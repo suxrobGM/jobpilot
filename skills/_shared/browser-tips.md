@@ -1,19 +1,39 @@
 # Browser Tips
 
-## Handling Large Pages
+## Snapshot Mode
 
-Job board pages can be very large and cause token overflow errors when Playwright returns the full page snapshot. To avoid this:
+Playwright MCP is configured with `--snapshot-mode none`. This means **actions do NOT return snapshots automatically**. You must explicitly call `browser_snapshot` when you need to read the page. This saves significant context tokens.
 
-1. **Use targeted snapshots.** If a full snapshot causes a token overflow, use `browser_snapshot` with a `ref` parameter to get only a specific element's subtree (e.g., the form container, the results list) instead of the entire page.
-2. **Avoid redundant snapshots.** Actions like `browser_click` and `browser_type` return a snapshot automatically. If you get a token overflow error from an action's response, do NOT retry the same action. Instead, use a targeted `browser_snapshot` with a `ref` to read just the part of the page you need.
-3. **When a tool returns a token overflow error**, the result is saved to a file. Use the `Read` tool with `offset` and `limit` to read portions of that file, or use `Grep` to search within it for specific content (e.g., job titles, form fields). **Do NOT use inline Python/Node scripts to parse these files** -- always use the built-in `Read` and `Grep` tools instead, as inline scripts trigger permission prompts.
-4. **Prefer `browser_snapshot`** over relying on action return values for page state assessment on large pages.
+### When to snapshot
+
+- **After navigation** (`browser_navigate`) -- to assess the page type
+- **After login** -- to confirm success
+- **Before filling a form** -- to identify fields
+- **After filling a form** -- to verify fields are filled correctly
+- **After clicking submit** -- to confirm submission
+
+### When NOT to snapshot
+
+- After every single `browser_click` or `browser_type` -- only snapshot when you need to read the result
+- After clicking "Next" on a multi-page form -- one snapshot after the new page loads is enough
+- After closing a popup -- just proceed with the next action
+
+### Targeted snapshots
+
+Always try `browser_snapshot` with a `ref` parameter first to get only a specific element's subtree (e.g., the form container, the results list) instead of the entire page. This dramatically reduces token usage on large pages.
+
+## Handling Token Overflow
+
+If a snapshot still exceeds token limits:
+
+1. The result is saved to a file. Use the `Read` tool with `offset` and `limit` to read portions, or use `Grep` to search for specific content (e.g., job titles, form fields).
+2. **Do NOT use inline Python/Node scripts to parse these files** -- always use the built-in `Read` and `Grep` tools instead.
+3. Try a more targeted `browser_snapshot` with a `ref` to a smaller element.
 
 ## General Best Practices
 
 1. **Handle popups and modals** -- close cookie banners, notification prompts, and overlays that block forms.
 2. **Be patient with page loads** -- use `browser_wait_for` after navigation and form submissions.
-3. **Take snapshots frequently** -- after every major action (navigation, form fill, submit) to verify state.
-4. **If something goes wrong** (unexpected page, error, crashed form), take a snapshot and report to the user with what you see rather than guessing.
-5. **For file uploads**, verify the resume file exists at the path in `profile.json`. If not, tell the user.
-6. **Never guess passwords** -- always read from profile.json credentials.
+3. **If something goes wrong** (unexpected page, error, crashed form), take a snapshot and report to the user with what you see rather than guessing.
+4. **For file uploads**, verify the resume file exists. If not, tell the user.
+5. **Never guess passwords** -- always read from profile.json credentials.

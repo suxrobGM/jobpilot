@@ -180,7 +180,7 @@ Applying to up to <maxApplications> jobs.
 - "go" -- apply to all qualified jobs
 - "go 1,3,5" -- apply only to specific jobs
 - "remove 3,7" -- exclude specific jobs
-- "details 2" -- show full job description before deciding
+- "details 2" -- show full job description including job URL before deciding
 - "stop" -- cancel the run
 ```
 
@@ -266,7 +266,23 @@ After each application:
 
 ### Step 3.8: Update Progress File
 
-**After every status change**, read the current progress file, update the relevant job and summary fields, update `updatedAt`, and write it back. This ensures the run can be resumed from the exact point of interruption.
+**After every status change**, use the update script to modify the progress file without reading the full JSON into context. This saves tokens on large run files.
+
+```bash
+# Update a job's status
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> job <job-id> status applied
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> job <job-id> appliedAt "2026-03-22T14:00:00Z"
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> job <job-id> failReason "CAPTCHA required"
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> job <job-id> retryNotes "Try direct careers page"
+
+# Recalculate summary counts
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> summary
+
+# Update run status
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> status completed
+```
+
+**Do NOT read the full progress file to update it.** Always use the script. This ensures the run can be resumed from the exact point of interruption without wasting context tokens.
 
 ## Phase 4: Summary Report
 
