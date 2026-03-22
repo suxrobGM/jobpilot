@@ -87,6 +87,8 @@ Add to `.claude/settings.json`:
 
 ![Autopilot run summary showing applied, failed, and skipped jobs](docs/images/run-summary.png)
 
+![Application tracking dashboard with stats and failure reasons](docs/images/dashboard.png)
+
 ## Documentation
 
 - [Configuration](docs/configuration.md) - profile setup, job boards, autopilot settings, work authorization, EEO
