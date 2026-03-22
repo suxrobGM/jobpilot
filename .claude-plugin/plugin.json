@@ -15,5 +15,6 @@
     "interview",
     "playwright",
     "automation"
-  ]
+  ],
+  "skills": "./humanizer/"
 }
