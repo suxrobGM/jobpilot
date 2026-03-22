@@ -24,7 +24,7 @@ Read the `autopilot` section from `profile.json`. Apply these defaults for any m
 | `maxApplicationsPerRun` | 10 | Max jobs to apply to in one run |
 | `skipCompanies` | [] | Company names to skip |
 | `skipTitleKeywords` | [] | Title keywords to skip (e.g., "intern", "principal") |
-| `confirmMode` | "batch" | `"batch"` = review and approve the list before applying. `"auto"` = skip confirmation and apply immediately when ALL qualified jobs score >= 6. If any job scores below 6, falls back to batch confirmation. |
+| `confirmMode` | "batch" | `"batch"` = review and approve the list before applying. `"auto"` = skip confirmation and apply immediately when ALL qualified jobs score >= `minMatchScore`. If any job scores below `minMatchScore`, falls back to batch confirmation. |
 | `defaultStartDate` | "2 weeks notice" | Default answer for start date fields |
 
 Inline argument overrides take precedence. Examples:
@@ -145,13 +145,13 @@ Update the `summary` counts in the progress file.
 
 ### Auto Mode (`confirmMode: "auto"`)
 
-If `confirmMode` is `"auto"` AND **every** qualified job has a match score >= 6:
+If `confirmMode` is `"auto"` AND **every** qualified job has a match score >= `minMatchScore`:
 
 1. Log the qualified jobs table (same format as batch mode) for the user's reference.
 2. Mark all qualified jobs as `status: "approved"` automatically.
 3. Proceed directly to Phase 3 without waiting for user input.
 
-**If any qualified job scores below 6, fall back to batch mode** regardless of the `confirmMode` setting. This ensures borderline matches always get human review.
+**If any qualified job scores below `minMatchScore`, fall back to batch mode** regardless of the `confirmMode` setting. This ensures borderline matches always get human review.
 
 ### Batch Mode (`confirmMode: "batch"`, or auto mode fallback)
 

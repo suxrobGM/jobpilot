@@ -105,7 +105,7 @@ Controls the behavior of the `/autopilot` batch application skill.
 | ------- | ------- | ----------- |
 | `minMatchScore` | 6 | Minimum fit score (1-10) to qualify |
 | `maxApplicationsPerRun` | 10 | Max applications per run |
-| `confirmMode` | `"batch"` | `"batch"` = review list before applying. `"auto"` = skip confirmation when all jobs score >= 6 |
+| `confirmMode` | `"batch"` | `"batch"` = review list before applying. `"auto"` = skip confirmation when all jobs score >= `minMatchScore` |
 | `skipCompanies` | `[]` | Company names to always skip |
 | `skipTitleKeywords` | `[]` | Title keywords to filter out |
 | `defaultStartDate` | `"2 weeks notice"` | Default answer for start date fields |
