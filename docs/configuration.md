@@ -37,11 +37,10 @@ Set `personal.resumePath` to your resume file (PDF, DOCX, LaTeX, or plain text).
 
 ## Credentials
 
-The `credentials` section stores login details for job boards. Each skill looks up credentials in this order:
+The `credentials` section stores default login details. Each skill looks up credentials in this order:
 
 1. Board-specific: the matching `jobBoards[]` entry's `email`/`password`
-2. Domain-specific: `credentials.<domain>`
-3. Fallback: `credentials.default`
+2. Fallback: `credentials.default`
 
 ```json
 "credentials": {

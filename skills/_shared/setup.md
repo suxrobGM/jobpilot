@@ -11,6 +11,5 @@ When credentials are needed for a domain:
 
 1. Find the matching entry in the `jobBoards` array where `domain` matches or is contained in the URL.
 2. If the board entry has `email` and `password` set, use those.
-3. Otherwise, try `credentials.<domain>` in the credentials object.
-4. Fall back to `credentials.default`.
-5. If no credentials are found at all, report it -- do not guess.
+3. Otherwise, fall back to `credentials.default`.
+4. If no credentials are found at all, report it -- do not guess.
