@@ -21,7 +21,9 @@ Job applications often span multiple pages/steps. For each page:
 - **LinkedIn/GitHub/Website** -> use `profile.json > personal.linkedin`, `personal.github`, `personal.website`
 - **Salary expectations** -> Ask the user before filling (in autopilot mode: ask once on first encounter, remember for the rest of the run).
 - **Start date** -> "Immediately" or "2 weeks notice" unless configured otherwise in `autopilot.defaultStartDate`.
-- **Cover letter** -> Generate a tailored cover letter using `/jobpilot:cover-letter` with the job description. The cover-letter skill already runs through the humanizer.
+- **Cover letter** -> Generate a tailored cover letter using `/jobpilot:cover-letter` with the job description. The cover-letter skill already runs through the humanizer. Then determine the field type:
+  - **Text area** -> paste the cover letter text directly into the field.
+  - **File upload only** -> save the generated cover letter to `${CLAUDE_PLUGIN_ROOT}/cover-letter.txt` using the `Write` tool, then use `browser_file_upload` to upload that file. Reuse the same file path for each application (it gets overwritten each time).
 - **"How did you hear about us?"** -> "Job board" or "Company website" as appropriate.
 - **Years of experience** -> Calculate from the earliest work experience date in the resume.
 - **Custom questions** -> Use best judgment from the candidate's resume. If genuinely uncertain, ask the user (in autopilot mode: make a reasonable attempt and log it in notes).
