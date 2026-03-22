@@ -15,3 +15,8 @@ All notable changes to this project will be documented in this file.
 - `humanizer` submodule integration for natural tone rewriting
 - Profile system with `profile.json` for storing personal info and credentials
 - Job board configuration support (LinkedIn, Indeed)
+
+- `autopilot` skill for autonomous batch job applications
+- Progress tracking in `runs/` directory with resumable JSON files
+- Autopilot configuration section in `profile.json` (minMatchScore, maxApplicationsPerRun, skipCompanies, skipTitleKeywords, defaultStartDate)
+- Resume and retry-failed support for interrupted or failed autopilot runs

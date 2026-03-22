@@ -11,6 +11,7 @@ A Claude Code plugin that automates job applications, generates cover letters an
 | **Upwork Proposal** | `/jobpilot:upwork-proposal <job_desc>` | Generate a concise Upwork proposal |
 | **Search** | `/jobpilot:search-job <query>` | Search job boards and rank results by qualification fit |
 | **Interview** | `/jobpilot:interview <job_desc>` | Generate interview prep Q&A (behavioral, technical, system design) |
+| **Autopilot** | `/jobpilot:autopilot <query>` | Autonomously search and apply to jobs in batch with progress tracking |
 | **Humanizer** | `/jobpilot:humanizer <text>` | Remove AI writing patterns for natural tone |
 
 ## Installation
@@ -62,10 +63,10 @@ Edit `profile.json` with your personal info, address, and credentials:
       "password": "your-password"
     }
   },
-  "jobBoards": {
-    "linkedin.com": { "enabled": true, "email": "", "password": "" },
-    "indeed.com": { "enabled": true, "email": "", "password": "" }
-  }
+  "jobBoards": [
+    { "name": "LinkedIn", "domain": "linkedin.com", "searchUrl": "https://www.linkedin.com/jobs/search/", "type": "search", "enabled": true, "email": "", "password": "" },
+    { "name": "Indeed", "domain": "indeed.com", "searchUrl": "https://www.indeed.com/jobs", "type": "search", "enabled": true, "email": "", "password": "" }
+  ]
 }
 ```
 
@@ -79,11 +80,12 @@ Alternatively, skip this step -- skills will ask for the path on first run and s
 
 ### 3. Configure job boards (optional)
 
-The `jobBoards` section controls which boards the `search` skill uses:
+The `jobBoards` array controls which boards are searched and how credentials are matched during apply:
 
+- Each entry has a `name`, `domain`, `type`, `enabled`, and optional `email`/`password`
+- Set `type: "search"` for boards with job search pages (requires `searchUrl`), or `type: "ats"` for apply-only platforms (Greenhouse, Lever, Workday)
 - Set `enabled: true/false` to include/exclude boards
-- Add board-specific credentials for login
-- The `apply` skill also uses these credentials when filling forms on matching domains
+- Add any new board by appending an entry to the array -- no code changes needed
 
 ### 4. Allow browser permissions (recommended)
 
@@ -98,6 +100,30 @@ To avoid being prompted for permission on every browser action, add the followin
   }
 }
 ```
+
+### 5. Configure autopilot (optional)
+
+Add an `autopilot` section to `profile.json` to control batch application behavior:
+
+```json
+"autopilot": {
+  "minMatchScore": 6,
+  "maxApplicationsPerRun": 10,
+  "confirmMode": "batch",
+  "skipCompanies": [],
+  "skipTitleKeywords": ["intern", "principal"],
+  "defaultStartDate": "2 weeks notice"
+}
+```
+
+| Setting | Default | Description |
+| ------- | ------- | ----------- |
+| `minMatchScore` | 6 | Minimum fit score (1-10) to qualify for application |
+| `maxApplicationsPerRun` | 10 | Max jobs to apply to per run (hard cap: 25) |
+| `confirmMode` | "batch" | `"batch"` = review list before applying. `"auto"` = skip confirmation when all jobs score >= 8 |
+| `skipCompanies` | [] | Company names to always skip |
+| `skipTitleKeywords` | [] | Title keywords to filter out |
+| `defaultStartDate` | "2 weeks notice" | Default answer for start date fields |
 
 ## Usage Examples
 
@@ -116,6 +142,15 @@ To avoid being prompted for permission on every browser action, add the followin
 
 # Prep for an interview
 /jobpilot:interview We're hiring a backend engineer to work on our API platform...
+
+# Autopilot: search and apply to matching jobs autonomously
+/jobpilot:autopilot "senior fullstack developer Portland ME remote"
+
+# Resume an interrupted autopilot run
+/jobpilot:autopilot "resume"
+
+# Retry failed applications from a previous run
+/jobpilot:autopilot "retry-failed 2026-03-22T14-30-00_senior-fullstack-developer"
 ```
 
 ## How It Works
@@ -124,6 +159,7 @@ To avoid being prompted for permission on every browser action, add the followin
 - **Cover Letter** and **Upwork Proposal** analyze the job description, match it against your resume, write a draft, then pass it through the humanizer for natural tone.
 - **Search** browses your enabled job boards, collects results, and scores each one against your resume.
 - **Interview** generates role-specific questions with suggested answers drawn from your actual experience.
+- **Autopilot** combines search and apply into a single autonomous workflow. It searches your enabled boards, scores results against your resume, presents a batch for one-time approval, then applies to every approved job without further prompts. Progress is saved to `runs/` so interrupted runs can be resumed.
 
 ## Credits
 

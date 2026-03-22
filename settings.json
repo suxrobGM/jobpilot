@@ -5,7 +5,8 @@
       "mcp__plugin_jobpilot_playwright__*",
       "Skill(jobpilot:humanizer)",
       "Skill(jobpilot:cover-letter)",
-      "Skill(jobpilot:upwork-proposal)"
+      "Skill(jobpilot:upwork-proposal)",
+      "Skill(jobpilot:autopilot)"
     ]
   }
 }

@@ -1,58 +1,102 @@
 {
   "personal": {
-    "firstName": "",
-    "lastName": "",
-    "email": "",
-    "phone": "",
-    "website": "",
-    "linkedin": "",
-    "github": "",
-    "resumePath": ""
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "email": "jane.doe@example.com",
+    "phone": "(555) 123-4567",
+    "website": "https://janedoe.dev",
+    "linkedin": "https://www.linkedin.com/in/janedoe",
+    "github": "https://github.com/janedoe",
+    "resumePath": "/path/to/your/resume.pdf"
+  },
+  "workAuthorization": {
+    "usAuthorized": true,
+    "requiresSponsorship": false,
+    "visaStatus": "OPT",
+    "optExtension": "STEM OPT"
   },
   "address": {
-    "street": "",
-    "aptUnit": "",
-    "city": "",
-    "state": "",
-    "zipCode": "",
-    "country": ""
+    "street": "123 Main St",
+    "aptUnit": "Apt 4B",
+    "city": "Portland",
+    "state": "ME",
+    "zipCode": "04101",
+    "country": "United States"
   },
   "credentials": {
     "default": {
-      "email": "",
-      "password": ""
+      "email": "jane.doe@example.com",
+      "password": "your-password-here"
     }
   },
-  "jobBoards": {
-    "linkedin.com": {
+  "jobBoards": [
+    {
+      "name": "LinkedIn",
+      "domain": "linkedin.com",
+      "searchUrl": "https://www.linkedin.com/jobs/search/",
+      "type": "search",
       "enabled": true,
       "email": "",
       "password": ""
     },
-    "indeed.com": {
+    {
+      "name": "Indeed",
+      "domain": "indeed.com",
+      "searchUrl": "https://www.indeed.com/jobs",
+      "type": "search",
       "enabled": true,
       "email": "",
       "password": ""
     },
-    "glassdoor.com": {
+    {
+      "name": "Glassdoor",
+      "domain": "glassdoor.com",
+      "searchUrl": "https://www.glassdoor.com/Job/",
+      "type": "search",
       "enabled": false,
       "email": "",
       "password": ""
     },
-    "greenhouse.io": {
+    {
+      "name": "Hiring Cafe",
+      "domain": "hiring.cafe",
+      "searchUrl": "https://hiring.cafe/jobs",
+      "type": "search",
       "enabled": true,
       "email": "",
       "password": ""
     },
-    "lever.co": {
+    {
+      "name": "Greenhouse",
+      "domain": "greenhouse.io",
+      "type": "ats",
       "enabled": true,
       "email": "",
       "password": ""
     },
-    "workday.com": {
+    {
+      "name": "Lever",
+      "domain": "lever.co",
+      "type": "ats",
+      "enabled": true,
+      "email": "",
+      "password": ""
+    },
+    {
+      "name": "Workday",
+      "domain": "workday.com",
+      "type": "ats",
       "enabled": true,
       "email": "",
       "password": ""
     }
+  ],
+  "autopilot": {
+    "minMatchScore": 6,
+    "maxApplicationsPerRun": 10,
+    "confirmMode": "batch",
+    "skipCompanies": [],
+    "skipTitleKeywords": [],
+    "defaultStartDate": "2 weeks notice"
   }
 }
