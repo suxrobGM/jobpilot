@@ -16,6 +16,16 @@ Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/setup.
 
 Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/run-stats.sh` to get a JSON summary of all runs. Parse the output and present it based on the user's request.
 
+### Cross-reference with Applied-Jobs Database
+
+The `run-stats.sh` script only reads `runs/*.json` files. Some applications may have been made via `/apply` (single-job skill) and only exist in the persistent database. To get a complete picture:
+
+1. Read `${CLAUDE_PLUGIN_ROOT}/applied-jobs.json` (if it exists) using the `Read` tool.
+2. Check for entries with `source: "apply"` — these are applications not tracked in any run file.
+3. Add their count to the `totalApplied` metric and include them in the applied list under a separate "Direct Applications" section.
+
+This ensures the dashboard reflects ALL applications, not just autopilot runs.
+
 ## Commands
 
 ### Default / `stats`
@@ -29,7 +39,9 @@ If no argument is provided, or the argument is `"stats"`, present the full dashb
 |--------|-------|
 | Total runs | <totalRuns> |
 | Jobs found | <totalJobsFound> |
-| Applied | <totalApplied> |
+| Applied (total) | <totalApplied + directApplied> |
+| Applied (autopilot) | <totalApplied> |
+| Applied (direct) | <directApplied> |
 | Failed | <totalFailed> |
 | Skipped | <totalSkipped> |
 | Success rate | <successRate> |
