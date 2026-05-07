@@ -7,3 +7,4 @@ node_modules/
 runs/
 applied-jobs.json
 snapshot-*.md
+jobs-to-apply.txt

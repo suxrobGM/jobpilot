@@ -1,0 +1,42 @@
+{
+  "name": "@jobpilot/web",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -H 127.0.0.1 -p 8000",
+    "build": "next build",
+    "start": "next start -H 127.0.0.1 -p 8000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate --schema ./prisma/schema",
+    "db:migrate": "prisma migrate dev --schema ./prisma/schema",
+    "db:studio": "prisma studio --schema ./prisma/schema",
+    "db:seed": "bun run prisma/seed/default-boards.ts",
+    "db:reset": "prisma migrate reset --schema ./prisma/schema --skip-seed"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.13.5",
+    "@emotion/react": "^11.13.5",
+    "@emotion/styled": "^11.13.5",
+    "@mui/icons-material": "^9.0.0",
+    "@mui/material": "^9.0.0",
+    "@mui/material-nextjs": "^9.0.0",
+    "@mui/x-data-grid": "^9.0.0",
+    "@prisma/client": "^7.8.0",
+    "@tanstack/react-form": "^1.29.0",
+    "@tanstack/react-query": "^5.100.0",
+    "@tanstack/react-query-devtools": "^5.100.0",
+    "next": "^16.2.5",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "prisma": "^7.8.0",
+    "typescript": "^6.0.3"
+  }
+}
