@@ -19,4 +19,16 @@ export const queryKeys = {
     list: () => [...queryKeys.jobBoards.all, "list"] as const,
     detail: (id: number) => [...queryKeys.jobBoards.all, "detail", id] as const,
   },
+
+  applications: {
+    all: ["applications"] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.applications.all, "list", filters] as const,
+    detail: (id: number) => [...queryKeys.applications.all, "detail", id] as const,
+  },
+
+  dashboard: {
+    all: ["dashboard"] as const,
+    stats: () => [...queryKeys.dashboard.all, "stats"] as const,
+  },
 } as const;
