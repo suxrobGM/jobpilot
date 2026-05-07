@@ -20,16 +20,13 @@ Next.js + SQLite web app that owns all of the state.
 git clone https://github.com/suxrobgm/jobpilot.git
 cd jobpilot/web
 bun install
-bunx prisma migrate dev          # creates web/prisma/dev.db
+bun run db:migrate:apply         # creates the SQLite database and applies the schema
 bun run db:seed                  # seeds default job boards
 
 # 2. Start the web app (keep this running)
 bun dev                          # serves on http://127.0.0.1:8000
 
-# 3. Open the onboarding wizard
-open http://127.0.0.1:8000       # fills the singleton Profile + Autopilot
-
-# 4. Install the plugin in Claude Code
+# 3. Install the plugin in Claude Code
 # Add this directory to your Claude Code plugins, then run any skill:
 /jobpilot:apply <job-url>
 /jobpilot:autopilot "senior fullstack developer remote"
@@ -55,48 +52,19 @@ message and tells you to start it.
 
 ## Web app
 
-- **`/`** — KPIs (total applied, last 7/30 days, positive response rate),
-  funnel, board breakdown, recent activity.
-- **`/applications`** — DataGrid with stage/board/source/text filters,
-  click a row for the detail view with stage timeline + manual transitions
-  + delete. CSV export.
-- **`/runs`** — autopilot + apply-batch run history; click a row for the
-  live viewer.
-- **`/runs/[id]`** — live SSE viewer: status chip, summary tiles, jobs
-  table updating in real time as the skill applies.
-- **`/batch`** — paste URLs to queue; the apply-batch skill consumes them.
-- **`/boards`** — manage job boards (search vs ATS, enabled toggle, board
-  credentials).
-- **`/profile`** — 7-tab editor: personal, address, work auth, EEO,
-  autopilot defaults, credentials, resumes (upload).
-- **`/onboarding`** — 5-step wizard, hit when the singleton Profile is
-  missing.
+A local Next.js dashboard at `http://127.0.0.1:8000` that owns every
+persistent fact: profile, resumes, credentials, job boards, applied jobs
+with stage funnel, autopilot/batch runs, and the URL queue. It's where
+you configure JobPilot, watch runs progress live over SSE, and review
+your application history. Skills read and write everything through its
+HTTP API.
 
-## Architecture overview
+## Documentation
 
-```
-┌──────────────────────────────┐
-│  Claude Code (skills)        │  ← reasons about applications, fills forms
-│  apply / autopilot /         │
-│  search / cover-letter / ... │
-└────────────┬─────────────────┘
-             │ curl http://127.0.0.1:8000/api/...
-             ▼
-┌──────────────────────────────┐       ┌─────────────────┐
-│  Next.js 16 (web/)           │ ◄────►│  Browser UI     │
-│  app/api/* route handlers    │       │  MUI 9 pages    │
-│  app/(pages)/*               │       └─────────────────┘
-└────────────┬─────────────────┘
-             │ Prisma 7 (libSQL adapter)
-             ▼
-┌──────────────────────────────┐
-│  SQLite (web/prisma/dev.db)  │
-└──────────────────────────────┘
-```
-
-See [docs/architecture.md](docs/architecture.md) for a deeper walk-through and
-[docs/self-hosting.md](docs/self-hosting.md) for the operations + configuration
-runbook. Convention rules live in [CLAUDE.md](CLAUDE.md).
+See [docs/architecture.md](docs/architecture.md) for the architecture
+walk-through and [docs/self-hosting.md](docs/self-hosting.md) for the
+operations + configuration runbook. Convention rules live in
+[CLAUDE.md](CLAUDE.md).
 
 ## Tech stack
 

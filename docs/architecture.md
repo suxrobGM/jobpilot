@@ -20,24 +20,99 @@ never touch the database directly; they never read or write JSON files.
 If the web app is down, skills stop with a clear message asking the user
 to start it.
 
+## High-level diagram
+
+```mermaid
+flowchart LR
+    subgraph Claude["Claude Code"]
+        Skills["Skills<br/>apply • autopilot • search<br/>cover-letter • interview"]
+        MCP["Playwright MCP"]
+    end
+
+    subgraph Web["Next.js 16 web app — :8000"]
+        API["API routes<br/>app/api/*<br/>Zod validate"]
+        Pages["RSC pages + client islands<br/>MUI 9 • TanStack Query/Form"]
+        SSE["SSE broker<br/>lib/sse.ts"]
+    end
+
+    subgraph Data["Persistence"]
+        Prisma["Prisma 7<br/>libSQL adapter"]
+        DB[("SQLite<br/>web/prisma/dev.db")]
+        Files["web/storage/resumes/*.pdf"]
+    end
+
+    Browser["Browser UI<br/>http://127.0.0.1:8000"]
+    Boards(["Job boards<br/>LinkedIn • Indeed • ATS sites"])
+
+    Skills -- "curl GET/POST/PATCH" --> API
+    Skills -- "browser_*" --> MCP
+    MCP -- "automate" --> Boards
+    Skills -- "Read profile/resume<br/>POST applied + run events" --> API
+
+    Pages <-- "fetch" --> API
+    Pages <-- "EventSource" --> SSE
+    API -- "publish run events" --> SSE
+    API --> Prisma
+    Prisma --> DB
+    API -- "stream upload/download" --> Files
+
+    Browser <--> Pages
+
+    classDef ext fill:#fef3c7,stroke:#d97706,color:#78350f;
+    classDef store fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
+    class Boards ext;
+    class DB,Files store;
 ```
-┌───────────────────────┐                ┌────────────────────────┐
-│ Claude Code skill     │  curl HTTP →   │  Next.js API routes    │
-│ (apply, autopilot,    │                │  app/api/*             │
-│  search, cover-letter)│  ← JSON        │  zod-validate, Prisma  │
-└───────────────────────┘                └────────────┬───────────┘
-                                                      │
-                                                      ▼
-                                              ┌──────────────────┐
-                                              │ SQLite (libSQL)  │
-                                              │ web/prisma/dev.db│
-                                              └──────────────────┘
-                                                      │
-┌───────────────────────┐                ┌────────────┴───────────┐
-│ Browser at :8000      │  TanStack      │  React Server          │
-│ MUI 9 pages, live     │  Query / SSE   │  Components +          │
-│ run viewer            │  ←—————→       │  client islands        │
-└───────────────────────┘                └────────────────────────┘
+
+## Request lifecycle: a single `/jobpilot:apply <url>`
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant S as apply skill
+    participant API as Next.js API
+    participant DB as SQLite
+    participant B as Playwright (MCP)
+
+    U->>S: /jobpilot:apply <url>
+    S->>API: GET /api/health
+    API-->>S: { ok: true }
+    S->>API: GET /api/profile
+    S->>API: GET /api/credentials
+    S->>API: GET /api/applied/check?url=...&title=...&company=...
+    API->>DB: exact + Jaro-Winkler match (30d)
+    API-->>S: { duplicate: false }
+    S->>B: browser_navigate / login / fill form
+    B-->>S: snapshot, dialog, success page
+    S->>API: POST /api/applied
+    API->>DB: insert AppliedJob + initial stage
+    API-->>S: { id, ... }
+    S-->>U: applied ✓
+```
+
+## Live-run dataflow (autopilot / apply-batch)
+
+```mermaid
+sequenceDiagram
+    participant S as autopilot skill
+    participant API as /api/runs/*
+    participant SSE as SSE broker
+    participant UI as /runs/[id] page
+
+    UI->>API: GET /api/runs/[id]
+    UI->>SSE: EventSource /api/runs/[id]/events
+    SSE-->>UI: heartbeat (every 15s)
+
+    loop per job
+        S->>API: PATCH /api/runs/[id]/jobs/[jobKey]
+        API->>SSE: publish(runId, event)
+        SSE-->>UI: event → invalidate(runDetail)
+        UI->>API: refetch run detail (canonical state)
+    end
+
+    S->>API: PATCH /api/runs/[id] { status: "completed" }
+    API->>SSE: publish completion
+    SSE-->>UI: event → final refetch
 ```
 
 ## Skills layer
