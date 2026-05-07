@@ -1,10 +1,6 @@
-profile.json
 node_modules/
 .playwright-mcp/
 *.pdf
 *.csv
-.claude/
-runs/
-applied-jobs.json
 snapshot-*.md
-jobs-to-apply.txt
+.claude/settings.local.json

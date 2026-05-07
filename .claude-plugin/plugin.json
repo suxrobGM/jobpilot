@@ -1,7 +1,7 @@
 {
   "name": "jobpilot",
-  "version": "1.3.0",
-  "description": "Automate job applications, generate cover letters and proposals, prep for interviews - all powered by your resume.",
+  "version": "2.0.0",
+  "description": "Automate job applications, generate cover letters and proposals, prep for interviews. Backed by a local Next.js + SQLite web app at 127.0.0.1:8000 that owns all state; skills drive the app via curl.",
   "author": {
     "name": "Sukhrob Ilyosbekov",
     "url": "https://github.com/suxrobgm"
