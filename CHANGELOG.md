@@ -75,12 +75,9 @@ web app before running any skill.**
 
 ### Changed
 
-- All skills (`apply`, `apply-batch`, `autopilot`, `search`, `dashboard`,
+- All remaining skills (`apply`, `apply-batch`, `autopilot`, `search`,
   `cover-letter`, `interview`, `upwork-proposal`) rewritten to call the
   JobPilot API via `curl`.
-- `dashboard` skill is now mostly a pointer to the web dashboard, with
-  optional text summaries from `/api/dashboard/stats` and
-  `/api/runs/stats`.
 - `apply-batch` no longer takes a file path argument; it consumes URLs
   from `/api/batch/pending` (managed via the `/batch` page in the web
   UI). Each entry is PATCHed to `consumed` after a successful apply.
@@ -109,6 +106,9 @@ web app before running any skill.**
   at `/onboarding`).
 - `jobs-to-apply.txt`, `jobs-to-apply.example.txt` (now `BatchInput`
   rows, managed at `/batch`).
+- `dashboard` skill — superseded by the web dashboard at
+  `http://127.0.0.1:8000/`. Use the browser; the per-skill text summary
+  was redundant.
 - `docs/configuration.md` (replaced by `docs/self-hosting.md`).
 - `docs/how-it-works.md` (replaced by `docs/architecture.md`).
 

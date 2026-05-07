@@ -34,8 +34,9 @@ open http://127.0.0.1:8000       # fills the singleton Profile + Autopilot
 /jobpilot:apply <job-url>
 /jobpilot:autopilot "senior fullstack developer remote"
 /jobpilot:search "react contract us-remote"
-/jobpilot:dashboard
 ```
+
+For dashboards and history, open the web app at `http://127.0.0.1:8000/`.
 
 If a skill is run while the web app is down it stops with a clear
 message and tells you to start it.
@@ -48,7 +49,6 @@ message and tells you to start it.
 | `/jobpilot:apply-batch` | Pull URLs from `/api/batch/pending`, score against your resume, get one-click batch approval, apply to all. |
 | `/jobpilot:autopilot <query>` | Search every enabled board, score, batch-approve, apply autonomously. Live viewer at `/runs/<id>`. |
 | `/jobpilot:search <query>` | Search boards and rank results without applying. |
-| `/jobpilot:dashboard` | Quick text summary or pointer to the rich web dashboard. |
 | `/jobpilot:cover-letter <description>` | Tailored cover letter, run through the humanizer. |
 | `/jobpilot:upwork-proposal <job>` | Tailored Upwork proposal. |
 | `/jobpilot:interview <description>` | Behavioral / technical / company-research interview prep. |

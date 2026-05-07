@@ -24,7 +24,7 @@ to start it.
 ┌───────────────────────┐                ┌────────────────────────┐
 │ Claude Code skill     │  curl HTTP →   │  Next.js API routes    │
 │ (apply, autopilot,    │                │  app/api/*             │
-│  search, dashboard…)  │  ← JSON        │  zod-validate, Prisma  │
+│  search, cover-letter)│  ← JSON        │  zod-validate, Prisma  │
 └───────────────────────┘                └────────────┬───────────┘
                                                       │
                                                       ▼
