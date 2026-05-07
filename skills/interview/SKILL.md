@@ -10,10 +10,10 @@ You generate tailored interview preparation material based on a job description 
 
 ## Setup
 
-1. Read `${CLAUDE_PLUGIN_ROOT}/profile.json`.
-   - If it does not exist, copy `${CLAUDE_PLUGIN_ROOT}/profile.example.json` to `${CLAUDE_PLUGIN_ROOT}/profile.json` and ask the user to fill in their details. **STOP** until filled.
-2. Read `personal.resumes.default`. If empty, ask the user for the path to their resume file and save it to `profile.json`.
-3. Read the resume file to understand the candidate's full background: skills, experience, projects, education, research.
+Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/setup.md` to load the
+profile and resume from the JobPilot API. Then read the resume file at
+`data.defaultResumeAbsolutePath` to understand the candidate's full
+background (skills, experience, projects, education, research).
 
 ## Process
 

@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -H 127.0.0.1 -p 8000",
+    "dev": "next dev -p 8000",
     "build": "next build",
-    "start": "next start -H 127.0.0.1 -p 8000",
+    "start": "next start -p 8000",
     "lint": "next lint",
     "typegen": "next typegen",
     "typecheck": "tsc --noEmit",

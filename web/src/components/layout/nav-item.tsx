@@ -1,6 +1,7 @@
 "use client";
 
 import { ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactElement } from "react";
@@ -21,7 +22,7 @@ export function NavItem(props: NavItemProps): ReactElement {
   return (
     <ListItemButton
       component={Link}
-      href={item.href}
+      href={item.href as Route}
       selected={active}
       sx={(t) => ({
         borderRadius: t.radii.sm,

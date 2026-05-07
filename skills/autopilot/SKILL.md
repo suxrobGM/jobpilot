@@ -1,174 +1,173 @@
 ---
 name: autopilot
-description: Autonomously search job boards and apply to matching positions in batch. Tracks progress in a JSON file for resumability. User approves a batch once, then Claude applies to all approved jobs without further prompts.
+description: Autonomously search job boards and apply to matching positions in batch. Tracks progress in the JobPilot database for resumability and live viewing. User approves a batch once, then Claude applies to all approved jobs without further prompts.
 argument-hint: "<search_query OR 'resume' OR 'retry-failed <run-id>'>"
 ---
 
-# Autopilot -- Autonomous Job Application System
+# Autopilot — Autonomous Job Application System
 
-You autonomously search job boards, score results against the user's resume, present a batch for one-time approval, then apply to every approved job without further confirmation. Progress is tracked in a JSON file so runs can be resumed if interrupted.
+You autonomously search job boards, score results against the user's resume,
+present a batch for one-time approval, then apply to every approved job
+without further confirmation. Progress lives in the JobPilot database; the
+live viewer at `http://127.0.0.1:8000/runs/<run-id>` reflects every state
+change in real time.
 
 ## Setup
 
-### Load Profile and Resume
+```bash
+JOBPILOT_API=http://127.0.0.1:8000
+```
 
-Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/setup.md` to load the profile, resume, and credentials.
-
-### Load Configuration
-
-Read the `autopilot` section from `profile.json`. Apply these defaults for any missing fields:
+Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/setup.md` to load the
+profile, resume, and credentials. Take `data.autopilot` from the profile
+response as the configuration object. Apply these defaults if a field is
+missing:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `minMatchScore` | 6 | Minimum score (1-10) to qualify for application |
+| `minMatchScore` | 6 | Minimum score (1-10) to qualify |
 | `maxApplicationsPerRun` | 10 | Max jobs to apply to in one run |
 | `skipCompanies` | [] | Company names to skip |
 | `skipTitleKeywords` | [] | Title keywords to skip (e.g., "intern", "principal") |
-| `confirmMode` | "batch" | `"batch"` = review and approve the list before applying. `"auto"` = skip confirmation and apply immediately when ALL qualified jobs score >= `minMatchScore`. If any job scores below `minMatchScore`, falls back to batch confirmation. |
-| `minSalary` | 0 | Minimum annual salary (USD). Skip jobs that list compensation below this. 0 = no filter. |
-| `maxSalary` | 0 | Maximum annual salary (USD). Skip jobs above this. 0 = no filter. |
-| `salaryExpectation` | "" | Auto-fill salary expectation fields (e.g., "$100,001 to $125,000"). If empty, asks the user on first encounter. |
-| `defaultStartDate` | "2 weeks notice" | Default answer for start date fields |
+| `confirmMode` | "batch" | `"batch"` reviews before applying. `"auto"` skips confirmation when ALL qualified jobs score >= `minMatchScore`. |
+| `minSalary` | 0 | Skip jobs with listed comp below this. 0 = no filter. |
+| `maxSalary` | 0 | Skip jobs above this. 0 = no filter. |
+| `salaryExpectation` | "" | Auto-fill salary expectation fields. |
+| `defaultStartDate` | "2 weeks notice" | Default start date answer. |
 
-Inline argument overrides take precedence. Examples:
+Inline argument overrides take precedence:
 - `/jobpilot:autopilot "senior fullstack React remote" --min-score 7 --max-apps 5`
-- `/jobpilot:autopilot "senior fullstack React remote"` (uses profile.json defaults)
 
-### Determine Run Mode
+### Run Modes
 
-Parse the argument to decide the run mode:
+Parse the argument:
 
-- **`"resume"`** -> list incomplete runs from `${CLAUDE_PLUGIN_ROOT}/runs/`, ask the user to pick one, then skip to Phase 3 (apply loop) with remaining `approved` or `pending` jobs.
-- **`"retry-failed <run-id>"`** -> load the specified run, reset all `failed` jobs to `approved`, then skip to Phase 3. **Before retrying each job, read its `retryNotes` field** (if set) to understand what went wrong last time and try a different approach (e.g., if the note says "Quick Apply button led to a broken iframe", try navigating to the company's careers page directly instead).
-- **Anything else** -> treat as a search query. Proceed to Phase 0.
+- **`"resume"`** → list incomplete runs (`GET /api/runs?status=in_progress`),
+  ask the user to pick one, then skip to Phase 3 with remaining
+  `approved`/`pending` jobs.
+- **`"retry-failed <run-id>"`** → fetch the run (`GET /api/runs/<id>`); for
+  every job with `status === "failed"`, PATCH back to `"approved"` and read
+  `retryNotes` so you can try a different approach. Then skip to Phase 3.
+- **Anything else** → search query. Continue to Phase 0.
 
-## Phase 0: Resume Check for Existing Runs
+## Phase 0: Existing Run Check + Create
 
-1. Check `${CLAUDE_PLUGIN_ROOT}/runs/` for any file with `status: "in_progress"` whose `query` matches (or is very similar to) the current search query.
-2. If found, ask the user: **"Found an incomplete run from [startedAt] with [remaining] jobs left. Resume it or start fresh?"**
-   - Resume -> load that run file, skip to Phase 3 with remaining jobs
-   - Fresh -> proceed to Phase 1
-
-3. Create a new run file at `${CLAUDE_PLUGIN_ROOT}/runs/<run-id>.json` where `<run-id>` is formatted as `YYYY-MM-DDTHH-MM-SS_<slugified-query>` (e.g., `2026-03-22T14-30-00_senior-fullstack-developer`).
-
-Initialize with:
-
-```json
-{
-  "runId": "<run-id>",
-  "query": "<user's search query>",
-  "config": {
-    "minMatchScore": <resolved value>,
-    "maxApplications": <resolved value>,
-    "boards": ["<enabled boards>"]
-  },
-  "status": "in_progress",
-  "startedAt": "<ISO timestamp>",
-  "updatedAt": "<ISO timestamp>",
-  "completedAt": null,
-  "jobs": [],
-  "summary": {
-    "totalFound": 0,
-    "qualified": 0,
-    "applied": 0,
-    "failed": 0,
-    "skipped": 0,
-    "remaining": 0
-  }
-}
+```bash
+curl -fsS "$JOBPILOT_API/api/runs?status=in_progress"
 ```
+
+If any returned run's `query` matches (or is very close to) the new search
+query, ask: **"Found an incomplete run from `<startedAt>` with `<remaining>`
+jobs left. Resume or start fresh?"**. Resume → skip to Phase 3.
+
+Otherwise create a new run:
+
+```bash
+SLUG=$(echo "<query>" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/-\+/-/g; s/^-//; s/-$//')
+RUN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_${SLUG})
+curl -fsS -X POST "$JOBPILOT_API/api/runs" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg id "$RUN_ID" --arg q "<query>" \
+    --argjson minScore <n> --argjson maxApps <n> \
+    --argjson boards '["linkedin.com","indeed.com"]' \
+    '{runId:$id, query:$q, source:"autopilot", config:{minMatchScore:$minScore, maxApplications:$maxApps, boards:$boards}}')"
+```
+
+Surface the live-view link to the user: `http://127.0.0.1:8000/runs/<RUN_ID>`.
 
 ## Phase 1: Search Job Boards
 
-### Step 1.1: Parse Search Query
+### Step 1.1: Parse the Query
 
-Extract from the user's query:
+Extract title/role, keywords, location, other preferences. If vague, ask the
+user to clarify before searching.
 
-- **Job title / role** (e.g., "Senior Full Stack Developer")
-- **Keywords** (e.g., "React", ".NET", "remote")
-- **Location** (e.g., "Portland ME", "remote")
-- **Other preferences** (e.g., "no startups", salary range)
-
-If the query is vague, ask the user to clarify before searching.
-
-### Step 1.2: Search Each Enabled Board
-
-Read the `jobBoards` array from `profile.json`. Only search boards where `enabled: true` and `type: "search"`. Boards with `type: "ats"` (e.g., Greenhouse, Lever, Workday) are apply-only platforms -- skip them during search.
-
-For each searchable board:
-
-#### Authenticate
-
-1. Use `browser_navigate` to go to the board's `searchUrl` (defined in the board entry).
-2. Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/auth.md` to log in proactively.
-3. After login (or if skipping auth), navigate back to the board's `searchUrl` if needed, then proceed to search.
-
-#### Search and Extract Results
-
-1. Fill the search fields with job title/keywords and location.
-2. Submit the search.
-3. Use `browser_snapshot` to read results.
-4. Extract up to **15 results per board**:
-   - Job title
-   - Company name
-   - Location / remote status
-   - URL to the listing
-   - Brief description (if visible in preview)
-5. **Write found jobs to the progress file immediately** after each board, with `status: "pending"`.
-
-Handle rate limiting gracefully -- if a board blocks or throttles, note it and move to the next board.
-
-### Step 1.3: Deduplicate and Exclude Previously Applied
-
-**Cross-board deduplication:** Remove duplicate jobs across boards. A duplicate = same company name AND same or very similar job title. Keep the entry with the richer description.
-
-**Previously applied filter:** Before scoring, check each job URL against the persistent applied-jobs database:
+### Step 1.2: Iterate Search Boards
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-applied.sh "<job-url>"
+curl -fsS "$JOBPILOT_API/api/job-boards"
 ```
 
-If the script outputs `already-applied` (exit code 0), mark the job as `status: "skipped"` with `skipReason: "Already applied (found in applied-jobs database)"` and exclude it from scoring and confirmation.
+For each board where `enabled === true` and `type === "search"`:
 
-### Step 1.4: Score and Filter
+1. `browser_navigate` to `searchUrl`.
+2. Follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/auth.md`.
+3. Fill the search fields, submit, snapshot the results.
+4. Extract up to 15 results: title, company, location, URL, brief description.
+5. POST each found job to the run as a `pending` `RunJob` (description below).
 
-For each job, assign a **match score (1-10)** based on:
+`type === "ats"` boards (Greenhouse / Lever / Workday) are apply-only — skip
+during search.
 
-- Tech stack overlap with resume
-- Years of experience match
-- Education match
-- Domain/industry relevance
-- Seniority level alignment
-- Location/remote preference match
+### Step 1.3: Dedupe + Previously-Applied Filter
 
-Write scores and `matchReason` to the progress file.
+Cross-board dedupe by normalized title + company; keep the richer entry.
 
-**Filter out:**
-- Jobs below `minMatchScore` -> set `status: "skipped"`, `skipReason: "Below minimum match score (X < Y)"`
-- Jobs from companies in `skipCompanies` -> set `status: "skipped"`, `skipReason: "Company in skip list"`
-- Jobs matching `skipTitleKeywords` -> set `status: "skipped"`, `skipReason: "Title contains blocked keyword: <keyword>"`
-- Jobs with listed salary below `minSalary` (if > 0) -> set `status: "skipped"`, `skipReason: "Salary below minimum ($X < $Y)"`
-- Jobs with listed salary above `maxSalary` (if > 0) -> set `status: "skipped"`, `skipReason: "Salary above maximum ($X > $Y)"`
+For each remaining job, hit the dedupe API:
 
-**Note on salary filtering:** Only filter if the job listing explicitly shows a salary range in the preview. Do not skip jobs that don't mention salary -- many good jobs omit compensation from listings.
+```bash
+URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
+TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
+COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
+curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+```
 
-Update the `summary` counts in the progress file.
+If `data.applied` is true, add the job to the run with
+`status: "skipped"`, `skipReason: "Already applied (<kind>)"`.
+
+### Step 1.4: Score and Add to Run
+
+For each surviving job:
+
+- Score 1-10 based on tech overlap, experience, education, domain, seniority,
+  location.
+- If below `minMatchScore` → status `"skipped"`,
+  `skipReason: "Below minimum match score (X < Y)"`.
+- If company in `skipCompanies` → `skipped`, `"Company in skip list"`.
+- If title matches `skipTitleKeywords` → `skipped`, `"Title contains blocked keyword: <k>"`.
+- If listed salary < `minSalary` (and minSalary > 0) → `skipped`,
+  `"Salary below minimum"`.
+- If listed salary > `maxSalary` (and maxSalary > 0) → `skipped`,
+  `"Salary above maximum"`.
+- Otherwise status `"pending"`.
+
+POST every job to the run:
+
+```bash
+curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n \
+    --arg key "<stable-id-within-run>" \
+    --arg title "<title>" --arg company "<company>" \
+    --arg location "<location>" --arg url "<url>" --arg board "<board>" \
+    --arg matchReason "<one line>" \
+    --argjson score <0-100> \
+    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
+```
+
+Salary filtering note: only filter when the listing explicitly shows a range
+in the preview. Don't skip jobs that omit comp.
+
+After scoring, PATCH the run summary to update counts (so the live viewer
+reflects progress):
+
+```bash
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --argjson found <n> --argjson qualified <n> --argjson skipped <n> \
+    '{summary:{totalFound:$found, qualified:$qualified, skipped:$skipped}}')"
+```
 
 ## Phase 2: Confirmation
 
 ### Auto Mode (`confirmMode: "auto"`)
 
-If `confirmMode` is `"auto"` AND **every** qualified job has a match score >= `minMatchScore`:
+If every qualified job scores >= `minMatchScore`, PATCH all qualified jobs to
+`status: "approved"` and skip to Phase 3. **If any qualified job is borderline,
+fall back to batch mode** regardless of the setting — humans always review the
+edge cases.
 
-1. Log the qualified jobs table (same format as batch mode) for the user's reference.
-2. Mark all qualified jobs as `status: "approved"` automatically.
-3. Proceed directly to Phase 3 without waiting for user input.
-
-**If any qualified job scores below `minMatchScore`, fall back to batch mode** regardless of the `confirmMode` setting. This ensures borderline matches always get human review.
-
-### Batch Mode (`confirmMode: "batch"`, or auto mode fallback)
-
-Present all qualified jobs (score >= minMatchScore, not filtered) in a ranked table:
+### Batch Mode (default)
 
 ```
 ## Autopilot Run: "<query>"
@@ -177,174 +176,152 @@ Found <totalFound> jobs across <N> boards. <qualified> qualify (score >= <minMat
 
 | # | Score | Title | Company | Location | Board |
 |---|-------|-------|---------|----------|-------|
-| 1 | 9/10  | Senior Full Stack Dev | Acme Corp | Remote | LinkedIn |
-| 2 | 8/10  | Full Stack Engineer | StartupCo | Portland, ME | Indeed |
-| ... |
+| 1 | 9/10  | Senior Full Stack Dev | Acme Corp | Remote | linkedin.com |
 
-Applying to up to <maxApplications> jobs.
+Live view: http://127.0.0.1:8000/runs/<RUN_ID>
 
 **Commands:**
-- "go" -- apply to all qualified jobs
-- "go 1,3,5" -- apply only to specific jobs
-- "remove 3,7" -- exclude specific jobs
-- "details 2" -- show full job description including job URL before deciding
-- "stop" -- cancel the run
+- "go" — apply to all qualified jobs
+- "go 1,3,5" — apply only to specific jobs
+- "remove 3,7" — exclude specific jobs
+- "details 2" — show full description before deciding
+- "stop" — pause the run
 ```
 
-**This is the single confirmation gate.** After the user says "go", apply to all approved jobs autonomously without asking again per-job.
+This is the **single confirmation gate.** After "go", apply autonomously.
 
-Process the user's response:
-- **"go"** -> mark all qualified jobs as `status: "approved"`
-- **"go 1,3,5"** -> mark only those jobs as `approved`, mark the rest as `skipped` with `skipReason: "Not selected by user"`
-- **"remove N"** -> mark those as `skipped` with `skipReason: "Removed by user"`, then re-present the table
-- **"details N"** -> navigate to that job's URL, read the full description, present it, then re-present the table
-- **"stop"** -> set run `status: "paused"`, save, and stop
+Process commands by PATCHing `RunJob.status`:
 
-Update the progress file after processing the response.
+```bash
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+  -H 'content-type: application/json' -d '{"status":"approved"}'
+```
+
+`stop` → PATCH the run with `status: "paused"` and stop.
 
 ## Phase 3: Autonomous Apply Loop
 
-For each job with `status: "approved"`, in order of match score (highest first):
+For each job with `status: "approved"`, in score-descending order:
 
-### Step 3.1: Begin Application
+### Step 3.1: Mark Applying
 
-1. Update the job's status to `"applying"` in the progress file.
-2. Use `browser_navigate` to open the job URL.
-3. Use `browser_snapshot` to assess the page.
+```bash
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+  -H 'content-type: application/json' -d '{"status":"applying"}'
+```
 
-### Step 3.2: Find and Click Apply
+### Step 3.2: Navigate, Find Apply
 
-1. Determine the page type:
-   - **Job listing page** -> find and click "Apply", "Apply Now", "Quick Apply", "Easy Apply", or similar button
-   - **Login page** -> go to Step 3.3
-   - **Application form** -> go to Step 3.4
-   - **Other** -> analyze and navigate toward the application
+`browser_navigate` to the URL, snapshot, find/click the Apply button. After
+clicking, `browser_wait_for` and re-snapshot.
 
-2. After clicking Apply, use `browser_wait_for` for page load, then `browser_snapshot` to reassess.
+### Step 3.3: Authentication
 
-### Step 3.3: Authentication (if needed)
+Follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/auth.md`.
 
-Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/auth.md` to log in.
+**On login failure for a domain:** PATCH this job and every other approved
+job on the same domain to `failed` with
+`failReason: "Login failed for <domain>"`. Continue with jobs on other
+domains.
 
-**Additional autopilot rules for auth failures:**
-- **If login fails:** Mark this job as `failed` with `failReason: "Login failed for <domain>"`. Mark ALL remaining approved jobs on the same domain as `failed` with `failReason: "Login failed for <domain> -- skipped after earlier failure"`. Continue to the next job on a different domain.
-- **If 2FA/MFA is required:** Ask the user to complete it manually. Wait for confirmation, then continue.
+### Step 3.4: Fill Forms
 
-### Step 3.4: Fill Application Forms
-
-Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/form-filling.md`.
-
-**Autopilot-specific overrides:**
-- **Salary expectations** -> On the FIRST form that asks this in the run, ask the user. Remember their answer for all subsequent applications in this run.
-- **Start date** -> use `autopilot.defaultStartDate` from config (default: "2 weeks notice").
-- **Custom questions** -> Make a reasonable attempt from resume. Log uncertain answers in the job's notes but do not pause the run.
+Follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/form-filling.md`. Use
+`autopilot.salaryExpectation` (or ask the user once on first encounter and
+remember for the rest of the run) and `autopilot.defaultStartDate`.
 
 ### Step 3.5: Submit
 
-**In autonomous mode, submit the application without waiting for per-job confirmation.** The user already approved the batch in Phase 2.
-
-1. On the final page, click "Submit", "Submit Application", or equivalent.
-2. Use `browser_wait_for` to confirm submission.
-3. Take a snapshot to verify success.
+Submit autonomously — the user already approved the batch in Phase 2.
+`browser_wait_for` confirmation, snapshot to verify.
 
 ### Step 3.6: Record Result
 
-**On success:**
-- Update job status to `"applied"`.
-- Set `appliedAt` to the current ISO timestamp.
-- Update `summary.applied` count.
-- Log to the persistent applied-jobs database:
-  ```bash
-  bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-applied.sh "<job-url>" "<title>" "<company>" "autopilot" "<run-id>"
-  ```
-
-**On failure** (any of these: CAPTCHA, unexpected page state, form error, submission error, page crash):
-- Take a snapshot for debugging.
-- Update job status to `"failed"`.
-- Set `failReason` to a clear description (e.g., "CAPTCHA required", "Unexpected page: saw pricing page instead of form", "Form validation error: missing required field 'Portfolio URL'").
-- Set `retryNotes` with actionable context for a future retry attempt. Describe what was tried and suggest an alternative approach. Examples:
-  - `"Quick Apply opened a broken iframe. Try navigating to the company careers page directly: https://company.com/careers"`
-  - `"Form required a Portfolio URL field not in profile. User should add it to profile.json before retrying."`
-  - `"Login succeeded but application page returned 403. May need different credentials or direct application URL."`
-- Update `summary.failed` count.
-- **Continue to the next job.** Do not stop the run.
-
-### Step 3.7: Check Limits
-
-After each application:
-1. Update `summary.remaining` count.
-2. If `summary.applied >= config.maxApplications`, mark all remaining `approved` jobs as `skipped` with `skipReason: "Max applications limit reached"`. End the loop.
-
-### Step 3.8: Update Progress File
-
-**After every status change**, use the update script to modify the progress file without reading the full JSON into context. This saves tokens on large run files.
+**On success** (one job-update event + one applied-jobs row + one summary update):
 
 ```bash
-# Update a job's status
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> job <job-id> status applied
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> job <job-id> appliedAt "2026-03-22T14:00:00Z"
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> job <job-id> failReason "CAPTCHA required"
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> job <job-id> retryNotes "Try direct careers page"
+NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg t "$NOW" '{status:"applied", appliedAt:$t}')"
 
-# Recalculate summary counts
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> summary
-
-# Update run status
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> status completed
+curl -fsS -X POST "$JOBPILOT_API/api/applied" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n \
+    --arg url "<url>" --arg title "<title>" --arg company "<company>" \
+    --arg board "<board>" --arg runId "$RUN_ID" \
+    --argjson score <0-100> \
+    '{url:$url, title:$title, company:$company, board:$board, source:"autopilot", runId:$runId, matchScore:$score}')"
 ```
 
-**Do NOT read the full progress file to update it.** Always use the script. This ensures the run can be resumed from the exact point of interruption without wasting context tokens.
+**On failure** (any: CAPTCHA mid-form, unexpected page, validation error,
+crash):
+
+```bash
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg r "<reason>" --arg notes "<actionable retry context>" \
+    '{status:"failed", failReason:$r, retryNotes:$notes}')"
+```
+
+`retryNotes` examples (write actionable hints, not just descriptions):
+
+- `"Quick Apply opened a broken iframe. Try the company careers page directly: https://company.com/careers"`
+- `"Form required Portfolio URL field that's not in the profile. User should add it before retrying."`
+- `"Login succeeded but app page returned 403. May need different credentials or a direct application URL."`
+
+**Continue to the next job either way.** Don't stop on a single failure.
+
+### Step 3.7: Limit Check
+
+After every job, PATCH the run summary. If `summary.applied >=
+config.maxApplications`, PATCH every remaining `approved` job to `skipped`
+with `skipReason: "Max applications limit reached"` and end the loop.
+
+### Step 3.8: Summary Updates
+
+After every state change, PATCH the run with a fresh summary so the SSE viewer
+reflects reality:
+
+```bash
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --argjson found <n> --argjson qualified <n> --argjson applied <n> \
+                 --argjson failed <n> --argjson skipped <n> --argjson remaining <n> \
+    '{summary:{totalFound:$found, qualified:$qualified, applied:$applied, failed:$failed, skipped:$skipped, remaining:$remaining}}')"
+```
 
 ## Phase 4: Summary Report
 
-After all jobs are processed (or the limit is reached):
-
-1. Set run `status: "completed"` and `completedAt` to current ISO timestamp.
-2. Write the final progress file.
-3. Present a summary:
-
+```bash
+NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
-## Autopilot Run Complete: "<query>"
 
-| Metric | Count |
-|--------|-------|
-| Jobs found | <totalFound> |
-| Qualified | <qualified> |
-| Applied | <applied> |
-| Failed | <failed> |
-| Skipped | <skipped> |
-
-### Successfully Applied
-- #1 Senior Full Stack Dev at Acme Corp (9/10)
-- #2 Full Stack Engineer at StartupCo (8/10)
-- ...
-
-### Failed (can retry)
-- #4 Backend Dev at BigCo -- CAPTCHA required on application form
-- ...
-
-### Skipped
-- #6 Junior Dev at SmallCo -- Below minimum match score (4 < 6)
-- ...
-
-Progress saved to: runs/<run-id>.json
-
-**Next steps:**
-- "retry-failed <run-id>" to retry failed applications
-- Start a new search with a different query
-```
+Print a summary table and link to `http://127.0.0.1:8000/runs/<RUN_ID>` for
+the full job-by-job breakdown. Suggest follow-ups:
+- `retry-failed <RUN_ID>` to retry failures.
+- A new search.
 
 ## Important Rules
 
-1. **Batch confirmation is mandatory.** Never skip Phase 2. The user must explicitly approve the list before any applications are submitted. This cannot be bypassed by configuration.
-2. **After batch approval, do NOT ask for per-job confirmation.** The whole point of autopilot is autonomous execution after the initial review.
-3. **Never create accounts** on any job board. If login is required and no credentials exist, skip that board.
-4. **Never process payments.** If an application requires payment (premium apply, etc.), mark as `failed` with `failReason: "Payment required"` and continue.
-5. **Handle CAPTCHAs and email verification codes** by pausing and asking the user to solve/provide them (see `auth.md`). These are typically one-time per board -- once resolved, remaining jobs on that board proceed without interruption. Only mark a job as failed if the user explicitly says to skip it, or if the CAPTCHA appears mid-application (not during login).
-6. **Be honest about match scores.** A 5/10 is a stretch. Don't inflate scores.
-7. **Deduplicate jobs** across boards before presenting to the user.
-8. **Pace applications.** Wait 3-5 seconds between submitting on the same board to reduce rate limiting risk. Use `browser_wait_for` with a brief timeout.
-9. **Progress file is the audit trail.** Update it after every state change. Never skip a write.
-10. **If the resume file doesn't exist** at the path in `personal.resumes.default`, **STOP the entire run** and ask the user to fix it. Save the run as `paused` so it can be resumed.
+1. **Batch confirmation is mandatory.** Phase 2 cannot be skipped. The user
+   must explicitly approve before any submission.
+2. **After approval, no per-job confirmation.** That's the whole point.
+3. **Never create accounts** on any board. Skip the board if no credentials.
+4. **Never process payments.** PATCH `failed` with
+   `failReason: "Payment required"` and continue.
+5. **Handle CAPTCHAs and email codes** by pausing and asking the user (see
+   `auth.md`). Typically one-time per board.
+6. **Be honest about match scores.** Don't inflate.
+7. **Deduplicate** jobs across boards before Phase 2.
+8. **Pace applications.** 3-5 seconds between submissions on the same domain.
+9. **The Run is the audit trail.** PATCH after every state change. The SSE
+   viewer surfaces this live to the user.
+10. **If the resume file is missing**, PATCH the run to `paused` and ask the
+    user to re-upload via the web UI before re-running.
 
-Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/browser-tips.md` for handling large pages, popups, and general browser best practices.
+Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/browser-tips.md` for
+handling large pages, popups, and general browser best practices.

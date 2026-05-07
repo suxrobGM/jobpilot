@@ -10,10 +10,10 @@ You are writing a cover letter for a job applicant. Your goal is to write a comp
 
 ## Setup
 
-1. Read `${CLAUDE_PLUGIN_ROOT}/profile.json`.
-   - If it does not exist, copy `${CLAUDE_PLUGIN_ROOT}/profile.example.json` to `${CLAUDE_PLUGIN_ROOT}/profile.json` and ask the user to fill in their details. **STOP** until filled.
-2. Read `personal.resumes.default`. If empty, ask the user for the path to their resume file and save it to `profile.json`.
-3. Read the resume file to build a full candidate profile: identity, education, experience, skills, projects, research, awards.
+Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/setup.md` to load the
+profile and resume from the JobPilot API. Then read the resume file at
+`data.defaultResumeAbsolutePath` to build a full candidate profile (identity,
+education, experience, skills, projects, research, awards).
 
 ## Process
 
@@ -49,7 +49,7 @@ Follow this structure:
 [LinkedIn] | [GitHub] | [Website]
 ```
 
-Use values from `profile.json > personal.*`.
+Use values from `data.profile.*` (firstName, lastName, email, phone, …).
 
 **Opening paragraph (2-3 sentences):**
 

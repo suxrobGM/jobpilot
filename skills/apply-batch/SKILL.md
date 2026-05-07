@@ -1,20 +1,28 @@
 ---
 name: apply-batch
-description: Apply to multiple jobs from a file of URLs. Visits each job, scores against your resume, presents a batch for approval, then applies autonomously.
-argument-hint: "<path_to_jobs_file>"
+description: Apply to a queued list of job URLs from the JobPilot batch input. Visits each, scores against your resume, presents a ranked batch for approval, then applies autonomously.
+argument-hint: "(none — pulls pending URLs from /api/batch/pending)"
 ---
 
-# Batch Apply - Apply to a List of Job URLs
+# Batch Apply - Apply to a Queued List of Job URLs
 
-You apply to multiple jobs from a user-provided file of URLs. You visit each job page, extract details, score against the user's resume, present a ranked batch for approval, then apply to every approved job autonomously.
+You apply to a queued list of jobs managed in the JobPilot web app. URLs are
+added through the web UI (`http://127.0.0.1:8000/batch`) or via
+`POST /api/batch`; this skill pulls the pending queue, scores each job,
+presents a ranked batch for approval, and applies autonomously.
 
 ## Setup
 
 Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/setup.md` to load the profile, resume, and credentials.
 
+```bash
+JOBPILOT_API=http://127.0.0.1:8000
+```
+
 ### Load Configuration
 
-Read the `autopilot` section from `profile.json` for shared settings. Apply these defaults for any missing fields:
+Read `data.autopilot` from the profile response (already loaded by setup.md).
+Apply these defaults if a field is missing:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
@@ -24,234 +32,243 @@ Read the `autopilot` section from `profile.json` for shared settings. Apply thes
 | `salaryExpectation` | "" | Auto-fill salary expectation fields |
 | `defaultStartDate` | "2 weeks notice" | Default answer for start date fields |
 
-## Phase 1: Parse Job URLs
+## Phase 1: Pull the Pending Batch
 
-1. Read the file at the path provided by the user.
-2. Parse URLs from the file:
-   - One URL per line
-   - Skip blank lines and lines starting with `#` (comments)
-   - Trim whitespace
-3. If no valid URLs found, report an error and stop.
-4. Report: **"Found X job URLs. Visiting each to gather details..."**
-
-### Create Run File
-
-Create a run file at `${CLAUDE_PLUGIN_ROOT}/runs/<run-id>.json` where `<run-id>` is `YYYY-MM-DDTHH-MM-SS_batch-apply`.
-
-Initialize with:
-
-```json
-{
-  "runId": "<run-id>",
-  "query": "batch-apply from <filename>",
-  "config": {
-    "minMatchScore": <resolved value>,
-    "maxApplications": <resolved value>,
-    "source": "apply-batch"
-  },
-  "status": "in_progress",
-  "startedAt": "<ISO timestamp>",
-  "updatedAt": "<ISO timestamp>",
-  "completedAt": null,
-  "jobs": [],
-  "summary": {
-    "totalFound": 0,
-    "qualified": 0,
-    "applied": 0,
-    "failed": 0,
-    "skipped": 0,
-    "remaining": 0
-  }
-}
+```bash
+curl -fsS "$JOBPILOT_API/api/batch/pending"
 ```
+
+`data` is an array of `{ id, url, note, status }`. If empty, tell the user:
+
+> No pending URLs in the batch queue. Open http://127.0.0.1:8000/batch to add
+> some, or paste a list in the Batch page.
+
+Otherwise report: **"Found N URLs in the batch queue. Visiting each to gather
+details..."**
+
+### Create the Run
+
+```bash
+RUN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_batch-apply)
+curl -fsS -X POST "$JOBPILOT_API/api/runs" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg runId "$RUN_ID" \
+    '{runId:$runId, query:"batch-apply queue", source:"apply-batch", config:{minMatchScore:6, maxApplications:10}}')"
+```
+
+Hold on to `RUN_ID` for the rest of the run. The created `Run` is now visible
+at `http://127.0.0.1:8000/runs/<RUN_ID>`.
 
 ## Phase 2: Visit and Score Each Job
 
-For each URL:
+For each URL in the batch:
 
 ### Step 2.1: Check if Already Applied
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-applied.sh "<job-url>"
+URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
+curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED"
 ```
 
-If `already-applied`, add to the run file as `status: "skipped"` with `skipReason: "Already applied (found in applied-jobs database)"`. Move to the next URL.
+If `data.applied === true`, mark the batch entry consumed (skipped) and add it
+as a skipped job in the run:
+
+```bash
+# Mark batch entry consumed
+curl -fsS -X PATCH "$JOBPILOT_API/api/batch/<batch-id>" \
+  -H 'content-type: application/json' -d '{"status":"skipped"}'
+
+# Add to run as skipped
+curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg key "<batch-id>" --arg url "<job-url>" \
+    '{jobKey:$key, title:"(unknown)", company:"(unknown)", url:$url, status:"skipped"}')"
+```
+
+Then move on. (Use a richer fuzzy check `?title=...&company=...` once you've
+visited the page.)
 
 ### Step 2.2: Visit the Job Page
 
 1. Use `browser_navigate` to open the URL.
-2. Use `browser_snapshot` with a targeted `ref` to read the job listing content.
-3. Extract:
-   - Job title
-   - Company name
-   - Location / remote status
-   - Salary range (if visible)
-   - Key requirements (brief)
-4. If the page requires login to view details, follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/auth.md` to authenticate first, then re-read.
+2. Use `browser_snapshot` with a targeted `ref` to read the listing.
+3. Extract title, company, location, salary, board, key requirements.
+4. If login is required, follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/auth.md` first, then re-read.
 
-### Step 2.3: Score Against Resume
+Re-run the dedupe check now that you have title + company:
 
-Assign a **match score (1-10)** based on:
+```bash
+URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
+TITLE_ENCODED=$(jq -rn --arg v "<job-title>" '$v|@uri')
+COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
+curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+```
 
-- Tech stack overlap with resume
-- Years of experience match
-- Education match
-- Domain/industry relevance
-- Seniority level alignment
-- Location/remote preference match
+### Step 2.3: Score and Add to Run
 
-Add the job to the run file with `status: "pending"`, the score, and `matchReason`.
+Assign a match score (1-10). Add a `RunJob` to the run:
 
-**Filter out** jobs below `minMatchScore` -> set `status: "skipped"`, `skipReason: "Below minimum match score (X < Y)"`.
+```bash
+curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n \
+    --arg key "<batch-id>" \
+    --arg title "<title>" \
+    --arg company "<company>" \
+    --arg location "<location>" \
+    --arg url "<job-url>" \
+    --arg board "<board>" \
+    --arg matchReason "<one-line why>" \
+    --argjson score <0-100> \
+    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
+```
+
+If the score is below `minMatchScore × 10`, immediately PATCH the job to
+`skipped` with `skipReason: "Below minimum match score (X < Y)"`.
 
 ## Phase 3: Batch Confirmation
 
 ### Auto Mode (`confirmMode: "auto"`)
 
-If `confirmMode` is `"auto"` AND **every** qualified job has a match score >= `minMatchScore`:
+When every qualified job is above threshold, PATCH all qualified jobs to
+`status: "approved"` and proceed to Phase 4.
 
-1. Log the qualified jobs table for the user's reference.
-2. Mark all qualified jobs as `status: "approved"` automatically.
-3. Proceed directly to Phase 4 without waiting for user input.
+### Batch Mode (`confirmMode: "batch"`, default)
 
-### Batch Mode (`confirmMode: "batch"`, or auto mode fallback)
-
-Present all qualified jobs in a ranked table:
+Present the qualified jobs in a ranked table:
 
 ```
-## Batch Apply: <filename>
+## Batch Apply
 
 Visited <total> jobs. <qualified> qualify (score >= <minMatchScore>/10).
 
-| # | Score | Title | Company | Location | Source |
-|---|-------|-------|---------|----------|--------|
-| 1 | 9/10  | Senior Full Stack Dev | Acme Corp | Remote | Greenhouse |
-| 2 | 8/10  | Full Stack Engineer | StartupCo | Portland, ME | Lever |
-
-Applying to up to <maxApplications> jobs.
+| # | Score | Title | Company | Location | Board |
+|---|-------|-------|---------|----------|-------|
+| 1 | 9/10  | Senior Full Stack Dev | Acme Corp | Remote | greenhouse.io |
 
 **Commands:**
-- "go" -- apply to all qualified jobs
-- "go 1,3,5" -- apply only to specific jobs
-- "remove 3" -- exclude specific jobs
-- "details 2" -- show full job description and URL before deciding
-- "stop" -- cancel the run
+- "go" — apply to all qualified jobs
+- "go 1,3,5" — apply only to specific jobs
+- "remove 3" — exclude specific jobs
+- "details 2" — show full description before deciding
+- "stop" — pause the run
 ```
 
-Process the user's response:
-- **"go"** -> mark all qualified jobs as `status: "approved"`
-- **"go 1,3,5"** -> mark only those as `approved`, rest as `skipped` with `skipReason: "Not selected by user"`
-- **"remove N"** -> mark as `skipped` with `skipReason: "Removed by user"`, re-present table
-- **"details N"** -> show the full extracted details and URL, then re-present table
-- **"stop"** -> set run `status: "paused"`, save, and stop
+Process the response by PATCHing each job's status:
+- `go` → set every qualified job to `approved`
+- `go 1,3,5` → those become `approved`; rest become `skipped` with `skipReason: "Not selected by user"`
+- `remove N` → that job becomes `skipped` with `skipReason: "Removed by user"`, re-present table
+- `stop` → PATCH the run with `status: "paused"`, save, stop
+
+```bash
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+  -H 'content-type: application/json' -d '{"status":"approved"}'
+```
 
 ## Phase 4: Autonomous Apply Loop
 
-For each job with `status: "approved"`, in order of match score (highest first):
+For each job with `status: "approved"`, in score-descending order:
 
-### Step 4.1: Begin Application
+### Step 4.1: Mark Applying
 
-1. Update the job's status to `"applying"` via the update script.
-2. Use `browser_navigate` to open the job URL.
-3. Use `browser_snapshot` to assess the page.
+```bash
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+  -H 'content-type: application/json' -d '{"status":"applying"}'
+```
 
-### Step 4.2: Find and Click Apply
+### Step 4.2: Navigate, Find Apply, Authenticate
 
-1. Determine the page type:
-   - **Job listing page** -> find and click "Apply", "Apply Now", "Quick Apply", or similar
-   - **Login page** -> go to Step 4.3
-   - **Application form** -> go to Step 4.4
-   - **Other** -> analyze and navigate toward the application
+Same flow as the `apply` skill — navigate, find Apply, follow `auth.md` if a
+login page is hit.
 
-2. After clicking Apply, use `browser_wait_for` for page load, then `browser_snapshot` to reassess.
+### Step 4.3: Fill Forms
 
-### Step 4.3: Authentication (if needed)
+Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/form-filling.md`. Use
+`autopilot.salaryExpectation` and `autopilot.defaultStartDate` from the profile
+response for the standard salary/start-date fields.
 
-Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/auth.md`.
+### Step 4.4: Submit
 
-### Step 4.4: Fill Application Forms
+Submit without per-job confirmation — the user approved the batch in Phase 3.
+`browser_wait_for` confirmation, take a targeted snapshot to verify.
 
-Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/form-filling.md`.
-
-**Batch-specific overrides:**
-- **Salary expectations** -> use `autopilot.salaryExpectation` from config if set. Otherwise ask on first encounter and remember for the rest.
-- **Start date** -> use `autopilot.defaultStartDate` from config.
-- **Custom questions** -> make a reasonable attempt from resume. Do not pause the run.
-
-### Step 4.5: Submit
-
-**Submit without per-job confirmation.** The user already approved the batch in Phase 3.
-
-1. Click "Submit", "Submit Application", or equivalent.
-2. Use `browser_wait_for` to confirm submission.
-3. Take a targeted snapshot to verify success.
-
-### Step 4.6: Record Result
+### Step 4.5: Record Result
 
 **On success:**
-- Update job status to `"applied"` and set `appliedAt`.
-- Log to the persistent database:
-  ```bash
-  bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-applied.sh "<job-url>" "<title>" "<company>" "apply-batch" "<run-id>"
-  ```
+
+```bash
+NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+# Update RunJob status
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg t "$NOW" '{status:"applied", appliedAt:$t}')"
+
+# Log to persistent applications table
+curl -fsS -X POST "$JOBPILOT_API/api/applied" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n \
+    --arg url "<job-url>" --arg title "<title>" --arg company "<company>" \
+    --arg board "<board>" --arg runId "$RUN_ID" \
+    --argjson matchScore <0-100> \
+    '{url:$url, title:$title, company:$company, board:$board, source:"apply-batch", runId:$runId, matchScore:$matchScore}')"
+
+# Mark batch entry consumed
+curl -fsS -X PATCH "$JOBPILOT_API/api/batch/<batch-id>" \
+  -H 'content-type: application/json' -d '{"status":"consumed"}'
+```
 
 **On failure:**
-- Set `failReason` with a clear description.
-- Set `retryNotes` with actionable context for future retry.
-- **Continue to the next job.**
+
+```bash
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg r "<reason>" --arg notes "<actionable retry notes>" \
+    '{status:"failed", failReason:$r, retryNotes:$notes}')"
+```
+
+**Continue to the next job either way.**
+
+### Step 4.6: Update Run Summary
+
+After every job, PATCH the run with the running summary:
+
+```bash
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --argjson found <n> --argjson qualified <n> --argjson applied <n> \
+                 --argjson failed <n> --argjson skipped <n> --argjson remaining <n> \
+    '{summary:{totalFound:$found, qualified:$qualified, applied:$applied, failed:$failed, skipped:$skipped, remaining:$remaining}}')"
+```
+
+This emits an SSE `progress` event so the live viewer at
+`http://127.0.0.1:8000/runs/<RUN_ID>` updates in real time.
 
 ### Step 4.7: Check Limits
 
-If `summary.applied >= config.maxApplications`, mark remaining `approved` jobs as `skipped` with `skipReason: "Max applications limit reached"`. End the loop.
+If `applied >= config.maxApplications`, PATCH every remaining `approved` job
+to `skipped` with `skipReason: "Max applications limit reached"`, then end the
+loop.
 
-### Step 4.8: Update Progress File
-
-Use the update script for all status changes:
+## Phase 5: Summary
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> job <job-id> status applied
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/update-run.sh <run-file> summary
+NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
 
-**Do NOT read the full progress file to update it.**
-
-## Phase 5: Summary Report
-
-1. Set run `status: "completed"` and `completedAt`.
-2. Present:
-
-```
-## Batch Apply Complete: <filename>
-
-| Metric | Count |
-|--------|-------|
-| Jobs in file | <total> |
-| Qualified | <qualified> |
-| Applied | <applied> |
-| Failed | <failed> |
-| Skipped | <skipped> |
-
-### Successfully Applied
-- #1 Senior Full Stack Dev at Acme Corp (9/10)
-
-### Failed (can retry)
-- #2 Backend Dev at BigCo -- CAPTCHA required
-
-### Skipped
-- #3 Junior Dev at SmallCo -- Below minimum match score (4 < 6)
-
-Progress saved to: runs/<run-id>.json
-```
+Print a summary table and point the user at `http://127.0.0.1:8000/runs/<RUN_ID>` for the live view.
 
 ## Important Rules
 
 1. **Batch confirmation is mandatory.** The user must approve before any applications are submitted.
 2. **After approval, do NOT ask per-job confirmation.** Apply autonomously.
 3. **Never create accounts** on any job board.
-4. **Never process payments.** Mark as `failed` with `failReason: "Payment required"`.
+4. **Never process payments.** PATCH the job as `failed` with `failReason: "Payment required"`.
 5. **Handle CAPTCHAs and email verification** by pausing and asking the user (see `auth.md`).
 6. **Be honest about match scores.** Don't inflate.
 7. **Pace applications.** Wait 3-5 seconds between submissions on the same domain.
-8. **Progress file is the audit trail.** Update after every state change.
+8. **The Run is the audit trail.** PATCH after every state change so the SSE viewer reflects reality.
 
 Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/browser-tips.md` for handling large pages, popups, and general browser best practices.

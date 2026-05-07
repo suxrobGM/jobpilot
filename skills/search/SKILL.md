@@ -1,6 +1,6 @@
 ---
 name: search
-description: Search job boards for matching positions using Playwright. Filters by qualification fit against the user's resume. Respects job board config in profile.json.
+description: Search job boards for matching positions using Playwright. Filters by qualification fit against the user's resume. Respects job board config from the JobPilot API.
 argument-hint: "<job_title_keywords_location>"
 ---
 
@@ -11,7 +11,16 @@ You search job boards for relevant positions and rank them by qualification fit 
 ## Setup
 
 1. Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/setup.md` to load the profile, resume, and credentials.
-2. Read the `jobBoards` array from `profile.json`. Only search boards where `enabled: true` and `type: "search"` (boards with `type: "ats"` are apply-only platforms, skip them during search).
+2. Fetch the enabled search boards from the API:
+
+   ```bash
+   JOBPILOT_API=http://127.0.0.1:8000
+   curl -fsS "$JOBPILOT_API/api/job-boards"
+   ```
+
+   Filter `data` to entries where `enabled === true` and `type === "search"`
+   (boards with `type === "ats"` are apply-only platforms — skip them during
+   search).
 
 ## Process
 
@@ -28,7 +37,7 @@ If the query is vague, ask the user to clarify before searching.
 
 ### Step 2: Search Enabled Job Boards
 
-For each board in the `jobBoards` array where `enabled: true` and `type: "search"`:
+For each board returned by `/api/job-boards` where `enabled === true` and `type === "search"`:
 
 #### 2a: Authenticate
 
@@ -49,17 +58,28 @@ For each board in the `jobBoards` array where `enabled: true` and `type: "search
    - URL to the listing
    - Brief description or key requirements (if visible in the listing preview)
 
-The search URL for each board comes from the `searchUrl` field in the board's `jobBoards` entry. Users can add any job board by adding a new entry to the array with `type: "search"` and the appropriate `searchUrl`. Boards with `type: "ats"` (e.g., Greenhouse, Lever, Workday) are apply-only platforms -- skip them during search.
+The search URL for each board comes from the `searchUrl` field on the JobBoard
+row. Users add boards through the web UI at `/boards` (or via
+`POST /api/job-boards`); skills don't need to know specific board names —
+they iterate over whatever `/api/job-boards` returns. Boards with
+`type: "ats"` (e.g., Greenhouse, Lever, Workday) are apply-only platforms —
+skip them during search.
 
 ### Step 3: Exclude Previously Applied Jobs
 
-Before scoring, check each job URL against the persistent applied-jobs database:
+Before scoring, check each job URL + title + company against the dedupe API:
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-applied.sh "<job-url>"
+URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
+TITLE_ENCODED=$(jq -rn --arg v "<job-title>" '$v|@uri')
+COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
+curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-If the script outputs `already-applied` (exit code 0), mark the job in the results table with a "Previously Applied" tag so the user knows, and exclude it from the "Apply to #N" action suggestions.
+If `data.applied` is `true`, mark the job in the results table with a
+"Previously Applied" tag (note the match kind: `url` for an exact URL hit, or
+`fuzzy` with score for a normalized title+company match), and exclude it from
+the "Apply to #N" action suggestions.
 
 ### Step 4: Qualification Fit Review
 
@@ -109,7 +129,7 @@ After presenting results, offer:
 
 ## Important Rules
 
-1. **Only search enabled boards.** Respect the user's `jobBoards` config.
+1. **Only search enabled boards.** Respect the user's `/api/job-boards` config.
 2. **Don't create accounts.** If a board requires login and no credentials exist, skip it and tell the user.
 3. **Handle rate limiting.** If a board blocks or throttles, note it and move to the next board.
 4. **Be honest about match scores.** Don't inflate scores to please the user. A 5/10 is a stretch and should be labeled as such.

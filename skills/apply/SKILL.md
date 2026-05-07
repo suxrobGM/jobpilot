@@ -63,13 +63,21 @@ Before starting the application, analyze the job posting and provide a quick qua
 
 ### Step 0c: Check if Already Applied
 
-Before navigating, check if this job URL has already been applied to:
+Before navigating, check if this job has already been applied to. The dedupe
+endpoint matches both by exact URL **and** by fuzzy normalized title+company
+over a 30-day window, so pass everything you have:
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-applied.sh "<job-url>"
+JOBPILOT_API=http://127.0.0.1:8000
+URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
+TITLE_ENCODED=$(jq -rn --arg v "<job-title>" '$v|@uri')
+COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
+curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-If the script outputs `already-applied`, inform the user: **"You've already applied to this job."** Ask if they want to proceed anyway or stop.
+If `data.applied` is `true`, inform the user: **"You've already applied to this
+job (matched by `data.match.kind`)."** and surface the matching application
+title + company + appliedAt. Ask if they want to proceed anyway or stop.
 
 ### Step 1: Navigate and Assess the Page
 
@@ -97,11 +105,21 @@ Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/form-f
 
 ### After Successful Submission
 
-Log the application to the persistent applied-jobs database:
+Log the application to the JobPilot database via the API:
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-applied.sh "<job-url>" "<title>" "<company>" "apply"
+curl -fsS -X POST "$JOBPILOT_API/api/applied" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n \
+    --arg url "<job-url>" \
+    --arg title "<title>" \
+    --arg company "<company>" \
+    --arg board "<board-domain>" \
+    '{url:$url, title:$title, company:$company, board:$board, source:"apply"}')"
 ```
+
+A 201 means logged. A 409 means the URL already exists (duplicate); fall back
+to the `/api/applied/check` result you got in Step 0c and tell the user.
 
 ## Important Rules
 

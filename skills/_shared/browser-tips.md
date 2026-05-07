@@ -53,7 +53,7 @@ If a snapshot still exceeds token limits even with `ref`:
 
 1. Narrow the `ref` further -- target a smaller child element (a single fieldset, a single result card).
 2. If the result is saved to a file, use the `Read` tool with `offset` and `limit` to read portions, or use `Grep` to search for specific content (e.g., job titles, form fields).
-3. **Do NOT use inline Python/Node scripts to parse these files** -- always use the built-in `Read` and `Grep` tools, or shell scripts in `scripts/` using `jq`/`grep`.
+3. **Do NOT use inline Python/Node scripts to parse these files** -- use the built-in `Read` and `Grep` tools, or `jq` against the JobPilot API responses.
 
 ## General Best Practices
 
@@ -61,4 +61,4 @@ If a snapshot still exceeds token limits even with `ref`:
 2. **Be patient with page loads** -- use `browser_wait_for` after navigation and form submissions.
 3. **If something goes wrong** (unexpected page, error, crashed form), take a snapshot and report to the user with what you see rather than guessing.
 4. **For file uploads**, verify the resume file exists. If not, tell the user.
-5. **Never guess passwords** -- always read from profile.json credentials.
+5. **Never guess passwords** -- always read from `/api/credentials` (see `_shared/setup.md` § Credential lookup).
