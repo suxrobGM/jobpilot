@@ -6,14 +6,14 @@ import type { ReactElement } from "react";
 import type { AnyReactForm } from "./types";
 
 interface FormTextFieldProps
-  extends Omit<TextFieldProps, "value" | "onChange" | "onBlur" | "error" | "helperText" | "name"> {
+  extends Omit<TextFieldProps, "value" | "onChange" | "onBlur" | "error" | "name"> {
   form: AnyReactForm;
   name: string;
   transform?: (value: string) => string;
 }
 
 export function FormTextField(props: FormTextFieldProps): ReactElement {
-  const { form, name, transform, ...rest } = props;
+  const { form, name, transform, helperText, ...rest } = props;
   return (
     <form.Field name={name}>
       {(field: AnyFieldApi) => {
@@ -30,7 +30,7 @@ export function FormTextField(props: FormTextFieldProps): ReactElement {
             }
             onBlur={field.handleBlur}
             error={field.state.meta.errors.length > 0}
-            helperText={errMsg}
+            helperText={errMsg ?? helperText}
             {...rest}
           />
         );
