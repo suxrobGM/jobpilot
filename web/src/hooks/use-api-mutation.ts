@@ -17,6 +17,7 @@ export function useApiMutation<TData, TVariables>(
   mutationFn: MutationFn<TData, TVariables>,
   options?: UseApiMutationOptions<TData, TVariables>,
 ): UseMutationResult<TData, Error, TVariables> {
+
   const opts = options ?? {};
   const { successMessage, errorMessage, invalidate, onSuccess, onError, ...rest } = opts;
   const toast = useToast();
@@ -28,24 +29,24 @@ export function useApiMutation<TData, TVariables>(
       if (error) throw new Error(error.message);
       return data as TData;
     },
-    onSuccess: (data, vars, ctx) => {
+    onSuccess: (data, vars, onMutateResult, ctx) => {
       if (invalidate) {
         for (const key of invalidate) queryClient.invalidateQueries({ queryKey: key });
       }
-      if (successMessage !== undefined) {
+      if (successMessage != null) {
         const msg = typeof successMessage === "function" ? successMessage(data, vars) : successMessage;
         toast.success(msg);
       }
-      onSuccess?.(data, vars, ctx);
+      onSuccess?.(data, vars, onMutateResult, ctx);
     },
-    onError: (error, vars, ctx) => {
-      if (errorMessage !== undefined) {
+    onError: (error, vars, onMutateResult, ctx) => {
+      if (errorMessage != null) {
         const msg = typeof errorMessage === "function" ? errorMessage(error, vars) : errorMessage;
         toast.error(msg);
       } else {
         toast.error(error.message);
       }
-      onError?.(error, vars, ctx);
+      onError?.(error, vars, onMutateResult, ctx);
     },
     ...rest,
   });

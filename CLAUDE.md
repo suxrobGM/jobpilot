@@ -73,6 +73,19 @@ Apply to all code under `web/src/`.
 
 ### Component Props
 
+Use `interface` (not `type`) for prop shapes. `type` is fine for unions, utilities, and domain values; `interface` is required for `<Name>Props`:
+
+```typescript
+// CORRECT
+interface SidebarProps {
+  open: boolean;
+  onToggle: () => void;
+}
+
+// WRONG
+type SidebarProps = { open: boolean; onToggle: () => void };
+```
+
 Destructure props inside the function body, not in parameters:
 
 ```typescript
@@ -83,6 +96,18 @@ function Sidebar(props: SidebarProps): ReactElement {
 
 // WRONG
 function Sidebar({ open, onToggle }: SidebarProps): ReactElement {}
+```
+
+### Conditional Rendering
+
+Prefer `&&` over a ternary when the false branch is `null`:
+
+```tsx
+// CORRECT
+{description && <Typography variant="body2Muted">{description}</Typography>}
+
+// WRONG
+{description ? <Typography variant="body2Muted">{description}</Typography> : null}
 ```
 
 ### MUI Imports
