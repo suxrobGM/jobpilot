@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
-import { ErrorCodes, err } from "@/lib/api";
+import { err, ErrorCodes } from "@/lib/api";
 import { db } from "@/lib/db";
 import { resumePath } from "@/lib/storage";
 
@@ -11,11 +11,15 @@ interface Params {
 export async function GET(_req: Request, ctx: Params) {
   const { id } = await ctx.params;
   const resumeId = Number(id);
+
   if (!Number.isInteger(resumeId)) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
+
   const resume = await db.resume.findUnique({ where: { id: resumeId } });
-  if (!resume) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+  if (!resume) {
+    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+  }
 
   const filePath = resumePath(resume.filename);
   try {

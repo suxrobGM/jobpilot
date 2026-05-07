@@ -1,14 +1,37 @@
 import type { Components, Theme } from "@mui/material/styles";
 import { buttonOverrides } from "./button";
-import { cardActionsOverrides, cardContentOverrides, cardHeaderOverrides, cardOverrides } from "./card";
+import {
+  cardActionsOverrides,
+  cardContentOverrides,
+  cardHeaderOverrides,
+  cardOverrides,
+} from "./card";
 import { chipOverrides } from "./chip";
-import { backdropOverrides, dialogActionsOverrides, dialogContentOverrides, dialogOverrides, dialogTitleOverrides } from "./dialog";
+import {
+  backdropOverrides,
+  dialogActionsOverrides,
+  dialogContentOverrides,
+  dialogOverrides,
+  dialogTitleOverrides,
+} from "./dialog";
 import { svgIconOverrides } from "./icon";
-import { formHelperTextOverrides, inputLabelOverrides, outlinedInputOverrides, selectOverrides, textFieldOverrides } from "./input";
+import {
+  formHelperTextOverrides,
+  inputLabelOverrides,
+  outlinedInputOverrides,
+  selectOverrides,
+  textFieldOverrides,
+} from "./input";
 import { linkOverrides } from "./link";
 import { menuItemOverrides, menuOverrides } from "./menu";
 import { paperOverrides } from "./paper";
-import { tableBodyOverrides, tableCellOverrides, tableHeadOverrides, tableOverrides, tableRowOverrides } from "./table";
+import {
+  tableBodyOverrides,
+  tableCellOverrides,
+  tableHeadOverrides,
+  tableOverrides,
+  tableRowOverrides,
+} from "./table";
 import { tabOverrides, tabsOverrides } from "./tabs";
 import { typographyOverrides } from "./typography";
 

@@ -1,5 +1,5 @@
-import { Box, LinearProgress } from "@mui/material";
 import type { ReactElement } from "react";
+import { Box, LinearProgress } from "@mui/material";
 
 export default function Loading(): ReactElement {
   return (

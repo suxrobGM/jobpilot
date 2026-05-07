@@ -12,7 +12,10 @@ export const outlinedInputOverrides: Components<Theme>["MuiOutlinedInput"] = {
       transition: theme.motion.fast,
       "& fieldset": { borderColor: theme.palette.line.border },
       "&:hover fieldset": { borderColor: `${theme.palette.line.borderHi} !important` },
-      "&.Mui-focused fieldset": { borderColor: `${theme.palette.accent.primary} !important`, borderWidth: 1 },
+      "&.Mui-focused fieldset": {
+        borderColor: `${theme.palette.accent.primary} !important`,
+        borderWidth: 1,
+      },
       "&.Mui-focused": { boxShadow: theme.shadows_custom.focus },
     }),
     input: { fontSize: "0.875rem" },

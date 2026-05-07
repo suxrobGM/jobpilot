@@ -1,8 +1,8 @@
 "use client";
 
+import { useEffect, type ReactElement } from "react";
 import { LinearProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useEffect, type ReactElement } from "react";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";

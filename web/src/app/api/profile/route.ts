@@ -1,7 +1,7 @@
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
-import { resumePath } from "@/lib/storage";
 import { profileWithAutopilotSchema } from "@/lib/schemas/profile";
+import { resumePath } from "@/lib/storage";
 
 const SINGLETON_ID = 1;
 
@@ -14,6 +14,7 @@ export async function GET() {
       autopilot: true,
     },
   });
+
   if (!profile) {
     return ok({
       profile: null,
@@ -21,6 +22,7 @@ export async function GET() {
       defaultResumeAbsolutePath: null,
     });
   }
+
   return ok({
     profile: {
       ...profile,
@@ -30,9 +32,7 @@ export async function GET() {
       ? {
           ...profile.autopilot,
           skipCompanies: JSON.parse(profile.autopilot.skipCompanies) as string[],
-          skipTitleKeywords: JSON.parse(
-            profile.autopilot.skipTitleKeywords,
-          ) as string[],
+          skipTitleKeywords: JSON.parse(profile.autopilot.skipTitleKeywords) as string[],
         }
       : null,
     defaultResumeAbsolutePath: profile.defaultResume
@@ -44,14 +44,11 @@ export async function GET() {
 export async function PUT(req: Request) {
   const body = await req.json();
   const parsed = profileWithAutopilotSchema.safeParse(body);
+
   if (!parsed.success) {
-    return err(
-      ErrorCodes.UNPROCESSABLE,
-      "Invalid profile payload",
-      422,
-      parsed.error.issues,
-    );
+    return err(ErrorCodes.UNPROCESSABLE, "Invalid profile payload", 422, parsed.error.issues);
   }
+
   const { autopilot, preferredLocations, ...profileFields } = parsed.data;
   const preferredLocationsJson = JSON.stringify(preferredLocations);
 

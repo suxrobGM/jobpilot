@@ -4,10 +4,7 @@ import type { ApiResponse } from "./api";
 
 export type ClientResult<T> = { data: T | null; error: { code: string; message: string } | null };
 
-async function request<T>(
-  url: string,
-  init?: RequestInit,
-): Promise<ClientResult<T>> {
+async function request<T>(url: string, init?: RequestInit): Promise<ClientResult<T>> {
   try {
     const res = await fetch(url, {
       ...init,
@@ -18,9 +15,7 @@ async function request<T>(
     });
     const json = (await res.json()) as ApiResponse<T>;
     if (!res.ok || !json.ok) {
-      const e = !json.ok
-        ? json.error
-        : { code: `HTTP_${res.status}`, message: res.statusText };
+      const e = !json.ok ? json.error : { code: `HTTP_${res.status}`, message: res.statusText };
       return { data: null, error: { code: e.code, message: e.message } };
     }
     return { data: json.data, error: null };
@@ -46,9 +41,7 @@ export const apiClient = {
       const res = await fetch(url, { method: "POST", body: formData });
       const json = (await res.json()) as ApiResponse<T>;
       if (!res.ok || !json.ok) {
-        const e = !json.ok
-          ? json.error
-          : { code: `HTTP_${res.status}`, message: res.statusText };
+        const e = !json.ok ? json.error : { code: `HTTP_${res.status}`, message: res.statusText };
         return { data: null, error: { code: e.code, message: e.message } };
       }
       return { data: json.data, error: null };

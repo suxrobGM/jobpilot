@@ -1,4 +1,4 @@
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
 import { runEventSchema } from "@/lib/schemas/run";
 import { publishRunEvent, subscribeToRun } from "@/lib/sse";
@@ -25,13 +25,9 @@ export async function POST(req: Request, ctx: Params) {
   const { id } = await ctx.params;
   const body = await req.json();
   const parsed = runEventSchema.safeParse(body);
+
   if (!parsed.success) {
-    return err(
-      ErrorCodes.UNPROCESSABLE,
-      "Invalid event payload",
-      422,
-      parsed.error.issues,
-    );
+    return err(ErrorCodes.UNPROCESSABLE, "Invalid event payload", 422, parsed.error.issues);
   }
 
   const event = await db.runEvent.create({

@@ -1,9 +1,9 @@
 "use client";
 
-import { Box, Stack, Typography } from "@mui/material";
 import type { ReactElement } from "react";
+import { Box, Stack, Typography } from "@mui/material";
 import { NavGroup } from "./nav-group";
-import { APP_TITLE, SIDEBAR_WIDTH, navGroups } from "./shell-config";
+import { APP_TITLE, navGroups, SIDEBAR_WIDTH } from "./shell-config";
 
 export function Sidebar(): ReactElement {
   return (
@@ -21,10 +21,7 @@ export function Sidebar(): ReactElement {
         top: 0,
       })}
     >
-      <Stack
-        direction="row"
-        sx={{ p: 2, pb: 1, alignItems: "center", gap: 1 }}
-      >
+      <Stack direction="row" sx={{ p: 2, pb: 1, alignItems: "center", gap: 1 }}>
         <Box
           sx={(t) => ({
             width: 28,
@@ -48,9 +45,7 @@ export function Sidebar(): ReactElement {
           borderTop: `1px solid ${t.palette.line.divider}`,
         })}
       >
-        <Typography variant="captionMuted">
-          Local · 127.0.0.1:8000
-        </Typography>
+        <Typography variant="captionMuted">Local · 127.0.0.1:8000</Typography>
       </Box>
     </Box>
   );

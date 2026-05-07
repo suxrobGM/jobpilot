@@ -1,4 +1,4 @@
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
 import { jobBoardSchema } from "@/lib/schemas/job-board";
 
@@ -12,14 +12,11 @@ export async function GET() {
 export async function POST(req: Request) {
   const body = await req.json();
   const parsed = jobBoardSchema.safeParse(body);
+
   if (!parsed.success) {
-    return err(
-      ErrorCodes.UNPROCESSABLE,
-      "Invalid board payload",
-      422,
-      parsed.error.issues,
-    );
+    return err(ErrorCodes.UNPROCESSABLE, "Invalid board payload", 422, parsed.error.issues);
   }
+
   try {
     const board = await db.jobBoard.create({ data: parsed.data });
     return ok(board, { status: 201 });

@@ -39,9 +39,7 @@ export async function GET(req: Request) {
   }
 
   if (title && company) {
-    const cutoff = new Date(
-      Date.now() - APPLIED_DUPLICATE_WINDOW_DAYS * 24 * 60 * 60 * 1000,
-    );
+    const cutoff = new Date(Date.now() - APPLIED_DUPLICATE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
     const candidates = await db.application.findMany({
       where: { appliedAt: { gte: cutoff } },
       select: {

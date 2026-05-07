@@ -1,12 +1,14 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { TextField, type TextFieldProps } from "@mui/material";
 import type { AnyFieldApi } from "@tanstack/react-form";
-import type { ReactElement } from "react";
 import type { AnyReactForm } from "./types";
 
-interface FormTextFieldProps
-  extends Omit<TextFieldProps, "value" | "onChange" | "onBlur" | "error" | "name"> {
+interface FormTextFieldProps extends Omit<
+  TextFieldProps,
+  "value" | "onChange" | "onBlur" | "error" | "name"
+> {
   form: AnyReactForm;
   name: string;
   transform?: (value: string) => string;

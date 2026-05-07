@@ -100,10 +100,7 @@ function jaro(a: string, b: string): number {
   }
   transpositions /= 2;
 
-  return (
-    (matches / a.length + matches / b.length + (matches - transpositions) / matches) /
-    3
-  );
+  return (matches / a.length + matches / b.length + (matches - transpositions) / matches) / 3;
 }
 
 /**

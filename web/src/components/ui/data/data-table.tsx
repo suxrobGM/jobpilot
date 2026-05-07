@@ -1,11 +1,13 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { Box } from "@mui/material";
 import { DataGrid, type DataGridProps, type GridColDef } from "@mui/x-data-grid";
-import type { ReactElement } from "react";
 
-export interface DataTableProps<T extends Record<string, any> = Record<string, any>>
-  extends Omit<DataGridProps<T>, "rows" | "columns" | "loading"> {
+export interface DataTableProps<T extends Record<string, any> = Record<string, any>> extends Omit<
+  DataGridProps<T>,
+  "rows" | "columns" | "loading"
+> {
   rows: ReadonlyArray<T>;
   columns: ReadonlyArray<GridColDef<T>>;
   loading?: boolean;

@@ -1,7 +1,7 @@
 "use client";
 
-import { Stack } from "@mui/material";
 import type { ReactElement } from "react";
+import { Stack } from "@mui/material";
 import { StatCard } from "@/components/ui/display/stat-card";
 import type { RunDetailDto } from "@/types/api";
 
@@ -13,11 +13,7 @@ export function RunSummaryTiles(props: RunSummaryTilesProps): ReactElement {
   const { run } = props;
   const s = run.summary;
   return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{ flexWrap: "wrap", "& > *": { flex: "1 1 160px" } }}
-    >
+    <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", "& > *": { flex: "1 1 160px" } }}>
       <StatCard label="Found" value={s.totalFound} />
       <StatCard label="Qualified" value={s.qualified} />
       <StatCard label="Applied" value={s.applied} />

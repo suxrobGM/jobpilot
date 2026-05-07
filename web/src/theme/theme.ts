@@ -15,7 +15,11 @@ export const theme = createTheme({
     success: { main: feedback.success },
     info: { main: feedback.info },
     background: { default: surfaces.base, paper: surfaces.card },
-    text: { primary: textColors.primary, secondary: textColors.secondary, disabled: textColors.disabled },
+    text: {
+      primary: textColors.primary,
+      secondary: textColors.secondary,
+      disabled: textColors.disabled,
+    },
     divider: line.divider,
     surfaces,
     accent,

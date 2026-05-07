@@ -1,15 +1,8 @@
 "use client";
 
-import { CloudUpload, Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
 import { useRef, useState, type ReactElement } from "react";
+import { CloudUpload, Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
+import { Box, Button, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -23,14 +16,12 @@ export function ResumesTab(): ReactElement {
   const [label, setLabel] = useState("default");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const resumes = useApiQuery<ResumeDto[]>(
-    queryKeys.resumes.list(),
-    () => apiClient.get<ResumeDto[]>("/api/resumes"),
+  const resumes = useApiQuery<ResumeDto[]>(queryKeys.resumes.list(), () =>
+    apiClient.get<ResumeDto[]>("/api/resumes"),
   );
 
-  const profile = useApiQuery<ProfileResponse>(
-    queryKeys.profile.detail(),
-    () => apiClient.get<ProfileResponse>("/api/profile"),
+  const profile = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () =>
+    apiClient.get<ProfileResponse>("/api/profile"),
   );
 
   const upload = useApiMutation<ResumeDto, { label: string; file: File }>(
@@ -164,10 +155,7 @@ export function ResumesTab(): ReactElement {
                 >
                   <PictureAsPdf fontSize="md" />
                 </IconButton>
-                <IconButton
-                  onClick={() => setPendingDelete(r)}
-                  aria-label="Delete resume"
-                >
+                <IconButton onClick={() => setPendingDelete(r)} aria-label="Delete resume">
                   <Delete fontSize="md" />
                 </IconButton>
               </Stack>

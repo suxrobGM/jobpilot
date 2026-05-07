@@ -1,7 +1,7 @@
 "use client";
 
-import { MenuItem, TextField } from "@mui/material";
 import type { ReactElement } from "react";
+import { MenuItem, TextField } from "@mui/material";
 
 export interface SelectFilterOption<TValue extends string = string> {
   value: TValue;

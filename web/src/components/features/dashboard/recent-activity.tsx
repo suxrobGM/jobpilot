@@ -1,8 +1,8 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { Stack, Typography } from "@mui/material";
 import Link from "next/link";
-import type { ReactElement } from "react";
 import { StageChip } from "@/components/ui/display/stage-chip";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiQuery } from "@/hooks/use-api-query";
@@ -11,9 +11,8 @@ import { queryKeys } from "@/lib/api/query-keys";
 import type { ApplicationDto } from "@/types/api";
 
 export function RecentActivity(): ReactElement {
-  const recent = useApiQuery<ApplicationDto[]>(
-    queryKeys.applications.list({ limit: 8 }),
-    () => apiClient.get<ApplicationDto[]>("/api/applied"),
+  const recent = useApiQuery<ApplicationDto[]>(queryKeys.applications.list({ limit: 8 }), () =>
+    apiClient.get<ApplicationDto[]>("/api/applied"),
   );
   const rows = (recent.data ?? []).slice(0, 8);
 

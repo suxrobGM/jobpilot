@@ -17,7 +17,11 @@ export function WorkAuthTab(props: WorkAuthTabProps): ReactElement {
     <FormSection title="Work authorization" description="What employers ask on every application.">
       <FormSwitchField form={form} name="usAuthorized" label="Authorized to work in the US" />
       <FormSwitchField form={form} name="requiresSponsorship" label="Requires visa sponsorship" />
-      <FormTextField form={form} name="visaStatus" label="Visa status (e.g. OPT, H1B, GC, Citizen)" />
+      <FormTextField
+        form={form}
+        name="visaStatus"
+        label="Visa status (e.g. OPT, H1B, GC, Citizen)"
+      />
       <FormTextField form={form} name="optExtension" label="OPT extension (e.g. STEM)" />
       <FormSwitchField form={form} name="willingToRelocate" label="Willing to relocate" />
       <FormMultiselectField

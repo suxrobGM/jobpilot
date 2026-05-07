@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
 import { normalizeCompanyName, normalizeJobTitle } from "@/lib/matching";
 import { logApplicationSchema } from "@/lib/schemas/application";
@@ -34,14 +34,11 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const body = await req.json();
   const parsed = logApplicationSchema.safeParse(body);
+
   if (!parsed.success) {
-    return err(
-      ErrorCodes.UNPROCESSABLE,
-      "Invalid application payload",
-      422,
-      parsed.error.issues,
-    );
+    return err(ErrorCodes.UNPROCESSABLE, "Invalid application payload", 422, parsed.error.issues);
   }
+
   const data = parsed.data;
   try {
     const application = await db.application.create({
@@ -66,11 +63,7 @@ export async function POST(req: Request) {
     return ok(application, { status: 201 });
   } catch (e) {
     if ((e as { code?: string }).code === "P2002") {
-      return err(
-        ErrorCodes.CONFLICT,
-        "An application with this URL already exists",
-        409,
-      );
+      return err(ErrorCodes.CONFLICT, "An application with this URL already exists", 409);
     }
     throw e;
   }

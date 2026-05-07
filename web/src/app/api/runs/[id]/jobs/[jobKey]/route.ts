@@ -1,4 +1,4 @@
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
 import { patchRunJobSchema } from "@/lib/schemas/run";
 import { publishRunEvent } from "@/lib/sse";
@@ -11,19 +11,18 @@ export async function PATCH(req: Request, ctx: Params) {
   const { id, jobKey } = await ctx.params;
   const body = await req.json();
   const parsed = patchRunJobSchema.safeParse(body);
+
   if (!parsed.success) {
-    return err(
-      ErrorCodes.UNPROCESSABLE,
-      "Invalid run job patch",
-      422,
-      parsed.error.issues,
-    );
+    return err(ErrorCodes.UNPROCESSABLE, "Invalid run job patch", 422, parsed.error.issues);
   }
 
   const existing = await db.runJob.findUnique({
     where: { runId_jobKey: { runId: id, jobKey } },
   });
-  if (!existing) return err(ErrorCodes.NOT_FOUND, "Run job not found", 404);
+
+  if (!existing) {
+    return err(ErrorCodes.NOT_FOUND, "Run job not found", 404);
+  }
 
   const job = await db.runJob.update({
     where: { runId_jobKey: { runId: id, jobKey } },

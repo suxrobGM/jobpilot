@@ -1,6 +1,6 @@
+import type { ReactElement } from "react";
 import { Download } from "@mui/icons-material";
 import { Button, Container, Stack } from "@mui/material";
-import type { ReactElement } from "react";
 import { ApplicationsContent } from "@/components/features/applications/applications-content";
 import { PageHeader } from "@/components/ui/layout/page-header";
 

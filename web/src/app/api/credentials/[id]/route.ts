@@ -1,4 +1,4 @@
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
 import { credentialPatchSchema } from "@/lib/schemas/credential";
 
@@ -9,14 +9,18 @@ interface Params {
 export async function PATCH(req: Request, ctx: Params) {
   const { id } = await ctx.params;
   const credId = Number(id);
+
   if (!Number.isInteger(credId)) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
+
   const body = await req.json();
   const parsed = credentialPatchSchema.safeParse(body);
+
   if (!parsed.success) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid patch", 422, parsed.error.issues);
   }
+
   try {
     const cred = await db.credential.update({ where: { id: credId }, data: parsed.data });
     return ok(cred);

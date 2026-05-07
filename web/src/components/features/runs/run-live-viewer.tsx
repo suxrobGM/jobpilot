@@ -1,7 +1,7 @@
 "use client";
 
-import { Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import type { ReactElement } from "react";
+import { Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useRunEvents } from "@/hooks/use-run-events";
@@ -26,9 +26,8 @@ interface RunLiveViewerProps {
 export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
   const { runId } = props;
 
-  const detail = useApiQuery<RunDetailDto>(
-    queryKeys.runs.detail(runId),
-    () => apiClient.get<RunDetailDto>(`/api/runs/${encodeURIComponent(runId)}`),
+  const detail = useApiQuery<RunDetailDto>(queryKeys.runs.detail(runId), () =>
+    apiClient.get<RunDetailDto>(`/api/runs/${encodeURIComponent(runId)}`),
   );
 
   useRunEvents(runId);
@@ -42,12 +41,7 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
   return (
     <Stack spacing={3}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-        <Chip
-          size="small"
-          label={run.status}
-          color={STATUS_COLOR[run.status]}
-          variant="outlined"
-        />
+        <Chip size="small" label={run.status} color={STATUS_COLOR[run.status]} variant="outlined" />
         <Typography variant="body2Muted">
           Source: {run.source} · Started {new Date(run.startedAt).toLocaleString()}
         </Typography>

@@ -1,5 +1,5 @@
-import { Container, Stack } from "@mui/material";
 import type { ReactElement } from "react";
+import { Container, Stack } from "@mui/material";
 import { DashboardContent } from "@/components/features/dashboard/dashboard-content";
 import { PageHeader } from "@/components/ui/layout/page-header";
 

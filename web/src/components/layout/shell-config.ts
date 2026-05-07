@@ -6,8 +6,8 @@ import {
   PlaylistAddCheck,
   Storage,
   WorkHistory,
+  type SvgIconComponent,
 } from "@mui/icons-material";
-import type { SvgIconComponent } from "@mui/icons-material";
 
 export interface NavItem {
   label: string;

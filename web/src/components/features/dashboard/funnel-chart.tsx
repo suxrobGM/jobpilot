@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, LinearProgress, Stack, Typography } from "@mui/material";
 import type { ReactElement } from "react";
+import { Box, LinearProgress, Stack, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { STAGES, type Stage } from "@/lib/schemas/application";
 import type { DashboardStats } from "@/types/api";

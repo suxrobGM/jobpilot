@@ -1,9 +1,17 @@
 "use client";
 
-import { Delete, Launch } from "@mui/icons-material";
-import { Box, Button, Container, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
-import { useRouter } from "next/navigation";
 import { useState, type ReactElement } from "react";
+import { Delete, Launch } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Container,
+  IconButton,
+  LinearProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { useRouter } from "next/navigation";
 import { StageChip } from "@/components/ui/display/stage-chip";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { PageHeader } from "@/components/ui/layout/page-header";
@@ -27,19 +35,15 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   const [stageDialogOpen, setStageDialogOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const detail = useApiQuery<ApplicationDetailDto>(
-    queryKeys.applications.detail(id),
-    () => apiClient.get<ApplicationDetailDto>(`/api/applied/${id}`),
+  const detail = useApiQuery<ApplicationDetailDto>(queryKeys.applications.detail(id), () =>
+    apiClient.get<ApplicationDetailDto>(`/api/applied/${id}`),
   );
 
   const updateStage = useApiMutation<{ id: number; stage: Stage }, StageTransitionInput>(
     (vars) => apiClient.post(`/api/applied/${id}/stage`, vars),
     {
       successMessage: "Stage updated",
-      invalidate: [
-        queryKeys.applications.all,
-        queryKeys.dashboard.all,
-      ],
+      invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],
       onSuccess: () => setStageDialogOpen(false),
     },
   );
@@ -96,16 +100,10 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
               <StageChip stage={app.stage} />
               {app.outcome && (
-                <Typography variant="captionMuted">
-                  Outcome: {app.outcome}
-                </Typography>
+                <Typography variant="captionMuted">Outcome: {app.outcome}</Typography>
               )}
             </Stack>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={3}
-              sx={{ flexWrap: "wrap" }}
-            >
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ flexWrap: "wrap" }}>
               <Field label="Board" value={app.board ?? "—"} />
               <Field label="Source" value={app.source} />
               <Field label="Location" value={app.location ?? "—"} />
@@ -113,10 +111,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
                 label="Match score"
                 value={app.matchScore !== null ? `${app.matchScore}/100` : "—"}
               />
-              <Field
-                label="Applied at"
-                value={new Date(app.appliedAt).toLocaleString()}
-              />
+              <Field label="Applied at" value={new Date(app.appliedAt).toLocaleString()} />
               {app.runId && <Field label="Run" value={app.runId} />}
             </Stack>
             {app.matchReason && (

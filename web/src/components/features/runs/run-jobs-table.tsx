@@ -1,13 +1,16 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { Chip } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
-import { type ReactElement, useMemo } from "react";
 import { DataTable } from "@/components/ui/data/data-table";
 import type { RunJobStatus } from "@/lib/schemas/run";
 import type { RunJobDto } from "@/types/api";
 
-const STATUS_COLOR: Record<RunJobStatus, "default" | "info" | "primary" | "success" | "error" | "warning"> = {
+const STATUS_COLOR: Record<
+  RunJobStatus,
+  "default" | "info" | "primary" | "success" | "error" | "warning"
+> = {
   pending: "default",
   approved: "info",
   applying: "primary",

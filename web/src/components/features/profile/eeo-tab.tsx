@@ -51,16 +51,37 @@ export function EeoTab(props: EeoTabProps): ReactElement {
           { value: "American Indian or Alaska Native", label: "American Indian or Alaska Native" },
           { value: "Asian", label: "Asian" },
           { value: "Black or African American", label: "Black or African American" },
-          { value: "Native Hawaiian or Other Pacific Islander", label: "Native Hawaiian or Other Pacific Islander" },
+          {
+            value: "Native Hawaiian or Other Pacific Islander",
+            label: "Native Hawaiian or Other Pacific Islander",
+          },
           { value: "White", label: "White" },
           { value: "Two or more races", label: "Two or more races" },
           { value: PNTD, label: PNTD },
         ]}
         optional
       />
-      <FormSelectField form={form} name="eeoHispanicOrLatino" label="Hispanic or Latino" items={YES_NO_PNTD} optional />
-      <FormSelectField form={form} name="eeoVeteranStatus" label="Veteran status" items={VETERAN} optional />
-      <FormSelectField form={form} name="eeoDisabilityStatus" label="Disability status" items={DISABILITY} optional />
+      <FormSelectField
+        form={form}
+        name="eeoHispanicOrLatino"
+        label="Hispanic or Latino"
+        items={YES_NO_PNTD}
+        optional
+      />
+      <FormSelectField
+        form={form}
+        name="eeoVeteranStatus"
+        label="Veteran status"
+        items={VETERAN}
+        optional
+      />
+      <FormSelectField
+        form={form}
+        name="eeoDisabilityStatus"
+        label="Disability status"
+        items={DISABILITY}
+        optional
+      />
     </FormSection>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, Stack, Typography } from "@mui/material";
 import type { PropsWithChildren, ReactElement } from "react";
+import { Box, Stack, Typography } from "@mui/material";
 
 interface FormSectionProps extends PropsWithChildren {
   title: string;
@@ -14,9 +14,7 @@ export function FormSection(props: FormSectionProps): ReactElement {
     <Box>
       <Stack spacing={0.25} sx={{ mb: 2 }}>
         <Typography variant="h4">{title}</Typography>
-        {description && (
-          <Typography variant="body2Muted">{description}</Typography>
-        )}
+        {description && <Typography variant="body2Muted">{description}</Typography>}
       </Stack>
       <Stack spacing={2}>{children}</Stack>
     </Box>

@@ -1,8 +1,8 @@
 "use client";
 
+import { useState, type ReactElement } from "react";
 import { Add, Delete, Edit } from "@mui/icons-material";
 import { Box, Button, Chip, Container, IconButton, Stack, Switch, Typography } from "@mui/material";
-import { useState, type ReactElement } from "react";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { PageHeader } from "@/components/ui/layout/page-header";
 import { SectionCard } from "@/components/ui/layout/section-card";
@@ -60,11 +60,7 @@ export function BoardsPageClient(): ReactElement {
           title="Job boards"
           description="Sites the search and apply skills will use. Add custom boards or disable ones you don't use."
           actions={
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => setCreating(true)}
-            >
+            <Button variant="contained" startIcon={<Add />} onClick={() => setCreating(true)}>
               Add board
             </Button>
           }

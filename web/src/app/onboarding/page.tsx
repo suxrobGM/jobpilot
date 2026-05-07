@@ -1,5 +1,5 @@
-import { Container, Stack } from "@mui/material";
 import type { ReactElement } from "react";
+import { Container, Stack } from "@mui/material";
 import { OnboardingWizard } from "@/components/features/onboarding/onboarding-wizard";
 import { PageHeader } from "@/components/ui/layout/page-header";
 

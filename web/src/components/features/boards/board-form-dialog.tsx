@@ -1,20 +1,13 @@
 "use client";
 
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-} from "@mui/material";
-import { useForm } from "@tanstack/react-form";
 import type { ReactElement } from "react";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
+import { useForm } from "@tanstack/react-form";
 import { FormSelectField } from "@/components/ui/form/form-select-field";
 import { FormSwitchField } from "@/components/ui/form/form-switch-field";
 import { FormTextField } from "@/components/ui/form/form-text-field";
 import type { AnyReactForm } from "@/components/ui/form/types";
-import { type JobBoardInput, jobBoardSchema } from "@/lib/schemas/job-board";
+import { jobBoardSchema, type JobBoardInput } from "@/lib/schemas/job-board";
 
 interface BoardFormDialogProps {
   open: boolean;
@@ -67,7 +60,11 @@ export function BoardFormDialog(props: BoardFormDialogProps): ReactElement {
               <FormTextField form={formApi} name="name" label="Display name" />
               <FormTextField form={formApi} name="domain" label="Domain (e.g. linkedin.com)" />
             </Stack>
-            <FormTextField form={formApi} name="searchUrl" label="Search URL (search boards only)" />
+            <FormTextField
+              form={formApi}
+              name="searchUrl"
+              label="Search URL (search boards only)"
+            />
             <FormSelectField form={formApi} name="type" label="Type" items={TYPE_ITEMS} />
             <Stack direction="row" spacing={2}>
               <FormTextField form={formApi} name="email" label="Email override (optional)" />

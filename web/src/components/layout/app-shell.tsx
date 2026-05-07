@@ -1,7 +1,7 @@
 "use client";
 
-import { Box } from "@mui/material";
 import type { PropsWithChildren, ReactElement } from "react";
+import { Box } from "@mui/material";
 import { Sidebar } from "./sidebar";
 
 export function AppShell(props: PropsWithChildren): ReactElement {

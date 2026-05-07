@@ -1,4 +1,4 @@
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
 
 interface Params {
@@ -8,16 +8,20 @@ interface Params {
 export async function GET(_req: Request, ctx: Params) {
   const { id } = await ctx.params;
   const appId = Number(id);
+
   if (!Number.isInteger(appId)) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
+
   const application = await db.application.findUnique({
     where: { id: appId },
     include: {
       stageEvents: { orderBy: { occurredAt: "asc" } },
     },
   });
-  if (!application) return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
+  if (!application) {
+    return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
+  }
   return ok(application);
 }
 

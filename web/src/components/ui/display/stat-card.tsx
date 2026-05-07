@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, Stack, Typography } from "@mui/material";
 import type { ReactElement, ReactNode } from "react";
+import { Box, Stack, Typography } from "@mui/material";
 
 interface StatCardProps {
   label: string;

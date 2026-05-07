@@ -1,7 +1,7 @@
 "use client";
 
-import { Stack } from "@mui/material";
 import type { ReactElement } from "react";
+import { Stack } from "@mui/material";
 import { FormSection } from "@/components/ui/form/form-section";
 import { FormTextField } from "@/components/ui/form/form-text-field";
 import type { AnyReactForm } from "@/components/ui/form/types";
@@ -13,7 +13,10 @@ interface AddressTabProps {
 export function AddressTab(props: AddressTabProps): ReactElement {
   const { form } = props;
   return (
-    <FormSection title="Address" description="Used to autofill applications that ask for a postal address.">
+    <FormSection
+      title="Address"
+      description="Used to autofill applications that ask for a postal address."
+    >
       <FormTextField form={form} name="street" label="Street" />
       <FormTextField form={form} name="aptUnit" label="Apt / Unit" />
       <Stack direction="row" spacing={2}>

@@ -1,7 +1,7 @@
 "use client";
 
-import { Stack } from "@mui/material";
 import type { PropsWithChildren, ReactElement } from "react";
+import { Stack } from "@mui/material";
 
 export function FilterBar(props: PropsWithChildren): ReactElement {
   const { children } = props;

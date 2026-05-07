@@ -1,8 +1,8 @@
 "use client";
 
+import { useState, type ReactElement } from "react";
 import { Add, Delete } from "@mui/icons-material";
 import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
-import { useState, type ReactElement } from "react";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -17,9 +17,8 @@ export function CredentialsTab(): ReactElement {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<CredentialDto | null>(null);
 
-  const credentials = useApiQuery<CredentialDto[]>(
-    queryKeys.credentials.list(),
-    () => apiClient.get<CredentialDto[]>("/api/credentials"),
+  const credentials = useApiQuery<CredentialDto[]>(queryKeys.credentials.list(), () =>
+    apiClient.get<CredentialDto[]>("/api/credentials"),
   );
 
   const create = useApiMutation<CredentialDto, CredentialInput>(
@@ -55,8 +54,8 @@ export function CredentialsTab(): ReactElement {
       {rows.length === 0 ? (
         <Box sx={{ py: 3, textAlign: "center" }}>
           <Typography variant="body2Muted">
-            No credentials yet. Add a "default" credential, or one per board domain
-            (e.g. <code>linkedin.com</code>).
+            No credentials yet. Add a "default" credential, or one per board domain (e.g.{" "}
+            <code>linkedin.com</code>).
           </Typography>
         </Box>
       ) : (

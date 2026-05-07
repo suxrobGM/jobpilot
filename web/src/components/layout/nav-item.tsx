@@ -1,10 +1,10 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactElement } from "react";
 import type { NavItem as NavItemType } from "./shell-config";
 
 interface NavItemProps {
@@ -16,8 +16,7 @@ export function NavItem(props: NavItemProps): ReactElement {
   const pathname = usePathname();
   const Icon = item.icon;
   const targetPath = item.href.split("?")[0];
-  const active =
-    targetPath === "/" ? pathname === "/" : pathname.startsWith(targetPath);
+  const active = targetPath === "/" ? pathname === "/" : pathname.startsWith(targetPath);
 
   return (
     <ListItemButton

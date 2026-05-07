@@ -1,9 +1,4 @@
-import type {
-  RunEventType,
-  RunJobStatus,
-  RunSource,
-  RunStatus,
-} from "@/lib/schemas/run";
+import type { RunEventType, RunJobStatus, RunSource, RunStatus } from "@/lib/schemas/run";
 
 export interface RunDto {
   runId: string;

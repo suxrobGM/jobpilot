@@ -1,7 +1,7 @@
 "use client";
 
-import { LinearProgress } from "@mui/material";
 import type { ReactElement } from "react";
+import { LinearProgress } from "@mui/material";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";

@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, Stack, Typography } from "@mui/material";
 import type { ReactElement } from "react";
+import { Box, Stack, Typography } from "@mui/material";
 import { StageChip } from "@/components/ui/display/stage-chip";
 import type { StageEventDto } from "@/types/api";
 

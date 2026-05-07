@@ -32,8 +32,7 @@ export function useApiQuery<T>(
 
   useEffect(() => {
     if (result.error && errorMessage !== undefined) {
-      const msg =
-        typeof errorMessage === "function" ? errorMessage(result.error) : errorMessage;
+      const msg = typeof errorMessage === "function" ? errorMessage(result.error) : errorMessage;
       toast.error(msg);
     }
   }, [result.error, errorMessage, toast]);

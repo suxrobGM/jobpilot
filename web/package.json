@@ -10,6 +10,7 @@
     "lint": "next lint",
     "typegen": "next typegen",
     "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
     "db:generate": "prisma generate --schema ./prisma/schema",
     "db:migrate": "prisma migrate dev --schema ./prisma/schema",
     "db:studio": "prisma studio --schema ./prisma/schema",

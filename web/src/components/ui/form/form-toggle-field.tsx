@@ -1,8 +1,8 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import type { AnyFieldApi } from "@tanstack/react-form";
-import type { ReactElement } from "react";
 import type { AnyReactForm } from "./types";
 
 interface ToggleOption {

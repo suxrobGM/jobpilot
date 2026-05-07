@@ -1,7 +1,7 @@
 "use client";
 
-import { Stack } from "@mui/material";
 import type { ReactElement } from "react";
+import { Stack } from "@mui/material";
 import { StatCard } from "@/components/ui/display/stat-card";
 import type { DashboardStats } from "@/types/api";
 
@@ -12,17 +12,9 @@ interface KpiTilesProps {
 export function KpiTiles(props: KpiTilesProps): ReactElement {
   const { stats } = props;
   return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{ flexWrap: "wrap", "& > *": { flex: "1 1 220px" } }}
-    >
+    <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", "& > *": { flex: "1 1 220px" } }}>
       <StatCard label="Total applied" value={stats.total} hint="All time" />
-      <StatCard
-        label="Last 7 days"
-        value={stats.last7Days}
-        hint={`${stats.last30Days} in 30d`}
-      />
+      <StatCard label="Last 7 days" value={stats.last7Days} hint={`${stats.last30Days} in 30d`} />
       <StatCard
         label="Positive response"
         value={`${stats.positiveResponseRate}%`}

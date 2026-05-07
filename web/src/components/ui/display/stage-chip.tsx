@@ -1,7 +1,7 @@
 "use client";
 
-import { Chip, type ChipProps } from "@mui/material";
 import type { ReactElement } from "react";
+import { Chip, type ChipProps } from "@mui/material";
 
 export const STAGES = [
   "applied",
@@ -48,5 +48,7 @@ interface StageChipProps {
 
 export function StageChip(props: StageChipProps): ReactElement {
   const { stage, size = "small" } = props;
-  return <Chip size={size} label={STAGE_LABEL[stage]} color={STAGE_COLOR[stage]} variant="outlined" />;
+  return (
+    <Chip size={size} label={STAGE_LABEL[stage]} color={STAGE_COLOR[stage]} variant="outlined" />
+  );
 }

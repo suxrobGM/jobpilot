@@ -1,6 +1,6 @@
 import "./globals.css";
-import type { Metadata } from "next";
 import type { PropsWithChildren, ReactElement } from "react";
+import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/app-shell";
 import { NotificationProvider } from "@/providers/notification-provider";
 import { QueryProvider } from "@/providers/query-provider";

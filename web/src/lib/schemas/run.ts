@@ -1,11 +1,6 @@
 import { z } from "zod/v4";
 
-export const RUN_STATUSES = [
-  "in_progress",
-  "paused",
-  "completed",
-  "failed",
-] as const;
+export const RUN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
 export const runStatusSchema = z.enum(RUN_STATUSES);
 export type RunStatus = z.infer<typeof runStatusSchema>;
 

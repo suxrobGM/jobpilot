@@ -8,7 +8,12 @@ export function ok<T>(data: T, init?: ResponseInit): NextResponse<ApiOk<T>> {
   return NextResponse.json({ ok: true, data }, init);
 }
 
-export function err(code: string, message: string, status = 400, details?: unknown): NextResponse<ApiErr> {
+export function err(
+  code: string,
+  message: string,
+  status = 400,
+  details?: unknown,
+): NextResponse<ApiErr> {
   return NextResponse.json({ ok: false, error: { code, message, details } }, { status });
 }
 

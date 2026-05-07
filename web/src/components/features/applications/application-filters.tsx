@@ -1,13 +1,13 @@
 "use client";
 
-import { TextField } from "@mui/material";
 import type { ReactElement } from "react";
+import { TextField } from "@mui/material";
 import { SelectFilter } from "@/components/ui/form/select-filter";
 import { FilterBar } from "@/components/ui/layout/filter-bar";
 import {
   APPLICATION_SOURCES,
-  type ApplicationSource,
   STAGES,
+  type ApplicationSource,
   type Stage,
 } from "@/lib/schemas/application";
 import type { ApplicationListFilters } from "@/types/api";

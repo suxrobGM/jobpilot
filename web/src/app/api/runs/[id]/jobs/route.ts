@@ -1,4 +1,4 @@
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
 import { addRunJobSchema } from "@/lib/schemas/run";
 import { publishRunEvent } from "@/lib/sse";
@@ -20,16 +20,15 @@ export async function POST(req: Request, ctx: Params) {
   const { id } = await ctx.params;
   const body = await req.json();
   const parsed = addRunJobSchema.safeParse(body);
+
   if (!parsed.success) {
-    return err(
-      ErrorCodes.UNPROCESSABLE,
-      "Invalid run job payload",
-      422,
-      parsed.error.issues,
-    );
+    return err(ErrorCodes.UNPROCESSABLE, "Invalid run job payload", 422, parsed.error.issues);
   }
+
   const existing = await db.run.findUnique({ where: { runId: id } });
-  if (!existing) return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
+  if (!existing) {
+    return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
+  }
 
   try {
     const job = await db.runJob.create({

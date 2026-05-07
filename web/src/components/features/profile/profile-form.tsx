@@ -1,15 +1,12 @@
 "use client";
 
+import { useState, type ReactElement } from "react";
 import { Box, Button, Stack, Tab, Tabs } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import { useState, type ReactElement } from "react";
 import type { AnyReactForm } from "@/components/ui/form/types";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api-client";
-import {
-  type ProfileWithAutopilotInput,
-  profileWithAutopilotSchema,
-} from "@/lib/schemas/profile";
+import { profileWithAutopilotSchema, type ProfileWithAutopilotInput } from "@/lib/schemas/profile";
 import { AddressTab } from "./address-tab";
 import { AutopilotTab } from "./autopilot-tab";
 import { EeoTab } from "./eeo-tab";

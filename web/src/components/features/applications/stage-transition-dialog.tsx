@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type ReactElement } from "react";
 import {
   Button,
   Dialog,
@@ -10,7 +11,6 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { useState, type ReactElement } from "react";
 import { STAGES, type Stage } from "@/lib/schemas/application";
 
 const STAGE_LABEL: Record<Stage, string> = {

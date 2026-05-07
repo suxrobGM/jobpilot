@@ -1,8 +1,8 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { MenuItem, TextField } from "@mui/material";
 import type { AnyFieldApi } from "@tanstack/react-form";
-import type { ReactElement } from "react";
 import type { AnyReactForm } from "./types";
 
 interface SelectItem {
@@ -34,9 +34,7 @@ export function FormSelectField(props: FormSelectFieldProps): ReactElement {
           onChange={(e) => field.handleChange(e.target.value)}
           onBlur={field.handleBlur}
           error={field.state.meta.errors.length > 0}
-          helperText={
-            (field.state.meta.errors[0] as { message?: string } | undefined)?.message
-          }
+          helperText={(field.state.meta.errors[0] as { message?: string } | undefined)?.message}
         >
           {optional && (
             <MenuItem value="">

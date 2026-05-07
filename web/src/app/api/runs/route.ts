@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
 import { createRunSchema } from "@/lib/schemas/run";
 
@@ -27,15 +27,13 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const body = await req.json();
   const parsed = createRunSchema.safeParse(body);
+
   if (!parsed.success) {
-    return err(
-      ErrorCodes.UNPROCESSABLE,
-      "Invalid run payload",
-      422,
-      parsed.error.issues,
-    );
+    return err(ErrorCodes.UNPROCESSABLE, "Invalid run payload", 422, parsed.error.issues);
   }
+
   const data = parsed.data;
+
   try {
     const run = await db.run.create({
       data: {

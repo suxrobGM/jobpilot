@@ -1,7 +1,7 @@
 "use client";
 
-import { Stack } from "@mui/material";
 import type { ReactElement } from "react";
+import { Stack } from "@mui/material";
 import { FormMultiselectField } from "@/components/ui/form/form-multiselect-field";
 import { FormSection } from "@/components/ui/form/form-section";
 import { FormSelectField } from "@/components/ui/form/form-select-field";
@@ -20,7 +20,10 @@ interface AutopilotTabProps {
 export function AutopilotTab(props: AutopilotTabProps): ReactElement {
   const { form } = props;
   return (
-    <FormSection title="Autopilot" description="Defaults used by the autopilot and apply-batch skills.">
+    <FormSection
+      title="Autopilot"
+      description="Defaults used by the autopilot and apply-batch skills."
+    >
       <Stack direction="row" spacing={2}>
         <FormTextField
           form={form}

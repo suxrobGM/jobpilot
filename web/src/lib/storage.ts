@@ -23,11 +23,12 @@ export async function deleteResumeFile(filename: string): Promise<void> {
 
 export function generateResumeFilename(originalName: string): string {
   const ext = path.extname(originalName) || ".pdf";
-  const slug = path
-    .basename(originalName, ext)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "resume";
+  const slug =
+    path
+      .basename(originalName, ext)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "resume";
   return `${Date.now()}-${slug}${ext}`;
 }

@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import { ErrorCodes, err, ok } from "@/lib/api";
+import { err, ErrorCodes, ok } from "@/lib/api";
 import { db } from "@/lib/db";
 import { ensureResumesDir, generateResumeFilename } from "@/lib/storage";
 
@@ -32,11 +32,7 @@ export async function POST(req: Request) {
 
   const profileExists = await db.profile.findUnique({ where: { id: PROFILE_ID } });
   if (!profileExists) {
-    return err(
-      ErrorCodes.UNPROCESSABLE,
-      "Profile not initialized; complete onboarding first",
-      422,
-    );
+    return err(ErrorCodes.UNPROCESSABLE, "Profile not initialized; complete onboarding first", 422);
   }
 
   const dir = await ensureResumesDir();

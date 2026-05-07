@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, Stack, Typography } from "@mui/material";
 import type { PropsWithChildren, ReactElement, ReactNode } from "react";
+import { Box, Stack, Typography } from "@mui/material";
 
 interface SectionCardProps extends PropsWithChildren {
   title?: string;
@@ -33,7 +33,11 @@ export function SectionCard(props: SectionCardProps): ReactElement {
               </Typography>
             )}
           </Box>
-          {actions && <Stack direction="row" spacing={1}>{actions}</Stack>}
+          {actions && (
+            <Stack direction="row" spacing={1}>
+              {actions}
+            </Stack>
+          )}
         </Stack>
       )}
       {children}

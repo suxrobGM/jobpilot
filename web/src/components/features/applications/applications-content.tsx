@@ -1,7 +1,7 @@
 "use client";
 
+import { useState, type ReactElement } from "react";
 import { LinearProgress } from "@mui/material";
-import { useMemo, useState, type ReactElement } from "react";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -27,11 +27,11 @@ export function ApplicationsContent(): ReactElement {
     () => apiClient.get<ApplicationDto[]>(`/api/applied${buildQuery(filters)}`),
   );
 
-  const boards = useMemo(() => {
-    const set = new Set<string>();
-    for (const app of apps.data ?? []) if (app.board) set.add(app.board);
-    return Array.from(set).sort();
-  }, [apps.data]);
+  const boardSet = new Set<string>();
+  for (const app of apps.data ?? []) {
+    if (app.board) boardSet.add(app.board);
+  }
+  const boards = Array.from(boardSet).sort();
 
   return (
     <>
