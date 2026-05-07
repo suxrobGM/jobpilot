@@ -2,55 +2,66 @@
 
 ## What This Is
 
-A Claude Code plugin for automated job searching and applications. All logic is prompt-based (SKILL.md files) -- no compiled code. Skills instruct Claude what to do at runtime using Playwright MCP for browser automation.
+JobPilot 2.0 is a Claude Code plugin for AI-driven job applications, paired
+with a local Next.js + SQLite web app at `http://127.0.0.1:8000` that owns
+all of the persistent state. Skills are markdown prompts (`skills/*/SKILL.md`);
+the web app is real TypeScript code under `web/`.
 
 ## Architecture
 
-- **Skills** live in `skills/<name>/SKILL.md` as markdown with YAML frontmatter
-- **Shared instructions** in `skills/_shared/` (setup, auth, form filling, browser tips) are referenced by skills to avoid duplication
-- **Profile system** in `profile.json` stores personal info, credentials, job board config, and autopilot settings. Gitignored for security. `profile.example.json` is the template.
-- **Autopilot progress** tracked in `runs/<run-id>.json` files (gitignored). Each run logs every job's status transitions.
-- **Applied-jobs database** in `applied-jobs.json` (gitignored) is a persistent record of all applied jobs across runs and skills. Prevents duplicate applications even if run files are deleted.
-- **Scripts** in `scripts/` for utility tasks. All scripts use `jq` only (no Python/Node fallbacks) to avoid permission prompts.
-- **Humanizer** is an external git submodule at `skills/humanizer/`
+- **Skills** live in `skills/<name>/SKILL.md` as markdown with YAML frontmatter. They drive Playwright via the MCP server, parse pages, score against the resume, fill forms.
+- **Shared instructions** in `skills/_shared/` (setup, auth, form-filling, browser-tips) are referenced by skills to avoid duplication.
+- **Web app** in `web/` is the data + UI layer: Bun + Next.js 16 + MUI 9 + Prisma 7 + TanStack Query/Form + Zod v4. SQLite database at `web/prisma/dev.db`; uploaded resumes at `web/storage/resumes/`.
+- **Skills talk to the web app over HTTP.** They do not read or write any local JSON or text files. Every skill calls `GET /api/health` first; if the app is down it stops with a clear message.
+- **Humanizer** is an external git submodule at `skills/humanizer/`, invoked by `cover-letter` and `upwork-proposal` skills.
 
 ## Key Patterns
 
-- Skills reference shared files with: `Read and follow the instructions in ${CLAUDE_PLUGIN_ROOT}/skills/_shared/<file>.md`
-- Credential lookup order: board-specific (`jobBoards[].email/password`) -> domain-specific (`credentials.<domain>`) -> `credentials.default`
-- Job boards are a dynamic array in `profile.json` with `type: "search"` or `type: "ats"`. Users add boards without code changes.
-- Skills proactively log in before searching/applying, not just reactively when redirected
-- Previously applied jobs are tracked in `applied-jobs.json` and checked via `scripts/check-applied.sh` before every application
-- After every successful application, log it via `scripts/log-applied.sh`
+- Skills reference shared files with: `Read and follow the instructions in ${CLAUDE_PLUGIN_ROOT}/skills/_shared/<file>.md`. `_shared/setup.md` is the single source of truth for "load the profile, resume, and credentials".
+- Skills set `JOBPILOT_API=http://127.0.0.1:8000` at the top and then issue `curl -fsS "$JOBPILOT_API/api/..."` calls. Mutations go through `POST` / `PATCH` / `DELETE` against the same API.
+- Credential lookup order: board-specific (`JobBoard.email`/`.password` override) → scope-matched (`Credential.scope === <domain>`) → `Credential.scope === "default"`.
+- Job boards are rows in the `JobBoard` table with `type: "search"` or `type: "ats"`. Users add boards through the web UI at `/boards`; skills iterate over whatever `/api/job-boards` returns.
+- Skills proactively log in before searching/applying, not just reactively when redirected.
+- Previously applied jobs are matched both by exact URL and by fuzzy normalized title+company over a 30-day window via `GET /api/applied/check`.
+- After every successful application, skills `POST /api/applied`. After every state change in an autopilot/apply-batch run, they `PATCH /api/runs/[id]/jobs/[jobKey]` and `PATCH /api/runs/[id]` so the SSE-driven live viewer reflects reality.
 
 ## Conventions
 
-- Skill files use imperative instructions directed at Claude (e.g., "Use `browser_navigate` to open the URL")
-- No inline Python/Node scripts for parsing -- use `Read` and `Grep` tools instead to avoid permission prompts
-- Browser automation uses `browser_snapshot` (accessibility tree) not screenshots
-- For token overflow from large pages, use targeted `browser_snapshot` with `ref` parameter
-- Cover letters chain through `/jobpilot:cover-letter` which already invokes the humanizer
-- Plugin manifest is in `.claude-plugin/plugin.json`
-- MCP config (Playwright server) is in `.mcp.json`
+- Skill files use imperative instructions directed at Claude (e.g., "Use `browser_navigate` to open the URL").
+- Browser automation uses `browser_snapshot` (accessibility tree), not screenshots.
+- For token overflow from large pages, use targeted `browser_snapshot` with the `ref` parameter.
+- Cover letters chain through `/jobpilot:cover-letter`, which already invokes the humanizer.
+- Plugin manifest is in `.claude-plugin/plugin.json` (currently `2.0.0`).
+- MCP config (Playwright server) is in `.mcp.json`.
+- API permissions in `.claude/settings.json` allow `Bash(curl:*)`, `Bash(jq:*)`, `Bash(date:*)` explicitly.
 
 ## File Inventory
 
 | Path | Purpose |
-| ---- | ------- |
-| `.claude-plugin/plugin.json` | Plugin manifest (name, version, author) |
-| `.mcp.json` | Playwright MCP server config |
-| `profile.json` | User config with credentials (gitignored) |
-| `profile.example.json` | Template for new users |
-| `skills/_shared/*.md` | Shared instructions (setup, auth, form-filling, browser-tips) |
-| `skills/*/SKILL.md` | Individual skill prompts |
-| `scripts/check-applied.sh` | Checks if a job URL was already applied to |
-| `scripts/log-applied.sh` | Logs a successful application to the database |
-| `scripts/run-stats.sh` | Aggregates stats from all run files |
-| `scripts/export-csv.sh` | Exports applications to CSV |
-| `scripts/update-run.sh` | Updates run file fields without full JSON read |
-| `applied-jobs.json` | Persistent applied-jobs database (gitignored) |
-| `runs/*.json` | Autopilot progress files (gitignored) |
-| `settings.json` | Plugin-level permission settings |
+| --- | --- |
+| `.claude-plugin/plugin.json` | Plugin manifest (name, version, author). |
+| `.claude/settings.json` | Claude Code permissions. |
+| `.mcp.json` | Playwright MCP server config. |
+| `CLAUDE.md` | This file: architecture summary + frontend conventions. |
+| `README.md` | User-facing intro + quick start. |
+| `docs/architecture.md` | Deeper architecture walk-through. |
+| `docs/self-hosting.md` | Operations + configuration runbook. |
+| `skills/_shared/*.md` | Shared instructions (setup, auth, form-filling, browser-tips). |
+| `skills/*/SKILL.md` | Individual skill prompts. |
+| `skills/humanizer/` | Cover-letter humanizer (git submodule). |
+| `web/prisma/schema/*.prisma` | Multi-file Prisma schema (one file per domain). |
+| `web/prisma/dev.db` | SQLite database (gitignored). |
+| `web/storage/resumes/*.pdf` | Uploaded resumes (gitignored). |
+| `web/src/app/api/**/route.ts` | API endpoints. |
+| `web/src/app/**/page.tsx` | Pages (RSC). |
+| `web/src/components/features/<domain>/` | Domain-specific React components. |
+| `web/src/components/ui/{data,display,feedback,form,layout}/` | UI primitives. |
+| `web/src/lib/db.ts` | Prisma client singleton (libSQL adapter). |
+| `web/src/lib/sse.ts` | In-process SSE broker. |
+| `web/src/lib/matching.ts` | Jaro-Winkler fuzzy duplicate detection. |
+| `web/src/lib/schemas/*.ts` | Zod schemas (shared by API + form validators). |
+| `web/src/lib/api/query-keys.ts` | Structured TanStack Query keys. |
+| `web/src/types/api/*.ts` | DTOs returned by API endpoints. |
 
 ## Frontend Conventions
 

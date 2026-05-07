@@ -33,7 +33,10 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
 
   useRunEvents(runId);
 
-  if (detail.isLoading || !detail.data) return <LinearProgress />;
+  if (detail.isLoading || !detail.data) {
+    return <LinearProgress />;
+  }
+
   const run = detail.data;
 
   return (

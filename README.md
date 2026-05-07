@@ -1,112 +1,115 @@
 # JobPilot
 
-A [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin that automates your job search end-to-end: find matching positions, auto-fill applications, generate cover letters, write proposals, and prep for interviews - all powered by your resume.
+A Claude Code plugin for AI-driven job applications, paired with a local
+Next.js + SQLite web app that owns all of the state.
 
-![Autopilot batch confirmation - jobs scored and ranked against your resume](docs/images/batch-confirmation.png)
+- **Skills** (Claude Code) do the work: scrape job boards, score postings
+  against your resume, fill in applications via Playwright, write cover
+  letters and interview prep, etc.
+- **Web app** (`web/`) at `http://127.0.0.1:8000` owns all data: profile,
+  credentials, resumes, job boards, applications with stage funnel, runs
+  with SSE-driven live progress, batch URL queue.
+- **Skills talk to the web app over HTTP** (`curl`), not the filesystem.
+  No more `profile.json`, `applied-jobs.json`, `runs/*.json`, or shell
+  scripts.
 
-## What It Does
-
-| Skill | Command | What it does |
-| ----- | ------- | ------------ |
-| **Autopilot** | `/autopilot <query>` | Search boards, score matches, and apply to jobs autonomously in batch |
-| **Apply** | `/apply <url>` | Auto-fill a single job application form via browser automation |
-| **Batch Apply** | `/apply-batch <file>` | Apply to multiple jobs from a file of URLs with scoring and batch approval |
-| **Search** | `/search <query>` | Search job boards and rank results by qualification fit |
-| **Cover Letter** | `/cover-letter <job_desc>` | Generate a tailored cover letter matched to your experience |
-| **Upwork Proposal** | `/upwork-proposal <job_desc>` | Generate a concise, client-focused Upwork proposal |
-| **Interview Prep** | `/interview <job_desc>` | Generate Q&A prep (behavioral, technical, system design) |
-| **Dashboard** | `/dashboard` | View application stats, success rates, and export to CSV |
-| **Humanizer** | `/humanizer <text>` | Rewrite text to remove AI patterns and sound natural |
-
-## Quick Start
-
-### Prerequisites
-
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
-- [jq](https://jqlang.github.io/jq/download/) is required by utility scripts (auto-installed on first run if missing)
-
-### 1. Install
+## Quick start
 
 ```bash
-git clone --recursive https://github.com/suxrobgm/jobpilot.git
-claude --plugin-dir ./jobpilot
+# 1. Install web dependencies (one-time)
+git clone https://github.com/suxrobgm/jobpilot.git
+cd jobpilot/web
+bun install
+bunx prisma migrate dev          # creates web/prisma/dev.db
+bun run db:seed                  # seeds default job boards
+
+# 2. Start the web app (keep this running)
+bun dev                          # serves on http://127.0.0.1:8000
+
+# 3. Open the onboarding wizard
+open http://127.0.0.1:8000       # fills the singleton Profile + Autopilot
+
+# 4. Install the plugin in Claude Code
+# Add this directory to your Claude Code plugins, then run any skill:
+/jobpilot:apply <job-url>
+/jobpilot:autopilot "senior fullstack developer remote"
+/jobpilot:search "react contract us-remote"
+/jobpilot:dashboard
 ```
 
-![Launching JobPilot with claude --plugin-dir](docs/images/launch.png)
+If a skill is run while the web app is down it stops with a clear
+message and tells you to start it.
 
-> Use `--recursive` to pull the [humanizer](https://github.com/blader/humanizer) submodule.
+## Skills
 
-### 2. Set up your profile
+| Slash command | Purpose |
+|---|---|
+| `/jobpilot:apply <url>` | Auto-fill a single application after a fit review and dedupe check. |
+| `/jobpilot:apply-batch` | Pull URLs from `/api/batch/pending`, score against your resume, get one-click batch approval, apply to all. |
+| `/jobpilot:autopilot <query>` | Search every enabled board, score, batch-approve, apply autonomously. Live viewer at `/runs/<id>`. |
+| `/jobpilot:search <query>` | Search boards and rank results without applying. |
+| `/jobpilot:dashboard` | Quick text summary or pointer to the rich web dashboard. |
+| `/jobpilot:cover-letter <description>` | Tailored cover letter, run through the humanizer. |
+| `/jobpilot:upwork-proposal <job>` | Tailored Upwork proposal. |
+| `/jobpilot:interview <description>` | Behavioral / technical / company-research interview prep. |
 
-```bash
-cp profile.example.json profile.json
+## Web app
+
+- **`/`** — KPIs (total applied, last 7/30 days, positive response rate),
+  funnel, board breakdown, recent activity.
+- **`/applications`** — DataGrid with stage/board/source/text filters,
+  click a row for the detail view with stage timeline + manual transitions
+  + delete. CSV export.
+- **`/runs`** — autopilot + apply-batch run history; click a row for the
+  live viewer.
+- **`/runs/[id]`** — live SSE viewer: status chip, summary tiles, jobs
+  table updating in real time as the skill applies.
+- **`/batch`** — paste URLs to queue; the apply-batch skill consumes them.
+- **`/boards`** — manage job boards (search vs ATS, enabled toggle, board
+  credentials).
+- **`/profile`** — 7-tab editor: personal, address, work auth, EEO,
+  autopilot defaults, credentials, resumes (upload).
+- **`/onboarding`** — 5-step wizard, hit when the singleton Profile is
+  missing.
+
+## Architecture overview
+
+```
+┌──────────────────────────────┐
+│  Claude Code (skills)        │  ← reasons about applications, fills forms
+│  apply / autopilot /         │
+│  search / cover-letter / ... │
+└────────────┬─────────────────┘
+             │ curl http://127.0.0.1:8000/api/...
+             ▼
+┌──────────────────────────────┐       ┌─────────────────┐
+│  Next.js 16 (web/)           │ ◄────►│  Browser UI     │
+│  app/api/* route handlers    │       │  MUI 9 pages    │
+│  app/(pages)/*               │       └─────────────────┘
+└────────────┬─────────────────┘
+             │ Prisma 7 (libSQL adapter)
+             ▼
+┌──────────────────────────────┐
+│  SQLite (web/prisma/dev.db)  │
+└──────────────────────────────┘
 ```
 
-Edit `profile.json` with your personal info, resume path, credentials, and job board config. See [Configuration](docs/configuration.md) for the full reference.
+See [docs/architecture.md](docs/architecture.md) for a deeper walk-through and
+[docs/self-hosting.md](docs/self-hosting.md) for the operations + configuration
+runbook. Convention rules live in [CLAUDE.md](CLAUDE.md).
 
-### 3. Allow browser permissions (recommended)
+## Tech stack
 
-Add to `.claude/settings.json`:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "mcp__plugin_jobpilot_playwright__*"
-    ]
-  }
-}
-```
-
-## Usage
-
-```bash
-# Autopilot: search and apply to matching jobs autonomously
-/autopilot "senior fullstack developer Portland ME remote"
-
-# Apply to a single job
-/apply https://boards.greenhouse.io/company/jobs/12345
-
-# Apply to multiple jobs from a file
-/apply-batch jobs-to-apply.txt
-
-# Search for jobs
-/search "software engineer remote"
-
-# Generate a cover letter
-/cover-letter We are looking for a senior full-stack developer...
-
-# Write an Upwork proposal
-/upwork-proposal Need a React/Node developer to build a dashboard...
-
-# Prep for an interview
-/interview We are hiring a backend engineer for our API platform...
-
-# Resume an interrupted autopilot run
-/autopilot "resume"
-
-# View application tracking dashboard
-/dashboard
-
-# Export all applications to CSV
-/dashboard "export"
-```
-
-![Auto-filling a job application form with profile data](docs/images/form-autofill.png)
-
-![Autopilot run summary showing applied, failed, and skipped jobs](docs/images/run-summary.png)
-
-![Application tracking dashboard with stats and failure reasons](docs/images/dashboard.png)
-
-## Documentation
-
-- [Configuration](docs/configuration.md) - profile setup, job boards, autopilot settings, work authorization, EEO
-- [How It Works](docs/how-it-works.md) - architecture, skill details, project structure
-
-## Credits
-
-- [Humanizer](https://github.com/blader/humanizer) by blader - included as a git submodule (MIT License)
+| Layer | Choice |
+|---|---|
+| Runtime | Bun 1.3 |
+| Framework | Next.js 16 (App Router, RSC, typed routes) |
+| UI | MUI 9, themed (`web/src/theme/`); MUI X DataGrid for tables; emotion via `AppRouterCacheProvider` |
+| Forms | TanStack Form 1 + Zod v4 (shared between API validators and form validators) |
+| Server state | TanStack Query 5 with structured `queryKeys` |
+| Database | SQLite via Prisma 7 modern client + `@prisma/adapter-libsql` (Bun-compatible on Windows) |
+| Browser automation | Playwright via the Claude Code Playwright MCP |
 
 ## License
 
-MIT
+MIT. The Humanizer submodule has its own license — see `skills/humanizer/`.

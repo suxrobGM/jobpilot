@@ -23,43 +23,40 @@ interface RunJobsTableProps {
 
 export function RunJobsTable(props: RunJobsTableProps): ReactElement {
   const { rows, loading } = props;
-  const columns = useMemo<GridColDef<RunJobDto>[]>(
-    () => [
-      {
-        field: "status",
-        headerName: "Status",
-        width: 130,
-        renderCell: (p) => (
-          <Chip
-            size="small"
-            label={p.row.status}
-            color={STATUS_COLOR[p.row.status]}
-            variant="outlined"
-          />
-        ),
-        sortable: false,
-      },
-      { field: "title", headerName: "Title", flex: 1.4, minWidth: 200 },
-      { field: "company", headerName: "Company", flex: 1, minWidth: 160 },
-      { field: "board", headerName: "Board", width: 130 },
-      {
-        field: "matchScore",
-        headerName: "Score",
-        width: 80,
-        align: "right",
-        headerAlign: "right",
-        valueGetter: (_v, row) => row.matchScore ?? "",
-      },
-      {
-        field: "failReason",
-        headerName: "Fail reason",
-        flex: 1,
-        minWidth: 160,
-        valueGetter: (_v, row) => row.failReason ?? row.skipReason ?? "",
-      },
-    ],
-    [],
-  );
+  const columns: GridColDef<RunJobDto>[] = [
+    {
+      field: "status",
+      headerName: "Status",
+      width: 130,
+      renderCell: (p) => (
+        <Chip
+          size="small"
+          label={p.row.status}
+          color={STATUS_COLOR[p.row.status]}
+          variant="outlined"
+        />
+      ),
+      sortable: false,
+    },
+    { field: "title", headerName: "Title", flex: 1.4, minWidth: 200 },
+    { field: "company", headerName: "Company", flex: 1, minWidth: 160 },
+    { field: "board", headerName: "Board", width: 130 },
+    {
+      field: "matchScore",
+      headerName: "Score",
+      width: 80,
+      align: "right",
+      headerAlign: "right",
+      valueGetter: (_v, row) => row.matchScore ?? "",
+    },
+    {
+      field: "failReason",
+      headerName: "Fail reason",
+      flex: 1,
+      minWidth: 160,
+      valueGetter: (_v, row) => row.failReason ?? row.skipReason ?? "",
+    },
+  ];
   return (
     <DataTable<RunJobDto>
       rows={rows}
