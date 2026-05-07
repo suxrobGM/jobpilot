@@ -1,0 +1,54 @@
+model Profile {
+  id        Int    @id @default(1)
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  website   String?
+  linkedin  String?
+  github    String?
+
+  street  String?
+  aptUnit String?
+  city    String?
+  state   String?
+  zipCode String?
+  country String?
+
+  usAuthorized        Boolean @default(false)
+  requiresSponsorship Boolean @default(false)
+  visaStatus          String?
+  optExtension        String?
+  willingToRelocate   Boolean @default(false)
+  preferredLocations  String  @default("[]")
+
+  eeoGender           String?
+  eeoRace             String?
+  eeoEthnicity        String?
+  eeoHispanicOrLatino String?
+  eeoVeteranStatus    String?
+  eeoDisabilityStatus String?
+
+  defaultResumeId Int?    @unique
+  defaultResume   Resume? @relation("DefaultResume", fields: [defaultResumeId], references: [id])
+  resumes         Resume[] @relation("AllResumes")
+
+  autopilot AutopilotSettings?
+
+  updatedAt DateTime @updatedAt
+}
+
+model AutopilotSettings {
+  id                    Int     @id @default(1)
+  profileId             Int     @unique
+  profile               Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  minMatchScore         Int     @default(6)
+  maxApplicationsPerRun Int     @default(20)
+  confirmMode           String  @default("batch")
+  skipCompanies         String  @default("[]")
+  skipTitleKeywords     String  @default("[]")
+  minSalary             Int     @default(0)
+  maxSalary             Int     @default(0)
+  salaryExpectation     String?
+  defaultStartDate      String  @default("2 weeks notice")
+}

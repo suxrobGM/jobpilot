@@ -1,0 +1,10 @@
+model BatchInput {
+  id         Int       @id @default(autoincrement())
+  url        String    @unique
+  note       String?
+  status     String    @default("pending")
+  createdAt  DateTime  @default(now())
+  consumedAt DateTime?
+
+  @@index([status])
+}

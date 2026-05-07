@@ -1,0 +1,13 @@
+model Resume {
+  id        Int    @id @default(autoincrement())
+  label     String
+  filename  String
+  mimeType  String @default("application/pdf")
+  sizeBytes Int
+
+  profileId  Int
+  profile    Profile  @relation("AllResumes", fields: [profileId], references: [id], onDelete: Cascade)
+  defaultFor Profile? @relation("DefaultResume")
+
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,51 @@
+model Run {
+  runId       String    @id
+  query       String
+  source      String
+  status      String    @default("in_progress")
+  startedAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+  config      String
+  summary     String    @default("{}")
+
+  jobs         RunJob[]
+  events       RunEvent[]
+  applications Application[]
+}
+
+model RunJob {
+  id          Int       @id @default(autoincrement())
+  runId       String
+  run         Run       @relation(fields: [runId], references: [runId], onDelete: Cascade)
+  jobKey      String
+  title       String
+  company     String
+  location    String?
+  salary      String?
+  type        String?
+  url         String
+  board       String?
+  matchScore  Int?
+  matchReason String?
+  status      String    @default("pending")
+  appliedAt   DateTime?
+  failReason  String?
+  retryNotes  String?
+  skipReason  String?
+  description String?
+
+  @@unique([runId, jobKey])
+  @@index([runId, status])
+}
+
+model RunEvent {
+  id        Int      @id @default(autoincrement())
+  runId     String
+  run       Run      @relation(fields: [runId], references: [runId], onDelete: Cascade)
+  type      String
+  payload   String
+  createdAt DateTime @default(now())
+
+  @@index([runId, createdAt])
+}

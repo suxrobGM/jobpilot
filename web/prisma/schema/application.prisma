@@ -1,0 +1,42 @@
+model Application {
+  id        Int      @id @default(autoincrement())
+  url       String   @unique
+  title     String
+  company   String
+  location  String?
+  board     String?
+  source    String
+  appliedAt DateTime @default(now())
+
+  stage      String    @default("applied")
+  outcome    String?
+  rejectedAt DateTime?
+
+  matchScore  Int?
+  matchReason String?
+  failReason  String?
+
+  runId String?
+  run   Run?    @relation(fields: [runId], references: [runId], onDelete: SetNull)
+
+  stageEvents StageEvent[]
+
+  normalizedTitle   String
+  normalizedCompany String
+
+  @@index([normalizedTitle, normalizedCompany])
+  @@index([appliedAt])
+  @@index([runId])
+}
+
+model StageEvent {
+  id            Int         @id @default(autoincrement())
+  applicationId Int
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStage     String?
+  toStage       String
+  note          String?
+  occurredAt    DateTime    @default(now())
+
+  @@index([applicationId, occurredAt])
+}

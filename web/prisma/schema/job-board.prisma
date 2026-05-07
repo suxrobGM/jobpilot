@@ -1,0 +1,11 @@
+model JobBoard {
+  id        Int     @id @default(autoincrement())
+  name      String
+  domain    String  @unique
+  searchUrl String?
+  type      String
+  enabled   Boolean @default(true)
+  email     String?
+  password  String?
+  sortOrder Int     @default(0)
+}

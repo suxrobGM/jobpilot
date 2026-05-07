@@ -19,10 +19,12 @@
     "@emotion/cache": "^11.13.5",
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
+    "@libsql/client": "^0.17.3",
     "@mui/icons-material": "^9.0.0",
     "@mui/material": "^9.0.0",
     "@mui/material-nextjs": "^9.0.0",
     "@mui/x-data-grid": "^9.0.0",
+    "@prisma/adapter-libsql": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@tanstack/react-form": "^1.29.0",
     "@tanstack/react-query": "^5.100.0",
@@ -39,6 +41,7 @@
     "@types/react-dom": "^19.2.0",
     "prettier": "^3.8.3",
     "prisma": "^7.8.0",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   }
 }
