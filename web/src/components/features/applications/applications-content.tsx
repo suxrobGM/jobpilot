@@ -1,9 +1,7 @@
 "use client";
 
-import { Download } from "@mui/icons-material";
-import { Button, Container, LinearProgress, Stack } from "@mui/material";
+import { LinearProgress } from "@mui/material";
 import { useMemo, useState, type ReactElement } from "react";
-import { PageHeader } from "@/components/ui/layout/page-header";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -21,7 +19,7 @@ function buildQuery(filters: ApplicationListFilters): string {
   return qs ? `?${qs}` : "";
 }
 
-export function ApplicationsPageClient(): ReactElement {
+export function ApplicationsContent(): ReactElement {
   const [filters, setFilters] = useState<ApplicationListFilters>({});
 
   const apps = useApiQuery<ApplicationDto[]>(
@@ -36,30 +34,13 @@ export function ApplicationsPageClient(): ReactElement {
   }, [apps.data]);
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Stack spacing={2}>
-        <PageHeader
-          eyebrow="History"
-          title="Applications"
-          description="Every job you've applied to. Filter by stage, board, source, or text."
-          actions={
-            <Button
-              startIcon={<Download fontSize="md" />}
-              variant="outlined"
-              component="a"
-              href="/api/applied/export.csv"
-            >
-              Export CSV
-            </Button>
-          }
-        />
-        <ApplicationFilters filters={filters} boards={boards} onChange={setFilters} />
-        {apps.isLoading ? (
-          <LinearProgress />
-        ) : (
-          <ApplicationsTable rows={apps.data ?? []} loading={apps.isFetching} />
-        )}
-      </Stack>
-    </Container>
+    <>
+      <ApplicationFilters filters={filters} boards={boards} onChange={setFilters} />
+      {apps.isLoading ? (
+        <LinearProgress />
+      ) : (
+        <ApplicationsTable rows={apps.data ?? []} loading={apps.isFetching} />
+      )}
+    </>
   );
 }

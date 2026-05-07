@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Container, Stack, Step, StepLabel, Stepper } from "@mui/material";
+import { Button, Stack, Step, StepLabel, Stepper } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { useState, type ReactElement } from "react";
@@ -12,7 +12,6 @@ import {
   PROFILE_DEFAULT_VALUES,
 } from "@/components/features/profile/profile-form";
 import { WorkAuthTab } from "@/components/features/profile/work-auth-tab";
-import { PageHeader } from "@/components/ui/layout/page-header";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import type { AnyReactForm } from "@/components/ui/form/types";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -56,21 +55,15 @@ export function OnboardingWizard(): ReactElement {
   const isLastStep = step === STEPS.length - 1;
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Stack spacing={3}>
-        <PageHeader
-          eyebrow="First run"
-          title="Welcome to JobPilot"
-          description="Fill in your profile so skills can autofill applications. You can edit anything later from the profile page."
-        />
-        <Stepper activeStep={step} alternativeLabel>
-          {STEPS.map((s) => (
-            <Step key={s.key}>
-              <StepLabel>{s.label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-        <SectionCard>
+    <Stack spacing={3}>
+      <Stepper activeStep={step} alternativeLabel>
+        {STEPS.map((s) => (
+          <Step key={s.key}>
+            <StepLabel>{s.label}</StepLabel>
+          </Step>
+        ))}
+      </Stepper>
+      <SectionCard>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -99,9 +92,8 @@ export function OnboardingWizard(): ReactElement {
                 </Button>
               </Stack>
             </Stack>
-          </form>
-        </SectionCard>
-      </Stack>
-    </Container>
+        </form>
+      </SectionCard>
+    </Stack>
   );
 }
