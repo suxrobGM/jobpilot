@@ -35,7 +35,7 @@ export function FormFileUploadField(props: FormFileUploadFieldProps): ReactEleme
               })}
               onClick={() => inputRef.current?.click()}
             >
-              <CloudUpload width={28} height={28} />
+              <CloudUpload fontSize="xxl" />
               <Typography variant="body2" sx={{ mt: 1 }}>
                 {file ? file.name : "Click to choose a file"}
               </Typography>

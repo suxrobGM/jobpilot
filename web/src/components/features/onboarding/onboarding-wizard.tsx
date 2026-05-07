@@ -17,6 +17,7 @@ import { SectionCard } from "@/components/ui/layout/section-card";
 import type { AnyReactForm } from "@/components/ui/form/types";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api-client";
+import { queryKeys } from "@/lib/api/query-keys";
 import {
   type ProfileWithAutopilotInput,
   profileWithAutopilotSchema,
@@ -38,7 +39,7 @@ export function OnboardingWizard(): ReactElement {
     (vars) => apiClient.put("/api/profile", vars),
     {
       successMessage: "Profile created",
-      invalidate: [["profile"]],
+      invalidate: [queryKeys.profile.all],
       onSuccess: () => router.push("/profile"),
     },
   );

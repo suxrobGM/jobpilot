@@ -55,4 +55,16 @@ declare module "@mui/material/Typography" {
   }
 }
 
+declare module "@mui/material/SvgIcon" {
+  interface SvgIconPropsSizeOverrides {
+    xs: true;
+    sm: true;
+    md: true;
+    lg: true;
+    xl: true;
+    xxl: true;
+    "2xxl": true;
+  }
+}
+
 export {};

@@ -3,6 +3,7 @@ import { buttonOverrides } from "./button";
 import { cardActionsOverrides, cardContentOverrides, cardHeaderOverrides, cardOverrides } from "./card";
 import { chipOverrides } from "./chip";
 import { backdropOverrides, dialogActionsOverrides, dialogContentOverrides, dialogOverrides, dialogTitleOverrides } from "./dialog";
+import { svgIconOverrides } from "./icon";
 import { formHelperTextOverrides, inputLabelOverrides, outlinedInputOverrides, selectOverrides, textFieldOverrides } from "./input";
 import { linkOverrides } from "./link";
 import { menuItemOverrides, menuOverrides } from "./menu";
@@ -31,6 +32,7 @@ export const componentOverrides: Components<Theme> = {
   MuiOutlinedInput: outlinedInputOverrides,
   MuiPaper: paperOverrides,
   MuiSelect: selectOverrides,
+  MuiSvgIcon: svgIconOverrides,
   MuiTab: tabOverrides,
   MuiTable: tableOverrides,
   MuiTableBody: tableBodyOverrides,

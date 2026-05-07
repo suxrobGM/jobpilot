@@ -8,30 +8,25 @@ import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
+import { queryKeys } from "@/lib/api/query-keys";
 import type { CredentialInput } from "@/lib/schemas/credential";
+import type { CredentialDto } from "@/types/api";
 import { CredentialFormDialog } from "./credential-form-dialog";
-
-interface Credential {
-  id: number;
-  scope: string;
-  email: string;
-  password: string;
-}
 
 export function CredentialsTab(): ReactElement {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<Credential | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CredentialDto | null>(null);
 
-  const credentials = useApiQuery<Credential[]>(
-    ["credentials"],
-    () => apiClient.get<Credential[]>("/api/credentials"),
+  const credentials = useApiQuery<CredentialDto[]>(
+    queryKeys.credentials.list(),
+    () => apiClient.get<CredentialDto[]>("/api/credentials"),
   );
 
-  const create = useApiMutation<Credential, CredentialInput>(
-    (vars) => apiClient.post<Credential>("/api/credentials", vars),
+  const create = useApiMutation<CredentialDto, CredentialInput>(
+    (vars) => apiClient.post<CredentialDto>("/api/credentials", vars),
     {
       successMessage: "Credential added",
-      invalidate: [["credentials"]],
+      invalidate: [queryKeys.credentials.all],
       onSuccess: () => setDialogOpen(false),
     },
   );
@@ -40,7 +35,7 @@ export function CredentialsTab(): ReactElement {
     (id) => apiClient.del<{ deleted: number }>(`/api/credentials/${id}`),
     {
       successMessage: "Credential removed",
-      invalidate: [["credentials"]],
+      invalidate: [queryKeys.credentials.all],
       onSuccess: () => setPendingDelete(null),
     },
   );
@@ -85,7 +80,7 @@ export function CredentialsTab(): ReactElement {
                 <Typography variant="captionMuted">{c.email}</Typography>
               </Box>
               <IconButton onClick={() => setPendingDelete(c)} aria-label="Delete credential">
-                <Delete sx={{ fontSize: 18 }} />
+                <Delete fontSize="md" />
               </IconButton>
             </Stack>
           ))}

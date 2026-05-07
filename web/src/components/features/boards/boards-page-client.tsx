@@ -9,44 +9,34 @@ import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
+import { queryKeys } from "@/lib/api/query-keys";
 import type { JobBoardInput, JobBoardPatch } from "@/lib/schemas/job-board";
+import type { JobBoardDto } from "@/types/api";
 import { BoardFormDialog } from "./board-form-dialog";
 
-interface JobBoard {
-  id: number;
-  name: string;
-  domain: string;
-  searchUrl: string | null;
-  type: "search" | "ats";
-  enabled: boolean;
-  email: string | null;
-  password: string | null;
-  sortOrder: number;
-}
-
 export function BoardsPageClient(): ReactElement {
-  const [editing, setEditing] = useState<JobBoard | null>(null);
+  const [editing, setEditing] = useState<JobBoardDto | null>(null);
   const [creating, setCreating] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<JobBoard | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<JobBoardDto | null>(null);
 
-  const boards = useApiQuery<JobBoard[]>(["job-boards"], () =>
-    apiClient.get<JobBoard[]>("/api/job-boards"),
+  const boards = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
+    apiClient.get<JobBoardDto[]>("/api/job-boards"),
   );
 
-  const create = useApiMutation<JobBoard, JobBoardInput>(
-    (vars) => apiClient.post<JobBoard>("/api/job-boards", vars),
+  const create = useApiMutation<JobBoardDto, JobBoardInput>(
+    (vars) => apiClient.post<JobBoardDto>("/api/job-boards", vars),
     {
       successMessage: "Board added",
-      invalidate: [["job-boards"]],
+      invalidate: [queryKeys.jobBoards.all],
       onSuccess: () => setCreating(false),
     },
   );
 
-  const update = useApiMutation<JobBoard, { id: number; patch: JobBoardPatch }>(
-    ({ id, patch }) => apiClient.patch<JobBoard>(`/api/job-boards/${id}`, patch),
+  const update = useApiMutation<JobBoardDto, { id: number; patch: JobBoardPatch }>(
+    ({ id, patch }) => apiClient.patch<JobBoardDto>(`/api/job-boards/${id}`, patch),
     {
       successMessage: "Board updated",
-      invalidate: [["job-boards"]],
+      invalidate: [queryKeys.jobBoards.all],
       onSuccess: () => setEditing(null),
     },
   );
@@ -55,7 +45,7 @@ export function BoardsPageClient(): ReactElement {
     (id) => apiClient.del<{ deleted: number }>(`/api/job-boards/${id}`),
     {
       successMessage: "Board removed",
-      invalidate: [["job-boards"]],
+      invalidate: [queryKeys.jobBoards.all],
       onSuccess: () => setPendingDelete(null),
     },
   );
@@ -122,10 +112,10 @@ export function BoardsPageClient(): ReactElement {
                     }
                   />
                   <IconButton onClick={() => setEditing(b)} aria-label="Edit board">
-                    <Edit sx={{ fontSize: 18 }} />
+                    <Edit fontSize="md" />
                   </IconButton>
                   <IconButton onClick={() => setPendingDelete(b)} aria-label="Delete board">
-                    <Delete sx={{ fontSize: 18 }} />
+                    <Delete fontSize="md" />
                   </IconButton>
                 </Stack>
               ))}

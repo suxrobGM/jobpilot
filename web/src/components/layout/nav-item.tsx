@@ -38,7 +38,7 @@ export function NavItem(props: NavItemProps): ReactElement {
       })}
     >
       <ListItemIcon sx={{ minWidth: 32 }}>
-        <Icon sx={{ fontSize: 18 }} />
+        <Icon fontSize="md" />
       </ListItemIcon>
       <ListItemText
         primary={item.label}

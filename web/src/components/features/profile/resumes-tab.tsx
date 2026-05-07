@@ -15,45 +15,34 @@ import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
-
-interface Resume {
-  id: number;
-  label: string;
-  filename: string;
-  mimeType: string;
-  sizeBytes: number;
-  createdAt: string;
-}
-
-interface ProfileResponse {
-  profile: { id: number; defaultResumeId: number | null } | null;
-}
+import { queryKeys } from "@/lib/api/query-keys";
+import type { ProfileResponse, ResumeDto } from "@/types/api";
 
 export function ResumesTab(): ReactElement {
-  const [pendingDelete, setPendingDelete] = useState<Resume | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ResumeDto | null>(null);
   const [label, setLabel] = useState("default");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const resumes = useApiQuery<Resume[]>(
-    ["resumes"],
-    () => apiClient.get<Resume[]>("/api/resumes"),
+  const resumes = useApiQuery<ResumeDto[]>(
+    queryKeys.resumes.list(),
+    () => apiClient.get<ResumeDto[]>("/api/resumes"),
   );
 
   const profile = useApiQuery<ProfileResponse>(
-    ["profile"],
+    queryKeys.profile.detail(),
     () => apiClient.get<ProfileResponse>("/api/profile"),
   );
 
-  const upload = useApiMutation<Resume, { label: string; file: File }>(
+  const upload = useApiMutation<ResumeDto, { label: string; file: File }>(
     (vars) => {
       const fd = new FormData();
       fd.append("label", vars.label);
       fd.append("file", vars.file);
-      return apiClient.upload<Resume>("/api/resumes", fd);
+      return apiClient.upload<ResumeDto>("/api/resumes", fd);
     },
     {
       successMessage: "Resume uploaded",
-      invalidate: [["resumes"], ["profile"]],
+      invalidate: [queryKeys.resumes.all, queryKeys.profile.all],
       onSuccess: () => {
         if (fileInputRef.current) fileInputRef.current.value = "";
       },
@@ -64,16 +53,19 @@ export function ResumesTab(): ReactElement {
     (id) => apiClient.del<{ deleted: number }>(`/api/resumes/${id}`),
     {
       successMessage: "Resume removed",
-      invalidate: [["resumes"], ["profile"]],
+      invalidate: [queryKeys.resumes.all, queryKeys.profile.all],
       onSuccess: () => setPendingDelete(null),
     },
   );
 
-  const setDefault = useApiMutation<{ id: number }, number>(
-    (id) => apiClient.put<{ id: number }>("/api/profile", { defaultResumeId: id, _patch: true }),
+  const setDefault = useApiMutation<{ defaultResumeId: number | null }, number>(
+    (id) =>
+      apiClient.post<{ defaultResumeId: number | null }>("/api/profile/default-resume", {
+        resumeId: id,
+      }),
     {
       successMessage: "Default resume updated",
-      invalidate: [["profile"]],
+      invalidate: [queryKeys.profile.all],
     },
   );
 
@@ -147,7 +139,7 @@ export function ResumesTab(): ReactElement {
                   border: `1px solid ${t.palette.line.divider}`,
                 })}
               >
-                <PictureAsPdf sx={{ fontSize: 20, color: "text.secondary" }} />
+                <PictureAsPdf fontSize="lg" sx={{ color: "text.secondary" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {r.label}
@@ -161,7 +153,7 @@ export function ResumesTab(): ReactElement {
                   aria-label={isDefault ? "Default resume" : "Set as default"}
                   disabled={setDefault.isPending}
                 >
-                  {isDefault ? <Star sx={{ fontSize: 18 }} /> : <StarBorder sx={{ fontSize: 18 }} />}
+                  {isDefault ? <Star fontSize="md" /> : <StarBorder fontSize="md" />}
                 </IconButton>
                 <IconButton
                   component="a"
@@ -170,13 +162,13 @@ export function ResumesTab(): ReactElement {
                   rel="noopener noreferrer"
                   aria-label="Open PDF"
                 >
-                  <PictureAsPdf sx={{ fontSize: 18 }} />
+                  <PictureAsPdf fontSize="md" />
                 </IconButton>
                 <IconButton
                   onClick={() => setPendingDelete(r)}
                   aria-label="Delete resume"
                 >
-                  <Delete sx={{ fontSize: 18 }} />
+                  <Delete fontSize="md" />
                 </IconButton>
               </Stack>
             );

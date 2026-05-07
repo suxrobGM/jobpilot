@@ -10,7 +10,7 @@ interface UseApiMutationOptions<TData, TVariables>
   extends Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn"> {
   successMessage?: string | ((data: TData, vars: TVariables) => string);
   errorMessage?: string | ((error: Error, vars: TVariables) => string);
-  invalidate?: readonly unknown[][];
+  invalidate?: ReadonlyArray<ReadonlyArray<unknown>>;
 }
 
 export function useApiMutation<TData, TVariables>(
@@ -31,7 +31,8 @@ export function useApiMutation<TData, TVariables>(
     },
     onSuccess: (data, vars, onMutateResult, ctx) => {
       if (invalidate) {
-        for (const key of invalidate) queryClient.invalidateQueries({ queryKey: key });
+        for (const key of invalidate)
+          queryClient.invalidateQueries({ queryKey: [...key] });
       }
       if (successMessage != null) {
         const msg = typeof successMessage === "function" ? successMessage(data, vars) : successMessage;
