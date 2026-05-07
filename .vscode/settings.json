@@ -1,18 +1,10 @@
 {
-  "files.autoSave": "afterDelay",
-  "files.autoSaveDelay": 1000,
-  "files.eol": "\n",
-  "files.trimTrailingWhitespace": true,
-  "files.insertFinalNewline": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.configPath": "./web/prettier.config.js",
+  "editor.formatOnSave": true,
   "[markdown]": {
     "editor.formatOnSave": true,
     "editor.wordWrap": "off",
     "files.trimTrailingWhitespace": false
-  },
-  "[shellscript]": {
-    "editor.formatOnSave": true
-  },
-  "[json]": {
-    "editor.formatOnSave": true
   }
 }
