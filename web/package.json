@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start -H 127.0.0.1 -p 8000",
     "lint": "next lint",
+    "typegen": "next typegen",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate --schema ./prisma/schema",
     "db:migrate": "prisma migrate dev --schema ./prisma/schema",
@@ -39,6 +40,9 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^10.3.0",
+    "eslint-config-next": "^16.2.5",
     "prettier": "^3.8.3",
     "prisma": "^7.8.0",
     "typescript": "^6.0.3"

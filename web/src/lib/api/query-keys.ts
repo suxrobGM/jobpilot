@@ -31,4 +31,12 @@ export const queryKeys = {
     all: ["dashboard"] as const,
     stats: () => [...queryKeys.dashboard.all, "stats"] as const,
   },
+
+  runs: {
+    all: ["runs"] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.runs.all, "list", filters] as const,
+    detail: (runId: string) => [...queryKeys.runs.all, "detail", runId] as const,
+    stats: () => [...queryKeys.runs.all, "stats"] as const,
+  },
 } as const;

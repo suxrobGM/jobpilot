@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  reactStrictMode: true,
+  output: "standalone",
+  cacheComponents: true,
+  reactCompiler: true,
+  typedRoutes: true,
   experimental: {
     optimizePackageImports: ["@mui/material", "@mui/icons-material"],
   },
