@@ -1,8 +1,6 @@
-using System.Net.WebSockets;
 using JobPilot.Terminal;
 using JobPilot.Terminal.Models;
 using JobPilot.Terminal.Pty;
-using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,13 +25,13 @@ app.Lifetime.ApplicationStopping.Register(() =>
 app.MapGet("/healthz", (SessionManager session) =>
 {
   var sessionState = session.State == SessionState.Running ? "running" : "stopped";
-  return TypedResults.Ok(new SessionStatus("ok", sessionState));
+  return TypedResults.Ok(new SessionStatus("ok", sessionState, session.ActiveProvider, SessionManager.Providers));
 });
 
 app.MapPost("/sessions/start", (StartSessionRequest request, SessionManager session) =>
 {
-  session.Start(request.WorkingDir, request.Cols, request.Rows);
-  return TypedResults.Ok(new SessionStatus("ok", "running"));
+  session.Start(request.Provider, request.WorkingDir, request.Cols, request.Rows);
+  return TypedResults.Ok(new SessionStatus("ok", "running", session.ActiveProvider, SessionManager.Providers));
 });
 
 app.MapPost("/sessions/inject", (InjectRequest request, SessionManager session) =>
@@ -45,7 +43,7 @@ app.MapPost("/sessions/inject", (InjectRequest request, SessionManager session) 
 app.MapDelete("/sessions/current", (SessionManager session) =>
 {
   session.Stop();
-  return TypedResults.Ok(new SessionStatus("ok", "stopped"));
+  return TypedResults.Ok(new SessionStatus("ok", "stopped", session.ActiveProvider, SessionManager.Providers));
 });
 
 app.Map("/ws", async (HttpContext ctx, TerminalHub hub) =>

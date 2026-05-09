@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "playwright-jobpilot": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--snapshot-mode",
+        "none",
+        "--user-data-dir",
+        ".playwright-mcp"
+      ]
+    }
+  }
+}

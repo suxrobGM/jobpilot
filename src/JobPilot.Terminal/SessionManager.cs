@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
+using JobPilot.Terminal.Models;
 using JobPilot.Terminal.Pty;
 
 namespace JobPilot.Terminal;
@@ -18,7 +19,7 @@ public enum SessionState
 }
 
 /// <summary>
-/// Coordinates the lifetime of the Claude Code PTY session and broadcasts PTY output to connected
+/// Coordinates the lifetime of the active provider PTY session and broadcasts PTY output to connected
 /// WebSocket clients.
 /// </summary>
 public sealed class SessionManager : IDisposable
@@ -29,6 +30,8 @@ public sealed class SessionManager : IDisposable
     private readonly ConcurrentDictionary<WebSocket, byte> clients = new();
     private readonly Lock stateLock = new();
     private SessionState state = SessionState.Stopped;
+    private string activeProvider = TerminalProviders.Claude;
+    private bool suppressNextExitMessage;
 
     /// <summary>
     /// Initializes a new <see cref="SessionManager"/> and subscribes to PTY output and exit events.
@@ -60,29 +63,67 @@ public sealed class SessionManager : IDisposable
     }
 
     /// <summary>
-    /// Starts the Claude Code PTY session if it is not already running.
+    /// Gets the active or last requested terminal provider.
     /// </summary>
+    public string ActiveProvider
+    {
+        get
+        {
+            lock (stateLock)
+            {
+                return activeProvider;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets every supported terminal provider.
+    /// </summary>
+    public static TerminalProviderInfo[] Providers => TerminalSessionPaths.Providers();
+
+    /// <summary>
+    /// Starts the provider PTY session if it is not already running.
+    /// </summary>
+    /// <param name="provider">Provider id to launch.</param>
     /// <param name="requestedWorkingDir">Optional working directory for the spawned process.</param>
     /// <param name="cols">Initial terminal column count.</param>
     /// <param name="rows">Initial terminal row count.</param>
-    public void Start(string? requestedWorkingDir, int cols, int rows)
+    public void Start(string? provider, string? requestedWorkingDir, int cols, int rows)
     {
         lock (stateLock)
         {
-            if (state == SessionState.Running)
+            var normalizedProvider = TerminalProviders.Normalize(provider);
+            if (state == SessionState.Running && activeProvider == normalizedProvider)
             {
-                logger.LogInformation("Session already running; Start is a no-op.");
+                logger.LogInformation("{Provider} session already running; Start is a no-op.", normalizedProvider);
                 return;
             }
 
+            if (state == SessionState.Running)
+            {
+                logger.LogInformation(
+                    "Switching terminal provider from {PreviousProvider} to {NextProvider}.", activeProvider,
+                    normalizedProvider);
+                suppressNextExitMessage = true;
+                pty.Stop();
+                state = SessionState.Stopped;
+            }
+
             var workingDir = paths.ResolveWorkingDir(requestedWorkingDir);
+            var spec = paths.GetLaunchSpec(normalizedProvider, workingDir);
+
             logger.LogInformation(
-                "Starting Claude Code: cwd={Cwd} pluginDir={PluginDir} cols={Cols} rows={Rows}",
+                "Starting {Provider}: cwd={Cwd} command={Command} args={Args} sharedSkillsDir={SharedSkillsDir} cols={Cols} rows={Rows}",
+                spec.Provider.DisplayName,
                 workingDir,
-                paths.PluginDir,
+                spec.Command,
+                string.Join(" ", spec.Args),
+                paths.SharedSkillsDir,
                 cols,
                 rows);
-            pty.Start("claude", ["--plugin-dir", paths.PluginDir], workingDir, cols, rows);
+
+            activeProvider = normalizedProvider;
+            pty.Start(spec.Command, spec.Args, workingDir, cols, rows);
             state = SessionState.Running;
         }
     }
@@ -127,7 +168,7 @@ public sealed class SessionManager : IDisposable
         lock (stateLock)
         {
             if (state == SessionState.Stopped) return;
-            logger.LogInformation("Stopping Claude Code session.");
+            logger.LogInformation("Stopping {Provider} session.", activeProvider);
             pty.Stop();
             state = SessionState.Stopped;
         }
@@ -158,12 +199,23 @@ public sealed class SessionManager : IDisposable
 
     private void OnPtyExit(int code)
     {
+        string provider;
+        bool suppressMessage;
         lock (stateLock)
         {
-            state = SessionState.Stopped;
+            provider = activeProvider;
+            suppressMessage = suppressNextExitMessage;
+            suppressNextExitMessage = false;
+            if (!suppressMessage)
+            {
+                state = SessionState.Stopped;
+            }
         }
 
-        var msg = $"\r\n\e[31m[JobPilot.Terminal] Claude Code exited with code {code}. Use Restart to reopen.\e[0m\r\n";
+        if (suppressMessage) return;
+
+        var displayName = provider == TerminalProviders.Codex ? "Codex" : "Claude Code";
+        var msg = $"\r\n\e[31m[JobPilot.Terminal] {displayName} exited with code {code}. Use Restart to reopen.\e[0m\r\n";
         Broadcast(Encoding.UTF8.GetBytes(msg));
     }
 

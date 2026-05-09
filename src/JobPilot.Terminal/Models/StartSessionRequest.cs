@@ -6,4 +6,5 @@ namespace JobPilot.Terminal.Models;
 /// <param name="Cols">Initial terminal column count.</param>
 /// <param name="Rows">Initial terminal row count.</param>
 /// <param name="WorkingDir">Optional working directory for the terminal process.</param>
-public sealed record StartSessionRequest(int Cols, int Rows, string? WorkingDir = null);
+/// <param name="Provider">Optional terminal provider id. Defaults to Claude.</param>
+public sealed record StartSessionRequest(int Cols, int Rows, string? WorkingDir = null, string? Provider = null);

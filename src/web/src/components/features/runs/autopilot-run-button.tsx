@@ -6,7 +6,7 @@ import { Box, Button, Popover, Stack, TextField, Typography } from "@mui/materia
 import { useTerminal } from "@/providers/terminal-provider";
 
 export function AutopilotRunButton(): ReactElement {
-  const { inject, setOpen: setTerminalOpen } = useTerminal();
+  const { injectSkill, provider, setOpen: setTerminalOpen } = useTerminal();
   const anchorRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -17,8 +17,10 @@ export function AutopilotRunButton(): ReactElement {
     if (!trimmed) return;
     setOpen(false);
     setTerminalOpen(true);
-    await inject(`/jobpilot:autopilot ${trimmed}`);
+    await injectSkill("autopilot", trimmed);
   };
+
+  const command = provider === "codex" ? "$jobpilot-autopilot" : "/jobpilot:autopilot";
 
   return (
     <>
@@ -40,7 +42,7 @@ export function AutopilotRunButton(): ReactElement {
         <Box component="form" onSubmit={handleSubmit} sx={{ p: 2, width: 360 }}>
           <Stack spacing={1.5}>
             <Typography variant="body2Muted">
-              Inject <code>/jobpilot:autopilot &lt;query&gt;</code> into the terminal.
+              Inject <code>{command} &lt;query&gt;</code> into the terminal.
             </Typography>
             <TextField
               autoFocus

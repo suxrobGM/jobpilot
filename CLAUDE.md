@@ -1,41 +1,46 @@
-# JobPilot - Claude Code Plugin
+# JobPilot - Multi-Provider Job Application Agent
 
 ## What This Is
 
-JobPilot 2.0 is a Claude Code plugin for AI-driven job applications, paired
-with a local Next.js + SQLite web app at `http://localhost:8000` that owns all
-persistent state. The reusable Claude Code plugin lives at
-`src/jobpilot-claude-plugin/`; the web app is real TypeScript code under
-`src/web/`. A companion .NET process, **JobPilot.Terminal** at
-`src/JobPilot.Terminal/` (port 8001), hosts the Claude Code PTY so the web UI
-can embed an interactive terminal and inject slash commands.
+JobPilot 2.0 is a local AI job-application app with Claude Code and Codex
+provider support, paired with a local Next.js + SQLite web app at
+`http://localhost:8000` that owns all persistent state. Reusable workflow
+instructions live in `src/jobpilot-skills/`; provider plugins live in
+`src/jobpilot-claude-plugin/` and `src/jobpilot-codex-plugin/`. A companion
+.NET process, **JobPilot.Terminal** at `src/JobPilot.Terminal/` (port 8001),
+hosts one active provider PTY so the web UI can embed an interactive terminal
+and inject provider-specific commands.
 
 ## Architecture
 
+- **Shared JobPilot skills** in `src/jobpilot-skills/` own provider-neutral
+  workflows (`skills/*.md`) and shared instructions (`shared/*.md`).
 - **Claude Code plugin** in `src/jobpilot-claude-plugin/` owns
-  `.claude-plugin/plugin.json`, `.mcp.json`, and `skills/<name>/SKILL.md`.
-  Its namespace is `jobpilot`, so skills run as `/jobpilot:<skill>`.
-- **Shared instructions** in `src/jobpilot-claude-plugin/skills/_shared/`
-  (setup, auth, form-filling, browser-tips) are referenced by skills to avoid
-  duplication.
+  `.claude-plugin/plugin.json`, `.mcp.json`, and thin `skills/<name>/SKILL.md`
+  wrappers. Its namespace is `jobpilot`, so skills run as `/jobpilot:<skill>`.
+- **Codex plugin** in `src/jobpilot-codex-plugin/` owns
+  `.codex-plugin/plugin.json`, `.mcp.json`, and thin
+  `skills/jobpilot-<name>/SKILL.md` wrappers. Skills run as
+  `$jobpilot-<skill>`.
 - **Web app** in `src/web/` is the data + UI layer: Bun + Next.js 16 + MUI 9
   + Prisma 7 + TanStack Query/Form + Zod v4. SQLite database at
   `src/web/prisma/dev.db`; uploaded resumes at `src/web/storage/resumes/`.
 - **JobPilot.Terminal** in `src/JobPilot.Terminal/` is a .NET 10 ASP.NET Core
-  minimal API. It owns the `claude` PTY, starts Claude Code with
-  `--plugin-dir src/jobpilot-claude-plugin`, and exposes `/ws`,
-  `/sessions/start`, `/sessions/inject`, `/sessions/current`, and `/healthz`.
+  minimal API. It owns one active provider PTY, starts Claude with
+  `--plugin-dir src/jobpilot-claude-plugin` or Codex with
+  `codex --no-alt-screen -C <repo>`, and exposes `/ws`, `/sessions/start`,
+  `/sessions/inject`, `/sessions/current`, and `/healthz`.
 - **Skills talk to the web app over HTTP.** They do not own persistence.
   Every skill calls `GET /api/health` first; if the app is down it stops with
   a clear message.
-- **Humanizer** is vendored at
-  `src/jobpilot-claude-plugin/skills/humanizer/`, invoked by `cover-letter`
-  and `upwork-proposal`.
+- **Humanizer** lives in `src/jobpilot-skills/skills/humanizer.md`, invoked by
+  `cover-letter` and `upwork-proposal` through provider-specific wrappers.
 
 ## Key Patterns
 
-- Skills reference shared files with: `Read and follow the instructions in ${CLAUDE_PLUGIN_ROOT}/skills/_shared/<file>.md`.
-- `_shared/setup.md` is the single source of truth for loading profile,
+- Provider wrappers reference shared files by setting `JOBPILOT_SKILLS_ROOT`
+  and then reading `${JOBPILOT_SKILLS_ROOT}/skills/<skill>.md`.
+- `src/jobpilot-skills/shared/setup.md` is the single source of truth for loading profile,
   resume, and credentials.
 - Skills set `JOBPILOT_API=http://localhost:8000` and issue
   `curl -fsS "$JOBPILOT_API/api/..."` calls. Mutations go through `POST`,
@@ -61,21 +66,27 @@ can embed an interactive terminal and inject slash commands.
   screenshots.
 - For token overflow from large pages, use targeted `browser_snapshot` with
   the `ref` parameter.
-- Cover letters chain through `/jobpilot:cover-letter`, which invokes the
-  humanizer.
-- Plugin manifest is in `src/jobpilot-claude-plugin/.claude-plugin/plugin.json`
-  (currently `2.0.0`).
-- MCP config is in `src/jobpilot-claude-plugin/.mcp.json`.
+- Cover letters chain through the provider's cover-letter command, which
+  invokes the provider's humanizer command.
+- Claude plugin manifest is in
+  `src/jobpilot-claude-plugin/.claude-plugin/plugin.json` (currently `2.0.0`).
+- Codex plugin manifest is in
+  `src/jobpilot-codex-plugin/.codex-plugin/plugin.json` (currently `2.0.0`).
+- MCP config is duplicated at each provider plugin's `.mcp.json`.
 - Project permissions are in root `.claude/settings.json`.
 
 ## File Inventory
 
 | Path                                                                        | Purpose                                                                 |
 | --------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `src/jobpilot-claude-plugin/.claude-plugin/plugin.json`                     | Plugin manifest (name, version, author).                                |
-| `src/jobpilot-claude-plugin/.mcp.json`                                      | Playwright MCP server config.                                           |
-| `src/jobpilot-claude-plugin/skills/_shared/*.md`                            | Shared instructions (setup, auth, form-filling, browser-tips).          |
-| `src/jobpilot-claude-plugin/skills/*/SKILL.md`                              | Individual skill prompts.                                               |
+| `src/jobpilot-skills/shared/*.md`                                           | Shared instructions (setup, auth, form-filling, browser-tips).          |
+| `src/jobpilot-skills/skills/*.md`                                           | Provider-neutral JobPilot workflow prompts.                             |
+| `src/jobpilot-claude-plugin/.claude-plugin/plugin.json`                     | Claude plugin manifest (name, version, author).                         |
+| `src/jobpilot-claude-plugin/.mcp.json`                                      | Claude Playwright MCP server config.                                    |
+| `src/jobpilot-claude-plugin/skills/*/SKILL.md`                              | Claude provider wrappers.                                               |
+| `src/jobpilot-codex-plugin/.codex-plugin/plugin.json`                       | Codex plugin manifest.                                                  |
+| `src/jobpilot-codex-plugin/.mcp.json`                                       | Codex Playwright MCP server config.                                     |
+| `src/jobpilot-codex-plugin/skills/*/SKILL.md`                               | Codex provider wrappers.                                                |
 | `.claude/settings.json`                                                     | Claude Code project permissions.                                        |
 | `CLAUDE.md`                                                                 | This file: architecture summary + frontend conventions.                 |
 | `AGENTS.md`                                                                 | Thin pointer back to `CLAUDE.md` for agent sessions.                    |
@@ -84,7 +95,7 @@ can embed an interactive terminal and inject slash commands.
 | `docs/self-hosting.md`                                                      | Operations + configuration runbook.                                     |
 | `JobPilot.slnx`                                                             | Solution file referencing the C# terminal project.                      |
 | `package.json`                                                              | Root scripts (`bun run dev` runs terminal + web together).              |
-| `src/JobPilot.Terminal/`                                                    | .NET terminal: Program.cs, SessionManager, TerminalHub, PTY code.       |
+| `src/JobPilot.Terminal/`                                                    | .NET terminal: provider launch, Program.cs, SessionManager, PTY code.   |
 | `src/web/prisma/schema/*.prisma`                                            | Multi-file Prisma schema (one file per domain).                         |
 | `src/web/prisma/dev.db`                                                     | SQLite database (gitignored).                                           |
 | `src/web/storage/resumes/*.pdf`                                             | Uploaded resumes (gitignored).                                          |
@@ -92,8 +103,8 @@ can embed an interactive terminal and inject slash commands.
 | `src/web/src/app/**/page.tsx`                                               | Pages (RSC).                                                            |
 | `src/web/src/components/features/<domain>/`                                 | Domain-specific React components.                                       |
 | `src/web/src/components/features/terminal/`                                 | xterm.js terminal panel + WS client.                                    |
-| `src/web/src/components/features/batch/batch-run-button.tsx`                | Injects `/jobpilot:apply-batch` into the embedded terminal.             |
-| `src/web/src/components/features/runs/autopilot-run-button.tsx`             | Injects `/jobpilot:autopilot <query>` into the embedded terminal.       |
+| `src/web/src/components/features/batch/batch-run-button.tsx`                | Injects provider-specific apply-batch commands into the terminal.       |
+| `src/web/src/components/features/runs/autopilot-run-button.tsx`             | Injects provider-specific autopilot commands into the terminal.         |
 | `src/web/src/providers/terminal-provider.tsx`                               | Open/toggle state + `inject(command)` helper used by the buttons above. |
 | `src/web/src/components/ui/{data,display,feedback,form,layout}/`            | UI primitives.                                                          |
 | `src/web/src/lib/db.ts`                                                     | Prisma client singleton (libSQL adapter).                               |

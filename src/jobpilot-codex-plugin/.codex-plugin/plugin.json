@@ -1,0 +1,27 @@
+{
+  "name": "jobpilot",
+  "version": "2.0.0",
+  "description": "Codex skills and Playwright MCP wiring for JobPilot job applications.",
+  "author": {
+    "name": "JobPilot"
+  },
+  "license": "MIT",
+  "keywords": ["jobpilot", "jobs", "applications", "codex", "skills"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "JobPilot",
+    "shortDescription": "Run JobPilot job-search and application workflows from Codex.",
+    "longDescription": "JobPilot provides Codex skills for searching job boards, preparing materials, scoring queued jobs, and applying through the local JobPilot web app.",
+    "developerName": "JobPilot",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "defaultPrompt": [
+      "$jobpilot-search senior typescript remote",
+      "$jobpilot-autopilot senior fullstack remote",
+      "$jobpilot-apply-batch"
+    ],
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}

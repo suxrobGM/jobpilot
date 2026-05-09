@@ -3,12 +3,14 @@
 JobPilot is local-first: SQLite on disk, Next.js bound to `127.0.0.1`, no
 auth, and no external services beyond the job boards your skills visit.
 
-The Claude behavior lives in
-[src/jobpilot-claude-plugin/](../src/jobpilot-claude-plugin/). The web UI can
-drive it through JobPilot.Terminal, and you can also run it directly:
+The reusable JobPilot workflows live in
+[src/jobpilot-skills/](../src/jobpilot-skills/). Claude and Codex provider
+plugins wrap those workflows. The web UI can drive either provider through
+JobPilot.Terminal, and you can also run them directly:
 
 ```bash
 claude --plugin-dir src/jobpilot-claude-plugin
+codex --no-alt-screen -C .
 ```
 
 ## Prerequisites
@@ -16,7 +18,9 @@ claude --plugin-dir src/jobpilot-claude-plugin
 - **Bun 1.3+** - runs the Next.js dev server, Prisma CLI, and seed scripts.
 - **.NET 10 SDK** - required for JobPilot.Terminal.
 - **Claude Code** on `PATH` (`claude --version`) - spawned by
-  JobPilot.Terminal as the PTY child.
+  JobPilot.Terminal when the Claude provider is selected.
+- **Codex CLI** on `PATH` (`codex --version`) - spawned by JobPilot.Terminal
+  when the Codex provider is selected.
 
 ## One-Time Setup
 
@@ -47,28 +51,38 @@ bun --cwd src/web run dev
 dotnet run --project src/JobPilot.Terminal
 ```
 
-JobPilot.Terminal starts Claude Code with
-`--plugin-dir src/jobpilot-claude-plugin`, so the embedded terminal sees the
-same `/jobpilot:<skill>` commands as a direct Claude Code session. Skills
-check `/api/health` and stop with a clear error if the web app is down.
+JobPilot.Terminal owns one active provider PTY. It starts Claude Code with
+`--plugin-dir src/jobpilot-claude-plugin`, or Codex with
+`codex --no-alt-screen -C <repo>`. The embedded terminal drawer lets you
+switch providers. Skills check `/api/health` and stop with a clear error if
+the web app is down.
 
 First visit to `http://localhost:8000/` redirects to `/onboarding`, a
 5-step wizard that creates the singleton Profile and AutopilotSettings rows.
 
-## Direct Claude Code Use
+## Direct Provider Use
 
 From the repo root, after the web app is running:
 
 ```bash
 claude --plugin-dir src/jobpilot-claude-plugin
+codex --no-alt-screen -C .
 ```
 
-Then run commands such as:
+Claude commands:
 
 ```text
 /jobpilot:search senior fullstack remote
 /jobpilot:autopilot senior fullstack remote
 /jobpilot:apply https://example.com/job
+```
+
+Codex commands:
+
+```text
+$jobpilot-search senior fullstack remote
+$jobpilot-autopilot senior fullstack remote
+$jobpilot-apply https://example.com/job
 ```
 
 ## Production Launch
@@ -80,10 +94,14 @@ dist/terminal/JobPilot.Terminal.exe
 bun --cwd src/web run start
 ```
 
-The Terminal project copies `src/jobpilot-claude-plugin` into its build and
-publish output as `jobpilot-claude-plugin/`. If you package the app manually,
-keep that folder next to `JobPilot.Terminal.exe`, or set `Claude:PluginDir`
-to an absolute plugin path.
+The Terminal project copies these folders into build and publish output:
+
+- `jobpilot-skills/`
+- `jobpilot-claude-plugin/`
+- `jobpilot-codex-plugin/`
+
+If you package the app manually, keep all three folders next to
+`JobPilot.Terminal.exe`.
 
 ## Profile, Boards, Credentials, Resumes
 
@@ -124,19 +142,24 @@ Two paths hold all local state:
 
 ## Permissions
 
-Root [.claude/settings.json](../.claude/settings.json) grants the embedded and
-direct Claude sessions permission to use `curl`, `jq`, `date`, the Playwright
-MCP namespace, and the JobPilot skills. The plugin itself owns the MCP config
-at [src/jobpilot-claude-plugin/.mcp.json](../src/jobpilot-claude-plugin/.mcp.json).
+Root [.claude/settings.json](../.claude/settings.json) grants Claude sessions
+permission to use `curl`, `jq`, `date`, the Playwright MCP namespace, and the
+JobPilot skills. Codex plugin discovery is described by
+[.agents/plugins/marketplace.json](../.agents/plugins/marketplace.json). Each
+provider plugin owns its own `.mcp.json`.
 
 ## File Map
 
 | Path                                                                        | Owner                                     |
 | --------------------------------------------------------------------------- | ----------------------------------------- |
+| `src/jobpilot-skills/shared/*.md`                                           | Shared setup/browser instructions.        |
+| `src/jobpilot-skills/skills/*.md`                                           | Provider-neutral JobPilot workflows.      |
 | `src/jobpilot-claude-plugin/.claude-plugin/plugin.json`                     | Claude Code plugin manifest.              |
-| `src/jobpilot-claude-plugin/.mcp.json`                                      | Playwright MCP server config.             |
-| `src/jobpilot-claude-plugin/skills/<name>/SKILL.md`                         | Skill prompts.                            |
-| `src/jobpilot-claude-plugin/skills/_shared/*.md`                            | Shared instructions referenced by skills. |
+| `src/jobpilot-claude-plugin/.mcp.json`                                      | Claude Playwright MCP server config.      |
+| `src/jobpilot-claude-plugin/skills/<name>/SKILL.md`                         | Claude provider wrappers.                 |
+| `src/jobpilot-codex-plugin/.codex-plugin/plugin.json`                       | Codex plugin manifest.                    |
+| `src/jobpilot-codex-plugin/.mcp.json`                                       | Codex Playwright MCP server config.       |
+| `src/jobpilot-codex-plugin/skills/<name>/SKILL.md`                          | Codex provider wrappers.                  |
 | `src/web/prisma/dev.db`                                                     | All persistent state.                     |
 | `src/web/storage/resumes/*.pdf`                                             | Uploaded resumes.                         |
 | `src/web/prisma/schema/*.prisma`                                            | Database schema (split per domain).       |
@@ -157,7 +180,12 @@ on Windows. JobPilot uses `@prisma/adapter-libsql`; re-run `bun install` if
 
 **Claude does not see the JobPilot skills** - start Claude with
 `claude --plugin-dir src/jobpilot-claude-plugin`, or make sure
-`jobpilot-claude-plugin/` is next to the published Terminal executable.
+`jobpilot-skills/` and `jobpilot-claude-plugin/` are next to the published
+Terminal executable.
+
+**Codex does not see the JobPilot skills** - run Codex from the repo root with
+`codex --no-alt-screen -C .` and install or enable the local JobPilot plugin
+from the marketplace entry in `.agents/plugins/marketplace.json`.
 
 **Profile redirect loop** - `/profile` keeps bouncing to `/onboarding` when
 the singleton Profile row is missing. Open `bun db:studio`, confirm the

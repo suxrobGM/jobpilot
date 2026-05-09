@@ -6,11 +6,11 @@ import { Button } from "@mui/material";
 import { useTerminal } from "@/providers/terminal-provider";
 
 export function BatchRunButton(): ReactElement {
-  const { inject, setOpen } = useTerminal();
+  const { injectSkill, setOpen } = useTerminal();
 
   const handleClick = async (): Promise<void> => {
     setOpen(true);
-    await inject("/jobpilot:apply-batch");
+    await injectSkill("apply-batch");
   };
 
   return (

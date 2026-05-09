@@ -1,4 +1,4 @@
-# Setup: Load Profile and Resume from the JobPilot API
+﻿# Setup: Load Profile and Resume from the JobPilot API
 
 JobPilot stores all configuration in a local SQLite database served by a Next.js
 app at `http://localhost:8000`. Skills must call this API instead of reading
@@ -21,7 +21,7 @@ If the request fails (connection refused / non-200), **stop and tell the user**:
 > The JobPilot web app is not running. Start it with `cd web && bun dev`, then
 > open http://localhost:8000 once before re-running this skill.
 
-Do not fall back to reading any local JSON files — they have been removed.
+Do not fall back to reading any local JSON files â€” they have been removed.
 
 ## 2. Load the profile
 
@@ -35,11 +35,11 @@ Inspect `data.profile`:
   tell them: "Open http://localhost:8000/onboarding to set up your profile,
   then re-run this skill."
 - Otherwise read fields directly from `data.profile` (firstName, lastName,
-  email, phone, address, work auth, EEO answers, preferredLocations, …) and
+  email, phone, address, work auth, EEO answers, preferredLocations, â€¦) and
   from `data.autopilot` (minMatchScore, maxApplicationsPerRun, confirmMode,
-  skipCompanies, skipTitleKeywords, salaryExpectation, defaultStartDate, …).
+  skipCompanies, skipTitleKeywords, salaryExpectation, defaultStartDate, â€¦).
 
-The response also includes `data.defaultResumeAbsolutePath` — an absolute
+The response also includes `data.defaultResumeAbsolutePath` â€” an absolute
 filesystem path to the user's default resume PDF, ready for `browser_file_upload`
 or for reading via the `Read` tool when extracting candidate details.
 
@@ -78,4 +78,5 @@ need credentials for a job board domain:
 2. If that board has its own `email`/`password` overrides on its `JobBoard` row
    (`/api/job-boards`), prefer those.
 3. Otherwise fall back to the credential with `scope === "default"`.
-4. If nothing matches, report it to the user — do not guess.
+4. If nothing matches, report it to the user â€” do not guess.
+

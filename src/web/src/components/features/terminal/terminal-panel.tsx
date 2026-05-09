@@ -5,17 +5,22 @@ import { useEffect, useRef, type ReactElement } from "react";
 import { Box, useTheme } from "@mui/material";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
-import { startSession, TERMINAL_WS_URL } from "@/lib/terminal";
+import { startSession, TERMINAL_WS_URL, type TerminalProviderId } from "@/lib/terminal";
 import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
 import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
+interface TerminalPanelProps {
+  provider: TerminalProviderId;
+}
+
 /**
  * Hosts the xterm.js instance that bridges browser input/output to JobPilot.Terminal.
  */
-export function TerminalPanel(): ReactElement {
+export function TerminalPanel(props: TerminalPanelProps): ReactElement {
+  const { provider } = props;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const theme = useTheme();
 
@@ -83,7 +88,7 @@ export function TerminalPanel(): ReactElement {
     const initialize = async () => {
       try {
         syncSize();
-        await startSession({ cols: terminal.cols, rows: terminal.rows });
+        await startSession({ cols: terminal.cols, rows: terminal.rows, provider });
       } catch (err) {
         terminal.writeln(
           `\x1b[31m[terminal] failed to start session: ${(err as Error).message}\x1b[0m`,
@@ -141,7 +146,7 @@ export function TerminalPanel(): ReactElement {
       socket?.close(1000, "panel unmounted");
       terminal.dispose();
     };
-  }, [theme]);
+  }, [provider, theme]);
 
   return (
     <Box

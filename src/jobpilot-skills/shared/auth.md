@@ -1,4 +1,4 @@
-# Authentication
+﻿# Authentication
 
 ## Proactive Login
 
@@ -63,3 +63,4 @@ If the site requires two-factor authentication:
 ## OAuth/SSO
 
 If the site offers "Sign in with Google/LinkedIn" and the user prefers it, ask before proceeding with OAuth flow.
+

@@ -1,6 +1,7 @@
 # Architecture
 
-JobPilot is three pieces glued together over HTTP and a single PTY.
+JobPilot is a web app, a provider terminal host, and provider plugins glued
+together over HTTP and a single active PTY.
 
 ## The Three Pieces
 
@@ -10,57 +11,64 @@ autopilot runs with per-job status, and the batch URL queue. Prisma schema is
 split per domain under `src/web/prisma/schema/`.
 
 **JobPilot.Terminal** ([src/JobPilot.Terminal/](../src/JobPilot.Terminal/)) is
-an ASP.NET Core minimal API on `127.0.0.1:8001`. It owns the `claude` PTY
-(winpty via Quick.PtyNet) and bridges it to the web UI's xterm.js panel over
-WebSocket. HTTP endpoints (`/sessions/start`, `/sessions/inject`,
-`/sessions/current`, `/healthz`) let UI buttons write slash commands directly
-into Claude Code's stdin.
+an ASP.NET Core minimal API on `127.0.0.1:8001`. It owns one active provider
+PTY (winpty via Quick.PtyNet) and bridges it to the web UI's xterm.js panel
+over WebSocket. HTTP endpoints (`/sessions/start`, `/sessions/inject`,
+`/sessions/current`, `/healthz`) let UI buttons write provider-specific
+commands directly into the active provider's stdin.
 
-**JobPilot Claude Code plugin**
-([src/jobpilot-claude-plugin/](../src/jobpilot-claude-plugin/)) contains the
-skills and Playwright MCP config. Terminal starts Claude Code with
-`--plugin-dir src/jobpilot-claude-plugin`, and developers can run the same
-plugin directly from the repo root:
+**Shared JobPilot skills** ([src/jobpilot-skills/](../src/jobpilot-skills/))
+contain the provider-neutral workflow instructions. Claude and Codex plugins
+are thin wrappers that define provider command syntax and read those shared
+files.
+
+**Provider plugins** live at
+[src/jobpilot-claude-plugin/](../src/jobpilot-claude-plugin/) and
+[src/jobpilot-codex-plugin/](../src/jobpilot-codex-plugin/). Terminal starts
+Claude Code with `--plugin-dir src/jobpilot-claude-plugin`, or Codex with
+`codex --no-alt-screen -C <repo>`. Developers can also run providers directly
+from the repo root:
 
 ```bash
 claude --plugin-dir src/jobpilot-claude-plugin
+codex --no-alt-screen -C .
 ```
 
 ## Topology
 
 ```text
 Browser (xterm.js)  <-- WS binary -->  JobPilot.Terminal :8001  <-- PTY -->  claude --plugin-dir src/jobpilot-claude-plugin
-                    -- POST /inject -> JobPilot.Terminal                   /jobpilot:<skill>
+                    -- POST /inject -> JobPilot.Terminal                   or codex --no-alt-screen -C <repo>
 Next.js :8000 API   <-- curl -------- JobPilot skills
                                       -> insert/update runs/jobs in SQLite
 ```
 
 One Terminal instance owns one PTY. The PTY survives browser tab close;
 reopening the terminal panel attaches a new WebSocket to the same live session.
-There is no replay buffer, so use the existing Claude Code scrollback for
+Switching providers stops the current PTY and starts the selected provider.
+There is no replay buffer, so use the active provider's terminal scrollback for
 history.
 
 ## Plugin Layout
 
 ```text
+src/jobpilot-skills/
+|-- shared/                # setup, auth, form-filling, browser-tips
+`-- skills/                # provider-neutral workflows
+
 src/jobpilot-claude-plugin/
-|-- .claude-plugin/
-|   `-- plugin.json        # name: jobpilot, namespace: /jobpilot:<skill>
-|-- .mcp.json              # Playwright MCP server config
-`-- skills/
-    |-- _shared/           # setup, auth, form-filling, browser-tips
-    |-- apply/SKILL.md
-    |-- apply-batch/SKILL.md
-    |-- autopilot/SKILL.md
-    |-- cover-letter/SKILL.md
-    |-- humanizer/
-    |-- interview/SKILL.md
-    |-- search/SKILL.md
-    `-- upwork-proposal/SKILL.md
+|-- .claude-plugin/plugin.json
+|-- .mcp.json
+`-- skills/*/SKILL.md      # /jobpilot:<skill> wrappers
+
+src/jobpilot-codex-plugin/
+|-- .codex-plugin/plugin.json
+|-- .mcp.json
+`-- skills/*/SKILL.md      # $jobpilot-<skill> wrappers
 ```
 
-Plugin skills are namespaced. The web app injects `/jobpilot:autopilot` and
-`/jobpilot:apply-batch`; direct Claude Code users run the same commands.
+Plugin skills are namespaced per provider. The web app formats injected
+commands as `/jobpilot:<skill>` for Claude and `$jobpilot-<skill>` for Codex.
 
 Root `.claude/settings.json` grants the project permissions needed by the
 skills. The plugin owns reusable behavior; the repository owns local trust and
@@ -72,11 +80,11 @@ permission policy.
 sequenceDiagram
     participant U as User
     participant T as JobPilot.Terminal
-    participant S as /jobpilot:apply
+    participant S as Provider apply skill
     participant API as Next.js API
     participant B as Playwright MCP
 
-    U->>T: POST /sessions/inject "/jobpilot:apply <url>"
+    U->>T: POST /sessions/inject provider command
     T->>S: write to PTY stdin
     S->>API: GET /api/health, /api/profile, /api/credentials
     S->>API: GET /api/applied/check
@@ -97,16 +105,15 @@ state from SQLite.
 
 ## Skills Layer
 
-`src/jobpilot-claude-plugin/skills/_shared/setup.md` is the single source of
-truth for loading config. Every skill hits `/api/health`, then
+`src/jobpilot-skills/shared/setup.md` is the single source of truth for
+loading config. Every skill hits `/api/health`, then
 `GET /api/profile`, then `GET /api/credentials`. Resume access goes through
 `data.defaultResumeAbsolutePath` from the profile endpoint, or
 `GET /api/resumes/[id]/file` for a stream.
 
 `auth.md`, `form-filling.md`, and `browser-tips.md` cover cross-cutting browser
-behavior. The humanizer at
-[src/jobpilot-claude-plugin/skills/humanizer/](../src/jobpilot-claude-plugin/skills/humanizer/)
-is a vendored copy invoked by the cover-letter and upwork-proposal skills.
+behavior. `src/jobpilot-skills/skills/humanizer.md` is invoked by the
+cover-letter and upwork-proposal workflows through the active provider wrapper.
 
 ## Web App Layer
 

@@ -1,4 +1,4 @@
-# Browser Tips
+﻿# Browser Tips
 
 ## Snapshot Mode
 
@@ -61,4 +61,5 @@ If a snapshot still exceeds token limits even with `ref`:
 2. **Be patient with page loads** -- use `browser_wait_for` after navigation and form submissions.
 3. **If something goes wrong** (unexpected page, error, crashed form), take a snapshot and report to the user with what you see rather than guessing.
 4. **For file uploads**, verify the resume file exists. If not, tell the user.
-5. **Never guess passwords** -- always read from `/api/credentials` (see `_shared/setup.md` § Credential lookup).
+5. **Never guess passwords** -- always read from `/api/credentials` (see `shared/setup.md` credential lookup).
+

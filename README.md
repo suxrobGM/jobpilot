@@ -1,8 +1,8 @@
 # JobPilot
 
 A local-first AI job-application app. A Next.js + SQLite web UI owns all
-state and embeds an interactive Claude Code session that runs the JobPilot
-plugin skills against real job boards via Playwright.
+state and embeds an interactive Claude Code or Codex terminal session that
+runs the JobPilot provider skills against real job boards via Playwright.
 
 ## Components
 
@@ -11,14 +11,20 @@ plugin skills against real job boards via Playwright.
   batch queue. It embeds an xterm.js terminal panel and exposes "Run
   autopilot" / "Run apply-batch" buttons that inject slash commands.
 - **JobPilot.Terminal** ([src/JobPilot.Terminal/](src/JobPilot.Terminal/)) -
-  `http://localhost:8001`. .NET 10 ASP.NET Core process that owns the
-  `claude` PTY (winpty) and bridges it to the web UI over WebSocket. It
-  launches Claude Code with `--plugin-dir src/jobpilot-claude-plugin`.
+  `http://localhost:8001`. .NET 10 ASP.NET Core process that owns one active
+  provider PTY (winpty) and bridges it to the web UI over WebSocket. The
+  terminal drawer can switch between Claude Code and Codex.
+- **Shared JobPilot skills**
+  ([src/jobpilot-skills/](src/jobpilot-skills/)) - provider-neutral workflow
+  instructions for search, apply, autopilot, batch apply, and writing tasks.
 - **Claude Code plugin**
-  ([src/jobpilot-claude-plugin/](src/jobpilot-claude-plugin/)) - reusable
-  JobPilot plugin containing the skills and Playwright MCP config. It can be
-  run through the web terminal or directly with
+  ([src/jobpilot-claude-plugin/](src/jobpilot-claude-plugin/)) - thin Claude
+  wrappers plus Playwright MCP config. Direct run:
   `claude --plugin-dir src/jobpilot-claude-plugin`.
+- **Codex plugin**
+  ([src/jobpilot-codex-plugin/](src/jobpilot-codex-plugin/)) - thin Codex
+  wrappers plus Playwright MCP config. Direct run from the repo root:
+  `codex --no-alt-screen -C .`.
 
 ## Quick Start
 
@@ -36,12 +42,20 @@ Open `http://localhost:8000` and toggle the Terminal panel.
 
 ## Skills
 
-Skills are markdown prompts under
-[src/jobpilot-claude-plugin/skills/](src/jobpilot-claude-plugin/skills/).
-Run them as `/jobpilot:<skill>`, for example:
+Reusable skill workflows are markdown prompts under
+[src/jobpilot-skills/skills/](src/jobpilot-skills/skills/). Provider plugins
+wrap those workflows with provider-specific command names.
+
+Claude commands use `/jobpilot:<skill>`, for example:
 
 ```text
 /jobpilot:autopilot senior typescript remote
+```
+
+Codex commands use `$jobpilot-<skill>`, for example:
+
+```text
+$jobpilot-autopilot senior typescript remote
 ```
 
 | Skill             | Purpose                                                              |
@@ -75,6 +89,7 @@ Run them as `/jobpilot:<skill>`, for example:
 
 ## License
 
-MIT. The bundled humanizer skill at
-[src/jobpilot-claude-plugin/skills/humanizer/](src/jobpilot-claude-plugin/skills/humanizer/)
-ships with its own LICENSE file.
+MIT. The shared humanizer skill is based on the bundled upstream humanizer
+package under
+[src/jobpilot-claude-plugin/skills/humanizer/](src/jobpilot-claude-plugin/skills/humanizer/),
+which ships with its own LICENSE file.

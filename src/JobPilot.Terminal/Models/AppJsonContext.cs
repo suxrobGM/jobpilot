@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
-using JobPilot.Terminal.Models;
 
-namespace JobPilot.Terminal;
+namespace JobPilot.Terminal.Models;
 
 /// <summary>
 /// Source-generated JSON metadata used by the Native AOT terminal host.
@@ -9,4 +8,6 @@ namespace JobPilot.Terminal;
 [JsonSerializable(typeof(StartSessionRequest))]
 [JsonSerializable(typeof(InjectRequest))]
 [JsonSerializable(typeof(SessionStatus))]
+[JsonSerializable(typeof(TerminalProviderInfo))]
+[JsonSerializable(typeof(TerminalProviderInfo[]))]
 internal sealed partial class AppJsonContext : JsonSerializerContext;

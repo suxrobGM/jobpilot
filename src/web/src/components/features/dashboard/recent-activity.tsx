@@ -20,7 +20,7 @@ export function RecentActivity(): ReactElement {
     <SectionCard title="Recent activity" description="Most recent applications.">
       {rows.length === 0 ? (
         <Typography variant="body2Muted">
-          No applications yet. Run a skill (e.g. <code>/jobpilot:apply</code>) to log one.
+          No applications yet. Run an apply skill from the terminal to log one.
         </Typography>
       ) : (
         <Stack spacing={1.25}>
