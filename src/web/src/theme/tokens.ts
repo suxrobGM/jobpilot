@@ -1,6 +1,7 @@
 export const gradients = {
-  primary: "linear-gradient(135deg, #4F46E5, #6366F1)",
-  reversed: "linear-gradient(135deg, #6366F1, #4F46E5)",
+  primary: "linear-gradient(135deg, #A78BFA, #7C5CFF)",
+  reversed: "linear-gradient(135deg, #7C5CFF, #A78BFA)",
+  orb: "conic-gradient(from 220deg, #A78BFA, #D4E157, #F5C2A4, #A78BFA)",
 } as const;
 
 export const motion = {
@@ -10,10 +11,10 @@ export const motion = {
 } as const;
 
 export const shadows = {
-  sm: "0 1px 2px rgba(15,23,42,0.05)",
-  md: "0 1px 3px rgba(15,23,42,0.06), 0 6px 16px rgba(15,23,42,0.04)",
-  lg: "0 2px 8px rgba(15,23,42,0.08), 0 16px 40px rgba(15,23,42,0.06)",
-  focus: "0 0 0 3px rgba(79,70,229,0.18)",
+  sm: "none",
+  md: "0 4px 12px rgba(0,0,0,0.35)",
+  lg: "0 14px 28px -8px rgba(0,0,0,0.5)",
+  focus: "0 0 0 2px rgba(167,139,250,0.4)",
 } as const;
 
 export const radii = {

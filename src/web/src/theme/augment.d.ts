@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { accent, line, surfaces } from "./palette";
+import type { accent, line, stages, surfaces } from "./palette";
 import type { gradients, iconSizes, motion, radii, shadows } from "./tokens";
 
 declare module "@mui/material/styles" {
@@ -7,11 +7,13 @@ declare module "@mui/material/styles" {
     surfaces: typeof surfaces;
     accent: typeof accent;
     line: typeof line;
+    stages: typeof stages;
   }
   interface PaletteOptions {
     surfaces?: typeof surfaces;
     accent?: typeof accent;
     line?: typeof line;
+    stages?: typeof stages;
   }
 
   interface Theme {

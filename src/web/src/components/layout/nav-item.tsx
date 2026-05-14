@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,35 +19,45 @@ export function NavItem(props: NavItemProps): ReactElement {
   const active = targetPath === "/" ? pathname === "/" : pathname.startsWith(targetPath);
 
   return (
-    <ListItemButton
-      component={Link}
-      href={item.href as Route}
-      selected={active}
-      sx={(t) => ({
-        borderRadius: t.radii.sm,
-        marginInline: 1,
-        marginBlock: 0.25,
-        paddingInline: 1.5,
-        paddingBlock: 0.75,
-        "&.Mui-selected": {
-          backgroundColor: t.palette.surfaces.elevated,
-          color: t.palette.accent.primary,
-          "& .MuiListItemIcon-root": { color: t.palette.accent.primary },
-        },
-        "&.Mui-selected:hover": { backgroundColor: t.palette.surfaces.hover },
-      })}
-    >
-      <ListItemIcon sx={{ minWidth: 32 }}>
-        <Icon fontSize="md" />
-      </ListItemIcon>
-      <ListItemText
-        primary={item.label}
-        slotProps={{
-          primary: {
-            sx: { fontSize: "0.875rem", fontWeight: active ? 600 : 500 },
+    <Tooltip title={item.label} placement="right" arrow disableInteractive>
+      <Box
+        component={Link}
+        href={item.href as Route}
+        aria-label={item.label}
+        aria-current={active ? "page" : undefined}
+        sx={(theme) => ({
+          position: "relative",
+          width: 36,
+          height: 36,
+          display: "grid",
+          placeItems: "center",
+          borderRadius: theme.radii.sm,
+          color: active ? theme.palette.text.primary : theme.palette.text.disabled,
+          backgroundColor: active ? theme.palette.surfaces.elevated : "transparent",
+          textDecoration: "none",
+          transition: theme.motion.fast,
+          "&:hover": {
+            color: theme.palette.text.secondary,
+            backgroundColor: active
+              ? theme.palette.surfaces.elevated
+              : theme.palette.surfaces.card,
           },
-        }}
-      />
-    </ListItemButton>
+          "&::before": active
+            ? {
+                content: '""',
+                position: "absolute",
+                left: -10,
+                top: 8,
+                bottom: 8,
+                width: 2,
+                borderRadius: 2,
+                background: theme.palette.accent.primary,
+              }
+            : undefined,
+        })}
+      >
+        <Icon fontSize="md" />
+      </Box>
+    </Tooltip>
   );
 }

@@ -5,10 +5,38 @@ body {
 
 body {
   margin: 0;
+  background-color: #07090f;
+  color: #e9edf5;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(167, 139, 250, 0.35);
+  color: #f5f5f7;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e2638;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3550;
+  background-clip: padding-box;
 }

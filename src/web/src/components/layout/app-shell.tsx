@@ -2,31 +2,32 @@
 
 import type { PropsWithChildren, ReactElement } from "react";
 import { Box } from "@mui/material";
-import { TerminalDrawer } from "@/components/features/terminal";
-import { TerminalProvider } from "@/providers";
-import { Sidebar } from "./sidebar";
+import { AgentDock } from "@/components/features/agent-dock";
+import { AgentProvider } from "@/providers/agent-provider";
+import { Rail } from "./rail";
 
 export function AppShell(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
-    <TerminalProvider>
+    <AgentProvider>
       <Box
-        sx={(t) => ({
+        sx={(theme) => ({
           display: "flex",
-          flexDirection: "column",
           height: "100vh",
-          backgroundColor: t.palette.surfaces.base,
-          color: t.palette.text.primary,
+          minHeight: 0,
+          backgroundColor: theme.palette.surfaces.base,
+          color: theme.palette.text.primary,
         })}
       >
-        <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
-          <Sidebar />
-          <Box component="main" sx={{ flex: 1, minWidth: 0, overflowY: "auto" }}>
-            {children}
-          </Box>
+        <Rail />
+        <Box
+          component="main"
+          sx={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto" }}
+        >
+          {children}
         </Box>
-        <TerminalDrawer />
+        <AgentDock />
       </Box>
-    </TerminalProvider>
+    </AgentProvider>
   );
 }

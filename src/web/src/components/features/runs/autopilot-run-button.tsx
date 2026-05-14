@@ -4,10 +4,10 @@ import { SyntheticEvent, useRef, useState, type ReactElement } from "react";
 import { PlayArrow } from "@mui/icons-material";
 import { Box, Button, Popover, Stack, TextField, Typography } from "@mui/material";
 import { formatSkillCommand } from "@/lib/terminal";
-import { useTerminal } from "@/providers/terminal-provider";
+import { useAgent } from "@/providers/agent-provider";
 
 export function AutopilotRunButton(): ReactElement {
-  const { injectSkill, provider, setOpen: setTerminalOpen } = useTerminal();
+  const { injectSkill, provider, expand } = useAgent();
   const anchorRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -17,7 +17,7 @@ export function AutopilotRunButton(): ReactElement {
     const trimmed = query.trim();
     if (!trimmed) return;
     setOpen(false);
-    setTerminalOpen(true);
+    expand("terminal");
     await injectSkill("autopilot", trimmed);
   };
 

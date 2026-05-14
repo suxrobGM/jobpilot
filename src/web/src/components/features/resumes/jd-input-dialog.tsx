@@ -11,7 +11,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { useTerminal } from "@/providers/terminal-provider";
+import { useAgent } from "@/providers/agent-provider";
 
 interface JdInputDialogProps {
   open: boolean;
@@ -21,7 +21,7 @@ interface JdInputDialogProps {
 export function JdInputDialog(props: JdInputDialogProps): ReactElement {
   const { open, onClose } = props;
   const [jd, setJd] = useState("");
-  const terminal = useTerminal();
+  const agent = useAgent();
 
   const handleClose = () => {
     setJd("");
@@ -31,8 +31,8 @@ export function JdInputDialog(props: JdInputDialogProps): ReactElement {
   const handleSubmit = async () => {
     const arg = jd.trim();
     if (!arg) return;
-    terminal.setOpen(true);
-    await terminal.injectSkill("tailor-resume", JSON.stringify(arg));
+    agent.expand("terminal");
+    await agent.injectSkill("tailor-resume", JSON.stringify(arg));
     handleClose();
   };
 

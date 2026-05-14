@@ -1,15 +1,15 @@
 import { createTheme } from "@mui/material/styles";
 import { componentOverrides } from "./overrides";
-import { accent, feedback, line, surfaces, textColors } from "./palette";
+import { accent, feedback, line, stages, surfaces, textColors } from "./palette";
 import { gradients, iconSizes, motion, radii, shadows } from "./tokens";
 import { typography } from "./typography";
 
 export const theme = createTheme({
   cssVariables: true,
   palette: {
-    mode: "light",
-    primary: { main: accent.primary, contrastText: "#FFFFFF" },
-    secondary: { main: accent.dark, contrastText: "#FFFFFF" },
+    mode: "dark",
+    primary: { main: accent.primary, contrastText: "#07090F" },
+    secondary: { main: accent.secondary, contrastText: "#07090F" },
     warning: { main: feedback.warning },
     error: { main: feedback.error },
     success: { main: feedback.success },
@@ -24,6 +24,7 @@ export const theme = createTheme({
     surfaces,
     accent,
     line,
+    stages,
   },
   shape: { borderRadius: 1 },
   typography,

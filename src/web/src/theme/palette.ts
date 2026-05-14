@@ -1,31 +1,42 @@
 export const surfaces = {
-  base: "#F8FAFC",
-  card: "#FFFFFF",
-  elevated: "#F1F5F9",
-  hover: "#E2E8F0",
+  base: "#07090F",
+  card: "#111726",
+  elevated: "#161D2E",
+  hover: "#1B2438",
 } as const;
 
 export const accent = {
-  primary: "#4F46E5",
-  secondary: "#6366F1",
-  dark: "#3730A3",
+  primary: "#A78BFA",
+  secondary: "#8B6FE8",
+  dark: "#7C5CFF",
 } as const;
 
 export const textColors = {
-  primary: "#0F172A",
-  secondary: "#475569",
-  disabled: "#94A3B8",
+  primary: "#E9EDF5",
+  secondary: "#94A3C5",
+  disabled: "#5D6886",
 } as const;
 
 export const feedback = {
-  error: "#DC2626",
-  success: "#16A34A",
-  info: "#2563EB",
-  warning: "#D97706",
+  error: "#F87171",
+  success: "#6FBC8E",
+  info: "#5DA8E0",
+  warning: "#FBBF24",
 } as const;
 
 export const line = {
-  divider: "#E2E8F0",
-  border: "#CBD5E1",
-  borderHi: "#94A3B8",
+  divider: "#1E2638",
+  border: "#26303F",
+  borderHi: "#2A3550",
 } as const;
+
+export const stages = {
+  discovered: "#6478D8",
+  queued: "#5DA8E0",
+  applying: "#A78BFA",
+  submitted: "#6FBC8E",
+  replied: "#F5C2A4",
+  rejected: "#F87171",
+} as const;
+
+export type StageKey = keyof typeof stages;

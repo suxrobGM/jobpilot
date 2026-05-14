@@ -6,7 +6,7 @@ import { Button, Chip, Stack } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
-import { useTerminal } from "@/providers/terminal-provider";
+import { useAgent } from "@/providers/agent-provider";
 import type { SyncResultDto } from "@/types/api";
 import type { InboxFilter } from "./inbox-content";
 
@@ -25,7 +25,7 @@ const FILTERS: ReadonlyArray<{ key: InboxFilter; label: string }> = [
 
 export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   const { filter, onFilterChange } = props;
-  const { injectSkill, setOpen: setTerminalOpen } = useTerminal();
+  const { injectSkill, expand } = useAgent();
 
   const sync = useApiMutation<SyncResultDto, void>(
     () => apiClient.post<SyncResultDto>("/api/email/sync"),
@@ -36,7 +36,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   );
 
   const handleScan = async (): Promise<void> => {
-    setTerminalOpen(true);
+    expand("terminal");
     await injectSkill("scan-inbox");
   };
 

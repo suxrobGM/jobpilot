@@ -3,13 +3,13 @@
 import type { ReactElement } from "react";
 import { PlayArrow } from "@mui/icons-material";
 import { Button } from "@mui/material";
-import { useTerminal } from "@/providers/terminal-provider";
+import { useAgent } from "@/providers/agent-provider";
 
 export function QueueRunButton(): ReactElement {
-  const { injectSkill, setOpen } = useTerminal();
+  const { injectSkill, expand } = useAgent();
 
   const handleClick = async (): Promise<void> => {
-    setOpen(true);
+    expand("terminal");
     await injectSkill("apply");
   };
 
