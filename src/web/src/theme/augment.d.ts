@@ -69,4 +69,11 @@ declare module "@mui/material/SvgIcon" {
   }
 }
 
+declare module "@mui/material/Paper" {
+  interface PaperPropsVariantOverrides {
+    interactive: true;
+    live: true;
+  }
+}
+
 export {};

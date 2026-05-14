@@ -6,7 +6,8 @@
     "src/web"
   ],
   "scripts": {
-    "dev": "bun run db:setup && concurrently -k -n terminal,web -c cyan,green \"dotnet run --project src/JobPilot.Terminal\" \"bun --cwd=src/web run dev\"",
+    "dev": "concurrently -k -n terminal,web -c cyan,green \"dotnet watch --project src/JobPilot.Terminal run\" \"bun --cwd=src/web run dev\"",
+    "start": "bun run db:setup && bun run dev",
     "db:setup": "bun --cwd=src/web run db:migrate:apply && bun --cwd=src/web run db:seed",
     "build:terminal": "dotnet publish src/JobPilot.Terminal -c Release -o dist/terminal",
     "build:web": "bun --cwd=src/web run build"

@@ -8,8 +8,34 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
       border: `1px solid ${theme.palette.line.divider}`,
       backgroundColor: theme.palette.surfaces.card,
       boxShadow: theme.shadows_custom.sm,
+      transition: theme.motion.fast,
     }),
   },
+  variants: [
+    {
+      props: { variant: "interactive" },
+      style: ({ theme }) => ({
+        cursor: "pointer",
+        "&:hover": {
+          borderColor: theme.palette.line.borderHi,
+          backgroundColor: theme.palette.surfaces.elevated,
+        },
+      }),
+    },
+    {
+      props: { variant: "live" },
+      style: ({ theme }) => ({
+        cursor: "pointer",
+        border: `1px solid ${theme.palette.accent.primary}66`,
+        backgroundColor: `${theme.palette.accent.primary}0D`,
+        boxShadow: `0 0 0 1px ${theme.palette.accent.primary}22, 0 4px 18px ${theme.palette.accent.primary}1A`,
+        "&:hover": {
+          borderColor: `${theme.palette.accent.primary}99`,
+          backgroundColor: `${theme.palette.accent.primary}14`,
+        },
+      }),
+    },
+  ],
 };
 
 export const cardHeaderOverrides: Components<Theme>["MuiCardHeader"] = {
