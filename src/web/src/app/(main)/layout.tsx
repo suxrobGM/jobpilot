@@ -1,7 +1,7 @@
 import type { PropsWithChildren, ReactElement } from "react";
 import { Container } from "@mui/material";
 
-export default function NarrowLayout(props: PropsWithChildren): ReactElement {
+export default function MainLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
