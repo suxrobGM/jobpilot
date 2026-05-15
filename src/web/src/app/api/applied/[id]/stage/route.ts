@@ -1,10 +1,9 @@
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { stageTransitionSchema } from "@/lib/schemas/application";
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+type Params = ApiRouteContext<{ id: string }>;
 
 const POSITIVE_STAGES = new Set([
   "recruiter_screen",
@@ -16,7 +15,7 @@ const POSITIVE_STAGES = new Set([
 ]);
 
 export async function POST(req: Request, ctx: Params) {
-  const { id } = await ctx.params;
+  const { id } = await parsePathParams(ctx);
   const appId = Number(id);
 
   if (!Number.isInteger(appId)) {

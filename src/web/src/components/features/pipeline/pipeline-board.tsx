@@ -2,17 +2,17 @@
 
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
+import { PIPELINE_STAGES, type PipelineJobDto } from "@/types/api";
 import { PipelineColumn } from "./pipeline-column";
-import type { PipelineColumnData, PipelineJob } from "./types";
+import type { PipelineColumnFilters } from "./use-pipeline-column";
 
 interface PipelineBoardProps {
-  columns: PipelineColumnData[];
-  onJobClick?: (job: PipelineJob) => void;
-  onLoadMore?: (stage: PipelineColumnData["stage"]) => void;
+  filters?: PipelineColumnFilters;
+  onJobClick?: (job: PipelineJobDto) => void;
 }
 
 export function PipelineBoard(props: PipelineBoardProps): ReactElement {
-  const { columns, onJobClick, onLoadMore } = props;
+  const { filters, onJobClick } = props;
   return (
     <Stack
       direction="row"
@@ -25,13 +25,8 @@ export function PipelineBoard(props: PipelineBoardProps): ReactElement {
         overflowX: "auto",
       }}
     >
-      {columns.map((col) => (
-        <PipelineColumn
-          key={col.stage}
-          data={col}
-          onJobClick={onJobClick}
-          onLoadMore={onLoadMore ? () => onLoadMore(col.stage) : undefined}
-        />
+      {PIPELINE_STAGES.map((stage) => (
+        <PipelineColumn key={stage} stage={stage} filters={filters} onJobClick={onJobClick} />
       ))}
     </Stack>
   );

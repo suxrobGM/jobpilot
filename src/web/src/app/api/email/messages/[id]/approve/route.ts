@@ -1,11 +1,10 @@
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { approveSchema } from "@/lib/schemas/email";
 import { publishInboxEvent } from "@/lib/sse/inbox-events";
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+type Params = ApiRouteContext<{ id: string }>;
 
 const POSITIVE_STAGES = new Set([
   "recruiter_screen",
@@ -23,7 +22,7 @@ const CLASSIFICATION_TO_STAGE: Record<string, string> = {
 };
 
 export async function POST(req: Request, ctx: Params) {
-  const { id } = await ctx.params;
+  const { id } = await parsePathParams(ctx);
   const msgId = Number(id);
   if (!Number.isInteger(msgId)) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);

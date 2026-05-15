@@ -1,11 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { err, ErrorCodes } from "@/lib/api";
+import { parseQueryParams } from "@/lib/api/request";
 import { getProvider } from "@/lib/email";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const providerName = url.searchParams.get("provider") ?? "gmail";
+  const { provider } = parseQueryParams(req, ["provider"] as const);
+  const providerName = provider ?? "gmail";
 
   if (providerName !== "gmail") {
     return err(ErrorCodes.INVALID_REQUEST, `Unsupported provider: ${providerName}`, 400);

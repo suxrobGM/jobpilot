@@ -1,14 +1,13 @@
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { addRunJobSchema } from "@/lib/schemas/run";
 import { publishRunEvent } from "@/lib/sse";
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+type Params = ApiRouteContext<{ id: string }>;
 
 export async function GET(_req: Request, ctx: Params) {
-  const { id } = await ctx.params;
+  const { id } = await parsePathParams(ctx);
   const jobs = await db.runJob.findMany({
     where: { runId: id },
     orderBy: { id: "asc" },
@@ -17,7 +16,7 @@ export async function GET(_req: Request, ctx: Params) {
 }
 
 export async function POST(req: Request, ctx: Params) {
-  const { id } = await ctx.params;
+  const { id } = await parsePathParams(ctx);
   const body = await req.json();
   const parsed = addRunJobSchema.safeParse(body);
 

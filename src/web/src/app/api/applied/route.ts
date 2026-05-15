@@ -1,15 +1,17 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { normalizeCompanyName, normalizeJobTitle } from "@/lib/matching";
 import { logApplicationSchema } from "@/lib/schemas/application";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const stage = url.searchParams.get("stage");
-  const board = url.searchParams.get("board");
-  const source = url.searchParams.get("source");
-  const search = url.searchParams.get("search");
+  const { stage, board, source, search } = parseQueryParams(req, [
+    "stage",
+    "board",
+    "source",
+    "search",
+  ] as const);
 
   const where: Prisma.ApplicationWhereInput = {};
   if (stage) where.stage = stage;

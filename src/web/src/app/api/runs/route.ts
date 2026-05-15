@@ -1,12 +1,11 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { createRunSchema } from "@/lib/schemas/run";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const status = url.searchParams.get("status");
-  const source = url.searchParams.get("source");
+  const { status, source } = parseQueryParams(req, ["status", "source"] as const);
   const where: Prisma.RunWhereInput = {};
   if (status) where.status = status;
   if (source) where.source = source;

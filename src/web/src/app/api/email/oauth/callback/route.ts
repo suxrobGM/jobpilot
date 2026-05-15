@@ -1,14 +1,12 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { err, ErrorCodes } from "@/lib/api";
+import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { getProvider } from "@/lib/email";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state");
-  const error = url.searchParams.get("error");
+  const { code, state, error } = parseQueryParams(req, ["code", "state", "error"] as const);
 
   if (error) {
     return err(ErrorCodes.UNPROCESSABLE, `OAuth error: ${error}`, 400);

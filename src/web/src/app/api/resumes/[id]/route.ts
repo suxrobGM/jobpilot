@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { z } from "zod/v4";
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { resumeDataSchema } from "@/lib/schemas/resume";
 import {
@@ -12,9 +13,7 @@ import type { ResumeDto } from "@/types/api";
 
 const PROFILE_ID = 1;
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+type Params = ApiRouteContext<{ id: string }>;
 
 function parseId(raw: string): number | null {
   const id = Number(raw);
@@ -22,7 +21,7 @@ function parseId(raw: string): number | null {
 }
 
 export async function GET(_req: Request, ctx: Params) {
-  const { id: rawId } = await ctx.params;
+  const { id: rawId } = await parsePathParams(ctx);
   const id = parseId(rawId);
   if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
 
@@ -57,7 +56,7 @@ const putSchema = z.object({
 });
 
 export async function PUT(req: Request, ctx: Params) {
-  const { id: rawId } = await ctx.params;
+  const { id: rawId } = await parsePathParams(ctx);
   const id = parseId(rawId);
   if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
 
@@ -97,7 +96,7 @@ export async function PUT(req: Request, ctx: Params) {
 }
 
 export async function DELETE(_req: Request, ctx: Params) {
-  const { id: rawId } = await ctx.params;
+  const { id: rawId } = await parsePathParams(ctx);
   const id = parseId(rawId);
   if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
 

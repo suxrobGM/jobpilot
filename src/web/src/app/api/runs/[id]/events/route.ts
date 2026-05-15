@@ -1,14 +1,13 @@
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { runEventSchema } from "@/lib/schemas/run";
 import { publishRunEvent, subscribeToRun } from "@/lib/sse";
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+type Params = ApiRouteContext<{ id: string }>;
 
 export async function GET(_req: Request, ctx: Params) {
-  const { id } = await ctx.params;
+  const { id } = await parsePathParams(ctx);
   const run = await db.run.findUnique({ where: { runId: id }, select: { runId: true } });
 
   if (!run) {
@@ -26,7 +25,7 @@ export async function GET(_req: Request, ctx: Params) {
 }
 
 export async function POST(req: Request, ctx: Params) {
-  const { id } = await ctx.params;
+  const { id } = await parsePathParams(ctx);
   const body = await req.json();
   const parsed = runEventSchema.safeParse(body);
 

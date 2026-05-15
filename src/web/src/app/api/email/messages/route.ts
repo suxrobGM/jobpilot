@@ -1,14 +1,17 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { ok } from "@/lib/api";
+import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const reviewStatus = url.searchParams.get("reviewStatus");
-  const classification = url.searchParams.get("classification");
-  const since = url.searchParams.get("since");
-  const domainHint = url.searchParams.get("domainHint");
-  const verificationDomain = url.searchParams.get("verificationDomain");
+  const { reviewStatus, classification, since, domainHint, verificationDomain } =
+    parseQueryParams(req, [
+      "reviewStatus",
+      "classification",
+      "since",
+      "domainHint",
+      "verificationDomain",
+    ] as const);
 
   const where: Prisma.EmailMessageWhereInput = {};
 

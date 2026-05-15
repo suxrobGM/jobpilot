@@ -1,14 +1,13 @@
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { patchRunJobSchema } from "@/lib/schemas/run";
 import { publishRunEvent } from "@/lib/sse";
 
-interface Params {
-  params: Promise<{ id: string; jobKey: string }>;
-}
+type Params = ApiRouteContext<{ id: string; jobKey: string }>;
 
 export async function PATCH(req: Request, ctx: Params) {
-  const { id, jobKey } = await ctx.params;
+  const { id, jobKey } = await parsePathParams(ctx);
   const body = await req.json();
   const parsed = patchRunJobSchema.safeParse(body);
 

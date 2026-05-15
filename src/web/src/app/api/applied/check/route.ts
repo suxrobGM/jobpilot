@@ -1,4 +1,5 @@
 import { ok } from "@/lib/api";
+import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import {
   APPLIED_DUPLICATE_THRESHOLD,
@@ -8,10 +9,10 @@ import {
 import type { DuplicateCheckResult } from "@/types/api";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const targetUrl = url.searchParams.get("url")?.trim();
-  const title = url.searchParams.get("title")?.trim();
-  const company = url.searchParams.get("company")?.trim();
+  const query = parseQueryParams(req, ["url", "title", "company"] as const);
+  const targetUrl = query.url?.trim();
+  const title = query.title?.trim();
+  const company = query.company?.trim();
 
   if (targetUrl) {
     const exact = await db.application.findUnique({ where: { url: targetUrl } });

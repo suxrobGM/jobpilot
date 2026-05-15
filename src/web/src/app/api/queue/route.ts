@@ -1,11 +1,11 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { addQueueSchema } from "@/lib/schemas/queue";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const status = url.searchParams.get("status");
+  const { status } = parseQueryParams(req, ["status"] as const);
   const where: Prisma.QueueEntryWhereInput = {};
   if (status) {
     where.status = status;

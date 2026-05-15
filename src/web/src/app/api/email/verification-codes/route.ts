@@ -1,10 +1,13 @@
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const domain = url.searchParams.get("domain");
-  const sinceMinutes = Number(url.searchParams.get("sinceMinutes") ?? "5");
+  const { domain, sinceMinutes: sinceMinutesRaw } = parseQueryParams(req, [
+    "domain",
+    "sinceMinutes",
+  ] as const);
+  const sinceMinutes = Number(sinceMinutesRaw ?? "5");
 
   if (!domain) {
     return err(ErrorCodes.INVALID_REQUEST, "domain is required", 400);

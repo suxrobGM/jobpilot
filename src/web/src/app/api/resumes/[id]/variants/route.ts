@@ -1,13 +1,12 @@
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { resumeVariantCreateSchema } from "@/lib/schemas/resume";
 import type { ResumeVariantListItem } from "@/types/api";
 
 const PROFILE_ID = 1;
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+type Params = ApiRouteContext<{ id: string }>;
 
 function parseId(raw: string): number | null {
   const id = Number(raw);
@@ -15,7 +14,7 @@ function parseId(raw: string): number | null {
 }
 
 export async function GET(_req: Request, ctx: Params) {
-  const { id: rawId } = await ctx.params;
+  const { id: rawId } = await parsePathParams(ctx);
   const resumeId = parseId(rawId);
   if (resumeId === null) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
@@ -47,7 +46,7 @@ export async function GET(_req: Request, ctx: Params) {
 }
 
 export async function POST(req: Request, ctx: Params) {
-  const { id: rawId } = await ctx.params;
+  const { id: rawId } = await parsePathParams(ctx);
   const resumeId = parseId(rawId);
   if (resumeId === null) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);

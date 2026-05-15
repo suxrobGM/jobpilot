@@ -2,12 +2,12 @@
 
 import type { ReactElement } from "react";
 import { Box, Card, CardActionArea, Stack, Typography } from "@mui/material";
-import { formatRelative } from "./format";
-import type { PipelineJob } from "./types";
+import type { PipelineJobDto } from "@/types/api";
+import { formatRelativeTime } from "@/utils/format";
 
 interface PipelineCardProps {
-  job: PipelineJob;
-  onClick?: (job: PipelineJob) => void;
+  job: PipelineJobDto;
+  onClick?: (job: PipelineJobDto) => void;
 }
 
 export function PipelineCard(props: PipelineCardProps): ReactElement {
@@ -31,22 +31,26 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
         direction="row"
         sx={{ alignItems: "center", justifyContent: "space-between", mt: 1.25, gap: 1 }}
       >
-        <Box
-          component="span"
-          sx={(theme) => ({
-            display: "inline-block",
-            paddingInline: 0.75,
-            paddingBlock: "1px",
-            borderRadius: theme.radii.xs,
-            border: `1px solid ${theme.palette.line.divider}`,
-            fontFamily: "var(--font-geist-mono), monospace",
-            fontSize: "0.625rem",
-            color: theme.palette.text.secondary,
-            backgroundColor: theme.palette.surfaces.elevated,
-          })}
-        >
-          {job.board}
-        </Box>
+        {job.board ? (
+          <Box
+            component="span"
+            sx={(theme) => ({
+              display: "inline-block",
+              paddingInline: 0.75,
+              paddingBlock: "1px",
+              borderRadius: theme.radii.xs,
+              border: `1px solid ${theme.palette.line.divider}`,
+              fontFamily: "var(--font-geist-mono), monospace",
+              fontSize: "0.625rem",
+              color: theme.palette.text.secondary,
+              backgroundColor: theme.palette.surfaces.elevated,
+            })}
+          >
+            {job.board}
+          </Box>
+        ) : (
+          <span />
+        )}
 
         <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
           {typeof job.matchScore === "number" && (
@@ -62,7 +66,7 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
               ★ {job.matchScore}%
             </Typography>
           )}
-          <Typography variant="captionMuted">{formatRelative(job.updatedAt)}</Typography>
+          <Typography variant="captionMuted">{formatRelativeTime(job.updatedAt)}</Typography>
         </Stack>
       </Stack>
 
@@ -101,11 +105,7 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
 
   return (
     <Card variant={variant}>
-      {onClick ? (
-        <CardActionArea onClick={() => onClick(job)}>{content}</CardActionArea>
-      ) : (
-        content
-      )}
+      {onClick ? <CardActionArea onClick={() => onClick(job)}>{content}</CardActionArea> : content}
     </Card>
   );
 }

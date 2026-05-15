@@ -1,13 +1,12 @@
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { jobBoardPatchSchema } from "@/lib/schemas/job-board";
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+type Params = ApiRouteContext<{ id: string }>;
 
 export async function PATCH(req: Request, ctx: Params) {
-  const { id } = await ctx.params;
+  const { id } = await parsePathParams(ctx);
   const boardId = Number(id);
 
   if (!Number.isInteger(boardId)) {
@@ -36,7 +35,7 @@ export async function PATCH(req: Request, ctx: Params) {
 }
 
 export async function DELETE(_req: Request, ctx: Params) {
-  const { id } = await ctx.params;
+  const { id } = await parsePathParams(ctx);
   const boardId = Number(id);
   if (!Number.isInteger(boardId)) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);

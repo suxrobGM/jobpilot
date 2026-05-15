@@ -3,38 +3,50 @@
 import { useRef, type ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
+import { PIPELINE_STAGE_LABEL, type PipelineJobDto, type PipelineStage } from "@/types/api";
 import { PipelineCard } from "./pipeline-card";
-import type { PipelineColumnData, PipelineJob, PipelineStage } from "./types";
-
-const STAGE_TONE_KEY: Record<PipelineStage, "discovered" | "queued" | "applying" | "submitted" | "replied"> = {
-  discovered: "discovered",
-  queued: "queued",
-  applying: "applying",
-  submitted: "submitted",
-  replied: "replied",
-};
+import { usePipelineColumn, type PipelineColumnFilters } from "./use-pipeline-column";
 
 const CARD_HEIGHT = 108;
 const CARD_GAP = 10;
 
 interface PipelineColumnProps {
-  data: PipelineColumnData;
-  onJobClick?: (job: PipelineJob) => void;
-  onLoadMore?: () => void;
+  stage: PipelineStage;
+  filters?: PipelineColumnFilters;
+  onJobClick?: (job: PipelineJobDto) => void;
 }
 
 export function PipelineColumn(props: PipelineColumnProps): ReactElement {
-  const { data, onJobClick, onLoadMore } = props;
+  const { stage, filters, onJobClick } = props;
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const toneKey = STAGE_TONE_KEY[data.stage];
-  const isApplying = data.stage === "applying";
+  const isApplying = stage === "applying";
+
+  const query = usePipelineColumn(stage, filters);
+  const items: PipelineJobDto[] = query.data?.pages.flatMap((p) => p.items) ?? [];
+  const head = query.data?.pages[0];
+  const total = head?.total ?? 0;
+  const todayCount = head?.todayCount ?? 0;
 
   const virtualizer = useVirtualizer({
-    count: data.items.length,
+    count: items.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => CARD_HEIGHT + CARD_GAP,
     overscan: 4,
   });
+
+  const sentinelRef = useIntersectionObserver(
+    () => {
+      if (!query.isFetchingNextPage) {
+        query.fetchNextPage();
+      }
+    },
+    {
+      root: scrollRef,
+      rootMargin: "200px 0px",
+      enabled: query.hasNextPage,
+    },
+  );
 
   return (
     <Stack
@@ -64,7 +76,7 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
               width: 7,
               height: 7,
               borderRadius: "50%",
-              backgroundColor: theme.palette.stages[toneKey],
+              backgroundColor: theme.palette.stages[stage],
               boxShadow: isApplying ? `0 0 0 3px ${theme.palette.stages.applying}33` : "none",
               animation: isApplying ? "stage-dot-pulse 2.4s ease-in-out infinite" : "none",
               "@keyframes stage-dot-pulse": {
@@ -75,7 +87,7 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
             })}
           />
           <Typography variant="h6" sx={{ fontSize: "0.8125rem", fontWeight: 500 }}>
-            {data.label}
+            {PIPELINE_STAGE_LABEL[stage]}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "baseline" }}>
@@ -83,11 +95,9 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
             variant="captionMuted"
             sx={(theme) => ({ color: theme.palette.text.secondary })}
           >
-            {data.total}
+            {total}
           </Typography>
-          {data.todayCount ? (
-            <Typography variant="captionMuted">· {data.todayCount} today</Typography>
-          ) : null}
+          {todayCount > 0 && <Typography variant="captionMuted">· {todayCount} today</Typography>}
         </Stack>
       </Stack>
 
@@ -101,7 +111,18 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
           "&::-webkit-scrollbar-thumb": { backgroundColor: theme.palette.line.divider },
         })}
       >
-        {data.items.length === 0 ? (
+        {query.isPending ? (
+          <Stack
+            sx={(theme) => ({
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 120,
+              color: theme.palette.text.disabled,
+            })}
+          >
+            <Typography variant="captionMuted">Loading…</Typography>
+          </Stack>
+        ) : items.length === 0 ? (
           <Stack
             sx={(theme) => ({
               alignItems: "center",
@@ -121,7 +142,8 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
             }}
           >
             {virtualizer.getVirtualItems().map((row) => {
-              const job = data.items[row.index];
+              const job = items[row.index];
+              if (!job) return null;
               return (
                 <Box
                   key={job.id}
@@ -143,29 +165,19 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
           </Box>
         )}
 
-        {data.hasMore && onLoadMore && (
+        {query.hasNextPage && (
           <Box
-            onClick={onLoadMore}
-            role="button"
-            tabIndex={0}
+            ref={sentinelRef}
             sx={(theme) => ({
               marginTop: 1,
               padding: 1,
-              borderRadius: theme.radii.sm,
-              border: `1px dashed ${theme.palette.line.borderHi}`,
               fontFamily: "var(--font-geist-mono), monospace",
               fontSize: "0.6875rem",
               color: theme.palette.text.disabled,
               textAlign: "center",
-              cursor: "pointer",
-              transition: theme.motion.fast,
-              "&:hover": {
-                color: theme.palette.text.secondary,
-                borderColor: theme.palette.text.disabled,
-              },
             })}
           >
-            + {data.total - data.items.length} more
+            {query.isFetchingNextPage ? "Loading more…" : `+ ${total - items.length} more`}
           </Box>
         )}
       </Box>

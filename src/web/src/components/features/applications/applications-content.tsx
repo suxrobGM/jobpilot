@@ -6,25 +6,24 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { ApplicationDto, ApplicationListFilters } from "@/types/api";
+import { buildUrl } from "@/utils/url";
 import { ApplicationFilters } from "./application-filters";
 import { ApplicationsTable } from "./applications-table";
-
-function buildQuery(filters: ApplicationListFilters): string {
-  const params = new URLSearchParams();
-  if (filters.stage) params.set("stage", filters.stage);
-  if (filters.board) params.set("board", filters.board);
-  if (filters.source) params.set("source", filters.source);
-  if (filters.search) params.set("search", filters.search);
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
-}
 
 export function ApplicationsContent(): ReactElement {
   const [filters, setFilters] = useState<ApplicationListFilters>({});
 
   const apps = useApiQuery<ApplicationDto[]>(
     queryKeys.applications.list(filters as Record<string, unknown>),
-    () => apiClient.get<ApplicationDto[]>(`/api/applied${buildQuery(filters)}`),
+    () =>
+      apiClient.get<ApplicationDto[]>(
+        buildUrl("/api/applied", {
+          stage: filters.stage,
+          board: filters.board,
+          source: filters.source,
+          search: filters.search,
+        }),
+      ),
   );
 
   const boardSet = new Set<string>();
