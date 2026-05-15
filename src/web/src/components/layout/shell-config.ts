@@ -31,7 +31,6 @@ export const navGroups: NavGroup[] = [
 ];
 
 export const APP_TITLE = "JobPilot";
-export const APP_SIGIL = "◇"; // ◇
 export const RAIL_WIDTH = 56;
 export const DOCK_COLLAPSED = 56;
 export const DOCK_EXPANDED = 380;

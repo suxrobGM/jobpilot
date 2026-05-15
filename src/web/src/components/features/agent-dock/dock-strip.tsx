@@ -2,9 +2,9 @@
 
 import type { ReactElement } from "react";
 import { ChevronLeft, Terminal as TerminalIcon } from "@mui/icons-material";
-import { Box, IconButton, Stack, Tooltip, Typography } from "@mui/material";
-import { PilotOrb } from "@/components/ui/display";
+import { Box, IconButton, Stack, Tooltip } from "@mui/material";
 import { useAgent } from "@/providers/agent-provider";
+import { AgentOrb } from "./agent-orb";
 
 export function DockStrip(): ReactElement {
   const { expand } = useAgent();
@@ -36,7 +36,7 @@ export function DockStrip(): ReactElement {
             "&:focus-visible": { boxShadow: theme.shadows_custom.focus },
           })}
         >
-          <PilotOrb size="2xxl" />
+          <AgentOrb size="2xxl" />
         </Box>
       </Tooltip>
 

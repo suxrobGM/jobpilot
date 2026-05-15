@@ -12,10 +12,10 @@ import {
   type SelectChangeEvent,
 } from "@mui/material";
 import { TerminalPanel } from "@/components/features/terminal";
-import { PilotOrb } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
 import { killSession } from "@/lib/terminal";
 import { useAgent } from "@/providers/agent-provider";
+import { AgentOrb } from "./agent-orb";
 
 export function DockPanel(): ReactElement {
   const { collapse, provider, setProvider } = useAgent();
@@ -49,7 +49,7 @@ export function DockPanel(): ReactElement {
         })}
       >
         <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
-          <PilotOrb size="xxl" />
+          <AgentOrb size="xxl" />
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontSize: "0.8125rem", fontWeight: 500 }}>
               Agent
