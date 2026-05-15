@@ -14,3 +14,4 @@ dist/
 .tmp/
 
 .idea/
+.VSCodeCounter/
