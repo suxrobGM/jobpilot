@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import { useRouter } from "next/navigation";
 import type { AnyReactForm } from "@/components/ui/form/types";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -36,20 +35,13 @@ const ANCHORS: SectionAnchor[] = [
 ];
 
 export function SettingsContent(): ReactElement {
-  const router = useRouter();
   const query = useApiQuery<ProfileResponse>(
     queryKeys.profile.detail(),
     () => apiClient.get<ProfileResponse>("/api/profile"),
     { errorMessage: "Failed to load profile" },
   );
 
-  useEffect(() => {
-    if (query.data && query.data.profile === null) {
-      router.replace("/onboarding");
-    }
-  }, [query.data, router]);
-
-  if (query.isLoading || !query.data || query.data.profile === null) {
+  if (query.isLoading || !query.data) {
     return <LinearProgress />;
   }
 
@@ -57,7 +49,10 @@ export function SettingsContent(): ReactElement {
 }
 
 function toFormValues(data: ProfileResponse): ProfileWithAutopilotInput {
-  const p = data.profile!;
+  if (!data.profile) {
+    return PROFILE_DEFAULT_VALUES;
+  }
+  const p = data.profile;
   const a = data.autopilot ?? PROFILE_DEFAULT_VALUES.autopilot!;
   return {
     firstName: p.firstName,
