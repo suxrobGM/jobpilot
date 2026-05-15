@@ -31,7 +31,7 @@ export function Rail(): ReactElement {
           display: "grid",
           placeItems: "center",
           color: theme.palette.surfaces.base,
-          fontFamily: "var(--font-geist-mono), monospace",
+          fontFamily: "var(--font-jetbrains-mono), monospace",
           fontWeight: 600,
           fontSize: 16,
           boxShadow: `0 0 18px ${theme.palette.accent.primary}40`,

@@ -1,42 +1,50 @@
 export const surfaces = {
-  base: "#07090F",
-  card: "#111726",
-  elevated: "#161D2E",
-  hover: "#1B2438",
+  base: "#161615",
+  card: "#1F1F1E",
+  elevated: "#2C2C2A",
+  hover: "#363633",
 } as const;
 
 export const accent = {
-  primary: "#A78BFA",
-  secondary: "#8B6FE8",
-  dark: "#7C5CFF",
+  primary: "#D9573A",
+  secondary: "#BF4A30",
+  dark: "#A33E26",
 } as const;
 
 export const textColors = {
-  primary: "#E9EDF5",
-  secondary: "#94A3C5",
-  disabled: "#5D6886",
+  primary: "#EEEAE0",
+  secondary: "#A8A49D",
+  disabled: "#646169",
 } as const;
 
 export const feedback = {
-  error: "#F87171",
-  success: "#6FBC8E",
-  info: "#5DA8E0",
-  warning: "#FBBF24",
+  error: "#D86F5A",
+  success: "#8FA08F",
+  info: "#7FA0B8",
+  warning: "#D9A85C",
 } as const;
 
 export const line = {
-  divider: "#1E2638",
-  border: "#26303F",
-  borderHi: "#2A3550",
+  divider: "#363634",
+  border: "#42423F",
+  borderHi: "#54544F",
 } as const;
 
 export const stages = {
-  discovered: "#6478D8",
-  queued: "#5DA8E0",
-  applying: "#A78BFA",
-  submitted: "#6FBC8E",
-  replied: "#F5C2A4",
-  rejected: "#F87171",
+  discovered: "#7A8B9E",
+  queued: "#C9A876",
+  applying: "#D9573A",
+  submitted: "#8FA08F",
+  replied: "#D9A85C",
+  rejected: "#D86F5A",
+} as const;
+
+export const editorial = {
+  paper: "#EEEAE0",
+  ink: "#161615",
+  sage: "#8FA08F",
+  ember: "#D9573A",
+  gold: "#D9A85C",
 } as const;
 
 export type StageKey = keyof typeof stages;

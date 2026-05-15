@@ -5,7 +5,7 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
   styleOverrides: {
     root: ({ theme }) => ({
       borderRadius: theme.radii.md,
-      border: `1px solid ${theme.palette.line.divider}`,
+      border: `1px solid ${theme.palette.line.border}`,
       backgroundColor: theme.palette.surfaces.card,
       boxShadow: theme.shadows_custom.sm,
       transition: theme.motion.fast,

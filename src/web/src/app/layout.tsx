@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { PropsWithChildren, ReactElement } from "react";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Fraunces, JetBrains_Mono } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
 import { NotificationProvider } from "@/providers/notification-provider";
 import { QueryProvider } from "@/providers/query-provider";
@@ -13,9 +13,17 @@ const geistSans = Geist({
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const fraunces = Fraunces({
   subsets: ["latin"],
-  variable: "--font-geist-mono",
+  variable: "--font-fraunces",
+  display: "swap",
+  axes: ["SOFT", "opsz"],
+  style: ["normal", "italic"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
   display: "swap",
 });
 
@@ -27,7 +35,10 @@ export const metadata: Metadata = {
 export default function RootLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${fraunces.variable} ${jetbrainsMono.variable}`}
+    >
       <body suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>

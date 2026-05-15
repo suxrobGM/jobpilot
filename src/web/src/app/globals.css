@@ -5,8 +5,21 @@ body {
 
 body {
   margin: 0;
-  background-color: #07090f;
-  color: #e9edf5;
+  background-color: #161615;
+  color: #eeeae0;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 160px 160px;
+  mix-blend-mode: soft-light;
 }
 
 *,
@@ -16,8 +29,8 @@ body {
 }
 
 ::selection {
-  background: rgba(167, 139, 250, 0.35);
-  color: #f5f5f7;
+  background: rgba(217, 87, 58, 0.32);
+  color: #eeeae0;
 }
 
 ::-webkit-scrollbar {
@@ -30,13 +43,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e2638;
+  background: #42423f;
   border-radius: 6px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a3550;
+  background: #54544f;
   background-clip: padding-box;
 }

@@ -8,7 +8,7 @@ export const outlinedInputOverrides: Components<Theme>["MuiOutlinedInput"] = {
   styleOverrides: {
     root: ({ theme }) => ({
       borderRadius: theme.radii.sm,
-      backgroundColor: theme.palette.surfaces.card,
+      backgroundColor: theme.palette.surfaces.base,
       transition: theme.motion.fast,
       "& fieldset": { borderColor: theme.palette.line.border },
       "&:hover fieldset": { borderColor: `${theme.palette.line.borderHi} !important` },
