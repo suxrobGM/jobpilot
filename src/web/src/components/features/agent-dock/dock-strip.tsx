@@ -22,7 +22,7 @@ export function DockStrip(): ReactElement {
       <Tooltip title="Open agent dock" placement="left" arrow disableInteractive>
         <Box
           component="button"
-          onClick={() => expand("terminal")}
+          onClick={() => expand()}
           aria-label="Open agent dock"
           sx={(theme) => ({
             appearance: "none",
@@ -43,13 +43,13 @@ export function DockStrip(): ReactElement {
       <Box sx={{ flex: 1 }} />
 
       <Tooltip title="Open terminal" placement="left" arrow disableInteractive>
-        <IconButton size="small" onClick={() => expand("terminal")} aria-label="Open terminal">
+        <IconButton size="small" onClick={() => expand()} aria-label="Open terminal">
           <TerminalIcon fontSize="sm" />
         </IconButton>
       </Tooltip>
 
       <Tooltip title="Expand" placement="left" arrow disableInteractive>
-        <IconButton size="small" onClick={() => expand("terminal")} aria-label="Expand dock">
+        <IconButton size="small" onClick={() => expand()} aria-label="Expand dock">
           <ChevronLeft fontSize="md" />
         </IconButton>
       </Tooltip>

@@ -1,19 +1,40 @@
 "use client";
 
-import type { ReactElement, SyntheticEvent } from "react";
-import { ChevronRight } from "@mui/icons-material";
-import { IconButton, Stack, Tab, Tabs, Typography } from "@mui/material";
+import { useState, type ReactElement } from "react";
+import { ChevronRight, RestartAlt, StopCircle } from "@mui/icons-material";
+import {
+  IconButton,
+  MenuItem,
+  Select,
+  Stack,
+  Tooltip,
+  Typography,
+  type SelectChangeEvent,
+} from "@mui/material";
+import { TerminalPanel } from "@/components/features/terminal";
 import { PilotOrb } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
-import { useAgent, type AgentTab } from "@/providers/agent-provider";
-import { DockTabEvents } from "./dock-tab-events";
-import { DockTabTerminal } from "./dock-tab-terminal";
+import { killSession } from "@/lib/terminal";
+import { useAgent } from "@/providers/agent-provider";
 
 export function DockPanel(): ReactElement {
-  const { activeTab, setActiveTab, collapse } = useAgent();
+  const { collapse, provider, setProvider } = useAgent();
+  const [reloadKey, setReloadKey] = useState(0);
+  const providerLabel = provider === "codex" ? "Codex" : "Claude Code";
 
-  const handleChange = (_: SyntheticEvent, next: AgentTab): void => {
-    setActiveTab(next);
+  const handleRestart = async (): Promise<void> => {
+    await killSession();
+    setReloadKey((k) => k + 1);
+  };
+
+  const handleProviderChange = async (event: SelectChangeEvent<string>): Promise<void> => {
+    const next = event.target.value === "codex" ? "codex" : "claude";
+    if (next === provider) {
+      return;
+    }
+    await killSession();
+    setProvider(next);
+    setReloadKey((k) => k + 1);
   };
 
   return (
@@ -27,11 +48,7 @@ export function DockPanel(): ReactElement {
           borderBottom: `1px solid ${theme.palette.line.divider}`,
         })}
       >
-        <Stack
-          direction="row"
-          spacing={1.25}
-          sx={{ alignItems: "center", flex: 1, minWidth: 0 }}
-        >
+        <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
           <PilotOrb size="xxl" />
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontSize: "0.8125rem", fontWeight: 500 }}>
@@ -48,31 +65,41 @@ export function DockPanel(): ReactElement {
         </IconButton>
       </Stack>
 
-      <Tabs
-        value={activeTab}
-        onChange={handleChange}
-        variant="fullWidth"
+      <Stack
+        direction="row"
+        spacing={0.75}
         sx={(theme) => ({
-          minHeight: 36,
-          paddingInline: theme.spacing(1),
+          alignItems: "center",
+          paddingInline: theme.spacing(1.5),
+          paddingBlock: theme.spacing(0.75),
           borderBottom: `1px solid ${theme.palette.line.divider}`,
-          "& .MuiTab-root": {
-            minHeight: 36,
-            paddingInline: theme.spacing(1.25),
-            paddingBlock: theme.spacing(0.75),
-            fontFamily: "var(--font-geist-mono), monospace",
-            fontSize: "0.6875rem",
-            letterSpacing: "0.06em",
-            textTransform: "lowercase",
-          },
         })}
       >
-        <Tab value="terminal" label="terminal" />
-        <Tab value="events" label="events" />
-      </Tabs>
+        <Typography variant="captionMuted" sx={{ flex: 1 }}>
+          {providerLabel}
+        </Typography>
+        <Select
+          size="small"
+          value={provider}
+          onChange={handleProviderChange}
+          sx={{ minWidth: 120, fontSize: "0.75rem" }}
+        >
+          <MenuItem value="claude">Claude Code</MenuItem>
+          <MenuItem value="codex">Codex</MenuItem>
+        </Select>
+        <Tooltip title={`Restart ${providerLabel}`}>
+          <IconButton size="small" onClick={handleRestart} aria-label="Restart">
+            <RestartAlt fontSize="sm" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={`Stop ${providerLabel}`}>
+          <IconButton size="small" onClick={killSession} aria-label="Stop">
+            <StopCircle fontSize="sm" />
+          </IconButton>
+        </Tooltip>
+      </Stack>
 
-      <DockTabTerminal hidden={activeTab !== "terminal"} />
-      {activeTab === "events" && <DockTabEvents />}
+      <TerminalPanel key={`${provider}-${reloadKey}`} provider={provider} />
     </Stack>
   );
 }

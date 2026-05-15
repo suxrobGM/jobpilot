@@ -10,6 +10,7 @@ import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
 import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
+const STABLE_FRAMES = 3;
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 const SHIFT_ENTER_INPUT = "\x1b[13;2u";
 
@@ -18,7 +19,11 @@ interface TerminalPanelProps {
 }
 
 /**
- * Hosts the xterm.js instance that bridges browser input/output to JobPilot.Terminal.
+ * xterm.js instance bridged to a JobPilot.Terminal provider PTY over WebSocket.
+ *
+ * Waits for the container size to settle before the initial fit so the first
+ * resize sent to a still-running PTY isn't the dock's mid-transition width.
+ * Shift+Enter is forwarded as CSI-u `ESC[13;2u` instead of a newline.
  */
 export function TerminalPanel(props: TerminalPanelProps): ReactElement {
   const { provider } = props;
@@ -27,9 +32,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
     const terminal = new Terminal({
       cursorBlink: true,
@@ -49,46 +52,46 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
     const fit = new FitAddon();
     terminal.loadAddon(fit);
     terminal.open(container);
-    fit.fit();
 
     let socket: WebSocketClient | null = null;
-    let inputDisposable: { dispose: () => void } | null = null;
     let disposed = false;
-    let lastCols = terminal.cols;
-    let lastRows = terminal.rows;
 
-    const writeOutput = (data: string | Uint8Array) => {
-      if (!disposed) {
-        terminal.write(data);
-      }
-    };
-
-    const sendResize = () => {
-      socket?.sendJson({ type: "resize", cols: lastCols, rows: lastRows });
-    };
-
-    const syncSize = () => {
-      if (disposed) {
-        return;
-      }
+    const fitAndResize = (): void => {
       try {
         fit.fit();
-        if (terminal.cols === lastCols && terminal.rows === lastRows) {
-          return;
-        }
-
-        lastCols = terminal.cols;
-        lastRows = terminal.rows;
-        sendResize();
-        terminal.scrollToBottom();
+        socket?.sendJson({ type: "resize", cols: terminal.cols, rows: terminal.rows });
       } catch {
-        // ignore until container is laid out
+        // container not laid out yet
       }
     };
 
-    const initialize = async () => {
+    const waitForStableSize = (): Promise<void> =>
+      new Promise((resolve) => {
+        let lastWidth = -1;
+        let lastHeight = -1;
+        let stableFrames = 0;
+        const tick = (): void => {
+          if (disposed) return resolve();
+          const width = container.offsetWidth;
+          const height = container.offsetHeight;
+          if (width > 0 && height > 0 && width === lastWidth && height === lastHeight) {
+            if (++stableFrames >= STABLE_FRAMES) return resolve();
+          } else {
+            stableFrames = 0;
+            lastWidth = width;
+            lastHeight = height;
+          }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+
+    const start = async (): Promise<void> => {
+      await waitForStableSize();
+      if (disposed) return;
+
       try {
-        syncSize();
+        fit.fit();
         await startSession({ cols: terminal.cols, rows: terminal.rows, provider });
       } catch (err) {
         terminal.writeln(
@@ -96,64 +99,42 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
         );
         return;
       }
-
-      if (disposed) {
-        return;
-      }
+      if (disposed) return;
 
       socket = connectWebSocket(TERMINAL_WS_URL, {
-        onOpen() {
-          sendResize();
-        },
-        onBinary(data) {
-          writeOutput(data);
-        },
-        onText(data) {
-          writeOutput(data);
-        },
-        onClose() {
-          writeOutput("\r\n\x1b[33m[terminal] disconnected\x1b[0m\r\n");
-        },
+        onOpen: () => fitAndResize(),
+        onBinary: (data) => terminal.write(data),
+        onText: (data) => terminal.write(data),
+        onClose: () => terminal.write("\r\n\x1b[33m[terminal] disconnected\x1b[0m\r\n"),
       });
 
       terminal.attachCustomKeyEventHandler((event) => {
-        if (event.type !== "keydown" || event.key !== "Enter" || !event.shiftKey) {
-          return true;
+        if (event.type === "keydown" && event.key === "Enter" && event.shiftKey) {
+          event.preventDefault();
+          socket?.sendJson({ type: "input", data: toBase64(SHIFT_ENTER_INPUT) });
+          return false;
         }
-
-        event.preventDefault();
-        socket?.sendJson({ type: "input", data: toBase64(SHIFT_ENTER_INPUT) });
-        return false;
+        return true;
       });
 
-      inputDisposable = terminal.onData((data) => {
+      terminal.onData((data) => {
         socket?.sendJson({ type: "input", data: toBase64(data) });
       });
     };
 
-    initialize();
+    start();
 
     let resizeTimer: ReturnType<typeof setTimeout> | null = null;
-
     const observer = new ResizeObserver(() => {
-      if (resizeTimer) {
-        clearTimeout(resizeTimer);
-      }
-
-      resizeTimer = setTimeout(() => {
-        resizeTimer = null;
-        syncSize();
-      }, RESIZE_DEBOUNCE_MS);
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(fitAndResize, RESIZE_DEBOUNCE_MS);
     });
     observer.observe(container);
 
     return () => {
       disposed = true;
-      if (resizeTimer) {
-        clearTimeout(resizeTimer);
-      }
+      if (resizeTimer) clearTimeout(resizeTimer);
       observer.disconnect();
-      inputDisposable?.dispose();
       socket?.close(1000, "panel unmounted");
       terminal.dispose();
     };
@@ -170,13 +151,8 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
         position: "relative",
         px: 1,
         py: 0.5,
-        "& .xterm": {
-          height: "100%",
-          maxWidth: "100%",
-        },
-        "& .xterm-viewport": {
-          overscrollBehavior: "contain",
-        },
+        "& .xterm": { height: "100%", maxWidth: "100%" },
+        "& .xterm-viewport": { overscrollBehavior: "contain" },
       })}
     />
   );

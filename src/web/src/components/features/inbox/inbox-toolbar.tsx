@@ -36,7 +36,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   );
 
   const handleScan = async (): Promise<void> => {
-    expand("terminal");
+    expand();
     await injectSkill("scan-inbox");
   };
 

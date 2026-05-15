@@ -27,13 +27,9 @@ function clampWidth(value: number): number {
   return Math.max(DOCK_MIN_EXPANDED, Math.min(DOCK_MAX_EXPANDED, Math.round(value)));
 }
 
-export type AgentTab = "terminal" | "events";
-
 export interface AgentContextValue {
   expanded: boolean;
-  activeTab: AgentTab;
-  setActiveTab: (tab: AgentTab) => void;
-  expand: (tab?: AgentTab) => void;
+  expand: () => void;
   collapse: () => void;
   toggleExpanded: () => void;
 
@@ -52,7 +48,6 @@ const AgentContext = createContext<AgentContextValue | null>(null);
 export function AgentProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const [expanded, setExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState<AgentTab>("terminal");
   const [provider, setProviderState] = useState<TerminalProviderId>(getProvider());
   const [expandedWidth, setExpandedWidthState] = useState<number>(DOCK_EXPANDED);
 
@@ -80,16 +75,9 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     window.localStorage.setItem(DOCK_WIDTH_KEY, String(next));
   };
 
-  const expand = (tab?: AgentTab): void => {
-    if (tab) setActiveTab(tab);
-    setExpanded(true);
-  };
-
   const value: AgentContextValue = {
     expanded,
-    activeTab,
-    setActiveTab,
-    expand,
+    expand: () => setExpanded(true),
     collapse: () => setExpanded(false),
     toggleExpanded: () => setExpanded((prev) => !prev),
     expandedWidth,

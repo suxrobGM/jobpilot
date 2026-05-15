@@ -66,7 +66,7 @@ export function PipelineView(): ReactElement {
               variant="contained"
               size="small"
               startIcon={<PlayArrow fontSize="md" />}
-              onClick={() => expand("terminal")}
+              onClick={() => expand()}
             >
               Open agent
             </Button>
