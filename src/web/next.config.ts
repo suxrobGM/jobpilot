@@ -9,7 +9,6 @@ const config: NextConfig = {
   experimental: {
     optimizePackageImports: ["@mui/material", "@mui/icons-material"],
   },
-  serverExternalPackages: ["@prisma/client"],
 };
 
 export default config;
