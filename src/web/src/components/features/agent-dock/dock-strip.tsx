@@ -40,17 +40,6 @@ export function DockStrip(): ReactElement {
         </Box>
       </Tooltip>
 
-      <Typography
-        variant="overlineMuted"
-        sx={{
-          writingMode: "vertical-rl",
-          transform: "rotate(180deg)",
-          letterSpacing: "0.18em",
-        }}
-      >
-        Agent
-      </Typography>
-
       <Box sx={{ flex: 1 }} />
 
       <Tooltip title="Open terminal" placement="left" arrow disableInteractive>
