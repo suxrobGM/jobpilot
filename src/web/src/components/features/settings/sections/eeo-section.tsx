@@ -31,11 +31,11 @@ const DISABILITY = [
   { value: PNTD, label: PNTD },
 ];
 
-interface EeoTabProps {
+interface EeoSectionProps {
   form: AnyReactForm;
 }
 
-export function EeoTab(props: EeoTabProps): ReactElement {
+export function EeoSection(props: EeoSectionProps): ReactElement {
   const { form } = props;
   return (
     <FormSection

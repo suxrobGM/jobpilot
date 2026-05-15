@@ -4,35 +4,13 @@ import type { ReactElement, SyntheticEvent } from "react";
 import { ChevronRight } from "@mui/icons-material";
 import { IconButton, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { PilotOrb } from "@/components/ui/display";
-import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
-import { useAgent, type AgentStatus, type AgentTab } from "@/providers/agent-provider";
+import { PulseDot } from "@/components/ui/feedback";
+import { useAgent, type AgentTab } from "@/providers/agent-provider";
 import { DockTabEvents } from "./dock-tab-events";
-import { DockTabPilot } from "./dock-tab-pilot";
 import { DockTabTerminal } from "./dock-tab-terminal";
 
-interface StatusCopy {
-  label: string;
-  pulsing: boolean;
-  tone: PulseDotTone;
-}
-
-function statusCopy(status: AgentStatus): StatusCopy {
-  switch (status) {
-    case "working":
-      return { label: "working", pulsing: true, tone: "violet" };
-    case "awaiting-input":
-      return { label: "awaiting you", pulsing: true, tone: "amber" };
-    case "error":
-      return { label: "needs help", pulsing: false, tone: "red" };
-    case "idle":
-    default:
-      return { label: "ready", pulsing: false, tone: "muted" };
-  }
-}
-
 export function DockPanel(): ReactElement {
-  const { activeTab, setActiveTab, collapse, status } = useAgent();
-  const { label, pulsing, tone } = statusCopy(status);
+  const { activeTab, setActiveTab, collapse } = useAgent();
 
   const handleChange = (_: SyntheticEvent, next: AgentTab): void => {
     setActiveTab(next);
@@ -54,18 +32,18 @@ export function DockPanel(): ReactElement {
           spacing={1.25}
           sx={{ alignItems: "center", flex: 1, minWidth: 0 }}
         >
-          <PilotOrb size={28} />
+          <PilotOrb size="xxl" />
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontSize: "0.8125rem", fontWeight: 500 }}>
-              Pilot
+              Agent
             </Typography>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", marginTop: "2px" }}>
-              <PulseDot tone={tone} pulsing={pulsing} size="xs" />
-              <Typography variant="overlineMuted">{label}</Typography>
+              <PulseDot tone="muted" pulsing={false} size="xs" />
+              <Typography variant="overlineMuted">ready</Typography>
             </Stack>
           </Stack>
         </Stack>
-        <IconButton size="small" onClick={collapse} aria-label="Collapse Pilot">
+        <IconButton size="small" onClick={collapse} aria-label="Collapse agent dock">
           <ChevronRight fontSize="md" />
         </IconButton>
       </Stack>
@@ -89,13 +67,11 @@ export function DockPanel(): ReactElement {
           },
         })}
       >
-        <Tab value="pilot" label="pilot" />
         <Tab value="terminal" label="terminal" />
         <Tab value="events" label="events" />
       </Tabs>
 
-      {activeTab === "pilot" && <DockTabPilot />}
-      {activeTab === "terminal" && <DockTabTerminal />}
+      <DockTabTerminal hidden={activeTab !== "terminal"} />
       {activeTab === "events" && <DockTabEvents />}
     </Stack>
   );

@@ -23,8 +23,11 @@ and inject provider-specific commands.
   `skills/jobpilot-<name>/SKILL.md` wrappers. Skills run as
   `$jobpilot-<skill>`.
 - **Web app** in `src/web/` is the data + UI layer: Bun + Next.js 16 + MUI 9
-  + Prisma 7 + TanStack Query/Form + Zod v4. SQLite database at
-  `src/web/prisma/dev.db`; uploaded resumes at `src/web/storage/resumes/`.
+  + Prisma 7 + TanStack Query/Form + Zod v4. Dark-only F2 theme, Geist
+  fonts, kanban Pipeline at `/` with virtualized columns + URL-driven filter
+  bar, and a resizable right-side agent dock (Pilot / Terminal / Events
+  tabs). SQLite database at `src/web/prisma/dev.db`; uploaded resumes at
+  `src/web/storage/resumes/`.
 - **JobPilot.Terminal** in `src/JobPilot.Terminal/` is a .NET 10 ASP.NET Core
   minimal API. It owns one active provider PTY, starts Claude with
   `--plugin-dir src/jobpilot-claude-plugin` or Codex with
@@ -102,17 +105,23 @@ and inject provider-specific commands.
 | `src/web/src/app/api/**/route.ts`                                           | API endpoints.                                                          |
 | `src/web/src/app/**/page.tsx`                                               | Pages (RSC).                                                            |
 | `src/web/src/components/features/<domain>/`                                 | Domain-specific React components.                                       |
-| `src/web/src/components/features/terminal/`                                 | xterm.js terminal panel + WS client.                                    |
-| `src/web/src/components/features/queue/queue-run-button.tsx`                | Injects provider-specific apply commands into the terminal.             |
-| `src/web/src/components/features/runs/autopilot-run-button.tsx`             | Injects provider-specific autopilot commands into the terminal.         |
-| `src/web/src/providers/terminal-provider.tsx`                               | Open/toggle state + `inject(command)` helper used by the buttons above. |
+| `src/web/src/components/features/pipeline/`                                 | Kanban home page: board, virtualized columns, filter bar, card.         |
+| `src/web/src/components/features/agent-dock/`                               | Right-side Pilot dock: strip, panel, tabs, resize handle, chat input.   |
+| `src/web/src/components/features/settings/`                                 | Scroll-and-anchor settings page sections (personal, address, …).        |
+| `src/web/src/components/features/terminal/`                                 | xterm.js terminal panel + WS client (embedded in dock terminal tab).    |
 | `src/web/src/components/ui/{data,display,feedback,form,layout}/`            | UI primitives.                                                          |
+| `src/web/src/components/ui/layout/section-anchor-nav.tsx`                   | Sticky left rail that highlights the currently-visible section.         |
+| `src/web/src/providers/agent-provider.tsx`                                  | Dock open/tab/width state + `inject(command)` helper.                   |
+| `src/web/src/hooks/use-search-param.ts`                                     | URL-state binding for filter bars (`useSearchParam{,Number}`).          |
+| `src/web/src/hooks/use-debounced-value.ts`                                  | Generic debounced-value hook (used by pipeline search).                 |
 | `src/web/src/lib/db.ts`                                                     | Prisma client singleton (libSQL adapter).                               |
 | `src/web/src/lib/terminal.ts`                                               | Terminal HTTP client (`startSession`, `injectCommand`, `killSession`).  |
+| `src/web/src/lib/api/api-server.ts`                                         | Server-side `apiGet<T>(path)` for RSC → own-API fetches.                |
 | `src/web/src/lib/sse.ts`                                                    | In-process SSE broker.                                                  |
 | `src/web/src/lib/matching.ts`                                               | Jaro-Winkler fuzzy duplicate detection.                                 |
 | `src/web/src/lib/schemas/*.ts`                                              | Zod schemas (shared by API + form validators).                          |
 | `src/web/src/lib/api/query-keys.ts`                                         | Structured TanStack Query keys.                                         |
+| `src/web/src/app/api/pipeline/route.ts`                                     | Cursor-paginated pipeline column data (stage + filters).                |
 | `src/web/src/types/api/*.ts`                                                | DTOs returned by API endpoints.                                         |
 
 ## Frontend Conventions

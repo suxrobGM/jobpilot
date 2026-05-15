@@ -7,11 +7,11 @@ import { FormSwitchField } from "@/components/ui/form/form-switch-field";
 import { FormTextField } from "@/components/ui/form/form-text-field";
 import type { AnyReactForm } from "@/components/ui/form/types";
 
-interface WorkAuthTabProps {
+interface WorkAuthSectionProps {
   form: AnyReactForm;
 }
 
-export function WorkAuthTab(props: WorkAuthTabProps): ReactElement {
+export function WorkAuthSection(props: WorkAuthSectionProps): ReactElement {
   const { form } = props;
   return (
     <FormSection title="Work authorization" description="What employers ask on every application.">

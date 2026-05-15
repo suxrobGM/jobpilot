@@ -3,12 +3,12 @@
 import type { ReactElement } from "react";
 import { Stack, TextField, Typography } from "@mui/material";
 
-interface SummaryTabProps {
+interface SummarySectionProps {
   value: string;
   onChange: (next: string) => void;
 }
 
-export function SummaryTab(props: SummaryTabProps): ReactElement {
+export function SummarySection(props: SummarySectionProps): ReactElement {
   const { value, onChange } = props;
   return (
     <Stack spacing={1}>

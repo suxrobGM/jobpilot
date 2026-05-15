@@ -13,11 +13,11 @@ const CONFIRM_MODES = [
   { value: "auto", label: "Auto-apply (no confirm)" },
 ];
 
-interface AutopilotTabProps {
+interface AutopilotSectionProps {
   form: AnyReactForm;
 }
 
-export function AutopilotTab(props: AutopilotTabProps): ReactElement {
+export function AutopilotSection(props: AutopilotSectionProps): ReactElement {
   const { form } = props;
   return (
     <FormSection

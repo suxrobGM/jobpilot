@@ -15,7 +15,12 @@ import { TerminalPanel } from "@/components/features/terminal";
 import { killSession } from "@/lib/terminal";
 import { useAgent } from "@/providers/agent-provider";
 
-export function DockTabTerminal(): ReactElement {
+interface DockTabTerminalProps {
+  hidden?: boolean;
+}
+
+export function DockTabTerminal(props: DockTabTerminalProps): ReactElement {
+  const { hidden = false } = props;
   const { provider, setProvider } = useAgent();
   const [reloadKey, setReloadKey] = useState(0);
   const providerLabel = provider === "codex" ? "Codex" : "Claude Code";
@@ -38,7 +43,7 @@ export function DockTabTerminal(): ReactElement {
   };
 
   return (
-    <Stack sx={{ flex: 1, minHeight: 0 }}>
+    <Stack sx={{ flex: 1, minHeight: 0, display: hidden ? "none" : "flex" }}>
       <Stack
         direction="row"
         spacing={0.75}

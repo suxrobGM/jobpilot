@@ -10,7 +10,7 @@ import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { EmailAccountStatus } from "@/types/api";
 
-export function EmailTab(): ReactElement {
+export function EmailSection(): ReactElement {
   const [provider, setProvider] = useState("gmail");
   const [pendingDisconnect, setPendingDisconnect] = useState(false);
 

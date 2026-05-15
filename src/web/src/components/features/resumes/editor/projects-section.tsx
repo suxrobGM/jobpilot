@@ -7,12 +7,12 @@ import type { ResumeProject } from "@/lib/schemas/resume";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
 
-interface ProjectsTabProps {
+interface ProjectsSectionProps {
   value: ResumeProject[];
   onChange: (next: ResumeProject[]) => void;
 }
 
-export function ProjectsTab(props: ProjectsTabProps): ReactElement {
+export function ProjectsSection(props: ProjectsSectionProps): ReactElement {
   const { value, onChange } = props;
   return (
     <EntryList<ResumeProject>

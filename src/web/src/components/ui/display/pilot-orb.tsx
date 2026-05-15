@@ -2,26 +2,37 @@
 
 import type { ReactElement } from "react";
 import { Box } from "@mui/material";
+import { iconSizes, type IconSizeToken } from "@/theme/tokens";
 
 interface PilotOrbProps {
-  size?: number;
+  /** Either a px value or one of the shared {@link IconSizeToken}s. */
+  size?: number | IconSizeToken;
   breathing?: boolean;
   liveDot?: boolean;
 }
 
+function resolveSize(size: PilotOrbProps["size"]): number {
+  if (size == null) {
+    return iconSizes["2xxl"];
+  }
+  return typeof size === "number" ? size : iconSizes[size];
+}
+
 export function PilotOrb(props: PilotOrbProps): ReactElement {
-  const { size = 32, breathing = true, liveDot = false } = props;
-  const innerInset = Math.max(3, Math.round(size * 0.12));
-  const dotSize = Math.max(7, Math.round(size * 0.28));
-  const glow = Math.round(size * 0.45);
+  const { size, breathing = true, liveDot = false } = props;
+
+  const sizePx = resolveSize(size);
+  const innerInset = Math.max(3, Math.round(sizePx * 0.12));
+  const dotSize = Math.max(7, Math.round(sizePx * 0.28));
+  const glow = Math.round(sizePx * 0.45);
 
   return (
     <Box
       aria-hidden
       sx={(theme) => ({
         position: "relative",
-        width: size,
-        height: size,
+        width: sizePx,
+        height: sizePx,
         borderRadius: "50%",
         background: theme.gradients.orb,
         boxShadow: `0 0 ${glow}px ${theme.palette.accent.primary}40`,

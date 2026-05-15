@@ -7,12 +7,12 @@ import type { ResumeExperience } from "@/lib/schemas/resume";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
 
-interface ExperienceTabProps {
+interface ExperienceSectionProps {
   value: ResumeExperience[];
   onChange: (next: ResumeExperience[]) => void;
 }
 
-export function ExperienceTab(props: ExperienceTabProps): ReactElement {
+export function ExperienceSection(props: ExperienceSectionProps): ReactElement {
   const { value, onChange } = props;
   return (
     <EntryList<ResumeExperience>

@@ -1,19 +1,23 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { Box } from "@mui/material";
-import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
+import { DOCK_COLLAPSED } from "@/components/layout/shell-config";
 import { useAgent } from "@/providers/agent-provider";
 import { DockPanel } from "./dock-panel";
+import { DockResizeHandle } from "./dock-resize-handle";
 import { DockStrip } from "./dock-strip";
 
 export function AgentDock(): ReactElement {
-  const { expanded } = useAgent();
+  const { expanded, expandedWidth } = useAgent();
+  const [dragging, setDragging] = useState(false);
+
   return (
     <Box
       component="aside"
       sx={(theme) => ({
-        width: expanded ? DOCK_EXPANDED : DOCK_COLLAPSED,
+        position: "relative",
+        width: expanded ? expandedWidth : DOCK_COLLAPSED,
         flexShrink: 0,
         height: "100%",
         overflow: "hidden",
@@ -21,9 +25,10 @@ export function AgentDock(): ReactElement {
         flexDirection: "column",
         borderLeft: `1px solid ${theme.palette.line.divider}`,
         backgroundColor: theme.palette.surfaces.base,
-        transition: `width ${theme.motion.expressive}`,
+        transition: dragging ? "none" : `width ${theme.motion.expressive}`,
       })}
     >
+      <DockResizeHandle onDragStart={() => setDragging(true)} onDragEnd={() => setDragging(false)} />
       {expanded ? <DockPanel /> : <DockStrip />}
     </Box>
   );

@@ -3,29 +3,31 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type PropsWithChildren,
   type ReactElement,
 } from "react";
+import {
+  DOCK_EXPANDED,
+  DOCK_MAX_EXPANDED,
+  DOCK_MIN_EXPANDED,
+} from "@/components/layout/shell-config";
 import { formatSkillCommand, injectCommand, type TerminalProviderId } from "@/lib/terminal";
 
 const TERMINAL_PROVIDER_KEY = "jobpilot.terminal.provider";
+const DOCK_WIDTH_KEY = "jobpilot.dock.width";
 
 function getProvider(): TerminalProviderId {
   if (typeof window === "undefined") return "claude";
   return window.localStorage.getItem(TERMINAL_PROVIDER_KEY) === "codex" ? "codex" : "claude";
 }
 
-export type AgentTab = "pilot" | "terminal" | "events";
-
-export type AgentStatus = "idle" | "working" | "awaiting-input" | "error";
-
-export interface AgentFocus {
-  runId: string;
-  jobKey: string;
-  step: string;
-  message: string;
+function clampWidth(value: number): number {
+  return Math.max(DOCK_MIN_EXPANDED, Math.min(DOCK_MAX_EXPANDED, Math.round(value)));
 }
+
+export type AgentTab = "terminal" | "events";
 
 export interface AgentContextValue {
   expanded: boolean;
@@ -35,8 +37,8 @@ export interface AgentContextValue {
   collapse: () => void;
   toggleExpanded: () => void;
 
-  status: AgentStatus;
-  currentFocus: AgentFocus | null;
+  expandedWidth: number;
+  setExpandedWidth: (px: number) => void;
 
   provider: TerminalProviderId;
   setProvider: (provider: TerminalProviderId) => void;
@@ -50,14 +52,32 @@ const AgentContext = createContext<AgentContextValue | null>(null);
 export function AgentProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const [expanded, setExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState<AgentTab>("pilot");
+  const [activeTab, setActiveTab] = useState<AgentTab>("terminal");
   const [provider, setProviderState] = useState<TerminalProviderId>(getProvider());
-  const [status] = useState<AgentStatus>("idle");
-  const [currentFocus] = useState<AgentFocus | null>(null);
+  const [expandedWidth, setExpandedWidthState] = useState<number>(DOCK_EXPANDED);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(DOCK_WIDTH_KEY);
+    if (!stored) {
+      return;
+    }
+
+    const parsed = Number(stored);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+    setExpandedWidthState(clampWidth(parsed));
+  }, []);
 
   const setProvider = (next: TerminalProviderId): void => {
     setProviderState(next);
     window.localStorage.setItem(TERMINAL_PROVIDER_KEY, next);
+  };
+
+  const setExpandedWidth = (px: number): void => {
+    const next = clampWidth(px);
+    setExpandedWidthState(next);
+    window.localStorage.setItem(DOCK_WIDTH_KEY, String(next));
   };
 
   const expand = (tab?: AgentTab): void => {
@@ -72,8 +92,8 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     expand,
     collapse: () => setExpanded(false),
     toggleExpanded: () => setExpanded((prev) => !prev),
-    status,
-    currentFocus,
+    expandedWidth,
+    setExpandedWidth,
     provider,
     setProvider,
     inject: (command: string) => injectCommand(command, provider),

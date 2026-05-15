@@ -6,11 +6,11 @@ import { FormSection } from "@/components/ui/form/form-section";
 import { FormTextField } from "@/components/ui/form/form-text-field";
 import type { AnyReactForm } from "@/components/ui/form/types";
 
-interface AddressTabProps {
+interface AddressSectionProps {
   form: AnyReactForm;
 }
 
-export function AddressTab(props: AddressTabProps): ReactElement {
+export function AddressSection(props: AddressSectionProps): ReactElement {
   const { form } = props;
   return (
     <FormSection

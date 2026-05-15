@@ -26,7 +26,13 @@ export const radii = {
 } as const;
 
 export const iconSizes = {
-  xs: 16,
-  sm: 20,
-  md: 24,
+  xs: 14,
+  sm: 16,
+  md: 18,
+  lg: 20,
+  xl: 24,
+  xxl: 28,
+  "2xxl": 32,
 } as const;
+
+export type IconSizeToken = keyof typeof iconSizes;

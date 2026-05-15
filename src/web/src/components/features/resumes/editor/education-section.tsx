@@ -7,12 +7,12 @@ import type { ResumeEducation } from "@/lib/schemas/resume";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
 
-interface EducationTabProps {
+interface EducationSectionProps {
   value: ResumeEducation[];
   onChange: (next: ResumeEducation[]) => void;
 }
 
-export function EducationTab(props: EducationTabProps): ReactElement {
+export function EducationSection(props: EducationSectionProps): ReactElement {
   const { value, onChange } = props;
   return (
     <EntryList<ResumeEducation>

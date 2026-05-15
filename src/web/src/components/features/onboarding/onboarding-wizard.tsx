@@ -4,18 +4,21 @@ import { useState, type ReactElement } from "react";
 import { Button, Stack, Step, StepLabel, Stepper } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
-import { AddressTab } from "@/components/features/profile/address-tab";
-import { AutopilotTab } from "@/components/features/profile/autopilot-tab";
-import { EeoTab } from "@/components/features/profile/eeo-tab";
-import { PersonalTab } from "@/components/features/profile/personal-tab";
-import { PROFILE_DEFAULT_VALUES } from "@/components/features/profile/profile-form";
-import { WorkAuthTab } from "@/components/features/profile/work-auth-tab";
+import { AddressSection } from "@/components/features/settings/sections/address-section";
+import { AutopilotSection } from "@/components/features/settings/sections/autopilot-section";
+import { EeoSection } from "@/components/features/settings/sections/eeo-section";
+import { PersonalSection } from "@/components/features/settings/sections/personal-section";
+import { WorkAuthSection } from "@/components/features/settings/sections/work-auth-section";
 import type { AnyReactForm } from "@/components/ui/form/types";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
-import { profileWithAutopilotSchema, type ProfileWithAutopilotInput } from "@/lib/schemas/profile";
+import {
+  PROFILE_DEFAULT_VALUES,
+  profileWithAutopilotSchema,
+  type ProfileWithAutopilotInput,
+} from "@/lib/schemas/profile";
 
 const STEPS = [
   { key: "personal", label: "Personal" },
@@ -34,7 +37,7 @@ export function OnboardingWizard(): ReactElement {
     {
       successMessage: "Profile created",
       invalidate: [queryKeys.profile.all],
-      onSuccess: () => router.push("/profile"),
+      onSuccess: () => router.push("/settings"),
     },
   );
 
@@ -67,11 +70,11 @@ export function OnboardingWizard(): ReactElement {
           }}
         >
           <Stack spacing={3}>
-            {step === 0 && <PersonalTab form={formApi} />}
-            {step === 1 && <AddressTab form={formApi} />}
-            {step === 2 && <WorkAuthTab form={formApi} />}
-            {step === 3 && <EeoTab form={formApi} />}
-            {step === 4 && <AutopilotTab form={formApi} />}
+            {step === 0 && <PersonalSection form={formApi} />}
+            {step === 1 && <AddressSection form={formApi} />}
+            {step === 2 && <WorkAuthSection form={formApi} />}
+            {step === 3 && <EeoSection form={formApi} />}
+            {step === 4 && <AutopilotSection form={formApi} />}
             <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
               <Button onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
                 Back

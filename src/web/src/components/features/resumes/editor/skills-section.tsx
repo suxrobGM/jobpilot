@@ -5,12 +5,12 @@ import { Stack, TextField } from "@mui/material";
 import type { ResumeSkillGroup } from "@/lib/schemas/resume";
 import { EntryList } from "./entry-list";
 
-interface SkillsTabProps {
+interface SkillsSectionProps {
   value: ResumeSkillGroup[];
   onChange: (next: ResumeSkillGroup[]) => void;
 }
 
-export function SkillsTab(props: SkillsTabProps): ReactElement {
+export function SkillsSection(props: SkillsSectionProps): ReactElement {
   const { value, onChange } = props;
   return (
     <EntryList<ResumeSkillGroup>

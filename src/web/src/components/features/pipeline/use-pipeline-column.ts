@@ -7,14 +7,19 @@ import type { PipelineColumnPage, PipelineStage } from "@/types/api/pipeline";
 import { buildUrl } from "@/utils/url";
 
 export interface PipelineColumnFilters {
-  search?: string;
-  board?: string;
-  matchMin?: number;
+  search: string | null;
+  board: string | null;
+  matchMin: number | null;
 }
 
 const DEFAULT_LIMIT = 50;
 
-export function usePipelineColumn(stage: PipelineStage, filters: PipelineColumnFilters = {}) {
+const EMPTY_FILTERS: PipelineColumnFilters = { search: null, board: null, matchMin: null };
+
+export function usePipelineColumn(
+  stage: PipelineStage,
+  filters: PipelineColumnFilters = EMPTY_FILTERS,
+) {
   return useInfiniteQuery<
     PipelineColumnPage,
     Error,
@@ -22,7 +27,7 @@ export function usePipelineColumn(stage: PipelineStage, filters: PipelineColumnF
     ReturnType<typeof queryKeys.pipeline.column>,
     string | null
   >({
-    queryKey: queryKeys.pipeline.column(stage, filters as Record<string, unknown>),
+    queryKey: queryKeys.pipeline.column(stage, filters as unknown as Record<string, unknown>),
     initialPageParam: null,
     queryFn: async ({ pageParam }) => {
       const { data, error } = await apiClient.get<PipelineColumnPage>(

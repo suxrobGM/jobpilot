@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import { Delete, Launch } from "@mui/icons-material";
-import { Box, Button, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
+import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { StageChip } from "@/components/ui/display/stage-chip";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
@@ -18,17 +18,21 @@ import { StageTimeline } from "./stage-timeline";
 import { StageTransitionDialog } from "./stage-transition-dialog";
 
 interface ApplicationDetailProps {
-  id: number;
+  initialApplication: ApplicationDetailDto;
 }
 
 export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
-  const { id } = props;
+  const { initialApplication } = props;
+  const id = initialApplication.id;
+
   const router = useRouter();
   const [stageDialogOpen, setStageDialogOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const detail = useApiQuery<ApplicationDetailDto>(queryKeys.applications.detail(id), () =>
-    apiClient.get<ApplicationDetailDto>(`/api/applied/${id}`),
+  const detail = useApiQuery<ApplicationDetailDto>(
+    queryKeys.applications.detail(id),
+    () => apiClient.get<ApplicationDetailDto>(`/api/applied/${id}`),
+    { initialData: initialApplication },
   );
 
   const updateStage = useApiMutation<{ id: number; stage: Stage }, StageTransitionInput>(
@@ -45,15 +49,11 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     {
       successMessage: "Application deleted",
       invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],
-      onSuccess: () => router.replace("/applications"),
+      onSuccess: () => router.replace("/"),
     },
   );
 
-  if (detail.isLoading || !detail.data) {
-    return <LinearProgress />;
-  }
-
-  const app = detail.data;
+  const app = detail.data ?? initialApplication;
 
   return (
     <>

@@ -6,11 +6,11 @@ import { FormSection } from "@/components/ui/form/form-section";
 import { FormTextField } from "@/components/ui/form/form-text-field";
 import type { AnyReactForm } from "@/components/ui/form/types";
 
-interface PersonalTabProps {
+interface PersonalSectionProps {
   form: AnyReactForm;
 }
 
-export function PersonalTab(props: PersonalTabProps): ReactElement {
+export function PersonalSection(props: PersonalSectionProps): ReactElement {
   const { form } = props;
   return (
     <FormSection

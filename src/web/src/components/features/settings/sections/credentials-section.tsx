@@ -13,7 +13,7 @@ import type { CredentialInput } from "@/lib/schemas/credential";
 import type { CredentialDto } from "@/types/api";
 import { CredentialFormDialog } from "./credential-form-dialog";
 
-export function CredentialsTab(): ReactElement {
+export function CredentialsSection(): ReactElement {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<CredentialDto | null>(null);
 

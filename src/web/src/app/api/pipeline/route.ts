@@ -12,6 +12,12 @@ import {
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
 
+interface PipelineFilters {
+  search?: string;
+  board?: string;
+  matchMin?: number;
+}
+
 function startOfToday(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -24,9 +30,17 @@ function parseCursor(cursor: string | null): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function safeSearch(value: string | null): string | undefined {
+function safeString(value: string | null): string | undefined {
   const v = value?.trim();
   return v && v.length > 0 ? v : undefined;
+}
+
+function safeMatchMin(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return undefined;
+  if (n <= 0) return undefined;
+  return Math.min(n, 100);
 }
 
 function isPipelineStage(value: string | null): value is PipelineStage {
@@ -100,17 +114,22 @@ function mapApplication(app: Application, stage: PipelineStage): PipelineJobDto 
 async function loadQueued(
   cursor: number | null,
   limit: number,
-  search?: string,
+  filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
+  if (filters.board || filters.matchMin !== undefined) {
+    return emptyPage("queued");
+  }
+
+  const baseWhere = { status: "pending" } as const;
   const where = {
-    status: "pending",
+    ...baseWhere,
     ...(cursor ? { id: { lt: cursor } } : {}),
-    ...(search
+    ...(filters.search
       ? {
-          OR: [{ url: { contains: search } }, { note: { contains: search } }],
+          OR: [{ url: { contains: filters.search } }, { note: { contains: filters.search } }],
         }
       : {}),
-  } as const;
+  };
 
   const [items, total, todayCount] = await Promise.all([
     db.queueEntry.findMany({
@@ -118,9 +137,9 @@ async function loadQueued(
       orderBy: { id: "desc" },
       take: limit + 1,
     }),
-    db.queueEntry.count({ where: { status: "pending" } }),
+    db.queueEntry.count({ where: baseWhere }),
     db.queueEntry.count({
-      where: { status: "pending", createdAt: { gte: startOfToday() } },
+      where: { ...baseWhere, createdAt: { gte: startOfToday() } },
     }),
   ]);
 
@@ -138,21 +157,23 @@ async function loadQueued(
 async function loadApplying(
   cursor: number | null,
   limit: number,
-  search?: string,
+  filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
   const baseWhere = {
     run: { status: "in_progress" },
     status: { notIn: ["applied", "failed", "skipped"] },
+    ...(filters.board ? { board: filters.board } : {}),
+    ...(filters.matchMin !== undefined ? { matchScore: { gte: filters.matchMin } } : {}),
   };
 
   const where = {
     ...baseWhere,
     ...(cursor ? { id: { lt: cursor } } : {}),
-    ...(search
+    ...(filters.search
       ? {
           OR: [
-            { title: { contains: search } },
-            { company: { contains: search } },
+            { title: { contains: filters.search } },
+            { company: { contains: filters.search } },
           ],
         }
       : {}),
@@ -184,18 +205,22 @@ async function loadApplying(
 async function loadSubmitted(
   cursor: number | null,
   limit: number,
-  search?: string,
+  filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
-  const baseWhere = { stage: "applied" } as const;
+  const baseWhere = {
+    stage: "applied",
+    ...(filters.board ? { board: filters.board } : {}),
+    ...(filters.matchMin !== undefined ? { matchScore: { gte: filters.matchMin } } : {}),
+  } as const;
   const where = {
     ...baseWhere,
     ...(cursor ? { id: { lt: cursor } } : {}),
-    ...(search
+    ...(filters.search
       ? {
           OR: [
-            { title: { contains: search } },
-            { company: { contains: search } },
-            { url: { contains: search } },
+            { title: { contains: filters.search } },
+            { company: { contains: filters.search } },
+            { url: { contains: filters.search } },
           ],
         }
       : {}),
@@ -227,20 +252,22 @@ async function loadSubmitted(
 async function loadReplied(
   cursor: number | null,
   limit: number,
-  search?: string,
+  filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
   const baseWhere = {
     stage: { notIn: ["applied", "rejected", "withdrawn"] },
+    ...(filters.board ? { board: filters.board } : {}),
+    ...(filters.matchMin !== undefined ? { matchScore: { gte: filters.matchMin } } : {}),
   };
 
   const where = {
     ...baseWhere,
     ...(cursor ? { id: { lt: cursor } } : {}),
-    ...(search
+    ...(filters.search
       ? {
           OR: [
-            { title: { contains: search } },
-            { company: { contains: search } },
+            { title: { contains: filters.search } },
+            { company: { contains: filters.search } },
           ],
         }
       : {}),
@@ -274,11 +301,20 @@ function emptyPage(stage: PipelineStage): PipelineColumnPage {
 }
 
 export async function GET(req: Request) {
-  const { stage, cursor: cursorRaw, limit: limitParam, search: searchRaw } = parseQueryParams(req, [
+  const {
+    stage,
+    cursor: cursorRaw,
+    limit: limitParam,
+    search: searchRaw,
+    board: boardRaw,
+    matchMin: matchMinRaw,
+  } = parseQueryParams(req, [
     "stage",
     "cursor",
     "limit",
     "search",
+    "board",
+    "matchMin",
   ] as const);
 
   if (!isPipelineStage(stage)) {
@@ -291,18 +327,22 @@ export async function GET(req: Request) {
     Math.max(Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : DEFAULT_LIMIT, 1),
     MAX_LIMIT,
   );
-  const search = safeSearch(searchRaw);
+  const filters: PipelineFilters = {
+    search: safeString(searchRaw),
+    board: safeString(boardRaw),
+    matchMin: safeMatchMin(matchMinRaw),
+  };
 
   switch (stage) {
     case "discovered":
       return ok(emptyPage("discovered"));
     case "queued":
-      return ok(await loadQueued(cursor, limit, search));
+      return ok(await loadQueued(cursor, limit, filters));
     case "applying":
-      return ok(await loadApplying(cursor, limit, search));
+      return ok(await loadApplying(cursor, limit, filters));
     case "submitted":
-      return ok(await loadSubmitted(cursor, limit, search));
+      return ok(await loadSubmitted(cursor, limit, filters));
     case "replied":
-      return ok(await loadReplied(cursor, limit, search));
+      return ok(await loadReplied(cursor, limit, filters));
   }
 }

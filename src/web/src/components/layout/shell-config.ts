@@ -35,3 +35,5 @@ export const APP_SIGIL = "◇"; // ◇
 export const RAIL_WIDTH = 56;
 export const DOCK_COLLAPSED = 56;
 export const DOCK_EXPANDED = 380;
+export const DOCK_MIN_EXPANDED = 320;
+export const DOCK_MAX_EXPANDED = 640;

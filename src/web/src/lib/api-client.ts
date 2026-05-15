@@ -14,6 +14,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<ClientResult
       },
     });
     const json = (await res.json()) as ApiResponse<T>;
+
     if (!res.ok || !json.ok) {
       const e = !json.ok ? json.error : { code: `HTTP_${res.status}`, message: res.statusText };
       return { data: null, error: { code: e.code, message: e.message } };
@@ -45,6 +46,7 @@ export const apiClient = {
     try {
       const res = await fetch(url, { method: "POST", body: formData });
       const json = (await res.json()) as ApiResponse<T>;
+
       if (!res.ok || !json.ok) {
         const e = !json.ok ? json.error : { code: `HTTP_${res.status}`, message: res.statusText };
         return { data: null, error: { code: e.code, message: e.message } };

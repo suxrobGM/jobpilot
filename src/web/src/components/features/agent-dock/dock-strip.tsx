@@ -7,8 +7,7 @@ import { PilotOrb } from "@/components/ui/display";
 import { useAgent } from "@/providers/agent-provider";
 
 export function DockStrip(): ReactElement {
-  const { expand, status } = useAgent();
-  const live = status === "working" || status === "awaiting-input";
+  const { expand } = useAgent();
 
   return (
     <Stack
@@ -20,11 +19,11 @@ export function DockStrip(): ReactElement {
         paddingBlock: theme.spacing(1.5),
       })}
     >
-      <Tooltip title="Open Pilot" placement="left" arrow disableInteractive>
+      <Tooltip title="Open agent dock" placement="left" arrow disableInteractive>
         <Box
           component="button"
-          onClick={() => expand("pilot")}
-          aria-label="Open Pilot"
+          onClick={() => expand("terminal")}
+          aria-label="Open agent dock"
           sx={(theme) => ({
             appearance: "none",
             border: "none",
@@ -37,7 +36,7 @@ export function DockStrip(): ReactElement {
             "&:focus-visible": { boxShadow: theme.shadows_custom.focus },
           })}
         >
-          <PilotOrb size={32} liveDot={live} />
+          <PilotOrb size="2xxl" />
         </Box>
       </Tooltip>
 
@@ -49,7 +48,7 @@ export function DockStrip(): ReactElement {
           letterSpacing: "0.18em",
         }}
       >
-        Pilot
+        Agent
       </Typography>
 
       <Box sx={{ flex: 1 }} />
@@ -61,7 +60,7 @@ export function DockStrip(): ReactElement {
       </Tooltip>
 
       <Tooltip title="Expand" placement="left" arrow disableInteractive>
-        <IconButton size="small" onClick={() => expand("pilot")} aria-label="Expand dock">
+        <IconButton size="small" onClick={() => expand("terminal")} aria-label="Expand dock">
           <ChevronLeft fontSize="md" />
         </IconButton>
       </Tooltip>

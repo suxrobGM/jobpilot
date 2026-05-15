@@ -52,3 +52,43 @@ export const profileWithAutopilotSchema = profileSchema.extend({
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type AutopilotSettingsInput = z.infer<typeof autopilotSettingsSchema>;
 export type ProfileWithAutopilotInput = z.infer<typeof profileWithAutopilotSchema>;
+
+export const PROFILE_DEFAULT_VALUES: ProfileWithAutopilotInput = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  website: "",
+  linkedin: "",
+  github: "",
+  street: "",
+  aptUnit: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  country: "United States",
+  usAuthorized: true,
+  requiresSponsorship: false,
+  visaStatus: "",
+  optExtension: "",
+  willingToRelocate: false,
+  preferredLocations: [],
+  eeoGender: "Prefer not to disclose",
+  eeoRace: "Prefer not to disclose",
+  eeoEthnicity: "Prefer not to disclose",
+  eeoHispanicOrLatino: "Prefer not to disclose",
+  eeoVeteranStatus: "Prefer not to disclose",
+  eeoDisabilityStatus: "Prefer not to disclose",
+  primaryResumeId: null,
+  autopilot: {
+    minMatchScore: 6,
+    maxApplicationsPerRun: 20,
+    confirmMode: "batch",
+    skipCompanies: [],
+    skipTitleKeywords: [],
+    minSalary: 0,
+    maxSalary: 0,
+    salaryExpectation: "",
+    defaultStartDate: "2 weeks notice",
+  },
+};

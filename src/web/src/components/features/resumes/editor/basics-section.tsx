@@ -5,7 +5,7 @@ import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type { ResumeBasics } from "@/lib/schemas/resume";
 
-interface BasicsTabProps {
+interface BasicsSectionProps {
   value: ResumeBasics;
   onChange: (next: ResumeBasics) => void;
 }
@@ -20,7 +20,7 @@ const FIELDS: { key: keyof ResumeBasics; label: string; placeholder?: string }[]
   { key: "github", label: "GitHub", placeholder: "github.com/…" },
 ];
 
-export function BasicsTab(props: BasicsTabProps): ReactElement {
+export function BasicsSection(props: BasicsSectionProps): ReactElement {
   const { value, onChange } = props;
   return (
     <Grid container spacing={2}>
