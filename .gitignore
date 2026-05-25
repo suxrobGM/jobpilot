@@ -5,7 +5,7 @@ node_modules/
 snapshot-*.md
 
 # Scratch/working files written by skills during a run (resume PDFs, cover
-# letters, page snapshots). See shared/setup.md "Scratch files".
+# letters, page snapshots). See plugin/skills/shared/setup.md "Scratch files".
 .temp/
 .claude/settings.local.json
 */**/.claude/settings.local.json
@@ -19,10 +19,5 @@ dist/
 
 .idea/
 .VSCodeCounter/
-
-# Generated per-provider skill bundles (see scripts/sync-skills.ts).
-# Canonical source lives at src/jobpilot-skills/skills/.
-src/jobpilot-claude-plugin/skills/
-src/jobpilot-codex-plugin/skills/
 
 resume.json

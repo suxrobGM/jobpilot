@@ -6,12 +6,9 @@
     "src/web"
   ],
   "scripts": {
-    "sync-skills": "bun scripts/sync-skills.ts",
-    "predev": "bun run sync-skills",
-    "dev": "concurrently -k -n terminal,web -c cyan,green \"dotnet run --project src/JobPilot.Terminal\" \"bun --cwd=src/web run dev\"",
+    "dev": "concurrently -k -n terminal,web -c cyan,green \"dotnet run --project src/terminal\" \"bun --cwd=src/web run dev\"",
     "db:setup": "bun --cwd=src/web run db:generate && bun --cwd=src/web run db:migrate:apply && bun --cwd=src/web run db:seed",
-    "prebuild:terminal": "bun run sync-skills",
-    "build:terminal": "dotnet publish src/JobPilot.Terminal -c Release -o dist/terminal",
+    "build:terminal": "dotnet publish src/terminal -c Release -o dist/terminal",
     "build:web": "bun --cwd=src/web run build",
     "format": "prettier --write ."
   },

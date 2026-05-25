@@ -4,18 +4,18 @@ Local AI job-application app. Uses Claude Code or Codex as the provider, a Next.
 
 ## Layout
 
-- `src/jobpilot-skills/` — canonical, provider-neutral SKILL.md prompts and `shared/*.md`. **Edit here only.**
-- `scripts/sync-skills.ts` — generates per-provider skill trees. Run `bun run sync-skills` (auto-runs on `predev`/`prestart`).
-- `src/jobpilot-claude-plugin/` & `src/jobpilot-codex-plugin/` — plugin manifests + `.mcp.json`. Their `skills/` subtrees are **generated and gitignored**.
+- `plugin/` — the JobPilot plugin, loaded by Claude (`--plugin-dir plugin`) and Codex (via `.agents/plugins/marketplace.json` → `./plugin`). One tree serves both providers — no generation step.
+  - `plugin/.claude-plugin/plugin.json` & `plugin/.codex-plugin/plugin.json` — provider manifests (both name the plugin `jobpilot`).
+  - `plugin/.mcp.json` — Playwright MCP wiring, shared by both providers.
+  - `plugin/skills/<name>/SKILL.md` — one hand-authored, provider-neutral skill per directory; `plugin/skills/shared/*.md` — shared docs. **Edit here directly.**
 - `src/web/` — Bun + Next.js 16 + MUI 9 + Prisma 7 + TanStack Query/Form + Zod v4. Owns all persistence (SQLite at `prisma/app.db`, resumes at `storage/resumes/`).
-- `src/JobPilot.Terminal/` — .NET 10 minimal API hosting one provider PTY. Exposes `/ws`, `/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`.
+- `src/terminal/` — .NET 10 minimal API hosting one provider PTY (project `JobPilot.Terminal`). Exposes `/ws`, `/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`.
 
 ## Commands
 
 Root (`bun run …`):
 
-- `dev` — runs terminal (`:8001`) + web (`:8000`) together; auto-syncs skills first.
-- `sync-skills` — regenerate per-provider skill trees.
+- `dev` — runs terminal (`:8001`) + web (`:8000`) together.
 - `db:setup` — generate Prisma client, apply migrations, seed default boards.
 - `build:web` / `build:terminal` — production builds.
 
@@ -25,17 +25,13 @@ Web (`bun --cwd=src/web run …`):
 - `typegen` — Next route/type generation.
 - `db:generate`, `db:migrate` (create-only), `db:migrate:apply`, `db:seed`, `db:reset`, `db:studio`.
 
-## Skill placeholders (rewritten by generator)
-
-- `<skill-name>-command` → `/jobpilot:skill-name` (Claude) or `$skill-name` (Codex)
-- `${JOBPILOT_SKILLS_ROOT}` → `${CLAUDE_PLUGIN_ROOT}/../jobpilot-skills` (Claude) or left as env var (Codex)
-
 ## Skill conventions
 
+- One tree, both providers. Skills are provider-neutral: reference sibling skills by name (e.g. "invoke the `tailor-resume` skill"), not provider-specific command tokens, and reference shared docs by repo-relative path (`plugin/skills/shared/<doc>.md`). Claude extras like `allowed-tools` are fine in frontmatter — Codex ignores unknown keys.
 - Imperative voice, addressed to the provider.
 - Start by checking `GET /api/health`; abort with a clear message if the web app is down.
 - Talk to the web app via `curl -fsS "$JOBPILOT_API/api/..."` (`JOBPILOT_API=http://localhost:8000`). No direct DB access.
-- Load profile/resume/credentials via `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`.
+- Load profile/resume/credentials via `plugin/skills/shared/setup.md`.
 - Credential lookup: board override → `Credential.scope === <domain>` → `Credential.scope === "default"`.
 - Log in proactively before searching/applying.
 - Dedupe applied jobs via `GET /api/applied/check` (exact URL + fuzzy title+company, 30-day window).

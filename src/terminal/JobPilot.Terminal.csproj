@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <PublishAot>true</PublishAot>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>JobPilot.Terminal</RootNamespace>
+    <AssemblyName>JobPilot.Terminal</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Quick.PtyNet" Version="1.0.4" />
+  </ItemGroup>
+
+  <!-- Ship the single plugin/ directory (both manifests, shared skills/ tree,
+       and .mcp.json), rebased under plugin/ in the published output root so
+       TerminalSessionPaths.Resolve() finds the same layout at runtime. -->
+  <ItemGroup>
+    <Content Include="..\..\plugin\**\*">
+      <Link>plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

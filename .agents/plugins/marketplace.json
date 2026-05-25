@@ -8,7 +8,7 @@
       "name": "jobpilot",
       "source": {
         "source": "local",
-        "path": "./src/jobpilot-codex-plugin"
+        "path": "./plugin"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -10,29 +10,22 @@ runs the JobPilot provider skills against real job boards via Playwright.
   profile, credentials, resumes, job boards, applications, runs, and the
   batch queue. It embeds an xterm.js terminal panel and exposes "Run
   autopilot" / "Run apply" buttons that inject slash commands.
-- **JobPilot.Terminal** ([src/JobPilot.Terminal/](src/JobPilot.Terminal/)) -
+- **JobPilot.Terminal** ([src/terminal/](src/terminal/)) -
   `http://localhost:8001`. .NET 10 ASP.NET Core process that owns one active
   provider PTY (winpty) and bridges it to the web UI over WebSocket. The
   terminal drawer can switch between Claude Code and Codex.
-- **Canonical skill pack**
-  ([src/jobpilot-skills/](src/jobpilot-skills/)) - provider-neutral workflow
-  instructions (`skills/<name>/SKILL.md`) plus shared setup, auth, and
-  browser-tips. This is the only place skills are edited by hand.
-- **Skill generator**
-  ([scripts/sync-skills.ts](scripts/sync-skills.ts)) - reads the canonical
-  pack and writes provider-specific copies into each plugin's `skills/`
-  directory. Runs automatically via `predev`/`prestart`, or invoke directly
-  with `bun run sync-skills`. Both plugin `skills/` trees are gitignored.
-- **Claude Code plugin**
-  ([src/jobpilot-claude-plugin/](src/jobpilot-claude-plugin/)) - manifest +
-  Playwright MCP config; skills are generated. Direct run:
-  `claude --plugin-dir src/jobpilot-claude-plugin`.
-- **Codex plugin**
-  ([src/jobpilot-codex-plugin/](src/jobpilot-codex-plugin/)) - manifest +
-  Playwright MCP config; skills are generated. Codex auto-discovers the
-  plugin via [.agents/plugins/marketplace.json](.agents/plugins/marketplace.json)
-  when launched against the repo root: `codex --no-alt-screen -C .`. Enable it
-  once from Codex's `/plugin` menu.
+- **Plugin** ([plugin/](plugin/)) - one provider-neutral plugin loaded by both
+  providers, with no generation step. It holds the hand-authored skill pack
+  (`plugin/skills/<name>/SKILL.md` plus shared setup, auth, browser-tips, and
+  form-filling docs under `plugin/skills/shared/`), the Playwright MCP config
+  (`plugin/.mcp.json`), and a manifest per provider
+  (`plugin/.claude-plugin/plugin.json`, `plugin/.codex-plugin/plugin.json` —
+  both name the plugin `jobpilot`).
+  - Claude: `claude --plugin-dir plugin`.
+  - Codex: auto-discovered via
+    [.agents/plugins/marketplace.json](.agents/plugins/marketplace.json)
+    (`source.path: ./plugin`) when launched at the repo root
+    (`codex --no-alt-screen -C .`). Enable it once from Codex's `/plugin` menu.
 
 ## Quick Start
 
@@ -48,23 +41,21 @@ Open `http://localhost:8000` and toggle the Terminal panel.
 
 ## Skills
 
-Reusable skill workflows live under
-[src/jobpilot-skills/skills/](src/jobpilot-skills/skills/) as
-`<name>/SKILL.md` directories, edited as the single source of truth. The
-[scripts/sync-skills.ts](scripts/sync-skills.ts) generator emits per-provider
-copies into each plugin's `skills/` directory (gitignored) with
-provider-specific command tokens substituted in.
+Skill workflows live under [plugin/skills/](plugin/skills/) as `<name>/SKILL.md`
+directories, edited directly as the single source of truth for both providers.
+Shared docs (setup, auth, browser-tips, form-filling) live under
+[plugin/skills/shared/](plugin/skills/shared/). There is no build step.
 
 Claude commands use `/jobpilot:<skill>`, for example:
 
 ```text
-/jobpilot:autopilot senior typescript remote
+/jobpilot:auto-apply senior typescript remote
 ```
 
 Codex commands use `$<skill>`, for example:
 
 ```text
-$autopilot senior typescript remote
+$auto-apply senior typescript remote
 ```
 
 | Skill             | Purpose                                                              |
@@ -148,6 +139,5 @@ scopes`** — the `gmail.readonly` scope isn't on the consent screen.
 ## License
 
 MIT. The shared humanizer skill is based on the bundled upstream humanizer
-package under
-[src/jobpilot-skills/skills/humanizer/](src/jobpilot-skills/skills/humanizer/),
-which ships with its own LICENSE file.
+package under [plugin/skills/humanizer/](plugin/skills/humanizer/), which
+ships with its own LICENSE file.
