@@ -1,18 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  TextField,
-} from "@mui/material";
-import { useForm } from "@tanstack/react-form";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { z } from "zod/v4";
-import { FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
+import { useAppForm } from "@/components/ui/form/tanstack";
 import type { AddQueueEntry } from "@/lib/schemas/queue";
 
 interface AddUrlsDialogProps {
@@ -63,7 +54,7 @@ const formSchema = z.object({
 export function AddUrlsDialog(props: AddUrlsDialogProps): ReactElement {
   const { open, onClose, onSubmit, submitting } = props;
 
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: EMPTY,
     validators: { onSubmit: formSchema },
     onSubmit: async ({ value }) => {
@@ -72,7 +63,6 @@ export function AddUrlsDialog(props: AddUrlsDialogProps): ReactElement {
       onSubmit({ urls, note: note ? note : null });
     },
   });
-  const formApi = form as unknown as AnyReactForm;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -85,37 +75,29 @@ export function AddUrlsDialog(props: AddUrlsDialogProps): ReactElement {
         <DialogTitle>Add URLs to queue</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <form.Field name="urlsText">
-              {(field) => {
-                const errMsg = field.state.meta.errors[0]?.message;
-                return (
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={6}
-                    label="URLs (one per line)"
-                    placeholder={
-                      "https://www.linkedin.com/jobs/view/...\nhttps://boards.greenhouse.io/..."
-                    }
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={field.state.meta.errors.length > 0}
-                    helperText={
-                      errMsg ?? "Paste one URL per line. Whitespace and commas are accepted."
-                    }
-                  />
-                );
-              }}
-            </form.Field>
-            <FormTextField form={formApi} name="note" label="Note (optional)" />
+            <form.AppField name="urlsText">
+              {(field) => (
+                <field.TextField
+                  label="URLs (one per line)"
+                  multiline
+                  rows={6}
+                  placeholder={
+                    "https://www.linkedin.com/jobs/view/...\nhttps://boards.greenhouse.io/..."
+                  }
+                  helperText="Paste one URL per line. Whitespace and commas are accepted."
+                />
+              )}
+            </form.AppField>
+            <form.AppField name="note">
+              {(field) => <field.TextField label="Note (optional)" />}
+            </form.AppField>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={submitting}>
-            Save
-          </Button>
+          <form.AppForm>
+            <form.SubmitButton disabled={submitting}>Save</form.SubmitButton>
+          </form.AppForm>
         </DialogActions>
       </form>
     </Dialog>

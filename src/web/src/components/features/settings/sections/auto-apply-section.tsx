@@ -1,38 +1,36 @@
 "use client";
 
-import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
 import { FormSection } from "@/components/ui/form";
-import { FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
+import { withForm } from "@/components/ui/form/tanstack";
+import { PROFILE_DEFAULT_VALUES } from "@/lib/schemas/profile";
 
-interface AutoApplySectionProps {
-  form: AnyReactForm;
-}
-
-export function AutoApplySection(props: AutoApplySectionProps): ReactElement {
-  const { form } = props;
-  return (
-    <FormSection title="Auto-apply" description="Defaults used by the auto-apply and apply skills.">
-      <Stack direction="row" spacing={2}>
-        <FormTextField
-          form={form}
-          name="autoApply.minMatchScore"
-          label="Min match score (0-100)"
-          type="number"
-        />
-        <FormTextField
-          form={form}
-          name="autoApply.maxApplicationsPerRun"
-          label="Max applications per run"
-          type="number"
-          helperText="Leave empty for unlimited"
-        />
-      </Stack>
-      <FormTextField
-        form={form}
-        name="autoApply.defaultStartDate"
-        label="Default start date answer"
-      />
-    </FormSection>
-  );
-}
+export const AutoApplySection = withForm({
+  defaultValues: PROFILE_DEFAULT_VALUES,
+  render: function AutoApplySection({ form }) {
+    return (
+      <FormSection
+        title="Auto-apply"
+        description="Defaults used by the auto-apply and apply skills."
+      >
+        <Stack direction="row" spacing={2}>
+          <form.AppField name="autoApply.minMatchScore">
+            {(field) => <field.TextField label="Min match score (0-100)" type="number" />}
+          </form.AppField>
+          <form.AppField name="autoApply.maxApplicationsPerRun">
+            {(field) => (
+              <field.TextField
+                label="Max applications per run"
+                type="number"
+                helperText="Leave empty for unlimited"
+              />
+            )}
+          </form.AppField>
+        </Stack>
+        <form.AppField name="autoApply.defaultStartDate">
+          {(field) => <field.TextField label="Default start date answer" />}
+        </form.AppField>
+      </FormSection>
+    );
+  },
+});

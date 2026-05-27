@@ -2,11 +2,10 @@
 
 import type { ReactElement } from "react";
 import { Button, Stack } from "@mui/material";
-import { useForm } from "@tanstack/react-form";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
-import { FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
+import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api/client";
@@ -37,7 +36,7 @@ export function ProposalComposer(): ReactElement {
     { invalidate: [queryKeys.upworkProposals.all] },
   );
 
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: {
       jobTitle: "",
       clientName: "",
@@ -59,8 +58,6 @@ export function ProposalComposer(): ReactElement {
     },
   });
 
-  const formApi = form as unknown as AnyReactForm;
-
   return (
     <SectionCard>
       <form
@@ -70,34 +67,38 @@ export function ProposalComposer(): ReactElement {
         }}
       >
         <Stack spacing={2.5}>
-          <FormTextField
-            form={formApi}
-            name="jobTitle"
-            label="Job title"
-            placeholder="Senior React developer for SaaS dashboard"
-            autoFocus
-          />
+          <form.AppField name="jobTitle">
+            {(field) => (
+              <field.TextField
+                label="Job title"
+                placeholder="Senior React developer for SaaS dashboard"
+                autoFocus
+              />
+            )}
+          </form.AppField>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <FormTextField form={formApi} name="clientName" label="Client (optional)" />
-            <FormTextField form={formApi} name="jobUrl" label="Job URL (optional)" />
+            <form.AppField name="clientName">
+              {(field) => <field.TextField label="Client (optional)" />}
+            </form.AppField>
+            <form.AppField name="jobUrl">
+              {(field) => <field.TextField label="Job URL (optional)" />}
+            </form.AppField>
           </Stack>
-          <FormTextField
-            form={formApi}
-            name="jobDescription"
-            label="Job description"
-            placeholder="Paste the full Upwork job posting here, including any screening questions."
-            multiline
-            minRows={8}
-          />
+          <form.AppField name="jobDescription">
+            {(field) => (
+              <field.TextField
+                label="Job description"
+                placeholder="Paste the full Upwork job posting here, including any screening questions."
+                multiline
+                minRows={8}
+              />
+            )}
+          </form.AppField>
           <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
             <Button onClick={() => router.back()}>Cancel</Button>
-            <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting] as const}>
-              {([canSubmit, isSubmitting]) => (
-                <Button type="submit" variant="contained" disabled={!canSubmit || isSubmitting}>
-                  Generate proposal
-                </Button>
-              )}
-            </form.Subscribe>
+            <form.AppForm>
+              <form.SubmitButton>Generate proposal</form.SubmitButton>
+            </form.AppForm>
           </Stack>
         </Stack>
       </form>

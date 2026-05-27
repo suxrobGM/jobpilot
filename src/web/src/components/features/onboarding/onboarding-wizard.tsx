@@ -12,7 +12,6 @@ import {
   Stepper,
   Typography,
 } from "@mui/material";
-import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
@@ -22,7 +21,7 @@ import {
   PersonalSection,
   WorkAuthSection,
 } from "@/components/features/settings/sections";
-import type { AnyReactForm } from "@/components/ui/form/tanstack";
+import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api/client";
@@ -112,14 +111,13 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
     }
   };
 
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: PROFILE_DEFAULT_VALUES,
     validators: { onSubmit: profileWithAutoApplySchema },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },
   });
-  const formApi = form as unknown as AnyReactForm;
   const isLastStep = step === STEPS.length - 1;
 
   const submitForm = async (e: SubmitEvent<HTMLFormElement>) => {
@@ -177,13 +175,13 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
       <SectionCard>
         <form onSubmit={submitForm}>
           <Stack spacing={3}>
-            {step === 0 && <ResumeUploadStep form={formApi} onContinue={() => setStep(1)} />}
-            {step === 1 && <PersonalSection form={formApi} />}
-            {step === 2 && <AddressSection form={formApi} />}
-            {step === 3 && <WorkAuthSection form={formApi} />}
-            {step === 4 && <EeoSection form={formApi} />}
-            {step === 5 && <AutoApplySection form={formApi} />}
-            {showValidationErrors && <ValidationSummary form={formApi} />}
+            {step === 0 && <ResumeUploadStep form={form} onContinue={() => setStep(1)} />}
+            {step === 1 && <PersonalSection form={form} />}
+            {step === 2 && <AddressSection form={form} />}
+            {step === 3 && <WorkAuthSection form={form} />}
+            {step === 4 && <EeoSection form={form} />}
+            {step === 5 && <AutoApplySection form={form} />}
+            {showValidationErrors && <ValidationSummary form={form} />}
             {step !== 0 && (
               <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
                 <Button variant="outlined" onClick={() => setStep((s) => Math.max(0, s - 1))}>
@@ -201,38 +199,36 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
   );
 }
 
-interface ValidationSummaryProps {
-  form: AnyReactForm;
-}
+const ValidationSummary = withForm({
+  defaultValues: PROFILE_DEFAULT_VALUES,
+  render: function ValidationSummary({ form }) {
+    return (
+      <form.Subscribe selector={(s) => s.values}>
+        {(values) => {
+          const result = profileWithAutoApplySchema.safeParse(values);
+          if (result.success) {
+            return null;
+          }
 
-function ValidationSummary(props: ValidationSummaryProps): ReactElement | null {
-  const { form } = props;
-  return (
-    <form.Subscribe selector={(s: { values: ProfileWithAutoApplyInput }) => s.values}>
-      {(values: ProfileWithAutoApplyInput) => {
-        const result = profileWithAutoApplySchema.safeParse(values);
-        if (result.success) {
-          return null;
-        }
-
-        const issues = describeIssues(result.error.issues);
-        return (
-          <Alert severity="error">
-            <AlertTitle>Some fields need fixing</AlertTitle>
-            <Stack spacing={0.5}>
-              {issues.map((issue, i) => {
-                const stepLabel = issue.stepIndex !== null ? STEPS[issue.stepIndex]?.label : null;
-                return (
-                  <Typography key={i} variant="body2">
-                    <strong>{issue.path}</strong>
-                    {stepLabel ? ` (${stepLabel} step)` : ""}: {issue.message}
-                  </Typography>
-                );
-              })}
-            </Stack>
-          </Alert>
-        );
-      }}
-    </form.Subscribe>
-  );
-}
+          const issues = describeIssues(result.error.issues);
+          return (
+            <Alert severity="error">
+              <AlertTitle>Some fields need fixing</AlertTitle>
+              <Stack spacing={0.5}>
+                {issues.map((issue, i) => {
+                  const stepLabel = issue.stepIndex !== null ? STEPS[issue.stepIndex]?.label : null;
+                  return (
+                    <Typography key={i} variant="body2">
+                      <strong>{issue.path}</strong>
+                      {stepLabel ? ` (${stepLabel} step)` : ""}: {issue.message}
+                    </Typography>
+                  );
+                })}
+              </Stack>
+            </Alert>
+          );
+        }}
+      </form.Subscribe>
+    );
+  },
+});

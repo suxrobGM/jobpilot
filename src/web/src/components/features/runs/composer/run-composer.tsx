@@ -11,10 +11,10 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
-import { FormSelectField, FormTextField } from "@/components/ui/form/tanstack";
+import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
@@ -100,7 +100,7 @@ export function RunComposer(): ReactElement {
   const autoApply = profileQuery.data?.autoApply;
   const hasBoards = boards.length > 0;
 
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: {
       mode: "auto-apply" as RunMode,
       query: "",
@@ -139,7 +139,7 @@ export function RunComposer(): ReactElement {
         }}
       >
         <Stack spacing={2.5}>
-          <form.Field name="mode">
+          <form.AppField name="mode">
             {(field) => (
               <Stack spacing={0.5}>
                 <Typography variant="body2Muted">Mode</Typography>
@@ -154,16 +154,18 @@ export function RunComposer(): ReactElement {
                 </ToggleButtonGroup>
               </Stack>
             )}
-          </form.Field>
+          </form.AppField>
 
           <Stack spacing={0.75}>
-            <FormTextField
-              form={form}
-              name="query"
-              label="Query"
-              placeholder="Senior React TypeScript remote"
-              autoFocus
-            />
+            <form.AppField name="query">
+              {(field) => (
+                <field.TextField
+                  label="Query"
+                  placeholder="Senior React TypeScript remote"
+                  autoFocus
+                />
+              )}
+            </form.AppField>
             {recentQueries.length > 0 && (
               <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.75 }}>
                 <Typography variant="captionMuted" sx={{ alignSelf: "center" }}>
@@ -183,12 +185,14 @@ export function RunComposer(): ReactElement {
           </Stack>
 
           {hasBoards ? (
-            <FormSelectField
-              form={form}
-              name="board"
-              label="Board"
-              items={boards.map((b) => ({ value: b.domain, label: b.name }))}
-            />
+            <form.AppField name="board">
+              {(field) => (
+                <field.Select
+                  label="Board"
+                  items={boards.map((b) => ({ value: b.domain, label: b.name }))}
+                />
+              )}
+            </form.AppField>
           ) : (
             <Typography variant="body2Muted">
               No boards configured. Add one on the Boards page first.
@@ -196,19 +200,21 @@ export function RunComposer(): ReactElement {
           )}
 
           {isSearch && (
-            <FormTextField
-              form={form}
-              name="maxJobs"
-              label="Jobs to search"
-              type="number"
-              helperText="How many results to rank (1–100)."
-              slotProps={{ htmlInput: { min: 1, max: 100, step: 1 } }}
-            />
+            <form.AppField name="maxJobs">
+              {(field) => (
+                <field.TextField
+                  label="Jobs to search"
+                  type="number"
+                  helperText="How many results to rank (1–100)."
+                  slotProps={{ htmlInput: { min: 1, max: 100, step: 1 } }}
+                />
+              )}
+            </form.AppField>
           )}
 
           {isAutoApply && (
             <Stack spacing={2}>
-              <form.Field name="minScore">
+              <form.AppField name="minScore">
                 {(field) => (
                   <Stack spacing={0.5}>
                     <Typography variant="body2Muted">
@@ -225,15 +231,17 @@ export function RunComposer(): ReactElement {
                     />
                   </Stack>
                 )}
-              </form.Field>
-              <FormTextField
-                form={form}
-                name="maxApps"
-                label="Max applications"
-                type="number"
-                helperText="Leave empty for unlimited."
-                slotProps={{ htmlInput: { min: 1, max: 500, step: 1 } }}
-              />
+              </form.AppField>
+              <form.AppField name="maxApps">
+                {(field) => (
+                  <field.TextField
+                    label="Max applications"
+                    type="number"
+                    helperText="Leave empty for unlimited."
+                    slotProps={{ htmlInput: { min: 1, max: 500, step: 1 } }}
+                  />
+                )}
+              </form.AppField>
             </Stack>
           )}
 

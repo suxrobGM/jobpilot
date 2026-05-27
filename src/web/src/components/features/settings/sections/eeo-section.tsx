@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactElement } from "react";
 import { FormSection } from "@/components/ui/form";
-import { FormSelectField, type AnyReactForm } from "@/components/ui/form/tanstack";
+import { withForm } from "@/components/ui/form/tanstack";
+import { PROFILE_DEFAULT_VALUES } from "@/lib/schemas/profile";
 
 const PNTD = "Prefer not to disclose";
 const YES_NO_PNTD = [
@@ -30,57 +30,43 @@ const DISABILITY = [
   { value: PNTD, label: PNTD },
 ];
 
-interface EeoSectionProps {
-  form: AnyReactForm;
-}
+const RACE = [
+  { value: "American Indian or Alaska Native", label: "American Indian or Alaska Native" },
+  { value: "Asian", label: "Asian" },
+  { value: "Black or African American", label: "Black or African American" },
+  {
+    value: "Native Hawaiian or Other Pacific Islander",
+    label: "Native Hawaiian or Other Pacific Islander",
+  },
+  { value: "White", label: "White" },
+  { value: "Two or more races", label: "Two or more races" },
+  { value: PNTD, label: PNTD },
+];
 
-export function EeoSection(props: EeoSectionProps): ReactElement {
-  const { form } = props;
-  return (
-    <FormSection
-      title="EEO"
-      description="Used only when an application asks. Default is 'Prefer not to disclose'."
-    >
-      <FormSelectField form={form} name="eeoGender" label="Gender" items={GENDER} optional />
-      <FormSelectField
-        form={form}
-        name="eeoRace"
-        label="Race"
-        items={[
-          { value: "American Indian or Alaska Native", label: "American Indian or Alaska Native" },
-          { value: "Asian", label: "Asian" },
-          { value: "Black or African American", label: "Black or African American" },
-          {
-            value: "Native Hawaiian or Other Pacific Islander",
-            label: "Native Hawaiian or Other Pacific Islander",
-          },
-          { value: "White", label: "White" },
-          { value: "Two or more races", label: "Two or more races" },
-          { value: PNTD, label: PNTD },
-        ]}
-        optional
-      />
-      <FormSelectField
-        form={form}
-        name="eeoHispanicOrLatino"
-        label="Hispanic or Latino"
-        items={YES_NO_PNTD}
-        optional
-      />
-      <FormSelectField
-        form={form}
-        name="eeoVeteranStatus"
-        label="Veteran status"
-        items={VETERAN}
-        optional
-      />
-      <FormSelectField
-        form={form}
-        name="eeoDisabilityStatus"
-        label="Disability status"
-        items={DISABILITY}
-        optional
-      />
-    </FormSection>
-  );
-}
+export const EeoSection = withForm({
+  defaultValues: PROFILE_DEFAULT_VALUES,
+  render: function EeoSection({ form }) {
+    return (
+      <FormSection
+        title="EEO"
+        description="Used only when an application asks. Default is 'Prefer not to disclose'."
+      >
+        <form.AppField name="eeoGender">
+          {(field) => <field.Select label="Gender" items={GENDER} optional />}
+        </form.AppField>
+        <form.AppField name="eeoRace">
+          {(field) => <field.Select label="Race" items={RACE} optional />}
+        </form.AppField>
+        <form.AppField name="eeoHispanicOrLatino">
+          {(field) => <field.Select label="Hispanic or Latino" items={YES_NO_PNTD} optional />}
+        </form.AppField>
+        <form.AppField name="eeoVeteranStatus">
+          {(field) => <field.Select label="Veteran status" items={VETERAN} optional />}
+        </form.AppField>
+        <form.AppField name="eeoDisabilityStatus">
+          {(field) => <field.Select label="Disability status" items={DISABILITY} optional />}
+        </form.AppField>
+      </FormSection>
+    );
+  },
+});

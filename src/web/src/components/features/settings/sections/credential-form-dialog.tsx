@@ -2,8 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
-import { useForm } from "@tanstack/react-form";
-import { FormTextField } from "@/components/ui/form/tanstack";
+import { useAppForm } from "@/components/ui/form/tanstack";
 import { credentialSchema, type CredentialInput } from "@/lib/schemas/credential";
 
 interface CredentialFormDialogProps {
@@ -15,7 +14,7 @@ interface CredentialFormDialogProps {
 
 export function CredentialFormDialog(props: CredentialFormDialogProps): ReactElement {
   const { open, onClose, onSubmit, submitting } = props;
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: { scope: "default", email: "", password: "" } as CredentialInput,
     validators: { onSubmit: credentialSchema },
     onSubmit: async ({ value }) => {
@@ -34,21 +33,27 @@ export function CredentialFormDialog(props: CredentialFormDialogProps): ReactEle
         <DialogTitle>Add credential</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <FormTextField
-              form={form}
-              name="scope"
-              label="Scope"
-              helperText='Use "default" or a domain like "linkedin.com"'
-            />
-            <FormTextField form={form} name="email" label="Email or username" />
-            <FormTextField form={form} name="password" label="Password" type="password" />
+            <form.AppField name="scope">
+              {(field) => (
+                <field.TextField
+                  label="Scope"
+                  helperText='Use "default" or a domain like "linkedin.com"'
+                />
+              )}
+            </form.AppField>
+            <form.AppField name="email">
+              {(field) => <field.TextField label="Email or username" />}
+            </form.AppField>
+            <form.AppField name="password">
+              {(field) => <field.TextField label="Password" type="password" />}
+            </form.AppField>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={submitting}>
-            Save
-          </Button>
+          <form.AppForm>
+            <form.SubmitButton disabled={submitting}>Save</form.SubmitButton>
+          </form.AppForm>
         </DialogActions>
       </form>
     </Dialog>

@@ -1,8 +1,25 @@
-import type { AnyReactForm } from "@/components/ui/form/tanstack";
 import type { ResumeBasics } from "@/lib/schemas/resume";
 import { normalizeLinkUrl } from "@/utils/url";
 
-export function applyBasicsToForm(form: AnyReactForm, basics: ResumeBasics): void {
+type ProfileTextFieldName =
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "phone"
+  | "website"
+  | "linkedin"
+  | "github"
+  | "city"
+  | "state";
+
+// Minimal slice of a TanStack form this helper needs — accepts the typed
+// `useAppForm` instance without dragging in its full generic signature.
+interface ProfileFieldWriter {
+  getFieldValue: (name: ProfileTextFieldName) => unknown;
+  setFieldValue: (name: ProfileTextFieldName, value: string) => void;
+}
+
+export function applyBasicsToForm(form: ProfileFieldWriter, basics: ResumeBasics): void {
   const [firstName, lastName] = splitName(basics.name);
 
   setIfEmpty(form, "firstName", firstName);
@@ -18,7 +35,11 @@ export function applyBasicsToForm(form: AnyReactForm, basics: ResumeBasics): voi
   setIfEmpty(form, "state", state);
 }
 
-function setIfEmpty(form: AnyReactForm, name: string, next?: string | null): void {
+function setIfEmpty(
+  form: ProfileFieldWriter,
+  name: ProfileTextFieldName,
+  next?: string | null,
+): void {
   if (!next) {
     return;
   }

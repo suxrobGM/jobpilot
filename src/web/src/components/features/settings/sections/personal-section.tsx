@@ -1,32 +1,42 @@
 "use client";
 
-import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
 import { FormSection } from "@/components/ui/form";
-import { FormPhoneField, FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
+import { withForm } from "@/components/ui/form/tanstack";
+import { PROFILE_DEFAULT_VALUES } from "@/lib/schemas/profile";
 
-interface PersonalSectionProps {
-  form: AnyReactForm;
-}
-
-export function PersonalSection(props: PersonalSectionProps): ReactElement {
-  const { form } = props;
-  return (
-    <FormSection
-      title="Personal"
-      description="Your name, contact, and links shared with employers."
-    >
-      <Stack direction="row" spacing={2}>
-        <FormTextField form={form} name="firstName" label="First name" />
-        <FormTextField form={form} name="lastName" label="Last name" />
-      </Stack>
-      <FormTextField form={form} name="email" label="Email" type="email" />
-      <FormPhoneField form={form} name="phone" label="Phone" />
-      <Stack direction="row" spacing={2}>
-        <FormTextField form={form} name="website" label="Website" />
-        <FormTextField form={form} name="linkedin" label="LinkedIn URL" />
-      </Stack>
-      <FormTextField form={form} name="github" label="GitHub URL" />
-    </FormSection>
-  );
-}
+export const PersonalSection = withForm({
+  defaultValues: PROFILE_DEFAULT_VALUES,
+  render: function PersonalSection({ form }) {
+    return (
+      <FormSection
+        title="Personal"
+        description="Your name, contact, and links shared with employers."
+      >
+        <Stack direction="row" spacing={2}>
+          <form.AppField name="firstName">
+            {(field) => <field.TextField label="First name" />}
+          </form.AppField>
+          <form.AppField name="lastName">
+            {(field) => <field.TextField label="Last name" />}
+          </form.AppField>
+        </Stack>
+        <form.AppField name="email">
+          {(field) => <field.TextField label="Email" type="email" />}
+        </form.AppField>
+        <form.AppField name="phone">{(field) => <field.Phone label="Phone" />}</form.AppField>
+        <Stack direction="row" spacing={2}>
+          <form.AppField name="website">
+            {(field) => <field.TextField label="Website" />}
+          </form.AppField>
+          <form.AppField name="linkedin">
+            {(field) => <field.TextField label="LinkedIn URL" />}
+          </form.AppField>
+        </Stack>
+        <form.AppField name="github">
+          {(field) => <field.TextField label="GitHub URL" />}
+        </form.AppField>
+      </FormSection>
+    );
+  },
+});

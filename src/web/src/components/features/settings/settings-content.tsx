@@ -3,8 +3,7 @@
 import { useState, type ReactElement } from "react";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
-import { useForm } from "@tanstack/react-form";
-import type { AnyReactForm } from "@/components/ui/form/tanstack";
+import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
@@ -111,15 +110,13 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
     },
   );
 
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: initialData,
     validators: { onSubmit: profileWithAutoApplySchema },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },
   });
-
-  const formApi = form as unknown as AnyReactForm;
 
   return (
     <Box
@@ -142,22 +139,22 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
       >
         <Stack spacing={3}>
           <Box data-section-id="personal">
-            <PersonalSection form={formApi} />
+            <PersonalSection form={form} />
           </Box>
           <Box data-section-id="address">
-            <AddressSection form={formApi} />
+            <AddressSection form={form} />
           </Box>
           <Box data-section-id="work-auth">
-            <WorkAuthSection form={formApi} />
+            <WorkAuthSection form={form} />
           </Box>
           <Box data-section-id="references">
-            <ReferencesSection form={formApi} />
+            <ReferencesSection form={form} />
           </Box>
           <Box data-section-id="eeo">
-            <EeoSection form={formApi} />
+            <EeoSection form={form} />
           </Box>
           <Box data-section-id="auto-apply">
-            <AutoApplySection form={formApi} />
+            <AutoApplySection form={form} />
           </Box>
           <Box data-section-id="email">
             <EmailSection />

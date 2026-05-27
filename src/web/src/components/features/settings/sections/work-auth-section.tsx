@@ -1,37 +1,41 @@
 "use client";
 
-import type { ReactElement } from "react";
 import { FormSection } from "@/components/ui/form";
-import {
-  FormMultiselectField,
-  FormSwitchField,
-  FormTextField,
-  type AnyReactForm,
-} from "@/components/ui/form/tanstack";
+import { withForm } from "@/components/ui/form/tanstack";
+import { PROFILE_DEFAULT_VALUES } from "@/lib/schemas/profile";
 
-interface WorkAuthSectionProps {
-  form: AnyReactForm;
-}
-
-export function WorkAuthSection(props: WorkAuthSectionProps): ReactElement {
-  const { form } = props;
-  return (
-    <FormSection title="Work authorization" description="What employers ask on every application.">
-      <FormSwitchField form={form} name="usAuthorized" label="Authorized to work in the US" />
-      <FormSwitchField form={form} name="requiresSponsorship" label="Requires visa sponsorship" />
-      <FormTextField
-        form={form}
-        name="visaStatus"
-        label="Visa status (e.g. OPT, H1B, GC, Citizen)"
-      />
-      <FormTextField form={form} name="optExtension" label="OPT extension (e.g. STEM)" />
-      <FormSwitchField form={form} name="willingToRelocate" label="Willing to relocate" />
-      <FormMultiselectField
-        form={form}
-        name="preferredLocations"
-        label="Preferred locations"
-        placeholder="Type a city and press Enter"
-      />
-    </FormSection>
-  );
-}
+export const WorkAuthSection = withForm({
+  defaultValues: PROFILE_DEFAULT_VALUES,
+  render: function WorkAuthSection({ form }) {
+    return (
+      <FormSection
+        title="Work authorization"
+        description="What employers ask on every application."
+      >
+        <form.AppField name="usAuthorized">
+          {(field) => <field.Switch label="Authorized to work in the US" />}
+        </form.AppField>
+        <form.AppField name="requiresSponsorship">
+          {(field) => <field.Switch label="Requires visa sponsorship" />}
+        </form.AppField>
+        <form.AppField name="visaStatus">
+          {(field) => <field.TextField label="Visa status (e.g. OPT, H1B, GC, Citizen)" />}
+        </form.AppField>
+        <form.AppField name="optExtension">
+          {(field) => <field.TextField label="OPT extension (e.g. STEM)" />}
+        </form.AppField>
+        <form.AppField name="willingToRelocate">
+          {(field) => <field.Switch label="Willing to relocate" />}
+        </form.AppField>
+        <form.AppField name="preferredLocations">
+          {(field) => (
+            <field.Multiselect
+              label="Preferred locations"
+              placeholder="Type a city and press Enter"
+            />
+          )}
+        </form.AppField>
+      </FormSection>
+    );
+  },
+});
