@@ -22,7 +22,7 @@ The argument is either a **proposal id** (an integer, when launched from the Job
   curl -fsS "$JOBPILOT_API/api/upwork/proposals/$ARG"
   ```
 
-  Use `data.jobDescription` as the posting, plus `data.jobTitle` / `data.clientName` / `data.jobUrl` for context. Remember the id — you will `PATCH` the result back to it in Step 7.
+  Use `data.jobDescription` as the posting, plus `data.jobTitle` / `data.clientName` / `data.jobUrl` for context. Remember the id — you will `PATCH` the result back to it in Step 7. (A draft launched from an Upwork **search recommendation** already has these fields filled and `source:"search"` — same flow, no extra work.)
 
 - **Anything else** → treat the argument itself as the job description. There is no row yet; you will `POST` a new one in Step 7.
 
