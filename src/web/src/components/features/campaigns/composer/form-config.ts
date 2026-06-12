@@ -40,6 +40,11 @@ export const composerFormSchema = z
 export type CampaignMode = Extract<CampaignSource, "search" | "auto-apply" | "outreach">;
 export type ComposerFormValues = z.infer<typeof composerFormSchema>;
 
+/** Upwork is recommend-only — searched + scored, never auto-submitted. */
+export const UPWORK_DOMAIN = "upwork.com";
+export const UPWORK_MODE_DESCRIPTION =
+  "JobPilot searches Upwork, filters out low-quality and unresponsive clients, and ranks the rest by fit. Review the recommendations, then draft a proposal per job — you submit on Upwork yourself.";
+
 /**
  * Static defaults shared by the parent `useAppForm` and the `withForm` field
  * groups so their form types line up. The parent overlays runtime values

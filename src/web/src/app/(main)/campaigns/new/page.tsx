@@ -3,7 +3,12 @@ import { Container } from "@mui/material";
 import { CampaignComposer } from "@/components/features/campaigns";
 import { PageHeader } from "@/components/ui/layout";
 
-export default function NewCampaignPage(): ReactElement {
+interface NewCampaignPageProps {
+  searchParams: Promise<{ board?: string }>;
+}
+
+export default async function NewCampaignPage(props: NewCampaignPageProps): Promise<ReactElement> {
+  const { board } = await props.searchParams;
   return (
     <Container maxWidth="md" sx={{ gap: 2 }}>
       <PageHeader
@@ -11,7 +16,7 @@ export default function NewCampaignPage(): ReactElement {
         title="Start a new campaign"
         description="Search a job board, score matches, and optionally batch-apply."
       />
-      <CampaignComposer />
+      <CampaignComposer defaultBoard={board} />
     </Container>
   );
 }

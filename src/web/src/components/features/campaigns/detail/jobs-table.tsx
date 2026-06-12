@@ -38,6 +38,10 @@ interface CampaignJobsTableProps {
   loading?: boolean;
   /** When provided, applicable rows get an "Apply" action that calls this. */
   onApplyJob?: (job: CampaignJobDto) => void;
+  /** When provided, applicable rows get a "Draft proposal" action (Upwork). */
+  onDraftProposal?: (job: CampaignJobDto) => void;
+  /** Show the match-reason column (recommendation rationale, e.g. Upwork). */
+  showReason?: boolean;
   /** Enables checkbox selection (reapplicable rows only). */
   checkboxSelection?: boolean;
   rowSelectionModel?: GridRowSelectionModel;
@@ -49,6 +53,8 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
     rows,
     loading,
     onApplyJob,
+    onDraftProposal,
+    showReason,
     checkboxSelection,
     rowSelectionModel,
     onRowSelectionModelChange,
@@ -98,21 +104,42 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
     },
   ];
 
-  if (onApplyJob) {
+  if (showReason) {
+    columns.splice(columns.length - 1, 0, {
+      field: "matchReason",
+      headerName: "Why",
+      flex: 1.5,
+      minWidth: 220,
+      valueGetter: (_v, row) => row.matchReason ?? "",
+    });
+  }
+
+  if (onApplyJob || onDraftProposal) {
     columns.push({
       field: "actions",
       headerName: "",
-      width: 96,
+      width: onDraftProposal ? 150 : 96,
       sortable: false,
       filterable: false,
       align: "right",
       headerAlign: "right",
-      renderCell: (p) =>
-        isApplicable(p.row.status) ? (
-          <Button size="small" variant="outlined" onClick={() => onApplyJob(p.row)}>
-            Apply
+      renderCell: (p) => {
+        if (!isApplicable(p.row.status)) {
+          return null;
+        }
+        if (onApplyJob) {
+          return (
+            <Button size="small" variant="outlined" onClick={() => onApplyJob(p.row)}>
+              Apply
+            </Button>
+          );
+        }
+        return (
+          <Button size="small" variant="outlined" onClick={() => onDraftProposal?.(p.row)}>
+            Draft proposal
           </Button>
-        ) : null,
+        );
+      },
     });
   }
 

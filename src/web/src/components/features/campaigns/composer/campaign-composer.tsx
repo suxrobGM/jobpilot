@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useEffect, type ReactElement } from "react";
 import { Button, Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import { useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
@@ -20,11 +20,19 @@ import {
   makeCampaignId,
   MODE_DESCRIPTIONS,
   SUBMIT_LABELS,
+  UPWORK_DOMAIN,
+  UPWORK_MODE_DESCRIPTION,
 } from "./form-config";
 import { OutreachFields } from "./outreach-fields";
 import { SearchFields } from "./search-fields";
 
-export function CampaignComposer(): ReactElement {
+interface CampaignComposerProps {
+  /** Preselect a board (e.g. from /campaigns/new?board=upwork.com). */
+  defaultBoard?: string;
+}
+
+export function CampaignComposer(props: CampaignComposerProps): ReactElement {
+  const { defaultBoard } = props;
   const router = useRouter();
   const agent = useAgent();
 
@@ -49,28 +57,47 @@ export function CampaignComposer(): ReactElement {
   ).slice(0, 5);
   const hasBoards = boards.length > 0;
 
+  const presetBoard =
+    defaultBoard && boards.some((b) => b.domain === defaultBoard) ? defaultBoard : undefined;
+
   const form = useAppForm({
     defaultValues: {
       ...COMPOSER_DEFAULT_VALUES,
-      board: boards[0]?.domain ?? "",
+      board: presetBoard ?? boards[0]?.domain ?? "",
       minScore: profileQuery.data?.autoApply?.minMatchScore ?? COMPOSER_DEFAULT_VALUES.minScore,
     },
     validators: { onSubmit: composerFormSchema },
     onSubmit: async ({ value }) => {
+      // Upwork is recommend-only: it runs a search campaign driven by the
+      // dedicated upwork-search skill regardless of the toggle.
+      const upwork = value.board === UPWORK_DOMAIN;
+      const effective = upwork ? { ...value, mode: "search" as const } : value;
       const campaignId = makeCampaignId(value.query);
       await createCampaign.mutateAsync({
         campaignId,
         query: value.query.trim(),
-        source: value.mode,
-        config: buildCampaignConfig(value),
+        source: effective.mode,
+        config: buildCampaignConfig(effective),
       });
       router.push(`/campaigns/${encodeURIComponent(campaignId)}`);
-      void agent.injectSkill(value.mode, buildSkillArg(value, campaignId));
+      void agent.injectSkill(
+        upwork ? "upwork-search" : effective.mode,
+        buildSkillArg(effective, campaignId),
+      );
     },
   });
 
   const mode = useStore(form.store, (s) => s.values.mode);
+  const board = useStore(form.store, (s) => s.values.board);
+  const isUpwork = board === UPWORK_DOMAIN;
   const isOutreach = mode === "outreach";
+
+  // Upwork has no auto-apply/outreach path — pin the mode to search.
+  useEffect(() => {
+    if (isUpwork && mode !== "search") {
+      form.setFieldValue("mode", "search");
+    }
+  }, [isUpwork, mode, form]);
 
   if (boardsQuery.isLoading || profileQuery.isLoading) {
     return <LinearProgress />;
@@ -90,15 +117,21 @@ export function CampaignComposer(): ReactElement {
               {(field) => (
                 <field.Toggle
                   label="Mode"
-                  options={[
-                    { value: "search", label: "Search only" },
-                    { value: "auto-apply", label: "Auto-apply" },
-                    { value: "outreach", label: "Outreach" },
-                  ]}
+                  options={
+                    isUpwork
+                      ? [{ value: "search", label: "Recommend" }]
+                      : [
+                          { value: "search", label: "Search only" },
+                          { value: "auto-apply", label: "Auto-apply" },
+                          { value: "outreach", label: "Outreach" },
+                        ]
+                  }
                 />
               )}
             </form.AppField>
-            <Typography variant="captionMuted">{MODE_DESCRIPTIONS[mode]}</Typography>
+            <Typography variant="captionMuted">
+              {isUpwork ? UPWORK_MODE_DESCRIPTION : MODE_DESCRIPTIONS[mode]}
+            </Typography>
           </Stack>
 
           <Stack spacing={0.75}>
@@ -175,7 +208,7 @@ export function CampaignComposer(): ReactElement {
                   variant="contained"
                   disabled={(!hasBoards && !isOutreach) || !canSubmit || isSubmitting}
                 >
-                  {SUBMIT_LABELS[mode]}
+                  {isUpwork ? "Find Upwork jobs" : SUBMIT_LABELS[mode]}
                 </Button>
               )}
             </form.Subscribe>

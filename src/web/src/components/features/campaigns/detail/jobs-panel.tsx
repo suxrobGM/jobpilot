@@ -29,11 +29,15 @@ interface CampaignJobsPanelProps {
   campaign: CampaignDetailDto;
   /** Per-job single Apply action (auto-apply campaigns). */
   onApplyJob?: (job: CampaignJobDto) => void;
+  /** Per-job Draft proposal action (Upwork recommendation campaigns). */
+  onDraftProposal?: (job: CampaignJobDto) => void;
+  /** Show the recommendation-reason column. */
+  showReason?: boolean;
 }
 
 /** Jobs table with status/search filtering and bulk re-apply / rescan of selected jobs. */
 export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
-  const { campaign, onApplyJob } = props;
+  const { campaign, onApplyJob, onDraftProposal, showReason } = props;
   const agent = useAgent();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -151,6 +155,8 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
       <CampaignJobsTable
         rows={visible}
         onApplyJob={onApplyJob}
+        onDraftProposal={onDraftProposal}
+        showReason={showReason}
         checkboxSelection={canReapply}
         rowSelectionModel={selection}
         onRowSelectionModelChange={setSelection}

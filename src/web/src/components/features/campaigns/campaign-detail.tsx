@@ -3,14 +3,18 @@
 import type { ReactElement } from "react";
 import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { apiClient } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
+import type { CampaignDetailDto, CampaignJobDto, UpworkProposalDto } from "@/api/types";
 import { OutreachBoard } from "@/components/features/outreach";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
+import { useToast } from "@/providers/notification-provider";
+import { UPWORK_DOMAIN } from "./composer/form-config";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
 import { CampaignReasonBreakdown } from "./detail/reason-breakdown";
@@ -22,8 +26,10 @@ interface CampaignDetailProps {
 
 export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   const { campaignId } = props;
+  const router = useRouter();
   const queryClient = useQueryClient();
   const agent = useAgent();
+  const toast = useToast();
 
   const detail = useApiQuery<CampaignDetailDto>(queryKeys.campaigns.detail(campaignId), () =>
     apiClient.get<CampaignDetailDto>(`/api/campaigns/${encodeURIComponent(campaignId)}`),
@@ -50,6 +56,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   const campaign = detail.data;
   const isAutoApply = campaign.source === "auto-apply";
+  const isUpwork = campaign.config.board === UPWORK_DOMAIN;
 
   if (campaign.source === "outreach") {
     return (
@@ -74,12 +81,37 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
     void agent.injectSkill("apply", job.url);
   };
 
+  // Upwork recommendations are recommend-only: seed a proposal draft from the
+  // recommendation, then hand off to the upwork-proposal skill to write it.
+  const draftProposal = async (job: CampaignJobDto): Promise<void> => {
+    const res = await apiClient.post<UpworkProposalDto>("/api/upwork/proposals", {
+      jobTitle: job.title,
+      clientName: job.company || null,
+      jobUrl: job.url,
+      jobDescription: job.description ?? "",
+      source: "search",
+      campaignId: job.campaignId,
+      jobKey: job.key,
+    });
+    if (res.error || !res.data) {
+      toast.error(res.error?.message ?? "Could not create the proposal draft");
+      return;
+    }
+    void agent.injectSkill("upwork-proposal", String(res.data.id));
+    router.push(`/upwork/${res.data.id}` as Route);
+  };
+
   return (
     <Stack spacing={3}>
       <CampaignHeaderCard campaign={campaign} />
       <CampaignSummaryTiles campaign={campaign} />
       <CampaignReasonBreakdown campaign={campaign} />
-      <CampaignJobsPanel campaign={campaign} onApplyJob={applyJob} />
+      <CampaignJobsPanel
+        campaign={campaign}
+        onApplyJob={isUpwork ? undefined : applyJob}
+        onDraftProposal={isUpwork ? draftProposal : undefined}
+        showReason={isUpwork}
+      />
     </Stack>
   );
 }
