@@ -3,7 +3,8 @@ import { defineChannel } from "../channel";
 export type UpworkEvent =
   | { type: "proposal.created"; id: number }
   | { type: "proposal.updated"; id: number }
-  | { type: "proposal.deleted"; id: number };
+  | { type: "proposal.deleted"; id: number }
+  | { type: "profile.updated" };
 
 /**
  * Profile-scoped feed for the Upwork proposals page. The client URL is

@@ -46,6 +46,9 @@ export const POST = api.route({ body: createUpworkProposalSchema }, async ({ bod
       screeningAnswers: JSON.stringify(body.screeningAnswers ?? []),
       status: body.status ?? "draft",
       notes: body.notes ?? null,
+      source: body.source ?? "manual",
+      campaignId: body.campaignId ?? null,
+      jobKey: body.jobKey ?? null,
     },
   });
 
