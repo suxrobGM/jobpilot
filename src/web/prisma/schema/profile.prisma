@@ -42,6 +42,7 @@ model Profile {
   queueEntries  QueueEntry[]
   emailAccount  EmailAccount?
   upworkProposals UpworkProposal[]
+  upworkProfile UpworkProfile?
   references    Reference[]
   contacts        Contact[]
   outreachMessages OutreachMessage[]

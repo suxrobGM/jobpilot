@@ -15,10 +15,42 @@ model UpworkProposal {
   outcome String? // when closed: hired | declined | no_response
   notes   String?
 
+  // Link back to the campaign Job this proposal was drafted from (set when
+  // launched from an Upwork search recommendation). `source` distinguishes a
+  // manually-pasted JD from a search-originated draft.
+  source     String  @default("manual") // manual | search
+  campaignId String?
+  jobKey     String?
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   submittedAt DateTime?
 
   @@index([profileId])
   @@index([profileId, status])
+  @@index([campaignId])
+}
+
+// One Upwork profile-enhancement record per profile. Holds the scraped current
+// state and the agent-generated suggestions; `status` gates the live write
+// (only `approved` may be applied to Upwork). Portfolio columns are JSON arrays
+// of { title, description, url?, skills?: string[] }.
+model UpworkProfile {
+  id        Int     @id @default(autoincrement())
+  profileId Int     @unique
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  currentTitle      String?
+  currentOverview   String?
+  currentHourlyRate String?
+  currentPortfolio  String  @default("[]")
+
+  suggestedTitle      String?
+  suggestedOverview   String?
+  suggestedHourlyRate String?
+  suggestedPortfolio  String  @default("[]")
+
+  status    String    @default("empty") // empty | draft | approved | applied
+  updatedAt DateTime  @updatedAt
+  appliedAt DateTime?
 }

@@ -74,6 +74,12 @@ const DEFAULT_BOARDS: BoardSeed[] = [
     searchUrl: "https://4dayweek.io/remote-jobs",
     sortOrder: 11,
   },
+  {
+    name: "Upwork",
+    domain: "upwork.com",
+    searchUrl: "https://www.upwork.com/nx/search/jobs/",
+    sortOrder: 12,
+  },
 ];
 
 async function main() {
