@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { AutoAwesome, ContentCopy, Delete, Launch } from "@mui/icons-material";
 import {
   Box,
   Button,
-  Chip,
   Container,
   IconButton,
   LinearProgress,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,14 +18,14 @@ import { apiClient } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
-import { SelectField } from "@/components/ui/form";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
-import { OUTCOME_OPTIONS, STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-ui";
+import { ProposalNotes } from "./proposal-notes";
+import { ProposalStatusBar } from "./proposal-status-bar";
 
 interface ProposalDetailProps {
   id: number;
@@ -40,8 +38,6 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const toast = useToast();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
-
-  const [notesDraft, setNotesDraft] = useState<string | null>(null);
 
   const detail = useApiQuery<UpworkProposalDto>(queryKeys.upworkProposals.detail(id), () =>
     apiClient.get<UpworkProposalDto>(`/api/upwork/proposals/${id}`),
@@ -83,8 +79,6 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
       </Container>
     );
   }
-
-  const notesValue = notesDraft ?? proposal.notes ?? "";
 
   const handleCopy = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -136,34 +130,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
         }
       />
 
-      <SectionCard>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: "center" }}>
-          <Chip
-            label={STATUS_LABEL[proposal.status]}
-            color={STATUS_COLOR[proposal.status]}
-            variant="outlined"
-          />
-          <SelectField
-            label="Status"
-            value={proposal.status}
-            options={STATUS_OPTIONS}
-            emptyLabel="—"
-            onChange={(v) => v && update.mutate({ status: v })}
-          />
-          {proposal.status === "closed" && (
-            <SelectField
-              label="Outcome"
-              value={proposal.outcome}
-              options={OUTCOME_OPTIONS}
-              onChange={(v) => update.mutate({ outcome: v })}
-            />
-          )}
-          <Box sx={{ flex: 1 }} />
-          <Typography variant="captionMuted">
-            Updated {new Date(proposal.updatedAt).toLocaleString()}
-          </Typography>
-        </Stack>
-      </SectionCard>
+      <ProposalStatusBar proposal={proposal} onChange={(patch) => update.mutate(patch)} />
 
       <SectionCard
         title="Proposal"
@@ -214,35 +181,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
         </SectionCard>
       )}
 
-      <SectionCard title="Notes">
-        <Stack spacing={1.5} sx={{ alignItems: "flex-start" }}>
-          <TextField
-            fullWidth
-            multiline
-            minRows={3}
-            placeholder="Private notes about this proposal."
-            value={notesValue}
-            onChange={(e) => setNotesDraft(e.target.value)}
-          />
-          <Button
-            variant="outlined"
-            disabled={notesDraft === null || update.isPending}
-            onClick={() =>
-              update.mutate(
-                { notes: notesValue },
-                {
-                  onSuccess: () => {
-                    setNotesDraft(null);
-                    toast.success("Notes saved");
-                  },
-                },
-              )
-            }
-          >
-            Save notes
-          </Button>
-        </Stack>
-      </SectionCard>
+      <ProposalNotes id={id} notes={proposal.notes} />
     </Container>
   );
 }

@@ -18,7 +18,7 @@ import { usePagination } from "@/hooks/use-pagination";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
 import { formatRelativeTime } from "@/utils/format";
-import { STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-ui";
+import { STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-status";
 
 const PAGE_SIZE = 12;
 

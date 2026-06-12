@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
-import { Add } from "@mui/icons-material";
-import { Container } from "@mui/material";
+import { Add, ManageAccounts, TravelExplore } from "@mui/icons-material";
+import { Container, Stack } from "@mui/material";
 import { ProposalsList } from "@/components/features/upwork";
 import { LinkButton } from "@/components/ui/buttons";
 import { PageHeader } from "@/components/ui/layout";
@@ -13,9 +13,25 @@ export default function UpworkPage(): ReactElement {
         title="Proposals"
         description="Drafted and submitted Upwork proposals, newest first."
         actions={
-          <LinkButton variant="contained" startIcon={<Add fontSize="md" />} href="/upwork/new">
-            New proposal
-          </LinkButton>
+          <Stack direction="row" spacing={1}>
+            <LinkButton
+              variant="outlined"
+              startIcon={<ManageAccounts fontSize="md" />}
+              href="/upwork/profile"
+            >
+              Enhance profile
+            </LinkButton>
+            <LinkButton
+              variant="outlined"
+              startIcon={<TravelExplore fontSize="md" />}
+              href="/campaigns/new?board=upwork.com"
+            >
+              Find jobs
+            </LinkButton>
+            <LinkButton variant="contained" startIcon={<Add fontSize="md" />} href="/upwork/new">
+              New proposal
+            </LinkButton>
+          </Stack>
         }
       />
       <ProposalsList />
