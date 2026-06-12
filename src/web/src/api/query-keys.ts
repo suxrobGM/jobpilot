@@ -54,7 +54,6 @@ export const queryKeys = {
   contacts: {
     all: ["contacts"] as const,
     list: () => [...queryKeys.contacts.all, "list"] as const,
-    detail: (id: number) => [...queryKeys.contacts.all, "detail", id] as const,
   },
 
   queue: {

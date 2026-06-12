@@ -70,13 +70,10 @@ mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp"
 
 ## 4. Credentials
 
+Resolve the login for a board domain in **one call** — the API applies the precedence (per-board override → `scope === <board-domain>` → `scope === "default"`) server-side, so you never merge endpoints by hand:
+
 ```bash
-curl -fsS "$JOBPILOT_API/api/credentials"
+curl -fsS "$JOBPILOT_API/api/credentials/resolve?domain=<board-domain>"
 ```
 
-Each row: `{ id, scope, email, password }`. `scope` is `"default"` or a board domain (`"linkedin.com"`). Lookup order:
-
-1. `JobBoard` row's own `email`/`password` override.
-2. Credential with `scope === <board-domain>`.
-3. Credential with `scope === "default"`.
-4. None → report to the user, do not guess.
+`data` → `{ email, password, source }` (`source`: `board` | `domain` | `default`) or `null` (none configured — report to the user, don't guess). The raw rows still live at `GET /api/credentials` (login creds + captcha-service keys) when you need to list or edit them.

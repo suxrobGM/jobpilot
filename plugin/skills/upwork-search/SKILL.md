@@ -24,7 +24,7 @@ Extract role/skills, keywords, and preferences (hourly vs fixed, budget floor, c
 ## Phase 2: Search Upwork
 
 1. `browser_navigate` to the board's `searchUrl`.
-2. Follow `../shared/auth.md` to log in proactively (credential scope `upwork.com`).
+2. Follow `../shared/auth.md` to log in proactively (resolve via `/api/credentials/resolve?domain=upwork.com`).
 3. Enter the query; apply available filters (e.g. payment-verified, fewer-than-N proposals) to cut junk early.
 4. **Run two passes — the user is US-based and eligible for both:**
    - **Global** — the default feed (jobs open to any location).

@@ -84,7 +84,6 @@ export const contactFieldsSchema = z.object({
 });
 
 export const createContactSchema = contactFieldsSchema;
-export const patchContactSchema = contactFieldsSchema.partial();
 
 // ── Outreach message ─────────────────────────────────────────────────────────
 
@@ -163,7 +162,6 @@ export type LinkedinTier = z.infer<typeof linkedinTierSchema>;
 export type OutreachAutonomy = z.infer<typeof outreachAutonomySchema>;
 export type OutreachMessageStatus = z.infer<typeof outreachMessageStatusSchema>;
 export type CreateContactInput = z.infer<typeof createContactSchema>;
-export type PatchContactInput = z.infer<typeof patchContactSchema>;
 export type AddCampaignOutreachInput = z.infer<typeof addCampaignOutreachSchema>;
 export type PatchOutreachMessageInput = z.infer<typeof patchOutreachMessageSchema>;
 export type OutreachMessageOutcome = z.infer<typeof outreachMessageOutcomeSchema>;
