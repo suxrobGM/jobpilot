@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
-import { Clear, Delete, Edit, Search } from "@mui/icons-material";
+import { Clear, Delete, Edit, Person, Search } from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -135,11 +135,20 @@ export function BoardsContent(): ReactElement {
               <Card key={b.id}>
                 <CardContent>
                   <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-                    <Box sx={{ flex: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {b.name}
                       </Typography>
                       <Typography variant="captionMuted">{b.domain}</Typography>
+                      {b.email && (
+                        <Typography
+                          variant="captionMuted"
+                          sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}
+                        >
+                          <Person fontSize="sm" />
+                          {b.email}
+                        </Typography>
+                      )}
                     </Box>
                     <IconButton onClick={() => setEditing(b)} aria-label="Edit board">
                       <Edit fontSize="md" />
