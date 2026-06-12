@@ -102,6 +102,8 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
       <PageHeader
         eyebrow={proposal.clientName ?? "Upwork"}
         title={proposal.jobTitle}
+        backHref="/upwork"
+        backLabel="Proposals"
         actions={
           <>
             {proposal.jobUrl && (

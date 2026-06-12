@@ -10,6 +10,8 @@ export default function NewProposalPage(): ReactElement {
         eyebrow="Upwork"
         title="New proposal"
         description="Paste a job posting; the proposal skill drafts a targeted proposal in the terminal."
+        backHref="/upwork"
+        backLabel="Proposals"
       />
       <ProposalComposer />
     </Container>
