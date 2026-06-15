@@ -1,0 +1,65 @@
+import { Elysia } from "elysia";
+import { ErrorCodes, HttpError } from "@/common/errors";
+import { logger } from "@/common/logger";
+import { env } from "@/env";
+
+interface ErrorBody {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+function prismaCode(error: unknown): string | undefined {
+  if (error && typeof error === "object" && "code" in error) {
+    return String((error as { code: unknown }).code);
+  }
+  return undefined;
+}
+
+/**
+ * Global error mapping. Returns the `{ code, message, details? }` body with the
+ * right status. `code` is a stable string (web + agent read it).
+ */
+export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
+  { as: "global" },
+  ({ code, error, set }): ErrorBody => {
+    if (error instanceof HttpError) {
+      set.status = error.status;
+      return { code: error.code, message: error.message, details: error.details };
+    }
+
+    if (prismaCode(error) === "P2002") {
+      set.status = 409;
+      return { code: ErrorCodes.CONFLICT, message: "Already exists" };
+    }
+
+    if (code === "VALIDATION") {
+      set.status = 422;
+      return {
+        code: ErrorCodes.UNPROCESSABLE,
+        message: "Invalid request",
+        details: (error as { all?: unknown }).all,
+      };
+    }
+
+    if (code === "NOT_FOUND") {
+      set.status = 404;
+      return { code: ErrorCodes.NOT_FOUND, message: "Not found" };
+    }
+
+    if (code === "PARSE") {
+      set.status = 400;
+      return { code: ErrorCodes.INVALID_REQUEST, message: "Malformed request" };
+    }
+
+    set.status = 500;
+    logger.error({ err: error }, "Unhandled API error");
+    const message =
+      env.NODE_ENV === "production"
+        ? "Internal error"
+        : error instanceof Error
+          ? error.message
+          : String(error);
+    return { code: ErrorCodes.INTERNAL, message };
+  },
+);

@@ -1,23 +1,26 @@
-import { cors } from "@elysiajs/cors";
-import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
+import { db } from "@/common/database";
+import { logger } from "@/common/logger";
+import { errorMiddleware } from "@/common/middleware";
+import { corsPlugin, swaggerPlugin } from "@/common/plugins";
 import { env } from "@/env";
+import { authController } from "@/modules/auth";
 
-// NOTE: skeleton boot (Phase 1). Database, middleware, and controllers are wired
-// in later phases. `export type App` is the Eden Treaty contract for the frontend.
 const app = new Elysia()
-  .use(cors({ origin: env.CORS_ORIGINS.split(","), credentials: true }))
-  .use(
-    swagger({
-      documentation: { info: { title: "JobPilot API", version: "2.0.0" } },
-    }),
-  )
+  .use(errorMiddleware)
+  .use(corsPlugin)
+  .use(swaggerPlugin)
+  .onStop(async () => {
+    await db.$disconnect();
+  })
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
+  .group("/api", (api) => api.use(authController))
   .listen(env.PORT);
 
-console.log(`JobPilot API running at http://localhost:${app.server?.port}`);
+logger.info(`JobPilot API running at http://localhost:${app.server?.port}`);
 if (env.NODE_ENV === "development") {
-  console.log(`Swagger docs at http://localhost:${app.server?.port}/swagger`);
+  logger.info(`Swagger docs at http://localhost:${app.server?.port}/swagger`);
 }
 
+// Eden Treaty contract for the frontend.
 export type App = typeof app;
