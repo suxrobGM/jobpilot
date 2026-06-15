@@ -9,6 +9,8 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "allowJs": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,

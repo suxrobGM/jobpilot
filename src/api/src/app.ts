@@ -1,3 +1,4 @@
+import "@/common/di/container";
 import { Elysia } from "elysia";
 import { db } from "@/common/database";
 import { logger } from "@/common/logger";
