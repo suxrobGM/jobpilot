@@ -3,11 +3,11 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { JobBoardsService } from "./job-boards.service";
+import { JobBoardService } from "./job-board.service";
 
-const svc = container.resolve(JobBoardsService);
+const svc = container.resolve(JobBoardService);
 
-export const jobBoardsController = new Elysia({
+export const jobBoardController = new Elysia({
   prefix: "/job-boards",
   detail: { tags: ["Job Boards"] },
 })

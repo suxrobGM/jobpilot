@@ -17,9 +17,9 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { sseResponse, subscribe } from "@/common/sse";
 import { campaignChannel } from "@/common/sse/channels/campaign";
-import { CampaignsService } from "./campaigns.service";
+import { CampaignService } from "./campaign.service";
 
-const svc = container.resolve(CampaignsService);
+const svc = container.resolve(CampaignService);
 
 // `:id` is a string slug (campaignId), not a numeric row id.
 const campaignParams = z.object({ id: z.string() });
@@ -33,7 +33,7 @@ const campaignsQuery = z.object({
   source: z.string().optional(),
 });
 
-export const campaignsController = new Elysia({
+export const campaignController = new Elysia({
   prefix: "/campaigns",
   detail: { tags: ["Campaigns"] },
 })

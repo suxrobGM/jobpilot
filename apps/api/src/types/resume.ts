@@ -1,5 +1,5 @@
 import type { ResumeData } from "@jobpilot/contracts/resume";
-import type { VariantRewriteAudit } from "@/modules/resumes/rewrite";
+import type { VariantRewriteAudit } from "@/modules/resume/rewrite";
 
 export interface ResumeDto {
   id: number;

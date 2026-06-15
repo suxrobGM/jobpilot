@@ -4,9 +4,9 @@ import { Elysia } from "elysia";
 import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { AppliedService } from "./applied.service";
+import { ApplicationService } from "./application.service";
 
-const svc = container.resolve(AppliedService);
+const svc = container.resolve(ApplicationService);
 
 const listQuerySchema = z.object({
   stage: z.string().trim().min(1).optional(),
@@ -21,7 +21,7 @@ const checkQuerySchema = z.object({
   company: z.string().trim().min(1).optional(),
 });
 
-export const appliedController = new Elysia({
+export const applicationController = new Elysia({
   prefix: "/applied",
   detail: { tags: ["Applied"] },
 })

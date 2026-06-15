@@ -11,9 +11,9 @@ import { badRequest } from "@/common/errors";
 import { profileGuard } from "@/common/middleware";
 import { sseResponse, subscribe } from "@/common/sse";
 import { resumeChannel } from "@/common/sse/channels/resume";
-import { ResumesService } from "./resumes.service";
+import { ResumeService } from "./resume.service";
 
-const svc = container.resolve(ResumesService);
+const svc = container.resolve(ResumeService);
 
 const jsonCreateSchema = z.object({
   label: z.string().min(1),
@@ -62,7 +62,7 @@ async function readUpload(
   return { file, text: typeof text === "string" ? text : undefined };
 }
 
-export const resumesController = new Elysia({
+export const resumeController = new Elysia({
   prefix: "/resumes",
   detail: { tags: ["Resumes"] },
 })

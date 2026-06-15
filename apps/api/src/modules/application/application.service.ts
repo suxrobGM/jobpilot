@@ -33,7 +33,7 @@ export interface AppliedCheckQuery {
 }
 
 @singleton()
-export class AppliedService {
+export class ApplicationService {
   constructor(private readonly prisma: PrismaClient) {}
 
   list(profileId: number, filters: AppliedListFilters) {

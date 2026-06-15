@@ -1,1 +1,0 @@
-export { createContactPayload } from "./contact";

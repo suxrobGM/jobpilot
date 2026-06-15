@@ -4,7 +4,7 @@ import { findOwned } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
 
 @singleton()
-export class JobBoardsService {
+export class JobBoardService {
   constructor(private readonly prisma: PrismaClient) {}
 
   list(profileId: number) {

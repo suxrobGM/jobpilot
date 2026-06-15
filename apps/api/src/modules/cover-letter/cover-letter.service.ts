@@ -21,7 +21,7 @@ export interface CoverLetterPdf {
 }
 
 @singleton()
-export class CoverLettersService {
+export class CoverLetterService {
   constructor(private readonly prisma: PrismaClient) {}
 
   /** The active profile's cover letters, newest first (no body — list payload). */

@@ -68,7 +68,7 @@ interface TailoredVariantResult {
 }
 
 @singleton()
-export class ResumesService {
+export class ResumeService {
   constructor(private readonly prisma: PrismaClient) {}
 
   private findResume(profileId: number, id: number) {

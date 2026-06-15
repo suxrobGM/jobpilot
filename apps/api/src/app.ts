@@ -6,20 +6,20 @@ import { errorMiddleware } from "@/common/middleware";
 import { corsPlugin, swaggerPlugin } from "@/common/plugins";
 import { env } from "@/env";
 import { analyticsController } from "@/modules/analytics";
-import { appliedController } from "@/modules/applied";
+import { applicationController } from "@/modules/application";
 import { authController } from "@/modules/auth";
-import { campaignsController } from "@/modules/campaigns";
+import { campaignController } from "@/modules/campaign";
 import { captchaController } from "@/modules/captcha";
-import { contactsController } from "@/modules/contacts";
-import { coverLettersController } from "@/modules/cover-letters";
-import { credentialsController } from "@/modules/credentials";
+import { contactController } from "@/modules/contact";
+import { coverLetterController } from "@/modules/cover-letter";
+import { credentialController } from "@/modules/credential";
 import { emailController } from "@/modules/email";
 import { healthController } from "@/modules/health";
-import { jobBoardsController } from "@/modules/job-boards";
+import { jobBoardController } from "@/modules/job-board";
 import { pipelineController } from "@/modules/pipeline";
 import { profileController } from "@/modules/profile";
 import { queueController } from "@/modules/queue";
-import { resumesController } from "@/modules/resumes";
+import { resumeController } from "@/modules/resume";
 import { scoringController } from "@/modules/scoring";
 import { upworkController } from "@/modules/upwork";
 
@@ -35,19 +35,19 @@ const app = new Elysia()
     api
       .use(authController)
       .use(healthController)
-      .use(jobBoardsController)
-      .use(credentialsController)
+      .use(jobBoardController)
+      .use(credentialController)
       .use(queueController)
-      .use(contactsController)
+      .use(contactController)
       .use(analyticsController)
       .use(captchaController)
       .use(profileController)
-      .use(resumesController)
-      .use(coverLettersController)
-      .use(appliedController)
+      .use(resumeController)
+      .use(coverLetterController)
+      .use(applicationController)
       .use(scoringController)
       .use(upworkController)
-      .use(campaignsController)
+      .use(campaignController)
       .use(pipelineController)
       .use(emailController),
   )

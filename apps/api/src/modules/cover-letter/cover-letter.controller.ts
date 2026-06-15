@@ -4,9 +4,9 @@ import { Elysia } from "elysia";
 import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { type CoverLetterPdf, CoverLettersService } from "./cover-letters.service";
+import { type CoverLetterPdf, CoverLetterService } from "./cover-letter.service";
 
-const svc = container.resolve(CoverLettersService);
+const svc = container.resolve(CoverLetterService);
 
 const pdfRequestSchema = z.object({
   text: z.string().min(1),
@@ -24,7 +24,7 @@ function pdfResponse({ buffer, slug }: CoverLetterPdf): Response {
   });
 }
 
-export const coverLettersController = new Elysia({
+export const coverLetterController = new Elysia({
   prefix: "/cover-letters",
   detail: { tags: ["CoverLetters"] },
 })

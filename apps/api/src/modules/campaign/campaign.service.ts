@@ -19,7 +19,7 @@ import { findOwned, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type CampaignEvent, campaignChannel } from "@/common/sse/channels/campaign";
 import { pipelineChannel } from "@/common/sse/channels/pipeline";
-import { createContactPayload } from "@/modules/outreach/contact";
+import { createContactPayload } from "@/modules/contact";
 import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 
@@ -68,7 +68,7 @@ function summarizeJobs(jobs: { status: string }[]): CampaignSummary {
 }
 
 @singleton()
-export class CampaignsService {
+export class CampaignService {
   constructor(private readonly prisma: PrismaClient) {}
 
   // ── Summary helpers ────────────────────────────────────────────────────────

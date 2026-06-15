@@ -25,7 +25,7 @@ const loginOf = (
 };
 
 @singleton()
-export class CredentialsService {
+export class CredentialService {
   constructor(private readonly prisma: PrismaClient) {}
 
   list(profileId: number) {

@@ -4,12 +4,12 @@ import { Elysia } from "elysia";
 import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { CredentialsService } from "./credentials.service";
+import { CredentialService } from "./credential.service";
 
-const svc = container.resolve(CredentialsService);
+const svc = container.resolve(CredentialService);
 const ResolveQuery = z.object({ domain: z.string().trim().min(1) });
 
-export const credentialsController = new Elysia({
+export const credentialController = new Elysia({
   prefix: "/credentials",
   detail: { tags: ["Credentials"] },
 })
