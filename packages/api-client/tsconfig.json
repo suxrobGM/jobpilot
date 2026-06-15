@@ -11,7 +11,15 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "paths": {
+      "@/*": ["../../src/api/src/*"],
+      "@jobpilot/api": ["../../src/api/src/app.ts"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
