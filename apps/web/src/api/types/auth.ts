@@ -1,24 +1,11 @@
-export interface AuthUserDto {
-  id: string;
-  email: string;
-  role: string;
-  emailVerified: boolean;
-  createdAt: string;
-}
+import type { Data } from "@jobpilot/api-client";
+import type { api } from "@/api/eden";
 
-/** `GET /api/auth/me` — the current user plus their active profile (if any). */
-export interface MeResponse {
-  user: AuthUserDto;
-  profile: unknown | null;
-}
+/** The current user + active profile, inferred from `GET /api/auth/me`. */
+export type MeResponse = Data<typeof api.auth.me.get>;
+export type AuthUserDto = MeResponse["user"];
 
-/** `POST /api/auth/login` and `POST /api/auth/register` — tokens are ignored; auth rides the httpOnly cookie. */
-export interface AuthSessionResponse {
-  user: AuthUserDto;
-  accessToken: string;
-  refreshToken: string;
-}
+/** Login/register response (tokens are ignored — auth rides the httpOnly cookie). */
+export type AuthSessionResponse = Data<typeof api.auth.login.post>;
 
-export interface LogoutResponse {
-  ok: boolean;
-}
+export type LogoutResponse = Data<typeof api.auth.logout.post>;

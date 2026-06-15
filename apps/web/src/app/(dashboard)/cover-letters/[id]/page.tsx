@@ -2,8 +2,7 @@ import type { ReactElement } from "react";
 import { Launch, PictureAsPdf } from "@mui/icons-material";
 import { Button, Chip, Container, Typography } from "@mui/material";
 import { notFound } from "next/navigation";
-import type { CoverLetterDto } from "@/api/types";
-import { serverGet } from "@/api/server-fetch";
+import { serverApi } from "@/api/server-api";
 import { CoverLetterActions } from "@/components/features/cover-letters";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 
@@ -14,7 +13,8 @@ interface PageProps {
 export default async function CoverLetterDetailPage(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
 
-  const { data: letter } = await serverGet<CoverLetterDto>(`/api/cover-letters/${id}`);
+  const api = await serverApi();
+  const { data: letter } = await api["cover-letters"]({ id }).get();
   if (!letter) {
     notFound();
   }

@@ -14,7 +14,8 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
@@ -40,7 +41,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const queryClient = useQueryClient();
 
   const detail = useApiQuery<UpworkProposalDto>(queryKeys.upworkProposals.detail(id), () =>
-    apiClient.get<UpworkProposalDto>(`/api/upwork/proposals/${id}`),
+    unwrap(api.upwork.proposals({ id }).get()),
   );
 
   useSseChannel(upworkChannel, null, {
@@ -54,12 +55,12 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   });
 
   const update = useApiMutation<UpworkProposalDto, UpdateUpworkProposalRequest>(
-    (body) => apiClient.patch<UpworkProposalDto>(`/api/upwork/proposals/${id}`, body),
+    (body) => unwrap(api.upwork.proposals({ id }).patch(body)),
     { invalidate: [queryKeys.upworkProposals.all] },
   );
 
   const remove = useApiMutation<{ id: number }, void>(
-    () => apiClient.del<{ id: number }>(`/api/upwork/proposals/${id}`),
+    () => unwrap(api.upwork.proposals({ id }).delete()),
     {
       successMessage: "Proposal deleted",
       invalidate: [queryKeys.upworkProposals.all],

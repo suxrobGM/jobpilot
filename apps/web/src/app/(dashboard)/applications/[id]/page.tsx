@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
 import { notFound } from "next/navigation";
-import type { ApplicationDetailDto } from "@/api/types";
-import { serverGet } from "@/api/server-fetch";
+import { serverApi } from "@/api/server-api";
 import { ApplicationDetail } from "@/components/features/applications";
 
 interface PageProps {
@@ -9,14 +8,14 @@ interface PageProps {
 }
 
 export default async function ApplicationDetailPage(props: PageProps): Promise<ReactElement> {
-  const { id: idParam } = await props.params;
-  const id = Number(idParam);
+  const { id } = await props.params;
 
-  if (!Number.isInteger(id)) {
+  if (!Number.isInteger(Number(id))) {
     notFound();
   }
 
-  const { data } = await serverGet<ApplicationDetailDto>(`/api/applied/${id}`);
+  const api = await serverApi();
+  const { data } = await api.applied({ id }).get();
   if (!data) {
     notFound();
   }

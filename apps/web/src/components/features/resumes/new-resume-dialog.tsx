@@ -11,7 +11,8 @@ import {
   TextField,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 
@@ -26,7 +27,7 @@ export function NewResumeDialog(props: NewResumeDialogProps): ReactElement {
   const [label, setLabel] = useState("");
 
   const create = useApiMutation<{ id: number }, { label: string }>(
-    (vars) => apiClient.post<{ id: number }>("/api/resumes", vars),
+    (vars) => unwrap(api.resumes.post(vars)),
     {
       successMessage: "Resume created",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

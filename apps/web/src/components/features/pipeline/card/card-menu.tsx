@@ -12,7 +12,8 @@ import {
 } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import type { Route } from "next";
-import { apiClient } from "@/api/client";
+import { api } from "@/api/eden";
+import { unwrap } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { PipelineJobDto } from "@/api/types";
@@ -32,8 +33,8 @@ export function PipelineCardMenu(props: PipelineCardMenuProps): ReactElement {
   const queueId = job.stage === "queued" ? job.id.replace(/^queue:/, "") : null;
   const isQueued = job.stage === "queued";
 
-  const remove = useApiMutation<{ deleted: string }, void>(
-    () => apiClient.del<{ deleted: string }>(`/api/queue/${queueId}`),
+  const remove = useApiMutation<unknown, void>(
+    () => unwrap(api.queue({ id: queueId! }).delete()),
     {
       successMessage: "Removed from queue",
       invalidate: [queryKeys.queue.all, queryKeys.pipeline.all],

@@ -3,7 +3,8 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { Clear, Search } from "@mui/icons-material";
 import { Box, Button, InputAdornment, MenuItem, Stack, TextField } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { api } from "@/api/eden";
+import { unwrap } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto as JobBoard } from "@/api/types";
@@ -27,7 +28,7 @@ export function PipelineFilterBar(): ReactElement {
   }, [debouncedSearch, search, setSearch]);
 
   const boards = useApiQuery<JobBoard[]>(queryKeys.jobBoards.list(), () =>
-    apiClient.get<JobBoard[]>("/api/job-boards"),
+    unwrap(api["job-boards"].get()),
   );
 
   return (

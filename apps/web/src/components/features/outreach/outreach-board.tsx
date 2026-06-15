@@ -8,7 +8,8 @@ import {
   type GridRowSelectionModel,
   type GridRowsProp,
 } from "@mui/x-data-grid";
-import { apiClient } from "@/api/client";
+import { api } from "@/api/eden";
+import { unwrap } from "@/api/client";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import {
   OUTREACH_MESSAGE_TERMINAL_STATUSES,
@@ -66,30 +67,36 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
 
   const messagesQuery = useApiQuery<OutreachMessageDto[]>(
     queryKeys.campaigns.outreach(campaignId),
-    () =>
-      apiClient.get<OutreachMessageDto[]>(
-        `/api/campaigns/${encodeURIComponent(campaignId)}/outreach`,
-      ),
+    () => unwrap(api.campaigns({ id: campaignId }).outreach.get()),
   );
   const accountQuery = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
-    apiClient.get<EmailAccountStatus>("/api/email/account"),
+    unwrap(api.email.account.get()),
   );
 
-  const outreachBase = `/api/campaigns/${encodeURIComponent(campaignId)}/outreach`;
   const invalidate = [
     queryKeys.campaigns.outreach(campaignId),
     queryKeys.campaigns.detail(campaignId),
   ];
 
   const skip = useApiMutation<unknown, number>(
-    (id) => apiClient.post(`${outreachBase}/${id}/result`, { outcome: "skipped" }),
+    (id) =>
+      unwrap(
+        api
+          .campaigns({ id: campaignId })
+          .outreach({ messageId: id })
+          .result.post({ outcome: "skipped" }),
+      ),
     { invalidate, successMessage: "Skipped" },
   );
 
   const approveSelected = useApiMutation<number[], number[]>(
     async (ids) => {
       for (const id of ids) {
-        const res = await apiClient.patch(`${outreachBase}/${id}`, { status: "approved" });
+        const res = await unwrap(
+          api.campaigns({ id: campaignId }).outreach({ messageId: id }).patch({
+            status: "approved",
+          }),
+        );
         if (res.error) {
           return { data: null, error: res.error };
         }

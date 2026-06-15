@@ -4,7 +4,8 @@ import type { ReactElement } from "react";
 import { ArrowDropDown, PlayArrow } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { api } from "@/api/eden";
+import { unwrap } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { PipelineColumnPage } from "@/api/types";
@@ -13,7 +14,7 @@ import { useAgent } from "@/providers/agent-provider";
 
 function useQueuedTotal(): number {
   const query = useApiQuery<PipelineColumnPage>(queryKeys.pipeline.total("queued"), () =>
-    apiClient.get<PipelineColumnPage>("/api/pipeline?stage=queued&limit=1"),
+    unwrap(api.pipeline.get({ query: { stage: "queued", limit: 1 } })),
   );
   return query.data?.total ?? 0;
 }

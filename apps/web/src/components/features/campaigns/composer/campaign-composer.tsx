@@ -4,7 +4,8 @@ import { useEffect, type ReactElement } from "react";
 import { Button, Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import { useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto, CreateCampaignRequest, JobBoardDto, ProfileResponse } from "@/api/types";
@@ -37,17 +38,17 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const agent = useAgent();
 
   const boardsQuery = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
-    apiClient.get<JobBoardDto[]>("/api/job-boards"),
+    unwrap(api["job-boards"].get()),
   );
   const profileQuery = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () =>
-    apiClient.get<ProfileResponse>("/api/profile"),
+    unwrap(api.profile.get()),
   );
   const recentCampaignsQuery = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    apiClient.get<CampaignDto[]>("/api/campaigns"),
+    unwrap(api.campaigns.get()),
   );
 
-  const createCampaign = useApiMutation<CampaignDto, CreateCampaignRequest>(
-    (body) => apiClient.post<CampaignDto>("/api/campaigns", body),
+  const createCampaign = useApiMutation<unknown, CreateCampaignRequest>(
+    (body) => unwrap(api.campaigns.post(body)),
     { invalidate: [queryKeys.campaigns.all] },
   );
 

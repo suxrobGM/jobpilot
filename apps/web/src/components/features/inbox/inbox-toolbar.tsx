@@ -3,7 +3,8 @@
 import type { ReactElement } from "react";
 import { CloudSync, FormatListBulleted } from "@mui/icons-material";
 import { Button, Stack, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { SyncResultDto } from "@/api/types";
@@ -28,7 +29,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   const { injectSkill } = useAgent();
 
   const sync = useApiMutation<SyncResultDto, void>(
-    () => apiClient.post<SyncResultDto>("/api/email/sync"),
+    () => unwrap(api.email.sync.post()),
     {
       successMessage: "Inbox synced",
       invalidate: [queryKeys.email.all],

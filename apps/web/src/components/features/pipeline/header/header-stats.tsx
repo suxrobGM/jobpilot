@@ -2,14 +2,15 @@
 
 import type { ReactElement } from "react";
 import { Typography } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { api } from "@/api/eden";
+import { unwrap } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { type PipelineColumnPage, type PipelineStage } from "@/api/types";
 
 function useStageTotal(stage: PipelineStage): number {
   const query = useApiQuery<PipelineColumnPage>(queryKeys.pipeline.total(stage), () =>
-    apiClient.get<PipelineColumnPage>(`/api/pipeline?stage=${stage}&limit=1`),
+    unwrap(api.pipeline.get({ query: { stage, limit: 1 } })),
   );
   return query.data?.total ?? 0;
 }

@@ -13,7 +13,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import type { JobBoardPatch } from "@jobpilot/contracts/job-board";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -36,11 +37,11 @@ export function BoardsContent(): ReactElement {
   const search = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
 
   const boards = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
-    apiClient.get<JobBoardDto[]>("/api/job-boards"),
+    unwrap(api["job-boards"].get()),
   );
 
   const update = useApiMutation<JobBoardDto, { id: number; patch: JobBoardPatch }>(
-    ({ id, patch }) => apiClient.patch<JobBoardDto>(`/api/job-boards/${id}`, patch),
+    ({ id, patch }) => unwrap(api["job-boards"]({ id }).patch(patch)),
     {
       successMessage: "Board updated",
       invalidate: [queryKeys.jobBoards.all],
@@ -49,7 +50,7 @@ export function BoardsContent(): ReactElement {
   );
 
   const remove = useApiMutation<{ deleted: number }, number>(
-    (id) => apiClient.del<{ deleted: number }>(`/api/job-boards/${id}`),
+    (id) => unwrap(api["job-boards"]({ id }).delete()),
     {
       successMessage: "Board removed",
       invalidate: [queryKeys.jobBoards.all],

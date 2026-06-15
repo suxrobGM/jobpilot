@@ -4,7 +4,8 @@ import { useState, type ReactElement } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { apiClient, unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
@@ -23,7 +24,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   const [editingLabel, setEditingLabel] = useState(resume.label);
 
   const renameLabel = useApiMutation<{ id: number }, { label: string }>(
-    (vars) => apiClient.put<{ id: number }>(`/api/resumes/${resume.id}`, vars),
+    (vars) => unwrap(api.resumes({ id: resume.id }).put(vars)),
     {
       successMessage: "Renamed",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],
@@ -42,7 +43,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   );
 
   const remove = useApiMutation<{ deleted: number }, void>(
-    () => apiClient.del<{ deleted: number }>(`/api/resumes/${resume.id}`),
+    () => unwrap(api.resumes({ id: resume.id }).delete()),
     {
       successMessage: "Resume deleted",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

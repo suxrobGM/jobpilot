@@ -14,7 +14,8 @@ import {
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { apiClient, unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import {
   PROFILE_DEFAULT_VALUES,
   profileWithAutoApplySchema,
@@ -63,7 +64,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
   const canCancel = isNewProfile && previousActiveId !== null && draftProfileId !== null;
 
   const save = useApiMutation<{ id: number }, ProfileWithAutoApplyInput>(
-    (vars) => apiClient.put("/api/profile", vars),
+    (vars) => unwrap(api.profile.put(vars)),
     {
       successMessage: isNewProfile ? "Profile created" : "Profile saved",
       invalidate: [queryKeys.profile.all, queryKeys.profiles.all],

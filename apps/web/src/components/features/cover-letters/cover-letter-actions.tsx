@@ -5,7 +5,8 @@ import { Delete } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -20,7 +21,7 @@ export function CoverLetterActions(props: CoverLetterActionsProps): ReactElement
   const confirm = useConfirm();
 
   const remove = useApiMutation<{ ok: true }, void>(
-    () => apiClient.del<{ ok: true }>(`/api/cover-letters/${id}`),
+    () => unwrap(api["cover-letters"]({ id }).delete()),
     {
       successMessage: "Cover letter deleted",
       invalidate: [queryKeys.coverLetters.all],

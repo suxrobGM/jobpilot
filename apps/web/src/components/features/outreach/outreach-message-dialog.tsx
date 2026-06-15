@@ -13,7 +13,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { api } from "@/api/eden";
+import { unwrap } from "@/api/client";
 import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@jobpilot/contracts/outreach";
 import { useApiMutation } from "@/api/hooks";
 import type { OutreachMessageDto } from "@/api/types";
@@ -34,36 +35,37 @@ export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactE
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
-  const base = `/api/campaigns/${encodeURIComponent(campaignId)}/outreach/${message.id}`;
+  const messageApi = api.campaigns({ id: campaignId }).outreach({ messageId: message.id });
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";
   const terminal = OUTREACH_MESSAGE_TERMINAL_STATUSES.includes(message.status);
 
   const save = useApiMutation<unknown, void>(
-    () => apiClient.patch(base, { subject: subject || null, body }),
+    () => unwrap(messageApi.patch({ subject: subject || null, body })),
     { invalidate, successMessage: "Saved" },
   );
 
   const approve = useApiMutation<unknown, void>(
-    () => apiClient.patch(base, { subject: subject || null, body, status: "approved" }),
+    () => unwrap(messageApi.patch({ subject: subject || null, body, status: "approved" })),
     { invalidate, successMessage: "Approved", onSuccess: onClose },
   );
 
   const send = useApiMutation<unknown, void>(
     async () => {
-      const sent = await apiClient.post<{ providerId: string; threadId: string }>(
-        "/api/email/send",
-        { to: message.contact.email, subject, body },
+      const sent = await unwrap<{ providerId: string; threadId: string }>(
+        api.email.send.post({ to: message.contact.email ?? "", subject, body }),
       );
       if (sent.error || !sent.data) {
         return sent;
       }
-      return apiClient.post(`${base}/result`, {
-        outcome: "sent",
-        providerId: sent.data.providerId,
-        threadId: sent.data.threadId,
-        sentAt: new Date().toISOString(),
-      });
+      return unwrap(
+        messageApi.result.post({
+          outcome: "sent",
+          providerId: sent.data.providerId,
+          threadId: sent.data.threadId,
+          sentAt: new Date().toISOString(),
+        }),
+      );
     },
     { invalidate, successMessage: "Sent", onSuccess: onClose },
   );

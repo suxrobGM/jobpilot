@@ -11,7 +11,8 @@ import {
   WorkOutlined,
 } from "@mui/icons-material";
 import { Box, Button, Stack, Typography, type SvgIconProps } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import type { ResumeData } from "@jobpilot/contracts/resume";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -118,8 +119,7 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
   const [dirty, setDirty] = useState(false);
 
   const save = useApiMutation<{ id: number; version: number }, ResumeData>(
-    (vars) =>
-      apiClient.put<{ id: number; version: number }>(`/api/resumes/${resumeId}`, { content: vars }),
+    (vars) => unwrap(api.resumes({ id: resumeId }).put({ content: vars })),
     {
       successMessage: "Resume saved",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

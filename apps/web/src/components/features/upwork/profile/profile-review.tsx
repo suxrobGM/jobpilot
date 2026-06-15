@@ -3,7 +3,8 @@
 import { useState, type ReactElement } from "react";
 import { CloudUpload, TaskAlt } from "@mui/icons-material";
 import { Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import type { UpdateUpworkProfileInput } from "@jobpilot/contracts/upwork";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -29,7 +30,7 @@ export function ProfileReview(props: ProfileReviewProps): ReactElement {
   const [overview, setOverview] = useState(profile.suggestedOverview ?? "");
 
   const save = useApiMutation<UpworkProfileDto, UpdateUpworkProfileInput>(
-    (body) => apiClient.put<UpworkProfileDto>("/api/upwork/profile", body),
+    (body) => unwrap(api.upwork.profile.put(body)),
     { invalidate: [queryKeys.upworkProfile.all] },
   );
 

@@ -4,7 +4,8 @@ import { useState, type ReactElement } from "react";
 import { Delete, Launch } from "@mui/icons-material";
 import { Box, Button, Container, IconButton, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import type { Stage, StageTransitionInput } from "@jobpilot/contracts/application";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -29,12 +30,12 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
 
   const detail = useApiQuery<ApplicationDetailDto>(
     queryKeys.applications.detail(id),
-    () => apiClient.get<ApplicationDetailDto>(`/api/applied/${id}`),
+    () => unwrap(api.applied({ id }).get()),
     { initialData: initialApplication },
   );
 
   const updateStage = useApiMutation<{ id: number; stage: Stage }, StageTransitionInput>(
-    (vars) => apiClient.post(`/api/applied/${id}/stage`, vars),
+    (vars) => unwrap(api.applied({ id }).stage.post(vars)),
     {
       successMessage: "Stage updated",
       invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],
@@ -43,7 +44,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   );
 
   const remove = useApiMutation<{ deleted: number }, void>(
-    () => apiClient.del<{ deleted: number }>(`/api/applied/${id}`),
+    () => unwrap(api.applied({ id }).delete()),
     {
       successMessage: "Application deleted",
       invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],

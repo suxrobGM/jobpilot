@@ -6,7 +6,8 @@ import { Chip, IconButton, Link } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CoverLetterListItem } from "@/api/types";
@@ -20,7 +21,7 @@ const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "
 export function CoverLettersTable(): ReactElement {
   const router = useRouter();
   const lettersQuery = useApiQuery<CoverLetterListItem[]>(queryKeys.coverLetters.list(), () =>
-    apiClient.get<CoverLetterListItem[]>("/api/cover-letters"),
+    unwrap(api["cover-letters"].get()),
   );
 
   const rows = lettersQuery.data ?? [];

@@ -5,7 +5,8 @@ import { Button, Stack } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CreateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
@@ -32,7 +33,7 @@ export function ProposalComposer(): ReactElement {
   const agent = useAgent();
 
   const createProposal = useApiMutation<UpworkProposalDto, CreateUpworkProposalRequest>(
-    (body) => apiClient.post<UpworkProposalDto>("/api/upwork/proposals", body),
+    (body) => unwrap(api.upwork.proposals.post(body)),
     { invalidate: [queryKeys.upworkProposals.all] },
   );
 

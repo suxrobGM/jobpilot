@@ -3,7 +3,8 @@
 import { useState, type ReactElement } from "react";
 import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { EmailAccountStatus, EmailMessageDto } from "@/api/types";
@@ -18,9 +19,9 @@ import { MessageReviewDialog } from "./message-review-dialog";
 
 export type InboxFilter = "pending" | "auto" | "approved" | "denied" | "all";
 
-function buildQuery(filter: InboxFilter): string {
-  if (filter === "all") return "";
-  return `?reviewStatus=${filter}`;
+function buildQuery(filter: InboxFilter): { reviewStatus?: InboxFilter } {
+  if (filter === "all") return {};
+  return { reviewStatus: filter };
 }
 
 export function InboxContent(): ReactElement {
@@ -30,7 +31,7 @@ export function InboxContent(): ReactElement {
   const { injectSkill } = useAgent();
 
   const account = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
-    apiClient.get<EmailAccountStatus>("/api/email/account"),
+    unwrap(api.email.account.get()),
   );
 
   const connected = account.data?.connected === true;
@@ -38,7 +39,7 @@ export function InboxContent(): ReactElement {
   const filters = { filter };
   const messages = useApiQuery<EmailMessageDto[]>(
     queryKeys.email.messages(filters as Record<string, unknown>),
-    () => apiClient.get<EmailMessageDto[]>(`/api/email/messages${buildQuery(filter)}`),
+    () => unwrap(api.email.messages.get({ query: buildQuery(filter) })),
     { enabled: connected },
   );
 

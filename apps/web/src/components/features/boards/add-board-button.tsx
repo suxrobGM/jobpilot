@@ -3,7 +3,8 @@
 import { useState, type ReactElement } from "react";
 import { Add } from "@mui/icons-material";
 import { Button } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import type { JobBoardInput } from "@jobpilot/contracts/job-board";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -14,7 +15,7 @@ export function AddBoardButton(): ReactElement {
   const [open, setOpen] = useState(false);
 
   const create = useApiMutation<JobBoardDto, JobBoardInput>(
-    (vars) => apiClient.post<JobBoardDto>("/api/job-boards", vars),
+    (vars) => unwrap(api["job-boards"].post(vars)),
     {
       successMessage: "Board added",
       invalidate: [queryKeys.jobBoards.all],

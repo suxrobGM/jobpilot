@@ -1,69 +1,14 @@
-import type { ApplicationSource, Stage } from "@jobpilot/contracts/application";
+import type { Data } from "@jobpilot/api-client";
+import type { api } from "@/api/eden";
 
-export interface ApplicationDto {
-  id: number;
-  url: string;
-  title: string;
-  company: string;
-  location: string | null;
-  board: string | null;
-  source: ApplicationSource;
-  appliedAt: string;
-  stage: Stage;
-  outcome: string | null;
-  rejectedAt: string | null;
-  matchScore: number | null;
-  matchReason: string | null;
-  failReason: string | null;
-  campaignId: string | null;
-}
+/** A submitted application row, inferred from `GET /api/applied`. */
+export type ApplicationDto = Data<typeof api.applied.get>[number];
 
-export interface StageEventDto {
-  id: number;
-  applicationId: number;
-  fromStage: Stage | null;
-  toStage: Stage;
-  note: string | null;
-  occurredAt: string;
-}
+/** A single application with its stage history, from `GET /api/applied/:id`. */
+export type ApplicationDetailDto = Data<ReturnType<typeof api.applied>["get"]>;
 
-export interface ApplicationDetailDto extends ApplicationDto {
-  stageEvents: StageEventDto[];
-}
+/** One stage-transition event on an application. */
+export type StageEventDto = ApplicationDetailDto["stageEvents"][number];
 
-export type DuplicateMatchKind = "url" | "fuzzy";
-
-export interface DuplicateMatch {
-  kind: DuplicateMatchKind;
-  application: {
-    id: number;
-    url: string;
-    title: string;
-    company: string;
-    appliedAt: string;
-    stage: Stage;
-  };
-  score?: number;
-}
-
-export interface DuplicateCheckResult {
-  applied: boolean;
-  match: DuplicateMatch | null;
-}
-
-export interface DashboardStats {
-  total: number;
-  last7Days: number;
-  last30Days: number;
-  positiveResponseRate: number;
-  byStage: Record<Stage, number>;
-  byBoard: { board: string; count: number }[];
-  bySource: { source: ApplicationSource; count: number }[];
-}
-
-export interface ApplicationListFilters {
-  stage?: Stage;
-  board?: string;
-  source?: ApplicationSource;
-  search?: string;
-}
+/** Result of the dedupe check, from `GET /api/applied/check`. */
+export type DuplicateCheckResult = Data<typeof api.applied.check.get>;

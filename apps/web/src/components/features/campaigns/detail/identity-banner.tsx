@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { PersonOutlined } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";
@@ -15,7 +16,7 @@ import type { ProfileResponse } from "@/api/types";
  */
 export function CampaignIdentityBanner(): ReactNode {
   const query = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () =>
-    apiClient.get<ProfileResponse>("/api/profile"),
+    unwrap(api.profile.get()),
   );
   const profile = query.data?.profile;
 

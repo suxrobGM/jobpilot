@@ -1,15 +1,8 @@
-import type { CoverLetterSource } from "@jobpilot/contracts/cover-letter";
+import type { Data } from "@jobpilot/api-client";
+import type { api } from "@/api/eden";
 
-export interface CoverLetterListItem {
-  id: number;
-  jobTitle: string | null;
-  company: string | null;
-  jobUrl: string | null;
-  source: CoverLetterSource;
-  createdAt: string;
-}
+/** A cover-letter list row, inferred from `GET /api/cover-letters`. */
+export type CoverLetterListItem = Data<(typeof api)["cover-letters"]["get"]>[number];
 
-export interface CoverLetterDto extends CoverLetterListItem {
-  profileId: number;
-  content: string;
-}
+/** A single cover letter with body, from `GET /api/cover-letters/:id`. */
+export type CoverLetterDto = Data<ReturnType<(typeof api)["cover-letters"]>["get"]>;

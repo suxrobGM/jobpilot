@@ -24,7 +24,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/common/*": ["../api/src/common/*"],
+      "@/modules/*": ["../api/src/modules/*"],
+      "@/generated/*": ["../api/src/generated/*"],
+      "@/env": ["../api/src/env"]
     }
   },
   "include": [

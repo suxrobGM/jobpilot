@@ -1,66 +1,14 @@
-import type {
-  PortfolioProject,
-  ScreeningAnswer,
-  UpworkProfileStatus,
-  UpworkProposalOutcome,
-  UpworkProposalSource,
-  UpworkProposalStatus,
-} from "@jobpilot/contracts/upwork";
+import type { Body, Data } from "@jobpilot/api-client";
+import type { api } from "@/api/eden";
 
-export interface UpworkProposalDto {
-  id: number;
-  jobTitle: string;
-  clientName: string | null;
-  jobUrl: string | null;
-  jobDescription: string | null;
-  proposalText: string;
-  screeningAnswers: ScreeningAnswer[];
-  status: UpworkProposalStatus;
-  outcome: UpworkProposalOutcome | null;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-  submittedAt: string | null;
-}
+/** An Upwork proposal, inferred from `GET /api/upwork/proposals`. */
+export type UpworkProposalDto = Data<typeof api.upwork.proposals.get>[number];
 
-export interface CreateUpworkProposalRequest {
-  jobTitle: string;
-  clientName?: string | null;
-  jobUrl?: string | null;
-  jobDescription?: string | null;
-  proposalText?: string;
-  screeningAnswers?: ScreeningAnswer[];
-  status?: UpworkProposalStatus;
-  notes?: string | null;
-  source?: UpworkProposalSource;
-  campaignId?: string | null;
-  jobKey?: string | null;
-}
+/** The Upwork profile-enhancement record, from `GET /api/upwork/profile`. */
+export type UpworkProfileDto = NonNullable<Data<typeof api.upwork.profile.get>>;
 
-export interface UpworkProfileDto {
-  id: number;
-  currentTitle: string | null;
-  currentOverview: string | null;
-  currentHourlyRate: string | null;
-  currentPortfolio: PortfolioProject[];
-  suggestedTitle: string | null;
-  suggestedOverview: string | null;
-  suggestedHourlyRate: string | null;
-  suggestedPortfolio: PortfolioProject[];
-  status: UpworkProfileStatus;
-  updatedAt: string;
-  appliedAt: string | null;
-}
+/** Create-proposal request body, from `POST /api/upwork/proposals`. */
+export type CreateUpworkProposalRequest = Body<typeof api.upwork.proposals.post>;
 
-export interface UpdateUpworkProposalRequest {
-  jobTitle?: string;
-  clientName?: string | null;
-  jobUrl?: string | null;
-  jobDescription?: string | null;
-  proposalText?: string;
-  screeningAnswers?: ScreeningAnswer[];
-  status?: UpworkProposalStatus;
-  outcome?: UpworkProposalOutcome | null;
-  notes?: string | null;
-  submittedAt?: string | null;
-}
+/** Update-proposal request body, from `PATCH /api/upwork/proposals/:id`. */
+export type UpdateUpworkProposalRequest = Body<ReturnType<typeof api.upwork.proposals>["patch"]>;

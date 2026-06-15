@@ -2,7 +2,8 @@
 
 import { useState, type ReactElement } from "react";
 import { Alert, Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { EmailAccountStatus } from "@/api/types";
@@ -14,11 +15,11 @@ export function EmailSection(): ReactElement {
   const [pendingDisconnect, setPendingDisconnect] = useState(false);
 
   const status = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
-    apiClient.get<EmailAccountStatus>("/api/email/account"),
+    unwrap(api.email.account.get()),
   );
 
   const disconnect = useApiMutation<{ disconnected: boolean }, void>(
-    () => apiClient.del<{ disconnected: boolean }>("/api/email/account"),
+    () => unwrap(api.email.account.delete()),
     {
       successMessage: "Email disconnected",
       invalidate: [queryKeys.email.all],

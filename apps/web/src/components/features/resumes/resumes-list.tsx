@@ -15,7 +15,8 @@ import {
 } from "@mui/material";
 import { Route } from "next";
 import Link from "next/link";
-import { apiClient } from "@/api/client";
+import { apiClient, unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
@@ -31,7 +32,7 @@ export function ResumesList(): ReactElement {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const list = useApiQuery<ResumeListItem[]>(queryKeys.resume.list(), () =>
-    apiClient.get<ResumeListItem[]>("/api/resumes"),
+    unwrap(api.resumes.get()),
   );
 
   const upload = useApiMutation<{ id: number }, File>(

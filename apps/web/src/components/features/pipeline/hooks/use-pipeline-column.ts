@@ -1,10 +1,10 @@
 "use client";
 
 import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
-import { apiClient } from "@/api/client";
+import { api } from "@/api/eden";
+import { unwrap } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
 import type { PipelineColumnPage, PipelineStage } from "@/api/types/pipeline";
-import { buildUrl } from "@/utils/url";
 
 export interface PipelineColumnFilters {
   search: string | null;
@@ -26,18 +26,20 @@ export function usePipelineColumn(
     Error,
     InfiniteData<PipelineColumnPage>,
     ReturnType<typeof queryKeys.pipeline.column>,
-    string | null
+    number | null
   >({
     enabled: options.enabled ?? true,
     queryKey: queryKeys.pipeline.column(stage, filters),
     initialPageParam: null,
     queryFn: async ({ pageParam }) => {
-      const { data, error } = await apiClient.get<PipelineColumnPage>(
-        buildUrl("/api/pipeline", {
-          stage,
-          limit: DEFAULT_LIMIT,
-          cursor: pageParam,
-          ...filters,
+      const { data, error } = await unwrap<PipelineColumnPage>(
+        api.pipeline.get({
+          query: {
+            stage,
+            limit: DEFAULT_LIMIT,
+            cursor: pageParam,
+            ...filters,
+          },
         }),
       );
       if (error || !data) {
@@ -45,6 +47,6 @@ export function usePipelineColumn(
       }
       return data;
     },
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    getNextPageParam: (lastPage) => (lastPage.nextCursor ? Number(lastPage.nextCursor) : undefined),
   });
 }

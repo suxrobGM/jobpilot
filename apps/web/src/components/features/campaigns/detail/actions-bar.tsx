@@ -23,7 +23,8 @@ import {
 } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -42,25 +43,29 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const confirm = useConfirm();
   const router = useRouter();
 
-  const campaignPath = `/api/campaigns/${encodeURIComponent(campaign.campaignId)}`;
+  const campaignResource = api.campaigns({ id: campaign.campaignId });
 
-  const stop = useApiMutation<CampaignDetailDto, void>(
+  const stop = useApiMutation<unknown, void>(
     () =>
-      apiClient.patch<CampaignDetailDto>(campaignPath, {
-        status: "paused" satisfies CampaignStatus,
-      }),
+      unwrap(
+        campaignResource.patch({
+          status: "paused" satisfies CampaignStatus,
+        }),
+      ),
     {
       successMessage: "Campaign paused",
       invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
     },
   );
 
-  const complete = useApiMutation<CampaignDetailDto, void>(
+  const complete = useApiMutation<unknown, void>(
     () =>
-      apiClient.patch<CampaignDetailDto>(campaignPath, {
-        status: "completed" satisfies CampaignStatus,
-        completedAt: new Date().toISOString(),
-      }),
+      unwrap(
+        campaignResource.patch({
+          status: "completed" satisfies CampaignStatus,
+          completedAt: new Date().toISOString(),
+        }),
+      ),
     {
       successMessage: "Campaign marked as done",
       invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
@@ -70,13 +75,13 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const [rescanOpen, setRescanOpen] = useState(false);
   const [minScore, setMinScore] = useState(campaign.config.minScore ?? 70);
 
-  const rescan = useApiMutation<CampaignDetailDto, void>(
-    () => apiClient.patch<CampaignDetailDto>(campaignPath, { config: { minScore } }),
+  const rescan = useApiMutation<unknown, void>(
+    () => unwrap(campaignResource.patch({ config: { minScore } })),
     { invalidate: [queryKeys.campaigns.detail(campaign.campaignId), queryKeys.campaigns.all] },
   );
 
-  const remove = useApiMutation<{ deleted: true; campaignId: string }, void>(
-    () => apiClient.del<{ deleted: true; campaignId: string }>(campaignPath),
+  const remove = useApiMutation<unknown, void>(
+    () => unwrap(campaignResource.delete()),
     {
       successMessage: "Campaign deleted",
       invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],

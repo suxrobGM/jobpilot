@@ -1,23 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { ProfileResponse } from "@/api/types";
+import { createApiClient } from "@jobpilot/api-client";
 import { isProfileEmpty } from "@/utils/profile";
 
 const API_BASE = process.env.API_PROXY_TARGET ?? "http://localhost:8002";
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  // Per-request Eden client that forwards the incoming auth cookie (middleware
+  // has no ambient cookie jar, so we pass it explicitly).
   const cookie = request.headers.get("cookie") ?? "";
-  const res = await fetch(`${API_BASE}/api/profile`, {
+  const api = createApiClient(API_BASE, {
     headers: cookie ? { cookie } : {},
-    cache: "no-store",
-  });
+    fetch: { cache: "no-store" },
+  }).api;
+
+  const { data, error } = await api.profile.get();
 
   // Not authenticated -> send to login.
-  if (res.status === 401) {
+  if (error?.status === 401) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const data = res.ok ? ((await res.json()) as ProfileResponse) : null;
-  if (data === null || data.profile === null || isProfileEmpty(data.profile)) {
+  if (data === null || isProfileEmpty(data.profile)) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 

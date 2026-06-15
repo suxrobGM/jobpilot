@@ -1,10 +1,5 @@
-import type { QueueStatus } from "@jobpilot/contracts/queue";
+import type { Data } from "@jobpilot/api-client";
+import type { api } from "@/api/eden";
 
-export interface QueueEntryDto {
-  id: number;
-  url: string;
-  note: string | null;
-  status: QueueStatus;
-  createdAt: string;
-  consumedAt: string | null;
-}
+/** A queue entry, inferred from `GET /api/queue`. */
+export type QueueEntryDto = Data<typeof api.queue.get>[number];

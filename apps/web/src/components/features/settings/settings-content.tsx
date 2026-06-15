@@ -3,7 +3,8 @@
 import { useState, type ReactElement } from "react";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import {
   PROFILE_DEFAULT_VALUES,
   profileWithAutoApplySchema,
@@ -37,7 +38,7 @@ const ANCHORS: SectionAnchor[] = [
 export function SettingsContent(): ReactElement {
   const query = useApiQuery<ProfileResponse>(
     queryKeys.profile.detail(),
-    () => apiClient.get<ProfileResponse>("/api/profile"),
+    () => unwrap(api.profile.get()),
     { errorMessage: "Failed to load profile" },
   );
 
@@ -101,7 +102,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
   const [, setDirty] = useState(false);
 
   const save = useApiMutation<{ id: number }, ProfileWithAutoApplyInput>(
-    (vars) => apiClient.put("/api/profile", vars),
+    (vars) => unwrap(api.profile.put(vars)),
     {
       successMessage: "Settings saved",
       invalidate: [queryKeys.profile.all],

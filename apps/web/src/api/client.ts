@@ -38,6 +38,30 @@ async function request<T>(url: string, init?: RequestInit): Promise<ClientResult
   }
 }
 
+/**
+ * Adapt an Eden Treaty call's `{ data, error }` result to the `ClientResult`
+ * shape the TanStack Query wrappers expect, so `useApiQuery`/`useApiMutation`
+ * stay unchanged. Usage: `() => unwrap(api.credentials.get())`. The response
+ * type flows from the backend `App` through Eden — no manual generic needed.
+ */
+export async function unwrap<T>(
+  call: Promise<{ data: T | null; error: { status: unknown; value: unknown } | null }>,
+): Promise<ClientResult<T>> {
+  const { data, error } = await call;
+  if (error) {
+    const body = (error.value ?? null) as { code?: string; message?: string } | null;
+    const status = String(error.status);
+    return {
+      data: null,
+      error: {
+        code: body?.code ?? `HTTP_${status}`,
+        message: body?.message ?? `Request failed (${status})`,
+      },
+    };
+  }
+  return { data: data as T, error: null };
+}
+
 export const apiClient = {
   get: <T>(url: string) => request<T>(url),
 

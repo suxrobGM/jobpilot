@@ -1,65 +1,19 @@
-import type { ResumeData } from "@jobpilot/contracts/resume";
+import type { Data } from "@jobpilot/api-client";
+import type { api } from "@/api/eden";
 
-// Persisted shape of ResumeVariant.rewrites (mirrors the backend audit types).
-export interface BulletRewriteAudit {
-  original: string;
-  tailored: string;
-  flags: string[];
-}
-export interface EntryRewriteAudit {
-  entryIndex: number;
-  company: string;
-  bullets: BulletRewriteAudit[];
-}
-export interface VariantRewriteAudit {
-  experience: EntryRewriteAudit[];
-}
+/** A resume list row, inferred from `GET /api/resumes`. */
+export type ResumeListItem = Data<typeof api.resumes.get>[number];
 
-export interface ResumeDto {
-  id: number;
-  profileId: number;
-  label: string;
-  content: ResumeData | null;
-  version: number;
-  sourceFilename: string | null;
-  sourceMimeType: string | null;
-  sourceSizeBytes: number | null;
-  isPrimary: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+/** A single resume, from `GET /api/resumes/:id`. */
+export type ResumeDto = Data<ReturnType<typeof api.resumes>["get"]>;
 
-export interface ResumeListItem {
-  id: number;
-  label: string;
-  sourceFilename: string | null;
-  hasData: boolean;
-  variantCount: number;
-  isPrimary: boolean;
-  updatedAt: string;
-}
+/** A tailored-variant list row, from `GET /api/resumes/:id/variants`. */
+export type ResumeVariantListItem = Data<ReturnType<typeof api.resumes>["variants"]["get"]>[number];
 
-export interface ResumeVariantDto {
-  id: number;
-  resumeId: number;
-  resumeLabel: string;
-  label: string;
-  jobUrl: string | null;
-  applicationId: number | null;
-  content: ResumeData;
-  diffNotes: string | null;
-  /** Per-bullet rewrite audit, or null when the variant used reordering only. */
-  rewrites: VariantRewriteAudit | null;
-  createdAt: string;
-  updatedAt: string;
-}
+/** A single tailored variant, from `GET /api/resumes/variants/:id`. */
+export type ResumeVariantDto = Data<ReturnType<(typeof api.resumes)["variants"]>["get"]>;
 
-export interface ResumeVariantListItem {
-  id: number;
-  resumeId: number;
-  label: string;
-  jobUrl: string | null;
-  applicationId: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
+/** Per-bullet rewrite audit carried on a variant. */
+export type VariantRewriteAudit = NonNullable<ResumeVariantDto["rewrites"]>;
+export type EntryRewriteAudit = VariantRewriteAudit["experience"][number];
+export type BulletRewriteAudit = EntryRewriteAudit["bullets"][number];

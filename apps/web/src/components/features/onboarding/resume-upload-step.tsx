@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { apiClient, unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { ResumeDto } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
@@ -55,7 +55,7 @@ export const ResumeUploadStep = withForm({
       if (appliedRef.current) {
         return;
       }
-      const { data } = await apiClient.get<ResumeDto>(`/api/resumes/${id}`);
+      const { data } = await unwrap(api.resumes({ id }).get());
       const basics = data?.content?.basics;
       if (appliedRef.current || !basics || basics.name.trim().length === 0) {
         return;

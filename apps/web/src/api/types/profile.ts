@@ -1,65 +1,19 @@
-import type { ResumeListItem } from "./resume";
+import type { Data } from "@jobpilot/api-client";
+import type { api } from "@/api/eden";
 
-export interface ReferenceDto {
-  id: number;
-  name: string;
-  relationship: string | null;
-  company: string | null;
-  email: string | null;
-  phone: string | null;
-}
+/** The active profile aggregate, inferred from `GET /api/profile`. */
+export type ProfileResponse = Data<typeof api.profile.get>;
+export type ProfileDto = NonNullable<ProfileResponse["profile"]>;
+export type AutoApplySettingsDto = NonNullable<ProfileResponse["autoApply"]>;
+export type ReferenceDto = ProfileDto["references"][number];
 
-export interface ProfileDto {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string | null;
-  website: string | null;
-  linkedin: string | null;
-  github: string | null;
-
-  street: string | null;
-  aptUnit: string | null;
-  city: string | null;
-  state: string | null;
-  zipCode: string | null;
-  country: string | null;
-
-  usAuthorized: boolean;
-  requiresSponsorship: boolean;
-  visaStatus: string | null;
-  optExtension: string | null;
-  willingToRelocate: boolean;
-  preferredLocations: string[];
-  references: ReferenceDto[];
-
-  eeoGender: string | null;
-  eeoRace: string | null;
-  eeoEthnicity: string | null;
-  eeoHispanicOrLatino: string | null;
-  eeoVeteranStatus: string | null;
-  eeoDisabilityStatus: string | null;
-
-  primaryResumeId: number | null;
-  updatedAt: string;
-}
-
-export interface AutoApplySettingsDto {
-  id: number;
-  profileId: number;
-  minMatchScore: number;
-  maxApplicationsPerCampaign: number | null;
-  defaultStartDate: string;
-}
-
-export interface ProfileResponse {
-  profile: ProfileDto | null;
-  autoApply: AutoApplySettingsDto | null;
-  primaryResumeSourceAbsolutePath: string | null;
-  resumes: ResumeListItem[];
-}
-
+/**
+ * Multi-profile management types (stale). The rail's `ProfileSwitcher` and the
+ * onboarding draft-profile flow call `/api/profiles*` collection endpoints that
+ * the current single-profile-per-user backend does not expose, so these cannot
+ * be Eden-inferred. Kept as manual declarations until that feature is reworked
+ * or removed.
+ */
 export interface ProfileListItemDto {
   id: number;
   firstName: string;

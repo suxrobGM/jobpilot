@@ -4,7 +4,8 @@ import { useSyncExternalStore, type ReactNode } from "react";
 import { Stop } from "@mui/icons-material";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -45,8 +46,8 @@ export function AutoApplyStopPill(): ReactNode {
   });
 
   const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(FILTERS), () =>
-    apiClient.get<CampaignDto[]>(
-      `/api/campaigns?status=${FILTERS.status}&source=${FILTERS.source}`,
+    unwrap(
+      api.campaigns.get({ query: { status: FILTERS.status, source: FILTERS.source } }),
     ),
   );
 
@@ -60,9 +61,10 @@ export function AutoApplyStopPill(): ReactNode {
           error: { code: "NO_CAMPAIGN", message: "No active auto-apply campaign" },
         });
       }
-      return apiClient.patch<{ campaignId: string; status: CampaignStatus }>(
-        `/api/campaigns/${encodeURIComponent(active.campaignId)}`,
-        { status: "paused" satisfies CampaignStatus },
+      return unwrap(
+        api.campaigns({ id: active.campaignId }).patch({
+          status: "paused" satisfies CampaignStatus,
+        }),
       );
     },
     {

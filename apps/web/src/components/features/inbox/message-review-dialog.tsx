@@ -14,10 +14,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { apiClient } from "@/api/client";
+import { unwrap } from "@/api/client";
+import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { ApplicationDto, EmailMessageDto } from "@/api/types";
+import type { ApplicationDto, EmailMessageDetailDto } from "@/api/types";
 
 interface MessageReviewDialogProps {
   messageId: number | null;
@@ -35,15 +36,13 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
   const [matchedApp, setMatchedApp] = useState<ApplicationDto | null>(null);
   const [search, setSearch] = useState("");
 
-  const message = useApiQuery<EmailMessageDto & { matchedApp?: ApplicationDto | null }>(
+  const message = useApiQuery<EmailMessageDetailDto>(
     [...queryKeys.email.all, "message", messageId ?? -1] as const,
     () => {
       if (messageId == null) {
         return Promise.resolve({ data: null, error: null });
       }
-      return apiClient.get<EmailMessageDto & { matchedApp?: ApplicationDto | null }>(
-        `/api/email/messages/${messageId}`,
-      );
+      return unwrap(api.email.messages({ id: messageId }).get());
     },
     { enabled: messageId !== null },
   );
@@ -64,22 +63,19 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
 
   const appOptions = useApiQuery<ApplicationDto[]>(
     [...queryKeys.applications.all, "search", search] as const,
-    () =>
-      apiClient.get<ApplicationDto[]>(
-        search ? `/api/applied?search=${encodeURIComponent(search)}` : "/api/applied",
-      ),
+    () => unwrap(api.applied.get({ query: search ? { search } : {} })),
     { enabled: open },
   );
 
-  const patchMatch = useApiMutation<EmailMessageDto, { matchedAppId: number | null }>(
-    (vars) => apiClient.patch<EmailMessageDto>(`/api/email/messages/${messageId}`, vars),
+  const patchMatch = useApiMutation<unknown, { matchedAppId: number | null }>(
+    (vars) => unwrap(api.email.messages({ id: messageId! }).patch(vars)),
     {
       invalidate: [queryKeys.email.all],
     },
   );
 
-  const approve = useApiMutation<{ id: number; applicationId: number }, void>(
-    () => apiClient.post(`/api/email/messages/${messageId}/approve`, {}),
+  const approve = useApiMutation<unknown, void>(
+    () => unwrap(api.email.messages({ id: messageId! }).approve.post({})),
     {
       successMessage: "Approved",
       invalidate: [queryKeys.email.all, queryKeys.applications.all],
@@ -87,8 +83,8 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
     },
   );
 
-  const deny = useApiMutation<{ id: number }, void>(
-    () => apiClient.post(`/api/email/messages/${messageId}/deny`, {}),
+  const deny = useApiMutation<unknown, void>(
+    () => unwrap(api.email.messages({ id: messageId! }).deny.post({})),
     {
       successMessage: "Denied",
       invalidate: [queryKeys.email.all],
