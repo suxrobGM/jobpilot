@@ -37,33 +37,95 @@ export const emailController = new Elysia({
 })
   .use(profileGuard)
   // --- Account ---------------------------------------------------------------
-  .get("/account", ({ profileId }) => svc.accountStatus(profileId))
-  .delete("/account", ({ profileId }) => svc.disconnectAccount(profileId))
+  .get("/account", ({ profileId }) => svc.accountStatus(profileId), {
+    detail: {
+      summary: "Get mailbox account status",
+      description:
+        "Returns the connection status of the profile's linked email account, including provider, email address, last sync time, and whether it can send.",
+    },
+  })
+  .delete("/account", ({ profileId }) => svc.disconnectAccount(profileId), {
+    detail: {
+      summary: "Disconnect mailbox account",
+      description:
+        "Removes the profile's connected email account and returns a confirmation that it was disconnected.",
+    },
+  })
   // --- Messages --------------------------------------------------------------
   .get("/messages", ({ profileId, query }) => svc.listMessages(profileId, query), {
     query: messagesQuery,
+    detail: {
+      summary: "List inbox messages",
+      description:
+        "Returns up to 200 of the profile's email messages, ordered newest first, filtered by the optional review status, classification, since date, domain hint, and verification domain query parameters.",
+    },
   })
   .get("/messages/:id", ({ profileId, params }) => svc.getMessage(profileId, params.id), {
     params: idParam,
+    detail: {
+      summary: "Get inbox message",
+      description:
+        "Returns a single email message owned by the profile, including its matched application summary, or 404 if not found.",
+    },
   })
   .patch(
     "/messages/:id",
     ({ profileId, params, body }) => svc.scanMessage(profileId, params.id, body),
-    { params: idParam, body: scanMessageSchema },
+    {
+      params: idParam,
+      body: scanMessageSchema,
+      detail: {
+        summary: "Scan and classify message",
+        description:
+          "Updates a message with classification, matching, verification, and review-status fields from a scan, publishes an inbox event, and returns the updated message.",
+      },
+    },
   )
   .post(
     "/messages/:id/approve",
     ({ profileId, params, body }) => svc.approveMessage(profileId, params.id, body),
-    { params: idParam, body: approveSchema },
+    {
+      params: idParam,
+      body: approveSchema,
+      detail: {
+        summary: "Approve message and advance application",
+        description:
+          "Approves a classified message, transitions its matched application to the inferred target stage with a stage event, marks the message approved, and returns the message id, application id, and new stage.",
+      },
+    },
   )
   .post("/messages/:id/deny", ({ profileId, params }) => svc.denyMessage(profileId, params.id), {
     params: idParam,
+    detail: {
+      summary: "Deny message",
+      description:
+        "Marks the message's review status as denied, publishes an inbox event, and returns the message id with its denied status.",
+    },
   })
   // --- Send / Sync -----------------------------------------------------------
-  .post("/send", ({ profileId, body }) => svc.send(profileId, body), { body: sendEmailSchema })
-  .post("/sync", ({ profileId }) => svc.syncInbox(profileId))
+  .post("/send", ({ profileId, body }) => svc.send(profileId, body), {
+    body: sendEmailSchema,
+    detail: {
+      summary: "Send outbound email",
+      description:
+        "Sends an email from the profile's connected mailbox (refreshing the token first), and returns the provider send result or errors when no account is connected or the mailbox lacks send access.",
+    },
+  })
+  .post("/sync", ({ profileId }) => svc.syncInbox(profileId), {
+    detail: {
+      summary: "Sync inbox messages",
+      description:
+        "Fetches new messages from the connected mailbox, persists them, links any outreach replies, emits inbox sync events, and returns the fetched and newly inserted counts.",
+    },
+  })
   // --- Events SSE (now auth-scoped) ------------------------------------------
-  .get("/events", () => sseResponse(subscribe(inboxChannel, undefined)))
+  .get("/events", () => sseResponse(subscribe(inboxChannel, undefined)), {
+    detail: {
+      summary: "Stream inbox events",
+      description:
+        "Opens a Server-Sent Events stream that emits inbox events (such as sync progress and message scan/review updates) as a raw streaming response.",
+    },
+  })
   // --- OAuth -----------------------------------------------------------------
   .get(
     "/oauth/start",
@@ -88,7 +150,14 @@ export const emailController = new Elysia({
 
       return redirect(authorizeUrl);
     },
-    { query: startQuery },
+    {
+      query: startQuery,
+      detail: {
+        summary: "Start mailbox OAuth flow",
+        description:
+          "Builds the provider authorize URL, stores the OAuth state and provider in short-lived cookies, and redirects the browser to the provider's consent screen.",
+      },
+    },
   )
   .get(
     "/oauth/callback",
@@ -116,5 +185,12 @@ export const emailController = new Elysia({
 
       return redirect(`${env.APP_URL}/inbox`);
     },
-    { query: callbackQuery },
+    {
+      query: callbackQuery,
+      detail: {
+        summary: "Complete mailbox OAuth callback",
+        description:
+          "Validates the OAuth state cookie, exchanges the authorization code to connect the mailbox account, clears the OAuth cookies, and redirects the browser back to the inbox page.",
+      },
+    },
   );

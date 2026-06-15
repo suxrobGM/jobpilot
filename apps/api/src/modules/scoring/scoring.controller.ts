@@ -19,4 +19,9 @@ export const scoringController = new Elysia({
   .use(profileGuard)
   .post("/", ({ profileId, body }) => scoringService.scoreJobFit(profileId, body), {
     body: scoreFitSchema,
+    detail: {
+      summary: "Score job fit",
+      description:
+        "Deterministically scores a job digest against the active profile's resume-derived inputs plus any provided overrides and returns the computed fit result.",
+    },
   });

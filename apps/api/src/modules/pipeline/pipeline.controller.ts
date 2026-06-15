@@ -38,8 +38,24 @@ export const pipelineController = new Elysia({
         board: query.board ?? null,
         campaignId: query.campaignId ?? null,
       }),
-    { query: pipelineQuery },
+    {
+      query: pipelineQuery,
+      detail: {
+        summary: "List pipeline stage",
+        description:
+          "Returns one paginated Kanban stage column for the active profile, aggregating queue, job, and application records filtered by the requested stage and optional search, board, and campaign criteria.",
+      },
+    },
   )
-  .get("/events", ({ profileId }) =>
-    sseResponse(subscribe(pipelineChannel, { profileId })),
+  .get(
+    "/events",
+    ({ profileId }) =>
+      sseResponse(subscribe(pipelineChannel, { profileId })),
+    {
+      detail: {
+        summary: "Stream pipeline events",
+        description:
+          "Opens a Server-Sent Events stream that pushes live pipeline updates for the active profile, returning a raw streaming Response that stays open until the client disconnects.",
+      },
+    },
   );

@@ -18,7 +18,14 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       setAuthCookies(cookie, result.accessToken, result.refreshToken);
       return result;
     },
-    { body: RegisterSchema },
+    {
+      body: RegisterSchema,
+      detail: {
+        summary: "Register a new account",
+        description:
+          "Creates a new user with an empty 1:1 profile, sets access and refresh token cookies, and returns the public user with freshly issued tokens.",
+      },
+    },
   )
   .post(
     "/login",
@@ -27,27 +34,68 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       setAuthCookies(cookie, result.accessToken, result.refreshToken);
       return result;
     },
-    { body: LoginSchema },
+    {
+      body: LoginSchema,
+      detail: {
+        summary: "Log in with credentials",
+        description:
+          "Verifies the email and password, sets access and refresh token cookies, and returns the public user with freshly issued tokens.",
+      },
+    },
   )
   .post("/refresh", async ({ cookie }) => {
     const raw = cookie[REFRESH_COOKIE]?.value;
     const result = await authService.rotateRefresh(typeof raw === "string" ? raw : "");
     setAuthCookies(cookie, result.accessToken, result.refreshToken);
     return result;
+  }, {
+    detail: {
+      summary: "Rotate refresh token",
+      description:
+        "Validates the refresh token cookie, revokes the old refresh token, sets new access and refresh token cookies, and returns the public user with freshly issued tokens.",
+    },
   })
   .post("/logout", async ({ cookie }) => {
     const raw = cookie[REFRESH_COOKIE]?.value;
     await authService.logout(typeof raw === "string" ? raw : "");
     clearAuthCookies(cookie);
     return { ok: true };
+  }, {
+    detail: {
+      summary: "Log out current session",
+      description:
+        "Revokes the refresh token from the cookie, clears the auth cookies, and returns an acknowledgement.",
+    },
   })
   // --- authenticated ---
   .use(authGuard)
-  .get("/me", ({ user }) => authService.me(user.id))
-  .get("/tokens", ({ user }) => authService.listApiTokens(user.id))
+  .get("/me", ({ user }) => authService.me(user.id), {
+    detail: {
+      summary: "Get current user",
+      description:
+        "Returns the authenticated user's public account details along with their associated profile.",
+    },
+  })
+  .get("/tokens", ({ user }) => authService.listApiTokens(user.id), {
+    detail: {
+      summary: "List agent API tokens",
+      description:
+        "Returns the authenticated user's active (non-revoked) personal access tokens with their metadata, excluding the secret token values.",
+    },
+  })
   .post("/tokens", ({ user, body }) => authService.mintApiToken(user.id, body), {
     body: ApiTokenCreateSchema,
+    detail: {
+      summary: "Create agent API token",
+      description:
+        "Mints a new personal access token for the authenticated user and returns its details including the raw token, which is shown only once.",
+    },
   })
   .delete("/tokens/:id", ({ user, params }) => authService.revokeApiToken(user.id, params.id), {
     params: IdParam,
+    detail: {
+      summary: "Revoke agent API token",
+      description:
+        "Revokes the specified personal access token owned by the authenticated user and returns an acknowledgement.",
+    },
   });

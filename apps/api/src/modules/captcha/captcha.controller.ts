@@ -13,4 +13,9 @@ export const captchaController = new Elysia({
   .use(profileGuard)
   .post("/solve", ({ profileId, body }) => svc.solve(profileId, body), {
     body: captchaSolveSchema,
+    detail: {
+      summary: "Solve a CAPTCHA",
+      description:
+        "Solves the supplied CAPTCHA challenge through the active profile's configured third-party solver (2captcha or CapSolver) and returns the resolved token along with the provider that solved it.",
+    },
   });

@@ -11,7 +11,18 @@ export const profileController = new Elysia({
   detail: { tags: ["Profile"] },
 })
   .use(profileGuard)
-  .get("/", ({ profileId }) => svc.get(profileId))
+  .get("/", ({ profileId }) => svc.get(profileId), {
+    detail: {
+      summary: "Get active profile",
+      description:
+        "Returns the active profile aggregate, including its auto-apply settings, references, and resumes.",
+    },
+  })
   .put("/", ({ profileId, body }) => svc.update(profileId, body), {
     body: profileWithAutoApplySchema,
+    detail: {
+      summary: "Replace active profile",
+      description:
+        "Performs a full replace of the active profile and its auto-apply settings, returning the updated profile aggregate.",
+    },
   });

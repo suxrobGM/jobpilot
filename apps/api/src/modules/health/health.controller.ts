@@ -7,4 +7,10 @@ const healthService = container.resolve(HealthService);
 export const healthController = new Elysia({
   prefix: "/health",
   detail: { tags: ["Health"] },
-}).get("/", () => healthService.status());
+}).get("/", () => healthService.status(), {
+  detail: {
+    summary: "Check API liveness",
+    description:
+      "Returns the API liveness status, including the running application version and the current server time.",
+  },
+});

@@ -10,4 +10,10 @@ export const contactController = new Elysia({
   detail: { tags: ["Contacts"] },
 })
   .use(profileGuard)
-  .get("/", ({ profileId }) => contactService.list(profileId));
+  .get("/", ({ profileId }) => contactService.list(profileId), {
+    detail: {
+      summary: "List networking contacts",
+      description:
+        "Returns the active profile's networking contacts, ordered newest first.",
+    },
+  });

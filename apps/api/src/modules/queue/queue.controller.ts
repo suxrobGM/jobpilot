@@ -13,14 +13,45 @@ export const queueController = new Elysia({ prefix: "/queue", detail: { tags: ["
   .use(profileGuard)
   .get("/", ({ profileId, query }) => queueService.list(profileId, query.status), {
     query: ListQuery,
+    detail: {
+      summary: "List queue entries",
+      description:
+        "Returns the profile's job-URL queue entries ordered by creation time, optionally filtered by the given status.",
+    },
   })
-  .post("/", ({ profileId, body }) => queueService.add(profileId, body), { body: addQueueSchema })
-  .get("/pending", ({ profileId }) => queueService.listPending(profileId))
+  .post("/", ({ profileId, body }) => queueService.add(profileId, body), {
+    body: addQueueSchema,
+    detail: {
+      summary: "Add queue entries",
+      description:
+        "Upserts the supplied job URLs into the profile's queue as pending entries, publishes a queue-updated event, and returns the inserted count with the created entries.",
+    },
+  })
+  .get("/pending", ({ profileId }) => queueService.listPending(profileId), {
+    detail: {
+      summary: "List pending entries",
+      description:
+        "Returns the profile's queue entries whose status is pending, ordered by creation time.",
+    },
+  })
   .patch(
     "/:id",
     ({ profileId, params, body }) => queueService.patch(profileId, params.id, body),
-    { params: idParam, body: patchQueueSchema },
+    {
+      params: idParam,
+      body: patchQueueSchema,
+      detail: {
+        summary: "Update queue entry status",
+        description:
+          "Updates the status of the profile's queue entry, setting consumedAt when transitioning to consumed and clearing it otherwise, and returns the updated entry.",
+      },
+    },
   )
   .delete("/:id", ({ profileId, params }) => queueService.remove(profileId, params.id), {
     params: idParam,
+    detail: {
+      summary: "Delete queue entry",
+      description:
+        "Deletes the profile's queue entry by id and returns the id of the removed entry.",
+    },
   });
