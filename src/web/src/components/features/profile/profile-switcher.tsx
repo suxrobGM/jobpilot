@@ -23,6 +23,7 @@ import type {
   ProfileListItemDto,
   SetActiveProfileResponse,
 } from "@/api/types";
+import { LogoutMenuItem } from "@/components/features/auth";
 import { useConfirm } from "@/providers/confirm-provider";
 
 function initials(p: ProfileListItemDto): string {
@@ -199,6 +200,8 @@ export function ProfileSwitcher(): ReactElement {
           </ListItemIcon>
           <ListItemText primary="Create new profile" />
         </MenuItem>
+        <Divider />
+        <LogoutMenuItem onClick={handleClose} />
       </Menu>
     </Box>
   );

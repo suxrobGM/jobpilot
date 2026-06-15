@@ -1,10 +1,13 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
+const here = path.dirname(fileURLToPath(import.meta.url));
 const API_PROXY_TARGET = process.env.API_PROXY_TARGET ?? "http://localhost:8002";
 
 const config: NextConfig = {
   output: "standalone",
-  outputFileTracingRoot: "../../",
+  outputFileTracingRoot: path.resolve(here, "../.."),
   cacheComponents: true,
   reactCompiler: true,
   typedRoutes: true,
