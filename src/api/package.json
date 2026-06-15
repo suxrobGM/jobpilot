@@ -30,6 +30,7 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@react-pdf/renderer": "^4.5.1",
+    "dotenv": "^17.4.2",
     "elysia": "^1.4.28",
     "google-auth-library": "^10.7.0",
     "googleapis": "^173.0.0",

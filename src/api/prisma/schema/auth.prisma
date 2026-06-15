@@ -1,0 +1,51 @@
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  role          UserRole @default(USER)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 1:1 — a user has exactly one profile (created at register, populated at onboarding).
+  profile       Profile?
+  refreshTokens RefreshToken[]
+  apiTokens     ApiToken[]
+}
+
+// Web session rotation. Only a hash of the token is stored, never the raw value.
+model RefreshToken {
+  id        Int       @id @default(autoincrement())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// The local agent's credential: a long-lived, revocable personal access token.
+// The terminal mints one and injects it as JOBPILOT_API_TOKEN. Only the hash is stored.
+model ApiToken {
+  id         Int       @id @default(autoincrement())
+  userId     String
+  name       String
+  tokenHash  String    @unique
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

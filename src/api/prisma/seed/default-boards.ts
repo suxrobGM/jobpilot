@@ -1,4 +1,4 @@
-import { db } from "@/server/db";
+import { db } from "@/common/database";
 
 interface BoardSeed {
   name: string;

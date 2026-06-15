@@ -46,5 +46,8 @@ next-env.d.ts
 !/storage/resumes/.gitkeep
 /prisma/app.db
 /prisma/app.db-journal
+/prisma/app.db.bak
+/prisma/*.db.bak
+__scratch__/
 /src/generated/
 storage/

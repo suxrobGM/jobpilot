@@ -1,6 +1,7 @@
 model Profile {
   id        Int    @id @default(autoincrement())
-  isActive  Boolean @default(false)
+  userId    String @unique
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   firstName String
   lastName  String
   email     String
@@ -50,7 +51,7 @@ model Profile {
 
   updatedAt DateTime @updatedAt
 
-  @@index([isActive])
+  @@index([userId])
 }
 
 model Reference {

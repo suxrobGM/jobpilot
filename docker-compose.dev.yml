@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     container_name: jobpilot-postgres
     restart: unless-stopped
     environment:
@@ -8,9 +8,11 @@ services:
       POSTGRES_PASSWORD: jobpilot
       POSTGRES_DB: jobpilot
     ports:
-      - "5432:5432"
+      # Host 5433 -> container 5432 (host 5432 is taken by the local PG 18 service)
+      - "5433:5432"
     volumes:
-      - jobpilot-pgdata:/var/lib/postgresql/data
+      # PG 18+ expects the mount at /var/lib/postgresql (data lands in a subdir)
+      - jobpilot-pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U jobpilot -d jobpilot"]
       interval: 5s
