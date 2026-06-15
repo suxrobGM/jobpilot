@@ -4,13 +4,11 @@ import type { Route } from "next";
 import { CampaignDetail } from "@/components/features/campaigns";
 import { PageHeader } from "@/components/ui/layout";
 
-interface CampaignDetailPageProps {
+interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function CampaignDetailPage(
-  props: CampaignDetailPageProps,
-): Promise<ReactElement> {
+export default async function CampaignDetailPage(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
   return (
     <Container maxWidth="lg" sx={{ gap: 2 }}>
