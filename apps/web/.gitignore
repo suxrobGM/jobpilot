@@ -42,12 +42,11 @@ yarn-error.log*
 next-env.d.ts
 
 # jobpilot
-/storage/resumes/*
-!/storage/resumes/.gitkeep
+# NOTE: resume storage and the database now live in the api app (apps/api);
+# the stale apps/web/prisma/app.db* below are pre-Postgres SQLite leftovers.
 /prisma/app.db
 /prisma/app.db-journal
 /prisma/app.db.bak
 /prisma/*.db.bak
 __scratch__/
 /src/generated/
-storage/

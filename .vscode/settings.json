@@ -43,7 +43,5 @@
 
   "dotnet.formatting.organizeImportsOnFormat": true,
   "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
-  "omnisharp.enableEditorConfigSupport": true,
-
-  "eslint.workingDirectories": [{ "pattern": "src/web" }]
+  "omnisharp.enableEditorConfigSupport": true
 }

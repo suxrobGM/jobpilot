@@ -10,30 +10,7 @@
         "prettier": "^3.8.3",
       },
     },
-    "packages/api-client": {
-      "name": "@jobpilot/api-client",
-      "version": "2.0.0",
-      "dependencies": {
-        "@elysiajs/eden": "^1.4.2",
-        "@jobpilot/api": "workspace:*",
-        "elysia": "^1.4.28",
-      },
-      "devDependencies": {
-        "typescript": "^6.0.3",
-      },
-    },
-    "packages/contracts": {
-      "name": "@jobpilot/contracts",
-      "version": "2.0.0",
-      "dependencies": {
-        "libphonenumber-js": "^1.13.2",
-        "zod": "^4.4.0",
-      },
-      "devDependencies": {
-        "typescript": "^6.0.3",
-      },
-    },
-    "src/api": {
+    "apps/api": {
       "name": "@jobpilot/api",
       "version": "2.0.0",
       "dependencies": {
@@ -69,7 +46,7 @@
         "typescript": "^6.0.3",
       },
     },
-    "src/web": {
+    "apps/web": {
       "name": "@jobpilot/web",
       "version": "2.0.0",
       "dependencies": {
@@ -103,6 +80,29 @@
         "babel-plugin-react-compiler": "^1.0.0",
         "eslint": "^10.5.0",
         "eslint-config-next": "^16.2.5",
+        "typescript": "^6.0.3",
+      },
+    },
+    "packages/api-client": {
+      "name": "@jobpilot/api-client",
+      "version": "2.0.0",
+      "dependencies": {
+        "@elysiajs/eden": "^1.4.2",
+        "@jobpilot/api": "workspace:*",
+        "elysia": "^1.4.28",
+      },
+      "devDependencies": {
+        "typescript": "^6.0.3",
+      },
+    },
+    "packages/contracts": {
+      "name": "@jobpilot/contracts",
+      "version": "2.0.0",
+      "dependencies": {
+        "libphonenumber-js": "^1.13.2",
+        "zod": "^4.4.0",
+      },
+      "devDependencies": {
         "typescript": "^6.0.3",
       },
     },
@@ -270,13 +270,13 @@
 
     "@img/sharp-win32-x64": ["@img/sharp-win32-x64@0.34.5", "", { "os": "win32", "cpu": "x64" }, "sha512-+29YMsqY2/9eFEiW93eqWnuLcWcufowXewwSNIT6UwZdUUCrM3oFjMWH/Z6/TMmb4hlFenmfAVbpWeup2jryCw=="],
 
-    "@jobpilot/api": ["@jobpilot/api@workspace:src/api"],
+    "@jobpilot/api": ["@jobpilot/api@workspace:apps/api"],
 
     "@jobpilot/api-client": ["@jobpilot/api-client@workspace:packages/api-client"],
 
     "@jobpilot/contracts": ["@jobpilot/contracts@workspace:packages/contracts"],
 
-    "@jobpilot/web": ["@jobpilot/web@workspace:src/web"],
+    "@jobpilot/web": ["@jobpilot/web@workspace:apps/web"],
 
     "@jridgewell/gen-mapping": ["@jridgewell/gen-mapping@0.3.13", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.0", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA=="],
 

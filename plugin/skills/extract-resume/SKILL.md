@@ -38,7 +38,7 @@ If 404, stop and report the id doesn't exist.
 Resolve the absolute path:
 
 - Primary resume → prefer `data.primaryResumeSourceAbsolutePath`.
-- Otherwise → `${JOBPILOT_WORKSPACE_ROOT}/src/web/storage/resumes/{sourceFilename}`.
+- Otherwise → `${JOBPILOT_WORKSPACE_ROOT}/apps/api/storage/resumes/{sourceFilename}`.
 
 If `sourceMimeType !== "application/pdf"`, stop and ask the user to re-upload as PDF.
 

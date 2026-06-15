@@ -3,20 +3,19 @@
   "version": "2.0.0",
   "private": true,
   "workspaces": [
-    "src/web",
-    "src/api",
+    "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -k -n terminal,api,web -c cyan,magenta,green \"dotnet run --project src/terminal\" \"bun --cwd=src/api run dev\" \"bun --cwd=src/web run dev\"",
-    "dev:api": "bun --cwd=src/api run dev",
-    "dev:web": "bun --cwd=src/web run dev",
+    "dev": "concurrently -k -n terminal,api,web -c cyan,magenta,green \"dotnet run --project apps/terminal\" \"bun --cwd=apps/api run dev\" \"bun --cwd=apps/web run dev\"",
+    "dev:api": "bun --cwd=apps/api run dev",
+    "dev:web": "bun --cwd=apps/web run dev",
     "db:up": "docker compose -f docker-compose.dev.yml up -d",
     "db:down": "docker compose -f docker-compose.dev.yml down",
-    "db:setup": "bun --cwd=src/api run db:generate && bun --cwd=src/api run db:migrate:apply && bun --cwd=src/api run db:seed",
-    "build:api": "bun --cwd=src/api run build",
-    "build:web": "bun --cwd=src/web run build",
-    "build:terminal": "dotnet publish src/terminal -c Release -o dist/terminal",
+    "db:setup": "bun --cwd=apps/api run db:generate && bun --cwd=apps/api run db:migrate:apply && bun --cwd=apps/api run db:seed",
+    "build:api": "bun --cwd=apps/api run build",
+    "build:web": "bun --cwd=apps/web run build",
+    "build:terminal": "dotnet publish apps/terminal -c Release -o dist/terminal",
     "format": "prettier --write ."
   },
   "devDependencies": {

@@ -3,7 +3,7 @@ import { Box } from "@mui/material";
 import { AutoApplyStopPill } from "@/components/features/campaigns";
 import { AppShell } from "@/components/layout";
 
-export default function MainLayout(props: PropsWithChildren): ReactElement {
+export default function DashboardLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
     <AppShell>
