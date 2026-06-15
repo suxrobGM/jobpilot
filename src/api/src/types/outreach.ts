@@ -3,7 +3,7 @@ import type {
   OutreachAutonomy,
   OutreachChannel,
   OutreachMessageStatus,
-} from "@/api/contracts/outreach";
+} from "@jobpilot/contracts/outreach";
 
 export interface OutreachConfigDto {
   channels: OutreachChannel[];

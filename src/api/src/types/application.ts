@@ -1,4 +1,4 @@
-import type { ApplicationSource, Stage } from "@/api/contracts/application";
+import type { ApplicationSource, Stage } from "@jobpilot/contracts/application";
 
 export interface ApplicationDto {
   id: number;

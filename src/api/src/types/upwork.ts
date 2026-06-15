@@ -5,7 +5,7 @@ import type {
   UpworkProposalOutcome,
   UpworkProposalSource,
   UpworkProposalStatus,
-} from "@/api/contracts/upwork";
+} from "@jobpilot/contracts/upwork";
 
 export interface UpworkProposalDto {
   id: number;

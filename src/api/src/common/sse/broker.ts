@@ -1,4 +1,3 @@
-import "server-only";
 
 type Subscriber = ReadableStreamDefaultController<Uint8Array>;
 

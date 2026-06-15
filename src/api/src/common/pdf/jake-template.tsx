@@ -7,7 +7,7 @@ import type {
   ResumeExperience,
   ResumeProject,
   ResumeSkillGroup,
-} from "@/api/contracts/resume";
+} from "@jobpilot/contracts/resume";
 
 const styles = StyleSheet.create({
   page: {

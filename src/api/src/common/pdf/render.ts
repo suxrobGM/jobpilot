@@ -1,7 +1,6 @@
-import "server-only";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement } from "react";
-import type { ResumeData } from "@/api/contracts/resume";
+import type { ResumeData } from "@jobpilot/contracts/resume";
 import { CoverLetterTemplate } from "./cover-letter-template";
 import { JakeTemplate } from "./jake-template";
 

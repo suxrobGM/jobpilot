@@ -3,7 +3,7 @@ import type {
   CampaignJobStatus,
   CampaignSource,
   CampaignStatus,
-} from "@/api/contracts/campaign";
+} from "@jobpilot/contracts/campaign";
 import type { OutreachConfigDto } from "./outreach";
 
 export interface CampaignDto {

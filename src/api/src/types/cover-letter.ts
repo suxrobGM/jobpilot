@@ -1,4 +1,4 @@
-import type { CoverLetterSource } from "@/api/contracts/cover-letter";
+import type { CoverLetterSource } from "@jobpilot/contracts/cover-letter";
 
 export interface CoverLetterListItem {
   id: number;

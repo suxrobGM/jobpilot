@@ -1,4 +1,4 @@
-import type { QueueStatus } from "@/api/contracts/queue";
+import type { QueueStatus } from "@jobpilot/contracts/queue";
 
 export interface QueueEntryDto {
   id: number;

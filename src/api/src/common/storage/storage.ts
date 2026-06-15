@@ -1,9 +1,9 @@
-import "server-only";
 import { mkdir, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
-import { slugify } from "@/utils/slug";
+import { env } from "@/env";
+import { slugify } from "@/common/utils/slug";
 
-const STORAGE_ROOT = path.resolve(process.cwd(), "storage");
+const STORAGE_ROOT = path.resolve(env.STORAGE_ROOT);
 const RESUMES_DIR = path.join(STORAGE_ROOT, "resumes");
 const GENERATED_DIR = path.join(STORAGE_ROOT, "resumes-generated");
 const BACKUPS_DIR = path.join(STORAGE_ROOT, "resume-backups");
