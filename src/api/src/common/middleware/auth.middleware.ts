@@ -1,3 +1,4 @@
+import type { Cookie } from "elysia";
 import { Elysia } from "elysia";
 import type { AuthUser } from "@/common/auth";
 import { verifyAccessToken } from "@/common/auth";
@@ -5,32 +6,40 @@ import { container } from "@/common/di";
 import { unauthorized } from "@/common/errors";
 import { AuthService } from "@/modules/auth/auth.service";
 
+interface AuthContext {
+  headers: Record<string, string | undefined>;
+  cookie: Record<string, Cookie<unknown> | undefined>;
+}
+
 /**
- * Dual-mode auth guard. Derives `user` from an `Authorization: Bearer` token
- * (web JWT or the local agent's PAT) or the httpOnly `accessToken` cookie (web).
+ * Resolve the principal from a request: prefer `Authorization: Bearer` (web JWT
+ * or the agent's PAT), then the httpOnly `accessToken` cookie. Returns null when
+ * unauthenticated. Shared by authGuard and profileGuard so neither nests the
+ * other (Elysia scoped derives don't propagate into a nested derive).
  */
+export async function resolveAuthUser({ headers, cookie }: AuthContext): Promise<AuthUser | null> {
+  const authorization = headers.authorization;
+  const bearer = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
+  const cookieToken = cookie.accessToken?.value;
+  const token = bearer ?? (typeof cookieToken === "string" ? cookieToken : undefined);
+  if (!token) {
+    return null;
+  }
+  const jwtUser = await verifyAccessToken(token);
+  if (jwtUser) {
+    return jwtUser;
+  }
+  return container.resolve(AuthService).verifyApiToken(token);
+}
+
+/** Derives `user`. Throws 401 when unauthenticated. */
 export const authGuard = new Elysia({ name: "auth-guard" }).derive(
   { as: "scoped" },
   async ({ headers, cookie }): Promise<{ user: AuthUser }> => {
-    const authorization = headers.authorization;
-    const bearer = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
-    const cookieToken = cookie.accessToken?.value;
-    const token = bearer ?? (typeof cookieToken === "string" ? cookieToken : undefined);
-
-    if (!token) {
+    const user = await resolveAuthUser({ headers, cookie });
+    if (!user) {
       throw unauthorized("Missing authorization");
     }
-
-    const jwtUser = await verifyAccessToken(token);
-    if (jwtUser) {
-      return { user: jwtUser };
-    }
-
-    const apiUser = await container.resolve(AuthService).verifyApiToken(token);
-    if (apiUser) {
-      return { user: apiUser };
-    }
-
-    throw unauthorized("Invalid or expired token");
+    return { user };
   },
 );
