@@ -77,6 +77,8 @@
         "@emotion/cache": "^11.13.5",
         "@emotion/react": "^11.13.5",
         "@emotion/styled": "^11.13.5",
+        "@jobpilot/api-client": "workspace:*",
+        "@jobpilot/contracts": "workspace:*",
         "@libsql/client": "^0.17.3",
         "@mui/icons-material": "^9.1.0",
         "@mui/material": "^9.1.0",

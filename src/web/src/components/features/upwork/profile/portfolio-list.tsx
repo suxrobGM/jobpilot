@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Launch } from "@mui/icons-material";
 import { Box, Chip, Link, Stack, Typography } from "@mui/material";
-import type { PortfolioProject } from "@/api/contracts/upwork";
+import type { PortfolioProject } from "@jobpilot/contracts/upwork";
 
 interface PortfolioListProps {
   items: PortfolioProject[];

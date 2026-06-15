@@ -5,7 +5,7 @@ import { Stop } from "@mui/icons-material";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/api/client";
-import type { CampaignSource, CampaignStatus } from "@/api/contracts/campaign";
+import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";

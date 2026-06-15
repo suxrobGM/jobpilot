@@ -24,7 +24,7 @@ import {
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/api/client";
-import type { CampaignStatus } from "@/api/contracts/campaign";
+import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDetailDto } from "@/api/types";

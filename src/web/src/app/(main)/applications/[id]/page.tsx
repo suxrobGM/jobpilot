@@ -1,8 +1,8 @@
 import type { ReactElement } from "react";
 import { notFound } from "next/navigation";
 import type { ApplicationDetailDto } from "@/api/types";
+import { serverGet } from "@/api/server-fetch";
 import { ApplicationDetail } from "@/components/features/applications";
-import { apiGet } from "@/server/api/fetch";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -16,7 +16,7 @@ export default async function ApplicationDetailPage(props: PageProps): Promise<R
     notFound();
   }
 
-  const { data } = await apiGet<ApplicationDetailDto>(`/api/applied/${id}`);
+  const { data } = await serverGet<ApplicationDetailDto>(`/api/applied/${id}`);
   if (!data) {
     notFound();
   }

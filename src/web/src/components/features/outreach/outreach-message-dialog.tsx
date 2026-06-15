@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { apiClient } from "@/api/client";
-import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@/api/contracts/outreach";
+import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@jobpilot/contracts/outreach";
 import { useApiMutation } from "@/api/hooks";
 import type { OutreachMessageDto } from "@/api/types";
 import { useAgent } from "@/providers/agent-provider";

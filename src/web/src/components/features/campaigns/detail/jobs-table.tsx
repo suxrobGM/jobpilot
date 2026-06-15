@@ -8,7 +8,7 @@ import {
   type GridRowSelectionModel,
   type GridRowsProp,
 } from "@mui/x-data-grid";
-import type { CampaignJobStatus } from "@/api/contracts/campaign";
+import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import type { CampaignJobDto } from "@/api/types";
 
 /** Statuses that can still be applied to from the campaigns detail page. */

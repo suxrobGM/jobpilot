@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import type { CampaignSource } from "@/api/contracts/campaign";
+import type { CampaignSource } from "@jobpilot/contracts/campaign";
 import type { CreateCampaignRequest } from "@/api/types";
 import { buildCliArgs } from "@/utils/cli-args";
 import { slugify } from "@/utils/slug";

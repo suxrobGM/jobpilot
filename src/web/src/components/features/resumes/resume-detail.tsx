@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/api/client";
-import { EMPTY_RESUME_DATA, type ResumeData } from "@/api/contracts/resume";
+import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";

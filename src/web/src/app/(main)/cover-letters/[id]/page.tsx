@@ -2,10 +2,10 @@ import type { ReactElement } from "react";
 import { Launch, PictureAsPdf } from "@mui/icons-material";
 import { Button, Chip, Container, Typography } from "@mui/material";
 import { notFound } from "next/navigation";
+import type { CoverLetterDto } from "@/api/types";
+import { serverGet } from "@/api/server-fetch";
 import { CoverLetterActions } from "@/components/features/cover-letters";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
-import { getActiveProfileId } from "@/server/active-profile";
-import { getCoverLetter } from "@/server/cover-letters/service";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -13,9 +13,8 @@ interface PageProps {
 
 export default async function CoverLetterDetailPage(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
-  const profileId = await getActiveProfileId();
 
-  const letter = await getCoverLetter(Number(id), profileId).catch(() => null);
+  const { data: letter } = await serverGet<CoverLetterDto>(`/api/cover-letters/${id}`);
   if (!letter) {
     notFound();
   }

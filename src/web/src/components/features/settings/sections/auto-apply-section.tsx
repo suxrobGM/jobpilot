@@ -1,7 +1,7 @@
 "use client";
 
 import { Stack } from "@mui/material";
-import { PROFILE_DEFAULT_VALUES } from "@/api/contracts/profile";
+import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 

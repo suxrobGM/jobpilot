@@ -8,7 +8,7 @@ import {
   PROFILE_DEFAULT_VALUES,
   profileWithAutoApplySchema,
   type ProfileWithAutoApplyInput,
-} from "@/api/contracts/profile";
+} from "@jobpilot/contracts/profile";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";

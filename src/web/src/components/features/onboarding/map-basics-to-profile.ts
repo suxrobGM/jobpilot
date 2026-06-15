@@ -1,4 +1,4 @@
-import type { ResumeBasics } from "@/api/contracts/resume";
+import type { ResumeBasics } from "@jobpilot/contracts/resume";
 import { normalizeLinkUrl } from "@/utils/url";
 
 type ProfileTextFieldName =

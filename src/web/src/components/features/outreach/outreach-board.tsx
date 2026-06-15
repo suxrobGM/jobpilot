@@ -9,11 +9,11 @@ import {
   type GridRowsProp,
 } from "@mui/x-data-grid";
 import { apiClient } from "@/api/client";
-import type { CampaignStatus } from "@/api/contracts/campaign";
+import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import {
   OUTREACH_MESSAGE_TERMINAL_STATUSES,
   type OutreachMessageStatus,
-} from "@/api/contracts/outreach";
+} from "@jobpilot/contracts/outreach";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type {

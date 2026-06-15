@@ -6,7 +6,7 @@ import { Box, Button, InputAdornment, MenuItem, Stack, TextField } from "@mui/ma
 import { apiClient } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { JobBoard } from "@/generated/prisma/client";
+import type { JobBoardDto as JobBoard } from "@/api/types";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 

@@ -4,7 +4,7 @@ import { useState, type ReactElement } from "react";
 import { CloudUpload, TaskAlt } from "@mui/icons-material";
 import { Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";
 import { apiClient } from "@/api/client";
-import type { UpdateUpworkProfileInput } from "@/api/contracts/upwork";
+import type { UpdateUpworkProfileInput } from "@jobpilot/contracts/upwork";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkProfileDto } from "@/api/types";

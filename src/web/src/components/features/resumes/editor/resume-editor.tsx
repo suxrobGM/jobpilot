@@ -12,7 +12,7 @@ import {
 } from "@mui/icons-material";
 import { Box, Button, Stack, Typography, type SvgIconProps } from "@mui/material";
 import { apiClient } from "@/api/client";
-import type { ResumeData } from "@/api/contracts/resume";
+import type { ResumeData } from "@jobpilot/contracts/resume";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { SectionCard } from "@/components/ui/layout";

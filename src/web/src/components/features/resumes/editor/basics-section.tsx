@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import type { ResumeBasics } from "@/api/contracts/resume";
+import type { ResumeBasics } from "@jobpilot/contracts/resume";
 import { PhoneField } from "@/components/ui/form";
 
 interface BasicsSectionProps {

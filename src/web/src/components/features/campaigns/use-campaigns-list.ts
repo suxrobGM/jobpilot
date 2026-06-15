@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { apiClient } from "@/api/client";
-import type { CampaignSource, CampaignStatus } from "@/api/contracts/campaign";
+import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";

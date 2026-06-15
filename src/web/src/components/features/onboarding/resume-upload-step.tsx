@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { apiClient } from "@/api/client";
-import { PROFILE_DEFAULT_VALUES } from "@/api/contracts/profile";
+import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";

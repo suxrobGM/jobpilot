@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/api/client";
-import type { UpworkProposalStatus } from "@/api/contracts/upwork";
+import type { UpworkProposalStatus } from "@jobpilot/contracts/upwork";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkProposalDto } from "@/api/types";

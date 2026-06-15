@@ -5,7 +5,7 @@ import { Delete, Launch } from "@mui/icons-material";
 import { Box, Button, Container, IconButton, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/api/client";
-import type { Stage, StageTransitionInput } from "@/api/contracts/application";
+import type { Stage, StageTransitionInput } from "@jobpilot/contracts/application";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ApplicationDetailDto } from "@/api/types";

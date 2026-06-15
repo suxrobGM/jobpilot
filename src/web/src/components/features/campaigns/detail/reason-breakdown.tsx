@@ -3,7 +3,7 @@
 import { useState, type ReactElement, type ReactNode } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
-import type { CampaignJobStatus } from "@/api/contracts/campaign";
+import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
 import { SectionCard } from "@/components/ui/layout";
 

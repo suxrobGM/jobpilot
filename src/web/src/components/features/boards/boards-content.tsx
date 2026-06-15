@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { apiClient } from "@/api/client";
-import type { JobBoardPatch } from "@/api/contracts/job-board";
+import type { JobBoardPatch } from "@jobpilot/contracts/job-board";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";

@@ -1,25 +1,35 @@
 "use client";
 
-import type { ApiResponse } from "@/api/envelope";
-
 export type ClientResult<T> = { data: T | null; error: { code: string; message: string } | null };
+
+async function parseError(res: Response): Promise<{ code: string; message: string }> {
+  const body = (await res.json().catch(() => null)) as { code?: string; message?: string } | null;
+  return {
+    code: body?.code ?? `HTTP_${res.status}`,
+    message: body?.message ?? res.statusText,
+  };
+}
+
+async function readBody<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
+}
 
 async function request<T>(url: string, init?: RequestInit): Promise<ClientResult<T>> {
   try {
     const res = await fetch(url, {
+      credentials: "include",
       ...init,
       headers: {
         "content-type": "application/json",
         ...(init?.headers ?? {}),
       },
     });
-    const json = (await res.json()) as ApiResponse<T>;
-
-    if (!res.ok || !json.ok) {
-      const e = !json.ok ? json.error : { code: `HTTP_${res.status}`, message: res.statusText };
-      return { data: null, error: { code: e.code, message: e.message } };
+    if (!res.ok) {
+      return { data: null, error: await parseError(res) };
     }
-    return { data: json.data, error: null };
+    // The backend returns the bare payload (no { ok, data } envelope).
+    return { data: await readBody<T>(res), error: null };
   } catch (e) {
     return {
       data: null,
@@ -44,14 +54,11 @@ export const apiClient = {
 
   upload: async <T>(url: string, formData: FormData): Promise<ClientResult<T>> => {
     try {
-      const res = await fetch(url, { method: "POST", body: formData });
-      const json = (await res.json()) as ApiResponse<T>;
-
-      if (!res.ok || !json.ok) {
-        const e = !json.ok ? json.error : { code: `HTTP_${res.status}`, message: res.statusText };
-        return { data: null, error: { code: e.code, message: e.message } };
+      const res = await fetch(url, { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) {
+        return { data: null, error: await parseError(res) };
       }
-      return { data: json.data, error: null };
+      return { data: await readBody<T>(res), error: null };
     } catch (e) {
       return {
         data: null,

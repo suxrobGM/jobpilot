@@ -3,7 +3,7 @@ import {
   UPWORK_PROPOSAL_STATUSES,
   type UpworkProposalOutcome,
   type UpworkProposalStatus,
-} from "@/api/contracts/upwork";
+} from "@jobpilot/contracts/upwork";
 
 export const STATUS_COLOR: Record<
   UpworkProposalStatus,

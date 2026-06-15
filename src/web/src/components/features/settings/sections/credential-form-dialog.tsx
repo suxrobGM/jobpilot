@@ -15,7 +15,7 @@ import {
   credentialSchema,
   SERVICE_PROVIDERS,
   type CredentialInput,
-} from "@/api/contracts/credential";
+} from "@jobpilot/contracts/credential";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 interface CredentialFormDialogProps {
