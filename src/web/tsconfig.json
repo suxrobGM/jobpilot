@@ -31,8 +31,6 @@
     "next-env.d.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
-    "prisma.config.ts",
-    "prisma/seed/**/*.ts",
     "next.config.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
