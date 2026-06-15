@@ -3,7 +3,6 @@ import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { renderCoverLetterPdf } from "@/common/pdf";
 import { slugifyForDownload } from "@/common/storage";
-import type { Prisma } from "@/generated/prisma/client";
 import { PrismaClient } from "@/generated/prisma/client";
 
 const LIST_SELECT = {
@@ -26,16 +25,17 @@ export class CoverLetterService {
   constructor(private readonly prisma: PrismaClient) {}
 
   /** The active profile's cover letters, newest first (no body — list payload). */
-  list(profileId: number) {
-    return this.prisma.coverLetter.findMany({
+  async list(profileId: number) {
+    const rows = await this.prisma.coverLetter.findMany({
       where: { profileId },
       orderBy: { createdAt: "desc" },
       select: LIST_SELECT,
-    }) as Promise<
-      (Omit<Prisma.CoverLetterGetPayload<{ select: typeof LIST_SELECT }>, "source"> & {
-        source: CoverLetterSource;
-      })[]
-    >;
+    });
+    return rows.map((row) => ({
+      ...row,
+      source: row.source as CoverLetterSource,
+      createdAt: row.createdAt.toISOString(),
+    }));
   }
 
   create(profileId: number, data: CoverLetterCreate) {
@@ -51,14 +51,17 @@ export class CoverLetterService {
     });
   }
 
-  get(profileId: number, id: number) {
-    return findOwned(
+  async get(profileId: number, id: number) {
+    const row = await findOwned(
       (where) => this.prisma.coverLetter.findFirst({ where }),
       { id, profileId },
       "Cover letter",
-    ) as Promise<
-      Omit<Prisma.CoverLetterGetPayload<{}>, "source"> & { source: CoverLetterSource }
-    >;
+    );
+    return {
+      ...row,
+      source: row.source as CoverLetterSource,
+      createdAt: row.createdAt.toISOString(),
+    };
   }
 
   async remove(profileId: number, id: number): Promise<{ ok: true }> {

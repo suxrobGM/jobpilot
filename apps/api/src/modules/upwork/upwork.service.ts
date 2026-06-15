@@ -59,7 +59,15 @@ function toProfileDto(row: UpworkProfile) {
 
 /** Decode a proposal row's JSON-encoded screening answers for the API shape. */
 function decodeProposal<
-  T extends { screeningAnswers: string; status: string; outcome: string | null; source: string },
+  T extends {
+    screeningAnswers: string;
+    status: string;
+    outcome: string | null;
+    source: string;
+    createdAt: Date;
+    updatedAt: Date;
+    submittedAt: Date | null;
+  },
 >(proposal: T) {
   return {
     ...proposal,
@@ -67,6 +75,9 @@ function decodeProposal<
     status: proposal.status as UpworkProposalStatus,
     outcome: proposal.outcome as UpworkProposalOutcome | null,
     source: proposal.source as UpworkProposalSource,
+    createdAt: proposal.createdAt.toISOString(),
+    updatedAt: proposal.updatedAt.toISOString(),
+    submittedAt: proposal.submittedAt?.toISOString() ?? null,
   };
 }
 

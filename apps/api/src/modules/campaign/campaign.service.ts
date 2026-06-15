@@ -39,25 +39,58 @@ type ContactLinkedinConnection = z.infer<typeof contactLinkedinConnectionSchema>
 // Prisma stores these enum-like columns as plain `String`. Re-narrow them to the
 // contract unions so Eden Treaty infers the precise wire types end-to-end.
 
-/** A Job row with `status` narrowed to the campaign job-status union. */
-type CampaignJobRow = Prisma.JobGetPayload<{}> & { status: CampaignJobStatus };
+/**
+ * A Job row with `status` narrowed to the campaign job-status union and the
+ * `appliedAt` Date serialized to its ISO `string` wire form.
+ */
+type CampaignJobRow = Omit<Prisma.JobGetPayload<{}>, "appliedAt"> & {
+  status: CampaignJobStatus;
+  appliedAt: string | null;
+};
 
-/** A Campaign row with `status`/`source` narrowed and `config`/`summary` typed. */
-type CampaignRow = Omit<Prisma.CampaignGetPayload<{}>, "config" | "summary"> & {
+/**
+ * A Campaign row with `status`/`source` narrowed, `config`/`summary` typed, and
+ * the `startedAt`/`updatedAt`/`completedAt` Dates serialized to ISO `string`s.
+ */
+type CampaignRow = Omit<
+  Prisma.CampaignGetPayload<{}>,
+  "config" | "summary" | "startedAt" | "updatedAt" | "completedAt"
+> & {
   status: CampaignStatus;
   source: CampaignSource;
   config: CampaignConfig;
   summary: CampaignSummary;
+  startedAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+};
+
+/** The nested contact on an OutreachMessage row, with Dates serialized to ISO. */
+type OutreachContactRow = Omit<
+  Prisma.ContactGetPayload<{}>,
+  "linkedinConnection" | "createdAt" | "updatedAt"
+> & {
+  linkedinConnection: ContactLinkedinConnection;
+  createdAt: string;
+  updatedAt: string;
 };
 
 /**
  * An OutreachMessage row (with its contact) with `status`/`channel` and the nested
- * contact's `linkedinConnection` narrowed to the contract unions.
+ * contact's `linkedinConnection` narrowed to the contract unions, and all Dates
+ * (`sentAt`/`repliedAt`/`createdAt`/`updatedAt` plus the contact's) serialized to ISO.
  */
-type OutreachMessageRow = Prisma.OutreachMessageGetPayload<{ include: { contact: true } }> & {
+type OutreachMessageRow = Omit<
+  Prisma.OutreachMessageGetPayload<{ include: { contact: true } }>,
+  "sentAt" | "repliedAt" | "createdAt" | "updatedAt" | "contact"
+> & {
   status: OutreachMessageStatus;
   channel: OutreachChannel;
-  contact: { linkedinConnection: ContactLinkedinConnection };
+  sentAt: string | null;
+  repliedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  contact: OutreachContactRow;
 };
 
 function emptySummary(): CampaignSummary {
@@ -100,6 +133,36 @@ function summarizeJobs(jobs: { status: string }[]): CampaignSummary {
     fold(summary, job.status as CampaignJobStatus, 1);
   }
   return summary;
+}
+
+/** Serialize a Job row's `status`/Date fields to their wire shape. */
+function toCampaignJobRow(job: Prisma.JobGetPayload<{}>): CampaignJobRow {
+  return {
+    ...job,
+    status: job.status as CampaignJobStatus,
+    appliedAt: job.appliedAt?.toISOString() ?? null,
+  };
+}
+
+/** Serialize an OutreachMessage row (with contact) to its wire shape. */
+function toOutreachMessageRow(
+  message: Prisma.OutreachMessageGetPayload<{ include: { contact: true } }>,
+): OutreachMessageRow {
+  return {
+    ...message,
+    status: message.status as OutreachMessageStatus,
+    channel: message.channel as OutreachChannel,
+    sentAt: message.sentAt?.toISOString() ?? null,
+    repliedAt: message.repliedAt?.toISOString() ?? null,
+    createdAt: message.createdAt.toISOString(),
+    updatedAt: message.updatedAt.toISOString(),
+    contact: {
+      ...message.contact,
+      linkedinConnection: message.contact.linkedinConnection as ContactLinkedinConnection,
+      createdAt: message.contact.createdAt.toISOString(),
+      updatedAt: message.contact.updatedAt.toISOString(),
+    },
+  };
 }
 
 @singleton()
@@ -265,12 +328,15 @@ export class CampaignService {
         source: r.source as CampaignSource,
         config: JSON.parse(r.config) as CampaignConfig,
         summary: JSON.parse(r.summary) as CampaignSummary,
+        startedAt: r.startedAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
+        completedAt: r.completedAt?.toISOString() ?? null,
       }),
     );
   }
 
-  create(profileId: number, body: CreateCampaignInput) {
-    return this.prisma.campaign.create({
+  async create(profileId: number, body: CreateCampaignInput) {
+    const campaign = await this.prisma.campaign.create({
       data: {
         campaignId: body.campaignId,
         profileId,
@@ -278,9 +344,25 @@ export class CampaignService {
         source: body.source,
         config: JSON.stringify(body.config ?? {}),
       },
-    }) as Promise<
-      Prisma.CampaignGetPayload<{}> & { status: CampaignStatus; source: CampaignSource }
-    >;
+    });
+
+    return {
+      ...campaign,
+      status: campaign.status as CampaignStatus,
+      source: campaign.source as CampaignSource,
+      startedAt: campaign.startedAt.toISOString(),
+      updatedAt: campaign.updatedAt.toISOString(),
+      completedAt: campaign.completedAt?.toISOString() ?? null,
+    } satisfies Omit<
+      Prisma.CampaignGetPayload<{}>,
+      "startedAt" | "updatedAt" | "completedAt"
+    > & {
+      status: CampaignStatus;
+      source: CampaignSource;
+      startedAt: string;
+      updatedAt: string;
+      completedAt: string | null;
+    };
   }
 
   // ── Single campaign get / patch / delete ─────────────────────────────────────
@@ -302,12 +384,16 @@ export class CampaignService {
       ...campaign,
       status: campaign.status as CampaignStatus,
       source: campaign.source as CampaignSource,
+      startedAt: campaign.startedAt.toISOString(),
+      updatedAt: campaign.updatedAt.toISOString(),
+      completedAt: campaign.completedAt?.toISOString() ?? null,
       // Clean replacement-char artifacts in historical rows written before the
       // schema-level sanitizer landed, so the UI never shows mojibake.
       jobs: campaign.jobs.map(
         (job): CampaignJobRow => ({
           ...job,
           status: job.status as CampaignJobStatus,
+          appliedAt: job.appliedAt?.toISOString() ?? null,
           skipReason: cleanReplacementCharsNullable(job.skipReason),
           failReason: cleanReplacementCharsNullable(job.failReason),
           matchReason: cleanReplacementCharsNullable(job.matchReason),
@@ -385,6 +471,9 @@ export class CampaignService {
       source: campaign.source as CampaignSource,
       config: JSON.parse(campaign.config) as CampaignConfig,
       summary: JSON.parse(campaign.summary) as CampaignSummary,
+      startedAt: campaign.startedAt.toISOString(),
+      updatedAt: campaign.updatedAt.toISOString(),
+      completedAt: campaign.completedAt?.toISOString() ?? null,
     } satisfies CampaignRow;
   }
 
@@ -453,11 +542,12 @@ export class CampaignService {
 
   // ── Jobs ──────────────────────────────────────────────────────────────────
 
-  listJobs(profileId: number, campaignId: string) {
-    return this.prisma.job.findMany({
+  async listJobs(profileId: number, campaignId: string) {
+    const jobs = await this.prisma.job.findMany({
       where: { campaignId, campaign: { profileId } },
       orderBy: { id: "asc" },
-    }) as Promise<CampaignJobRow[]>;
+    });
+    return jobs.map(toCampaignJobRow);
   }
 
   async addJob(profileId: number, campaignId: string, body: AddCampaignJobInput) {
@@ -505,7 +595,7 @@ export class CampaignService {
       },
     );
 
-    return job as CampaignJobRow;
+    return toCampaignJobRow(job);
   }
 
   async patchJob(profileId: number, campaignId: string, key: string, patch: PatchCampaignJobInput) {
@@ -558,7 +648,7 @@ export class CampaignService {
       { type: "campaignjob.updated", campaignId, key, status: patch.status },
     );
 
-    return job as CampaignJobRow;
+    return toCampaignJobRow(job);
   }
 
   /**
@@ -660,7 +750,7 @@ export class CampaignService {
     }
 
     return {
-      campaignJob: result.job as CampaignJobRow,
+      campaignJob: toCampaignJobRow(result.job),
       application: result.application,
       summary: result.summary,
     };
@@ -669,12 +759,13 @@ export class CampaignService {
   // ── Outreach ────────────────────────────────────────────────────────────────
 
   /** List the campaign's outreach messages (with their contacts) for the board. */
-  listOutreach(profileId: number, campaignId: string) {
-    return this.prisma.outreachMessage.findMany({
+  async listOutreach(profileId: number, campaignId: string) {
+    const messages = await this.prisma.outreachMessage.findMany({
       where: { campaignId, profileId },
       include: { contact: true },
       orderBy: { id: "asc" },
-    }) as Promise<OutreachMessageRow[]>;
+    });
+    return messages.map(toOutreachMessageRow);
   }
 
   /**
@@ -728,7 +819,7 @@ export class CampaignService {
 
     // Push the new contact/message to the live campaign viewer.
     publish(campaignChannel, { campaignId }, { type: "outreach-update" });
-    return result.outreachMessage as OutreachMessageRow;
+    return toOutreachMessageRow(result.outreachMessage);
   }
 
   /**
@@ -781,7 +872,7 @@ export class CampaignService {
 
     // Refresh the live campaign board (e.g. a regenerated draft) without a reload.
     publish(campaignChannel, { campaignId }, { type: "outreach-update" });
-    return updated as OutreachMessageRow;
+    return toOutreachMessageRow(updated);
   }
 
   /**
@@ -823,6 +914,6 @@ export class CampaignService {
 
     // Refresh the live campaign viewer on the terminal outcome.
     publish(campaignChannel, { campaignId }, { type: "outreach-update" });
-    return { message: result.message as OutreachMessageRow, summary: result.summary };
+    return { message: toOutreachMessageRow(result.message), summary: result.summary };
   }
 }

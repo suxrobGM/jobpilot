@@ -71,6 +71,8 @@ export class ApplicationService {
       ...r,
       stage: r.stage as Stage,
       source: r.source as ApplicationSource,
+      appliedAt: r.appliedAt.toISOString(),
+      rejectedAt: r.rejectedAt?.toISOString() ?? null,
     }));
   }
 
@@ -91,6 +93,14 @@ export class ApplicationService {
       ...row,
       stage: row.stage as Stage,
       source: row.source as ApplicationSource,
+      appliedAt: row.appliedAt.toISOString(),
+      rejectedAt: row.rejectedAt?.toISOString() ?? null,
+      stageEvents: row.stageEvents.map((e) => ({
+        ...e,
+        fromStage: e.fromStage as Stage | null,
+        toStage: e.toStage as Stage,
+        occurredAt: e.occurredAt.toISOString(),
+      })),
     };
   }
 

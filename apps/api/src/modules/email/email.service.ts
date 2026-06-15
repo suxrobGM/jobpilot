@@ -18,7 +18,6 @@ import { publish } from "@/common/sse";
 import { inboxChannel } from "@/common/sse/channels/inbox";
 import {
   type EmailAccount,
-  type EmailMessage,
   PrismaClient,
   type Prisma,
 } from "@/generated/prisma/client";
@@ -40,11 +39,20 @@ interface MessageQuery {
 }
 
 /** An inbox message row with its union fields narrowed off plain `string`. */
-type EmailMessageRow = Prisma.EmailMessageGetPayload<{
-  include: {
-    matchedApp: { select: { id: true; title: true; company: true; stage: true } };
-  };
-}> & { reviewStatus: ReviewStatus; classification: Classification | null };
+type EmailMessageRow = Omit<
+  Prisma.EmailMessageGetPayload<{
+    include: {
+      matchedApp: { select: { id: true; title: true; company: true; stage: true } };
+    };
+  }>,
+  "receivedAt" | "fetchedAt" | "scannedAt"
+> & {
+  reviewStatus: ReviewStatus;
+  classification: Classification | null;
+  receivedAt: string;
+  fetchedAt: string;
+  scannedAt: string | null;
+};
 
 const POSITIVE_STAGES = new Set([
   "recruiter_screen",
@@ -78,7 +86,7 @@ export class EmailService {
       connected: true,
       provider: account.provider,
       email: account.email,
-      lastSyncAt: account.lastSyncAt,
+      lastSyncAt: account.lastSyncAt?.toISOString() ?? null,
       canSend: accountCanSend(account),
     };
   }
@@ -121,7 +129,25 @@ export class EmailService {
 
   // --- Messages --------------------------------------------------------------
 
-  listMessages(profileId: number, query: MessageQuery) {
+  /** Serialize a raw message row: Date fields -> ISO strings, enums narrowed. */
+  private serializeMessage(row: {
+    receivedAt: Date;
+    fetchedAt: Date;
+    scannedAt: Date | null;
+    reviewStatus: string;
+    classification: string | null;
+  }): EmailMessageRow {
+    return {
+      ...row,
+      receivedAt: row.receivedAt.toISOString(),
+      fetchedAt: row.fetchedAt.toISOString(),
+      scannedAt: row.scannedAt?.toISOString() ?? null,
+      reviewStatus: row.reviewStatus as ReviewStatus,
+      classification: row.classification as Classification | null,
+    } as EmailMessageRow;
+  }
+
+  async listMessages(profileId: number, query: MessageQuery) {
     const { reviewStatus, classification, since, domainHint, verificationDomain } = query;
 
     const where: Prisma.EmailMessageWhereInput = { account: { profileId } };
@@ -149,18 +175,20 @@ export class EmailService {
       ];
     }
 
-    return this.prisma.emailMessage.findMany({
+    const rows = await this.prisma.emailMessage.findMany({
       where,
       orderBy: { receivedAt: "desc" },
       take: 200,
       include: {
         matchedApp: { select: { id: true, title: true, company: true, stage: true } },
       },
-    }) as Promise<EmailMessageRow[]>;
+    });
+
+    return rows.map((row) => this.serializeMessage(row));
   }
 
-  getMessage(profileId: number, id: number) {
-    return findOwned(
+  async getMessage(profileId: number, id: number) {
+    const row = await findOwned(
       (where) =>
         this.prisma.emailMessage.findFirst({
           where,
@@ -170,7 +198,9 @@ export class EmailService {
         }),
       { id, account: { profileId } },
       "Message",
-    ) as Promise<EmailMessageRow>;
+    );
+
+    return this.serializeMessage(row);
   }
 
   async scanMessage(profileId: number, id: number, body: ScanMessageInput) {
@@ -180,7 +210,7 @@ export class EmailService {
       "Message",
     );
 
-    const message = (await this.prisma.emailMessage.update({
+    const row = await this.prisma.emailMessage.update({
       where: { id },
       data: {
         classification: body.classification,
@@ -195,7 +225,9 @@ export class EmailService {
         verificationDomain: body.verificationDomain,
         scannedAt: body.classification ? new Date() : undefined,
       },
-    })) as EmailMessage & { reviewStatus: ReviewStatus; classification: Classification | null };
+    });
+
+    const message = this.serializeMessage(row);
 
     publish(inboxChannel, undefined, { type: "message.scanned", id });
 

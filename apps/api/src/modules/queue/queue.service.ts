@@ -5,7 +5,20 @@ import { pipelineChannel } from "@/common/sse/channels/pipeline";
 import { publish } from "@/common/sse";
 import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 
-type QueueEntryRow = Prisma.QueueEntryGetPayload<{}> & { status: QueueStatus };
+type QueueEntryRow = Omit<Prisma.QueueEntryGetPayload<{}>, "status" | "createdAt" | "consumedAt"> & {
+  status: QueueStatus;
+  createdAt: string;
+  consumedAt: string | null;
+};
+
+function serializeQueueEntry(row: Prisma.QueueEntryGetPayload<{}>): QueueEntryRow {
+  return {
+    ...row,
+    status: row.status as QueueStatus,
+    createdAt: row.createdAt.toISOString(),
+    consumedAt: row.consumedAt?.toISOString() ?? null,
+  };
+}
 
 @singleton()
 export class QueueService {
@@ -19,21 +32,21 @@ export class QueueService {
     );
   }
 
-  list(profileId: number, status?: string): Promise<QueueEntryRow[]> {
+  async list(profileId: number, status?: string): Promise<QueueEntryRow[]> {
     const where: Prisma.QueueEntryWhereInput = { profileId };
     if (status) {
       where.status = status;
     }
-    return this.prisma.queueEntry.findMany({ where, orderBy: { createdAt: "asc" } }) as Promise<
-      QueueEntryRow[]
-    >;
+    const rows = await this.prisma.queueEntry.findMany({ where, orderBy: { createdAt: "asc" } });
+    return rows.map(serializeQueueEntry);
   }
 
-  listPending(profileId: number): Promise<QueueEntryRow[]> {
-    return this.prisma.queueEntry.findMany({
+  async listPending(profileId: number): Promise<QueueEntryRow[]> {
+    const rows = await this.prisma.queueEntry.findMany({
       where: { profileId, status: "pending" },
       orderBy: { createdAt: "asc" },
-    }) as Promise<QueueEntryRow[]>;
+    });
+    return rows.map(serializeQueueEntry);
   }
 
   async add(profileId: number, input: AddQueueEntry) {
@@ -47,18 +60,19 @@ export class QueueService {
       ),
     );
     publish(pipelineChannel, { profileId }, { type: "queue.updated" });
-    return { inserted: created.length, items: created as QueueEntryRow[] };
+    return { inserted: created.length, items: created.map(serializeQueueEntry) };
   }
 
   async patch(profileId: number, id: number, input: PatchQueueEntry): Promise<QueueEntryRow> {
     await this.findEntry(id, profileId);
-    return this.prisma.queueEntry.update({
+    const updated = await this.prisma.queueEntry.update({
       where: { id },
       data: {
         status: input.status,
         consumedAt: input.status === "consumed" ? new Date() : null,
       },
-    }) as Promise<QueueEntryRow>;
+    });
+    return serializeQueueEntry(updated);
   }
 
   async remove(profileId: number, id: number) {
