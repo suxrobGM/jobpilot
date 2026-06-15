@@ -5,12 +5,17 @@ together over HTTP and a single active PTY.
 
 ## The Three Pieces
 
-**Next.js + SQLite web app** ([src/web/](../src/web/)) is the data and UI
-layer. It owns every persistent fact: profile, applications by stage,
-autopilot campaigns with per-job status, and the batch URL queue. Prisma schema is
-split per domain under `src/web/prisma/schema/`.
+**Next.js web app** ([apps/web/](../apps/web/)) is the UI layer. It renders
+profile, applications by stage, autopilot campaigns with per-job status, and
+the batch URL queue, talking to the API over HTTP (a dev proxy forwards
+`/api/*` to `:8002`).
 
-**JobPilot.Terminal** ([src/terminal/](../src/terminal/)) is
+**Elysia + PostgreSQL API** ([apps/api/](../apps/api/)) is the data layer on
+`127.0.0.1:8002`. It owns every persistent fact and serves the typed `/api/*`
+surface (Swagger at `/swagger`). Prisma schema is split per domain under
+`apps/api/prisma/schema/`.
+
+**JobPilot.Terminal** ([apps/terminal/](../apps/terminal/)) is
 an ASP.NET Core minimal API on `127.0.0.1:8001`. It owns one active provider
 PTY (winpty via Quick.PtyNet) and bridges it to the web UI's xterm.js panel
 over WebSocket. HTTP endpoints (`POST /sessions/start`, `POST /sessions/inject`,
@@ -53,8 +58,8 @@ codex --no-alt-screen -C .
 ```text
 Browser (xterm.js)  <-- WS binary -->  JobPilot.Terminal :8001  <-- PTY -->  claude --plugin-dir plugin
                     -- POST /inject -> JobPilot.Terminal                   or codex --no-alt-screen -C <repo>
-Next.js :8000 API   <-- curl -------- JobPilot skills
-                                      -> insert/update campaigns/jobs in SQLite
+Elysia API :8002    <-- curl -------- JobPilot skills
+                                      -> insert/update campaigns/jobs in PostgreSQL
 ```
 
 One Terminal instance owns one PTY. The PTY survives browser tab close;
@@ -92,7 +97,7 @@ sequenceDiagram
     participant U as User
     participant T as JobPilot.Terminal
     participant S as Provider apply skill (single-job or queue mode)
-    participant API as Next.js API
+    participant API as Elysia API :8002
     participant B as Playwright MCP
 
     U->>T: POST /sessions/inject provider command
@@ -112,7 +117,7 @@ sequenceDiagram
 Autopilot and apply create and update campaign rows through `/api/campaigns/*`.
 The web UI opens `EventSource /api/campaigns/[id]/events`, receives in-process SSE
 events, and invalidates the campaign detail query so the page refetches canonical
-state from SQLite.
+state from PostgreSQL.
 
 ## Skills Layer
 

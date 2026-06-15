@@ -1,7 +1,8 @@
 # Self-Hosting
 
-JobPilot is local-first: SQLite on disk, Next.js bound to `127.0.0.1`, no
-auth, and no external services beyond the job boards your skills visit.
+JobPilot is local-first: PostgreSQL on disk, all services bound to
+`127.0.0.1`, cookie-based auth, and no external services beyond the job boards
+your skills visit.
 
 The reusable JobPilot workflows live in [plugin/](../plugin/) as a single
 provider-neutral plugin: `plugin/skills/<name>/SKILL.md` directories plus
@@ -39,9 +40,8 @@ which points Codex at `./plugin`. Codex auto-discovers it when launched with
 git clone https://github.com/suxrobgm/jobpilot.git
 cd jobpilot
 bun install
-bun --cwd src/web install
-bun --cwd src/web run db:migrate:apply   # creates src/web/prisma/app.db
-bun --cwd src/web run db:seed            # seeds default job boards
+bun run db:up        # starts the local PostgreSQL container (Docker)
+bun run db:setup     # generates the Prisma client, applies migrations, seeds default job boards
 ```
 
 ## Running
@@ -58,8 +58,9 @@ That starts:
 Or run them separately:
 
 ```bash
-bun --cwd src/web run dev
-dotnet run --project src/terminal
+bun --cwd apps/web run dev
+bun --cwd apps/api run dev
+dotnet run --project apps/terminal
 ```
 
 JobPilot.Terminal owns one active provider PTY. It starts Claude Code with
@@ -100,9 +101,11 @@ $apply https://example.com/job
 
 ```bash
 bun run build:terminal
+bun run build:api
 bun run build:web
 dist/terminal/JobPilot.Terminal.exe
-bun --cwd src/web run start
+bun --cwd apps/api run start
+bun --cwd apps/web run start
 ```
 
 The Terminal project copies the `plugin/` folder into build and publish output
@@ -135,7 +138,7 @@ All managed in the web UI:
   (`default` or a board domain). Lookup order is per-board override,
   scope-matched, then default.
 - **Resumes** under Profile -> Resumes - multipart PDF upload to
-  `src/web/storage/resumes/`. The chosen default path is what skills hand to
+  `apps/api/storage/resumes/`. The chosen default path is what skills hand to
   `browser_file_upload`.
 
 ## Apply Queue
@@ -148,17 +151,17 @@ the next chunk and PATCHes each entry to `consumed` when applied.
 
 Two paths hold all local state:
 
-- `src/web/prisma/app.db` - the entire database.
-- `src/web/storage/resumes/` - uploaded PDFs.
+- your PostgreSQL database (back up with `pg_dump`) - all rows.
+- `apps/api/storage/resumes/` - uploaded PDFs.
 
 ## Resetting
 
-- **Drop the database**: `bunx prisma migrate reset --schema ./prisma/schema --skip-seed`,
-  then re-run `bun db:seed`.
-- **Drop just resumes**: clear `src/web/storage/resumes/` and delete `Resume`
+- **Drop the database**: `bun --cwd apps/api run db:reset`, then re-run
+  `bun --cwd apps/api run db:seed`.
+- **Drop just resumes**: clear `apps/api/storage/resumes/` and delete `Resume`
   rows in the UI.
-- **Drop the singleton profile to re-onboard**: delete the row in Prisma
-  Studio (`bun db:studio`).
+- **Drop the profile to re-onboard**: delete the row in Prisma Studio
+  (`bun --cwd apps/api run db:studio`).
 
 ## Permissions
 
@@ -172,11 +175,11 @@ through `/plugin`. Both provider manifests share the one `plugin/.mcp.json`.
 ## Troubleshooting
 
 **`curl: (7) Failed to connect to 127.0.0.1 port 8000`** - the web app is not
-running. Start it with `bun --cwd src/web run dev`.
+running. Start it with `bun --cwd apps/web run dev`.
 
-**`ERR_DLOPEN_FAILED` from Prisma** - better-sqlite3 does not load under Bun
-on Windows. JobPilot uses `@prisma/adapter-libsql`; re-run `bun install` if
-`node_modules` is stale.
+**Prisma can't reach the database** - make sure the PostgreSQL container is up
+(`bun run db:up`) and `DATABASE_URL` in `apps/api/.env` matches it; re-run
+`bun install` if `node_modules` is stale.
 
 **Claude does not see the JobPilot skills** - start Claude with
 `claude --plugin-dir plugin`, or make sure the `plugin/` folder is next to the

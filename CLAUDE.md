@@ -1,6 +1,6 @@
 # JobPilot
 
-Local AI job-application app. Uses Claude Code or Codex as the provider, a Next.js + SQLite web app at `http://localhost:8000` for state, and a .NET PTY host at `:8001` for the embedded terminal.
+Local AI job-application app. Uses Claude Code or Codex as the provider, a Next.js web UI at `http://localhost:8000`, an Elysia + PostgreSQL API at `http://localhost:8002` that owns all state, and a .NET PTY host at `:8001` for the embedded terminal.
 
 ## Layout
 
@@ -8,21 +8,29 @@ Local AI job-application app. Uses Claude Code or Codex as the provider, a Next.
   - `plugin/.claude-plugin/plugin.json` & `plugin/.codex-plugin/plugin.json` — provider manifests (both name the plugin `jobpilot`).
   - `plugin/.mcp.json` — Playwright MCP wiring, shared by both providers.
   - `plugin/skills/<name>/SKILL.md` — one hand-authored, provider-neutral skill per directory; `plugin/skills/shared/*.md` — shared docs. **Edit here directly.**
-- `src/web/` — Bun + Next.js 16 + MUI 9 + Prisma 7 + TanStack Query/Form + Zod v4. Owns all persistence (SQLite at `prisma/app.db`, resumes at `storage/resumes/`).
-- `src/terminal/` — .NET 10 minimal API hosting one provider PTY (project `JobPilot.Terminal`). Exposes `/ws`, `/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`.
+- `apps/web/` — Bun + Next.js 16 + MUI 9 + TanStack Query/Form + Zod v4. The UI only; it talks to the API over HTTP (no direct DB access). A dev proxy in `next.config.ts` rewrites `/api/*` to the backend so the auth cookie stays first-party.
+- `apps/api/` — Bun + Elysia + Prisma 7 backend at `:8002`. Owns all persistence (PostgreSQL via `DATABASE_URL`, resumes/PDFs under `apps/api/storage/`). Exports its `App` type for end-to-end Eden Treaty typing; Swagger UI at `:8002/swagger` in dev.
+- `apps/terminal/` — .NET 10 minimal API hosting one provider PTY (project `JobPilot.Terminal`). Exposes `/ws`, `/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`.
+- `packages/` — workspace libs: `@jobpilot/contracts` (Zod schemas + enums shared by API and web) and `@jobpilot/api-client` (Eden Treaty client bound to the API's `App` type).
 
 ## Commands
 
 Root (`bun run …`):
 
-- `dev` — runs terminal (`:8001`) + web (`:8000`) together.
-- `db:setup` — generate Prisma client, apply migrations, seed default boards.
-- `build:web` / `build:terminal` — production builds.
+- `dev` — runs terminal (`:8001`) + api (`:8002`) + web (`:8000`) together.
+- `db:up` / `db:down` — start/stop the local PostgreSQL container (`docker-compose.dev.yml`).
+- `db:setup` — generate Prisma client, apply migrations, seed default boards (runs on `apps/api`).
+- `build:api` / `build:web` / `build:terminal` — production builds.
 
-Web (`bun --cwd=src/web run …`):
+Web (`bun --cwd=apps/web run …`):
 
 - `lint`, `typecheck`, `format` — Next lint, `tsc --noEmit`, Prettier.
 - `typegen` — Next route/type generation.
+
+API (`bun --cwd=apps/api run …`):
+
+- `dev`, `start`, `build` — Elysia server (watch / run / compile to `dist/server.exe`).
+- `typecheck` — `tsc --noEmit`.
 - `db:generate`, `db:migrate` (create-only), `db:migrate:apply`, `db:seed`, `db:reset`, `db:studio`.
 
 ## Skill conventions
@@ -38,17 +46,16 @@ Web (`bun --cwd=src/web run …`):
 - During campaigns, `PATCH /api/campaigns/[id]/jobs/[jobKey]` for non-terminal status transitions (pending → approved → applying). On terminal outcome (applied / failed / skipped), `POST /api/campaigns/[id]/jobs/[jobKey]/result` — one call updates the Job, creates the Application row (when applied), marks the queue entry, and recomputes the campaign summary.
 - Browser automation: use `browser_snapshot` (with `ref` for large pages), not screenshots.
 
-## API & module layout (`src/web/src/`)
+## Backend layout (`apps/api/src/`)
 
-- **`app/api/**/route.ts` are thin adapters only** — no business logic, no manual parsing/envelope/try-catch. Each handler declares Zod contracts and delegates to a `server/<domain>` service.
-- **Route kernel** (`server/api/route.ts`): wrap handlers in `api.route(config, handler)`. Profile-scoped routes are the default and inject `profileId`; public routes must pass `{ public: true }`. `config: { public?, params?, query?, body?: ZodType, status? }`. Handlers receive `{ req, params, query, body, profileId }` for profile routes, or `{ req, params, query, body }` for public routes, and **return plain data** (auto-wrapped in the `ok` envelope) or a raw `Response` (escape hatch for SSE/file streams/redirects/cookies). The kernel maps errors: `HttpError`→its status, `ZodError`→422, Prisma `P2002`→409, unknown→logged 500 (never rethrown — preserves the JSON envelope contract).
-- **Errors**: `throw notFound(msg)` / `conflict(msg)` / `badRequest(msg)` or `new HttpError(code, msg, status)` from `server/api/errors`. Ownership-or-404: `findOwned((where) => db.X.findFirst({ where }), { id, profileId }, "Label")` from `server/api/owned`.
-- **Params/query parsing is Zod**, not hand-rolled utils: numeric id via `idParam` (`lib/contracts/shared`); query filters as an inline `z.object({...})` with `z.coerce`/`.trim()`/`.catch()`. Success status defaults to **200** (no 201).
-- **`src/server/**` = server-only** (db, fs, secrets, domain services) — guarded by `import "server-only"`; never imported by client code. Domains: `server/{campaigns,resumes,email,scoring,pdf,outreach,analytics,pipeline}`, plus `server/{db,active-profile,storage}` and the `server/api` kernel.
-- **`src/lib/contracts/`** = Zod schemas shared by routes **and** client forms (the only schemas both sides import). **`src/lib/client/`** = `"use client"` helpers (`api.ts` fetch wrapper, `query-keys.ts`, `resume-urls.ts`). **`src/lib/api/envelope.ts`** = neutral envelope types both sides import. `src/lib/sse/` stays put (directive-split server/client/types).
-- Adding a route: add/reuse a schema in `lib/contracts`, write `export const GET = api.route({...}, …)`, put non-trivial logic in `server/<domain>`.
+- **Elysia app** (`app.ts`) mounts every module controller under `/api` and exports `type App` — the single source of truth for Eden Treaty client typing.
+- **`modules/<name>/`** — one module per domain. `<name>.controller.ts` holds thin Elysia routes (request Zod schemas + a `detail` block for Swagger summary/tags) that delegate to the service; `<name>.service.ts` holds business logic (tsyringe `@singleton`, Prisma); `index.ts` is the barrel exporting the controller.
+- **`common/`** — cross-cutting: `database` (Prisma client), `di` (tsyringe container), `errors` (`HttpError`, `notFound`/`conflict`, `findOwned` ownership-or-404), `middleware` (`authGuard`, `profileGuard` — profile routes are the default), `auth`, `sse`, `pdf`, `storage`, `plugins` (cors, swagger).
+- **Request validation is Zod from `@jobpilot/contracts`** (the package both API and web import); numeric path ids via `idParam`. Handlers return plain data (Elysia JSON-serializes it) or a raw `Response` for SSE / file streams / redirects.
+- **Response types are inferred end-to-end via Eden Treaty** — prefer letting the service's return type flow through `App` to the web client over hand-written DTOs.
+- Adding a route: add/reuse a schema in `packages/contracts`, add the route to the module controller with a `detail` summary, put non-trivial logic in the module service.
 
-## Frontend conventions (`src/web/src/`)
+## Frontend conventions (`apps/web/src/`)
 
 - **Files**: kebab-case (`auth-card.tsx`, `use-auth.ts`). No PascalCase filenames.
 - **Exports**: named for components/hooks/providers. Default exports only for `page.tsx` / `layout.tsx`.

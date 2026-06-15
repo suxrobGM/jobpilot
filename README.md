@@ -1,16 +1,21 @@
 # JobPilot
 
-A local-first AI job-application app. A Next.js + SQLite web UI owns all
-state and embeds an interactive Claude Code or Codex terminal session that
-runs the JobPilot provider skills against real job boards via Playwright.
+A local-first AI job-application app. An Elysia + PostgreSQL API owns all
+state, a Next.js web UI talks to it, and an embedded Claude Code or Codex
+terminal session runs the JobPilot provider skills against real job boards via
+Playwright.
 
 ## Components
 
-- **Web app** ([src/web/](src/web/)) - `http://localhost:8000`. Owns
-  profile, credentials, resumes, job boards, applications, campaigns, and the
-  batch queue. It embeds an xterm.js terminal panel and exposes "Run
+- **Web app** ([apps/web/](apps/web/)) - `http://localhost:8000`. The Next.js
+  UI for profile, credentials, resumes, job boards, applications, campaigns,
+  and the batch queue. It embeds an xterm.js terminal panel and exposes "Run
   autopilot" / "Run apply" buttons that inject slash commands.
-- **JobPilot.Terminal** ([src/terminal/](src/terminal/)) -
+- **API** ([apps/api/](apps/api/)) - `http://localhost:8002`. Bun + Elysia +
+  Prisma backend that owns all persistence (PostgreSQL; resumes under
+  `apps/api/storage/`) and serves the typed `/api/*` surface (Swagger at
+  `/swagger`).
+- **JobPilot.Terminal** ([apps/terminal/](apps/terminal/)) -
   `http://localhost:8001`. .NET 10 ASP.NET Core process that owns one active
   provider PTY (winpty) and bridges it to the web UI over WebSocket. The
   terminal drawer can switch between Claude Code and Codex.
@@ -33,8 +38,9 @@ runs the JobPilot provider skills against real job boards via Playwright.
 git clone https://github.com/suxrobgm/jobpilot.git
 cd jobpilot
 bun install
-bun run db:setup # Creates the SQLite database, runs migrations, and seeds initial data
-bun run dev   # web :8000 + terminal :8001
+bun run db:up    # starts the local PostgreSQL container (Docker)
+bun run db:setup # generates the Prisma client, runs migrations, seeds default data
+bun run dev      # web :8000 + api :8002 + terminal :8001
 ```
 
 Open `http://localhost:8000` and toggle the Terminal panel.
@@ -80,7 +86,7 @@ your behalf. Setup:
 2. Add `http://localhost:8000/api/email/oauth/callback` as an authorized
    redirect URI.
 3. Enable the **Gmail API** for the project under "APIs & Services".
-4. Copy `Client ID` and `Client secret` into `src/web/.env`:
+4. Copy `Client ID` and `Client secret` into `apps/api/.env`:
 
    ```env
    GOOGLE_CLIENT_ID=...
@@ -108,7 +114,7 @@ your behalf. Setup:
 The scopes are `gmail.readonly` and `gmail.send` — JobPilot reads your mail and
 sends outreach emails and replies on your behalf, but never deletes mail. The
 account is stored as a singleton row in `EmailAccount` (refresh token kept
-locally in `src/web/prisma/app.db`).
+locally in your PostgreSQL database).
 
 **Troubleshooting**
 
@@ -142,7 +148,7 @@ scopes`** — a required Gmail scope (`gmail.readonly` or `gmail.send`) isn't
 | UI                 | MUI 9 + MUI X DataGrid                         |
 | Forms              | TanStack Form 1 + Zod v4                       |
 | Server state       | TanStack Query 5                               |
-| Database           | SQLite via Prisma 7 + `@prisma/adapter-libsql` |
+| Database           | PostgreSQL via Prisma 7 + `@prisma/adapter-pg`  |
 | Terminal host      | .NET 10 ASP.NET Core, winpty via Quick.PtyNet  |
 | Browser automation | Playwright via the Playwright MCP server       |
 
