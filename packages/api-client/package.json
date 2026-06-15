@@ -1,0 +1,20 @@
+{
+  "name": "@jobpilot/api-client",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elysiajs/eden": "^1.4.2",
+    "@jobpilot/api": "workspace:*",
+    "elysia": "^1.4.28"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

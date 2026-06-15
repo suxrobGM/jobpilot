@@ -1,0 +1,20 @@
+{
+  "name": "@jobpilot/contracts",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "libphonenumber-js": "^1.13.2",
+    "zod": "^4.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+
+# Generated Prisma client (regenerated via `prisma generate`)
+src/generated/
+
+# Local file storage (resumes, generated PDFs, backups)
+storage/

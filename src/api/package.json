@@ -1,0 +1,49 @@
+{
+  "name": "@jobpilot/api",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "module": "src/app.ts",
+  "exports": {
+    ".": "./src/app.ts"
+  },
+  "types": "./src/app.ts",
+  "scripts": {
+    "dev": "bun run --watch src/app.ts",
+    "start": "bun run src/app.ts",
+    "build": "bun build --compile --minify --target bun-windows-x64 --outfile dist/server.exe src/app.ts",
+    "typecheck": "tsc --noEmit",
+    "prebuild": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev --create-only",
+    "db:migrate:apply": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:seed": "bun run prisma/seed/default-boards.ts",
+    "db:reset": "prisma migrate reset --skip-seed"
+  },
+  "dependencies": {
+    "@2captcha/captcha-solver": "^1.3.6",
+    "@elysiajs/cors": "^1.4.2",
+    "@elysiajs/jwt": "^1.4.2",
+    "@elysiajs/swagger": "^1.3.1",
+    "@jobpilot/contracts": "workspace:*",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@react-pdf/renderer": "^4.5.1",
+    "elysia": "^1.4.28",
+    "google-auth-library": "^10.7.0",
+    "googleapis": "^173.0.0",
+    "jose": "6.1.3",
+    "libphonenumber-js": "^1.13.2",
+    "pg": "^8.21.0",
+    "pino": "^10.3.1",
+    "pino-pretty": "^13.1.3",
+    "zod": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/pg": "^8.20.0",
+    "prisma": "^7.8.0",
+    "typescript": "^6.0.3"
+  }
+}
