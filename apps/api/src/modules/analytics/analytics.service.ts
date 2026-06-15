@@ -1,13 +1,5 @@
 import { singleton } from "tsyringe";
 import { PrismaClient } from "@/generated/prisma/client";
-import type {
-  AnalyticsContactSourceEntry,
-  AnalyticsPerDayEntry,
-  AnalyticsStageBreakdownEntry,
-  AnalyticsStatsDto,
-  AnalyticsTopBoardEntry,
-  AnalyticsTopReasonEntry,
-} from "@/types/analytics";
 
 const NON_INTERVIEWING_STAGES = ["applied", "rejected", "withdrawn"] as const;
 const DAYS_IN_TIMELINE = 30;
@@ -35,7 +27,7 @@ function isoDateKey(d: Date): string {
 }
 
 /** Bucket timestamps into a zero-filled, day-by-day series over the timeline window. */
-function bucketPerDay(dates: Date[], start: Date): AnalyticsPerDayEntry[] {
+function bucketPerDay(dates: Date[], start: Date) {
   const perDayMap = new Map<string, number>();
   for (let i = 0; i < DAYS_IN_TIMELINE; i++) {
     const d = new Date(start);
@@ -55,7 +47,7 @@ function bucketPerDay(dates: Date[], start: Date): AnalyticsPerDayEntry[] {
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async stats(profileId: number): Promise<AnalyticsStatsDto> {
+  async stats(profileId: number) {
     const weekStart = startOfWeek();
     const timelineStart = startOfTimeline();
 
@@ -149,7 +141,7 @@ export class AnalyticsService {
       }),
     ]);
 
-    const stageBreakdown: AnalyticsStageBreakdownEntry[] = stageGroupRows.map((r) => ({
+    const stageBreakdown = stageGroupRows.map((r) => ({
       stage: r.stage,
       count: r._count._all,
     }));
@@ -159,11 +151,11 @@ export class AnalyticsService {
       timelineStart,
     );
 
-    const topBoards: AnalyticsTopBoardEntry[] = boardGroupRows
+    const topBoards = boardGroupRows
       .filter((r) => r.board)
       .map((r) => ({ board: r.board as string, count: r._count._all }));
 
-    const topRejectReasons: AnalyticsTopReasonEntry[] = failReasonRows
+    const topRejectReasons = failReasonRows
       .filter((r) => r.failReason)
       .map((r) => ({ reason: r.failReason as string, count: r._count._all }));
 
@@ -180,7 +172,7 @@ export class AnalyticsService {
     const outreachSent = (outreachByStatus.get("sent") ?? 0) + outreachReplied + outreachBounced;
     const replyRatePct = outreachSent > 0 ? Math.round((outreachReplied / outreachSent) * 100) : 0;
 
-    const topContactSources: AnalyticsContactSourceEntry[] = contactSourceRows
+    const topContactSources = contactSourceRows
       .filter((r) => r.discoverySource)
       .map((r) => ({ source: r.discoverySource as string, count: r._count._all }));
 
@@ -189,7 +181,7 @@ export class AnalyticsService {
       timelineStart,
     );
 
-    const stats: AnalyticsStatsDto = {
+    const stats = {
       totals: {
         applications: totalApplications,
         submitted: totalSubmitted,

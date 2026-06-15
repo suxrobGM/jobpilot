@@ -3,8 +3,12 @@ import type {
   ScreeningAnswer,
   UpdateUpworkProfileInput,
   UpworkClient,
+  UpworkProfileStatus,
   UpworkProposalInput,
+  UpworkProposalOutcome,
   UpworkProposalPatch,
+  UpworkProposalSource,
+  UpworkProposalStatus,
   UpworkQualityResult,
 } from "@jobpilot/contracts/upwork";
 import { singleton } from "tsyringe";
@@ -12,7 +16,6 @@ import { findOwned } from "@/common/errors";
 import { scoreUpworkClient } from "@/modules/scoring/upwork-quality";
 import { PrismaClient } from "@/generated/prisma/client";
 import type { Prisma, UpworkProfile } from "@/generated/prisma/client";
-import type { UpworkProfileDto } from "@/types/upwork";
 
 /** Plain column writes — shared by upsert's create and update (no Prisma field-op wrappers). */
 interface UpworkProfileFields {
@@ -37,7 +40,7 @@ function parsePortfolio(json: string): PortfolioProject[] {
   }
 }
 
-function toProfileDto(row: UpworkProfile): UpworkProfileDto {
+function toProfileDto(row: UpworkProfile) {
   return {
     id: row.id,
     currentTitle: row.currentTitle,
@@ -48,17 +51,22 @@ function toProfileDto(row: UpworkProfile): UpworkProfileDto {
     suggestedOverview: row.suggestedOverview,
     suggestedHourlyRate: row.suggestedHourlyRate,
     suggestedPortfolio: parsePortfolio(row.suggestedPortfolio),
-    status: row.status as UpworkProfileDto["status"],
+    status: row.status as UpworkProfileStatus,
     updatedAt: row.updatedAt.toISOString(),
     appliedAt: row.appliedAt?.toISOString() ?? null,
   };
 }
 
 /** Decode a proposal row's JSON-encoded screening answers for the API shape. */
-function decodeProposal<T extends { screeningAnswers: string }>(proposal: T) {
+function decodeProposal<
+  T extends { screeningAnswers: string; status: string; outcome: string | null; source: string },
+>(proposal: T) {
   return {
     ...proposal,
     screeningAnswers: JSON.parse(proposal.screeningAnswers) as ScreeningAnswer[],
+    status: proposal.status as UpworkProposalStatus,
+    outcome: proposal.outcome as UpworkProposalOutcome | null,
+    source: proposal.source as UpworkProposalSource,
   };
 }
 
@@ -76,7 +84,7 @@ export class UpworkService {
   }
 
   // ── Profile enhancement ────────────────────────────────────────────────────
-  async getProfile(profileId: number): Promise<UpworkProfileDto | null> {
+  async getProfile(profileId: number) {
     const row = await this.prisma.upworkProfile.findUnique({ where: { profileId } });
     return row ? toProfileDto(row) : null;
   }
@@ -86,10 +94,7 @@ export class UpworkService {
    * written; portfolio arrays are JSON-encoded. Moving to `applied` stamps
    * `appliedAt` (set by the skill after it writes the live Upwork profile).
    */
-  async upsertProfile(
-    profileId: number,
-    input: UpdateUpworkProfileInput,
-  ): Promise<UpworkProfileDto> {
+  async upsertProfile(profileId: number, input: UpdateUpworkProfileInput) {
     const fields: UpworkProfileFields = {};
 
     if (input.currentTitle != null) fields.currentTitle = input.currentTitle;

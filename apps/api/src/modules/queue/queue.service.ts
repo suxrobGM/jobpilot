@@ -1,9 +1,11 @@
-import type { AddQueueEntry, PatchQueueEntry } from "@jobpilot/contracts/queue";
+import type { AddQueueEntry, PatchQueueEntry, QueueStatus } from "@jobpilot/contracts/queue";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { pipelineChannel } from "@/common/sse/channels/pipeline";
 import { publish } from "@/common/sse";
 import { PrismaClient, type Prisma } from "@/generated/prisma/client";
+
+type QueueEntryRow = Prisma.QueueEntryGetPayload<{}> & { status: QueueStatus };
 
 @singleton()
 export class QueueService {
@@ -17,19 +19,21 @@ export class QueueService {
     );
   }
 
-  list(profileId: number, status?: string) {
+  list(profileId: number, status?: string): Promise<QueueEntryRow[]> {
     const where: Prisma.QueueEntryWhereInput = { profileId };
     if (status) {
       where.status = status;
     }
-    return this.prisma.queueEntry.findMany({ where, orderBy: { createdAt: "asc" } });
+    return this.prisma.queueEntry.findMany({ where, orderBy: { createdAt: "asc" } }) as Promise<
+      QueueEntryRow[]
+    >;
   }
 
-  listPending(profileId: number) {
+  listPending(profileId: number): Promise<QueueEntryRow[]> {
     return this.prisma.queueEntry.findMany({
       where: { profileId, status: "pending" },
       orderBy: { createdAt: "asc" },
-    });
+    }) as Promise<QueueEntryRow[]>;
   }
 
   async add(profileId: number, input: AddQueueEntry) {
@@ -43,10 +47,10 @@ export class QueueService {
       ),
     );
     publish(pipelineChannel, { profileId }, { type: "queue.updated" });
-    return { inserted: created.length, items: created };
+    return { inserted: created.length, items: created as QueueEntryRow[] };
   }
 
-  async patch(profileId: number, id: number, input: PatchQueueEntry) {
+  async patch(profileId: number, id: number, input: PatchQueueEntry): Promise<QueueEntryRow> {
     await this.findEntry(id, profileId);
     return this.prisma.queueEntry.update({
       where: { id },
@@ -54,7 +58,7 @@ export class QueueService {
         status: input.status,
         consumedAt: input.status === "consumed" ? new Date() : null,
       },
-    });
+    }) as Promise<QueueEntryRow>;
   }
 
   async remove(profileId: number, id: number) {

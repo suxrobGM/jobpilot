@@ -1,4 +1,9 @@
-import type { ApproveInput, ScanMessageInput } from "@jobpilot/contracts/email";
+import type {
+  ApproveInput,
+  Classification,
+  ReviewStatus,
+  ScanMessageInput,
+} from "@jobpilot/contracts/email";
 import type { SendEmailInput } from "@jobpilot/contracts/outreach";
 import { randomBytes } from "node:crypto";
 import { singleton } from "tsyringe";
@@ -11,7 +16,12 @@ import {
 } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { inboxChannel } from "@/common/sse/channels/inbox";
-import { type EmailAccount, PrismaClient, type Prisma } from "@/generated/prisma/client";
+import {
+  type EmailAccount,
+  type EmailMessage,
+  PrismaClient,
+  type Prisma,
+} from "@/generated/prisma/client";
 import { accountCanSend, getProvider } from "./gmail.provider";
 
 /** The fields the reply-linker needs from a freshly-synced inbound message. */
@@ -28,6 +38,13 @@ interface MessageQuery {
   domainHint?: string;
   verificationDomain?: string;
 }
+
+/** An inbox message row with its union fields narrowed off plain `string`. */
+type EmailMessageRow = Prisma.EmailMessageGetPayload<{
+  include: {
+    matchedApp: { select: { id: true; title: true; company: true; stage: true } };
+  };
+}> & { reviewStatus: ReviewStatus; classification: Classification | null };
 
 const POSITIVE_STAGES = new Set([
   "recruiter_screen",
@@ -139,7 +156,7 @@ export class EmailService {
       include: {
         matchedApp: { select: { id: true, title: true, company: true, stage: true } },
       },
-    });
+    }) as Promise<EmailMessageRow[]>;
   }
 
   getMessage(profileId: number, id: number) {
@@ -153,7 +170,7 @@ export class EmailService {
         }),
       { id, account: { profileId } },
       "Message",
-    );
+    ) as Promise<EmailMessageRow>;
   }
 
   async scanMessage(profileId: number, id: number, body: ScanMessageInput) {
@@ -163,7 +180,7 @@ export class EmailService {
       "Message",
     );
 
-    const message = await this.prisma.emailMessage.update({
+    const message = (await this.prisma.emailMessage.update({
       where: { id },
       data: {
         classification: body.classification,
@@ -178,7 +195,7 @@ export class EmailService {
         verificationDomain: body.verificationDomain,
         scannedAt: body.classification ? new Date() : undefined,
       },
-    });
+    })) as EmailMessage & { reviewStatus: ReviewStatus; classification: Classification | null };
 
     publish(inboxChannel, undefined, { type: "message.scanned", id });
 

@@ -2,7 +2,8 @@ import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@jobpilot/contracts/campaign";
 import { singleton } from "tsyringe";
 import { PrismaClient } from "@/generated/prisma/client";
 import type { Application, Job, QueueEntry } from "@/generated/prisma/client";
-import type { PipelineColumnPage, PipelineJobDto, PipelineStage } from "@/types/pipeline";
+import type { PipelineStage } from "./pipeline.constants";
+import type { PipelineColumnPage, PipelineJobDto } from "./pipeline.types";
 
 /** Active board/campaign/search scoping applied to a pipeline column query. */
 export interface PipelineFilters {

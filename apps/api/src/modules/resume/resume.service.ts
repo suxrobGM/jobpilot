@@ -32,13 +32,8 @@ import {
   slugifyForDownload,
 } from "@/common/storage";
 import { PrismaClient } from "@/generated/prisma/client";
-import type {
-  ResumeDto,
-  ResumeListItem,
-  ResumeVariantDto,
-  ResumeVariantListItem,
-} from "@/types/resume";
 import { backfillResumeIds } from "./backfill-ids";
+import type { VariantRewriteAudit } from "./rewrite";
 import { validateRewrites } from "./rewrite";
 import { tailorBase } from "./tailor";
 
@@ -79,7 +74,7 @@ export class ResumeService {
     );
   }
 
-  async list(profileId: number): Promise<ResumeListItem[]> {
+  async list(profileId: number) {
     const profile = await this.prisma.profile.findUnique({
       where: { id: profileId },
       select: { primaryResumeId: true },
@@ -161,7 +156,7 @@ export class ResumeService {
     return { id: resume.id };
   }
 
-  async get(profileId: number, id: number): Promise<ResumeDto> {
+  async get(profileId: number, id: number) {
     const profile = await this.prisma.profile.findUnique({
       where: { id: profileId },
       select: { primaryResumeId: true },
@@ -410,7 +405,7 @@ export class ResumeService {
 
   // ── Variants ──────────────────────────────────────────────────────────────
 
-  async listVariants(profileId: number, resumeId: number): Promise<ResumeVariantListItem[]> {
+  async listVariants(profileId: number, resumeId: number) {
     await findOwned(
       (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),
       { id: resumeId, profileId },
@@ -480,7 +475,7 @@ export class ResumeService {
     );
   }
 
-  async getVariant(profileId: number, id: number): Promise<ResumeVariantDto> {
+  async getVariant(profileId: number, id: number) {
     const variant = await this.findVariant(profileId, id);
 
     return {
@@ -490,9 +485,11 @@ export class ResumeService {
       label: variant.label,
       jobUrl: variant.jobUrl,
       applicationId: variant.applicationId,
-      content: JSON.parse(variant.content),
+      content: JSON.parse(variant.content) as ResumeData,
       diffNotes: variant.diffNotes,
-      rewrites: variant.rewrites ? JSON.parse(variant.rewrites) : null,
+      rewrites: variant.rewrites
+        ? (JSON.parse(variant.rewrites) as VariantRewriteAudit)
+        : null,
       createdAt: variant.createdAt.toISOString(),
       updatedAt: variant.updatedAt.toISOString(),
     };

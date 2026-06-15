@@ -4,7 +4,7 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { pipelineChannel } from "@/common/sse/channels/pipeline";
 import { sseResponse, subscribe } from "@/common/sse";
-import { PIPELINE_STAGES } from "@/types/pipeline";
+import { PIPELINE_STAGES } from "./pipeline.constants";
 import { PipelineService } from "./pipeline.service";
 
 const svc = container.resolve(PipelineService);

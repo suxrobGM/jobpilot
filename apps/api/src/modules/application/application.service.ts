@@ -1,4 +1,8 @@
-import type { StageTransitionInput } from "@jobpilot/contracts/application";
+import type {
+  ApplicationSource,
+  Stage,
+  StageTransitionInput,
+} from "@jobpilot/contracts/application";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import {
@@ -6,7 +10,6 @@ import {
   APPLIED_DUPLICATE_WINDOW_DAYS,
   findFuzzyDuplicate,
 } from "@/modules/scoring/applied-duplicates";
-import type { DuplicateCheckResult } from "@/types/application";
 import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 
 /** Stages that count as a positive recruiter/interview response. */
@@ -36,7 +39,7 @@ export interface AppliedCheckQuery {
 export class ApplicationService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  list(profileId: number, filters: AppliedListFilters) {
+  async list(profileId: number, filters: AppliedListFilters) {
     const { stage, board, source, search } = filters;
 
     const where: Prisma.ApplicationWhereInput = { profileId };
@@ -58,15 +61,21 @@ export class ApplicationService {
       ];
     }
 
-    return this.prisma.application.findMany({
+    const rows = await this.prisma.application.findMany({
       where,
       orderBy: { appliedAt: "desc" },
       take: 500,
     });
+
+    return rows.map((r) => ({
+      ...r,
+      stage: r.stage as Stage,
+      source: r.source as ApplicationSource,
+    }));
   }
 
-  get(profileId: number, id: number) {
-    return findOwned(
+  async get(profileId: number, id: number) {
+    const row = await findOwned(
       (where) =>
         this.prisma.application.findFirst({
           where,
@@ -77,6 +86,12 @@ export class ApplicationService {
       { id, profileId },
       "Application",
     );
+
+    return {
+      ...row,
+      stage: row.stage as Stage,
+      source: row.source as ApplicationSource,
+    };
   }
 
   async remove(profileId: number, id: number) {
@@ -125,7 +140,7 @@ export class ApplicationService {
     return { id, stage: toStage };
   }
 
-  async check(profileId: number, query: AppliedCheckQuery): Promise<DuplicateCheckResult> {
+  async check(profileId: number, query: AppliedCheckQuery) {
     const targetUrl = query.url;
     const title = query.title;
     const company = query.company;
@@ -145,11 +160,7 @@ export class ApplicationService {
               title: exact.title,
               company: exact.company,
               appliedAt: exact.appliedAt.toISOString(),
-              stage: exact.stage as DuplicateCheckResult["match"] extends infer M
-                ? M extends { application: { stage: infer S } }
-                  ? S
-                  : never
-                : never,
+              stage: exact.stage as Stage,
             },
           },
         };
@@ -196,11 +207,7 @@ export class ApplicationService {
               title: matched.title,
               company: matched.company,
               appliedAt: matched.appliedAt.toISOString(),
-              stage: matched.stage as DuplicateCheckResult["match"] extends infer M
-                ? M extends { application: { stage: infer S } }
-                  ? S
-                  : never
-                : never,
+              stage: matched.stage as Stage,
             },
           },
         };

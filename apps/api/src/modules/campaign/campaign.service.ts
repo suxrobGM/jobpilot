@@ -1,8 +1,11 @@
 import type {
   AddCampaignJobInput,
+  CampaignConfig,
   CampaignEventInput,
   CampaignJobResultInput,
   CampaignJobStatus,
+  CampaignSource,
+  CampaignStatus,
   CampaignSummary,
   CreateCampaignInput,
   PatchCampaignJobInput,
@@ -10,11 +13,15 @@ import type {
 } from "@jobpilot/contracts/campaign";
 import type {
   AddCampaignOutreachInput,
+  OutreachChannel,
   OutreachMessageResultInput,
+  OutreachMessageStatus,
   PatchOutreachMessageInput,
 } from "@jobpilot/contracts/outreach";
+import { contactLinkedinConnectionSchema } from "@jobpilot/contracts/outreach";
 import { cleanReplacementCharsNullable } from "@jobpilot/contracts/utils/text";
 import { singleton } from "tsyringe";
+import type { z } from "zod/v4";
 import { findOwned, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type CampaignEvent, campaignChannel } from "@/common/sse/channels/campaign";
@@ -24,6 +31,34 @@ import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/appli
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 
 const STALE_THRESHOLD_MS = 5 * 60 * 1000;
+
+/** Contact connection-state union — derived from the contract schema. */
+type ContactLinkedinConnection = z.infer<typeof contactLinkedinConnectionSchema>;
+
+// ── Narrowed row shapes ──────────────────────────────────────────────────────
+// Prisma stores these enum-like columns as plain `String`. Re-narrow them to the
+// contract unions so Eden Treaty infers the precise wire types end-to-end.
+
+/** A Job row with `status` narrowed to the campaign job-status union. */
+type CampaignJobRow = Prisma.JobGetPayload<{}> & { status: CampaignJobStatus };
+
+/** A Campaign row with `status`/`source` narrowed and `config`/`summary` typed. */
+type CampaignRow = Omit<Prisma.CampaignGetPayload<{}>, "config" | "summary"> & {
+  status: CampaignStatus;
+  source: CampaignSource;
+  config: CampaignConfig;
+  summary: CampaignSummary;
+};
+
+/**
+ * An OutreachMessage row (with its contact) with `status`/`channel` and the nested
+ * contact's `linkedinConnection` narrowed to the contract unions.
+ */
+type OutreachMessageRow = Prisma.OutreachMessageGetPayload<{ include: { contact: true } }> & {
+  status: OutreachMessageStatus;
+  channel: OutreachChannel;
+  contact: { linkedinConnection: ContactLinkedinConnection };
+};
 
 function emptySummary(): CampaignSummary {
   return {
@@ -223,11 +258,15 @@ export class CampaignService {
       take: 200,
     });
 
-    return campaigns.map((r) => ({
-      ...r,
-      config: JSON.parse(r.config) as Record<string, unknown>,
-      summary: JSON.parse(r.summary) as Record<string, unknown>,
-    }));
+    return campaigns.map(
+      (r): CampaignRow => ({
+        ...r,
+        status: r.status as CampaignStatus,
+        source: r.source as CampaignSource,
+        config: JSON.parse(r.config) as CampaignConfig,
+        summary: JSON.parse(r.summary) as CampaignSummary,
+      }),
+    );
   }
 
   create(profileId: number, body: CreateCampaignInput) {
@@ -239,7 +278,9 @@ export class CampaignService {
         source: body.source,
         config: JSON.stringify(body.config ?? {}),
       },
-    });
+    }) as Promise<
+      Prisma.CampaignGetPayload<{}> & { status: CampaignStatus; source: CampaignSource }
+    >;
   }
 
   // ── Single campaign get / patch / delete ─────────────────────────────────────
@@ -259,22 +300,27 @@ export class CampaignService {
 
     return {
       ...campaign,
+      status: campaign.status as CampaignStatus,
+      source: campaign.source as CampaignSource,
       // Clean replacement-char artifacts in historical rows written before the
       // schema-level sanitizer landed, so the UI never shows mojibake.
-      jobs: campaign.jobs.map((job) => ({
-        ...job,
-        skipReason: cleanReplacementCharsNullable(job.skipReason),
-        failReason: cleanReplacementCharsNullable(job.failReason),
-        matchReason: cleanReplacementCharsNullable(job.matchReason),
-        retryNotes: cleanReplacementCharsNullable(job.retryNotes),
-      })),
-      config: JSON.parse(campaign.config) as Record<string, unknown>,
+      jobs: campaign.jobs.map(
+        (job): CampaignJobRow => ({
+          ...job,
+          status: job.status as CampaignJobStatus,
+          skipReason: cleanReplacementCharsNullable(job.skipReason),
+          failReason: cleanReplacementCharsNullable(job.failReason),
+          matchReason: cleanReplacementCharsNullable(job.matchReason),
+          retryNotes: cleanReplacementCharsNullable(job.retryNotes),
+        }),
+      ),
+      config: JSON.parse(campaign.config) as CampaignConfig,
       // Job-based campaigns derive the summary from their loaded jobs so the tiles
       // always match the rows; outreach campaigns have no jobs, so their
       // recomputed `Campaign.summary` (OutreachMessage aggregates) is authoritative.
       summary:
         campaign.source === "outreach"
-          ? (JSON.parse(campaign.summary) as Record<string, unknown>)
+          ? (JSON.parse(campaign.summary) as CampaignSummary)
           : summarizeJobs(campaign.jobs),
     };
   }
@@ -335,9 +381,11 @@ export class CampaignService {
 
     return {
       ...campaign,
-      config: JSON.parse(campaign.config) as Record<string, unknown>,
-      summary: JSON.parse(campaign.summary) as Record<string, unknown>,
-    };
+      status: campaign.status as CampaignStatus,
+      source: campaign.source as CampaignSource,
+      config: JSON.parse(campaign.config) as CampaignConfig,
+      summary: JSON.parse(campaign.summary) as CampaignSummary,
+    } satisfies CampaignRow;
   }
 
   /**
@@ -409,7 +457,7 @@ export class CampaignService {
     return this.prisma.job.findMany({
       where: { campaignId, campaign: { profileId } },
       orderBy: { id: "asc" },
-    });
+    }) as Promise<CampaignJobRow[]>;
   }
 
   async addJob(profileId: number, campaignId: string, body: AddCampaignJobInput) {
@@ -457,7 +505,7 @@ export class CampaignService {
       },
     );
 
-    return job;
+    return job as CampaignJobRow;
   }
 
   async patchJob(profileId: number, campaignId: string, key: string, patch: PatchCampaignJobInput) {
@@ -510,7 +558,7 @@ export class CampaignService {
       { type: "campaignjob.updated", campaignId, key, status: patch.status },
     );
 
-    return job;
+    return job as CampaignJobRow;
   }
 
   /**
@@ -612,7 +660,7 @@ export class CampaignService {
     }
 
     return {
-      campaignJob: result.job,
+      campaignJob: result.job as CampaignJobRow,
       application: result.application,
       summary: result.summary,
     };
@@ -626,7 +674,7 @@ export class CampaignService {
       where: { campaignId, profileId },
       include: { contact: true },
       orderBy: { id: "asc" },
-    });
+    }) as Promise<OutreachMessageRow[]>;
   }
 
   /**
@@ -680,7 +728,7 @@ export class CampaignService {
 
     // Push the new contact/message to the live campaign viewer.
     publish(campaignChannel, { campaignId }, { type: "outreach-update" });
-    return result.outreachMessage;
+    return result.outreachMessage as OutreachMessageRow;
   }
 
   /**
@@ -733,7 +781,7 @@ export class CampaignService {
 
     // Refresh the live campaign board (e.g. a regenerated draft) without a reload.
     publish(campaignChannel, { campaignId }, { type: "outreach-update" });
-    return updated;
+    return updated as OutreachMessageRow;
   }
 
   /**
@@ -775,6 +823,6 @@ export class CampaignService {
 
     // Refresh the live campaign viewer on the terminal outcome.
     publish(campaignChannel, { campaignId }, { type: "outreach-update" });
-    return { message: result.message, summary: result.summary };
+    return { message: result.message as OutreachMessageRow, summary: result.summary };
   }
 }

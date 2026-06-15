@@ -1,8 +1,9 @@
-import type { CoverLetterCreate } from "@jobpilot/contracts/cover-letter";
+import type { CoverLetterCreate, CoverLetterSource } from "@jobpilot/contracts/cover-letter";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { renderCoverLetterPdf } from "@/common/pdf";
 import { slugifyForDownload } from "@/common/storage";
+import type { Prisma } from "@/generated/prisma/client";
 import { PrismaClient } from "@/generated/prisma/client";
 
 const LIST_SELECT = {
@@ -30,7 +31,11 @@ export class CoverLetterService {
       where: { profileId },
       orderBy: { createdAt: "desc" },
       select: LIST_SELECT,
-    });
+    }) as Promise<
+      (Omit<Prisma.CoverLetterGetPayload<{ select: typeof LIST_SELECT }>, "source"> & {
+        source: CoverLetterSource;
+      })[]
+    >;
   }
 
   create(profileId: number, data: CoverLetterCreate) {
@@ -51,7 +56,9 @@ export class CoverLetterService {
       (where) => this.prisma.coverLetter.findFirst({ where }),
       { id, profileId },
       "Cover letter",
-    );
+    ) as Promise<
+      Omit<Prisma.CoverLetterGetPayload<{}>, "source"> & { source: CoverLetterSource }
+    >;
   }
 
   async remove(profileId: number, id: number): Promise<{ ok: true }> {
