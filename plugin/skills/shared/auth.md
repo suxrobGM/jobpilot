@@ -38,7 +38,7 @@ Ask the user to complete it; wait for confirmation.
 Resolve the login in **one call** — the API applies the precedence (per-board override → credential scoped to the domain → `default`) server-side. Never merge `/api/credentials` and `/api/job-boards` by hand.
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/credentials/resolve?domain=<board-domain>"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/credentials/resolve?domain=<board-domain>"
 ```
 
 `data` → `{ email, password, source }` (`source`: `board` | `domain` | `default`) or `null`. Null → report to the user and proceed without login (some boards allow it). Use the resolved `email`/`password` exactly; never substitute the `default` credential when a board/domain match exists.

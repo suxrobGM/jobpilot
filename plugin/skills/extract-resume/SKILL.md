@@ -10,21 +10,21 @@ Read a resume's uploaded source PDF and produce JSON matching the JobPilot resum
 
 ## Setup
 
-Follow `../shared/setup.md`. The profile response provides `data.profile.primaryResumeId`, `data.primaryResumeSourceAbsolutePath`, and `data.resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
+Follow `../shared/setup.md`. The profile response provides `profile.primaryResumeId`, `data.primaryResumeSourceAbsolutePath`, and `resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
 
 ## Step 1: Resolve Target
 
 Parse the argument:
 
 - Integer → use that resume id.
-- Empty → use `data.profile.primaryResumeId`. If no primary, stop:
+- Empty → use `profile.primaryResumeId`. If no primary, stop:
   > No primary resume set. Pass an explicit id, or set a primary at <http://localhost:8000/resumes>.
 - `--force` (anywhere) → overwrite existing structured data. Otherwise refuse to overwrite (Step 3).
 
 Let `RESUME_ID` be the resolved id, `FORCE` be `true`/`false`.
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/resumes/$RESUME_ID"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$RESUME_ID"
 ```
 
 If 404, stop and report the id doesn't exist.
@@ -112,7 +112,7 @@ Hard rules:
 The PUT body must be `{ "content": <resume-object> }` — the API rejects a bare resume payload with 400 "label or content required". Write the file with that wrapper, then send it:
 
 ```bash
-curl -fsS -X PUT "$JOBPILOT_API/api/resumes/$RESUME_ID" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/resumes/$RESUME_ID" \
   -H "Content-Type: application/json" \
   --data-binary @resume.json
 ```

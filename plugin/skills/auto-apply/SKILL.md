@@ -11,10 +11,10 @@ Keep the chosen board open in tab 1; for each result that qualifies, apply in a 
 ## Setup
 
 ```bash
-JOBPILOT_API=http://localhost:8000
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 ```
 
-Follow `../shared/setup.md`. Read `data.autoApply` (defaults applied per field):
+Follow `../shared/setup.md`. Read `autoApply` (defaults applied per field):
 
 | Setting                 | Default            | Notes                                                                                     |
 | ----------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
@@ -35,9 +35,9 @@ To recover wrongly-`skipped` jobs, use the dedicated `rescan-skipped` skill (it 
 ## Phase 0: Existing Campaign Check + Create
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/campaigns?status=in_progress"
-curl -fsS "$JOBPILOT_API/api/campaigns?status=paused"
-curl -fsS "$JOBPILOT_API/api/campaigns?status=interrupted"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=in_progress"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=paused"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=interrupted"
 ```
 
 If any matches, ask **"Found an incomplete campaign from `<startedAt>` (status: `<status>`). Resume or start fresh?"** Resume → inject the `resume` skill with that `campaignId`.
@@ -48,7 +48,7 @@ Otherwise the web UI already created the campaign row when the user submitted `/
 SLUG=$(echo "<query>" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/-\+/-/g; s/^-//; s/-$//')
 CAMPAIGN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_${SLUG})
 # maxApplications is OPTIONAL — omit the field entirely for unlimited mode.
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg id "$CAMPAIGN_ID" --arg q "<query>" --arg board "<domain>" \
     --argjson minScore <n> \
@@ -68,7 +68,7 @@ Extract title/role, keywords, location, preferences. If vague, ask before search
 Resolve the board:
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.data[] | select(.domain == $d)'
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.[] | select(.domain == $d)'
 ```
 
 If no row matches, PATCH the campaign to `failed` with `failReason:"Board <domain> not configured"` and stop.
@@ -90,7 +90,7 @@ Dedupe in-board by normalized title+company. Then check previously-applied:
 URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
 COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
-curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
 If `data.applied`, add the job with `status:"skipped"`, `skipReason:"Already applied (<kind>)"` and move on — **don't open a tab.**
@@ -100,18 +100,18 @@ If `data.applied`, add the job with `status:"skipped"`, `skipReason:"Already app
 If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the digest — `{ title, company, techStack[], requirements[], responsibilities[], yearsExperience, descriptionExcerpt }`; always populate `techStack` (it drives the score, empty → low score/confidence) — then score server-side:
 
 ```bash
-FIT=$(curl -fsS -X POST "$JOBPILOT_API/api/score-fit" \
+FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson digest "$DIGEST" '{digest:$digest}')")
-SCORE=$(echo "$FIT" | jq -r '.data.score')
-CONF=$(echo "$FIT" | jq -r '.data.confidence')
+SCORE=$(echo "$FIT" | jq -r '.score')
+CONF=$(echo "$FIT" | jq -r '.confidence')
 ```
 
 If `CONF >= 0.7` and `SCORE` is ≥10 from `minMatchScore` either side, use it directly; otherwise rescore using `strongMatches`/`partialMatches`/`gaps`. A thin/generic row is **not** a skip — read the full posting (tab-1 detail or briefly in tab 2), rebuild the digest, and rescore first. Below `minMatchScore` after a fair read → add with `status:"skipped"`, `skipReason:"Below minimum match score ($SCORE < $MIN_SCORE)"` and move on (no tab). Otherwise add it (status `applying`) and apply (2.3):
 
 ```bash
 DIGEST=<stringified digest>
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<stable-id>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<url>" --arg board "<board>" \
@@ -169,7 +169,7 @@ The loop ends **only** on one of these. Before picking the next result, refetch 
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```

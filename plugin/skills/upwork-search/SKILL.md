@@ -10,12 +10,12 @@ Find Upwork jobs the user can win — qualify on fit **and** client quality, dro
 
 ## Setup
 
-1. Follow `../shared/setup.md`. `$JOBPILOT_API=http://localhost:8000`.
+1. Follow `../shared/setup.md`. ``$JOBPILOT_API` (injected by the terminal)`.
 2. Parse and strip the flags; the rest is the free-text query.
    - `--board upwork.com` — required.
    - `--max-jobs <N>` — cap on results to evaluate (default 15, max 100).
    - `--campaign <id>` — campaign to save to. The UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else create one.
-3. Resolve the board: `curl -fsS "$JOBPILOT_API/api/job-boards" | jq '.data[] | select(.domain=="upwork.com")'`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign` was given, PATCH it to `failed` with `failReason:"Board upwork.com not configured"` first.
+3. Resolve the board: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq '.[] | select(.domain=="upwork.com")'`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign` was given, PATCH it to `failed` with `failReason:"Board upwork.com not configured"` first.
 
 ## Phase 1: Parse Query
 
@@ -40,7 +40,7 @@ Extract role/skills, keywords, and preferences (hourly vs fixed, budget floor, c
 URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
 COMPANY_ENCODED=$(jq -rn --arg v "<clientName>" '$v|@uri')
-curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
 `data.applied` → save with `status:"skipped"`, `skipReason:"Already applied (<kind>)"`; skip the rest.
@@ -52,9 +52,9 @@ Read the card + client panel for the signals below (omit any you can't see — e
 ```bash
 CLIENT='{ "paymentVerified": true, "hireRate": 80, "totalSpent": 12000, "rating": 4.9,
   "reviewsCount": 24, "proposalsBucket": "5-10", "postedHoursAgo": 6, "jobType": "hourly" }'
-QUALITY=$(curl -fsS -X POST "$JOBPILOT_API/api/upwork/client-quality" \
+QUALITY=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/client-quality" \
   -H 'content-type: application/json' -d "$(jq -n --argjson c "$CLIENT" '{client:$c}')")
-VERDICT=$(echo "$QUALITY" | jq -r '.data.verdict')   # good | caution | skip
+VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 ```
 
 `proposalsBucket` is one of `<5 | 5-10 | 10-15 | 15-20 | 20-50 | 50+`. The scorer hard-skips unverified payment, 50+ proposals (saturated), low hire-rate-but-many-jobs (unresponsive), and unproven+unverified clients. If `VERDICT == "skip"`, save the Job `status:"skipped"` with `skipReason` = `data.skipReason` and move on — don't score fit.
@@ -64,9 +64,9 @@ VERDICT=$(echo "$QUALITY" | jq -r '.data.verdict')   # good | caution | skip
 Build the digest — `{ title, company, techStack[], requirements[], responsibilities[], yearsExperience, descriptionExcerpt }`; always populate `techStack`. If the card is thin, open the posting, snapshot its body, then build it. Score:
 
 ```bash
-FIT=$(curl -fsS -X POST "$JOBPILOT_API/api/score-fit" \
+FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' -d "$(jq -n --argjson d "$DIGEST" '{digest:$d}')")
-SCORE=$(echo "$FIT" | jq -r '.data.score')
+SCORE=$(echo "$FIT" | jq -r '.score')
 ```
 
 Use it directly when `confidence >= 0.7`; otherwise rescore from `strongMatches`/`partialMatches`/`gaps`. A thin or below-level posting is **not** a skip — judge on tech fit (see `../shared/setup.md` eligibility notes).
@@ -77,11 +77,11 @@ Stash the client signals + quality score into the digest so the campaign card ca
 
 ```bash
 DIGEST_FULL=$(jq -n --argjson fit "$DIGEST" --argjson client "$CLIENT" --argjson q "$QUALITY" \
-  '$fit + {clientStats:$client, qualityScore:($q.data.qualityScore)}')
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
+  '$fit + {clientStats:$client, qualityScore:($q.qualityScore)}')
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<company-title-rank slug>" --arg title "<title>" --arg company "<clientName>" \
-    --arg url "<job-url>" --arg matchReason "Fit $SCORE · $(echo "$QUALITY" | jq -r '.data.flags|join(", ")')" \
+    --arg url "<job-url>" --arg matchReason "Fit $SCORE · $(echo "$QUALITY" | jq -r '.flags|join(", ")')" \
     --argjson score "$SCORE" --arg digest "$(echo "$DIGEST_FULL" | jq -c .)" --arg desc "<full JD>" \
     '{key:$key, title:$title, company:$company, url:$url, board:"upwork.com", matchScore:$score, matchReason:$matchReason, status:"pending", digest:$digest, description:$desc}')"
 ```
@@ -90,7 +90,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" -H 'content-type: application/json' \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" -H 'content-type: application/json' \
   -d "$(jq -n --argjson found <total> --argjson qualified <pending_count> --arg t "$NOW" \
     '{status:"completed", completedAt:$t, summary:{totalFound:$found, qualified:$qualified}}')"
 ```

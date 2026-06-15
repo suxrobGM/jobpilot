@@ -13,13 +13,13 @@ Classify recent email and link each thread to an existing `Application` when the
 Follow `../shared/setup.md`.
 
 ```bash
-JOBPILOT_API=http://localhost:8000
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 ```
 
 ## Phase 1: Confirm Mailbox Connected
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/email/account"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"
 ```
 
 If `data.connected === false`, stop:
@@ -31,14 +31,14 @@ If `data.connected === false`, stop:
 **One message** — an id was passed (a re-scan from the inbox table). Fetch just it and classify it again even if it's already classified or reviewed:
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/email/messages/<id>"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/messages/<id>"
 ```
 
 **All pending** — no argument. Sync, then pull the unscanned queue:
 
 ```bash
-curl -fsS -X POST "$JOBPILOT_API/api/email/sync"
-curl -fsS "$JOBPILOT_API/api/email/messages?reviewStatus=pending&classification=null"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/sync"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/messages?reviewStatus=pending&classification=null"
 ```
 
 If `data` is empty: **"Inbox is already triaged. Nothing new to classify."** and exit.
@@ -68,7 +68,7 @@ For `interviewing | rejected | offer`:
 1. Pull candidates:
 
    ```bash
-   curl -fsS --data-urlencode "search=<company-or-from-domain>" \
+   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" --data-urlencode "search=<company-or-from-domain>" \
      -G "$JOBPILOT_API/api/applied"
    ```
 
@@ -90,7 +90,7 @@ For matched non-verification messages, set `appliedStage`:
 ## Phase 4: Write Back
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/email/messages/<id>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/email/messages/<id>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg classification "<c>" --argjson confidence <0..1> --arg reasoning "<one line>" \
     --argjson matchedAppId <id-or-null> --argjson matchScore <0..1-or-null> \

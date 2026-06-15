@@ -11,10 +11,10 @@ Re-score a campaign's `skipped` jobs and set eligible ones to `approved`. **Neve
 ## Setup
 
 ```bash
-JOBPILOT_API=http://localhost:8000
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 ```
 
-Follow `../shared/setup.md`. Fetch the campaign: `curl -fsS "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `data.autoApply.minMatchScore`, else 70).
+Follow `../shared/setup.md`. Fetch the campaign: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `autoApply.minMatchScore`, else 70).
 
 ## Step 1: Select Targets
 
@@ -32,7 +32,7 @@ Count the full target list up front and process every one. **Below-threshold, ze
 2. **Re-read only when needed** — if the digest is thin/empty, or the original `skipReason` was invalid (location/onsite, sparse JD, 1099, seniority), open the posting (`browser_navigate` + narrowed `browser_snapshot`; log in via `../shared/auth.md` if walled), rebuild the digest, and write it back so future rescans skip the browser:
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg digest "$DIGEST" --arg desc "<posting text>" '{digest:$digest, description:$desc}')"
 ```
@@ -42,7 +42,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
    - Eligible and `score >= threshold` → promote (no apply):
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson score <0-100> --arg reason "<one line>" '{status:"approved", matchScore:$score, matchReason:$reason}')"
 ```

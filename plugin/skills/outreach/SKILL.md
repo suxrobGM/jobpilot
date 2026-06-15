@@ -15,10 +15,10 @@ Backed by a `Campaign` (`source: "outreach"`); each contacted person + message i
 Follow `../shared/setup.md` (health, profile, primary/tailored resume, credentials).
 
 ```bash
-JOBPILOT_API=http://localhost:8000
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 ```
 
-- Email capability: `curl -fsS "$JOBPILOT_API/api/email/account"` → if `data.canSend` is false,
+- Email capability: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"` → if `data.canSend` is false,
   tell the user to **Reconnect Gmail** in email settings before email sends; LinkedIn still works.
 - LinkedIn login: `../shared/auth.md`, credentials scope `"linkedin.com"`.
 
@@ -27,7 +27,7 @@ JOBPILOT_API=http://localhost:8000
 `--campaign <id>` is required. Read the campaign config:
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.data.config'
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.config'
 ```
 
 `config.outreach` = `{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium",
@@ -46,7 +46,7 @@ discover or send.
 ## Phase 0.5: Open the board (when `config.board` set)
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/job-boards" | jq --arg d "<config.board>" '.data[] | select(.domain == $d)'
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<config.board>" '.[] | select(.domain == $d)'
 ```
 
 No row → PATCH campaign `failed`, `failReason:"Board <domain> not configured"`, stop. Else
@@ -79,7 +79,7 @@ Walk tab-1 results top to bottom; per result:
    URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
    TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
    COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
-   curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
    ```
 
    On `data.applied`, keep `data.match.application.id` as `relatedAppId` — **don't skip** (outreach
@@ -87,7 +87,7 @@ Walk tab-1 results top to bottom; per result:
 2. Save the job (stable, shell-safe `key`):
 
    ```bash
-   curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
+   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
      -H 'content-type: application/json' \
      -d "$(jq -n --arg key "<key>" --arg title "<title>" --arg company "<company>" \
        --arg location "<location>" --arg url "<job-url>" --arg board "<config.board>" \
@@ -106,7 +106,7 @@ matching opening (`relatedJobUrl` + applied-check for `relatedAppId`); else reac
 ### Save a contact + message
 
 ```bash
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg name "<name>" --arg title "<title>" --arg company "<company>" \
     --arg li "<linkedin-url>" --arg email "<email-or-empty>" --arg src "google" \
@@ -126,8 +126,8 @@ Per contact, invoke the `tailor-resume` skill for the role to surface the 1–2 
 points — **this shapes the body even when no resume is sent**. Reuse the `humanizer` skill for
 tone.
 
-Sign as the user: name = `data.profile.{firstName, lastName}`, title = resume `content.basics.headline`
-(profile has no `name`/`headline`; active profile is `GET /api/profiles/active` → `{ profileId }`).
+Sign as the user: name = `profile.{firstName, lastName}`, title = resume `content.basics.headline`
+(profile has no `name`/`headline`; the API scopes to your account's single profile automatically).
 
 **Style:** plain ASCII only (hyphens not em/en-dashes, straight quotes, no bullets — the terminal
 mangles non-ASCII). Short and direct; run `humanizer`; no template tells.
@@ -142,7 +142,7 @@ Then per channel:
 Save the draft:
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach/<messageId>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach/<messageId>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg s "<subject>" --arg b "<body>" --arg k "<linkedin-kind-or-empty>" \
     '{subject:(if $s=="" then null else $s end),body:$b,
@@ -168,12 +168,12 @@ For each message to send:
 
 - **Email** — send (carry `threadId` on follow-ups for threading):
   ```bash
-  SENT=$(curl -fsS -X POST "$JOBPILOT_API/api/email/send" \
+  SENT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/send" \
     -H 'content-type: application/json' \
     -d "$(jq -n --arg to "<email>" --arg s "<subject>" --arg b "<body>" \
       '{to:$to,subject:$s,body:$b}')")
-  PID=$(echo "$SENT" | jq -r '.data.providerId'); TID=$(echo "$SENT" | jq -r '.data.threadId')
-  curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach/<messageId>/result" \
+  PID=$(echo "$SENT" | jq -r '.providerId'); TID=$(echo "$SENT" | jq -r '.threadId')
+  curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach/<messageId>/result" \
     -H 'content-type: application/json' \
     -d "$(jq -n --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg p "$PID" --arg th "$TID" \
       '{outcome:"sent",sentAt:$t,providerId:$p,threadId:$th}')"
@@ -192,7 +192,7 @@ will surface later via inbox sync.
 ## Phase 5: Summary
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{status:"completed",completedAt:$t}')"
 ```

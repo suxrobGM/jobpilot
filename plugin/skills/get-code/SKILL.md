@@ -13,14 +13,14 @@ Return the most recent verification code (or magic link) for a given board domai
 Read `../shared/setup.md` to load `JOBPILOT_API`.
 
 ```bash
-JOBPILOT_API=http://localhost:8000
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 BOARD_DOMAIN="$1"
 ```
 
 ## Phase 1: Confirm Mailbox Connected
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/email/account"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"
 ```
 
 If `data.connected === false`, print exactly `{}` and exit. Caller falls back to asking the user.
@@ -28,7 +28,7 @@ If `data.connected === false`, print exactly `{}` and exit. Caller falls back to
 ## Phase 2: Trigger Sync
 
 ```bash
-curl -fsS -X POST "$JOBPILOT_API/api/email/sync"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/sync"
 ```
 
 ## Phase 3: Poll for the Code
@@ -37,11 +37,11 @@ Up to 6 attempts (~30s) looking for a verification message in the last 5 minutes
 
 ```bash
 for i in 1 2 3 4 5 6; do
-  RESULT=$(curl -fsS -G "$JOBPILOT_API/api/email/messages" \
+  RESULT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -G "$JOBPILOT_API/api/email/messages" \
     --data-urlencode "classification=verification" \
     --data-urlencode "domainHint=$BOARD_DOMAIN" \
     --data-urlencode "since=$(date -u -d '5 minutes ago' +%FT%TZ 2>/dev/null || date -u -v-5M +%FT%TZ)")
-  COUNT=$(echo "$RESULT" | jq '.data | length')
+  COUNT=$(echo "$RESULT" | jq '. | length')
   if [ "$COUNT" -gt 0 ]; then break; fi
   sleep 5
 done
@@ -58,7 +58,7 @@ If still nothing, also look for unclassified messages whose body matches the boa
 5. PATCH the message:
 
    ```bash
-   curl -fsS -X PATCH "$JOBPILOT_API/api/email/messages/<id>" \
+   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/email/messages/<id>" \
      -H 'content-type: application/json' \
      -d "$(jq -n --arg code "<code>" --arg link "<link>" --arg domain "$BOARD_DOMAIN" \
        '{classification:"verification",

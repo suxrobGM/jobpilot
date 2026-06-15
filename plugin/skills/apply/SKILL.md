@@ -18,10 +18,10 @@ User approves once up front. No per-job confirmation after that.
 Follow `../shared/setup.md` to load profile, resume, credentials.
 
 ```bash
-JOBPILOT_API=http://localhost:8000
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 ```
 
-Read `data.autoApply` for config (defaults applied per field):
+Read `autoApply` for config (defaults applied per field):
 
 | Setting                 | Default            | Notes                                                                                            |
 | ----------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
@@ -67,7 +67,7 @@ Ask: **"Want me to proceed with the application?"** — `yes`/`go` continue, any
 URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
 COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
-curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
 If `data.applied === true`, surface the match (title + company + appliedAt + `data.match.kind`) and ask whether to proceed anyway. Stop on no.
@@ -76,7 +76,7 @@ If `data.applied === true`, surface the match (title + company + appliedAt + `da
 
 ```bash
 CAMPAIGN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_apply)
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg campaignId "$CAMPAIGN_ID" --arg query "<title> at <company>" \
     '{campaignId:$campaignId, query:$query, source:"apply", config:{maxApplications:1}}')"
@@ -86,7 +86,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/campaigns" \
 
 ```bash
 JOB_KEY=$(date -u +%s)-single
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "$JOB_KEY" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
@@ -104,7 +104,7 @@ Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `http://localhost:8000/campaigns/
 ### 1B.1 Pull Queue
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/queue/pending"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/queue/pending"
 ```
 
 `data` is `[{ id, url, note, status }]`. If empty, tell user to open `http://localhost:8000/queue` to add URLs and stop. Otherwise: **"Found N URLs in the queue. Visiting each to gather details..."**
@@ -113,7 +113,7 @@ curl -fsS "$JOBPILOT_API/api/queue/pending"
 
 ```bash
 CAMPAIGN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_apply)
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg campaignId "$CAMPAIGN_ID" \
     '{campaignId:$campaignId, query:"apply queue", source:"apply", config:{minScore:6, maxApplications:10}}')"
@@ -127,7 +127,7 @@ For each queue URL:
 
 ```bash
 URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
-curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED"
 ```
 
 If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped Job with `skipReason:"Already applied (<kind>)"`, then continue.
@@ -144,17 +144,17 @@ If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped
 Pre-score server-side; deliberate only on borderline cases. Always populate the digest's `techStack` — it drives the score (empty → low score/confidence).
 
 ```bash
-FIT=$(curl -fsS -X POST "$JOBPILOT_API/api/score-fit" \
+FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson digest "$DIGEST" '{digest:$digest}')")
-SCORE=$(echo "$FIT" | jq -r '.data.score')
-CONF=$(echo "$FIT" | jq -r '.data.confidence')
+SCORE=$(echo "$FIT" | jq -r '.score')
+CONF=$(echo "$FIT" | jq -r '.confidence')
 ```
 
 If `CONF >= 0.7` and `SCORE` is at least 10 from threshold either side, use it directly. Otherwise rescore from the digest using `strongMatches`/`partialMatches`/`gaps` in `FIT`.
 
 ```bash
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<entry-id>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
@@ -192,7 +192,7 @@ PATCH `Job.status` accordingly:
 - `stop` → PATCH campaign `status:"paused"` and stop
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"approved"}'
 ```
 
@@ -203,7 +203,7 @@ For each `approved` job, score-descending:
 ### 4.1 Mark Applying
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"applying"}'
 ```
 
@@ -214,7 +214,7 @@ Navigate to the job URL. `browser_snapshot` the header, `browser_click` the Appl
 ### 4.3 Tailor Resume
 
 ```bash
-DIGEST=$(curl -fsS "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" | jq -r --arg key "<key>" '.data[] | select(.key == $key) | .digest // empty')
+DIGEST=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" | jq -r --arg key "<key>" '.[] | select(.key == $key) | .digest // empty')
 ```
 
 Invoke the `tailor-resume` skill with `$DIGEST`. Empty `$DIGEST` (legacy row) → fall back to the job URL. Capture the variant id + PDF URL for 4.4. If no usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`.
@@ -263,7 +263,7 @@ If `config.maxApplications` is set and `applied >= config.maxApplications`, stop
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```

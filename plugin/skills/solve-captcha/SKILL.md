@@ -9,7 +9,7 @@ argument-hint: "[url | ref_or_description] (optional; a URL → navigate there f
 Clear a CAPTCHA on the **current browser tab**. Return **solved** or **unsolved** (the caller falls back). Authorized use only — the user's own applications.
 
 ```bash
-JOBPILOT_API=http://localhost:8000
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 ```
 
 ## 1. Dispatch + identify
@@ -50,9 +50,9 @@ hCaptcha: `iframe[src*="hcaptcha"]` → `type:"hcaptcha"`. Turnstile: `.cf-turns
 Solve it server-side (the endpoint resolves the configured key + polls the provider; the skill never sees the key):
 
 ```bash
-RESP=$(curl -fsS -X POST "$JOBPILOT_API/api/captcha/solve" -H 'content-type: application/json' \
+RESP=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/captcha/solve" -H 'content-type: application/json' \
   -d "$(jq -n --arg s "$SITEKEY" --arg u "$PAGEURL" '{type:"recaptcha", sitekey:$s, pageurl:$u}')") || true
-TOKEN=$(echo "$RESP" | jq -r '.data.token // empty')
+TOKEN=$(echo "$RESP" | jq -r '.token // empty')
 ```
 
 Empty `TOKEN` (no key configured, or solver failure) → **unsolved**.

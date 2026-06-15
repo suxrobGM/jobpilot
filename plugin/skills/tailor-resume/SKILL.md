@@ -10,7 +10,7 @@ Choose or produce a resume for a specific job. You decide reuse vs create; the u
 
 ## Setup
 
-Follow `../shared/setup.md`. The profile response includes `data.resumes` (every base with `label`, `hasData`, `variantCount`, `isPrimary`).
+Follow `../shared/setup.md`. The profile response includes `resumes` (every base with `label`, `hasData`, `variantCount`, `isPrimary`).
 
 ## Step 1: Build the JD object
 
@@ -32,7 +32,7 @@ From the digest (`title`, `requirements[]`, `responsibilities[]`, `techStack[]`,
 
 **Primary wins.** If `primaryResumeId` is set and that resume has `hasData` or a `sourceFilename`,
 use it as `BASE_ID` (skip scoring; Step 3 extracts content if missing). Otherwise score each
-`data.resumes` entry (max 10):
+`resumes` entry (max 10):
 
 | Signal              | Points | Rule                                                                                |
 | ------------------- | ------ | ----------------------------------------------------------------------------------- |
@@ -52,7 +52,7 @@ Let `BASE_ID` be the chosen id.
 ## Step 3: Extract Structure if Missing
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID"
 ```
 
 If `content` is `null`, delegate to extract-resume so the logic stays in one place:
@@ -66,7 +66,7 @@ Skip this step when `hasData: true`.
 ## Step 4: Decide Reuse vs Create
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
 ```
 
 For each variant, fetch `GET /api/resumes/variants/<id>` and compute `reuseScore` (0–100). Variants failing the role-family gate (different family AND not adjacent) score 0.
@@ -115,7 +115,7 @@ You may rephrase bullets on the **top 1–2 roles** to match the JD's wording. O
 Server-enforced: **422** on a new number, an unknown `original`, or out-of-window `entryIndex`; non-blocking **`flags`** for tech terms absent from the resume. On 422, read `details`, fix the text, resend — never drop the guardrail.
 
 ```bash
-curl -fsS -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg summary "<2-3 sentence tailored summary>" \
                 --arg label "<Company> — <Title>" \

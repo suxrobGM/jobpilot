@@ -19,7 +19,7 @@ The argument is either a **proposal id** (an integer, when launched from the Job
 - **Integer id** → fetch the draft row and use its stored job details as the JD:
 
   ```bash
-  curl -fsS "$JOBPILOT_API/api/upwork/proposals/$ARG"
+  curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/proposals/$ARG"
   ```
 
   Use `data.jobDescription` as the posting, plus `data.jobTitle` / `data.clientName` / `data.jobUrl` for context. Remember the id — you will `PATCH` the result back to it in Step 7. (A draft launched from an Upwork **search recommendation** already has these fields filled and `source:"search"` — same flow, no extra work.)
@@ -61,7 +61,7 @@ Save the result so it appears on the Upwork page. `screeningAnswers` is a JSON a
 - **Launched with an id** → `PATCH` the existing draft (status stays `draft`):
 
   ```bash
-  curl -fsS -X PATCH "$JOBPILOT_API/api/upwork/proposals/$ARG" \
+  curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/upwork/proposals/$ARG" \
     -H 'content-type: application/json' \
     -d '{ "proposalText": "...", "screeningAnswers": [] }'
   ```
@@ -69,7 +69,7 @@ Save the result so it appears on the Upwork page. `screeningAnswers` is a JSON a
 - **Launched with a raw job description** → `POST` a new row:
 
   ```bash
-  curl -fsS -X POST "$JOBPILOT_API/api/upwork/proposals" \
+  curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/proposals" \
     -H 'content-type: application/json' \
     -d '{ "jobTitle": "...", "clientName": "...", "jobUrl": "...", "jobDescription": "...", "proposalText": "...", "screeningAnswers": [] }'
   ```

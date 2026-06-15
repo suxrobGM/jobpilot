@@ -18,8 +18,8 @@ Search a single board (picked by the user when launching the campaign) and rank 
 3. Resolve the board:
 
    ```bash
-   JOBPILOT_API=http://localhost:8000
-   curl -fsS "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.data[] | select(.domain == $d)'
+   JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
+   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.[] | select(.domain == $d)'
    ```
 
    If no row matches, abort with: "Board `<domain>` is not configured. Add it on /boards or run again with a different `--board`." When a `--campaign` id was given, PATCH it to `failed` with `failReason:"Board <domain> not configured"` first.
@@ -42,7 +42,7 @@ Extract title/role, keywords, location, other preferences (e.g. "no startups", "
 URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
 COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
-curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
 If `data.applied`, tag with "Previously Applied" (note `data.match.kind`: `url` for exact, `fuzzy` with score for title+company). These are saved as `skipped` in Phase 5, not offered for apply.
@@ -56,7 +56,7 @@ For each non-applied result, score 0–100 based on: tech stack overlap, years v
 Save every result as a `Job` on `<campaign-id>` so it appears on the campaigns detail page. **Don't offer apply/search-again commands** — the user applies from there. Use a stable, shell-safe `key` per result (slug of `company-title` + rank, no spaces).
 
 ```bash
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<key>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<domain>" \
@@ -68,7 +68,7 @@ Previously-applied results (Phase 3) → save with `status:"skipped"`, `skipReas
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson found <total> --argjson qualified <pending_count> --arg t "$NOW" \
     '{status:"completed", completedAt:$t, summary:{totalFound:$found, qualified:$qualified}}')"

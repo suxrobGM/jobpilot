@@ -120,7 +120,14 @@ public sealed class SessionManager : IDisposable
             var env = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["JOBPILOT_SKILLS_ROOT"] = paths.SharedSkillsDir,
-                ["JOBPILOT_WORKSPACE_ROOT"] = workingDir
+                ["JOBPILOT_WORKSPACE_ROOT"] = workingDir,
+                // Backend base URL + the agent's bearer token (a revocable PAT minted
+                // via POST /api/auth/tokens). Sourced from the host env so the user
+                // configures the token once; the skills read them to call the API.
+                ["JOBPILOT_API"] =
+                    Environment.GetEnvironmentVariable("JOBPILOT_API") ?? "http://localhost:8002",
+                ["JOBPILOT_API_TOKEN"] =
+                    Environment.GetEnvironmentVariable("JOBPILOT_API_TOKEN") ?? ""
             };
 
             try
