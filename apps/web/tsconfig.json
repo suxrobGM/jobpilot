@@ -11,6 +11,11 @@
     "allowJs": true,
     "incremental": true,
     "strict": true,
+
+    // The path aliases below pull in API source (which uses tsyringe parameter
+    // decorators), so the web typecheck must accept experimental decorators too.
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,

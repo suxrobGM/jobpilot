@@ -48,6 +48,12 @@ export function LoginForm(): ReactElement {
           )}
         </form.AppField>
 
+        <Typography variant="body2Muted" sx={{ textAlign: "right", mt: -1 }}>
+          <Link component={NextLink} href="/forgot-password" color="primary">
+            Forgot password?
+          </Link>
+        </Typography>
+
         <form.AppForm>
           <form.SubmitButton disabled={login.isPending} fullWidth size="large">
             {login.isPending ? "Signing in…" : "Sign in"}

@@ -13,14 +13,21 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     fetch: { cache: "no-store" },
   }).api;
 
-  const { data, error } = await api.profile.get();
+  // One call yields both the verified flag and the profile (auth rides the cookie).
+  const { data, error } = await api.auth.me.get();
 
   // Not authenticated -> send to login.
-  if (error?.status === 401) {
+  if (error || data === null) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (data === null || isProfileEmpty(data.profile)) {
+  // Authenticated but unverified -> gate at verify-email until they confirm.
+  if (!data.user.emailVerified) {
+    return NextResponse.redirect(new URL("/verify-email", request.url));
+  }
+
+  // Verified but profile not filled in -> onboarding.
+  if (data.profile === null || isProfileEmpty(data.profile)) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 
@@ -28,5 +35,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|login|register|onboarding|favicon.ico|.*\\..*).*)"],
+  matcher: [
+    "/((?!api|_next|login|register|onboarding|verify-email|forgot-password|reset-password|favicon.ico|.*\\..*).*)",
+  ],
 };
