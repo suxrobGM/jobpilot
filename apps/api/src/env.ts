@@ -14,6 +14,14 @@ const EnvSchema = z.object({
   JWT_EXPIRY: z.string().default("15m"),
   REFRESH_TOKEN_EXPIRY: z.string().default("30d"),
 
+  // Master key (base64 of 32 random bytes) that wraps each user's data-encryption
+  // key. Encrypts stored secrets at rest (board logins, captcha keys, Gmail tokens).
+  // Generate with `openssl rand -base64 32`; in production source it from a secrets
+  // manager, never the DB. Rotating it only re-wraps DEKs, not the data.
+  SECRET_MASTER_KEY: z
+    .string()
+    .refine((v) => Buffer.from(v, "base64").length === 32, "must be base64 of 32 bytes"),
+
   // CSV of allowed browser origins for CORS (credentials mode — no wildcard).
   CORS_ORIGINS: z.string().default("http://localhost:8000"),
   // Public web origin, used for OAuth redirects back to the app.
@@ -27,9 +35,7 @@ const EnvSchema = z.object({
   // Google OAuth (Gmail). Optional so the app boots without email configured.
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_OAUTH_REDIRECT_URI: z
-    .string()
-    .default("http://localhost:8002/api/email/oauth/callback"),
+  GOOGLE_OAUTH_REDIRECT_URI: z.string().default("http://localhost:8002/api/email/oauth/callback"),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
