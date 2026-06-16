@@ -21,7 +21,7 @@ import { findResume, MAX_RESUME_BYTES } from "../resume.utils";
 export class ResumeFileService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async renderPdf(profileId: number, id: number): Promise<Response> {
+  async renderPdf(profileId: string, id: string): Promise<Response> {
     const resume = await findResume(this.prisma, profileId, id);
     const slug = slugifyForDownload(resume.label);
 
@@ -52,7 +52,7 @@ export class ResumeFileService {
     throw notFound("Resume has no data or source PDF");
   }
 
-  async getSource(profileId: number, id: number): Promise<Response> {
+  async getSource(profileId: string, id: string): Promise<Response> {
     const resume = await findResume(this.prisma, profileId, id);
     if (!resume.sourceFilename) {
       throw notFound("No source PDF uploaded");
@@ -70,10 +70,10 @@ export class ResumeFileService {
   }
 
   async uploadSource(
-    profileId: number,
-    id: number,
+    profileId: string,
+    id: string,
     file: File,
-  ): Promise<{ id: number; sourceFilename: string }> {
+  ): Promise<{ id: string; sourceFilename: string }> {
     const resume = await findResume(this.prisma, profileId, id);
 
     if (file.size > MAX_RESUME_BYTES) {
@@ -101,7 +101,7 @@ export class ResumeFileService {
     return { id, sourceFilename: filename };
   }
 
-  async deleteSource(profileId: number, id: number): Promise<{ id: number }> {
+  async deleteSource(profileId: string, id: string): Promise<{ id: string }> {
     const resume = await findResume(this.prisma, profileId, id);
 
     if (resume.sourceFilename) {

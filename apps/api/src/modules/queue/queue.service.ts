@@ -24,7 +24,7 @@ function serializeQueueEntry(row: Prisma.QueueEntryGetPayload<{}>): QueueEntryRo
 export class QueueService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  private findEntry(id: number, profileId: number) {
+  private findEntry(id: string, profileId: string) {
     return findOwned(
       (where) => this.prisma.queueEntry.findFirst({ where, select: { id: true } }),
       { id, profileId },
@@ -32,7 +32,7 @@ export class QueueService {
     );
   }
 
-  async list(profileId: number, status?: string): Promise<QueueEntryRow[]> {
+  async list(profileId: string, status?: string): Promise<QueueEntryRow[]> {
     const where: Prisma.QueueEntryWhereInput = { profileId };
     if (status) {
       where.status = status;
@@ -41,7 +41,7 @@ export class QueueService {
     return rows.map(serializeQueueEntry);
   }
 
-  async listPending(profileId: number): Promise<QueueEntryRow[]> {
+  async listPending(profileId: string): Promise<QueueEntryRow[]> {
     const rows = await this.prisma.queueEntry.findMany({
       where: { profileId, status: "pending" },
       orderBy: { createdAt: "asc" },
@@ -49,7 +49,7 @@ export class QueueService {
     return rows.map(serializeQueueEntry);
   }
 
-  async add(profileId: number, input: AddQueueEntry) {
+  async add(profileId: string, input: AddQueueEntry) {
     const created = await this.prisma.$transaction(
       input.urls.map((u) =>
         this.prisma.queueEntry.upsert({
@@ -63,7 +63,7 @@ export class QueueService {
     return { inserted: created.length, items: created.map(serializeQueueEntry) };
   }
 
-  async patch(profileId: number, id: number, input: PatchQueueEntry): Promise<QueueEntryRow> {
+  async patch(profileId: string, id: string, input: PatchQueueEntry): Promise<QueueEntryRow> {
     await this.findEntry(id, profileId);
     const updated = await this.prisma.queueEntry.update({
       where: { id },
@@ -75,7 +75,7 @@ export class QueueService {
     return serializeQueueEntry(updated);
   }
 
-  async remove(profileId: number, id: number) {
+  async remove(profileId: string, id: string) {
     await this.findEntry(id, profileId);
     await this.prisma.queueEntry.delete({ where: { id } });
     return { deleted: id };

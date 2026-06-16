@@ -22,7 +22,7 @@ type ResumeVariantPatch = z.infer<typeof resumeVariantPatchSchema>;
 export interface TailorVariantBody {
   label: string;
   jobUrl?: string | null;
-  applicationId?: number | null;
+  applicationId?: string | null;
   summary?: string;
   emphasizedTech?: string[];
   jobKeywords?: string[];
@@ -33,7 +33,7 @@ export interface TailorVariantBody {
 }
 
 interface TailoredVariantResult {
-  id: number;
+  id: string;
   pdfUrl: string;
   rewordedBullets: number;
   flags: string[];
@@ -43,7 +43,7 @@ interface TailoredVariantResult {
 export class ResumeVariantService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  private findVariant(profileId: number, id: number) {
+  private findVariant(profileId: string, id: string) {
     return findOwned(
       (where) =>
         this.prisma.resumeVariant.findFirst({
@@ -55,7 +55,7 @@ export class ResumeVariantService {
     );
   }
 
-  async listVariants(profileId: number, resumeId: number) {
+  async listVariants(profileId: string, resumeId: string) {
     await findOwned(
       (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),
       { id: resumeId, profileId },
@@ -79,10 +79,10 @@ export class ResumeVariantService {
   }
 
   async createVariant(
-    profileId: number,
-    resumeId: number,
+    profileId: string,
+    resumeId: string,
     body: ResumeVariantCreateInput,
-  ): Promise<{ id: number }> {
+  ): Promise<{ id: string }> {
     await findOwned(
       (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),
       { id: resumeId, profileId },
@@ -113,7 +113,7 @@ export class ResumeVariantService {
     return { id: variant.id };
   }
 
-  async getVariant(profileId: number, id: number) {
+  async getVariant(profileId: string, id: string) {
     const variant = await this.findVariant(profileId, id);
 
     return {
@@ -132,10 +132,10 @@ export class ResumeVariantService {
   }
 
   async updateVariant(
-    profileId: number,
-    id: number,
+    profileId: string,
+    id: string,
     body: ResumeVariantPatch,
-  ): Promise<{ id: number }> {
+  ): Promise<{ id: string }> {
     await this.findVariant(profileId, id);
 
     const updated = await this.prisma.resumeVariant.update({
@@ -151,13 +151,13 @@ export class ResumeVariantService {
     return { id: updated.id };
   }
 
-  async removeVariant(profileId: number, id: number): Promise<{ deleted: number }> {
+  async removeVariant(profileId: string, id: string): Promise<{ deleted: string }> {
     await this.findVariant(profileId, id);
     await this.prisma.resumeVariant.delete({ where: { id } });
     return { deleted: id };
   }
 
-  async renderVariantPdf(profileId: number, variantId: number): Promise<Response> {
+  async renderVariantPdf(profileId: string, variantId: string): Promise<Response> {
     const variant = await findOwned(
       (where) => this.prisma.resumeVariant.findFirst({ where }),
       { id: variantId, resume: { profileId } },
@@ -183,8 +183,8 @@ export class ResumeVariantService {
    * deterministic ranking against the base content.
    */
   async createTailoredVariant(
-    profileId: number,
-    resumeId: number,
+    profileId: string,
+    resumeId: string,
     body: TailorVariantBody,
   ): Promise<TailoredVariantResult> {
     const base = await findResume(this.prisma, profileId, resumeId);

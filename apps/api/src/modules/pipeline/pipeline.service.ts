@@ -19,8 +19,16 @@ export interface PipelineFilters {
 
 type ApplicationStageFilter = string | { notIn: string[] };
 
-function withCursor(cursor: number | null) {
-  return cursor ? { id: { lt: cursor } } : {};
+/**
+ * Keyset pagination anchor. UUID ids aren't ordered, so each query orders by a
+ * creation timestamp (with `id` as a deterministic tiebreaker) and anchors the
+ * next page on the previous page's last id via Prisma's cursor.
+ */
+function cursorPage(cursor: string | null) {
+  return {
+    cursor: cursor ? { id: cursor } : undefined,
+    skip: cursor ? 1 : undefined,
+  };
 }
 
 function startOfToday(): Date {
@@ -33,7 +41,7 @@ function emptyPage(stage: PipelineStage): PipelineColumnPage {
   return { stage, items: [], nextCursor: null, total: 0, todayCount: 0 };
 }
 
-function finalize<T extends { id: number }>(
+function finalize<T extends { id: string }>(
   stage: PipelineStage,
   items: T[],
   total: number,
@@ -57,9 +65,9 @@ export class PipelineService {
   constructor(private readonly prisma: PrismaClient) {}
 
   loadStage(
-    profileId: number,
+    profileId: string,
     stage: PipelineStage,
-    cursor: number | null,
+    cursor: string | null,
     limit: number,
     filters: PipelineFilters,
   ): Promise<PipelineColumnPage> {
@@ -76,8 +84,8 @@ export class PipelineService {
   }
 
   async loadQueued(
-    profileId: number,
-    cursor: number | null,
+    profileId: string,
+    cursor: string | null,
     limit: number,
     filters: PipelineFilters,
   ): Promise<PipelineColumnPage> {
@@ -96,9 +104,10 @@ export class PipelineService {
 
     const [items, total, todayCount] = await Promise.all([
       this.prisma.queueEntry.findMany({
-        where: { ...baseWhere, ...withCursor(cursor), ...searchWhere },
-        orderBy: { id: "desc" },
+        where: { ...baseWhere, ...searchWhere },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: limit + 1,
+        ...cursorPage(cursor),
       }),
       this.prisma.queueEntry.count({ where: baseWhere }),
       this.prisma.queueEntry.count({
@@ -110,8 +119,8 @@ export class PipelineService {
   }
 
   async loadApplying(
-    profileId: number,
-    cursor: number | null,
+    profileId: string,
+    cursor: string | null,
     limit: number,
     filters: PipelineFilters,
   ): Promise<PipelineColumnPage> {
@@ -129,9 +138,10 @@ export class PipelineService {
 
     const [items, total, todayCount] = await Promise.all([
       this.prisma.job.findMany({
-        where: { ...baseWhere, ...withCursor(cursor), ...searchWhere },
-        orderBy: { id: "desc" },
+        where: { ...baseWhere, ...searchWhere },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: limit + 1,
+        ...cursorPage(cursor),
       }),
       this.prisma.job.count({ where: baseWhere }),
       this.prisma.job.count({ where: { ...baseWhere, appliedAt: { gte: startOfToday() } } }),
@@ -141,8 +151,8 @@ export class PipelineService {
   }
 
   loadSubmitted(
-    profileId: number,
-    cursor: number | null,
+    profileId: string,
+    cursor: string | null,
     limit: number,
     filters: PipelineFilters,
   ): Promise<PipelineColumnPage> {
@@ -152,8 +162,8 @@ export class PipelineService {
   }
 
   loadInterviewing(
-    profileId: number,
-    cursor: number | null,
+    profileId: string,
+    cursor: string | null,
     limit: number,
     filters: PipelineFilters,
   ): Promise<PipelineColumnPage> {
@@ -168,10 +178,10 @@ export class PipelineService {
   }
 
   private async loadApplicationStage(
-    profileId: number,
+    profileId: string,
     stage: PipelineStage,
     stageFilter: ApplicationStageFilter,
-    cursor: number | null,
+    cursor: string | null,
     limit: number,
     filters: PipelineFilters,
     opts: { extraSearchFields?: "url"[] } = {},
@@ -196,9 +206,10 @@ export class PipelineService {
 
     const [items, total, todayCount] = await Promise.all([
       this.prisma.application.findMany({
-        where: { ...baseWhere, ...withCursor(cursor), ...searchWhere },
-        orderBy: { id: "desc" },
+        where: { ...baseWhere, ...searchWhere },
+        orderBy: [{ appliedAt: "desc" }, { id: "desc" }],
         take: limit + 1,
+        ...cursorPage(cursor),
       }),
       this.prisma.application.count({ where: baseWhere }),
       this.prisma.application.count({

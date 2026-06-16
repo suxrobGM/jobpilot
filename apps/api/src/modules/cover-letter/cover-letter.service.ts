@@ -25,7 +25,7 @@ export class CoverLetterService {
   constructor(private readonly prisma: PrismaClient) {}
 
   /** The active profile's cover letters, newest first (no body — list payload). */
-  async list(profileId: number) {
+  async list(profileId: string) {
     const rows = await this.prisma.coverLetter.findMany({
       where: { profileId },
       orderBy: { createdAt: "desc" },
@@ -38,7 +38,7 @@ export class CoverLetterService {
     }));
   }
 
-  create(profileId: number, data: CoverLetterCreate) {
+  create(profileId: string, data: CoverLetterCreate) {
     return this.prisma.coverLetter.create({
       data: {
         profileId,
@@ -51,7 +51,7 @@ export class CoverLetterService {
     });
   }
 
-  async get(profileId: number, id: number) {
+  async get(profileId: string, id: string) {
     const row = await findOwned(
       (where) => this.prisma.coverLetter.findFirst({ where }),
       { id, profileId },
@@ -64,7 +64,7 @@ export class CoverLetterService {
     };
   }
 
-  async remove(profileId: number, id: number): Promise<{ ok: true }> {
+  async remove(profileId: string, id: string): Promise<{ ok: true }> {
     await this.get(profileId, id);
     await this.prisma.coverLetter.delete({ where: { id } });
     return { ok: true };
@@ -81,7 +81,7 @@ export class CoverLetterService {
   }
 
   /** Render a saved cover letter to a PDF, viewable inline in a new tab. */
-  async renderSavedPdf(profileId: number, id: number): Promise<CoverLetterPdf> {
+  async renderSavedPdf(profileId: string, id: string): Promise<CoverLetterPdf> {
     const letter = await this.get(profileId, id);
     const buffer = await renderCoverLetterPdf(letter.content);
     const slug = slugifyForDownload(

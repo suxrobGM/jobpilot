@@ -49,7 +49,7 @@ export class CaptchaService {
    * Resolve a CAPTCHA via the profile's configured solving service (2captcha / CapSolver)
    * and return the token to inject. Throws 404 when no key is configured, 502 on solver failure.
    */
-  async solve(profileId: number, input: CaptchaSolveInput): Promise<CaptchaSolveResult> {
+  async solve(profileId: string, input: CaptchaSolveInput): Promise<CaptchaSolveResult> {
     const cred = await this.resolveServiceCredential(profileId, input.provider);
     if (!cred) {
       throw notFound(
@@ -64,7 +64,7 @@ export class CaptchaService {
   }
 
   private async resolveServiceCredential(
-    profileId: number,
+    profileId: string,
     provider?: ServiceProvider,
   ): Promise<{ provider: ServiceProvider; apiKey: string } | null> {
     const rows = await this.prisma.credential.findMany({

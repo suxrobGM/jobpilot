@@ -16,7 +16,7 @@ export class ContactService {
   constructor(private readonly prisma: PrismaClient) {}
 
   /** List the profile's contacts (newest first) for the networking page. */
-  async list(profileId: number) {
+  async list(profileId: string) {
     const rows = await this.prisma.contact.findMany({
       where: { profileId },
       orderBy: { createdAt: "desc" },

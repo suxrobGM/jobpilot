@@ -159,7 +159,7 @@ export interface FuzzyMatchInput {
 }
 
 export interface FuzzyMatchCandidate {
-  id: number;
+  id: string;
   url: string;
   title: string;
   company: string;

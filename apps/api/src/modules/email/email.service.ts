@@ -33,7 +33,7 @@ const CLASSIFICATION_TO_STAGE: Record<string, string> = {
 export class EmailService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listMessages(profileId: number, query: MessageQuery) {
+  async listMessages(profileId: string, query: MessageQuery) {
     const { reviewStatus, classification, since, domainHint, verificationDomain } = query;
 
     const where: Prisma.EmailMessageWhereInput = { account: { profileId } };
@@ -73,7 +73,7 @@ export class EmailService {
     return rows.map((row) => serializeMessage(row));
   }
 
-  async getMessage(profileId: number, id: number) {
+  async getMessage(profileId: string, id: string) {
     const row = await findOwned(
       (where) =>
         this.prisma.emailMessage.findFirst({
@@ -89,7 +89,7 @@ export class EmailService {
     return serializeMessage(row);
   }
 
-  async scanMessage(profileId: number, id: number, body: ScanMessageInput) {
+  async scanMessage(profileId: string, id: string, body: ScanMessageInput) {
     await findOwned(
       (where) => this.prisma.emailMessage.findFirst({ where, select: { id: true } }),
       { id, account: { profileId } },
@@ -120,7 +120,7 @@ export class EmailService {
     return message;
   }
 
-  async denyMessage(profileId: number, id: number) {
+  async denyMessage(profileId: string, id: string) {
     await findOwned(
       (where) => this.prisma.emailMessage.findFirst({ where, select: { id: true } }),
       { id, account: { profileId } },
@@ -137,7 +137,7 @@ export class EmailService {
     return { id, status: "denied" as const };
   }
 
-  async approveMessage(profileId: number, id: number, body: ApproveInput) {
+  async approveMessage(profileId: string, id: string, body: ApproveInput) {
     const message = await findOwned(
       (where) => this.prisma.emailMessage.findFirst({ where }),
       { id, account: { profileId } },

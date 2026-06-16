@@ -39,7 +39,7 @@ export interface AppliedCheckQuery {
 export class ApplicationService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async list(profileId: number, filters: AppliedListFilters) {
+  async list(profileId: string, filters: AppliedListFilters) {
     const { stage, board, source, search } = filters;
 
     const where: Prisma.ApplicationWhereInput = { profileId };
@@ -76,7 +76,7 @@ export class ApplicationService {
     }));
   }
 
-  async get(profileId: number, id: number) {
+  async get(profileId: string, id: string) {
     const row = await findOwned(
       (where) =>
         this.prisma.application.findFirst({
@@ -104,7 +104,7 @@ export class ApplicationService {
     };
   }
 
-  async remove(profileId: number, id: number) {
+  async remove(profileId: string, id: string) {
     await findOwned(
       (where) => this.prisma.application.findFirst({ where, select: { id: true } }),
       { id, profileId },
@@ -114,7 +114,7 @@ export class ApplicationService {
     return { deleted: id };
   }
 
-  async transitionStage(profileId: number, id: number, input: StageTransitionInput) {
+  async transitionStage(profileId: string, id: string, input: StageTransitionInput) {
     const existing = await findOwned(
       (where) => this.prisma.application.findFirst({ where }),
       { id, profileId },
@@ -150,7 +150,7 @@ export class ApplicationService {
     return { id, stage: toStage };
   }
 
-  async check(profileId: number, query: AppliedCheckQuery) {
+  async check(profileId: string, query: AppliedCheckQuery) {
     const targetUrl = query.url;
     const title = query.title;
     const company = query.company;

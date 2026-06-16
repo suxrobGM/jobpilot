@@ -39,7 +39,7 @@ const PROFILE_SCALAR_SELECT = {
 export class ProfileService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(profileId: number) {
+  async get(profileId: string) {
     const profile = await findOwned(
       (where) => this.prisma.profile.findFirst({ where, select: PROFILE_SCALAR_SELECT }),
       { id: profileId },
@@ -109,7 +109,7 @@ export class ProfileService {
     };
   }
 
-  async update(profileId: number, body: ProfileWithAutoApplyInput) {
+  async update(profileId: string, body: ProfileWithAutoApplyInput) {
     const { autoApply, preferredLocations, primaryResumeId, references, ...profileFields } = body;
     const preferredLocationsJson = JSON.stringify(preferredLocations);
 
@@ -150,7 +150,7 @@ export class ProfileService {
   }
 
   /** Point the profile at one of its own resumes (or clear it with `null`). */
-  async setPrimaryResume(profileId: number, resumeId: number | null) {
+  async setPrimaryResume(profileId: string, resumeId: string | null) {
     if (resumeId !== null) {
       await findOwned(
         (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),

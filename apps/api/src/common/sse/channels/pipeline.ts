@@ -13,7 +13,7 @@ export type PipelineEvent =
  * Profile-scoped feed for cross-campaign UI (kanban, auto-apply pill). The client
  * URL is parameter-free; the server resolves the profile from the session.
  */
-export const pipelineChannel = defineChannel<PipelineEvent, void, { profileId: number }>({
+export const pipelineChannel = defineChannel<PipelineEvent, void, { profileId: string }>({
   name: "pipeline",
   url: () => "/api/pipeline/events",
   topic: ({ profileId }) => String(profileId),

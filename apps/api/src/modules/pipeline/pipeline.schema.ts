@@ -5,7 +5,7 @@ const filter = z.string().trim().min(1).nullish().catch(null);
 
 export const pipelineQuery = z.object({
   stage: z.enum(PIPELINE_STAGES),
-  cursor: z.coerce.number().int().positive().nullish().catch(null),
+  cursor: z.string().min(1).nullish().catch(null),
   limit: z.coerce
     .number()
     .int()

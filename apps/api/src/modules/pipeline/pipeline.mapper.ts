@@ -16,7 +16,7 @@ export interface PipelineJobDto {
   stageSummary: string | null;
   url: string;
   campaignId: string | null;
-  applicationId: number | null;
+  applicationId: string | null;
 }
 
 export interface PipelineColumnPage {

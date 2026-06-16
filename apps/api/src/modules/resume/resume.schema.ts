@@ -14,7 +14,7 @@ export const updateResumeSchema = z.object({
 export const tailorResumeSchema = z.object({
   label: z.string().min(1),
   jobUrl: z.url().optional().nullable(),
-  applicationId: z.number().int().positive().optional().nullable(),
+  applicationId: z.uuid().optional().nullable(),
   summary: z.string().optional(),
   emphasizedTech: z.array(z.string()).optional(),
   jobKeywords: z.array(z.string()).optional(),

@@ -5,7 +5,7 @@ export const campaignJobParams = z.object({ id: z.string(), key: z.string() });
 
 export const outreachMessageParams = z.object({
   id: z.string(),
-  messageId: z.coerce.number().int().positive(),
+  messageId: z.uuid(),
 });
 
 export const campaignsQuery = z.object({

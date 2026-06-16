@@ -135,7 +135,7 @@ export class AuthService {
     });
   }
 
-  async revokeApiToken(userId: string, id: number): Promise<{ ok: true }> {
+  async revokeApiToken(userId: string, id: string): Promise<{ ok: true }> {
     const token = await this.prisma.apiToken.findFirst({ where: { id, userId } });
     if (!token) {
       throw notFound("Token not found");

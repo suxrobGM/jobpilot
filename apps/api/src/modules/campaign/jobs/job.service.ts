@@ -18,7 +18,7 @@ import { ensureCampaignOwned } from "../campaign.utils";
 export class CampaignJobService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listJobs(profileId: number, campaignId: string) {
+  async listJobs(profileId: string, campaignId: string) {
     const jobs = await this.prisma.job.findMany({
       where: { campaignId, campaign: { profileId } },
       orderBy: { id: "asc" },
@@ -26,7 +26,7 @@ export class CampaignJobService {
     return jobs.map(toCampaignJobRow);
   }
 
-  async addJob(profileId: number, campaignId: string, body: AddCampaignJobInput) {
+  async addJob(profileId: string, campaignId: string, body: AddCampaignJobInput) {
     await ensureCampaignOwned(this.prisma, profileId, campaignId);
 
     const job = await this.prisma.job.create({
@@ -74,7 +74,7 @@ export class CampaignJobService {
     return toCampaignJobRow(job);
   }
 
-  async patchJob(profileId: number, campaignId: string, key: string, patch: PatchCampaignJobInput) {
+  async patchJob(profileId: string, campaignId: string, key: string, patch: PatchCampaignJobInput) {
     await findOwned(
       (where) => this.prisma.job.findFirst({ where, select: { campaignId: true } }),
       { campaignId, key, campaign: { profileId } },
@@ -133,7 +133,7 @@ export class CampaignJobService {
    * recomputes Campaign.summary from the post-update Job aggregates.
    */
   async recordJobResult(
-    profileId: number,
+    profileId: string,
     campaignId: string,
     key: string,
     data: CampaignJobResultInput,

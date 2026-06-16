@@ -32,7 +32,7 @@ export class CampaignService {
    * threshold to `interrupted`, and revert their `applying` jobs to `approved`
    * so `/resume <campaignId>` can pick them up. Emits SSE per campaign.
    */
-  private async reconcileStaleCampaigns(profileId: number): Promise<number> {
+  private async reconcileStaleCampaigns(profileId: string): Promise<number> {
     const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
 
     const stale = await this.prisma.campaign.findMany({
@@ -82,7 +82,7 @@ export class CampaignService {
 
   // ── Campaign list / create ───────────────────────────────────────────────────
 
-  async list(profileId: number, query: { status?: string; source?: string }) {
+  async list(profileId: string, query: { status?: string; source?: string }) {
     await this.reconcileStaleCampaigns(profileId);
 
     const where: Prisma.CampaignWhereInput = { profileId };
@@ -110,7 +110,7 @@ export class CampaignService {
     );
   }
 
-  async create(profileId: number, body: CreateCampaignInput) {
+  async create(profileId: string, body: CreateCampaignInput) {
     const campaign = await this.prisma.campaign.create({
       data: {
         campaignId: body.campaignId,
@@ -139,7 +139,7 @@ export class CampaignService {
 
   // ── Single campaign get / patch / delete ─────────────────────────────────────
 
-  async get(profileId: number, id: string) {
+  async get(profileId: string, id: string) {
     await this.reconcileStaleCampaigns(profileId);
 
     const campaign = await findOwned(
@@ -183,7 +183,7 @@ export class CampaignService {
     };
   }
 
-  async update(profileId: number, id: string, body: UpdateCampaignInput) {
+  async update(profileId: string, id: string, body: UpdateCampaignInput) {
     const existing = await findOwned(
       (where) => this.prisma.campaign.findFirst({ where }),
       { campaignId: id, profileId },
@@ -255,7 +255,7 @@ export class CampaignService {
    * they (and campaign-only contacts) are deleted explicitly inside a transaction
    * before the campaign row. Synced EmailMessages are kept (matchedAppId SetNull).
    */
-  async remove(profileId: number, id: string) {
+  async remove(profileId: string, id: string) {
     await findOwned(
       (where) => this.prisma.campaign.findFirst({ where }),
       { campaignId: id, profileId },
@@ -291,11 +291,11 @@ export class CampaignService {
   // ── Campaign events (SSE record) ─────────────────────────────────────────────
 
   /** Ownership check used before subscribing to a campaign's SSE feed. */
-  ensureCampaignOwned(profileId: number, campaignId: string): Promise<void> {
+  ensureCampaignOwned(profileId: string, campaignId: string): Promise<void> {
     return ensureCampaignOwned(this.prisma, profileId, campaignId);
   }
 
-  async recordCampaignEvent(profileId: number, campaignId: string, event: CampaignEventInput) {
+  async recordCampaignEvent(profileId: string, campaignId: string, event: CampaignEventInput) {
     await this.ensureCampaignOwned(profileId, campaignId);
 
     const created = await this.prisma.campaignEvent.create({

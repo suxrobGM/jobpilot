@@ -27,15 +27,15 @@ export function resumePath(filename: string): string {
   return path.join(RESUMES_DIR, filename);
 }
 
-export function generatedResumePath(id: number, updatedAtMs: number): string {
+export function generatedResumePath(id: string, updatedAtMs: number): string {
   return path.join(GENERATED_DIR, `master-${id}-${updatedAtMs}.pdf`);
 }
 
-export function generatedVariantPath(variantId: number, createdAtMs: number): string {
+export function generatedVariantPath(variantId: string, createdAtMs: number): string {
   return path.join(GENERATED_DIR, `variant-${variantId}-${createdAtMs}.pdf`);
 }
 
-export function resumeBackupPath(resumeId: number, updatedAtMs: number): string {
+export function resumeBackupPath(resumeId: string, updatedAtMs: number): string {
   return path.join(BACKUPS_DIR, `resume-${resumeId}-${updatedAtMs}.json`);
 }
 
@@ -74,22 +74,22 @@ async function unlinkMatching(dir: string, prefix: string, suffix: string): Prom
   );
 }
 
-export function deleteResumeBackups(resumeId: number): Promise<void> {
+export function deleteResumeBackups(resumeId: string): Promise<void> {
   return unlinkMatching(BACKUPS_DIR, `resume-${resumeId}-`, ".json");
 }
 
-export function deleteGeneratedResumeFiles(resumeId: number): Promise<void> {
+export function deleteGeneratedResumeFiles(resumeId: string): Promise<void> {
   return unlinkMatching(GENERATED_DIR, `master-${resumeId}-`, ".pdf");
 }
 
-export function deleteGeneratedVariantFiles(variantId: number): Promise<void> {
+export function deleteGeneratedVariantFiles(variantId: string): Promise<void> {
   return unlinkMatching(GENERATED_DIR, `variant-${variantId}-`, ".pdf");
 }
 
 interface ResumeArtifactRefs {
-  resumeId: number;
+  resumeId: string;
   sourceFilename: string | null;
-  variantIds: number[];
+  variantIds: string[];
 }
 
 export async function deleteAllResumeArtifacts(refs: ResumeArtifactRefs): Promise<void> {

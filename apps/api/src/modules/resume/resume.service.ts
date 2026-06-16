@@ -20,7 +20,7 @@ import { findResume, MAX_RESUME_BYTES } from "./resume.utils";
 export class ResumeService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async list(profileId: number) {
+  async list(profileId: string) {
     const profile = await this.prisma.profile.findUnique({
       where: { id: profileId },
       select: { primaryResumeId: true },
@@ -48,9 +48,9 @@ export class ResumeService {
 
   /** Create a structured resume from a JSON body. */
   async createJson(
-    profileId: number,
+    profileId: string,
     input: { label: string; content?: ResumeData },
-  ): Promise<{ id: number }> {
+  ): Promise<{ id: string }> {
     const resume = await this.prisma.resume.create({
       data: {
         profileId,
@@ -63,10 +63,10 @@ export class ResumeService {
 
   /** Create a resume from an uploaded source file (multipart). */
   async createFromUpload(
-    profileId: number,
+    profileId: string,
     file: File,
     labelRaw?: string,
-  ): Promise<{ id: number }> {
+  ): Promise<{ id: string }> {
     if (file.size > MAX_RESUME_BYTES) {
       throw badRequest("Resume must be 5 MB or less");
     }
@@ -102,7 +102,7 @@ export class ResumeService {
     return { id: resume.id };
   }
 
-  async get(profileId: number, id: number) {
+  async get(profileId: string, id: string) {
     const profile = await this.prisma.profile.findUnique({
       where: { id: profileId },
       select: { primaryResumeId: true },
@@ -139,10 +139,10 @@ export class ResumeService {
   }
 
   async update(
-    profileId: number,
-    id: number,
+    profileId: string,
+    id: string,
     body: { label?: string; content?: ResumeData },
-  ): Promise<{ id: number; version: number }> {
+  ): Promise<{ id: string; version: number }> {
     if (body.label === undefined && body.content === undefined) {
       throw badRequest("label or content required");
     }
@@ -179,7 +179,7 @@ export class ResumeService {
     return { id: updated.id, version: updated.version };
   }
 
-  async remove(profileId: number, id: number): Promise<{ deleted: number }> {
+  async remove(profileId: string, id: string): Promise<{ deleted: string }> {
     const existing = await findOwned(
       (where) =>
         this.prisma.resume.findFirst({
@@ -210,7 +210,7 @@ export class ResumeService {
   }
 
   /** Ownership assertion for the SSE events subscription. */
-  async assertResumeOwned(profileId: number, id: number): Promise<void> {
+  async assertResumeOwned(profileId: string, id: string): Promise<void> {
     await findOwned(
       (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),
       { id, profileId },

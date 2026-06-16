@@ -18,7 +18,7 @@ export class CampaignOutreachService {
   constructor(private readonly prisma: PrismaClient) {}
 
   /** List the campaign's outreach messages (with their contacts) for the board. */
-  async listOutreach(profileId: number, campaignId: string) {
+  async listOutreach(profileId: string, campaignId: string) {
     const messages = await this.prisma.outreachMessage.findMany({
       where: { campaignId, profileId },
       include: { contact: true },
@@ -31,7 +31,7 @@ export class CampaignOutreachService {
    * Add a discovered contact (or attach to an existing `contactId`) plus an
    * initial draft message to the campaign, then recompute the campaign summary.
    */
-  async addOutreach(profileId: number, campaignId: string, body: AddCampaignOutreachInput) {
+  async addOutreach(profileId: string, campaignId: string, body: AddCampaignOutreachInput) {
     await ensureCampaignOwned(this.prisma, profileId, campaignId);
 
     const { contact, contactId, message } = body;
@@ -87,9 +87,9 @@ export class CampaignOutreachService {
    * connection state. Terminal outcomes go through `recordOutreachResult`.
    */
   async patchOutreach(
-    profileId: number,
+    profileId: string,
     campaignId: string,
-    messageId: number,
+    messageId: string,
     body: PatchOutreachMessageInput,
   ) {
     await findOwned(
@@ -140,9 +140,9 @@ export class CampaignOutreachService {
    * the campaign summary. Mirrors campaigns/[id]/jobs/[key]/result.
    */
   async recordOutreachResult(
-    profileId: number,
+    profileId: string,
     campaignId: string,
-    messageId: number,
+    messageId: string,
     data: OutreachMessageResultInput,
   ) {
     const existing = await findOwned(

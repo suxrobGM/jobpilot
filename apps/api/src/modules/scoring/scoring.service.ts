@@ -18,7 +18,7 @@ export class ScoringService {
    * Loads the profile's primary resume, derives fit inputs from it, merges any
    * caller-provided profile overrides, and scores the job digest.
    */
-  async scoreJobFit(profileId: number, { digest, profile }: ScoreJobFitInput): Promise<FitResult> {
+  async scoreJobFit(profileId: string, { digest, profile }: ScoreJobFitInput): Promise<FitResult> {
     const found = await this.prisma.profile.findUnique({
       where: { id: profileId },
       select: { primaryResumeId: true },

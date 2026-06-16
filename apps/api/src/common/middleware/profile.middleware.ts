@@ -11,7 +11,7 @@ import { resolveAuthUser } from "./auth.middleware";
  */
 export const profileGuard = new Elysia({ name: "profile-guard" }).derive(
   { as: "scoped" },
-  async ({ headers, cookie }): Promise<{ user: AuthUser; profileId: number }> => {
+  async ({ headers, cookie }): Promise<{ user: AuthUser; profileId: string }> => {
     const user = await resolveAuthUser({ headers, cookie });
     if (!user) {
       throw unauthorized("Missing authorization");

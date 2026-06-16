@@ -47,7 +47,7 @@ function bucketPerDay(dates: Date[], start: Date) {
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async stats(profileId: number) {
+  async stats(profileId: string) {
     const weekStart = startOfWeek();
     const timelineStart = startOfTimeline();
 
