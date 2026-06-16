@@ -1,20 +1,14 @@
 import type {
-  PortfolioProject,
-  ScreeningAnswer,
   UpdateUpworkProfileInput,
   UpworkClient,
-  UpworkProfileStatus,
   UpworkProposalInput,
-  UpworkProposalOutcome,
   UpworkProposalPatch,
-  UpworkProposalSource,
-  UpworkProposalStatus,
   UpworkQualityResult,
 } from "@jobpilot/contracts/upwork";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
-import { PrismaClient, type Prisma, type UpworkProfile } from "@/generated/prisma/client";
-import { scoreUpworkClient } from "@/modules/scoring/upwork-quality";
+import { PrismaClient, type Prisma } from "@/generated/prisma/client";
+import { scoreUpworkClient } from "./upwork-quality";
 import { decodeUpworkProposal, toUpworkProfileDto } from "./upwork.mapper";
 
 /** Plain column writes — shared by upsert's create and update (no Prisma field-op wrappers). */
