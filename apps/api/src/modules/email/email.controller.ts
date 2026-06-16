@@ -8,10 +8,14 @@ import { profileGuard } from "@/common/middleware";
 import { sseResponse, subscribe } from "@/common/sse";
 import { inboxChannel } from "@/common/sse/channels/inbox";
 import { env } from "@/env";
+import { EmailAccountService } from "./account/account.service";
 import { callbackQuery, messagesQuery, startQuery } from "./email.schema";
 import { EmailService } from "./email.service";
+import { EmailSyncService } from "./sync/sync.service";
 
 const svc = container.resolve(EmailService);
+const account = container.resolve(EmailAccountService);
+const sync = container.resolve(EmailSyncService);
 
 const OAUTH_COOKIE_PATH = "/api/email/oauth";
 
@@ -21,14 +25,14 @@ export const emailController = new Elysia({
 })
   .use(profileGuard)
   // --- Account ---------------------------------------------------------------
-  .get("/account", ({ profileId }) => svc.accountStatus(profileId), {
+  .get("/account", ({ profileId }) => account.accountStatus(profileId), {
     detail: {
       summary: "Get mailbox account status",
       description:
         "Returns the connection status of the profile's linked email account, including provider, email address, last sync time, and whether it can send.",
     },
   })
-  .delete("/account", ({ profileId }) => svc.disconnectAccount(profileId), {
+  .delete("/account", ({ profileId }) => account.disconnectAccount(profileId), {
     detail: {
       summary: "Disconnect mailbox account",
       description:
@@ -87,7 +91,7 @@ export const emailController = new Elysia({
     },
   })
   // --- Send / Sync -----------------------------------------------------------
-  .post("/send", ({ profileId, body }) => svc.send(profileId, body), {
+  .post("/send", ({ profileId, body }) => account.send(profileId, body), {
     body: sendEmailSchema,
     detail: {
       summary: "Send outbound email",
@@ -95,7 +99,7 @@ export const emailController = new Elysia({
         "Sends an email from the profile's connected mailbox (refreshing the token first), and returns the provider send result or errors when no account is connected or the mailbox lacks send access.",
     },
   })
-  .post("/sync", ({ profileId }) => svc.syncInbox(profileId), {
+  .post("/sync", ({ profileId }) => sync.syncInbox(profileId), {
     detail: {
       summary: "Sync inbox messages",
       description:
@@ -115,7 +119,7 @@ export const emailController = new Elysia({
     "/oauth/start",
     ({ query, cookie, redirect }) => {
       const providerName = query.provider ?? "gmail";
-      const { authorizeUrl, state } = svc.buildAuthorizeUrl(providerName);
+      const { authorizeUrl, state } = account.buildAuthorizeUrl(providerName);
 
       cookie.email_oauth_state!.set({
         value: state,
@@ -162,7 +166,7 @@ export const emailController = new Elysia({
         throw badRequest("OAuth state mismatch");
       }
 
-      await svc.completeEmailOAuth({ providerName, code: query.code, profileId });
+      await account.completeEmailOAuth({ providerName, code: query.code, profileId });
 
       cookie.email_oauth_state!.set({ value: "", path: OAUTH_COOKIE_PATH, maxAge: 0 });
       cookie.email_oauth_provider!.set({ value: "", path: OAUTH_COOKIE_PATH, maxAge: 0 });

@@ -1,29 +1,17 @@
 import {
-  addCampaignJobSchema,
   campaignEventSchema,
-  campaignJobResultSchema,
   createCampaignSchema,
-  patchCampaignJobSchema,
   updateCampaignSchema,
 } from "@jobpilot/contracts/campaign";
-import {
-  addCampaignOutreachSchema,
-  outreachMessageResultSchema,
-  patchOutreachMessageSchema,
-} from "@jobpilot/contracts/outreach";
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { sseResponse, subscribe } from "@/common/sse";
 import { campaignChannel } from "@/common/sse/channels/campaign";
-import {
-  campaignJobParams,
-  campaignParams,
-  campaignsQuery,
-  outreachMessageParams,
-} from "./campaign.schema";
+import { campaignParams, campaignsQuery } from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
+import { campaignJobController } from "./jobs/job.controller";
+import { campaignOutreachController } from "./outreach/outreach.controller";
 
 const svc = container.resolve(CampaignService);
 
@@ -103,96 +91,6 @@ export const campaignController = new Elysia({
       },
     },
   )
-  // ── Jobs ──────────────────────────────────────────────────────────────────
-  .get("/:id/jobs", ({ profileId, params }) => svc.listJobs(profileId, params.id), {
-    params: campaignParams,
-    detail: {
-      summary: "List campaign jobs",
-      description: "Returns all queued jobs for the owned campaign, ordered by creation.",
-    },
-  })
-  .post("/:id/jobs", ({ profileId, params, body }) => svc.addJob(profileId, params.id, body), {
-    params: campaignParams,
-    body: addCampaignJobSchema,
-    detail: {
-      summary: "Add campaign job",
-      description:
-        "Adds a discovered job to the campaign, consumes its matching pending queue entry, emits SSE updates, and returns the created job.",
-    },
-  })
-  .patch(
-    "/:id/jobs/:key",
-    ({ profileId, params, body }) => svc.patchJob(profileId, params.id, params.key, body),
-    {
-      params: campaignJobParams,
-      body: patchCampaignJobSchema,
-      detail: {
-        summary: "Update campaign job",
-        description:
-          "Applies a non-terminal update to a campaign job (e.g. status, match data, notes), recomputes the summary on status changes, emits SSE updates, and returns the updated job.",
-      },
-    },
-  )
-  .post(
-    "/:id/jobs/:key/result",
-    ({ profileId, params, body }) => svc.recordJobResult(profileId, params.id, params.key, body),
-    {
-      params: campaignJobParams,
-      body: campaignJobResultSchema,
-      detail: {
-        summary: "Record campaign job result",
-        description:
-          "Records a job's terminal outcome (applied/failed/skipped), upserts the Application row when applied, marks the queue entry, recomputes the summary, and returns the job, application, and summary.",
-      },
-    },
-  )
-  // ── Outreach ────────────────────────────────────────────────────────────────
-  .get("/:id/outreach", ({ profileId, params }) => svc.listOutreach(profileId, params.id), {
-    params: campaignParams,
-    detail: {
-      summary: "List outreach messages",
-      description:
-        "Returns the campaign's outreach messages with their contacts, ordered by creation.",
-    },
-  })
-  .post(
-    "/:id/outreach",
-    ({ profileId, params, body }) => svc.addOutreach(profileId, params.id, body),
-    {
-      params: campaignParams,
-      body: addCampaignOutreachSchema,
-      detail: {
-        summary: "Add outreach message",
-        description:
-          "Adds a contact (new or existing) and an initial draft outreach message to the campaign, recomputes the outreach summary, emits an SSE update, and returns the created message.",
-      },
-    },
-  )
-  .patch(
-    "/:id/outreach/:messageId",
-    ({ profileId, params, body }) =>
-      svc.patchOutreach(profileId, params.id, params.messageId, body),
-    {
-      params: outreachMessageParams,
-      body: patchOutreachMessageSchema,
-      detail: {
-        summary: "Update outreach message",
-        description:
-          "Applies a non-terminal edit to an outreach message (draft body/subject, draft-to-approved, or the contact's LinkedIn connection state), recomputes the summary on status changes, and returns the updated message.",
-      },
-    },
-  )
-  .post(
-    "/:id/outreach/:messageId/result",
-    ({ profileId, params, body }) =>
-      svc.recordOutreachResult(profileId, params.id, params.messageId, body),
-    {
-      params: outreachMessageParams,
-      body: outreachMessageResultSchema,
-      detail: {
-        summary: "Record outreach message result",
-        description:
-          "Records an outreach message's terminal outcome (sent/failed/skipped), stamps the send time and Gmail provider/thread ids, recomputes the summary, and returns the message and summary.",
-      },
-    },
-  );
+  // ── Sub-domain controllers (jobs, outreach) ───────────────────────────────────
+  .use(campaignJobController)
+  .use(campaignOutreachController);

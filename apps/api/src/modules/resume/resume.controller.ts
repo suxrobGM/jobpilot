@@ -1,30 +1,16 @@
-import { resumeVariantCreateSchema, resumeVariantPatchSchema } from "@jobpilot/contracts/resume";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { badRequest } from "@/common/errors";
 import { profileGuard } from "@/common/middleware";
 import { sseResponse, subscribe } from "@/common/sse";
 import { resumeChannel } from "@/common/sse/channels/resume";
-import { createResumeSchema, tailorResumeSchema, updateResumeSchema } from "./resume.schema";
+import { resumeFileController } from "./files/file.controller";
+import { createResumeSchema, updateResumeSchema } from "./resume.schema";
 import { ResumeService } from "./resume.service";
+import { readUpload } from "./resume.upload";
+import { resumeVariantController } from "./variants/variant.controller";
 
 const svc = container.resolve(ResumeService);
-
-/** Pull a single `File` (and optional string field) out of a multipart request. */
-async function readUpload(
-  request: Request,
-  field = "file",
-  textField?: string,
-): Promise<{ file: File; text?: string }> {
-  const form = await request.formData();
-  const file = form.get(field);
-  if (!(file instanceof File)) {
-    throw badRequest(`${field} field is required`);
-  }
-  const text = textField ? form.get(textField) : null;
-  return { file, text: typeof text === "string" ? text : undefined };
-}
 
 export const resumeController = new Elysia({
   prefix: "/resumes",
@@ -89,56 +75,6 @@ export const resumeController = new Elysia({
         "Deletes a master resume along with its variants and all on-disk artifacts, clears the primary pointer if set, and returns the deleted id.",
     },
   })
-  // master resume PDF (cached, binary)
-  .get("/:id/pdf", ({ profileId, params }) => svc.renderPdf(profileId, params.id), {
-    params: idParam,
-    detail: {
-      summary: "Render resume PDF",
-      description:
-        "Streams the master resume as a cached PDF, rendering from structured content when present or falling back to the uploaded source file.",
-    },
-  })
-  // variant PDF (cached, binary)
-  .get("/variants/:id/pdf", ({ profileId, params }) => svc.renderVariantPdf(profileId, params.id), {
-    params: idParam,
-    detail: {
-      summary: "Render variant PDF",
-      description:
-        "Streams a tailored resume variant as a cached PDF, rendering it from the variant's structured content on first request.",
-    },
-  })
-  // source file: stream / replace (multipart) / delete
-  .get("/:id/source", ({ profileId, params }) => svc.getSource(profileId, params.id), {
-    params: idParam,
-    detail: {
-      summary: "Stream resume source file",
-      description:
-        "Streams the resume's uploaded source file inline with its stored MIME type, or returns 404 when no source file exists.",
-    },
-  })
-  .post(
-    "/:id/source",
-    async ({ profileId, params, request }) => {
-      const { file } = await readUpload(request, "file");
-      return svc.uploadSource(profileId, params.id, file);
-    },
-    {
-      params: idParam,
-      detail: {
-        summary: "Replace resume source file",
-        description:
-          "Replaces the resume's source file with a multipart upload, deleting the previous file, and returns the id and new stored filename.",
-      },
-    },
-  )
-  .delete("/:id/source", ({ profileId, params }) => svc.deleteSource(profileId, params.id), {
-    params: idParam,
-    detail: {
-      summary: "Delete resume source file",
-      description:
-        "Removes the resume's uploaded source file from disk, clears its source metadata, and returns the resume id.",
-    },
-  })
   // resume content-change SSE stream
   .get(
     "/:id/events",
@@ -155,69 +91,6 @@ export const resumeController = new Elysia({
       },
     },
   )
-  // variants for a resume: list / create
-  .get("/:id/variants", ({ profileId, params }) => svc.listVariants(profileId, params.id), {
-    params: idParam,
-    detail: {
-      summary: "List resume variants",
-      description:
-        "Returns all tailored variants belonging to the given master resume, ordered by most recently updated.",
-    },
-  })
-  .post(
-    "/:id/variants",
-    ({ profileId, params, body }) => svc.createVariant(profileId, params.id, body),
-    {
-      params: idParam,
-      body: resumeVariantCreateSchema,
-      detail: {
-        summary: "Create resume variant",
-        description:
-          "Creates a tailored variant under the given master resume from explicit structured content and returns the new variant's id.",
-      },
-    },
-  )
-  // deterministic tailored variant from model hints
-  .post(
-    "/:id/tailor",
-    ({ profileId, params, body }) => svc.createTailoredVariant(profileId, params.id, body),
-    {
-      params: idParam,
-      body: tailorResumeSchema,
-      detail: {
-        summary: "Create tailored variant",
-        description:
-          "Deterministically tailors the master resume from model-authored hints (summary, emphasized tech, validated bullet rewrites) and returns the new variant's id, PDF URL, reworded bullet count, and flags.",
-      },
-    },
-  )
-  // single variant CRUD
-  .get("/variants/:id", ({ profileId, params }) => svc.getVariant(profileId, params.id), {
-    params: idParam,
-    detail: {
-      summary: "Get resume variant",
-      description:
-        "Returns a single tailored variant owned by the active profile, including its parsed content, diff notes, and rewrite audit.",
-    },
-  })
-  .patch(
-    "/variants/:id",
-    ({ profileId, params, body }) => svc.updateVariant(profileId, params.id, body),
-    {
-      params: idParam,
-      body: resumeVariantPatchSchema,
-      detail: {
-        summary: "Update resume variant",
-        description:
-          "Partially updates a tailored variant's label, job URL, application link, content, or diff notes and returns the variant id.",
-      },
-    },
-  )
-  .delete("/variants/:id", ({ profileId, params }) => svc.removeVariant(profileId, params.id), {
-    params: idParam,
-    detail: {
-      summary: "Delete resume variant",
-      description:
-        "Deletes a tailored variant owned by the active profile and returns the deleted variant id.",
-    },
-  });
+  // ── Sub-domain controllers (source files + master PDF, variants + tailoring) ───
+  .use(resumeFileController)
+  .use(resumeVariantController);
