@@ -2,7 +2,7 @@ import "server-only";
 import { createApiClient } from "@jobpilot/api-client";
 import { cookies } from "next/headers";
 
-const API_BASE = process.env.API_PROXY_TARGET ?? "http://localhost:8002";
+const API_BASE = process.env.API_URL ?? "http://localhost:8002";
 
 /**
  * Per-request Eden Treaty client for RSC pages and route handlers. Forwards the

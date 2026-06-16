@@ -13,7 +13,7 @@ import { createApiClient } from "@jobpilot/api-client";
  */
 const baseUrl =
   typeof window === "undefined"
-    ? (process.env.API_PROXY_TARGET ?? "http://localhost:8002")
+    ? (process.env.API_URL ?? "http://localhost:8002")
     : window.location.origin;
 
 export const api = createApiClient(baseUrl, { fetch: { credentials: "include" } }).api;

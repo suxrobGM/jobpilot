@@ -2,7 +2,7 @@ import { createApiClient } from "@jobpilot/api-client";
 import { NextResponse, type NextRequest } from "next/server";
 import { isProfileEmpty } from "@/utils/profile";
 
-const API_BASE = process.env.API_PROXY_TARGET ?? "http://localhost:8002";
+const API_BASE = process.env.API_URL ?? "http://localhost:8002";
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Per-request Eden client that forwards the incoming auth cookie (middleware

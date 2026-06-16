@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const API_PROXY_TARGET = process.env.API_PROXY_TARGET ?? "http://localhost:8002";
+const API_URL = process.env.API_URL ?? "http://localhost:8002";
 
 const config: NextConfig = {
   output: "standalone",
@@ -21,7 +21,7 @@ const config: NextConfig = {
   // /api/* on :8000; Next forwards to the Elysia backend. Keeps cookies
   // first-party and avoids cross-origin CORS in dev.
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${API_PROXY_TARGET}/api/:path*` }];
+    return [{ source: "/api/:path*", destination: `${API_URL}/api/:path*` }];
   },
 };
 
