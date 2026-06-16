@@ -11,7 +11,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
 
   JWT_SECRET: z.string().min(1),
-  JWT_EXPIRY: z.string().default("15m"),
+  JWT_EXPIRY: z.string().default("1d"),
   REFRESH_TOKEN_EXPIRY: z.string().default("30d"),
 
   // Master key (base64 of 32 random bytes) that wraps each user's data-encryption
@@ -47,12 +47,7 @@ const EnvSchema = z.object({
 
 export type Env = z.infer<typeof EnvSchema>;
 
-let cached: Env | null = null;
-
 export function validateEnv(): Env {
-  if (cached) {
-    return cached;
-  }
   const parsed = EnvSchema.safeParse(process.env);
   if (!parsed.success) {
     const messages = parsed.error.issues
@@ -60,8 +55,7 @@ export function validateEnv(): Env {
       .join("\n");
     throw new Error(`Environment validation failed:\n${messages}`);
   }
-  cached = parsed.data;
-  return cached;
+  return parsed.data;
 }
 
 /** Validated, typed env. Import this everywhere instead of touching process.env. */

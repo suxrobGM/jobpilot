@@ -19,7 +19,7 @@ import { jobBoardController } from "@/modules/job-board";
 import { pipelineController } from "@/modules/pipeline";
 import { profileController } from "@/modules/profile";
 import { queueController } from "@/modules/queue";
-import { resumeController } from "@/modules/resume";
+import { resumeController, resumeJob } from "@/modules/resume";
 import { scoringController } from "@/modules/scoring";
 import { upworkController } from "@/modules/upwork";
 
@@ -27,6 +27,7 @@ const app = new Elysia()
   .use(errorMiddleware)
   .use(corsPlugin)
   .use(swaggerPlugin)
+  .use(resumeJob)
   .onStop(async () => {
     await db.$disconnect();
   })

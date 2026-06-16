@@ -1,4 +1,4 @@
-import { mkdir, readdir, unlink } from "node:fs/promises";
+import { mkdir, readdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { env } from "@/env";
 import { slugify } from "@/common/utils/slug";
@@ -39,12 +39,21 @@ export function resumeBackupPath(resumeId: string, updatedAtMs: number): string 
   return path.join(BACKUPS_DIR, `resume-${resumeId}-${updatedAtMs}.json`);
 }
 
-export async function deleteResumeFile(filename: string): Promise<void> {
+/** Unlinks a file, treating an already-missing file as success. Returns whether it removed anything. */
+async function tryUnlink(filePath: string): Promise<boolean> {
   try {
-    await unlink(resumePath(filename));
+    await unlink(filePath);
+    return true;
   } catch (e) {
-    if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") {
+      return false;
+    }
+    throw e;
   }
+}
+
+export async function deleteResumeFile(filename: string): Promise<void> {
+  await tryUnlink(resumePath(filename));
 }
 
 /** Unlinks files in a directory that match a given prefix and suffix. */
@@ -62,15 +71,7 @@ async function unlinkMatching(dir: string, prefix: string, suffix: string): Prom
   await Promise.all(
     entries
       .filter((name) => name.startsWith(prefix) && name.endsWith(suffix))
-      .map(async (name) => {
-        try {
-          await unlink(path.join(dir, name));
-        } catch (e) {
-          if ((e as NodeJS.ErrnoException).code !== "ENOENT") {
-            throw e;
-          }
-        }
-      }),
+      .map((name) => tryUnlink(path.join(dir, name))),
   );
 }
 
@@ -110,4 +111,110 @@ export function generateResumeFilename(originalName: string): string {
 
 export function slugifyForDownload(label: string): string {
   return slugify(label, { fallback: "resume" });
+}
+
+/**
+ * Ensures a PDF exists at `cachePath`, rendering it via `render` on a miss. On a hit
+ * it bumps the file's mtime so the prune sweep treats time-since-last-download as the
+ * idle clock (a frequently downloaded PDF whose source hasn't changed stays warm). The
+ * cache is fully regenerable — eviction only costs a re-render on the next request.
+ */
+export async function ensureCachedPdf(
+  cachePath: string,
+  render: () => Promise<Buffer>,
+): Promise<void> {
+  try {
+    await stat(cachePath);
+  } catch {
+    const buffer = await render();
+    await writeFile(cachePath, buffer);
+    return;
+  }
+  // Recency bump is best-effort — never fail a download because utimes hiccuped.
+  const now = new Date();
+  try {
+    await utimes(cachePath, now, now);
+  } catch {
+    // ignore
+  }
+}
+
+export interface CachePruneResult {
+  scanned: number;
+  removed: number;
+  freedBytes: number;
+  remainingBytes: number;
+}
+
+/**
+ * Prunes the generated-PDF cache so it can't fill the disk: first evicts files idle
+ * longer than `ttlMs`, then, if the survivors still exceed `maxBytes`, evicts coldest
+ * (oldest mtime) first until under the cap. A `ttlMs`/`maxBytes` of 0 disables that
+ * stage. Safe to run repeatedly — every evicted file is re-rendered on next download.
+ */
+export async function pruneGeneratedCache(opts: {
+  ttlMs: number;
+  maxBytes: number;
+}): Promise<CachePruneResult> {
+  let names: string[];
+  try {
+    names = await readdir(GENERATED_DIR);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") {
+      return { scanned: 0, removed: 0, freedBytes: 0, remainingBytes: 0 };
+    }
+    throw e;
+  }
+
+  const files: { path: string; size: number; mtimeMs: number }[] = [];
+  await Promise.all(
+    names.map(async (name) => {
+      const filePath = path.join(GENERATED_DIR, name);
+      try {
+        const s = await stat(filePath);
+        if (s.isFile()) {
+          files.push({ path: filePath, size: s.size, mtimeMs: s.mtimeMs });
+        }
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw e;
+        }
+      }
+    }),
+  );
+
+  const now = Date.now();
+  let removed = 0;
+  let freedBytes = 0;
+  const survivors: typeof files = [];
+
+  // 1. TTL eviction — drop files untouched for longer than ttlMs.
+  for (const f of files) {
+    if (opts.ttlMs > 0 && now - f.mtimeMs > opts.ttlMs) {
+      if (await tryUnlink(f.path)) {
+        removed++;
+        freedBytes += f.size;
+      }
+    } else {
+      survivors.push(f);
+    }
+  }
+
+  // 2. Size-cap eviction — coldest first until the survivors fit in maxBytes.
+  let remainingBytes = survivors.reduce((n, f) => n + f.size, 0);
+  if (opts.maxBytes > 0 && remainingBytes > opts.maxBytes) {
+    survivors.sort((a, b) => a.mtimeMs - b.mtimeMs);
+    for (const f of survivors) {
+      if (remainingBytes <= opts.maxBytes) {
+        break;
+      }
+      if (await tryUnlink(f.path)) {
+        removed++;
+        freedBytes += f.size;
+        remainingBytes -= f.size;
+      }
+    }
+  }
+
+  return { scanned: files.length, removed, freedBytes, remainingBytes };
 }

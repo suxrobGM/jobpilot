@@ -1,4 +1,3 @@
-import { stat, writeFile } from "node:fs/promises";
 import type {
   ResumeData,
   resumeVariantCreateSchema,
@@ -8,7 +7,12 @@ import { singleton } from "tsyringe";
 import type { z } from "zod/v4";
 import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
 import { renderResumePdf } from "@/common/pdf";
-import { ensureGeneratedDir, generatedVariantPath, slugifyForDownload } from "@/common/storage";
+import {
+  ensureCachedPdf,
+  ensureGeneratedDir,
+  generatedVariantPath,
+  slugifyForDownload,
+} from "@/common/storage";
 import { PrismaClient } from "@/generated/prisma/client";
 import { backfillResumeIds } from "../backfill-ids";
 import { streamFile } from "../resume.stream";
@@ -166,12 +170,9 @@ export class ResumeVariantService {
 
     await ensureGeneratedDir();
     const cachePath = generatedVariantPath(variant.id, variant.updatedAt.getTime());
-    try {
-      await stat(cachePath);
-    } catch {
-      const buffer = await renderResumePdf(JSON.parse(variant.content) as ResumeData);
-      await writeFile(cachePath, buffer);
-    }
+    await ensureCachedPdf(cachePath, () =>
+      renderResumePdf(JSON.parse(variant.content) as ResumeData),
+    );
 
     return streamFile(cachePath, "application/pdf", `${slugifyForDownload(variant.label)}.pdf`);
   }

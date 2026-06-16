@@ -1,4 +1,4 @@
-import { stat, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { ResumeData } from "@jobpilot/contracts/resume";
 import { singleton } from "tsyringe";
@@ -6,6 +6,7 @@ import { badRequest, notFound } from "@/common/errors";
 import { renderResumePdf } from "@/common/pdf";
 import {
   deleteResumeFile,
+  ensureCachedPdf,
   ensureGeneratedDir,
   ensureResumesDir,
   generatedResumePath,
@@ -26,14 +27,10 @@ export class ResumeFileService {
     const slug = slugifyForDownload(resume.label);
 
     if (resume.content) {
+      const content = resume.content;
       await ensureGeneratedDir();
       const cachePath = generatedResumePath(resume.id, resume.updatedAt.getTime());
-      try {
-        await stat(cachePath);
-      } catch {
-        const buffer = await renderResumePdf(JSON.parse(resume.content) as ResumeData);
-        await writeFile(cachePath, buffer);
-      }
+      await ensureCachedPdf(cachePath, () => renderResumePdf(JSON.parse(content) as ResumeData));
       return streamFile(cachePath, "application/pdf", `${slug}.pdf`);
     }
 
