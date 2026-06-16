@@ -5,7 +5,6 @@ import {
   Alert,
   AlertTitle,
   Button,
-  CircularProgress,
   Stack,
   Step,
   StepLabel,
@@ -14,7 +13,7 @@ import {
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { apiClient, unwrap } from "@/api/client";
+import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import {
   PROFILE_DEFAULT_VALUES,
@@ -23,7 +22,6 @@ import {
 } from "@jobpilot/contracts/profile";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { DeleteProfileResponse, SetActiveProfileResponse } from "@/api/types";
 import {
   AddressSection,
   AutoApplySection,
@@ -33,10 +31,8 @@ import {
 } from "@/components/features/settings/sections";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
 import { ResumeUploadStep } from "./resume-upload-step";
-import { useEnsureDraftProfile } from "./use-ensure-draft-profile";
 import { describeIssues, firstStepWithIssue } from "./validation-issues";
 
 const STEPS = [
@@ -48,69 +44,27 @@ const STEPS = [
   { key: "auto-apply", label: "Auto-apply" },
 ] as const;
 
-interface OnboardingWizardProps {
-  isNewProfile: boolean;
-}
-
-export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
-  const { isNewProfile } = props;
+export function OnboardingWizard(): ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const confirm = useConfirm();
-  const { ready, draftProfileId, previousActiveId } = useEnsureDraftProfile();
   const [step, setStep] = useState(0);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
-  const canCancel = isNewProfile && previousActiveId !== null && draftProfileId !== null;
 
+  // The user's single profile is co-created at registration, so onboarding just
+  // populates it via PUT /profile — no draft/active-profile dance.
   const save = useApiMutation<{ id: number }, ProfileWithAutoApplyInput>(
     (vars) => unwrap(api.profile.put(vars)),
     {
-      successMessage: isNewProfile ? "Profile created" : "Profile saved",
-      invalidate: [queryKeys.profile.all, queryKeys.profiles.all],
+      successMessage: "Profile saved",
+      invalidate: [queryKeys.profile.all],
       onSuccess: () => {
         queryClient.invalidateQueries();
         router.refresh();
-        router.push(isNewProfile ? "/" : "/settings");
+        router.push("/settings");
       },
     },
   );
-
-  const discard = useApiMutation<DeleteProfileResponse, void>(
-    async () => {
-      if (previousActiveId === null || draftProfileId === null) {
-        return { data: null, error: { code: "INVALID_STATE", message: "No draft to discard" } };
-      }
-      const restored = await apiClient.post<SetActiveProfileResponse>("/api/profiles/active", {
-        profileId: previousActiveId,
-      });
-      if (restored.error) {
-        return { data: null, error: restored.error };
-      }
-      return apiClient.del<DeleteProfileResponse>(`/api/profiles/${draftProfileId}`);
-    },
-    {
-      successMessage: "Draft discarded",
-      invalidate: [queryKeys.profile.all, queryKeys.profiles.all],
-      onSuccess: () => {
-        queryClient.invalidateQueries();
-        router.refresh();
-        router.push("/");
-      },
-    },
-  );
-
-  const handleCancel = async () => {
-    const confirmed = await confirm({
-      title: "Discard new profile?",
-      description: "Any data you've added — including uploaded resumes — will be deleted.",
-      confirmLabel: "Discard",
-      destructive: true,
-    });
-    if (confirmed) {
-      discard.mutate();
-    }
-  };
 
   const form = useAppForm({
     defaultValues: PROFILE_DEFAULT_VALUES,
@@ -144,28 +98,8 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
     await form.handleSubmit();
   };
 
-  if (!ready) {
-    return (
-      <Stack sx={{ py: 6, alignItems: "center" }}>
-        <CircularProgress size={28} />
-      </Stack>
-    );
-  }
-
   return (
     <Stack spacing={3}>
-      {canCancel && (
-        <Stack direction="row" sx={{ justifyContent: "flex-end" }}>
-          <Button
-            variant="text"
-            color="inherit"
-            onClick={handleCancel}
-            disabled={discard.isPending}
-          >
-            {discard.isPending ? "Discarding…" : "Cancel"}
-          </Button>
-        </Stack>
-      )}
       <Stepper activeStep={step} alternativeLabel>
         {STEPS.map((s) => (
           <Step key={s.key}>

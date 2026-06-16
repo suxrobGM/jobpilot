@@ -1,5 +1,5 @@
 import { expandSynonyms, normalizeKeyword } from "./keyword-normalize";
-import { FitProfile, JobDigest } from "./scoring.schema";
+import type { FitProfile, JobDigest } from "./scoring.schema";
 
 export interface FitResult {
   score: number;

@@ -13,7 +13,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { Route } from "next";
+import type { Route } from "next";
 import Link from "next/link";
 import { apiClient, unwrap } from "@/api/client";
 import { api } from "@/api/eden";
@@ -48,10 +48,7 @@ export function ResumesList(): ReactElement {
   );
 
   const setPrimary = useApiMutation<{ primaryResumeId: number | null }, number>(
-    (id) =>
-      apiClient.post<{ primaryResumeId: number | null }>("/api/profile/primary-resume", {
-        resumeId: id,
-      }),
+    (id) => unwrap(api.profile["primary-resume"].put({ resumeId: id })),
     {
       successMessage: "Primary resume updated",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

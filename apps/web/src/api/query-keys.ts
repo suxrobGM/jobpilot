@@ -9,12 +9,6 @@ export const queryKeys = {
     detail: () => [...queryKeys.profile.all, "detail"] as const,
   },
 
-  profiles: {
-    all: ["profiles"] as const,
-    list: () => [...queryKeys.profiles.all, "list"] as const,
-    active: () => [...queryKeys.profiles.all, "active"] as const,
-  },
-
   credentials: {
     all: ["credentials"] as const,
     list: () => [...queryKeys.credentials.all, "list"] as const,

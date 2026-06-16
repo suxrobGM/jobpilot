@@ -4,7 +4,7 @@ import { useState, type ReactElement } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { apiClient, unwrap } from "@/api/client";
+import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -32,10 +32,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   );
 
   const setPrimary = useApiMutation<{ primaryResumeId: number | null }, void>(
-    () =>
-      apiClient.post<{ primaryResumeId: number | null }>("/api/profile/primary-resume", {
-        resumeId: resume.id,
-      }),
+    () => unwrap(api.profile["primary-resume"].put({ resumeId: resume.id })),
     {
       successMessage: "Set as primary",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

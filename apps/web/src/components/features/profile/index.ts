@@ -1,1 +1,1 @@
-export * from "./profile-switcher";
+export * from "./account-menu";

@@ -104,9 +104,15 @@ export const profileWithAutoApplySchema = profileSchema.extend({
   autoApply: autoApplySettingsSchema.optional(),
 });
 
+/** Body for setting (or clearing, with `null`) the profile's primary resume. */
+export const setPrimaryResumeSchema = z.object({
+  resumeId: z.number().int().nullable(),
+});
+
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type AutoApplySettingsInput = z.infer<typeof autoApplySettingsSchema>;
 export type ProfileWithAutoApplyInput = z.infer<typeof profileWithAutoApplySchema>;
+export type SetPrimaryResumeInput = z.infer<typeof setPrimaryResumeSchema>;
 
 export const PROFILE_DEFAULT_VALUES: ProfileWithAutoApplyInput = {
   firstName: "",

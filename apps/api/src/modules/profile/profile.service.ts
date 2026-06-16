@@ -148,4 +148,22 @@ export class ProfileService {
 
     return { id: profileId };
   }
+
+  /** Point the profile at one of its own resumes (or clear it with `null`). */
+  async setPrimaryResume(profileId: number, resumeId: number | null) {
+    if (resumeId !== null) {
+      await findOwned(
+        (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),
+        { id: resumeId, profileId },
+        "Resume",
+      );
+    }
+
+    await this.prisma.profile.update({
+      where: { id: profileId },
+      data: { primaryResumeId: resumeId },
+    });
+
+    return { primaryResumeId: resumeId };
+  }
 }
