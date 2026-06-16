@@ -25,7 +25,7 @@ export function NewResumeDialog(props: NewResumeDialogProps): ReactElement {
   const router = useRouter();
   const [label, setLabel] = useState("");
 
-  const create = useApiMutation<{ id: number }, { label: string }>(
+  const create = useApiMutation<{ id: string }, { label: string }>(
     (vars) => api.resumes.post(vars),
     {
       successMessage: "Resume created",

@@ -20,7 +20,7 @@ import { queryKeys } from "@/api/query-keys";
 import type { ApplicationDto, EmailMessageDetailDto } from "@/api/types";
 
 interface MessageReviewDialogProps {
-  messageId: number | null;
+  messageId: string | null;
   open: boolean;
   onClose: () => void;
 }
@@ -66,7 +66,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
     { enabled: open },
   );
 
-  const patchMatch = useApiMutation<unknown, { matchedAppId: number | null }>(
+  const patchMatch = useApiMutation<unknown, { matchedAppId: string | null }>(
     (vars) => api.email.messages({ id: messageId! }).patch(vars),
     {
       invalidate: [queryKeys.email.all],

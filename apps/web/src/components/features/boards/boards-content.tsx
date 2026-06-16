@@ -39,7 +39,7 @@ export function BoardsContent(): ReactElement {
     api["job-boards"].get(),
   );
 
-  const update = useApiMutation<JobBoardDto, { id: number; patch: JobBoardPatch }>(
+  const update = useApiMutation<JobBoardDto, { id: string; patch: JobBoardPatch }>(
     ({ id, patch }) => api["job-boards"]({ id }).patch(patch),
     {
       successMessage: "Board updated",
@@ -48,7 +48,7 @@ export function BoardsContent(): ReactElement {
     },
   );
 
-  const remove = useApiMutation<{ deleted: number }, number>(
+  const remove = useApiMutation<{ deleted: string }, string>(
     (id) => api["job-boards"]({ id }).delete(),
     {
       successMessage: "Board removed",

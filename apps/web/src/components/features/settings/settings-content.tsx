@@ -98,7 +98,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
   const { initialData } = props;
   const [, setDirty] = useState(false);
 
-  const save = useApiMutation<{ id: number }, ProfileWithAutoApplyInput>(
+  const save = useApiMutation<{ id: string }, ProfileWithAutoApplyInput>(
     (vars) => api.profile.put(vars),
     {
       successMessage: "Settings saved",

@@ -22,7 +22,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   const confirm = useConfirm();
   const [editingLabel, setEditingLabel] = useState(resume.label);
 
-  const renameLabel = useApiMutation<{ id: number }, { label: string }>(
+  const renameLabel = useApiMutation<{ id: string }, { label: string }>(
     (vars) => api.resumes({ id: resume.id }).put(vars),
     {
       successMessage: "Renamed",
@@ -30,7 +30,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
     },
   );
 
-  const setPrimary = useApiMutation<{ primaryResumeId: number | null }, void>(
+  const setPrimary = useApiMutation<{ primaryResumeId: string | null }, void>(
     () => api.profile["primary-resume"].put({ resumeId: resume.id }),
     {
       successMessage: "Set as primary",
@@ -38,7 +38,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
     },
   );
 
-  const remove = useApiMutation<{ deleted: number }, void>(
+  const remove = useApiMutation<{ deleted: string }, void>(
     () => api.resumes({ id: resume.id }).delete(),
     {
       successMessage: "Resume deleted",

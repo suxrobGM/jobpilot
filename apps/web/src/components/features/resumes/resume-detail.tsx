@@ -17,7 +17,7 @@ import { VariantsPanel } from "./detail/variants-panel";
 import { ResumeEditor } from "./editor/resume-editor";
 
 interface ResumeDetailProps {
-  resumeId: number;
+  resumeId: string;
 }
 
 export function ResumeDetail(props: ResumeDetailProps): ReactElement {

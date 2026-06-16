@@ -9,7 +9,7 @@ import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types
 import { SectionCard } from "@/components/ui/layout";
 
 interface ProposalNotesProps {
-  id: number;
+  id: string;
   notes: string | null;
 }
 

@@ -32,12 +32,12 @@ export function ResumesList(): ReactElement {
 
   const list = useApiQuery<ResumeListItem[]>(queryKeys.resume.list(), () => api.resumes.get());
 
-  const upload = useApiMutation<{ id: number }, File>((file) => api.resumes.upload.post({ file }), {
+  const upload = useApiMutation<{ id: string }, File>((file) => api.resumes.upload.post({ file }), {
     successMessage: "Resume uploaded",
     invalidate: [queryKeys.resume.all, queryKeys.profile.all],
   });
 
-  const setPrimary = useApiMutation<{ primaryResumeId: number | null }, number>(
+  const setPrimary = useApiMutation<{ primaryResumeId: string | null }, string>(
     (id) => api.profile["primary-resume"].put({ resumeId: id }),
     {
       successMessage: "Primary resume updated",

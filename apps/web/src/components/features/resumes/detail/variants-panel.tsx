@@ -24,7 +24,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { TailorForJobButton } from "../tailor/tailor-for-job-button";
 
 interface VariantsPanelProps {
-  resumeId: number;
+  resumeId: string;
   resumeLabel: string;
 }
 
@@ -37,7 +37,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
     api.resumes({ id: resumeId }).variants.get(),
   );
 
-  const remove = useApiMutation<{ deleted: number }, number>(
+  const remove = useApiMutation<{ deleted: string }, string>(
     (id) => api.resumes.variants({ id }).delete(),
     {
       successMessage: "Variant deleted",

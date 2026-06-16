@@ -26,7 +26,7 @@ export function usePipelineColumn(
     Error,
     InfiniteData<PipelineColumnPage>,
     ReturnType<typeof queryKeys.pipeline.column>,
-    number | null
+    string | null
   >({
     enabled: options.enabled ?? true,
     queryKey: queryKeys.pipeline.column(stage, filters),
@@ -45,6 +45,6 @@ export function usePipelineColumn(
       }
       return data;
     },
-    getNextPageParam: (lastPage) => (lastPage.nextCursor ? Number(lastPage.nextCursor) : undefined),
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 }

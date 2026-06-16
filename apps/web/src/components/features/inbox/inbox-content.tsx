@@ -25,7 +25,7 @@ function buildQuery(filter: InboxFilter): { reviewStatus?: InboxFilter } {
 
 export function InboxContent(): ReactElement {
   const [filter, setFilter] = useState<InboxFilter>("all");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { injectSkill } = useAgent();
 

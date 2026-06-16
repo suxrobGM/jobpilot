@@ -25,15 +25,15 @@ export const ResumeUploadStep = withForm({
     const toast = useToast();
     const agent = useAgent();
     const [state, setState] = useState<StepState>("idle");
-    const [resumeId, setResumeId] = useState<number | null>(null);
+    const [resumeId, setResumeId] = useState<string | null>(null);
     const appliedRef = useRef(false);
 
-    const startExtraction = async (id: number): Promise<void> => {
+    const startExtraction = async (id: string): Promise<void> => {
       setState("extracting");
       await agent.injectSkill("extract-resume", String(id));
     };
 
-    const upload = useApiMutation<{ id: number }, File>(
+    const upload = useApiMutation<{ id: string }, File>(
       (file) => api.resumes.upload.post({ file }),
       {
         successMessage: "Resume uploaded",
@@ -46,7 +46,7 @@ export const ResumeUploadStep = withForm({
       },
     );
 
-    const applyExtractedBasics = async (id: number): Promise<void> => {
+    const applyExtractedBasics = async (id: string): Promise<void> => {
       if (appliedRef.current) {
         return;
       }
@@ -63,7 +63,7 @@ export const ResumeUploadStep = withForm({
 
     useSseChannel(
       resumeChannel,
-      { resumeId: resumeId ?? 0 },
+      { resumeId: resumeId ?? "" },
       {
         enabled: resumeId !== null && state === "extracting",
         on: {

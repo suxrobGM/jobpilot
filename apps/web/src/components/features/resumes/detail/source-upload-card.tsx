@@ -21,7 +21,7 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
   const { resume } = props;
   const toast = useToast();
 
-  const upload = useApiMutation<{ id: number }, File>(
+  const upload = useApiMutation<{ id: string }, File>(
     (file) => api.resumes({ id: resume.id }).source.post({ file }),
     {
       successMessage: "Source PDF uploaded",
@@ -29,7 +29,7 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
     },
   );
 
-  const remove = useApiMutation<{ id: number }, void>(
+  const remove = useApiMutation<{ id: string }, void>(
     () => api.resumes({ id: resume.id }).source.delete(),
     {
       successMessage: "Source PDF removed",

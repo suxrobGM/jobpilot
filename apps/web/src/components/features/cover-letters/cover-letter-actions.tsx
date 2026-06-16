@@ -11,7 +11,7 @@ import { queryKeys } from "@/api/query-keys";
 import { useConfirm } from "@/providers/confirm-provider";
 
 interface CoverLetterActionsProps {
-  id: number;
+  id: string;
 }
 
 export function CoverLetterActions(props: CoverLetterActionsProps): ReactElement {

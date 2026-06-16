@@ -61,7 +61,7 @@ interface OutreachBoardProps {
 export function OutreachBoard(props: OutreachBoardProps): ReactElement {
   const { campaignId, status, summary, config } = props;
   const agent = useAgent();
-  const [openId, setOpenId] = useState<number | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
   const messagesQuery = useApiQuery<OutreachMessageDto[]>(
@@ -77,7 +77,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
     queryKeys.campaigns.detail(campaignId),
   ];
 
-  const skip = useApiMutation<unknown, number>(
+  const skip = useApiMutation<unknown, string>(
     (id) =>
       api
         .campaigns({ id: campaignId })
@@ -86,7 +86,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
     { invalidate, successMessage: "Skipped" },
   );
 
-  const approveSelected = useApiMutation<number[], number[]>(
+  const approveSelected = useApiMutation<string[], string[]>(
     async (ids) => {
       for (const id of ids) {
         const res = await api.campaigns({ id: campaignId }).outreach({ messageId: id }).patch({

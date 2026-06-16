@@ -48,7 +48,7 @@ export function ProposalsList(): ReactElement {
   const hasFilters = statusFilter !== null;
   const { page, setPage, pageCount, pageRows, total } = usePagination(filteredRows, PAGE_SIZE);
 
-  const handleNavigate = (id: number): void => {
+  const handleNavigate = (id: string): void => {
     router.push(`/upwork/${id}` as Route);
   };
 

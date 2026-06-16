@@ -29,7 +29,7 @@ export function CredentialsSection(): ReactElement {
     },
   );
 
-  const remove = useApiMutation<{ deleted: number }, number>(
+  const remove = useApiMutation<{ deleted: string }, string>(
     (id) => api.credentials({ id }).delete(),
     {
       successMessage: "Credential removed",

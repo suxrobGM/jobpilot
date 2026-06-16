@@ -28,7 +28,7 @@ import { ProposalNotes } from "./proposal-notes";
 import { ProposalStatusBar } from "./proposal-status-bar";
 
 interface ProposalDetailProps {
-  id: number;
+  id: string;
 }
 
 export function ProposalDetail(props: ProposalDetailProps): ReactElement {
@@ -58,7 +58,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
     { invalidate: [queryKeys.upworkProposals.all] },
   );
 
-  const remove = useApiMutation<{ id: number }, void>(() => api.upwork.proposals({ id }).delete(), {
+  const remove = useApiMutation<{ id: string }, void>(() => api.upwork.proposals({ id }).delete(), {
     successMessage: "Proposal deleted",
     invalidate: [queryKeys.upworkProposals.all],
     onSuccess: () => router.replace("/upwork" as Route),

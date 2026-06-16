@@ -8,7 +8,7 @@ export const EMPTY_SELECTION: GridRowSelectionModel = { type: "include", ids: ne
  * against `all`; `exclude` (select-all-across-pages) matches `visible`
  * (defaulting to `all`) minus the explicitly excluded ids.
  */
-export function resolveSelectedRows<T extends { id: number }>(
+export function resolveSelectedRows<T extends { id: string }>(
   model: GridRowSelectionModel,
   all: ReadonlyArray<T>,
   visible: ReadonlyArray<T> = all,

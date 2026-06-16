@@ -52,7 +52,7 @@ export function OnboardingWizard(): ReactElement {
 
   // The user's single profile is co-created at registration, so onboarding just
   // populates it via PUT /profile — no draft/active-profile dance.
-  const save = useApiMutation<{ id: number }, ProfileWithAutoApplyInput>(
+  const save = useApiMutation<{ id: string }, ProfileWithAutoApplyInput>(
     (vars) => api.profile.put(vars),
     {
       successMessage: "Profile saved",

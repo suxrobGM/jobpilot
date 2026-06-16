@@ -33,7 +33,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     { initialData: initialApplication },
   );
 
-  const updateStage = useApiMutation<{ id: number; stage: Stage }, StageTransitionInput>(
+  const updateStage = useApiMutation<{ id: string; stage: Stage }, StageTransitionInput>(
     (vars) => api.applied({ id }).stage.post(vars),
     {
       successMessage: "Stage updated",
@@ -42,7 +42,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     },
   );
 
-  const remove = useApiMutation<{ deleted: number }, void>(() => api.applied({ id }).delete(), {
+  const remove = useApiMutation<{ deleted: string }, void>(() => api.applied({ id }).delete(), {
     successMessage: "Application deleted",
     invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],
     onSuccess: () => router.replace("/"),

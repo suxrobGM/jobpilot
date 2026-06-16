@@ -17,23 +17,23 @@ export const queryKeys = {
   resume: {
     all: ["resume"] as const,
     list: () => [...queryKeys.resume.all, "list"] as const,
-    detail: (id: number) => [...queryKeys.resume.all, "detail", id] as const,
-    variants: (resumeId: number) =>
+    detail: (id: string) => [...queryKeys.resume.all, "detail", id] as const,
+    variants: (resumeId: string) =>
       [...queryKeys.resume.all, "variants", "list", resumeId] as const,
-    variantDetail: (id: number) => [...queryKeys.resume.all, "variants", "detail", id] as const,
+    variantDetail: (id: string) => [...queryKeys.resume.all, "variants", "detail", id] as const,
   },
 
   jobBoards: {
     all: ["job-boards"] as const,
     list: () => [...queryKeys.jobBoards.all, "list"] as const,
-    detail: (id: number) => [...queryKeys.jobBoards.all, "detail", id] as const,
+    detail: (id: string) => [...queryKeys.jobBoards.all, "detail", id] as const,
   },
 
   applications: {
     all: ["applications"] as const,
     list: (filters: Record<string, unknown>) =>
       [...queryKeys.applications.all, "list", filters] as const,
-    detail: (id: number) => [...queryKeys.applications.all, "detail", id] as const,
+    detail: (id: string) => [...queryKeys.applications.all, "detail", id] as const,
   },
 
   dashboard: {
@@ -84,7 +84,7 @@ export const queryKeys = {
     all: ["upwork-proposals"] as const,
     list: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.upworkProposals.all, "list", filters] as const,
-    detail: (id: number) => [...queryKeys.upworkProposals.all, "detail", id] as const,
+    detail: (id: string) => [...queryKeys.upworkProposals.all, "detail", id] as const,
   },
 
   upworkProfile: {
@@ -95,6 +95,6 @@ export const queryKeys = {
   coverLetters: {
     all: ["cover-letters"] as const,
     list: () => [...queryKeys.coverLetters.all, "list"] as const,
-    detail: (id: number) => [...queryKeys.coverLetters.all, "detail", id] as const,
+    detail: (id: string) => [...queryKeys.coverLetters.all, "detail", id] as const,
   },
 } as const;

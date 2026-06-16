@@ -10,7 +10,7 @@ interface PageProps {
 export default async function ApplicationDetailPage(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
 
-  if (!Number.isInteger(Number(id))) {
+  if (!id) {
     notFound();
   }
 

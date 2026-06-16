@@ -7,7 +7,7 @@ import { resumePdfUrl } from "@/api/resume-urls";
 import { SectionCard } from "@/components/ui/layout";
 
 interface ResumePdfPreviewProps {
-  resumeId: number;
+  resumeId: string;
   updatedAt: string;
 }
 

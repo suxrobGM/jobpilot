@@ -9,7 +9,6 @@ interface PageProps {
 
 export default async function ResumeDetailPage(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
-  const numericId = Number(id);
 
   return (
     <Container maxWidth="xl" sx={{ gap: 2 }}>
@@ -18,7 +17,7 @@ export default async function ResumeDetailPage(props: PageProps): Promise<ReactE
         title="Edit resume"
         description="Structured fields render to PDF on the right. Variants tailored from this base appear below."
       />
-      <ResumeDetail resumeId={numericId} />
+      <ResumeDetail resumeId={id} />
     </Container>
   );
 }

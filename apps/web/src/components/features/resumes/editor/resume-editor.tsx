@@ -25,7 +25,7 @@ import { SkillsSection } from "./skills-section";
 import { SummarySection } from "./summary-section";
 
 interface ResumeEditorProps {
-  resumeId: number;
+  resumeId: string;
   initialData: ResumeData;
 }
 
@@ -117,7 +117,7 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
   const [data, setData] = useState<ResumeData>(initialData);
   const [dirty, setDirty] = useState(false);
 
-  const save = useApiMutation<{ id: number; version: number }, ResumeData>(
+  const save = useApiMutation<{ id: string; version: number }, ResumeData>(
     (vars) => api.resumes({ id: resumeId }).put({ content: vars }),
     {
       successMessage: "Resume saved",
