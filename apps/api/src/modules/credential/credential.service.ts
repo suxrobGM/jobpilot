@@ -1,5 +1,6 @@
 import type { CredentialInput, CredentialPatch } from "@jobpilot/contracts/credential";
 import { singleton } from "tsyringe";
+import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { findOwned } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
 
@@ -15,28 +16,58 @@ export interface ResolvedCredential {
   scope: string;
 }
 
-/** A row with both login fields present, trimmed — or null if either is blank. */
-const loginOf = (
-  row: { email: string | null; password: string | null } | null | undefined,
-): { email: string; password: string } | null => {
-  const email = row?.email?.trim();
-  const password = row?.password?.trim();
-  return email && password ? { email, password } : null;
-};
-
 @singleton()
 export class CredentialService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly crypto: CryptoService,
+  ) {}
 
-  list(profileId: number) {
-    return this.prisma.credential.findMany({ where: { profileId }, orderBy: { scope: "asc" } });
+  private async decryptRow<T extends { password: string | null; apiKey: string | null }>(
+    userId: string,
+    row: T,
+  ): Promise<T> {
+    return {
+      ...row,
+      password: await this.crypto.decryptField(
+        userId,
+        SECRET_CONTEXTS.credentialPassword,
+        row.password,
+      ),
+      apiKey: await this.crypto.decryptField(userId, SECRET_CONTEXTS.credentialApiKey, row.apiKey),
+    };
   }
 
-  create(profileId: number, input: CredentialInput) {
-    return this.prisma.credential.create({ data: { ...input, profileId } });
+  async list(userId: string, profileId: string) {
+    const rows = await this.prisma.credential.findMany({
+      where: { profileId },
+      orderBy: { scope: "asc" },
+    });
+    return Promise.all(rows.map((row) => this.decryptRow(userId, row)));
   }
 
-  private findCredential(profileId: number, id: number) {
+  async create(userId: string, profileId: string, input: CredentialInput) {
+    const row = await this.prisma.credential.create({
+      data: {
+        profileId,
+        scope: input.scope,
+        email: input.email,
+        password: await this.crypto.encryptField(
+          userId,
+          SECRET_CONTEXTS.credentialPassword,
+          input.password,
+        ),
+        apiKey: await this.crypto.encryptField(
+          userId,
+          SECRET_CONTEXTS.credentialApiKey,
+          input.apiKey,
+        ),
+      },
+    });
+    return this.decryptRow(userId, row);
+  }
+
+  private findCredential(profileId: string, id: string) {
     return findOwned(
       (where) => this.prisma.credential.findFirst({ where, select: { id: true } }),
       { id, profileId },
@@ -44,15 +75,47 @@ export class CredentialService {
     );
   }
 
-  async update(profileId: number, id: number, patch: CredentialPatch) {
+  async update(userId: string, profileId: string, id: string, patch: CredentialPatch) {
     await this.findCredential(profileId, id);
-    return this.prisma.credential.update({ where: { id }, data: patch });
+    const row = await this.prisma.credential.update({
+      where: { id },
+      data: {
+        scope: patch.scope,
+        email: patch.email,
+        password: await this.crypto.encryptField(
+          userId,
+          SECRET_CONTEXTS.credentialPassword,
+          patch.password,
+        ),
+        apiKey: await this.crypto.encryptField(
+          userId,
+          SECRET_CONTEXTS.credentialApiKey,
+          patch.apiKey,
+        ),
+      },
+    });
+    return this.decryptRow(userId, row);
   }
 
-  async remove(profileId: number, id: number) {
+  async remove(profileId: string, id: string) {
     await this.findCredential(profileId, id);
     await this.prisma.credential.delete({ where: { id } });
     return { deleted: id };
+  }
+
+  /** A row with both login fields present and the password decrypted — or null. */
+  private async toLogin(
+    userId: string,
+    row: { email: string | null; password: string | null } | null | undefined,
+    ctx: string,
+  ): Promise<{ email: string; password: string } | null> {
+    const email = row?.email?.trim();
+    const stored = row?.password?.trim();
+    if (!email || !stored) {
+      return null;
+    }
+    const password = (await this.crypto.decryptFor(userId, ctx, stored)).trim();
+    return password ? { email, password } : null;
   }
 
   /**
@@ -60,12 +123,18 @@ export class CredentialService {
    * per-board override → credential scoped to the domain → credential scoped to "default".
    * Returns `null` when no stage yields a complete email + password pair.
    */
-  async resolveCredential(profileId: number, domain: string): Promise<ResolvedCredential | null> {
-    const board = loginOf(
+  async resolveCredential(
+    userId: string,
+    profileId: string,
+    domain: string,
+  ): Promise<ResolvedCredential | null> {
+    const board = await this.toLogin(
+      userId,
       await this.prisma.jobBoard.findFirst({
         where: { profileId, domain },
         select: { email: true, password: true },
       }),
+      SECRET_CONTEXTS.boardPassword,
     );
     if (board) {
       return { ...board, source: "board", scope: domain };
@@ -76,12 +145,20 @@ export class CredentialService {
       select: { scope: true, email: true, password: true },
     });
 
-    const domainCred = loginOf(creds.find((c) => c.scope === domain));
+    const domainCred = await this.toLogin(
+      userId,
+      creds.find((c) => c.scope === domain),
+      SECRET_CONTEXTS.credentialPassword,
+    );
     if (domainCred) {
       return { ...domainCred, source: "domain", scope: domain };
     }
 
-    const defaultCred = loginOf(creds.find((c) => c.scope === "default"));
+    const defaultCred = await this.toLogin(
+      userId,
+      creds.find((c) => c.scope === "default"),
+      SECRET_CONTEXTS.credentialPassword,
+    );
     if (defaultCred) {
       return { ...defaultCred, source: "default", scope: "default" };
     }

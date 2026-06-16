@@ -91,7 +91,7 @@ export const emailController = new Elysia({
     },
   })
   // --- Send / Sync -----------------------------------------------------------
-  .post("/send", ({ profileId, body }) => account.send(profileId, body), {
+  .post("/send", ({ user, profileId, body }) => account.send(user.id, profileId, body), {
     body: sendEmailSchema,
     detail: {
       summary: "Send outbound email",
@@ -99,7 +99,7 @@ export const emailController = new Elysia({
         "Sends an email from the profile's connected mailbox (refreshing the token first), and returns the provider send result or errors when no account is connected or the mailbox lacks send access.",
     },
   })
-  .post("/sync", ({ profileId }) => sync.syncInbox(profileId), {
+  .post("/sync", ({ user, profileId }) => sync.syncInbox(user.id, profileId), {
     detail: {
       summary: "Sync inbox messages",
       description:
@@ -149,7 +149,7 @@ export const emailController = new Elysia({
   )
   .get(
     "/oauth/callback",
-    async ({ profileId, query, cookie, redirect }) => {
+    async ({ user, profileId, query, cookie, redirect }) => {
       if (query.error) {
         throw new HttpError(ErrorCodes.UNPROCESSABLE, `OAuth error: ${query.error}`, 400);
       }
@@ -166,7 +166,12 @@ export const emailController = new Elysia({
         throw badRequest("OAuth state mismatch");
       }
 
-      await account.completeEmailOAuth({ providerName, code: query.code, profileId });
+      await account.completeEmailOAuth({
+        providerName,
+        code: query.code,
+        userId: user.id,
+        profileId,
+      });
 
       cookie.email_oauth_state!.set({ value: "", path: OAUTH_COOKIE_PATH, maxAge: 0 });
       cookie.email_oauth_provider!.set({ value: "", path: OAUTH_COOKIE_PATH, maxAge: 0 });

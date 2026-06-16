@@ -12,14 +12,14 @@ export const jobBoardController = new Elysia({
   detail: { tags: ["Job Boards"] },
 })
   .use(profileGuard)
-  .get("/", ({ profileId }) => svc.list(profileId), {
+  .get("/", ({ user, profileId }) => svc.list(user.id, profileId), {
     detail: {
       summary: "List job boards",
       description:
         "Returns all saved job boards owned by the active profile, ordered by their sort order.",
     },
   })
-  .post("/", ({ profileId, body }) => svc.create(profileId, body), {
+  .post("/", ({ user, profileId, body }) => svc.create(user.id, profileId, body), {
     body: jobBoardSchema,
     detail: {
       summary: "Create job board",
@@ -29,7 +29,7 @@ export const jobBoardController = new Elysia({
   })
   .patch(
     "/:id",
-    ({ profileId, params, body }) => svc.update(profileId, params.id, body),
+    ({ user, profileId, params, body }) => svc.update(user.id, profileId, params.id, body),
     {
       params: idParam,
       body: jobBoardPatchSchema,

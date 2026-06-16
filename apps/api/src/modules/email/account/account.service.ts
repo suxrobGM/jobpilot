@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { SendEmailInput } from "@jobpilot/contracts/outreach";
 import { singleton } from "tsyringe";
+import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { badRequest, ErrorCodes, HttpError } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
 import { accountCanSend, getProvider } from "../gmail.provider";
@@ -8,9 +9,12 @@ import { loadFreshAccount } from "./account.utils";
 
 @singleton()
 export class EmailAccountService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly crypto: CryptoService,
+  ) {}
 
-  async accountStatus(profileId: number) {
+  async accountStatus(profileId: string) {
     const account = await this.prisma.emailAccount.findUnique({ where: { profileId } });
 
     if (!account) {
@@ -26,7 +30,7 @@ export class EmailAccountService {
     };
   }
 
-  async disconnectAccount(profileId: number) {
+  async disconnectAccount(profileId: string) {
     await this.prisma.emailAccount.deleteMany({ where: { profileId } });
     return { disconnected: true };
   }
@@ -37,8 +41,8 @@ export class EmailAccountService {
    * an expired token first and 4xxs with an actionable message when the account
    * lacks send scope (needs reconnecting).
    */
-  async send(profileId: number, body: SendEmailInput) {
-    const account = await loadFreshAccount(this.prisma, profileId);
+  async send(userId: string, profileId: string, body: SendEmailInput) {
+    const account = await loadFreshAccount(this.prisma, this.crypto, userId, profileId);
     if (!account) {
       throw new HttpError(ErrorCodes.NOT_FOUND, "No email account connected", 404);
     }
@@ -90,31 +94,34 @@ export class EmailAccountService {
   async completeEmailOAuth(input: {
     providerName: string;
     code: string;
-    profileId: number;
+    userId: string;
+    profileId: string;
   }): Promise<{ email: string }> {
-    const { providerName, code, profileId } = input;
+    const { providerName, code, userId, profileId } = input;
     const provider = getProvider(providerName);
     const { tokens, email } = await provider.exchangeCode(code);
 
+    const accessToken = await this.crypto.encryptFor(
+      userId,
+      SECRET_CONTEXTS.gmailTokens,
+      tokens.accessToken,
+    );
+    const refreshToken =
+      (await this.crypto.encryptField(userId, SECRET_CONTEXTS.gmailTokens, tokens.refreshToken)) ??
+      null;
+    const fields = {
+      provider: providerName,
+      email,
+      accessToken,
+      refreshToken,
+      tokenExpiresAt: tokens.expiresAt ?? null,
+      scope: tokens.scope ?? null,
+    };
+
     await this.prisma.emailAccount.upsert({
       where: { profileId },
-      create: {
-        profileId,
-        provider: providerName,
-        email,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken ?? null,
-        tokenExpiresAt: tokens.expiresAt ?? null,
-        scope: tokens.scope ?? null,
-      },
-      update: {
-        provider: providerName,
-        email,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken ?? null,
-        tokenExpiresAt: tokens.expiresAt ?? null,
-        scope: tokens.scope ?? null,
-      },
+      create: { profileId, ...fields },
+      update: fields,
     });
 
     return { email };

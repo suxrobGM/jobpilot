@@ -1,4 +1,5 @@
 import { singleton } from "tsyringe";
+import { CryptoService } from "@/common/crypto";
 import { ErrorCodes, HttpError, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { inboxChannel } from "@/common/sse/channels/inbox";
@@ -15,12 +16,15 @@ interface InboundForLinking {
 
 @singleton()
 export class EmailSyncService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly crypto: CryptoService,
+  ) {}
 
-  async syncInbox(profileId: number) {
+  async syncInbox(userId: string, profileId: string) {
     let active;
     try {
-      active = await loadFreshAccount(this.prisma, profileId);
+      active = await loadFreshAccount(this.prisma, this.crypto, userId, profileId);
     } catch (e) {
       throw new HttpError(
         ErrorCodes.UNPROCESSABLE,
@@ -97,7 +101,7 @@ export class EmailSyncService {
    * Returns the number of outreach messages newly marked replied.
    */
   private async linkOutreachReplies(
-    profileId: number,
+    profileId: string,
     messages: InboundForLinking[],
   ): Promise<number> {
     let linked = 0;

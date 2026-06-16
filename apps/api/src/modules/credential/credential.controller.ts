@@ -13,14 +13,14 @@ export const credentialController = new Elysia({
   detail: { tags: ["Credentials"] },
 })
   .use(profileGuard)
-  .get("/", ({ profileId }) => svc.list(profileId), {
+  .get("/", ({ user, profileId }) => svc.list(user.id, profileId), {
     detail: {
       summary: "List credentials",
       description:
         "Returns all stored login/service credentials for the active profile, ordered by scope.",
     },
   })
-  .post("/", ({ profileId, body }) => svc.create(profileId, body), {
+  .post("/", ({ user, profileId, body }) => svc.create(user.id, profileId, body), {
     body: credentialSchema,
     detail: {
       summary: "Create credential",
@@ -28,23 +28,31 @@ export const credentialController = new Elysia({
         "Creates a new login/service credential for the active profile and returns the created record.",
     },
   })
-  .get("/resolve", ({ profileId, query }) => svc.resolveCredential(profileId, query.domain), {
-    query: domainResolveQuery,
-    detail: {
-      summary: "Resolve login for domain",
-      description:
-        "Resolves the effective login for a board domain by precedence (per-board override, then domain-scoped credential, then default-scoped credential) and returns the matching email/password with its source and scope, or null when no complete pair is found.",
+  .get(
+    "/resolve",
+    ({ user, profileId, query }) => svc.resolveCredential(user.id, profileId, query.domain),
+    {
+      query: domainResolveQuery,
+      detail: {
+        summary: "Resolve login for domain",
+        description:
+          "Resolves the effective login for a board domain by precedence (per-board override, then domain-scoped credential, then default-scoped credential) and returns the matching email/password with its source and scope, or null when no complete pair is found.",
+      },
     },
-  })
-  .patch("/:id", ({ profileId, params, body }) => svc.update(profileId, params.id, body), {
-    params: idParam,
-    body: credentialPatchSchema,
-    detail: {
-      summary: "Update credential",
-      description:
-        "Updates the specified credential owned by the active profile and returns the updated record.",
+  )
+  .patch(
+    "/:id",
+    ({ user, profileId, params, body }) => svc.update(user.id, profileId, params.id, body),
+    {
+      params: idParam,
+      body: credentialPatchSchema,
+      detail: {
+        summary: "Update credential",
+        description:
+          "Updates the specified credential owned by the active profile and returns the updated record.",
+      },
     },
-  })
+  )
   .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
     params: idParam,
     detail: {
