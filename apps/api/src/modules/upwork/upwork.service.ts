@@ -13,9 +13,9 @@ import type {
 } from "@jobpilot/contracts/upwork";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
+import { PrismaClient, type Prisma, type UpworkProfile } from "@/generated/prisma/client";
 import { scoreUpworkClient } from "@/modules/scoring/upwork-quality";
-import { PrismaClient } from "@/generated/prisma/client";
-import type { Prisma, UpworkProfile } from "@/generated/prisma/client";
+import { decodeUpworkProposal, toUpworkProfileDto } from "./upwork.mapper";
 
 /** Plain column writes — shared by upsert's create and update (no Prisma field-op wrappers). */
 interface UpworkProfileFields {
@@ -29,56 +29,6 @@ interface UpworkProfileFields {
   suggestedPortfolio?: string;
   status?: string;
   appliedAt?: Date | null;
-}
-
-function parsePortfolio(json: string): PortfolioProject[] {
-  try {
-    const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? (parsed as PortfolioProject[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function toProfileDto(row: UpworkProfile) {
-  return {
-    id: row.id,
-    currentTitle: row.currentTitle,
-    currentOverview: row.currentOverview,
-    currentHourlyRate: row.currentHourlyRate,
-    currentPortfolio: parsePortfolio(row.currentPortfolio),
-    suggestedTitle: row.suggestedTitle,
-    suggestedOverview: row.suggestedOverview,
-    suggestedHourlyRate: row.suggestedHourlyRate,
-    suggestedPortfolio: parsePortfolio(row.suggestedPortfolio),
-    status: row.status as UpworkProfileStatus,
-    updatedAt: row.updatedAt.toISOString(),
-    appliedAt: row.appliedAt?.toISOString() ?? null,
-  };
-}
-
-/** Decode a proposal row's JSON-encoded screening answers for the API shape. */
-function decodeProposal<
-  T extends {
-    screeningAnswers: string;
-    status: string;
-    outcome: string | null;
-    source: string;
-    createdAt: Date;
-    updatedAt: Date;
-    submittedAt: Date | null;
-  },
->(proposal: T) {
-  return {
-    ...proposal,
-    screeningAnswers: JSON.parse(proposal.screeningAnswers) as ScreeningAnswer[],
-    status: proposal.status as UpworkProposalStatus,
-    outcome: proposal.outcome as UpworkProposalOutcome | null,
-    source: proposal.source as UpworkProposalSource,
-    createdAt: proposal.createdAt.toISOString(),
-    updatedAt: proposal.updatedAt.toISOString(),
-    submittedAt: proposal.submittedAt?.toISOString() ?? null,
-  };
 }
 
 @singleton()
@@ -97,7 +47,7 @@ export class UpworkService {
   // ── Profile enhancement ────────────────────────────────────────────────────
   async getProfile(profileId: number) {
     const row = await this.prisma.upworkProfile.findUnique({ where: { profileId } });
-    return row ? toProfileDto(row) : null;
+    return row ? toUpworkProfileDto(row) : null;
   }
 
   /**
@@ -133,7 +83,7 @@ export class UpworkService {
       update: fields,
     });
 
-    return toProfileDto(row);
+    return toUpworkProfileDto(row);
   }
 
   // ── Proposals ──────────────────────────────────────────────────────────────
@@ -154,7 +104,7 @@ export class UpworkService {
       take: 500,
     });
 
-    return proposals.map(decodeProposal);
+    return proposals.map(decodeUpworkProposal);
   }
 
   async createProposal(profileId: number, body: UpworkProposalInput) {
@@ -175,7 +125,7 @@ export class UpworkService {
       },
     });
 
-    return decodeProposal(proposal);
+    return decodeUpworkProposal(proposal);
   }
 
   async getProposal(profileId: number, id: number) {
@@ -185,7 +135,7 @@ export class UpworkService {
       "Proposal",
     );
 
-    return decodeProposal(proposal);
+    return decodeUpworkProposal(proposal);
   }
 
   async updateProposal(profileId: number, id: number, body: UpworkProposalPatch) {
@@ -218,7 +168,7 @@ export class UpworkService {
 
     const proposal = await this.prisma.upworkProposal.update({ where: { id }, data: update });
 
-    return decodeProposal(proposal);
+    return decodeUpworkProposal(proposal);
   }
 
   async deleteProposal(profileId: number, id: number) {

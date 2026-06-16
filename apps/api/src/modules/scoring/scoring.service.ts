@@ -1,8 +1,9 @@
 import type { ResumeData } from "@jobpilot/contracts/resume";
 import { singleton } from "tsyringe";
 import { PrismaClient } from "@/generated/prisma/client";
-import { scoreFit, type FitProfile, type FitResult, type JobDigest } from "./fit";
+import { scoreFit, type FitResult } from "./fit";
 import { deriveProfileFitInputs } from "./profile-fit";
+import type { FitProfile, JobDigest } from "./scoring.schema";
 
 interface ScoreJobFitInput {
   digest: JobDigest;

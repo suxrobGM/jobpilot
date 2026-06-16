@@ -2,32 +2,16 @@ import { approveSchema, scanMessageSchema } from "@jobpilot/contracts/email";
 import { sendEmailSchema } from "@jobpilot/contracts/outreach";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { badRequest, ErrorCodes, HttpError } from "@/common/errors";
 import { profileGuard } from "@/common/middleware";
 import { sseResponse, subscribe } from "@/common/sse";
 import { inboxChannel } from "@/common/sse/channels/inbox";
 import { env } from "@/env";
+import { callbackQuery, messagesQuery, startQuery } from "./email.schema";
 import { EmailService } from "./email.service";
 
 const svc = container.resolve(EmailService);
-
-const messagesQuery = z.object({
-  reviewStatus: z.string().optional(),
-  classification: z.string().optional(),
-  since: z.string().optional(),
-  domainHint: z.string().optional(),
-  verificationDomain: z.string().optional(),
-});
-
-const startQuery = z.object({ provider: z.string().optional() });
-
-const callbackQuery = z.object({
-  code: z.string().optional(),
-  state: z.string().optional(),
-  error: z.string().optional(),
-});
 
 const OAUTH_COOKIE_PATH = "/api/email/oauth";
 

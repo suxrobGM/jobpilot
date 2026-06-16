@@ -1,25 +1,12 @@
 import { stageTransitionSchema } from "@jobpilot/contracts/application";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
+import { applicationListQuerySchema, applicationQuerySchema } from "./application.schema";
 import { ApplicationService } from "./application.service";
 
 const svc = container.resolve(ApplicationService);
-
-const listQuerySchema = z.object({
-  stage: z.string().trim().min(1).optional(),
-  board: z.string().trim().min(1).optional(),
-  source: z.string().trim().min(1).optional(),
-  search: z.string().trim().min(1).optional(),
-});
-
-const checkQuerySchema = z.object({
-  url: z.string().trim().min(1).optional(),
-  title: z.string().trim().min(1).optional(),
-  company: z.string().trim().min(1).optional(),
-});
 
 export const applicationController = new Elysia({
   prefix: "/applied",
@@ -27,7 +14,7 @@ export const applicationController = new Elysia({
 })
   .use(profileGuard)
   .get("/", ({ profileId, query }) => svc.list(profileId, query), {
-    query: listQuerySchema,
+    query: applicationListQuerySchema,
     detail: {
       summary: "List applications",
       description:
@@ -35,7 +22,7 @@ export const applicationController = new Elysia({
     },
   })
   .get("/check", ({ profileId, query }) => svc.check(profileId, query), {
-    query: checkQuerySchema,
+    query: applicationQuerySchema,
     detail: {
       summary: "Check for duplicate application",
       description:

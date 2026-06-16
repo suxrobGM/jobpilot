@@ -17,21 +17,15 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { sseResponse, subscribe } from "@/common/sse";
 import { campaignChannel } from "@/common/sse/channels/campaign";
+import {
+  campaignJobParams,
+  campaignParams,
+  campaignsQuery,
+  outreachMessageParams,
+} from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
 
 const svc = container.resolve(CampaignService);
-
-// `:id` is a string slug (campaignId), not a numeric row id.
-const campaignParams = z.object({ id: z.string() });
-const campaignJobParams = z.object({ id: z.string(), key: z.string() });
-const outreachMessageParams = z.object({
-  id: z.string(),
-  messageId: z.coerce.number().int().positive(),
-});
-const campaignsQuery = z.object({
-  status: z.string().optional(),
-  source: z.string().optional(),
-});
 
 export const campaignController = new Elysia({
   prefix: "/campaigns",

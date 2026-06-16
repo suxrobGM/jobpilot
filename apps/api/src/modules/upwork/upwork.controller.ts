@@ -11,14 +11,10 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { publish, sseResponse, subscribe } from "@/common/sse";
 import { upworkChannel } from "@/common/sse/channels/upwork";
+import { proposalsQuery } from "./upwork.schema";
 import { UpworkService } from "./upwork.service";
 
 const svc = container.resolve(UpworkService);
-
-const proposalsQuery = z.object({
-  status: z.string().trim().min(1).optional(),
-  search: z.string().trim().min(1).optional(),
-});
 
 export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: ["Upwork"] } })
   // --- public: deterministic client/job quality assessment (profile-independent) ---

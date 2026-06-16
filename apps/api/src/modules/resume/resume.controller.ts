@@ -1,51 +1,15 @@
-import {
-  resumeDataSchema,
-  resumeVariantCreateSchema,
-  resumeVariantPatchSchema,
-} from "@jobpilot/contracts/resume";
+import { resumeVariantCreateSchema, resumeVariantPatchSchema } from "@jobpilot/contracts/resume";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { badRequest } from "@/common/errors";
 import { profileGuard } from "@/common/middleware";
 import { sseResponse, subscribe } from "@/common/sse";
 import { resumeChannel } from "@/common/sse/channels/resume";
+import { createResumeSchema, tailorResumeSchema, updateResumeSchema } from "./resume.schema";
 import { ResumeService } from "./resume.service";
 
 const svc = container.resolve(ResumeService);
-
-const jsonCreateSchema = z.object({
-  label: z.string().min(1),
-  content: resumeDataSchema.optional(),
-});
-
-const putSchema = z.object({
-  label: z.string().min(1).optional(),
-  content: resumeDataSchema.optional(),
-});
-
-const tailorRequestSchema = z.object({
-  label: z.string().min(1),
-  jobUrl: z.url().optional().nullable(),
-  applicationId: z.number().int().positive().optional().nullable(),
-  summary: z.string().optional(),
-  emphasizedTech: z.array(z.string()).optional(),
-  jobKeywords: z.array(z.string()).optional(),
-  diffNotes: z.string().optional().nullable(),
-  maxBulletsPerEntry: z.number().int().min(1).max(20).optional(),
-  rewordTopN: z.number().int().min(0).max(3).optional(),
-  bulletRewrites: z
-    .array(
-      z.object({
-        entryIndex: z.number().int().min(0),
-        bullets: z
-          .array(z.object({ original: z.string().min(1), tailored: z.string().min(1) }))
-          .min(1),
-      }),
-    )
-    .optional(),
-});
 
 /** Pull a single `File` (and optional string field) out of a multipart request. */
 async function readUpload(
@@ -77,7 +41,7 @@ export const resumeController = new Elysia({
   })
   // create (structured JSON)
   .post("/", ({ profileId, body }) => svc.createJson(profileId, body), {
-    body: jsonCreateSchema,
+    body: createResumeSchema,
     detail: {
       summary: "Create resume from JSON",
       description:
@@ -110,7 +74,7 @@ export const resumeController = new Elysia({
   })
   .put("/:id", ({ profileId, params, body }) => svc.update(profileId, params.id, body), {
     params: idParam,
-    body: putSchema,
+    body: updateResumeSchema,
     detail: {
       summary: "Update resume",
       description:
@@ -135,18 +99,14 @@ export const resumeController = new Elysia({
     },
   })
   // variant PDF (cached, binary)
-  .get(
-    "/variants/:id/pdf",
-    ({ profileId, params }) => svc.renderVariantPdf(profileId, params.id),
-    {
-      params: idParam,
-      detail: {
-        summary: "Render variant PDF",
-        description:
-          "Streams a tailored resume variant as a cached PDF, rendering it from the variant's structured content on first request.",
-      },
+  .get("/variants/:id/pdf", ({ profileId, params }) => svc.renderVariantPdf(profileId, params.id), {
+    params: idParam,
+    detail: {
+      summary: "Render variant PDF",
+      description:
+        "Streams a tailored resume variant as a cached PDF, rendering it from the variant's structured content on first request.",
     },
-  )
+  })
   // source file: stream / replace (multipart) / delete
   .get("/:id/source", ({ profileId, params }) => svc.getSource(profileId, params.id), {
     params: idParam,
@@ -196,18 +156,14 @@ export const resumeController = new Elysia({
     },
   )
   // variants for a resume: list / create
-  .get(
-    "/:id/variants",
-    ({ profileId, params }) => svc.listVariants(profileId, params.id),
-    {
-      params: idParam,
-      detail: {
-        summary: "List resume variants",
-        description:
-          "Returns all tailored variants belonging to the given master resume, ordered by most recently updated.",
-      },
+  .get("/:id/variants", ({ profileId, params }) => svc.listVariants(profileId, params.id), {
+    params: idParam,
+    detail: {
+      summary: "List resume variants",
+      description:
+        "Returns all tailored variants belonging to the given master resume, ordered by most recently updated.",
     },
-  )
+  })
   .post(
     "/:id/variants",
     ({ profileId, params, body }) => svc.createVariant(profileId, params.id, body),
@@ -227,7 +183,7 @@ export const resumeController = new Elysia({
     ({ profileId, params, body }) => svc.createTailoredVariant(profileId, params.id, body),
     {
       params: idParam,
-      body: tailorRequestSchema,
+      body: tailorResumeSchema,
       detail: {
         summary: "Create tailored variant",
         description:
@@ -257,15 +213,11 @@ export const resumeController = new Elysia({
       },
     },
   )
-  .delete(
-    "/variants/:id",
-    ({ profileId, params }) => svc.removeVariant(profileId, params.id),
-    {
-      params: idParam,
-      detail: {
-        summary: "Delete resume variant",
-        description:
-          "Deletes a tailored variant owned by the active profile and returns the deleted variant id.",
-      },
+  .delete("/variants/:id", ({ profileId, params }) => svc.removeVariant(profileId, params.id), {
+    params: idParam,
+    detail: {
+      summary: "Delete resume variant",
+      description:
+        "Deletes a tailored variant owned by the active profile and returns the deleted variant id.",
     },
-  );
+  });

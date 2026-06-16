@@ -1,13 +1,12 @@
 import { credentialPatchSchema, credentialSchema } from "@jobpilot/contracts/credential";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
+import { domainResolveQuery } from "./credential.schema";
 import { CredentialService } from "./credential.service";
 
 const svc = container.resolve(CredentialService);
-const ResolveQuery = z.object({ domain: z.string().trim().min(1) });
 
 export const credentialController = new Elysia({
   prefix: "/credentials",
@@ -30,7 +29,7 @@ export const credentialController = new Elysia({
     },
   })
   .get("/resolve", ({ profileId, query }) => svc.resolveCredential(profileId, query.domain), {
-    query: ResolveQuery,
+    query: domainResolveQuery,
     detail: {
       summary: "Resolve login for domain",
       description:

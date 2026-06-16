@@ -11,87 +11,28 @@ import type {
   PatchCampaignJobInput,
   UpdateCampaignInput,
 } from "@jobpilot/contracts/campaign";
-import type {
-  AddCampaignOutreachInput,
-  OutreachChannel,
-  OutreachMessageResultInput,
-  OutreachMessageStatus,
-  PatchOutreachMessageInput,
+import {
+  type AddCampaignOutreachInput,
+  type OutreachMessageResultInput,
+  type PatchOutreachMessageInput,
 } from "@jobpilot/contracts/outreach";
-import { contactLinkedinConnectionSchema } from "@jobpilot/contracts/outreach";
 import { cleanReplacementCharsNullable } from "@jobpilot/contracts/utils/text";
 import { singleton } from "tsyringe";
-import type { z } from "zod/v4";
 import { findOwned, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { type CampaignEvent, campaignChannel } from "@/common/sse/channels/campaign";
+import { campaignChannel, type CampaignEvent } from "@/common/sse/channels/campaign";
 import { pipelineChannel } from "@/common/sse/channels/pipeline";
+import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
 import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
-import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import {
+  toCampaignJobRow,
+  toOutreachMessageRow,
+  type CampaignJobRow,
+  type CampaignRow,
+} from "./campaign.mapper";
 
 const STALE_THRESHOLD_MS = 5 * 60 * 1000;
-
-/** Contact connection-state union — derived from the contract schema. */
-type ContactLinkedinConnection = z.infer<typeof contactLinkedinConnectionSchema>;
-
-// ── Narrowed row shapes ──────────────────────────────────────────────────────
-// Prisma stores these enum-like columns as plain `String`. Re-narrow them to the
-// contract unions so Eden Treaty infers the precise wire types end-to-end.
-
-/**
- * A Job row with `status` narrowed to the campaign job-status union and the
- * `appliedAt` Date serialized to its ISO `string` wire form.
- */
-type CampaignJobRow = Omit<Prisma.JobGetPayload<{}>, "appliedAt"> & {
-  status: CampaignJobStatus;
-  appliedAt: string | null;
-};
-
-/**
- * A Campaign row with `status`/`source` narrowed, `config`/`summary` typed, and
- * the `startedAt`/`updatedAt`/`completedAt` Dates serialized to ISO `string`s.
- */
-type CampaignRow = Omit<
-  Prisma.CampaignGetPayload<{}>,
-  "config" | "summary" | "startedAt" | "updatedAt" | "completedAt"
-> & {
-  status: CampaignStatus;
-  source: CampaignSource;
-  config: CampaignConfig;
-  summary: CampaignSummary;
-  startedAt: string;
-  updatedAt: string;
-  completedAt: string | null;
-};
-
-/** The nested contact on an OutreachMessage row, with Dates serialized to ISO. */
-type OutreachContactRow = Omit<
-  Prisma.ContactGetPayload<{}>,
-  "linkedinConnection" | "createdAt" | "updatedAt"
-> & {
-  linkedinConnection: ContactLinkedinConnection;
-  createdAt: string;
-  updatedAt: string;
-};
-
-/**
- * An OutreachMessage row (with its contact) with `status`/`channel` and the nested
- * contact's `linkedinConnection` narrowed to the contract unions, and all Dates
- * (`sentAt`/`repliedAt`/`createdAt`/`updatedAt` plus the contact's) serialized to ISO.
- */
-type OutreachMessageRow = Omit<
-  Prisma.OutreachMessageGetPayload<{ include: { contact: true } }>,
-  "sentAt" | "repliedAt" | "createdAt" | "updatedAt" | "contact"
-> & {
-  status: OutreachMessageStatus;
-  channel: OutreachChannel;
-  sentAt: string | null;
-  repliedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  contact: OutreachContactRow;
-};
 
 function emptySummary(): CampaignSummary {
   return {
@@ -133,36 +74,6 @@ function summarizeJobs(jobs: { status: string }[]): CampaignSummary {
     fold(summary, job.status as CampaignJobStatus, 1);
   }
   return summary;
-}
-
-/** Serialize a Job row's `status`/Date fields to their wire shape. */
-function toCampaignJobRow(job: Prisma.JobGetPayload<{}>): CampaignJobRow {
-  return {
-    ...job,
-    status: job.status as CampaignJobStatus,
-    appliedAt: job.appliedAt?.toISOString() ?? null,
-  };
-}
-
-/** Serialize an OutreachMessage row (with contact) to its wire shape. */
-function toOutreachMessageRow(
-  message: Prisma.OutreachMessageGetPayload<{ include: { contact: true } }>,
-): OutreachMessageRow {
-  return {
-    ...message,
-    status: message.status as OutreachMessageStatus,
-    channel: message.channel as OutreachChannel,
-    sentAt: message.sentAt?.toISOString() ?? null,
-    repliedAt: message.repliedAt?.toISOString() ?? null,
-    createdAt: message.createdAt.toISOString(),
-    updatedAt: message.updatedAt.toISOString(),
-    contact: {
-      ...message.contact,
-      linkedinConnection: message.contact.linkedinConnection as ContactLinkedinConnection,
-      createdAt: message.contact.createdAt.toISOString(),
-      updatedAt: message.contact.updatedAt.toISOString(),
-    },
-  };
 }
 
 @singleton()
@@ -353,10 +264,7 @@ export class CampaignService {
       startedAt: campaign.startedAt.toISOString(),
       updatedAt: campaign.updatedAt.toISOString(),
       completedAt: campaign.completedAt?.toISOString() ?? null,
-    } satisfies Omit<
-      Prisma.CampaignGetPayload<{}>,
-      "startedAt" | "updatedAt" | "completedAt"
-    > & {
+    } satisfies Omit<Prisma.CampaignGetPayload<{}>, "startedAt" | "updatedAt" | "completedAt"> & {
       status: CampaignStatus;
       source: CampaignSource;
       startedAt: string;

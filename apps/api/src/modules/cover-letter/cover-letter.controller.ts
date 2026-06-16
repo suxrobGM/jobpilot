@@ -1,17 +1,12 @@
 import { coverLetterCreateSchema } from "@jobpilot/contracts/cover-letter";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { type CoverLetterPdf, CoverLetterService } from "./cover-letter.service";
+import { pdfRequestSchema } from "./cover-letter.schema";
+import { CoverLetterService, type CoverLetterPdf } from "./cover-letter.service";
 
 const svc = container.resolve(CoverLetterService);
-
-const pdfRequestSchema = z.object({
-  text: z.string().min(1),
-  name: z.string().optional(),
-});
 
 /** Wrap a rendered cover-letter PDF in an inline Response. */
 function pdfResponse({ buffer, slug }: CoverLetterPdf): Response {

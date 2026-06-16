@@ -1,13 +1,12 @@
 import { ApiTokenCreateSchema, LoginSchema, RegisterSchema } from "@jobpilot/contracts";
+import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
 import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from "./auth.cookies";
 import { AuthService } from "./auth.service";
 
 const authService = container.resolve(AuthService);
-const IdParam = z.object({ id: z.coerce.number().int() });
 
 export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   // --- public ---
@@ -43,30 +42,38 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       },
     },
   )
-  .post("/refresh", async ({ cookie }) => {
-    const raw = cookie[REFRESH_COOKIE]?.value;
-    const result = await authService.rotateRefresh(typeof raw === "string" ? raw : "");
-    setAuthCookies(cookie, result.accessToken, result.refreshToken);
-    return result;
-  }, {
-    detail: {
-      summary: "Rotate refresh token",
-      description:
-        "Validates the refresh token cookie, revokes the old refresh token, sets new access and refresh token cookies, and returns the public user with freshly issued tokens.",
+  .post(
+    "/refresh",
+    async ({ cookie }) => {
+      const raw = cookie[REFRESH_COOKIE]?.value;
+      const result = await authService.rotateRefresh(typeof raw === "string" ? raw : "");
+      setAuthCookies(cookie, result.accessToken, result.refreshToken);
+      return result;
     },
-  })
-  .post("/logout", async ({ cookie }) => {
-    const raw = cookie[REFRESH_COOKIE]?.value;
-    await authService.logout(typeof raw === "string" ? raw : "");
-    clearAuthCookies(cookie);
-    return { ok: true };
-  }, {
-    detail: {
-      summary: "Log out current session",
-      description:
-        "Revokes the refresh token from the cookie, clears the auth cookies, and returns an acknowledgement.",
+    {
+      detail: {
+        summary: "Rotate refresh token",
+        description:
+          "Validates the refresh token cookie, revokes the old refresh token, sets new access and refresh token cookies, and returns the public user with freshly issued tokens.",
+      },
     },
-  })
+  )
+  .post(
+    "/logout",
+    async ({ cookie }) => {
+      const raw = cookie[REFRESH_COOKIE]?.value;
+      await authService.logout(typeof raw === "string" ? raw : "");
+      clearAuthCookies(cookie);
+      return { ok: true };
+    },
+    {
+      detail: {
+        summary: "Log out current session",
+        description:
+          "Revokes the refresh token from the cookie, clears the auth cookies, and returns an acknowledgement.",
+      },
+    },
+  )
   // --- authenticated ---
   .use(authGuard)
   .get("/me", ({ user }) => authService.me(user.id), {
@@ -92,7 +99,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
   })
   .delete("/tokens/:id", ({ user, params }) => authService.revokeApiToken(user.id, params.id), {
-    params: IdParam,
+    params: idParam,
     detail: {
       summary: "Revoke agent API token",
       description:

@@ -1,14 +1,8 @@
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { fitProfileSchema, jobDigestSchema } from "./fit";
+import { scoreFitSchema } from "./scoring.schema";
 import { ScoringService } from "./scoring.service";
-
-const scoreFitSchema = z.object({
-  digest: jobDigestSchema,
-  profile: fitProfileSchema.partial().optional(),
-});
 
 const scoringService = container.resolve(ScoringService);
 

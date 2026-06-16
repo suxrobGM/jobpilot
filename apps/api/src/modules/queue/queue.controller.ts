@@ -1,18 +1,17 @@
 import { addQueueSchema, patchQueueSchema } from "@jobpilot/contracts/queue";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
+import { queueListQuery } from "./queue.schema";
 import { QueueService } from "./queue.service";
 
 const queueService = container.resolve(QueueService);
-const ListQuery = z.object({ status: z.string().trim().min(1).optional() });
 
 export const queueController = new Elysia({ prefix: "/queue", detail: { tags: ["Queue"] } })
   .use(profileGuard)
   .get("/", ({ profileId, query }) => queueService.list(profileId, query.status), {
-    query: ListQuery,
+    query: queueListQuery,
     detail: {
       summary: "List queue entries",
       description:
@@ -34,19 +33,15 @@ export const queueController = new Elysia({ prefix: "/queue", detail: { tags: ["
         "Returns the profile's queue entries whose status is pending, ordered by creation time.",
     },
   })
-  .patch(
-    "/:id",
-    ({ profileId, params, body }) => queueService.patch(profileId, params.id, body),
-    {
-      params: idParam,
-      body: patchQueueSchema,
-      detail: {
-        summary: "Update queue entry status",
-        description:
-          "Updates the status of the profile's queue entry, setting consumedAt when transitioning to consumed and clearing it otherwise, and returns the updated entry.",
-      },
+  .patch("/:id", ({ profileId, params, body }) => queueService.patch(profileId, params.id, body), {
+    params: idParam,
+    body: patchQueueSchema,
+    detail: {
+      summary: "Update queue entry status",
+      description:
+        "Updates the status of the profile's queue entry, setting consumedAt when transitioning to consumed and clearing it otherwise, and returns the updated entry.",
     },
-  )
+  })
   .delete("/:id", ({ profileId, params }) => queueService.remove(profileId, params.id), {
     params: idParam,
     detail: {
