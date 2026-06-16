@@ -36,6 +36,13 @@ const EnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_OAUTH_REDIRECT_URI: z.string().default("http://localhost:8002/api/email/oauth/callback"),
+
+  // Transactional email (Resend). Optional: when unset, the app logs the email
+  // body (incl. magic links) instead of sending — fine for local dev.
+  RESEND_API_KEY: z.string().optional(),
+  // Sender of account emails. `onboarding@resend.dev` is Resend's no-domain test
+  // sender (only delivers to the Resend account owner); production needs a verified domain.
+  EMAIL_FROM: z.string().default("JobPilot <onboarding@resend.dev>"),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

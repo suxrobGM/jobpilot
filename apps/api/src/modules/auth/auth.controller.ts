@@ -1,4 +1,11 @@
-import { ApiTokenCreateSchema, LoginSchema, RegisterSchema } from "@jobpilot/contracts";
+import {
+  ApiTokenCreateSchema,
+  ForgotPasswordSchema,
+  LoginSchema,
+  RegisterSchema,
+  ResetPasswordSchema,
+  VerifyEmailSchema,
+} from "@jobpilot/contracts";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
@@ -74,8 +81,39 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       },
     },
   )
+  .post("/email/verify", ({ body }) => authService.verifyEmail(body.token), {
+    body: VerifyEmailSchema,
+    detail: {
+      summary: "Verify an email address",
+      description:
+        "Confirms an email address from a verification magic link by its token, marking the account verified. The token is single-use and expires.",
+    },
+  })
+  .post("/password/forgot", ({ body }) => authService.requestPasswordReset(body.email), {
+    body: ForgotPasswordSchema,
+    detail: {
+      summary: "Request a password reset",
+      description:
+        "Sends a password-reset magic link to the address if an account exists. Always returns an acknowledgement and never reveals whether the email is registered.",
+    },
+  })
+  .post("/password/reset", ({ body }) => authService.resetPassword(body.token, body.password), {
+    body: ResetPasswordSchema,
+    detail: {
+      summary: "Reset a password",
+      description:
+        "Sets a new password from a reset magic link by its token, consumes the token, and revokes all of the user's existing sessions.",
+    },
+  })
   // --- authenticated ---
   .use(authGuard)
+  .post("/email/resend", ({ user }) => authService.resendVerification(user.id), {
+    detail: {
+      summary: "Resend the verification email",
+      description:
+        "Re-sends the verification magic link to the authenticated user's email if it is not already verified.",
+    },
+  })
   .get("/me", ({ user }) => authService.me(user.id), {
     detail: {
       summary: "Get current user",

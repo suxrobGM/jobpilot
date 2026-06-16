@@ -18,9 +18,33 @@ model User {
   updatedAt     DateTime @updatedAt
 
   // 1:1 — a user has exactly one profile (created at register, populated at onboarding).
-  profile       Profile?
-  refreshTokens RefreshToken[]
-  apiTokens     ApiToken[]
+  profile            Profile?
+  refreshTokens      RefreshToken[]
+  apiTokens          ApiToken[]
+  verificationTokens VerificationToken[]
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+// Single-use, expiring tokens for account email workflows (verify email, reset
+// password). Like RefreshToken, only a hash of the token is stored — the raw
+// value travels once, inside the magic link emailed to the user.
+model VerificationToken {
+  id         String                @id @default(uuid())
+  userId     String
+  type       VerificationTokenType
+  tokenHash  String                @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime              @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // Web session rotation. Only a hash of the token is stored, never the raw value.

@@ -29,6 +29,8 @@
     "@jobpilot/contracts": "workspace:*",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.0.9",
     "@react-pdf/renderer": "^4.5.1",
     "dotenv": "^17.4.2",
     "elysia": "^1.4.28",
@@ -42,6 +44,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "reflect-metadata": "^0.2.2",
+    "resend": "^6.12.4",
     "tsyringe": "^4.10.0",
     "zod": "^4.4.0"
   },
