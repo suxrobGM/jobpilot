@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { PersonOutlined } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -15,9 +14,7 @@ import type { ProfileResponse } from "@/api/types";
  * obvious at a glance.
  */
 export function CampaignIdentityBanner(): ReactNode {
-  const query = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () =>
-    unwrap(api.profile.get()),
-  );
+  const query = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () => api.profile.get());
   const profile = query.data?.profile;
 
   if (!profile) {

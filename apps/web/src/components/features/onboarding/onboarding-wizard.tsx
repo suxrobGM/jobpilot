@@ -2,6 +2,11 @@
 
 import { useState, type ReactElement, type SubmitEvent } from "react";
 import {
+  PROFILE_DEFAULT_VALUES,
+  profileWithAutoApplySchema,
+  type ProfileWithAutoApplyInput,
+} from "@jobpilot/contracts/profile";
+import {
   Alert,
   AlertTitle,
   Button,
@@ -13,13 +18,7 @@ import {
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import {
-  PROFILE_DEFAULT_VALUES,
-  profileWithAutoApplySchema,
-  type ProfileWithAutoApplyInput,
-} from "@jobpilot/contracts/profile";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import {
@@ -54,7 +53,7 @@ export function OnboardingWizard(): ReactElement {
   // The user's single profile is co-created at registration, so onboarding just
   // populates it via PUT /profile — no draft/active-profile dance.
   const save = useApiMutation<{ id: number }, ProfileWithAutoApplyInput>(
-    (vars) => unwrap(api.profile.put(vars)),
+    (vars) => api.profile.put(vars),
     {
       successMessage: "Profile saved",
       invalidate: [queryKeys.profile.all],

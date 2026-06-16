@@ -1,11 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { apiClient, unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { FileUpload } from "@/components/ui/form";
@@ -35,11 +34,7 @@ export const ResumeUploadStep = withForm({
     };
 
     const upload = useApiMutation<{ id: number }, File>(
-      (file) => {
-        const fd = new FormData();
-        fd.append("file", file);
-        return apiClient.upload<{ id: number }>("/api/resumes", fd);
-      },
+      (file) => api.resumes.upload.post({ file }),
       {
         successMessage: "Resume uploaded",
         invalidate: [queryKeys.resume.all, queryKeys.profile.all],
@@ -55,7 +50,7 @@ export const ResumeUploadStep = withForm({
       if (appliedRef.current) {
         return;
       }
-      const { data } = await unwrap(api.resumes({ id }).get());
+      const { data } = await api.resumes({ id }).get();
       const basics = data?.content?.basics;
       if (appliedRef.current || !basics || basics.name.trim().length === 0) {
         return;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@jobpilot/contracts/outreach";
 import { Close } from "@mui/icons-material";
 import {
   Button,
@@ -14,8 +15,6 @@ import {
   Typography,
 } from "@mui/material";
 import { api } from "@/api/eden";
-import { unwrap } from "@/api/client";
-import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@jobpilot/contracts/outreach";
 import { useApiMutation } from "@/api/hooks";
 import type { OutreachMessageDto } from "@/api/types";
 import { useAgent } from "@/providers/agent-provider";
@@ -41,31 +40,31 @@ export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactE
   const terminal = OUTREACH_MESSAGE_TERMINAL_STATUSES.includes(message.status);
 
   const save = useApiMutation<unknown, void>(
-    () => unwrap(messageApi.patch({ subject: subject || null, body })),
+    () => messageApi.patch({ subject: subject || null, body }),
     { invalidate, successMessage: "Saved" },
   );
 
   const approve = useApiMutation<unknown, void>(
-    () => unwrap(messageApi.patch({ subject: subject || null, body, status: "approved" })),
+    () => messageApi.patch({ subject: subject || null, body, status: "approved" }),
     { invalidate, successMessage: "Approved", onSuccess: onClose },
   );
 
   const send = useApiMutation<unknown, void>(
     async () => {
-      const sent = await unwrap<{ providerId: string; threadId: string }>(
-        api.email.send.post({ to: message.contact.email ?? "", subject, body }),
-      );
+      const sent = await api.email.send.post({
+        to: message.contact.email ?? "",
+        subject,
+        body,
+      });
       if (sent.error || !sent.data) {
         return sent;
       }
-      return unwrap(
-        messageApi.result.post({
-          outcome: "sent",
-          providerId: sent.data.providerId,
-          threadId: sent.data.threadId,
-          sentAt: new Date().toISOString(),
-        }),
-      );
+      return messageApi.result.post({
+        outcome: "sent",
+        providerId: sent.data.providerId,
+        threadId: sent.data.threadId,
+        sentAt: new Date().toISOString(),
+      });
     },
     { invalidate, successMessage: "Sent", onSuccess: onClose },
   );

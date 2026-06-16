@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { CAMPAIGN_JOB_STATUSES, type CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Autorenew, Clear, Replay } from "@mui/icons-material";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQueryClient } from "@tanstack/react-query";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import { CAMPAIGN_JOB_STATUSES, type CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
@@ -70,11 +69,9 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
     async () => {
       const results = await Promise.all(
         selected.map((job) =>
-          unwrap(
-            api.campaigns({ id: campaign.campaignId }).jobs({ key: job.key }).patch({
-              status: "approved",
-            }),
-          ),
+          api.campaigns({ id: campaign.campaignId }).jobs({ key: job.key }).patch({
+            status: "approved",
+          }),
         ),
       );
       const failure = results.find((r) => r.error);

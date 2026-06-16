@@ -15,7 +15,6 @@ import {
 } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
-import { apiClient, unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -31,24 +30,15 @@ export function ResumesList(): ReactElement {
   const toast = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const list = useApiQuery<ResumeListItem[]>(queryKeys.resume.list(), () =>
-    unwrap(api.resumes.get()),
-  );
+  const list = useApiQuery<ResumeListItem[]>(queryKeys.resume.list(), () => api.resumes.get());
 
-  const upload = useApiMutation<{ id: number }, File>(
-    (file) => {
-      const fd = new FormData();
-      fd.append("file", file);
-      return apiClient.upload<{ id: number }>("/api/resumes", fd);
-    },
-    {
-      successMessage: "Resume uploaded",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
-    },
-  );
+  const upload = useApiMutation<{ id: number }, File>((file) => api.resumes.upload.post({ file }), {
+    successMessage: "Resume uploaded",
+    invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+  });
 
   const setPrimary = useApiMutation<{ primaryResumeId: number | null }, number>(
-    (id) => unwrap(api.profile["primary-resume"].put({ resumeId: id })),
+    (id) => api.profile["primary-resume"].put({ resumeId: id }),
     {
       successMessage: "Primary resume updated",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

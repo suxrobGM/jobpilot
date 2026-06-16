@@ -2,7 +2,6 @@
 
 import { useState, type ReactElement } from "react";
 import { Button, Stack, TextField } from "@mui/material";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -20,7 +19,7 @@ export function ProposalNotes(props: ProposalNotesProps): ReactElement {
   const [draft, setDraft] = useState<string | null>(null);
 
   const save = useApiMutation<UpworkProposalDto, UpdateUpworkProposalRequest>(
-    (body) => unwrap(api.upwork.proposals({ id }).patch(body)),
+    (body) => api.upwork.proposals({ id }).patch(body),
     {
       invalidate: [queryKeys.upworkProposals.all],
       successMessage: "Notes saved",

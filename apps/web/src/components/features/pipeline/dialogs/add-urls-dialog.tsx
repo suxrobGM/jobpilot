@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { AddQueueEntry } from "@jobpilot/contracts/queue";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { z } from "zod/v4";
-import type { AddQueueEntry } from "@jobpilot/contracts/queue";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 interface AddUrlsDialogProps {

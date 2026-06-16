@@ -7,9 +7,8 @@ import {
   type PropsWithChildren,
   type ReactElement,
 } from "react";
-import { api } from "@/api/eden";
-import { unwrap } from "@/api/client";
 import type { AddQueueEntry } from "@jobpilot/contracts/queue";
+import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { AddUrlsDialog } from "./dialogs/add-urls-dialog";
@@ -28,14 +27,11 @@ export function PipelineActionsProvider(props: PropsWithChildren): ReactElement 
   const { children } = props;
   const [addUrlsOpen, setAddUrlsOpen] = useState(false);
 
-  const create = useApiMutation<AddUrlsResponse, AddQueueEntry>(
-    (vars) => unwrap(api.queue.post(vars)),
-    {
-      successMessage: (data) => `Queued ${data.inserted} URL${data.inserted === 1 ? "" : "s"}`,
-      invalidate: [queryKeys.queue.all, queryKeys.pipeline.all],
-      onSuccess: () => setAddUrlsOpen(false),
-    },
-  );
+  const create = useApiMutation<AddUrlsResponse, AddQueueEntry>((vars) => api.queue.post(vars), {
+    successMessage: (data) => `Queued ${data.inserted} URL${data.inserted === 1 ? "" : "s"}`,
+    invalidate: [queryKeys.queue.all, queryKeys.pipeline.all],
+    onSuccess: () => setAddUrlsOpen(false),
+  });
 
   const value: PipelineActionsValue = {
     openAddUrls: () => setAddUrlsOpen(true),

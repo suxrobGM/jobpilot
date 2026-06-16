@@ -2,10 +2,10 @@
 
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect } from "react";
-import type { ClientResult } from "@/api/client";
+import { apiErrorMessage, type EdenResult } from "@/api/error";
 import { useToast } from "@/providers/notification-provider";
 
-type QueryFn<T> = () => Promise<ClientResult<T>>;
+type QueryFn<T> = () => Promise<EdenResult<T>>;
 
 type ApiQueryKey = readonly unknown[];
 
@@ -34,7 +34,7 @@ export function useApiQuery<TData, TSelected = TData>(
     queryFn: async (): Promise<TData> => {
       const { data, error } = await queryFn();
       if (error) {
-        throw new Error(error.message);
+        throw new Error(apiErrorMessage(error));
       }
       return data as TData;
     },

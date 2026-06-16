@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import type { CredentialInput } from "@jobpilot/contracts/credential";
 import { Add, Delete } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import type { CredentialInput } from "@jobpilot/contracts/credential";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
@@ -18,11 +17,11 @@ export function CredentialsSection(): ReactElement {
   const [pendingDelete, setPendingDelete] = useState<CredentialDto | null>(null);
 
   const credentials = useApiQuery<CredentialDto[]>(queryKeys.credentials.list(), () =>
-    unwrap(api.credentials.get()),
+    api.credentials.get(),
   );
 
   const create = useApiMutation<CredentialDto, CredentialInput>(
-    (vars) => unwrap(api.credentials.post(vars)),
+    (vars) => api.credentials.post(vars),
     {
       successMessage: "Credential added",
       invalidate: [queryKeys.credentials.all],
@@ -31,7 +30,7 @@ export function CredentialsSection(): ReactElement {
   );
 
   const remove = useApiMutation<{ deleted: number }, number>(
-    (id) => unwrap(api.credentials({ id }).delete()),
+    (id) => api.credentials({ id }).delete(),
     {
       successMessage: "Credential removed",
       invalidate: [queryKeys.credentials.all],

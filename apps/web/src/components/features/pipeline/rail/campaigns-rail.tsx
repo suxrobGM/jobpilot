@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { CAMPAIGN_SOURCES, type CampaignSource } from "@jobpilot/contracts/campaign";
 import { Add, ChevronLeft, Clear, History } from "@mui/icons-material";
 import {
   Alert,
@@ -15,7 +16,6 @@ import {
 } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { CAMPAIGN_SOURCES, type CampaignSource } from "@jobpilot/contracts/campaign";
 import type { CampaignDto } from "@/api/types";
 import { CampaignRow, useCampaignsList } from "@/components/features/campaigns";
 import { CAMPAIGN_STATUS_OPTIONS } from "@/components/features/campaigns/campaign-status";

@@ -5,8 +5,8 @@ import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
+import { apiErrorMessage } from "@/api/error";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
@@ -33,7 +33,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   const toast = useToast();
 
   const detail = useApiQuery<CampaignDetailDto>(queryKeys.campaigns.detail(campaignId), () =>
-    unwrap(api.campaigns({ id: campaignId }).get()),
+    api.campaigns({ id: campaignId }).get(),
   );
 
   useSseChannel(
@@ -85,19 +85,17 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   // Upwork recommendations are recommend-only: seed a proposal draft from the
   // recommendation, then hand off to the upwork-proposal skill to write it.
   const draftProposal = async (job: CampaignJobDto): Promise<void> => {
-    const res = await unwrap(
-      api.upwork.proposals.post({
-        jobTitle: job.title,
-        clientName: job.company || null,
-        jobUrl: job.url,
-        jobDescription: job.description ?? "",
-        source: "search",
-        campaignId: job.campaignId,
-        jobKey: job.key,
-      }),
-    );
+    const res = await api.upwork.proposals.post({
+      jobTitle: job.title,
+      clientName: job.company || null,
+      jobUrl: job.url,
+      jobDescription: job.description ?? "",
+      source: "search",
+      campaignId: job.campaignId,
+      jobKey: job.key,
+    });
     if (res.error || !res.data) {
-      toast.error(res.error?.message ?? "Could not create the proposal draft");
+      toast.error(apiErrorMessage(res.error, "Could not create the proposal draft"));
       return;
     }
     void agent.injectSkill("upwork-proposal", String(res.data.id));

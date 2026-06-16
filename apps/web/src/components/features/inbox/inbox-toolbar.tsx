@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { CloudSync, FormatListBulleted } from "@mui/icons-material";
 import { Button, Stack, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -28,13 +27,10 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   const { filter, onFilterChange } = props;
   const { injectSkill } = useAgent();
 
-  const sync = useApiMutation<SyncResultDto, void>(
-    () => unwrap(api.email.sync.post()),
-    {
-      successMessage: "Inbox synced",
-      invalidate: [queryKeys.email.all],
-    },
-  );
+  const sync = useApiMutation<SyncResultDto, void>(() => api.email.sync.post(), {
+    successMessage: "Inbox synced",
+    invalidate: [queryKeys.email.all],
+  });
 
   const handleScan = async (): Promise<void> => {
     await injectSkill("scan-inbox");

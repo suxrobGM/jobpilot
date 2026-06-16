@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Button, Chip, Link } from "@mui/material";
 import {
   DataGrid,
@@ -8,7 +9,6 @@ import {
   type GridRowSelectionModel,
   type GridRowsProp,
 } from "@mui/x-data-grid";
-import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import type { CampaignJobDto } from "@/api/types";
 
 /** Statuses that can still be applied to from the campaigns detail page. */

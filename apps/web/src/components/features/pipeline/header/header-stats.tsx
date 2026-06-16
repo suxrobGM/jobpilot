@@ -3,14 +3,13 @@
 import type { ReactElement } from "react";
 import { Typography } from "@mui/material";
 import { api } from "@/api/eden";
-import { unwrap } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { type PipelineColumnPage, type PipelineStage } from "@/api/types";
 
 function useStageTotal(stage: PipelineStage): number {
   const query = useApiQuery<PipelineColumnPage>(queryKeys.pipeline.total(stage), () =>
-    unwrap(api.pipeline.get({ query: { stage, limit: 1 } })),
+    api.pipeline.get({ query: { stage, limit: 1 } }),
   );
   return query.data?.total ?? 0;
 }

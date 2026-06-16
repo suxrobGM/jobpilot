@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Stack, TextField } from "@mui/material";
 import type { ResumeSkillGroup } from "@jobpilot/contracts/resume";
+import { Stack, TextField } from "@mui/material";
 import { EntryList } from "./entry-list";
 
 interface SkillsSectionProps {

@@ -1,5 +1,5 @@
-import { NextResponse, type NextRequest } from "next/server";
 import { createApiClient } from "@jobpilot/api-client";
+import { NextResponse, type NextRequest } from "next/server";
 import { isProfileEmpty } from "@/utils/profile";
 
 const API_BASE = process.env.API_PROXY_TARGET ?? "http://localhost:8002";

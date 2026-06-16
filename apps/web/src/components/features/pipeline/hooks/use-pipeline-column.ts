@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
 import { api } from "@/api/eden";
-import { unwrap } from "@/api/client";
+import { apiErrorMessage } from "@/api/error";
 import { queryKeys } from "@/api/query-keys";
 import type { PipelineColumnPage, PipelineStage } from "@/api/types/pipeline";
 
@@ -32,18 +32,16 @@ export function usePipelineColumn(
     queryKey: queryKeys.pipeline.column(stage, filters),
     initialPageParam: null,
     queryFn: async ({ pageParam }) => {
-      const { data, error } = await unwrap<PipelineColumnPage>(
-        api.pipeline.get({
-          query: {
-            stage,
-            limit: DEFAULT_LIMIT,
-            cursor: pageParam,
-            ...filters,
-          },
-        }),
-      );
+      const { data, error } = await api.pipeline.get({
+        query: {
+          stage,
+          limit: DEFAULT_LIMIT,
+          cursor: pageParam,
+          ...filters,
+        },
+      });
       if (error || !data) {
-        throw new Error(error?.message ?? "Failed to load pipeline column");
+        throw new Error(apiErrorMessage(error, "Failed to load pipeline column"));
       }
       return data;
     },

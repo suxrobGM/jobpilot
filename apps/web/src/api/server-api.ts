@@ -1,6 +1,6 @@
 import "server-only";
-import { cookies } from "next/headers";
 import { createApiClient } from "@jobpilot/api-client";
+import { cookies } from "next/headers";
 
 const API_BASE = process.env.API_PROXY_TARGET ?? "http://localhost:8002";
 

@@ -4,7 +4,6 @@ import { useEffect, type ReactElement } from "react";
 import { Button, Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import { useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -38,17 +37,17 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const agent = useAgent();
 
   const boardsQuery = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
-    unwrap(api["job-boards"].get()),
+    api["job-boards"].get(),
   );
   const profileQuery = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () =>
-    unwrap(api.profile.get()),
+    api.profile.get(),
   );
   const recentCampaignsQuery = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    unwrap(api.campaigns.get()),
+    api.campaigns.get(),
   );
 
   const createCampaign = useApiMutation<unknown, CreateCampaignRequest>(
-    (body) => unwrap(api.campaigns.post(body)),
+    (body) => api.campaigns.post(body),
     { invalidate: [queryKeys.campaigns.all] },
   );
 

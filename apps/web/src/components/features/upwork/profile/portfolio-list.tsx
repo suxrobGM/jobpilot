@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { PortfolioProject } from "@jobpilot/contracts/upwork";
 import { Launch } from "@mui/icons-material";
 import { Box, Chip, Link, Stack, Typography } from "@mui/material";
-import type { PortfolioProject } from "@jobpilot/contracts/upwork";
 
 interface PortfolioListProps {
   items: PortfolioProject[];

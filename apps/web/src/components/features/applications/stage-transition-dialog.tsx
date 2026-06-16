@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { STAGES, type Stage } from "@jobpilot/contracts/application";
 import {
   Button,
   Dialog,
@@ -11,7 +12,6 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { STAGES, type Stage } from "@jobpilot/contracts/application";
 
 const STAGE_LABEL: Record<Stage, string> = {
   applied: "Applied",

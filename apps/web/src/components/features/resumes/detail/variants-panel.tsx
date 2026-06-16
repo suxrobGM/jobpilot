@@ -14,7 +14,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -35,11 +34,11 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
   const [search, setSearch] = useState("");
 
   const query = useApiQuery<ResumeVariantListItem[]>(queryKeys.resume.variants(resumeId), () =>
-    unwrap(api.resumes({ id: resumeId }).variants.get()),
+    api.resumes({ id: resumeId }).variants.get(),
   );
 
   const remove = useApiMutation<{ deleted: number }, number>(
-    (id) => unwrap(api.resumes.variants({ id }).delete()),
+    (id) => api.resumes.variants({ id }).delete(),
     {
       successMessage: "Variant deleted",
       invalidate: [queryKeys.resume.variants(resumeId)],

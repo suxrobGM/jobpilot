@@ -5,7 +5,6 @@ import { Delete } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -20,14 +19,11 @@ export function CoverLetterActions(props: CoverLetterActionsProps): ReactElement
   const router = useRouter();
   const confirm = useConfirm();
 
-  const remove = useApiMutation<{ ok: true }, void>(
-    () => unwrap(api["cover-letters"]({ id }).delete()),
-    {
-      successMessage: "Cover letter deleted",
-      invalidate: [queryKeys.coverLetters.all],
-      onSuccess: () => router.replace("/cover-letters" as Route),
-    },
-  );
+  const remove = useApiMutation<{ ok: true }, void>(() => api["cover-letters"]({ id }).delete(), {
+    successMessage: "Cover letter deleted",
+    invalidate: [queryKeys.coverLetters.all],
+    onSuccess: () => router.replace("/cover-letters" as Route),
+  });
 
   const handleDelete = async () => {
     const confirmed = await confirm({

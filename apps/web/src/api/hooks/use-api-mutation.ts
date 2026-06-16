@@ -6,10 +6,10 @@ import {
   type UseMutationOptions,
   type UseMutationResult,
 } from "@tanstack/react-query";
-import type { ClientResult } from "@/api/client";
+import { apiErrorMessage, type EdenResult } from "@/api/error";
 import { useToast } from "@/providers/notification-provider";
 
-type MutationFn<TData, TVariables> = (vars: TVariables) => Promise<ClientResult<TData>>;
+type MutationFn<TData, TVariables> = (vars: TVariables) => Promise<EdenResult<TData>>;
 
 type UseApiMutationOptions<TData, TVariables, TContext = unknown> = Omit<
   UseMutationOptions<TData, Error, TVariables, TContext>,
@@ -42,7 +42,7 @@ export function useApiMutation<TData, TVariables = void, TContext = unknown>(
     mutationFn: async (vars: TVariables) => {
       const { data, error } = await mutationFn(vars);
       if (error) {
-        throw new Error(error.message);
+        throw new Error(apiErrorMessage(error));
       }
       return data as TData;
     },

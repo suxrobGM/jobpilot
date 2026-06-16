@@ -4,7 +4,6 @@ import type { ReactElement } from "react";
 import { Chip, Link } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
 import { api } from "@/api/eden";
-import { unwrap } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ContactDto } from "@/api/types";
@@ -17,7 +16,7 @@ const CONNECTION_COLOR: Record<ContactDto["linkedinConnection"], "default" | "in
 
 export function ContactsTable(): ReactElement {
   const contactsQuery = useApiQuery<ContactDto[]>(queryKeys.contacts.list(), () =>
-    unwrap(api.contacts.get()),
+    api.contacts.get(),
   );
 
   const rows = contactsQuery.data ?? [];

@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import type { UpworkProposalStatus } from "@jobpilot/contracts/upwork";
 import { ChevronRight, Clear } from "@mui/icons-material";
 import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import type { UpworkProposalStatus } from "@jobpilot/contracts/upwork";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkProposalDto } from "@/api/types";
@@ -40,7 +39,7 @@ export function ProposalsList(): ReactElement {
   });
 
   const proposals = useApiQuery<UpworkProposalDto[]>(queryKeys.upworkProposals.list(), () =>
-    unwrap(api.upwork.proposals.get()),
+    api.upwork.proposals.get(),
   );
 
   const allRows = proposals.data ?? [];

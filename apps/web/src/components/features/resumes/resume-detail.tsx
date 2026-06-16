@@ -1,11 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";
@@ -29,7 +28,7 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
 
   const detail = useApiQuery<ResumeDto>(
     queryKeys.resume.detail(resumeId),
-    () => unwrap(api.resumes({ id: resumeId }).get()),
+    () => api.resumes({ id: resumeId }).get(),
     { errorMessage: "Failed to load resume" },
   );
 

@@ -4,7 +4,6 @@ import { useState, type ReactElement } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -24,7 +23,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   const [editingLabel, setEditingLabel] = useState(resume.label);
 
   const renameLabel = useApiMutation<{ id: number }, { label: string }>(
-    (vars) => unwrap(api.resumes({ id: resume.id }).put(vars)),
+    (vars) => api.resumes({ id: resume.id }).put(vars),
     {
       successMessage: "Renamed",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],
@@ -32,7 +31,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   );
 
   const setPrimary = useApiMutation<{ primaryResumeId: number | null }, void>(
-    () => unwrap(api.profile["primary-resume"].put({ resumeId: resume.id })),
+    () => api.profile["primary-resume"].put({ resumeId: resume.id }),
     {
       successMessage: "Set as primary",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],
@@ -40,7 +39,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   );
 
   const remove = useApiMutation<{ deleted: number }, void>(
-    () => unwrap(api.resumes({ id: resume.id }).delete()),
+    () => api.resumes({ id: resume.id }).delete(),
     {
       successMessage: "Resume deleted",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

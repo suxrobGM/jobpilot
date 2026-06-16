@@ -3,7 +3,6 @@
 import type { LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import {
   useApiMutation,
@@ -35,11 +34,10 @@ export function useAuth(): UseAuthResult {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const meQuery = useApiQuery<MeResponse>(
-    queryKeys.auth.me(),
-    () => unwrap(api.auth.me.get()),
-    { retry: false, staleTime: 30_000 },
-  );
+  const meQuery = useApiQuery<MeResponse>(queryKeys.auth.me(), () => api.auth.me.get(), {
+    retry: false,
+    staleTime: 30_000,
+  });
 
   const onSession = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
@@ -47,24 +45,21 @@ export function useAuth(): UseAuthResult {
   };
 
   const login = useApiMutation<AuthSessionResponse, LoginInput>(
-    (body) => unwrap(api.auth.login.post(body)),
+    (body) => api.auth.login.post(body),
     { onSuccess: onSession },
   );
 
   const register = useApiMutation<AuthSessionResponse, RegisterInput>(
-    (body) => unwrap(api.auth.register.post(body)),
+    (body) => api.auth.register.post(body),
     { onSuccess: onSession },
   );
 
-  const logout = useApiMutation<LogoutResponse, void>(
-    () => unwrap(api.auth.logout.post()),
-    {
-      onSuccess: () => {
-        queryClient.clear();
-        router.push("/login");
-      },
+  const logout = useApiMutation<LogoutResponse, void>(() => api.auth.logout.post(), {
+    onSuccess: () => {
+      queryClient.clear();
+      router.push("/login");
     },
-  );
+  });
 
   return {
     user: meQuery.data?.user,

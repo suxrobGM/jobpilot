@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { Delete, PictureAsPdf } from "@mui/icons-material";
 import { Box, IconButton, Stack, Typography } from "@mui/material";
-import { apiClient, unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -23,11 +22,7 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
   const toast = useToast();
 
   const upload = useApiMutation<{ id: number }, File>(
-    (file) => {
-      const fd = new FormData();
-      fd.append("file", file);
-      return apiClient.upload<{ id: number }>(`/api/resumes/${resume.id}/source`, fd);
-    },
+    (file) => api.resumes({ id: resume.id }).source.post({ file }),
     {
       successMessage: "Source PDF uploaded",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],
@@ -35,7 +30,7 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
   );
 
   const remove = useApiMutation<{ id: number }, void>(
-    () => unwrap(api.resumes({ id: resume.id }).source.delete()),
+    () => api.resumes({ id: resume.id }).source.delete(),
     {
       successMessage: "Source PDF removed",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

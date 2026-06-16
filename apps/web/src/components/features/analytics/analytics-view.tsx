@@ -2,7 +2,6 @@
 
 import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -23,7 +22,7 @@ function toEntries<T extends { count: number }>(
 export function AnalyticsView(): ReactElement {
   const query = useApiQuery<AnalyticsStatsDto>(
     queryKeys.analytics.stats(),
-    () => unwrap(api.analytics.get()),
+    () => api.analytics.get(),
     { errorMessage: "Failed to load analytics stats" },
   );
 

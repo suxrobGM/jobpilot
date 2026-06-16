@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import type { ResumeData } from "@jobpilot/contracts/resume";
 import {
   AccountCircleOutlined,
   Build,
@@ -11,9 +12,7 @@ import {
   WorkOutlined,
 } from "@mui/icons-material";
 import { Box, Button, Stack, Typography, type SvgIconProps } from "@mui/material";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import type { ResumeData } from "@jobpilot/contracts/resume";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { SectionCard } from "@/components/ui/layout";
@@ -119,7 +118,7 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
   const [dirty, setDirty] = useState(false);
 
   const save = useApiMutation<{ id: number; version: number }, ResumeData>(
-    (vars) => unwrap(api.resumes({ id: resumeId }).put({ content: vars })),
+    (vars) => api.resumes({ id: resumeId }).put({ content: vars }),
     {
       successMessage: "Resume saved",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

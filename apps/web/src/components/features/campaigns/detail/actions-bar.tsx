@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import {
   Autorenew,
   Delete,
@@ -23,9 +24,7 @@ import {
 } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDetailDto } from "@/api/types";
@@ -47,11 +46,9 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const stop = useApiMutation<unknown, void>(
     () =>
-      unwrap(
-        campaignResource.patch({
-          status: "paused" satisfies CampaignStatus,
-        }),
-      ),
+      campaignResource.patch({
+        status: "paused" satisfies CampaignStatus,
+      }),
     {
       successMessage: "Campaign paused",
       invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
@@ -60,12 +57,10 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const complete = useApiMutation<unknown, void>(
     () =>
-      unwrap(
-        campaignResource.patch({
-          status: "completed" satisfies CampaignStatus,
-          completedAt: new Date().toISOString(),
-        }),
-      ),
+      campaignResource.patch({
+        status: "completed" satisfies CampaignStatus,
+        completedAt: new Date().toISOString(),
+      }),
     {
       successMessage: "Campaign marked as done",
       invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
@@ -76,18 +71,15 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const [minScore, setMinScore] = useState(campaign.config.minScore ?? 70);
 
   const rescan = useApiMutation<unknown, void>(
-    () => unwrap(campaignResource.patch({ config: { minScore } })),
+    () => campaignResource.patch({ config: { minScore } }),
     { invalidate: [queryKeys.campaigns.detail(campaign.campaignId), queryKeys.campaigns.all] },
   );
 
-  const remove = useApiMutation<unknown, void>(
-    () => unwrap(campaignResource.delete()),
-    {
-      successMessage: "Campaign deleted",
-      invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
-      onSuccess: () => router.replace("/" as Route),
-    },
-  );
+  const remove = useApiMutation<unknown, void>(() => campaignResource.delete(), {
+    successMessage: "Campaign deleted",
+    invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
+    onSuccess: () => router.replace("/" as Route),
+  });
 
   const failedCount = campaign.jobs.filter((j) => j.status === "failed").length;
   const skippedCount = campaign.summary.skipped;

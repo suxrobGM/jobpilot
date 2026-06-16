@@ -2,6 +2,11 @@
 
 import { useState, type ReactElement } from "react";
 import {
+  credentialSchema,
+  SERVICE_PROVIDERS,
+  type CredentialInput,
+} from "@jobpilot/contracts/credential";
+import {
   Button,
   Dialog,
   DialogActions,
@@ -11,11 +16,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
-import {
-  credentialSchema,
-  SERVICE_PROVIDERS,
-  type CredentialInput,
-} from "@jobpilot/contracts/credential";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 interface CredentialFormDialogProps {

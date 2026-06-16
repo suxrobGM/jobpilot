@@ -5,7 +5,6 @@ import { Close } from "@mui/icons-material";
 import { Button, Card, CardActions, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { api } from "@/api/eden";
-import { unwrap } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
@@ -24,7 +23,7 @@ import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 export function PipelineScopeBanner(): ReactNode {
   const { campaignId, setCampaignId } = usePipelineFilters();
   const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    unwrap(api.campaigns.get()),
+    api.campaigns.get(),
   );
 
   if (!campaignId) {

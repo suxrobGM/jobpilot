@@ -1,15 +1,14 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
-import { Save } from "@mui/icons-material";
-import { Box, Button, LinearProgress, Stack } from "@mui/material";
-import { unwrap } from "@/api/client";
-import { api } from "@/api/eden";
 import {
   PROFILE_DEFAULT_VALUES,
   profileWithAutoApplySchema,
   type ProfileWithAutoApplyInput,
 } from "@jobpilot/contracts/profile";
+import { Save } from "@mui/icons-material";
+import { Box, Button, LinearProgress, Stack } from "@mui/material";
+import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";
@@ -36,11 +35,9 @@ const ANCHORS: SectionAnchor[] = [
 ];
 
 export function SettingsContent(): ReactElement {
-  const query = useApiQuery<ProfileResponse>(
-    queryKeys.profile.detail(),
-    () => unwrap(api.profile.get()),
-    { errorMessage: "Failed to load profile" },
-  );
+  const query = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () => api.profile.get(), {
+    errorMessage: "Failed to load profile",
+  });
 
   if (query.isLoading || !query.data) {
     return <LinearProgress />;
@@ -102,7 +99,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
   const [, setDirty] = useState(false);
 
   const save = useApiMutation<{ id: number }, ProfileWithAutoApplyInput>(
-    (vars) => unwrap(api.profile.put(vars)),
+    (vars) => api.profile.put(vars),
     {
       successMessage: "Settings saved",
       invalidate: [queryKeys.profile.all],

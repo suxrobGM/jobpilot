@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import type { JobBoardInput } from "@jobpilot/contracts/job-board";
 import { Add } from "@mui/icons-material";
 import { Button } from "@mui/material";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import type { JobBoardInput } from "@jobpilot/contracts/job-board";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";
@@ -15,7 +14,7 @@ export function AddBoardButton(): ReactElement {
   const [open, setOpen] = useState(false);
 
   const create = useApiMutation<JobBoardDto, JobBoardInput>(
-    (vars) => unwrap(api["job-boards"].post(vars)),
+    (vars) => api["job-boards"].post(vars),
     {
       successMessage: "Board added",
       invalidate: [queryKeys.jobBoards.all],

@@ -11,7 +11,6 @@ import {
   MenuItem,
   Tooltip,
 } from "@mui/material";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -41,7 +40,7 @@ export function AccountMenu(): ReactElement {
 
   const profileQuery = useApiQuery<ProfileResponse, ProfileDto | null>(
     queryKeys.profile.detail(),
-    () => unwrap(api.profile.get()),
+    () => api.profile.get(),
     { select: (data) => data.profile },
   );
 

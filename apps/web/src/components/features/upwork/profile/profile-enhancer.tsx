@@ -1,12 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Box, Button, Chip, LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
-import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkProfileDto } from "@/api/types";
@@ -44,7 +43,7 @@ export function ProfileEnhancer(): ReactElement {
   });
 
   const query = useApiQuery<UpworkProfileDto | null>(queryKeys.upworkProfile.detail(), () =>
-    unwrap(api.upwork.profile.get()),
+    api.upwork.profile.get(),
   );
 
   if (query.isLoading) {

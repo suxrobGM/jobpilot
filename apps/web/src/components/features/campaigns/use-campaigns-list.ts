@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { unwrap } from "@/api/client";
-import { api } from "@/api/eden";
 import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
+import { useState } from "react";
+import { api } from "@/api/eden";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
@@ -33,7 +32,7 @@ export function useCampaignsList(pageSize: number): UseCampaignsListResult {
   const [sourceFilter, setSourceFilterState] = useState<CampaignSource | null>(null);
 
   const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    unwrap(api.campaigns.get()),
+    api.campaigns.get(),
   );
 
   const allRows = campaigns.data ?? [];

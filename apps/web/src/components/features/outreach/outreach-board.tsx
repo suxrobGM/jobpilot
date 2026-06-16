@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import type { CampaignStatus } from "@jobpilot/contracts/campaign";
+import {
+  OUTREACH_MESSAGE_TERMINAL_STATUSES,
+  type OutreachMessageStatus,
+} from "@jobpilot/contracts/outreach";
 import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
 import {
   DataGrid,
@@ -9,12 +14,6 @@ import {
   type GridRowsProp,
 } from "@mui/x-data-grid";
 import { api } from "@/api/eden";
-import { unwrap } from "@/api/client";
-import type { CampaignStatus } from "@jobpilot/contracts/campaign";
-import {
-  OUTREACH_MESSAGE_TERMINAL_STATUSES,
-  type OutreachMessageStatus,
-} from "@jobpilot/contracts/outreach";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type {
@@ -67,10 +66,10 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
 
   const messagesQuery = useApiQuery<OutreachMessageDto[]>(
     queryKeys.campaigns.outreach(campaignId),
-    () => unwrap(api.campaigns({ id: campaignId }).outreach.get()),
+    () => api.campaigns({ id: campaignId }).outreach.get(),
   );
   const accountQuery = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
-    unwrap(api.email.account.get()),
+    api.email.account.get(),
   );
 
   const invalidate = [
@@ -80,23 +79,19 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
 
   const skip = useApiMutation<unknown, number>(
     (id) =>
-      unwrap(
-        api
-          .campaigns({ id: campaignId })
-          .outreach({ messageId: id })
-          .result.post({ outcome: "skipped" }),
-      ),
+      api
+        .campaigns({ id: campaignId })
+        .outreach({ messageId: id })
+        .result.post({ outcome: "skipped" }),
     { invalidate, successMessage: "Skipped" },
   );
 
   const approveSelected = useApiMutation<number[], number[]>(
     async (ids) => {
       for (const id of ids) {
-        const res = await unwrap(
-          api.campaigns({ id: campaignId }).outreach({ messageId: id }).patch({
-            status: "approved",
-          }),
-        );
+        const res = await api.campaigns({ id: campaignId }).outreach({ messageId: id }).patch({
+          status: "approved",
+        });
         if (res.error) {
           return { data: null, error: res.error };
         }

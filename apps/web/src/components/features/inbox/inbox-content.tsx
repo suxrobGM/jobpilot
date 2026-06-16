@@ -3,7 +3,6 @@
 import { useState, type ReactElement } from "react";
 import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { unwrap } from "@/api/client";
 import { api } from "@/api/eden";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -31,7 +30,7 @@ export function InboxContent(): ReactElement {
   const { injectSkill } = useAgent();
 
   const account = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
-    unwrap(api.email.account.get()),
+    api.email.account.get(),
   );
 
   const connected = account.data?.connected === true;
@@ -39,7 +38,7 @@ export function InboxContent(): ReactElement {
   const filters = { filter };
   const messages = useApiQuery<EmailMessageDto[]>(
     queryKeys.email.messages(filters as Record<string, unknown>),
-    () => unwrap(api.email.messages.get({ query: buildQuery(filter) })),
+    () => api.email.messages.get({ query: buildQuery(filter) }),
     { enabled: connected },
   );
 
