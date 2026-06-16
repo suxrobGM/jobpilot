@@ -1,6 +1,6 @@
 model UpworkProposal {
-  id        Int     @id @default(autoincrement())
-  profileId Int
+  id        String  @id @default(uuid())
+  profileId String
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   jobTitle       String
@@ -36,8 +36,8 @@ model UpworkProposal {
 // (only `approved` may be applied to Upwork). Portfolio columns are JSON arrays
 // of { title, description, url?, skills?: string[] }.
 model UpworkProfile {
-  id        Int     @id @default(autoincrement())
-  profileId Int     @unique
+  id        String  @id @default(uuid())
+  profileId String  @unique
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   currentTitle      String?

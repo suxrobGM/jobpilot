@@ -1,6 +1,6 @@
 model QueueEntry {
-  id         Int       @id @default(autoincrement())
-  profileId  Int
+  id         String    @id @default(uuid())
+  profileId  String
   profile    Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   url        String
   note       String?

@@ -1,6 +1,6 @@
 model Resume {
-  id        Int     @id @default(autoincrement())
-  profileId Int
+  id        String  @id @default(uuid())
+  profileId String
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   label String
@@ -22,13 +22,13 @@ model Resume {
 }
 
 model ResumeVariant {
-  id       Int    @id @default(autoincrement())
-  resumeId Int
+  id       String @id @default(uuid())
+  resumeId String
   resume   Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   label         String
   jobUrl        String?
-  applicationId Int?
+  applicationId String?
   application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
 
   content   String

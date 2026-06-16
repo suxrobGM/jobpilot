@@ -1,5 +1,5 @@
 model Job {
-  id          Int       @id @default(autoincrement())
+  id          String    @id @default(uuid())
   campaignId  String
   campaign    Campaign  @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
   key         String
@@ -19,6 +19,7 @@ model Job {
   skipReason  String?
   description String?
   digest      String?
+  createdAt   DateTime  @default(now())
 
   @@unique([campaignId, key])
   @@index([campaignId, status])

@@ -9,6 +9,11 @@ model User {
   passwordHash  String
   role          UserRole @default(USER)
   emailVerified Boolean  @default(false)
+  // Per-user data-encryption key (random 32B), itself encrypted under SECRET_MASTER_KEY.
+  // Decrypts this account's stored secrets (board logins, captcha keys, Gmail tokens).
+  // Dropping it (account delete) crypto-shreds those secrets.
+  wrappedDek    String?
+  dekKeyId      Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -20,7 +25,7 @@ model User {
 
 // Web session rotation. Only a hash of the token is stored, never the raw value.
 model RefreshToken {
-  id        Int       @id @default(autoincrement())
+  id        String    @id @default(uuid())
   userId    String
   tokenHash String    @unique
   expiresAt DateTime
@@ -36,7 +41,7 @@ model RefreshToken {
 // The local agent's credential: a long-lived, revocable personal access token.
 // The terminal mints one and injects it as JOBPILOT_API_TOKEN. Only the hash is stored.
 model ApiToken {
-  id         Int       @id @default(autoincrement())
+  id         String    @id @default(uuid())
   userId     String
   name       String
   tokenHash  String    @unique

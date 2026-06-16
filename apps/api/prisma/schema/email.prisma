@@ -1,6 +1,6 @@
 model EmailAccount {
-  id             Int       @id @default(autoincrement())
-  profileId      Int       @unique
+  id             String    @id @default(uuid())
+  profileId      String    @unique
   profile        Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   provider       String
   email          String
@@ -17,8 +17,8 @@ model EmailAccount {
 }
 
 model EmailMessage {
-  id          Int          @id @default(autoincrement())
-  accountId   Int
+  id          String       @id @default(uuid())
+  accountId   String
   account     EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   providerId  String       @unique
   threadId    String?
@@ -35,7 +35,7 @@ model EmailMessage {
   classification String?
   confidence     Float?
   reasoning      String?
-  matchedAppId   Int?
+  matchedAppId   String?
   matchedApp     Application? @relation(fields: [matchedAppId], references: [id], onDelete: SetNull)
   matchScore     Float?
   reviewStatus   String       @default("pending")

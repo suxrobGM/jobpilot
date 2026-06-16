@@ -1,10 +1,13 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'USER');
 
 -- CreateTable
 CREATE TABLE "Application" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "url" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "company" TEXT NOT NULL,
@@ -27,8 +30,8 @@ CREATE TABLE "Application" (
 
 -- CreateTable
 CREATE TABLE "StageEvent" (
-    "id" SERIAL NOT NULL,
-    "applicationId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "applicationId" TEXT NOT NULL,
     "fromStage" TEXT,
     "toStage" TEXT NOT NULL,
     "note" TEXT,
@@ -44,6 +47,8 @@ CREATE TABLE "User" (
     "passwordHash" TEXT NOT NULL,
     "role" "UserRole" NOT NULL DEFAULT 'USER',
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "wrappedDek" TEXT,
+    "dekKeyId" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -52,7 +57,7 @@ CREATE TABLE "User" (
 
 -- CreateTable
 CREATE TABLE "RefreshToken" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "tokenHash" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
@@ -64,7 +69,7 @@ CREATE TABLE "RefreshToken" (
 
 -- CreateTable
 CREATE TABLE "ApiToken" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "tokenHash" TEXT NOT NULL,
@@ -79,7 +84,7 @@ CREATE TABLE "ApiToken" (
 -- CreateTable
 CREATE TABLE "Campaign" (
     "campaignId" TEXT NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "profileId" TEXT NOT NULL,
     "query" TEXT NOT NULL,
     "source" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'in_progress',
@@ -94,7 +99,7 @@ CREATE TABLE "Campaign" (
 
 -- CreateTable
 CREATE TABLE "CampaignEvent" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "campaignId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
     "payload" TEXT NOT NULL,
@@ -105,8 +110,8 @@ CREATE TABLE "CampaignEvent" (
 
 -- CreateTable
 CREATE TABLE "CoverLetter" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "jobUrl" TEXT,
     "jobTitle" TEXT,
     "company" TEXT,
@@ -119,8 +124,8 @@ CREATE TABLE "CoverLetter" (
 
 -- CreateTable
 CREATE TABLE "Credential" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "scope" TEXT NOT NULL,
     "email" TEXT,
     "password" TEXT,
@@ -131,8 +136,8 @@ CREATE TABLE "Credential" (
 
 -- CreateTable
 CREATE TABLE "EmailAccount" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "provider" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "accessToken" TEXT,
@@ -149,8 +154,8 @@ CREATE TABLE "EmailAccount" (
 
 -- CreateTable
 CREATE TABLE "EmailMessage" (
-    "id" SERIAL NOT NULL,
-    "accountId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
     "providerId" TEXT NOT NULL,
     "threadId" TEXT,
     "subject" TEXT NOT NULL,
@@ -165,7 +170,7 @@ CREATE TABLE "EmailMessage" (
     "classification" TEXT,
     "confidence" DOUBLE PRECISION,
     "reasoning" TEXT,
-    "matchedAppId" INTEGER,
+    "matchedAppId" TEXT,
     "matchScore" DOUBLE PRECISION,
     "reviewStatus" TEXT NOT NULL DEFAULT 'pending',
     "appliedStage" TEXT,
@@ -178,8 +183,8 @@ CREATE TABLE "EmailMessage" (
 
 -- CreateTable
 CREATE TABLE "JobBoard" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "domain" TEXT NOT NULL,
     "searchUrl" TEXT,
@@ -192,7 +197,7 @@ CREATE TABLE "JobBoard" (
 
 -- CreateTable
 CREATE TABLE "Job" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "campaignId" TEXT NOT NULL,
     "key" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -211,14 +216,15 @@ CREATE TABLE "Job" (
     "skipReason" TEXT,
     "description" TEXT,
     "digest" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Job_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Contact" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "title" TEXT,
     "company" TEXT,
@@ -229,7 +235,7 @@ CREATE TABLE "Contact" (
     "linkedinConnection" TEXT NOT NULL DEFAULT 'none',
     "discoverySource" TEXT,
     "matchConfidence" DOUBLE PRECISION,
-    "relatedAppId" INTEGER,
+    "relatedAppId" TEXT,
     "relatedJobUrl" TEXT,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -240,9 +246,9 @@ CREATE TABLE "Contact" (
 
 -- CreateTable
 CREATE TABLE "OutreachMessage" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
-    "contactId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
+    "contactId" TEXT NOT NULL,
     "campaignId" TEXT,
     "channel" TEXT NOT NULL,
     "linkedinKind" TEXT,
@@ -262,7 +268,7 @@ CREATE TABLE "OutreachMessage" (
 
 -- CreateTable
 CREATE TABLE "Profile" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "firstName" TEXT NOT NULL,
     "lastName" TEXT NOT NULL,
@@ -289,7 +295,7 @@ CREATE TABLE "Profile" (
     "eeoHispanicOrLatino" TEXT,
     "eeoVeteranStatus" TEXT,
     "eeoDisabilityStatus" TEXT,
-    "primaryResumeId" INTEGER,
+    "primaryResumeId" TEXT,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Profile_pkey" PRIMARY KEY ("id")
@@ -297,8 +303,8 @@ CREATE TABLE "Profile" (
 
 -- CreateTable
 CREATE TABLE "Reference" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "relationship" TEXT,
     "company" TEXT,
@@ -311,8 +317,8 @@ CREATE TABLE "Reference" (
 
 -- CreateTable
 CREATE TABLE "AutoApplySettings" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "minMatchScore" INTEGER NOT NULL DEFAULT 70,
     "maxApplicationsPerCampaign" INTEGER,
     "defaultStartDate" TEXT NOT NULL DEFAULT '2 weeks notice',
@@ -322,8 +328,8 @@ CREATE TABLE "AutoApplySettings" (
 
 -- CreateTable
 CREATE TABLE "QueueEntry" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "url" TEXT NOT NULL,
     "note" TEXT,
     "status" TEXT NOT NULL DEFAULT 'pending',
@@ -335,8 +341,8 @@ CREATE TABLE "QueueEntry" (
 
 -- CreateTable
 CREATE TABLE "Resume" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "label" TEXT NOT NULL,
     "sourceFilename" TEXT,
     "sourceMimeType" TEXT,
@@ -351,11 +357,11 @@ CREATE TABLE "Resume" (
 
 -- CreateTable
 CREATE TABLE "ResumeVariant" (
-    "id" SERIAL NOT NULL,
-    "resumeId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "resumeId" TEXT NOT NULL,
     "label" TEXT NOT NULL,
     "jobUrl" TEXT,
-    "applicationId" INTEGER,
+    "applicationId" TEXT,
     "content" TEXT NOT NULL,
     "diffNotes" TEXT,
     "rewrites" TEXT,
@@ -367,8 +373,8 @@ CREATE TABLE "ResumeVariant" (
 
 -- CreateTable
 CREATE TABLE "UpworkProposal" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "jobTitle" TEXT NOT NULL,
     "clientName" TEXT,
     "jobUrl" TEXT,
@@ -390,8 +396,8 @@ CREATE TABLE "UpworkProposal" (
 
 -- CreateTable
 CREATE TABLE "UpworkProfile" (
-    "id" SERIAL NOT NULL,
-    "profileId" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
     "currentTitle" TEXT,
     "currentOverview" TEXT,
     "currentHourlyRate" TEXT,

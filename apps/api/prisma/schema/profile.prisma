@@ -1,5 +1,5 @@
 model Profile {
-  id        Int    @id @default(autoincrement())
+  id        String @id @default(uuid())
   userId    String @unique
   user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   firstName String
@@ -31,7 +31,7 @@ model Profile {
   eeoVeteranStatus    String?
   eeoDisabilityStatus String?
 
-  primaryResumeId Int?     @unique
+  primaryResumeId String?  @unique
   primaryResume   Resume?  @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
   resumes         Resume[]
 
@@ -55,8 +55,8 @@ model Profile {
 }
 
 model Reference {
-  id           Int     @id @default(autoincrement())
-  profileId    Int
+  id           String  @id @default(uuid())
+  profileId    String
   profile      Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   name         String
   relationship String?
@@ -69,8 +69,8 @@ model Reference {
 }
 
 model AutoApplySettings {
-  id                    Int     @id @default(autoincrement())
-  profileId             Int     @unique
+  id                    String  @id @default(uuid())
+  profileId             String  @unique
   profile               Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   minMatchScore              Int     @default(70)
   maxApplicationsPerCampaign Int?

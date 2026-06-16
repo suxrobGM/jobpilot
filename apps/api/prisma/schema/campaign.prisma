@@ -1,6 +1,6 @@
 model Campaign {
   campaignId  String    @id
-  profileId   Int
+  profileId   String
   profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   query       String
   source      String
@@ -20,7 +20,7 @@ model Campaign {
 }
 
 model CampaignEvent {
-  id         Int      @id @default(autoincrement())
+  id         String   @id @default(uuid())
   campaignId String
   campaign   Campaign @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
   type       String

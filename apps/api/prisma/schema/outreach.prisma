@@ -1,6 +1,6 @@
 model Contact {
-  id        Int     @id @default(autoincrement())
-  profileId Int
+  id        String  @id @default(uuid())
+  profileId String
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   name            String
@@ -15,7 +15,7 @@ model Contact {
   discoverySource    String? // "google" | "company-site" | "web" | "linkedin" | "manual"
   matchConfidence    Float? // confidence we found the right person
 
-  relatedAppId  Int? // job-tied scope
+  relatedAppId  String? // job-tied scope
   relatedApp    Application? @relation(fields: [relatedAppId], references: [id], onDelete: SetNull)
   relatedJobUrl String?
 
@@ -30,10 +30,10 @@ model Contact {
 }
 
 model OutreachMessage {
-  id        Int     @id @default(autoincrement())
-  profileId Int
+  id        String  @id @default(uuid())
+  profileId String
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  contactId Int
+  contactId String
   contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
   campaignId String?
   campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
