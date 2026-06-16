@@ -91,7 +91,7 @@ export const profileSchema = z.object({
   eeoVeteranStatus: z.string().optional().nullable(),
   eeoDisabilityStatus: z.string().optional().nullable(),
 
-  primaryResumeId: z.number().int().nullable().optional(),
+  primaryResumeId: z.uuid().nullable().optional(),
 });
 
 export const autoApplySettingsSchema = z.object({
@@ -106,7 +106,7 @@ export const profileWithAutoApplySchema = profileSchema.extend({
 
 /** Body for setting (or clearing, with `null`) the profile's primary resume. */
 export const setPrimaryResumeSchema = z.object({
-  resumeId: z.number().int().nullable(),
+  resumeId: z.uuid().nullable(),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;

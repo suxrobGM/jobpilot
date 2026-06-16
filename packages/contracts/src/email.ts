@@ -19,7 +19,7 @@ export const scanMessageSchema = z.object({
   classification: classificationSchema.optional(),
   confidence: z.number().min(0).max(1).optional(),
   reasoning: z.string().optional(),
-  matchedAppId: z.number().int().optional().nullable(),
+  matchedAppId: z.uuid().optional().nullable(),
   matchScore: z.number().min(0).max(1).optional().nullable(),
   appliedStage: z.string().optional().nullable(),
   reviewStatus: reviewStatusSchema.optional(),

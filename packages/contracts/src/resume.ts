@@ -66,7 +66,7 @@ export type ResumeEducation = z.infer<typeof resumeEducationSchema>;
 export const resumeVariantCreateSchema = z.object({
   label: z.string().min(1, "Required"),
   jobUrl: z.string().optional().nullable(),
-  applicationId: z.number().int().optional().nullable(),
+  applicationId: z.uuid().optional().nullable(),
   content: resumeDataSchema,
   diffNotes: z.string().optional().nullable(),
 });
@@ -74,7 +74,7 @@ export const resumeVariantCreateSchema = z.object({
 export const resumeVariantPatchSchema = z.object({
   label: z.string().min(1).optional(),
   jobUrl: z.string().optional().nullable(),
-  applicationId: z.number().int().optional().nullable(),
+  applicationId: z.uuid().optional().nullable(),
   content: resumeDataSchema.optional(),
   diffNotes: z.string().optional().nullable(),
 });

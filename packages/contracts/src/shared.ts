@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-/** Numeric `id` path param, coerced from the route string and validated positive. */
+/** UUID `id` path param. */
 export const idParam = z.object({
-  id: z.coerce.number().int().positive(),
+  id: z.uuid(),
 });

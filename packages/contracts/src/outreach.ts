@@ -78,7 +78,7 @@ export const contactFieldsSchema = z.object({
   linkedinConnection: contactLinkedinConnectionSchema.optional(),
   discoverySource: contactDiscoverySourceSchema.optional().nullable(),
   matchConfidence: z.number().min(0).max(1).optional().nullable(),
-  relatedAppId: z.number().int().optional().nullable(),
+  relatedAppId: z.uuid().optional().nullable(),
   relatedJobUrl: z.url().optional().nullable(),
   notes: reasonText.optional().nullable(),
 });
@@ -102,7 +102,7 @@ export const outreachMessageFieldsSchema = z.object({
  */
 export const addCampaignOutreachSchema = z
   .object({
-    contactId: z.number().int().optional(),
+    contactId: z.uuid().optional(),
     contact: createContactSchema.optional(),
     message: outreachMessageFieldsSchema,
   })
