@@ -1,11 +1,11 @@
 import { approveSchema, scanMessageSchema } from "@jobpilot/contracts/email";
 import { sendEmailSchema } from "@jobpilot/contracts/outreach";
 import { idParam } from "@jobpilot/contracts/shared";
-import { Elysia } from "elysia";
+import { Elysia, sse } from "elysia";
 import { container } from "@/common/di";
 import { badRequest, ErrorCodes, HttpError } from "@/common/errors";
 import { profileGuard } from "@/common/middleware";
-import { sseResponse, subscribe } from "@/common/sse";
+import { subscribe } from "@/common/sse";
 import { inboxChannel } from "@/common/sse/channels/inbox";
 import { env } from "@/env";
 import { EmailAccountService } from "./account/account.service";
@@ -107,7 +107,7 @@ export const emailController = new Elysia({
     },
   })
   // --- Events SSE (now auth-scoped) ------------------------------------------
-  .get("/events", () => sseResponse(subscribe(inboxChannel, undefined)), {
+  .get("/events", () => sse(subscribe(inboxChannel, undefined)), {
     detail: {
       summary: "Stream inbox events",
       description:

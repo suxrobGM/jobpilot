@@ -21,21 +21,10 @@ export function publish<C extends AnyChannel>(
   busFor(channel).publish(channel.topic(params), event);
 }
 
-/** Open an SSE-encoded stream for a channel's topic. Wrap with {@link sseResponse}. */
+/** Async generator of a channel's events. Wrap with Elysia `sse()` in the route. */
 export function subscribe<C extends AnyChannel>(
   channel: C,
   params: ChannelTopicParams<C>,
-): ReadableStream<Uint8Array> {
+): AsyncGenerator<ChannelEvent<C>, void, unknown> {
   return busFor(channel).subscribe(channel.topic(params));
-}
-
-const SSE_HEADERS = {
-  "content-type": "text/event-stream",
-  "cache-control": "no-cache, no-transform",
-  connection: "keep-alive",
-} as const;
-
-/** Wrap an SSE stream in a `Response` with the right text/event-stream headers. */
-export function sseResponse(stream: ReadableStream<Uint8Array>): Response {
-  return new Response(stream, { headers: SSE_HEADERS });
 }

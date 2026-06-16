@@ -1,8 +1,8 @@
 import { idParam } from "@jobpilot/contracts/shared";
-import { Elysia } from "elysia";
+import { Elysia, sse } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { sseResponse, subscribe } from "@/common/sse";
+import { subscribe } from "@/common/sse";
 import { resumeChannel } from "@/common/sse/channels/resume";
 import { resumeFileController } from "./files/file.controller";
 import { createResumeSchema, updateResumeSchema } from "./resume.schema";
@@ -80,7 +80,7 @@ export const resumeController = new Elysia({
     "/:id/events",
     async ({ profileId, params }) => {
       await svc.assertResumeOwned(profileId, params.id);
-      return sseResponse(subscribe(resumeChannel, { resumeId: params.id }));
+      return sse(subscribe(resumeChannel, { resumeId: params.id }));
     },
     {
       params: idParam,

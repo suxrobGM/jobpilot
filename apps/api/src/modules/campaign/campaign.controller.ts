@@ -3,10 +3,10 @@ import {
   createCampaignSchema,
   updateCampaignSchema,
 } from "@jobpilot/contracts/campaign";
-import { Elysia } from "elysia";
+import { Elysia, sse } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { sseResponse, subscribe } from "@/common/sse";
+import { subscribe } from "@/common/sse";
 import { campaignChannel } from "@/common/sse/channels/campaign";
 import { campaignParams, campaignsQuery } from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
@@ -67,7 +67,7 @@ export const campaignController = new Elysia({
     "/:id/events",
     async ({ profileId, params }) => {
       await svc.ensureCampaignOwned(profileId, params.id);
-      return sseResponse(subscribe(campaignChannel, { campaignId: params.id }));
+      return sse(subscribe(campaignChannel, { campaignId: params.id }));
     },
     {
       params: campaignParams,
