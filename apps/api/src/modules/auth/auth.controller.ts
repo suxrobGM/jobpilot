@@ -9,11 +9,16 @@ import {
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
+import { logger } from "@/common/logger";
 import { authGuard } from "@/common/middleware";
+import { ApiTokenService } from "./api-token.service";
 import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from "./auth.cookies";
 import { AuthService } from "./auth.service";
+import { VerificationService } from "./verification.service";
 
 const authService = container.resolve(AuthService);
+const verificationService = container.resolve(VerificationService);
+const apiTokenService = container.resolve(ApiTokenService);
 
 export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   // --- public ---
@@ -22,6 +27,15 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     async ({ body, cookie }) => {
       const result = await authService.register(body);
       setAuthCookies(cookie, result.accessToken, result.refreshToken);
+      // Confirm the address unless dev auto-verified it. Best-effort: a mail outage
+      // shouldn't block account creation — the user can re-trigger from the gate.
+      if (!result.user.emailVerified) {
+        try {
+          await verificationService.sendVerificationEmail(result.user.id, result.user.email);
+        } catch (error) {
+          logger.error({ err: error, userId: result.user.id }, "Failed to send verification email");
+        }
+      }
       return result;
     },
     {
@@ -81,7 +95,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       },
     },
   )
-  .post("/email/verify", ({ body }) => authService.verifyEmail(body.token), {
+  .post("/email/verify", ({ body }) => verificationService.verifyEmail(body.token), {
     body: VerifyEmailSchema,
     detail: {
       summary: "Verify an email address",
@@ -89,7 +103,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
         "Confirms an email address from a verification magic link by its token, marking the account verified. The token is single-use and expires.",
     },
   })
-  .post("/password/forgot", ({ body }) => authService.requestPasswordReset(body.email), {
+  .post("/password/forgot", ({ body }) => verificationService.requestPasswordReset(body.email), {
     body: ForgotPasswordSchema,
     detail: {
       summary: "Request a password reset",
@@ -97,17 +111,21 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
         "Sends a password-reset magic link to the address if an account exists. Always returns an acknowledgement and never reveals whether the email is registered.",
     },
   })
-  .post("/password/reset", ({ body }) => authService.resetPassword(body.token, body.password), {
-    body: ResetPasswordSchema,
-    detail: {
-      summary: "Reset a password",
-      description:
-        "Sets a new password from a reset magic link by its token, consumes the token, and revokes all of the user's existing sessions.",
+  .post(
+    "/password/reset",
+    ({ body }) => verificationService.resetPassword(body.token, body.password),
+    {
+      body: ResetPasswordSchema,
+      detail: {
+        summary: "Reset a password",
+        description:
+          "Sets a new password from a reset magic link by its token, consumes the token, and revokes all of the user's existing sessions.",
+      },
     },
-  })
+  )
   // --- authenticated ---
   .use(authGuard)
-  .post("/email/resend", ({ user }) => authService.resendVerification(user.id), {
+  .post("/email/resend", ({ user }) => verificationService.resendVerification(user.id), {
     detail: {
       summary: "Resend the verification email",
       description:
@@ -121,14 +139,14 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
         "Returns the authenticated user's public account details along with their associated profile.",
     },
   })
-  .get("/tokens", ({ user }) => authService.listApiTokens(user.id), {
+  .get("/tokens", ({ user }) => apiTokenService.list(user.id), {
     detail: {
       summary: "List agent API tokens",
       description:
         "Returns the authenticated user's active (non-revoked) personal access tokens with their metadata, excluding the secret token values.",
     },
   })
-  .post("/tokens", ({ user, body }) => authService.mintApiToken(user.id, body), {
+  .post("/tokens", ({ user, body }) => apiTokenService.mint(user.id, body), {
     body: ApiTokenCreateSchema,
     detail: {
       summary: "Create agent API token",
@@ -136,7 +154,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
         "Mints a new personal access token for the authenticated user and returns its details including the raw token, which is shown only once.",
     },
   })
-  .delete("/tokens/:id", ({ user, params }) => authService.revokeApiToken(user.id, params.id), {
+  .delete("/tokens/:id", ({ user, params }) => apiTokenService.revoke(user.id, params.id), {
     params: idParam,
     detail: {
       summary: "Revoke agent API token",

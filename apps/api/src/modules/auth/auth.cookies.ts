@@ -18,26 +18,25 @@ const isProduction = env.NODE_ENV === "production";
 const accessMaxAge = Math.floor(durationToMs(env.JWT_EXPIRY, 15 * 60_000) / 1000);
 const refreshMaxAge = Math.floor(durationToMs(env.REFRESH_TOKEN_EXPIRY, 30 * 86_400_000) / 1000);
 
+// Shared flags for both cookies; callers add value/path/maxAge.
+const baseOptions = { httpOnly: true, sameSite: "lax", secure: isProduction } as const;
+
 export function setAuthCookies(cookie: CookieJar, accessToken: string, refreshToken: string): void {
   cookie[ACCESS_COOKIE]!.set({
+    ...baseOptions,
     value: accessToken,
-    httpOnly: true,
-    sameSite: "lax",
-    secure: isProduction,
     path: "/",
     maxAge: accessMaxAge,
   });
   cookie[REFRESH_COOKIE]!.set({
+    ...baseOptions,
     value: refreshToken,
-    httpOnly: true,
-    sameSite: "lax",
-    secure: isProduction,
     path: REFRESH_PATH,
     maxAge: refreshMaxAge,
   });
 }
 
 export function clearAuthCookies(cookie: CookieJar): void {
-  cookie[ACCESS_COOKIE]!.set({ value: "", httpOnly: true, sameSite: "lax", secure: isProduction, path: "/", maxAge: 0 });
-  cookie[REFRESH_COOKIE]!.set({ value: "", httpOnly: true, sameSite: "lax", secure: isProduction, path: REFRESH_PATH, maxAge: 0 });
+  cookie[ACCESS_COOKIE]!.set({ ...baseOptions, value: "", path: "/", maxAge: 0 });
+  cookie[REFRESH_COOKIE]!.set({ ...baseOptions, value: "", path: REFRESH_PATH, maxAge: 0 });
 }

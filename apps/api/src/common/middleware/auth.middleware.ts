@@ -1,10 +1,10 @@
-import type { Cookie } from "elysia";
-import { Elysia } from "elysia";
-import type { AuthUser } from "@/common/auth";
-import { verifyAccessToken } from "@/common/auth";
+import { Elysia, type Cookie } from "elysia";
+import { verifyAccessToken, type AuthUser } from "@/common/auth";
 import { container } from "@/common/di";
 import { unauthorized } from "@/common/errors";
-import { AuthService } from "@/modules/auth/auth.service";
+import { ApiTokenService } from "@/modules/auth/api-token.service";
+
+const apiTokenService = container.resolve(ApiTokenService);
 
 interface AuthContext {
   headers: Record<string, string | undefined>;
@@ -29,7 +29,7 @@ export async function resolveAuthUser({ headers, cookie }: AuthContext): Promise
   if (jwtUser) {
     return jwtUser;
   }
-  return container.resolve(AuthService).verifyApiToken(token);
+  return apiTokenService.verify(token);
 }
 
 /** Derives `user`. Throws 401 when unauthenticated. */
