@@ -124,7 +124,7 @@ export function FileUpload(props: FileUploadProps): ReactElement {
         onDrop={onDrop}
         sx={(t) => ({
           border: `1px dashed ${dragOver ? t.palette.accent.primary : t.palette.line.border}`,
-          bgcolor: dragOver ? t.palette.action.hover : "transparent",
+          bgcolor: dragOver ? "action.hover" : "transparent",
           borderRadius: t.radii.md,
           p: 2.5,
           textAlign: "center",

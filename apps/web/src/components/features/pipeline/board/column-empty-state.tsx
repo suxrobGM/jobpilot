@@ -17,14 +17,14 @@ export function ColumnEmptyState(props: ColumnEmptyStateProps): ReactElement {
   return (
     <Stack
       spacing={1.5}
-      sx={(theme) => ({
+      sx={{
         alignItems: "center",
         justifyContent: "center",
         minHeight: 160,
         padding: 2,
-        color: theme.palette.text.disabled,
+        color: "text.disabled",
         textAlign: "center",
-      })}
+      }}
     >
       {stage === "queued" && (
         <>

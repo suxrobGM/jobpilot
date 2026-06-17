@@ -104,9 +104,9 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
                 borderLeft: `2px solid ${
                   active ? theme.palette.accent.primary : theme.palette.line.divider
                 }`,
-                color: active ? theme.palette.text.primary : theme.palette.text.secondary,
+                color: active ? "text.primary" : "text.secondary",
                 transition: `color ${theme.motion.fast}, border-color ${theme.motion.fast}`,
-                "&:hover": { color: theme.palette.text.primary },
+                "&:hover": { color: "text.primary" },
                 "&:focus-visible": { outline: theme.shadows_custom.focus, outlineOffset: 2 },
               })}
             >

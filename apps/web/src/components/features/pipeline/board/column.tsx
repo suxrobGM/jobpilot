@@ -94,25 +94,25 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
       >
         {scopedOut ? (
           <Stack
-            sx={(theme) => ({
+            sx={{
               alignItems: "center",
               justifyContent: "center",
               minHeight: 120,
               paddingInline: 2,
               textAlign: "center",
-              color: theme.palette.text.disabled,
-            })}
+              color: "text.disabled",
+            }}
           >
             <Typography variant="captionMuted">Not tied to a campaign</Typography>
           </Stack>
         ) : query.isPending ? (
           <Stack
-            sx={(theme) => ({
+            sx={{
               alignItems: "center",
               justifyContent: "center",
               minHeight: 120,
-              color: theme.palette.text.disabled,
-            })}
+              color: "text.disabled",
+            }}
           >
             <Typography variant="captionMuted">Loading…</Typography>
           </Stack>
@@ -147,13 +147,13 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
         {query.hasNextPage && (
           <Box
             ref={sentinelRef}
-            sx={(theme) => ({
+            sx={{
               marginTop: 1,
               padding: 1,
               fontSize: "0.6875rem",
-              color: theme.palette.text.disabled,
+              color: "text.disabled",
               textAlign: "center",
-            })}
+            }}
           >
             {query.isFetchingNextPage ? "Loading more…" : `+ ${total - items.length} more`}
           </Box>

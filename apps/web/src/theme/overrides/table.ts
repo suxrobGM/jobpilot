@@ -12,7 +12,7 @@ export const tableHeadOverrides: Components<Theme>["MuiTableHead"] = {
         textTransform: "uppercase",
         fontSize: "0.7rem",
         letterSpacing: "0.06em",
-        color: theme.palette.text.secondary,
+        color: (theme.vars ?? theme).palette.text.secondary,
       },
     }),
   },

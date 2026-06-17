@@ -31,14 +31,14 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
     }),
     outlined: ({ theme }) => ({
       borderColor: theme.palette.line.borderHi,
-      color: theme.palette.text.primary,
+      color: (theme.vars ?? theme).palette.text.primary,
       "&:hover": {
         backgroundColor: theme.palette.surfaces.hover,
         borderColor: theme.palette.accent.primary,
       },
     }),
     text: ({ theme }) => ({
-      color: theme.palette.text.primary,
+      color: (theme.vars ?? theme).palette.text.primary,
       textUnderlineOffset: 4,
       textDecorationThickness: 1,
       "&:hover": {

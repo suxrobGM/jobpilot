@@ -75,7 +75,7 @@ export function AccountMenu(): ReactElement {
               fontSize: 14,
               fontWeight: 600,
               bgcolor: theme.palette.accent.primary,
-              color: theme.palette.text.primary,
+              color: "text.primary",
               border: `1px solid ${theme.palette.line.borderHi}`,
             })}
           >

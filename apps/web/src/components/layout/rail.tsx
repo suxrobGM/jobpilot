@@ -60,7 +60,7 @@ export function Rail(): ReactElement {
       >
         <Box
           component="span"
-          sx={(theme) => ({
+          sx={{
             position: "relative",
             zIndex: 1,
             fontFamily: 'var(--font-fraunces), "Iowan Old Style", Georgia, serif',
@@ -69,10 +69,11 @@ export function Rail(): ReactElement {
             fontSize: 22,
             lineHeight: 1,
             letterSpacing: "-0.02em",
-            color: theme.palette.text.primary,
+            // Shorthand, not theme.palette.text.primary (cssVariables SSR/client hash drift).
+            color: "text.primary",
             transform: "translate(-1px, 1px)",
             textShadow: `0 1px 0 rgba(0,0,0,0.4)`,
-          })}
+          }}
         >
           J
         </Box>

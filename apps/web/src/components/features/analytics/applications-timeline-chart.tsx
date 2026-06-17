@@ -43,14 +43,14 @@ export function ApplicationsTimelineChart(props: ApplicationsTimelineChartProps)
 
         {total === 0 ? (
           <Stack
-            sx={(t) => ({
+            sx={{
               mt: 2,
               flex: 1,
               minHeight: CHART_HEIGHT,
               alignItems: "center",
               justifyContent: "center",
-              color: t.palette.text.disabled,
-            })}
+              color: "text.disabled",
+            }}
           >
             <Typography variant="captionMuted">{emptyMessage}</Typography>
           </Stack>

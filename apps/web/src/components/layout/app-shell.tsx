@@ -14,7 +14,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
         height: "100vh",
         minHeight: 0,
         backgroundColor: theme.palette.surfaces.base,
-        color: theme.palette.text.primary,
+        color: "text.primary",
       })}
     >
       <Rail />

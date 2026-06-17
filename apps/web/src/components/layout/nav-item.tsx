@@ -32,12 +32,12 @@ export function NavItem(props: NavItemProps): ReactElement {
           display: "grid",
           placeItems: "center",
           borderRadius: theme.radii.sm,
-          color: active ? theme.palette.text.primary : theme.palette.text.disabled,
+          color: active ? "text.primary" : "text.disabled",
           backgroundColor: active ? theme.palette.surfaces.elevated : "transparent",
           textDecoration: "none",
           transition: theme.motion.fast,
           "&:hover": {
-            color: theme.palette.text.secondary,
+            color: "text.secondary",
             backgroundColor: active ? theme.palette.surfaces.elevated : theme.palette.surfaces.card,
           },
           "&::before": active

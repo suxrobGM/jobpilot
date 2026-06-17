@@ -44,7 +44,7 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
               borderRadius: theme.radii.xs,
               border: `1px solid ${theme.palette.line.divider}`,
               fontSize: "0.625rem",
-              color: theme.palette.text.secondary,
+              color: "text.secondary",
               backgroundColor: theme.palette.surfaces.elevated,
             })}
           >
@@ -58,12 +58,9 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
           {typeof job.matchScore === "number" && (
             <Typography
               variant="captionMuted"
-              sx={(theme) => ({
-                color:
-                  job.matchScore && job.matchScore >= 80
-                    ? theme.palette.success.main
-                    : theme.palette.text.disabled,
-              })}
+              sx={{
+                color: job.matchScore && job.matchScore >= 80 ? "success.main" : "text.disabled",
+              }}
             >
               ★ {job.matchScore}%
             </Typography>
@@ -89,17 +86,19 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
       {showInlineStageSummary && (
         <Box
           sx={(theme) => {
+            // theme.vars keeps text.secondary a CSS var on both sides; color-mix applies
+            // alpha (concatenating `${tint}1A` would emit invalid `var(…)1A` on the client).
             const tint =
               job.stage === "interviewing"
                 ? theme.palette.stages.interviewing
-                : theme.palette.text.secondary;
+                : (theme.vars ?? theme).palette.text.secondary;
 
             return {
               mt: 1,
               padding: 0.75,
               borderRadius: theme.radii.xs,
-              backgroundColor: `${tint}1A`,
-              border: `1px solid ${tint}33`,
+              backgroundColor: `color-mix(in srgb, ${tint} 10%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${tint} 20%, transparent)`,
               color: tint,
               fontSize: "0.6875rem",
               lineHeight: 1.45,

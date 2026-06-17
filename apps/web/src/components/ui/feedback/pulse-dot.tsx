@@ -15,23 +15,26 @@ interface PulseDotProps {
 
 const DOT_SIZE: Record<PulseDotSize, number> = { xs: 5, sm: 7, md: 9 };
 
+// Standard keys via theme.vars (raw theme.palette.* drifts SSR vs client under
+// cssVariables); custom keys (accent/stages) have no var and stay raw hex.
 function toneColor(theme: Theme, tone: PulseDotTone): string {
+  const vars = theme.vars ?? theme;
   switch (tone) {
     case "violet":
       return theme.palette.accent.primary;
     case "green":
-      return theme.palette.success.main;
+      return vars.palette.success.main;
     case "amber":
-      return theme.palette.warning.main;
+      return vars.palette.warning.main;
     case "red":
-      return theme.palette.error.main;
+      return vars.palette.error.main;
     case "blue":
-      return theme.palette.info.main;
+      return vars.palette.info.main;
     case "peach":
       return theme.palette.stages.interviewing;
     case "muted":
     default:
-      return theme.palette.text.disabled;
+      return vars.palette.text.disabled;
   }
 }
 
@@ -49,7 +52,7 @@ export function PulseDot(props: PulseDotProps): ReactElement {
           height: px,
           borderRadius: "50%",
           backgroundColor: color,
-          boxShadow: pulsing ? `0 0 0 3px ${color}30` : "none",
+          boxShadow: pulsing ? `0 0 0 3px color-mix(in srgb, ${color} 19%, transparent)` : "none",
           animation: pulsing ? "pulse-dot 2.4s ease-in-out infinite" : "none",
           flexShrink: 0,
           "@keyframes pulse-dot": {

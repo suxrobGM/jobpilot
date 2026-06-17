@@ -79,7 +79,7 @@ export function AutoApplyStopPill(): ReactNode {
         zIndex: t.zIndex.snackbar,
         borderRadius: t.radii.md,
         padding: 1.5,
-        backgroundColor: t.palette.background.paper,
+        backgroundColor: "background.paper",
         border: `1px solid ${t.palette.line.divider}`,
       })}
     >

@@ -39,7 +39,7 @@ export function ResumePdfPreview(props: ResumePdfPreviewProps): ReactElement {
             aspectRatio: "8.5/11",
             border: `1px solid ${t.palette.line.divider}`,
             borderRadius: t.radii.sm,
-            bgcolor: t.palette.background.default,
+            bgcolor: "background.default",
           })}
         />
         <Typography variant="captionMuted">

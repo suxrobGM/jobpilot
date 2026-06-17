@@ -34,12 +34,7 @@ export function ColumnHeader(props: ColumnHeaderProps): ReactElement {
         {sharedNote && <SourceNoteChip note={sharedNote} />}
       </Stack>
       <Stack direction="row" spacing={0.75} sx={{ alignItems: "baseline", flexShrink: 0 }}>
-        <Typography
-          variant="captionMuted"
-          sx={(theme) => ({ color: theme.palette.text.secondary })}
-        >
-          {total}
-        </Typography>
+        <Typography variant="captionMuted">{total}</Typography>
         {todayCount > 0 && <Typography variant="captionMuted">· {todayCount} today</Typography>}
       </Stack>
     </Stack>
@@ -79,7 +74,7 @@ function SourceNoteChip(props: { note: string }): ReactElement {
         borderRadius: theme.radii.xs,
         border: `1px solid ${theme.palette.line.divider}`,
         fontSize: "0.625rem",
-        color: theme.palette.text.secondary,
+        color: "text.secondary",
         backgroundColor: theme.palette.surfaces.elevated,
         whiteSpace: "nowrap",
         overflow: "hidden",

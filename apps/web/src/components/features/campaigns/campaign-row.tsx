@@ -37,7 +37,7 @@ export function CampaignRow(props: CampaignRowProps): ReactElement {
         position: "relative",
         ...(selected && {
           borderColor: theme.palette.accent.primary,
-          backgroundColor: theme.palette.action.selected,
+          backgroundColor: "action.selected",
         }),
       })}
     >
