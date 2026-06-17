@@ -15,14 +15,14 @@ export function AuthCard(props: AuthCardProps): ReactElement {
   const { title, subtitle, children } = props;
   return (
     <Box
-      sx={(theme) => ({
+      sx={{
         minHeight: "100vh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: theme.palette.surfaces.base,
+        backgroundColor: "surfaces.base",
         py: 6,
-      })}
+      }}
     >
       <Container maxWidth="xs">
         <Stack spacing={3}>
