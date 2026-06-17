@@ -3,7 +3,15 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { applicationListQuerySchema, applicationQuerySchema } from "./application.schema";
+import { deletedResponseSchema } from "@/types/response";
+import {
+  applicationCheckSchema,
+  applicationDetailSchema,
+  applicationListQuerySchema,
+  applicationListSchema,
+  applicationQuerySchema,
+  stageTransitionResultSchema,
+} from "./application.schema";
 import { ApplicationService } from "./application.service";
 
 const svc = container.resolve(ApplicationService);
@@ -15,6 +23,7 @@ export const applicationController = new Elysia({
   .use(profileGuard)
   .get("/", ({ profileId, query }) => svc.list(profileId, query), {
     query: applicationListQuerySchema,
+    response: applicationListSchema,
     detail: {
       summary: "List applications",
       description:
@@ -23,6 +32,7 @@ export const applicationController = new Elysia({
   })
   .get("/check", ({ profileId, query }) => svc.check(profileId, query), {
     query: applicationQuerySchema,
+    response: applicationCheckSchema,
     detail: {
       summary: "Check for duplicate application",
       description:
@@ -31,6 +41,7 @@ export const applicationController = new Elysia({
   })
   .get("/:id", ({ profileId, params }) => svc.get(profileId, params.id), {
     params: idParam,
+    response: applicationDetailSchema,
     detail: {
       summary: "Get application with stage history",
       description:
@@ -39,6 +50,7 @@ export const applicationController = new Elysia({
   })
   .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
     params: idParam,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete application",
       description:
@@ -51,6 +63,7 @@ export const applicationController = new Elysia({
     {
       params: idParam,
       body: stageTransitionSchema,
+      response: stageTransitionResultSchema,
       detail: {
         summary: "Transition application stage",
         description:

@@ -3,7 +3,13 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { domainResolveQuery } from "./credential.schema";
+import { deletedResponseSchema } from "@/types/response";
+import {
+  credentialListSchema,
+  credentialRecordSchema,
+  domainResolveQuery,
+  resolvedCredentialSchema,
+} from "./credential.schema";
 import { CredentialService } from "./credential.service";
 
 const svc = container.resolve(CredentialService);
@@ -14,6 +20,7 @@ export const credentialController = new Elysia({
 })
   .use(profileGuard)
   .get("/", ({ user, profileId }) => svc.list(user.id, profileId), {
+    response: credentialListSchema,
     detail: {
       summary: "List credentials",
       description:
@@ -22,6 +29,7 @@ export const credentialController = new Elysia({
   })
   .post("/", ({ user, profileId, body }) => svc.create(user.id, profileId, body), {
     body: credentialSchema,
+    response: credentialRecordSchema,
     detail: {
       summary: "Create credential",
       description:
@@ -33,6 +41,7 @@ export const credentialController = new Elysia({
     ({ user, profileId, query }) => svc.resolveCredential(user.id, profileId, query.domain),
     {
       query: domainResolveQuery,
+      response: resolvedCredentialSchema,
       detail: {
         summary: "Resolve login for domain",
         description:
@@ -46,6 +55,7 @@ export const credentialController = new Elysia({
     {
       params: idParam,
       body: credentialPatchSchema,
+      response: credentialRecordSchema,
       detail: {
         summary: "Update credential",
         description:
@@ -55,6 +65,7 @@ export const credentialController = new Elysia({
   )
   .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
     params: idParam,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete credential",
       description:

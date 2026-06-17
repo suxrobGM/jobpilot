@@ -11,8 +11,15 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { logger } from "@/common/logger";
 import { authGuard } from "@/common/middleware";
+import { okResponseSchema } from "@/types/response";
 import { ApiTokenService } from "./api-token.service";
 import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from "./auth.cookies";
+import {
+  apiTokenListSchema,
+  apiTokenMintedSchema,
+  authSessionSchema,
+  meSchema,
+} from "./auth.schema";
 import { AuthService } from "./auth.service";
 import { VerificationService } from "./verification.service";
 
@@ -40,6 +47,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
     {
       body: RegisterSchema,
+      response: authSessionSchema,
       detail: {
         summary: "Register a new account",
         description:
@@ -56,6 +64,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
     {
       body: LoginSchema,
+      response: authSessionSchema,
       detail: {
         summary: "Log in with credentials",
         description:
@@ -72,6 +81,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       return result;
     },
     {
+      response: authSessionSchema,
       detail: {
         summary: "Rotate refresh token",
         description:
@@ -85,9 +95,10 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       const raw = cookie[REFRESH_COOKIE]?.value;
       await authService.logout(typeof raw === "string" ? raw : "");
       clearAuthCookies(cookie);
-      return { ok: true };
+      return { ok: true as const };
     },
     {
+      response: okResponseSchema,
       detail: {
         summary: "Log out current session",
         description:
@@ -97,6 +108,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   )
   .post("/email/verify", ({ body }) => verificationService.verifyEmail(body.token), {
     body: VerifyEmailSchema,
+    response: okResponseSchema,
     detail: {
       summary: "Verify an email address",
       description:
@@ -105,6 +117,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   })
   .post("/password/forgot", ({ body }) => verificationService.requestPasswordReset(body.email), {
     body: ForgotPasswordSchema,
+    response: okResponseSchema,
     detail: {
       summary: "Request a password reset",
       description:
@@ -116,6 +129,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     ({ body }) => verificationService.resetPassword(body.token, body.password),
     {
       body: ResetPasswordSchema,
+      response: okResponseSchema,
       detail: {
         summary: "Reset a password",
         description:
@@ -126,6 +140,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   // --- authenticated ---
   .use(authGuard)
   .post("/email/resend", ({ user }) => verificationService.resendVerification(user.id), {
+    response: okResponseSchema,
     detail: {
       summary: "Resend the verification email",
       description:
@@ -133,6 +148,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
   })
   .get("/me", ({ user }) => authService.me(user.id), {
+    response: meSchema,
     detail: {
       summary: "Get current user",
       description:
@@ -140,6 +156,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
   })
   .get("/tokens", ({ user }) => apiTokenService.list(user.id), {
+    response: apiTokenListSchema,
     detail: {
       summary: "List agent API tokens",
       description:
@@ -148,6 +165,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   })
   .post("/tokens", ({ user, body }) => apiTokenService.mint(user.id, body), {
     body: ApiTokenCreateSchema,
+    response: apiTokenMintedSchema,
     detail: {
       summary: "Create agent API token",
       description:
@@ -156,6 +174,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   })
   .delete("/tokens/:id", ({ user, params }) => apiTokenService.revoke(user.id, params.id), {
     params: idParam,
+    response: okResponseSchema,
     detail: {
       summary: "Revoke agent API token",
       description:

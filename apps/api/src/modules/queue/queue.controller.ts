@@ -3,7 +3,13 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { queueListQuery } from "./queue.schema";
+import { deletedResponseSchema } from "@/types/response";
+import {
+  queueAddedSchema,
+  queueEntrySchema,
+  queueListQuery,
+  queueListSchema,
+} from "./queue.schema";
 import { QueueService } from "./queue.service";
 
 const queueService = container.resolve(QueueService);
@@ -12,6 +18,7 @@ export const queueController = new Elysia({ prefix: "/queue", detail: { tags: ["
   .use(profileGuard)
   .get("/", ({ profileId, query }) => queueService.list(profileId, query.status), {
     query: queueListQuery,
+    response: queueListSchema,
     detail: {
       summary: "List queue entries",
       description:
@@ -20,6 +27,7 @@ export const queueController = new Elysia({ prefix: "/queue", detail: { tags: ["
   })
   .post("/", ({ profileId, body }) => queueService.add(profileId, body), {
     body: addQueueSchema,
+    response: queueAddedSchema,
     detail: {
       summary: "Add queue entries",
       description:
@@ -27,6 +35,7 @@ export const queueController = new Elysia({ prefix: "/queue", detail: { tags: ["
     },
   })
   .get("/pending", ({ profileId }) => queueService.listPending(profileId), {
+    response: queueListSchema,
     detail: {
       summary: "List pending entries",
       description:
@@ -36,6 +45,7 @@ export const queueController = new Elysia({ prefix: "/queue", detail: { tags: ["
   .patch("/:id", ({ profileId, params, body }) => queueService.patch(profileId, params.id, body), {
     params: idParam,
     body: patchQueueSchema,
+    response: queueEntrySchema,
     detail: {
       summary: "Update queue entry status",
       description:
@@ -44,6 +54,7 @@ export const queueController = new Elysia({ prefix: "/queue", detail: { tags: ["
   })
   .delete("/:id", ({ profileId, params }) => queueService.remove(profileId, params.id), {
     params: idParam,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete queue entry",
       description:

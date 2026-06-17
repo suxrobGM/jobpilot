@@ -3,7 +3,13 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
+import { deletedResponseSchema, idResponseSchema } from "@/types/response";
 import { tailorResumeSchema } from "../resume.schema";
+import {
+  tailoredVariantSchema,
+  variantDetailSchema,
+  variantListSchema,
+} from "./variant.schema";
 import { ResumeVariantService } from "./variant.service";
 
 const svc = container.resolve(ResumeVariantService);
@@ -25,6 +31,7 @@ export const resumeVariantController = new Elysia({
   // variants for a resume: list / create
   .get("/:id/variants", ({ profileId, params }) => svc.listVariants(profileId, params.id), {
     params: idParam,
+    response: variantListSchema,
     detail: {
       summary: "List resume variants",
       description:
@@ -37,6 +44,7 @@ export const resumeVariantController = new Elysia({
     {
       params: idParam,
       body: resumeVariantCreateSchema,
+      response: idResponseSchema,
       detail: {
         summary: "Create resume variant",
         description:
@@ -51,6 +59,7 @@ export const resumeVariantController = new Elysia({
     {
       params: idParam,
       body: tailorResumeSchema,
+      response: tailoredVariantSchema,
       detail: {
         summary: "Create tailored variant",
         description:
@@ -61,6 +70,7 @@ export const resumeVariantController = new Elysia({
   // single variant CRUD
   .get("/variants/:id", ({ profileId, params }) => svc.getVariant(profileId, params.id), {
     params: idParam,
+    response: variantDetailSchema,
     detail: {
       summary: "Get resume variant",
       description:
@@ -73,6 +83,7 @@ export const resumeVariantController = new Elysia({
     {
       params: idParam,
       body: resumeVariantPatchSchema,
+      response: idResponseSchema,
       detail: {
         summary: "Update resume variant",
         description:
@@ -82,6 +93,7 @@ export const resumeVariantController = new Elysia({
   )
   .delete("/variants/:id", ({ profileId, params }) => svc.removeVariant(profileId, params.id), {
     params: idParam,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete resume variant",
       description:

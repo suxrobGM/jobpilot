@@ -29,8 +29,8 @@ export function toUpworkProfileDto(row: UpworkProfile) {
     suggestedHourlyRate: row.suggestedHourlyRate,
     suggestedPortfolio: parsePortfolio(row.suggestedPortfolio),
     status: row.status as UpworkProfileStatus,
-    updatedAt: row.updatedAt.toISOString(),
-    appliedAt: row.appliedAt?.toISOString() ?? null,
+    updatedAt: row.updatedAt,
+    appliedAt: row.appliedAt,
   };
 }
 
@@ -52,8 +52,8 @@ export function decodeUpworkProposal<
     status: proposal.status as UpworkProposalStatus,
     outcome: proposal.outcome as UpworkProposalOutcome | null,
     source: proposal.source as UpworkProposalSource,
-    createdAt: proposal.createdAt.toISOString(),
-    updatedAt: proposal.updatedAt.toISOString(),
-    submittedAt: proposal.submittedAt?.toISOString() ?? null,
+    createdAt: proposal.createdAt,
+    updatedAt: proposal.updatedAt,
+    submittedAt: proposal.submittedAt,
   };
 }

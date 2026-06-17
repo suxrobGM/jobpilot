@@ -7,6 +7,11 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { campaignParams, outreachMessageParams } from "../campaign.schema";
+import {
+  outreachMessageListSchema,
+  outreachMessageResultResponseSchema,
+  outreachMessageSchema,
+} from "./outreach.schema";
 import { CampaignOutreachService } from "./outreach.service";
 
 const svc = container.resolve(CampaignOutreachService);
@@ -18,6 +23,7 @@ export const campaignOutreachController = new Elysia({
   .use(profileGuard)
   .get("/:id/outreach", ({ profileId, params }) => svc.listOutreach(profileId, params.id), {
     params: campaignParams,
+    response: outreachMessageListSchema,
     detail: {
       summary: "List outreach messages",
       description:
@@ -30,6 +36,7 @@ export const campaignOutreachController = new Elysia({
     {
       params: campaignParams,
       body: addCampaignOutreachSchema,
+      response: outreachMessageSchema,
       detail: {
         summary: "Add outreach message",
         description:
@@ -44,6 +51,7 @@ export const campaignOutreachController = new Elysia({
     {
       params: outreachMessageParams,
       body: patchOutreachMessageSchema,
+      response: outreachMessageSchema,
       detail: {
         summary: "Update outreach message",
         description:
@@ -58,6 +66,7 @@ export const campaignOutreachController = new Elysia({
     {
       params: outreachMessageParams,
       body: outreachMessageResultSchema,
+      response: outreachMessageResultResponseSchema,
       detail: {
         summary: "Record outreach message result",
         description:

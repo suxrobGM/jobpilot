@@ -10,7 +10,15 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { publish, subscribe } from "@/common/sse";
 import { upworkChannel } from "@/common/sse/channels/upwork";
-import { proposalsQuery } from "./upwork.schema";
+import { idResponseSchema } from "@/types/response";
+import {
+  proposalsQuery,
+  upworkProfileResponseSchema,
+  upworkProfileSchema,
+  upworkProposalListSchema,
+  upworkProposalSchema,
+  upworkQualityResultSchema,
+} from "./upwork.schema";
 import { UpworkService } from "./upwork.service";
 
 const svc = container.resolve(UpworkService);
@@ -19,6 +27,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
   // --- public: deterministic client/job quality assessment (profile-independent) ---
   .post("/client-quality", ({ body }) => svc.scoreClientQuality(body.client), {
     body: upworkClientQualitySchema,
+    response: upworkQualityResultSchema,
     detail: {
       summary: "Score client quality",
       description:
@@ -35,6 +44,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
     },
   })
   .get("/profile", ({ profileId }) => svc.getProfile(profileId), {
+    response: upworkProfileResponseSchema,
     detail: {
       summary: "Get profile enhancement",
       description:
@@ -50,6 +60,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
     },
     {
       body: updateUpworkProfileSchema,
+      response: upworkProfileSchema,
       detail: {
         summary: "Upsert profile enhancement",
         description:
@@ -59,6 +70,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
   )
   .get("/proposals", ({ profileId, query }) => svc.listProposals(profileId, query), {
     query: proposalsQuery,
+    response: upworkProposalListSchema,
     detail: {
       summary: "List proposals",
       description:
@@ -74,6 +86,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
     },
     {
       body: createUpworkProposalSchema,
+      response: upworkProposalSchema,
       detail: {
         summary: "Create proposal",
         description:
@@ -83,6 +96,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
   )
   .get("/proposals/:id", ({ profileId, params }) => svc.getProposal(profileId, params.id), {
     params: idParam,
+    response: upworkProposalSchema,
     detail: {
       summary: "Get proposal",
       description:
@@ -99,6 +113,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
     {
       params: idParam,
       body: patchUpworkProposalSchema,
+      response: upworkProposalSchema,
       detail: {
         summary: "Update proposal",
         description:
@@ -115,6 +130,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
     },
     {
       params: idParam,
+      response: idResponseSchema,
       detail: {
         summary: "Delete proposal",
         description:

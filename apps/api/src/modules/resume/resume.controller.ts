@@ -4,8 +4,15 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { subscribe } from "@/common/sse";
 import { resumeChannel } from "@/common/sse/channels/resume";
+import { deletedResponseSchema, idResponseSchema } from "@/types/response";
 import { resumeFileController } from "./files/file.controller";
-import { createResumeSchema, updateResumeSchema } from "./resume.schema";
+import {
+  createResumeSchema,
+  resumeDetailSchema,
+  resumeListSchema,
+  resumeUpdatedSchema,
+  updateResumeSchema,
+} from "./resume.schema";
 import { ResumeService } from "./resume.service";
 import { readUpload } from "./resume.upload";
 import { resumeVariantController } from "./variants/variant.controller";
@@ -19,6 +26,7 @@ export const resumeController = new Elysia({
   .use(profileGuard)
   // list
   .get("/", ({ profileId }) => svc.list(profileId), {
+    response: resumeListSchema,
     detail: {
       summary: "List master resumes",
       description:
@@ -28,6 +36,7 @@ export const resumeController = new Elysia({
   // create (structured JSON)
   .post("/", ({ profileId, body }) => svc.createJson(profileId, body), {
     body: createResumeSchema,
+    response: idResponseSchema,
     detail: {
       summary: "Create resume from JSON",
       description:
@@ -42,6 +51,7 @@ export const resumeController = new Elysia({
       return svc.createFromUpload(profileId, file, text);
     },
     {
+      response: idResponseSchema,
       detail: {
         summary: "Create resume from upload",
         description:
@@ -52,6 +62,7 @@ export const resumeController = new Elysia({
   // single resume CRUD
   .get("/:id", ({ profileId, params }) => svc.get(profileId, params.id), {
     params: idParam,
+    response: resumeDetailSchema,
     detail: {
       summary: "Get resume",
       description:
@@ -61,6 +72,7 @@ export const resumeController = new Elysia({
   .put("/:id", ({ profileId, params, body }) => svc.update(profileId, params.id, body), {
     params: idParam,
     body: updateResumeSchema,
+    response: resumeUpdatedSchema,
     detail: {
       summary: "Update resume",
       description:
@@ -69,6 +81,7 @@ export const resumeController = new Elysia({
   })
   .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
     params: idParam,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete resume",
       description:

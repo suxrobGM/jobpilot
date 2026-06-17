@@ -10,7 +10,7 @@ export interface PipelineJobDto {
   board: string | null;
   matchScore: number | null;
   resumeVariant: string | null;
-  updatedAt: string;
+  updatedAt: Date;
   liveStep: string | null;
   liveMessage: string | null;
   stageSummary: string | null;
@@ -65,7 +65,7 @@ export function toQueueEntry(entry: QueueEntry): PipelineJobDto {
     board: null,
     matchScore: null,
     resumeVariant: null,
-    updatedAt: entry.createdAt.toISOString(),
+    updatedAt: entry.createdAt,
     liveStep: null,
     liveMessage: null,
     stageSummary: entry.note,
@@ -85,7 +85,7 @@ export function toCampaignJob(job: Job): PipelineJobDto {
     board: job.board,
     matchScore: job.matchScore,
     resumeVariant: null,
-    updatedAt: (job.appliedAt ?? new Date()).toISOString(),
+    updatedAt: job.appliedAt ?? new Date(),
     liveStep: job.status,
     liveMessage: job.retryNotes,
     stageSummary: null,
@@ -105,7 +105,7 @@ export function toApplication(app: Application, stage: PipelineStage): PipelineJ
     board: app.board,
     matchScore: app.matchScore,
     resumeVariant: null,
-    updatedAt: app.appliedAt.toISOString(),
+    updatedAt: app.appliedAt,
     liveStep: null,
     liveMessage: null,
     stageSummary: stage === "interviewing" ? formatApplicationStage(app.stage) : null,

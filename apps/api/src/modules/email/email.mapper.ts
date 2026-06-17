@@ -12,12 +12,12 @@ export type EmailMessageRow = Omit<
 > & {
   reviewStatus: ReviewStatus;
   classification: Classification | null;
-  receivedAt: string;
-  fetchedAt: string;
-  scannedAt: string | null;
+  receivedAt: Date;
+  fetchedAt: Date;
+  scannedAt: Date | null;
 };
 
-/** Serialize a raw message row: Date fields -> ISO strings, enums narrowed. */
+/** Serialize a raw message row: enums narrowed; Date fields kept as Date objects. */
 export function serializeMessage(row: {
   receivedAt: Date;
   fetchedAt: Date;
@@ -27,9 +27,9 @@ export function serializeMessage(row: {
 }): EmailMessageRow {
   return {
     ...row,
-    receivedAt: row.receivedAt.toISOString(),
-    fetchedAt: row.fetchedAt.toISOString(),
-    scannedAt: row.scannedAt?.toISOString() ?? null,
+    receivedAt: row.receivedAt,
+    fetchedAt: row.fetchedAt,
+    scannedAt: row.scannedAt,
     reviewStatus: row.reviewStatus as ReviewStatus,
     classification: row.classification as Classification | null,
   } as EmailMessageRow;

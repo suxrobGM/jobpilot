@@ -8,7 +8,7 @@ import { SectionCard } from "@/components/ui/layout";
 
 interface ResumePdfPreviewProps {
   resumeId: string;
-  updatedAt: string;
+  updatedAt: string | Date;
 }
 
 export function ResumePdfPreview(props: ResumePdfPreviewProps): ReactElement {

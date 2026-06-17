@@ -34,6 +34,7 @@
       "@/common/*": ["../api/src/common/*"],
       "@/modules/*": ["../api/src/modules/*"],
       "@/generated/*": ["../api/src/generated/*"],
+      "@/types/*": ["../api/src/types/*"],
       "@/env": ["../api/src/env"]
     }
   },

@@ -34,7 +34,7 @@ export class CoverLetterService {
     return rows.map((row) => ({
       ...row,
       source: row.source as CoverLetterSource,
-      createdAt: row.createdAt.toISOString(),
+      createdAt: row.createdAt,
     }));
   }
 
@@ -60,7 +60,7 @@ export class CoverLetterService {
     return {
       ...row,
       source: row.source as CoverLetterSource,
-      createdAt: row.createdAt.toISOString(),
+      createdAt: row.createdAt,
     };
   }
 

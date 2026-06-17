@@ -9,7 +9,19 @@ import { subscribe } from "@/common/sse";
 import { inboxChannel } from "@/common/sse/channels/inbox";
 import { env } from "@/env";
 import { EmailAccountService } from "./account/account.service";
-import { callbackQuery, messagesQuery, startQuery } from "./email.schema";
+import {
+  accountDisconnectedSchema,
+  accountStatusSchema,
+  callbackQuery,
+  emailMessageListSchema,
+  emailMessageSchema,
+  messageApprovedSchema,
+  messageDeniedSchema,
+  messagesQuery,
+  sentMessageSchema,
+  startQuery,
+  syncResultSchema,
+} from "./email.schema";
 import { EmailService } from "./email.service";
 import { EmailSyncService } from "./sync/sync.service";
 
@@ -26,6 +38,7 @@ export const emailController = new Elysia({
   .use(profileGuard)
   // --- Account ---------------------------------------------------------------
   .get("/account", ({ profileId }) => account.accountStatus(profileId), {
+    response: accountStatusSchema,
     detail: {
       summary: "Get mailbox account status",
       description:
@@ -33,6 +46,7 @@ export const emailController = new Elysia({
     },
   })
   .delete("/account", ({ profileId }) => account.disconnectAccount(profileId), {
+    response: accountDisconnectedSchema,
     detail: {
       summary: "Disconnect mailbox account",
       description:
@@ -42,6 +56,7 @@ export const emailController = new Elysia({
   // --- Messages --------------------------------------------------------------
   .get("/messages", ({ profileId, query }) => svc.listMessages(profileId, query), {
     query: messagesQuery,
+    response: emailMessageListSchema,
     detail: {
       summary: "List inbox messages",
       description:
@@ -50,6 +65,7 @@ export const emailController = new Elysia({
   })
   .get("/messages/:id", ({ profileId, params }) => svc.getMessage(profileId, params.id), {
     params: idParam,
+    response: emailMessageSchema,
     detail: {
       summary: "Get inbox message",
       description:
@@ -62,6 +78,7 @@ export const emailController = new Elysia({
     {
       params: idParam,
       body: scanMessageSchema,
+      response: emailMessageSchema,
       detail: {
         summary: "Scan and classify message",
         description:
@@ -75,6 +92,7 @@ export const emailController = new Elysia({
     {
       params: idParam,
       body: approveSchema,
+      response: messageApprovedSchema,
       detail: {
         summary: "Approve message and advance application",
         description:
@@ -84,6 +102,7 @@ export const emailController = new Elysia({
   )
   .post("/messages/:id/deny", ({ profileId, params }) => svc.denyMessage(profileId, params.id), {
     params: idParam,
+    response: messageDeniedSchema,
     detail: {
       summary: "Deny message",
       description:
@@ -93,6 +112,7 @@ export const emailController = new Elysia({
   // --- Send / Sync -----------------------------------------------------------
   .post("/send", ({ user, profileId, body }) => account.send(user.id, profileId, body), {
     body: sendEmailSchema,
+    response: sentMessageSchema,
     detail: {
       summary: "Send outbound email",
       description:
@@ -100,6 +120,7 @@ export const emailController = new Elysia({
     },
   })
   .post("/sync", ({ user, profileId }) => sync.syncInbox(user.id, profileId), {
+    response: syncResultSchema,
     detail: {
       summary: "Sync inbox messages",
       description:

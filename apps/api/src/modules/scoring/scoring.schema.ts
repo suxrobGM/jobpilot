@@ -23,3 +23,14 @@ export const scoreFitSchema = z.object({
   digest: jobDigestSchema,
   profile: fitProfileSchema.partial().optional(),
 });
+
+// ── Response schemas ──────────────────────────────────────────────────────────
+
+/** Deterministic keyword-overlap fit result returned by `scoreJobFit`. */
+export const fitResultSchema = z.object({
+  score: z.number(),
+  confidence: z.number(),
+  strongMatches: z.array(z.string()),
+  partialMatches: z.array(z.string()),
+  gaps: z.array(z.string()),
+});

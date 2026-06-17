@@ -77,8 +77,8 @@ export class ResumeVariantService {
       label: v.label,
       jobUrl: v.jobUrl,
       applicationId: v.applicationId,
-      createdAt: v.createdAt.toISOString(),
-      updatedAt: v.updatedAt.toISOString(),
+      createdAt: v.createdAt,
+      updatedAt: v.updatedAt,
     }));
   }
 
@@ -130,8 +130,8 @@ export class ResumeVariantService {
       content: JSON.parse(variant.content) as ResumeData,
       diffNotes: variant.diffNotes,
       rewrites: variant.rewrites ? (JSON.parse(variant.rewrites) as VariantRewriteAudit) : null,
-      createdAt: variant.createdAt.toISOString(),
-      updatedAt: variant.updatedAt.toISOString(),
+      createdAt: variant.createdAt,
+      updatedAt: variant.updatedAt,
     };
   }
 

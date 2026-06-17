@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
+import { analyticsStatsSchema } from "./analytics.schema";
 import { AnalyticsService } from "./analytics.service";
 
 const analyticsService = container.resolve(AnalyticsService);
@@ -11,6 +12,7 @@ export const analyticsController = new Elysia({
 })
   .use(profileGuard)
   .get("/", ({ profileId }) => analyticsService.stats(profileId), {
+    response: analyticsStatsSchema,
     detail: {
       summary: "Get dashboard analytics summary",
       description:

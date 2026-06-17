@@ -6,7 +6,8 @@ import {
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { campaignJobParams, campaignParams } from "../campaign.schema";
+import { campaignJobParams, campaignJobSchema, campaignParams } from "../campaign.schema";
+import { campaignJobListSchema, campaignJobResultResponseSchema } from "./job.schema";
 import { CampaignJobService } from "./job.service";
 
 const svc = container.resolve(CampaignJobService);
@@ -18,6 +19,7 @@ export const campaignJobController = new Elysia({
   .use(profileGuard)
   .get("/:id/jobs", ({ profileId, params }) => svc.listJobs(profileId, params.id), {
     params: campaignParams,
+    response: campaignJobListSchema,
     detail: {
       summary: "List campaign jobs",
       description: "Returns all queued jobs for the owned campaign, ordered by creation.",
@@ -26,6 +28,7 @@ export const campaignJobController = new Elysia({
   .post("/:id/jobs", ({ profileId, params, body }) => svc.addJob(profileId, params.id, body), {
     params: campaignParams,
     body: addCampaignJobSchema,
+    response: campaignJobSchema,
     detail: {
       summary: "Add campaign job",
       description:
@@ -38,6 +41,7 @@ export const campaignJobController = new Elysia({
     {
       params: campaignJobParams,
       body: patchCampaignJobSchema,
+      response: campaignJobSchema,
       detail: {
         summary: "Update campaign job",
         description:
@@ -51,6 +55,7 @@ export const campaignJobController = new Elysia({
     {
       params: campaignJobParams,
       body: campaignJobResultSchema,
+      response: campaignJobResultResponseSchema,
       detail: {
         summary: "Record campaign job result",
         description:

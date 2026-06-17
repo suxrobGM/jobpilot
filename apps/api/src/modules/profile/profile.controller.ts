@@ -2,6 +2,8 @@ import { profileWithAutoApplySchema, setPrimaryResumeSchema } from "@jobpilot/co
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
+import { idResponseSchema } from "@/types/response";
+import { primaryResumeSetSchema, profileAggregateSchema } from "./profile.schema";
 import { ProfileService } from "./profile.service";
 
 const svc = container.resolve(ProfileService);
@@ -12,6 +14,7 @@ export const profileController = new Elysia({
 })
   .use(profileGuard)
   .get("/", ({ profileId }) => svc.get(profileId), {
+    response: profileAggregateSchema,
     detail: {
       summary: "Get active profile",
       description:
@@ -20,6 +23,7 @@ export const profileController = new Elysia({
   })
   .put("/", ({ profileId, body }) => svc.update(profileId, body), {
     body: profileWithAutoApplySchema,
+    response: idResponseSchema,
     detail: {
       summary: "Replace active profile",
       description:
@@ -28,6 +32,7 @@ export const profileController = new Elysia({
   })
   .put("/primary-resume", ({ profileId, body }) => svc.setPrimaryResume(profileId, body.resumeId), {
     body: setPrimaryResumeSchema,
+    response: primaryResumeSetSchema,
     detail: {
       summary: "Set primary resume",
       description:

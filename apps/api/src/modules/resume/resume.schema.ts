@@ -11,6 +11,42 @@ export const updateResumeSchema = z.object({
   content: resumeDataSchema.optional(),
 });
 
+// ── Response schemas ──────────────────────────────────────────────────────────
+
+/** A row in the master-resume list. */
+export const resumeSummarySchema = z.object({
+  id: z.uuid(),
+  label: z.string(),
+  sourceFilename: z.string().nullable(),
+  hasData: z.boolean(),
+  variantCount: z.number().int(),
+  isPrimary: z.boolean(),
+  updatedAt: z.date(),
+});
+
+export const resumeListSchema = z.array(resumeSummarySchema);
+
+/** A single master resume with its structured content and source metadata. */
+export const resumeDetailSchema = z.object({
+  id: z.uuid(),
+  profileId: z.uuid(),
+  label: z.string(),
+  content: resumeDataSchema.nullable(),
+  version: z.number().int(),
+  sourceFilename: z.string().nullable(),
+  sourceMimeType: z.string().nullable(),
+  sourceSizeBytes: z.number().int().nullable(),
+  isPrimary: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+/** Result of updating a resume — id plus the bumped version. */
+export const resumeUpdatedSchema = z.object({
+  id: z.uuid(),
+  version: z.number().int(),
+});
+
 export const tailorResumeSchema = z.object({
   label: z.string().min(1),
   jobUrl: z.url().optional().nullable(),

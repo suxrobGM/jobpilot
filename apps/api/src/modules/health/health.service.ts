@@ -7,7 +7,7 @@ export class HealthService {
   status() {
     return {
       version: VERSION,
-      time: new Date().toISOString(),
+      time: new Date(),
     };
   }
 }

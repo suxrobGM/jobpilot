@@ -3,7 +3,13 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { pdfRequestSchema } from "./cover-letter.schema";
+import { okResponseSchema } from "@/types/response";
+import {
+  coverLetterCreatedSchema,
+  coverLetterDetailSchema,
+  coverLetterListSchema,
+  pdfRequestSchema,
+} from "./cover-letter.schema";
 import { CoverLetterService, type CoverLetterPdf } from "./cover-letter.service";
 
 const svc = container.resolve(CoverLetterService);
@@ -25,6 +31,7 @@ export const coverLetterController = new Elysia({
 })
   .use(profileGuard)
   .get("/", ({ profileId }) => svc.list(profileId), {
+    response: coverLetterListSchema,
     detail: {
       summary: "List cover letters",
       description:
@@ -33,6 +40,7 @@ export const coverLetterController = new Elysia({
   })
   .post("/", ({ profileId, body }) => svc.create(profileId, body), {
     body: coverLetterCreateSchema,
+    response: coverLetterCreatedSchema,
     detail: {
       summary: "Create cover letter",
       description:
@@ -53,6 +61,7 @@ export const coverLetterController = new Elysia({
   )
   .get("/:id", ({ profileId, params }) => svc.get(profileId, params.id), {
     params: idParam,
+    response: coverLetterDetailSchema,
     detail: {
       summary: "Get cover letter",
       description:
@@ -61,6 +70,7 @@ export const coverLetterController = new Elysia({
   })
   .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
     params: idParam,
+    response: okResponseSchema,
     detail: {
       summary: "Delete cover letter",
       description:

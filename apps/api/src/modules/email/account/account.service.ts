@@ -18,14 +18,14 @@ export class EmailAccountService {
     const account = await this.prisma.emailAccount.findUnique({ where: { profileId } });
 
     if (!account) {
-      return { connected: false, canSend: false };
+      return { connected: false as const, canSend: false };
     }
 
     return {
-      connected: true,
+      connected: true as const,
       provider: account.provider,
       email: account.email,
-      lastSyncAt: account.lastSyncAt?.toISOString() ?? null,
+      lastSyncAt: account.lastSyncAt,
       canSend: accountCanSend(account),
     };
   }

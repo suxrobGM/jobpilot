@@ -18,16 +18,17 @@ type ContactLinkedinConnection = z.infer<typeof contactLinkedinConnectionSchema>
 
 /**
  * A Job row with `status` narrowed to the campaign job-status union and the
- * `appliedAt` Date serialized to its ISO `string` wire form.
+ * `appliedAt` Date carried through as a raw `Date` (Elysia serializes it on the wire).
  */
 export type CampaignJobRow = Omit<Prisma.JobGetPayload<{}>, "appliedAt"> & {
   status: CampaignJobStatus;
-  appliedAt: string | null;
+  appliedAt: Date | null;
 };
 
 /**
  * A Campaign row with `status`/`source` narrowed, `config`/`summary` typed, and
- * the `startedAt`/`updatedAt`/`completedAt` Dates serialized to ISO `string`s.
+ * the `startedAt`/`updatedAt`/`completedAt` Dates carried through as raw `Date`s
+ * (Elysia serializes them on the wire).
  */
 export type CampaignRow = Omit<
   Prisma.CampaignGetPayload<{}>,
@@ -37,25 +38,26 @@ export type CampaignRow = Omit<
   source: CampaignSource;
   config: CampaignConfig;
   summary: CampaignSummary;
-  startedAt: string;
-  updatedAt: string;
-  completedAt: string | null;
+  startedAt: Date;
+  updatedAt: Date;
+  completedAt: Date | null;
 };
 
-/** The nested contact on an OutreachMessage row, with Dates serialized to ISO. */
+/** The nested contact on an OutreachMessage row, with Dates carried through as raw `Date`s. */
 type OutreachContactRow = Omit<
   Prisma.ContactGetPayload<{}>,
   "linkedinConnection" | "createdAt" | "updatedAt"
 > & {
   linkedinConnection: ContactLinkedinConnection;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 /**
  * An OutreachMessage row (with its contact) with `status`/`channel` and the nested
  * contact's `linkedinConnection` narrowed to the contract unions, and all Dates
- * (`sentAt`/`repliedAt`/`createdAt`/`updatedAt` plus the contact's) serialized to ISO.
+ * (`sentAt`/`repliedAt`/`createdAt`/`updatedAt` plus the contact's) carried through
+ * as raw `Date`s (Elysia serializes them on the wire).
  */
 type OutreachMessageRow = Omit<
   Prisma.OutreachMessageGetPayload<{ include: { contact: true } }>,
@@ -63,10 +65,10 @@ type OutreachMessageRow = Omit<
 > & {
   status: OutreachMessageStatus;
   channel: OutreachChannel;
-  sentAt: string | null;
-  repliedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+  sentAt: Date | null;
+  repliedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
   contact: OutreachContactRow;
 };
 
@@ -75,7 +77,7 @@ export function toCampaignJobRow(job: Prisma.JobGetPayload<{}>): CampaignJobRow 
   return {
     ...job,
     status: job.status as CampaignJobStatus,
-    appliedAt: job.appliedAt?.toISOString() ?? null,
+    appliedAt: job.appliedAt,
   };
 }
 
@@ -87,15 +89,15 @@ export function toOutreachMessageRow(
     ...message,
     status: message.status as OutreachMessageStatus,
     channel: message.channel as OutreachChannel,
-    sentAt: message.sentAt?.toISOString() ?? null,
-    repliedAt: message.repliedAt?.toISOString() ?? null,
-    createdAt: message.createdAt.toISOString(),
-    updatedAt: message.updatedAt.toISOString(),
+    sentAt: message.sentAt,
+    repliedAt: message.repliedAt,
+    createdAt: message.createdAt,
+    updatedAt: message.updatedAt,
     contact: {
       ...message.contact,
       linkedinConnection: message.contact.linkedinConnection as ContactLinkedinConnection,
-      createdAt: message.contact.createdAt.toISOString(),
-      updatedAt: message.contact.updatedAt.toISOString(),
+      createdAt: message.contact.createdAt,
+      updatedAt: message.contact.updatedAt,
     },
   };
 }

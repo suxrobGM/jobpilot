@@ -3,6 +3,7 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { readUpload } from "../resume.upload";
+import { sourceDeletedSchema, sourceUploadedSchema } from "./file.schema";
 import { ResumeFileService } from "./file.service";
 
 const svc = container.resolve(ResumeFileService);
@@ -38,6 +39,7 @@ export const resumeFileController = new Elysia({
     },
     {
       params: idParam,
+      response: sourceUploadedSchema,
       detail: {
         summary: "Replace resume source file",
         description:
@@ -47,6 +49,7 @@ export const resumeFileController = new Elysia({
   )
   .delete("/:id/source", ({ profileId, params }) => svc.deleteSource(profileId, params.id), {
     params: idParam,
+    response: sourceDeletedSchema,
     detail: {
       summary: "Delete resume source file",
       description:

@@ -26,8 +26,8 @@ export class ContactService {
       linkedinConnection: row.linkedinConnection as ContactLinkedinConnection,
       emailSource: row.emailSource as ContactEmailSource | null,
       discoverySource: row.discoverySource as ContactDiscoverySource | null,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
     }));
   }
 }

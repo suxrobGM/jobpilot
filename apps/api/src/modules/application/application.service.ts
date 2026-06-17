@@ -71,8 +71,8 @@ export class ApplicationService {
       ...r,
       stage: r.stage as Stage,
       source: r.source as ApplicationSource,
-      appliedAt: r.appliedAt.toISOString(),
-      rejectedAt: r.rejectedAt?.toISOString() ?? null,
+      appliedAt: r.appliedAt,
+      rejectedAt: r.rejectedAt,
     }));
   }
 
@@ -93,13 +93,13 @@ export class ApplicationService {
       ...row,
       stage: row.stage as Stage,
       source: row.source as ApplicationSource,
-      appliedAt: row.appliedAt.toISOString(),
-      rejectedAt: row.rejectedAt?.toISOString() ?? null,
+      appliedAt: row.appliedAt,
+      rejectedAt: row.rejectedAt,
       stageEvents: row.stageEvents.map((e) => ({
         ...e,
         fromStage: e.fromStage as Stage | null,
         toStage: e.toStage as Stage,
-        occurredAt: e.occurredAt.toISOString(),
+        occurredAt: e.occurredAt,
       })),
     };
   }
@@ -161,15 +161,15 @@ export class ApplicationService {
       });
       if (exact) {
         return {
-          applied: true,
+          applied: true as const,
           match: {
-            kind: "url",
+            kind: "url" as const,
             application: {
               id: exact.id,
               url: exact.url,
               title: exact.title,
               company: exact.company,
-              appliedAt: exact.appliedAt.toISOString(),
+              appliedAt: exact.appliedAt,
               stage: exact.stage as Stage,
             },
           },
@@ -207,16 +207,16 @@ export class ApplicationService {
       if (fuzzy) {
         const matched = candidates.find((c) => c.id === fuzzy.candidate.id)!;
         return {
-          applied: true,
+          applied: true as const,
           match: {
-            kind: "fuzzy",
+            kind: "fuzzy" as const,
             score: fuzzy.score,
             application: {
               id: matched.id,
               url: matched.url,
               title: matched.title,
               company: matched.company,
-              appliedAt: matched.appliedAt.toISOString(),
+              appliedAt: matched.appliedAt,
               stage: matched.stage as Stage,
             },
           },
@@ -224,6 +224,6 @@ export class ApplicationService {
       }
     }
 
-    return { applied: false, match: null };
+    return { applied: false as const, match: null };
   }
 }

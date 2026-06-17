@@ -103,9 +103,9 @@ export class CampaignService {
         source: r.source as CampaignSource,
         config: JSON.parse(r.config) as CampaignConfig,
         summary: JSON.parse(r.summary) as CampaignSummary,
-        startedAt: r.startedAt.toISOString(),
-        updatedAt: r.updatedAt.toISOString(),
-        completedAt: r.completedAt?.toISOString() ?? null,
+        startedAt: r.startedAt,
+        updatedAt: r.updatedAt,
+        completedAt: r.completedAt,
       }),
     );
   }
@@ -125,15 +125,15 @@ export class CampaignService {
       ...campaign,
       status: campaign.status as CampaignStatus,
       source: campaign.source as CampaignSource,
-      startedAt: campaign.startedAt.toISOString(),
-      updatedAt: campaign.updatedAt.toISOString(),
-      completedAt: campaign.completedAt?.toISOString() ?? null,
+      startedAt: campaign.startedAt,
+      updatedAt: campaign.updatedAt,
+      completedAt: campaign.completedAt,
     } satisfies Omit<Prisma.CampaignGetPayload<{}>, "startedAt" | "updatedAt" | "completedAt"> & {
       status: CampaignStatus;
       source: CampaignSource;
-      startedAt: string;
-      updatedAt: string;
-      completedAt: string | null;
+      startedAt: Date;
+      updatedAt: Date;
+      completedAt: Date | null;
     };
   }
 
@@ -156,16 +156,16 @@ export class CampaignService {
       ...campaign,
       status: campaign.status as CampaignStatus,
       source: campaign.source as CampaignSource,
-      startedAt: campaign.startedAt.toISOString(),
-      updatedAt: campaign.updatedAt.toISOString(),
-      completedAt: campaign.completedAt?.toISOString() ?? null,
+      startedAt: campaign.startedAt,
+      updatedAt: campaign.updatedAt,
+      completedAt: campaign.completedAt,
       // Clean replacement-char artifacts in historical rows written before the
       // schema-level sanitizer landed, so the UI never shows mojibake.
       jobs: campaign.jobs.map(
         (job): CampaignJobRow => ({
           ...job,
           status: job.status as CampaignJobStatus,
-          appliedAt: job.appliedAt?.toISOString() ?? null,
+          appliedAt: job.appliedAt,
           skipReason: cleanReplacementCharsNullable(job.skipReason),
           failReason: cleanReplacementCharsNullable(job.failReason),
           matchReason: cleanReplacementCharsNullable(job.matchReason),
@@ -243,9 +243,9 @@ export class CampaignService {
       source: campaign.source as CampaignSource,
       config: JSON.parse(campaign.config) as CampaignConfig,
       summary: JSON.parse(campaign.summary) as CampaignSummary,
-      startedAt: campaign.startedAt.toISOString(),
-      updatedAt: campaign.updatedAt.toISOString(),
-      completedAt: campaign.completedAt?.toISOString() ?? null,
+      startedAt: campaign.startedAt,
+      updatedAt: campaign.updatedAt,
+      completedAt: campaign.completedAt,
     } satisfies CampaignRow;
   }
 

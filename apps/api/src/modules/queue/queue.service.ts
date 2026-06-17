@@ -5,18 +5,14 @@ import { pipelineChannel } from "@/common/sse/channels/pipeline";
 import { publish } from "@/common/sse";
 import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 
-type QueueEntryRow = Omit<Prisma.QueueEntryGetPayload<{}>, "status" | "createdAt" | "consumedAt"> & {
+type QueueEntryRow = Omit<Prisma.QueueEntryGetPayload<{}>, "status"> & {
   status: QueueStatus;
-  createdAt: string;
-  consumedAt: string | null;
 };
 
 function serializeQueueEntry(row: Prisma.QueueEntryGetPayload<{}>): QueueEntryRow {
   return {
     ...row,
     status: row.status as QueueStatus,
-    createdAt: row.createdAt.toISOString(),
-    consumedAt: row.consumedAt?.toISOString() ?? null,
   };
 }
 

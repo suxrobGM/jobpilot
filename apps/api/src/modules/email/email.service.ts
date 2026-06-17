@@ -111,6 +111,9 @@ export class EmailService {
         verificationDomain: body.verificationDomain,
         scannedAt: body.classification ? new Date() : undefined,
       },
+      include: {
+        matchedApp: { select: { id: true, title: true, company: true, stage: true } },
+      },
     });
 
     const message = serializeMessage(row);

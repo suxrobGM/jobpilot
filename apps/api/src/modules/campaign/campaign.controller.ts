@@ -8,7 +8,16 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { subscribe } from "@/common/sse";
 import { campaignChannel } from "@/common/sse/channels/campaign";
-import { campaignParams, campaignsQuery } from "./campaign.schema";
+import { idResponseSchema } from "@/types/response";
+import {
+  campaignCreatedSchema,
+  campaignDeletedSchema,
+  campaignListSchema,
+  campaignParams,
+  campaignSchema,
+  campaignsQuery,
+  campaignWithJobsSchema,
+} from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
 import { campaignJobController } from "./jobs/job.controller";
 import { campaignOutreachController } from "./outreach/outreach.controller";
@@ -23,6 +32,7 @@ export const campaignController = new Elysia({
   // ── Collection ──────────────────────────────────────────────────────────────
   .get("/", ({ profileId, query }) => svc.list(profileId, query), {
     query: campaignsQuery,
+    response: campaignListSchema,
     detail: {
       summary: "List campaigns",
       description:
@@ -31,6 +41,7 @@ export const campaignController = new Elysia({
   })
   .post("/", ({ profileId, body }) => svc.create(profileId, body), {
     body: createCampaignSchema,
+    response: campaignCreatedSchema,
     detail: {
       summary: "Create campaign",
       description: "Creates a new campaign for the profile and returns the created campaign row.",
@@ -39,6 +50,7 @@ export const campaignController = new Elysia({
   // ── Single campaign ───────────────────────────────────────────────────────────
   .get("/:id", ({ profileId, params }) => svc.get(profileId, params.id), {
     params: campaignParams,
+    response: campaignWithJobsSchema,
     detail: {
       summary: "Get campaign",
       description:
@@ -48,6 +60,7 @@ export const campaignController = new Elysia({
   .patch("/:id", ({ profileId, params, body }) => svc.update(profileId, params.id, body), {
     params: campaignParams,
     body: updateCampaignSchema,
+    response: campaignSchema,
     detail: {
       summary: "Update campaign",
       description:
@@ -56,6 +69,7 @@ export const campaignController = new Elysia({
   })
   .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
     params: campaignParams,
+    response: campaignDeletedSchema,
     detail: {
       summary: "Delete campaign",
       description:
@@ -84,6 +98,7 @@ export const campaignController = new Elysia({
     {
       params: campaignParams,
       body: campaignEventSchema,
+      response: idResponseSchema,
       detail: {
         summary: "Record campaign event",
         description:

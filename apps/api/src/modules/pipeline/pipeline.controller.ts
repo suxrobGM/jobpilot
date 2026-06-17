@@ -3,7 +3,7 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { subscribe } from "@/common/sse";
 import { pipelineChannel } from "@/common/sse/channels/pipeline";
-import { pipelineQuery } from "./pipeline.schema";
+import { pipelineColumnPageSchema, pipelineQuery } from "./pipeline.schema";
 import { PipelineService } from "./pipeline.service";
 
 const svc = container.resolve(PipelineService);
@@ -23,6 +23,7 @@ export const pipelineController = new Elysia({
       }),
     {
       query: pipelineQuery,
+      response: pipelineColumnPageSchema,
       detail: {
         summary: "List pipeline stage",
         description:

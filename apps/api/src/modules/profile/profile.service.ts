@@ -91,7 +91,7 @@ export class ProfileService {
       hasData: hasContentIds.has(r.id),
       variantCount: r._count.variants,
       isPrimary: r.id === profile.primaryResumeId,
-      updatedAt: r.updatedAt.toISOString(),
+      updatedAt: r.updatedAt,
     }));
 
     return {
@@ -99,7 +99,7 @@ export class ProfileService {
         ...profile,
         preferredLocations: JSON.parse(profile.preferredLocations) as string[],
         references,
-        updatedAt: profile.updatedAt.toISOString(),
+        updatedAt: profile.updatedAt,
       },
       autoApply,
       primaryResumeSourceAbsolutePath: primarySource?.sourceFilename

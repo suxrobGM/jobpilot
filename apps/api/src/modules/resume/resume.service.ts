@@ -41,7 +41,7 @@ export class ResumeService {
         hasData: r.content !== null,
         variantCount: r._count.variants,
         isPrimary: r.id === primaryId,
-        updatedAt: r.updatedAt.toISOString(),
+        updatedAt: r.updatedAt,
       }))
       .sort((a, b) => (a.isPrimary === b.isPrimary ? 0 : a.isPrimary ? -1 : 1));
   }
@@ -133,8 +133,8 @@ export class ResumeService {
       sourceMimeType: resume.sourceMimeType,
       sourceSizeBytes: resume.sourceSizeBytes,
       isPrimary: profile?.primaryResumeId === resume.id,
-      createdAt: resume.createdAt.toISOString(),
-      updatedAt: resume.updatedAt.toISOString(),
+      createdAt: resume.createdAt,
+      updatedAt: resume.updatedAt,
     };
   }
 

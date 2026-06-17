@@ -1,6 +1,7 @@
 import "@/common/di/container";
 import { Elysia } from "elysia";
 import { db } from "@/common/database";
+import { httpErrorResponses } from "@/types/response";
 import { logger } from "@/common/logger";
 import { errorMiddleware } from "@/common/middleware";
 import { corsPlugin, swaggerPlugin } from "@/common/plugins";
@@ -32,6 +33,10 @@ const app = new Elysia()
     await db.$disconnect();
   })
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
+  // Document the standard error envelope (from the global error handler) on every
+  // /api route so Swagger and Eden Treaty surface error responses without each
+  // route repeating them. Success (200) schemas stay per-route.
+  .guard({ as: "scoped", response: httpErrorResponses })
   .group("/api", (api) =>
     api
       .use(authController)

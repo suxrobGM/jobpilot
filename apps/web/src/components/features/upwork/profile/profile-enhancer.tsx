@@ -85,7 +85,7 @@ export function ProfileEnhancer(): ReactElement {
         </Stack>
 
         {hasSuggestion && profile ? (
-          <ProfileReview key={profile.updatedAt} profile={profile} />
+          <ProfileReview key={String(profile.updatedAt)} profile={profile} />
         ) : (
           <EmptyState
             variant="inline"
