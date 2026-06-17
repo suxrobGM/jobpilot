@@ -78,7 +78,6 @@ function SourceNoteChip(props: { note: string }): ReactElement {
         paddingBlock: "1px",
         borderRadius: theme.radii.xs,
         border: `1px solid ${theme.palette.line.divider}`,
-        fontFamily: "var(--font-jetbrains-mono), monospace",
         fontSize: "0.625rem",
         color: theme.palette.text.secondary,
         backgroundColor: theme.palette.surfaces.elevated,

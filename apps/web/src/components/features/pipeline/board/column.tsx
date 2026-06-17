@@ -150,7 +150,6 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
             sx={(theme) => ({
               marginTop: 1,
               padding: 1,
-              fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: "0.6875rem",
               color: theme.palette.text.disabled,
               textAlign: "center",

@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { PropsWithChildren, ReactElement } from "react";
 import type { Metadata } from "next";
-import { Fraunces, Geist, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Geist } from "next/font/google";
 import { AgentProvider } from "@/providers/agent-provider";
 import { ConfirmProvider } from "@/providers/confirm-provider";
 import { ToastProvider } from "@/providers/notification-provider";
@@ -14,18 +14,13 @@ const geistSans = Geist({
   display: "swap",
 });
 
+// Serif retained only for the rail's "J" brand mark; the rest of the UI is all-sans.
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
   display: "swap",
   axes: ["SOFT", "opsz"],
   style: ["normal", "italic"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -37,10 +32,7 @@ export const metadata: Metadata = {
 export default function RootLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${fraunces.variable} ${jetbrainsMono.variable}`}
-    >
+    <html lang="en" className={`${geistSans.variable} ${fraunces.variable}`}>
       <body suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>

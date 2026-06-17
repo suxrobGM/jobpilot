@@ -29,11 +29,7 @@ export function AuthCard(props: AuthCardProps): ReactElement {
           <Stack spacing={0.5} sx={{ textAlign: "center" }}>
             <Typography
               variant="h1"
-              sx={{
-                fontFamily: "var(--font-fraunces), Georgia, serif",
-                fontStyle: "italic",
-                fontSize: "2rem",
-              }}
+              sx={{ fontSize: "2rem", letterSpacing: "-0.035em" }}
             >
               JobPilot
             </Typography>
