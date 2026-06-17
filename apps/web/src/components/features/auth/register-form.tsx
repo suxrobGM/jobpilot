@@ -48,7 +48,7 @@ export function RegisterForm(): ReactElement {
               label="Password"
               type="password"
               autoComplete="new-password"
-              helperText="At least 8 characters."
+              helperText="8+ characters with an uppercase letter, a lowercase letter, a number, and a special character."
             />
           )}
         </form.AppField>

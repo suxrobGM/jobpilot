@@ -65,7 +65,7 @@ export function ResetPasswordForm(props: ResetPasswordFormProps): ReactElement {
               type="password"
               autoComplete="new-password"
               autoFocus
-              helperText="At least 8 characters."
+              helperText="8+ characters with an uppercase letter, a lowercase letter, a number, and a special character."
             />
           )}
         </form.AppField>
