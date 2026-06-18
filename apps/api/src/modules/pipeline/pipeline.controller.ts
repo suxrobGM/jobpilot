@@ -1,7 +1,7 @@
-import { Elysia, sse } from "elysia";
+import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { subscribe } from "@/common/sse";
+import { sseStream } from "@/common/sse";
 import { pipelineChannel } from "@/common/sse/channels/pipeline";
 import { pipelineColumnPageSchema, pipelineQuery } from "./pipeline.schema";
 import { PipelineService } from "./pipeline.service";
@@ -31,7 +31,7 @@ export const pipelineController = new Elysia({
       },
     },
   )
-  .get("/events", ({ profileId }) => sse(subscribe(pipelineChannel, { profileId })), {
+  .get("/events", ({ profileId, headers }) => sseStream(pipelineChannel, { profileId }, headers), {
     detail: {
       summary: "Stream pipeline events",
       description:

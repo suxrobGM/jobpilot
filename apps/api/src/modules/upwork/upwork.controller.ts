@@ -5,10 +5,10 @@ import {
   updateUpworkProfileSchema,
   upworkClientQualitySchema,
 } from "@jobpilot/contracts/upwork";
-import { Elysia, sse } from "elysia";
+import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { publish, subscribe } from "@/common/sse";
+import { publish, sseStream } from "@/common/sse";
 import { upworkChannel } from "@/common/sse/channels/upwork";
 import { idResponseSchema } from "@/types/response";
 import {
@@ -36,7 +36,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
   })
   // --- profile-scoped ---
   .use(profileGuard)
-  .get("/events", ({ profileId }) => sse(subscribe(upworkChannel, { profileId })), {
+  .get("/events", ({ profileId, headers }) => sseStream(upworkChannel, { profileId }, headers), {
     detail: {
       summary: "Stream Upwork events",
       description:

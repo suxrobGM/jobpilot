@@ -1,5 +1,6 @@
 "use client";
 
+import { EventSource } from "eventsource";
 import { useEffect, useRef } from "react";
 import type { AnyChannel, ChannelEvent, ChannelUrlParams } from "./channel";
 
@@ -54,7 +55,8 @@ export function useEventSource<TEvent = unknown>(
       return;
     }
 
-    const source = new EventSource(url);
+    // `eventsource` (not native) for fetch-based transport: credentialed cross-origin streams + header control.
+    const source = new EventSource(url, { withCredentials: true });
     source.onmessage = (event) => {
       try {
         onMessageRef.current?.(parseRef.current(event.data), event);

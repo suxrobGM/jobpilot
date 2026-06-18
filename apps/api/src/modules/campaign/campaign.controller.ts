@@ -3,10 +3,10 @@ import {
   createCampaignSchema,
   updateCampaignSchema,
 } from "@jobpilot/contracts/campaign";
-import { Elysia, sse } from "elysia";
+import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { subscribe } from "@/common/sse";
+import { sseStream } from "@/common/sse";
 import { campaignChannel } from "@/common/sse/channels/campaign";
 import { idResponseSchema } from "@/types/response";
 import {
@@ -79,9 +79,9 @@ export const campaignController = new Elysia({
   // ── Events (SSE stream + event record) ────────────────────────────────────────
   .get(
     "/:id/events",
-    async ({ profileId, params }) => {
+    async ({ profileId, params, headers }) => {
       await svc.ensureCampaignOwned(profileId, params.id);
-      return sse(subscribe(campaignChannel, { campaignId: params.id }));
+      return sseStream(campaignChannel, { campaignId: params.id }, headers);
     },
     {
       params: campaignParams,

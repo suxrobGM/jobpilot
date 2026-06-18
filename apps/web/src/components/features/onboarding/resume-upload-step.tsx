@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { api } from "@/api/eden";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
+import type { ResumeDto } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
@@ -26,7 +27,6 @@ export const ResumeUploadStep = withForm({
     const agent = useAgent();
     const [state, setState] = useState<StepState>("idle");
     const [resumeId, setResumeId] = useState<string | null>(null);
-    const appliedRef = useRef(false);
 
     const startExtraction = async (id: string): Promise<void> => {
       setState("extracting");
@@ -46,20 +46,12 @@ export const ResumeUploadStep = withForm({
       },
     );
 
-    const applyExtractedBasics = async (id: string): Promise<void> => {
-      if (appliedRef.current) {
-        return;
-      }
-      const { data } = await api.resumes({ id }).get();
-      const basics = data?.content?.basics;
-      if (appliedRef.current || !basics || basics.name.trim().length === 0) {
-        return;
-      }
-      appliedRef.current = true;
-      applyBasicsToForm(form, basics);
-      setState("done");
-      onContinue();
-    };
+    // Extraction target: initial fetch covers an already-parsed resume; SSE refetches on completion (no poll).
+    const resume = useApiQuery<ResumeDto>(
+      queryKeys.resume.detail(resumeId ?? ""),
+      () => api.resumes({ id: resumeId ?? "" }).get(),
+      { enabled: resumeId !== null && state === "extracting" },
+    );
 
     useSseChannel(
       resumeChannel,
@@ -67,12 +59,27 @@ export const ResumeUploadStep = withForm({
       {
         enabled: resumeId !== null && state === "extracting",
         on: {
-          "content.updated": (event) => {
-            void applyExtractedBasics(event.resumeId);
-          },
+          "content.updated": () => void resume.refetch(),
         },
       },
     );
+
+    // Complete on content presence (not just a delivered event); the "done" state then blocks re-entry.
+    useEffect(() => {
+      if (state !== "extracting") {
+        return;
+      }
+      const content = resume.data?.content;
+      if (!content) {
+        return;
+      }
+      const basics = content.basics;
+      if (basics && basics.name.trim().length > 0) {
+        applyBasicsToForm(form, basics);
+      }
+      setState("done");
+      onContinue();
+    }, [resume.data, state, form, onContinue]);
 
     const retryInject = async (): Promise<void> => {
       if (resumeId === null) {
