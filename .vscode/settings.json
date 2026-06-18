@@ -12,6 +12,10 @@
     "files.trimTrailingWhitespace": false
   },
 
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+
   "[csharp]": {
     "editor.defaultFormatter": "ms-dotnettools.csharp",
     "editor.formatOnSave": true,
