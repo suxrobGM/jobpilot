@@ -8,11 +8,9 @@ import { Terminal } from "@xterm/xterm";
 import { api } from "@/api/eden";
 import { startSession, TERMINAL_WS_URL, type TerminalProviderId } from "@/lib/terminal";
 import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
-import { useAgentDock } from "@/providers/agent-provider";
 import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
-const READY_IDLE_MS = 600;
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 const SHIFT_ENTER_B64 = toBase64("\x1b[13;2u");
 const CTRL_C_B64 = toBase64("\x03");
@@ -32,14 +30,6 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
   const { provider } = props;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const theme = useTheme();
-  const { markTerminalReady, resetTerminalReady } = useAgentDock();
-
-  const markReadyRef = useRef(markTerminalReady);
-  const resetReadyRef = useRef(resetTerminalReady);
-  useEffect(() => {
-    markReadyRef.current = markTerminalReady;
-    resetReadyRef.current = resetTerminalReady;
-  });
 
   const background = theme.palette.surfaces.base;
   const foreground = theme.palette.text.primary;
@@ -51,15 +41,6 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
     if (!container) {
       return;
     }
-
-    resetReadyRef.current();
-    let readyIdleTimer: ReturnType<typeof setTimeout> | null = null;
-    const bumpReadyIdle = (): void => {
-      if (readyIdleTimer) {
-        clearTimeout(readyIdleTimer);
-      }
-      readyIdleTimer = setTimeout(() => markReadyRef.current(), READY_IDLE_MS);
-    };
 
     const terminal = new Terminal({
       cursorBlink: true,
@@ -77,14 +58,34 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
 
     let socket: WebSocketClient | null = null;
     let disposed = false;
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    // Last size sent to the PTY. A redundant resize makes the provider TUI
+    // repaint, and on reattach those repeated repaints stack into duplicate
+    // banners. Starts at 0 so the first post-connect resize always fires once.
+    let lastCols = 0;
+    let lastRows = 0;
 
-    const fitAndResize = (): void => {
+    const sendResize = (): void => {
       try {
         fit.fit();
-        socket?.sendJson({ type: "resize", cols: terminal.cols, rows: terminal.rows });
       } catch {
-        // container not laid out yet
+        return; // container not laid out yet
       }
+      if (terminal.cols === lastCols && terminal.rows === lastRows) {
+        return;
+      }
+      lastCols = terminal.cols;
+      lastRows = terminal.rows;
+      socket?.sendJson({ type: "resize", cols: terminal.cols, rows: terminal.rows });
+    };
+
+    // Debounce so a dock-open animation or hydration size flip sends one resize
+    // at the settled width, not one repaint-triggering resize per frame.
+    const scheduleResize = (): void => {
+      if (resizeTimer) {
+        clearTimeout(resizeTimer);
+      }
+      resizeTimer = setTimeout(sendResize, RESIZE_DEBOUNCE_MS);
     };
 
     terminal.attachCustomKeyEventHandler((event) => {
@@ -158,31 +159,22 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       }
 
       socket = connectWebSocket(TERMINAL_WS_URL, {
-        onOpen: () => fitAndResize(),
+        onOpen: () => scheduleResize(),
         onBinary: (data) => {
           terminal.write(data);
-          bumpReadyIdle();
         },
         onText: (data) => {
           terminal.write(data);
-          bumpReadyIdle();
         },
         onClose: () => {
           terminal.write("\r\n\x1b[33m[terminal] disconnected\x1b[0m\r\n");
-          resetReadyRef.current();
         },
       });
     };
 
     start();
 
-    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
-    const observer = new ResizeObserver(() => {
-      if (resizeTimer) {
-        clearTimeout(resizeTimer);
-      }
-      resizeTimer = setTimeout(fitAndResize, RESIZE_DEBOUNCE_MS);
-    });
+    const observer = new ResizeObserver(() => scheduleResize());
     observer.observe(container);
 
     return () => {
@@ -190,13 +182,9 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       if (resizeTimer) {
         clearTimeout(resizeTimer);
       }
-      if (readyIdleTimer) {
-        clearTimeout(readyIdleTimer);
-      }
       observer.disconnect();
       socket?.close(1000, "panel unmounted");
       terminal.dispose();
-      resetReadyRef.current();
     };
   }, [provider, background, foreground, cursor, selection]);
 

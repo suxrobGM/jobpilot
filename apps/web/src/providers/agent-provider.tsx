@@ -3,7 +3,6 @@
 import {
   createContext,
   useContext,
-  useRef,
   useState,
   useSyncExternalStore,
   type PropsWithChildren,
@@ -20,7 +19,6 @@ import { useToast } from "@/providers/notification-provider";
 import { readLocalStorage, writeLocalStorage } from "@/utils/local-storage";
 
 const STORAGE_KEY = "jobpilot:agent";
-const READY_TIMEOUT_MS = 15_000;
 
 interface AgentStorage {
   provider: TerminalProviderId;
@@ -91,27 +89,16 @@ export interface AgentDockContextValue {
   expanded: boolean;
   expand: () => void;
   collapse: () => void;
-  markTerminalReady: () => void;
-  resetTerminalReady: () => void;
 }
 
 const AgentContext = createContext<AgentContextValue | null>(null);
 const AgentDockContext = createContext<AgentDockContextValue | null>(null);
 
-class TerminalReadyTimeoutError extends Error {
-  constructor() {
-    super("Terminal did not become ready in time.");
-    this.name = "TerminalReadyTimeoutError";
-  }
-}
-
 function describeInjectError(error: unknown): string {
   if (error instanceof TypeError) {
     return "JobPilot Terminal isn't reachable. Start it (bun run dev) and open the Terminal tab in the dock.";
   }
-  if (error instanceof TerminalReadyTimeoutError) {
-    return "Terminal didn't finish starting up. Try again in a moment or restart the Terminal.";
-  }
+
   if (error instanceof TerminalApiError) {
     if (error.status === 404) {
       return "Terminal session has ended. Restart it from the Terminal tab in the dock.";
@@ -139,57 +126,22 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
   const expanded = useSyncExternalStore(subscribeAgentStorage, getStoredExpanded, () => false);
   const [terminalRevision, setTerminalRevision] = useState(0);
 
-  const terminalReadyRef = useRef(false);
-  const readyWaitersRef = useRef<Array<() => void>>([]);
-
-  const markTerminalReady = (): void => {
-    if (terminalReadyRef.current) {
-      return;
-    }
-    terminalReadyRef.current = true;
-    const waiters = readyWaitersRef.current;
-    readyWaitersRef.current = [];
-    waiters.forEach((resolve) => resolve());
+  const stop = async (): Promise<void> => {
+    await killSession();
   };
 
-  const resetTerminalReady = (): void => {
-    terminalReadyRef.current = false;
-  };
-
-  const waitForTerminalReady = (timeoutMs: number): Promise<void> =>
-    new Promise((resolve, reject) => {
-      if (terminalReadyRef.current) {
-        return resolve();
-      }
-      const wrappedResolve = (): void => {
-        clearTimeout(timerId);
-        resolve();
-      };
-
-      const timerId = setTimeout(() => {
-        readyWaitersRef.current = readyWaitersRef.current.filter((r) => r !== wrappedResolve);
-        reject(new TerminalReadyTimeoutError());
-      }, timeoutMs);
-
-      readyWaitersRef.current.push(wrappedResolve);
-    });
-
+  // Kill the host session and bump the revision so the TerminalPanel key changes,
+  // remounting it with a fresh xterm + a newly started session.
   const restart = async (): Promise<void> => {
-    resetTerminalReady();
     await killSession();
     setTerminalRevision((n) => n + 1);
-  };
-
-  const stop = async (): Promise<void> => {
-    resetTerminalReady();
-    await killSession();
   };
 
   const switchProvider = async (next: TerminalProviderId): Promise<void> => {
     if (next === provider) {
       return;
     }
-    resetTerminalReady();
+
     await killSession();
     patchAgentStorage({ provider: next });
     setTerminalRevision((n) => n + 1);
@@ -198,7 +150,6 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
   const runInject = async (command: string): Promise<void> => {
     patchAgentStorage({ dockExpanded: true });
     try {
-      await waitForTerminalReady(READY_TIMEOUT_MS);
       await injectCommand(command, provider);
     } catch (error) {
       toast.error(describeInjectError(error));
@@ -219,8 +170,6 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     expanded,
     expand: () => patchAgentStorage({ dockExpanded: true }),
     collapse: () => patchAgentStorage({ dockExpanded: false }),
-    markTerminalReady,
-    resetTerminalReady,
   };
 
   return (
