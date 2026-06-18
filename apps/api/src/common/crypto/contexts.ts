@@ -13,4 +13,5 @@ export const SECRET_CONTEXTS = {
   credentialApiKey: "credential:apiKey",
   boardPassword: "board:password",
   gmailTokens: "gmail:tokens",
+  apiTokenTerminal: "apiToken:terminal",
 } as const;

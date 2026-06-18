@@ -53,6 +53,8 @@ interface StartOptions {
   cols: number;
   rows: number;
   provider: TerminalProviderId;
+  /** Per-user agent PAT, injected into the PTY as JOBPILOT_API_TOKEN. */
+  apiToken?: string;
 }
 
 export function startSession(options: StartOptions): Promise<SessionStatus> {

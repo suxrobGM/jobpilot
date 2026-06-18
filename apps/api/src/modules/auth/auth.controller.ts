@@ -172,6 +172,14 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
         "Mints a new personal access token for the authenticated user and returns its details including the raw token, which is shown only once.",
     },
   })
+  .post("/tokens/terminal", ({ user }) => apiTokenService.getOrCreateTerminalToken(user.id), {
+    response: apiTokenMintedSchema,
+    detail: {
+      summary: "Get or create the agent terminal token",
+      description:
+        "Returns the authenticated user's single reusable terminal token, provisioning it on first use. The raw token is stored encrypted at rest, so the same value is returned on every call — the web sends it to the local terminal host on session start.",
+    },
+  })
   .delete("/tokens/:id", ({ user, params }) => apiTokenService.revoke(user.id, params.id), {
     params: idParam,
     response: okResponseSchema,

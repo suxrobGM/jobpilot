@@ -5,13 +5,13 @@ import { useEffect, useRef, type ReactElement } from "react";
 import { Box, useTheme } from "@mui/material";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
+import { api } from "@/api/eden";
 import { startSession, TERMINAL_WS_URL, type TerminalProviderId } from "@/lib/terminal";
 import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
 import { useAgentDock } from "@/providers/agent-provider";
 import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
-const STABLE_FRAMES = 3;
 const READY_IDLE_MS = 600;
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 const SHIFT_ENTER_B64 = toBase64("\x1b[13;2u");
@@ -126,52 +126,34 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       socket?.sendJson({ type: "input", data: toBase64(data) });
     });
 
-    // The dock's width transition reflows the container after mount; wait for the size
-    // to be stable across STABLE_FRAMES rAFs so the first PTY resize isn't mid-transition.
-    const waitForStableSize = (): Promise<void> =>
-      new Promise((resolve) => {
-        let lastWidth = -1;
-        let lastHeight = -1;
-        let stableFrames = 0;
-
-        const tick = () => {
-          if (disposed) {
-            return resolve();
-          }
-          const width = container.offsetWidth;
-          const height = container.offsetHeight;
-
-          if (width > 0 && height > 0 && width === lastWidth && height === lastHeight) {
-            if (++stableFrames >= STABLE_FRAMES) {
-              return resolve();
-            }
-          } else {
-            stableFrames = 0;
-            lastWidth = width;
-            lastHeight = height;
-          }
-          requestAnimationFrame(tick);
-        };
-
-        requestAnimationFrame(tick);
-      });
-
     const start = async (): Promise<void> => {
-      await waitForStableSize();
+      // Fetch the token while the container settles — it's independent of terminal size.
+      const tokenPromise = api.auth.tokens.terminal.post();
+
       if (disposed) {
+        return;
+      }
+
+      const { data, error } = await tokenPromise;
+      if (error) {
+        terminal.writeln(
+          `\x1b[31m[terminal] couldn't authenticate the agent — sign in to JobPilot, then restart the terminal. (${error.value.message})\x1b[0m`,
+        );
         return;
       }
 
       try {
         fit.fit();
-        await startSession({ cols: terminal.cols, rows: terminal.rows, provider });
+        await startSession({
+          cols: terminal.cols,
+          rows: terminal.rows,
+          provider,
+          apiToken: data.token,
+        });
       } catch (err) {
         terminal.writeln(
           `\x1b[31m[terminal] failed to start session: ${(err as Error).message}\x1b[0m`,
         );
-        return;
-      }
-      if (disposed) {
         return;
       }
 

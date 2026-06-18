@@ -81,8 +81,9 @@ public sealed class SessionManager : IDisposable
     /// <param name="requestedWorkingDir">Optional working directory for the spawned process.</param>
     /// <param name="cols">Initial terminal column count.</param>
     /// <param name="rows">Initial terminal row count.</param>
+    /// <param name="apiToken">Per-user agent PAT injected as JOBPILOT_API_TOKEN; falls back to the host env var.</param>
     /// <exception cref="PtyStartException">Thrown when the PTY provider fails to spawn the process.</exception>
-    public void Start(string? provider, string? requestedWorkingDir, int cols, int rows)
+    public void Start(string? provider, string? requestedWorkingDir, int cols, int rows, string? apiToken = null)
     {
         lock (stateLock)
         {
@@ -121,13 +122,13 @@ public sealed class SessionManager : IDisposable
             {
                 ["JOBPILOT_SKILLS_ROOT"] = paths.SharedSkillsDir,
                 ["JOBPILOT_WORKSPACE_ROOT"] = workingDir,
-                // Backend base URL + the agent's bearer token (a revocable PAT minted
-                // via POST /api/auth/tokens). Sourced from the host env so the user
-                // configures the token once; the skills read them to call the API.
+                // Backend base URL + the agent's per-user PAT (passed in by the web on
+                // session start). Host env vars are a local-dev fallback.
                 ["JOBPILOT_API"] =
                     Environment.GetEnvironmentVariable("JOBPILOT_API") ?? "http://localhost:8002",
-                ["JOBPILOT_API_TOKEN"] =
-                    Environment.GetEnvironmentVariable("JOBPILOT_API_TOKEN") ?? ""
+                ["JOBPILOT_API_TOKEN"] = !string.IsNullOrEmpty(apiToken)
+                    ? apiToken
+                    : Environment.GetEnvironmentVariable("JOBPILOT_API_TOKEN") ?? ""
             };
 
             try

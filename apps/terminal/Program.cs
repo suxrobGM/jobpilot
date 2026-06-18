@@ -33,7 +33,7 @@ app.MapPost("/sessions/start", Results<Ok<SessionStatus>, ProblemHttpResult> (St
 {
     try
     {
-        session.Start(request.Provider, request.WorkingDir, request.Cols, request.Rows);
+        session.Start(request.Provider, request.WorkingDir, request.Cols, request.Rows, request.ApiToken);
     }
     catch (PtyStartException ex)
     {

@@ -62,17 +62,19 @@ model RefreshToken {
   @@index([expiresAt])
 }
 
-// The local agent's credential: a long-lived, revocable personal access token.
-// The terminal mints one and injects it as JOBPILOT_API_TOKEN. Only the hash is stored.
+// The local agent's credential: a long-lived, revocable PAT. PATs are hash-only;
+// the reusable terminal token also stores `tokenCipher` (raw, encrypted) so it can be re-fetched.
 model ApiToken {
-  id         String    @id @default(uuid())
-  userId     String
-  name       String
-  tokenHash  String    @unique
-  lastUsedAt DateTime?
-  expiresAt  DateTime?
-  revokedAt  DateTime?
-  createdAt  DateTime  @default(now())
+  id          String    @id @default(uuid())
+  userId      String
+  name        String
+  tokenHash   String    @unique
+  // Raw token, encrypted; set only for the reusable terminal token, else null.
+  tokenCipher String?
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

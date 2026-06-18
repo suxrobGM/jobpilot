@@ -1,6 +1,8 @@
 # JobPilot
 
-Local AI job-application app. Uses Claude Code or Codex as the provider, a Next.js web UI at `http://localhost:8000`, an Elysia + PostgreSQL API at `http://localhost:8002` that owns all state, and a .NET PTY host at `:8001` for the embedded terminal.
+Multi-user AI job-application app. The Next.js web UI and the Elysia + PostgreSQL API (which owns all state) are **cloud-hosted and shared across users**; each user runs the **agent locally** — Claude Code or Codex driven through a .NET PTY host, plus Playwright browser automation — so jobs run on that user's own Claude/Codex subscription (see [project differentiator]). Dev ports: web `:8000`, API `:8002`, PTY host `:8001`.
+
+The agent authenticates to the (possibly remote, multi-user) API as the signed-in user via a per-user personal access token (PAT). On terminal session start the web fetches the user's **single reusable terminal token** (`POST /api/auth/tokens/terminal` — get-or-create, authed by the auth cookie) and passes it to the PTY host, which injects it as `JOBPILOT_API_TOKEN`; skills send it as `Authorization: Bearer`. The terminal token's raw value is stored encrypted at rest (per-user DEK) so the same token is returned every time — no manual setup, no per-session accumulation.
 
 ## Layout
 
@@ -10,7 +12,7 @@ Local AI job-application app. Uses Claude Code or Codex as the provider, a Next.
   - `plugin/skills/<name>/SKILL.md` — one hand-authored, provider-neutral skill per directory; `plugin/skills/shared/*.md` — shared docs. **Edit here directly.**
 - `apps/web/` — Bun + Next.js 16 + MUI 9 + TanStack Query/Form + Zod v4. The UI only; it talks to the API over HTTP (no direct DB access). A dev proxy in `next.config.ts` rewrites `/api/*` to the backend so the auth cookie stays first-party.
 - `apps/api/` — Bun + Elysia + Prisma 7 backend at `:8002`. Owns all persistence (PostgreSQL via `DATABASE_URL`, resumes/PDFs under `apps/api/storage/`). Exports its `App` type for end-to-end Eden Treaty typing; Swagger UI at `:8002/swagger` in dev.
-- `apps/terminal/` — .NET 10 minimal API hosting one provider PTY (project `JobPilot.Terminal`). Exposes `/ws`, `/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`.
+- `apps/terminal/` — .NET 10 minimal API hosting one provider PTY (project `JobPilot.Terminal`). Exposes `/ws`, `/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`. `/sessions/start` takes a per-user `apiToken` (the web fetches the reusable terminal token via `POST /api/auth/tokens/terminal`) and injects it into the PTY as `JOBPILOT_API_TOKEN`; the host env var is only a local-dev fallback. Runs on each user's machine, not the server. A C# change needs `bun run build:terminal` + a host restart to take effect.
 - `packages/` — workspace libs: `@jobpilot/contracts` (Zod schemas + enums shared by API and web) and `@jobpilot/api-client` (Eden Treaty client bound to the API's `App` type).
 
 ## Commands
@@ -37,8 +39,8 @@ API (`bun --cwd=apps/api run …`):
 
 - One tree, both providers. Skills are provider-neutral: reference sibling skills by name (e.g. "invoke the `tailor-resume` skill"), not provider-specific command tokens, and reference shared docs by path-relative reference (`../shared/<doc>.md`). Claude extras like `allowed-tools` are fine in frontmatter — Codex ignores unknown keys.
 - Imperative voice, addressed to the provider.
-- Start by checking `GET /api/health`; abort with a clear message if the web app is down.
-- Talk to the web app via `curl -fsS "$JOBPILOT_API/api/..."` (`JOBPILOT_API=http://localhost:8000`). No direct DB access.
+- Start by checking `GET /api/health`; abort with a clear message if the API is down.
+- Talk to the API via `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."`. Both env vars are injected by the terminal host — `JOBPILOT_API` is the backend base URL (`:8002` in dev, the hosted URL in prod), `JOBPILOT_API_TOKEN` is the per-user PAT. No direct DB access.
 - Load profile/resume/credentials via `plugin/skills/shared/setup.md`.
 - Credential lookup: board override → `Credential.scope === <domain>` → `Credential.scope === "default"`.
 - Log in proactively before searching/applying.
