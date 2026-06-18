@@ -1,52 +1,55 @@
 model EmailAccount {
   id             String    @id @default(uuid())
-  profileId      String    @unique
+  profileId      String    @unique @map("profile_id")
   profile        Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   provider       String
   email          String
-  accessToken    String?
-  refreshToken   String?
-  tokenExpiresAt DateTime?
+  accessToken    String?   @map("access_token")
+  refreshToken   String?   @map("refresh_token")
+  tokenExpiresAt DateTime? @map("token_expires_at")
   scope          String?
-  historyId      String?
-  lastSyncAt     DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  historyId      String?   @map("history_id")
+  lastSyncAt     DateTime? @map("last_sync_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   messages EmailMessage[]
+
+  @@map("email_account")
 }
 
 model EmailMessage {
   id          String       @id @default(uuid())
-  accountId   String
+  accountId   String       @map("account_id")
   account     EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  providerId  String       @unique
-  threadId    String?
+  providerId  String       @unique @map("provider_id")
+  threadId    String?      @map("thread_id")
   subject     String
-  fromAddress String
-  fromName    String?
-  fromDomain  String
+  fromAddress String       @map("from_address")
+  fromName    String?      @map("from_name")
+  fromDomain  String       @map("from_domain")
   snippet     String
-  rawBody     String
-  receivedAt  DateTime
-  fetchedAt   DateTime     @default(now())
+  rawBody     String       @map("raw_body")
+  receivedAt  DateTime     @map("received_at")
+  fetchedAt   DateTime     @default(now()) @map("fetched_at")
 
-  scannedAt      DateTime?
+  scannedAt      DateTime?    @map("scanned_at")
   classification String?
   confidence     Float?
   reasoning      String?
-  matchedAppId   String?
+  matchedAppId   String?      @map("matched_app_id")
   matchedApp     Application? @relation(fields: [matchedAppId], references: [id], onDelete: SetNull)
-  matchScore     Float?
-  reviewStatus   String       @default("pending")
-  appliedStage   String?
+  matchScore     Float?       @map("match_score")
+  reviewStatus   String       @default("pending") @map("review_status")
+  appliedStage   String?      @map("applied_stage")
 
-  verificationCode   String?
-  verificationLink   String?
-  verificationDomain String?
+  verificationCode   String? @map("verification_code")
+  verificationLink   String? @map("verification_link")
+  verificationDomain String? @map("verification_domain")
 
   @@index([reviewStatus, receivedAt])
   @@index([matchedAppId])
   @@index([fromDomain, receivedAt])
   @@index([verificationDomain, receivedAt])
+  @@map("email_message")
 }

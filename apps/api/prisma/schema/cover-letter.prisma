@@ -1,15 +1,16 @@
 model CoverLetter {
-  id        String   @id @default(uuid())
-  profileId String
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id        String  @id @default(uuid())
+  profileId String  @map("profile_id")
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  jobUrl   String?
-  jobTitle String?
+  jobUrl   String? @map("job_url")
+  jobTitle String? @map("job_title")
   company  String?
-  source   String   @default("manual") // apply | auto-apply | manual
-  content  String                       // the full plain-text letter
+  source   String  @default("manual") // apply | auto-apply | manual
+  content  String // the full plain-text letter
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([profileId, createdAt])
+  @@map("cover_letter")
 }

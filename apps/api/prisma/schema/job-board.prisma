@@ -1,14 +1,15 @@
 model JobBoard {
   id        String  @id @default(uuid())
-  profileId String
+  profileId String  @map("profile_id")
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   name      String
   domain    String
-  searchUrl String?
+  searchUrl String? @map("search_url")
   email     String?
   password  String?
-  sortOrder Int     @default(0)
+  sortOrder Int     @default(0) @map("sort_order")
 
   @@unique([profileId, domain])
   @@index([profileId])
+  @@map("job_board")
 }

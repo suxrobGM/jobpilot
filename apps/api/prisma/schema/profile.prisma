@@ -1,9 +1,9 @@
 model Profile {
-  id        String @id @default(uuid())
-  userId    String @unique
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  firstName String
-  lastName  String
+  id        String  @id @default(uuid())
+  userId    String  @unique @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName String  @map("first_name")
+  lastName  String  @map("last_name")
   email     String
   phone     String?
   website   String?
@@ -11,52 +11,53 @@ model Profile {
   github    String?
 
   street  String?
-  aptUnit String?
+  aptUnit String? @map("apt_unit")
   city    String?
   state   String?
-  zipCode String?
+  zipCode String? @map("zip_code")
   country String?
 
-  usAuthorized        Boolean @default(false)
-  requiresSponsorship Boolean @default(false)
-  visaStatus          String?
-  optExtension        String?
-  willingToRelocate   Boolean @default(false)
-  preferredLocations  String  @default("[]")
+  usAuthorized        Boolean @default(false) @map("us_authorized")
+  requiresSponsorship Boolean @default(false) @map("requires_sponsorship")
+  visaStatus          String? @map("visa_status")
+  optExtension        String? @map("opt_extension")
+  willingToRelocate   Boolean @default(false) @map("willing_to_relocate")
+  preferredLocations  String  @default("[]") @map("preferred_locations")
 
-  eeoGender           String?
-  eeoRace             String?
-  eeoEthnicity        String?
-  eeoHispanicOrLatino String?
-  eeoVeteranStatus    String?
-  eeoDisabilityStatus String?
+  eeoGender           String? @map("eeo_gender")
+  eeoRace             String? @map("eeo_race")
+  eeoEthnicity        String? @map("eeo_ethnicity")
+  eeoHispanicOrLatino String? @map("eeo_hispanic_or_latino")
+  eeoVeteranStatus    String? @map("eeo_veteran_status")
+  eeoDisabilityStatus String? @map("eeo_disability_status")
 
-  primaryResumeId String?  @unique
+  primaryResumeId String?  @unique @map("primary_resume_id")
   primaryResume   Resume?  @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
   resumes         Resume[]
 
-  autoApply     AutoApplySettings?
-  applications  Application[]
-  campaigns     Campaign[]
-  credentials   Credential[]
-  jobBoards     JobBoard[]
-  queueEntries  QueueEntry[]
-  emailAccount  EmailAccount?
-  upworkProposals UpworkProposal[]
-  upworkProfile UpworkProfile?
-  references    Reference[]
-  contacts        Contact[]
+  autoApply        AutoApplySettings?
+  applications     Application[]
+  campaigns        Campaign[]
+  credentials      Credential[]
+  jobBoards        JobBoard[]
+  queueEntries     QueueEntry[]
+  emailAccount     EmailAccount?
+  upworkProposals  UpworkProposal[]
+  upworkProfile    UpworkProfile?
+  references       Reference[]
+  contacts         Contact[]
   outreachMessages OutreachMessage[]
-  coverLetters    CoverLetter[]
+  coverLetters     CoverLetter[]
 
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@map("profile")
 }
 
 model Reference {
   id           String  @id @default(uuid())
-  profileId    String
+  profileId    String  @map("profile_id")
   profile      Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   name         String
   relationship String?
@@ -66,13 +67,16 @@ model Reference {
   position     Int     @default(0)
 
   @@index([profileId])
+  @@map("reference")
 }
 
 model AutoApplySettings {
-  id                    String  @id @default(uuid())
-  profileId             String  @unique
-  profile               Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  minMatchScore              Int     @default(70)
-  maxApplicationsPerCampaign Int?
-  defaultStartDate      String  @default("2 weeks notice")
+  id                         String  @id @default(uuid())
+  profileId                  String  @unique @map("profile_id")
+  profile                    Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  minMatchScore              Int     @default(70) @map("min_match_score")
+  maxApplicationsPerCampaign Int?    @map("max_applications_per_campaign")
+  defaultStartDate           String  @default("2 weeks notice") @map("default_start_date")
+
+  @@map("auto_apply_settings")
 }

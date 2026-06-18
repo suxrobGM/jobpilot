@@ -1,6 +1,6 @@
 model Application {
   id        String   @id @default(uuid())
-  profileId String
+  profileId String   @map("profile_id")
   profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
   url       String
   title     String
@@ -8,17 +8,17 @@ model Application {
   location  String?
   board     String?
   source    String
-  appliedAt DateTime @default(now())
+  appliedAt DateTime @default(now()) @map("applied_at")
 
   stage      String    @default("applied")
   outcome    String?
-  rejectedAt DateTime?
+  rejectedAt DateTime? @map("rejected_at")
 
-  matchScore  Int?
-  matchReason String?
-  failReason  String?
+  matchScore  Int?    @map("match_score")
+  matchReason String? @map("match_reason")
+  failReason  String? @map("fail_reason")
 
-  campaignId String?
+  campaignId String?   @map("campaign_id")
   campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
 
   stageEvents    StageEvent[]
@@ -26,25 +26,26 @@ model Application {
   resumeVariants ResumeVariant[]
   contacts       Contact[]
 
-
-  normalizedTitle   String
-  normalizedCompany String
+  normalizedTitle   String @map("normalized_title")
+  normalizedCompany String @map("normalized_company")
 
   @@unique([profileId, url])
   @@index([profileId])
   @@index([normalizedTitle, normalizedCompany])
   @@index([appliedAt])
   @@index([campaignId])
+  @@map("application")
 }
 
 model StageEvent {
   id            String      @id @default(uuid())
-  applicationId String
+  applicationId String      @map("application_id")
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  fromStage     String?
-  toStage       String
+  fromStage     String?     @map("from_stage")
+  toStage       String      @map("to_stage")
   note          String?
-  occurredAt    DateTime    @default(now())
+  occurredAt    DateTime    @default(now()) @map("occurred_at")
 
   @@index([applicationId, occurredAt])
+  @@map("stage_event")
 }

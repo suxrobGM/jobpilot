@@ -1,32 +1,38 @@
 enum UserRole {
   ADMIN
   USER
+
+  @@map("user_role")
 }
 
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
-  passwordHash  String
+  passwordHash  String   @map("password_hash")
   role          UserRole @default(USER)
-  emailVerified Boolean  @default(false)
+  emailVerified Boolean  @default(false) @map("email_verified")
   // Per-user data-encryption key (random 32B), itself encrypted under SECRET_MASTER_KEY.
   // Decrypts this account's stored secrets (board logins, captcha keys, Gmail tokens).
   // Dropping it (account delete) crypto-shreds those secrets.
-  wrappedDek    String?
-  dekKeyId      Int?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  wrappedDek    String?  @map("wrapped_dek")
+  dekKeyId      Int?     @map("dek_key_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   // 1:1 — a user has exactly one profile (created at register, populated at onboarding).
   profile            Profile?
   refreshTokens      RefreshToken[]
   apiTokens          ApiToken[]
   verificationTokens VerificationToken[]
+
+  @@map("user")
 }
 
 enum VerificationTokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+
+  @@map("verification_token_type")
 }
 
 // Single-use, expiring tokens for account email workflows (verify email, reset
@@ -34,49 +40,52 @@ enum VerificationTokenType {
 // value travels once, inside the magic link emailed to the user.
 model VerificationToken {
   id         String                @id @default(uuid())
-  userId     String
+  userId     String                @map("user_id")
   type       VerificationTokenType
-  tokenHash  String                @unique
-  expiresAt  DateTime
-  consumedAt DateTime?
-  createdAt  DateTime              @default(now())
+  tokenHash  String                @unique @map("token_hash")
+  expiresAt  DateTime              @map("expires_at")
+  consumedAt DateTime?             @map("consumed_at")
+  createdAt  DateTime              @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
+  @@map("verification_token")
 }
 
 // Web session rotation. Only a hash of the token is stored, never the raw value.
 model RefreshToken {
   id        String    @id @default(uuid())
-  userId    String
-  tokenHash String    @unique
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
+  @@map("refresh_token")
 }
 
 // The local agent's credential: a long-lived, revocable PAT. PATs are hash-only;
 // the reusable terminal token also stores `tokenCipher` (raw, encrypted) so it can be re-fetched.
 model ApiToken {
   id          String    @id @default(uuid())
-  userId      String
+  userId      String    @map("user_id")
   name        String
-  tokenHash   String    @unique
+  tokenHash   String    @unique @map("token_hash")
   // Raw token, encrypted; set only for the reusable terminal token, else null.
-  tokenCipher String?
-  lastUsedAt  DateTime?
-  expiresAt   DateTime?
-  revokedAt   DateTime?
-  createdAt   DateTime  @default(now())
+  tokenCipher String?   @map("token_cipher")
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@map("api_token")
 }

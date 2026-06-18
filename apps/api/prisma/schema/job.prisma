@@ -1,6 +1,6 @@
 model Job {
   id          String    @id @default(uuid())
-  campaignId  String
+  campaignId  String    @map("campaign_id")
   campaign    Campaign  @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
   key         String
   title       String
@@ -10,17 +10,18 @@ model Job {
   type        String?
   url         String
   board       String?
-  matchScore  Int?
-  matchReason String?
+  matchScore  Int?      @map("match_score")
+  matchReason String?   @map("match_reason")
   status      String    @default("pending")
-  appliedAt   DateTime?
-  failReason  String?
-  retryNotes  String?
-  skipReason  String?
+  appliedAt   DateTime? @map("applied_at")
+  failReason  String?   @map("fail_reason")
+  retryNotes  String?   @map("retry_notes")
+  skipReason  String?   @map("skip_reason")
   description String?
   digest      String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   @@unique([campaignId, key])
   @@index([campaignId, status])
+  @@map("job")
 }

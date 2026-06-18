@@ -1,13 +1,13 @@
 model Resume {
   id        String  @id @default(uuid())
-  profileId String
+  profileId String  @map("profile_id")
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   label String
 
-  sourceFilename  String?
-  sourceMimeType  String?
-  sourceSizeBytes Int?
+  sourceFilename  String? @map("source_filename")
+  sourceMimeType  String? @map("source_mime_type")
+  sourceSizeBytes Int?    @map("source_size_bytes")
 
   content String?
   version Int     @default(1)
@@ -15,33 +15,35 @@ model Resume {
   variants   ResumeVariant[]
   primaryFor Profile?        @relation("PrimaryResume")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([profileId])
+  @@map("resume")
 }
 
 model ResumeVariant {
   id       String @id @default(uuid())
-  resumeId String
+  resumeId String @map("resume_id")
   resume   Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   label         String
-  jobUrl        String?
-  applicationId String?
+  jobUrl        String?      @map("job_url")
+  applicationId String?      @map("application_id")
   application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
 
   content   String
-  diffNotes String?
+  diffNotes String? @map("diff_notes")
 
   // JSON audit of model-authored bullet rewrites applied to this variant:
   // { experience: [{ entryIndex, company, bullets: [{ original, tailored, flags[] }] }] }.
   // Null when the variant used selection/reordering only (no rewording).
   rewrites String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([resumeId])
   @@index([applicationId])
+  @@map("resume_variant")
 }

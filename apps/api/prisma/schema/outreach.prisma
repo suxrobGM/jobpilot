@@ -1,60 +1,62 @@
 model Contact {
   id        String  @id @default(uuid())
-  profileId String
+  profileId String  @map("profile_id")
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   name            String
   title           String?
   company         String?
-  linkedinUrl     String?
+  linkedinUrl     String? @map("linkedin_url")
   email           String?
-  emailSource     String? // "guessed" | "verified" | "provided"
-  emailConfidence Float?
+  emailSource     String? @map("email_source") // "guessed" | "verified" | "provided"
+  emailConfidence Float?  @map("email_confidence")
 
-  linkedinConnection String  @default("none") // none | pending | connected
-  discoverySource    String? // "google" | "company-site" | "web" | "linkedin" | "manual"
-  matchConfidence    Float? // confidence we found the right person
+  linkedinConnection String  @default("none") @map("linkedin_connection") // none | pending | connected
+  discoverySource    String? @map("discovery_source") // "google" | "company-site" | "web" | "linkedin" | "manual"
+  matchConfidence    Float?  @map("match_confidence") // confidence we found the right person
 
-  relatedAppId  String? // job-tied scope
+  relatedAppId  String?      @map("related_app_id") // job-tied scope
   relatedApp    Application? @relation(fields: [relatedAppId], references: [id], onDelete: SetNull)
-  relatedJobUrl String?
+  relatedJobUrl String?      @map("related_job_url")
 
   notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   messages OutreachMessage[]
 
   @@index([profileId])
   @@index([profileId, company])
+  @@map("contact")
 }
 
 model OutreachMessage {
-  id        String  @id @default(uuid())
-  profileId String
-  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  contactId String
-  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  campaignId String?
+  id         String    @id @default(uuid())
+  profileId  String    @map("profile_id")
+  profile    Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  contactId  String    @map("contact_id")
+  contact    Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  campaignId String?   @map("campaign_id")
   campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
 
   channel      String // "email" | "linkedin"
-  linkedinKind String? // "inmail" | "connect_note" | "dm"
+  linkedinKind String? @map("linkedin_kind") // "inmail" | "connect_note" | "dm"
   subject      String?
   body         String  @default("")
 
-  status     String  @default("draft") // draft | approved | sent | replied | bounced | failed | skipped
-  failReason String?
-  providerId String? // Gmail message id (sent)
-  threadId   String? // Gmail thread id — used for reply matching
-  sentAt     DateTime?
-  repliedAt  DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  status     String    @default("draft") // draft | approved | sent | replied | bounced | failed | skipped
+  failReason String?   @map("fail_reason")
+  providerId String?   @map("provider_id") // Gmail message id (sent)
+  threadId   String?   @map("thread_id") // Gmail thread id — used for reply matching
+  sentAt     DateTime? @map("sent_at")
+  repliedAt  DateTime? @map("replied_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
   @@index([profileId])
   @@index([campaignId])
   @@index([contactId])
   @@index([threadId])
   @@index([status])
+  @@map("outreach_message")
 }
