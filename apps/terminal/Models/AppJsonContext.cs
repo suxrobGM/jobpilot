@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace JobPilot.Terminal.Models;
 
@@ -10,4 +11,6 @@ namespace JobPilot.Terminal.Models;
 [JsonSerializable(typeof(SessionStatus))]
 [JsonSerializable(typeof(TerminalProviderInfo))]
 [JsonSerializable(typeof(TerminalProviderInfo[]))]
+// TypedResults.Problem returns this; the AOT serializer throws NotSupportedException without it.
+[JsonSerializable(typeof(ProblemDetails))]
 internal sealed partial class AppJsonContext : JsonSerializerContext;

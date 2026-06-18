@@ -1,16 +1,25 @@
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Pty.Net;
 
 namespace JobPilot.Terminal.Pty;
 
-/// <summary>
-/// PTY provider that uses winpty (via Quick.PtyNet) instead of ConPTY.
-/// Winpty uses screen-scraping of a hidden console, which works on all
-/// Windows versions including those with broken ConPTY rendering (Win11 25H2).
-/// </summary>
+/// <summary>Pty.Net-backed provider on the OS in-box ConPTY (static ctor redirects conpty.dll to kernel32).</summary>
 [SupportedOSPlatform("windows")]
-public sealed class WinPtyProvider : IPtyProvider
+public sealed class PtyNetProvider : IPtyProvider
 {
+    static PtyNetProvider()
+    {
+        // Quick.PtyNet loads a bundled os64\conpty.dll it never ships; use the OS in-box ConPTY in kernel32 instead.
+        NativeLibrary.SetDllImportResolver(typeof(PtyProvider).Assembly, ResolveConPty);
+    }
+
+    private static IntPtr ResolveConPty(string libraryName, Assembly assembly, DllImportSearchPath? searchPath) =>
+        libraryName is "os64\\conpty.dll" or "os86\\conpty.dll"
+            ? NativeLibrary.Load("kernel32.dll")
+            : IntPtr.Zero;
+
     private IPtyConnection? connection;
     private Thread? readThread;
     private volatile bool disposed;
@@ -37,9 +46,7 @@ public sealed class WinPtyProvider : IPtyProvider
         var env = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["TERM"] = "xterm-256color",
-            // Force a UTF-8 locale so the spawned shell/tools (bash, jq, curl) read and write
-            // input as UTF-8 instead of the system code page — otherwise non-ASCII punctuation
-            // an agent types (em-dashes, smart quotes) is mangled to the replacement char.
+            // UTF-8 locale so spawned tools don't mangle non-ASCII (em-dashes, smart quotes) via the system code page.
             ["LANG"] = "C.UTF-8",
             ["LC_ALL"] = "C.UTF-8",
             ["PYTHONUTF8"] = "1"
@@ -59,7 +66,7 @@ public sealed class WinPtyProvider : IPtyProvider
             Cwd = workingDirectory,
             Cols = cols,
             Rows = rows,
-            ForceWinPty = true,
+            ForceWinPty = false,
             Environment = env
         };
 
@@ -71,7 +78,7 @@ public sealed class WinPtyProvider : IPtyProvider
         readThread = new Thread(ReadLoop)
         {
             IsBackground = true,
-            Name = "WinPTY-Read"
+            Name = "PTY-Read"
         };
         readThread.Start();
     }

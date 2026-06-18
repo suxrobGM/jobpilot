@@ -135,9 +135,10 @@ public sealed class SessionManager : IDisposable
             {
                 pty.Start(spec.Command, spec.Args, workingDir, cols, rows, env);
             }
-            catch (PtyStartException)
+            catch (PtyStartException ex)
             {
                 state = SessionState.Stopped;
+                logger.LogError(ex, "Failed to start {Provider} PTY.", normalizedProvider);
                 throw;
             }
 

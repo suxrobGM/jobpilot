@@ -105,11 +105,11 @@ public sealed class PtyService : IDisposable
 
     private static IPtyProvider CreateProvider()
     {
-        if (OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsWindows())
         {
-            return new WinPtyProvider();
+            throw new PlatformNotSupportedException("Only Windows is supported");
         }
 
-        throw new PlatformNotSupportedException("Only Windows is supported");
+        return new PtyNetProvider();
     }
 }

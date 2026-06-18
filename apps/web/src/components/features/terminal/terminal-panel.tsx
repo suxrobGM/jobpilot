@@ -19,13 +19,7 @@ interface TerminalPanelProps {
   provider: TerminalProviderId;
 }
 
-/**
- * xterm.js instance bridged to a JobPilot.Terminal provider PTY over WebSocket.
- *
- * Waits for the container size to settle before the initial fit so the first
- * resize sent to a still-running PTY isn't the dock's mid-transition width.
- * Shift+Enter is forwarded as CSI-u `ESC[13;2u` instead of a newline.
- */
+/** xterm.js bridged to a JobPilot.Terminal PTY over WebSocket; Shift+Enter sent as CSI-u `ESC[13;2u`. */
 export function TerminalPanel(props: TerminalPanelProps): ReactElement {
   const { provider } = props;
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -48,7 +42,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       fontSize: 13,
       scrollOnUserInput: true,
       smoothScrollDuration: 0,
-      windowsPty: { backend: "winpty" },
+      windowsPty: { backend: "conpty" },
       theme: { background, foreground, cursor, selectionBackground: selection },
     });
 
@@ -58,34 +52,14 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
 
     let socket: WebSocketClient | null = null;
     let disposed = false;
-    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
-    // Last size sent to the PTY. A redundant resize makes the provider TUI
-    // repaint, and on reattach those repeated repaints stack into duplicate
-    // banners. Starts at 0 so the first post-connect resize always fires once.
-    let lastCols = 0;
-    let lastRows = 0;
 
-    const sendResize = (): void => {
+    const fitAndResize = (): void => {
       try {
         fit.fit();
+        socket?.sendJson({ type: "resize", cols: terminal.cols, rows: terminal.rows });
       } catch {
-        return; // container not laid out yet
+        // container not laid out yet
       }
-      if (terminal.cols === lastCols && terminal.rows === lastRows) {
-        return;
-      }
-      lastCols = terminal.cols;
-      lastRows = terminal.rows;
-      socket?.sendJson({ type: "resize", cols: terminal.cols, rows: terminal.rows });
-    };
-
-    // Debounce so a dock-open animation or hydration size flip sends one resize
-    // at the settled width, not one repaint-triggering resize per frame.
-    const scheduleResize = (): void => {
-      if (resizeTimer) {
-        clearTimeout(resizeTimer);
-      }
-      resizeTimer = setTimeout(sendResize, RESIZE_DEBOUNCE_MS);
     };
 
     terminal.attachCustomKeyEventHandler((event) => {
@@ -159,7 +133,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       }
 
       socket = connectWebSocket(TERMINAL_WS_URL, {
-        onOpen: () => scheduleResize(),
+        onOpen: () => fitAndResize(),
         onBinary: (data) => {
           terminal.write(data);
         },
@@ -174,7 +148,13 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
 
     start();
 
-    const observer = new ResizeObserver(() => scheduleResize());
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const observer = new ResizeObserver(() => {
+      if (resizeTimer) {
+        clearTimeout(resizeTimer);
+      }
+      resizeTimer = setTimeout(fitAndResize, RESIZE_DEBOUNCE_MS);
+    });
     observer.observe(container);
 
     return () => {

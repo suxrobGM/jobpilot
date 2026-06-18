@@ -17,7 +17,7 @@ surface (Swagger at `/swagger`). Prisma schema is split per domain under
 
 **JobPilot.Terminal** ([apps/terminal/](../apps/terminal/)) is
 an ASP.NET Core minimal API on `127.0.0.1:8001`. It owns one active provider
-PTY (winpty via Quick.PtyNet) and bridges it to the web UI's xterm.js panel
+PTY (ConPTY via Quick.PtyNet) and bridges it to the web UI's xterm.js panel
 over WebSocket. HTTP endpoints (`POST /sessions/start`, `POST /sessions/inject`,
 `DELETE /sessions/current`, `GET /healthz`, `GET /ws`) let UI buttons write
 provider-specific commands directly into the active provider's stdin. When

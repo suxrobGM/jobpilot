@@ -17,7 +17,7 @@ Playwright.
   `/swagger`).
 - **JobPilot.Terminal** ([apps/terminal/](apps/terminal/)) -
   `http://localhost:8001`. .NET 10 ASP.NET Core process that owns one active
-  provider PTY (winpty) and bridges it to the web UI over WebSocket. The
+  provider PTY (ConPTY) and bridges it to the web UI over WebSocket. The
   terminal drawer can switch between Claude Code and Codex.
 - **Plugin** ([plugin/](plugin/)) - one provider-neutral plugin loaded by both
   providers, with no generation step. It holds the hand-authored skill pack
@@ -149,7 +149,7 @@ scopes`** — a required Gmail scope (`gmail.readonly` or `gmail.send`) isn't
 | Forms              | TanStack Form 1 + Zod v4                       |
 | Server state       | TanStack Query 5                               |
 | Database           | PostgreSQL via Prisma 7 + `@prisma/adapter-pg`  |
-| Terminal host      | .NET 10 ASP.NET Core, winpty via Quick.PtyNet  |
+| Terminal host      | .NET 10 ASP.NET Core, ConPTY via Quick.PtyNet  |
 | Browser automation | Playwright via the Playwright MCP server       |
 
 ## License
