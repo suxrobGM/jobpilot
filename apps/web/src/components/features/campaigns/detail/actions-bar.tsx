@@ -68,7 +68,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   );
 
   const [rescanOpen, setRescanOpen] = useState(false);
-  const [minScore, setMinScore] = useState(campaign.config.minScore ?? 70);
+  const [minScore, setMinScore] = useState(campaign.config.minScore ?? 60);
 
   const rescan = useApiMutation<unknown, void>(
     () => campaignResource.patch({ config: { minScore } }),

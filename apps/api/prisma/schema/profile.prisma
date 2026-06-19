@@ -74,7 +74,7 @@ model AutoApplySettings {
   id                         String  @id @default(uuid())
   profileId                  String  @unique @map("profile_id")
   profile                    Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  minMatchScore              Int     @default(70) @map("min_match_score")
+  minMatchScore              Int     @default(60) @map("min_match_score")
   maxApplicationsPerCampaign Int?    @map("max_applications_per_campaign")
   defaultStartDate           String  @default("2 weeks notice") @map("default_start_date")
 

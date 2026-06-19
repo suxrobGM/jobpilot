@@ -23,11 +23,11 @@ JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 
 Read `autoApply` for config (defaults applied per field):
 
-| Setting                 | Default            | Notes                                                                                            |
-| ----------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
-| `minMatchScore`         | 70                 | Batch-mode threshold (0–100). Ignored in single-job mode.                                        |
+| Setting                      | Default            | Notes                                                                                            |
+| ---------------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
+| `minMatchScore`              | 60                 | Batch-mode threshold (0–100). Ignored in single-job mode.                                        |
 | `maxApplicationsPerCampaign` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
-| `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                                       |
+| `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                       |
 
 For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`. Follow `../shared/auth.md` — credentials are resolved from the `Credential.scope === <domain>` row or the `scope === "default"` fallback. The auth flow **registers a new account when none exists** (no asking) and runs forgot-password if the stored password is stale.
 

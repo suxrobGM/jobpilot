@@ -46,11 +46,16 @@ export const ResumeUploadStep = withForm({
       },
     );
 
-    // Extraction target: initial fetch covers an already-parsed resume; SSE refetches on completion (no poll).
+    // Extraction target: initial fetch covers an already-parsed resume; SSE gives
+    // instant updates, and polling covers the race where the agent PUT finishes
+    // before the EventSource subscription is established.
     const resume = useApiQuery<ResumeDto>(
       queryKeys.resume.detail(resumeId ?? ""),
       () => api.resumes({ id: resumeId ?? "" }).get(),
-      { enabled: resumeId !== null && state === "extracting" },
+      {
+        enabled: resumeId !== null && state === "extracting",
+        refetchInterval: 2_000,
+      },
     );
 
     useSseChannel(

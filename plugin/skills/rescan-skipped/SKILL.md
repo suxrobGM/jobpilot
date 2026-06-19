@@ -14,7 +14,7 @@ Re-score a campaign's `skipped` jobs and set eligible ones to `approved`. **Neve
 JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 ```
 
-Follow `../shared/setup.md`. Fetch the campaign: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `autoApply.minMatchScore`, else 70).
+Follow `../shared/setup.md`. Fetch the campaign: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `autoApply.minMatchScore`, else 60).
 
 ## Step 1: Select Targets
 
@@ -47,8 +47,8 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -d "$(jq -n --argjson score <0-100> --arg reason "<one line>" '{status:"approved", matchScore:$score, matchReason:$reason}')"
 ```
 
-   - Below threshold after a fair read → leave `skipped`, PATCH `skipReason:"Below minimum match score (X < Y)"`.
-   - JD-stated citizenship/clearance found on re-read → leave `skipped` with that reason.
+- Below threshold after a fair read → leave `skipped`, PATCH `skipReason:"Below minimum match score (X < Y)"`.
+- JD-stated citizenship/clearance found on re-read → leave `skipped` with that reason.
 
 ## Step 3: Eligibility
 

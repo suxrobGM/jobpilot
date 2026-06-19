@@ -29,7 +29,11 @@ export function ColumnEmptyState(props: ColumnEmptyStateProps): ReactElement {
       {stage === "queued" && (
         <>
           <Typography variant="captionMuted">Nothing queued.</Typography>
-          <Stack direction="row" spacing={1}>
+          <Stack
+            direction="row"
+            useFlexGap
+            sx={{ flexWrap: "wrap", gap: 1, justifyContent: "center" }}
+          >
             <Button size="small" variant="outlined" onClick={actions.openAddUrls}>
               Add URLs
             </Button>
