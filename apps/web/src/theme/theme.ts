@@ -8,8 +8,8 @@ export const theme = createTheme({
   cssVariables: true,
   palette: {
     mode: "dark",
-    primary: { main: accent.primary, contrastText: "#07090F" },
-    secondary: { main: accent.secondary, contrastText: "#07090F" },
+    primary: { main: accent.primary, contrastText: "#06140E" },
+    secondary: { main: accent.secondary, contrastText: "#06140E" },
     warning: { main: feedback.warning },
     error: { main: feedback.error },
     success: { main: feedback.success },

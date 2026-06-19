@@ -4,6 +4,7 @@ import { Suspense, type ReactElement } from "react";
 import { Box, Stack } from "@mui/material";
 import NextLink from "next/link";
 import { AccountMenu } from "@/components/features/profile";
+import { fontFamilies } from "@/theme";
 import { NavGroup } from "./nav-group";
 import { APP_TITLE, navGroups, RAIL_WIDTH } from "./shell-config";
 
@@ -32,27 +33,27 @@ export function Rail(): ReactElement {
           width: 36,
           height: 36,
           borderRadius: theme.radii.sm,
-          background: `linear-gradient(155deg, ${theme.palette.surfaces.elevated} 0%, ${theme.palette.surfaces.card} 60%, ${theme.palette.surfaces.base} 100%)`,
-          border: `1px solid ${theme.palette.line.borderHi}`,
+          background: theme.gradients.reversed,
+          border: `1px solid ${theme.palette.accent.primary}`,
           display: "grid",
           placeItems: "center",
           textDecoration: "none",
           overflow: "hidden",
           transition: theme.motion.standard,
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 6px rgba(0,0,0,0.4)",
+          boxShadow:
+            "inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.4), 0 0 16px rgba(21,217,138,0.25)",
           "&::before": {
             content: '""',
             position: "absolute",
             inset: 0,
-            background: `radial-gradient(circle at 80% 100%, ${theme.palette.accent.primary}40 0%, transparent 60%)`,
-            opacity: 0.9,
+            background: "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 55%)",
+            opacity: 0.8,
             transition: theme.motion.standard,
           },
           "&:hover": {
-            borderColor: `${theme.palette.accent.primary}99`,
             transform: "translateY(-1px)",
             boxShadow:
-              "inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 18px rgba(0,0,0,0.5), 0 0 22px rgba(217,87,58,0.35)",
+              "inset 0 1px 0 rgba(255,255,255,0.3), 0 6px 18px rgba(0,0,0,0.5), 0 0 26px rgba(21,217,138,0.5)",
             "&::before": { opacity: 1 },
           },
           "&:focus-visible": { boxShadow: theme.shadows_custom.focus },
@@ -63,16 +64,13 @@ export function Rail(): ReactElement {
           sx={{
             position: "relative",
             zIndex: 1,
-            fontFamily: 'var(--font-fraunces), "Iowan Old Style", Georgia, serif',
-            fontStyle: "italic",
-            fontWeight: 500,
-            fontSize: 22,
+            fontFamily: fontFamilies.display,
+            fontWeight: 700,
+            fontSize: 20,
             lineHeight: 1,
             letterSpacing: "-0.02em",
-            // Shorthand, not theme.palette.text.primary (cssVariables SSR/client hash drift).
-            color: "text.primary",
-            transform: "translate(-1px, 1px)",
-            textShadow: `0 1px 0 rgba(0,0,0,0.4)`,
+            // Shorthand, not theme.palette.primary.contrastText (cssVariables SSR/client hash drift).
+            color: "primary.contrastText",
           }}
         >
           J

@@ -3,33 +3,35 @@ import { textColors } from "./palette";
 
 export const fontFamilies = {
   body: 'var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  display: 'var(--font-space-grotesk), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif',
+  mono: 'var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace',
 } as const;
 
 export const typography: TypographyVariantsOptions = {
   fontFamily: fontFamilies.body,
   h1: {
-    fontFamily: fontFamilies.body,
+    fontFamily: fontFamilies.display,
     fontWeight: 700,
     fontSize: "2.25rem",
     lineHeight: 1.05,
-    letterSpacing: "-0.03em",
+    letterSpacing: "-0.025em",
   },
   h2: {
-    fontFamily: fontFamilies.body,
+    fontFamily: fontFamilies.display,
     fontWeight: 700,
     fontSize: "1.75rem",
     lineHeight: 1.15,
-    letterSpacing: "-0.025em",
+    letterSpacing: "-0.02em",
   },
   h3: {
-    fontFamily: fontFamilies.body,
+    fontFamily: fontFamilies.display,
     fontWeight: 600,
     fontSize: "1.25rem",
     lineHeight: 1.25,
     letterSpacing: "-0.01em",
   },
   h4: {
-    fontFamily: fontFamilies.body,
+    fontFamily: fontFamilies.display,
     fontWeight: 600,
     fontSize: "1.0625rem",
     lineHeight: 1.3,
@@ -97,8 +99,8 @@ export const typography: TypographyVariantsOptions = {
     color: textColors.secondary,
   },
   statValue: {
-    fontFamily: fontFamilies.body,
-    fontWeight: 700,
+    fontFamily: fontFamilies.mono,
+    fontWeight: 600,
     fontSize: "1.5rem",
     lineHeight: 1.1,
     letterSpacing: "-0.02em",

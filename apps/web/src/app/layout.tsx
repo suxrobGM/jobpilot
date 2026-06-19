@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { PropsWithChildren, ReactElement } from "react";
 import type { Metadata } from "next";
-import { Fraunces, Geist } from "next/font/google";
+import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import { AgentProvider } from "@/providers/agent-provider";
 import { ConfirmProvider } from "@/providers/confirm-provider";
 import { ToastProvider } from "@/providers/notification-provider";
@@ -14,13 +14,18 @@ const geistSans = Geist({
   display: "swap",
 });
 
-// Serif retained only for the rail's "J" brand mark; the rest of the UI is all-sans.
-const fraunces = Fraunces({
+// Display face for headings, brand mark, and stat values.
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-fraunces",
+  variable: "--font-space-grotesk",
   display: "swap",
-  axes: ["SOFT", "opsz"],
-  style: ["normal", "italic"],
+});
+
+// Mono for stat values and tabular numerics.
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -32,7 +37,10 @@ export const metadata: Metadata = {
 export default function RootLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
-    <html lang="en" className={`${geistSans.variable} ${fraunces.variable}`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${spaceGrotesk.variable} ${geistMono.variable}`}
+    >
       <body suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>

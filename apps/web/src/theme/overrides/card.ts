@@ -26,12 +26,12 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
       props: { variant: "live" },
       style: ({ theme }) => ({
         cursor: "pointer",
-        border: `1px solid ${theme.palette.accent.primary}66`,
-        backgroundColor: `${theme.palette.accent.primary}0D`,
-        boxShadow: `0 0 0 1px ${theme.palette.accent.primary}22, 0 4px 18px ${theme.palette.accent.primary}1A`,
+        border: `1px solid ${theme.palette.accent.primary}73`,
+        backgroundColor: `${theme.palette.accent.primary}12`,
+        boxShadow: `0 0 0 1px ${theme.palette.accent.primary}2E, 0 6px 24px ${theme.palette.accent.primary}26`,
         "&:hover": {
-          borderColor: `${theme.palette.accent.primary}99`,
-          backgroundColor: `${theme.palette.accent.primary}14`,
+          borderColor: `${theme.palette.accent.primary}B3`,
+          backgroundColor: `${theme.palette.accent.primary}1C`,
         },
       }),
     },
