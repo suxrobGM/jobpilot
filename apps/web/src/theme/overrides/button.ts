@@ -22,9 +22,9 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
       "&:hover": {
         backgroundColor: theme.palette.accent.dark,
         transform: "translateY(-1px)",
-        // afterburner: flame glow blooms with a thrust-blue exhaust line under the edge
+        // afterburner: flame glow blooms on hover
         boxShadow:
-          "inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(59,130,246,0.7), 0 8px 24px -6px rgba(255,106,61,0.6), 0 1px 0 rgba(0,0,0,0.3)",
+          "inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 24px -6px rgba(255,106,61,0.6), 0 1px 0 rgba(0,0,0,0.3)",
       },
       "&:active": {
         transform: "translateY(0)",
