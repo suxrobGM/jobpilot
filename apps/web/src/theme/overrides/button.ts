@@ -17,12 +17,14 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
     contained: ({ theme }) => ({
       backgroundColor: theme.palette.accent.primary,
       color: (theme.vars ?? theme).palette.primary.contrastText,
-      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 0 rgba(0,0,0,0.25)",
+      boxShadow:
+        "inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 12px -6px rgba(255,106,61,0.45), 0 1px 0 rgba(0,0,0,0.25)",
       "&:hover": {
         backgroundColor: theme.palette.accent.dark,
         transform: "translateY(-1px)",
+        // afterburner: flame glow blooms with a thrust-blue exhaust line under the edge
         boxShadow:
-          "inset 0 1px 0 rgba(255,255,255,0.2), 0 6px 18px -6px rgba(21,217,138,0.55), 0 1px 0 rgba(0,0,0,0.3)",
+          "inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(59,130,246,0.7), 0 8px 24px -6px rgba(255,106,61,0.6), 0 1px 0 rgba(0,0,0,0.3)",
       },
       "&:active": {
         transform: "translateY(0)",

@@ -41,7 +41,7 @@ export function Rail(): ReactElement {
           overflow: "hidden",
           transition: theme.motion.standard,
           boxShadow:
-            "inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.4), 0 0 16px rgba(21,217,138,0.25)",
+            "inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.4), 0 0 16px rgba(255,106,61,0.25)",
           "&::before": {
             content: '""',
             position: "absolute",
@@ -53,7 +53,7 @@ export function Rail(): ReactElement {
           "&:hover": {
             transform: "translateY(-1px)",
             boxShadow:
-              "inset 0 1px 0 rgba(255,255,255,0.3), 0 6px 18px rgba(0,0,0,0.5), 0 0 26px rgba(21,217,138,0.5)",
+              "inset 0 1px 0 rgba(255,255,255,0.3), 0 6px 18px rgba(0,0,0,0.5), 0 0 26px rgba(255,106,61,0.5)",
             "&::before": { opacity: 1 },
           },
           "&:focus-visible": { boxShadow: theme.shadows_custom.focus },

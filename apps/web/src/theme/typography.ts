@@ -2,15 +2,19 @@ import type { TypographyVariantsOptions } from "@mui/material/styles";
 import { textColors } from "./palette";
 
 export const fontFamilies = {
-  body: 'var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  display: 'var(--font-space-grotesk), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif',
-  mono: 'var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace',
+  body: 'var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  display: 'var(--font-archivo), ui-sans-serif, system-ui, sans-serif',
+  mono: 'var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace',
 } as const;
+
+// The display role is Archivo widened to its expanded width axis (athletic headers).
+const displayStretch = "125%";
 
 export const typography: TypographyVariantsOptions = {
   fontFamily: fontFamilies.body,
   h1: {
     fontFamily: fontFamilies.display,
+    fontStretch: displayStretch,
     fontWeight: 700,
     fontSize: "2.25rem",
     lineHeight: 1.05,
@@ -18,6 +22,7 @@ export const typography: TypographyVariantsOptions = {
   },
   h2: {
     fontFamily: fontFamilies.display,
+    fontStretch: displayStretch,
     fontWeight: 700,
     fontSize: "1.75rem",
     lineHeight: 1.15,
@@ -25,6 +30,7 @@ export const typography: TypographyVariantsOptions = {
   },
   h3: {
     fontFamily: fontFamilies.display,
+    fontStretch: displayStretch,
     fontWeight: 600,
     fontSize: "1.25rem",
     lineHeight: 1.25,
@@ -32,6 +38,7 @@ export const typography: TypographyVariantsOptions = {
   },
   h4: {
     fontFamily: fontFamilies.display,
+    fontStretch: displayStretch,
     fontWeight: 600,
     fontSize: "1.0625rem",
     lineHeight: 1.3,

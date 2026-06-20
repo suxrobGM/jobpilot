@@ -69,7 +69,7 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           position: "absolute",
           inset: 0,
           borderRadius: "50%",
-          background: `conic-gradient(from 0deg, ${theme.palette.accent.primary}33, ${editorial.gold}26, ${editorial.sage}1F, ${theme.palette.accent.primary}33)`,
+          background: `conic-gradient(from 0deg, ${theme.palette.accent.primary}33, ${editorial.amber}26, ${editorial.thrust}1F, ${theme.palette.accent.primary}33)`,
         })}
       />
       {/* fast bright comet sweep */}
@@ -82,7 +82,7 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
             transparent 0deg,
             transparent 200deg,
             ${theme.palette.accent.primary}80 260deg,
-            ${editorial.gold}FF 330deg,
+            ${editorial.amber}FF 330deg,
             ${editorial.paper}CC 350deg,
             transparent 360deg)`,
           animation: "agent-orb-spin 4.5s linear infinite",
@@ -98,7 +98,7 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           background: `conic-gradient(from 120deg,
             transparent 0deg,
             transparent 240deg,
-            ${editorial.sage}59 320deg,
+            ${editorial.thrust}59 320deg,
             transparent 360deg)`,
           animation: "agent-orb-counterspin 9s linear infinite",
           mixBlendMode: "screen",
@@ -121,7 +121,7 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           position: "absolute",
           inset: `${coreInset}px`,
           borderRadius: "50%",
-          background: `radial-gradient(circle, ${editorial.gold}FF 0%, ${theme.palette.accent.primary}DD 50%, ${theme.palette.accent.primary}00 100%)`,
+          background: `radial-gradient(circle, ${editorial.amber}FF 0%, ${theme.palette.accent.primary}DD 50%, ${theme.palette.accent.primary}00 100%)`,
           animation: "agent-orb-pulse 1.8s ease-in-out infinite",
           filter: "blur(0.5px)",
         })}

@@ -1,49 +1,51 @@
 export const surfaces = {
-  base: "#0F1418",
-  card: "#161C21",
-  elevated: "#1E262C",
-  hover: "#28323A",
+  base: "#0B1016",
+  card: "#15191F",
+  elevated: "#1D232B",
+  hover: "#28313B",
 } as const;
 
+// Brand ramp: flame (primary/dark) + thrust blue (secondary) — the Afterburner duotone.
+// Green is reserved for go/success — see `feedback.success` / `stages.submitted`.
 export const accent = {
-  primary: "#15D98A",
-  secondary: "#0FB877",
-  dark: "#0C9A63",
+  primary: "#FF6A3D",
+  secondary: "#3B82F6",
+  dark: "#D9532A",
 } as const;
 
 export const textColors = {
-  primary: "#ECF2EE",
-  secondary: "#97A6A0",
-  disabled: "#5A6660",
+  primary: "#F1F0EE",
+  secondary: "#9AA0A6",
+  disabled: "#5C636B",
 } as const;
 
 export const feedback = {
-  error: "#FB5E52",
-  success: "#15D98A",
-  info: "#38BDF8",
-  warning: "#F5B23B",
+  error: "#E5484D",
+  success: "#16D98A",
+  info: "#3B82F6",
+  warning: "#FFB020",
 } as const;
 
 export const line = {
-  divider: "#222A30",
-  border: "#2C363D",
-  borderHi: "#3C4951",
+  divider: "#1E242B",
+  border: "#2A323B",
+  borderHi: "#3A444F",
 } as const;
 
 export const stages = {
-  queued: "#8593A0",
-  applying: "#B6F03C",
-  submitted: "#15D98A",
-  interviewing: "#F5B23B",
-  rejected: "#FB5E52",
+  queued: "#8A93A0",
+  applying: "#3B82F6",
+  submitted: "#16D98A",
+  interviewing: "#FFB020",
+  rejected: "#E5484D",
 } as const;
 
 export const editorial = {
-  paper: "#ECF2EE",
-  ink: "#0F1418",
-  sage: "#38BDF8",
-  ember: "#15D98A",
-  gold: "#B6F03C",
+  paper: "#F1F0EE",
+  ink: "#0B1016",
+  thrust: "#3B82F6",
+  flame: "#FF6A3D",
+  amber: "#FFB020",
 } as const;
 
 export type StageKey = keyof typeof stages;
