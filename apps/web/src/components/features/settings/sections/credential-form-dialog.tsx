@@ -61,8 +61,15 @@ export function CredentialFormDialog(props: CredentialFormDialogProps): ReactEle
     }
   };
 
+  // Reset the form and tab so reopening starts clean instead of showing stale input.
+  const handleClose = (): void => {
+    form.reset();
+    setKind("login");
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -121,7 +128,7 @@ export function CredentialFormDialog(props: CredentialFormDialogProps): ReactEle
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={handleClose}>Cancel</Button>
           <form.AppForm>
             <form.SubmitButton disabled={submitting}>Save</form.SubmitButton>
           </form.AppForm>

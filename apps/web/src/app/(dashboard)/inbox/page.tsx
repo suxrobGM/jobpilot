@@ -1,11 +1,17 @@
 import type { ReactElement } from "react";
 import { Container } from "@mui/material";
-import { InboxContent } from "@/components/features/inbox";
+import { EmailConnectToast, InboxContent } from "@/components/features/inbox";
 import { PageHeader } from "@/components/ui/layout/page-header";
 
-export default function InboxPage(): ReactElement {
+interface InboxPageProps {
+  searchParams: Promise<{ emailConnect?: string; reason?: string }>;
+}
+
+export default async function InboxPage(props: InboxPageProps): Promise<ReactElement> {
+  const { emailConnect, reason } = await props.searchParams;
   return (
     <Container maxWidth="lg" sx={{ gap: 2 }}>
+      <EmailConnectToast status={emailConnect} reason={reason} />
       <PageHeader
         eyebrow="Email"
         title="Inbox"

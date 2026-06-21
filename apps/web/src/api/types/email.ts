@@ -4,6 +4,9 @@ import type { api } from "@/api/eden";
 /** Connected mailbox status, inferred from `GET /api/email/account`. */
 export type EmailAccountStatus = Data<typeof api.email.account.get>;
 
+/** Per-user Google OAuth client config status, from `GET /api/email/oauth/client`. */
+export type OAuthClientStatus = Data<typeof api.email.oauth.client.get>;
+
 /** An inbox message, from `GET /api/email/messages`. */
 export type EmailMessageDto = Data<typeof api.email.messages.get>[number];
 

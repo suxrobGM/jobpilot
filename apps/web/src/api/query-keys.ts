@@ -64,6 +64,7 @@ export const queryKeys = {
   email: {
     all: ["email"] as const,
     account: () => [...queryKeys.email.all, "account"] as const,
+    oauthClient: () => [...queryKeys.email.all, "oauthClient"] as const,
     messages: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.email.all, "messages", filters] as const,
   },
