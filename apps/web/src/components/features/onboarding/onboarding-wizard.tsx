@@ -24,7 +24,9 @@ import { queryKeys } from "@/api/query-keys";
 import {
   AddressSection,
   AutoApplySection,
+  CredentialsSection,
   EeoSection,
+  EmailSection,
   PersonalSection,
   WorkAuthSection,
 } from "@/components/features/settings/sections";
@@ -41,7 +43,12 @@ const STEPS = [
   { key: "work-auth", label: "Work auth" },
   { key: "eeo", label: "EEO" },
   { key: "auto-apply", label: "Auto-apply" },
+  { key: "email", label: "Email" },
+  { key: "credentials", label: "Credentials" },
 ] as const;
+
+/** Profile-form steps come first; "email"/"credentials" are optional self-contained sections. */
+const PROFILE_STEPS = STEPS.findIndex((s) => s.key === "email");
 
 export function OnboardingWizard(): ReactElement {
   const router = useRouter();
@@ -59,8 +66,8 @@ export function OnboardingWizard(): ReactElement {
       invalidate: [queryKeys.profile.all],
       onSuccess: () => {
         queryClient.invalidateQueries();
-        router.refresh();
-        router.push("/settings");
+        // Profile saved (non-empty) clears the redirect gate, so the optional steps can navigate away safely.
+        setStep(PROFILE_STEPS);
       },
     },
   );
@@ -72,11 +79,13 @@ export function OnboardingWizard(): ReactElement {
       await save.mutateAsync(value);
     },
   });
-  const isLastStep = step === STEPS.length - 1;
+  const isProfileStep = step < PROFILE_STEPS;
+  const isLastProfileStep = step === PROFILE_STEPS - 1;
+  const isFinalStep = step === STEPS.length - 1;
 
   const submitForm = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!isLastStep) {
+    if (!isLastProfileStep) {
       setStep((s) => s + 1);
       return;
     }
@@ -107,27 +116,48 @@ export function OnboardingWizard(): ReactElement {
         ))}
       </Stepper>
       <SectionCard>
-        <form onSubmit={submitForm}>
+        {isProfileStep ? (
+          <form onSubmit={submitForm}>
+            <Stack spacing={3}>
+              {step === 0 && <ResumeUploadStep form={form} onContinue={() => setStep(1)} />}
+              {step === 1 && <PersonalSection form={form} />}
+              {step === 2 && <AddressSection form={form} />}
+              {step === 3 && <WorkAuthSection form={form} />}
+              {step === 4 && <EeoSection form={form} />}
+              {step === 5 && <AutoApplySection form={form} />}
+              {showValidationErrors && <ValidationSummary form={form} />}
+              {step !== 0 && (
+                <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
+                  <Button variant="outlined" onClick={() => setStep((s) => Math.max(0, s - 1))}>
+                    Back
+                  </Button>
+                  <Button type="submit" variant="contained" disabled={save.isPending}>
+                    {isLastProfileStep ? (save.isPending ? "Saving…" : "Save & continue") : "Next"}
+                  </Button>
+                </Stack>
+              )}
+            </Stack>
+          </form>
+        ) : (
           <Stack spacing={3}>
-            {step === 0 && <ResumeUploadStep form={form} onContinue={() => setStep(1)} />}
-            {step === 1 && <PersonalSection form={form} />}
-            {step === 2 && <AddressSection form={form} />}
-            {step === 3 && <WorkAuthSection form={form} />}
-            {step === 4 && <EeoSection form={form} />}
-            {step === 5 && <AutoApplySection form={form} />}
-            {showValidationErrors && <ValidationSummary form={form} />}
-            {step !== 0 && (
-              <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
-                <Button variant="outlined" onClick={() => setStep((s) => Math.max(0, s - 1))}>
-                  Back
-                </Button>
-                <Button type="submit" variant="contained" disabled={save.isPending}>
-                  {isLastStep ? (save.isPending ? "Saving…" : "Finish") : "Next"}
-                </Button>
-              </Stack>
-            )}
+            <Typography variant="body2Muted">
+              Optional — you can set these up now or anytime later in Settings.
+            </Typography>
+            {step === 6 && <EmailSection />}
+            {step === 7 && <CredentialsSection />}
+            <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
+              <Button variant="outlined" onClick={() => setStep((s) => s - 1)}>
+                Back
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => (isFinalStep ? router.push("/settings") : setStep((s) => s + 1))}
+              >
+                {isFinalStep ? "Finish" : "Continue"}
+              </Button>
+            </Stack>
           </Stack>
-        </form>
+        )}
       </SectionCard>
     </Stack>
   );
