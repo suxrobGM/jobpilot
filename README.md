@@ -79,42 +79,39 @@ $auto-apply senior typescript remote
 
 JobPilot reads your Gmail inbox (to track recruiter replies and auto-fill
 verification codes during login) and sends outreach emails and replies on
-your behalf. Setup:
+your behalf. Each user connects Gmail with **their own** Google OAuth client —
+JobPilot ships no shared client, so the app itself needs no Google verification
+or CASA security audit. Setup (once per user):
 
 1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
-   create an OAuth 2.0 Client ID (type: **Web application**).
-2. Add `http://localhost:8000/api/email/oauth/callback` as an authorized
-   redirect URI.
-3. Enable the **Gmail API** for the project under "APIs & Services".
-4. Copy `Client ID` and `Client secret` into `apps/api/.env`:
-
-   ```env
-   GOOGLE_CLIENT_ID=...
-   GOOGLE_CLIENT_SECRET=...
-   ```
-
-5. Add the **`gmail.readonly`** and **`gmail.send`** scopes to the consent
+   create a new project, then an OAuth 2.0 Client ID (type: **Web application**).
+2. Enable the **Gmail API** for the project under "APIs & Services".
+3. In JobPilot, open **Settings → Email** and copy the **redirect URI** shown
+   there; add it as an authorized redirect URI on your OAuth client (defaults to
+   `http://localhost:8002/api/email/oauth/callback` in dev; in production it's
+   your deployment's API callback URL).
+4. Add the **`gmail.readonly`** and **`gmail.send`** scopes to the consent
    screen. Google reorganized this UI — it now lives at
    [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes)
    Click **Add or remove scopes**, search for `gmail.readonly` and
-   `gmail.send`, tick both Gmail API rows (each marked **Sensitive**), then
-   **Save**. `readonly` lets JobPilot track replies and read verification
-   codes; `send` lets it send outreach emails and replies. Without `readonly`
-   the Gmail API returns 403 "insufficient scopes"; without `send` the mailbox
-   connects read-only and outreach can't send.
-6. While in Testing mode, add your Gmail address under
+   `gmail.send`, tick both Gmail API rows, then **Save**. `readonly` lets
+   JobPilot track replies and read verification codes; `send` lets it send
+   outreach emails and replies. Without `readonly` the Gmail API returns 403
+   "insufficient scopes"; without `send` the mailbox connects read-only and
+   outreach can't send.
+5. Keep **your** app in Testing mode and add your Gmail address under
    [Audience → Test users](https://console.cloud.google.com/auth/audience).
-   Keep the app in Testing — both Gmail scopes are Sensitive, and
-   publishing requires a paid third-party CASA security audit. Testing
-   mode allows 100 test users; refresh tokens expire after 7 days so
-   you'll need to reconnect weekly.
-7. Restart `bun run dev`, open `/settings` → **Email** section → **Connect
-   Gmail**.
+   Because it's your own project with you as the sole test user, no
+   verification/CASA is required. Note: Testing-mode refresh tokens expire
+   after ~7 days, so you'll reconnect periodically — publish your own app
+   (still no verification under Google's 100-user test limit) to avoid that.
+6. Back in **Settings → Email**, paste your **Client ID** and **Client
+   secret**, **Save**, then **Connect Gmail**.
 
 The scopes are `gmail.readonly` and `gmail.send` — JobPilot reads your mail and
-sends outreach emails and replies on your behalf, but never deletes mail. The
-account is stored as a singleton row in `EmailAccount` (refresh token kept
-locally in your PostgreSQL database).
+sends outreach emails and replies on your behalf, but never deletes mail. Your
+OAuth client id/secret are stored encrypted per-user (the secret never leaves
+the server); the connected account is one row per profile in `EmailAccount`.
 
 **Troubleshooting**
 
