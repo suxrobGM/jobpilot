@@ -8,10 +8,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Per-request Eden client that forwards the incoming auth cookie (middleware
   // has no ambient cookie jar, so we pass it explicitly).
   const cookie = request.headers.get("cookie") ?? "";
-  const api = createApiClient(API_BASE, {
+  const { api } = createApiClient(API_BASE, {
     headers: cookie ? { cookie } : {},
     fetch: { cache: "no-store" },
-  }).api;
+  });
 
   // One call yields both the verified flag and the profile (auth rides the cookie).
   const { data, error } = await api.auth.me.get();
