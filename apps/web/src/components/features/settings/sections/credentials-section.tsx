@@ -3,30 +3,30 @@
 import { useState, type ReactElement } from "react";
 import type { CredentialInput } from "@jobpilot/contracts/credential";
 import { Add, Delete, Key, Lock } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/eden";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
-import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
+import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
+import { useConfirm } from "@/providers/confirm-provider";
 import { CredentialFormDialog } from "./credential-form-dialog";
 
-export function CredentialsSection(): ReactElement {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<CredentialDto | null>(null);
+interface CredentialsSectionProps {
+  /** SSR-fetched seed; omitted in client-only contexts (onboarding) where it fetches itself. */
+  initialCredentials?: CredentialDto[];
+}
 
-  const credentials = useApiQuery<CredentialDto[]>(queryKeys.credentials.list(), () =>
-    api.credentials.get(),
+export function CredentialsSection(props: CredentialsSectionProps): ReactElement {
+  const { initialCredentials } = props;
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const confirm = useConfirm();
+
+  const credentials = useApiQuery<CredentialDto[]>(
+    queryKeys.credentials.list(),
+    () => api.credentials.get(),
+    { initialData: initialCredentials },
   );
 
   const create = useApiMutation<CredentialDto, CredentialInput>(
@@ -43,9 +43,20 @@ export function CredentialsSection(): ReactElement {
     {
       successMessage: "Credential removed",
       invalidate: [queryKeys.credentials.all],
-      onSuccess: () => setPendingDelete(null),
     },
   );
+
+  const handleDelete = async (credential: CredentialDto): Promise<void> => {
+    const confirmed = await confirm({
+      title: "Delete credential?",
+      description: `Remove the "${credential.scope}" credential? Skills using this scope will fall back to the next match.`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (confirmed) {
+      remove.mutate(credential.id);
+    }
+  };
 
   const rows = credentials.data ?? [];
   const logins = rows.filter((c) => !c.apiKey);
@@ -67,9 +78,7 @@ export function CredentialsSection(): ReactElement {
       }
     >
       {credentials.isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-          <CircularProgress size={24} />
-        </Box>
+        <LoadingSpinner />
       ) : rows.length === 0 ? (
         <Box sx={{ py: 3, textAlign: "center" }}>
           <Typography variant="body2Muted">
@@ -87,7 +96,7 @@ export function CredentialsSection(): ReactElement {
                   credential={c}
                   icon={<Lock fontSize="small" color="action" />}
                   subtitle={c.email ?? ""}
-                  onDelete={() => setPendingDelete(c)}
+                  onDelete={() => void handleDelete(c)}
                 />
               ))}
             </CredentialGroup>
@@ -100,7 +109,7 @@ export function CredentialsSection(): ReactElement {
                   credential={c}
                   icon={<Key fontSize="small" color="action" />}
                   subtitle={`API key ••••${c.apiKey?.slice(-4) ?? ""}`}
-                  onDelete={() => setPendingDelete(c)}
+                  onDelete={() => void handleDelete(c)}
                 />
               ))}
             </CredentialGroup>
@@ -113,20 +122,6 @@ export function CredentialsSection(): ReactElement {
         onClose={() => setDialogOpen(false)}
         onSubmit={(values) => create.mutate(values)}
         submitting={create.isPending}
-      />
-
-      <ConfirmDialog
-        open={pendingDelete !== null}
-        title="Delete credential?"
-        description={
-          pendingDelete
-            ? `Remove the "${pendingDelete.scope}" credential? Skills using this scope will fall back to the next match.`
-            : ""
-        }
-        confirmLabel="Delete"
-        destructive
-        onConfirm={() => pendingDelete && remove.mutate(pendingDelete.id)}
-        onCancel={() => setPendingDelete(null)}
       />
     </SectionCard>
   );

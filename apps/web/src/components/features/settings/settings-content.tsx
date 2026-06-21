@@ -13,29 +13,22 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { AddressSection } from "./sections/address-section";
 import { AutoApplySection } from "./sections/auto-apply-section";
-import { CredentialsSection } from "./sections/credentials-section";
 import { EeoSection } from "./sections/eeo-section";
-import { EmailSection } from "./sections/email-section";
 import { PersonalSection } from "./sections/personal-section";
 import { ReferencesSection } from "./sections/references-section";
 import { WorkAuthSection } from "./sections/work-auth-section";
 
-const ANCHORS: SectionAnchor[] = [
-  { id: "personal", label: "Personal" },
-  { id: "address", label: "Address" },
-  { id: "work-auth", label: "Work auth" },
-  { id: "references", label: "References" },
-  { id: "eeo", label: "EEO" },
-  { id: "auto-apply", label: "Auto-apply" },
-  { id: "email", label: "Email" },
-  { id: "credentials", label: "Credentials" },
-];
+interface SettingsContentProps {
+  /** SSR-fetched seed so the form renders without a loading flash. */
+  initialProfile?: ProfileResponse;
+}
 
-export function SettingsContent(): ReactElement {
+export function SettingsContent(props: SettingsContentProps): ReactElement {
+  const { initialProfile } = props;
   const query = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () => api.profile.get(), {
+    initialData: initialProfile,
     errorMessage: "Failed to load profile",
   });
 
@@ -117,72 +110,43 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
 
   return (
     <Box
-      sx={{
-        display: "flex",
-        flexDirection: { xs: "column", lg: "row" },
-        gap: 3,
-        alignItems: "flex-start",
+      component="form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
       }}
+      sx={{ width: "100%" }}
     >
-      <SectionAnchorNav anchors={ANCHORS} />
+      <Stack spacing={3}>
+        <PersonalSection form={form} />
+        <AddressSection form={form} />
+        <WorkAuthSection form={form} />
+        <ReferencesSection form={form} />
+        <EeoSection form={form} />
+        <AutoApplySection form={form} />
 
-      <Box
-        component="form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-        sx={{ flex: 1, minWidth: 0, width: "100%" }}
-      >
-        <Stack spacing={3}>
-          <Box data-section-id="personal">
-            <PersonalSection form={form} />
-          </Box>
-          <Box data-section-id="address">
-            <AddressSection form={form} />
-          </Box>
-          <Box data-section-id="work-auth">
-            <WorkAuthSection form={form} />
-          </Box>
-          <Box data-section-id="references">
-            <ReferencesSection form={form} />
-          </Box>
-          <Box data-section-id="eeo">
-            <EeoSection form={form} />
-          </Box>
-          <Box data-section-id="auto-apply">
-            <AutoApplySection form={form} />
-          </Box>
-          <Box data-section-id="email">
-            <EmailSection />
-          </Box>
-          <Box data-section-id="credentials">
-            <CredentialsSection />
-          </Box>
-
-          <Stack
-            direction="row"
-            sx={(theme) => ({
-              position: "sticky",
-              bottom: 0,
-              justifyContent: "flex-end",
-              paddingBlock: theme.spacing(1.5),
-              backgroundColor: theme.palette.surfaces.base,
-              borderTop: `1px solid ${theme.palette.line.divider}`,
-              zIndex: 1,
-            })}
+        <Stack
+          direction="row"
+          sx={(theme) => ({
+            position: "sticky",
+            bottom: 0,
+            justifyContent: "flex-end",
+            paddingBlock: theme.spacing(1.5),
+            backgroundColor: theme.palette.surfaces.base,
+            borderTop: `1px solid ${theme.palette.line.divider}`,
+            zIndex: 1,
+          })}
+        >
+          <Button
+            type="submit"
+            variant="contained"
+            startIcon={<Save fontSize="md" />}
+            disabled={save.isPending}
           >
-            <Button
-              type="submit"
-              variant="contained"
-              startIcon={<Save fontSize="md" />}
-              disabled={save.isPending}
-            >
-              {save.isPending ? "Saving" : "Save settings"}
-            </Button>
-          </Stack>
+            {save.isPending ? "Saving" : "Save settings"}
+          </Button>
         </Stack>
-      </Box>
+      </Stack>
     </Box>
   );
 }
