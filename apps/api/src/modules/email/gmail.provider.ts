@@ -1,9 +1,9 @@
 import { google } from "googleapis";
-import { env } from "@/env";
 import type { EmailAccount } from "@/generated/prisma/client";
 import type {
   EmailProvider,
   NormalizedMessage,
+  OAuthClientConfig,
   SendMessageInput,
   SentMessage,
   SyncResult,
@@ -30,7 +30,8 @@ type OAuth2Client = InstanceType<typeof google.auth.OAuth2>;
 /** Scope that grants outbound send. Absent ⇒ the account must be reconnected. */
 export const GMAIL_SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send";
 
-const GMAIL_SCOPES = [
+/** Scopes requested at consent; surfaced in the email settings UI. */
+export const GMAIL_SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
   GMAIL_SEND_SCOPE,
   "openid",
@@ -42,31 +43,13 @@ export function scopeCanSend(scope: string | null | undefined): boolean {
   return !!scope && scope.split(/\s+/).includes(GMAIL_SEND_SCOPE);
 }
 
-interface GoogleEnv {
-  clientId: string;
-  clientSecret: string;
-  redirectUri: string;
-}
-
-function getEnv(): GoogleEnv {
-  const clientId = env.GOOGLE_CLIENT_ID;
-  const clientSecret = env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = env.GOOGLE_OAUTH_REDIRECT_URI;
-
-  if (!clientId || !clientSecret) {
-    throw new Error("GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are not configured. See README.md.");
-  }
-  return { clientId, clientSecret, redirectUri };
-}
-
 export class GmailProvider implements EmailProvider {
-  private makeOAuthClient(): OAuth2Client {
-    const { clientId, clientSecret, redirectUri } = getEnv();
-    return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+  private makeOAuthClient(config: OAuthClientConfig): OAuth2Client {
+    return new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri);
   }
 
-  private clientForAccount(account: EmailAccount): OAuth2Client {
-    const client = this.makeOAuthClient();
+  private clientForAccount(config: OAuthClientConfig, account: EmailAccount): OAuth2Client {
+    const client = this.makeOAuthClient(config);
     client.setCredentials({
       access_token: account.accessToken,
       refresh_token: account.refreshToken,
@@ -75,8 +58,8 @@ export class GmailProvider implements EmailProvider {
     return client;
   }
 
-  getAuthorizeUrl(state: string): string {
-    return this.makeOAuthClient().generateAuthUrl({
+  getAuthorizeUrl(config: OAuthClientConfig, state: string): string {
+    return this.makeOAuthClient(config).generateAuthUrl({
       access_type: "offline",
       prompt: "consent",
       scope: GMAIL_SCOPES,
@@ -84,8 +67,11 @@ export class GmailProvider implements EmailProvider {
     });
   }
 
-  async exchangeCode(code: string): Promise<{ tokens: TokenSet; email: string }> {
-    const client = this.makeOAuthClient();
+  async exchangeCode(
+    config: OAuthClientConfig,
+    code: string,
+  ): Promise<{ tokens: TokenSet; email: string }> {
+    const client = this.makeOAuthClient(config);
     const { tokens } = await client.getToken(code);
 
     if (!tokens.access_token) {
@@ -112,8 +98,8 @@ export class GmailProvider implements EmailProvider {
     };
   }
 
-  async refresh(refreshToken: string): Promise<TokenSet> {
-    const client = this.makeOAuthClient();
+  async refresh(config: OAuthClientConfig, refreshToken: string): Promise<TokenSet> {
+    const client = this.makeOAuthClient(config);
     client.setCredentials({ refresh_token: refreshToken });
     const { credentials } = await client.refreshAccessToken();
 
@@ -129,12 +115,16 @@ export class GmailProvider implements EmailProvider {
     };
   }
 
-  async sendMessage(account: EmailAccount, input: SendMessageInput): Promise<SentMessage> {
+  async sendMessage(
+    config: OAuthClientConfig,
+    account: EmailAccount,
+    input: SendMessageInput,
+  ): Promise<SentMessage> {
     if (!scopeCanSend(account.scope)) {
       throw new Error("Connected Gmail account lacks send access. Reconnect it to enable sending.");
     }
 
-    const auth = this.clientForAccount(account);
+    const auth = this.clientForAccount(config, account);
     const gmail = google.gmail({ version: "v1", auth });
 
     const raw = encodeBase64Url(
@@ -158,8 +148,8 @@ export class GmailProvider implements EmailProvider {
     };
   }
 
-  async syncMessages(account: EmailAccount): Promise<SyncResult> {
-    const auth = this.clientForAccount(account);
+  async syncMessages(config: OAuthClientConfig, account: EmailAccount): Promise<SyncResult> {
+    const auth = this.clientForAccount(config, account);
     const gmail = google.gmail({ version: "v1", auth });
 
     const messageIds: string[] = [];

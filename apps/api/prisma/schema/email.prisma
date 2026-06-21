@@ -18,6 +18,20 @@ model EmailAccount {
   @@map("email_account")
 }
 
+// Per-user Google OAuth client; separate from EmailAccount so it pre-dates connection and survives disconnect.
+model EmailOAuthClient {
+  id           String   @id @default(uuid())
+  profileId    String   @unique @map("profile_id")
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  provider     String   @default("gmail")
+  clientId     String   @map("client_id") // plaintext (semi-public)
+  clientSecret String   @map("client_secret") // ciphertext (per-user DEK)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("email_oauth_client")
+}
+
 model EmailMessage {
   id          String       @id @default(uuid())
   accountId   String       @map("account_id")

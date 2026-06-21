@@ -22,9 +22,9 @@ export class EmailSyncService {
   ) {}
 
   async syncInbox(userId: string, profileId: string) {
-    let active;
+    let loaded;
     try {
-      active = await loadFreshAccount(this.prisma, this.crypto, userId, profileId);
+      loaded = await loadFreshAccount(this.prisma, this.crypto, userId, profileId);
     } catch (e) {
       throw new HttpError(
         ErrorCodes.UNPROCESSABLE,
@@ -32,15 +32,16 @@ export class EmailSyncService {
         401,
       );
     }
-    if (!active) {
+    if (!loaded) {
       throw notFound("No email account connected");
     }
 
+    const { account: active, config } = loaded;
     const provider = getProvider(active.provider);
 
     publish(inboxChannel, undefined, { type: "sync.started" });
 
-    const result = await provider.syncMessages(active);
+    const result = await provider.syncMessages(config, active);
 
     let inserted = 0;
     const insertedForLinking: InboundForLinking[] = [];

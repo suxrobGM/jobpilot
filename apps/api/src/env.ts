@@ -32,9 +32,8 @@ const EnvSchema = z.object({
 
   LOG_LEVEL: z.string().default("info"),
 
-  // Google OAuth (Gmail). Optional so the app boots without email configured.
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  // Google OAuth (Gmail) callback URL. Client id/secret are per-user (entered in the
+  // app); only this shared callback is configured here — users register it in their own client.
   GOOGLE_OAUTH_REDIRECT_URI: z.string().default("http://localhost:8002/api/email/oauth/callback"),
 
   // Transactional email (Resend). Optional: when unset, the app logs the email

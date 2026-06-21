@@ -42,6 +42,7 @@ model Profile {
   jobBoards        JobBoard[]
   queueEntries     QueueEntry[]
   emailAccount     EmailAccount?
+  emailOAuthClient EmailOAuthClient?
   upworkProposals  UpworkProposal[]
   upworkProfile    UpworkProfile?
   references       Reference[]

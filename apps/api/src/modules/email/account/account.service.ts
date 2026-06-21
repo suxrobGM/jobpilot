@@ -1,11 +1,13 @@
 import { randomBytes } from "node:crypto";
+import type { OAuthClientUpsertInput } from "@jobpilot/contracts/email";
 import type { SendEmailInput } from "@jobpilot/contracts/outreach";
 import { singleton } from "tsyringe";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
-import { badRequest, ErrorCodes, HttpError } from "@/common/errors";
+import { badRequest, conflict, ErrorCodes, HttpError } from "@/common/errors";
+import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
-import { accountCanSend, getProvider } from "../gmail.provider";
-import { loadFreshAccount } from "./account.utils";
+import { accountCanSend, getProvider, GMAIL_SCOPES } from "../gmail.provider";
+import { loadFreshAccount, resolveOAuthClient } from "./account.utils";
 
 @singleton()
 export class EmailAccountService {
@@ -42,10 +44,11 @@ export class EmailAccountService {
    * lacks send scope (needs reconnecting).
    */
   async send(userId: string, profileId: string, body: SendEmailInput) {
-    const account = await loadFreshAccount(this.prisma, this.crypto, userId, profileId);
-    if (!account) {
+    const loaded = await loadFreshAccount(this.prisma, this.crypto, userId, profileId);
+    if (!loaded) {
       throw new HttpError(ErrorCodes.NOT_FOUND, "No email account connected", 404);
     }
+    const { account, config } = loaded;
     if (!accountCanSend(account)) {
       throw new HttpError(
         ErrorCodes.UNPROCESSABLE,
@@ -55,7 +58,7 @@ export class EmailAccountService {
     }
 
     try {
-      return await getProvider(account.provider).sendMessage(account, {
+      return await getProvider(account.provider).sendMessage(config, account, {
         to: body.to,
         subject: body.subject,
         body: body.body,
@@ -71,15 +74,20 @@ export class EmailAccountService {
     }
   }
 
-  buildAuthorizeUrl(providerName: string): { authorizeUrl: string; state: string } {
+  async buildAuthorizeUrl(
+    userId: string,
+    profileId: string,
+    providerName: string,
+  ): Promise<{ authorizeUrl: string; state: string }> {
     if (providerName !== "gmail") {
       throw badRequest(`Unsupported provider: ${providerName}`);
     }
 
+    const config = await resolveOAuthClient(this.prisma, this.crypto, userId, profileId);
     const state = randomBytes(16).toString("hex");
     let authorizeUrl: string;
     try {
-      authorizeUrl = getProvider(providerName).getAuthorizeUrl(state);
+      authorizeUrl = getProvider(providerName).getAuthorizeUrl(config, state);
     } catch (e) {
       throw new HttpError(
         ErrorCodes.UNPROCESSABLE,
@@ -99,7 +107,8 @@ export class EmailAccountService {
   }): Promise<{ email: string }> {
     const { providerName, code, userId, profileId } = input;
     const provider = getProvider(providerName);
-    const { tokens, email } = await provider.exchangeCode(code);
+    const config = await resolveOAuthClient(this.prisma, this.crypto, userId, profileId);
+    const { tokens, email } = await provider.exchangeCode(config, code);
 
     const accessToken = await this.crypto.encryptFor(
       userId,
@@ -125,5 +134,61 @@ export class EmailAccountService {
     });
 
     return { email };
+  }
+
+  // ── OAuth client config (bring-your-own Google app) ─────────────────────────
+
+  /** Config status for the email settings UI. Never returns the client secret. */
+  async getOAuthClient(profileId: string) {
+    const row = await this.prisma.emailOAuthClient.findUnique({ where: { profileId } });
+    return {
+      configured: row !== null,
+      provider: row?.provider ?? "gmail",
+      clientId: row?.clientId ?? null,
+      redirectUri: env.GOOGLE_OAUTH_REDIRECT_URI,
+      scopes: GMAIL_SCOPES,
+    };
+  }
+
+  /** Create/update the client; a blank clientSecret keeps the stored one (required on first create). */
+  async upsertOAuthClient(userId: string, profileId: string, input: OAuthClientUpsertInput) {
+    const provider = input.provider ?? "gmail";
+    if (provider !== "gmail") {
+      throw badRequest(`Unsupported provider: ${provider}`);
+    }
+
+    const existing = await this.prisma.emailOAuthClient.findUnique({ where: { profileId } });
+    const plainSecret = input.clientSecret?.trim();
+
+    let clientSecret: string;
+    if (plainSecret) {
+      clientSecret = await this.crypto.encryptFor(
+        userId,
+        SECRET_CONTEXTS.emailOAuthClient,
+        plainSecret,
+      );
+    } else if (existing) {
+      clientSecret = existing.clientSecret;
+    } else {
+      throw badRequest("Client secret is required");
+    }
+
+    await this.prisma.emailOAuthClient.upsert({
+      where: { profileId },
+      create: { profileId, provider, clientId: input.clientId, clientSecret },
+      update: { provider, clientId: input.clientId, clientSecret },
+    });
+
+    return this.getOAuthClient(profileId);
+  }
+
+  /** Remove the OAuth client. Blocked while a mailbox is still connected. */
+  async deleteOAuthClient(profileId: string) {
+    const account = await this.prisma.emailAccount.findUnique({ where: { profileId } });
+    if (account) {
+      throw conflict("Disconnect the mailbox before removing its OAuth client.");
+    }
+    await this.prisma.emailOAuthClient.deleteMany({ where: { profileId } });
+    return { deleted: true };
   }
 }

@@ -1,5 +1,12 @@
 import type { EmailAccount } from "@/generated/prisma/client";
 
+/** The OAuth client (app) a provider authenticates as — resolved per-user from the user's own EmailOAuthClient. */
+export interface OAuthClientConfig {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+}
+
 /**
  * OAuth tokens returned by a provider after consent or refresh.
  *
@@ -98,19 +105,22 @@ export interface EmailProvider {
    * opaque CSRF token the caller stores in a cookie and verifies on
    * callback.
    */
-  getAuthorizeUrl(state: string): string;
+  getAuthorizeUrl(config: OAuthClientConfig, state: string): string;
 
   /**
    * Exchange the OAuth `code` returned to the callback for tokens and
    * resolve the user's email address. Called once per Connect flow.
    */
-  exchangeCode(code: string): Promise<{ tokens: TokenSet; email: string }>;
+  exchangeCode(
+    config: OAuthClientConfig,
+    code: string,
+  ): Promise<{ tokens: TokenSet; email: string }>;
 
   /**
    * Use a stored refresh token to obtain a fresh access token. Called by
    * the sync route when `tokenExpiresAt` has passed.
    */
-  refresh(refreshToken: string): Promise<TokenSet>;
+  refresh(config: OAuthClientConfig, refreshToken: string): Promise<TokenSet>;
 
   /**
    * Send an outbound message from the connected mailbox. Returns the
@@ -118,7 +128,11 @@ export interface EmailProvider {
    * descriptive error when the granted scope does not permit sending (the
    * account must be reconnected with send access).
    */
-  sendMessage(account: EmailAccount, input: SendMessageInput): Promise<SentMessage>;
+  sendMessage(
+    config: OAuthClientConfig,
+    account: EmailAccount,
+    input: SendMessageInput,
+  ): Promise<SentMessage>;
 
   /**
    * Pull new messages from the mailbox. Implementations should:
@@ -127,5 +141,5 @@ export interface EmailProvider {
    *   too old,
    * - return a fresh `historyId` so the caller can persist it.
    */
-  syncMessages(account: EmailAccount): Promise<SyncResult>;
+  syncMessages(config: OAuthClientConfig, account: EmailAccount): Promise<SyncResult>;
 }
