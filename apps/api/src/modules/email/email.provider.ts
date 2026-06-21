@@ -124,9 +124,8 @@ export interface EmailProvider {
 
   /**
    * Send an outbound message from the connected mailbox. Returns the
-   * provider's message + thread ids so callers can track replies. Throws a
-   * descriptive error when the granted scope does not permit sending (the
-   * account must be reconnected with send access).
+   * provider's message + thread ids so callers can track replies. Callers
+   * must gate on `accountCanSend` first — this assumes send scope is present.
    */
   sendMessage(
     config: OAuthClientConfig,

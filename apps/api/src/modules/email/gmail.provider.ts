@@ -120,10 +120,6 @@ export class GmailProvider implements EmailProvider {
     account: EmailAccount,
     input: SendMessageInput,
   ): Promise<SentMessage> {
-    if (!scopeCanSend(account.scope)) {
-      throw new Error("Connected Gmail account lacks send access. Reconnect it to enable sending.");
-    }
-
     const auth = this.clientForAccount(config, account);
     const gmail = google.gmail({ version: "v1", auth });
 
