@@ -1,14 +1,13 @@
 import { createApiClient } from "@jobpilot/api-client";
 import { NextResponse, type NextRequest } from "next/server";
+import { API_BASE_URL } from "@/api/base-url";
 import { isProfileEmpty } from "@/utils/profile";
-
-const API_BASE = process.env.API_URL ?? "http://localhost:8002";
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Per-request Eden client that forwards the incoming auth cookie (middleware
   // has no ambient cookie jar, so we pass it explicitly).
   const cookie = request.headers.get("cookie") ?? "";
-  const { api } = createApiClient(API_BASE, {
+  const { api } = createApiClient(API_BASE_URL, {
     headers: cookie ? { cookie } : {},
     fetch: { cache: "no-store" },
   });
@@ -36,6 +35,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    "/((?!api|_next|login|register|onboarding|verify-email|forgot-password|reset-password|favicon.ico|.*\\..*).*)",
+    "/((?!_next|login|register|onboarding|verify-email|forgot-password|reset-password|favicon.ico|.*\\..*).*)",
   ],
 };

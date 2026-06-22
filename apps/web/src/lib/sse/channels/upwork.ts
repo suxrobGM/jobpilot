@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/api/base-url";
 import { defineChannel } from "../channel";
 
 export type UpworkEvent =
@@ -12,6 +13,6 @@ export type UpworkEvent =
  */
 export const upworkChannel = defineChannel<UpworkEvent, void, { profileId: string }>({
   name: "upwork",
-  url: () => "/api/upwork/events",
+  url: () => `${API_BASE_URL}/api/upwork/events`,
   topic: ({ profileId }) => String(profileId),
 });

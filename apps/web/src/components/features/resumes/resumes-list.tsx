@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { useState, type ReactElement, type ReactNode } from "react";
 import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import {
   Box,
@@ -13,6 +13,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { api } from "@/api/client";
@@ -23,8 +24,25 @@ import type { ResumeListItem } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
+import { resumeChannel } from "@/lib/sse/channels/resume";
+import { useSseChannel } from "@/lib/sse/client";
 import { useToast } from "@/providers/notification-provider";
 import { NewResumeDialog } from "./new-resume-dialog";
+
+/** Invisible per-resume SSE subscriber: refetches the list when content or variants change. */
+function ResumeEventsSubscriber({ resumeId }: { resumeId: string }): ReactNode {
+  const queryClient = useQueryClient();
+  useSseChannel(
+    resumeChannel,
+    { resumeId },
+    {
+      onMessage: () => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.resume.list() });
+      },
+    },
+  );
+  return null;
+}
 
 export function ResumesList(): ReactElement {
   const toast = useToast();
@@ -84,6 +102,10 @@ export function ResumesList(): ReactElement {
           {rows.length} resume{rows.length === 1 ? "" : "s"}
         </Typography>
       </Stack>
+
+      {rows.map((r) => (
+        <ResumeEventsSubscriber key={`sse-${r.id}`} resumeId={r.id} />
+      ))}
 
       {rows.length === 0 ? (
         <SectionCard title="No resumes yet">

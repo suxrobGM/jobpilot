@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/api/base-url";
 import { defineChannel } from "../channel";
 
 export type PipelineEvent =
@@ -15,6 +16,6 @@ export type PipelineEvent =
  */
 export const pipelineChannel = defineChannel<PipelineEvent, void, { profileId: string }>({
   name: "pipeline",
-  url: () => "/api/pipeline/events",
+  url: () => `${API_BASE_URL}/api/pipeline/events`,
   topic: ({ profileId }) => String(profileId),
 });

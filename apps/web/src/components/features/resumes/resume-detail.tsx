@@ -40,6 +40,9 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
         "content.updated": () => {
           void queryClient.invalidateQueries({ queryKey: queryKeys.resume.detail(resumeId) });
         },
+        "variant.created": () => {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.resume.variants(resumeId) });
+        },
       },
     },
   );

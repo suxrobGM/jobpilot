@@ -7,6 +7,8 @@ import { singleton } from "tsyringe";
 import type { z } from "zod/v4";
 import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
 import { renderResumePdf } from "@/common/pdf";
+import { publish } from "@/common/sse";
+import { resumeChannel } from "@/common/sse/channels/resume";
 import {
   ensureCachedPdf,
   ensureGeneratedDir,
@@ -113,6 +115,12 @@ export class ResumeVariantService {
         diffNotes: body.diffNotes ?? null,
       },
     });
+
+    publish(
+      resumeChannel,
+      { resumeId },
+      { type: "variant.created", resumeId, variantId: variant.id },
+    );
 
     return { id: variant.id };
   }
@@ -246,6 +254,12 @@ export class ResumeVariantService {
         rewrites: rewordedBullets > 0 ? JSON.stringify({ experience: validation.audit }) : null,
       },
     });
+
+    publish(
+      resumeChannel,
+      { resumeId },
+      { type: "variant.created", resumeId, variantId: variant.id },
+    );
 
     return {
       id: variant.id,
