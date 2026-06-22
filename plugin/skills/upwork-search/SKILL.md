@@ -14,7 +14,7 @@ Find Upwork jobs the user can win — qualify on fit **and** client quality, dro
 2. Parse and strip the flags; the rest is the free-text query.
    - `--board upwork.com` — required.
    - `--max-jobs <N>` — cap on results to evaluate (default 15, max 100).
-   - `--campaign <id>` — campaign to save to. The UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else create one.
+   - `--campaign <id>` — campaign to save to. The UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else create one (a `source:"search"` create requires `config.resumeId` — default to the profile's `primaryResumeId`).
 3. Resolve the board: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq '.[] | select(.domain=="upwork.com")'`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign` was given, PATCH it to `failed` with `failReason:"Board upwork.com not configured"` first.
 
 ## Phase 1: Parse Query

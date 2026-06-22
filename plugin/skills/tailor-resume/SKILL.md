@@ -1,7 +1,7 @@
 ---
 name: tailor-resume
 description: Choose the best existing resume base/variant for a job, or create a new tailored variant when nothing fits.
-argument-hint: "<digest-json | job-url | pasted-jd-text>"
+argument-hint: "<digest-json | job-url | pasted-jd-text> [--base <resumeId>]"
 ---
 
 # Tailor Resume — Reuse or Create
@@ -30,7 +30,9 @@ From the digest (`title`, `requirements[]`, `responsibilities[]`, `techStack[]`,
 
 ## Step 2: Pick the Base
 
-**Primary wins.** If `primaryResumeId` is set and that resume has `hasData` or a `sourceFilename`,
+**Campaign choice wins.** If `--base <resumeId>` was passed (the campaign's selected resume) and
+that resume has `hasData` or a `sourceFilename`, use it as `BASE_ID` (skip scoring). Else **primary
+wins**: if `primaryResumeId` is set and that resume has `hasData` or a `sourceFilename`,
 use it as `BASE_ID` (skip scoring; Step 3 extracts content if missing). Otherwise score each
 `resumes` entry (max 10):
 

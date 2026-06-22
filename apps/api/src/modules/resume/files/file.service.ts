@@ -14,7 +14,7 @@ import {
   resumePath,
   slugifyForDownload,
 } from "@/common/storage";
-import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient, type Resume } from "@/generated/prisma/client";
 import { streamFile } from "../resume.stream";
 import { findResume, MAX_RESUME_BYTES } from "../resume.utils";
 
@@ -24,6 +24,19 @@ export class ResumeFileService {
 
   async renderPdf(profileId: string, id: string): Promise<Response> {
     const resume = await findResume(this.prisma, profileId, id);
+    return this.streamResumePdf(resume);
+  }
+
+  /** Public (unauthenticated) PDF render — the uuid acts as an unguessable token. */
+  async renderPublicPdf(id: string): Promise<Response> {
+    const resume = await this.prisma.resume.findUnique({ where: { id } });
+    if (!resume) {
+      throw notFound("Resume not found");
+    }
+    return this.streamResumePdf(resume);
+  }
+
+  private async streamResumePdf(resume: Resume): Promise<Response> {
     const slug = slugifyForDownload(resume.label);
 
     if (resume.content) {

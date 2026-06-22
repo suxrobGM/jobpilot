@@ -42,17 +42,19 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/camp
 
 If any matches, ask **"Found an incomplete campaign from `<startedAt>` (status: `<status>`). Resume or start fresh?"** Resume → inject the `resume` skill with that `campaignId`.
 
-Otherwise the web UI already created the campaign row when the user submitted `/campaigns/new` — confirm it exists and use that `campaignId`. If invoked manually (rare), create one:
+Otherwise the web UI already created the campaign row when the user submitted `/campaigns/new` — confirm it exists and use that `campaignId`. Capture its selected base resume: `RESUME_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" | jq -r '.config.resumeId // ""')` (empty → fall back to the primary downstream). If invoked manually (rare), create one:
 
 ```bash
 SLUG=$(echo "<query>" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/-\+/-/g; s/^-//; s/-$//')
 CAMPAIGN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_${SLUG})
+# resumeId is REQUIRED for auto-apply — default to the profile's primary.
+RESUME_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/profile" | jq -r '.profile.primaryResumeId // ""')
 # maxApplications is OPTIONAL — omit the field entirely for unlimited mode.
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg id "$CAMPAIGN_ID" --arg q "<query>" --arg board "<domain>" \
+  -d "$(jq -n --arg id "$CAMPAIGN_ID" --arg q "<query>" --arg board "<domain>" --arg rid "$RESUME_ID" \
     --argjson minScore <n> \
-    '{campaignId:$id, query:$q, source:"auto-apply", config:{board:$board, minScore:$minScore}}')"
+    '{campaignId:$id, query:$q, source:"auto-apply", config:{board:$board, resumeId:$rid, minScore:$minScore}}')"
 ```
 
 Surface live view: `http://localhost:8000/campaigns/<CAMPAIGN_ID>`.
@@ -102,7 +104,8 @@ If the listing row lacks enough detail, read it from the tab-1 snapshot (don't n
 ```bash
 FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --argjson digest "$DIGEST" '{digest:$digest}')")
+  -d "$(jq -n --argjson digest "$DIGEST" --arg rid "$RESUME_ID" \
+    '{digest:$digest} + (if $rid=="" then {} else {resumeId:$rid} end)')")
 SCORE=$(echo "$FIT" | jq -r '.score')
 CONF=$(echo "$FIT" | jq -r '.confidence')
 ```
@@ -137,7 +140,7 @@ Open a second tab: `browser_tabs(action:"new")`, then `browser_navigate` it to t
 1. **Find Apply** — `browser_snapshot` the header, `browser_click` the Apply / Easy Apply control's `ref`. `browser_wait_for`. If a new tab appeared (ATS portal), `browser_tabs(action:"select", index:<new>)`.
 2. **Authentication** — if a login/registration wall appears, follow `../shared/auth.md`. On unrecoverable login failure for the domain: POST `/result` `outcome:"failed"`, `failReason:"Login failed for <domain>"`, close apply tab(s), continue.
 3. **CAPTCHA gate** — `browser_snapshot` the apply form _before_ tailoring or filling. If it shows a CAPTCHA (reCAPTCHA / hCaptcha / Turnstile, "I'm not a robot", image/puzzle), invoke the `solve-captcha` skill. **Solved** → continue. **Unsolved** → skip: POST `/result` `outcome:"skipped"`, `skipReason:"CAPTCHA — apply manually via the apply skill"`, close apply tab(s), continue. Checking here avoids wasted tailoring/filling.
-4. **Tailor Resume** — invoke the `tailor-resume` skill with `$DIGEST` (empty → fall back to the job URL). Capture the variant id + PDF URL. No usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`, close apply tab(s), continue.
+4. **Tailor Resume** — invoke the `tailor-resume` skill with `$DIGEST` (empty → fall back to the job URL), passing `--base $RESUME_ID` when set (the campaign's selected resume). Capture the variant id + PDF URL. No usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`, close apply tab(s), continue.
 5. **Fill Forms** — follow `../shared/form-filling.md`. Upload the tailored variant. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` (pass `source:auto-apply`) and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation and remember it for the campaign.
 6. **Submit** — submit autonomously, `browser_wait_for`, then a narrowed `browser_snapshot`: a success confirmation = applied; a populated error = failure with that message as `failReason`. A CAPTCHA at this stage → invoke `solve-captcha`; **unsolved** is a skip (2.4), not a failure.
 

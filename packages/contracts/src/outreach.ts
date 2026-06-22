@@ -21,8 +21,6 @@ export const outreachConfigSchema = z.object({
   linkedinTier: linkedinTierSchema.optional(),
   autonomy: outreachAutonomySchema.default("draft"),
   dailyCap: z.number().int().min(1).max(100).optional(),
-  // Public, recipient-reachable resume link appended to the email body when present.
-  resumeUrl: z.url().optional(),
 });
 
 // ── Message / contact enums ─────────────────────────────────────────────────

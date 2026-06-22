@@ -20,7 +20,7 @@ import { jobBoardController } from "@/modules/job-board";
 import { pipelineController } from "@/modules/pipeline";
 import { profileController } from "@/modules/profile";
 import { queueController } from "@/modules/queue";
-import { resumeController, resumeJob } from "@/modules/resume";
+import { publicResumeController, resumeController, resumeJob } from "@/modules/resume";
 import { scoringController } from "@/modules/scoring";
 import { upworkController } from "@/modules/upwork";
 
@@ -49,6 +49,7 @@ const app = new Elysia()
       .use(captchaController)
       .use(profileController)
       .use(resumeController)
+      .use(publicResumeController)
       .use(coverLetterController)
       .use(applicationController)
       .use(scoringController)

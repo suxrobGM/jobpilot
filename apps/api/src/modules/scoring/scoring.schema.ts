@@ -22,6 +22,8 @@ export type FitProfile = z.infer<typeof fitProfileSchema>;
 export const scoreFitSchema = z.object({
   digest: jobDigestSchema,
   profile: fitProfileSchema.partial().optional(),
+  // Base resume to derive fit inputs from; falls back to the profile's primary.
+  resumeId: z.uuid().optional(),
 });
 
 // ── Response schemas ──────────────────────────────────────────────────────────

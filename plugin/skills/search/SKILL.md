@@ -14,7 +14,7 @@ Search a single board (picked by the user when launching the campaign) and rank 
 2. Parse and strip the flags; the rest is the free-text query.
    - `--board <domain>` — **required** (e.g. `--board linkedin.com`).
    - `--max-jobs <N>` — optional cap on results to rank (default 15, max 100).
-   - `--campaign <campaign-id>` — campaign to save results to (Phase 5). The web UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else create one.
+   - `--campaign <campaign-id>` — campaign to save results to (Phase 5). The web UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else create one (a `source:"search"` create requires `config.resumeId` — default to the profile's `primaryResumeId`).
 3. Resolve the board:
 
    ```bash
@@ -49,7 +49,7 @@ If `data.applied`, tag with "Previously Applied" (note `data.match.kind`: `url` 
 
 ## Phase 4: Fit Review
 
-For each non-applied result, score 0–100 based on: tech stack overlap, years vs candidate, education match, domain/industry relevance, seniority alignment.
+Score against the campaign's `config.resumeId` when set (`GET /api/resumes/<id>` for its content), else the primary (from setup). For each non-applied result, score 0–100 based on: tech stack overlap, years vs candidate, education match, domain/industry relevance, seniority alignment.
 
 ## Phase 5: Save Results to the Campaign
 

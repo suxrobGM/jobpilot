@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, type ReactElement } from "react";
-import { Button, Chip, LinearProgress, Stack, Typography } from "@mui/material";
+import { Button, LinearProgress, Stack } from "@mui/material";
 import { useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
@@ -12,16 +12,15 @@ import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
 import { AutoApplyFields } from "./auto-apply-fields";
+import { CampaignBasicsFields } from "./campaign-basics-fields";
 import {
   buildCampaignConfig,
   buildSkillArg,
   COMPOSER_DEFAULT_VALUES,
   composerFormSchema,
   makeCampaignId,
-  MODE_DESCRIPTIONS,
   SUBMIT_LABELS,
   UPWORK_DOMAIN,
-  UPWORK_MODE_DESCRIPTION,
 } from "./form-config";
 import { OutreachFields } from "./outreach-fields";
 import { SearchFields } from "./search-fields";
@@ -52,10 +51,12 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   );
 
   const boards = boardsQuery.data ?? [];
+  const resumes = profileQuery.data?.resumes ?? [];
   const recentQueries = Array.from(
     new Set((recentCampaignsQuery.data ?? []).map((r) => r.query)),
   ).slice(0, 5);
   const hasBoards = boards.length > 0;
+  const hasResumes = resumes.length > 0;
 
   const presetBoard =
     defaultBoard && boards.some((b) => b.domain === defaultBoard) ? defaultBoard : undefined;
@@ -64,6 +65,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     defaultValues: {
       ...COMPOSER_DEFAULT_VALUES,
       board: presetBoard ?? boards[0]?.domain ?? "",
+      resumeId: resumes.find((r) => r.isPrimary)?.id ?? resumes[0]?.id ?? "",
       minScore: profileQuery.data?.autoApply?.minMatchScore ?? COMPOSER_DEFAULT_VALUES.minScore,
     },
     validators: { onSubmit: composerFormSchema },
@@ -77,7 +79,8 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
         campaignId,
         query: value.query.trim(),
         source: effective.mode,
-        config: buildCampaignConfig(effective),
+        // resumeId is campaign-wide (mandatory for every mode), not mode-specific.
+        config: { resumeId: effective.resumeId, ...buildCampaignConfig(effective) },
       });
       router.push(`/campaigns/${encodeURIComponent(campaignId)}`);
       void agent.injectSkill(
@@ -112,88 +115,12 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
         }}
       >
         <Stack spacing={2.5}>
-          <Stack spacing={0.75}>
-            <form.AppField name="mode">
-              {(field) => (
-                <field.Toggle
-                  label="Mode"
-                  options={
-                    isUpwork
-                      ? [{ value: "search", label: "Recommend" }]
-                      : [
-                          { value: "search", label: "Search only" },
-                          { value: "auto-apply", label: "Auto-apply" },
-                          { value: "outreach", label: "Outreach" },
-                        ]
-                  }
-                />
-              )}
-            </form.AppField>
-            <Typography variant="captionMuted">
-              {isUpwork ? UPWORK_MODE_DESCRIPTION : MODE_DESCRIPTIONS[mode]}
-            </Typography>
-          </Stack>
-
-          <Stack spacing={0.75}>
-            <form.AppField name="query">
-              {(field) => (
-                <field.TextField
-                  label={isOutreach ? "Target criteria" : "Query"}
-                  placeholder={
-                    isOutreach
-                      ? "Hiring managers at NYC fintech startups"
-                      : "Senior React TypeScript remote"
-                  }
-                  autoFocus
-                />
-              )}
-            </form.AppField>
-            {recentQueries.length > 0 && (
-              <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.75 }}>
-                <Typography variant="captionMuted" sx={{ alignSelf: "center" }}>
-                  Recent:
-                </Typography>
-                {recentQueries.map((q) => (
-                  <Chip
-                    key={q}
-                    label={q}
-                    size="small"
-                    variant="outlined"
-                    onClick={() => form.setFieldValue("query", q)}
-                  />
-                ))}
-              </Stack>
-            )}
-          </Stack>
-
-          {/* One board control: required for search/auto-apply, optional for outreach
-              (where it toggles board-grounded vs criteria-only discovery). */}
-          {hasBoards ? (
-            <Stack spacing={0.75}>
-              <form.AppField name="board">
-                {(field) => (
-                  <field.Select
-                    label="Board"
-                    optional={isOutreach}
-                    emptyLabel="No board — reach by criteria"
-                    items={boards.map((b) => ({ value: b.domain, label: b.name }))}
-                  />
-                )}
-              </form.AppField>
-              {isOutreach && (
-                <Typography variant="captionMuted">
-                  With a board, each contact is grounded in a matching opening; without one,
-                  outreach uses your criteria alone.
-                </Typography>
-              )}
-            </Stack>
-          ) : (
-            !isOutreach && (
-              <Typography variant="body2Muted">
-                No boards configured. Add one on the Boards page first.
-              </Typography>
-            )
-          )}
+          <CampaignBasicsFields
+            form={form}
+            boards={boards}
+            resumes={resumes}
+            recentQueries={recentQueries}
+          />
 
           {mode === "search" && <SearchFields form={form} />}
           {mode === "auto-apply" && <AutoApplyFields form={form} />}
@@ -206,7 +133,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={(!hasBoards && !isOutreach) || !canSubmit || isSubmitting}
+                  disabled={!hasResumes || (!hasBoards && !isOutreach) || !canSubmit || isSubmitting}
                 >
                   {isUpwork ? "Find Upwork jobs" : SUBMIT_LABELS[mode]}
                 </Button>

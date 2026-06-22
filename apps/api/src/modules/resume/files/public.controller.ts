@@ -1,0 +1,23 @@
+import { idParam } from "@jobpilot/contracts/shared";
+import { Elysia } from "elysia";
+import { container } from "@/common/di";
+import { ResumeFileService } from "./file.service";
+
+const svc = container.resolve(ResumeFileService);
+
+/**
+ * Unauthenticated resume PDF access — the resume's v4 uuid is the capability
+ * token. Used for recipient-reachable links (e.g. outreach emails) where a
+ * bearer-authed `/api/resumes/:id/pdf` would not be openable.
+ */
+export const publicResumeController = new Elysia({
+  prefix: "/public/resumes",
+  detail: { tags: ["Resumes"] },
+}).get("/:id/pdf", ({ params }) => svc.renderPublicPdf(params.id), {
+  params: idParam,
+  detail: {
+    summary: "Render resume PDF (public)",
+    description:
+      "Streams a resume as a PDF without authentication, keyed by the resume's unguessable uuid, for recipient-reachable links such as outreach emails.",
+  },
+});

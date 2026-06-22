@@ -29,6 +29,9 @@ export const campaignJobStatusSchema = z.enum(CAMPAIGN_JOB_STATUSES);
 
 export const campaignConfigSchema = z.object({
   board: z.string().min(1).optional(),
+  // Base resume the campaign scores and tailors against; optional for read
+  // back-compat (older/agent-created campaigns fall back to the primary resume).
+  resumeId: z.uuid().optional(),
   minScore: z.number().int().min(0).max(100).optional(),
   maxApplications: z.number().int().min(1).max(500).optional(),
   maxJobs: z.number().int().min(1).max(100).optional(),
@@ -50,12 +53,20 @@ export const campaignSummarySchema = z.object({
   bounced: z.number().int().min(0).default(0),
 });
 
-export const createCampaignSchema = z.object({
-  campaignId: z.string().min(1),
-  query: z.string().min(1),
-  source: campaignSourceSchema,
-  config: campaignConfigSchema.optional(),
-});
+/** Composer-driven sources require a user-selected base resume; `apply` tailors per job. */
+const RESUME_REQUIRED_SOURCES: readonly CampaignSource[] = ["search", "auto-apply", "outreach"];
+
+export const createCampaignSchema = z
+  .object({
+    campaignId: z.string().min(1),
+    query: z.string().min(1),
+    source: campaignSourceSchema,
+    config: campaignConfigSchema.optional(),
+  })
+  .refine((v) => !RESUME_REQUIRED_SOURCES.includes(v.source) || !!v.config?.resumeId, {
+    message: "config.resumeId is required for search, auto-apply, and outreach campaigns.",
+    path: ["config", "resumeId"],
+  });
 
 export const updateCampaignSchema = z.object({
   status: campaignStatusSchema.optional(),

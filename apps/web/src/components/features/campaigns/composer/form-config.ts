@@ -9,6 +9,8 @@ export const composerFormSchema = z
     mode: z.enum(["search", "auto-apply", "outreach"]),
     query: z.string().trim().min(2, "Enter a query"),
     board: z.string(),
+    // Base resume the campaign scores and tailors against (mandatory, all modes).
+    resumeId: z.string().min(1, "Select a resume"),
     minScore: z.number().int().min(0).max(100),
     maxApps: z.union([z.number().int().min(1).max(500), z.null(), z.undefined()]),
     maxJobs: z.number().int().min(1).max(100),
@@ -17,7 +19,6 @@ export const composerFormSchema = z
     linkedinTier: z.enum(["free", "premium"]),
     autonomy: z.enum(["draft", "review", "auto"]),
     dailyCap: z.number().int().min(1).max(100),
-    resumeUrl: z.string(),
   })
   .superRefine((v, ctx) => {
     // Board is required for search/auto-apply; for outreach it is optional (the
@@ -27,13 +28,6 @@ export const composerFormSchema = z
     }
     if (v.mode === "outreach" && v.channels.length === 0) {
       ctx.addIssue({ code: "custom", message: "Pick at least one channel", path: ["channels"] });
-    }
-    if (
-      v.mode === "outreach" &&
-      v.resumeUrl.trim() &&
-      !z.url().safeParse(v.resumeUrl.trim()).success
-    ) {
-      ctx.addIssue({ code: "custom", message: "Enter a valid resume URL", path: ["resumeUrl"] });
     }
   });
 
@@ -54,6 +48,7 @@ export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   mode: "auto-apply",
   query: "",
   board: "",
+  resumeId: "",
   minScore: 60,
   maxApps: null,
   maxJobs: 15,
@@ -61,7 +56,6 @@ export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   linkedinTier: "free",
   autonomy: "draft",
   dailyCap: 20,
-  resumeUrl: "",
 };
 
 export function makeCampaignId(query: string): string {
@@ -94,7 +88,6 @@ export function buildCampaignConfig(values: ComposerFormValues): CreateCampaignR
         ...(values.channels.includes("linkedin") ? { linkedinTier: values.linkedinTier } : {}),
         autonomy: values.autonomy,
         ...(values.autonomy === "auto" ? { dailyCap: values.dailyCap } : {}),
-        ...(values.resumeUrl.trim() ? { resumeUrl: values.resumeUrl.trim() } : {}),
       },
     };
   }

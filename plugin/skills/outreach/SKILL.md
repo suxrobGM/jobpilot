@@ -27,11 +27,12 @@ JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 `--campaign <id>` is required. Read the campaign config:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.config'
+CONFIG=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.config')
 ```
 
 `config.outreach` = `{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium",
-autonomy:"draft"|"review"|"auto", dailyCap?, resumeUrl? }` (append `resumeUrl` verbatim to email body when present; never a `localhost` URL). `config` may also carry `board`
+autonomy:"draft"|"review"|"auto", dailyCap? }`. `config` also carries the campaign's selected
+`resumeId` — build its public link `RESUME_URL="$JOBPILOT_API/api/public/resumes/$(echo "$CONFIG" | jq -r '.resumeId')/pdf"` and append it to the email body (skip when it is a `localhost` URL — dev only). `config` may also carry `board`
 (domain to search) and optional `maxJobs` (cap; absent = run until stopped).
 
 Target criteria = the positional arg, else `data.query`. The optional `board` is the control:
@@ -134,8 +135,8 @@ mangles non-ASCII). Short and direct; run `humanizer`; no template tells.
 
 Then per channel:
 
-- **Email**: short subject + body, one specific proof point, soft ask. Per `resumeInclude`:
-  `resumeUrl` present → append it verbatim (never a `localhost` URL); absent → no link.
+- **Email**: short subject + body, one specific proof point, soft ask. Append `RESUME_URL`
+  (the campaign resume's public link from Phase 0); skip it when it is a `localhost` URL.
 - **LinkedIn connect note** (free tier, not yet connected): ≤300 chars, no link.
 - **LinkedIn InMail** (premium) / **DM** (free, already connected): a few sentences.
 

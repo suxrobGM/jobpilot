@@ -83,18 +83,9 @@ export const OutreachFields = withForm({
           </form.AppField>
         )}
 
-        <form.AppField name="resumeUrl">
-          {(field) => (
-            <field.TextField
-              label="Resume URL (optional)"
-              placeholder="https://example.com/resume.pdf"
-              helperText="Paste your public resume URL — recipients will see a clickable link in the email. Leave blank to omit."
-            />
-          )}
-        </form.AppField>
         <Typography variant="captionMuted">
-          Cold-email attachments hurt deliverability — the tailored resume shapes the message and is
-          best shared as a link.
+          The resume you selected above is shared as a link in each email — cold-email attachments
+          hurt deliverability.
         </Typography>
       </Stack>
     );
