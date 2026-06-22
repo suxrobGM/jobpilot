@@ -4,7 +4,7 @@ import { useState, type ReactElement } from "react";
 import type { JobBoardInput } from "@jobpilot/contracts/job-board";
 import { Add } from "@mui/icons-material";
 import { Button } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";

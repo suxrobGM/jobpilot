@@ -4,7 +4,7 @@ import { useState, type ReactElement } from "react";
 import type { CredentialInput } from "@jobpilot/contracts/credential";
 import { Add, Delete, Key, Lock } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";

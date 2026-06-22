@@ -5,7 +5,7 @@ import { useEffect, useRef, type ReactElement } from "react";
 import { Box, useTheme } from "@mui/material";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { startSession, TERMINAL_WS_URL, type TerminalProviderId } from "@/lib/terminal";
 import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
 import { toBase64 } from "@/utils/base64";

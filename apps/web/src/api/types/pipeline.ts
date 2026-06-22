@@ -1,5 +1,5 @@
 import type { Data } from "@jobpilot/api-client";
-import type { api } from "@/api/eden";
+import type { api } from "@/api/client";
 
 // Runtime constants for the Kanban UI — values, so they stay here (not inferable).
 export const PIPELINE_STAGES = ["queued", "applying", "submitted", "interviewing"] as const;

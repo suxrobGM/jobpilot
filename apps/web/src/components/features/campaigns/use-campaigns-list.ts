@@ -2,7 +2,7 @@
 
 import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
 import { useState } from "react";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";

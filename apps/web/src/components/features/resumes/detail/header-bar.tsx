@@ -4,7 +4,7 @@ import { useState, type ReactElement } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";

@@ -13,7 +13,7 @@ import {
   type GridRowSelectionModel,
   type GridRowsProp,
 } from "@mui/x-data-grid";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type {

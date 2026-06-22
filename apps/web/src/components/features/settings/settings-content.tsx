@@ -8,7 +8,7 @@ import {
 } from "@jobpilot/contracts/profile";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";

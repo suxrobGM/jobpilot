@@ -1,5 +1,5 @@
 import type { Body, Data } from "@jobpilot/api-client";
-import type { api } from "@/api/eden";
+import type { api } from "@/api/client";
 
 /** An Upwork proposal, inferred from `GET /api/upwork/proposals`. */
 export type UpworkProposalDto = Data<typeof api.upwork.proposals.get>[number];

@@ -5,7 +5,7 @@ import type { VerifyEmailInput } from "@jobpilot/contracts/auth";
 import { Alert, Box, Button, CircularProgress, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { ResendVerificationResponse, VerifyEmailResponse } from "@/api/types";
 import { useAuth } from "@/hooks/use-auth";

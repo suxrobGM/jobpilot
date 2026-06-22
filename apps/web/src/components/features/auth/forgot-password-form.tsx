@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { ForgotPasswordSchema, type ForgotPasswordInput } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { ForgotPasswordResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";

@@ -5,7 +5,7 @@ import { Delete } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { useConfirm } from "@/providers/confirm-provider";

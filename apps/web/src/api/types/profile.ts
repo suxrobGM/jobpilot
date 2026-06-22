@@ -1,5 +1,5 @@
 import type { Data } from "@jobpilot/api-client";
-import type { api } from "@/api/eden";
+import type { api } from "@/api/client";
 
 /** The active profile aggregate, inferred from `GET /api/profile`. */
 export type ProfileResponse = Data<typeof api.profile.get>;

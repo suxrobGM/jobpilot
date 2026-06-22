@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Chip, Link } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ContactDto } from "@/api/types";

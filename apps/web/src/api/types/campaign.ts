@@ -1,5 +1,5 @@
 import type { Body, Data } from "@jobpilot/api-client";
-import type { api } from "@/api/eden";
+import type { api } from "@/api/client";
 
 /** A campaign list row, inferred from `GET /api/campaigns`. */
 export type CampaignDto = Data<typeof api.campaigns.get>[number];

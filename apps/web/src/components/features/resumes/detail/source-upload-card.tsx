@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Delete, PictureAsPdf } from "@mui/icons-material";
 import { Box, IconButton, Stack, Typography } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";

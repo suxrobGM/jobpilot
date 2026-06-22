@@ -12,7 +12,7 @@ import {
   WorkOutlined,
 } from "@mui/icons-material";
 import { Box, Button, Stack, Typography, type SvgIconProps } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { SectionCard } from "@/components/ui/layout";

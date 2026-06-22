@@ -7,7 +7,7 @@ import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkProposalDto } from "@/api/types";

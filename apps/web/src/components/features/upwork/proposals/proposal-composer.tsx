@@ -5,7 +5,7 @@ import { Button, Stack } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CreateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";

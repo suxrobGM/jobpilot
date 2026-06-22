@@ -5,7 +5,7 @@ import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Box, Button, Chip, LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkProfileDto } from "@/api/types";

@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { ArrowDropDown, PlayArrow } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { PipelineColumnPage } from "@/api/types";

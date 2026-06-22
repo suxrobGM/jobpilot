@@ -6,7 +6,7 @@ import { Autorenew, Clear, Replay } from "@mui/icons-material";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";

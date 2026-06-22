@@ -1,5 +1,5 @@
 import type { Data } from "@jobpilot/api-client";
-import type { api } from "@/api/eden";
+import type { api } from "@/api/client";
 import type { CampaignConfigDto } from "./campaign";
 
 /** A networking contact, inferred from `GET /api/contacts`. */

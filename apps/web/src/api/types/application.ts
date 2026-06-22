@@ -1,5 +1,5 @@
 import type { Data } from "@jobpilot/api-client";
-import type { api } from "@/api/eden";
+import type { api } from "@/api/client";
 
 /** A submitted application row, inferred from `GET /api/applied`. */
 export type ApplicationDto = Data<typeof api.applied.get>[number];

@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import { Alert, Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { EmailAccountStatus, OAuthClientStatus } from "@/api/types";

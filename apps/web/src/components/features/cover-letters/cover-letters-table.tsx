@@ -6,7 +6,7 @@ import { Chip, IconButton, Link } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CoverLetterListItem } from "@/api/types";

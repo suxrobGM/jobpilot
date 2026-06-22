@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";

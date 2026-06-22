@@ -1,5 +1,5 @@
 import type { Data } from "@jobpilot/api-client";
-import type { api } from "@/api/eden";
+import type { api } from "@/api/client";
 
 /** The current user + active profile, inferred from `GET /api/auth/me`. */
 export type MeResponse = Data<typeof api.auth.me.get>;

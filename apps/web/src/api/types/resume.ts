@@ -1,5 +1,5 @@
 import type { Data } from "@jobpilot/api-client";
-import type { api } from "@/api/eden";
+import type { api } from "@/api/client";
 
 /** A resume list row, inferred from `GET /api/resumes`. */
 export type ResumeListItem = Data<typeof api.resumes.get>[number];

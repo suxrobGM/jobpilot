@@ -4,7 +4,7 @@ import { useEffect, type ReactElement } from "react";
 import { Button, Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import { useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto, CreateCampaignRequest, JobBoardDto, ProfileResponse } from "@/api/types";

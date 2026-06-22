@@ -3,7 +3,7 @@
 import type { LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import {
   useApiMutation,
   useApiQuery,

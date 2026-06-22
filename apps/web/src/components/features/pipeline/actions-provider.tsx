@@ -8,7 +8,7 @@ import {
   type ReactElement,
 } from "react";
 import type { AddQueueEntry } from "@jobpilot/contracts/queue";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { AddUrlsDialog } from "./dialogs/add-urls-dialog";

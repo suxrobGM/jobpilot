@@ -5,7 +5,7 @@ import { ResetPasswordSchema, type ResetPasswordInput } from "@jobpilot/contract
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { ResetPasswordResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";

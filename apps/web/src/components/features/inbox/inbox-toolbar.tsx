@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { CloudSync, FormatListBulleted } from "@mui/icons-material";
 import { Button, Stack, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { SyncResultDto } from "@/api/types";

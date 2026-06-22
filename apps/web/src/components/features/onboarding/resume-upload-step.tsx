@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";

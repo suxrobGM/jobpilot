@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { Clear, Search } from "@mui/icons-material";
 import { Box, Button, InputAdornment, MenuItem, Stack, TextField } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto as JobBoard } from "@/api/types";

@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { AnalyticsStatsDto } from "@/api/types";

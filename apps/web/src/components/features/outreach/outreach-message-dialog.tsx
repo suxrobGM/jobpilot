@@ -14,7 +14,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { api } from "@/api/eden";
+import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { OutreachMessageDto } from "@/api/types";
 import { useAgent } from "@/providers/agent-provider";

@@ -1,5 +1,5 @@
 import type { Data } from "@jobpilot/api-client";
-import type { api } from "@/api/eden";
+import type { api } from "@/api/client";
 
 /** Connected mailbox status, inferred from `GET /api/email/account`. */
 export type EmailAccountStatus = Data<typeof api.email.account.get>;
