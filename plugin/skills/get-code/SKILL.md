@@ -23,7 +23,7 @@ BOARD_DOMAIN="$1"
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"
 ```
 
-If `data.connected === false`, print exactly `{}` and exit. Caller falls back to asking the user.
+If `.connected === false`, print exactly `{}` and exit. Caller falls back to asking the user.
 
 ## Phase 2: Trigger Sync
 

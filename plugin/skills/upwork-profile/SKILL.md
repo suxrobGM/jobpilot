@@ -10,7 +10,7 @@ Two modes. Default (**generate**) drafts suggestions for review; **apply** (argu
 
 ## Setup
 
-Follow `../shared/setup.md`. `Read` the resume at `data.primaryResumeSourceAbsolutePath` for identity, summary, experience, skills, and **projects** (the portfolio source). ``$JOBPILOT_API` (injected by the terminal)`. Log in to Upwork via `../shared/auth.md` (resolve via `/api/credentials/resolve?domain=upwork.com`).
+Follow `../shared/setup.md`. `Read` the resume at `primaryResumeSourceAbsolutePath` for identity, summary, experience, skills, and **projects** (the portfolio source). ``$JOBPILOT_API` (injected by the terminal)`. Log in to Upwork via `../shared/auth.md` (resolve via `/api/credentials/resolve?domain=upwork.com`).
 
 ## Mode: generate (default)
 
@@ -33,7 +33,7 @@ Follow `../shared/setup.md`. `Read` the resume at `data.primaryResumeSourceAbsol
 
 ## Mode: apply
 
-1. `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/profile"` → require `data.status == "approved"`. If not, tell the user to review and approve on `/upwork/profile` first, then stop.
+1. `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/profile"` → require `.status == "approved"`. If not, tell the user to review and approve on `/upwork/profile` first, then stop.
 2. Use the `suggested*` fields as the source of truth (the user may have edited them in the UI).
 3. `browser_navigate` to the Upwork profile editor and write each section via `../shared/form-filling.md`: title, overview, hourly rate (if suggested), and portfolio projects (add/update). `browser_wait_for` and re-snapshot after each save. Pause and ask the user on 2FA; attempt the `solve-captcha` skill on a CAPTCHA.
 4. On success, mark it applied:

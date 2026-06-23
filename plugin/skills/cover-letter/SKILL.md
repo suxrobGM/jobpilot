@@ -10,7 +10,7 @@ Write a tailored, one-page cover letter connecting the candidate's resume to a s
 
 ## Setup
 
-Follow `../shared/setup.md` to load profile and resume. Then `Read` the resume file at `data.primaryResumeSourceAbsolutePath` for full context (identity, education, experience, skills, projects, research, awards).
+Follow `../shared/setup.md` to load profile and resume. Then `Read` the resume file at `primaryResumeSourceAbsolutePath` for full context (identity, education, experience, skills, projects, research, awards).
 
 ## Step 1: Analyze the JD
 

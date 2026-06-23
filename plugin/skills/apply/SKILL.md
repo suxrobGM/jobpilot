@@ -70,7 +70,7 @@ COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-If `data.applied === true`, surface the match (title + company + appliedAt + `data.match.kind`) and ask whether to proceed anyway. Stop on no.
+If `.applied === true`, surface the match (title + company + appliedAt + `.match.kind`) and ask whether to proceed anyway. Stop on no.
 
 ### 1A.3 Create Campaign-of-1
 

@@ -18,7 +18,7 @@ Follow `../shared/setup.md` (health, profile, primary/tailored resume, credentia
 JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 ```
 
-- Email capability: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"` → if `data.canSend` is false,
+- Email capability: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"` → if `.canSend` is false,
   tell the user to **Reconnect Gmail** in email settings before email sends; LinkedIn still works.
 - LinkedIn login: `../shared/auth.md`, credentials scope `"linkedin.com"`.
 
@@ -35,7 +35,7 @@ autonomy:"draft"|"review"|"auto", dailyCap? }`. `config` also carries the campai
 `resumeId` — build its public link `RESUME_URL="$JOBPILOT_API/api/public/resumes/$(echo "$CONFIG" | jq -r '.resumeId')/pdf"` and append it to the email body (skip when it is a `localhost` URL — dev only). `config` may also carry `board`
 (domain to search) and optional `maxJobs` (cap; absent = run until stopped).
 
-Target criteria = the positional arg, else `data.query`. The optional `board` is the control:
+Target criteria = the positional arg, else `.query`. The optional `board` is the control:
 `board` set → search it (Phase 0.5) and loop results (Phase 1), grounding each message in its posting;
 no `board` → discover from criteria, grounding only if an opening turns up. Skip contacts already
 messaged on this campaign.
@@ -61,7 +61,7 @@ the query, and `browser_snapshot` the results (narrowed, per `../shared/browser-
 in this order and cross-reference:
 
 1. **Google → LinkedIn**: `WebSearch` `site:linkedin.com/in "<company>" ("recruiter" OR "talent"
-   OR "hiring manager" OR "<title>")` — yields profile URLs without touching LinkedIn search.
+OR "hiring manager" OR "<title>")` — yields profile URLs without touching LinkedIn search.
 2. **Company site**: careers/about/team pages for named recruiters or hiring contacts.
 3. **General web**: press releases, GitHub (eng roles), meetup/conference pages.
 4. **Email**: web-search the company's email pattern (`first.last@`, `flast@`, …), construct the
@@ -76,24 +76,24 @@ Walk tab-1 results top to bottom; per result:
 
 1. Dedupe in-board, then applied-check:
 
-   ```bash
-   URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
-   TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
-   COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
-   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
-   ```
+```bash
+URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
+TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
+COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+```
 
-   On `data.applied`, keep `data.match.application.id` as `relatedAppId` — **don't skip** (outreach
-   complements applying).
-2. Save the job (stable, shell-safe `key`):
+On `.applied`, keep `.match.application.id` as `relatedAppId` — **don't skip** (outreach
+complements applying). 2. Save the job (stable, shell-safe `key`):
 
-   ```bash
-   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
-     -H 'content-type: application/json' \
-     -d "$(jq -n --arg key "<key>" --arg title "<title>" --arg company "<company>" \
-       --arg location "<location>" --arg url "<job-url>" --arg board "<config.board>" \
-       '{key:$key,title:$title,company:$company,location:$location,url:$url,board:$board,status:"pending"}')"
-   ```
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg key "<key>" --arg title "<title>" --arg company "<company>" \
+    --arg location "<location>" --arg url "<job-url>" --arg board "<config.board>" \
+    '{key:$key,title:$title,company:$company,location:$location,url:$url,board:$board,status:"pending"}')"
+```
+
 3. Discover + save the contact (below) with `relatedJobUrl` (+ `relatedAppId` if matched).
 4. Compose (Phase 2), then gate (Phase 3).
 5. Before the next result, `GET /api/campaigns/<campaign-id>`: `status:"paused"` → exit; `maxJobs`
@@ -119,8 +119,8 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
       message:{channel:$chan,body:""}}')"
 ```
 
-Add `relatedAppId:<id>` when applied-check matched. Keep the returned `data.id` (messageId) and
-`data.contactId`. Create one message per channel.
+Add `relatedAppId:<id>` when applied-check matched. Keep the returned `id` (messageId) and
+`contactId`. Create one message per channel.
 
 ## Phase 2: Compose
 

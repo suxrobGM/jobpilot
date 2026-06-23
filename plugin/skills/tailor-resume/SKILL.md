@@ -104,7 +104,7 @@ The server does all structural rewriting (skill ordering, bullet ranking) determ
 - **`jobKeywords`** — optional, ~10 terms; defaults to `emphasizedTech`. Ranks experience/project bullets.
 - **`label`** — `"{Company} — {Title}"` (short).
 - **`jobUrl`** — when the argument was a URL or digest carried one.
-- **`applicationId`** — when the JD URL matches an existing Application (`GET /api/applied/check?url=…` → `data.match.application.id`).
+- **`applicationId`** — when the JD URL matches an existing Application (`GET /api/applied/check?url=…` → `.match.application.id`).
 - **`diffNotes`** — 1–3 sentences on what was emphasized and why.
 
 ### Optional — reword recent bullets

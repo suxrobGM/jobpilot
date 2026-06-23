@@ -10,7 +10,7 @@ Read a resume's uploaded source PDF and produce JSON matching the JobPilot resum
 
 ## Setup
 
-Follow `../shared/setup.md`. The profile response provides `profile.primaryResumeId`, `data.primaryResumeSourceAbsolutePath`, and `resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
+Follow `../shared/setup.md`. The profile response provides `profile.primaryResumeId`, `primaryResumeSourceAbsolutePath`, and `resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
 
 ## Step 1: Resolve Target
 
@@ -37,7 +37,7 @@ If 404, stop and report the id doesn't exist.
 
 Resolve the absolute path:
 
-- Primary resume → prefer `data.primaryResumeSourceAbsolutePath`.
+- Primary resume → prefer `primaryResumeSourceAbsolutePath`.
 - Otherwise → `${JOBPILOT_WORKSPACE_ROOT}/apps/api/storage/resumes/{sourceFilename}`.
 
 If `sourceMimeType !== "application/pdf"`, stop and ask the user to re-upload as PDF.

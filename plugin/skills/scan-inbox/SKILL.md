@@ -22,7 +22,7 @@ JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"
 ```
 
-If `data.connected === false`, stop:
+If `.connected === false`, stop:
 
 > No email account is connected. Open `/profile` → **Email** and connect a Gmail account, then re-run `scan-inbox`.
 

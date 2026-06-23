@@ -43,7 +43,7 @@ COMPANY_ENCODED=$(jq -rn --arg v "<clientName>" '$v|@uri')
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-`data.applied` → save with `status:"skipped"`, `skipReason:"Already applied (<kind>)"`; skip the rest.
+`.applied` → save with `status:"skipped"`, `skipReason:"Already applied (<kind>)"`; skip the rest.
 
 ### 3.2 Client quality (smart filter)
 
@@ -57,7 +57,7 @@ QUALITY=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOB
 VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 ```
 
-`proposalsBucket` is one of `<5 | 5-10 | 10-15 | 15-20 | 20-50 | 50+`. The scorer hard-skips unverified payment, 50+ proposals (saturated), low hire-rate-but-many-jobs (unresponsive), and unproven+unverified clients. If `VERDICT == "skip"`, save the Job `status:"skipped"` with `skipReason` = `data.skipReason` and move on — don't score fit.
+`proposalsBucket` is one of `<5 | 5-10 | 10-15 | 15-20 | 20-50 | 50+`. The scorer hard-skips unverified payment, 50+ proposals (saturated), low hire-rate-but-many-jobs (unresponsive), and unproven+unverified clients. If `VERDICT == "skip"`, save the Job `status:"skipped"` with `skipReason` = `.skipReason` and move on — don't score fit.
 
 ### 3.3 Fit
 

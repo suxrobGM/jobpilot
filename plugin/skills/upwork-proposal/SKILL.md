@@ -10,7 +10,7 @@ Write a concise, winning Upwork proposal that directly addresses the client's ne
 
 ## Setup
 
-Follow `../shared/setup.md`. Then `Read` the resume at `data.primaryResumeSourceAbsolutePath` for full context (identity, skills, experience, projects, research).
+Follow `../shared/setup.md`. Then `Read` the resume at `primaryResumeSourceAbsolutePath` for full context (identity, skills, experience, projects, research).
 
 ## Step 1: Resolve the Input
 
@@ -22,7 +22,7 @@ The argument is either a **proposal id** (an integer, when launched from the Job
   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/proposals/$ARG"
   ```
 
-  Use `data.jobDescription` as the posting, plus `data.jobTitle` / `data.clientName` / `data.jobUrl` for context. Remember the id — you will `PATCH` the result back to it in Step 7. (A draft launched from an Upwork **search recommendation** already has these fields filled and `source:"search"` — same flow, no extra work.)
+  Use `jobDescription` as the posting, plus `jobTitle` / `clientName` / `jobUrl` for context. Remember the id — you will `PATCH` the result back to it in Step 7. (A draft launched from an Upwork **search recommendation** already has these fields filled and `source:"search"` — same flow, no extra work.)
 
 - **Anything else** → treat the argument itself as the job description. There is no row yet; you will `POST` a new one in Step 7.
 

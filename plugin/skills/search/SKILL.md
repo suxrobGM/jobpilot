@@ -45,7 +45,7 @@ COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-If `data.applied`, tag with "Previously Applied" (note `data.match.kind`: `url` for exact, `fuzzy` with score for title+company). These are saved as `skipped` in Phase 5, not offered for apply.
+If `.applied`, tag with "Previously Applied" (note `.match.kind`: `url` for exact, `fuzzy` with score for title+company). These are saved as `skipped` in Phase 5, not offered for apply.
 
 ## Phase 4: Fit Review
 

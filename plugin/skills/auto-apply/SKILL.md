@@ -95,7 +95,7 @@ COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-If `data.applied`, add the job with `status:"skipped"`, `skipReason:"Already applied (<kind>)"` and move on — **don't open a tab.**
+If `.applied`, add the job with `status:"skipped"`, `skipReason:"Already applied (<kind>)"` and move on — **don't open a tab.**
 
 ### 2.2 Score
 
