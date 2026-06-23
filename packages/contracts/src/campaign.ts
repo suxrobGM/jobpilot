@@ -87,6 +87,8 @@ export const addCampaignJobSchema = z.object({
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
   matchReason: reasonText.optional().nullable(),
   status: campaignJobStatusSchema.optional(),
+  failReason: reasonText.optional().nullable(),
+  skipReason: reasonText.optional().nullable(),
   description: z.string().optional().nullable(),
   digest: z.string().optional().nullable(),
 });

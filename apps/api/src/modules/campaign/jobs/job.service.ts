@@ -43,6 +43,8 @@ export class CampaignJobService {
         matchScore: body.matchScore ?? null,
         matchReason: body.matchReason ?? null,
         status: body.status ?? "pending",
+        failReason: body.failReason ?? null,
+        skipReason: body.skipReason ?? null,
         description: body.description ?? null,
         digest: body.digest ?? null,
       },
