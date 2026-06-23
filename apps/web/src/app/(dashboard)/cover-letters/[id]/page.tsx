@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { Launch, PictureAsPdf } from "@mui/icons-material";
 import { Button, Chip, Container, Typography } from "@mui/material";
 import { notFound } from "next/navigation";
+import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
 import { CoverLetterActions } from "@/components/features/cover-letters";
@@ -45,7 +46,7 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
               variant="outlined"
               startIcon={<PictureAsPdf fontSize="md" />}
               component="a"
-              href={`/api/cover-letters/${letter.id}/pdf`}
+              href={`${API_BASE_URL}/api/cover-letters/${letter.id}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
             >

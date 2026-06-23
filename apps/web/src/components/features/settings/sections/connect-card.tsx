@@ -2,6 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import { Alert, Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
+import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -43,7 +44,7 @@ export function ConnectCard(props: ConnectCardProps): ReactElement {
   );
 
   const connect = (p: string): void => {
-    window.location.href = `/api/email/oauth/start?provider=${p}`;
+    window.location.href = `${API_BASE_URL}/api/email/oauth/start?provider=${p}`;
   };
 
   const handleDisconnect = async (): Promise<void> => {
