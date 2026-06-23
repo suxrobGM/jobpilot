@@ -33,8 +33,8 @@ Extract title/role, keywords, location, other preferences (e.g. "no startups", "
 1. `browser_navigate` to the resolved board's `searchUrl`.
 2. Follow `../shared/auth.md` to log in proactively.
 3. Fill the search fields and submit.
-4. Take a `browser_snapshot` narrowed to the results list (per `../shared/browser-tips.md`) and read `{ title, company, location, url, postedAt }` per row.
-5. Take the first `--max-jobs` results (default 15). If fewer are available, take what's there. Only if a brief description is needed for the ranked table AND the listing preview didn't include one, `browser_navigate` into the posting and `browser_snapshot` its body for the detail. Otherwise skip the per-job nav to save tokens.
+4. Take a `browser_snapshot` narrowed to the results list (per `../shared/browser-tips.md`) and read `{ title, company, location, url, postedAt }` per row. If under `--max-jobs`, scroll/paginate per **Pagination & infinite scroll** in `../shared/browser-tips.md`.
+5. Take the first `--max-jobs` results (default 15); if fewer after paginating, take what's there. Only if a brief description is needed for the ranked table AND the listing preview didn't include one, `browser_navigate` into the posting and `browser_snapshot` its body for the detail. Otherwise skip the per-job nav to save tokens.
 
 ## Phase 3: Exclude Previously Applied
 

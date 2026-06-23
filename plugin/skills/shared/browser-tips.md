@@ -18,6 +18,12 @@ A full-page snapshot on a job board is large (50k–120k tokens). **Always narro
 | Confirm an application was submitted            | `browser_wait_for` the confirmation, then a narrowed `browser_snapshot` for the success or error text                                                            |
 | Act on an element whose `ref` you already have  | use the ref directly — no new snapshot                                                                                                                           |
 
+## Pagination & infinite scroll
+
+The first snapshot is one viewport, never the full result set. Infinite-scroll boards (hiring.cafe, LinkedIn, Indeed) lazy-load on scroll and usually have **no "Load more" button** — its absence isn't exhaustion.
+Scroll the results container to the bottom (`browser_evaluate` `() => document.scrollingElement.scrollTo(0, document.scrollingElement.scrollHeight)`, or target the list `ref`; else `browser_press_key` `End`), `browser_wait_for` new rows, re-snapshot.
+Paged boards: click next-page, wait, re-snapshot. Track rows by URL/key. Board is exhausted only after **2 consecutive** attempts add no new rows; a repeated batch means the scroll didn't take — retry the correct container.
+
 ## Best Practices
 
 1. **Close popups and modals** before interacting (cookie banners, notification prompts).

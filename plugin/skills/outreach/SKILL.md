@@ -97,7 +97,8 @@ Walk tab-1 results top to bottom; per result:
 3. Discover + save the contact (below) with `relatedJobUrl` (+ `relatedAppId` if matched).
 4. Compose (Phase 2), then gate (Phase 3).
 5. Before the next result, `GET /api/campaigns/<campaign-id>`: `status:"paused"` → exit; `maxJobs`
-   reached → stop; no rows left → scroll / next page, else Phase 5.
+   reached → stop. At the last loaded row, scroll/paginate per **Pagination & infinite scroll** in
+   `../shared/browser-tips.md`; Phase 5 only once it's exhausted. `maxJobs` absent → paginate until dry.
 
 ### Without a board — discover from criteria
 

@@ -78,7 +78,7 @@ If no row matches, PATCH the campaign to `failed` with `failReason:"Board <domai
 1. `browser_navigate` to `searchUrl` (this is **tab 1** — keep it open for the whole campaign).
 2. Follow `../shared/auth.md` — logs in, and **registers a new account when none exists, without asking**.
 3. Fill the search fields and submit.
-4. Take a `browser_snapshot` narrowed to the results list (per `../shared/browser-tips.md`) to read `{ title, company, location, url }` per row. This is only the first viewport — scroll/paginate to load more rows as the loop drains them (see 2.5); never treat the first ~15 as all jobs.
+4. Take a `browser_snapshot` narrowed to the results list (per `../shared/browser-tips.md`) to read `{ title, company, location, url }` per row. This is one viewport — scroll/paginate per **Pagination & infinite scroll** in `../shared/browser-tips.md` as the loop drains rows (see 2.5); never treat the first batch as all jobs.
 
 ## Phase 2: Apply Loop (on demand)
 
@@ -166,7 +166,7 @@ The loop ends **only** on one of these. Before picking the next result, refetch 
 
 1. `status === "paused"` → POST `/result` `outcome:"skipped"`, `skipReason:"Campaign paused by user"` for any in-flight `applying` job, exit.
 2. `config.maxApplications` set AND `summary.applied >= config.maxApplications` → end. Unset (default) = no cap; keep going.
-3. Board exhausted — only when a scroll/next-page attempt surfaces no new rows. First page done ≠ exhausted.
+3. Board exhausted — per **Pagination & infinite scroll** in `../shared/browser-tips.md` (2 consecutive scrolls with no new rows). First batch done ≠ exhausted. With `maxApplications` unset, paginate until genuinely dry.
 
 ## Phase 3: Summary
 
