@@ -4,7 +4,7 @@ description: Apply to a single job (URL or pasted page) with fit review, or drai
 argument-hint: "[job_url_or_pasted_job_page] (omit to drain the queue)"
 ---
 
-# Apply — Single Job or Batch Queue
+# Apply - Single Job or Batch Queue
 
 Two modes, one shared apply loop:
 
@@ -25,15 +25,15 @@ Read `autoApply` for config (defaults applied per field):
 
 | Setting                      | Default            | Notes                                                                                            |
 | ---------------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
-| `minMatchScore`              | 60                 | Batch-mode threshold (0–100). Ignored in single-job mode.                                        |
+| `minMatchScore`              | 60                 | Batch-mode threshold (0-100). Ignored in single-job mode.                                        |
 | `maxApplicationsPerCampaign` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
 | `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                       |
 
-For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`. Follow `../shared/auth.md` — credentials are resolved from the `Credential.scope === <domain>` row or the `scope === "default"` fallback. The auth flow **registers a new account when none exists** (no asking) and runs forgot-password if the stored password is stale.
+For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`; the `job-worker` handles login/registration there per `../shared/auth.md`.
 
 ## Phase 0: Dispatch
 
-- Argument is `campaign <campaign-id>` → **re-apply mode**: set `CAMPAIGN_ID=<campaign-id>`, set `config.maxApplications = null` (unlimited — the user hand-selected these jobs), skip Phases 1–3, and run the Phase 4 loop over its current `approved` jobs. (The campaign viewer — or the `rescan-skipped` skill — promotes the chosen skipped/failed jobs to `approved` before injecting this.)
+- Argument is `campaign <campaign-id>` → **re-apply mode**: set `CAMPAIGN_ID=<campaign-id>`, set `config.maxApplications = null` (unlimited - the user hand-selected these jobs), skip Phases 1-3, and run the Phase 4 loop over its current `approved` jobs. (The campaign viewer - or the `rescan-skipped` skill - promotes the chosen skipped/failed jobs to `approved` before injecting this.)
 - Any other argument present → **Phase 1A** (single-job).
 - No argument → **Phase 1B** (batch).
 
@@ -45,21 +45,23 @@ If the argument is pasted content (HTML / text), extract description, Apply URL,
 
 ### 1A.1 Fit Review
 
-URL input → `browser_navigate`, then take a `browser_snapshot` narrowed to the posting body (per `../shared/browser-tips.md`) and build the digest JSON (`title`, `company`, `location`, `salary`, `employmentType`, `remote`, `requirements`, `responsibilities`, `techStack`, `yearsExperience`, `descriptionExcerpt`) from it. Pasted input → parse the same fields manually. Keep the digest in `DIGEST=...` for 1A.4.
+**URL input** → delegate to the `job-worker` subagent with `mode:"review"` so the posting snapshot stays out of this conversation: `{ "mode":"review", "url":"<job-url>", "resumeId":"<primary-or-empty>" }`. Use its returned `matchScore`/`strongMatches`/`partialMatches`/`gaps`/`blockers`/`visaRisk`/`verdict` to fill the review below; keep its `digest` as `DIGEST` for 1A.4.
+
+**Pasted input** → parse the fields yourself (the content is already in hand), build the digest (`../shared/digest-schema.md`), and `POST /api/score-fit` for the score. Keep the digest in `DIGEST=...` for 1A.4.
 
 ```
 ## Job Fit Review: [Title] at [Company]
 
 **Match Score: X/100**
 
-**Strong Matches:** [skill — evidence]
-**Partial Matches:** [skill — what's adjacent]
-**Gaps:** [skill — what's missing]
+**Strong Matches:** [skill - evidence]
+**Partial Matches:** [skill - what's adjacent]
+**Gaps:** [skill - what's missing]
 **Visa/Sponsorship Risk:** [if mentioned]
 **Verdict:** [1-2 sentence recommendation]
 ```
 
-Ask: **"Want me to proceed with the application?"** — `yes`/`go` continue, anything else stop.
+Ask: **"Want me to proceed with the application?"** - `yes`/`go` continue, anything else stop.
 
 ### 1A.2 Dedupe Check
 
@@ -123,49 +125,25 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 
 For each queue URL:
 
-### 2.1 Pre-dedupe
+### 2.1 Pre-dedupe (no tab)
 
 ```bash
 URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED"
 ```
 
-If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped Job with `skipReason:"Already applied (<kind>)"`, then continue.
+If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped Job with `skipReason:"Already applied (<kind>)"`, then continue - don't spawn a worker.
 
-### 2.2 Visit + Extract
+### 2.2 Score (delegate to `job-worker`)
 
-1. `browser_navigate` to the URL.
-2. Take a `browser_snapshot` narrowed to the posting body (per `../shared/browser-tips.md`) and build the digest JSON from it. Keep the stringified digest as `DIGEST` for 2.3.
-3. If login is needed, follow `../shared/auth.md`, then re-read the posting.
-4. Re-run `/api/applied/check` with title+company for fuzzy match.
+Delegate the visit + score to the `job-worker` subagent - it opens its own tab, reads the posting, fuzzy-dedupes by title+company, scores, applies eligibility (`../shared/eligibility.md`), and **saves the Job row itself** (so the full posting/digest never enters this conversation). One worker at a time. Input JSON:
 
-### 2.3 Score and Add
-
-Pre-score server-side; deliberate only on borderline cases. Always populate the digest's `techStack` — it drives the score (empty → low score/confidence).
-
-```bash
-FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --argjson digest "$DIGEST" '{digest:$digest}')")
-SCORE=$(echo "$FIT" | jq -r '.score')
-CONF=$(echo "$FIT" | jq -r '.confidence')
+```json
+{ "mode": "score", "campaignId": "<CAMPAIGN_ID>", "jobKey": "<entry-id>", "url": "<job-url>",
+  "board": "<domain>", "minMatchScore": <minMatchScore>, "resumeId": "<RESUME_ID>" }
 ```
 
-If `CONF >= 0.7` and `SCORE` is at least 10 from threshold either side, use it directly. Otherwise rescore from the digest using `strongMatches`/`partialMatches`/`gaps` in `FIT`.
-
-```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg key "<entry-id>" --arg title "<title>" --arg company "<company>" \
-    --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
-    --arg matchReason "<one line>" --argjson score <0-100> \
-    --arg digest "$DIGEST" --arg desc "<posting text>" \
-    '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending", digest:$digest, description:$desc}')"
-```
-
-If `score < minMatchScore`, immediately PATCH to `skipped` with `skipReason:"Below minimum match score (X < Y)"`.
-
-**Eligibility** (same as `auto-apply` 2.2a): never skip for onsite/other-city when `willingToRelocate` is true or `preferredLocations` is empty/`"Anywhere"`, for a thin JD (read and rescore first), for 1099/defense/federal work, or for a role below your level/seniority (over-qualification scores full marks on experience) — only a JD-stated citizenship/clearance requirement disqualifies.
+It returns `{ outcome:"scored", jobKey, title, company, location, matchScore, confidence, eligible, skipReason, matchReason }`. Collect these summaries for the ranked table (Phase 3) - the worker has already written each Job as `pending` (eligible) or `skipped` (with `skipReason`).
 
 ## Phase 3: Batch Confirmation (Batch Only)
 
@@ -207,25 +185,19 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -H 'content-type: application/json' -d '{"status":"applying"}'
 ```
 
-### 4.2 Navigate + Find Apply
+### 4.2 Apply (delegate to `job-worker`)
 
-Navigate to the job URL. `browser_snapshot` the header, `browser_click` the Apply / Easy Apply control's `ref`. `browser_wait_for`. If a new tab appeared (ATS portal), `browser_tabs(action:"select", index:<new>)`. `browser_snapshot` the form to enumerate fields and refs. If a login page appears, follow `../shared/auth.md`.
+Delegate to the `job-worker` subagent and wait for its compact result - it navigates, authenticates, tailors, fills, and submits in its own tab/context (keeping the form snapshots out of this conversation). One worker at a time. Input JSON:
 
-### 4.3 Tailor Resume
-
-```bash
-DIGEST=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" | jq -r --arg key "<key>" '.[] | select(.key == $key) | .digest // empty')
+```json
+{ "mode": "apply", "campaignId": "<CAMPAIGN_ID>", "jobKey": "<key>", "url": "<job-url>",
+  "board": "<domain>", "resumeId": "<RESUME_ID>", "defaultStartDate": "<autoApply.defaultStartDate>",
+  "salaryExpectation": <remembered-or-null>, "preSubmitReview": <true when config.maxApplications === 1, else false> }
 ```
 
-Invoke the `tailor-resume` skill with `$DIGEST`. Empty `$DIGEST` (legacy row) → fall back to the job URL. Capture the variant id + PDF URL for 4.4. If no usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`.
+(`digest` omitted → the worker fetches it from the saved Job.)
 
-### 4.4 Fill Forms
-
-Follow `../shared/form-filling.md`. Upload the 4.3 variant for resume fields. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` (pass `source:apply`) and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation if a field needs it.
-
-### 4.5 Pre-Submit Review (Single-Job Mode Only)
-
-Skip in batch mode. When `config.maxApplications === 1`, re-snapshot the form and present:
+**Single-job pre-submit review:** when `preSubmitReview` is true the worker fills everything, leaves the form open, and returns `needs_user reason:"review"` with a field summary. Present:
 
 ```
 ## Ready to Submit: [Title] at [Company]
@@ -233,29 +205,25 @@ Skip in batch mode. When `config.maxApplications === 1`, re-snapshot the form an
 <total> fields across <P> page(s). Submit? (yes / no / edit <field>)
 ```
 
-`no` → POST `/result` with `outcome:"skipped"`, `skipReason:"User cancelled at pre-submit review"`. `edit <field>` → fix, re-snapshot, re-present.
+`yes` → re-delegate 4.2 with `preSubmitReview:false` (the worker submits the already-filled form). `no` → POST `/result` `outcome:"skipped"`, `skipReason:"User cancelled at pre-submit review"`. `edit <field>` → tell the worker what to change on re-delegation.
 
-### 4.6 Submit
+### 4.3 Record Result
 
-Click submit, `browser_wait_for`, then take a narrowed `browser_snapshot` for the result. A success confirmation = applied; a populated error message on the page = failure with that message as `failReason`.
-
-### 4.7 Record Result
-
-POST one of three outcomes to `/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result`. The server atomically updates the Job, creates Application (on `applied`), marks the queue, and recomputes summary.
+Map the worker's `outcome` to `/result` (the worker never writes it). The server atomically updates the Job, creates the Application (on `applied`), marks the queue, and recomputes the summary.
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 # applied
 jq -n --arg t "$NOW" --argjson score <0-100> '{outcome:"applied", appliedAt:$t, matchScore:$score}'
 # failed
-jq -n --arg r "<reason>" --arg notes "<actionable retry notes>" '{outcome:"failed", failReason:$r, retryNotes:$notes}'
-# skipped (e.g., user cancelled, max-apps cap)
-jq -n --arg r "<reason>" '{outcome:"skipped", skipReason:$r}'
+jq -n --arg r "<failReason>" --arg notes "<retryNotes>" '{outcome:"failed", failReason:$r, retryNotes:$notes}'
+# skipped (e.g. CAPTCHA, user cancelled, max-apps cap)
+jq -n --arg r "<skipReason>" '{outcome:"skipped", skipReason:$r}'
 ```
 
-Close any tabs with index ≥ 1: `browser_tabs(action:"close", index:<i>)` descending, then `browser_tabs(action:"select", index:0)`. Continue to next job.
+`needs_user`: `reason:"salary"` → ask once, remember for the campaign, re-delegate 4.2 with `salaryExpectation`; `reason:"2FA"` or email verification → pause and ask; `reason:"payment"` → POST `/result` `failed` `"Payment required"`. The worker closed its tabs; re-select tab 0, then continue.
 
-### 4.8 Limit
+### 4.4 Limit
 
 If `config.maxApplications` is set and `applied >= config.maxApplications`, stop the loop. Leave remaining `approved` jobs as-is.
 
@@ -272,11 +240,11 @@ Print a summary table and link to `http://localhost:8000/campaigns/<CAMPAIGN_ID>
 
 ## Rules
 
-1. **Up-front confirmation mandatory** (1A.1 or Phase 3); single-job mode adds pre-submit review (4.5).
-2. **Create accounts when needed** — follow `../shared/auth.md`: register when no account exists (without asking), run forgot-password when the stored password is stale.
-3. **Never process payments** — POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
-4. **CAPTCHAs / email verification** — for a CAPTCHA, invoke the `solve-captcha` skill; if it returns **unsolved**, pause and ask (see `../shared/auth.md`). Email verification → pause and ask.
+1. **Up-front confirmation mandatory** (1A.1 or Phase 3); single-job mode adds pre-submit review (4.2).
+2. **Create accounts when needed** - the `job-worker` follows `../shared/auth.md`: register when no account exists (without asking), run forgot-password when the stored password is stale.
+3. **Never process payments** - on `needs_user reason:"payment"`, POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
+4. **CAPTCHAs / email verification** - the worker attempts `solve-captcha` and returns `skipped` when unsolved; for `needs_user reason:"2FA"` or email verification, pause and ask (see `../shared/auth.md`).
 5. **Be honest about match scores.**
-6. **Pace** 3–5s between submissions on the same domain.
+6. **Pace** 3-5s between submissions on the same domain.
 7. **The Campaign is the audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.
 8. **Never skip silently.** Every `skipped` write carries a non-empty `skipReason`. No valid reason → not a skip.

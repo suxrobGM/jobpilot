@@ -12,6 +12,7 @@
     "dev:web": "bun --cwd=apps/web run dev",
     "db:up": "docker compose -f docker-compose.dev.yml up -d",
     "db:down": "docker compose -f docker-compose.dev.yml down",
+    "db:tunnel": "bash apps/api/scripts/db-tunnel.sh",
     "db:setup": "bun --cwd=apps/api run db:generate && bun --cwd=apps/api run db:migrate:apply && bun --cwd=apps/api run db:seed",
     "build:api": "bun --cwd=apps/api run build",
     "build:web": "bun --cwd=apps/web run build",

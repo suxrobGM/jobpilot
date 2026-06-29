@@ -4,9 +4,9 @@ description: Re-score a campaign's skipped jobs and promote the eligible ones to
 argument-hint: "<campaign-id> [--jobs key1,key2,…]"
 ---
 
-# Rescan Skipped — Recover Wrongly-Dropped Jobs
+# Rescan Skipped - Recover Wrongly-Dropped Jobs
 
-Re-score a campaign's `skipped` jobs and set eligible ones to `approved`. **Never apply and never change the campaign's status** — apply the promoted jobs afterward via the `apply` skill (`apply campaign <campaign-id>`) or the campaign page.
+Re-score a campaign's `skipped` jobs and set eligible ones to `approved`. **Never apply and never change the campaign's status** - apply the promoted jobs afterward via the `apply` skill (`apply campaign <campaign-id>`) or the campaign page.
 
 ## Setup
 
@@ -20,16 +20,16 @@ Follow `../shared/setup.md`. Fetch the campaign: `curl -fsS -H "authorization: B
 
 Targets are **every** `status:"skipped"` job; with `--jobs key1,key2,…`, restrict to those `key`s.
 
-- **Always leave (permanent) — only these:** `skipReason` starting `Already applied`, `CAPTCHA`, or `Payment required`, or one stating a JD-cited citizenship/clearance requirement.
-- **Whole-campaign mode (no `--jobs`):** also leave deliberate user choices — `Removed by user`, `Not selected by user`, `User cancelled…`, `Max applications limit reached`, `Campaign paused by user`.
+- **Always leave (permanent) - only these:** `skipReason` starting `Already applied`, `CAPTCHA`, or `Payment required`, or one stating a JD-cited citizenship/clearance requirement.
+- **Whole-campaign mode (no `--jobs`):** also leave deliberate user choices - `Removed by user`, `Not selected by user`, `User cancelled…`, `Max applications limit reached`, `Campaign paused by user`.
 - **`--jobs` mode:** reconsider every named target except the permanent ones.
 
-Count the full target list up front and process every one. **Below-threshold, zero-score, and no-`skipReason` jobs are all targets** — the stored score came from the campaign that wrongly skipped them, so it's never a reason to skip the re-score. Don't cherry-pick the jobs already at/above threshold.
+Count the full target list up front and process every one. **Below-threshold, zero-score, and no-`skipReason` jobs are all targets** - the stored score came from the campaign that wrongly skipped them, so it's never a reason to skip the re-score. Don't cherry-pick the jobs already at/above threshold.
 
 ## Step 2: Per Job
 
-1. **Digest** — parse the cached `digest`. Rich = non-empty `techStack` **and** `requirements`/`responsibilities`.
-2. **Re-read only when needed** — if the digest is thin/empty, or the original `skipReason` was invalid (location/onsite, sparse JD, 1099, seniority), open the posting (`browser_navigate` + narrowed `browser_snapshot`; log in via `../shared/auth.md` if walled), rebuild the digest, and write it back so future rescans skip the browser:
+1. **Digest** - parse the cached `digest`. Rich = non-empty `techStack` **and** `requirements`/`responsibilities`.
+2. **Re-read only when needed** - if the digest is thin/empty, or the original `skipReason` was invalid (location/onsite, sparse JD, 1099, seniority), open the posting (`browser_navigate` + narrowed `browser_snapshot`; log in via `../shared/auth.md` if walled), rebuild the digest, and write it back so future rescans skip the browser:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
@@ -37,7 +37,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -d "$(jq -n --arg digest "$DIGEST" --arg desc "<posting text>" '{digest:$digest, description:$desc}')"
 ```
 
-3. **Re-score** — every target gets a fresh `POST /api/score-fit` with `{digest}`; never reuse the stored `matchScore`. If `confidence >= 0.7` and `score` is ≥10 from the threshold, trust it; else deliberate from `strongMatches`/`partialMatches`/`gaps`. A zero/low score with no `skipReason` (common at defense/federal employers) is not a disqualifier — only a JD-stated citizenship/clearance bar is (never infer from industry).
+3. **Re-score** - every target gets a fresh `POST /api/score-fit` with `{digest}`; never reuse the stored `matchScore`. If `confidence >= 0.7` and `score` is ≥10 from the threshold, trust it; else deliberate from `strongMatches`/`partialMatches`/`gaps`. A zero/low score with no `skipReason` (common at defense/federal employers) is not a disqualifier - only a JD-stated citizenship/clearance bar is (never infer from industry).
 4. **Decide:**
    - Eligible and `score >= threshold` → promote (no apply):
 
@@ -52,10 +52,10 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
 
 ## Step 3: Eligibility
 
-Same rules as `auto-apply` 2.2a. **Seniority is never a skip** — never drop a role for being below your level (Junior/Mid when your résumé is Senior) or for asking fewer years than you have; over-qualification is full marks on experience. Location/onsite, sparse JDs, and 1099/contractor work are never skips either — only a JD-stated citizenship/clearance requirement disqualifies.
+Follow `../shared/eligibility.md` - seniority/below-level, location/onsite, sparse JDs, and 1099/contractor are never skips; only a JD-stated citizenship/clearance requirement disqualifies.
 
 ## Step 4: Finish
 
-Process every target before finishing — `promoted + left-skipped + permanent` must equal the target count. If any are unprocessed, keep going; don't report a partial pass as complete.
+Process every target before finishing - `promoted + left-skipped + permanent` must equal the target count. If any are unprocessed, keep going; don't report a partial pass as complete.
 
 Print a short table (promoted vs left `skipped`, with reasons) plus the reconciliation (e.g. "228 skipped → 226 targets; 19 promoted, 207 left skipped"). Then point the user to `apply campaign <campaign-id>` (or the campaign page's Apply selected). Don't apply; don't change campaign status.

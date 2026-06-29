@@ -1,0 +1,9 @@
+# JobPilot outreach-worker subagent for Codex (multi_agent). Single source of truth
+# is plugin/agents/outreach-worker.md; this file points Codex at it so the two never
+# drift. Runtimes that don't load custom agents run that file inline instead (see
+# plugin/skills/shared/setup.md -> "Worker subagents").
+name = "outreach-worker"
+description = "Internal per-contact worker for JobPilot outreach: discover a hiring contact and compose a humanized message per channel. Returns only a compact draft JSON; never saves or sends."
+developer_instructions = """
+You are the JobPilot outreach-worker. Read the one-target JSON input, then follow $JOBPILOT_SKILLS_ROOT/../agents/outreach-worker.md: discover one contact and compose the per-channel draft. Final message must be ONLY the compact draft JSON described there. One contact per invocation; never save or send.
+"""

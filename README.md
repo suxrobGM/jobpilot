@@ -24,13 +24,24 @@ Playwright.
   (`plugin/skills/<name>/SKILL.md` plus shared setup, auth, browser-tips, and
   form-filling docs under `plugin/skills/shared/`), the Playwright MCP config
   (`plugin/.mcp.json`), and a manifest per provider
-  (`plugin/.claude-plugin/plugin.json`, `plugin/.codex-plugin/plugin.json` —
+  (`plugin/.claude-plugin/plugin.json`, `plugin/.codex-plugin/plugin.json` -
   both name the plugin `jobpilot`).
+  - **Worker subagents** ([plugin/agents/](plugin/agents/)) - `job-worker`
+    (per-job score/apply) and `outreach-worker` (contact discovery + compose)
+    run the heavy browser/web work in an isolated context so long campaigns
+    don't fill the main conversation and trigger compaction. Claude
+    auto-discovers them from `plugin/agents/`; Codex definitions live at
+    [.codex/agents/](.codex/agents/) (repo root) and point back at the same
+    `plugin/agents/*.md` procedures. Any runtime that can't load custom
+    subagents simply runs those procedures inline - same behavior, no isolation
+    (see `plugin/skills/shared/setup.md` → "Worker subagents").
   - Claude: `claude --plugin-dir plugin`.
   - Codex: auto-discovered via
     [.agents/plugins/marketplace.json](.agents/plugins/marketplace.json)
     (`source.path: ./plugin`) when launched at the repo root
     (`codex --no-alt-screen -C .`). Enable it once from Codex's `/plugin` menu.
+    For Codex subagent isolation outside the repo, copy
+    [.codex/agents/](.codex/agents/) into `~/.codex/agents/`.
 
 ## Quick Start
 
@@ -44,6 +55,22 @@ bun run dev      # web :8000 + api :8002 + terminal :8001
 ```
 
 Open `http://localhost:8000` and toggle the Terminal panel.
+
+### Remote database (SSH tunnel)
+
+To point the API at a remote PostgreSQL, open an SSH tunnel and target it
+locally. Set the `SSH_TUNNEL_*` / `REMOTE_DB_*` / `LOCAL_DB_PORT` vars in
+[apps/api/.env](apps/api/.env) (see [apps/api/.env.example](apps/api/.env.example)),
+then:
+
+```bash
+bun run db:tunnel   # binds localhost:5433 -> remote db through the SSH host; Ctrl+C to close
+```
+
+With the tunnel up, set `DATABASE_URL=postgresql://<user>:<pass>@localhost:5433/<db>`
+in [apps/api/.env](apps/api/.env). `db:setup`, `db:studio`, and the API all then
+run against the remote DB. Set `REMOTE_DB_HOST` to `127.0.0.1` when the database
+runs on the SSH server itself, or to its private host when tunneling via a bastion.
 
 ## Skills
 
@@ -79,7 +106,7 @@ $auto-apply senior typescript remote
 
 JobPilot reads your Gmail inbox (to track recruiter replies and auto-fill
 verification codes during login) and sends outreach emails and replies on
-your behalf. Each user connects Gmail with **their own** Google OAuth client —
+your behalf. Each user connects Gmail with **their own** Google OAuth client -
 JobPilot ships no shared client, so the app itself needs no Google verification
 or CASA security audit. Setup (once per user):
 
@@ -91,7 +118,7 @@ or CASA security audit. Setup (once per user):
    `http://localhost:8002/api/email/oauth/callback` in dev; in production it's
    your deployment's API callback URL).
 4. Add the **`gmail.readonly`** and **`gmail.send`** scopes to the consent
-   screen. Google reorganized this UI — it now lives at
+   screen. Google reorganized this UI - it now lives at
    [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes)
    Click **Add or remove scopes**, search for `gmail.readonly` and
    `gmail.send`, tick both Gmail API rows, then **Save**. `readonly` lets
@@ -103,12 +130,12 @@ or CASA security audit. Setup (once per user):
    [Audience → Test users](https://console.cloud.google.com/auth/audience).
    Because it's your own project with you as the sole test user, no
    verification/CASA is required. Note: Testing-mode refresh tokens expire
-   after ~7 days, so you'll reconnect periodically — publish your own app
+   after ~7 days, so you'll reconnect periodically - publish your own app
    (still no verification under Google's 100-user test limit) to avoid that.
 6. Back in **Settings → Email**, paste your **Client ID** and **Client
    secret**, **Save**, then **Connect Gmail**.
 
-The scopes are `gmail.readonly` and `gmail.send` — JobPilot reads your mail and
+The scopes are `gmail.readonly` and `gmail.send` - JobPilot reads your mail and
 sends outreach emails and replies on your behalf, but never deletes mail. Your
 OAuth client id/secret are stored encrypted per-user (the secret never leaves
 the server); the connected account is one row per profile in `EmailAccount`.
@@ -116,17 +143,17 @@ the server); the connected account is one row per profile in `EmailAccount`.
 **Troubleshooting**
 
 - **"Access blocked: app has not completed the Google verification
-  process"** — your Gmail isn't on the Test users list. Add it under
+  process"** - your Gmail isn't on the Test users list. Add it under
   **Audience → Test users**.
-- **`403 PERMISSION_DENIED — Request had insufficient authentication
-scopes`** — a required Gmail scope (`gmail.readonly` or `gmail.send`) isn't
+- **`403 PERMISSION_DENIED - Request had insufficient authentication
+scopes`** - a required Gmail scope (`gmail.readonly` or `gmail.send`) isn't
   on the consent screen. Add both under **Data access**, then **Disconnect**
   and reconnect in `/settings` → **Email** so a new token with the right
   scopes is issued.
-- **Mailbox connects read-only / outreach can't send** — the token was issued
+- **Mailbox connects read-only / outreach can't send** - the token was issued
   without `gmail.send`. Add the `gmail.send` scope under **Data access**, then
   use **Reconnect to enable sending** in `/settings` → **Email**.
-- **Google 500 after publishing** — you published an app that uses a
+- **Google 500 after publishing** - you published an app that uses a
   Sensitive scope. Go back to Testing mode under
   **Audience → Publishing status → Back to testing**.
 
