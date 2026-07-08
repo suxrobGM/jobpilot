@@ -27,6 +27,8 @@ interface AgentStorage {
   dockExpanded: boolean;
   /** True once a local terminal host has ever answered /healthz from this browser. */
   everReachable: boolean;
+  /** Last-reported host capability: the jobpilot:// scheme is registered, so it can be relaunched from the browser. */
+  canRelaunch: boolean;
 }
 
 const storageListeners = new Set<() => void>();

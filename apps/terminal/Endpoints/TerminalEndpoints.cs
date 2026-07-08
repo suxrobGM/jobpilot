@@ -1,4 +1,5 @@
 using JobPilot.Terminal.Models;
+using JobPilot.Terminal.Plugins;
 using JobPilot.Terminal.Realtime;
 using JobPilot.Terminal.Sessions;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -73,11 +74,14 @@ public static class TerminalEndpoints
     /// Snapshot of host health + session state ("degraded" = the host runs but sessions
     /// can't start, e.g. the plugin tree is missing).
     /// </summary>
-    private static SessionStatus CurrentStatus(SessionManager session) => new(
-        session.PathsError is null ? "ok" : "degraded",
-        session.State == SessionState.Running ? "running" : "stopped",
-        session.ActiveProvider,
-        SessionManager.Providers,
-        SessionManager.HostVersion,
-        session.PathsError);
+    private static SessionStatus CurrentStatus(SessionManager session) => new()
+    {
+        Status = session.PathsError is null ? "ok" : "degraded",
+        Session = session.State == SessionState.Running ? "running" : "stopped",
+        Provider = session.ActiveProvider,
+        Providers = SessionManager.Providers,
+        HostVersion = SessionManager.HostVersion,
+        Detail = session.PathsError,
+        CanRelaunch = ProtocolRegistrar.IsRegistered,
+    };
 }

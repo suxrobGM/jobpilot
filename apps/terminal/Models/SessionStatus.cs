@@ -5,17 +5,28 @@ namespace JobPilot.Terminal.Models;
 /// <summary>
 /// Health and lifecycle status returned by terminal session endpoints.
 /// </summary>
-/// <param name="Status">API status value, usually <c>ok</c>.</param>
-/// <param name="Session">Current terminal session state.</param>
-/// <param name="Provider">Current or last requested terminal provider.</param>
-/// <param name="Providers">Supported provider metadata for clients.</param>
-/// <param name="HostVersion">The host binary version. The dashboard compares it to the latest
-/// terminal release to prompt a re-install; the plugin self-updates at startup, so it is not here.</param>
-/// <param name="Detail">Human-readable reason when <paramref name="Status"/> is <c>degraded</c>.</param>
-public sealed record SessionStatus(
-    string Status,
-    string Session,
-    string Provider,
-    TerminalProviderInfo[] Providers,
-    string HostVersion,
-    string? Detail = null);
+public sealed record SessionStatus
+{
+    /// <summary>API status value, usually <c>ok</c>; <c>degraded</c> when the host runs but can't start sessions.</summary>
+    public required string Status { get; init; }
+
+    /// <summary>Current terminal session state (<c>running</c> / <c>stopped</c>).</summary>
+    public required string Session { get; init; }
+
+    /// <summary>Current or last requested terminal provider.</summary>
+    public required string Provider { get; init; }
+
+    /// <summary>Supported provider metadata for clients.</summary>
+    public required TerminalProviderInfo[] Providers { get; init; }
+
+    /// <summary>The host binary version. The dashboard compares it to the latest terminal release to prompt a
+    /// re-install; the plugin self-updates at startup, so it is not here.</summary>
+    public required string HostVersion { get; init; }
+
+    /// <summary>Human-readable reason when <see cref="Status"/> is <c>degraded</c>.</summary>
+    public string? Detail { get; init; }
+
+    /// <summary>True when the <c>jobpilot://</c> scheme is registered, so the dashboard can offer a one-click
+    /// relaunch when the host is offline.</summary>
+    public bool CanRelaunch { get; init; }
+}

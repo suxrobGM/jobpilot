@@ -11,8 +11,7 @@ const INSTALL_COMMANDS = [
 
 type InstallCommand = (typeof INSTALL_COMMANDS)[number];
 
-/** True when the visitor's browser reports Windows; false during SSR (no navigator). */
-export const isWindows = (): boolean =>
+const isWindows = (): boolean =>
   typeof navigator !== "undefined" && /win/i.test(navigator.userAgent);
 
 /** Install commands with the visitor's OS first. */

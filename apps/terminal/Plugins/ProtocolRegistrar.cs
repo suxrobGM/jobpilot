@@ -13,6 +13,9 @@ public static class ProtocolRegistrar
     private const string Scheme = "jobpilot";
     private const string SchemePrefix = $"{Scheme}://";
 
+    /// <summary>True once the scheme is registered, so /healthz can tell the dashboard the browser can relaunch us.</summary>
+    public static bool IsRegistered { get; private set; }
+
     /// <summary>
     /// On a <c>jobpilot://</c> launch, drops the flashed console window and strips the scheme arg (which
     /// ASP.NET config binding rejects). Returns the args to hand the host builder.
@@ -46,16 +49,16 @@ public static class ProtocolRegistrar
             using var commandKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{Scheme}\shell\open\command");
 
             // Idempotent: skip the write when the command already points at this exe.
-            if ((commandKey.GetValue(null) as string) == command)
+            if ((commandKey.GetValue(null) as string) != command)
             {
-                return;
+                using var schemeKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{Scheme}");
+                schemeKey.SetValue(null, "URL:JobPilot Protocol");
+                schemeKey.SetValue("URL Protocol", "");
+                commandKey.SetValue(null, command);
+                logger.LogInformation("Registered {Scheme}:// URL scheme.", Scheme);
             }
 
-            using var schemeKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{Scheme}");
-            schemeKey.SetValue(null, "URL:JobPilot Protocol");
-            schemeKey.SetValue("URL Protocol", "");
-            commandKey.SetValue(null, command);
-            logger.LogInformation("Registered {Scheme}:// URL scheme.", Scheme);
+            IsRegistered = true;
         }
         catch (Exception ex)
         {
@@ -77,6 +80,7 @@ public static class ProtocolRegistrar
         try
         {
             Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{Scheme}", throwOnMissingSubKey: false);
+            IsRegistered = false;
             logger.LogInformation("Removed {Scheme}:// URL scheme.", Scheme);
         }
         catch (Exception ex)

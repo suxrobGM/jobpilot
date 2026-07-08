@@ -35,9 +35,11 @@ export function useTerminalHealth(): TerminalHealthState {
         if (active) {
           setStatus(result);
           setHealth(result.status === "degraded" ? "degraded" : "reachable");
-          // Remember that a host ever answered - the dock only auto-expands before that.
-          if (!readAgentStorage()?.everReachable) {
-            patchAgentStorage({ everReachable: true });
+          // Persist that a host answered (the dock only auto-expands before that) and its relaunch
+          // capability, so the offline card can gate the Start-agent button across reloads.
+          const stored = readAgentStorage();
+          if (!stored?.everReachable || stored.canRelaunch !== result.canRelaunch) {
+            patchAgentStorage({ everReachable: true, canRelaunch: result.canRelaunch });
           }
         }
       } catch {

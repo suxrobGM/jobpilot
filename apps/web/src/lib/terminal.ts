@@ -22,6 +22,8 @@ export interface SessionStatus {
   hostVersion: string;
   /** Human-readable reason when status is "degraded". */
   detail?: string | null;
+  /** True when the host registered the jobpilot:// scheme, so the browser can relaunch it when offline. */
+  canRelaunch: boolean;
 }
 
 export class TerminalApiError extends Error {
