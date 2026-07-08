@@ -13,12 +13,20 @@ public sealed record TerminalLaunchSpec(TerminalProviderInfo Provider, string Co
 /// <summary>
 /// Resolved filesystem paths used to launch embedded AI terminal sessions.
 /// </summary>
-public sealed record TerminalSessionPaths(
-    string WorkingDir,
-    string SharedSkillsDir,
-    string ClaudePluginDir,
-    string CodexPluginDir)
+public sealed record TerminalSessionPaths
 {
+    /// <summary>Default working directory for a launched session.</summary>
+    public required string WorkingDir { get; init; }
+
+    /// <summary>Shared skills tree (plugin/skills).</summary>
+    public required string SharedSkillsDir { get; init; }
+
+    /// <summary>Plugin dir Claude loads (holds .claude-plugin/).</summary>
+    public required string ClaudePluginDir { get; init; }
+
+    /// <summary>Plugin dir Codex loads (holds .codex-plugin/); same tree as Claude's.</summary>
+    public required string CodexPluginDir { get; init; }
+
     /// <summary>
     /// Finds the JobPilot repository/plugin layout from the current process location.
     /// </summary>
@@ -39,7 +47,13 @@ public sealed record TerminalSessionPaths(
                 && IsClaudePluginDir(pluginDir)
                 && IsCodexPluginDir(pluginDir))
             {
-                return new TerminalSessionPaths(root, skillsDir, pluginDir, pluginDir);
+                return new TerminalSessionPaths
+                {
+                    WorkingDir = root,
+                    SharedSkillsDir = skillsDir,
+                    ClaudePluginDir = pluginDir,
+                    CodexPluginDir = pluginDir,
+                };
             }
         }
 
