@@ -2,6 +2,9 @@ export const TERMINAL_HTTP_URL = process.env.NEXT_PUBLIC_TERMINAL_URL ?? "http:/
 
 export const TERMINAL_WS_URL = TERMINAL_HTTP_URL.replace(/^http/, "ws") + "/ws";
 
+/** URL scheme the host registers on Windows; opening it relaunches an offline host from the browser. */
+export const TERMINAL_PROTOCOL_URL = "jobpilot://start";
+
 export type TerminalProviderId = "claude" | "codex";
 
 export interface TerminalProviderInfo {
