@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { Button, Stack, Typography } from "@mui/material";
 import { CopyField } from "@/components/ui/display";
 import {
@@ -9,23 +9,19 @@ import {
   TERMINAL_PROTOCOL_URL,
   type TerminalProviderId,
 } from "@/lib/terminal";
-import { readAgentStorage, subscribeAgentStorage } from "@/providers/agent-provider";
 import { RecheckButton } from "./recheck-button";
 
 interface AgentOfflineCardProps {
   onRecheck: () => void;
   provider: TerminalProviderId;
+  /** Whether the host reported the jobpilot:// scheme is registered, so the browser can relaunch it. */
+  canRelaunch: boolean;
 }
-
-// The button only works where the host registered the jobpilot:// scheme; the host reports that via
-// /healthz and we persist it, so gate on the last-reported capability (SSR-safe, false until known).
-const getCanRelaunch = (): boolean => readAgentStorage()?.canRelaunch ?? false;
 
 /** Shown when a host previously connected from this browser but isn't answering now - installed, just stopped. */
 export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
-  const { onRecheck, provider } = props;
+  const { onRecheck, provider, canRelaunch } = props;
   const providerLabel = providerDisplayName(provider);
-  const canRelaunch = useSyncExternalStore(subscribeAgentStorage, getCanRelaunch, () => false);
 
   return (
     <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2, overflowY: "auto" }}>

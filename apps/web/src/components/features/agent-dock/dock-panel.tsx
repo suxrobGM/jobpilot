@@ -14,7 +14,7 @@ import {
 import { TerminalPanel } from "@/components/features/terminal";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import { providerDisplayName } from "@/lib/terminal";
-import { useAgentDock } from "@/providers/agent-provider";
+import { readAgentStorage, useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOfflineCard } from "./agent-offline-card";
 import { AgentOrb } from "./agent-orb";
@@ -75,7 +75,14 @@ export function DockPanel(): ReactElement {
           <LoadingSpinner />
         </Stack>
       )}
-      {health === "offline" && <AgentOfflineCard onRecheck={recheck} provider={provider} />}
+      {health === "offline" && (
+        <AgentOfflineCard
+          onRecheck={recheck}
+          provider={provider}
+          // Live status while warm-offline; the persisted copy covers a cold reload (status is null then).
+          canRelaunch={status?.canRelaunch ?? readAgentStorage()?.canRelaunch ?? false}
+        />
+      )}
       {health === "uninstalled" && <AgentInstallCard onRecheck={recheck} />}
       {health === "degraded" && (
         <AgentInstallCard
