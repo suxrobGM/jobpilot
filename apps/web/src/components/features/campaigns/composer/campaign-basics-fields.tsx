@@ -1,7 +1,7 @@
 "use client";
 
 import { Chip, Stack, Typography } from "@mui/material";
-import { useStore } from "@tanstack/react-form";
+import { useSelector } from "@tanstack/react-form";
 import type { JobBoardDto, ProfileResponse } from "@/api/types";
 import { withForm } from "@/components/ui/form/tanstack";
 import {
@@ -20,8 +20,8 @@ export const CampaignBasicsFields = withForm({
     recentQueries: [] as string[],
   },
   render: function CampaignBasicsFields({ form, boards, resumes, recentQueries }) {
-    const mode = useStore(form.store, (s) => s.values.mode);
-    const board = useStore(form.store, (s) => s.values.board);
+    const mode = useSelector(form.store, (s) => s.values.mode);
+    const board = useSelector(form.store, (s) => s.values.board);
     const isUpwork = board === UPWORK_DOMAIN;
     const isOutreach = mode === "outreach";
 

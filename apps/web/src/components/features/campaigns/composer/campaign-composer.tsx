@@ -2,7 +2,7 @@
 
 import { type ReactElement, useEffect } from "react";
 import { Button, LinearProgress, Stack } from "@mui/material";
-import { useStore } from "@tanstack/react-form";
+import { useSelector } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
@@ -90,8 +90,8 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     },
   });
 
-  const mode = useStore(form.store, (s) => s.values.mode);
-  const board = useStore(form.store, (s) => s.values.board);
+  const mode = useSelector(form.store, (s) => s.values.mode);
+  const board = useSelector(form.store, (s) => s.values.board);
   const isUpwork = board === UPWORK_DOMAIN;
   const isOutreach = mode === "outreach";
 
