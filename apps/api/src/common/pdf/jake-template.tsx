@@ -1,3 +1,6 @@
+// biome-ignore-all lint/suspicious/noArrayIndexKey: react-pdf renders once to a buffer -- no
+// reconciliation, and the mapped rows carry no stable id.
+
 import { Children, type ReactElement, type ReactNode } from "react";
 import type {
   ResumeBasics,

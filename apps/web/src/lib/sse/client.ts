@@ -10,6 +10,7 @@ import type { AnyChannel, ChannelEvent, ChannelUrlParams } from "./channel";
  * params" marker; typed channels still require their full param object.
  */
 type UrlParamsArg<C extends AnyChannel> =
+  // biome-ignore lint/suspicious/noConfusingVoidType: probes the `TUrlParams = void` channels declare
   void extends ChannelUrlParams<C> ? null : ChannelUrlParams<C>;
 
 interface UseEventSourceOptions<TEvent> {

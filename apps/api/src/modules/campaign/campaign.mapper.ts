@@ -11,7 +11,7 @@ import type {
   OutreachMessageStatus,
 } from "@jobpilot/contracts/outreach";
 import type { z } from "zod/v4";
-import type { Prisma } from "@/generated/prisma/client";
+import type { Campaign, Contact, Job, Prisma } from "@/generated/prisma/client";
 
 /** Contact connection-state union - derived from the contract schema. */
 type ContactLinkedinConnection = z.infer<typeof contactLinkedinConnectionSchema>;
@@ -20,7 +20,7 @@ type ContactLinkedinConnection = z.infer<typeof contactLinkedinConnectionSchema>
  * A Job row with `status` narrowed to the campaign job-status union and the
  * `appliedAt` Date carried through as a raw `Date` (Elysia serializes it on the wire).
  */
-export type CampaignJobRow = Omit<Prisma.JobGetPayload<{}>, "appliedAt"> & {
+export type CampaignJobRow = Omit<Job, "appliedAt"> & {
   status: CampaignJobStatus;
   appliedAt: Date | null;
 };
@@ -31,7 +31,7 @@ export type CampaignJobRow = Omit<Prisma.JobGetPayload<{}>, "appliedAt"> & {
  * (Elysia serializes them on the wire).
  */
 export type CampaignRow = Omit<
-  Prisma.CampaignGetPayload<{}>,
+  Campaign,
   "config" | "summary" | "startedAt" | "updatedAt" | "completedAt"
 > & {
   status: CampaignStatus;
@@ -44,10 +44,7 @@ export type CampaignRow = Omit<
 };
 
 /** The nested contact on an OutreachMessage row, with Dates carried through as raw `Date`s. */
-type OutreachContactRow = Omit<
-  Prisma.ContactGetPayload<{}>,
-  "linkedinConnection" | "createdAt" | "updatedAt"
-> & {
+type OutreachContactRow = Omit<Contact, "linkedinConnection" | "createdAt" | "updatedAt"> & {
   linkedinConnection: ContactLinkedinConnection;
   createdAt: Date;
   updatedAt: Date;
@@ -73,7 +70,7 @@ type OutreachMessageRow = Omit<
 };
 
 /** Serialize a Job row's `status`/Date fields to their wire shape. */
-export function toCampaignJobRow(job: Prisma.JobGetPayload<{}>): CampaignJobRow {
+export function toCampaignJobRow(job: Job): CampaignJobRow {
   return {
     ...job,
     status: job.status as CampaignJobStatus,

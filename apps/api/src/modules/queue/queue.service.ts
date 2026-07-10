@@ -3,13 +3,13 @@ import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { workspaceChannel } from "@/common/sse/channels/workspace";
-import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type Prisma, PrismaClient, type QueueEntry } from "@/generated/prisma/client";
 
-type QueueEntryRow = Omit<Prisma.QueueEntryGetPayload<{}>, "status"> & {
+type QueueEntryRow = Omit<QueueEntry, "status"> & {
   status: QueueStatus;
 };
 
-function serializeQueueEntry(row: Prisma.QueueEntryGetPayload<{}>): QueueEntryRow {
+function serializeQueueEntry(row: QueueEntry): QueueEntryRow {
   return {
     ...row,
     status: row.status as QueueStatus,

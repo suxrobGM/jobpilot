@@ -69,10 +69,9 @@ export class ResumeService {
       throw badRequest("Resume must be 5 MB or less");
     }
 
-    const label =
-      labelRaw && labelRaw.trim()
-        ? labelRaw.trim()
-        : path.basename(file.name, path.extname(file.name)) || "Resume";
+    const label = labelRaw?.trim()
+      ? labelRaw.trim()
+      : path.basename(file.name, path.extname(file.name)) || "Resume";
 
     const dir = await ensureResumesDir();
     const filename = generateResumeFilename(file.name);

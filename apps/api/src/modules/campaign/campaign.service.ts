@@ -14,7 +14,7 @@ import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type CampaignEvent, campaignChannel } from "@/common/sse/channels/campaign";
 import { workspaceChannel } from "@/common/sse/channels/workspace";
-import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type Campaign, type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { type CampaignJobRow, type CampaignRow } from "./campaign.mapper";
 import { summarizeJobs } from "./campaign.summary";
 import { ensureCampaignOwned } from "./campaign.utils";
@@ -128,7 +128,7 @@ export class CampaignService {
       startedAt: campaign.startedAt,
       updatedAt: campaign.updatedAt,
       completedAt: campaign.completedAt,
-    } satisfies Omit<Prisma.CampaignGetPayload<{}>, "startedAt" | "updatedAt" | "completedAt"> & {
+    } satisfies Omit<Campaign, "startedAt" | "updatedAt" | "completedAt"> & {
       status: CampaignStatus;
       source: CampaignSource;
       startedAt: Date;

@@ -1,3 +1,6 @@
+// biome-ignore-all lint/suspicious/noArrayIndexKey: react-pdf renders once to a buffer -- no
+// reconciliation, and blank lines repeat, so the text carries no stable id.
+
 import type { ReactElement } from "react";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 

@@ -15,12 +15,13 @@ export type ApiClient = ReturnType<typeof createApiClient>;
  * Resolved success-data type of an Eden endpoint method.
  *   Data<(typeof client)["api"]["resumes"]["get"]>
  */
+// biome-ignore lint/suspicious/noExplicitAny: Treaty.Data constrains T to `(...a: any) => any`
 export type Data<T extends (...args: any[]) => any> = NonNullable<Treaty.Data<T>>;
 
 /** Request-body type of an Eden POST/PATCH/PUT endpoint. */
-export type Body<T extends (...args: any[]) => any> = NonNullable<Parameters<T>[0]>;
+export type Body<T extends (...args: never[]) => unknown> = NonNullable<Parameters<T>[0]>;
 
 /** Query type of an Eden GET endpoint. */
-export type Query<T extends (...args: any[]) => any> = NonNullable<
+export type Query<T extends (...args: never[]) => unknown> = NonNullable<
   NonNullable<Parameters<T>[0]>["query"]
 >;
