@@ -163,8 +163,8 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
       {proposal.screeningAnswers.length > 0 && (
         <SectionCard title="Screening answers">
           <Stack spacing={2}>
-            {proposal.screeningAnswers.map((qa, i) => (
-              <Box key={i}>
+            {proposal.screeningAnswers.map((qa) => (
+              <Box key={qa.question}>
                 <Typography variant="overlineMuted">{qa.question}</Typography>
                 <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
                   {qa.answer}

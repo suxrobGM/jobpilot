@@ -18,7 +18,14 @@ export function EducationSection(props: EducationSectionProps): ReactElement {
     <EntryList<ResumeEducation>
       value={value}
       onChange={onChange}
-      newItem={() => ({ school: "", degree: "", start: "", end: "", details: [] })}
+      newItem={() => ({
+        id: `edu_${crypto.randomUUID()}`,
+        school: "",
+        degree: "",
+        start: "",
+        end: "",
+        details: [],
+      })}
       addLabel="Add education"
       emptyLabel="No education entries yet."
       renderTitle={(e, i) => e.school || `Entry ${i + 1}`}

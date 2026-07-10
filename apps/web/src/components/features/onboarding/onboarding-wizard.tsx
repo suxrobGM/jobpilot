@@ -165,10 +165,10 @@ const ValidationSummary = withForm({
             <Alert severity="error">
               <AlertTitle>Some fields need fixing</AlertTitle>
               <Stack spacing={0.5}>
-                {issues.map((issue, i) => {
+                {issues.map((issue) => {
                   const stepLabel = issue.stepIndex !== null ? STEPS[issue.stepIndex]?.label : null;
                   return (
-                    <Typography key={i} variant="body2">
+                    <Typography key={`${issue.path}:${issue.message}`} variant="body2">
                       <strong>{issue.path}</strong>
                       {stepLabel ? ` (${stepLabel} step)` : ""}: {issue.message}
                     </Typography>

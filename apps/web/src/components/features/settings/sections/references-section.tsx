@@ -12,8 +12,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useSelector } from "@tanstack/react-form";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
+import { useKeyedList } from "@/hooks/use-keyed-list";
 
 const EMPTY_REFERENCE: ReferenceInput = {
   name: "",
@@ -26,6 +28,9 @@ const EMPTY_REFERENCE: ReferenceInput = {
 export const ReferencesSection = withForm({
   defaultValues: PROFILE_DEFAULT_VALUES,
   render: function ReferencesSection({ form }) {
+    const count = useSelector(form.store, (s) => s.values.references?.length ?? 0);
+    const { keys, onRemove, onAdd } = useKeyedList(count);
+
     return (
       <FormSection
         title="References"
@@ -37,14 +42,17 @@ export const ReferencesSection = withForm({
             return (
               <Stack spacing={2}>
                 {refs.map((_, i) => (
-                  <Card key={i}>
+                  <Card key={keys[i]}>
                     <CardHeader
                       title={<Typography variant="subtitle2">Reference {i + 1}</Typography>}
                       action={
                         <IconButton
                           aria-label={`Remove reference ${i + 1}`}
                           size="small"
-                          onClick={() => field.removeValue(i)}
+                          onClick={() => {
+                            onRemove(i);
+                            field.removeValue(i);
+                          }}
                         >
                           <Delete fontSize="sm" />
                         </IconButton>
@@ -80,7 +88,10 @@ export const ReferencesSection = withForm({
                     <Button
                       variant="outlined"
                       startIcon={<Add fontSize="sm" />}
-                      onClick={() => field.pushValue(EMPTY_REFERENCE)}
+                      onClick={() => {
+                        onAdd();
+                        field.pushValue(EMPTY_REFERENCE);
+                      }}
                     >
                       Add reference
                     </Button>

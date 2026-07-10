@@ -16,7 +16,7 @@ export function SkillsSection(props: SkillsSectionProps): ReactElement {
     <EntryList<ResumeSkillGroup>
       value={value}
       onChange={onChange}
-      newItem={() => ({ group: "", items: [] })}
+      newItem={() => ({ id: `skill_${crypto.randomUUID()}`, group: "", items: [] })}
       addLabel="Add skill group"
       emptyLabel="No skill groups yet."
       renderTitle={(g, i) => g.group || `Group ${i + 1}`}

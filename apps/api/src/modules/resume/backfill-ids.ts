@@ -48,17 +48,27 @@ export interface BackfillResult {
 }
 
 /**
- * Walk a ResumeData object and assign stable ids to experience and project
- * entries missing them. Idempotent: a second call with the same input mutates
- * nothing and returns `mutated: false`.
+ * Walk a ResumeData object and assign stable ids to the entries missing them.
+ * Idempotent: a second call with the same input mutates nothing and returns
+ * `mutated: false`.
  */
 export function backfillResumeIds(input: ResumeData): BackfillResult {
   const exp = assignIds(input.experience ?? [], "exp", (e) => [e.company, e.title, e.start]);
   const proj = assignIds(input.projects ?? [], "proj", (p) => [p.name, p.url]);
+  const edu = assignIds(input.education ?? [], "edu", (e) => [e.school, e.degree, e.start]);
+  const skill = assignIds(input.skills ?? [], "skill", (s) => [s.group]);
 
-  if (!exp.mutated && !proj.mutated) return { content: input, mutated: false };
+  if (!exp.mutated && !proj.mutated && !edu.mutated && !skill.mutated) {
+    return { content: input, mutated: false };
+  }
   return {
-    content: { ...input, experience: exp.entries, projects: proj.entries },
+    content: {
+      ...input,
+      experience: exp.entries,
+      projects: proj.entries,
+      education: edu.entries,
+      skills: skill.entries,
+    },
     mutated: true,
   };
 }

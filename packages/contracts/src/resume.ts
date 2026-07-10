@@ -35,11 +35,13 @@ export const resumeProjectSchema = z.object({
 });
 
 export const resumeSkillGroupSchema = z.object({
+  id: z.string().optional(),
   group: z.string().min(1, "Required"),
   items: z.array(z.string()),
 });
 
 export const resumeEducationSchema = z.object({
+  id: z.string().optional(),
   school: z.string().min(1, "Required"),
   degree: z.string().min(1, "Required"),
   start: z.string().optional(),

@@ -18,7 +18,14 @@ export function ProjectsSection(props: ProjectsSectionProps): ReactElement {
     <EntryList<ResumeProject>
       value={value}
       onChange={onChange}
-      newItem={() => ({ name: "", url: "", description: "", bullets: [], keywords: [] })}
+      newItem={() => ({
+        id: `proj_${crypto.randomUUID()}`,
+        name: "",
+        url: "",
+        description: "",
+        bullets: [],
+        keywords: [],
+      })}
       addLabel="Add project"
       emptyLabel="No projects yet."
       renderTitle={(p, i) => p.name || `Project ${i + 1}`}

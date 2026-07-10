@@ -18,7 +18,15 @@ export function ExperienceSection(props: ExperienceSectionProps): ReactElement {
     <EntryList<ResumeExperience>
       value={value}
       onChange={onChange}
-      newItem={() => ({ company: "", title: "", location: "", start: "", end: "", bullets: [] })}
+      newItem={() => ({
+        id: `exp_${crypto.randomUUID()}`,
+        company: "",
+        title: "",
+        location: "",
+        start: "",
+        end: "",
+        bullets: [],
+      })}
       addLabel="Add role"
       emptyLabel="No experience entries yet. Add roles below."
       renderTitle={(e, i) =>

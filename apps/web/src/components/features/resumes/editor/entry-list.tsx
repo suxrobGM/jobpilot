@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { moveAt, removeAt, replaceAt } from "@/utils/array";
 
-interface EntryListProps<T> {
+interface EntryListProps<T extends { id?: string }> {
   value: T[];
   onChange: (next: T[]) => void;
   newItem: () => T;
@@ -23,7 +23,7 @@ interface EntryListProps<T> {
   emptyLabel?: string;
 }
 
-export function EntryList<T>(props: EntryListProps<T>): ReactElement {
+export function EntryList<T extends { id?: string }>(props: EntryListProps<T>): ReactElement {
   const { value, onChange, newItem, renderEntry, renderTitle, addLabel, emptyLabel } = props;
 
   const update = (idx: number, next: T) => onChange(replaceAt(value, idx, next));
@@ -36,7 +36,7 @@ export function EntryList<T>(props: EntryListProps<T>): ReactElement {
         <Typography variant="body2Muted">{emptyLabel}</Typography>
       )}
       {value.map((entry, i) => (
-        <Card key={i}>
+        <Card key={entry.id}>
           <CardHeader
             title={<Typography variant="overlineMuted">{renderTitle(entry, i)}</Typography>}
             action={

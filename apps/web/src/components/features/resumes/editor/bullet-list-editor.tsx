@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import { Add, ArrowDownward, ArrowUpward, Delete } from "@mui/icons-material";
 import { Button, IconButton, Stack, TextField } from "@mui/material";
+import { useKeyedList } from "@/hooks/use-keyed-list";
 import { moveAt, removeAt, replaceAt } from "@/utils/array";
 
 interface BulletListEditorProps {
@@ -14,16 +15,26 @@ interface BulletListEditorProps {
 
 export function BulletListEditor(props: BulletListEditorProps): ReactElement {
   const { value, onChange, placeholder, label } = props;
+  const { keys, onMove, onRemove, onAdd } = useKeyedList(value.length);
 
   const update = (idx: number, text: string) => onChange(replaceAt(value, idx, text));
-  const remove = (idx: number) => onChange(removeAt(value, idx));
-  const move = (idx: number, dir: -1 | 1) => onChange(moveAt(value, idx, dir));
-  const add = () => onChange([...value, ""]);
+  const remove = (idx: number) => {
+    onRemove(idx);
+    onChange(removeAt(value, idx));
+  };
+  const move = (idx: number, dir: -1 | 1) => {
+    onMove(idx, dir);
+    onChange(moveAt(value, idx, dir));
+  };
+  const add = () => {
+    onAdd();
+    onChange([...value, ""]);
+  };
 
   return (
     <Stack spacing={1}>
       {value.map((b, i) => (
-        <Stack key={i} direction="row" spacing={0.5} sx={{ alignItems: "flex-start" }}>
+        <Stack key={keys[i]} direction="row" spacing={0.5} sx={{ alignItems: "flex-start" }}>
           <TextField
             fullWidth
             size="small"

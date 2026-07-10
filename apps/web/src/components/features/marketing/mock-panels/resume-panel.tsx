@@ -11,9 +11,19 @@ const VARIANTS = [
   { name: "Vercel variant", target: "Design Engineer", score: "88" },
 ];
 
+const LINES = [
+  { id: "l1", width: 0.9 },
+  { id: "l2", width: 0.65 },
+  { id: "l3", width: 0.8 },
+  { id: "l4", width: 0.5 },
+  { id: "l5", width: 0.85 },
+  { id: "l6", width: 0.7 },
+  { id: "l7", width: 0.6 },
+  { id: "l8", width: 0.75 },
+];
+
 /** Faux rendered-PDF page: paper block with skeleton text lines. */
 function PagePreview(): ReactElement {
-  const lines = [0.9, 0.65, 0.8, 0.5, 0.85, 0.7, 0.6, 0.75];
   return (
     <Box
       sx={(theme) => ({
@@ -29,12 +39,12 @@ function PagePreview(): ReactElement {
       })}
     >
       <Box sx={{ height: 6, width: "55%", backgroundColor: editorial.ink, opacity: 0.8 }} />
-      {lines.map((width, i) => (
+      {LINES.map((line) => (
         <Box
-          key={i}
+          key={line.id}
           sx={{
             height: 3,
-            width: `${width * 100}%`,
+            width: `${line.width * 100}%`,
             backgroundColor: editorial.ink,
             opacity: 0.25,
           }}

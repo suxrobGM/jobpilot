@@ -21,11 +21,8 @@ export function PortfolioList(props: PortfolioListProps): ReactElement {
   }
   return (
     <Stack spacing={1}>
-      {items.map((p, i) => (
-        <Box
-          key={`${p.title}-${i}`}
-          sx={{ p: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}
-        >
+      {items.map((p) => (
+        <Box key={p.title} sx={{ p: 1.5, border: 1, borderColor: "divider", borderRadius: 1 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
             <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }} noWrap>
               {p.title}
