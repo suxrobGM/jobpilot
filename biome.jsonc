@@ -7,18 +7,9 @@
     "useIgnoreFile": true
   },
   "files": {
-    // Biome cannot parse Markdown yet; without this it reports every .md file.
-    "ignoreUnknown": true,
-    "includes": [
-      "**",
-      "!**/node_modules",
-      "!**/.next",
-      // Static assets, not source; Biome parses them as markup and lints them.
-      "!**/*.svg",
-      "!apps/api/src/generated",
-      "!apps/api/storage",
-      "!dist"
-    ]
+    // .gitignore (nested included) covers node_modules, .next, dist, generated, storage.
+    // SVGs are not: Biome parses them as markup and would reformat them.
+    "includes": ["**", "!**/*.svg"]
   },
   "formatter": {
     "enabled": true,
@@ -46,11 +37,10 @@
     "enabled": true,
     "rules": {
       "preset": "recommended",
-      "suspicious": {
-        // Pre-existing index keys in the resume/profile list editors are a real
-        // bug class, but fixing them needs stable ids on the data model. Warn
-        // (non-blocking) until that lands rather than suppress per call site.
-        "noArrayIndexKey": "warn"
+      "style": {
+        // `noUncheckedIndexedAccess` forces `!` on Elysia's cookie jar and other Record
+        // lookups; Biome's `?.` autofix would silently drop the call.
+        "noNonNullAssertion": "off"
       }
     }
   },
@@ -103,18 +93,6 @@
         "rules": {
           "style": {
             "useImportType": "off"
-          }
-        }
-      }
-    },
-    {
-      // react-pdf renders a document once to a buffer: no reconciliation, and
-      // the mapped lines/strings carry no stable id.
-      "includes": ["apps/api/src/common/pdf/**"],
-      "linter": {
-        "rules": {
-          "suspicious": {
-            "noArrayIndexKey": "off"
           }
         }
       }

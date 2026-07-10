@@ -19,7 +19,8 @@
     "build:terminal": "dotnet publish apps/terminal -c Release -o dist/terminal",
     "check": "biome check --write .",
     "format": "biome format --write .",
-    "lint": "biome lint ."
+    "lint": "biome lint .",
+    "ci": "biome ci --error-on-warnings ."
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.3",

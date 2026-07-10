@@ -27,7 +27,8 @@ Root (`bun run …`):
 - `db:up` / `db:down` - start/stop the local PostgreSQL container (`docker-compose.dev.yml`).
 - `db:setup` - generate Prisma client, apply migrations, seed default boards (runs on `apps/api`).
 - `build:api` / `build:web` / `build:terminal` - production builds.
-- `check` / `format` / `lint` - Biome across the whole repo (`check` = format + lint + import sort, with `--write`). Biome does not format Markdown; `.editorconfig` covers whitespace there. CI gate is `biome ci .`.
+- `check` / `format` / `lint` - Biome across the whole repo (`check` = format + lint + import sort, with `--write`). Biome does not format Markdown; `.editorconfig` covers whitespace there.
+- `ci` - the CI gate: `biome ci --error-on-warnings .`. Biome 2 defaults most recommended rules to *warning* and plain `biome ci` only fails on errors, so warnings must fail the build or the gate is a no-op. Infos stay advisory. Never run `biome check --write --unsafe`: the `noNonNullAssertion` fix rewrites `cookie[KEY]!.set(…)` to `?.set(…)`, silently dropping auth cookie writes.
 
 Web (`bun --cwd=apps/web run …`):
 
@@ -87,6 +88,7 @@ A tsyringe-injected class must stay a **value** import (`import { PrismaClient }
 - **Zod**: import from `zod/v4`.
 - **Forms**: TanStack Form + Zod validators.
 - **React 19**: use the `use()` hook for async data in client components. Never use `useCallback`, `useMemo`, or `memo` - the compiler handles it. Pass `ref` as a regular prop; do **not** use `forwardRef`.
+- **List keys**: never key by array index. Key by the model's `id` - resume experience/project/education/skill rows all carry one (`backfillResumeIds` assigns it server-side). For a controlled list whose model has no id, use `useKeyedList` (`@/hooks/use-keyed-list`), which keeps keys in lockstep with move/remove/add.
 
 ## Styling Guidelines (MUI)
 
