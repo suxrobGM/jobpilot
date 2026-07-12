@@ -4,6 +4,7 @@ import { db } from "@/common/database";
 import { logger } from "@/common/logger";
 import { errorMiddleware } from "@/common/middleware";
 import { corsPlugin, swaggerPlugin } from "@/common/plugins";
+import { rateLimitJob } from "@/common/rate-limit";
 import { env } from "@/env";
 import { analyticsController } from "@/modules/analytics";
 import { applicationController } from "@/modules/application";
@@ -29,6 +30,7 @@ const app = new Elysia()
   .use(corsPlugin)
   .use(swaggerPlugin)
   .use(resumeJob)
+  .use(rateLimitJob)
   .onStop(async () => {
     await db.$disconnect();
   })

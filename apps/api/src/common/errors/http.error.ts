@@ -8,6 +8,7 @@ export const ErrorCodes = {
   UNAUTHORIZED: "UNAUTHORIZED",
   FORBIDDEN: "FORBIDDEN",
   EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
+  RATE_LIMITED: "RATE_LIMITED",
   INTERNAL: "INTERNAL_ERROR",
 } as const;
 
@@ -21,6 +22,8 @@ export class HttpError extends Error {
     message: string,
     readonly status: number,
     readonly details?: unknown,
+    /** Response headers the global `.onError` copies onto the response (e.g. `retry-after`). */
+    readonly headers?: Record<string, string>,
   ) {
     super(message);
     this.name = "HttpError";
@@ -49,6 +52,22 @@ export function unauthorized(message = "Unauthorized"): HttpError {
 
 export function forbidden(message = "Forbidden"): HttpError {
   return new HttpError(ErrorCodes.FORBIDDEN, message, 403);
+}
+
+/**
+ * 429. `retryAfterSeconds` rides both the `Retry-After` header and `details`: a cross-origin browser
+ * can't read the header unless CORS exposes it, but the body always arrives.
+ */
+export function tooManyRequests(message = "Too many requests", retryAfterSeconds = 60): HttpError {
+  return new HttpError(
+    ErrorCodes.RATE_LIMITED,
+    message,
+    429,
+    { retryAfterSeconds },
+    {
+      "retry-after": String(retryAfterSeconds),
+    },
+  );
 }
 
 export function emailNotVerified(): HttpError {

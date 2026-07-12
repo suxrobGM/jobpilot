@@ -25,6 +25,11 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
   ({ code, error, set }): ErrorBody => {
     if (error instanceof HttpError) {
       set.status = error.status;
+      // Carried on the error, not set at the throw site: rate-limit 429s are thrown from services
+      // (CaptchaService's in-flight cap) that never see `set`.
+      for (const [name, value] of Object.entries(error.headers ?? {})) {
+        set.headers[name] = value;
+      }
       return { code: error.code, message: error.message, details: error.details };
     }
 

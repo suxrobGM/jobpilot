@@ -11,6 +11,7 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { logger } from "@/common/logger";
 import { authGuard } from "@/common/middleware";
+import { RATE_LIMITS, rateLimitHook } from "@/common/rate-limit";
 import { okResponseSchema } from "@/types/response";
 import { ApiTokenService } from "./api-token.service";
 import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from "./auth.cookies";
@@ -26,6 +27,19 @@ import { VerificationService } from "./verification.service";
 const authService = container.resolve(AuthService);
 const verificationService = container.resolve(VerificationService);
 const apiTokenService = container.resolve(ApiTokenService);
+
+// Per route, not `.use(rateLimit(...))`: a scoped plugin hook covers every route declared after it
+// in this instance (that is how `.use(authGuard)` below works), and these public routes each need a
+// different policy. Attaching per route also keeps /me and /tokens/* unthrottled.
+const limitRegister = rateLimitHook(RATE_LIMITS.register);
+const limitLoginIp = rateLimitHook(RATE_LIMITS.loginPerIp);
+const limitLoginAccount = rateLimitHook(RATE_LIMITS.loginPerAccount);
+const limitRefresh = rateLimitHook(RATE_LIMITS.refresh);
+const limitEmailVerify = rateLimitHook(RATE_LIMITS.emailVerify);
+const limitForgotIp = rateLimitHook(RATE_LIMITS.forgotPerIp);
+const limitForgotEmail = rateLimitHook(RATE_LIMITS.forgotPerEmail);
+const limitPasswordReset = rateLimitHook(RATE_LIMITS.passwordReset);
+const limitEmailResend = rateLimitHook(RATE_LIMITS.emailResend);
 
 export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   // --- public ---
@@ -47,6 +61,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
     {
       body: RegisterSchema,
+      beforeHandle: limitRegister,
       response: authSessionSchema,
       detail: {
         summary: "Register a new account",
@@ -64,6 +79,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
     {
       body: LoginSchema,
+      beforeHandle: [limitLoginIp, limitLoginAccount],
       response: authSessionSchema,
       detail: {
         summary: "Log in with credentials",
@@ -81,6 +97,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       return result;
     },
     {
+      beforeHandle: limitRefresh,
       response: authSessionSchema,
       detail: {
         summary: "Rotate refresh token",
@@ -108,6 +125,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   )
   .post("/email/verify", ({ body }) => verificationService.verifyEmail(body.token), {
     body: VerifyEmailSchema,
+    beforeHandle: limitEmailVerify,
     response: okResponseSchema,
     detail: {
       summary: "Verify an email address",
@@ -117,6 +135,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   })
   .post("/password/forgot", ({ body }) => verificationService.requestPasswordReset(body.email), {
     body: ForgotPasswordSchema,
+    beforeHandle: [limitForgotIp, limitForgotEmail],
     response: okResponseSchema,
     detail: {
       summary: "Request a password reset",
@@ -129,6 +148,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     ({ body }) => verificationService.resetPassword(body.token, body.password),
     {
       body: ResetPasswordSchema,
+      beforeHandle: limitPasswordReset,
       response: okResponseSchema,
       detail: {
         summary: "Reset a password",
@@ -140,6 +160,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   // --- authenticated ---
   .use(authGuard)
   .post("/email/resend", ({ user }) => verificationService.resendVerification(user.id), {
+    beforeHandle: limitEmailResend,
     response: okResponseSchema,
     detail: {
       summary: "Resend the verification email",

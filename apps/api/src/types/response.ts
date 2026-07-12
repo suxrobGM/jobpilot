@@ -29,6 +29,7 @@ export const httpErrorResponses = {
   404: errorResponseSchema,
   409: errorResponseSchema,
   422: errorResponseSchema,
+  429: errorResponseSchema,
   500: errorResponseSchema,
 } as const;
 
