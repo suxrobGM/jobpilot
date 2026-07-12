@@ -39,7 +39,7 @@ export class EmailSyncService {
     const { account: active, config } = loaded;
     const provider = getProvider(active.provider);
 
-    publish(inboxChannel, undefined, { type: "sync.started" });
+    publish(inboxChannel, { profileId }, { type: "sync.started" });
 
     const result = await provider.syncMessages(config, active);
 
@@ -86,11 +86,15 @@ export class EmailSyncService {
       },
     });
 
-    publish(inboxChannel, undefined, {
-      type: "sync.progress",
-      fetched: result.fetched,
-      new: inserted,
-    });
+    publish(
+      inboxChannel,
+      { profileId },
+      {
+        type: "sync.progress",
+        fetched: result.fetched,
+        new: inserted,
+      },
+    );
 
     return { fetched: result.fetched, new: inserted };
   }

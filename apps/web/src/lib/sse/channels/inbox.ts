@@ -7,9 +7,10 @@ export type InboxEvent =
   | { type: "message.scanned"; id: string }
   | { type: "message.reviewed"; id: string; status: "approved" | "denied" };
 
-/** Single global inbox feed: sync progress + per-message scan/review state. */
-export const inboxChannel = defineChannel<InboxEvent>({
+/** Per-profile inbox feed: sync progress + per-message scan/review state. Mirrors the API channel;
+ *  the URL is param-free because the server resolves the profile from the session. */
+export const inboxChannel = defineChannel<InboxEvent, void, { profileId: string }>({
   name: "inbox",
   url: () => `${API_BASE_URL}/api/email/events`,
-  topic: () => "inbox",
+  topic: ({ profileId }) => String(profileId),
 });

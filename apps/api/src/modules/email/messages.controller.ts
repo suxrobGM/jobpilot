@@ -87,10 +87,10 @@ export const emailMessagesController = new Elysia({
         "Fetches new messages from the connected mailbox, persists them, links any outreach replies, emits inbox sync events, and returns the fetched and newly inserted counts.",
     },
   })
-  .get("/events", ({ headers }) => sseStream(inboxChannel, undefined, headers), {
+  .get("/events", ({ headers, profileId }) => sseStream(inboxChannel, { profileId }, headers), {
     detail: {
       summary: "Stream inbox events",
       description:
-        "Opens a Server-Sent Events stream that emits inbox events (such as sync progress and message scan/review updates) as a raw streaming response.",
+        "Opens a Server-Sent Events stream that emits the signed-in profile's inbox events (such as sync progress and message scan/review updates) as a raw streaming response.",
     },
   });

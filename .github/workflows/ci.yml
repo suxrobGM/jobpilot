@@ -71,6 +71,12 @@ jobs:
         run: bun run typecheck
         working-directory: apps/api
 
+      # No services and no env: the SSE tests only reach the in-process broker. The first test that
+      # imports a service or controller will need a dummy env block here - env.ts validates at load.
+      - name: Test API
+        run: bun run test
+        working-directory: apps/api
+
       - name: Typegen web
         run: bun run typegen
         working-directory: apps/web

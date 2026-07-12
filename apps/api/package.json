@@ -13,6 +13,7 @@
     "start": "bun run src/app.ts",
     "build": "bun build --compile --minify --target bun-windows-x64 --outfile dist/server.exe src/app.ts",
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "prebuild": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --create-only",

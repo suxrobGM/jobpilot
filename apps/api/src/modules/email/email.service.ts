@@ -110,7 +110,7 @@ export class EmailService {
 
     const message = serializeMessage(row);
 
-    publish(inboxChannel, undefined, { type: "message.scanned", id });
+    publish(inboxChannel, { profileId }, { type: "message.scanned", id });
 
     return message;
   }
@@ -127,7 +127,7 @@ export class EmailService {
       data: { reviewStatus: "denied" },
     });
 
-    publish(inboxChannel, undefined, { type: "message.reviewed", id, status: "denied" });
+    publish(inboxChannel, { profileId }, { type: "message.reviewed", id, status: "denied" });
 
     return { id, status: "denied" as const };
   }
@@ -173,7 +173,7 @@ export class EmailService {
       }),
     ]);
 
-    publish(inboxChannel, undefined, { type: "message.reviewed", id, status: "approved" });
+    publish(inboxChannel, { profileId }, { type: "message.reviewed", id, status: "approved" });
 
     return { id, applicationId: app.id, status: inferred };
   }
