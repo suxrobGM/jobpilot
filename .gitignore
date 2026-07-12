@@ -1,13 +1,23 @@
 node_modules/
 .playwright-mcp/
 .playwright-mcp-test/
+
+# Skill scratch output. The rule lives in plugin/shared/setup.md "Scratch files".
+.temp/
 *.pdf
 *.csv
-snapshot-*.md
+*.tsv
 
-# Scratch/working files written by skills during a run (resume PDFs, cover
-# letters, page snapshots). See plugin/skills/shared/setup.md "Scratch files".
-.temp/
+# Repo root is source only. Ignore strays by location - `snapshot-*.md` guessed at
+# filenames and missed job-header.md / results-p2.md.
+/*.md
+!/README.md
+!/CLAUDE.md
+!/AGENTS.md
+!/CHANGELOG.md
+/*.json
+!/package.json
+
 .claude/settings.local.json
 */**/.claude/settings.local.json
 
@@ -21,5 +31,4 @@ dist/
 .idea/
 .VSCodeCounter/
 
-resume.json
 .env

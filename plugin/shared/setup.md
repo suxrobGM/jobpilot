@@ -80,11 +80,17 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resu
 
 ## Scratch files
 
-Any temporary artifact a skill writes to disk during a campaign - downloaded resume PDFs, generated cover letters, page snapshots, or other scratch output - goes under the project-local `.temp/` directory, never the repo root or the system temp dir. Create it once before writing:
+**Every** file a skill writes during a run - resume PDFs, cover letters, page snapshots, API dumps, notes - goes under `$JOBPILOT_WORKSPACE_ROOT/.temp`. Never the repo root, never the system temp dir, never a relative path. Create it once, then write only inside it:
 
 ```bash
-mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp"
+[ -n "$JOBPILOT_WORKSPACE_ROOT" ] || { echo "JOBPILOT_WORKSPACE_ROOT unset - not running in the terminal host"; exit 1; }
+TEMP="$JOBPILOT_WORKSPACE_ROOT/.temp"
+mkdir -p "$TEMP"
 ```
+
+Guard the variable first: it is empty outside the terminal host, and `"$JOBPILOT_WORKSPACE_ROOT/.temp"` would then resolve to `/.temp`.
+
+Name files so parallel work can't collide - prefix with the campaign or job key (`"$TEMP/$JOB_KEY-header.md"`), not bare `header.md`. Writing a snapshot to the repo root is a bug; `Read`/`Grep` it back out of `$TEMP` instead.
 
 ## 4. Credentials
 
