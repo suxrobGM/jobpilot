@@ -28,9 +28,7 @@ const authService = container.resolve(AuthService);
 const verificationService = container.resolve(VerificationService);
 const apiTokenService = container.resolve(ApiTokenService);
 
-// Per route, not `.use(rateLimit(...))`: a scoped plugin hook covers every route declared after it
-// in this instance (that is how `.use(authGuard)` below works), and these public routes each need a
-// different policy. Attaching per route also keeps /me and /tokens/* unthrottled.
+// One hook per route: each public route needs its own policy, and /me and /tokens/* stay unthrottled.
 const limitRegister = rateLimitHook(RATE_LIMITS.register);
 const limitLoginIp = rateLimitHook(RATE_LIMITS.loginPerIp);
 const limitLoginAccount = rateLimitHook(RATE_LIMITS.loginPerAccount);

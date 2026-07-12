@@ -20,10 +20,14 @@ middleware later. ✅
 
 ## Notes
 
-- 2026-07-12 — Done. New `apps/api/src/common/rate-limit/`: in-memory token bucket (O(1) per key, no
-  timers, exact `Retry-After`, `burst` as a first-class knob), a `policies.ts` table carrying every
-  limit with a rationale, and a 5-min cron sweep. The table is capped (`MAX_KEYS`) and fails open
-  under memory pressure — an unbounded map keyed by client IP is itself a DoS.
+- 2026-07-12 — Done. New `apps/api/src/common/rate-limit/` — three files: `limiter.ts` (token bucket,
+  key derivation, the `beforeHandle` hook, `acquireSlot`), `policies.ts` (every limit with a
+  rationale), `index.ts`. Each `rateLimitHook(policy)` owns a private bucket table, capped at
+  `MAX_KEYS` with batched eviction — an unbounded map keyed by client IP is itself a DoS.
+- No cron sweep and no store registry: eviction already happens lazily at capacity (so memory is
+  bounded either way), and every policy is instantiated exactly once, so a registry keyed by name
+  deduped nothing. Both were cut in review as over-engineering, along with the `rateLimit` Elysia
+  plugin factory — one attach mechanism (`beforeHandle`) is enough.
 - **The keys matter more than the algorithm.** Login is keyed by **(email, IP)** so stuffing one
   account can't lock out everyone behind a shared office NAT, plus a looser per-IP net for password
   spraying. `/captcha/solve` and `/auth/email/resend` are keyed by **user**.
@@ -32,9 +36,9 @@ middleware later. ✅
   the entire user base. nginx sets `X-Real-IP $remote_addr`, which *replaces* any client value.
   `X-Forwarded-For` uses `$proxy_add_x_forwarded_for`, which **appends** to a client-supplied header,
   so its leftmost entry is attacker-controlled — never read it.
-- Limiters attach **per route** (`beforeHandle`), not via the plugin factory: a scoped hook covers
-  every route declared after it, and the public auth routes each need a different policy. The factory
-  form is used for `captchaController`, where one policy covers the instance.
+- Limiters attach **per route** (`beforeHandle`), never as a scoped Elysia plugin: a scoped hook
+  covers every route declared after it in the instance, and the public auth routes each need a
+  different policy.
 - Considered and rejected `elysia-rate-limit`: its key generator receives the raw `Request`, not the
   parsed/validated body, so the (email, IP) composite key isn't expressible; its default generator
   keys off `requestIP()` (the container problem above); it's one policy per plugin instance; and its
