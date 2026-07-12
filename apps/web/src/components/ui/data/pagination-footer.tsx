@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactNode } from "react";
 import { Pagination, Stack, Typography } from "@mui/material";
 
 interface PaginationFooterProps {
@@ -16,7 +16,7 @@ interface PaginationFooterProps {
  * "Showing X–Y of Z" summary plus a page selector. Renders nothing when the
  * list fits on a single page. Designed to consume a {@link usePagination} result.
  */
-export function PaginationFooter(props: PaginationFooterProps): ReactElement | null {
+export function PaginationFooter(props: PaginationFooterProps): ReactNode {
   const { page, pageCount, pageSize, total, onChange } = props;
 
   if (total <= pageSize) {

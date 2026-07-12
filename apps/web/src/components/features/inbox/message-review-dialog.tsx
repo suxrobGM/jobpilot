@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { CLASSIFICATION_TO_STATUS } from "@jobpilot/contracts/email";
 import {
   Autocomplete,
@@ -30,7 +30,7 @@ interface MessageReviewDialogProps {
 // "irrelevant" have none); derived from the shared classification→status map.
 const STATUS_CLASSIFICATIONS = new Set(Object.keys(CLASSIFICATION_TO_STATUS));
 
-export function MessageReviewDialog(props: MessageReviewDialogProps): ReactElement | null {
+export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode {
   const { messageId, open, onClose } = props;
   const [matchedApp, setMatchedApp] = useState<ApplicationDto | null>(null);
   const [search, setSearch] = useState("");
