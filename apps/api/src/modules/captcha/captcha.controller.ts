@@ -2,14 +2,14 @@ import { captchaSolveSchema } from "@jobpilot/contracts/captcha";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
-import { RATE_LIMITS, rateLimitHook } from "@/common/rate-limit";
+import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { captchaSolveResultSchema } from "./captcha.schema";
 import { CaptchaService } from "./captcha.service";
 
 const svc = container.resolve(CaptchaService);
 
 // Runs after profileGuard's derive, so `user` is in context - the policy is user-keyed.
-const limitSolve = rateLimitHook(RATE_LIMITS.captchaSolve);
+const limitSolve = rateLimit(RATE_LIMITS.captchaSolve);
 
 export const captchaController = new Elysia({
   prefix: "/captcha",

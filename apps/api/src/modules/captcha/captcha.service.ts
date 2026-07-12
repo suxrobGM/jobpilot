@@ -8,7 +8,7 @@ import { SERVICE_PROVIDERS, type ServiceProvider } from "@jobpilot/contracts/cre
 import { singleton } from "tsyringe";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { ErrorCodes, HttpError, notFound } from "@/common/errors";
-import { acquireSlot } from "@/common/rate-limit";
+import { acquireSlot, RATE_LIMITS } from "@/common/rate-limit";
 import { sleep } from "@/common/utils";
 import { PrismaClient } from "@/generated/prisma/client";
 
@@ -21,10 +21,6 @@ interface ProviderJob {
 
 const POLL_INTERVAL_MS = 5_000;
 const MAX_POLLS = 24; // ~120s budget
-
-/** Each solve can hold the request open for the full poll budget, so cap simultaneity per user -
- *  the rate limiter bounds requests per hour, not how many sit parked on a socket at once. */
-const MAX_CONCURRENT_SOLVES = 2;
 
 /** 502 - the upstream solver failed or timed out. */
 function serviceError(message: string): HttpError {
@@ -69,7 +65,7 @@ export class CaptchaService {
   ): Promise<CaptchaSolveResult> {
     // try/finally rather than a lifecycle hook: no hook is guaranteed to run when the client aborts
     // mid-poll, and a leaked counter would lock this user out permanently.
-    const release = acquireSlot("captcha-solve", userId, MAX_CONCURRENT_SOLVES);
+    const release = acquireSlot(`captcha-solve:${userId}`, RATE_LIMITS.captchaSolve.maxInFlight);
     try {
       const cred = await this.resolveServiceCredential(userId, profileId, input.provider);
       if (!cred) {

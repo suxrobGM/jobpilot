@@ -1,2 +1,2 @@
-export { acquireSlot, type RateLimitPolicy, rateLimitHook } from "./limiter";
+export { acquireSlot, rateLimit } from "./limiter";
 export { RATE_LIMITS } from "./policies";

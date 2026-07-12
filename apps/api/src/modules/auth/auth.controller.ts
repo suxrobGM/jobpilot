@@ -11,7 +11,7 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { logger } from "@/common/logger";
 import { authGuard } from "@/common/middleware";
-import { RATE_LIMITS, rateLimitHook } from "@/common/rate-limit";
+import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { okResponseSchema } from "@/types/response";
 import { ApiTokenService } from "./api-token.service";
 import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from "./auth.cookies";
@@ -29,15 +29,15 @@ const verificationService = container.resolve(VerificationService);
 const apiTokenService = container.resolve(ApiTokenService);
 
 // One hook per route: each public route needs its own policy, and /me and /tokens/* stay unthrottled.
-const limitRegister = rateLimitHook(RATE_LIMITS.register);
-const limitLoginIp = rateLimitHook(RATE_LIMITS.loginPerIp);
-const limitLoginAccount = rateLimitHook(RATE_LIMITS.loginPerAccount);
-const limitRefresh = rateLimitHook(RATE_LIMITS.refresh);
-const limitEmailVerify = rateLimitHook(RATE_LIMITS.emailVerify);
-const limitForgotIp = rateLimitHook(RATE_LIMITS.forgotPerIp);
-const limitForgotEmail = rateLimitHook(RATE_LIMITS.forgotPerEmail);
-const limitPasswordReset = rateLimitHook(RATE_LIMITS.passwordReset);
-const limitEmailResend = rateLimitHook(RATE_LIMITS.emailResend);
+const limitRegister = rateLimit(RATE_LIMITS.register);
+const limitLoginIp = rateLimit(RATE_LIMITS.loginPerIp);
+const limitLoginAccount = rateLimit(RATE_LIMITS.loginPerAccount);
+const limitRefresh = rateLimit(RATE_LIMITS.refresh);
+const limitEmailVerify = rateLimit(RATE_LIMITS.emailVerify);
+const limitForgotIp = rateLimit(RATE_LIMITS.forgotPerIp);
+const limitForgotEmail = rateLimit(RATE_LIMITS.forgotPerEmail);
+const limitPasswordReset = rateLimit(RATE_LIMITS.passwordReset);
+const limitEmailResend = rateLimit(RATE_LIMITS.emailResend);
 
 export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   // --- public ---

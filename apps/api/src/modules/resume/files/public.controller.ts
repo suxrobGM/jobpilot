@@ -1,9 +1,12 @@
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
+import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { ResumeFileService } from "./file.service";
 
 const svc = container.resolve(ResumeFileService);
+
+const limitPublicPdf = rateLimit(RATE_LIMITS.publicResumePdf);
 
 /**
  * Unauthenticated resume PDF access - the resume's v4 uuid is the capability
@@ -15,6 +18,7 @@ export const publicResumeController = new Elysia({
   detail: { tags: ["Resumes"] },
 }).get("/:id/pdf", ({ params }) => svc.renderPublicPdf(params.id), {
   params: idParam,
+  beforeHandle: limitPublicPdf,
   detail: {
     summary: "Render resume PDF (public)",
     description:

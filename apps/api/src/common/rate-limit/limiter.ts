@@ -10,7 +10,7 @@ export interface RateLimitContext {
 }
 
 /** How requests are bucketed. `null` skips the check for this request. */
-export type RateLimitKey = (ctx: RateLimitContext) => string | null;
+type RateLimitKey = (ctx: RateLimitContext) => string | null;
 
 export interface RateLimitPolicy {
   /** Sustained allowance: `limit` requests per `windowMs`. */
@@ -18,19 +18,18 @@ export interface RateLimitPolicy {
   windowMs: number;
   /** What a fully-idle key may spend at once. Defaults to `limit`. */
   burst?: number;
+  /** Simultaneous in-flight requests per key, enforced by `acquireSlot` in the service. */
+  maxInFlight?: number;
   message?: string;
   key: RateLimitKey;
 }
 
 /**
- * The caller's IP.
- *
- * nginx sets `X-Real-IP $remote_addr`, *replacing* any client-supplied value, so it is trustworthy.
- * Reading it is mandatory, not a nicety: the API runs inside a container, so `requestIP()` returns
- * the docker bridge gateway for every proxied request - one bucket for the entire user base. Never
- * read `X-Forwarded-For`: nginx *appends* to it, so its leftmost entry is attacker-supplied.
+ * Mandatory, not a nicety: the API runs in a container, so `requestIP()` is the docker bridge gateway
+ * for every proxied request - one bucket for the whole user base. nginx *replaces* `X-Real-IP`, so it
+ * is trustworthy; never read `X-Forwarded-For`, which nginx appends to (leftmost entry is spoofable).
  */
-export function clientIp(ctx: RateLimitContext): string {
+function clientIp(ctx: RateLimitContext): string {
   const realIp = ctx.headers["x-real-ip"]?.trim();
   return realIp || ctx.server?.requestIP(ctx.request)?.address || "unknown";
 }
@@ -65,22 +64,29 @@ interface Bucket {
   updatedAt: number;
 }
 
-/** An unbounded table keyed by client IP is itself a DoS. Evict in batches so the O(n) sweep
- *  amortizes rather than running on every request once the table is full. */
+/** An unbounded table keyed by client IP is itself a DoS. */
 const MAX_KEYS = 10_000;
-const EVICT_BATCH = 1_000;
+/** Headroom left after a sweep, so the O(n) scan runs once per this many new keys, not per request. */
+const EVICT_HEADROOM = 1_000;
+
+const DEFAULT_MESSAGE = "Too many requests. Slow down and try again shortly.";
 
 /**
- * Token bucket, in memory. Beats a sliding log (which lets the attacker size our memory) and a fixed
- * window (which allows a 2x burst across the window edge): O(1) per key, no timers, an exact
- * Retry-After, and `burst` as a knob. Single-process only.
+ * A `beforeHandle` hook that spends one token for this request's key and throws 429 (carrying
+ * Retry-After) when the bucket is empty. Each call owns its own table, so attach one per route.
  *
- * Returns 0 when the request is allowed, else the seconds to wait.
+ * Token bucket, in memory, single-process: O(1) per key, no timers, an exact Retry-After, and `burst`
+ * as a knob. Beats a sliding log (lets the attacker size our memory) and a fixed window (allows a 2x
+ * burst across the window edge).
+ *
+ * `beforeHandle`, not `derive`: the body is parsed *and validated* by then - which the email keys
+ * need - so a malformed body 422s without spending anyone's token.
  */
-function createBucket(policy: RateLimitPolicy): (key: string, now?: number) => number {
+export function rateLimit(policy: RateLimitPolicy): (ctx: RateLimitContext) => void {
   const buckets = new Map<string, Bucket>();
   const capacity = policy.burst ?? policy.limit;
   const refillPerMs = policy.limit / policy.windowMs;
+  const message = policy.message ?? DEFAULT_MESSAGE;
   /** Idle this long and a bucket has fully refilled - indistinguishable from a key never seen. */
   const idleMs = Math.ceil(capacity / refillPerMs);
 
@@ -90,21 +96,18 @@ function createBucket(policy: RateLimitPolicy): (key: string, now?: number) => n
         buckets.delete(key);
       }
     }
-    if (buckets.size < MAX_KEYS) {
-      return;
-    }
-    // Still full: someone is churning keys. Drop the oldest inserted (Map keeps insertion order)
-    // rather than refuse to track the new one, which would leave it unthrottled entirely.
-    let dropped = 0;
+    // Still near capacity: someone is churning keys. Drop the oldest inserted (Map keeps insertion
+    // order) rather than refuse to track the new one, which would leave it unthrottled entirely.
     for (const key of buckets.keys()) {
-      buckets.delete(key);
-      if (++dropped >= EVICT_BATCH) {
+      if (buckets.size <= MAX_KEYS - EVICT_HEADROOM) {
         break;
       }
+      buckets.delete(key);
     }
   };
 
-  return (key, now = Date.now()) => {
+  const take = (key: string): number => {
+    const now = Date.now();
     const bucket = buckets.get(key);
 
     if (!bucket) {
@@ -128,20 +131,6 @@ function createBucket(policy: RateLimitPolicy): (key: string, now?: number) => n
     // Round up, so a client that honors Retry-After is never rejected twice.
     return Math.max(1, Math.ceil((1 - tokens) / refillPerMs / 1000));
   };
-}
-
-const DEFAULT_MESSAGE = "Too many requests. Slow down and try again shortly.";
-
-/**
- * A `beforeHandle` hook that spends one token for this request's key and throws 429 (carrying
- * Retry-After) when the bucket is empty. Each call owns its own table, so attach one per route.
- *
- * `beforeHandle`, not `derive`: the body is parsed *and validated* by then - which the email keys
- * need - so a malformed body 422s without spending anyone's token.
- */
-export function rateLimitHook(policy: RateLimitPolicy): (ctx: RateLimitContext) => void {
-  const take = createBucket(policy);
-  const message = policy.message ?? DEFAULT_MESSAGE;
 
   return (ctx) => {
     const key = policy.key(ctx);
@@ -160,32 +149,31 @@ const inFlight = new Map<string, number>();
 /**
  * Cap concurrent in-flight work for one key; returns a release fn to call in a `finally`.
  *
- * A token bucket bounds *rate*, not simultaneity: a burst of CAPTCHA solves can still park several
- * requests holding a socket ~2 minutes each. Deliberately not a lifecycle hook - none is guaranteed
- * to run when the client aborts mid-poll, and a leaked counter would lock the user out for good.
+ * A token bucket bounds *rate*, not simultaneity: a burst of slow requests can still park several
+ * sockets at once. Deliberately not a lifecycle hook - none is guaranteed to run when the client
+ * aborts mid-request, and a leaked counter would lock the user out for good.
  */
-export function acquireSlot(scope: string, key: string, max: number): () => void {
-  const id = `${scope}:${key}`;
-  const current = inFlight.get(id) ?? 0;
+export function acquireSlot(key: string, max: number): () => void {
+  const current = inFlight.get(key) ?? 0;
   if (current >= max) {
     throw tooManyRequests(
       "Too many requests already in flight. Wait for the current ones to finish.",
       30,
     );
   }
-  inFlight.set(id, current + 1);
+  inFlight.set(key, current + 1);
 
   let released = false;
   return () => {
     if (released) {
-      return;
+      return; // a double release would decrement someone else's slot
     }
     released = true;
-    const next = (inFlight.get(id) ?? 1) - 1;
+    const next = (inFlight.get(key) ?? 1) - 1;
     if (next <= 0) {
-      inFlight.delete(id); // self-emptying, so no sweep needed
+      inFlight.delete(key); // self-emptying, so no sweep needed
     } else {
-      inFlight.set(id, next);
+      inFlight.set(key, next);
     }
   };
 }

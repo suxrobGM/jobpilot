@@ -45,15 +45,20 @@ export const RATE_LIMITS = {
   /** Cheap and cookie-driven; exists only so a broken client retry loop can't spin the DB. */
   refresh: { key: byIp, limit: 60, windowMs: 15 * MINUTE },
 
+  /** The only unauthenticated route that does real work: a cache miss re-renders the PDF. The uuid is
+   *  the capability token, so this caps how fast a leaked link can be replayed - a recruiter opening
+   *  and reloading the link a few times never trips it. */
+  publicResumePdf: { key: byIp, limit: 30, windowMs: HOUR, burst: 10 },
+
   /** Burns the *user's own* solver credits (captcha.service.ts decrypts their key), so this is a
-   *  runaway-agent guardrail, not an anti-abuse wall. burst 5 covers a page with several
-   *  challenges. Paired with MAX_CONCURRENT_SOLVES: a rate cap alone still lets several two-minute
-   *  requests pile up. */
+   *  runaway-agent guardrail, not an anti-abuse wall. burst 5 covers a page with several challenges.
+   *  `maxInFlight` because a rate cap alone still lets several two-minute solves pile up on sockets. */
   captchaSolve: {
     key: byUser,
     limit: 60,
     windowMs: HOUR,
     burst: 5,
+    maxInFlight: 2,
     message: "Too many CAPTCHA solves in flight. Slow the loop down.",
   },
 } as const satisfies Record<string, RateLimitPolicy>;
