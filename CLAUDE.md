@@ -38,6 +38,7 @@ API (`bun --cwd=apps/api run …`):
 
 - `dev`, `start`, `build` - Elysia server (watch / run / compile to `dist/server.exe`).
 - `typecheck` - `tsc --noEmit`.
+- `test` - `bun test`. Colocated `*.test.ts` next to the code. Runs in CI with no database and no env, so keep it that way: import the module under test **directly**, not through a barrel that might pull in Prisma or `@/env` (which validates at module load).
 - `db:generate`, `db:migrate` (create-only), `db:migrate:apply`, `db:seed`, `db:reset`, `db:studio`.
 
 ### TypeScript 7 (`apps/web` carries two compilers - do not "clean this up")
@@ -68,11 +69,11 @@ A tsyringe-injected class must stay a **value** import (`import { PrismaClient }
 
 - **Elysia app** (`app.ts`) mounts every module controller under `/api` and exports `type App` - the single source of truth for Eden Treaty client typing.
 - **`modules/<name>/`** - one module per domain. `<name>.controller.ts` holds thin Elysia routes (request Zod schemas + a `detail` block for Swagger summary/tags) that delegate to the service; `<name>.service.ts` holds business logic (tsyringe `@singleton`, Prisma); `index.ts` is the barrel exporting the controller.
-- **`common/`** - cross-cutting: `database` (Prisma client), `di` (tsyringe container), `errors` (`HttpError`, `notFound`/`conflict`, `findOwned` ownership-or-404), `middleware` (`authGuard`, `profileGuard` - profile routes are the default), `auth`, `sse`, `pdf`, `storage`, `plugins` (cors, swagger).
+- **`common/`** - cross-cutting: `database` (Prisma client), `di` (tsyringe container), `errors` (`HttpError`, `notFound`/`conflict`, `findOwned` ownership-or-404), `middleware` (`authGuard`, `profileGuard` - profile routes are the default), `rate-limit` (token-bucket limiter + the `RATE_LIMITS` policy table + an in-flight cap; attach per route via `rateLimitHook`, per instance via `rateLimit`), `auth`, `sse`, `pdf`, `storage`, `plugins` (cors, swagger).
 - **`types/response.ts`** - shared response schemas/types: the error envelope (`errorResponseSchema`/`httpErrorResponses`), success envelopes (`idResponseSchema`, `deletedResponseSchema`, `okResponseSchema`, `messageResponseSchema`), and pagination (`paginationSchema`, `paginatedResponseSchema(item)`, `createPaginatedResponse`). Imported as `@/types/response` (the web mirrors this alias in its tsconfig `paths`).
 - **Request validation is Zod from `@jobpilot/contracts`** (the package both API and web import); uuid path ids via `idParam`. Handlers return plain data (Elysia JSON-serializes it) or a raw `Response` for SSE / file streams / redirects.
 - **Every JSON route declares an explicit Zod `response` success schema** (the 200 shape) in its module `<name>.schema.ts`, or a shared envelope from `@/types/response`. Model the service's return exactly - Eden Treaty infers the web client's types from it, and Elysia silently strips fields not in the schema, so under-specifying breaks the web app and the agent's curl skills. **Dates are `z.date()`** (the service returns the raw Prisma `Date`; Elysia validates it then serializes to an ISO string on the wire - never `.toISOString()` in a response path). Genuine string values (e.g. `YYYY-MM-DD` bucket keys, free-text date columns) stay `z.string()`. Streaming / SSE / file / redirect routes omit `response`.
-- **Error responses are documented once, globally**: `app.ts` applies `.guard({ as: "scoped", response: httpErrorResponses })` to the `/api` group, so every route advertises the standard error envelope (`{ code, message, details? }`; statuses 400/401/403/404/409/422/500) in Swagger and Eden - never repeat error responses per route.
+- **Error responses are documented once, globally**: `app.ts` applies `.guard({ as: "scoped", response: httpErrorResponses })` to the `/api` group, so every route advertises the standard error envelope (`{ code, message, details? }`; statuses 400/401/403/404/409/422/429/500) in Swagger and Eden - never repeat error responses per route.
 - Adding a route: add/reuse a request schema in `packages/contracts` (or the module `*.schema.ts`), add the route with `body`/`query`/`params` as needed + a `response` success schema + a `detail` summary, and put non-trivial logic in the module service.
 
 ## Frontend conventions (`apps/web/src/`)

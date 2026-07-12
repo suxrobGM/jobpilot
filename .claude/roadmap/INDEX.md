@@ -20,13 +20,16 @@ Agreed sequence: Tier 0 first, then leases → stateless step loop → escalatio
 
 ## Tier 0 — Fixes (days, do first)
 
+Done 2026-07-12. Three of the five premises were wrong — the item files record the corrections, so
+they aren't re-litigated.
+
 | Status | Item | Hook |
 | --- | --- | --- |
-| todo | [Green CI](t0-green-ci.md) | `bun run ci` fails with 161 errors |
-| todo | [Inbox SSE tenant leak](t0-inbox-sse-leak.md) | security: all users receive all inbox events |
-| todo | [Rate limiting](t0-rate-limiting.md) | none on auth/captcha routes |
-| todo | [Prompt-injection boundary](t0-prompt-injection.md) | security: JD text can steer workers holding the PAT |
-| todo | [Scratch-file discipline](t0-scratch-files.md) | workers wrote snapshots to repo root |
+| done | [Green CI](t0-green-ci.md) | CI was already green; 161 errors were a Windows CRLF artifact |
+| done | [Inbox SSE tenant leak](t0-inbox-sse-leak.md) | topic keyed by `profileId`; replay buffer leaked too |
+| done | [Rate limiting](t0-rate-limiting.md) | token bucket on auth/captcha; `x-real-ip` is load-bearing |
+| done | [Prompt-injection boundary](t0-prompt-injection.md) | rules shipped; **eval fixture blocks on T1** |
+| done | [Scratch-file discipline](t0-scratch-files.md) | strays never existed; prevention only |
 
 ## Tier 1 — Foundations (weeks)
 
