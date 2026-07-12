@@ -13,7 +13,7 @@ interface ExtractResumeButtonProps {
   size?: "small" | "medium";
 }
 
-export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactElement {
+export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactElement | null {
   const { resume, size = "small" } = props;
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
@@ -46,7 +46,7 @@ export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactEleme
 
   // Extraction runs the local agent, so this control is desktop-only.
   if (!agentAvailable) {
-    return <></>;
+    return null;
   }
 
   return (

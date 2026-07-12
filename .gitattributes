@@ -1,2 +1,7 @@
+# Biome formats to LF (biome.jsonc `formatter.lineEnding`), so the working tree must be LF on every
+# platform. Without this, Windows `core.autocrlf=true` checks files out as CRLF and `bun run ci`
+# reports ~140 phantom format errors locally that CI never sees. `text=auto` leaves binaries alone.
+* text=auto eol=lf
+
 # Shell scripts must stay LF so they run inside Linux containers.
 *.sh text eol=lf

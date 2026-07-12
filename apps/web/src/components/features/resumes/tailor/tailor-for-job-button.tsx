@@ -10,14 +10,14 @@ interface TailorForJobButtonProps {
   size?: "small" | "medium";
 }
 
-export function TailorForJobButton(props: TailorForJobButtonProps): ReactElement {
+export function TailorForJobButton(props: TailorForJobButtonProps): ReactElement | null {
   const { size = "small" } = props;
   const agentAvailable = useAgentAvailable();
   const [open, setOpen] = useState(false);
 
   // Tailoring runs the local agent, so this control is desktop-only.
   if (!agentAvailable) {
-    return <></>;
+    return null;
   }
 
   return (

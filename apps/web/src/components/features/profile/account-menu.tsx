@@ -34,7 +34,7 @@ function displayName(p: ProfileDto): string {
  * Account avatar for the app rail. One profile per user, so this is an identity
  * + sign-out menu rather than a switcher. Reads the profile from `GET /profile`.
  */
-export function AccountMenu(): ReactElement {
+export function AccountMenu(): ReactElement | null {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
 
@@ -47,7 +47,7 @@ export function AccountMenu(): ReactElement {
   const profile = profileQuery.data;
 
   if (!profile) {
-    return <></>;
+    return null;
   }
 
   const handleOpen = (e: MouseEvent<HTMLElement>) => setAnchor(e.currentTarget);

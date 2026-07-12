@@ -16,11 +16,11 @@ interface PaginationFooterProps {
  * "Showing X–Y of Z" summary plus a page selector. Renders nothing when the
  * list fits on a single page. Designed to consume a {@link usePagination} result.
  */
-export function PaginationFooter(props: PaginationFooterProps): ReactElement {
+export function PaginationFooter(props: PaginationFooterProps): ReactElement | null {
   const { page, pageCount, pageSize, total, onChange } = props;
 
   if (total <= pageSize) {
-    return <></>;
+    return null;
   }
 
   return (

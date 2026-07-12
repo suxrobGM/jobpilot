@@ -95,7 +95,7 @@ function dateRange(start: string | undefined, end: string | undefined): string {
   return `${s} – ${e}`;
 }
 
-function ContactBar(props: { basics: ResumeBasics }): ReactElement {
+function ContactBar(props: { basics: ResumeBasics }): ReactElement | null {
   const { basics } = props;
   const parts: { kind: "text" | "link"; value: string; href?: string }[] = [];
 
@@ -126,7 +126,7 @@ function ContactBar(props: { basics: ResumeBasics }): ReactElement {
   }
 
   if (parts.length === 0) {
-    return <></>;
+    return null;
   }
 
   return (
@@ -147,9 +147,9 @@ function ContactBar(props: { basics: ResumeBasics }): ReactElement {
   );
 }
 
-function Bullets(props: { items: string[] }): ReactElement {
+function Bullets(props: { items: string[] }): ReactElement | null {
   if (props.items.length === 0) {
-    return <></>;
+    return null;
   }
 
   return (
