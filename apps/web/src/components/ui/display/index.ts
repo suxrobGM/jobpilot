@@ -1,3 +1,4 @@
+export * from "./color-chip";
 export * from "./copy-field";
 export * from "./external-link";
 export * from "./stat-card";

@@ -11,6 +11,7 @@ import { useApiQuery } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
+import { ColorChip } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePagination } from "@/hooks/use-pagination";
@@ -100,11 +101,10 @@ export function ProposalsList(): ReactElement {
                       spacing={1}
                       sx={{ alignItems: "center", flexWrap: "wrap" }}
                     >
-                      <Chip
-                        size="small"
+                      <ColorChip
+                        value={p.status}
+                        colors={STATUS_COLOR}
                         label={STATUS_LABEL[p.status]}
-                        color={STATUS_COLOR[p.status]}
-                        variant="outlined"
                       />
                       {p.clientName && (
                         <Chip size="small" label={p.clientName} variant="outlined" />

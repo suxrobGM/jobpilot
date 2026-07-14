@@ -1,11 +1,12 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Chip, Link } from "@mui/material";
+import { Link } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
 import { useApiQuery } from "@/api/hooks";
 import { contactQueries } from "@/api/queries";
 import type { ContactDto } from "@/api/types";
+import { ColorChip } from "@/components/ui/display";
 
 const CONNECTION_COLOR: Record<ContactDto["linkedinConnection"], "default" | "info" | "success"> = {
   none: "default",
@@ -46,14 +47,7 @@ export function ContactsTable(): ReactElement {
       field: "linkedinConnection",
       headerName: "LinkedIn",
       width: 130,
-      renderCell: (p) => (
-        <Chip
-          size="small"
-          label={p.row.linkedinConnection}
-          color={CONNECTION_COLOR[p.row.linkedinConnection]}
-          variant="outlined"
-        />
-      ),
+      renderCell: (p) => <ColorChip value={p.row.linkedinConnection} colors={CONNECTION_COLOR} />,
     },
     {
       field: "discoverySource",

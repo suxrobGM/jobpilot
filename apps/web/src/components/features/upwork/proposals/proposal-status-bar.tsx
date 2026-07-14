@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Chip, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
+import { ColorChip } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { OUTCOME_OPTIONS, STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-status";
@@ -18,10 +19,11 @@ export function ProposalStatusBar(props: ProposalStatusBarProps): ReactElement {
   return (
     <SectionCard>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: "center" }}>
-        <Chip
+        <ColorChip
+          value={proposal.status}
+          colors={STATUS_COLOR}
           label={STATUS_LABEL[proposal.status]}
-          color={STATUS_COLOR[proposal.status]}
-          variant="outlined"
+          size="medium"
         />
         <SelectField
           label="Status"

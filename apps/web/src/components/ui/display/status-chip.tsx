@@ -2,7 +2,8 @@
 
 import type { ReactElement } from "react";
 import { type ApplicationStatus, STATUSES } from "@jobpilot/contracts/application";
-import { Chip, type ChipProps } from "@mui/material";
+import type { ChipProps } from "@mui/material";
+import { ColorChip } from "./color-chip";
 
 export { type ApplicationStatus, STATUSES };
 
@@ -30,13 +31,8 @@ interface StatusChipProps {
 }
 
 export function StatusChip(props: StatusChipProps): ReactElement {
-  const { status, size = "small" } = props;
+  const { status, size } = props;
   return (
-    <Chip
-      size={size}
-      label={STATUS_LABEL[status]}
-      color={STATUS_COLOR[status]}
-      variant="outlined"
-    />
+    <ColorChip value={status} colors={STATUS_COLOR} label={STATUS_LABEL[status]} size={size} />
   );
 }

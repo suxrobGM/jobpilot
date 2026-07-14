@@ -19,7 +19,7 @@ import { campaignQueries, emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignSummaryDto, OutreachConfigDto, OutreachMessageDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
-import { ExternalLink, StatCard } from "@/components/ui/display";
+import { ColorChip, ExternalLink, StatCard } from "@/components/ui/display";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { OutreachMessageDialog } from "./outreach-message-dialog";
@@ -118,14 +118,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
       headerName: "Status",
       width: 110,
       sortable: false,
-      renderCell: (p) => (
-        <Chip
-          size="small"
-          label={p.row.status}
-          color={STATUS_COLOR[p.row.status]}
-          variant="outlined"
-        />
-      ),
+      renderCell: (p) => <ColorChip value={p.row.status} colors={STATUS_COLOR} />,
     },
     {
       field: "name",

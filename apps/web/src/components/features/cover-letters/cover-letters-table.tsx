@@ -2,13 +2,14 @@
 
 import type { ReactElement } from "react";
 import { Launch } from "@mui/icons-material";
-import { Chip, IconButton, Link } from "@mui/material";
+import { IconButton, Link } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
 import { coverLetterQueries } from "@/api/queries";
 import type { CoverLetterListItem } from "@/api/types";
+import { ColorChip } from "@/components/ui/display";
 
 const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "success"> = {
   manual: "default",
@@ -47,14 +48,7 @@ export function CoverLettersTable(): ReactElement {
       field: "source",
       headerName: "Source",
       width: 130,
-      renderCell: (p) => (
-        <Chip
-          size="small"
-          label={p.row.source}
-          color={SOURCE_COLOR[p.row.source]}
-          variant="outlined"
-        />
-      ),
+      renderCell: (p) => <ColorChip value={p.row.source} colors={SOURCE_COLOR} />,
     },
     {
       field: "jobUrl",

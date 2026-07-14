@@ -3,12 +3,13 @@
 import type { ReactElement } from "react";
 import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { AutoFixHigh } from "@mui/icons-material";
-import { Box, Button, Chip, LinearProgress, Stack } from "@mui/material";
+import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { upworkProfileQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { EmptyState } from "@/components/ui/data";
+import { ColorChip } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
@@ -66,12 +67,7 @@ export function ProfileEnhancer(): ReactElement {
     >
       <Stack spacing={3}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-          <Chip
-            size="small"
-            label={STATUS_LABEL[status]}
-            color={STATUS_COLOR[status]}
-            variant="outlined"
-          />
+          <ColorChip value={status} colors={STATUS_COLOR} label={STATUS_LABEL[status]} />
           <Box sx={{ flex: 1 }} />
           {agentAvailable && (
             <Button
