@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RELEASES_URL } from "./agent-install";
+import { RELEASES_URL } from "@/components/features/install/install-commands";
 
 const TAG_PREFIX = "v";
 

@@ -6,7 +6,10 @@ import { Autorenew, Clear, Replay } from "@mui/icons-material";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQueryClient } from "@tanstack/react-query";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
+import { apiErrorMessage } from "@/api/error";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
@@ -15,6 +18,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
+import { UPWORK_DOMAIN } from "../composer/form-config";
 import { CampaignJobsTable, isReapplicable } from "./jobs-table";
 
 const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<CampaignJobStatus>> =
@@ -27,25 +31,23 @@ const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? "" 
 
 interface CampaignJobsPanelProps {
   campaign: CampaignDetailDto;
-  /** Per-job single Apply action (auto-apply campaigns). */
-  onApplyJob?: (job: CampaignJobDto) => void;
-  /** Per-job Draft proposal action (Upwork recommendation campaigns). */
-  onDraftProposal?: (job: CampaignJobDto) => void;
-  /** Show the recommendation-reason column. */
-  showReason?: boolean;
 }
 
 /** Jobs table with status/search filtering and bulk re-apply / rescan of selected jobs. */
 export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
-  const { campaign, onApplyJob, onDraftProposal, showReason } = props;
+  const { campaign } = props;
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
   const toast = useToast();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState<CampaignJobStatus | null>(null);
   const [search, setSearch] = useState("");
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
+
+  const isAutoApply = campaign.source === "auto-apply";
+  const isUpwork = campaign.config.board === UPWORK_DOMAIN;
 
   const term = search.trim().toLowerCase();
   const visible = campaign.jobs.filter(
@@ -96,6 +98,35 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
     void agent.injectSkill("rescan-skipped", `${campaign.campaignId} --jobs ${keys}`);
     toast.success(`Rescanning ${plural(selectedSkipped.length, "skipped job")}`);
     resetSelection();
+  };
+
+  // Auto-apply campaigns apply on their own; on other campaigns (e.g. search results) the
+  // user dispatches a job to the single-job apply flow by its URL.
+  const applyJob = (job: CampaignJobDto): void => {
+    if (!isAutoApply) {
+      return;
+    }
+    void agent.injectSkill("apply", job.url);
+  };
+
+  // Upwork recommendations are recommend-only: seed a proposal draft from the
+  // recommendation, then hand off to the upwork-proposal skill to write it.
+  const draftProposal = async (job: CampaignJobDto): Promise<void> => {
+    const res = await api.upwork.proposals.post({
+      jobTitle: job.title,
+      clientName: job.company || null,
+      jobUrl: job.url,
+      jobDescription: job.description ?? "",
+      source: "search",
+      campaignId: job.campaignId,
+      jobKey: job.key,
+    });
+    if (res.error || !res.data) {
+      toast.error(apiErrorMessage(res.error, "Could not create the proposal draft"));
+      return;
+    }
+    void agent.injectSkill("upwork-proposal", String(res.data.id));
+    router.push(`/upwork/${res.data.id}` as Route);
   };
 
   return (
@@ -155,9 +186,9 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
       </Stack>
       <CampaignJobsTable
         rows={visible}
-        onApplyJob={onApplyJob}
-        onDraftProposal={onDraftProposal}
-        showReason={showReason}
+        onApplyJob={!isUpwork && agentAvailable ? applyJob : undefined}
+        onDraftProposal={isUpwork && agentAvailable ? draftProposal : undefined}
+        showReason={isUpwork}
         checkboxSelection={canReapply}
         rowSelectionModel={selection}
         onRowSelectionModelChange={setSelection}

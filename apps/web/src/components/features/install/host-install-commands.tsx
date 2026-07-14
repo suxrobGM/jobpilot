@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Stack, Typography } from "@mui/material";
-import { orderedInstallCommands } from "@/components/features/agent-dock/agent-install";
 import { CopyField } from "@/components/ui/display";
+import { orderedInstallCommands } from "./install-commands";
 
 /** Labeled copy fields for the per-OS direct host-install one-liners. Renders as flex children. */
 export function HostInstallCommands(): ReactElement {
