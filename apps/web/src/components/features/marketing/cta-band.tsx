@@ -1,34 +1,33 @@
-"use client";
-
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
+import { accent, gradients, radii } from "@/theme";
 import { Section } from "./section";
 
 export function CtaBand(): ReactElement {
   return (
     <Section>
       <Box
-        sx={(theme) => ({
+        sx={{
           position: "relative",
           overflow: "hidden",
-          borderRadius: theme.radii.lg,
-          border: `1px solid ${theme.palette.accent.primary}40`,
-          backgroundColor: theme.palette.surfaces.card,
-          boxShadow: `0 24px 64px -32px ${theme.palette.accent.primary}33`,
+          borderRadius: `${radii.lg}px`,
+          border: `1px solid ${accent.primary}40`,
+          backgroundColor: "surfaces.card",
+          boxShadow: `0 24px 64px -32px ${accent.primary}33`,
           paddingBlock: { xs: 6, md: 8 },
           paddingInline: { xs: 3, md: 6 },
-        })}
+        }}
       >
         <Box
           aria-hidden
-          sx={(theme) => ({
+          sx={{
             position: "absolute",
             inset: 0,
-            background: theme.gradients.reversed,
+            background: gradients.reversed,
             opacity: 0.05,
             pointerEvents: "none",
-          })}
+          }}
         />
         <Box
           aria-hidden

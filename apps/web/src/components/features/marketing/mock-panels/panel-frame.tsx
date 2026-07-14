@@ -1,8 +1,6 @@
-"use client";
-
 import type { ReactElement, ReactNode } from "react";
 import { Box, Stack, type SxProps, type Theme, Typography } from "@mui/material";
-import { fontFamilies } from "@/theme";
+import { fontFamilies, line, radii, shadows } from "@/theme";
 
 interface PanelFrameProps {
   /** Mono window-title label, e.g. "pipeline". */
@@ -16,24 +14,24 @@ export function PanelFrame(props: PanelFrameProps): ReactElement {
   return (
     <Box
       aria-hidden
-      sx={(theme) => ({
-        borderRadius: theme.radii.lg,
-        border: `1px solid ${theme.palette.line.border}`,
-        backgroundColor: theme.palette.surfaces.card,
-        boxShadow: theme.shadows_custom.lg,
+      sx={{
+        borderRadius: `${radii.lg}px`,
+        border: `1px solid ${line.border}`,
+        backgroundColor: "surfaces.card",
+        boxShadow: shadows.lg,
         overflow: "hidden",
-      })}
+      }}
     >
       <Stack
         direction="row"
         spacing={0.75}
-        sx={(theme) => ({
+        sx={{
           alignItems: "center",
           paddingInline: 1.5,
           height: 36,
-          borderBottom: `1px solid ${theme.palette.line.divider}`,
-          backgroundColor: theme.palette.surfaces.elevated,
-        })}
+          borderBottom: `1px solid ${line.divider}`,
+          backgroundColor: "surfaces.elevated",
+        }}
       >
         {(["error.main", "warning.main", "success.main"] as const).map((c) => (
           <Box key={c} sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: c }} />
@@ -47,12 +45,12 @@ export function PanelFrame(props: PanelFrameProps): ReactElement {
   );
 }
 
-/** Inset-card surface shared by every mock panel; spread with a `padding` override. */
-export const panelCellSx = (theme: Theme) => ({
-  borderRadius: theme.radii.sm,
-  border: `1px solid ${theme.palette.line.divider}`,
-  backgroundColor: theme.palette.surfaces.elevated,
-});
+/** Inset-card surface shared by every mock panel; merge with a `padding` override. */
+export const panelCellSx = {
+  borderRadius: `${radii.sm}px`,
+  border: `1px solid ${line.divider}`,
+  backgroundColor: "surfaces.elevated",
+} satisfies SxProps<Theme>;
 
 interface PanelBadgeProps {
   children: ReactNode;
@@ -70,18 +68,18 @@ export function PanelBadge(props: PanelBadgeProps): ReactElement {
     <Box
       component="span"
       sx={[
-        (theme) => ({
+        {
           fontSize: "0.625rem",
           fontWeight: mono ? 400 : 600,
           fontFamily: mono ? fontFamilies.mono : undefined,
           color,
           border: "1px solid",
           borderColor: borderColor ?? color,
-          borderRadius: theme.radii.pill,
+          borderRadius: `${radii.pill}px`,
           paddingInline: 1,
           paddingBlock: 0.25,
           whiteSpace: "nowrap",
-        }),
+        },
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}
     >

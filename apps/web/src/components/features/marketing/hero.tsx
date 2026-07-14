@@ -1,9 +1,7 @@
-"use client";
-
 import type { ReactElement } from "react";
 import { Box, Container, Grid, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
-import { fontFamilies } from "@/theme";
+import { fontFamilies, gradients } from "@/theme";
 import { AgentTranscript } from "./agent-transcript";
 import { SectionEyebrow } from "./section-eyebrow";
 
@@ -24,17 +22,17 @@ export function Hero(): ReactElement {
       {/* Ambient brand orb. */}
       <Box
         aria-hidden
-        sx={(theme) => ({
+        sx={{
           position: "absolute",
           top: -180,
           right: -120,
           width: 520,
           height: 520,
-          background: theme.gradients.orb,
+          background: gradients.orb,
           filter: "blur(120px)",
           opacity: 0.16,
           pointerEvents: "none",
-        })}
+        }}
       />
       <Container maxWidth="lg" sx={{ position: "relative", paddingBlock: { xs: 6, md: 10 } }}>
         <Grid container spacing={6} sx={{ alignItems: "center" }}>

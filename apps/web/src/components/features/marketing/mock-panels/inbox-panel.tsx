@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { fontFamilies } from "@/theme";

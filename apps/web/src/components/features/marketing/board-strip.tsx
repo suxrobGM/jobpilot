@@ -1,8 +1,6 @@
-"use client";
-
 import type { ReactElement } from "react";
 import { Box, Container, Stack, Typography } from "@mui/material";
-import { fontFamilies } from "@/theme";
+import { accent, fontFamilies, line } from "@/theme";
 
 const BOARDS = [
   "LinkedIn",
@@ -59,11 +57,11 @@ export function BoardStrip(): ReactElement {
                 component="span"
                 sx={[
                   chipSx,
-                  (theme) => ({
+                  {
                     color: "text.secondary",
-                    border: `1px solid ${theme.palette.line.border}`,
-                    backgroundColor: theme.palette.surfaces.elevated,
-                  }),
+                    border: `1px solid ${line.border}`,
+                    backgroundColor: "surfaces.elevated",
+                  },
                 ]}
               >
                 {board}
@@ -73,10 +71,10 @@ export function BoardStrip(): ReactElement {
               component="span"
               sx={[
                 chipSx,
-                (theme) => ({
+                {
                   color: "accent.primary",
-                  border: `1px dashed ${theme.palette.accent.primary}66`,
-                }),
+                  border: `1px dashed ${accent.primary}66`,
+                },
               ]}
             >
               + your board

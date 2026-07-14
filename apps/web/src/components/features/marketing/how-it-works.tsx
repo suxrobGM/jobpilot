@@ -1,8 +1,6 @@
-"use client";
-
 import type { ReactElement } from "react";
 import { Box, Grid, Stack, Typography } from "@mui/material";
-import { fontFamilies } from "@/theme";
+import { fontFamilies, line, radii } from "@/theme";
 import { Section } from "./section";
 
 const STEPS = [
@@ -53,16 +51,16 @@ export function HowItWorks(): ReactElement {
                 <Typography variant="body2Muted">{step.body}</Typography>
                 <Box
                   component="code"
-                  sx={(theme) => ({
+                  sx={{
                     fontFamily: fontFamilies.mono,
                     fontSize: "0.75rem",
-                    color: theme.palette.text.secondary,
-                    backgroundColor: theme.palette.surfaces.elevated,
-                    border: `1px solid ${theme.palette.line.divider}`,
-                    borderRadius: `${theme.radii.sm}px`,
+                    color: "text.secondary",
+                    backgroundColor: "surfaces.elevated",
+                    border: `1px solid ${line.divider}`,
+                    borderRadius: `${radii.sm}px`,
                     paddingInline: 1,
                     paddingBlock: 0.5,
-                  })}
+                  }}
                 >
                   {step.snippet}
                 </Box>

@@ -1,8 +1,6 @@
-"use client";
-
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
-import { editorial, fontFamilies } from "@/theme";
+import { editorial, fontFamilies, radii } from "@/theme";
 import { PanelFrame, panelCellSx } from "./panel-frame";
 
 const VARIANTS = [
@@ -26,17 +24,17 @@ const LINES = [
 function PagePreview(): ReactElement {
   return (
     <Box
-      sx={(theme) => ({
+      sx={{
         width: 104,
         flexShrink: 0,
         aspectRatio: "3 / 4",
-        borderRadius: theme.radii.xs,
+        borderRadius: `${radii.xs}px`,
         backgroundColor: editorial.paper,
         padding: 1.25,
         display: "flex",
         flexDirection: "column",
         gap: 0.75,
-      })}
+      }}
     >
       <Box sx={{ height: 6, width: "55%", backgroundColor: editorial.ink, opacity: 0.8 }} />
       {LINES.map((line) => (
