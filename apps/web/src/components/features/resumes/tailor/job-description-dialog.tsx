@@ -1,16 +1,8 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Stack,
-  TextField,
-} from "@mui/material";
+import { Button, DialogContentText, TextField } from "@mui/material";
+import { FormDialogShell } from "@/components/ui/form";
 import { useAgent } from "@/providers/agent-provider";
 
 interface JobDescriptionDialogProps {
@@ -39,32 +31,31 @@ export function JobDescriptionDialog(props: JobDescriptionDialogProps): ReactEle
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-      <DialogTitle>Tailor for job</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2}>
-          <DialogContentText>
-            Paste the job description (or a URL). The AI will inspect your existing resumes and
-            either reuse a close match or create a new tailored variant under the most relevant
-            base.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            fullWidth
-            multiline
-            minRows={8}
-            placeholder="Paste JD text or a URL"
-            value={jd}
-            onChange={(e) => setJd(e.target.value)}
-          />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={!jd.trim()}>
+    <FormDialogShell
+      open={open}
+      title="Tailor for job"
+      onClose={handleClose}
+      onSubmit={() => void handleSubmit()}
+      maxWidth="md"
+      submit={
+        <Button type="submit" variant="contained" disabled={!jd.trim()}>
           Run /tailor-resume
         </Button>
-      </DialogActions>
-    </Dialog>
+      }
+    >
+      <DialogContentText>
+        Paste the job description (or a URL). The AI will inspect your existing resumes and either
+        reuse a close match or create a new tailored variant under the most relevant base.
+      </DialogContentText>
+      <TextField
+        autoFocus
+        fullWidth
+        multiline
+        minRows={8}
+        placeholder="Paste JD text or a URL"
+        value={jd}
+        onChange={(e) => setJd(e.target.value)}
+      />
+    </FormDialogShell>
   );
 }

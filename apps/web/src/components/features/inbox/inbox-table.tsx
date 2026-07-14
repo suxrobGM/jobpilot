@@ -1,10 +1,12 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { Classification } from "@jobpilot/contracts/email";
 import { Button, Chip, Stack, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
-import { DataTable } from "@/components/ui/data";
+import { DataTable } from "@/components/ui/data/data-table";
+import { ColorChip } from "@/components/ui/display";
 
 interface InboxTableProps {
   rows: ReadonlyArray<EmailMessageDto>;
@@ -14,7 +16,10 @@ interface InboxTableProps {
   onScanMessage?: (row: EmailMessageDto) => void;
 }
 
-const CLASS_COLORS: Record<string, "default" | "primary" | "success" | "error" | "warning"> = {
+const CLASS_COLORS: Record<
+  Classification,
+  "default" | "primary" | "success" | "error" | "warning"
+> = {
   interviewing: "primary",
   offer: "success",
   rejected: "error",
@@ -57,10 +62,9 @@ export function InboxTable(props: InboxTableProps): ReactElement {
             </Typography>
           );
         }
-        const color = CLASS_COLORS[c] ?? "default";
         return (
           <Stack direction="row" spacing={0.5} sx={{ height: "100%", alignItems: "center" }}>
-            <Chip size="small" label={c} color={color} />
+            <ColorChip value={c} colors={CLASS_COLORS} variant="filled" />
             {p.row.reviewStatus === "auto" && (
               <Chip size="small" label="auto" variant="outlined" color="info" />
             )}

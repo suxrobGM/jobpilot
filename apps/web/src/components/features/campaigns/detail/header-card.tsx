@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { CampaignDetailDto } from "@/api/types";
+import { ColorChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
 import { CAMPAIGN_STATUS_COLOR, CAMPAIGN_STATUS_LABEL } from "../campaign-status";
 import { CampaignActionsBar } from "./actions-bar";
@@ -32,11 +33,10 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
               spacing={1}
               sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
             >
-              <Chip
-                size="small"
+              <ColorChip
+                value={campaign.status}
+                colors={CAMPAIGN_STATUS_COLOR}
                 label={CAMPAIGN_STATUS_LABEL[campaign.status]}
-                color={CAMPAIGN_STATUS_COLOR[campaign.status]}
-                variant="outlined"
               />
               <Typography
                 variant="body1"

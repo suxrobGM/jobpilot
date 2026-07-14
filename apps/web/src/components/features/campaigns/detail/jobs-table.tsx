@@ -2,10 +2,11 @@
 
 import type { ReactElement } from "react";
 import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
-import { Button, Chip, Link } from "@mui/material";
+import { Button, Link } from "@mui/material";
 import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import type { CampaignJobDto } from "@/api/types";
-import { DataTable } from "@/components/ui/data";
+import { DataTable } from "@/components/ui/data/data-table";
+import { ColorChip } from "@/components/ui/display";
 
 /** Statuses that can still be applied to from the campaigns detail page. */
 export function isApplicable(status: CampaignJobStatus): boolean {
@@ -60,14 +61,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       field: "status",
       headerName: "Status",
       width: 130,
-      renderCell: (p) => (
-        <Chip
-          size="small"
-          label={p.row.status}
-          color={STATUS_COLOR[p.row.status]}
-          variant="outlined"
-        />
-      ),
+      renderCell: (p) => <ColorChip value={p.row.status} colors={STATUS_COLOR} />,
       sortable: false,
     },
     {

@@ -4,7 +4,7 @@ import { type ReactElement, useState } from "react";
 import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
-import { emailQueries } from "@/api/queries";
+import { emailQueries, type InboxFilter } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data/empty-state";
@@ -14,8 +14,6 @@ import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { InboxTable } from "./inbox-table";
 import { InboxToolbar } from "./inbox-toolbar";
 import { MessageReviewDialog } from "./message-review-dialog";
-
-export type InboxFilter = "pending" | "auto" | "approved" | "denied" | "all";
 
 export function InboxContent(): ReactElement {
   const [filter, setFilter] = useState<InboxFilter>("all");

@@ -7,9 +7,10 @@ interface ColorChipProps<T extends string> {
   /** Defaults to the raw value. */
   label?: string;
   size?: ChipProps["size"];
+  variant?: ChipProps["variant"];
 }
 
 export function ColorChip<T extends string>(props: ColorChipProps<T>): ReactElement {
-  const { value, colors, label, size = "small" } = props;
-  return <Chip size={size} variant="outlined" label={label ?? value} color={colors[value]} />;
+  const { value, colors, label, size = "small", variant = "outlined" } = props;
+  return <Chip size={size} variant={variant} label={label ?? value} color={colors[value]} />;
 }

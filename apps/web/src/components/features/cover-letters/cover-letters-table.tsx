@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
 import { coverLetterQueries } from "@/api/queries";
 import type { CoverLetterListItem } from "@/api/types";
-import { DataTable } from "@/components/ui/data";
+import { DataTable } from "@/components/ui/data/data-table";
 import { ColorChip } from "@/components/ui/display";
 
 const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "success"> = {

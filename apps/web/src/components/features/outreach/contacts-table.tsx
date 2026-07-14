@@ -6,7 +6,7 @@ import type { GridColDef } from "@mui/x-data-grid";
 import { useApiQuery } from "@/api/hooks";
 import { contactQueries } from "@/api/queries";
 import type { ContactDto } from "@/api/types";
-import { DataTable } from "@/components/ui/data";
+import { DataTable } from "@/components/ui/data/data-table";
 import { ColorChip } from "@/components/ui/display";
 
 const CONNECTION_COLOR: Record<ContactDto["linkedinConnection"], "default" | "info" | "success"> = {

@@ -1,14 +1,4 @@
 "use client";
 
-import type { ReactElement } from "react";
-import { ErrorFallback } from "@/components/ui/feedback";
-
-interface RootErrorProps {
-  error: Error & { digest?: string };
-  reset: () => void;
-}
-
-export default function RootErrorBoundary(props: RootErrorProps): ReactElement {
-  const { error, reset } = props;
-  return <ErrorFallback error={error} reset={reset} />;
-}
+// ErrorFallback's props are already Next's error-page contract (error + reset).
+export { ErrorFallback as default } from "@/components/ui/feedback";

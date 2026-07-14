@@ -1,7 +1,8 @@
+import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
+import type { ReviewStatus } from "@jobpilot/contracts/email";
+import type { QueueStatus } from "@jobpilot/contracts/queue";
 import { api } from "@/api/client";
-import type { ApiQueryDef } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { EmailMessageDetailDto } from "@/api/types";
 
 /**
  * Per-endpoint query defs: one (queryKey, queryFn) pair per read, mirroring the
@@ -47,15 +48,15 @@ export const applicationQueries = {
     queryFn: () => api.applied({ id }).get(),
   }),
   search: (search: string) => ({
-    queryKey: [...queryKeys.applications.all, "search", search] as const,
+    queryKey: queryKeys.applications.search(search),
     queryFn: () => api.applied.get({ query: search ? { search } : {} }),
   }),
 };
 
 export const campaignQueries = {
-  list: (filters?: { status?: string; source?: string }) => ({
+  list: (filters: { status?: CampaignStatus; source?: CampaignSource } = {}) => ({
     queryKey: queryKeys.campaigns.list(filters),
-    queryFn: () => (filters ? api.campaigns.get({ query: filters }) : api.campaigns.get()),
+    queryFn: () => api.campaigns.get({ query: filters }),
   }),
   detail: (id: string) => ({
     queryKey: queryKeys.campaigns.detail(id),
@@ -72,11 +73,14 @@ export const contactQueries = {
 };
 
 export const queueQueries = {
-  list: (filters: { status?: string } = {}) => ({
+  list: (filters: { status?: QueueStatus } = {}) => ({
     queryKey: queryKeys.queue.list(filters),
     queryFn: () => api.queue.get({ query: filters }),
   }),
 };
+
+/** The inbox list filter: a review status, or "all" for no filter. */
+export type InboxFilter = ReviewStatus | "all";
 
 export const emailQueries = {
   account: () => ({ queryKey: queryKeys.email.account(), queryFn: () => api.email.account.get() }),
@@ -84,18 +88,14 @@ export const emailQueries = {
     queryKey: queryKeys.email.oauthClient(),
     queryFn: () => api.email.oauth.client.get(),
   }),
-  messages: (filter: string) => ({
+  messages: (filter: InboxFilter) => ({
     queryKey: queryKeys.email.messages({ filter }),
     queryFn: () =>
       api.email.messages.get({ query: filter === "all" ? {} : { reviewStatus: filter } }),
   }),
-  // Null id yields an empty result so the def stays callable while disabled (enabled: id !== null).
-  message: (messageId: string | null): ApiQueryDef<EmailMessageDetailDto> => ({
-    queryKey: [...queryKeys.email.all, "message", messageId ?? -1] as const,
-    queryFn: () =>
-      messageId == null
-        ? Promise.resolve({ data: null, error: null })
-        : api.email.messages({ id: messageId }).get(),
+  message: (messageId: string) => ({
+    queryKey: queryKeys.email.message(messageId),
+    queryFn: () => api.email.messages({ id: messageId }).get(),
   }),
 };
 

@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import type { Role } from "@jobpilot/contracts/role";
-import { Chip } from "@mui/material";
+import { ColorChip } from "@/components/ui/display";
 
 interface AdminRoleChipProps {
   role: Role;
@@ -16,5 +16,5 @@ const COLOR: Record<Role, "warning" | "primary" | "default"> = {
 export function AdminRoleChip(props: AdminRoleChipProps): ReactElement {
   const { role } = props;
 
-  return <Chip size="small" label={role.toLowerCase()} color={COLOR[role]} variant="outlined" />;
+  return <ColorChip value={role} colors={COLOR} label={role.toLowerCase()} />;
 }

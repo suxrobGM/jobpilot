@@ -1,3 +1,5 @@
-export * from "./data-table";
+// data-table stays out of the barrel: re-exporting it would make @mui/x-data-grid
+// reachable from every EmptyState/PaginationFooter importer, including the root
+// client chunk. Grid call sites import "@/components/ui/data/data-table" directly.
 export * from "./empty-state";
 export * from "./pagination-footer";

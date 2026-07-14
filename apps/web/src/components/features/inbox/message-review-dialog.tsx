@@ -18,7 +18,7 @@ import {
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { applicationQueries, emailQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations, queryKeys } from "@/api/query-keys";
 import type { ApplicationDto } from "@/api/types";
 
 interface MessageReviewDialogProps {
@@ -36,7 +36,9 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
   const [matchedApp, setMatchedApp] = useState<ApplicationDto | null>(null);
   const [search, setSearch] = useState("");
 
-  const message = useApiQuery(emailQueries.message(messageId), { enabled: messageId !== null });
+  const message = useApiQuery(emailQueries.message(messageId ?? ""), {
+    enabled: messageId !== null,
+  });
 
   // Seed the editable match/search from the fetched message whenever it changes
   const [prevData, setPrevData] = useState(message.data);
@@ -65,7 +67,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
     () => api.email.messages({ id: messageId! }).approve.post({}),
     {
       successMessage: "Approved",
-      invalidate: [queryKeys.email.all, queryKeys.applications.all],
+      invalidate: invalidations.emailReview,
       onSuccess: () => onClose(),
     },
   );
