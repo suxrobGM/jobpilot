@@ -15,13 +15,9 @@ import {
 } from "@mui/x-data-grid";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { campaignQueries, emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type {
-  CampaignSummaryDto,
-  EmailAccountStatus,
-  OutreachConfigDto,
-  OutreachMessageDto,
-} from "@/api/types";
+import type { CampaignSummaryDto, OutreachConfigDto, OutreachMessageDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { ExternalLink, StatCard } from "@/components/ui/display";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
@@ -65,13 +61,8 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
   const [openId, setOpenId] = useState<string | null>(null);
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
-  const messagesQuery = useApiQuery<OutreachMessageDto[]>(
-    queryKeys.campaigns.outreach(campaignId),
-    () => api.campaigns({ id: campaignId }).outreach.get(),
-  );
-  const accountQuery = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
-    api.email.account.get(),
-  );
+  const messagesQuery = useApiQuery(campaignQueries.outreach(campaignId));
+  const accountQuery = useApiQuery(emailQueries.account());
 
   const invalidate = [
     queryKeys.campaigns.outreach(campaignId),

@@ -5,9 +5,13 @@ import { useEffect } from "react";
 import { apiErrorMessage, type EdenResult } from "@/api/error";
 import { useToast } from "@/providers/notification-provider";
 
-type QueryFn<T> = () => Promise<EdenResult<T>>;
-
 type ApiQueryKey = readonly unknown[];
+
+/** A per-endpoint (queryKey, queryFn) pair; built by the factories in `@/api/queries`. */
+export interface ApiQueryDef<TData> {
+  queryKey: ApiQueryKey;
+  queryFn: () => Promise<EdenResult<TData>>;
+}
 
 type UseApiQueryOptions<TData, TSelected = TData> = Omit<
   UseQueryOptions<TData, Error, TSelected, ApiQueryKey>,
@@ -22,10 +26,10 @@ export type ApiQueryResult<TData> = Omit<UseQueryResult<TData, Error>, "data" | 
 };
 
 export function useApiQuery<TData, TSelected = TData>(
-  queryKey: ApiQueryKey,
-  queryFn: QueryFn<TData>,
+  def: ApiQueryDef<TData>,
   options?: UseApiQueryOptions<NoInfer<TData>, TSelected>,
 ): ApiQueryResult<TSelected> {
+  const { queryKey, queryFn } = def;
   const { errorMessage, ...queryOptions } = options ?? {};
   const toast = useToast();
 

@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { jobBoardQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
@@ -39,9 +40,7 @@ export function BoardsContent(): ReactElement {
   const search = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
   const confirm = useConfirm();
 
-  const boards = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
-    api["job-boards"].get(),
-  );
+  const boards = useApiQuery(jobBoardQueries.list());
 
   const update = useApiMutation<JobBoardDto, { id: string; patch: JobBoardPatch }>(
     ({ id, patch }) => api["job-boards"]({ id }).patch(patch),

@@ -2,9 +2,8 @@
 
 import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
 import { useState } from "react";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { campaignQueries } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { type Pagination, usePagination } from "@/hooks/use-pagination";
 
@@ -31,9 +30,7 @@ export function useCampaignsList(pageSize: number): UseCampaignsListResult {
   const [statusFilter, setStatusFilterState] = useState<CampaignStatus | null>(null);
   const [sourceFilter, setSourceFilterState] = useState<CampaignSource | null>(null);
 
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    api.campaigns.get(),
-  );
+  const campaigns = useApiQuery(campaignQueries.list());
 
   const allRows = campaigns.data ?? [];
   const interruptedCount = allRows.filter((r) => r.status === "interrupted").length;

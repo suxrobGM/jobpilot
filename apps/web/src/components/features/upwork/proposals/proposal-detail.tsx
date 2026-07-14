@@ -16,6 +16,7 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
@@ -40,9 +41,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
 
-  const detail = useApiQuery<UpworkProposalDto>(queryKeys.upworkProposals.detail(id), () =>
-    api.upwork.proposals({ id }).get(),
-  );
+  const detail = useApiQuery(upworkProposalQueries.detail(id));
 
   useSseChannel(upworkChannel, null, {
     on: {

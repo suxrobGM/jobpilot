@@ -6,8 +6,9 @@ import { useSelector } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { campaignQueries, jobBoardQueries, profileQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { CampaignDto, CreateCampaignRequest, JobBoardDto, ProfileResponse } from "@/api/types";
+import type { CreateCampaignRequest } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
@@ -35,15 +36,9 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const router = useRouter();
   const agent = useAgent();
 
-  const boardsQuery = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
-    api["job-boards"].get(),
-  );
-  const profileQuery = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () =>
-    api.profile.get(),
-  );
-  const recentCampaignsQuery = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    api.campaigns.get(),
-  );
+  const boardsQuery = useApiQuery(jobBoardQueries.list());
+  const profileQuery = useApiQuery(profileQueries.detail());
+  const recentCampaignsQuery = useApiQuery(campaignQueries.list());
 
   const createCampaign = useApiMutation<unknown, CreateCampaignRequest>(
     (body) => api.campaigns.post(body),

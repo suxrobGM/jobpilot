@@ -6,9 +6,8 @@ import { Add } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { campaignQueries } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { CampaignRow } from "@/components/features/campaigns";
 import { EmptyState } from "@/components/ui/data";
@@ -25,9 +24,7 @@ export function CampaignGroups(): ReactElement {
   const router = useRouter();
   const { expand } = useAgentDock();
   const agentAvailable = useAgentAvailable();
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    api.campaigns.get(),
-  );
+  const campaigns = useApiQuery(campaignQueries.list());
   const rows = campaigns.data ?? [];
 
   const open = (c: CampaignDto): void => {

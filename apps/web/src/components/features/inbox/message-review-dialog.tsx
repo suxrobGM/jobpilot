@@ -17,8 +17,9 @@ import {
 } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { applicationQueries, emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { ApplicationDto, EmailMessageDetailDto } from "@/api/types";
+import type { ApplicationDto } from "@/api/types";
 
 interface MessageReviewDialogProps {
   messageId: string | null;
@@ -35,16 +36,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
   const [matchedApp, setMatchedApp] = useState<ApplicationDto | null>(null);
   const [search, setSearch] = useState("");
 
-  const message = useApiQuery<EmailMessageDetailDto>(
-    [...queryKeys.email.all, "message", messageId ?? -1] as const,
-    () => {
-      if (messageId == null) {
-        return Promise.resolve({ data: null, error: null });
-      }
-      return api.email.messages({ id: messageId }).get();
-    },
-    { enabled: messageId !== null },
-  );
+  const message = useApiQuery(emailQueries.message(messageId), { enabled: messageId !== null });
 
   // Seed the editable match/search from the fetched message whenever it changes
   const [prevData, setPrevData] = useState(message.data);
@@ -60,11 +52,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
     }
   }
 
-  const appOptions = useApiQuery<ApplicationDto[]>(
-    [...queryKeys.applications.all, "search", search] as const,
-    () => api.applied.get({ query: search ? { search } : {} }),
-    { enabled: open },
-  );
+  const appOptions = useApiQuery(applicationQueries.search(search), { enabled: open });
 
   const patchMatch = useApiMutation<unknown, { matchedAppId: string | null }>(
     (vars) => api.email.messages({ id: messageId! }).patch(vars),

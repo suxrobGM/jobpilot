@@ -7,8 +7,8 @@ import { Button, Paper, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { campaignQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { CampaignDto } from "@/api/types";
 import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
 import { readAgentStorage, subscribeAgentStorage } from "@/lib/agent-storage";
 import { workspaceChannel } from "@/lib/sse/channels/workspace";
@@ -44,9 +44,7 @@ export function AutoApplyStopPill(): ReactNode {
     },
   });
 
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(FILTERS), () =>
-    api.campaigns.get({ query: { status: FILTERS.status, source: FILTERS.source } }),
-  );
+  const campaigns = useApiQuery(campaignQueries.list(FILTERS));
 
   const active = campaigns.data?.[0] ?? null;
 

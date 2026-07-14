@@ -2,20 +2,14 @@
 
 import type { ReactElement } from "react";
 import { Grid } from "@mui/material";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
-import type { ApplicationDto, CampaignDto } from "@/api/types";
+import { applicationQueries, campaignQueries } from "@/api/queries";
 import { StatCard } from "@/components/ui/display";
 import { INTERVIEW_STATUSES } from "../applications/funnel-bar";
 
 export function StatTiles(): ReactElement {
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    api.campaigns.get(),
-  );
-  const applications = useApiQuery<ApplicationDto[]>(queryKeys.applications.list({}), () =>
-    api.applied.get({ query: {} }),
-  );
+  const campaigns = useApiQuery(campaignQueries.list());
+  const applications = useApiQuery(applicationQueries.list());
 
   const rows = campaigns.data ?? [];
   const apps = applications.data ?? [];

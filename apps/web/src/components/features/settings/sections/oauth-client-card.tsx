@@ -6,6 +6,7 @@ import { CheckCircle } from "@mui/icons-material";
 import { Alert, Box, Button, Chip, Link, Stack, Tooltip, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { EmailAccountStatus, OAuthClientStatus } from "@/api/types";
 import { CopyField } from "@/components/ui/display";
@@ -33,16 +34,8 @@ interface OAuthClientCardProps {
  */
 export function OAuthClientCard(props: OAuthClientCardProps): ReactElement {
   const { initialConfig, initialStatus } = props;
-  const config = useApiQuery<OAuthClientStatus>(
-    queryKeys.email.oauthClient(),
-    () => api.email.oauth.client.get(),
-    { initialData: initialConfig },
-  );
-  const status = useApiQuery<EmailAccountStatus>(
-    queryKeys.email.account(),
-    () => api.email.account.get(),
-    { initialData: initialStatus },
-  );
+  const config = useApiQuery(emailQueries.oauthClient(), { initialData: initialConfig });
+  const status = useApiQuery(emailQueries.account(), { initialData: initialStatus });
 
   if (!config.data || !status.data) {
     return (

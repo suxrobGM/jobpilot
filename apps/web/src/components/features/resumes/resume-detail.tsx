@@ -4,10 +4,9 @@ import type { ReactElement } from "react";
 import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
+import { resumeQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { ResumeDto } from "@/api/types";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import { ResumeHeaderBar } from "./detail/header-bar";
@@ -26,11 +25,9 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const queryClient = useQueryClient();
 
-  const detail = useApiQuery<ResumeDto>(
-    queryKeys.resume.detail(resumeId),
-    () => api.resumes({ id: resumeId }).get(),
-    { errorMessage: "Failed to load resume" },
-  );
+  const detail = useApiQuery(resumeQueries.detail(resumeId), {
+    errorMessage: "Failed to load resume",
+  });
 
   useSseChannel(
     resumeChannel,

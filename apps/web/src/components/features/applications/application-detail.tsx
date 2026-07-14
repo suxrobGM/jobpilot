@@ -7,6 +7,7 @@ import { Box, Button, Container, IconButton, Stack, Typography } from "@mui/mate
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { applicationQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { ApplicationDetailDto } from "@/api/types";
 import { StatusChip } from "@/components/ui/display";
@@ -27,11 +28,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const confirm = useConfirm();
 
-  const detail = useApiQuery<ApplicationDetailDto>(
-    queryKeys.applications.detail(id),
-    () => api.applied({ id }).get(),
-    { initialData: initialApplication },
-  );
+  const detail = useApiQuery(applicationQueries.detail(id), { initialData: initialApplication });
 
   const updateStatus = useApiMutation<
     { id: string; status: ApplicationStatus },

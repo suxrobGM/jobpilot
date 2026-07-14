@@ -3,10 +3,9 @@
 import { type ReactElement, useState } from "react";
 import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
+import { emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { EmailAccountStatus, EmailMessageDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data/empty-state";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
@@ -18,11 +17,6 @@ import { MessageReviewDialog } from "./message-review-dialog";
 
 export type InboxFilter = "pending" | "auto" | "approved" | "denied" | "all";
 
-function buildQuery(filter: InboxFilter): { reviewStatus?: InboxFilter } {
-  if (filter === "all") return {};
-  return { reviewStatus: filter };
-}
-
 export function InboxContent(): ReactElement {
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -30,18 +24,11 @@ export function InboxContent(): ReactElement {
   const { injectSkill } = useAgent();
   const agentAvailable = useAgentAvailable();
 
-  const account = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
-    api.email.account.get(),
-  );
+  const account = useApiQuery(emailQueries.account());
 
   const connected = account.data?.connected === true;
 
-  const filters = { filter };
-  const messages = useApiQuery<EmailMessageDto[]>(
-    queryKeys.email.messages(filters as Record<string, unknown>),
-    () => api.email.messages.get({ query: buildQuery(filter) }),
-    { enabled: connected },
-  );
+  const messages = useApiQuery(emailQueries.messages(filter), { enabled: connected });
 
   useSseChannel(inboxChannel, null, {
     enabled: connected,

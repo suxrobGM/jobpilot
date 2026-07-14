@@ -8,8 +8,9 @@ import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { apiErrorMessage } from "@/api/error";
 import { useApiQuery } from "@/api/hooks";
+import { campaignQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
+import type { CampaignJobDto } from "@/api/types";
 import { OutreachBoard } from "@/components/features/outreach";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { useSseChannel } from "@/lib/sse/client";
@@ -33,9 +34,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   const agentAvailable = useAgentAvailable();
   const toast = useToast();
 
-  const detail = useApiQuery<CampaignDetailDto>(queryKeys.campaigns.detail(campaignId), () =>
-    api.campaigns({ id: campaignId }).get(),
-  );
+  const detail = useApiQuery(campaignQueries.detail(campaignId));
 
   useSseChannel(
     campaignChannel,

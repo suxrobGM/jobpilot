@@ -6,8 +6,8 @@ import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material"
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { resumeQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { ResumeDto } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
@@ -58,14 +58,10 @@ export const ResumeUploadStep = withForm({
     // Extraction target: initial fetch covers an already-parsed resume; SSE gives
     // instant updates, and polling covers the race where the agent PUT finishes
     // before the EventSource subscription is established.
-    const resume = useApiQuery<ResumeDto>(
-      queryKeys.resume.detail(resumeId ?? ""),
-      () => api.resumes({ id: resumeId ?? "" }).get(),
-      {
-        enabled: resumeId !== null && state === "extracting",
-        refetchInterval: 2_000,
-      },
-    );
+    const resume = useApiQuery(resumeQueries.detail(resumeId ?? ""), {
+      enabled: resumeId !== null && state === "extracting",
+      refetchInterval: 2_000,
+    });
 
     useSseChannel(
       resumeChannel,

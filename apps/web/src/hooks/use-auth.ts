@@ -10,6 +10,7 @@ import {
   useApiMutation,
   useApiQuery,
 } from "@/api/hooks";
+import { authQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { AuthSessionResponse, AuthUserDto, LogoutResponse, MeResponse } from "@/api/types";
 
@@ -34,7 +35,7 @@ export function useAuth(): UseAuthResult {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const meQuery = useApiQuery<MeResponse>(queryKeys.auth.me(), () => api.auth.me.get(), {
+  const meQuery = useApiQuery(authQueries.me(), {
     retry: false,
     staleTime: 30_000,
   });

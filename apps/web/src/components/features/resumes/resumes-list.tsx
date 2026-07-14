@@ -18,9 +18,9 @@ import type { Route } from "next";
 import Link from "next/link";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { resumeQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
-import type { ResumeListItem } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
@@ -48,7 +48,7 @@ export function ResumesList(): ReactElement {
   const toast = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const list = useApiQuery<ResumeListItem[]>(queryKeys.resume.list(), () => api.resumes.get());
+  const list = useApiQuery(resumeQueries.list());
 
   const upload = useApiMutation<{ id: string }, File>((file) => api.resumes.upload.post({ file }), {
     successMessage: "Resume uploaded",

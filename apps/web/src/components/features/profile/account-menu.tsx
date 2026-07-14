@@ -11,10 +11,9 @@ import {
   MenuItem,
   Tooltip,
 } from "@mui/material";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
-import type { ProfileDto, ProfileResponse } from "@/api/types";
+import { profileQueries } from "@/api/queries";
+import type { ProfileDto } from "@/api/types";
 import { LogoutMenuItem } from "@/components/features/auth";
 
 function initials(p: ProfileDto): string {
@@ -38,11 +37,7 @@ export function AccountMenu(): ReactNode {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
 
-  const profileQuery = useApiQuery<ProfileResponse, ProfileDto | null>(
-    queryKeys.profile.detail(),
-    () => api.profile.get(),
-    { select: (data) => data.profile },
-  );
+  const profileQuery = useApiQuery(profileQueries.detail(), { select: (data) => data.profile });
 
   const profile = profileQuery.data;
 

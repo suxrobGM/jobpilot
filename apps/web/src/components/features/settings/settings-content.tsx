@@ -10,6 +10,7 @@ import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { profileQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -27,7 +28,7 @@ interface SettingsContentProps {
 
 export function SettingsContent(props: SettingsContentProps): ReactElement {
   const { initialProfile } = props;
-  const query = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () => api.profile.get(), {
+  const query = useApiQuery(profileQueries.detail(), {
     initialData: initialProfile,
     errorMessage: "Failed to load profile",
   });

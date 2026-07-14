@@ -3,17 +3,14 @@
 import type { ReactNode } from "react";
 import { Alert, Stack } from "@mui/material";
 import type { Route } from "next";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { campaignQueries } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
 
 /** Surfaces campaigns that need user action. Renders nothing when all clear. */
 export function AttentionStrip(): ReactNode {
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    api.campaigns.get(),
-  );
+  const campaigns = useApiQuery(campaignQueries.list());
   const rows = campaigns.data ?? [];
 
   const interrupted = rows.filter((c) => c.status === "interrupted");

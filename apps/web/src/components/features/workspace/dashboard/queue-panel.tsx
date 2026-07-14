@@ -5,6 +5,7 @@ import { Add, Delete, MoreVert, PlayArrow } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { queueQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { QueueEntryDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
@@ -32,9 +33,7 @@ export function QueuePanel(): ReactElement {
   const agentAvailable = useAgentAvailable();
   const { openAddUrls } = useWorkspaceActions();
 
-  const queue = useApiQuery<QueueEntryDto[]>(queryKeys.queue.list(QUEUE_FILTER), () =>
-    api.queue.get({ query: QUEUE_FILTER }),
-  );
+  const queue = useApiQuery(queueQueries.list(QUEUE_FILTER));
   const entries = queue.data ?? [];
 
   return (

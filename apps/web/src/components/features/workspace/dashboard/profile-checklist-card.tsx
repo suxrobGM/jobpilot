@@ -4,10 +4,8 @@ import type { ReactElement } from "react";
 import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
-import type { CredentialDto, EmailAccountStatus, ProfileResponse } from "@/api/types";
+import { credentialQueries, emailQueries, profileQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,15 +24,9 @@ interface ChecklistItem {
  */
 export function ProfileChecklistCard(): ReactElement | null {
   const { user } = useAuth();
-  const profileQuery = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () =>
-    api.profile.get(),
-  );
-  const emailQuery = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
-    api.email.account.get(),
-  );
-  const credentialsQuery = useApiQuery<CredentialDto[]>(queryKeys.credentials.list(), () =>
-    api.credentials.get(),
-  );
+  const profileQuery = useApiQuery(profileQueries.detail());
+  const emailQuery = useApiQuery(emailQueries.account());
+  const credentialsQuery = useApiQuery(credentialQueries.list());
 
   // Don't flash an incomplete checklist while the queries load.
   if (!user || !profileQuery.data || !emailQuery.data || !credentialsQuery.data) {

@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { resumeQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { variantPdfUrl } from "@/api/resume-urls";
 import type { ResumeVariantListItem } from "@/api/types";
@@ -33,9 +34,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
   const [search, setSearch] = useState("");
   const confirm = useConfirm();
 
-  const query = useApiQuery<ResumeVariantListItem[]>(queryKeys.resume.variants(resumeId), () =>
-    api.resumes({ id: resumeId }).variants.get(),
-  );
+  const query = useApiQuery(resumeQueries.variants(resumeId));
 
   const remove = useApiMutation<{ deleted: string }, string>(
     (id) => api.resumes.variants({ id }).delete(),

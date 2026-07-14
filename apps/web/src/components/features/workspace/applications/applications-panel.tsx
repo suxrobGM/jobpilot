@@ -2,10 +2,8 @@
 
 import { type ReactElement, useState } from "react";
 import { Button, Stack, TextField } from "@mui/material";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
-import type { ApplicationDto, CampaignDto, JobBoardDto } from "@/api/types";
+import { applicationQueries, campaignQueries, jobBoardQueries } from "@/api/queries";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useSearchParam } from "@/hooks/use-search-param";
@@ -17,15 +15,9 @@ const SINGLE = "__single__";
 
 /** Tab 2 - cross-campaign application funnel + filterable, attributed table. */
 export function ApplicationsPanel(): ReactElement {
-  const apps = useApiQuery<ApplicationDto[]>(queryKeys.applications.list({}), () =>
-    api.applied.get({ query: {} }),
-  );
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    api.campaigns.get(),
-  );
-  const boards = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
-    api["job-boards"].get(),
-  );
+  const apps = useApiQuery(applicationQueries.list());
+  const campaigns = useApiQuery(campaignQueries.list());
+  const boards = useApiQuery(jobBoardQueries.list());
 
   const [search, setSearch] = useState("");
   const [board, setBoard] = useSearchParam("board");

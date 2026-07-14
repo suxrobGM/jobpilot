@@ -5,6 +5,7 @@ import { Alert, Box, Button, MenuItem, Select, Stack, Typography } from "@mui/ma
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { EmailAccountStatus, OAuthClientStatus } from "@/api/types";
 import { LoadingSpinner } from "@/components/ui/feedback";
@@ -27,16 +28,8 @@ export function ConnectCard(props: ConnectCardProps): ReactElement {
   const [provider, setProvider] = useState("gmail");
   const confirm = useConfirm();
 
-  const statusQuery = useApiQuery<EmailAccountStatus>(
-    queryKeys.email.account(),
-    () => api.email.account.get(),
-    { initialData: initialStatus },
-  );
-  const configQuery = useApiQuery<OAuthClientStatus>(
-    queryKeys.email.oauthClient(),
-    () => api.email.oauth.client.get(),
-    { initialData: initialConfig },
-  );
+  const statusQuery = useApiQuery(emailQueries.account(), { initialData: initialStatus });
+  const configQuery = useApiQuery(emailQueries.oauthClient(), { initialData: initialConfig });
 
   const disconnect = useApiMutation<{ disconnected: boolean }, void>(
     () => api.email.account.delete(),

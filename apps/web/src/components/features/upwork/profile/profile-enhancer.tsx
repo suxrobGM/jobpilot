@@ -5,10 +5,9 @@ import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Box, Button, Chip, LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
+import { upworkProfileQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { UpworkProfileDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
@@ -43,9 +42,7 @@ export function ProfileEnhancer(): ReactElement {
     },
   });
 
-  const query = useApiQuery<UpworkProfileDto | null>(queryKeys.upworkProfile.detail(), () =>
-    api.upwork.profile.get(),
-  );
+  const query = useApiQuery(upworkProfileQueries.detail());
 
   if (query.isLoading) {
     return (

@@ -6,6 +6,7 @@ import { Add, Delete, Key, Lock } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { credentialQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
 import { LoadingSpinner } from "@/components/ui/feedback";
@@ -23,11 +24,7 @@ export function CredentialsSection(props: CredentialsSectionProps): ReactElement
   const [dialogOpen, setDialogOpen] = useState(false);
   const confirm = useConfirm();
 
-  const credentials = useApiQuery<CredentialDto[]>(
-    queryKeys.credentials.list(),
-    () => api.credentials.get(),
-    { initialData: initialCredentials },
-  );
+  const credentials = useApiQuery(credentialQueries.list(), { initialData: initialCredentials });
 
   const create = useApiMutation<CredentialDto, CredentialInput>(
     (vars) => api.credentials.post(vars),
