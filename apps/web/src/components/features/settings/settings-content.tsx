@@ -21,15 +21,8 @@ import { PersonalSection } from "./sections/personal-section";
 import { ReferencesSection } from "./sections/references-section";
 import { WorkAuthSection } from "./sections/work-auth-section";
 
-interface SettingsContentProps {
-  /** SSR-fetched seed so the form renders without a loading flash. */
-  initialProfile?: ProfileResponse;
-}
-
-export function SettingsContent(props: SettingsContentProps): ReactElement {
-  const { initialProfile } = props;
+export function SettingsContent(): ReactElement {
   const query = useApiQuery(profileQueries.detail(), {
-    initialData: initialProfile,
     errorMessage: "Failed to load profile",
   });
 

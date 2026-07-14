@@ -3,13 +3,21 @@
 import { type ReactElement, useState } from "react";
 import type { ApplicationStatus, StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
-import { Box, Button, Container, IconButton, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Container,
+  IconButton,
+  LinearProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { applicationQueries } from "@/api/queries";
 import { invalidations } from "@/api/query-keys";
-import type { ApplicationDetailDto } from "@/api/types";
+import { EmptyState } from "@/components/ui/data/empty-state";
 import { StatusChip } from "@/components/ui/display";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -17,18 +25,17 @@ import { ActivityTimeline } from "./activity-timeline";
 import { StatusTransitionDialog } from "./status-transition-dialog";
 
 interface ApplicationDetailProps {
-  initialApplication: ApplicationDetailDto;
+  applicationId: string;
 }
 
 export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
-  const { initialApplication } = props;
-  const id = initialApplication.id;
+  const { applicationId: id } = props;
 
   const router = useRouter();
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const confirm = useConfirm();
 
-  const detail = useApiQuery(applicationQueries.detail(id), { initialData: initialApplication });
+  const detail = useApiQuery(applicationQueries.detail(id));
 
   const updateStatus = useApiMutation<
     { id: string; status: ApplicationStatus },
@@ -58,7 +65,22 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     }
   };
 
-  const app = detail.data ?? initialApplication;
+  if (detail.isLoading) {
+    return <LinearProgress />;
+  }
+
+  const app = detail.data;
+
+  if (!app) {
+    return (
+      <Container maxWidth="lg">
+        <EmptyState
+          title="Application not found"
+          description="It may have been deleted, or the link is incorrect."
+        />
+      </Container>
+    );
+  }
 
   return (
     <>

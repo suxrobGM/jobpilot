@@ -8,7 +8,7 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { EmailAccountStatus, OAuthClientStatus } from "@/api/types";
+import type { OAuthClientStatus } from "@/api/types";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -21,21 +21,14 @@ const shortScope = (scope: string): string => scope.split("/").pop() ?? scope;
 const CARD_DESCRIPTION =
   "JobPilot connects Gmail through your own Google OAuth app, so it needs no Google verification. Create one in Google Cloud, then paste its Client ID and secret here.";
 
-interface OAuthClientCardProps {
-  /** SSR-fetched seed; omitted in client-only contexts (onboarding) where it fetches itself. */
-  initialConfig?: OAuthClientStatus;
-  initialStatus?: EmailAccountStatus;
-}
-
 /**
  * Step 1 - the user's own Google OAuth app. Reads its config and the mailbox
- * status (seeded by the SSR page, shared keys dedupe with the connect card),
- * then mounts the form once data is present so initial values are correct.
+ * status (shared keys dedupe with the connect card), then mounts the form
+ * once data is present so initial values are correct.
  */
-export function OAuthClientCard(props: OAuthClientCardProps): ReactElement {
-  const { initialConfig, initialStatus } = props;
-  const config = useApiQuery(emailQueries.oauthClient(), { initialData: initialConfig });
-  const status = useApiQuery(emailQueries.account(), { initialData: initialStatus });
+export function OAuthClientCard(): ReactElement {
+  const config = useApiQuery(emailQueries.oauthClient());
+  const status = useApiQuery(emailQueries.account());
 
   if (!config.data || !status.data) {
     return (

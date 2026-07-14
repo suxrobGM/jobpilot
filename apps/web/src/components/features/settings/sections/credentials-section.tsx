@@ -14,17 +14,11 @@ import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
 import { CredentialFormDialog } from "./credential-form-dialog";
 
-interface CredentialsSectionProps {
-  /** SSR-fetched seed; omitted in client-only contexts (onboarding) where it fetches itself. */
-  initialCredentials?: CredentialDto[];
-}
-
-export function CredentialsSection(props: CredentialsSectionProps): ReactElement {
-  const { initialCredentials } = props;
+export function CredentialsSection(): ReactElement {
   const [dialogOpen, setDialogOpen] = useState(false);
   const confirm = useConfirm();
 
-  const credentials = useApiQuery(credentialQueries.list(), { initialData: initialCredentials });
+  const credentials = useApiQuery(credentialQueries.list());
 
   const create = useApiMutation<CredentialDto, CredentialInput>(
     (vars) => api.credentials.post(vars),
