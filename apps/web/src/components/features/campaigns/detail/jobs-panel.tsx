@@ -46,7 +46,6 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const [search, setSearch] = useState("");
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
-  const isAutoApply = campaign.source === "auto-apply";
   const isUpwork = campaign.config.board === UPWORK_DOMAIN;
 
   const term = search.trim().toLowerCase();
@@ -103,9 +102,6 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   // Auto-apply campaigns apply on their own; on other campaigns (e.g. search results) the
   // user dispatches a job to the single-job apply flow by its URL.
   const applyJob = (job: CampaignJobDto): void => {
-    if (!isAutoApply) {
-      return;
-    }
     void agent.injectSkill("apply", job.url);
   };
 
