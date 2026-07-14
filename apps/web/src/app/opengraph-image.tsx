@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { accent, feedback, surfaces, textColors } from "@/theme/palette";
+import { gradients } from "@/theme/tokens";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -14,7 +16,7 @@ export default function OpenGraphImage(): ImageResponse {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        backgroundColor: "#0B0B0A",
+        backgroundColor: surfaces.base,
         padding: 80,
       }}
     >
@@ -25,7 +27,7 @@ export default function OpenGraphImage(): ImageResponse {
           left: 0,
           width: "100%",
           height: 10,
-          background: "linear-gradient(90deg, #FF6A3D, #FFB020, #3B82F6)",
+          background: `linear-gradient(90deg, ${accent.primary}, ${feedback.warning}, ${accent.secondary})`,
         }}
       />
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
@@ -34,8 +36,8 @@ export default function OpenGraphImage(): ImageResponse {
             width: 56,
             height: 56,
             borderRadius: 10,
-            background: "linear-gradient(135deg, #FF7A4D, #D9532A)",
-            border: "1px solid #FF6A3D",
+            background: gradients.reversed,
+            border: `1px solid ${accent.primary}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -46,12 +48,12 @@ export default function OpenGraphImage(): ImageResponse {
         >
           J
         </div>
-        <div style={{ color: "#F4F2EE", fontSize: 40, fontWeight: 700 }}>JobPilot</div>
+        <div style={{ color: textColors.primary, fontSize: 40, fontWeight: 700 }}>JobPilot</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         <div
           style={{
-            color: "#F4F2EE",
+            color: textColors.primary,
             fontSize: 74,
             fontWeight: 700,
             lineHeight: 1.05,
@@ -60,12 +62,14 @@ export default function OpenGraphImage(): ImageResponse {
         >
           Your AI job agent, running on your machine.
         </div>
-        <div style={{ color: "#A7A49D", fontSize: 30, lineHeight: 1.4, maxWidth: 940 }}>
+        <div style={{ color: textColors.secondary, fontSize: 30, lineHeight: 1.4, maxWidth: 940 }}>
           Search any job board, tailor your resume, apply, and track every reply - on your own
           Claude or Codex subscription.
         </div>
       </div>
-      <div style={{ display: "flex", color: "#6C6860", fontSize: 24 }}>jobpilot.suxrobgm.net</div>
+      <div style={{ display: "flex", color: textColors.disabled, fontSize: 24 }}>
+        jobpilot.suxrobgm.net
+      </div>
     </div>,
     { ...size },
   );

@@ -1,7 +1,13 @@
+import { accent, feedback } from "./palette";
+
+// Lighter flame tints used only inside these gradients - no equivalent in palette.ts.
+const flameLight = "#FF8A5C";
+const flameMid = "#FF7A4D";
+
 export const gradients = {
-  primary: "linear-gradient(135deg, #FF8A5C, #FF6A3D)",
-  reversed: "linear-gradient(135deg, #FF7A4D, #D9532A)",
-  orb: "conic-gradient(from 200deg, #FF6A3D, #FFB020, #3B82F6, #FF6A3D)",
+  primary: `linear-gradient(135deg, ${flameLight}, ${accent.primary})`,
+  reversed: `linear-gradient(135deg, ${flameMid}, ${accent.dark})`,
+  orb: `conic-gradient(from 200deg, ${accent.primary}, ${feedback.warning}, ${accent.secondary}, ${accent.primary})`,
 } as const;
 
 export const motion = {

@@ -8,6 +8,7 @@ import { ConfirmProvider } from "@/providers/confirm-provider";
 import { ToastProvider } from "@/providers/notification-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { surfaces } from "@/theme/palette";
 
 // Body + display (the display role widens to the expanded width axis via fontStretch).
 const archivo = Archivo({
@@ -67,9 +68,8 @@ export const metadata: Metadata = {
   },
 };
 
-// Matches surfaces.base - the app ships a single dark palette.
 export const viewport: Viewport = {
-  themeColor: "#0B0B0A",
+  themeColor: surfaces.base,
   colorScheme: "dark",
 };
 

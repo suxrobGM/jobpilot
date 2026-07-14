@@ -6,8 +6,6 @@ import {
   cardHeaderOverrides,
   cardOverrides,
 } from "./card";
-import { chipOverrides } from "./chip";
-import { containerOverrides } from "./container";
 import { dataGridOverrides } from "./data-grid";
 import {
   backdropOverrides,
@@ -16,7 +14,6 @@ import {
   dialogOverrides,
   dialogTitleOverrides,
 } from "./dialog";
-import { svgIconOverrides } from "./icon";
 import {
   formHelperTextOverrides,
   outlinedInputOverrides,
@@ -25,8 +22,14 @@ import {
 } from "./input";
 import { buttonBaseOverrides, linkOverrides } from "./link";
 import { menuItemOverrides, menuOverrides } from "./menu";
-import { paperOverrides } from "./paper";
-import { stackOverrides } from "./stack";
+import {
+  chipOverrides,
+  containerOverrides,
+  paperOverrides,
+  stackOverrides,
+  svgIconOverrides,
+  typographyOverrides,
+} from "./misc";
 import {
   tableBodyOverrides,
   tableCellOverrides,
@@ -36,7 +39,6 @@ import {
 } from "./table";
 import { tabOverrides, tabsOverrides } from "./tabs";
 import { toggleButtonOverrides } from "./toggle-button";
-import { typographyOverrides } from "./typography";
 
 export const componentOverrides: Components<Theme> = {
   MuiBackdrop: backdropOverrides,
