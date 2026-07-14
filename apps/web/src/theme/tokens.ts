@@ -1,3 +1,4 @@
+import { alpha } from "@mui/material/styles";
 import { accent, feedback } from "./palette";
 
 // Lighter flame tints used only inside these gradients - no equivalent in palette.ts.
@@ -20,7 +21,7 @@ export const shadows = {
   sm: "none",
   md: "0 4px 14px rgba(0,0,0,0.45), 0 0 0 0.5px rgba(255,255,255,0.04)",
   lg: "0 18px 36px -10px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.05)",
-  focus: "0 0 0 2px rgba(255, 106, 61, 0.5)",
+  focus: `0 0 0 2px ${alpha(accent.primary, 0.5)}`,
 } as const;
 
 export const radii = {

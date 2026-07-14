@@ -25,6 +25,7 @@ import { menuItemOverrides, menuOverrides } from "./menu";
 import {
   chipOverrides,
   containerOverrides,
+  cssBaselineOverrides,
   paperOverrides,
   stackOverrides,
   svgIconOverrides,
@@ -50,6 +51,7 @@ export const componentOverrides: Components<Theme> = {
   MuiCardHeader: cardHeaderOverrides,
   MuiChip: chipOverrides,
   MuiContainer: containerOverrides,
+  MuiCssBaseline: cssBaselineOverrides,
   MuiDataGrid: dataGridOverrides,
   MuiDialog: dialogOverrides,
   MuiDialogActions: dialogActionsOverrides,

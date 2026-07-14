@@ -1,8 +1,12 @@
 import type { ReactElement } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import { alpha, Box, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { accent, gradients, radii } from "@/theme";
 import { Section } from "../section";
+
+// A server component, so sx must stay a plain object - a `(theme) => …` callback
+// is a function, and functions cannot cross the RSC boundary.
+const emberWash = `radial-gradient(ellipse 45% 90% at 10% -15%, ${alpha(accent.primary, 0.2)}, transparent 50%)`;
 
 export function CtaBand(): ReactElement {
   return (
@@ -34,8 +38,7 @@ export function CtaBand(): ReactElement {
           sx={{
             position: "absolute",
             inset: 0,
-            background:
-              "radial-gradient(ellipse 45% 90% at 10% -15%, rgba(255,106,61,0.2), transparent 50%)",
+            background: emberWash,
             pointerEvents: "none",
           }}
         />

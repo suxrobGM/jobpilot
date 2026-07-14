@@ -1,4 +1,33 @@
-import type { Components, Theme } from "@mui/material/styles";
+import { alpha, type Components, type Theme } from "@mui/material/styles";
+
+/**
+ * Global colour rules, kept here rather than in globals.css so the palette stays
+ * the one source (CssBaseline already paints body's background/text from it).
+ */
+export const cssBaselineOverrides: Components<Theme>["MuiCssBaseline"] = {
+  styleOverrides: (theme) => ({
+    "::selection": {
+      background: alpha(theme.palette.accent.primary, 0.3),
+      color: theme.palette.text.primary,
+    },
+    // Mice only: a styled scrollbar is a classic one, and it steals layout width off the right edge.
+    // Touch keeps its native overlay bar, which costs nothing and leaves content centred.
+    "@media (pointer: fine)": {
+      "::-webkit-scrollbar": { width: 10, height: 10 },
+      "::-webkit-scrollbar-track": { background: "transparent" },
+      "::-webkit-scrollbar-thumb": {
+        background: theme.palette.line.border,
+        borderRadius: 6,
+        border: "2px solid transparent",
+        backgroundClip: "padding-box",
+      },
+      "::-webkit-scrollbar-thumb:hover": {
+        background: theme.palette.line.borderHi,
+        backgroundClip: "padding-box",
+      },
+    },
+  }),
+};
 
 export const chipOverrides: Components<Theme>["MuiChip"] = {
   styleOverrides: {

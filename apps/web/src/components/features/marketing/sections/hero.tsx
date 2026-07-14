@@ -1,9 +1,13 @@
 import type { ReactElement } from "react";
-import { Box, Container, Grid, Stack, Typography } from "@mui/material";
+import { alpha, Box, Container, Grid, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
-import { fontFamilies, gradients } from "@/theme";
+import { accent, fontFamilies, gradients } from "@/theme";
 import { SectionEyebrow } from "../section-eyebrow";
 import { AgentTranscript } from "./agent-transcript";
+
+// A server component, so sx must stay a plain object - a `(theme) => …` callback
+// is a function, and functions cannot cross the RSC boundary.
+const emberWash = `radial-gradient(ellipse 80% 60% at 50% -10%, ${alpha(accent.primary, 0.09)}, transparent 60%)`;
 
 export function Hero(): ReactElement {
   return (
@@ -14,8 +18,7 @@ export function Hero(): ReactElement {
         sx={{
           position: "absolute",
           inset: 0,
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(255,106,61,0.09), transparent 60%)",
+          background: emberWash,
           pointerEvents: "none",
         }}
       />
