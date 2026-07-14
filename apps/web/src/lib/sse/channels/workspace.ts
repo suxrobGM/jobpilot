@@ -14,8 +14,7 @@ export type WorkspaceEvent =
  * Profile-scoped live-refresh feed for the workspace UI (dashboard, auto-apply pill).
  * The client URL is parameter-free; the server resolves the profile from the session.
  */
-export const workspaceChannel = defineChannel<WorkspaceEvent, void, { profileId: string }>({
+export const workspaceChannel = defineChannel<WorkspaceEvent, void>({
   name: "workspace",
   url: () => `${API_BASE_URL}/api/workspace/events`,
-  topic: ({ profileId }) => String(profileId),
 });

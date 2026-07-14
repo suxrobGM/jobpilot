@@ -9,5 +9,4 @@ export type ResumeEvent =
 export const resumeChannel = defineChannel<ResumeEvent, { resumeId: string }>({
   name: "resume",
   url: ({ resumeId }) => `${API_BASE_URL}/api/resumes/${resumeId}/events`,
-  topic: ({ resumeId }) => String(resumeId),
 });

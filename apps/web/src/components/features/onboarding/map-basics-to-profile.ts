@@ -1,5 +1,5 @@
 import type { ResumeBasics } from "@jobpilot/contracts/resume";
-import { normalizeLinkUrl } from "@/utils/url";
+import { normalizeLinkUrl } from "@jobpilot/contracts/utils/url";
 
 type ProfileTextFieldName =
   | "firstName"

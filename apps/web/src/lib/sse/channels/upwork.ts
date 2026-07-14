@@ -11,8 +11,7 @@ export type UpworkEvent =
  * Profile-scoped feed for the Upwork proposals page. The client URL is
  * parameter-free; the server resolves the profile from the session.
  */
-export const upworkChannel = defineChannel<UpworkEvent, void, { profileId: string }>({
+export const upworkChannel = defineChannel<UpworkEvent, void>({
   name: "upwork",
   url: () => `${API_BASE_URL}/api/upwork/events`,
-  topic: ({ profileId }) => String(profileId),
 });

@@ -12,5 +12,4 @@ export type CampaignEvent =
 export const campaignChannel = defineChannel<CampaignEvent, { campaignId: string }>({
   name: "campaign",
   url: ({ campaignId }) => `${API_BASE_URL}/api/campaigns/${encodeURIComponent(campaignId)}/events`,
-  topic: ({ campaignId }) => campaignId,
 });
