@@ -13,7 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations } from "@/api/query-keys";
 
 interface NewResumeDialogProps {
   open: boolean;
@@ -29,7 +29,7 @@ export function NewResumeDialog(props: NewResumeDialogProps): ReactElement {
     (vars) => api.resumes.post(vars),
     {
       successMessage: "Resume created",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+      invalidate: invalidations.resume,
       onSuccess: (data) => {
         onClose();
         setLabel("");

@@ -14,7 +14,7 @@ import {
 import { Box, Button, Stack, type SvgIconProps, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations } from "@/api/query-keys";
 import { SectionCard } from "@/components/ui/layout";
 import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/section-anchor-nav";
 import { BasicsSection } from "./basics-section";
@@ -121,7 +121,7 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
     (vars) => api.resumes({ id: resumeId }).put({ content: vars }),
     {
       successMessage: "Resume saved",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+      invalidate: invalidations.resume,
       onSuccess: () => setDirty(false),
     },
   );

@@ -6,7 +6,7 @@ import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } f
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
 import type { ResumeDto } from "@/api/types";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -26,7 +26,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
     (vars) => api.resumes({ id: resume.id }).put(vars),
     {
       successMessage: "Renamed",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+      invalidate: invalidations.resume,
     },
   );
 
@@ -34,7 +34,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
     () => api.profile["primary-resume"].put({ resumeId: resume.id }),
     {
       successMessage: "Set as primary",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+      invalidate: invalidations.resume,
     },
   );
 
@@ -42,7 +42,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
     () => api.resumes({ id: resume.id }).delete(),
     {
       successMessage: "Resume deleted",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+      invalidate: invalidations.resume,
       onSuccess: () => router.push("/resumes"),
     },
   );

@@ -10,7 +10,7 @@ import {
 import type { AddQueueEntry } from "@jobpilot/contracts/queue";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations } from "@/api/query-keys";
 import { AddUrlsDialog } from "./dialogs/add-urls-dialog";
 
 interface AddUrlsResponse {
@@ -29,7 +29,7 @@ export function WorkspaceActionsProvider(props: PropsWithChildren): ReactElement
 
   const create = useApiMutation<AddUrlsResponse, AddQueueEntry>((vars) => api.queue.post(vars), {
     successMessage: (data) => `Queued ${data.inserted} URL${data.inserted === 1 ? "" : "s"}`,
-    invalidate: [queryKeys.queue.all, queryKeys.workspace.all],
+    invalidate: invalidations.queue,
     onSuccess: () => setAddUrlsOpen(false),
   });
 

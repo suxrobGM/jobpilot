@@ -6,7 +6,7 @@ import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queueQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations } from "@/api/query-keys";
 import type { QueueEntryDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
@@ -88,7 +88,7 @@ function QueueRow(props: { entry: QueueEntryDto }): ReactElement {
 
   const remove = useApiMutation<unknown, void>(() => api.queue({ id: entry.id }).delete(), {
     successMessage: "Removed from queue",
-    invalidate: [queryKeys.queue.all, queryKeys.workspace.all],
+    invalidate: invalidations.queue,
   });
 
   const items: DropdownMenuItem[] = [

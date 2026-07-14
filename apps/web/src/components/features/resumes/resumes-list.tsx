@@ -19,7 +19,7 @@ import Link from "next/link";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations, queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
@@ -52,14 +52,14 @@ export function ResumesList(): ReactElement {
 
   const upload = useApiMutation<{ id: string }, File>((file) => api.resumes.upload.post({ file }), {
     successMessage: "Resume uploaded",
-    invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+    invalidate: invalidations.resume,
   });
 
   const setPrimary = useApiMutation<{ primaryResumeId: string | null }, string>(
     (id) => api.profile["primary-resume"].put({ resumeId: id }),
     {
       successMessage: "Primary resume updated",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+      invalidate: invalidations.resume,
     },
   );
 

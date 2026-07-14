@@ -7,7 +7,7 @@ import type { Route } from "next";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
 import { PulseDot } from "@/components/ui/feedback";
@@ -52,7 +52,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
     () => api.campaigns({ id: campaign.campaignId }).patch({ status: "paused" }),
     {
       successMessage: "Campaign paused",
-      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
+      invalidate: invalidations.campaign,
     },
   );
 

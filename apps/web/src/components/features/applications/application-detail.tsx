@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { applicationQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations } from "@/api/query-keys";
 import type { ApplicationDetailDto } from "@/api/types";
 import { StatusChip } from "@/components/ui/display";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
@@ -35,13 +35,13 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     StatusTransitionInput
   >((vars) => api.applied({ id }).status.post(vars), {
     successMessage: "Status updated",
-    invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],
+    invalidate: invalidations.application,
     onSuccess: () => setStatusDialogOpen(false),
   });
 
   const remove = useApiMutation<{ deleted: string }, void>(() => api.applied({ id }).delete(), {
     successMessage: "Application deleted",
-    invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],
+    invalidate: invalidations.application,
     onSuccess: () => router.replace("/"),
   });
 

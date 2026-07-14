@@ -97,3 +97,11 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.coverLetters.all, "detail", id] as const,
   },
 } as const;
+
+/** Named invalidation sets for useApiMutation's `invalidate:` option. */
+export const invalidations = {
+  resume: [queryKeys.resume.all, queryKeys.profile.all],
+  campaign: [queryKeys.campaigns.all, queryKeys.workspace.all],
+  queue: [queryKeys.queue.all, queryKeys.workspace.all],
+  application: [queryKeys.applications.all, queryKeys.dashboard.all],
+} as const;

@@ -26,7 +26,7 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations, queryKeys } from "@/api/query-keys";
 import type { CampaignDetailDto } from "@/api/types";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
@@ -52,7 +52,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
       }),
     {
       successMessage: "Campaign paused",
-      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
+      invalidate: invalidations.campaign,
     },
   );
 
@@ -64,7 +64,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
       }),
     {
       successMessage: "Campaign marked as done",
-      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
+      invalidate: invalidations.campaign,
     },
   );
 
@@ -78,7 +78,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const remove = useApiMutation<unknown, void>(() => campaignResource.delete(), {
     successMessage: "Campaign deleted",
-    invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
+    invalidate: invalidations.campaign,
     onSuccess: () => router.replace("/" as Route),
   });
 

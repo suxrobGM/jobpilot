@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations, queryKeys } from "@/api/query-keys";
 import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
 import { readAgentStorage, subscribeAgentStorage } from "@/lib/agent-storage";
 import { workspaceChannel } from "@/lib/sse/channels/workspace";
@@ -59,7 +59,7 @@ export function AutoApplyStopPill(): ReactNode {
     },
     {
       successMessage: "Auto-apply paused",
-      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
+      invalidate: invalidations.campaign,
     },
   );
 

@@ -5,7 +5,7 @@ import { Delete, PictureAsPdf } from "@mui/icons-material";
 import { Box, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
@@ -25,7 +25,7 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
     (file) => api.resumes({ id: resume.id }).source.post({ file }),
     {
       successMessage: "Source PDF uploaded",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+      invalidate: invalidations.resume,
     },
   );
 
@@ -33,7 +33,7 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
     () => api.resumes({ id: resume.id }).source.delete(),
     {
       successMessage: "Source PDF removed",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+      invalidate: invalidations.resume,
     },
   );
 

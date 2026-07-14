@@ -7,7 +7,7 @@ import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/materia
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { invalidations } from "@/api/query-keys";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
@@ -38,7 +38,7 @@ export const ResumeUploadStep = withForm({
       (file) => api.resumes.upload.post({ file }),
       {
         successMessage: "Resume uploaded",
-        invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+        invalidate: invalidations.resume,
         onSuccess: ({ id }) => {
           setResumeId(id);
           form.setFieldValue("primaryResumeId", id);
