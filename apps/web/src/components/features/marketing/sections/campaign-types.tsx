@@ -1,9 +1,9 @@
 import type { ReactElement } from "react";
 import { Box, Card, CardContent, Grid, Link, Stack, Typography } from "@mui/material";
 import { accent, feedback, fontFamilies } from "@/theme";
-import { panelCellSx } from "./mock-panels/panel-frame";
-import { Section } from "./section";
-import { SectionEyebrow } from "./section-eyebrow";
+import { panelCellSx } from "../mock-panels/panel-frame";
+import { Section } from "../section";
+import { SectionEyebrow } from "../section-eyebrow";
 
 interface Mode {
   tag: string;

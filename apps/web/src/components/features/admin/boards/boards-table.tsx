@@ -13,7 +13,7 @@ import {
 import type { AdminBoardDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { ExternalLink } from "@/components/ui/display";
-import { AdminBoardActions } from "./admin-board-actions";
+import { AdminBoardActions } from "./board-actions";
 
 interface AdminBoardsTableProps {
   boards: AdminBoardDto[];

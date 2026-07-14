@@ -13,7 +13,7 @@ import {
 import type { AdminJobListingDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { formatDate } from "@/utils/format";
-import { AdminListingActions } from "./admin-listing-actions";
+import { AdminListingActions } from "./listing-actions";
 
 interface AdminListingsTableProps {
   listings: AdminJobListingDto[];

@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Card, CardContent, Grid, Stack, Typography } from "@mui/material";
-import { Section } from "./section";
-import { SectionEyebrow } from "./section-eyebrow";
+import { Section } from "../section";
+import { SectionEyebrow } from "../section-eyebrow";
 
 const FACTS = [
   {

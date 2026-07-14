@@ -10,7 +10,7 @@ import { useApiMutation } from "@/api/hooks";
 import type { AdminBoardDto } from "@/api/types";
 import { DropdownMenu } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
-import { AdminBoardFormDialog } from "./admin-board-form-dialog";
+import { AdminBoardFormDialog } from "./board-form-dialog";
 
 interface AdminBoardActionsProps {
   board: AdminBoardDto;

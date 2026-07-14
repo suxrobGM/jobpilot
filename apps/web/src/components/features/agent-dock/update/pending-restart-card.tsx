@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Stack, Typography } from "@mui/material";
 import { LoadingSpinner } from "@/components/ui/feedback";
-import type { PendingAction } from "./use-dock-health";
+import type { PendingAction } from "../use-dock-health";
 
 /** Spinner card shown instead of the offline card while an expected host restart is in flight. */
 export function PendingRestartCard(props: { action: PendingAction }): ReactElement {

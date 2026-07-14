@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { accent, gradients, radii } from "@/theme";
-import { Section } from "./section";
+import { Section } from "../section";
 
 export function CtaBand(): ReactElement {
   return (

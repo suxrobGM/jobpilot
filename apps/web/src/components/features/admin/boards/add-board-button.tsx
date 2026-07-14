@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { AdminBoardDto } from "@/api/types";
-import { AdminBoardFormDialog } from "./admin-board-form-dialog";
+import { AdminBoardFormDialog } from "./board-form-dialog";
 
 /** Adds a board to the global catalog. Remounted by `key` so the dialog resets between opens. */
 export function AddBoardButton(): ReactElement {

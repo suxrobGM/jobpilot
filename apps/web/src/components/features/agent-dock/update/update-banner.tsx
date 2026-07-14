@@ -12,7 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { providerDisplayName, type TerminalProviderId, triggerUpdate } from "@/lib/terminal";
-import { UpdateManualSteps } from "./update-manual-steps";
+import { UpdateManualSteps } from "./manual-steps";
 import { isNewer, useLatestRelease } from "./use-latest-release";
 
 type UpdatePhase = "idle" | "updating" | "restarting" | "error";

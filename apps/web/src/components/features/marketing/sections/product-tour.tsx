@@ -1,8 +1,8 @@
 import type { ReactElement } from "react";
 import { Box, Grid, Stack, Typography } from "@mui/material";
-import { InboxPanel, ResumePanel, UpworkPanel, WorkspacePanel } from "./mock-panels";
-import { Section } from "./section";
-import { SectionEyebrow } from "./section-eyebrow";
+import { InboxPanel, ResumePanel, UpworkPanel, WorkspacePanel } from "../mock-panels";
+import { Section } from "../section";
+import { SectionEyebrow } from "../section-eyebrow";
 
 interface TourRow {
   eyebrow: string;

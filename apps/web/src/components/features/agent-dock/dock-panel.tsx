@@ -19,8 +19,8 @@ import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOfflineCard } from "./agent-offline-card";
 import { AgentOrb } from "./agent-orb";
-import { AgentUpdateBanner } from "./agent-update-banner";
-import { PendingRestartCard } from "./pending-restart-card";
+import { PendingRestartCard } from "./update/pending-restart-card";
+import { AgentUpdateBanner } from "./update/update-banner";
 import { useDockHealth } from "./use-dock-health";
 import type { TerminalHealth } from "./use-terminal-health";
 

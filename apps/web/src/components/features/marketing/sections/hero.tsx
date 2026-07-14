@@ -2,8 +2,8 @@ import type { ReactElement } from "react";
 import { Box, Container, Grid, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { fontFamilies, gradients } from "@/theme";
+import { SectionEyebrow } from "../section-eyebrow";
 import { AgentTranscript } from "./agent-transcript";
-import { SectionEyebrow } from "./section-eyebrow";
 
 export function Hero(): ReactElement {
   return (

@@ -10,8 +10,8 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { Section } from "../section";
 import { FAQ_ITEMS } from "./faq-items";
-import { Section } from "./section";
 
 export function Faq(): ReactElement {
   return (

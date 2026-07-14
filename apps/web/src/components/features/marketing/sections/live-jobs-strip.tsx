@@ -4,8 +4,8 @@ import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
 import { JobCard } from "@/components/features/jobs";
 import { LinkButton } from "@/components/ui/buttons";
-import { Section } from "./section";
-import { SectionEyebrow } from "./section-eyebrow";
+import { Section } from "../section";
+import { SectionEyebrow } from "../section-eyebrow";
 
 const SHOWN = 6;
 

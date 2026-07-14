@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Box, Grid, Stack, Typography } from "@mui/material";
 import { fontFamilies, line, radii } from "@/theme";
-import { Section } from "./section";
+import { Section } from "../section";
 
 const STEPS = [
   {

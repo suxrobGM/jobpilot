@@ -13,8 +13,8 @@ import {
 import type { AdminUserDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { formatDate } from "@/utils/format";
-import { AdminRoleChip } from "./admin-role-chip";
-import { AdminRoleMenu } from "./admin-role-menu";
+import { AdminRoleChip } from "./role-chip";
+import { AdminRoleMenu } from "./role-menu";
 
 interface AdminUsersTableProps {
   users: AdminUserDto[];
