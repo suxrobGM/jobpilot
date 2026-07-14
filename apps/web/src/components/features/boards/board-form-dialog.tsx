@@ -2,7 +2,8 @@
 
 import type { ReactElement } from "react";
 import { type JobBoardInput, jobBoardSchema } from "@jobpilot/contracts/job-board";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
+import { Stack } from "@mui/material";
+import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 interface BoardFormDialogProps {
@@ -34,50 +35,32 @@ export function BoardFormDialog(props: BoardFormDialogProps): ReactElement {
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
-        <DialogTitle>{title}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <Stack direction="row" spacing={2}>
-              <form.AppField name="name">
-                {(field) => <field.TextField label="Display name" />}
-              </form.AppField>
-              <form.AppField name="domain">
-                {/* The domain identifies the shared board, so it is fixed once linked - remove and re-add to change it. */}
-                {(field) => (
-                  <field.TextField label="Domain (e.g. linkedin.com)" disabled={Boolean(initial)} />
-                )}
-              </form.AppField>
-            </Stack>
-            <form.AppField name="searchUrl">
-              {(field) => <field.TextField label="Search URL" />}
-            </form.AppField>
-            <Stack direction="row" spacing={2}>
-              <form.AppField name="email">
-                {(field) => <field.TextField label="Email (for login)" />}
-              </form.AppField>
-              <form.AppField name="password">
-                {(field) => <field.TextField label="Password (for login)" type="password" />}
-              </form.AppField>
-            </Stack>
-            <form.AppField name="sortOrder">
-              {(field) => <field.TextField label="Sort order" type="number" />}
-            </form.AppField>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <form.AppForm>
-            <form.SubmitButton disabled={submitting}>Save</form.SubmitButton>
-          </form.AppForm>
-        </DialogActions>
-      </form>
-    </Dialog>
+    <FormDialog open={open} title={title} onClose={onClose} form={form} submitting={submitting}>
+      <Stack direction="row" spacing={2}>
+        <form.AppField name="name">
+          {(field) => <field.TextField label="Display name" />}
+        </form.AppField>
+        <form.AppField name="domain">
+          {/* The domain identifies the shared board, so it is fixed once linked - remove and re-add to change it. */}
+          {(field) => (
+            <field.TextField label="Domain (e.g. linkedin.com)" disabled={Boolean(initial)} />
+          )}
+        </form.AppField>
+      </Stack>
+      <form.AppField name="searchUrl">
+        {(field) => <field.TextField label="Search URL" />}
+      </form.AppField>
+      <Stack direction="row" spacing={2}>
+        <form.AppField name="email">
+          {(field) => <field.TextField label="Email (for login)" />}
+        </form.AppField>
+        <form.AppField name="password">
+          {(field) => <field.TextField label="Password (for login)" type="password" />}
+        </form.AppField>
+      </Stack>
+      <form.AppField name="sortOrder">
+        {(field) => <field.TextField label="Sort order" type="number" />}
+      </form.AppField>
+    </FormDialog>
   );
 }

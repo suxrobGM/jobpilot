@@ -2,7 +2,8 @@
 
 import type { ReactElement } from "react";
 import { type AdminBoardInput, adminBoardSchema } from "@jobpilot/contracts/job-board";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
+import { Stack } from "@mui/material";
+import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 interface AdminBoardFormDialogProps {
@@ -34,45 +35,27 @@ export function AdminBoardFormDialog(props: AdminBoardFormDialogProps): ReactEle
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
-        <DialogTitle>{title}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <Stack direction="row" spacing={2}>
-              <form.AppField name="name">
-                {(field) => <field.TextField label="Display name" />}
-              </form.AppField>
-              <form.AppField name="domain">
-                {(field) => <field.TextField label="Domain (e.g. linkedin.com)" />}
-              </form.AppField>
-            </Stack>
-            <form.AppField name="searchUrl">
-              {(field) => <field.TextField label="Search URL" />}
-            </form.AppField>
-            <form.AppField name="sortOrder">
-              {(field) => <field.TextField label="Sort order" type="number" />}
-            </form.AppField>
-            <form.AppField name="listed">
-              {(field) => <field.Switch label="Listed - offer this board to every user" />}
-            </form.AppField>
-            <form.AppField name="isDefault">
-              {(field) => <field.Switch label="Default - add it to new accounts automatically" />}
-            </form.AppField>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <form.AppForm>
-            <form.SubmitButton disabled={submitting}>Save</form.SubmitButton>
-          </form.AppForm>
-        </DialogActions>
-      </form>
-    </Dialog>
+    <FormDialog open={open} title={title} onClose={onClose} form={form} submitting={submitting}>
+      <Stack direction="row" spacing={2}>
+        <form.AppField name="name">
+          {(field) => <field.TextField label="Display name" />}
+        </form.AppField>
+        <form.AppField name="domain">
+          {(field) => <field.TextField label="Domain (e.g. linkedin.com)" />}
+        </form.AppField>
+      </Stack>
+      <form.AppField name="searchUrl">
+        {(field) => <field.TextField label="Search URL" />}
+      </form.AppField>
+      <form.AppField name="sortOrder">
+        {(field) => <field.TextField label="Sort order" type="number" />}
+      </form.AppField>
+      <form.AppField name="listed">
+        {(field) => <field.Switch label="Listed - offer this board to every user" />}
+      </form.AppField>
+      <form.AppField name="isDefault">
+        {(field) => <field.Switch label="Default - add it to new accounts automatically" />}
+      </form.AppField>
+    </FormDialog>
   );
 }

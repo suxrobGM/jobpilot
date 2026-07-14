@@ -1,5 +1,6 @@
 export * from "./currency-field";
 export * from "./file-upload";
+export * from "./form-dialog";
 export * from "./form-section";
 export * from "./multi-select";
 export * from "./phone-field";

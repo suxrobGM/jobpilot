@@ -2,8 +2,8 @@
 
 import type { ReactElement } from "react";
 import type { AddQueueEntry } from "@jobpilot/contracts/queue";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { z } from "zod/v4";
+import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 interface AddUrlsDialogProps {
@@ -65,41 +65,27 @@ export function AddUrlsDialog(props: AddUrlsDialogProps): ReactElement {
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
-        <DialogTitle>Add URLs to queue</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <form.AppField name="urlsText">
-              {(field) => (
-                <field.TextField
-                  label="URLs (one per line)"
-                  multiline
-                  rows={6}
-                  placeholder={
-                    "https://www.linkedin.com/jobs/view/...\nhttps://boards.greenhouse.io/..."
-                  }
-                  helperText="Paste one URL per line. Whitespace and commas are accepted."
-                />
-              )}
-            </form.AppField>
-            <form.AppField name="note">
-              {(field) => <field.TextField label="Note (optional)" />}
-            </form.AppField>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <form.AppForm>
-            <form.SubmitButton disabled={submitting}>Save</form.SubmitButton>
-          </form.AppForm>
-        </DialogActions>
-      </form>
-    </Dialog>
+    <FormDialog
+      open={open}
+      title="Add URLs to queue"
+      onClose={onClose}
+      form={form}
+      submitting={submitting}
+    >
+      <form.AppField name="urlsText">
+        {(field) => (
+          <field.TextField
+            label="URLs (one per line)"
+            multiline
+            rows={6}
+            placeholder={"https://www.linkedin.com/jobs/view/...\nhttps://boards.greenhouse.io/..."}
+            helperText="Paste one URL per line. Whitespace and commas are accepted."
+          />
+        )}
+      </form.AppField>
+      <form.AppField name="note">
+        {(field) => <field.TextField label="Note (optional)" />}
+      </form.AppField>
+    </FormDialog>
   );
 }

@@ -6,16 +6,8 @@ import {
   credentialSchema,
   SERVICE_PROVIDERS,
 } from "@jobpilot/contracts/credential";
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@mui/material";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 interface CredentialFormDialogProps {
@@ -69,71 +61,59 @@ export function CredentialFormDialog(props: CredentialFormDialogProps): ReactEle
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
+    <FormDialog
+      open={open}
+      title="Add credential"
+      onClose={handleClose}
+      form={form}
+      submitting={submitting}
+    >
+      <ToggleButtonGroup
+        exclusive
+        size="small"
+        color="primary"
+        value={kind}
+        onChange={(_, next) => next && switchKind(next)}
       >
-        <DialogTitle>Add credential</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <ToggleButtonGroup
-              exclusive
-              size="small"
-              color="primary"
-              value={kind}
-              onChange={(_, next) => next && switchKind(next)}
-            >
-              <ToggleButton value="login">Login</ToggleButton>
-              <ToggleButton value="service">Captcha service</ToggleButton>
-            </ToggleButtonGroup>
+        <ToggleButton value="login">Login</ToggleButton>
+        <ToggleButton value="service">Captcha service</ToggleButton>
+      </ToggleButtonGroup>
 
-            {kind === "login" && (
-              <>
-                <form.AppField name="scope">
-                  {(field) => (
-                    <field.TextField
-                      label="Scope"
-                      helperText='Use "default" or a domain like "linkedin.com"'
-                    />
-                  )}
-                </form.AppField>
-                <form.AppField name="email">
-                  {(field) => <field.TextField label="Email or username" />}
-                </form.AppField>
-                <form.AppField name="password">
-                  {(field) => <field.TextField label="Password" type="password" />}
-                </form.AppField>
-              </>
+      {kind === "login" && (
+        <>
+          <form.AppField name="scope">
+            {(field) => (
+              <field.TextField
+                label="Scope"
+                helperText='Use "default" or a domain like "linkedin.com"'
+              />
             )}
+          </form.AppField>
+          <form.AppField name="email">
+            {(field) => <field.TextField label="Email or username" />}
+          </form.AppField>
+          <form.AppField name="password">
+            {(field) => <field.TextField label="Password" type="password" />}
+          </form.AppField>
+        </>
+      )}
 
-            {kind === "service" && (
-              <>
-                <form.AppField name="scope">
-                  {(field) => <field.Select label="Provider" items={PROVIDER_ITEMS} />}
-                </form.AppField>
-                <form.AppField name="apiKey">
-                  {(field) => (
-                    <field.TextField
-                      label="API key"
-                      type="password"
-                      helperText="Used by the solve-captcha skill to solve image challenges"
-                    />
-                  )}
-                </form.AppField>
-              </>
+      {kind === "service" && (
+        <>
+          <form.AppField name="scope">
+            {(field) => <field.Select label="Provider" items={PROVIDER_ITEMS} />}
+          </form.AppField>
+          <form.AppField name="apiKey">
+            {(field) => (
+              <field.TextField
+                label="API key"
+                type="password"
+                helperText="Used by the solve-captcha skill to solve image challenges"
+              />
             )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <form.AppForm>
-            <form.SubmitButton disabled={submitting}>Save</form.SubmitButton>
-          </form.AppForm>
-        </DialogActions>
-      </form>
-    </Dialog>
+          </form.AppField>
+        </>
+      )}
+    </FormDialog>
   );
 }
