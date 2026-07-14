@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { upworkChannel } from "@jobpilot/contracts/sse";
 import { AutoAwesome, ContentCopy, Delete, Launch } from "@mui/icons-material";
 import {
   Box,
@@ -20,7 +21,6 @@ import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
-import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";

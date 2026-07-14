@@ -1,10 +1,10 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { ResumeData } from "@jobpilot/contracts/resume";
+import { resumeChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { badRequest, findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { resumeChannel } from "@/common/sse/channels/resume";
 import {
   deleteAllResumeArtifacts,
   ensureResumesDir,

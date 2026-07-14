@@ -8,12 +8,11 @@ import type {
   CreateCampaignInput,
   UpdateCampaignInput,
 } from "@jobpilot/contracts/campaign";
+import { type CampaignEvent, campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { cleanReplacementCharsNullable } from "@jobpilot/contracts/utils/text";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { type CampaignEvent, campaignChannel } from "@/common/sse/channels/campaign";
-import { workspaceChannel } from "@/common/sse/channels/workspace";
 import { type Campaign, type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { type CampaignJobRow, type CampaignRow } from "./campaign.mapper";
 import { summarizeJobs } from "./campaign.summary";

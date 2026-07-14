@@ -7,6 +7,6 @@ export type ResumeEvent =
 /** Push updates when a resume's content changes (extraction) or a tailored variant is added. */
 export const resumeChannel = defineChannel<ResumeEvent, { resumeId: string }>({
   name: "resume",
-  url: ({ resumeId }) => `/api/resumes/${resumeId}/events`,
+  path: ({ resumeId }) => `/api/resumes/${resumeId}/events`,
   topic: ({ resumeId }) => String(resumeId),
 });

@@ -1,9 +1,9 @@
 import { idParam } from "@jobpilot/contracts/shared";
+import { resumeChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
-import { resumeChannel } from "@/common/sse/channels/resume";
 import { deletedResponseSchema, idResponseSchema } from "@/types/response";
 import { resumeFileController } from "./files/file.controller";
 import {

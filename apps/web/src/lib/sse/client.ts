@@ -1,8 +1,9 @@
 "use client";
 
+import type { AnyChannel, ChannelEvent, ChannelUrlParams } from "@jobpilot/contracts/sse";
 import { EventSource } from "eventsource";
 import { useEffect, useRef } from "react";
-import type { AnyChannel, ChannelEvent, ChannelUrlParams } from "./channel";
+import { API_BASE_URL } from "@/api/base-url";
 
 /**
  * Hook input for a channel's URL params. Channels with no URL params
@@ -86,8 +87,9 @@ interface UseSseChannelOptions<TEvent extends { type: string }> {
 }
 
 /**
- * Subscribe to a typed channel. URL comes from the descriptor; `on`
- * dispatches by `event.type` with full type narrowing per variant.
+ * Subscribe to a typed channel. The URL is the descriptor's API-relative path
+ * against the API origin; `on` dispatches by `event.type` with full type
+ * narrowing per variant.
  */
 export function useSseChannel<C extends AnyChannel>(
   channel: C,
@@ -95,7 +97,10 @@ export function useSseChannel<C extends AnyChannel>(
   options: UseSseChannelOptions<ChannelEvent<C>> = {},
 ): void {
   type TEvent = ChannelEvent<C>;
-  const url = options.enabled === false ? null : channel.url(params as ChannelUrlParams<C>);
+  const url =
+    options.enabled === false
+      ? null
+      : `${API_BASE_URL}${channel.path(params as ChannelUrlParams<C>)}`;
 
   useEventSource<TEvent>(url, {
     enabled: options.enabled,

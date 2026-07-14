@@ -2,12 +2,12 @@
 
 import type { ReactElement } from "react";
 import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
+import { resumeChannel } from "@jobpilot/contracts/sse";
 import { LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import { ResumeHeaderBar } from "./detail/header-bar";
 import { ResumePdfPreview } from "./detail/pdf-preview";

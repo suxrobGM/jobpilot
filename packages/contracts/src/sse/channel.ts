@@ -1,7 +1,8 @@
 /**
- * Pure-data descriptor of an SSE channel - safe to import from client and
- * server. `TUrlParams` and `TTopicParams` differ when the topic key is
- * server-resolved (e.g. from the session) and absent from the URL.
+ * Pure-data descriptor of an SSE channel - the contract both sides read, so an
+ * event added here is an exhaustiveness error in the web's handler map.
+ * `TUrlParams` and `TTopicParams` differ when the topic key is server-resolved
+ * (e.g. from the session) and absent from the URL.
  */
 export interface Channel<
   _TEvent extends { type: string },
@@ -10,8 +11,8 @@ export interface Channel<
 > {
   /** Unique channel id; used as the in-process bus key. */
   readonly name: string;
-  /** Build the SSE endpoint URL the client connects to. */
-  url(params: TUrlParams): string;
+  /** API-relative path of the stream; the web prefixes it with the API origin. */
+  path(params: TUrlParams): string;
   /** Compute the broker topic key the server publishes/subscribes on. */
   topic(params: TTopicParams): string;
 }

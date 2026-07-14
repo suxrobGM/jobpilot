@@ -2,6 +2,7 @@
 
 import { type ReactNode, useSyncExternalStore } from "react";
 import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
+import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { Stop } from "@mui/icons-material";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,7 +12,6 @@ import { campaignQueries } from "@/api/queries";
 import { invalidations, queryKeys } from "@/api/query-keys";
 import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
 import { readAgentStorage, subscribeAgentStorage } from "@/lib/agent-storage";
-import { workspaceChannel } from "@/lib/sse/channels/workspace";
 import { useSseChannel } from "@/lib/sse/client";
 
 const FILTERS = {

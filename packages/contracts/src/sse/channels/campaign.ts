@@ -1,4 +1,3 @@
-import { API_BASE_URL } from "@/api/base-url";
 import { defineChannel } from "../channel";
 
 export type CampaignEvent =
@@ -11,5 +10,6 @@ export type CampaignEvent =
 /** Live event feed scoped to a single campaign (logs, progress, job updates). */
 export const campaignChannel = defineChannel<CampaignEvent, { campaignId: string }>({
   name: "campaign",
-  url: ({ campaignId }) => `${API_BASE_URL}/api/campaigns/${encodeURIComponent(campaignId)}/events`,
+  path: ({ campaignId }) => `/api/campaigns/${encodeURIComponent(campaignId)}/events`,
+  topic: ({ campaignId }) => campaignId,
 });

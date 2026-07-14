@@ -1,4 +1,5 @@
 import { idParam } from "@jobpilot/contracts/shared";
+import { upworkChannel } from "@jobpilot/contracts/sse";
 import {
   createUpworkProposalSchema,
   patchUpworkProposalSchema,
@@ -9,7 +10,6 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { publish, sseStream } from "@/common/sse";
-import { upworkChannel } from "@/common/sse/channels/upwork";
 import { idResponseSchema } from "@/types/response";
 import {
   proposalsQuery,

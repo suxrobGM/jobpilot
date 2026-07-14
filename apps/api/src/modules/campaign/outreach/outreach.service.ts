@@ -3,10 +3,10 @@ import {
   type OutreachMessageResultInput,
   type PatchOutreachMessageInput,
 } from "@jobpilot/contracts/outreach";
+import { campaignChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { findOwned, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { campaignChannel } from "@/common/sse/channels/campaign";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
 import { toOutreachMessageRow } from "../campaign.mapper";

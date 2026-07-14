@@ -3,11 +3,10 @@ import type {
   CampaignJobResultInput,
   PatchCampaignJobInput,
 } from "@jobpilot/contracts/campaign";
+import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { campaignChannel } from "@/common/sse/channels/campaign";
-import { workspaceChannel } from "@/common/sse/channels/workspace";
 import { PrismaClient } from "@/generated/prisma/client";
 import { JobListingIngestService } from "@/modules/job-listing";
 import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";

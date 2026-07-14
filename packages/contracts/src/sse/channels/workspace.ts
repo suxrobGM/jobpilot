@@ -1,4 +1,3 @@
-import { API_BASE_URL } from "@/api/base-url";
 import { defineChannel } from "../channel";
 
 export type WorkspaceEvent =
@@ -12,9 +11,10 @@ export type WorkspaceEvent =
 
 /**
  * Profile-scoped live-refresh feed for the workspace UI (dashboard, auto-apply pill).
- * The client URL is parameter-free; the server resolves the profile from the session.
+ * The path is parameter-free; the server resolves the profile from the session.
  */
-export const workspaceChannel = defineChannel<WorkspaceEvent, void>({
+export const workspaceChannel = defineChannel<WorkspaceEvent, void, { profileId: string }>({
   name: "workspace",
-  url: () => `${API_BASE_URL}/api/workspace/events`,
+  path: () => "/api/workspace/events",
+  topic: ({ profileId }) => String(profileId),
 });

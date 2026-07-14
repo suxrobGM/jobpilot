@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactElement, type ReactNode, useState } from "react";
+import { resumeChannel } from "@jobpilot/contracts/sse";
 import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import {
   Box,
@@ -24,7 +25,6 @@ import { resumePdfUrl } from "@/api/resume-urls";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import { useToast } from "@/providers/notification-provider";
 import { NewResumeDialog } from "./new-resume-dialog";

@@ -1,11 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { Box, Tab, Tabs } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api/query-keys";
 import { useSearchParam } from "@/hooks/use-search-param";
-import { workspaceChannel } from "@/lib/sse/channels/workspace";
 import { useSseChannel } from "@/lib/sse/client";
 import { ApplicationsPanel } from "./applications/applications-panel";
 import { OverviewPanel } from "./overview-panel";

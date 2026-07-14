@@ -1,7 +1,7 @@
+import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { profileGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
-import { workspaceChannel } from "@/common/sse/channels/workspace";
 
 export const workspaceController = new Elysia({
   prefix: "/workspace",

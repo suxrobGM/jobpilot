@@ -3,12 +3,12 @@ import type {
   resumeVariantCreateSchema,
   resumeVariantPatchSchema,
 } from "@jobpilot/contracts/resume";
+import { resumeChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import type { z } from "zod/v4";
 import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
 import { renderResumePdf } from "@/common/pdf";
 import { publish } from "@/common/sse";
-import { resumeChannel } from "@/common/sse/channels/resume";
 import {
   ensureCachedPdf,
   ensureGeneratedDir,

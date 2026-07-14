@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
+import { resumeChannel } from "@jobpilot/contracts/sse";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
@@ -11,7 +12,6 @@ import { invalidations } from "@/api/query-keys";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";

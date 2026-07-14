@@ -1,6 +1,6 @@
+import type { AnyChannel, ChannelEvent, ChannelTopicParams } from "@jobpilot/contracts/sse";
 import { sse } from "elysia";
 import { createSseBroker, type SseBroker } from "./broker";
-import type { AnyChannel, ChannelEvent, ChannelTopicParams } from "./channel";
 
 const buses = new Map<string, SseBroker<unknown>>();
 

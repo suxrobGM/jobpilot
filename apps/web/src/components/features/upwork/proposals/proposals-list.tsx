@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
+import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkProposalStatus } from "@jobpilot/contracts/upwork";
 import { ChevronRight, Clear } from "@mui/icons-material";
 import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
@@ -15,7 +16,6 @@ import { ColorChip } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePagination } from "@/hooks/use-pagination";
-import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
 import { formatRelativeTime } from "@/utils/format";
 import { STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-status";

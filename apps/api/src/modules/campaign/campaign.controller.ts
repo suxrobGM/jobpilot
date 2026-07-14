@@ -3,11 +3,11 @@ import {
   createCampaignSchema,
   updateCampaignSchema,
 } from "@jobpilot/contracts/campaign";
+import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard, requireVerifiedEmail } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
-import { campaignChannel } from "@/common/sse/channels/campaign";
 import { idResponseSchema } from "@/types/response";
 import {
   campaignCreatedSchema,

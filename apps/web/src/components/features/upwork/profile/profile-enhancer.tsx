@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
@@ -11,7 +12,6 @@ import { queryKeys } from "@/api/query-keys";
 import { EmptyState } from "@/components/ui/data";
 import { ColorChip } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
-import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { ProfileReview } from "./profile-review";

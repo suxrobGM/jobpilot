@@ -1,6 +1,6 @@
 // Imported directly, not via the `@/common/sse` barrel: a future db-touching re-export there would
 // drag Prisma + env validation into this test and fail it at import time.
-import { type InboxEvent, inboxChannel } from "@/common/sse/channels/inbox";
+import { type InboxEvent, inboxChannel } from "@jobpilot/contracts/sse";
 import { publish, subscribe } from "@/common/sse/server";
 import { describe, expect, it } from "bun:test";
 

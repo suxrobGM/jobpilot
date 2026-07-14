@@ -1,8 +1,8 @@
+import { inboxChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { CryptoService } from "@/common/crypto";
 import { ErrorCodes, HttpError, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { inboxChannel } from "@/common/sse/channels/inbox";
 import { PrismaClient } from "@/generated/prisma/client";
 import { loadFreshAccount } from "../account/account.utils";
 import { getProvider } from "../gmail.provider";

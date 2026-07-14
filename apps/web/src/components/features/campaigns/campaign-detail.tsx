@@ -1,13 +1,13 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { campaignChannel } from "@jobpilot/contracts/sse";
 import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { OutreachBoard } from "@/components/features/outreach";
-import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { useSseChannel } from "@/lib/sse/client";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";

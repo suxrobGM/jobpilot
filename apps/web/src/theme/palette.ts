@@ -1,3 +1,5 @@
+import { alpha } from "@mui/material/styles";
+
 // Warm-carbon ladder: near-black with a whisper of warmth - low saturation so
 // large surfaces stay carbon, never brown.
 export const surfaces = {
@@ -41,6 +43,11 @@ export const stages = {
   interviewing: feedback.warning,
   rejected: feedback.error,
 } as const;
+
+/** Translucent flame - every glow, wash and focus ring is this, never a literal rgba. */
+export function flameAlpha(opacity: number): string {
+  return alpha(accent.primary, opacity);
+}
 
 export const editorial = {
   paper: textColors.primary,

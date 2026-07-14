@@ -1,10 +1,10 @@
 import { approveSchema, scanMessageSchema } from "@jobpilot/contracts/email";
 import { idParam } from "@jobpilot/contracts/shared";
+import { inboxChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
-import { inboxChannel } from "@/common/sse/channels/inbox";
 import {
   emailMessageListSchema,
   emailMessageSchema,
