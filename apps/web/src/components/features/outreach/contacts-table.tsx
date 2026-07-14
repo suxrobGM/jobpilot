@@ -2,10 +2,11 @@
 
 import type { ReactElement } from "react";
 import { Link } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
+import type { GridColDef } from "@mui/x-data-grid";
 import { useApiQuery } from "@/api/hooks";
 import { contactQueries } from "@/api/queries";
 import type { ContactDto } from "@/api/types";
+import { DataTable } from "@/components/ui/data";
 import { ColorChip } from "@/components/ui/display";
 
 const CONNECTION_COLOR: Record<ContactDto["linkedinConnection"], "default" | "info" | "success"> = {
@@ -58,11 +59,11 @@ export function ContactsTable(): ReactElement {
   ];
 
   return (
-    <DataGrid
-      rows={rows as GridRowsProp}
-      columns={columns as GridColDef[]}
+    <DataTable
+      rows={rows}
+      columns={columns}
       loading={contactsQuery.isLoading}
-      getRowId={(row) => (row as ContactDto).id}
+      getRowId={(row) => row.id}
       autoHeight
     />
   );

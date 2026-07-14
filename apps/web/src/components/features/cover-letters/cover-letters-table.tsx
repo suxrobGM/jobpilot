@@ -3,12 +3,13 @@
 import type { ReactElement } from "react";
 import { Launch } from "@mui/icons-material";
 import { IconButton, Link } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
+import type { GridColDef } from "@mui/x-data-grid";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
 import { coverLetterQueries } from "@/api/queries";
 import type { CoverLetterListItem } from "@/api/types";
+import { DataTable } from "@/components/ui/data";
 import { ColorChip } from "@/components/ui/display";
 
 const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "success"> = {
@@ -75,12 +76,12 @@ export function CoverLettersTable(): ReactElement {
   ];
 
   return (
-    <DataGrid
-      rows={rows as GridRowsProp}
-      columns={columns as GridColDef[]}
+    <DataTable
+      rows={rows}
+      columns={columns}
       loading={lettersQuery.isLoading}
-      getRowId={(row) => (row as CoverLetterListItem).id}
-      onRowClick={(p) => router.push(`/cover-letters/${p.id}` as Route)}
+      getRowId={(row) => row.id}
+      onRowClick={(row) => router.push(`/cover-letters/${row.id}` as Route)}
     />
   );
 }

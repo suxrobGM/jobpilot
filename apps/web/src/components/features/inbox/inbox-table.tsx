@@ -2,8 +2,9 @@
 
 import type { ReactElement } from "react";
 import { Button, Chip, Stack, Typography } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
+import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
+import { DataTable } from "@/components/ui/data";
 
 interface InboxTableProps {
   rows: ReadonlyArray<EmailMessageDto>;
@@ -143,15 +144,13 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       : []),
   ];
 
-  // DTOs are interfaces without an index signature, so widen rows/columns at
-  // the grid boundary; columns above stay typed against EmailMessageDto.
   return (
-    <DataGrid
-      rows={rows as GridRowsProp}
-      columns={columns as GridColDef[]}
+    <DataTable
+      rows={rows}
+      columns={columns}
       loading={loading}
       rowHeight={60}
-      onRowClick={(p) => onRowClick(p.row as EmailMessageDto)}
+      onRowClick={onRowClick}
     />
   );
 }

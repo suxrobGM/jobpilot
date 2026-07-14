@@ -3,13 +3,9 @@
 import type { ReactElement } from "react";
 import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Button, Chip, Link } from "@mui/material";
-import {
-  DataGrid,
-  type GridColDef,
-  type GridRowSelectionModel,
-  type GridRowsProp,
-} from "@mui/x-data-grid";
+import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import type { CampaignJobDto } from "@/api/types";
+import { DataTable } from "@/components/ui/data";
 
 /** Statuses that can still be applied to from the campaigns detail page. */
 export function isApplicable(status: CampaignJobStatus): boolean {
@@ -143,19 +139,16 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
     });
   }
 
-  // Our DTOs are interfaces without an index signature, so they don't satisfy
-  // DataGrid's GridValidRowModel constraint. Author columns against CampaignJobDto
-  // for type safety, then widen rows/columns at the grid boundary.
   return (
-    <DataGrid
-      rows={rows as GridRowsProp}
-      columns={columns as GridColDef[]}
+    <DataTable
+      rows={rows}
+      columns={columns}
       loading={loading}
-      getRowId={(row) => (row as CampaignJobDto).id}
+      getRowId={(row) => row.id}
       checkboxSelection={checkboxSelection}
       rowSelectionModel={rowSelectionModel}
       onRowSelectionModelChange={onRowSelectionModelChange}
-      isRowSelectable={(p) => isReapplicable((p.row as CampaignJobDto).status)}
+      isRowSelectable={(row) => isReapplicable(row.status)}
       keepNonExistentRowsSelected
     />
   );

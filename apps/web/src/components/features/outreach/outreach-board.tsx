@@ -7,18 +7,13 @@ import {
   type OutreachMessageStatus,
 } from "@jobpilot/contracts/outreach";
 import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
-import {
-  DataGrid,
-  type GridColDef,
-  type GridRowSelectionModel,
-  type GridRowsProp,
-} from "@mui/x-data-grid";
+import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries, emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignSummaryDto, OutreachConfigDto, OutreachMessageDto } from "@/api/types";
-import { EmptyState } from "@/components/ui/data";
+import { DataTable, EmptyState } from "@/components/ui/data";
 import { ColorChip, ExternalLink, StatCard } from "@/components/ui/display";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
@@ -232,11 +227,11 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
         </Stack>
       )}
 
-      <DataGrid
-        rows={messages as GridRowsProp}
-        columns={columns as GridColDef[]}
+      <DataTable
+        rows={messages}
+        columns={columns}
         loading={messagesQuery.isLoading}
-        getRowId={(row) => (row as OutreachMessageDto).id}
+        getRowId={(row) => row.id}
         checkboxSelection
         rowSelectionModel={selection}
         onRowSelectionModelChange={setSelection}
