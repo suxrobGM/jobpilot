@@ -33,6 +33,7 @@ const agenda = container.resolve(AgendaService);
 
 const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
 const limitJournal = rateLimit(RATE_LIMITS.pilotJournal);
+const limitJournalExport = rateLimit(RATE_LIMITS.pilotJournalExport);
 const limitLease = rateLimit(RATE_LIMITS.pilotLease);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
@@ -136,6 +137,15 @@ export const pilotController = new Elysia({
       },
     },
   )
+  // Streams the whole history as NDJSON; no `response` schema (raw streaming Response).
+  .get("/journal/export", ({ profileId }) => pilot.streamJournalExport(profileId), {
+    beforeHandle: limitJournalExport,
+    detail: {
+      summary: "Export the journal",
+      description:
+        "Streams every journal entry as newline-delimited JSON (createdAt ascending) for offline analysis.",
+    },
+  })
   // ── Escalations ───────────────────────────────────────────────────────────────
   .post("/escalations", ({ profileId, body }) => pilot.createEscalation(profileId, body), {
     body: createEscalationSchema,

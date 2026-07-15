@@ -27,6 +27,9 @@ const TWO_FA_TTL_MS = 5 * 60 * 1000;
 /** Push bodies are glanceable; keep them short so a phone banner never truncates mid-word. */
 const PUSH_BODY_MAX = 120;
 
+/** Journal export reads the history in cursor batches so a huge history never loads all at once. */
+const EXPORT_BATCH = 500;
+
 function truncate(text: string, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
@@ -221,5 +224,45 @@ export class PilotService {
       items: page.map(toJournalEntry),
       nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
     };
+  }
+
+  /**
+   * Streams the profile's entire journal as NDJSON (one entry per line, createdAt ascending),
+   * pulling in cursor batches so the whole history is never materialized in memory at once.
+   */
+  streamJournalExport(profileId: string): Response {
+    const prisma = this.prisma;
+    const encoder = new TextEncoder();
+    // id tiebreaks createdAt (batch appends share one timestamp) for a deterministic cursor walk.
+    let cursor: string | undefined;
+    let closed = false;
+
+    const stream = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        if (closed) return;
+        const rows = await prisma.pilotJournalEntry.findMany({
+          where: { profileId },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          take: EXPORT_BATCH,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        });
+        if (rows.length === 0) {
+          closed = true;
+          controller.close();
+          return;
+        }
+        for (const row of rows) {
+          controller.enqueue(encoder.encode(`${JSON.stringify(toJournalEntry(row))}\n`));
+        }
+        cursor = rows[rows.length - 1]?.id;
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "content-type": "application/x-ndjson",
+        "content-disposition": 'attachment; filename="pilot-journal.ndjson"',
+      },
+    });
   }
 }

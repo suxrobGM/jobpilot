@@ -9,8 +9,9 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict, findOwned, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient, type PromotionPost as PromotionPostModel } from "@/generated/prisma/client";
 import { toPromotion } from "./pilot.mapper";
+import { PilotService } from "./pilot.service";
 import { PushService } from "./push.service";
 
 /** Push bodies are glanceable; keep them short so a phone banner never truncates mid-word. */
@@ -25,6 +26,7 @@ export class PromotionService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly push: PushService,
+    private readonly pilot: PilotService,
   ) {}
 
   /** Agent creates a draft post for review; notifies the user to look it over. */
@@ -84,7 +86,58 @@ export class PromotionService {
     });
     const promotion = toPromotion(row);
     publish(pilotChannel, { profileId }, { type: "promotion.updated", promotion });
+    await this.captureCorrection(profileId, id, existing, body, row);
     return promotion;
+  }
+
+  /** A decline or a content edit of a draft is a user override; log it as a correction signal. */
+  private async captureCorrection(
+    profileId: string,
+    id: string,
+    before: PromotionPostModel,
+    body: PatchPromotionInput,
+    after: PromotionPostModel,
+  ): Promise<void> {
+    if (body.status === "declined") {
+      await this.pilot.appendJournal(profileId, {
+        entries: [
+          {
+            kind: "correction",
+            summary: `Declined ${before.venue} post draft.`,
+            detail: {
+              type: "promotion.declined",
+              venue: before.venue,
+              title: before.title,
+              body: before.body,
+            },
+            subjectType: "promotion",
+            subjectId: id,
+          },
+        ],
+      });
+      return;
+    }
+
+    const titleChanged = body.title !== undefined && body.title !== before.title;
+    const bodyChanged = body.body !== undefined && body.body !== before.body;
+    if (!titleChanged && !bodyChanged) return;
+
+    await this.pilot.appendJournal(profileId, {
+      entries: [
+        {
+          kind: "correction",
+          summary: `Edited ${before.venue} post draft.`,
+          detail: {
+            type: "promotion.edited",
+            venue: before.venue,
+            before: { title: before.title, body: before.body },
+            after: { title: after.title, body: after.body },
+          },
+          subjectType: "promotion",
+          subjectId: id,
+        },
+      ],
+    });
   }
 
   /** Agent records the terminal outcome after posting; stamps postedAt on success. */

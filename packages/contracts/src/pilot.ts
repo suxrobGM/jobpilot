@@ -15,6 +15,8 @@ export const PILOT_JOURNAL_KINDS = [
   "escalation",
   "system",
   "digest",
+  // A user override (declined/edited a draft) captured as a labeled learning signal.
+  "correction",
 ] as const;
 export const pilotJournalKindSchema = z.enum(PILOT_JOURNAL_KINDS);
 

@@ -7,7 +7,9 @@ import type { SvgIconComponent } from "@mui/icons-material";
 import {
   Autorenew,
   Bolt,
+  Download,
   NotificationImportant,
+  Rule,
   Summarize,
   Terminal,
   Visibility,
@@ -21,6 +23,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { PILOT_JOURNAL_PAGE_SIZE, pilotQueries } from "@/api/queries";
@@ -35,7 +38,11 @@ const KIND_META: Record<PilotJournalKind, { icon: SvgIconComponent; color: ChipP
   escalation: { icon: NotificationImportant, color: "warning" },
   system: { icon: Terminal, color: "default" },
   digest: { icon: Summarize, color: "success" },
+  correction: { icon: Rule, color: "secondary" },
 };
+
+/** Same-site cookie rides a top-level anchor download, so no fetch/token handling is needed here. */
+const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
 
 const n = (detail: Record<string, unknown>, key: string): number =>
   typeof detail[key] === "number" ? (detail[key] as number) : 0;
@@ -158,7 +165,20 @@ export function JournalFeed(): ReactElement {
   }
 
   return (
-    <SectionCard title="Journal">
+    <SectionCard
+      title="Journal"
+      actions={
+        <Button
+          size="small"
+          startIcon={<Download fontSize="sm" />}
+          component="a"
+          href={JOURNAL_EXPORT_URL}
+          download="pilot-journal.ndjson"
+        >
+          Export
+        </Button>
+      }
+    >
       <Stack spacing={2}>
         {body}
         {activeCursor && (

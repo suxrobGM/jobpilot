@@ -10,6 +10,7 @@ import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
 import { loadMandateConfig } from "@/modules/pilot/pilot.mandate";
+import { PilotService } from "@/modules/pilot/pilot.service";
 import { countSentToday } from "@/modules/pilot/pilot.stats";
 import { toOutreachMessageRow } from "../campaign.mapper";
 import { recomputeOutreachSummary } from "../campaign.summary";
@@ -17,7 +18,10 @@ import { ensureCampaignOwned } from "../campaign.utils";
 
 @singleton()
 export class CampaignOutreachService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly pilot: PilotService,
+  ) {}
 
   /** List the campaign's outreach messages (with their contacts) for the board. */
   async listOutreach(profileId: string, campaignId: string) {
@@ -94,8 +98,12 @@ export class CampaignOutreachService {
     messageId: string,
     body: PatchOutreachMessageInput,
   ) {
-    await findOwned(
-      (where) => this.prisma.outreachMessage.findFirst({ where, select: { id: true } }),
+    const existing = await findOwned(
+      (where) =>
+        this.prisma.outreachMessage.findFirst({
+          where,
+          select: { id: true, status: true, subject: true, body: true },
+        }),
       { id: messageId, campaignId, profileId },
       "Outreach message",
     );
@@ -133,6 +141,30 @@ export class CampaignOutreachService {
 
     // Refresh the live campaign board (e.g. a regenerated draft) without a reload.
     publish(campaignChannel, { campaignId }, { type: "outreach-update" });
+
+    // Draft-only approximation of a user edit: the agent regenerates drafts through this same route,
+    // so we can't perfectly separate the two - gate on "draft" and treat any content change as a correction.
+    const subjectChanged = fields.subject != null && fields.subject !== existing.subject;
+    const bodyChanged = fields.body != null && fields.body !== existing.body;
+    if (existing.status === "draft" && (subjectChanged || bodyChanged)) {
+      await this.pilot.appendJournal(profileId, {
+        entries: [
+          {
+            kind: "correction",
+            summary: "Edited outreach draft.",
+            detail: {
+              type: "outreach.edited",
+              messageId,
+              before: { subject: existing.subject, body: existing.body },
+              after: { subject: updated.subject, body: updated.body },
+            },
+            subjectType: "outreach",
+            subjectId: messageId,
+          },
+        ],
+      });
+    }
+
     return toOutreachMessageRow(updated);
   }
 

@@ -72,6 +72,9 @@ export const RATE_LIMITS = {
   /** Batched journal writes, several per cycle - the loosest Pilot limit. */
   pilotJournal: { key: byUser, limit: 600, windowMs: HOUR, burst: 20 },
 
+  /** Full-history NDJSON export - heavy (streams every row), user-initiated, rarely needed. */
+  pilotJournalExport: { key: byUser, limit: 10, windowMs: HOUR },
+
   /** Lease/heartbeat/release bookkeeping, a few per worked item. */
   pilotLease: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
 
