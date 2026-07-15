@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Alert, Box, Button, Chip, Stack, Typography } from "@mui/material";
+import { ColorChip } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime } from "@/utils/format";
 import { useTerminalHealth } from "../agent-dock/use-terminal-health";
@@ -100,10 +101,11 @@ export function PilotStatusCard(props: PilotStatusCardProps): ReactElement {
                 {state.lastCycleAt ? `${formatRelativeTime(state.lastCycleAt)} ago` : "-"}
               </Typography>
               {pilot?.lastCycleStatus && (
-                <Chip
+                <ColorChip
+                  value={pilot.lastCycleStatus}
+                  colors={CYCLE_STATUS_COLOR}
+                  variant="filled"
                   size="small"
-                  color={CYCLE_STATUS_COLOR[pilot.lastCycleStatus] ?? "default"}
-                  label={pilot.lastCycleStatus}
                 />
               )}
             </Stack>

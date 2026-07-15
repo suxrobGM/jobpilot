@@ -3,8 +3,6 @@
 import type { ReactElement } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Grid, LinearProgress, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
-import { analyticsQueries } from "@/api/queries";
 import { StatCard } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 
@@ -12,24 +10,11 @@ interface BudgetTileProps {
   state: PilotState;
 }
 
-/** UTC-midnight of the current day, matching the analytics per-day bucket keys. */
-function utcTodayKey(): number {
-  const now = new Date();
-  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-}
-
 export function BudgetTile(props: BudgetTileProps): ReactElement {
   const { state } = props;
   const { dailyApplyCap, minScore } = state.mandateConfig;
+  const { appliedToday, capReached } = state;
 
-  // Today's applied count is not on the pilot state (agenda is the agent's endpoint,
-  // and polling it mutates lease/escalation expiry), so derive it from analytics.
-  const analytics = useApiQuery(analyticsQueries.stats());
-  const todayKey = utcTodayKey();
-  const appliedToday =
-    analytics.data?.perDay.find((p) => new Date(p.date).getTime() === todayKey)?.count ?? 0;
-
-  const capReached = dailyApplyCap > 0 && appliedToday >= dailyApplyCap;
   const progress = dailyApplyCap > 0 ? Math.min(100, (appliedToday / dailyApplyCap) * 100) : 0;
 
   return (

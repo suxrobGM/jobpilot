@@ -2,6 +2,7 @@ import type {
   AddCampaignJobInput,
   CampaignJobResultInput,
   CampaignJobStatus,
+  CampaignSummary,
   PatchCampaignJobInput,
 } from "@jobpilot/contracts/campaign";
 import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
@@ -146,13 +147,17 @@ export class CampaignJobService {
     return this.emitJobUpdate(profileId, campaignId, key, job, "applying");
   }
 
-  /** Post-update SSE + summary recompute shared by patchJob and claimJobForApply. */
+  /**
+   * Post-update SSE + summary recompute shared by every job-status writer.
+   * Pass `summary` to reuse a transaction-computed one instead of re-querying.
+   */
   private async emitJobUpdate(
     profileId: string,
     campaignId: string,
     key: string,
     job: Job,
     status?: CampaignJobStatus,
+    summary?: CampaignSummary,
   ): Promise<CampaignJobRow> {
     publish(
       campaignChannel,
@@ -161,8 +166,8 @@ export class CampaignJobService {
     );
 
     if (status) {
-      const summary = await recomputeCampaignSummary(this.prisma, campaignId);
-      publish(campaignChannel, { campaignId }, { type: "progress", payload: summary });
+      const progress = summary ?? (await recomputeCampaignSummary(this.prisma, campaignId));
+      publish(campaignChannel, { campaignId }, { type: "progress", payload: progress });
     }
 
     publish(
@@ -259,23 +264,20 @@ export class CampaignJobService {
       return { job, application, applicationCreated, summary };
     });
 
-    publish(
-      campaignChannel,
-      { campaignId },
-      { type: "job-update", payload: { kind: "updated", job: result.job } },
-    );
-    publish(campaignChannel, { campaignId }, { type: "progress", payload: result.summary });
-    publish(
-      workspaceChannel,
-      { profileId },
-      { type: "campaignjob.updated", campaignId, key, status: data.outcome },
+    const campaignJob = await this.emitJobUpdate(
+      profileId,
+      campaignId,
+      key,
+      result.job,
+      data.outcome,
+      result.summary,
     );
     if (result.applicationCreated) {
       publish(workspaceChannel, { profileId }, { type: "application.created", campaignId });
     }
 
     return {
-      campaignJob: toCampaignJobRow(result.job),
+      campaignJob,
       application: result.application,
       summary: result.summary,
     };

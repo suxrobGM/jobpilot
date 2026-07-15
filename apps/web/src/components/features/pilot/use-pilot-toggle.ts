@@ -1,17 +1,17 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
-import { getStoredProvider, subscribeAgentStorage } from "@/lib/agent-storage";
 import {
   pilotDisable,
   pilotEnable,
   TerminalApiError,
   type TerminalProviderId,
 } from "@/lib/terminal";
+import { useAgentDock } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 
 export interface PilotToggle {
@@ -41,12 +41,7 @@ export function usePilotToggle(): PilotToggle {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
-
-  const provider = useSyncExternalStore(
-    subscribeAgentStorage,
-    getStoredProvider,
-    (): TerminalProviderId => "claude",
-  );
+  const { provider } = useAgentDock();
 
   const refreshState = (): void => {
     queryClient.invalidateQueries({ queryKey: queryKeys.pilot.state() });

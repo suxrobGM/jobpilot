@@ -6,18 +6,40 @@ import type {
   SetPilotEnabledInput,
   UpdatePilotMandateInput,
 } from "@jobpilot/contracts/pilot";
+import { pilotMandateConfigSchema } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { PrismaClient } from "@/generated/prisma/client";
+import {
+  type PilotJournalEntry as PilotJournalEntryModel,
+  type PilotState as PilotStateModel,
+  PrismaClient,
+} from "@/generated/prisma/client";
 import { toEscalation, toJournalEntry, toPilotState } from "./pilot.mapper";
+import { countAppliedToday } from "./pilot.stats";
 
 @singleton()
 export class PilotService {
   constructor(private readonly prisma: PrismaClient) {}
 
   // ── State / mandate ───────────────────────────────────────────────────────────
+
+  /**
+   * Full state DTO shared by every state-returning route: the persisted row plus
+   * today's tz-aware applied count. The tz lives in the row's config, so the count
+   * runs after the upsert rather than in parallel with it.
+   */
+  private async toStateDto(profileId: string, row: PilotStateModel) {
+    const config = pilotMandateConfigSchema.parse(JSON.parse(row.mandateConfig));
+    const appliedToday = await countAppliedToday(
+      this.prisma,
+      profileId,
+      new Date(),
+      config.activeHours?.tz,
+    );
+    return toPilotState(row, appliedToday);
+  }
 
   /** Create-on-first-read: every profile has exactly one PilotState, defaulted. */
   async getState(profileId: string) {
@@ -26,7 +48,7 @@ export class PilotService {
       create: { profileId },
       update: {},
     });
-    return toPilotState(row);
+    return this.toStateDto(profileId, row);
   }
 
   async updateMandate(profileId: string, body: UpdatePilotMandateInput) {
@@ -44,7 +66,7 @@ export class PilotService {
         mandateUpdatedAt: new Date(),
       },
     });
-    const state = toPilotState(row);
+    const state = await this.toStateDto(profileId, row);
     publish(pilotChannel, { profileId }, { type: "state.changed", state });
     return state;
   }
@@ -55,7 +77,7 @@ export class PilotService {
       create: { profileId, enabled: body.enabled },
       update: { enabled: body.enabled },
     });
-    const state = toPilotState(row);
+    const state = await this.toStateDto(profileId, row);
     publish(pilotChannel, { profileId }, { type: "state.changed", state });
     return state;
   }
@@ -109,35 +131,32 @@ export class PilotService {
 
   async appendJournal(profileId: string, body: CreatePilotJournalInput) {
     const cycleEntries = body.entries.filter((e) => e.kind === "cycle").length;
+    const now = new Date();
 
-    const rows = await this.prisma.$transaction(async (tx) => {
-      const created = [];
-      for (const entry of body.entries) {
-        created.push(
-          await tx.pilotJournalEntry.create({
-            data: {
-              profileId,
-              cycleId: body.cycleId ?? null,
-              kind: entry.kind,
-              summary: entry.summary,
-              detail: JSON.stringify(entry.detail ?? {}),
-              subjectType: entry.subjectType ?? null,
-              subjectId: entry.subjectId ?? null,
-            },
-          }),
-        );
-      }
+    // id/createdAt generated app-side so the rows are fully known in-hand for the SSE publishes below.
+    const rows: PilotJournalEntryModel[] = body.entries.map((entry) => ({
+      id: crypto.randomUUID(),
+      profileId,
+      cycleId: body.cycleId ?? null,
+      kind: entry.kind,
+      summary: entry.summary,
+      detail: JSON.stringify(entry.detail ?? {}),
+      subjectType: entry.subjectType ?? null,
+      subjectId: entry.subjectId ?? null,
+      createdAt: now,
+    }));
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.pilotJournalEntry.createMany({ data: rows });
 
       // A "cycle" entry marks a completed loop iteration; advance cycle accounting once per such entry.
       if (cycleEntries > 0) {
         await tx.pilotState.upsert({
           where: { profileId },
-          create: { profileId, lastCycleAt: new Date(), cycleCount: cycleEntries },
-          update: { lastCycleAt: new Date(), cycleCount: { increment: cycleEntries } },
+          create: { profileId, lastCycleAt: now, cycleCount: cycleEntries },
+          update: { lastCycleAt: now, cycleCount: { increment: cycleEntries } },
         });
       }
-
-      return created;
     });
 
     const items = rows.map(toJournalEntry);

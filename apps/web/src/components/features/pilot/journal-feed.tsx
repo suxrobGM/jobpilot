@@ -43,6 +43,9 @@ function fromEvent(entry: unknown): PilotJournalEntry {
   return { ...raw, createdAt: new Date(raw.createdAt) };
 }
 
+/** Cap the live buffer so a long-lived session doesn't grow unbounded; oldest (tail) drop first. */
+const LIVE_CAP = 100;
+
 function dedupeById(entries: PilotJournalEntry[]): PilotJournalEntry[] {
   const seen = new Set<string>();
   const out: PilotJournalEntry[] = [];
@@ -82,19 +85,19 @@ export function JournalFeed(): ReactElement {
   const firstPage = useApiQuery(pilotQueries.journal());
   const [live, setLive] = useState<PilotJournalEntry[]>([]);
   const [older, setOlder] = useState<PilotJournalEntry[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [primed, setPrimed] = useState(false);
+  // `undefined` means paging hasn't started, so fall back to the first page's cursor.
+  const [cursor, setCursor] = useState<string | null | undefined>(undefined);
   const [loadingMore, setLoadingMore] = useState(false);
 
   useSseChannel(pilotChannel, null, {
     on: {
       "journal.appended": (event) => {
-        setLive((prev) => [fromEvent(event.entry), ...prev]);
+        setLive((prev) => [fromEvent(event.entry), ...prev].slice(0, LIVE_CAP));
       },
     },
   });
 
-  const activeCursor = primed ? cursor : (firstPage.data?.nextCursor ?? null);
+  const activeCursor = cursor === undefined ? (firstPage.data?.nextCursor ?? null) : cursor;
 
   const loadMore = async (): Promise<void> => {
     if (!activeCursor) {
@@ -108,7 +111,6 @@ export function JournalFeed(): ReactElement {
       if (data) {
         setOlder((prev) => [...prev, ...data.items]);
         setCursor(data.nextCursor);
-        setPrimed(true);
       }
     } finally {
       setLoadingMore(false);

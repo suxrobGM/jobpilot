@@ -128,6 +128,9 @@ describe("recordJobResult", () => {
     expect(rec.queueUpdate?.data.consumedAt).toBeInstanceOf(Date);
 
     expect(result.summary.applied).toBe(1);
+
+    // The shared emit path reuses the transaction-computed summary; it must not recompute.
+    expect(rec.groupByCount).toBe(1);
   });
 
   it("applied with an existing Application: reuses it instead of creating a duplicate", async () => {

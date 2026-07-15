@@ -86,6 +86,9 @@ export const pilotStateSchema = z.object({
   mandateUpdatedAt: z.date().nullable(),
   lastCycleAt: z.date().nullable(),
   cycleCount: z.number().int(),
+  // Today's applied count (tz-aware) and whether it has reached the mandate's daily cap.
+  appliedToday: z.number().int(),
+  capReached: z.boolean(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

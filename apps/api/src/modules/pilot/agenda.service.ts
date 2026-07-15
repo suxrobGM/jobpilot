@@ -10,7 +10,7 @@ import { type PilotLease, PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { type AgendaApprovedJob, type AgendaDueQuery, buildAgenda } from "./agenda.build";
 import { toPilotLease } from "./pilot.mapper";
-import { startOfDayInTz } from "./pilot.time";
+import { countAppliedToday } from "./pilot.stats";
 
 const LEASE_TTL_MS = 15 * 60 * 1000;
 
@@ -55,7 +55,7 @@ export class AgendaService {
     });
     const reverts = leases
       .filter((l) => l.kind === "job.apply")
-      .map((l) => this.jobRef(l.payload, l.subjectId))
+      .map((l) => this.jobRef(this.parsePayload(l.payload), l.subjectId))
       .filter((ref) => ref.campaignId)
       .map((ref) => this.revertJobToApproved(profileId, ref.campaignId, ref.jobKey));
     await Promise.all(reverts);
@@ -86,9 +86,15 @@ export class AgendaService {
       : { campaignId: subjectId.slice(0, idx), jobKey: subjectId.slice(idx + 1) };
   }
 
-  private jobRef(payload: string, subjectId: string): { campaignId: string; jobKey: string } {
-    const p = JSON.parse(payload) as { campaignId?: string; jobKey?: string };
-    return { campaignId: p.campaignId ?? "", jobKey: p.jobKey ?? subjectId };
+  private parsePayload(payload: string): { campaignId?: string; jobKey?: string } {
+    return JSON.parse(payload) as { campaignId?: string; jobKey?: string };
+  }
+
+  private jobRef(
+    payload: { campaignId?: string; jobKey?: string },
+    subjectId: string,
+  ): { campaignId: string; jobKey: string } {
+    return { campaignId: payload.campaignId ?? "", jobKey: payload.jobKey ?? subjectId };
   }
 
   private async revertJobToApproved(profileId: string, campaignId: string, jobKey: string) {
@@ -154,9 +160,7 @@ export class AgendaService {
         orderBy: { matchScore: "desc" },
         include: { campaign: { select: { config: true } } },
       }),
-      this.prisma.application.count({
-        where: { profileId, appliedAt: { gte: startOfDayInTz(now, config.activeHours?.tz) } },
-      }),
+      countAppliedToday(this.prisma, profileId, now, config.activeHours?.tz),
       this.prisma.campaign.findMany({
         where: {
           profileId,
@@ -311,9 +315,8 @@ export class AgendaService {
       "Lease",
     );
 
-    const parsed = JSON.parse(existing.payload) as { campaignId?: string; jobKey?: string };
-    const campaignId = parsed.campaignId ?? "";
-    const jobKey = parsed.jobKey ?? existing.subjectId;
+    const parsed = this.parsePayload(existing.payload);
+    const { campaignId, jobKey } = this.jobRef(parsed, existing.subjectId);
     // "abandoned" un-claims the work; the terminal result for done/failed arrives via the campaign result route.
     if (body.outcome === "abandoned" && existing.kind === "job.apply" && campaignId) {
       await this.revertJobToApproved(profileId, campaignId, jobKey);

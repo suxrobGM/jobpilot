@@ -15,15 +15,18 @@ import type {
   PilotState as PilotStateModel,
 } from "@/generated/prisma/client";
 
-export function toPilotState(row: PilotStateModel): PilotState {
+export function toPilotState(row: PilotStateModel, appliedToday: number): PilotState {
+  const mandateConfig = pilotMandateConfigSchema.parse(JSON.parse(row.mandateConfig));
   return {
     profileId: row.profileId,
     enabled: row.enabled,
     mandateGoals: row.mandateGoals,
-    mandateConfig: pilotMandateConfigSchema.parse(JSON.parse(row.mandateConfig)),
+    mandateConfig,
     mandateUpdatedAt: row.mandateUpdatedAt,
     lastCycleAt: row.lastCycleAt,
     cycleCount: row.cycleCount,
+    appliedToday,
+    capReached: mandateConfig.dailyApplyCap > 0 && appliedToday >= mandateConfig.dailyApplyCap,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

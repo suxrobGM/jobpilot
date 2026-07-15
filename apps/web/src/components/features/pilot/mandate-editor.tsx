@@ -106,7 +106,7 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
 
   const activeHoursEnabled = useSelector(form.store, (s) => s.values.activeHoursEnabled);
   const queryCount = useSelector(form.store, (s) => s.values.standingQueries.length);
-  const { keys, onRemove, onAdd } = useKeyedList(queryCount);
+  const { keys, onRemove } = useKeyedList(queryCount);
 
   return (
     <SectionCard title="Mandate">
@@ -281,7 +281,7 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
                         variant="outlined"
                         startIcon={<Add fontSize="sm" />}
                         onClick={() => {
-                          onAdd();
+                          // useKeyedList appends a key when the tracked length grows.
                           field.pushValue({ ...EMPTY_QUERY });
                         }}
                       >

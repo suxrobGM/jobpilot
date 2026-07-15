@@ -51,17 +51,9 @@ function makeDb() {
       },
     },
     pilotJournalEntry: {
-      create: async (a: { data: Record<string, unknown> }) => {
-        rec.journalCreates.push(a.data);
-        return {
-          id: `j${rec.journalCreates.length}`,
-          profileId: "p1",
-          cycleId: null,
-          subjectType: null,
-          subjectId: null,
-          createdAt: new Date(),
-          ...a.data,
-        };
+      createMany: async (a: { data: Record<string, unknown>[] }) => {
+        rec.journalCreates.push(...a.data);
+        return { count: a.data.length };
       },
     },
     pilotState: {
