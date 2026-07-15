@@ -182,16 +182,12 @@ export class AgendaService {
     // Server-side grant gates: re-verify the row is still in a leasable state, ignoring agent claims.
     await verifyGrant(this.prisma, profileId, item.kind, item.subjectId);
 
-    const jobPayload = item.payload as { campaignId?: string; jobKey?: string };
-    const isJobClaim = item.kind === "job.apply" && !!jobPayload.campaignId && !!jobPayload.jobKey;
-
+    const { campaignId, jobKey } = item.payload as { campaignId?: string; jobKey?: string };
     // Single-writer claim first: only one lease can flip approved->applying (409 on a lost race).
-    if (isJobClaim) {
-      await this.campaignJobs.claimJobForApply(
-        profileId,
-        jobPayload.campaignId!,
-        jobPayload.jobKey!,
-      );
+    const jobClaim =
+      item.kind === "job.apply" && campaignId && jobKey ? { campaignId, jobKey } : null;
+    if (jobClaim) {
+      await this.campaignJobs.claimJobForApply(profileId, jobClaim.campaignId, jobClaim.jobKey);
     }
 
     let lease: PilotLease;
@@ -208,13 +204,8 @@ export class AgendaService {
       });
     } catch (err) {
       // A claim without a lease row would strand the job in applying; hand it back to the agenda.
-      if (isJobClaim) {
-        await revertJobToApproved(
-          this.jobDeps,
-          profileId,
-          jobPayload.campaignId!,
-          jobPayload.jobKey!,
-        );
+      if (jobClaim) {
+        await revertJobToApproved(this.jobDeps, profileId, jobClaim.campaignId, jobClaim.jobKey);
       }
       throw err;
     }
