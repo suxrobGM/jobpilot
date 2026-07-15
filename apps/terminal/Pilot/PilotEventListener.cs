@@ -23,7 +23,7 @@ internal sealed record PilotSsePromotion
 /// state changes — so a sleeping conductor starts its next cycle within seconds instead of at nextWakeAt.
 /// Reconnects with exponential backoff, tears down when disabled, and never faults the host.
 /// </summary>
-public sealed class PilotEventListener : BackgroundService, IDisposable
+public sealed class PilotEventListener : BackgroundService
 {
     // While disconnected the pairing is re-polled at this cadence to notice an enable without a wake signal.
     private static readonly TimeSpan IdlePoll = TimeSpan.FromSeconds(2);

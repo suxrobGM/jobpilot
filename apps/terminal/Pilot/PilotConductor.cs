@@ -26,13 +26,15 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
     private volatile bool driving;
     private volatile bool eventStreamConnected;
 
+    private int wakeCount;
+
     /// <summary>Count of wake signals received; a test seam to observe event-driven wakes.</summary>
-    internal int WakeCount { get; private set; }
+    internal int WakeCount => Volatile.Read(ref wakeCount);
 
     /// <summary>Signals the loop to re-read the pairing (after enable/disable).</summary>
     public void WakeUp()
     {
-        WakeCount++;
+        Interlocked.Increment(ref wakeCount);
         wake.Release();
         lock (ctsGate)
         {
