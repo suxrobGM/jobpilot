@@ -1,10 +1,10 @@
 import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
+import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { PilotService } from "../pilot.service";
 import { minutesOfDay, startOfDayInTz } from "../pilot.time";
 import type { PushService } from "../push.service";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 /** The morning digest is composed once the tz-local clock passes this hour. */
 const DIGEST_HOUR = 7;
 
@@ -96,7 +96,7 @@ export async function writeDigestIfDue(
   });
   void push.sendToProfile(profileId, {
     title: "Your Pilot's morning digest",
-    body: summary.slice(0, 120),
+    body: summary,
     url: "/pilot",
     tag: "pilot-digest",
   });

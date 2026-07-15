@@ -109,6 +109,8 @@ describe("AgendaService interview replies", () => {
 
 describe("AgendaService interview prep", () => {
   it("emits interview.prep with a resumeId derived from the campaign config", async () => {
+    // Config is schema-parsed now, so the fixture's resumeId must be a real uuid.
+    const resumeId = "3f0e1a9c-2b4d-4c8e-9f1a-5b6c7d8e9f0a";
     const agenda = await service({
       interviewPrepApps: [
         {
@@ -116,7 +118,7 @@ describe("AgendaService interview prep", () => {
           company: "Acme",
           title: "Engineer",
           url: "https://x/1",
-          campaign: { config: JSON.stringify({ resumeId: "r1" }) },
+          campaign: { config: JSON.stringify({ resumeId }) },
         },
       ],
     }).compile("p1");
@@ -124,7 +126,7 @@ describe("AgendaService interview prep", () => {
     expect(item?.subjectId).toBe("app1");
     expect(item?.payload).toMatchObject({
       applicationId: "app1",
-      resumeId: "r1",
+      resumeId,
       jobUrl: "https://x/1",
     });
   });

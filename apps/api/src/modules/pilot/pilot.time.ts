@@ -1,5 +1,5 @@
 import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
-import { startOfDay } from "@/common/date/buckets";
+import { DAY_MS, startOfDay } from "@/common/date/buckets";
 
 type ActiveHours = NonNullable<PilotMandateConfig["activeHours"]>;
 
@@ -73,7 +73,7 @@ export function startOfDayInTz(now: Date, tz?: string): Date {
 
 /** Next tz-local midnight strictly after `now` - the daily apply budget's reset instant. */
 export function nextDayResetInTz(now: Date, tz?: string): Date {
-  return new Date(startOfDayInTz(now, tz).getTime() + 24 * 60 * 60 * 1000);
+  return new Date(startOfDayInTz(now, tz).getTime() + DAY_MS);
 }
 
 function hhmmToMinutes(hhmm: string): number {
@@ -104,6 +104,6 @@ export function secondsUntilNextWindow(now: Date, hours?: ActiveHours): number {
   }
   const start = hhmmToMinutes(hours.start);
   const todayStart = startOfDayInTz(now, hours.tz).getTime() + start * 60_000;
-  const target = todayStart > now.getTime() ? todayStart : todayStart + 24 * 60 * 60 * 1000;
+  const target = todayStart > now.getTime() ? todayStart : todayStart + DAY_MS;
   return Math.ceil((target - now.getTime()) / 1000);
 }

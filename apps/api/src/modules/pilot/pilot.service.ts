@@ -24,15 +24,8 @@ import { PushService } from "./push.service";
  *  expiry sweep then cleanly skips the parked job instead of leaving it wedged in needs_user. */
 const TWO_FA_TTL_MS = 5 * 60 * 1000;
 
-/** Push bodies are glanceable; keep them short so a phone banner never truncates mid-word. */
-const PUSH_BODY_MAX = 120;
-
 /** Journal export reads the history in cursor batches so a huge history never loads all at once. */
 const EXPORT_BATCH = 500;
-
-function truncate(text: string, max: number): string {
-  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
-}
 
 function escalationExpiry(body: CreateEscalationInput): Date | null {
   if (body.expiresAt) return new Date(body.expiresAt);
@@ -127,7 +120,7 @@ export class PilotService {
     // Fire-and-forget so a slow/failed push never delays the escalation write.
     void this.push.sendToProfile(profileId, {
       title: "JobPilot needs you",
-      body: truncate(row.question, PUSH_BODY_MAX),
+      body: row.question,
       url: row.deepLink ?? "/pilot",
       tag: `escalation-${row.id}`,
     });
@@ -201,7 +194,7 @@ export class PilotService {
       if (entry.kind === "system") {
         void this.push.sendToProfile(profileId, {
           title: "Pilot alert",
-          body: truncate(entry.summary, PUSH_BODY_MAX),
+          body: entry.summary,
           url: "/pilot",
           tag: "pilot-system",
         });

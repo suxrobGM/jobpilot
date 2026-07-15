@@ -25,6 +25,13 @@ export interface PushPayload {
 /** A push endpoint the receiver has dropped, so we prune the stored subscription. */
 const GONE_STATUSES = new Set([404, 410]);
 
+/** Push bodies are glanceable; keep them short so a phone banner never truncates mid-word. */
+const PUSH_BODY_MAX = 120;
+
+function truncate(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+}
+
 // Intentionally no @/common/logger here: it imports @/env, which validates at load and would make
 // this module (and PilotService, which depends on it) impossible to unit-test without a full env.
 
@@ -110,7 +117,7 @@ export class PushService {
         where: { profileId },
         select: { id: true, endpoint: true, p256dh: true, auth: true },
       });
-      const body = JSON.stringify(payload);
+      const body = JSON.stringify({ ...payload, body: truncate(payload.body, PUSH_BODY_MAX) });
       await Promise.all(subs.map((sub) => this.deliver(sub, body)));
     } catch (err) {
       console.error("[push] sendToProfile failed", err);

@@ -1,4 +1,5 @@
 import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
+import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type {
   AgendaFollowup,
@@ -6,8 +7,6 @@ import type {
   AgendaPromoPost,
   AgendaPromoVenue,
 } from "./types";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Approved email drafts with a deliverable address, oldest first. LinkedIn drafts are never sends. */
 export async function gatherApprovedOutreach(

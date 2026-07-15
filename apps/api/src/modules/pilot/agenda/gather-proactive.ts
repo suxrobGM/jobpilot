@@ -1,5 +1,7 @@
-import { campaignConfigSchema, campaignSummarySchema } from "@jobpilot/contracts/campaign";
+import { campaignSummarySchema } from "@jobpilot/contracts/campaign";
+import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { parseCampaignConfig } from "./campaign-config";
 import { BOARD_HEALTH_MIN_FAILURES } from "./constants";
 import type {
   AgendaBoardHealth,
@@ -9,7 +11,6 @@ import type {
   AgendaStrategyReview,
 } from "./types";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 /** Recent apply outcomes scanned for board health; capped so one busy board can't crowd out the rest. */
 const BOARD_HEALTH_SCAN = 500;
 const BOARD_HEALTH_WINDOW = 50;
@@ -165,12 +166,12 @@ export async function gatherQuietCandidates(
       summary.qualified / summary.totalFound < STRATEGY_MAX_RATIO &&
       !strategyMarked.has(c.campaignId)
     ) {
-      const config = campaignConfigSchema.parse(JSON.parse(c.config));
+      const config = parseCampaignConfig(c.config);
       strategyReviews.push({
         campaignId: c.campaignId,
         query: c.query,
-        minScore: config.minScore ?? null,
-        board: config.board ?? null,
+        minScore: config?.minScore ?? null,
+        board: config?.board ?? null,
         counts: {
           totalFound: summary.totalFound,
           qualified: summary.qualified,

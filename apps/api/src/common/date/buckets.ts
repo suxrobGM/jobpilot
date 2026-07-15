@@ -1,6 +1,9 @@
 /** The rolling window every timeline series in the app is drawn over. */
 export const DAYS_IN_TIMELINE = 30;
 
+export const HOUR_MS = 60 * 60 * 1000;
+export const DAY_MS = 24 * HOUR_MS;
+
 /** UTC, not server-local: a local day would re-bucket every user's activity if the server moved region. */
 export function startOfDay(d: Date): Date {
   const out = new Date(d);

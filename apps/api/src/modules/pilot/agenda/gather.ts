@@ -1,6 +1,9 @@
 import { CAMPAIGN_JOB_ACTIVE_STATUSES, type CampaignConfig } from "@jobpilot/contracts/campaign";
 import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
+import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { parseCampaignConfig } from "./campaign-config";
+import { WARM_INTRO_MIN_SCORE } from "./constants";
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
@@ -62,13 +65,13 @@ export async function gatherApprovedJobs(
   // A parked board's jobs are excluded here; null-board jobs are never parked (park keys on board name).
   const parked = new Set(parkedBoards);
   // Jobs of the same campaign share one config; parse each campaign's JSON at most once.
-  const configByCampaign = new Map<string, CampaignConfig>();
+  const configByCampaign = new Map<string, CampaignConfig | null>();
   return rows
     .filter((job) => !(job.board && parked.has(job.board)))
     .map((job) => {
       let cfg = configByCampaign.get(job.campaignId);
-      if (!cfg) {
-        cfg = JSON.parse(job.campaign.config) as CampaignConfig;
+      if (cfg === undefined) {
+        cfg = parseCampaignConfig(job.campaign.config);
         configByCampaign.set(job.campaignId, cfg);
       }
       return {
@@ -79,7 +82,7 @@ export async function gatherApprovedJobs(
         board: job.board,
         digest: job.digest,
         matchScore: job.matchScore,
-        resumeId: cfg.resumeId,
+        resumeId: cfg?.resumeId,
         company: job.company,
       };
     });
@@ -121,7 +124,7 @@ export async function attachWarmContacts(
   profileId: string,
   approvedJobs: AgendaApprovedJob[],
 ): Promise<void> {
-  const hot = approvedJobs.filter((j) => (j.matchScore ?? 0) >= 85 && j.company);
+  const hot = approvedJobs.filter((j) => (j.matchScore ?? 0) >= WARM_INTRO_MIN_SCORE && j.company);
   if (hot.length === 0) return;
   const contacts = await prisma.contact.findMany({
     where: { profileId, email: { not: null }, company: { not: null } },
@@ -166,7 +169,7 @@ export async function dueStandingQueries(
     // A standing query targeting a parked board is suppressed until the user un-parks it.
     if (sq.board && parked.has(sq.board)) continue;
     const last = latest.get(sq.query);
-    const cadenceMs = sq.cadenceHours * 60 * 60 * 1000;
+    const cadenceMs = sq.cadenceHours * HOUR_MS;
     // Due when never run, or the last run released longer ago than the cadence. An active
     // (unreleased) discovery lease means it is in progress, so it is not due.
     const isDue =

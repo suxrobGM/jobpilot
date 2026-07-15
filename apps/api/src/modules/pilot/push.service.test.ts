@@ -155,6 +155,23 @@ describe("PushService sendToProfile", () => {
     expect(rec.deletedIds).toEqual(["dead"]);
   });
 
+  it("truncates a long body to 120 chars ending in an ellipsis", async () => {
+    let sentBody = "";
+    webpush.sendNotification = (async (_sub: unknown, body: string) => {
+      sentBody = body;
+      return {} as never;
+    }) as unknown as typeof webpush.sendNotification;
+
+    const { push } = svc({
+      findMany: [{ id: "s1", endpoint: "https://push/x", p256dh: "pub", auth: "sec" }],
+    });
+    await push.sendToProfile("p1", { title: "t", body: "x".repeat(200) });
+
+    const payload = JSON.parse(sentBody) as { body: string };
+    expect(payload.body.length).toBe(120);
+    expect(payload.body.endsWith("…")).toBe(true);
+  });
+
   it("logs and does not prune on a non-gone error", async () => {
     const errorSpy = spyOn(console, "error").mockImplementation(() => {});
     webpush.sendNotification = (async () => {

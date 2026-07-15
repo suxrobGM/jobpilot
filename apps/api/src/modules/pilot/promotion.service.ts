@@ -14,13 +14,6 @@ import { toPromotion } from "./pilot.mapper";
 import { PilotService } from "./pilot.service";
 import { PushService } from "./push.service";
 
-/** Push bodies are glanceable; keep them short so a phone banner never truncates mid-word. */
-const PUSH_BODY_MAX = 120;
-
-function truncate(text: string, max: number): string {
-  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
-}
-
 @singleton()
 export class PromotionService {
   constructor(
@@ -44,7 +37,7 @@ export class PromotionService {
     publish(pilotChannel, { profileId }, { type: "promotion.created", promotion });
     void this.push.sendToProfile(profileId, {
       title: "Post draft ready for review",
-      body: truncate(`${row.venue}: ${row.title ?? row.body}`, PUSH_BODY_MAX),
+      body: `${row.venue}: ${row.title ?? row.body}`,
       url: "/pilot",
       tag: `promo-${row.id}`,
     });
