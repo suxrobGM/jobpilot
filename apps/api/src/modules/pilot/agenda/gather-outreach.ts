@@ -5,7 +5,7 @@ import type {
   AgendaOutreachSend,
   AgendaPromoPost,
   AgendaPromoVenue,
-} from "./agenda/types";
+} from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

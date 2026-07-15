@@ -7,9 +7,13 @@ import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
 import { type PilotLease, PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import { buildAgenda } from "./agenda/build";
-import { writeDigestIfDue } from "./agenda-digest";
-import { jobRef, parsePayload, revertJobToApproved, runExpiry } from "./agenda-expiry";
+import { toPilotLease } from "../pilot.mapper";
+import { PilotService } from "../pilot.service";
+import { countAppliedToday, countSentToday } from "../pilot.stats";
+import { PushService } from "../push.service";
+import { buildAgenda } from "./build";
+import { writeDigestIfDue } from "./digest";
+import { jobRef, parsePayload, revertJobToApproved, runExpiry } from "./expiry";
 import {
   attachWarmContacts,
   dueStandingQueries,
@@ -17,24 +21,16 @@ import {
   gatherApprovedJobs,
   gatherFinalizeCampaigns,
   gatherInbox,
-} from "./agenda-gather";
-import { gatherInterviewPreps, gatherInterviewReplies } from "./agenda-gather.interview";
+} from "./gather";
+import { gatherInterviewPreps, gatherInterviewReplies } from "./gather-interview";
 import {
   dueVenues,
   gatherApprovedOutreach,
   gatherApprovedPromotions,
   gatherFollowups,
-} from "./agenda-gather.outreach";
-import {
-  gatherBoardHealth,
-  gatherQueueDrain,
-  gatherQuietCandidates,
-} from "./agenda-gather.proactive";
-import { verifyGrant } from "./agenda-grant";
-import { toPilotLease } from "./pilot.mapper";
-import { PilotService } from "./pilot.service";
-import { countAppliedToday, countSentToday } from "./pilot.stats";
-import { PushService } from "./push.service";
+} from "./gather-outreach";
+import { gatherBoardHealth, gatherQueueDrain, gatherQuietCandidates } from "./gather-proactive";
+import { verifyGrant } from "./grant";
 
 const LEASE_TTL_MS = 15 * 60 * 1000;
 

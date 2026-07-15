@@ -1,6 +1,6 @@
 import type { CampaignConfig } from "@jobpilot/contracts/campaign";
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { AgendaInterviewPrep, AgendaInterviewReply } from "./agenda/types";
+import type { AgendaInterviewPrep, AgendaInterviewReply } from "./types";
 
 /** Prefix marking an ApplicationEvent note as a generated interview prep sheet. */
 const INTERVIEW_PREP_MARKER = "[interview-prep]";

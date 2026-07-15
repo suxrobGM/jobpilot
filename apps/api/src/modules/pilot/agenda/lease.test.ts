@@ -1,8 +1,9 @@
 // Lease grant path: a fake Prisma and CampaignJobService are injected into AgendaService, so lease
 // grant/claim/verify logic runs with no database. Loading the service transitively loads `@/env`,
 // satisfied by the local .env / ci.yml dummy env.
-import { AgendaService } from "./agenda.service";
-import { approvedJob, makeAgendaDeps, type Over } from "./pilot.test-helpers";
+
+import { approvedJob, makeAgendaDeps, type Over } from "./db.test-helpers";
+import { AgendaService } from "./service";
 import { describe, expect, it } from "bun:test";
 
 const service = (over: Over = {}) => {

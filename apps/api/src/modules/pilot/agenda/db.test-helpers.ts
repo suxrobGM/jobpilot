@@ -2,8 +2,8 @@
 // this file (and therefore build.test, which stays pure) from loading `@/env` at module time.
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import type { PilotService } from "./pilot.service";
-import type { PushPayload, PushService } from "./push.service";
+import type { PilotService } from "../pilot.service";
+import type { PushPayload, PushService } from "../push.service";
 
 export interface Recorder {
   patchJob: unknown[][];

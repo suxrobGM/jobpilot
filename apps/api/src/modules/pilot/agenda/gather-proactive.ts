@@ -1,13 +1,13 @@
 import { campaignConfigSchema, campaignSummarySchema } from "@jobpilot/contracts/campaign";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { BOARD_HEALTH_MIN_FAILURES } from "./agenda/constants";
+import { BOARD_HEALTH_MIN_FAILURES } from "./constants";
 import type {
   AgendaBoardHealth,
   AgendaQueueDrain,
   AgendaRescanSkipped,
   AgendaRetryFailed,
   AgendaStrategyReview,
-} from "./agenda/types";
+} from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Recent apply outcomes scanned for board health; capped so one busy board can't crowd out the rest. */

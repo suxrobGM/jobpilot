@@ -3,9 +3,9 @@
 // the local .env / ci.yml dummy env.
 
 import type { PrismaClient } from "@/generated/prisma/client";
-import { runExpiry } from "./agenda-expiry";
-import type { Over } from "./pilot.test-helpers";
-import { makeAgendaDb, makeCampaignJobs } from "./pilot.test-helpers";
+import type { Over } from "./db.test-helpers";
+import { makeAgendaDb, makeCampaignJobs } from "./db.test-helpers";
+import { runExpiry } from "./expiry";
 import { describe, expect, it } from "bun:test";
 
 const sweep = (over: Over) => {

@@ -22,7 +22,7 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
-import { AgendaService } from "./agenda.service";
+import { AgendaService } from "./agenda/service";
 import { createPilotJournalResponseSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
 import { promotionController } from "./promotion.controller";

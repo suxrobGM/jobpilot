@@ -1,8 +1,9 @@
 // Compile-level gather behavior (escalation consumption, warm-check join, promotion cadence) driven
 // through AgendaService.compile with a fake Prisma - no database. Loading the service transitively
 // loads `@/env`, satisfied by the local .env / ci.yml dummy env.
-import { AgendaService } from "./agenda.service";
-import { approvedJob, makeAgendaDeps, type Over } from "./pilot.test-helpers";
+
+import { approvedJob, makeAgendaDeps, type Over } from "./db.test-helpers";
+import { AgendaService } from "./service";
 import { describe, expect, it } from "bun:test";
 
 const service = (over: Over = {}) => {

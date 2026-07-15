@@ -1,8 +1,8 @@
 import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { PilotService } from "./pilot.service";
-import { minutesOfDay, startOfDayInTz } from "./pilot.time";
-import type { PushService } from "./push.service";
+import type { PilotService } from "../pilot.service";
+import { minutesOfDay, startOfDayInTz } from "../pilot.time";
+import type { PushService } from "../push.service";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** The morning digest is composed once the tz-local clock passes this hour. */

@@ -8,7 +8,7 @@ import type {
   AgendaFinalizeCampaign,
   AgendaInbox,
   WarmContact,
-} from "./agenda/types";
+} from "./types";
 
 /** Lowercase, strip punctuation and common company suffixes, so "Acme, Inc." ≈ "acme". */
 function normalizeCompany(s: string): string {
