@@ -10,6 +10,7 @@
     "dev": "concurrently -k -n terminal,api,web -c cyan,magenta,green \"dotnet run --project apps/terminal\" \"bun --cwd=apps/api run dev\" \"bun --cwd=apps/web run dev\"",
     "dev:api": "bun --cwd=apps/api run dev",
     "dev:web": "bun --cwd=apps/web run dev",
+    "test": "bun --cwd=apps/api run test",
     "db:tunnel": "bash apps/api/scripts/db-tunnel.sh",
     "db:setup": "bun --cwd=apps/api run db:generate && bun --cwd=apps/api run db:migrate:apply && bun --cwd=apps/api run db:seed",
     "build:api": "bun --cwd=apps/api run build",
