@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal.Pilot;
@@ -41,11 +40,8 @@ public sealed class PilotEventListener : BackgroundService, IDisposable
     public bool Connected { get; private set; }
 
     public PilotEventListener(PilotStore store, PilotConductor conductor, ILogger<PilotEventListener> logger)
-        // No client timeout: an SSE stream is intentionally long-lived; the pooled lifetime lets a long-lived host follow DNS.
-        : this(store, conductor, logger, new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(15) })
-        {
-            Timeout = Timeout.InfiniteTimeSpan,
-        })
+        // The SSE stream is intentionally long-lived, so it must never be bounded by a client timeout.
+        : this(store, conductor, logger, PilotHttp.CreateLongLivedClient())
     {
     }
 
@@ -74,7 +70,7 @@ public sealed class PilotEventListener : BackgroundService, IDisposable
         PilotSseEnvelope? envelope;
         try
         {
-            envelope = JsonSerializer.Deserialize(frame.Data, PilotSseJsonContext.Default.PilotSseEnvelope);
+            envelope = JsonSerializer.Deserialize(frame.Data, AppJsonContext.Default.PilotSseEnvelope);
         }
         catch (JsonException)
         {
@@ -217,8 +213,3 @@ public sealed class PilotEventListener : BackgroundService, IDisposable
         base.Dispose();
     }
 }
-
-/// <summary>Source-gen JSON for the pilot SSE payloads; reflection-free for Native AOT.</summary>
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-[JsonSerializable(typeof(PilotSseEnvelope))]
-internal sealed partial class PilotSseJsonContext : JsonSerializerContext;

@@ -22,11 +22,7 @@ public sealed class PilotApiClient : IDisposable
     private readonly ILogger<PilotApiClient> logger;
 
     public PilotApiClient(ILogger<PilotApiClient> logger)
-        // No client timeout - the per-request token bounds it; pooled lifetime lets a long-lived host follow DNS.
-        : this(logger, new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(15) })
-        {
-            Timeout = Timeout.InfiniteTimeSpan,
-        })
+        : this(logger, PilotHttp.CreateLongLivedClient())
     {
     }
 

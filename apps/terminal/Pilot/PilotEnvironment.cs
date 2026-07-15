@@ -52,28 +52,21 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
         DrainSignals();  // Discard any signal buffered before this injection so the await only sees the new cycle.
         stall.Reset();
         var command = TerminalProviders.FormatSkillCommand(pairing.Provider, PilotSkill);
-        var result = await session.Inject(command, pairing.Provider);
-        if (result != InjectResult.Injected)
-        {
-            logger.LogWarning("Pilot cycle inject was rejected ({Result}).", result);
-        }
+        await InjectAsync(command, pairing.Provider, "cycle");
     }
 
-    public async Task InjectNudgeAsync(PilotPairing pairing, CancellationToken ct)
-    {
-        var result = await session.Inject(NudgeCommand, pairing.Provider);
-        if (result != InjectResult.Injected)
-        {
-            logger.LogWarning("Pilot nudge inject was rejected ({Result}).", result);
-        }
-    }
+    public Task InjectNudgeAsync(PilotPairing pairing, CancellationToken ct) =>
+        InjectAsync(NudgeCommand, pairing.Provider, "nudge");
 
-    public async Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct)
+    public Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct) =>
+        InjectAsync(SkipCommand, pairing.Provider, "skip");
+
+    private async Task InjectAsync(string command, string provider, string what)
     {
-        var result = await session.Inject(SkipCommand, pairing.Provider);
+        var result = await session.Inject(command, provider);
         if (result != InjectResult.Injected)
         {
-            logger.LogWarning("Pilot skip inject was rejected ({Result}).", result);
+            logger.LogWarning("Pilot {What} inject was rejected ({Result}).", what, result);
         }
     }
 

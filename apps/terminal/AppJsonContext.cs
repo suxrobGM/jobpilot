@@ -19,6 +19,7 @@ namespace JobPilot.Terminal;
 [JsonSerializable(typeof(PilotStatus))]
 [JsonSerializable(typeof(PilotStateFile))]
 [JsonSerializable(typeof(PilotJournalRequest))]
+[JsonSerializable(typeof(PilotSseEnvelope))]
 [JsonSerializable(typeof(UpdateResult))]
 [JsonSerializable(typeof(TerminalProviderInfo[]))]
 [JsonSerializable(typeof(ProblemDetails))]
