@@ -1,7 +1,9 @@
 // Category bases; job.apply is offset by matchScore so higher scores sort first, still under escalations.
 export const PRIORITY = {
   escalation: 1000,
+  interviewReply: 850,
   jobBase: 800,
+  interviewPrep: 750,
   outreachSend: 700,
   inboxTriage: 650,
   promoPost: 600,
@@ -18,6 +20,9 @@ export const WARM_INTRO_MIN_SCORE = 85;
 /** At most one warm intro and one followup burst per agenda so a single cycle stays focused. */
 export const MAX_WARM_INTROS = 1;
 export const MAX_FOLLOWUPS = 2;
+/** An interview invite is time-sensitive; reply to a couple per cycle, prep one, to stay focused. */
+export const MAX_INTERVIEW_REPLIES = 2;
+export const MAX_INTERVIEW_PREPS = 1;
 
 /** Idle poll cadence has a floor so a tiny `checkIntervalMinutes` can't spin the loop. */
 export const MIN_IDLE_SLEEP_SECONDS = 30;

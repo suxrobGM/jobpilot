@@ -4,6 +4,31 @@ export interface AgendaEscalation {
   id: string;
   kind: string;
   question: string;
+  // Enrichment so escalation.answered leases carry the subject and Q/A without the worker re-reading.
+  subjectType?: string | null;
+  subjectId?: string | null;
+  answer?: string | null;
+}
+
+/** An interviewing app whose recruiter reply is unanswered - the availability-reply draft candidate. */
+export interface AgendaInterviewReply {
+  applicationId: string;
+  emailMessageId: string;
+  threadId: string | null;
+  from: string;
+  subject: string;
+  receivedAt: Date;
+  company: string;
+  jobTitle: string;
+}
+
+/** An interviewing app with no prep sheet yet. */
+export interface AgendaInterviewPrep {
+  applicationId: string;
+  company: string;
+  jobTitle: string;
+  jobUrl: string | null;
+  resumeId: string | null;
 }
 
 export interface WarmContact {
@@ -96,4 +121,6 @@ export interface AgendaInput {
   followups: AgendaFollowup[];
   dueVenues: AgendaPromoVenue[];
   approvedPromotions: AgendaPromoPost[];
+  interviewReplies: AgendaInterviewReply[];
+  interviewPreps: AgendaInterviewPrep[];
 }

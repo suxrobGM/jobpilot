@@ -3,10 +3,13 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
+import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { deletedResponseSchema } from "@/types/response";
 import {
+  appendNoteSchema,
   applicationCheckSchema,
   applicationDetailSchema,
+  applicationEventSchema,
   applicationListQuerySchema,
   applicationListSchema,
   applicationQuerySchema,
@@ -15,6 +18,7 @@ import {
 import { ApplicationService } from "./application.service";
 
 const svc = container.resolve(ApplicationService);
+const limitNote = rateLimit(RATE_LIMITS.applicationNote);
 
 export const applicationController = new Elysia({
   prefix: "/applied",
@@ -70,4 +74,15 @@ export const applicationController = new Elysia({
           "Moves the owned application to the requested status, recording a status-change activity event and updating its rejection timestamp, then returns the new status (no-op if already in that status).",
       },
     },
-  );
+  )
+  .post("/:id/events", ({ profileId, params, body }) => svc.addEvent(profileId, params.id, body), {
+    params: idParam,
+    body: appendNoteSchema,
+    beforeHandle: limitNote,
+    response: applicationEventSchema,
+    detail: {
+      summary: "Append a note to an application",
+      description:
+        "Appends a free-text note event to the owned application's activity timeline (e.g. a generated interview prep sheet) and returns the created event, or 404 if it does not belong to the profile.",
+    },
+  });

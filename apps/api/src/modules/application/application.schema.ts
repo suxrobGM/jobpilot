@@ -18,6 +18,12 @@ export const applicationQuerySchema = z.object({
   company: z.string().trim().min(1).optional(),
 });
 
+/** Append a free-text note to an application's timeline (e.g. a generated interview prep sheet). */
+export const appendNoteSchema = z.object({
+  kind: z.literal("note"),
+  notes: z.string().min(1),
+});
+
 // ── Response schemas ──────────────────────────────────────────────────────────
 
 /** A full applied-job row (mirrors the `Application` Prisma model with dates stringified). */

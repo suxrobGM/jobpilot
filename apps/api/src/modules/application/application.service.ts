@@ -94,6 +94,22 @@ export class ApplicationService {
     };
   }
 
+  async addEvent(profileId: string, id: string, input: { kind: "note"; notes: string }) {
+    await findOwned(
+      (where) => this.prisma.application.findFirst({ where, select: { id: true } }),
+      { id, profileId },
+      "Application",
+    );
+    const event = await this.prisma.applicationEvent.create({
+      data: { applicationId: id, kind: input.kind, note: input.notes },
+    });
+    return {
+      ...event,
+      kind: event.kind as ApplicationEventKind,
+      source: event.source as ApplicationEventSource | null,
+    };
+  }
+
   async remove(profileId: string, id: string) {
     await findOwned(
       (where) => this.prisma.application.findFirst({ where, select: { id: true } }),

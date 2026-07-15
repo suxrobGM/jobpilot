@@ -38,7 +38,14 @@ export async function gatherAnsweredEscalations(
   const consumed = new Set(leases.map((l) => l.subjectId));
   return answered
     .filter((e) => !consumed.has(e.id))
-    .map((e) => ({ id: e.id, kind: e.kind, question: e.question }));
+    .map((e) => ({
+      id: e.id,
+      kind: e.kind,
+      question: e.question,
+      subjectType: e.subjectType,
+      subjectId: e.subjectId,
+      answer: e.answer,
+    }));
 }
 
 /** Approved jobs of in-progress campaigns, each carrying its campaign's resumeId. */

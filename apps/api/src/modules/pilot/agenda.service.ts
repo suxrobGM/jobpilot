@@ -18,6 +18,7 @@ import {
   gatherFinalizeCampaigns,
   gatherInbox,
 } from "./agenda-gather";
+import { gatherInterviewPreps, gatherInterviewReplies } from "./agenda-gather.interview";
 import {
   dueVenues,
   gatherApprovedOutreach,
@@ -76,6 +77,8 @@ export class AgendaService {
       followups,
       approvedPromotions,
       dueVenueList,
+      interviewReplies,
+      interviewPreps,
     ] = await Promise.all([
       this.prisma.escalation.count({ where: { profileId, status: "open" } }),
       gatherAnsweredEscalations(this.prisma, profileId),
@@ -91,6 +94,8 @@ export class AgendaService {
       gatherFollowups(this.prisma, profileId, config, now),
       gatherApprovedPromotions(this.prisma, profileId, now),
       dueVenues(this.prisma, profileId, config, now),
+      gatherInterviewReplies(this.prisma, profileId),
+      gatherInterviewPreps(this.prisma, profileId),
     ]);
 
     // Warm-check join: attach same-company contacts to high-score jobs so the builder can offer a warm intro.
@@ -127,6 +132,8 @@ export class AgendaService {
       followups,
       dueVenues: dueVenueList,
       approvedPromotions,
+      interviewReplies,
+      interviewPreps,
     });
   }
 

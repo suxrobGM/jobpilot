@@ -29,6 +29,8 @@ export const AGENDA_ITEM_KINDS = [
   "outreach.warmIntro",
   "promo.compose",
   "promo.post",
+  "interview.reply",
+  "interview.prep",
 ] as const;
 export const agendaItemKindSchema = z.enum(AGENDA_ITEM_KINDS);
 
@@ -39,6 +41,8 @@ export const AGENDA_SUBJECT_TYPES = [
   "outreach",
   "inbox",
   "promotion",
+  "application",
+  "email",
 ] as const;
 export const agendaSubjectTypeSchema = z.enum(AGENDA_SUBJECT_TYPES);
 

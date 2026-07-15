@@ -77,4 +77,7 @@ export const RATE_LIMITS = {
 
   /** User- or agent-driven Pilot mutations (mandate, enable, escalations) - infrequent. */
   pilotMutation: { key: byUser, limit: 120, windowMs: HOUR },
+
+  /** Agent/user appends a timeline note (e.g. an interview prep sheet) to an application - infrequent. */
+  applicationNote: { key: byUser, limit: 120, windowMs: HOUR },
 } as const satisfies Record<string, RateLimitPolicy>;

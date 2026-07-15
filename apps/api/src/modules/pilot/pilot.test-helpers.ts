@@ -39,6 +39,10 @@ export interface Over {
   venuePosts?: Record<string, unknown>[];
   promoFindFirst?: Record<string, unknown> | null;
   messageFindFirst?: Record<string, unknown> | null;
+  // Interview wiring:
+  interviewReplyApps?: Record<string, unknown>[];
+  interviewPrepApps?: Record<string, unknown>[];
+  interviewEscalations?: { subjectId: string }[];
   // Digest wiring:
   existingDigests?: number;
   digestApps?: number;
@@ -97,8 +101,12 @@ export function makeAgendaDb(over: Over = {}) {
     },
     escalation: {
       count: async () => 0,
-      findMany: async (args: { where: { status?: string } }) =>
-        args.where.status === "answered" ? (over.answered ?? []) : (over.expiredEscalations ?? []),
+      findMany: async (args: { where: { status?: string; subjectType?: string } }) =>
+        args.where.subjectType === "email"
+          ? (over.interviewEscalations ?? [])
+          : args.where.status === "answered"
+            ? (over.answered ?? [])
+            : (over.expiredEscalations ?? []),
       update: async (a: { data: Record<string, unknown> }) => {
         rec.escalationUpdates.push(a);
         return {};
@@ -125,6 +133,13 @@ export function makeAgendaDb(over: Over = {}) {
         over.digestApps != null && "appliedAt" in a.where && a.where.appliedAt != null
           ? over.digestApps
           : (over.appliedToday ?? 0),
+      // The prep gather filters by an `events` none-clause; the reply gather does not - split on that.
+      findMany: async (a: { where: Record<string, unknown> }) =>
+        a.where.status !== "interviewing"
+          ? []
+          : "events" in a.where
+            ? (over.interviewPrepApps ?? [])
+            : (over.interviewReplyApps ?? []),
     },
     campaign: { findMany: async () => over.finalizeCampaigns ?? [], update: async () => ({}) },
     emailMessage: {

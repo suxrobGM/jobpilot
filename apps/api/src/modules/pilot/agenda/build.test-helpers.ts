@@ -24,6 +24,8 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   followups: [],
   dueVenues: [],
   approvedPromotions: [],
+  interviewReplies: [],
+  interviewPreps: [],
   ...over,
 });
 
@@ -57,5 +59,26 @@ export const followup = (messageId: string, over: Record<string, unknown> = {}) 
   subject: "Hi",
   sentAt: new Date("2026-07-08T12:00:00.000Z"),
   daysSince: 7,
+  ...over,
+});
+
+export const reply = (emailMessageId: string, over: Record<string, unknown> = {}) => ({
+  applicationId: `app-${emailMessageId}`,
+  emailMessageId,
+  threadId: `thr-${emailMessageId}`,
+  from: "dana@acme.test",
+  subject: "Interview availability?",
+  receivedAt: new Date("2026-07-14T12:00:00.000Z"),
+  company: "Acme",
+  jobTitle: "Engineer",
+  ...over,
+});
+
+export const prep = (applicationId: string, over: Record<string, unknown> = {}) => ({
+  applicationId,
+  company: "Acme",
+  jobTitle: "Engineer",
+  jobUrl: "https://x/1",
+  resumeId: "r1",
   ...over,
 });

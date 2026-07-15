@@ -1,7 +1,7 @@
 // Per-item builder behavior (the M3 kinds) through buildAgenda: send/inbox/promo/followup/warmIntro
 // caps and active-hours gating. Pure: no Prisma, no env.
 import { buildAgenda } from "./build";
-import { base, cfg, followup, job, send } from "./build.test-helpers";
+import { base, cfg, followup, job, prep, reply, send } from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda M3 kinds", () => {
@@ -140,5 +140,117 @@ describe("buildAgenda M3 kinds", () => {
       }),
     );
     expect(agenda.items).toHaveLength(0);
+  });
+});
+
+describe("buildAgenda interview kinds", () => {
+  it("emits an interview.reply keyed and subjected on the email with the full payload", () => {
+    const agenda = buildAgenda(base({ interviewReplies: [reply("em1")] }));
+    const item = agenda.items.find((i) => i.kind === "interview.reply");
+    expect(item?.id).toBe("interview.reply:em1");
+    expect(item?.subjectType).toBe("email");
+    expect(item?.subjectId).toBe("em1");
+    expect(item?.priority).toBe(850);
+    expect(item?.payload).toEqual({
+      applicationId: "app-em1",
+      emailMessageId: "em1",
+      threadId: "thr-em1",
+      from: "dana@acme.test",
+      subject: "Interview availability?",
+      receivedAt: new Date("2026-07-14T12:00:00.000Z"),
+      company: "Acme",
+      jobTitle: "Engineer",
+    });
+  });
+
+  it("emits at most 2 interview.reply items per agenda", () => {
+    const agenda = buildAgenda(base({ interviewReplies: [reply("e1"), reply("e2"), reply("e3")] }));
+    expect(agenda.items.filter((i) => i.kind === "interview.reply")).toHaveLength(2);
+  });
+
+  it("emits an interview.prep subjected on the application with a nullable resumeId", () => {
+    const agenda = buildAgenda(base({ interviewPreps: [prep("app1", { resumeId: null })] }));
+    const item = agenda.items.find((i) => i.kind === "interview.prep");
+    expect(item?.id).toBe("interview.prep:app1");
+    expect(item?.subjectType).toBe("application");
+    expect(item?.subjectId).toBe("app1");
+    expect(item?.priority).toBe(750);
+    expect(item?.payload).toEqual({
+      applicationId: "app1",
+      company: "Acme",
+      jobTitle: "Engineer",
+      jobUrl: "https://x/1",
+      resumeId: null,
+    });
+  });
+
+  it("emits at most one interview.prep per agenda", () => {
+    const agenda = buildAgenda(base({ interviewPreps: [prep("a1"), prep("a2")] }));
+    expect(agenda.items.filter((i) => i.kind === "interview.prep")).toHaveLength(1);
+  });
+
+  it("ranks interview.reply above job.apply and interview.prep between apply and outreach.send", () => {
+    // job.apply is score-offset (800 + score), so a low score keeps it under interview.reply's 850.
+    const agenda = buildAgenda(
+      base({
+        interviewReplies: [reply("em1")],
+        interviewPreps: [prep("app1")],
+        approvedJobs: [job("j1", 40)],
+        approvedOutreach: [send("m1")],
+      }),
+    );
+    expect(agenda.items.map((i) => i.kind)).toEqual([
+      "interview.reply",
+      "job.apply",
+      "interview.prep",
+      "outreach.send",
+    ]);
+  });
+
+  it("gates interview kinds behind active hours", () => {
+    const hours = cfg({ activeHours: { start: "09:00", end: "17:00", tz: "UTC" } });
+    const agenda = buildAgenda(
+      base({
+        now: new Date("2026-07-15T03:00:00.000Z"),
+        config: hours,
+        interviewReplies: [reply("em1")],
+        interviewPreps: [prep("app1")],
+      }),
+    );
+    expect(agenda.items).toHaveLength(0);
+  });
+
+  it("enriches the escalation.answered payload with subject and Q/A", () => {
+    const agenda = buildAgenda(
+      base({
+        answeredEscalations: [
+          {
+            id: "E1",
+            kind: "approval",
+            question: "Send this reply?",
+            subjectType: "email",
+            subjectId: "em1",
+            answer: "yes",
+          },
+        ],
+      }),
+    );
+    const item = agenda.items.find((i) => i.kind === "escalation.answered");
+    expect(item?.payload).toEqual({
+      escalationId: "E1",
+      escalationKind: "approval",
+      subjectType: "email",
+      subjectId: "em1",
+      question: "Send this reply?",
+      answer: "yes",
+    });
+  });
+
+  it("defaults the enriched escalation fields to null when absent", () => {
+    const agenda = buildAgenda(
+      base({ answeredEscalations: [{ id: "E2", kind: "question", question: "q" }] }),
+    );
+    const item = agenda.items.find((i) => i.kind === "escalation.answered");
+    expect(item?.payload).toMatchObject({ subjectType: null, subjectId: null, answer: null });
   });
 });

@@ -1,6 +1,7 @@
 import type { AgendaItem, AgendaResponse } from "@jobpilot/contracts/pilot";
 import { isWithinActiveHours, nextDayResetInTz, secondsUntilNextWindow } from "../pilot.time";
 import { ACTIVE_SLEEP_SECONDS, MAX_ITEMS, MIN_IDLE_SLEEP_SECONDS } from "./constants";
+import { buildInterviewPrepItems, buildInterviewReplyItems } from "./items-interview";
 import {
   buildDiscoverItems,
   buildEscalationItems,
@@ -22,10 +23,11 @@ function idleSleepSeconds({ now, config }: AgendaInput, within: boolean): number
  * Compile a prioritized agenda from already-fetched inputs. Pure: no I/O, so the
  * ordering, cap-suppression, budget, and sleep rules are unit-testable.
  *
- * Priority: escalation.answered > job.apply (by matchScore) > outreach.send >
- * inbox.triage > promo.post > outreach.warmIntro > search.discover >
- * outreach.followup > promo.compose > campaign.finalize. Outside active hours only
- * escalation/finalize items are emitted, and the agent sleeps until the window opens.
+ * Priority: escalation.answered > interview.reply > job.apply (by matchScore) >
+ * interview.prep > outreach.send > inbox.triage > promo.post > outreach.warmIntro >
+ * search.discover > outreach.followup > promo.compose > campaign.finalize. Outside
+ * active hours only escalation/finalize items are emitted, and the agent sleeps until
+ * the window opens.
  */
 export function buildAgenda(input: AgendaInput): AgendaResponse {
   const { now, config } = input;
@@ -37,6 +39,9 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
   const items: AgendaItem[] = [...buildEscalationItems(input.answeredEscalations)];
   if (within && !capReached) items.push(...buildJobApplyItems(input.approvedJobs));
   if (within) {
+    // Interview work is gated like the rest - replying at 3am reads as a bot.
+    items.push(...buildInterviewReplyItems(input.interviewReplies));
+    items.push(...buildInterviewPrepItems(input.interviewPreps));
     items.push(...buildWarmIntroItems(input.approvedJobs));
     items.push(...buildOutreachSendItems(input.approvedOutreach, sendHeadroom));
     items.push(...buildInboxItem(input.inbox));

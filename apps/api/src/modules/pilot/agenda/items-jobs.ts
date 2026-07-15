@@ -16,7 +16,15 @@ export function buildEscalationItems(escalations: AgendaEscalation[]): AgendaIte
     title: `Apply answer: ${esc.question}`.slice(0, 200),
     subjectType: "escalation",
     subjectId: esc.id,
-    payload: { escalationId: esc.id, escalationKind: esc.kind },
+    // Enriched with subject + Q/A so the worker can route non-job answers (email replies, outreach) directly.
+    payload: {
+      escalationId: esc.id,
+      escalationKind: esc.kind,
+      subjectType: esc.subjectType ?? null,
+      subjectId: esc.subjectId ?? null,
+      question: esc.question,
+      answer: esc.answer ?? null,
+    },
   }));
 }
 
