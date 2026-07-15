@@ -22,9 +22,13 @@ const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const EMPTY_QUERY = { query: "", board: "", cadenceHours: 24 };
 
+const EMPTY_VENUE = { venue: "", target: "", cadenceDays: 30 };
+
 const mandateFormSchema = z.object({
   goals: z.string(),
   dailyApplyCap: z.number().int().min(0),
+  dailyOutreachCap: z.number().int().min(0),
+  outreachFollowupDays: z.number().int().min(0),
   minScore: z.number().min(0).max(100),
   checkIntervalMinutes: z.number().int().min(1),
   activeHoursEnabled: z.boolean(),
@@ -40,6 +44,13 @@ const mandateFormSchema = z.object({
       cadenceHours: z.number().min(1),
     }),
   ),
+  promotionVenues: z.array(
+    z.object({
+      venue: z.string().min(1, "Required"),
+      target: z.string(),
+      cadenceDays: z.number().min(1),
+    }),
+  ),
 });
 
 type MandateFormValues = z.infer<typeof mandateFormSchema>;
@@ -49,6 +60,8 @@ function toFormValues(state: PilotState): MandateFormValues {
   return {
     goals: state.mandateGoals,
     dailyApplyCap: c.dailyApplyCap,
+    dailyOutreachCap: c.dailyOutreachCap,
+    outreachFollowupDays: c.outreachFollowupDays,
     minScore: c.minScore,
     checkIntervalMinutes: c.checkIntervalMinutes,
     activeHoursEnabled: Boolean(c.activeHours),
@@ -61,6 +74,11 @@ function toFormValues(state: PilotState): MandateFormValues {
       query: q.query,
       board: q.board ?? "",
       cadenceHours: q.cadenceHours,
+    })),
+    promotionVenues: c.promotion.venues.map((v) => ({
+      venue: v.venue,
+      target: v.target ?? "",
+      cadenceDays: v.cadenceDays,
     })),
   };
 }
@@ -79,6 +97,8 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
     onSubmit: async ({ value }) => {
       const config: PilotMandateConfig = {
         dailyApplyCap: value.dailyApplyCap,
+        dailyOutreachCap: value.dailyOutreachCap,
+        outreachFollowupDays: value.outreachFollowupDays,
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
         // Boards aren't editable in M1 - preserve whatever the mandate already had.
@@ -99,6 +119,14 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
           outreachEmail: value.outreachEmail,
           outreachLinkedIn: value.outreachLinkedIn,
         },
+        promotion: {
+          venues: value.promotionVenues.map((v) => ({
+            venue: v.venue.trim(),
+            target: v.target.trim() || undefined,
+            cadenceDays: v.cadenceDays,
+          })),
+          autonomy: "review",
+        },
       };
       await save.mutateAsync({ goals: value.goals, config });
     },
@@ -107,6 +135,8 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
   const activeHoursEnabled = useSelector(form.store, (s) => s.values.activeHoursEnabled);
   const queryCount = useSelector(form.store, (s) => s.values.standingQueries.length);
   const { keys, onRemove } = useKeyedList(queryCount);
+  const venueCount = useSelector(form.store, (s) => s.values.promotionVenues.length);
+  const venueList = useKeyedList(venueCount);
 
   return (
     <SectionCard title="Mandate">
@@ -135,6 +165,28 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
                   {(field) => (
                     <field.TextField
                       label="Daily apply cap"
+                      type="number"
+                      slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                    />
+                  )}
+                </form.AppField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <form.AppField name="dailyOutreachCap">
+                  {(field) => (
+                    <field.TextField
+                      label="Daily outreach cap"
+                      type="number"
+                      slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                    />
+                  )}
+                </form.AppField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <form.AppField name="outreachFollowupDays">
+                  {(field) => (
+                    <field.TextField
+                      label="Outreach follow-up (days)"
                       type="number"
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
@@ -292,6 +344,80 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
                 );
               }}
             </form.AppField>
+          </FormSection>
+
+          <FormSection
+            title="Promotion venues"
+            description="Where the pilot drafts self-promotion posts, and how often. Posts are review-only."
+          >
+            <Stack spacing={2}>
+              <Typography variant="body2Muted">
+                Autonomy: review each post before it goes out.
+              </Typography>
+              <form.AppField name="promotionVenues" mode="array">
+                {(field) => {
+                  const rows = field.state.value ?? [];
+                  return (
+                    <Stack spacing={2}>
+                      {rows.map((_, i) => (
+                        <Stack
+                          key={venueList.keys[i]}
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1.5}
+                        >
+                          <Box sx={{ flex: 2 }}>
+                            <form.AppField name={`promotionVenues[${i}].venue`}>
+                              {(sub) => <sub.TextField label="Venue" />}
+                            </form.AppField>
+                          </Box>
+                          <Box sx={{ flex: 2 }}>
+                            <form.AppField name={`promotionVenues[${i}].target`}>
+                              {(sub) => <sub.TextField label="Target (optional)" />}
+                            </form.AppField>
+                          </Box>
+                          <Box sx={{ width: { xs: "100%", sm: 140 } }}>
+                            <form.AppField name={`promotionVenues[${i}].cadenceDays`}>
+                              {(sub) => (
+                                <sub.TextField
+                                  label="Cadence (d)"
+                                  type="number"
+                                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                                />
+                              )}
+                            </form.AppField>
+                          </Box>
+                          <IconButton
+                            aria-label={`Remove venue ${i + 1}`}
+                            size="small"
+                            sx={{ alignSelf: { xs: "flex-end", sm: "center" } }}
+                            onClick={() => {
+                              venueList.onRemove(i);
+                              field.removeValue(i);
+                            }}
+                          >
+                            <Delete fontSize="sm" />
+                          </IconButton>
+                        </Stack>
+                      ))}
+                      {rows.length === 0 && (
+                        <Typography variant="body2Muted">No promotion venues yet.</Typography>
+                      )}
+                      <Box>
+                        <Button
+                          variant="outlined"
+                          startIcon={<Add fontSize="sm" />}
+                          onClick={() => {
+                            field.pushValue({ ...EMPTY_VENUE });
+                          }}
+                        >
+                          Add venue
+                        </Button>
+                      </Box>
+                    </Stack>
+                  );
+                }}
+              </form.AppField>
+            </Stack>
           </FormSection>
 
           <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>

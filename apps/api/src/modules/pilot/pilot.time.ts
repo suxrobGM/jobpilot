@@ -82,7 +82,7 @@ function hhmmToMinutes(hhmm: string): number {
 }
 
 /** Minutes elapsed since tz-local midnight for `now`. */
-function minutesOfDay(now: Date, tz?: string): number {
+export function minutesOfDay(now: Date, tz?: string): number {
   return Math.floor((now.getTime() - startOfDayInTz(now, tz).getTime()) / 60_000);
 }
 

@@ -23,10 +23,23 @@ export const AGENDA_ITEM_KINDS = [
   "job.apply",
   "search.discover",
   "campaign.finalize",
+  "inbox.triage",
+  "outreach.send",
+  "outreach.followup",
+  "outreach.warmIntro",
+  "promo.compose",
+  "promo.post",
 ] as const;
 export const agendaItemKindSchema = z.enum(AGENDA_ITEM_KINDS);
 
-export const AGENDA_SUBJECT_TYPES = ["job", "campaign", "escalation"] as const;
+export const AGENDA_SUBJECT_TYPES = [
+  "job",
+  "campaign",
+  "escalation",
+  "outreach",
+  "inbox",
+  "promotion",
+] as const;
 export const agendaSubjectTypeSchema = z.enum(AGENDA_SUBJECT_TYPES);
 
 /** Release outcomes an agent reports; leases also close as "expired" server-side. */
@@ -56,6 +69,18 @@ export const pilotAutonomySchema = z.object({
   outreachLinkedIn: z.enum(["draft", "review"]).default("draft"),
 });
 
+export const pilotPromotionVenueSchema = z.object({
+  venue: z.string().min(1),
+  target: z.string().optional(),
+  cadenceDays: z.number().int().min(1).default(30),
+});
+
+/** Self-promotion config. Review-only in M3: auto-posting is deliberately not offered. */
+export const pilotPromotionConfigSchema = z.object({
+  venues: z.array(pilotPromotionVenueSchema).default([]),
+  autonomy: z.literal("review").default("review"),
+});
+
 /**
  * The Pilot's operating envelope, stored as JSON in `PilotState.mandateConfig`.
  * Every field defaults, so an empty `{}` parses to a full, usable config.
@@ -69,6 +94,10 @@ export const pilotMandateConfigSchema = z.object({
   standingQueries: z.array(pilotStandingQuerySchema).default([]),
   // Full default so a missing key still yields both autonomy fields (zod does not re-parse defaults).
   autonomy: pilotAutonomySchema.default({ outreachEmail: "review", outreachLinkedIn: "draft" }),
+  dailyOutreachCap: z.number().int().min(0).default(5),
+  outreachFollowupDays: z.number().int().default(5),
+  // Full default so a missing key still yields a usable promotion block (zod does not re-parse defaults).
+  promotion: pilotPromotionConfigSchema.default({ venues: [], autonomy: "review" }),
 });
 
 export const updatePilotMandateSchema = z.object({
@@ -251,6 +280,73 @@ export const pushSubscriptionListItemSchema = z.object({
 
 export const pushSubscriptionListSchema = z.array(pushSubscriptionListItemSchema);
 
+// ── Promotion posts ─────────────────────────────────────────────────────────────
+
+export const PROMOTION_STATUSES = [
+  "draft",
+  "approved",
+  "declined",
+  "posted",
+  "failed",
+  "skipped",
+  "expired",
+] as const;
+export const promotionStatusSchema = z.enum(PROMOTION_STATUSES);
+
+/** Statuses past which a post is locked (no further editing or approval). */
+export const PROMOTION_TERMINAL_STATUSES: readonly string[] = [
+  "declined",
+  "posted",
+  "failed",
+  "skipped",
+  "expired",
+];
+
+/** Agent creates a draft post for a venue. */
+export const createPromotionSchema = z.object({
+  venue: z.string().min(1),
+  target: z.string().optional(),
+  title: z.string().optional(),
+  body: z.string().min(1),
+});
+
+/** User edits the draft body/title, or moves draft → approved | declined, or schedules it. */
+export const patchPromotionSchema = z.object({
+  title: z.string().optional(),
+  body: z.string().optional(),
+  status: z.enum(["approved", "declined"]).optional(),
+  scheduledFor: z.iso.datetime().optional(),
+});
+
+export const PROMOTION_OUTCOMES = ["posted", "failed", "skipped"] as const;
+export const promotionOutcomeSchema = z.enum(PROMOTION_OUTCOMES);
+
+/** Agent reports the terminal outcome after posting. */
+export const promotionResultSchema = z.object({
+  outcome: promotionOutcomeSchema,
+  postedUrl: z.string().optional(),
+  note: z.string().optional(),
+});
+
+export const promotionsQuerySchema = z.object({ status: promotionStatusSchema.optional() });
+
+export const promotionSchema = z.object({
+  id: z.uuid(),
+  profileId: z.uuid(),
+  venue: z.string(),
+  target: z.string().nullable(),
+  title: z.string().nullable(),
+  body: z.string(),
+  status: promotionStatusSchema,
+  postedUrl: z.string().nullable(),
+  scheduledFor: z.date().nullable(),
+  postedAt: z.date().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export const promotionListSchema = z.array(promotionSchema);
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type EscalationKind = z.infer<typeof escalationKindSchema>;
@@ -279,3 +375,11 @@ export type PushSubscriptionInput = z.infer<typeof pushSubscriptionInputSchema>;
 export type PushUnsubscribeInput = z.infer<typeof pushUnsubscribeSchema>;
 export type PushSubscriptionDto = z.infer<typeof pushSubscriptionSchema>;
 export type PushSubscriptionListItem = z.infer<typeof pushSubscriptionListItemSchema>;
+export type PilotPromotionVenue = z.infer<typeof pilotPromotionVenueSchema>;
+export type PilotPromotionConfig = z.infer<typeof pilotPromotionConfigSchema>;
+export type PromotionStatus = z.infer<typeof promotionStatusSchema>;
+export type CreatePromotionInput = z.infer<typeof createPromotionSchema>;
+export type PatchPromotionInput = z.infer<typeof patchPromotionSchema>;
+export type PromotionOutcome = z.infer<typeof promotionOutcomeSchema>;
+export type PromotionResultInput = z.infer<typeof promotionResultSchema>;
+export type Promotion = z.infer<typeof promotionSchema>;

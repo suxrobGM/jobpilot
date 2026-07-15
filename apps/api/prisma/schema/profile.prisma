@@ -55,6 +55,7 @@ model Profile {
   escalations       Escalation[]
   pilotJournal      PilotJournalEntry[]
   pushSubscriptions PushSubscription[]
+  promotionPosts    PromotionPost[]
 
   updatedAt DateTime @updatedAt @map("updated_at")
 

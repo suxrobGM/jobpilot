@@ -5,10 +5,12 @@ import {
 } from "@jobpilot/contracts/outreach";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
-import { findOwned, notFound } from "@/common/errors";
+import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
+import { loadMandateConfig } from "@/modules/pilot/pilot.mandate";
+import { countSentToday } from "@/modules/pilot/pilot.stats";
 import { toOutreachMessageRow } from "../campaign.mapper";
 import { recomputeOutreachSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
@@ -135,6 +137,35 @@ export class CampaignOutreachService {
   }
 
   /**
+   * Server-side send gates, enforced regardless of what the agent claims: a LinkedIn InMail
+   * may only be sent once the user approved it (InMails cost credits / are irreversible), and
+   * an email send is blocked once the profile's daily outreach cap is spent.
+   */
+  private async guardSend(
+    profileId: string,
+    message: { channel: string; linkedinKind: string | null; status: string },
+  ): Promise<void> {
+    if (message.channel === "linkedin" && message.linkedinKind === "inmail") {
+      if (message.status !== "approved") {
+        throw unprocessable("A LinkedIn InMail can only be sent after you approve it.");
+      }
+      return;
+    }
+    if (message.channel === "email") {
+      const config = await loadMandateConfig(this.prisma, profileId);
+      const sentToday = await countSentToday(
+        this.prisma,
+        profileId,
+        new Date(),
+        config.activeHours?.tz,
+      );
+      if (sentToday >= config.dailyOutreachCap) {
+        throw unprocessable("Daily outreach cap reached; try again tomorrow.");
+      }
+    }
+  }
+
+  /**
    * Terminal-outcome handoff for an outreach message: marks it `sent`/`failed`/
    * `skipped`, stamps `sentAt` + the Gmail `providerId`/`threadId`, and recomputes
    * the campaign summary. Mirrors campaigns/[id]/jobs/[key]/result.
@@ -150,6 +181,10 @@ export class CampaignOutreachService {
       { id: messageId, campaignId, profileId },
       "Outreach message",
     );
+
+    if (data.outcome === "sent") {
+      await this.guardSend(profileId, existing);
+    }
 
     const sentAt =
       data.outcome === "sent" ? (data.sentAt ? new Date(data.sentAt) : new Date()) : null;

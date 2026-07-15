@@ -37,6 +37,22 @@ const KIND_META: Record<PilotJournalKind, { icon: SvgIconComponent; color: ChipP
   digest: { icon: Summarize, color: "success" },
 };
 
+const n = (detail: Record<string, unknown>, key: string): number =>
+  typeof detail[key] === "number" ? (detail[key] as number) : 0;
+
+/** Glanceable counts from a digest entry's 24h detail, mirroring the summary's fields. */
+function DigestCounts(props: { detail: Record<string, unknown> }): ReactElement {
+  const { detail } = props;
+  const parts = [
+    `${n(detail, "applicationsCreated")} applied`,
+    `${n(detail, "jobsFailed") + n(detail, "jobsSkipped")} not applied`,
+    `${n(detail, "outreachSent")} outreach (${n(detail, "outreachReplies")} replies)`,
+    `${n(detail, "promotionsPosted")} posts`,
+    `${n(detail, "openEscalations")} open`,
+  ];
+  return <Typography variant="captionMuted">{parts.join(" · ")}</Typography>;
+}
+
 /** SSE delivers raw JSON, so `createdAt` arrives as an ISO string, not a revived Date. */
 function fromEvent(entry: unknown): PilotJournalEntry {
   const raw = entry as PilotJournalEntry & { createdAt: string };
@@ -73,6 +89,7 @@ function JournalRow(props: { entry: PilotJournalEntry }): ReactElement {
       />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography variant="body2">{entry.summary}</Typography>
+        {entry.kind === "digest" && <DigestCounts detail={entry.detail} />}
       </Box>
       <Typography variant="captionMuted" sx={{ whiteSpace: "nowrap" }}>
         {formatRelativeTime(entry.createdAt)} ago

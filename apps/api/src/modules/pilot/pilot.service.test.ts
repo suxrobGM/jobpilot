@@ -2,7 +2,8 @@
 // Injects a fake Prisma directly (no database); publish() is a no-op without subscribers.
 import type { PrismaClient } from "@/generated/prisma/client";
 import { PilotService } from "./pilot.service";
-import type { PushPayload, PushService } from "./push.service";
+import { makePush } from "./pilot.test-helpers";
+import type { PushPayload } from "./push.service";
 import { describe, expect, it } from "bun:test";
 
 interface Recorder {
@@ -11,15 +12,6 @@ interface Recorder {
   journalCreates: Record<string, unknown>[];
   stateUpserts: { create: Record<string, unknown>; update: Record<string, unknown> }[];
   pushes: { profileId: string; payload: PushPayload }[];
-}
-
-/** Records sendToProfile calls without any web-push/env dependency. */
-function makePush(rec: Recorder): PushService {
-  return {
-    sendToProfile: async (profileId: string, payload: PushPayload) => {
-      rec.pushes.push({ profileId, payload });
-    },
-  } as unknown as PushService;
 }
 
 function makeDb() {

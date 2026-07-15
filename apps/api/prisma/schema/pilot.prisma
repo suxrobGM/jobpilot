@@ -80,3 +80,22 @@ model PilotJournalEntry {
   @@index([profileId, createdAt])
   @@map("pilot_journal_entries")
 }
+
+model PromotionPost {
+  id           String    @id @default(uuid())
+  profileId    String    @map("profile_id")
+  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  venue        String // "hn-whoishiring" | "reddit:r/forhire" | "linkedin-post"
+  target       String? // thread/subreddit URL when known
+  title        String?
+  body         String
+  status       String    @default("draft") // draft | approved | declined | posted | failed | skipped | expired
+  postedUrl    String?   @map("posted_url")
+  scheduledFor DateTime? @map("scheduled_for")
+  postedAt     DateTime? @map("posted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([profileId, status])
+  @@map("promotion_posts")
+}

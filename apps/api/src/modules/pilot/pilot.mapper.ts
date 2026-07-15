@@ -6,6 +6,8 @@ import {
   type PilotJournalKind,
   type PilotLease,
   type PilotState,
+  type Promotion,
+  type PromotionStatus,
   pilotMandateConfigSchema,
 } from "@jobpilot/contracts/pilot";
 import type {
@@ -13,6 +15,7 @@ import type {
   PilotJournalEntry as PilotJournalEntryModel,
   PilotLease as PilotLeaseModel,
   PilotState as PilotStateModel,
+  PromotionPost as PromotionPostModel,
 } from "@/generated/prisma/client";
 
 export function toPilotState(row: PilotStateModel, appliedToday: number): PilotState {
@@ -61,6 +64,23 @@ export function toJournalEntry(row: PilotJournalEntryModel): PilotJournalEntry {
     subjectType: row.subjectType,
     subjectId: row.subjectId,
     createdAt: row.createdAt,
+  };
+}
+
+export function toPromotion(row: PromotionPostModel): Promotion {
+  return {
+    id: row.id,
+    profileId: row.profileId,
+    venue: row.venue,
+    target: row.target,
+    title: row.title,
+    body: row.body,
+    status: row.status as PromotionStatus,
+    postedUrl: row.postedUrl,
+    scheduledFor: row.scheduledFor,
+    postedAt: row.postedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 

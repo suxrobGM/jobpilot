@@ -13,6 +13,7 @@ import { EscalationList } from "./escalation-list";
 import { JournalFeed } from "./journal-feed";
 import { MandateEditor } from "./mandate-editor";
 import { PilotStatusCard } from "./pilot-status-card";
+import { PromotionList } from "./promotion-list";
 import { PushSettings } from "./push-settings";
 
 export function PilotView(): ReactElement {
@@ -49,6 +50,9 @@ export function PilotView(): ReactElement {
       </Grid>
       <Box sx={{ order: { xs: 1, md: 0 } }}>
         <EscalationList />
+      </Box>
+      <Box sx={{ order: { xs: 2, md: 0 } }}>
+        <PromotionList />
       </Box>
       <Box sx={{ order: { xs: 3, md: 0 } }}>
         <MandateEditor state={state} />

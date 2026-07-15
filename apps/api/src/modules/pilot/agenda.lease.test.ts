@@ -1,0 +1,68 @@
+// Lease grant path: a fake Prisma and CampaignJobService are injected into AgendaService, so lease
+// grant/claim/verify logic runs with no database. Loading the service transitively loads `@/env`,
+// satisfied by the local .env / ci.yml dummy env.
+import { AgendaService } from "./agenda.service";
+import { approvedJob, makeAgendaDeps, type Over } from "./pilot.test-helpers";
+import { describe, expect, it } from "bun:test";
+
+const service = (over: Over = {}) => {
+  const { prisma, campaignJobs, pilot, push, rec } = makeAgendaDeps(over);
+  return { svc: new AgendaService(prisma, campaignJobs, pilot, push), rec };
+};
+
+describe("AgendaService leasing", () => {
+  it("grants a job.apply lease and flips the job to applying", async () => {
+    const { svc, rec } = service({
+      approvedJobs: [approvedJob()],
+      job: {
+        campaignId: "c1",
+        key: "jobkey",
+        status: "approved",
+        title: "Engineer",
+        url: "https://x/1",
+      },
+    });
+
+    const lease = await svc.lease("p1", "job.apply:c1:jobkey");
+
+    expect(rec.claimJobForApply[0]).toEqual(["p1", "c1", "jobkey"]);
+    expect(rec.leaseCreates[0]).toMatchObject({
+      kind: "job.apply",
+      subjectType: "job",
+      subjectId: "jobkey",
+    });
+    expect((lease.payload as { jobKey: string }).jobKey).toBe("jobkey");
+  });
+
+  it("409s when the leased item is no longer on the agenda", async () => {
+    const { svc } = service({ approvedJobs: [] });
+    expect(svc.lease("p1", "job.apply:c1:jobkey")).rejects.toThrow();
+  });
+
+  it("409s when the atomic approved->applying claim loses the race", async () => {
+    const { svc } = service({
+      approvedJobs: [approvedJob()],
+      claimCount: 0,
+      job: { status: "approved" },
+    });
+    expect(svc.lease("p1", "job.apply:c1:jobkey")).rejects.toThrow();
+  });
+
+  it("grants a promo.post lease only when the post is still approved", async () => {
+    const { svc, rec } = service({
+      approvedPromotions: [{ id: "P1", venue: "hn", target: null, title: null, body: "b" }],
+      promoFindFirst: { id: "P1" },
+    });
+    const lease = await svc.lease("p1", "promo.post:P1");
+    expect(rec.leaseCreates[0]).toMatchObject({ kind: "promo.post", subjectId: "P1" });
+    expect(lease.subjectId).toBe("P1");
+  });
+
+  it("409s a promo.post lease when the post is no longer approved", async () => {
+    const { svc } = service({
+      approvedPromotions: [{ id: "P1", venue: "hn", target: null, title: null, body: "b" }],
+      promoFindFirst: null,
+    });
+    expect(svc.lease("p1", "promo.post:P1")).rejects.toThrow();
+  });
+});

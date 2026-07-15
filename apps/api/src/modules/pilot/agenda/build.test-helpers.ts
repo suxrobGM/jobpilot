@@ -1,0 +1,61 @@
+// Pure builders for the agenda unit tests: contracts + local types only, so importing this never
+// loads `@/env` and the builder suites stay database-free.
+import { type PilotMandateConfig, pilotMandateConfigSchema } from "@jobpilot/contracts/pilot";
+import type { AgendaInput } from "./types";
+
+export const cfg = (over: Record<string, unknown> = {}): PilotMandateConfig =>
+  pilotMandateConfigSchema.parse(over);
+
+export const NOW = new Date("2026-07-15T12:00:00.000Z"); // noon UTC, inside a 09-17 window
+
+export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
+  now: NOW,
+  config: cfg(),
+  openEscalations: 0,
+  answeredEscalations: [],
+  activeLeases: 0,
+  approvedJobs: [],
+  appliedToday: 0,
+  dueQueries: [],
+  finalizeCampaigns: [],
+  inbox: { messageIds: [], count: 0 },
+  approvedOutreach: [],
+  outreachSentToday: 0,
+  followups: [],
+  dueVenues: [],
+  approvedPromotions: [],
+  ...over,
+});
+
+export const job = (key: string, matchScore: number | null) => ({
+  campaignId: "c1",
+  key,
+  title: `Job ${key}`,
+  url: `https://x/${key}`,
+  board: null,
+  digest: null,
+  matchScore,
+});
+
+export const send = (messageId: string, over: Record<string, unknown> = {}) => ({
+  campaignId: "c1",
+  messageId,
+  contactId: `ct-${messageId}`,
+  contactName: "Dana Recruiter",
+  contactEmail: "dana@acme.test",
+  subject: "Hi",
+  body: "hello",
+  ...over,
+});
+
+export const followup = (messageId: string, over: Record<string, unknown> = {}) => ({
+  campaignId: "c1",
+  messageId,
+  contactId: `ct-${messageId}`,
+  contactName: "Dana Recruiter",
+  contactEmail: "dana@acme.test",
+  subject: "Hi",
+  sentAt: new Date("2026-07-08T12:00:00.000Z"),
+  daysSince: 7,
+  ...over,
+});

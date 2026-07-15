@@ -4,7 +4,9 @@ export type PilotEvent =
   | { type: "journal.appended"; entry: unknown }
   | { type: "escalation.created"; escalation: unknown }
   | { type: "escalation.answered"; escalation: unknown }
-  | { type: "state.changed"; state: unknown };
+  | { type: "state.changed"; state: unknown }
+  | { type: "promotion.created"; promotion: unknown }
+  | { type: "promotion.updated"; promotion: unknown };
 
 /**
  * Profile-scoped Pilot feed (journal entries, escalations, state changes).

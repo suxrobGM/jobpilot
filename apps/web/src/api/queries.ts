@@ -1,6 +1,6 @@
 import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
 import type { ReviewStatus } from "@jobpilot/contracts/email";
-import type { EscalationStatus } from "@jobpilot/contracts/pilot";
+import type { EscalationStatus, PromotionStatus } from "@jobpilot/contracts/pilot";
 import type { QueueStatus } from "@jobpilot/contracts/queue";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
@@ -141,6 +141,10 @@ export const pilotQueries = {
   escalations: (status?: EscalationStatus) => ({
     queryKey: queryKeys.pilot.escalations({ status: status ?? "all" }),
     queryFn: () => api.pilot.escalations.get({ query: status ? { status } : {} }),
+  }),
+  promotions: (status?: PromotionStatus) => ({
+    queryKey: queryKeys.pilot.promotions({ status: status ?? "all" }),
+    queryFn: () => api.pilot.promotions.get({ query: status ? { status } : {} }),
   }),
   pushKey: () => ({
     queryKey: queryKeys.pilot.pushKey(),

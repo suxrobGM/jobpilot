@@ -107,3 +107,4 @@ Apply to one job. If `digest` is absent, fetch it from `GET /api/campaigns/$CAMP
 5. Eligibility per eligibility.md; never skip silently.
 6. One job per invocation; no looping or pagination.
 7. Every file you write goes under `$JOBPILOT_WORKSPACE_ROOT/.temp`, prefixed with the job key (setup.md → "Scratch files"). Never the repo root.
+8. Optionally add `observations` to your return: an array of 0-3 short strings, **durable board/site facts only** (e.g. "greenhouse.io added a demographics page after submit"), never per-job trivia. Omit when there's nothing lasting to report.
