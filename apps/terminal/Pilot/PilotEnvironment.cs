@@ -99,7 +99,7 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
             var signal = await signals.Reader.ReadAsync(timeoutCts.Token);
             return signal.Cycle is { } cycle
                 ? PilotWaitResult.Sentinel(cycle)
-                : PilotWaitResult.Stalled(signal.Stall);
+                : PilotWaitResult.Stalled;
         }
         catch (OperationCanceledException)
         {
@@ -149,7 +149,8 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
         var reason = stall.Feed(data, DateTimeOffset.UtcNow);
         if (reason != PilotStallReason.None)
         {
-            signals.Writer.TryWrite(WaitSignal.Stalled(reason));
+            logger.LogDebug("Pilot stall heuristic fired ({Reason}).", reason);
+            signals.Writer.TryWrite(WaitSignal.Stalled);
         }
     }
 
@@ -163,10 +164,10 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
     public void Dispose() => session.Output -= OnOutput;
 
     /// <summary>A sentinel cycle or a fired stall heuristic, merged onto one channel so the await sees whichever wins.</summary>
-    private readonly record struct WaitSignal(PilotCycle? Cycle, PilotStallReason Stall)
+    private readonly record struct WaitSignal(PilotCycle? Cycle)
     {
-        public static WaitSignal Sentinel(PilotCycle cycle) => new(cycle, PilotStallReason.None);
+        public static WaitSignal Sentinel(PilotCycle cycle) => new(cycle);
 
-        public static WaitSignal Stalled(PilotStallReason reason) => new(null, reason);
+        public static readonly WaitSignal Stalled = new(null);
     }
 }

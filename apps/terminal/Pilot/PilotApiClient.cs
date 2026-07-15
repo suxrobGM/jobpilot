@@ -10,12 +10,6 @@ internal sealed record PilotJournalRequest(PilotJournalEntry[] Entries);
 /// <summary>One journal entry; the host only ever writes <c>kind=system</c>.</summary>
 internal sealed record PilotJournalEntry(string Kind, string Summary);
 
-/// <summary>Response shape; only the status code is read, so the fields stay minimal.</summary>
-internal sealed record PilotJournalResponse
-{
-    public int? Created { get; init; }
-}
-
 /// <summary>
 /// Posts the conductor's own interventions to the API journal so the user's phone hears about them.
 /// Best-effort: a briefly unreachable API logs a warning and never throws into the conductor loop.

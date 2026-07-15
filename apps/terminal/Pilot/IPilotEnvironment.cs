@@ -12,15 +12,13 @@ public enum PilotWaitOutcome
 }
 
 /// <summary>Result of awaiting a cycle sentinel.</summary>
-public readonly record struct PilotWaitResult(
-    PilotWaitOutcome Outcome, PilotCycle Cycle = default, PilotStallReason StallReason = PilotStallReason.None)
+public readonly record struct PilotWaitResult(PilotWaitOutcome Outcome, PilotCycle Cycle = default)
 {
     public static readonly PilotWaitResult Timeout = new(PilotWaitOutcome.Timeout);
     public static readonly PilotWaitResult Exited = new(PilotWaitOutcome.SessionExited);
+    public static readonly PilotWaitResult Stalled = new(PilotWaitOutcome.StallDetected);
 
     public static PilotWaitResult Sentinel(PilotCycle cycle) => new(PilotWaitOutcome.Sentinel, cycle);
-
-    public static PilotWaitResult Stalled(PilotStallReason reason) => new(PilotWaitOutcome.StallDetected, default, reason);
 }
 
 /// <summary>Side effects the Pilot loop drives, abstracted from the real PTY so the state machine is testable.</summary>

@@ -211,9 +211,9 @@ public class PilotLoopTests
     public async Task RunIteration_ClimbsNudgeSkipKill_WhenStallHeuristicsFireRepeatedly()
     {
         var env = new FakePilotEnvironment { RunningProvider = "claude" };
-        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.RepeatedOutput));
-        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.RepeatedOutput));
-        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.ErrorLoop));
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled);
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled);
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled);
         var loop = new PilotLoop(env);
 
         await loop.RunIterationAsync(Claude, CancellationToken.None);
@@ -229,8 +229,8 @@ public class PilotLoopTests
     public async Task RunIteration_RecoversAtSkip_WhenTheSkipDirectiveUnsticksTheAgent()
     {
         var env = new FakePilotEnvironment { RunningProvider = "claude" };
-        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.ErrorLoop)); // first stall -> nudge
-        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.ErrorLoop)); // still stalled -> skip
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled); // first stall -> nudge
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled); // still stalled -> skip
         env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(45)));                 // skip unsticks it
         var loop = new PilotLoop(env);
 
@@ -248,7 +248,7 @@ public class PilotLoopTests
     public async Task RunIteration_RecoversAtNudge_WhenAStallFiresThenTheNudgeUnsticksTheAgent()
     {
         var env = new FakePilotEnvironment { RunningProvider = "claude" };
-        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.RepeatedOutput));
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled);
         env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(20)));
         var loop = new PilotLoop(env);
 
@@ -264,7 +264,7 @@ public class PilotLoopTests
     {
         var env = new FakePilotEnvironment { RunningProvider = "claude" };
         env.SentinelResults.Enqueue(PilotWaitResult.Timeout);                              // cap lapses -> nudge
-        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.ErrorLoop));  // stalls -> skip
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled);  // stalls -> skip
         // third await times out -> kill
         var loop = new PilotLoop(env);
 
