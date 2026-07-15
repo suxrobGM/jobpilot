@@ -1,0 +1,115 @@
+import { buildDocsMetadata } from "@/components/features/docs";
+
+export const metadata = buildDocsMetadata("pilot", {
+  description:
+    "Run JobPilot autonomously: write a mandate, close the lid, answer escalations from your phone, and wake to a journal.",
+});
+
+# The Pilot
+
+The Pilot is JobPilot's autonomous mode. Instead of running a skill each time,
+you write a **mandate** once - your goals and limits - and the local agent runs
+your search on its own: perpetual cycles that discover and score roles, apply,
+find warm intros before cold applies, send and follow up on outreach, triage
+recruiter replies, and draft interview replies, prep sheets, and self-promotion
+posts. It journals every action, escalates the few decisions only you can make
+to your phone, and keeps going overnight with the browser closed. You wake to a
+morning digest.
+
+The Pilot **supersedes** the [campaign modes](/docs/campaigns-and-skills) - it
+runs all of them for you - but those skills stay available for hands-on work.
+
+## Enabling it
+
+1. Make sure your local agent terminal is running (the dock in the dashboard's
+   bottom corner). If it's offline, install or start it first - see
+   [Getting started](/docs/getting-started).
+2. Open **Pilot** in the workspace.
+3. Write your mandate (below) and save it.
+4. Click **Enable**.
+
+Enabling pairs your machine with the Pilot once, so you don't need a browser tab
+open after that: the local host self-starts cycles on boot, crash, or wake and
+drives the loop until you disable it.
+
+## The mandate
+
+The mandate is one small document that steers everything. Its fields:
+
+- **Goals** - plain-language direction: the roles you want, priorities, and
+  constraints (for example, "senior TypeScript remote, at least $150k, by
+  October").
+- **Operating limits** - daily apply cap, daily outreach cap, follow-up delay,
+  minimum match score, and how often the Pilot checks for work.
+- **Active hours** - restrict cycles to a window (with a time zone), or leave
+  off to run around the clock.
+- **Standing queries** - searches the Pilot re-runs on its own cadence, so new
+  postings get scored and applied to without you starting a campaign.
+- **Outreach autonomy** - per channel. Email can be **draft** (compose only),
+  **review** (ask before each send), or **auto** (send within your cap).
+  LinkedIn is always review - the Pilot never sends an InMail on its own.
+- **Promotion venues** - where the Pilot drafts self-promotion posts (a
+  "who wants to be hired" thread, a subreddit, a LinkedIn post) and how often.
+  Posts are always review-only.
+
+Soft judgment lives in your goals text; the caps are also enforced on the
+server, so the Pilot can never exceed them no matter how you word the mandate.
+Edit the mandate any time - even from your phone - and the change takes effect
+on the next cycle.
+
+## What it does on its own vs. what asks you
+
+| Runs on its own | Always asks you |
+| --- | --- |
+| Applies to matching roles within your daily cap | A 2FA / login code (a one-tap card, ~5-minute window) |
+| Sends outreach emails you set to auto, within your cap | Salary and screening questions on an application |
+| Follows up on outreach per your autonomy setting | Sending a LinkedIn InMail |
+| Triages recruiter replies in your inbox (proposes moves) | Posting any self-promotion publicly |
+| Drafts everything - emails, follow-ups, interview replies, prep sheets, posts | Parking a board that keeps failing |
+
+Anything in the right column surfaces as an escalation. Nothing sends, posts, or
+changes an application's status without you.
+
+## Escalations and push notifications
+
+When the Pilot hits a decision only you can make, it posts an **escalation** - a
+one-decision card in the Pilot page - and parks the related work until you
+answer. Answer, and the parked job or message resumes on the next cycle.
+
+To answer without watching the dashboard, turn on **Notifications** in the Pilot
+page for each device (including your phone). You'll get a web push when an
+escalation opens, even with the tab closed - tap it and answer the card. A 2FA
+code request self-expires after about five minutes; if you miss it, the Pilot
+skips that job cleanly and moves on.
+
+## The journal and morning digest
+
+Every action the Pilot takes lands in the **journal** - a live feed you can
+watch in real time ("Applied to Staff TypeScript Engineer at Acme - score 87",
+"Triaged 7 replies - 1 interview invite", "Parked Stripe - needs your salary
+answer"). Once a day it rolls the last 24 hours into a **morning digest**:
+applications submitted, replies triaged, outreach sent, and questions waiting.
+
+Use **Export** on the journal card to download the full history as a file for
+your own records.
+
+## Interview autonomy
+
+When a recruiter's reply is an interview invite, the Pilot drafts a short
+availability reply and posts it as an approval card - it never sends it for you.
+It also builds an interview **prep sheet** (behavioral, technical, system
+design, and company notes) and attaches it to the application, so it's ready
+when you approve the reply.
+
+## Troubleshooting
+
+- **Host offline** - the Pilot can't run without your local agent. Start it from
+  the dock; the Pilot resumes on its own once the host is back.
+- **Pilot paused after repeated stalls** - if cycles keep timing out, the host
+  backs off to protect your machine. Check the dock terminal for what wedged,
+  then re-enable.
+- **A board keeps failing** - the Pilot probes it once, and if it still fails,
+  asks whether to park it. Parked boards are skipped until you clear them; the
+  rest of your search keeps running.
+
+Next up: [Email setup](/docs/email-setup) so the Pilot can triage your replies.

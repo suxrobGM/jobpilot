@@ -18,12 +18,22 @@
 </div>
 
 JobPilot pairs a hosted dashboard with an AI agent that runs on your machine.
-The agent - Claude Code or Codex on your own subscription - drives a real
-browser to search job boards, tailor your resume, fill out applications, and
-message recruiters. The dashboard tracks every application, reply, and
-interview in one pipeline.
+Write a mandate once and the Pilot takes the job search from there -
+perpetual sense-decide-act cycles running on their own. Prefer to stay
+hands-on? Four manual campaign modes cover the same ground step by step.
+Either way, the agent - Claude Code or Codex on your own subscription -
+drives a real browser to search job boards, tailor your resume, fill out
+applications, and message recruiters. The dashboard tracks every
+application, reply, and interview in one pipeline.
 
-- **Four campaign modes** - search-and-review, autonomous auto-apply,
+- **The Pilot — your job search on autopilot** - write a mandate once (goals,
+  daily caps, active hours, standing queries) and the agent runs perpetual
+  sense → decide → act → record cycles: discovers and applies to jobs,
+  checks for warm intros before cold applies, sends and follows up outreach,
+  triages recruiter replies, and drafts interview prep and self-promotion
+  posts - every action narrated in a live journal, with questions escalated
+  to your phone as one-tap cards and hard caps enforced server-side.
+- **Four manual campaign modes** - search-and-review, autonomous auto-apply,
   single-job apply, and recruiter outreach.
 - **Any job board** - 12 built in (LinkedIn, Indeed, Glassdoor, Wellfound,
   Y Combinator, HN Who's Hiring, We Work Remotely, Remote OK, and more), and

@@ -19,6 +19,11 @@ export const DOCS_NAV: DocsNavEntry[] = [
     description: "The four campaign modes, every skill, and how statuses work.",
   },
   {
+    title: "The Pilot",
+    href: "/docs/pilot",
+    description: "Autonomous mode: write a mandate, close the lid, wake to a journal.",
+  },
+  {
     title: "Email setup",
     href: "/docs/email-setup",
     description: "Connect Gmail with your own Google OAuth client.",

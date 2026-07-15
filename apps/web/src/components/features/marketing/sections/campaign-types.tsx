@@ -50,9 +50,13 @@ const toneColor = (tone: Mode["tone"]): string =>
 export function CampaignTypes(): ReactElement {
   return (
     <Section>
-      <Stack spacing={1} sx={{ mb: 4 }}>
-        <SectionEyebrow>FOUR WAYS TO RUN</SectionEyebrow>
-        <Typography variant="h2">One workspace, every approach to the search.</Typography>
+      <Stack spacing={1.5} sx={{ mb: 4, maxWidth: 620 }}>
+        <SectionEyebrow>MANUAL MODES</SectionEyebrow>
+        <Typography variant="h2">Prefer to drive? Four hands-on modes.</Typography>
+        <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
+          The Pilot runs all of these for you. Reach for them directly when you want to steer a
+          single search, application, or message by hand.
+        </Typography>
       </Stack>
       <Grid container spacing={2}>
         {MODES.map((mode) => {

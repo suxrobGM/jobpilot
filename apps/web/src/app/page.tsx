@@ -12,6 +12,7 @@ import {
   LiveJobsStrip,
   MarketingFooter,
   MarketingNav,
+  Pilot,
   PrivacyGrid,
   ProductTour,
 } from "@/components/features/marketing";
@@ -40,6 +41,7 @@ export default function LandingPage(): ReactElement {
       <MarketingNav />
       <Box component="main">
         <Hero />
+        <Pilot />
         <BoardStrip />
         <CampaignTypes />
 

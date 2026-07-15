@@ -41,13 +41,14 @@ export function Hero(): ReactElement {
         <Grid container spacing={6} sx={{ alignItems: "center" }}>
           <Grid size={{ xs: 12, md: 6 }}>
             <Stack spacing={3}>
-              <SectionEyebrow color="accent.primary">LOCAL-FIRST JOB AGENT</SectionEyebrow>
+              <SectionEyebrow color="accent.primary">AUTONOMOUS · LOCAL-FIRST</SectionEyebrow>
               <Typography variant="h1" sx={{ fontSize: { xs: "2.25rem", md: "3.25rem" } }}>
-                Your AI job agent, running on your machine.
+                Your job search on autopilot, running on your machine.
               </Typography>
               <Typography variant="body1Muted" sx={{ fontSize: "1.05rem", maxWidth: 520 }}>
-                JobPilot drives Claude Code or Codex on your own subscription to search any job
-                board, tailor your resume, apply, and track every reply - from one dashboard.
+                Write your goals once and the Pilot runs the search on its own - discovering,
+                tailoring, applying, and following up on your Claude Code or Codex subscription.
+                Close the lid; wake to a journal of what it did.
               </Typography>
               <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
                 <LinkButton href="/install" variant="contained" size="large">

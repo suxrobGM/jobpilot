@@ -92,6 +92,52 @@ Depending on the campaign mode, the agent either asks you to review matches
 first (`search`, `apply`) or proceeds on its own up to a cap you set
 (`auto-apply`).
 
+## The Pilot: fully autonomous mode
+
+Everything above still works by hand, but you can also hand the whole loop
+over. Write a mandate once - goals, daily caps, active hours, standing
+searches, how much autonomy to give outreach, which venues you're okay
+posting to - and the Pilot takes it from there, repeating one cycle forever
+while it's enabled:
+
+```text
+  sense ──► decide ──► act ──► record ──► exit
+    ▲                                        │
+    └──── PilotConductor re-injects ◄────────┘
+```
+
+- **Sense** - the agent asks the dashboard for its agenda: a prioritized list
+  compiled fresh from your data every time it's asked (jobs to apply to,
+  replies to triage, follow-ups due, an interview invite awaiting a reply) -
+  there's no separate task queue or server-side cron job ticking in the
+  background.
+- **Decide** - it takes the single top item.
+- **Act** - it leases that item - a short-lived claim with a timeout, so a
+  crash never leaves it stuck mid-work - then does the one thing: apply to a
+  job, send an outreach follow-up, draft an interview reply, and so on.
+- **Record** - every action lands in a live journal you can read like a diary
+  of what the agent did and why.
+- **Exit** - the cycle prints a sentinel line (`[[JOBPILOT_CYCLE ...]]`) and
+  stops. A small watchdog on your machine, the **PilotConductor**, drives the
+  loop from there: it reads the sentinel and starts the next cycle. If a
+  cycle goes quiet or gets stuck, the conductor nudges it, then restarts it -
+  the lease timeout makes sure any half-finished work is picked back up.
+
+Two things make this run without a browser tab open: **one-time pairing**
+stores your login token securely with the host the first time you enable the
+Pilot, so it can start its own sessions after a reboot or crash; and a live
+SSE connection lets the dashboard push the agent an instant wake-up the
+moment something time-sensitive happens, instead of it waiting for the next
+scheduled check.
+
+Anything the Pilot isn't sure about - a salary question, an unexpected form
+field, an interview invite - is escalated as a question, sent to your phone
+as a one-tap card, and the affected job is parked until you answer. The
+important limits aren't just instructions to the AI: daily apply/outreach
+caps, "never send a LinkedIn message automatically," and "never publish a
+post without my approval" are enforced by the dashboard itself, so they hold
+even if a cycle goes off-script.
+
 ## Where your data lives
 
 - **Profile, resumes, applications, campaigns** are stored by the hosted
