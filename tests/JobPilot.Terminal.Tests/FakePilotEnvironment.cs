@@ -7,6 +7,12 @@ internal sealed class FakePilotEnvironment : IPilotEnvironment
 {
     public List<string> Actions { get; } = [];
 
+    /// <summary>Journal summaries passed to ReportSystemAsync, kept apart from Actions so sequence asserts stay stable.</summary>
+    public List<string> Reports { get; } = [];
+
+    /// <summary>When true, ReportSystemAsync throws after recording, to prove a failed report never breaks a cycle.</summary>
+    public bool ReportThrows { get; set; }
+
     /// <summary>Results returned by successive AwaitSentinelAsync calls; empty dequeues to a timeout.</summary>
     public Queue<PilotWaitResult> SentinelResults { get; } = new();
 
@@ -70,6 +76,16 @@ internal sealed class FakePilotEnvironment : IPilotEnvironment
     public Task PauseAsync(CancellationToken ct)
     {
         Actions.Add("pause");
+        return Task.CompletedTask;
+    }
+
+    public Task ReportSystemAsync(string summary)
+    {
+        Reports.Add(summary);
+        if (ReportThrows)
+        {
+            throw new InvalidOperationException("simulated journal failure");
+        }
         return Task.CompletedTask;
     }
 

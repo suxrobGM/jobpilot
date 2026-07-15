@@ -19,6 +19,8 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
         "You appear stuck. Release your lease, journal the failure, and print the cycle sentinel.";
 
     private readonly SessionManager session;
+    private readonly PilotStore store;
+    private readonly PilotApiClient api;
     private readonly ILogger<PilotEnvironment> logger;
     private readonly SentinelParser parser = new();
 
@@ -26,9 +28,11 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
     private readonly Channel<PilotCycle> cycles = Channel.CreateUnbounded<PilotCycle>(
         new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 
-    public PilotEnvironment(SessionManager session, ILogger<PilotEnvironment> logger)
+    public PilotEnvironment(SessionManager session, PilotStore store, PilotApiClient api, ILogger<PilotEnvironment> logger)
     {
         this.session = session;
+        this.store = store;
+        this.api = api;
         this.logger = logger;
         session.Output += OnOutput;
     }
@@ -101,6 +105,15 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
     public void StopSession() => session.Stop();
 
     public Task PauseAsync(CancellationToken ct) => Task.Delay(MismatchPoll, ct);
+
+    public async Task ReportSystemAsync(string summary)
+    {
+        var pairing = store.Current;
+        if (pairing is not null)
+        {
+            await api.ReportSystemAsync(pairing.ApiUrl, pairing.ApiToken, summary);
+        }
+    }
 
     private void OnOutput(byte[] data)
     {

@@ -48,7 +48,11 @@ export function EscalationCard(props: EscalationCardProps): ReactElement {
           )}
 
           {hasOptions ? (
-            <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              sx={{ flexWrap: { sm: "wrap" }, gap: 1, alignItems: { xs: "stretch", sm: "center" } }}
+            >
               {escalation.options.map((option) => (
                 <Button
                   key={option}
@@ -56,13 +60,18 @@ export function EscalationCard(props: EscalationCardProps): ReactElement {
                   size="small"
                   disabled={busy}
                   onClick={() => answer.mutate(option)}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
                 >
                   {option}
                 </Button>
               ))}
             </Stack>
           ) : (
-            <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              sx={{ alignItems: { xs: "stretch", sm: "flex-start" } }}
+            >
               <TextField
                 fullWidth
                 multiline
@@ -77,6 +86,7 @@ export function EscalationCard(props: EscalationCardProps): ReactElement {
                 size="small"
                 disabled={busy || freeText.trim().length === 0}
                 onClick={() => answer.mutate(freeText.trim())}
+                sx={{ width: { xs: "100%", sm: "auto" }, flexShrink: 0 }}
               >
                 Send
               </Button>

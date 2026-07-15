@@ -62,16 +62,19 @@ Delegate ONE `job-worker` invocation in apply mode, same input JSON auto-apply b
 - `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` per `../../skills/auto-apply/SKILL.md` (2.4 payload shapes).
 - `needs_user` → escalate, then park the job:
 
-`kind` is an enum: `2fa` for 2FA/verification codes, `approval` for pre-submit review, `choice` when the worker returned options, else `question`. The worker's reason/details go in `question`.
+Pass the worker's `kind`, `question`, and `options` through verbatim (`options` defaults `[]`).
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/escalations" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg kind "<question|choice|2fa|approval>" --arg sid "$CID:$KEY" --arg q "<question>" --arg dl "$JOBPILOT_WEB/campaigns/$CID" \
-    '{kind:$kind, subjectType:"job", subjectId:$sid, question:$q, options:[], deepLink:$dl}')"
+  -d "$(jq -n --arg kind "<worker kind>" --arg sid "$CID:$KEY" --arg q "<worker question>" \
+    --argjson opts "<worker options, else []>" --arg dl "$JOBPILOT_WEB/campaigns/$CID" \
+    '{kind:$kind, subjectType:"job", subjectId:$sid, question:$q, options:$opts, deepLink:$dl}')"
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CID/jobs/$KEY" \
   -H 'content-type: application/json' -d '{"status":"needs_user"}'
 ```
+
+For `2fa`: the server auto-expires the escalation in ~5 minutes and the parked job is skipped cleanly - do nothing special, keep moving.
 
 ### `escalation.answered`
 

@@ -3,6 +3,7 @@
 import { type ReactElement, useState } from "react";
 import { MoreHoriz } from "@mui/icons-material";
 import {
+  Badge,
   BottomNavigation,
   BottomNavigationAction,
   Divider,
@@ -16,6 +17,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
+import { useOpenEscalations } from "@/components/features/pilot/use-open-escalations";
 import { useAuth } from "@/hooks/use-auth";
 import {
   feedbackLinks,
@@ -39,6 +41,7 @@ export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { user } = useAuth();
+  const { count: escalationCount } = useOpenEscalations();
 
   // Derived per render, not at module scope: the visible set depends on the signed-in role.
   const allItems = visibleNavGroups(user?.role).flatMap((group) => group.items);
@@ -98,7 +101,11 @@ export function MobileNav(): ReactElement {
         <BottomNavigationAction
           value={MORE_VALUE}
           label="More"
-          icon={<MoreHoriz fontSize="small" />}
+          icon={
+            <Badge badgeContent={escalationCount} color="error" max={99}>
+              <MoreHoriz fontSize="small" />
+            </Badge>
+          }
           onClick={() => setMoreOpen(true)}
         />
       </BottomNavigation>
@@ -115,7 +122,13 @@ export function MobileNav(): ReactElement {
               onClick={() => setMoreOpen(false)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
-                <item.icon fontSize="small" />
+                {item.badge === "escalations" ? (
+                  <Badge badgeContent={escalationCount} color="error" max={99}>
+                    <item.icon fontSize="small" />
+                  </Badge>
+                ) : (
+                  <item.icon fontSize="small" />
+                )}
               </ListItemIcon>
               <ListItemText primary={item.label} />
             </ListItemButton>

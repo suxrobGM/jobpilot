@@ -46,4 +46,7 @@ public interface IPilotEnvironment
 
     /// <summary>Polls briefly while conducting is paused (user-driven provider mismatch).</summary>
     Task PauseAsync(CancellationToken ct);
+
+    /// <summary>Reports a conductor intervention to the API journal. Best-effort; never throws.</summary>
+    Task ReportSystemAsync(string summary);
 }

@@ -142,4 +142,12 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.escalations({ status: status ?? "all" }),
     queryFn: () => api.pilot.escalations.get({ query: status ? { status } : {} }),
   }),
+  pushKey: () => ({
+    queryKey: queryKeys.pilot.pushKey(),
+    queryFn: () => api.pilot.push["vapid-key"].get(),
+  }),
+  pushDevices: () => ({
+    queryKey: queryKeys.pilot.pushDevices(),
+    queryFn: () => api.pilot.push.subscriptions.get(),
+  }),
 };

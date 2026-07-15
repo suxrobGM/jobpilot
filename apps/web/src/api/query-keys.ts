@@ -105,6 +105,8 @@ export const queryKeys = {
     journal: () => [...queryKeys.pilot.all, "journal"] as const,
     escalations: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.pilot.all, "escalations", filters] as const,
+    pushKey: () => [...queryKeys.pilot.all, "push", "vapid-key"] as const,
+    pushDevices: () => [...queryKeys.pilot.all, "push", "devices"] as const,
   },
 } as const;
 

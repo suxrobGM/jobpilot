@@ -18,10 +18,31 @@ import {
 } from "@/generated/prisma/client";
 import { toEscalation, toJournalEntry, toPilotState } from "./pilot.mapper";
 import { countAppliedToday } from "./pilot.stats";
+import { PushService } from "./push.service";
+
+/** 2FA codes die within minutes, so an unanswered 2FA escalation must self-expire fast; the agenda
+ *  expiry sweep then cleanly skips the parked job instead of leaving it wedged in needs_user. */
+const TWO_FA_TTL_MS = 5 * 60 * 1000;
+
+/** Push bodies are glanceable; keep them short so a phone banner never truncates mid-word. */
+const PUSH_BODY_MAX = 120;
+
+function truncate(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+}
+
+function escalationExpiry(body: CreateEscalationInput): Date | null {
+  if (body.expiresAt) return new Date(body.expiresAt);
+  if (body.kind === "2fa") return new Date(Date.now() + TWO_FA_TTL_MS);
+  return null;
+}
 
 @singleton()
 export class PilotService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly push: PushService,
+  ) {}
 
   // ── State / mandate ───────────────────────────────────────────────────────────
 
@@ -85,6 +106,7 @@ export class PilotService {
   // ── Escalations ───────────────────────────────────────────────────────────────
 
   async createEscalation(profileId: string, body: CreateEscalationInput) {
+    const expiresAt = escalationExpiry(body);
     const row = await this.prisma.escalation.create({
       data: {
         profileId,
@@ -94,11 +116,18 @@ export class PilotService {
         question: body.question,
         options: JSON.stringify(body.options),
         deepLink: body.deepLink ?? null,
-        expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
+        expiresAt,
       },
     });
     const escalation = toEscalation(row);
     publish(pilotChannel, { profileId }, { type: "escalation.created", escalation });
+    // Fire-and-forget so a slow/failed push never delays the escalation write.
+    void this.push.sendToProfile(profileId, {
+      title: "JobPilot needs you",
+      body: truncate(row.question, PUSH_BODY_MAX),
+      url: row.deepLink ?? "/pilot",
+      tag: `escalation-${row.id}`,
+    });
     return escalation;
   }
 
@@ -162,6 +191,18 @@ export class PilotService {
     const items = rows.map(toJournalEntry);
     for (const entry of items) {
       publish(pilotChannel, { profileId }, { type: "journal.appended", entry });
+    }
+    // System entries are how the terminal host surfaces watchdog kills/restarts ("pilot stopped
+    // unexpectedly") - push them so the alert reaches the phone. Fire-and-forget off the hot path.
+    for (const entry of items) {
+      if (entry.kind === "system") {
+        void this.push.sendToProfile(profileId, {
+          title: "Pilot alert",
+          body: truncate(entry.summary, PUSH_BODY_MAX),
+          url: "/pilot",
+          tag: "pilot-system",
+        });
+      }
     }
     return { items };
   }

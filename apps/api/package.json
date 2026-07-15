@@ -48,6 +48,7 @@
     "reflect-metadata": "^0.2.2",
     "resend": "^6.17.2",
     "tsyringe": "^4.10.0",
+    "web-push": "^3.6.7",
     "zod": "^4.4.0"
   },
   "devDependencies": {
@@ -55,6 +56,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/web-push": "^3.6.4",
     "prisma": "^7.8.0",
     "typescript": "^7.0.2"
   }

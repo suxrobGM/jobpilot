@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { Grid, LinearProgress, Stack } from "@mui/material";
+import { Box, Grid, LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
@@ -13,6 +13,7 @@ import { EscalationList } from "./escalation-list";
 import { JournalFeed } from "./journal-feed";
 import { MandateEditor } from "./mandate-editor";
 import { PilotStatusCard } from "./pilot-status-card";
+import { PushSettings } from "./push-settings";
 
 export function PilotView(): ReactElement {
   const queryClient = useQueryClient();
@@ -34,9 +35,11 @@ export function PilotView(): ReactElement {
 
   const state = stateQuery.data;
 
+  // On xs, open escalations hoist above the status cards so they're reachable one-handed;
+  // md keeps DOM order (status/budget, then escalations). useFlexGap makes `order` reflow cleanly.
   return (
-    <Stack spacing={3}>
-      <Grid container spacing={3} sx={{ alignItems: "stretch" }}>
+    <Stack spacing={3} useFlexGap>
+      <Grid container spacing={3} sx={{ alignItems: "stretch", order: { xs: 2, md: 0 } }}>
         <Grid size={{ xs: 12, md: 8 }}>
           <PilotStatusCard state={state} />
         </Grid>
@@ -44,9 +47,18 @@ export function PilotView(): ReactElement {
           <BudgetTile state={state} />
         </Grid>
       </Grid>
-      <EscalationList />
-      <MandateEditor state={state} />
-      <JournalFeed />
+      <Box sx={{ order: { xs: 1, md: 0 } }}>
+        <EscalationList />
+      </Box>
+      <Box sx={{ order: { xs: 3, md: 0 } }}>
+        <MandateEditor state={state} />
+      </Box>
+      <Box sx={{ order: { xs: 4, md: 0 } }}>
+        <PushSettings />
+      </Box>
+      <Box sx={{ order: { xs: 5, md: 0 } }}>
+        <JournalFeed />
+      </Box>
     </Stack>
   );
 }

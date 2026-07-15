@@ -83,6 +83,23 @@ public sealed class PilotConductorTests : IDisposable
     }
 
     [Fact]
+    public async Task Conductor_ResumesConducting_AtStartup_WithoutAWakeUp_WhenTheStoreIsEnabled()
+    {
+        store.Save(Enabled()); // paired + enabled persisted before the host process starts
+
+        await conductor.StartAsync(CancellationToken.None);
+
+        // No WakeUp: a fresh host must resume on its own from the persisted pairing.
+        await WaitUntil(() => env.Actions.Contains("inject-cycle"));
+        Assert.True(conductor.BuildStatus().Conducting);
+        Assert.Contains(PilotConductor.ResumeReport, env.Reports);
+
+        store.SetEnabled(false);
+        conductor.WakeUp();
+        await conductor.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task BuildStatus_ReportsCycleOutcome()
     {
         await conductor.StartAsync(CancellationToken.None);

@@ -17,6 +17,11 @@ public sealed class PilotLoop(IPilotEnvironment env)
     public const int MinSleepSeconds = 15;
     public const int MaxSleepSeconds = 21600;
 
+    // Stable, user-facing intervention summaries pushed to the API journal (the phone hears about these).
+    public const string NudgeReport = "Pilot watchdog: cycle timed out after 20m — nudged the agent.";
+    public const string KillReport = "Pilot watchdog: agent unresponsive — restarted the session; the leased job will recover by TTL.";
+    public const string BackoffReport = "Pilot watchdog: 3 consecutive stalls — backing off 30m.";
+
     private readonly IPilotEnvironment env = env;
 
     /// <summary>Consecutive watchdog kills; reset by any completed cycle.</summary>
@@ -60,6 +65,7 @@ public sealed class PilotLoop(IPilotEnvironment env)
         }
 
         // Timed out: nudge exactly once, then a shorter grace.
+        await ReportAsync(NudgeReport);
         await env.InjectNudgeAsync(pairing, ct);
         result = await env.AwaitSentinelAsync(NudgeGrace, ct);
         if (await TrySleepOnCycleAsync(result, ct) || result.Outcome == PilotWaitOutcome.SessionExited)
@@ -69,10 +75,25 @@ public sealed class PilotLoop(IPilotEnvironment env)
 
         // Still wedged: kill for a clean restart, and back off once repeated kills prove the install is broken.
         ConsecutiveTimeouts++;
+        await ReportAsync(KillReport);
         env.StopSession();
         if (ConsecutiveTimeouts >= BackoffThreshold)
         {
+            await ReportAsync(BackoffReport);
             await env.SleepAsync(BackoffDelay, ct);
+        }
+    }
+
+    // Reporting is best-effort: the env swallows delivery errors, but guard here too so a future env
+    // change can never wedge a cycle on a failed journal push.
+    private async Task ReportAsync(string summary)
+    {
+        try
+        {
+            await env.ReportSystemAsync(summary);
+        }
+        catch
+        {
         }
     }
 

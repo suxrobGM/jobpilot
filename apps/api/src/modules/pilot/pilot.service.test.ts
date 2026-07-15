@@ -2,6 +2,7 @@
 // Injects a fake Prisma directly (no database); publish() is a no-op without subscribers.
 import type { PrismaClient } from "@/generated/prisma/client";
 import { PilotService } from "./pilot.service";
+import type { PushPayload, PushService } from "./push.service";
 import { describe, expect, it } from "bun:test";
 
 interface Recorder {
@@ -9,10 +10,20 @@ interface Recorder {
   escalationUpdate?: { data: Record<string, unknown> };
   journalCreates: Record<string, unknown>[];
   stateUpserts: { create: Record<string, unknown>; update: Record<string, unknown> }[];
+  pushes: { profileId: string; payload: PushPayload }[];
+}
+
+/** Records sendToProfile calls without any web-push/env dependency. */
+function makePush(rec: Recorder): PushService {
+  return {
+    sendToProfile: async (profileId: string, payload: PushPayload) => {
+      rec.pushes.push({ profileId, payload });
+    },
+  } as unknown as PushService;
 }
 
 function makeDb() {
-  const rec: Recorder = { journalCreates: [], stateUpserts: [] };
+  const rec: Recorder = { journalCreates: [], stateUpserts: [], pushes: [] };
   const db = {
     escalation: {
       create: async (a: { data: Record<string, unknown> }) => {
@@ -69,7 +80,7 @@ function makeDb() {
 
 const service = () => {
   const { db, rec } = makeDb();
-  return { svc: new PilotService(db as unknown as PrismaClient), rec };
+  return { svc: new PilotService(db as unknown as PrismaClient, makePush(rec)), rec };
 };
 
 describe("PilotService escalations", () => {
@@ -94,6 +105,50 @@ describe("PilotService escalations", () => {
     expect(esc.answer).toBe("2 weeks");
     expect(rec.escalationUpdate?.data).toMatchObject({ status: "answered", answer: "2 weeks" });
     expect(rec.escalationUpdate?.data.answeredAt).toBeInstanceOf(Date);
+  });
+
+  it("pushes a notification on creation, using the deep link as the url", async () => {
+    const { svc, rec } = service();
+    await svc.createEscalation("p1", {
+      kind: "question",
+      question: "Approve this application?",
+      options: [],
+      deepLink: "/pilot/escalations/e1",
+    });
+
+    expect(rec.pushes).toHaveLength(1);
+    expect(rec.pushes[0]).toMatchObject({
+      profileId: "p1",
+      payload: {
+        title: "JobPilot needs you",
+        body: "Approve this application?",
+        url: "/pilot/escalations/e1",
+        tag: "escalation-e1",
+      },
+    });
+  });
+
+  it("defaults a 2fa escalation to expire in ~5 minutes when none is given", async () => {
+    const { svc, rec } = service();
+    const before = Date.now();
+    await svc.createEscalation("p1", { kind: "2fa", question: "Enter the code", options: [] });
+
+    const expiresAt = rec.escalationCreate?.expiresAt as Date;
+    expect(expiresAt).toBeInstanceOf(Date);
+    const ms = expiresAt.getTime() - before;
+    expect(ms).toBeGreaterThanOrEqual(4 * 60 * 1000);
+    expect(ms).toBeLessThanOrEqual(6 * 60 * 1000);
+  });
+
+  it("does not default an expiry for non-2fa escalations", async () => {
+    const { svc, rec } = service();
+    await svc.createEscalation("p1", {
+      kind: "question",
+      question: "Which start date?",
+      options: [],
+    });
+
+    expect(rec.escalationCreate?.expiresAt).toBeNull();
   });
 });
 
@@ -121,5 +176,26 @@ describe("PilotService journal", () => {
 
     expect(rec.journalCreates).toHaveLength(1);
     expect(rec.stateUpserts).toHaveLength(0);
+  });
+
+  it("pushes an alert for a system entry but not for other kinds", async () => {
+    const { svc, rec } = service();
+    await svc.appendJournal("p1", {
+      entries: [
+        { kind: "action", summary: "applied to a job" },
+        { kind: "system", summary: "Pilot stopped unexpectedly (watchdog)" },
+      ],
+    });
+
+    expect(rec.pushes).toHaveLength(1);
+    expect(rec.pushes[0]).toMatchObject({
+      profileId: "p1",
+      payload: {
+        title: "Pilot alert",
+        body: "Pilot stopped unexpectedly (watchdog)",
+        url: "/pilot",
+        tag: "pilot-system",
+      },
+    });
   });
 });

@@ -11,23 +11,32 @@ import {
   pilotJournalQuerySchema,
   pilotLeaseSchema,
   pilotStateSchema,
+  pushSubscriptionInputSchema,
+  pushSubscriptionListSchema,
+  pushSubscriptionSchema,
+  pushUnsubscribeSchema,
   releasePilotLeaseSchema,
   setPilotEnabledSchema,
   updatePilotMandateSchema,
+  vapidKeySchema,
 } from "@jobpilot/contracts/pilot";
 import { idParam } from "@jobpilot/contracts/shared";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
+import { notFound } from "@/common/errors";
 import { profileGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
+import { deletedResponseSchema } from "@/types/response";
 import { AgendaService } from "./agenda.service";
 import { createPilotJournalResponseSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
+import { PushService } from "./push.service";
 
 const pilot = container.resolve(PilotService);
 const agenda = container.resolve(AgendaService);
+const push = container.resolve(PushService);
 
 const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
 const limitJournal = rateLimit(RATE_LIMITS.pilotJournal);
@@ -166,6 +175,51 @@ export const pilotController = new Elysia({
       },
     },
   )
+  // ── Web push ──────────────────────────────────────────────────────────────────
+  .get("/push/vapid-key", () => ({ publicKey: push.publicKey }), {
+    response: vapidKeySchema,
+    detail: {
+      summary: "Get the VAPID public key",
+      description:
+        "The application-server key the browser subscribes with, or null when push is unconfigured.",
+    },
+  })
+  .post("/push/subscriptions", ({ profileId, body }) => push.subscribe(profileId, body), {
+    body: pushSubscriptionInputSchema,
+    beforeHandle: limitMutation,
+    response: pushSubscriptionSchema,
+    detail: {
+      summary: "Register a push subscription",
+      description:
+        "Upserts the browser's push subscription by endpoint, reassigning it to the caller.",
+    },
+  })
+  .delete(
+    "/push/subscriptions",
+    async ({ profileId, body }) => {
+      const deleted = await push.unsubscribe(profileId, body.endpoint);
+      if (!deleted) {
+        throw notFound("Subscription not found");
+      }
+      return { deleted };
+    },
+    {
+      body: pushUnsubscribeSchema,
+      beforeHandle: limitMutation,
+      response: deletedResponseSchema,
+      detail: {
+        summary: "Remove a push subscription",
+        description: "Deletes the caller's subscription for the given endpoint.",
+      },
+    },
+  )
+  .get("/push/subscriptions", ({ profileId }) => push.list(profileId), {
+    response: pushSubscriptionListSchema,
+    detail: {
+      summary: "List push subscriptions",
+      description: "The caller's registered push devices, newest first.",
+    },
+  })
   // ── Events (SSE) ────────────────────────────────────────────────────────────────
   .get("/events", ({ profileId, headers }) => sseStream(pilotChannel, { profileId }, headers), {
     detail: {

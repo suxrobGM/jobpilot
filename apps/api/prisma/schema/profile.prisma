@@ -54,6 +54,7 @@ model Profile {
   pilotLeases       PilotLease[]
   escalations       Escalation[]
   pilotJournal      PilotJournalEntry[]
+  pushSubscriptions PushSubscription[]
 
   updatedAt DateTime @updatedAt @map("updated_at")
 

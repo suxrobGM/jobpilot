@@ -139,6 +139,57 @@ public class PilotLoopTests
     }
 
     [Fact]
+    public async Task RunIteration_ReportsNudgeThenKill_OnceEach_WhenTheCycleWedges()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude" };
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None); // both awaits time out -> nudge, then kill
+
+        Assert.Equal([PilotLoop.NudgeReport, PilotLoop.KillReport], env.Reports);
+    }
+
+    [Fact]
+    public async Task RunIteration_ReportsOnlyTheNudge_WhenTheNudgeUnsticksTheAgent()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude" };
+        env.SentinelResults.Enqueue(PilotWaitResult.Timeout);
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(20)));
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal([PilotLoop.NudgeReport], env.Reports);
+    }
+
+    [Fact]
+    public async Task RunIteration_ReportsBackoff_OnTheThirdConsecutiveKill()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude", StartMakesRunning = true };
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+        Assert.DoesNotContain(PilotLoop.BackoffReport, env.Reports);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+        Assert.Equal(1, env.Reports.Count(r => r == PilotLoop.BackoffReport)); // fires once, on the third kill
+    }
+
+    [Fact]
+    public async Task RunIteration_StillNudgesAndKills_WhenReportingThrows()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude", ReportThrows = true };
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        // A failing journal push must not abort the intervention.
+        Assert.Equal(["inject-cycle", "await", "inject-nudge", "await", "stop"], env.Actions);
+        Assert.Equal(1, loop.ConsecutiveTimeouts);
+    }
+
+    [Fact]
     public async Task RunIteration_ResetsTheKillCount_AfterASuccessfulCycle()
     {
         var env = new FakePilotEnvironment { RunningProvider = "claude" };

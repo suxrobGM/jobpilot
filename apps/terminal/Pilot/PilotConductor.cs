@@ -11,6 +11,12 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
 {
     private static readonly TimeSpan ErrorBackoff = TimeSpan.FromSeconds(30);
 
+    // A restarted host waits this long before its first resumed cycle so Kestrel finishes binding first.
+    private static readonly TimeSpan StartupResumeDelay = TimeSpan.FromSeconds(10);
+
+    /// <summary>Journal summary pushed when a restarted host resumes conducting on its own.</summary>
+    public const string ResumeReport = "Pilot conductor resumed after host restart.";
+
     private readonly PilotLoop loop = new PilotLoop(env);
 
     // Released to start from idle or to interrupt a running iteration when the pairing changes.
@@ -46,6 +52,8 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await ResumeIfEnabledAsync(stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             var pairing = store.Current;
@@ -89,6 +97,30 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
                     return;
                 }
             }
+        }
+    }
+
+    /// <summary>On a fresh start already paired+enabled, resumes conducting after a short bind grace and journals it.</summary>
+    private async Task ResumeIfEnabledAsync(CancellationToken stoppingToken)
+    {
+        var pairing = store.Current;
+        if (pairing is null || !pairing.Enabled)
+        {
+            return;
+        }
+
+        if (!await AwaitUnlessCanceledAsync(env.SleepAsync(StartupResumeDelay, stoppingToken)))
+        {
+            return; // host shutting down before the grace elapsed
+        }
+
+        try
+        {
+            await env.ReportSystemAsync(ResumeReport);
+        }
+        catch
+        {
+            // Best-effort; a failed resume report must not fault the background service.
         }
     }
 

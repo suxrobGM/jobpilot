@@ -5,6 +5,7 @@ import { Box, Tooltip } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { EscalationBadge } from "@/components/features/pilot/escalation-badge";
 import { isNavItemActive, type NavItem as NavItemType } from "./shell-config";
 
 interface NavItemProps {
@@ -16,6 +17,7 @@ export function NavItem(props: NavItemProps): ReactElement {
   const pathname = usePathname();
   const Icon = item.icon;
   const active = isNavItemActive(pathname, item.href);
+  const icon = <Icon fontSize="md" />;
 
   return (
     <Tooltip title={item.label} placement="right" arrow disableInteractive>
@@ -53,7 +55,7 @@ export function NavItem(props: NavItemProps): ReactElement {
             : undefined,
         })}
       >
-        <Icon fontSize="md" />
+        {item.badge === "escalations" ? <EscalationBadge>{icon}</EscalationBadge> : icon}
       </Box>
     </Tooltip>
   );

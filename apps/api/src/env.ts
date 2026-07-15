@@ -43,6 +43,11 @@ const EnvSchema = z.object({
   // Sender of account emails. `onboarding@resend.dev` is Resend's no-domain test
   // sender (only delivers to the Resend account owner); production needs a verified domain.
   EMAIL_FROM: z.string().default("JobPilot <onboarding@resend.dev>"),
+
+  // Web Push (VAPID). All three optional: unset silently disables push (never crashes startup).
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
