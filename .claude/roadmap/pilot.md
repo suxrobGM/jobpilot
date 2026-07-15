@@ -102,8 +102,8 @@ bandit — see deferred.md) is the strategy tier of that system.
 
 | Status | Milestone | Hook |
 | --- | --- | --- |
-| in-progress | **M1 — Pilot spine** | mandate → agenda → lease → cycle → journal; conductor + pairing; the killer demo |
-| todo | **M2 — Away-proof** | web push, phone-answerable escalations, unattended nights |
+| done | **M1 — Pilot spine** | mandate → agenda → lease → cycle → journal; conductor + pairing; the killer demo |
+| done | **M2 — Away-proof** | web push, phone-answerable escalations, unattended nights |
 | todo | **M3 — Full surface** | inbox triage, outreach + warm path, self-promotion (PromotionPost, draft-first), 7am digest |
 | todo | **M3.5 — Interview autonomy** | invite → availability reply (approval card) + auto prep sheet via `interview` skill |
 | todo | **M4 — Event wake + proactive** | SSE→inject wake, stall heuristics, strategy review, board health, rescan/retry |
@@ -120,3 +120,9 @@ zero skill invocations by the user, ever.
 - 2026-07-15 — Roadmap consolidated around the Pilot; T2/T5 item files (and four absorbed
   T3/T4 files) folded into this doc. Implementation started on branch `feat/pilot` per the
   approved M1–M5 plan (plan file: `~/.claude/plans/i-would-like-to-lively-deer.md`).
+- 2026-07-15 — M1 shipped (fd185cd + 1f645cb): pilot module (agenda/lease/journal/escalations,
+  SSE), PilotConductor + sentinel loop + host pairing, pilot skill, /pilot dashboard page.
+  M2 shipped (f221460): web push (VAPID, service worker, device management), system-journal
+  reporting from the host watchdog, startup resume, structured needs_user escalations,
+  2FA self-expiry, live escalation badges. Code gates green; the live overnight smoke test
+  (real board, host running, lid closed) is still pending — run it before starting M3.
