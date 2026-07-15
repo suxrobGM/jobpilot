@@ -24,16 +24,24 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
     private readonly Lock ctsGate = new();
     private CancellationTokenSource? iterationCts;
     private volatile bool driving;
+    private volatile bool eventStreamConnected;
+
+    /// <summary>Count of wake signals received; a test seam to observe event-driven wakes.</summary>
+    internal int WakeCount { get; private set; }
 
     /// <summary>Signals the loop to re-read the pairing (after enable/disable).</summary>
     public void WakeUp()
     {
+        WakeCount++;
         wake.Release();
         lock (ctsGate)
         {
             iterationCts?.Cancel();
         }
     }
+
+    /// <summary>Records whether the SSE event stream is currently connected, for /healthz. Set by the listener.</summary>
+    public void SetEventStreamConnected(bool connected) => eventStreamConnected = connected;
 
     /// <summary>Snapshot of pilot state for /healthz.</summary>
     public PilotStatus BuildStatus()
@@ -47,6 +55,7 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
             LastCycleAt = loop.LastCycleAt,
             LastCycleStatus = StatusName(loop.LastCycleStatus),
             ConsecutiveTimeouts = loop.ConsecutiveTimeouts,
+            Connected = eventStreamConnected,
         };
     }
 

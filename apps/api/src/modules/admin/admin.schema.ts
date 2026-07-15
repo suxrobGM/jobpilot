@@ -16,6 +16,18 @@ export const adminUserSchema = publicUserSchema.extend({
 
 export const adminUserPageSchema = paginatedResponseSchema(adminUserSchema);
 
+/** One Pilot in the admin fleet view: its owner, enablement, and cycle/escalation activity. */
+export const adminPilotSchema = z.object({
+  userEmail: z.string(),
+  profileId: z.uuid(),
+  enabled: z.boolean(),
+  lastCycleAt: z.date().nullable(),
+  cycleCount: z.number().int(),
+  openEscalations: z.number().int(),
+});
+
+export const adminPilotPageSchema = paginatedResponseSchema(adminPilotSchema);
+
 /** Platform-wide counters. `signupsPerDay.date` is UTC midnight of the bucketed day. */
 export const adminStatsSchema = z.object({
   users: z.object({

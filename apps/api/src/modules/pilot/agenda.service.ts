@@ -25,6 +25,11 @@ import {
   gatherApprovedPromotions,
   gatherFollowups,
 } from "./agenda-gather.outreach";
+import {
+  gatherBoardHealth,
+  gatherQueueDrain,
+  gatherQuietCandidates,
+} from "./agenda-gather.proactive";
 import { verifyGrant } from "./agenda-grant";
 import { toPilotLease } from "./pilot.mapper";
 import { PilotService } from "./pilot.service";
@@ -79,13 +84,15 @@ export class AgendaService {
       dueVenueList,
       interviewReplies,
       interviewPreps,
+      queue,
+      boardHealth,
     ] = await Promise.all([
       this.prisma.escalation.count({ where: { profileId, status: "open" } }),
       gatherAnsweredEscalations(this.prisma, profileId),
       this.prisma.pilotLease.count({
         where: { profileId, releasedAt: null, expiresAt: { gt: now } },
       }),
-      gatherApprovedJobs(this.prisma, profileId),
+      gatherApprovedJobs(this.prisma, profileId, config.parkedBoards),
       countAppliedToday(this.prisma, profileId, now, tz),
       gatherFinalizeCampaigns(this.prisma, profileId),
       gatherInbox(this.prisma, profileId),
@@ -96,6 +103,8 @@ export class AgendaService {
       dueVenues(this.prisma, profileId, config, now),
       gatherInterviewReplies(this.prisma, profileId),
       gatherInterviewPreps(this.prisma, profileId),
+      gatherQueueDrain(this.prisma, profileId),
+      gatherBoardHealth(this.prisma, profileId, config.parkedBoards),
     ]);
 
     // Warm-check join: attach same-company contacts to high-score jobs so the builder can offer a warm intro.
@@ -106,6 +115,14 @@ export class AgendaService {
       approvedJobs.length === 0
         ? await dueStandingQueries(this.prisma, profileId, config, now)
         : [];
+
+    // Quiet-agenda maintenance runs only when nothing apply/discover/queue-shaped is pending anyway,
+    // so gather its candidates only then - the builder still gates authoritatively.
+    const pipelineQuiet =
+      approvedJobs.length === 0 && dueQueries.length === 0 && queue.pendingCount === 0;
+    const quiet = pipelineQuiet
+      ? await gatherQuietCandidates(this.prisma, profileId, now)
+      : { strategyReviews: [], rescanSkipped: [], retryFailed: [] };
 
     // Idempotent per tz-day; fire-and-forget so a slow push never delays the agenda response.
     void writeDigestIfDue(
@@ -134,6 +151,11 @@ export class AgendaService {
       approvedPromotions,
       interviewReplies,
       interviewPreps,
+      queue,
+      boardHealth,
+      strategyReviews: quiet.strategyReviews,
+      rescanSkipped: quiet.rescanSkipped,
+      retryFailed: quiet.retryFailed,
     });
   }
 

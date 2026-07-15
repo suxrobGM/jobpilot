@@ -105,6 +105,42 @@ export interface AgendaPromoPost {
   body: string;
 }
 
+/** Oldest-first pending queue entries (≤5) plus the total pending count - the drain-queue predicate. */
+export interface AgendaQueueDrain {
+  entries: { id: string; url: string }[];
+  pendingCount: number;
+}
+
+/** A board whose most recent apply outcomes are a failure streak - a board-health warning candidate. */
+export interface AgendaBoardHealth {
+  board: string;
+  consecutiveFailures: number;
+  recentFailReasons: string[];
+  probeJob: { campaignId: string; jobKey: string; url: string } | null;
+}
+
+/** An in-progress campaign converting poorly (low qualified ratio) - a strategy-review candidate. */
+export interface AgendaStrategyReview {
+  campaignId: string;
+  query: string;
+  minScore: number | null;
+  board: string | null;
+  counts: { totalFound: number; qualified: number; applied: number; skipped: number };
+  topSkipReasons: string[];
+}
+
+/** A campaign with a backlog of skipped jobs worth re-scanning. */
+export interface AgendaRescanSkipped {
+  campaignId: string;
+  skippedCount: number;
+}
+
+/** A campaign with a backlog of failed jobs worth retrying. */
+export interface AgendaRetryFailed {
+  campaignId: string;
+  failedCount: number;
+}
+
 export interface AgendaInput {
   now: Date;
   config: PilotMandateConfig;
@@ -123,4 +159,10 @@ export interface AgendaInput {
   approvedPromotions: AgendaPromoPost[];
   interviewReplies: AgendaInterviewReply[];
   interviewPreps: AgendaInterviewPrep[];
+  queue: AgendaQueueDrain;
+  boardHealth: AgendaBoardHealth[];
+  // Quiet-agenda candidates: only surface when no apply/discover/queue work is queued.
+  strategyReviews: AgendaStrategyReview[];
+  rescanSkipped: AgendaRescanSkipped[];
+  retryFailed: AgendaRetryFailed[];
 }

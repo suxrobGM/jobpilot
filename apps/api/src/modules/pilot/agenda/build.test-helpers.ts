@@ -26,6 +26,11 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   approvedPromotions: [],
   interviewReplies: [],
   interviewPreps: [],
+  queue: { entries: [], pendingCount: 0 },
+  boardHealth: [],
+  strategyReviews: [],
+  rescanSkipped: [],
+  retryFailed: [],
   ...over,
 });
 
@@ -80,5 +85,23 @@ export const prep = (applicationId: string, over: Record<string, unknown> = {}) 
   jobTitle: "Engineer",
   jobUrl: "https://x/1",
   resumeId: "r1",
+  ...over,
+});
+
+export const boardHealth = (board: string, over: Record<string, unknown> = {}) => ({
+  board,
+  consecutiveFailures: 3,
+  recentFailReasons: ["captcha"],
+  probeJob: { campaignId: "c1", jobKey: "j1", url: "https://x/j1" },
+  ...over,
+});
+
+export const strategyReview = (campaignId: string, over: Record<string, unknown> = {}) => ({
+  campaignId,
+  query: "react",
+  minScore: 70,
+  board: "linkedin",
+  counts: { totalFound: 40, qualified: 4, applied: 1, skipped: 36 },
+  topSkipReasons: ["overqualified"],
   ...over,
 });

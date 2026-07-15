@@ -51,6 +51,13 @@ export interface Over {
   outreachSent?: number;
   outreachReplies?: number;
   promotionsPosted?: number;
+  // Proactive (M4) wiring:
+  pendingQueue?: { id: string; url: string }[];
+  pendingQueueCount?: number;
+  boardHealthJobs?: Record<string, unknown>[];
+  quietCampaigns?: Record<string, unknown>[];
+  actionMarkers?: { subjectId: string | null; detail: string }[];
+  skipReasonRows?: { skipReason: string | null; _count: { _all: number } }[];
 }
 
 /** A fake Prisma covering every query the agenda pipeline (expiry, gather, lease, digest) issues. */
@@ -117,10 +124,14 @@ export function makeAgendaDb(over: Over = {}) {
       },
     },
     job: {
-      findMany: async () => over.approvedJobs ?? [],
+      // Board-health scans applied/failed rows (status is an `in` filter); everything else is the approved gather.
+      findMany: async (a: { where: { status?: unknown } }) =>
+        a.where.status && typeof a.where.status === "object"
+          ? (over.boardHealthJobs ?? [])
+          : (over.approvedJobs ?? []),
       findFirst: async () => over.job ?? null,
       update: async () => ({}),
-      groupBy: async () => [],
+      groupBy: async () => over.skipReasonRows ?? [],
       count: async (a: { where: { status?: string } }) =>
         a.where.status === "failed"
           ? (over.jobsFailed ?? 0)
@@ -141,7 +152,16 @@ export function makeAgendaDb(over: Over = {}) {
             ? (over.interviewPrepApps ?? [])
             : (over.interviewReplyApps ?? []),
     },
-    campaign: { findMany: async () => over.finalizeCampaigns ?? [], update: async () => ({}) },
+    campaign: {
+      // Finalize gather filters on a `jobs` none-clause; the quiet-candidate gather does not - split on that.
+      findMany: async (a: { where: Record<string, unknown> }) =>
+        "jobs" in a.where ? (over.finalizeCampaigns ?? []) : (over.quietCampaigns ?? []),
+      update: async () => ({}),
+    },
+    queueEntry: {
+      findMany: async () => over.pendingQueue ?? [],
+      count: async () => over.pendingQueueCount ?? 0,
+    },
     emailMessage: {
       findMany: async () => over.inboxIds ?? [],
       count: async () => over.inboxCount ?? 0,
@@ -166,6 +186,8 @@ export function makeAgendaDb(over: Over = {}) {
     pilotJournalEntry: {
       // Default 1 so the digest guard treats it as already written and stays quiet in unrelated tests.
       count: async () => over.existingDigests ?? 1,
+      // Action-journal markers the quiet-candidate gather dedupes against.
+      findMany: async () => over.actionMarkers ?? [],
     },
     $transaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(db),
   };

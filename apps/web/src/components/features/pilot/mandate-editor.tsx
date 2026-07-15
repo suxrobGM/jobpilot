@@ -101,8 +101,10 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
         outreachFollowupDays: value.outreachFollowupDays,
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
-        // Boards aren't editable in M1 - preserve whatever the mandate already had.
+        // Boards/parked boards aren't editable here - preserve whatever the mandate already had
+        // (parkedBoards is written by the board-health escalation flow).
         boards: state.mandateConfig.boards,
+        parkedBoards: state.mandateConfig.parkedBoards,
         activeHours: value.activeHoursEnabled
           ? {
               start: value.activeHoursStart,

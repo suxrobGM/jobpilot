@@ -51,6 +51,12 @@ internal sealed class FakePilotEnvironment : IPilotEnvironment
         return Task.CompletedTask;
     }
 
+    public Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct)
+    {
+        Actions.Add("inject-skip");
+        return Task.CompletedTask;
+    }
+
     public Task<PilotWaitResult> AwaitSentinelAsync(TimeSpan timeout, CancellationToken ct)
     {
         Actions.Add("await");

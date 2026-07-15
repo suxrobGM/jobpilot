@@ -1,18 +1,31 @@
 // Category bases; job.apply is offset by matchScore so higher scores sort first, still under escalations.
 export const PRIORITY = {
   escalation: 1000,
+  boardHealth: 820,
   interviewReply: 850,
   jobBase: 800,
   interviewPrep: 750,
+  queueDrain: 720,
   outreachSend: 700,
   inboxTriage: 650,
   promoPost: 600,
   warmIntro: 550,
   discover: 500,
   followup: 400,
+  strategyReview: 350,
   promoCompose: 300,
+  rescanSkipped: 250,
+  retryFailed: 240,
   finalize: 100,
 } as const;
+
+/** Board health, strategy reviews, and skipped/failed sweeps are one-per-agenda so a cycle stays focused. */
+export const MAX_BOARD_HEALTH = 1;
+export const MAX_STRATEGY_REVIEWS = 1;
+export const MAX_RESCAN_SKIPPED = 1;
+export const MAX_RETRY_FAILED = 1;
+/** A board is unhealthy once its most recent apply outcomes are this many failures deep. */
+export const BOARD_HEALTH_MIN_FAILURES = 3;
 
 export const MAX_ITEMS = 10;
 /** A job needs a strong match before its company is worth a warm-intro detour. */

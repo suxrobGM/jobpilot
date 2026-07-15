@@ -62,15 +62,17 @@ public class PilotLoopTests
     }
 
     [Fact]
-    public async Task RunIteration_NudgesThenKills_WhenTheCycleTimesOut()
+    public async Task RunIteration_NudgesThenSkipsThenKills_WhenTheCycleTimesOut()
     {
         var env = new FakePilotEnvironment { RunningProvider = "claude" };
-        // No scripted results: both awaits time out.
+        // No scripted results: all three awaits time out, climbing the full ladder.
         var loop = new PilotLoop(env);
 
         await loop.RunIterationAsync(Claude, CancellationToken.None);
 
-        Assert.Equal(["inject-cycle", "await", "inject-nudge", "await", "stop"], env.Actions);
+        Assert.Equal(
+            ["inject-cycle", "await", "inject-nudge", "await", "inject-skip", "await", "stop"],
+            env.Actions);
         Assert.Equal(1, loop.ConsecutiveTimeouts);
     }
 
@@ -144,9 +146,9 @@ public class PilotLoopTests
         var env = new FakePilotEnvironment { RunningProvider = "claude" };
         var loop = new PilotLoop(env);
 
-        await loop.RunIterationAsync(Claude, CancellationToken.None); // both awaits time out -> nudge, then kill
+        await loop.RunIterationAsync(Claude, CancellationToken.None); // all awaits time out -> nudge, skip, kill
 
-        Assert.Equal([PilotLoop.NudgeReport, PilotLoop.KillReport], env.Reports);
+        Assert.Equal([PilotLoop.NudgeReport, PilotLoop.SkipReport, PilotLoop.KillReport], env.Reports);
     }
 
     [Fact]
@@ -184,8 +186,10 @@ public class PilotLoopTests
 
         await loop.RunIterationAsync(Claude, CancellationToken.None);
 
-        // A failing journal push must not abort the intervention.
-        Assert.Equal(["inject-cycle", "await", "inject-nudge", "await", "stop"], env.Actions);
+        // A failing journal push must not abort any intervention.
+        Assert.Equal(
+            ["inject-cycle", "await", "inject-nudge", "await", "inject-skip", "await", "stop"],
+            env.Actions);
         Assert.Equal(1, loop.ConsecutiveTimeouts);
     }
 
@@ -201,5 +205,74 @@ public class PilotLoopTests
         env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(30)));
         await loop.RunIterationAsync(Claude, CancellationToken.None); // completes
         Assert.Equal(0, loop.ConsecutiveTimeouts);
+    }
+
+    [Fact]
+    public async Task RunIteration_ClimbsNudgeSkipKill_WhenStallHeuristicsFireRepeatedly()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude" };
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.RepeatedOutput));
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.RepeatedOutput));
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.ErrorLoop));
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal(
+            ["inject-cycle", "await", "inject-nudge", "await", "inject-skip", "await", "stop"],
+            env.Actions);
+        Assert.Equal([PilotLoop.NudgeReport, PilotLoop.SkipReport, PilotLoop.KillReport], env.Reports);
+        Assert.Equal(1, loop.ConsecutiveTimeouts);
+    }
+
+    [Fact]
+    public async Task RunIteration_RecoversAtSkip_WhenTheSkipDirectiveUnsticksTheAgent()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude" };
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.ErrorLoop)); // first stall -> nudge
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.ErrorLoop)); // still stalled -> skip
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(45)));                 // skip unsticks it
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal(
+            ["inject-cycle", "await", "inject-nudge", "await", "inject-skip", "await", "sleep:45"],
+            env.Actions);
+        Assert.Equal([PilotLoop.NudgeReport, PilotLoop.SkipReport], env.Reports);
+        Assert.DoesNotContain("stop", env.Actions);
+        Assert.Equal(0, loop.ConsecutiveTimeouts);
+    }
+
+    [Fact]
+    public async Task RunIteration_RecoversAtNudge_WhenAStallFiresThenTheNudgeUnsticksTheAgent()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude" };
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.RepeatedOutput));
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(20)));
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal(["inject-cycle", "await", "inject-nudge", "await", "sleep:20"], env.Actions);
+        Assert.Equal([PilotLoop.NudgeReport], env.Reports);
+        Assert.DoesNotContain("inject-skip", env.Actions);
+    }
+
+    [Fact]
+    public async Task RunIteration_MixesTimeoutAndStall_OnTheSameLadder()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude" };
+        env.SentinelResults.Enqueue(PilotWaitResult.Timeout);                              // cap lapses -> nudge
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled(PilotStallReason.ErrorLoop));  // stalls -> skip
+        // third await times out -> kill
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal(
+            ["inject-cycle", "await", "inject-nudge", "await", "inject-skip", "await", "stop"],
+            env.Actions);
+        Assert.Equal(1, loop.ConsecutiveTimeouts);
     }
 }

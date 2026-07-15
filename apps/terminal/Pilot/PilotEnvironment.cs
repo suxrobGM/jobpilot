@@ -14,18 +14,21 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
     private static readonly TimeSpan StartupGrace = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan MismatchPoll = TimeSpan.FromSeconds(5);
 
-    // Matches the sentinel the pilot skill prints as its final line.
+    // Nudge and skip are graduated unstick directives; the skip forces the leased work failed so the cycle moves on.
     private const string NudgeCommand =
         "You appear stuck. Release your lease, journal the failure, and print the cycle sentinel.";
+    private const string SkipCommand =
+        "Stop the current action. Record the leased work as failed, journal why, and print the cycle sentinel.";
 
     private readonly SessionManager session;
     private readonly PilotStore store;
     private readonly PilotApiClient api;
     private readonly ILogger<PilotEnvironment> logger;
     private readonly SentinelParser parser = new();
+    private readonly StallDetector stall = new();
 
-    // Same output event TerminalHub taps; the parser is the only consumer, so a single-reader channel suffices.
-    private readonly Channel<PilotCycle> cycles = Channel.CreateUnbounded<PilotCycle>(
+    // Same output event TerminalHub taps; a single-reader channel merges sentinels and stalls into one await.
+    private readonly Channel<WaitSignal> signals = Channel.CreateUnbounded<WaitSignal>(
         new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 
     public PilotEnvironment(SessionManager session, PilotStore store, PilotApiClient api, ILogger<PilotEnvironment> logger)
@@ -46,7 +49,8 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
 
     public async Task InjectCycleAsync(PilotPairing pairing, CancellationToken ct)
     {
-        DrainCycles(); // Discard any sentinel buffered before this injection so the await only sees the new cycle.
+        DrainSignals();  // Discard any signal buffered before this injection so the await only sees the new cycle.
+        stall.Reset();
         var command = TerminalProviders.FormatSkillCommand(pairing.Provider, PilotSkill);
         var result = await session.Inject(command, pairing.Provider);
         if (result != InjectResult.Injected)
@@ -61,6 +65,15 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
         if (result != InjectResult.Injected)
         {
             logger.LogWarning("Pilot nudge inject was rejected ({Result}).", result);
+        }
+    }
+
+    public async Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct)
+    {
+        var result = await session.Inject(SkipCommand, pairing.Provider);
+        if (result != InjectResult.Injected)
+        {
+            logger.LogWarning("Pilot skip inject was rejected ({Result}).", result);
         }
     }
 
@@ -83,8 +96,10 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
         try
         {
             timeoutCts.CancelAfter(timeout);
-            var cycle = await cycles.Reader.ReadAsync(timeoutCts.Token);
-            return PilotWaitResult.Sentinel(cycle);
+            var signal = await signals.Reader.ReadAsync(timeoutCts.Token);
+            return signal.Cycle is { } cycle
+                ? PilotWaitResult.Sentinel(cycle)
+                : PilotWaitResult.Stalled(signal.Stall);
         }
         catch (OperationCanceledException)
         {
@@ -117,18 +132,41 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
 
     private void OnOutput(byte[] data)
     {
+        var sawSentinel = false;
         foreach (var cycle in parser.Feed(data))
         {
-            cycles.Writer.TryWrite(cycle);
+            sawSentinel = true;
+            signals.Writer.TryWrite(WaitSignal.Sentinel(cycle));
+        }
+
+        // A completed cycle clears stall evidence before the next one accumulates its own.
+        if (sawSentinel)
+        {
+            stall.Reset();
+            return;
+        }
+
+        var reason = stall.Feed(data, DateTimeOffset.UtcNow);
+        if (reason != PilotStallReason.None)
+        {
+            signals.Writer.TryWrite(WaitSignal.Stalled(reason));
         }
     }
 
-    private void DrainCycles()
+    private void DrainSignals()
     {
-        while (cycles.Reader.TryRead(out _))
+        while (signals.Reader.TryRead(out _))
         {
         }
     }
 
     public void Dispose() => session.Output -= OnOutput;
+
+    /// <summary>A sentinel cycle or a fired stall heuristic, merged onto one channel so the await sees whichever wins.</summary>
+    private readonly record struct WaitSignal(PilotCycle? Cycle, PilotStallReason Stall)
+    {
+        public static WaitSignal Sentinel(PilotCycle cycle) => new(cycle, PilotStallReason.None);
+
+        public static WaitSignal Stalled(PilotStallReason reason) => new(null, reason);
+    }
 }

@@ -110,6 +110,7 @@ The lease payload is enriched: `{escalationId, escalationKind, subjectType, subj
 - **`job`** → delegate `job-worker` apply mode as `job.apply` above with `answer` included in its input as `answers` (pre-provided user answers the worker reads instead of asking again); record the result exactly as `job.apply`.
 - **`email`** → the answer to an `interview.reply` approval. `"Send"` → send the drafted reply (recovered from the escalation `question`) via the email module (`POST /api/email/send {to,subject,body}`, adding `threadId` when the payload carries one, else send to `from`); free-text answer → treat it as availability/corrections, adjust the draft, then send; `"Skip"` → journal the skip. Journal the sent reply.
 - **`outreach`** → `"Send"` → send the referenced draft (`subjectId` = messageId) exactly as `outreach.send`; `"Skip"` → record result `skipped`.
+- **`board`** → the answer to a `board.health` choice. `"Park board"` → `GET /api/pilot`, append the board (`subjectId`) to mandate `config.parkedBoards`, `PUT /api/pilot/mandate` with the updated config (user-approved change - allowed); `"Keep trying"` → journal only.
 
 ### `search.discover`
 
@@ -131,6 +132,56 @@ NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CID" \
   -H 'content-type: application/json' -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
+
+### `queue.drain`
+
+Payload `{entries: [{id, url}], pendingCount}` - user-queued URLs. Resolve the target campaign: the profile's most recent `in_progress` auto-apply campaign, else create one (query `"queued urls"`, primary resume, exactly as `search.discover` creates one):
+
+```bash
+CID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=in_progress" \
+  | jq -r '[.[] | select(.source=="auto-apply")] | sort_by(.startedAt) | last | .campaignId // ""')
+```
+
+For each entry (≤5): dedupe via `GET /api/applied/check`, then delegate ONE `job-worker` score mode (input as the `apply` skill's batch score - `campaignId:$CID`, `jobKey:<entry id>`, `url`) to score + save the Job. One worker at a time. Scored jobs enter the normal `job.apply` pipeline in later cycles - **do not apply here**. Queue entries auto-consume server-side when their job reaches a terminal result - never mark them manually. Journal: "Scored 4 queued jobs - 3 eligible."
+
+### `board.health`
+
+Payload `{board, consecutiveFailures, recentFailReasons, probeJob}` - the board is failing repeatedly. Run ONE diagnostic probe in careful mode: log in per `../../shared/auth.md` (this alone often reveals the cause - expired login, changed flow, bot wall). If `probeJob` is present, delegate ONE `job-worker` apply for it with full attention. Then:
+
+- Probe succeeds (login ok / job applied) → journal "Board <board> healthy again - probe applied/logged in cleanly." Done; the server's streak resets via the successful result.
+- Probe fails → POST an escalation and journal it:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/escalations" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg sid "$BOARD" --arg q "$BOARD keeps failing ($REASONS). Park it?" \
+    --arg dl "$JOBPILOT_WEB/pilot" \
+    '{kind:"choice", subjectType:"board", subjectId:$sid, question:$q, options:["Park board","Keep trying"], deepLink:$dl}')"
+```
+
+The `board` answer is handled in `escalation.answered`.
+
+### `campaign.strategyReview`
+
+Payload `{campaignId, query, config, counts, topSkipReasons}`. Quiet-agenda deep think, **no browser**. Reason over the yield: is the query too broad/narrow, `minScore` mistuned, skip reasons clustered? Decide ONE concrete adjustment (rewrite query and/or shift `minScore` by at most ±10 within [50,95]). Apply it and record the reasoning as a campaign event:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CID" \
+  -H 'content-type: application/json' -d "$(jq -n --argjson config "$UPDATED_CONFIG" '{config:$config}')"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CID/events" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg b "$BEFORE" --arg a "$AFTER" --arg r "$REASONING" '{type:"strategy", payload:{before:$b, after:$a, reasoning:$r}}')"
+```
+
+Journal with detail `{type:"strategyReview"}` (see step 5): "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65." The `detail.type` marker is load-bearing - the server dedupes reviews on it. Larger changes than the bounds → escalate a `choice` instead of applying.
+
+### `job.rescanSkipped`
+
+Payload `{campaignId, skippedCount}`. Run the `rescan-skipped` skill's procedure bounded to this campaign (reference it - do not duplicate its promotion rules). Journal with detail `{type:"rescanSkipped"}`: "Rescanned 8 skipped jobs - 2 promoted to approved."
+
+### `job.retryFailed`
+
+Payload `{campaignId, failedCount}`. Follow `auto-apply`'s retry-failed mode for this campaign, but score/queue only - flip retryable `failed` jobs back to `approved` (`PATCH` each job `{status:"approved"}`) so normal `job.apply` cycles retry them; do **not** apply this cycle. Retryable = transient `failReason`s (timeouts, 5xx, session lost), never eligibility skips. Journal with detail `{type:"retryFailed"}`.
 
 ### `inbox.triage`
 
@@ -217,6 +268,13 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 ```
 
 Write one `action` entry, human and specific ("Applied to Staff TypeScript Engineer at Acme - score 87.", "Discovered 14 jobs for 'senior typescript remote', 9 scored ≥70.", "Parked Stripe application - needs your salary answer."), and one `cycle` entry summarizing the whole cycle. Both carry `cycleId`; the action entry also carries `subjectType`/`subjectId`.
+
+An action entry may also carry a `detail` object (the entries schema allows it) - required for the load-bearing markers on `campaign.strategyReview` / `job.rescanSkipped` / `job.retryFailed`:
+
+```bash
+jq -n --arg cid "$CYCLE_ID" --arg sid "$CID" --arg a "$NARRATIVE" --argjson detail '{"type":"strategyReview"}' \
+  '{cycleId:$cid, entries:[{kind:"action", subjectType:"campaign", subjectId:$sid, summary:$a, detail:$detail}]}'
+```
 
 If the worker returned `observations`, append each to the **same** journal POST as an extra entry `{kind:"observation", summary:<text>, subjectType:"board", subjectId:<board domain>}` - durable board/site facts only, not per-job trivia.
 

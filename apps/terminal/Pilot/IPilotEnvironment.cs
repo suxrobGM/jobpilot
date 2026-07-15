@@ -6,15 +6,21 @@ public enum PilotWaitOutcome
     Sentinel,
     Timeout,
     SessionExited,
+
+    /// <summary>A deterministic stall heuristic fired before the sentinel cap lapsed.</summary>
+    StallDetected,
 }
 
 /// <summary>Result of awaiting a cycle sentinel.</summary>
-public readonly record struct PilotWaitResult(PilotWaitOutcome Outcome, PilotCycle Cycle = default)
+public readonly record struct PilotWaitResult(
+    PilotWaitOutcome Outcome, PilotCycle Cycle = default, PilotStallReason StallReason = PilotStallReason.None)
 {
     public static readonly PilotWaitResult Timeout = new(PilotWaitOutcome.Timeout);
     public static readonly PilotWaitResult Exited = new(PilotWaitOutcome.SessionExited);
 
     public static PilotWaitResult Sentinel(PilotCycle cycle) => new(PilotWaitOutcome.Sentinel, cycle);
+
+    public static PilotWaitResult Stalled(PilotStallReason reason) => new(PilotWaitOutcome.StallDetected, default, reason);
 }
 
 /// <summary>Side effects the Pilot loop drives, abstracted from the real PTY so the state machine is testable.</summary>
@@ -34,6 +40,9 @@ public interface IPilotEnvironment
 
     /// <summary>Injects the one-shot unstick nudge.</summary>
     Task InjectNudgeAsync(PilotPairing pairing, CancellationToken ct);
+
+    /// <summary>Injects the skip directive that forces the leased work failed after a nudge fails to unstick.</summary>
+    Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct);
 
     /// <summary>Waits for the next cycle sentinel, the timeout, or the session exiting.</summary>
     Task<PilotWaitResult> AwaitSentinelAsync(TimeSpan timeout, CancellationToken ct);

@@ -1,9 +1,18 @@
-import { adminUserQuerySchema, updateUserRoleSchema } from "@jobpilot/contracts/admin";
+import {
+  adminPilotQuerySchema,
+  adminUserQuerySchema,
+  updateUserRoleSchema,
+} from "@jobpilot/contracts/admin";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { requireRole, requireRoleOn } from "@/common/middleware";
-import { adminStatsSchema, adminUserPageSchema, adminUserSchema } from "./admin.schema";
+import {
+  adminPilotPageSchema,
+  adminStatsSchema,
+  adminUserPageSchema,
+  adminUserSchema,
+} from "./admin.schema";
 import { AdminService } from "./admin.service";
 
 const svc = container.resolve(AdminService);
@@ -21,6 +30,15 @@ export const adminController = new Elysia({
       summary: "Platform stats",
       description:
         "Returns platform-wide counters: users, content volumes, application status breakdown, top boards, and a 30-day signup series.",
+    },
+  })
+  .get("/pilots", ({ query }) => svc.listPilots(query), {
+    query: adminPilotQuerySchema,
+    response: adminPilotPageSchema,
+    detail: {
+      summary: "List Pilots (fleet view)",
+      description:
+        "Returns a page of Pilots across all users: owner email, profile id, enablement, last cycle time, cycle count, and open-escalation count.",
     },
   })
   .get("/users", ({ user, query }) => svc.listUsers(user, query), {

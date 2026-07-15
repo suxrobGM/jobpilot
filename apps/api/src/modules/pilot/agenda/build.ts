@@ -10,6 +10,13 @@ import {
   buildWarmIntroItems,
 } from "./items-jobs";
 import { buildFollowupItems, buildInboxItem, buildOutreachSendItems } from "./items-outreach";
+import {
+  buildBoardHealthItems,
+  buildQueueDrainItem,
+  buildRescanSkippedItems,
+  buildRetryFailedItems,
+  buildStrategyReviewItems,
+} from "./items-proactive";
 import { buildPromoComposeItems, buildPromoPostItems } from "./items-promo";
 import type { AgendaInput } from "./types";
 
@@ -23,11 +30,12 @@ function idleSleepSeconds({ now, config }: AgendaInput, within: boolean): number
  * Compile a prioritized agenda from already-fetched inputs. Pure: no I/O, so the
  * ordering, cap-suppression, budget, and sleep rules are unit-testable.
  *
- * Priority: escalation.answered > interview.reply > job.apply (by matchScore) >
- * interview.prep > outreach.send > inbox.triage > promo.post > outreach.warmIntro >
- * search.discover > outreach.followup > promo.compose > campaign.finalize. Outside
- * active hours only escalation/finalize items are emitted, and the agent sleeps until
- * the window opens.
+ * Priority: escalation.answered > interview.reply > board.health > job.apply (by matchScore) >
+ * interview.prep > queue.drain > outreach.send > inbox.triage > promo.post > outreach.warmIntro >
+ * search.discover > outreach.followup > campaign.strategyReview > promo.compose > job.rescanSkipped >
+ * job.retryFailed > campaign.finalize. The strategyReview/rescan/retry maintenance kinds surface only
+ * on a quiet agenda (no apply/discover/queue work). Outside active hours only escalation/finalize items
+ * are emitted, and the agent sleeps until the window opens.
  */
 export function buildAgenda(input: AgendaInput): AgendaResponse {
   const { now, config } = input;
@@ -39,9 +47,13 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
   const items: AgendaItem[] = [...buildEscalationItems(input.answeredEscalations)];
   if (within && !capReached) items.push(...buildJobApplyItems(input.approvedJobs));
   if (within) {
+    // Board health outranks apply work: a failing board should be probed before more attempts pile on.
+    items.push(...buildBoardHealthItems(input.boardHealth));
     // Interview work is gated like the rest - replying at 3am reads as a bot.
     items.push(...buildInterviewReplyItems(input.interviewReplies));
     items.push(...buildInterviewPrepItems(input.interviewPreps));
+    // User-curated URLs are proactive apply work, ranked just under the scored apply queue.
+    items.push(...buildQueueDrainItem(input.queue));
     items.push(...buildWarmIntroItems(input.approvedJobs));
     items.push(...buildOutreachSendItems(input.approvedOutreach, sendHeadroom));
     items.push(...buildInboxItem(input.inbox));
@@ -51,6 +63,16 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
       items.push(...buildDiscoverItems(input.dueQueries, config));
     if (sendHeadroom > 0) items.push(...buildFollowupItems(input.followups));
     items.push(...buildPromoComposeItems(input.dueVenues));
+
+    // Quiet-agenda maintenance surfaces only when no apply / discover / queue work is queued.
+    const busy = items.some(
+      (i) => i.kind === "job.apply" || i.kind === "search.discover" || i.kind === "queue.drain",
+    );
+    if (!busy) {
+      items.push(...buildStrategyReviewItems(input.strategyReviews));
+      items.push(...buildRescanSkippedItems(input.rescanSkipped));
+      items.push(...buildRetryFailedItems(input.retryFailed));
+    }
   }
   items.push(...buildFinalizeItems(input.finalizeCampaigns));
 

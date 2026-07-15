@@ -31,6 +31,12 @@ export const AGENDA_ITEM_KINDS = [
   "promo.post",
   "interview.reply",
   "interview.prep",
+  // M4 proactive work + board health.
+  "queue.drain",
+  "board.health",
+  "campaign.strategyReview",
+  "job.rescanSkipped",
+  "job.retryFailed",
 ] as const;
 export const agendaItemKindSchema = z.enum(AGENDA_ITEM_KINDS);
 
@@ -43,6 +49,8 @@ export const AGENDA_SUBJECT_TYPES = [
   "promotion",
   "application",
   "email",
+  "queue",
+  "board",
 ] as const;
 export const agendaSubjectTypeSchema = z.enum(AGENDA_SUBJECT_TYPES);
 
@@ -102,6 +110,8 @@ export const pilotMandateConfigSchema = z.object({
   outreachFollowupDays: z.number().int().default(5),
   // Full default so a missing key still yields a usable promotion block (zod does not re-parse defaults).
   promotion: pilotPromotionConfigSchema.default({ venues: [], autonomy: "review" }),
+  // Boards the user agreed to park; agenda excludes their job.apply items and standing queries.
+  parkedBoards: z.array(z.string()).default([]),
 });
 
 export const updatePilotMandateSchema = z.object({

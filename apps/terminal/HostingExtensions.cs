@@ -38,6 +38,8 @@ public static class HostingExtensions
         services.AddSingleton<IPilotEnvironment, PilotEnvironment>();
         services.AddSingleton<PilotConductor>();
         services.AddHostedService(sp => sp.GetRequiredService<PilotConductor>());
+        services.AddSingleton<PilotEventListener>();
+        services.AddHostedService(sp => sp.GetRequiredService<PilotEventListener>());
         services.ConfigureHttpJsonOptions(c =>
             c.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
 

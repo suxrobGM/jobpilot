@@ -1,4 +1,4 @@
-import type { AdminUserQuery } from "@jobpilot/contracts/admin";
+import type { AdminPilotQuery, AdminUserQuery } from "@jobpilot/contracts/admin";
 import { type AssignableRole, hasRole } from "@jobpilot/contracts/role";
 import { singleton } from "tsyringe";
 import type { AuthUser } from "@/common/auth";
@@ -103,6 +103,44 @@ export class AdminService {
         timelineStart,
       ),
     };
+  }
+
+  /** The Pilot fleet: one row per PilotState, joined to its owner's email and open-escalation count. */
+  async listPilots(query: AdminPilotQuery) {
+    const { page, limit } = query;
+    const [rows, total] = await Promise.all([
+      this.prisma.pilotState.findMany({
+        orderBy: [{ lastCycleAt: { sort: "desc", nulls: "last" } }, { profileId: "asc" }],
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          profileId: true,
+          enabled: true,
+          lastCycleAt: true,
+          cycleCount: true,
+          profile: { select: { user: { select: { email: true } } } },
+        },
+      }),
+      this.prisma.pilotState.count(),
+    ]);
+
+    const profileIds = rows.map((row) => row.profileId);
+    const escalationRows = await this.prisma.escalation.groupBy({
+      by: ["profileId"],
+      where: { profileId: { in: profileIds }, status: "open" },
+      _count: { _all: true },
+    });
+    const openByProfile = new Map(escalationRows.map((row) => [row.profileId, row._count._all]));
+
+    const items = rows.map((row) => ({
+      userEmail: row.profile.user.email,
+      profileId: row.profileId,
+      enabled: row.enabled,
+      lastCycleAt: row.lastCycleAt,
+      cycleCount: row.cycleCount,
+      openEscalations: openByProfile.get(row.profileId) ?? 0,
+    }));
+    return createPaginatedResponse(items, { page, limit, total });
   }
 
   async listUsers(actor: AuthUser, query: AdminUserQuery) {

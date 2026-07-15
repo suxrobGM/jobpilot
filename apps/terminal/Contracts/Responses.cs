@@ -60,6 +60,9 @@ public sealed record PilotStatus
 
     /// <summary>Consecutive watchdog kills; reset by a completed cycle.</summary>
     public required int ConsecutiveTimeouts { get; init; }
+
+    /// <summary>Whether the pilot event stream (SSE wake channel) is connected. Additive; absent on older hosts.</summary>
+    public bool Connected { get; init; }
 }
 
 /// <summary>Result of a runtime update request.</summary>

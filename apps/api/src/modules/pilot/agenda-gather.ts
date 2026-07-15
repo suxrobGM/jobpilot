@@ -48,36 +48,41 @@ export async function gatherAnsweredEscalations(
     }));
 }
 
-/** Approved jobs of in-progress campaigns, each carrying its campaign's resumeId. */
+/** Approved jobs of in-progress campaigns, each carrying its campaign's resumeId. Parked boards excluded. */
 export async function gatherApprovedJobs(
   prisma: PrismaClient,
   profileId: string,
+  parkedBoards: string[] = [],
 ): Promise<AgendaApprovedJob[]> {
   const rows = await prisma.job.findMany({
     where: { status: "approved", campaign: { profileId, status: "in_progress" } },
     orderBy: { matchScore: "desc" },
     include: { campaign: { select: { config: true } } },
   });
+  // A parked board's jobs are excluded here; null-board jobs are never parked (park keys on board name).
+  const parked = new Set(parkedBoards);
   // Jobs of the same campaign share one config; parse each campaign's JSON at most once.
   const configByCampaign = new Map<string, CampaignConfig>();
-  return rows.map((job) => {
-    let cfg = configByCampaign.get(job.campaignId);
-    if (!cfg) {
-      cfg = JSON.parse(job.campaign.config) as CampaignConfig;
-      configByCampaign.set(job.campaignId, cfg);
-    }
-    return {
-      campaignId: job.campaignId,
-      key: job.key,
-      title: job.title,
-      url: job.url,
-      board: job.board,
-      digest: job.digest,
-      matchScore: job.matchScore,
-      resumeId: cfg.resumeId,
-      company: job.company,
-    };
-  });
+  return rows
+    .filter((job) => !(job.board && parked.has(job.board)))
+    .map((job) => {
+      let cfg = configByCampaign.get(job.campaignId);
+      if (!cfg) {
+        cfg = JSON.parse(job.campaign.config) as CampaignConfig;
+        configByCampaign.set(job.campaignId, cfg);
+      }
+      return {
+        campaignId: job.campaignId,
+        key: job.key,
+        title: job.title,
+        url: job.url,
+        board: job.board,
+        digest: job.digest,
+        matchScore: job.matchScore,
+        resumeId: cfg.resumeId,
+        company: job.company,
+      };
+    });
 }
 
 /** In-progress campaigns with no active jobs left - ready to finalize. */
@@ -155,8 +160,11 @@ export async function dueStandingQueries(
     }
   }
 
+  const parked = new Set(config.parkedBoards);
   const due: AgendaDueQuery[] = [];
   for (const sq of config.standingQueries) {
+    // A standing query targeting a parked board is suppressed until the user un-parks it.
+    if (sq.board && parked.has(sq.board)) continue;
     const last = latest.get(sq.query);
     const cadenceMs = sq.cadenceHours * 60 * 60 * 1000;
     // Due when never run, or the last run released longer ago than the cadence. An active
