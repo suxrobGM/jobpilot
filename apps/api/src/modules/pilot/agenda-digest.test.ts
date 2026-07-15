@@ -1,7 +1,7 @@
-// The morning-digest writer in isolation via writeDigestIfDue with fake Prisma/Pilot/Push deps - no
+﻿// The morning-digest writer in isolation via writeDigestIfDue with fake Prisma/Pilot/Push deps - no
 // database. Loading the digest module transitively loads `@/env`, satisfied by the dummy env.
 import { pilotMandateConfigSchema } from "@jobpilot/contracts/pilot";
-import { writeDigestIfDue } from "./agenda.digest";
+import { writeDigestIfDue } from "./agenda-digest";
 import { makeAgendaDeps, type Over } from "./pilot.test-helpers";
 import { describe, expect, it } from "bun:test";
 

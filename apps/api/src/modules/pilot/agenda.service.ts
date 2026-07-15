@@ -1,4 +1,4 @@
-import {
+﻿import {
   type PilotMandateConfig,
   pilotMandateConfigSchema,
   type ReleasePilotLeaseInput,
@@ -8,8 +8,8 @@ import { conflict, findOwned } from "@/common/errors";
 import { type PilotLease, PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { buildAgenda } from "./agenda/build";
-import { writeDigestIfDue } from "./agenda.digest";
-import { jobRef, parsePayload, revertJobToApproved, runExpiry } from "./agenda.expiry";
+import { writeDigestIfDue } from "./agenda-digest";
+import { jobRef, parsePayload, revertJobToApproved, runExpiry } from "./agenda-expiry";
 import {
   attachWarmContacts,
   dueStandingQueries,
@@ -17,14 +17,14 @@ import {
   gatherApprovedJobs,
   gatherFinalizeCampaigns,
   gatherInbox,
-} from "./agenda.gather";
-import { verifyGrant } from "./agenda.grant";
+} from "./agenda-gather";
 import {
   dueVenues,
   gatherApprovedOutreach,
   gatherApprovedPromotions,
   gatherFollowups,
 } from "./agenda-gather.outreach";
+import { verifyGrant } from "./agenda-grant";
 import { toPilotLease } from "./pilot.mapper";
 import { PilotService } from "./pilot.service";
 import { countAppliedToday, countSentToday } from "./pilot.stats";
@@ -130,7 +130,7 @@ export class AgendaService {
     });
   }
 
-  // ── Leasing ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Leasing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async lease(profileId: string, itemId: string) {
     const agenda = await this.compile(profileId);

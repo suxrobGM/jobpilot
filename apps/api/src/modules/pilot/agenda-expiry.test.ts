@@ -1,9 +1,9 @@
-// Exercises the lazy expiry sweep in isolation via runExpiry with a fake Prisma + CampaignJobService,
+﻿// Exercises the lazy expiry sweep in isolation via runExpiry with a fake Prisma + CampaignJobService,
 // so no database is touched. Importing the campaign service transitively loads `@/env`, satisfied by
 // the local .env / ci.yml dummy env.
 
 import type { PrismaClient } from "@/generated/prisma/client";
-import { runExpiry } from "./agenda.expiry";
+import { runExpiry } from "./agenda-expiry";
 import type { Over } from "./pilot.test-helpers";
 import { makeAgendaDb, makeCampaignJobs } from "./pilot.test-helpers";
 import { describe, expect, it } from "bun:test";
