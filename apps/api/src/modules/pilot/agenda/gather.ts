@@ -3,7 +3,7 @@ import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { parseCampaignConfig } from "./campaign-config";
-import { WARM_INTRO_MIN_SCORE } from "./constants";
+import { GATHER_CAP, WARM_INTRO_MIN_SCORE } from "./constants";
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
@@ -28,16 +28,26 @@ export async function gatherAnsweredEscalations(
   prisma: PrismaClient,
   profileId: string,
 ): Promise<AgendaEscalation[]> {
-  const [answered, leases] = await Promise.all([
-    prisma.escalation.findMany({
-      where: { profileId, status: "answered" },
-      orderBy: { answeredAt: "asc" },
-    }),
-    prisma.pilotLease.findMany({
-      where: { profileId, subjectType: "escalation" },
-      select: { subjectId: true },
-    }),
-  ]);
+  const answered = await prisma.escalation.findMany({
+    where: { profileId, status: "answered" },
+    orderBy: { answeredAt: "asc" },
+    take: GATHER_CAP,
+    select: {
+      id: true,
+      kind: true,
+      question: true,
+      subjectType: true,
+      subjectId: true,
+      answer: true,
+    },
+  });
+  if (answered.length === 0) return [];
+  // Only the answered ids can be consumed, so scope the lease lookup to them.
+  const leases = await prisma.pilotLease.findMany({
+    where: { profileId, subjectType: "escalation", subjectId: { in: answered.map((e) => e.id) } },
+    take: GATHER_CAP,
+    select: { subjectId: true },
+  });
   const consumed = new Set(leases.map((l) => l.subjectId));
   return answered
     .filter((e) => !consumed.has(e.id))
@@ -60,7 +70,18 @@ export async function gatherApprovedJobs(
   const rows = await prisma.job.findMany({
     where: { status: "approved", campaign: { profileId, status: "in_progress" } },
     orderBy: { matchScore: "desc" },
-    include: { campaign: { select: { config: true } } },
+    take: GATHER_CAP,
+    select: {
+      campaignId: true,
+      key: true,
+      title: true,
+      url: true,
+      board: true,
+      digest: true,
+      matchScore: true,
+      company: true,
+      campaign: { select: { config: true } },
+    },
   });
   // A parked board's jobs are excluded here; null-board jobs are never parked (park keys on board name).
   const parked = new Set(parkedBoards);
@@ -152,7 +173,13 @@ export async function dueStandingQueries(
   if (config.standingQueries.length === 0) return [];
   // One read for every discovery lease, reduced to the latest per query - avoids an N+1 findFirst.
   const leases = await prisma.pilotLease.findMany({
-    where: { profileId, kind: "search.discover" },
+    where: {
+      profileId,
+      kind: "search.discover",
+      subjectId: { in: config.standingQueries.map((q) => q.query) },
+    },
+    orderBy: { grantedAt: "desc" },
+    take: GATHER_CAP,
     select: { subjectId: true, grantedAt: true, releasedAt: true },
   });
   const latest = new Map<string, { grantedAt: Date; releasedAt: Date | null }>();

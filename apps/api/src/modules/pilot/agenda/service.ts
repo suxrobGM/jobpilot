@@ -214,11 +214,14 @@ export class AgendaService {
   }
 
   async heartbeat(profileId: string, id: string) {
-    await findOwned(
-      (where) => this.prisma.pilotLease.findFirst({ where, select: { id: true } }),
+    const existing = await findOwned(
+      (where) =>
+        this.prisma.pilotLease.findFirst({ where, select: { id: true, releasedAt: true } }),
       { id, profileId },
       "Lease",
     );
+    // A released lease must not get its TTL resurrected by a late worker heartbeat.
+    if (existing.releasedAt) throw conflict("Lease is already released.");
     const lease = await this.prisma.pilotLease.update({
       where: { id },
       data: { heartbeatAt: new Date(), expiresAt: new Date(Date.now() + LEASE_TTL_MS) },
@@ -232,6 +235,8 @@ export class AgendaService {
       { id, profileId },
       "Lease",
     );
+    // A released lease is terminal; a second release must not overwrite its recorded outcome.
+    if (existing.releasedAt) throw conflict("Lease is already released.");
 
     const parsed = parsePayload(existing.payload);
     const { campaignId, jobKey } = jobRef(parsed, existing.subjectId);
@@ -246,7 +251,7 @@ export class AgendaService {
 
     const lease = await this.prisma.pilotLease.update({
       where: { id },
-      data: { releasedAt: existing.releasedAt ?? new Date(), outcome: body.outcome, payload },
+      data: { releasedAt: new Date(), outcome: body.outcome, payload },
     });
     return toPilotLease(lease);
   }

@@ -67,3 +67,26 @@ describe("AgendaService leasing", () => {
     expect(svc.lease("p1", "promo.post:P1")).rejects.toThrow();
   });
 });
+
+describe("AgendaService lease lifecycle", () => {
+  it("409s a heartbeat on an already-released lease and records no update", async () => {
+    const { svc, rec } = service({ activeLease: { id: "L1", releasedAt: new Date() } });
+    await expect(svc.heartbeat("p1", "L1")).rejects.toThrow();
+    expect(rec.leaseUpdates).toHaveLength(0);
+  });
+
+  it("bumps heartbeatAt and expiresAt on a live lease", async () => {
+    const { svc, rec } = service({ activeLease: { id: "L1", releasedAt: null } });
+    await svc.heartbeat("p1", "L1");
+    expect(rec.leaseUpdates[0]?.data).toHaveProperty("heartbeatAt");
+    expect(rec.leaseUpdates[0]?.data).toHaveProperty("expiresAt");
+  });
+
+  it("409s a release on an already-released lease and records no update", async () => {
+    const { svc, rec } = service({
+      activeLease: { id: "L1", releasedAt: new Date(), payload: "{}" },
+    });
+    await expect(svc.release("p1", "L1", { outcome: "done" })).rejects.toThrow();
+    expect(rec.leaseUpdates).toHaveLength(0);
+  });
+});

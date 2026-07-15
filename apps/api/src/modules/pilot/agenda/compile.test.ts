@@ -293,7 +293,7 @@ describe("AgendaService quiet-agenda candidates", () => {
   it("emits strategyReview with counts and top skip reasons for a poorly-converting campaign", async () => {
     const agenda = await service({
       quietCampaigns: [laggard],
-      skipReasonRows: [{ skipReason: "overqualified", _count: { _all: 20 } }],
+      skipReasonRows: [{ campaignId: "c1", skipReason: "overqualified", _count: { _all: 20 } }],
     }).compile("p1");
     const item = agenda.items.find((i) => i.kind === "campaign.strategyReview");
     expect(item?.payload).toMatchObject({

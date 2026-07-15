@@ -1,6 +1,7 @@
 import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
 import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { GATHER_CAP } from "./constants";
 import type {
   AgendaFollowup,
   AgendaOutreachSend,
@@ -16,7 +17,15 @@ export async function gatherApprovedOutreach(
   const rows = await prisma.outreachMessage.findMany({
     where: { profileId, channel: "email", status: "approved", contact: { email: { not: null } } },
     orderBy: { createdAt: "asc" },
-    include: { contact: { select: { id: true, name: true, email: true } } },
+    take: GATHER_CAP,
+    select: {
+      id: true,
+      campaignId: true,
+      contactId: true,
+      subject: true,
+      body: true,
+      contact: { select: { name: true, email: true } },
+    },
   });
   return rows.map((m) => ({
     campaignId: m.campaignId ?? "",
@@ -40,7 +49,16 @@ export async function gatherFollowups(
   const candidates = await prisma.outreachMessage.findMany({
     where: { profileId, channel: "email", repliedAt: null, sentAt: { not: null, lt: cutoff } },
     orderBy: { sentAt: "asc" },
-    include: { contact: { select: { id: true, name: true, email: true } } },
+    take: GATHER_CAP,
+    select: {
+      id: true,
+      campaignId: true,
+      contactId: true,
+      subject: true,
+      sentAt: true,
+      createdAt: true,
+      contact: { select: { name: true, email: true } },
+    },
   });
   if (candidates.length === 0) return [];
 
@@ -100,8 +118,9 @@ export async function dueVenues(
   const venues = config.promotion.venues;
   if (venues.length === 0) return [];
   const posts = await prisma.promotionPost.findMany({
-    where: { profileId, status: { not: "declined" } },
+    where: { profileId, status: { not: "declined" }, venue: { in: venues.map((v) => v.venue) } },
     orderBy: { createdAt: "desc" },
+    take: GATHER_CAP,
     select: { venue: true, createdAt: true },
   });
   const newestByVenue = new Map<string, Date>();

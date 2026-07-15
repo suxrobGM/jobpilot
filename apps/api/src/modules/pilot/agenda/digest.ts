@@ -40,6 +40,7 @@ function composeDigestSummary(c: DigestCounts): string {
 /**
  * Compose one "digest" journal entry summarizing the last 24h, once per tz-day after
  * 07:00 local. Guarded by a single indexed count so the common path is one cheap query.
+ * Fire-and-forget at the call site, so it swallows its own errors and never rejects.
  */
 export async function writeDigestIfDue(
   { prisma, pilot, push }: DigestDeps,
@@ -48,56 +49,60 @@ export async function writeDigestIfDue(
   config: PilotMandateConfig,
   openEscalations: number,
 ): Promise<void> {
-  const tz = config.activeHours?.tz;
-  if (minutesOfDay(now, tz) < DIGEST_HOUR * 60) return;
+  try {
+    const tz = config.activeHours?.tz;
+    if (minutesOfDay(now, tz) < DIGEST_HOUR * 60) return;
 
-  const dayStart = startOfDayInTz(now, tz);
-  const alreadyWritten = await prisma.pilotJournalEntry.count({
-    where: { profileId, kind: "digest", createdAt: { gte: dayStart } },
-  });
-  if (alreadyWritten > 0) return;
+    const dayStart = startOfDayInTz(now, tz);
+    const alreadyWritten = await prisma.pilotJournalEntry.count({
+      where: { profileId, kind: "digest", createdAt: { gte: dayStart } },
+    });
+    if (alreadyWritten > 0) return;
 
-  const windowStart = new Date(now.getTime() - DAY_MS);
-  const [
-    applicationsCreated,
-    jobsFailed,
-    jobsSkipped,
-    outreachSent,
-    outreachReplies,
-    promotionsPosted,
-  ] = await Promise.all([
-    prisma.application.count({ where: { profileId, appliedAt: { gte: windowStart } } }),
-    prisma.job.count({
-      where: { status: "failed", campaign: { profileId }, createdAt: { gte: windowStart } },
-    }),
-    prisma.job.count({
-      where: { status: "skipped", campaign: { profileId }, createdAt: { gte: windowStart } },
-    }),
-    prisma.outreachMessage.count({ where: { profileId, sentAt: { gte: windowStart } } }),
-    prisma.outreachMessage.count({ where: { profileId, repliedAt: { gte: windowStart } } }),
-    prisma.promotionPost.count({
-      where: { profileId, status: "posted", postedAt: { gte: windowStart } },
-    }),
-  ]);
+    const windowStart = new Date(now.getTime() - DAY_MS);
+    const [
+      applicationsCreated,
+      jobsFailed,
+      jobsSkipped,
+      outreachSent,
+      outreachReplies,
+      promotionsPosted,
+    ] = await Promise.all([
+      prisma.application.count({ where: { profileId, appliedAt: { gte: windowStart } } }),
+      prisma.job.count({
+        where: { status: "failed", campaign: { profileId }, createdAt: { gte: windowStart } },
+      }),
+      prisma.job.count({
+        where: { status: "skipped", campaign: { profileId }, createdAt: { gte: windowStart } },
+      }),
+      prisma.outreachMessage.count({ where: { profileId, sentAt: { gte: windowStart } } }),
+      prisma.outreachMessage.count({ where: { profileId, repliedAt: { gte: windowStart } } }),
+      prisma.promotionPost.count({
+        where: { profileId, status: "posted", postedAt: { gte: windowStart } },
+      }),
+    ]);
 
-  const counts: DigestCounts = {
-    applicationsCreated,
-    jobsFailed,
-    jobsSkipped,
-    openEscalations,
-    outreachSent,
-    outreachReplies,
-    promotionsPosted,
-  };
-  const summary = composeDigestSummary(counts);
-  // Reuse the journal write path so SSE fires; then push the glanceable summary to the phone.
-  await pilot.appendJournal(profileId, {
-    entries: [{ kind: "digest", summary, detail: { ...counts } as Record<string, unknown> }],
-  });
-  void push.sendToProfile(profileId, {
-    title: "Your Pilot's morning digest",
-    body: summary,
-    url: "/pilot",
-    tag: "pilot-digest",
-  });
+    const counts: DigestCounts = {
+      applicationsCreated,
+      jobsFailed,
+      jobsSkipped,
+      openEscalations,
+      outreachSent,
+      outreachReplies,
+      promotionsPosted,
+    };
+    const summary = composeDigestSummary(counts);
+    // Reuse the journal write path so SSE fires; then push the glanceable summary to the phone.
+    await pilot.appendJournal(profileId, {
+      entries: [{ kind: "digest", summary, detail: { ...counts } as Record<string, unknown> }],
+    });
+    void push.sendToProfile(profileId, {
+      title: "Your Pilot's morning digest",
+      body: summary,
+      url: "/pilot",
+      tag: "pilot-digest",
+    });
+  } catch (err) {
+    console.error("[pilot] digest write failed", err);
+  }
 }

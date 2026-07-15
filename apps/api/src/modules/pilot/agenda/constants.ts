@@ -27,6 +27,9 @@ export const MAX_RETRY_FAILED = 1;
 /** A board is unhealthy once its most recent apply outcomes are this many failures deep. */
 export const BOARD_HEALTH_MIN_FAILURES = 3;
 
+/** Row cap for unbounded gather/expiry scans, matching the module's take: 200 list precedent. */
+export const GATHER_CAP = 200;
+
 export const MAX_ITEMS = 10;
 /** A job needs a strong match before its company is worth a warm-intro detour. */
 export const WARM_INTRO_MIN_SCORE = 85;

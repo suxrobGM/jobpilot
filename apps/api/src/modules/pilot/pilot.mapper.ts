@@ -1,14 +1,14 @@
-import {
-  type Escalation,
-  type EscalationKind,
-  type EscalationStatus,
-  type PilotJournalEntry,
-  type PilotJournalKind,
-  type PilotLease,
-  type PilotState,
-  type Promotion,
-  type PromotionStatus,
-  pilotMandateConfigSchema,
+import type {
+  Escalation,
+  EscalationKind,
+  EscalationStatus,
+  PilotJournalEntry,
+  PilotJournalKind,
+  PilotLease,
+  PilotMandateConfig,
+  PilotState,
+  Promotion,
+  PromotionStatus,
 } from "@jobpilot/contracts/pilot";
 import type {
   Escalation as EscalationModel,
@@ -18,8 +18,11 @@ import type {
   PromotionPost as PromotionPostModel,
 } from "@/generated/prisma/client";
 
-export function toPilotState(row: PilotStateModel, appliedToday: number): PilotState {
-  const mandateConfig = pilotMandateConfigSchema.parse(JSON.parse(row.mandateConfig));
+export function toPilotState(
+  row: PilotStateModel,
+  appliedToday: number,
+  mandateConfig: PilotMandateConfig,
+): PilotState {
   return {
     profileId: row.profileId,
     enabled: row.enabled,

@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import { GATHER_CAP } from "./constants";
 
 /** Deps for the job-status mutations shared by expiry, lease grant, and release. */
 interface JobMutationDeps {
@@ -64,6 +65,8 @@ async function expireLeases(deps: JobMutationDeps, profileId: string, now: Date)
   const { prisma } = deps;
   const leases = await prisma.pilotLease.findMany({
     where: { profileId, releasedAt: null, expiresAt: { lt: now } },
+    take: GATHER_CAP, // remainder is swept on the next compile.
+    select: { id: true, kind: true, subjectId: true, payload: true },
   });
   if (leases.length === 0) return;
   await prisma.pilotLease.updateMany({
@@ -86,6 +89,8 @@ async function expireEscalations(
   const { prisma } = deps;
   const escalations = await prisma.escalation.findMany({
     where: { profileId, status: "open", expiresAt: { not: null, lt: now } },
+    take: GATHER_CAP, // remainder is swept on the next compile.
+    select: { id: true, subjectType: true, subjectId: true },
   });
   if (escalations.length === 0) return;
   await prisma.escalation.updateMany({

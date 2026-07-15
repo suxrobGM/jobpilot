@@ -3,7 +3,7 @@
 import { pilotMandateConfigSchema } from "@jobpilot/contracts/pilot";
 import { makeAgendaDeps, type Over } from "./db.test-helpers";
 import { writeDigestIfDue } from "./digest";
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 
 const config = pilotMandateConfigSchema.parse({});
 const MORNING = new Date("2026-07-15T08:00:00.000Z"); // past 07:00 UTC
@@ -62,5 +62,20 @@ describe("AgendaService morning digest", () => {
     const { write, rec } = run({ existingDigests: 0 }, new Date("2026-07-15T05:00:00.000Z"), 0);
     await write();
     expect(rec.journals).toHaveLength(0);
+  });
+
+  it("swallows a db failure and writes nothing", async () => {
+    const errorSpy = spyOn(console, "error").mockImplementation(() => {});
+    const { prisma, pilot, push, rec } = makeAgendaDeps({ existingDigests: 0 });
+    (
+      prisma as unknown as { pilotJournalEntry: { count: () => Promise<number> } }
+    ).pilotJournalEntry.count = async () => {
+      throw new Error("db down");
+    };
+    await writeDigestIfDue({ prisma, pilot, push }, "p1", MORNING, config, 0);
+    expect(rec.journals).toHaveLength(0);
+    expect(rec.pushes).toHaveLength(0);
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

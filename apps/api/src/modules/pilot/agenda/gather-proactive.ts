@@ -113,16 +113,28 @@ function markedSubjects(
   return ids;
 }
 
-/** Top skip reasons for a campaign's skipped jobs (≤3, most common first). */
-async function topSkipReasons(prisma: PrismaClient, campaignId: string): Promise<string[]> {
+/** Top skip reasons per campaign (≤3 each, most common first), one grouped query for all candidates. */
+async function topSkipReasonsByCampaign(
+  prisma: PrismaClient,
+  campaignIds: string[],
+): Promise<Map<string, string[]>> {
+  if (campaignIds.length === 0) return new Map();
   const rows = await prisma.job.groupBy({
-    by: ["skipReason"],
-    where: { campaignId, status: "skipped", skipReason: { not: null } },
+    by: ["campaignId", "skipReason"],
+    where: { campaignId: { in: campaignIds }, status: "skipped", skipReason: { not: null } },
     _count: { _all: true },
     orderBy: { _count: { skipReason: "desc" } },
-    take: 3,
   });
-  return rows.map((r) => r.skipReason).filter((r): r is string => Boolean(r));
+  const out = new Map<string, string[]>();
+  for (const r of rows) {
+    if (!r.skipReason) continue;
+    const list = out.get(r.campaignId) ?? [];
+    if (list.length < 3) {
+      list.push(r.skipReason);
+      out.set(r.campaignId, list);
+    }
+  }
+  return out;
 }
 
 /**
@@ -178,7 +190,7 @@ export async function gatherQuietCandidates(
           applied: summary.applied,
           skipped: summary.skipped,
         },
-        topSkipReasons: await topSkipReasons(prisma, c.campaignId),
+        topSkipReasons: [],
       });
     }
 
@@ -189,6 +201,15 @@ export async function gatherQuietCandidates(
     if (summary.failed >= RETRY_MIN_FAILED && !retryMarked.has(c.campaignId)) {
       retryFailed.push({ campaignId: c.campaignId, failedCount: summary.failed });
     }
+  }
+
+  // One grouped query attaches skip reasons for every strategy candidate, avoiding an N+1 per campaign.
+  const skipReasons = await topSkipReasonsByCampaign(
+    prisma,
+    strategyReviews.map((r) => r.campaignId),
+  );
+  for (const r of strategyReviews) {
+    r.topSkipReasons = skipReasons.get(r.campaignId) ?? [];
   }
 
   return { strategyReviews, rescanSkipped, retryFailed };

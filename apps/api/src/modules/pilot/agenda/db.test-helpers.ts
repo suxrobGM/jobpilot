@@ -57,7 +57,7 @@ export interface Over {
   boardHealthJobs?: Record<string, unknown>[];
   quietCampaigns?: Record<string, unknown>[];
   actionMarkers?: { subjectId: string | null; detail: string }[];
-  skipReasonRows?: { skipReason: string | null; _count: { _all: number } }[];
+  skipReasonRows?: { campaignId: string; skipReason: string | null; _count: { _all: number } }[];
 }
 
 /** A fake Prisma covering every query the agenda pipeline (expiry, gather, lease, digest) issues. */
@@ -88,7 +88,20 @@ export function makeAgendaDb(over: Over = {}) {
       findFirst: async () => over.activeLease ?? null,
       update: async (a: { data: Record<string, unknown> }) => {
         rec.leaseUpdates.push(a);
-        return {};
+        // Full merged row so toPilotLease can map heartbeat/release results.
+        return {
+          id: "lease-1",
+          kind: "job.apply",
+          subjectType: "job",
+          subjectId: "s1",
+          payload: "{}",
+          grantedAt: new Date(),
+          expiresAt: new Date(),
+          heartbeatAt: null,
+          releasedAt: null,
+          outcome: null,
+          ...a.data,
+        };
       },
       updateMany: async (a: { data: Record<string, unknown> }) => {
         rec.leaseUpdates.push(a);

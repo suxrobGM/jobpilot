@@ -55,7 +55,7 @@ export class PilotService {
       new Date(),
       config.activeHours?.tz,
     );
-    return toPilotState(row, appliedToday);
+    return toPilotState(row, appliedToday, config);
   }
 
   /** Create-on-first-read: every profile has exactly one PilotState, defaulted. */
