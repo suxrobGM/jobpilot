@@ -105,9 +105,9 @@ bandit — see deferred.md) is the strategy tier of that system.
 | done | **M1 — Pilot spine** | mandate → agenda → lease → cycle → journal; conductor + pairing; the killer demo |
 | done | **M2 — Away-proof** | web push, phone-answerable escalations, unattended nights |
 | done | **M3 — Full surface** | inbox triage, outreach + warm path, self-promotion (PromotionPost, draft-first), 7am digest |
-| todo | **M3.5 — Interview autonomy** | invite → availability reply (approval card) + auto prep sheet via `interview` skill |
-| todo | **M4 — Event wake + proactive** | SSE→inject wake, stall heuristics, strategy review, board health, rescan/retry |
-| todo | **M5 — Learning-ready capture** | correction capture, journal export, subjectKey conventions frozen |
+| done | **M3.5 — Interview autonomy** | invite → availability reply (approval card) + auto prep sheet via `interview` skill |
+| done | **M4 — Event wake + proactive** | SSE→inject wake, stall heuristics, strategy review, board health, rescan/retry |
+| done | **M5 — Learning-ready capture** | correction capture, journal export, subjectKey conventions frozen |
 
 ## Done when
 
@@ -126,3 +126,10 @@ zero skill invocations by the user, ever.
   reporting from the host watchdog, startup resume, structured needs_user escalations,
   2FA self-expiry, live escalation badges. Code gates green; the live overnight smoke test
   (real board, host running, lid closed) is still pending — run it before starting M3.
+- 2026-07-15 — M3 (7dbe434), M3.5 (3b654e3), M4 (34f5aa5), M5 (413963b) shipped: full agenda
+  surface (inbox triage, outreach send/followup/warm-intro, promo compose/post — posting
+  explicitly user-authorized, review-gated), interview reply+prep, SSE event wake, three-rung
+  stall ladder (nudge → skip → kill), proactive quiet-agenda work (strategy review, board
+  health probe-or-park via parkedBoards, rescan/retry, queue drain), admin fleet view,
+  correction capture + NDJSON journal export + frozen subjectKeys. All M1–M5 code-complete;
+  the LIVE OVERNIGHT SMOKE TEST remains the outstanding gate before calling the Pilot done.
