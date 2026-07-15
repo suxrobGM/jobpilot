@@ -23,7 +23,7 @@ import {
   gatherApprovedOutreach,
   gatherApprovedPromotions,
   gatherFollowups,
-} from "./agenda.gather.outreach";
+} from "./agenda.gather-outreach";
 import { verifyGrant } from "./agenda.grant";
 import { toPilotLease } from "./pilot.mapper";
 import { PilotService } from "./pilot.service";
