@@ -104,7 +104,7 @@ bandit — see deferred.md) is the strategy tier of that system.
 | --- | --- | --- |
 | done | **M1 — Pilot spine** | mandate → agenda → lease → cycle → journal; conductor + pairing; the killer demo |
 | done | **M2 — Away-proof** | web push, phone-answerable escalations, unattended nights |
-| todo | **M3 — Full surface** | inbox triage, outreach + warm path, self-promotion (PromotionPost, draft-first), 7am digest |
+| done | **M3 — Full surface** | inbox triage, outreach + warm path, self-promotion (PromotionPost, draft-first), 7am digest |
 | todo | **M3.5 — Interview autonomy** | invite → availability reply (approval card) + auto prep sheet via `interview` skill |
 | todo | **M4 — Event wake + proactive** | SSE→inject wake, stall heuristics, strategy review, board health, rescan/retry |
 | todo | **M5 — Learning-ready capture** | correction capture, journal export, subjectKey conventions frozen |
