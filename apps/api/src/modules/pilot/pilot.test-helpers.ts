@@ -51,7 +51,7 @@ export interface Over {
   outreachSent?: number;
   outreachReplies?: number;
   promotionsPosted?: number;
-  // Proactive (M4) wiring:
+  // Proactive wiring:
   pendingQueue?: { id: string; url: string }[];
   pendingQueueCount?: number;
   boardHealthJobs?: Record<string, unknown>[];

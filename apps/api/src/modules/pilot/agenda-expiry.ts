@@ -2,7 +2,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 
 /** Deps for the job-status mutations shared by expiry, lease grant, and release. */
-export interface JobMutationDeps {
+interface JobMutationDeps {
   prisma: PrismaClient;
   campaignJobs: CampaignJobService;
 }

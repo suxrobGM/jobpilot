@@ -3,7 +3,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import type { AgendaInterviewPrep, AgendaInterviewReply } from "./agenda/types";
 
 /** Prefix marking an ApplicationEvent note as a generated interview prep sheet. */
-export const INTERVIEW_PREP_MARKER = "[interview-prep]";
+const INTERVIEW_PREP_MARKER = "[interview-prep]";
 
 /**
  * Interviewing apps whose recruiter reply still needs an availability answer: the app has an

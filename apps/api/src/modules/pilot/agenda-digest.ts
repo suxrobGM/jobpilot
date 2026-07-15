@@ -9,7 +9,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const DIGEST_HOUR = 7;
 
 /** Deps for writing the digest journal entry and pushing its summary. */
-export interface DigestDeps {
+interface DigestDeps {
   prisma: PrismaClient;
   pilot: PilotService;
   push: PushService;
