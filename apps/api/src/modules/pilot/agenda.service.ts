@@ -18,13 +18,13 @@ import {
   gatherFinalizeCampaigns,
   gatherInbox,
 } from "./agenda.gather";
+import { verifyGrant } from "./agenda.grant";
 import {
   dueVenues,
   gatherApprovedOutreach,
   gatherApprovedPromotions,
   gatherFollowups,
-} from "./agenda.gather-outreach";
-import { verifyGrant } from "./agenda.grant";
+} from "./agenda-gather.outreach";
 import { toPilotLease } from "./pilot.mapper";
 import { PilotService } from "./pilot.service";
 import { countAppliedToday, countSentToday } from "./pilot.stats";
