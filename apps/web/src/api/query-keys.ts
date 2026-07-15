@@ -98,6 +98,14 @@ export const queryKeys = {
     list: () => [...queryKeys.coverLetters.all, "list"] as const,
     detail: (id: string) => [...queryKeys.coverLetters.all, "detail", id] as const,
   },
+
+  pilot: {
+    all: ["pilot"] as const,
+    state: () => [...queryKeys.pilot.all, "state"] as const,
+    journal: () => [...queryKeys.pilot.all, "journal"] as const,
+    escalations: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.pilot.all, "escalations", filters] as const,
+  },
 } as const;
 
 /** Named invalidation sets for useApiMutation's `invalidate:` option. */

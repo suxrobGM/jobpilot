@@ -4,6 +4,7 @@ import {
   BusinessCenter,
   Dashboard,
   Description,
+  FlightTakeoff,
   Forum,
   Handshake,
   Inbox,
@@ -33,6 +34,7 @@ export const navGroups: NavGroup[] = [
   {
     items: [
       { label: "Workspace", href: "/workspace", icon: Dashboard },
+      { label: "Pilot", href: "/pilot", icon: FlightTakeoff },
       { label: "Analytics", href: "/analytics", icon: Insights },
       { label: "Upwork", href: "/upwork", icon: Handshake },
       { label: "Outreach", href: "/outreach", icon: Forum },

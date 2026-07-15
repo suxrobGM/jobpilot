@@ -35,6 +35,31 @@ public sealed record SessionStatus
 
     /// <summary>Whether this install supports self-update.</summary>
     public bool CanUpdate { get; init; }
+
+    /// <summary>Pilot autonomous-mode state. Additive; absent on older hosts.</summary>
+    public PilotStatus? Pilot { get; init; }
+}
+
+/// <summary>Autonomous pilot-mode status surfaced on /healthz.</summary>
+public sealed record PilotStatus
+{
+    /// <summary>Whether the pilot loop is enabled.</summary>
+    public required bool Enabled { get; init; }
+
+    /// <summary>Whether a provider pairing is stored.</summary>
+    public required bool Paired { get; init; }
+
+    /// <summary>Whether the conductor is actively driving a session right now.</summary>
+    public required bool Conducting { get; init; }
+
+    /// <summary>When the last cycle sentinel was seen.</summary>
+    public DateTimeOffset? LastCycleAt { get; init; }
+
+    /// <summary>Last cycle outcome: <c>ok</c>, <c>empty</c>, or <c>error</c>.</summary>
+    public string? LastCycleStatus { get; init; }
+
+    /// <summary>Consecutive watchdog kills; reset by a completed cycle.</summary>
+    public required int ConsecutiveTimeouts { get; init; }
 }
 
 /// <summary>Result of a runtime update request.</summary>

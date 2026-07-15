@@ -90,4 +90,26 @@ public class TerminalProvidersTests
     {
         Assert.Throws<ArgumentException>(() => TerminalProviders.GetLaunchSpec("gemini", "/plugin", "/cwd"));
     }
+
+    [Theory]
+    [InlineData(TerminalProviders.Claude, "/jobpilot:pilot")]
+    [InlineData(TerminalProviders.Codex, "$pilot")]
+    public void FormatSkillCommand_UsesTheProvidersInvocationSyntax(string provider, string expected)
+    {
+        Assert.Equal(expected, TerminalProviders.FormatSkillCommand(provider, "pilot"));
+    }
+
+    [Theory]
+    [InlineData(TerminalProviders.Claude, "/jobpilot:setup --force")]
+    [InlineData(TerminalProviders.Codex, "$setup --force")]
+    public void FormatSkillCommand_AppendsTrimmedArgs(string provider, string expected)
+    {
+        Assert.Equal(expected, TerminalProviders.FormatSkillCommand(provider, "setup", "  --force  "));
+    }
+
+    [Fact]
+    public void FormatSkillCommand_Throws_ForAnUnknownProvider()
+    {
+        Assert.Throws<ArgumentException>(() => TerminalProviders.FormatSkillCommand("gemini", "pilot"));
+    }
 }

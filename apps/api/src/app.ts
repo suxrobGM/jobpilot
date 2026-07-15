@@ -18,6 +18,7 @@ import { emailController } from "@/modules/email";
 import { healthController } from "@/modules/health";
 import { adminBoardController, jobBoardController } from "@/modules/job-board";
 import { adminJobListingController, publicJobListingController } from "@/modules/job-listing";
+import { pilotController } from "@/modules/pilot";
 import { profileController } from "@/modules/profile";
 import { queueController } from "@/modules/queue";
 import { publicResumeController, resumeController, resumeJob } from "@/modules/resume";
@@ -56,6 +57,7 @@ const app = new Elysia()
       .use(scoringController)
       .use(upworkController)
       .use(campaignController)
+      .use(pilotController)
       .use(workspaceController)
       .use(emailController)
       // Mounted one by one: an array widens them to AnyElysia and collapses the `App` type Eden reads.

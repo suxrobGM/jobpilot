@@ -51,6 +51,15 @@ public static class TerminalProviders
     /// <exception cref="ArgumentException">The id is not a known provider.</exception>
     public static string GetDisplayName(string id) => Find(id).DisplayName;
 
+    /// <summary>Formats a skill invocation for a provider (mirrors the web's formatSkillCommand).</summary>
+    /// <exception cref="ArgumentException">The provider id is not a known provider.</exception>
+    public static string FormatSkillCommand(string provider, string skill, string? args = null)
+    {
+        var command = Find(Normalize(provider)).Id == Codex ? $"${skill}" : $"/jobpilot:{skill}";
+        var suffix = args?.Trim();
+        return string.IsNullOrEmpty(suffix) ? command : $"{command} {suffix}";
+    }
+
     /// <summary>Returns every supported provider.</summary>
     public static TerminalProviderInfo[] Supported() => SupportedProviders;
 

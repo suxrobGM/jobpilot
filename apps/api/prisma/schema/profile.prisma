@@ -50,6 +50,10 @@ model Profile {
   contacts          Contact[]
   outreachMessages  OutreachMessage[]
   coverLetters      CoverLetter[]
+  pilotState        PilotState?
+  pilotLeases       PilotLease[]
+  escalations       Escalation[]
+  pilotJournal      PilotJournalEntry[]
 
   updatedAt DateTime @updatedAt @map("updated_at")
 

@@ -1,0 +1,101 @@
+using JobPilot.Terminal.Pilot;
+using Microsoft.Extensions.Logging.Abstractions;
+using Xunit;
+
+namespace JobPilot.Terminal.Tests;
+
+public sealed class PilotConductorTests : IDisposable
+{
+    private readonly TempDir temp = new();
+    private readonly PilotStore store;
+    private readonly FakePilotEnvironment env = new() { BlockWhenScriptless = true };
+    private readonly PilotConductor conductor;
+
+    public PilotConductorTests()
+    {
+        store = new PilotStore(Path.Combine(temp.Root, ".jobpilot", "pilot.json"), NullLogger<PilotStore>.Instance);
+        conductor = new PilotConductor(store, env, NullLogger<PilotConductor>.Instance);
+    }
+
+    public void Dispose()
+    {
+        conductor.Dispose();
+        temp.Dispose();
+    }
+
+    private static PilotPairing Enabled() => new()
+    {
+        Provider = "claude",
+        ApiToken = "tok",
+        ApiUrl = "https://api",
+        WebUrl = "https://web",
+        Enabled = true,
+    };
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        for (var i = 0; i < 200 && !condition(); i++)
+        {
+            await Task.Delay(10);
+        }
+        Assert.True(condition(), "condition was not met within the timeout");
+    }
+
+    [Fact]
+    public async Task Conductor_StaysIdle_WhenUnpaired()
+    {
+        await conductor.StartAsync(CancellationToken.None);
+
+        await Task.Delay(50);
+
+        Assert.Empty(env.Actions);
+        Assert.False(conductor.BuildStatus().Conducting);
+        Assert.False(conductor.BuildStatus().Paired);
+
+        await conductor.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Enable_StartsConducting_AndDisableStopsInjecting()
+    {
+        await conductor.StartAsync(CancellationToken.None);
+
+        store.Save(Enabled());
+        conductor.WakeUp();
+
+        await WaitUntil(() => env.Actions.Contains("inject-cycle"));
+        Assert.True(conductor.BuildStatus().Conducting);
+        Assert.True(conductor.BuildStatus().Enabled);
+
+        store.SetEnabled(false);
+        conductor.WakeUp();
+
+        await WaitUntil(() => !conductor.BuildStatus().Conducting);
+        var injectsAtDisable = env.Actions.Count(a => a == "inject-cycle");
+
+        // The paired session is left running; the conductor simply stops driving it.
+        await Task.Delay(50);
+        Assert.Equal(injectsAtDisable, env.Actions.Count(a => a == "inject-cycle"));
+        Assert.DoesNotContain("stop", env.Actions);
+        Assert.True(conductor.BuildStatus().Paired); // pairing is kept
+
+        await conductor.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task BuildStatus_ReportsCycleOutcome()
+    {
+        await conductor.StartAsync(CancellationToken.None);
+
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(new PilotCycle(Guid.NewGuid(), PilotCycleStatus.Empty, 3600)));
+        store.Save(Enabled());
+        conductor.WakeUp();
+
+        await WaitUntil(() => conductor.BuildStatus().LastCycleStatus == "empty");
+        Assert.NotNull(conductor.BuildStatus().LastCycleAt);
+
+        store.SetEnabled(false);
+        conductor.WakeUp();
+        await conductor.StopAsync(CancellationToken.None);
+    }
+}

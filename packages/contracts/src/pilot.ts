@@ -1,0 +1,245 @@
+import { z } from "zod/v4";
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+export const ESCALATION_KINDS = ["question", "choice", "2fa", "approval"] as const;
+export const escalationKindSchema = z.enum(ESCALATION_KINDS);
+
+export const ESCALATION_STATUSES = ["open", "answered", "expired", "cancelled"] as const;
+export const escalationStatusSchema = z.enum(ESCALATION_STATUSES);
+
+export const PILOT_JOURNAL_KINDS = [
+  "cycle",
+  "action",
+  "observation",
+  "escalation",
+  "system",
+  "digest",
+] as const;
+export const pilotJournalKindSchema = z.enum(PILOT_JOURNAL_KINDS);
+
+export const AGENDA_ITEM_KINDS = [
+  "escalation.answered",
+  "job.apply",
+  "search.discover",
+  "campaign.finalize",
+] as const;
+export const agendaItemKindSchema = z.enum(AGENDA_ITEM_KINDS);
+
+export const AGENDA_SUBJECT_TYPES = ["job", "campaign", "escalation"] as const;
+export const agendaSubjectTypeSchema = z.enum(AGENDA_SUBJECT_TYPES);
+
+/** Release outcomes an agent reports; leases also close as "expired" server-side. */
+export const PILOT_LEASE_OUTCOMES = ["done", "failed", "abandoned"] as const;
+export const pilotLeaseOutcomeSchema = z.enum(PILOT_LEASE_OUTCOMES);
+
+// ── Mandate ───────────────────────────────────────────────────────────────────
+
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export const pilotActiveHoursSchema = z.object({
+  start: z.string().regex(HHMM),
+  end: z.string().regex(HHMM),
+  tz: z.string(),
+});
+
+export const pilotStandingQuerySchema = z.object({
+  query: z.string().min(1),
+  board: z.string().optional(),
+  // Base resume the discovered campaign scores against; campaign config requires it.
+  resumeId: z.string().optional(),
+  cadenceHours: z.number().default(24),
+});
+
+export const pilotAutonomySchema = z.object({
+  outreachEmail: z.enum(["draft", "review", "auto"]).default("review"),
+  outreachLinkedIn: z.enum(["draft", "review"]).default("draft"),
+});
+
+/**
+ * The Pilot's operating envelope, stored as JSON in `PilotState.mandateConfig`.
+ * Every field defaults, so an empty `{}` parses to a full, usable config.
+ */
+export const pilotMandateConfigSchema = z.object({
+  dailyApplyCap: z.number().int().min(0).default(10),
+  minScore: z.number().min(0).max(100).default(70),
+  boards: z.array(z.string()).default([]),
+  activeHours: pilotActiveHoursSchema.optional(),
+  checkIntervalMinutes: z.number().int().default(30),
+  standingQueries: z.array(pilotStandingQuerySchema).default([]),
+  // Full default so a missing key still yields both autonomy fields (zod does not re-parse defaults).
+  autonomy: pilotAutonomySchema.default({ outreachEmail: "review", outreachLinkedIn: "draft" }),
+});
+
+export const updatePilotMandateSchema = z.object({
+  goals: z.string(),
+  config: pilotMandateConfigSchema,
+});
+
+export const setPilotEnabledSchema = z.object({ enabled: z.boolean() });
+
+export const pilotStateSchema = z.object({
+  profileId: z.uuid(),
+  enabled: z.boolean(),
+  mandateGoals: z.string(),
+  mandateConfig: pilotMandateConfigSchema,
+  mandateUpdatedAt: z.date().nullable(),
+  lastCycleAt: z.date().nullable(),
+  cycleCount: z.number().int(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+// ── Agenda ────────────────────────────────────────────────────────────────────
+
+export const agendaItemSchema = z.object({
+  id: z.string(),
+  kind: agendaItemKindSchema,
+  priority: z.number(),
+  title: z.string(),
+  subjectType: agendaSubjectTypeSchema,
+  subjectId: z.string(),
+  payload: z.record(z.string(), z.unknown()),
+});
+
+export const agendaCountsSchema = z.object({
+  openEscalations: z.number().int(),
+  activeLeases: z.number().int(),
+  approvedJobs: z.number().int(),
+  appliedToday: z.number().int(),
+});
+
+export const agendaBudgetSchema = z.object({
+  dailyApplyCap: z.number().int(),
+  appliedToday: z.number().int(),
+  capReached: z.boolean(),
+  resetsAt: z.date(),
+});
+
+export const agendaResponseSchema = z.object({
+  generatedAt: z.date(),
+  items: z.array(agendaItemSchema),
+  counts: agendaCountsSchema,
+  budget: agendaBudgetSchema,
+  sleepSeconds: z.number(),
+  nextWakeAt: z.date(),
+});
+
+// ── Leases ────────────────────────────────────────────────────────────────────
+
+export const createPilotLeaseSchema = z.object({ itemId: z.string().min(1) });
+
+export const releasePilotLeaseSchema = z.object({
+  outcome: pilotLeaseOutcomeSchema,
+  note: z.string().optional(),
+});
+
+export const pilotLeaseSchema = z.object({
+  id: z.uuid(),
+  profileId: z.uuid(),
+  kind: z.string(),
+  subjectType: z.string(),
+  subjectId: z.string(),
+  payload: z.record(z.string(), z.unknown()),
+  grantedAt: z.date(),
+  heartbeatAt: z.date().nullable(),
+  expiresAt: z.date(),
+  releasedAt: z.date().nullable(),
+  outcome: z.string().nullable(),
+});
+
+// ── Journal ───────────────────────────────────────────────────────────────────
+
+export const pilotJournalEntryInputSchema = z.object({
+  kind: pilotJournalKindSchema,
+  summary: z.string(),
+  detail: z.record(z.string(), z.unknown()).optional(),
+  subjectType: z.string().optional(),
+  subjectId: z.string().optional(),
+});
+
+export const createPilotJournalSchema = z.object({
+  cycleId: z.string().optional(),
+  entries: z.array(pilotJournalEntryInputSchema).min(1),
+});
+
+export const pilotJournalEntrySchema = z.object({
+  id: z.uuid(),
+  profileId: z.uuid(),
+  cycleId: z.string().nullable(),
+  kind: pilotJournalKindSchema,
+  summary: z.string(),
+  detail: z.record(z.string(), z.unknown()),
+  subjectType: z.string().nullable(),
+  subjectId: z.string().nullable(),
+  createdAt: z.date(),
+});
+
+export const pilotJournalQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+
+export const pilotJournalPageSchema = z.object({
+  items: z.array(pilotJournalEntrySchema),
+  nextCursor: z.string().nullable(),
+});
+
+// ── Escalations ───────────────────────────────────────────────────────────────
+
+export const createEscalationSchema = z.object({
+  kind: escalationKindSchema,
+  subjectType: z.string().optional(),
+  subjectId: z.string().optional(),
+  question: z.string().min(1),
+  options: z.array(z.string()).default([]),
+  deepLink: z.string().optional(),
+  expiresAt: z.iso.datetime().optional(),
+});
+
+export const answerEscalationSchema = z.object({ answer: z.string().min(1) });
+
+export const escalationsQuerySchema = z.object({ status: escalationStatusSchema.optional() });
+
+export const escalationSchema = z.object({
+  id: z.uuid(),
+  profileId: z.uuid(),
+  kind: escalationKindSchema,
+  status: escalationStatusSchema,
+  subjectType: z.string().nullable(),
+  subjectId: z.string().nullable(),
+  question: z.string(),
+  options: z.array(z.string()),
+  deepLink: z.string().nullable(),
+  answer: z.string().nullable(),
+  answeredAt: z.date().nullable(),
+  expiresAt: z.date().nullable(),
+  createdAt: z.date(),
+});
+
+export const escalationListSchema = z.array(escalationSchema);
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export type EscalationKind = z.infer<typeof escalationKindSchema>;
+export type EscalationStatus = z.infer<typeof escalationStatusSchema>;
+export type PilotJournalKind = z.infer<typeof pilotJournalKindSchema>;
+export type AgendaItemKind = z.infer<typeof agendaItemKindSchema>;
+export type AgendaSubjectType = z.infer<typeof agendaSubjectTypeSchema>;
+export type PilotLeaseOutcome = z.infer<typeof pilotLeaseOutcomeSchema>;
+export type PilotMandateConfig = z.infer<typeof pilotMandateConfigSchema>;
+export type PilotStandingQuery = z.infer<typeof pilotStandingQuerySchema>;
+export type UpdatePilotMandateInput = z.infer<typeof updatePilotMandateSchema>;
+export type SetPilotEnabledInput = z.infer<typeof setPilotEnabledSchema>;
+export type PilotState = z.infer<typeof pilotStateSchema>;
+export type AgendaItem = z.infer<typeof agendaItemSchema>;
+export type AgendaResponse = z.infer<typeof agendaResponseSchema>;
+export type CreatePilotLeaseInput = z.infer<typeof createPilotLeaseSchema>;
+export type ReleasePilotLeaseInput = z.infer<typeof releasePilotLeaseSchema>;
+export type PilotLease = z.infer<typeof pilotLeaseSchema>;
+export type PilotJournalEntryInput = z.infer<typeof pilotJournalEntryInputSchema>;
+export type CreatePilotJournalInput = z.infer<typeof createPilotJournalSchema>;
+export type PilotJournalEntry = z.infer<typeof pilotJournalEntrySchema>;
+export type CreateEscalationInput = z.infer<typeof createEscalationSchema>;
+export type AnswerEscalationInput = z.infer<typeof answerEscalationSchema>;
+export type Escalation = z.infer<typeof escalationSchema>;

@@ -12,6 +12,17 @@ export interface TerminalProviderInfo {
   displayName: string;
 }
 
+/** Autonomous pilot-mode health from the host's /healthz. Additive; absent on older hosts. */
+export interface PilotHealth {
+  enabled: boolean;
+  paired: boolean;
+  conducting: boolean;
+  lastCycleAt?: string | null;
+  /** Last cycle outcome: "ok", "empty", or "error". */
+  lastCycleStatus?: string | null;
+  consecutiveTimeouts: number;
+}
+
 export interface SessionStatus {
   /** "ok", or "degraded" when the host runs but sessions can't start (e.g. plugin tree missing). */
   status: string;
@@ -26,6 +37,8 @@ export interface SessionStatus {
   canRelaunch: boolean;
   /** True when this is a published install, so the dashboard can offer a one-click self-update. */
   canUpdate: boolean;
+  /** Pilot loop state; null/absent on older hosts. */
+  pilot?: PilotHealth | null;
 }
 
 /** Outcome of a dashboard-triggered host self-update (POST /update). */
@@ -102,6 +115,26 @@ export function injectCommand(command: string, provider?: TerminalProviderId): P
 
 export function killSession(): Promise<SessionStatus> {
   return send<SessionStatus>("DELETE", "/sessions/current");
+}
+
+interface PilotEnableOptions {
+  provider: TerminalProviderId;
+  /** Per-user agent PAT the pilot loop authenticates with. */
+  apiToken: string;
+  /** Backend base URL injected into the pilot PTY as JOBPILOT_API. */
+  apiUrl: string;
+  /** Web origin injected as JOBPILOT_WEB for user-facing links. */
+  webUrl: string;
+}
+
+/** Store the provider pairing and start the local pilot loop. */
+export function pilotEnable(options: PilotEnableOptions): Promise<SessionStatus> {
+  return send<SessionStatus>("POST", "/pilot/enable", options);
+}
+
+/** Stop the local pilot loop; the host keeps the pairing and any mid-cycle session. */
+export function pilotDisable(): Promise<SessionStatus> {
+  return send<SessionStatus>("POST", "/pilot/disable");
 }
 
 /** Ask the running host to self-update and relaunch; on `updating: true` poll health to see it return on the new version. */

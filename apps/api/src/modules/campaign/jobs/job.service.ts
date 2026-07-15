@@ -1,16 +1,17 @@
 import type {
   AddCampaignJobInput,
   CampaignJobResultInput,
+  CampaignJobStatus,
   PatchCampaignJobInput,
 } from "@jobpilot/contracts/campaign";
 import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
-import { findOwned } from "@/common/errors";
+import { conflict, findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { PrismaClient } from "@/generated/prisma/client";
+import { type Job, PrismaClient } from "@/generated/prisma/client";
 import { JobListingIngestService } from "@/modules/job-listing";
 import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
-import { toCampaignJobRow } from "../campaign.mapper";
+import { type CampaignJobRow, toCampaignJobRow } from "../campaign.mapper";
 import { recomputeCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
 
@@ -119,13 +120,47 @@ export class CampaignJobService {
     // the digest is the ingest's own job; duplicating that policy here would silently diverge.
     this.listings.ingestInBackground(job);
 
+    return this.emitJobUpdate(profileId, campaignId, key, job, patch.status);
+  }
+
+  /**
+   * Single-writer claim: atomically flip an approved job to applying so only one Pilot
+   * lease can take it. Conflicts (409) when the row is no longer approved (lost the race).
+   * Emits through patchJob's shared path so a claim looks identical to a manual status change.
+   */
+  async claimJobForApply(
+    profileId: string,
+    campaignId: string,
+    key: string,
+  ): Promise<CampaignJobRow> {
+    const claim = await this.prisma.job.updateMany({
+      where: { campaignId, key, status: "approved", campaign: { profileId } },
+      data: { status: "applying" },
+    });
+    if (claim.count === 0) {
+      throw conflict("Job is no longer approved.");
+    }
+    const job = await this.prisma.job.findUniqueOrThrow({
+      where: { campaignId_key: { campaignId, key } },
+    });
+    return this.emitJobUpdate(profileId, campaignId, key, job, "applying");
+  }
+
+  /** Post-update SSE + summary recompute shared by patchJob and claimJobForApply. */
+  private async emitJobUpdate(
+    profileId: string,
+    campaignId: string,
+    key: string,
+    job: Job,
+    status?: CampaignJobStatus,
+  ): Promise<CampaignJobRow> {
     publish(
       campaignChannel,
       { campaignId },
       { type: "job-update", payload: { kind: "updated", job } },
     );
 
-    if (patch.status) {
+    if (status) {
       const summary = await recomputeCampaignSummary(this.prisma, campaignId);
       publish(campaignChannel, { campaignId }, { type: "progress", payload: summary });
     }
@@ -133,7 +168,7 @@ export class CampaignJobService {
     publish(
       workspaceChannel,
       { profileId },
-      { type: "campaignjob.updated", campaignId, key, status: patch.status },
+      { type: "campaignjob.updated", campaignId, key, status },
     );
 
     return toCampaignJobRow(job);

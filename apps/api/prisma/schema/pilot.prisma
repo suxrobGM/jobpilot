@@ -1,0 +1,68 @@
+model PilotState {
+  profileId        String    @id @map("profile_id")
+  profile          Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  enabled          Boolean   @default(false)
+  mandateGoals     String    @default("") @map("mandate_goals")
+  mandateConfig    String    @default("{}") @map("mandate_config")
+  mandateUpdatedAt DateTime? @map("mandate_updated_at")
+  lastCycleAt      DateTime? @map("last_cycle_at")
+  cycleCount       Int       @default(0) @map("cycle_count")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@map("pilot_states")
+}
+
+model PilotLease {
+  id          String    @id @default(uuid())
+  profileId   String    @map("profile_id")
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  kind        String
+  subjectType String    @map("subject_type")
+  subjectId   String    @map("subject_id")
+  payload     String    @default("{}")
+  grantedAt   DateTime  @default(now()) @map("granted_at")
+  heartbeatAt DateTime? @map("heartbeat_at")
+  expiresAt   DateTime  @map("expires_at")
+  releasedAt  DateTime? @map("released_at")
+  outcome     String?
+
+  @@index([profileId, expiresAt])
+  @@map("pilot_leases")
+}
+
+model Escalation {
+  id          String    @id @default(uuid())
+  profileId   String    @map("profile_id")
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  kind        String
+  status      String    @default("open")
+  subjectType String?   @map("subject_type")
+  subjectId   String?   @map("subject_id")
+  question    String
+  options     String    @default("[]")
+  deepLink    String?   @map("deep_link")
+  answer      String?
+  answeredAt  DateTime? @map("answered_at")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([profileId, status])
+  @@map("escalations")
+}
+
+model PilotJournalEntry {
+  id          String   @id @default(uuid())
+  profileId   String   @map("profile_id")
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  cycleId     String?  @map("cycle_id")
+  kind        String
+  summary     String
+  detail      String   @default("{}")
+  subjectType String?  @map("subject_type")
+  subjectId   String?  @map("subject_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([profileId, createdAt])
+  @@map("pilot_journal_entries")
+}

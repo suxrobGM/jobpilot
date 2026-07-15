@@ -29,7 +29,7 @@ export function fold(summary: CampaignSummary, status: CampaignJobStatus, n: num
     summary.failed += n;
   } else if (status === "skipped") {
     summary.skipped += n;
-  } else if (status === "approved" || status === "applying") {
+  } else if (status === "approved" || status === "applying" || status === "needs_user") {
     summary.remaining += n;
   }
 }

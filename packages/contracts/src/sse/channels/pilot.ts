@@ -1,0 +1,17 @@
+import { defineChannel } from "../channel";
+
+export type PilotEvent =
+  | { type: "journal.appended"; entry: unknown }
+  | { type: "escalation.created"; escalation: unknown }
+  | { type: "escalation.answered"; escalation: unknown }
+  | { type: "state.changed"; state: unknown };
+
+/**
+ * Profile-scoped Pilot feed (journal entries, escalations, state changes).
+ * Parameter-free path; the server resolves the profile from the session.
+ */
+export const pilotChannel = defineChannel<PilotEvent, void, { profileId: string }>({
+  name: "pilot",
+  path: () => "/api/pilot/events",
+  topic: ({ profileId }) => String(profileId),
+});

@@ -39,18 +39,31 @@ interface Recorder {
   applicationCreate?: Record<string, unknown>;
   queueUpdate?: { data: Record<string, unknown> };
   jobUpdate?: { data: Record<string, unknown> };
+  jobUpdateMany?: { where: Record<string, unknown>; data: Record<string, unknown> };
+  groupByCount: number;
 }
 
-function makeDb(existingApplication: Record<string, unknown> | null = null) {
-  const rec: Recorder = { applicationCreateCount: 0 };
+function makeDb(existingApplication: Record<string, unknown> | null = null, claimCount = 1) {
+  const rec: Recorder = { applicationCreateCount: 0, groupByCount: 0 };
   const db = {
     job: {
       findFirst: async () => ({ ...baseJob, campaign: { source: "auto-apply", summary: "{}" } }),
+      findUniqueOrThrow: async () => ({ ...baseJob, status: "applying" }),
       update: async (args: { data: Record<string, unknown> }) => {
         rec.jobUpdate = args;
         return { ...baseJob, ...args.data };
       },
-      groupBy: async () => [{ status: "applied", _count: { _all: 1 } }],
+      updateMany: async (args: {
+        where: Record<string, unknown>;
+        data: Record<string, unknown>;
+      }) => {
+        rec.jobUpdateMany = args;
+        return { count: claimCount };
+      },
+      groupBy: async () => {
+        rec.groupByCount += 1;
+        return [{ status: "applied", _count: { _all: 1 } }];
+      },
     },
     application: {
       findUnique: async () => existingApplication,
@@ -152,5 +165,25 @@ describe("recordJobResult", () => {
     expect(rec.applicationCreateCount).toBe(0);
     expect(result.application).toBeNull();
     expect(rec.queueUpdate?.data).toMatchObject({ status: "consumed" });
+  });
+});
+
+describe("claimJobForApply", () => {
+  it("claims an approved job, flips it to applying, and recomputes the summary", async () => {
+    const { db, rec } = makeDb();
+
+    const row = await service(db).claimJobForApply(PROFILE, CAMPAIGN, KEY);
+
+    // The conditional claim only matches an approved row, guarding the single-writer invariant.
+    expect(rec.jobUpdateMany?.where).toMatchObject({ status: "approved", key: KEY });
+    expect(rec.jobUpdateMany?.data).toEqual({ status: "applying" });
+    expect(row.status).toBe("applying");
+    // Emission parity with patchJob: the shared path recomputes the campaign summary.
+    expect(rec.groupByCount).toBe(1);
+  });
+
+  it("409s when the row is no longer approved (claim matched zero rows)", async () => {
+    const { db } = makeDb(null, 0);
+    expect(service(db).claimJobForApply(PROFILE, CAMPAIGN, KEY)).rejects.toThrow();
   });
 });

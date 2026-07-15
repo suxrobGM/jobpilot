@@ -24,6 +24,8 @@ export const CAMPAIGN_JOB_STATUSES = [
   "applied",
   "failed",
   "skipped",
+  // Parked by the Pilot mid-apply pending a user answer (see Escalation); non-terminal.
+  "needs_user",
 ] as const;
 export const campaignJobStatusSchema = z.enum(CAMPAIGN_JOB_STATUSES);
 
@@ -108,6 +110,14 @@ export const patchCampaignJobSchema = z.object({
 
 export const CAMPAIGN_JOB_TERMINAL_OUTCOMES = ["applied", "failed", "skipped"] as const;
 export const campaignJobOutcomeSchema = z.enum(CAMPAIGN_JOB_TERMINAL_OUTCOMES);
+
+/** Non-terminal statuses: a campaign with any such job is still active (not finalizable). */
+export const CAMPAIGN_JOB_ACTIVE_STATUSES = [
+  "pending",
+  "approved",
+  "applying",
+  "needs_user",
+] as const;
 
 export const campaignJobResultSchema = z
   .object({

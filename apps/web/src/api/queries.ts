@@ -1,5 +1,6 @@
 import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
 import type { ReviewStatus } from "@jobpilot/contracts/email";
+import type { EscalationStatus } from "@jobpilot/contracts/pilot";
 import type { QueueStatus } from "@jobpilot/contracts/queue";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
@@ -126,4 +127,19 @@ export const coverLetterQueries = {
 
 export const analyticsQueries = {
   stats: () => ({ queryKey: queryKeys.analytics.stats(), queryFn: () => api.analytics.get() }),
+};
+
+/** Journal page size; shared by the first-page query and the load-more fetch. */
+export const PILOT_JOURNAL_PAGE_SIZE = 50;
+
+export const pilotQueries = {
+  state: () => ({ queryKey: queryKeys.pilot.state(), queryFn: () => api.pilot.get() }),
+  journal: () => ({
+    queryKey: queryKeys.pilot.journal(),
+    queryFn: () => api.pilot.journal.get({ query: { limit: PILOT_JOURNAL_PAGE_SIZE } }),
+  }),
+  escalations: (status?: EscalationStatus) => ({
+    queryKey: queryKeys.pilot.escalations({ status: status ?? "all" }),
+    queryFn: () => api.pilot.escalations.get({ query: status ? { status } : {} }),
+  }),
 };

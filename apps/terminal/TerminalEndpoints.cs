@@ -1,5 +1,6 @@
 using JobPilot.Terminal.Contracts;
 using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Realtime;
 using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Updates;
@@ -15,9 +16,9 @@ public static class TerminalEndpoints
     /// <summary>Maps health, session, update, and WebSocket endpoints.</summary>
     public static WebApplication MapTerminalEndpoints(this WebApplication app)
     {
-        app.MapGet("/healthz", (SessionManager session, HostInstall install, ProtocolRegistrar registrar) => TypedResults.Ok(CurrentStatus(session, install, registrar)));
+        app.MapGet("/healthz", (SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotConductor pilot) => TypedResults.Ok(CurrentStatus(session, install, registrar, pilot)));
 
-        app.MapPost("/sessions/start", Results<Ok<SessionStatus>, ProblemHttpResult> (StartSessionRequest request, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
+        app.MapPost("/sessions/start", Results<Ok<SessionStatus>, ProblemHttpResult> (StartSessionRequest request, SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotConductor pilot) =>
         {
             if (!Viewport.IsValid(request.Cols, request.Rows))
             {
@@ -39,7 +40,7 @@ public static class TerminalEndpoints
                     detail: ex.Message,
                     statusCode: StatusCodes.Status500InternalServerError);
             }
-            return TypedResults.Ok(CurrentStatus(session, install, registrar));
+            return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
         });
 
         app.MapPost("/sessions/inject", async Task<Results<Ok, ProblemHttpResult>> (InjectRequest request, SessionManager session) =>
@@ -72,10 +73,48 @@ public static class TerminalEndpoints
             };
         });
 
-        app.MapDelete("/sessions/current", (SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
+        app.MapDelete("/sessions/current", (SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotConductor pilot) =>
         {
             session.Stop();
-            return TypedResults.Ok(CurrentStatus(session, install, registrar));
+            return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
+        });
+
+        app.MapPost("/pilot/enable", Results<Ok<SessionStatus>, ProblemHttpResult> (
+            PilotEnableRequest request, PilotStore store, PilotConductor pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
+        {
+            string provider;
+            try
+            {
+                provider = TerminalProviders.Normalize(request.Provider);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            if (string.IsNullOrWhiteSpace(request.ApiToken))
+            {
+                return BadRequest("apiToken must be a non-empty string.");
+            }
+
+            store.Save(new PilotPairing
+            {
+                Provider = provider,
+                ApiToken = request.ApiToken,
+                ApiUrl = request.ApiUrl ?? string.Empty,
+                WebUrl = request.WebUrl ?? string.Empty,
+                Enabled = true,
+            });
+            pilot.WakeUp();
+            return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
+        });
+
+        app.MapPost("/pilot/disable", (PilotStore store, PilotConductor pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
+        {
+            // Keep the pairing and never kill a mid-cycle session; just stop driving it.
+            store.SetEnabled(false);
+            pilot.WakeUp();
+            return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
         });
 
         app.MapPost("/update", async Task<Results<Ok<UpdateResult>, ProblemHttpResult>> (
@@ -120,7 +159,7 @@ public static class TerminalEndpoints
     private static ProblemHttpResult Conflict(string detail) => TypedResults.Problem(
         title: "Inject rejected", detail: detail, statusCode: StatusCodes.Status409Conflict);
 
-    private static SessionStatus CurrentStatus(SessionManager session, HostInstall install, ProtocolRegistrar registrar) => new()
+    private static SessionStatus CurrentStatus(SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotConductor pilot) => new()
     {
         Status = install.PathsError is null ? SessionStatus.StatusOk : SessionStatus.StatusDegraded,
         Session = session.State == SessionState.Running ? SessionStatus.SessionRunning : SessionStatus.SessionStopped,
@@ -130,5 +169,6 @@ public static class TerminalEndpoints
         Detail = install.PathsError,
         CanRelaunch = registrar.IsRegistered,
         CanUpdate = install.CanUpdate,
+        Pilot = pilot.BuildStatus(),
     };
 }

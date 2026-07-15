@@ -25,6 +25,7 @@ const STATUS_COLOR: Record<
   pending: "default",
   approved: "info",
   applying: "primary",
+  needs_user: "warning",
   applied: "success",
   failed: "error",
   skipped: "warning",

@@ -65,4 +65,16 @@ export const RATE_LIMITS = {
     maxInFlight: 2,
     message: "Too many CAPTCHA solves in flight. Slow the loop down.",
   },
+
+  /** Pilot polls the agenda once per cycle; burst covers a tight lease-then-repoll loop. */
+  pilotAgenda: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
+
+  /** Batched journal writes, several per cycle - the loosest Pilot limit. */
+  pilotJournal: { key: byUser, limit: 600, windowMs: HOUR, burst: 20 },
+
+  /** Lease/heartbeat/release bookkeeping, a few per worked item. */
+  pilotLease: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
+
+  /** User- or agent-driven Pilot mutations (mandate, enable, escalations) - infrequent. */
+  pilotMutation: { key: byUser, limit: 120, windowMs: HOUR },
 } as const satisfies Record<string, RateLimitPolicy>;

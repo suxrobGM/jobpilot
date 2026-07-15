@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <PackageReference Include="Quick.PtyNet" Version="1.0.4" />
+    <!-- DPAPI for the pilot token at rest on Windows; a P/Invoke shim that is trim/AOT safe. -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.9" />
   </ItemGroup>
 
   <ItemGroup>

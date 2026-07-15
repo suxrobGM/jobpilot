@@ -29,6 +29,22 @@ public sealed record StartSessionRequest
 /// <param name="Provider">Optional provider id for the intended session.</param>
 public sealed record InjectRequest(string? Command, string? Provider = null);
 
+/// <summary>Request to enable pilot mode with a provider pairing.</summary>
+public sealed record PilotEnableRequest
+{
+    /// <summary>Provider that drives the pilot loop. Defaults to Claude.</summary>
+    public string? Provider { get; init; }
+
+    /// <summary>Per-user agent PAT, injected into the PTY as JOBPILOT_API_TOKEN.</summary>
+    public string? ApiToken { get; init; }
+
+    /// <summary>API base URL injected as JOBPILOT_API.</summary>
+    public string? ApiUrl { get; init; }
+
+    /// <summary>Web origin injected as JOBPILOT_WEB.</summary>
+    public string? WebUrl { get; init; }
+}
+
 /// <summary>Browser control message sent over <c>/ws</c>.</summary>
 public sealed record TerminalClientMessage
 {
