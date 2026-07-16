@@ -7,7 +7,7 @@ export const PRIORITY = {
   interviewPrep: 750,
   queueDrain: 720,
   outreachSend: 700,
-  inboxTriage: 650,
+  inboxReview: 650,
   promoPost: 600,
   warmIntro: 550,
   discover: 500,

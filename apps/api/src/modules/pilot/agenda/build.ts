@@ -31,7 +31,7 @@ function idleSleepSeconds({ now, config }: AgendaInput, within: boolean): number
  * ordering, cap-suppression, budget, and sleep rules are unit-testable.
  *
  * Priority: escalation.answered > interview.reply > board.health > job.apply (by matchScore) >
- * interview.prep > queue.drain > outreach.send > inbox.triage > promo.post > outreach.warmIntro >
+ * interview.prep > queue.drain > outreach.send > inbox.review > promo.post > outreach.warmIntro >
  * search.discover > outreach.followup > campaign.strategyReview > promo.compose > job.rescanSkipped >
  * job.retryFailed > campaign.finalize. The strategyReview/rescan/retry maintenance kinds surface only
  * on a quiet agenda (no apply/discover/queue work). Outside active hours only escalation/finalize items

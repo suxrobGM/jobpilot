@@ -7,7 +7,7 @@ const AGENDA_ITEM_KINDS = [
   "job.apply",
   "search.discover",
   "campaign.finalize",
-  "inbox.triage",
+  "inbox.review",
   "outreach.send",
   "outreach.followup",
   "outreach.warmIntro",

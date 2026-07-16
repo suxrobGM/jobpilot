@@ -104,7 +104,7 @@ bandit — see deferred.md) is the strategy tier of that system.
 | --- | --- | --- |
 | done | **M1 — Pilot spine** | mandate → agenda → lease → cycle → journal; conductor + pairing; the killer demo |
 | done | **M2 — Away-proof** | web push, phone-answerable escalations, unattended nights |
-| done | **M3 — Full surface** | inbox triage, outreach + warm path, self-promotion (PromotionPost, draft-first), 7am digest |
+| done | **M3 — Full surface** | inbox review, outreach + warm path, self-promotion (PromotionPost, draft-first), 7am digest |
 | done | **M3.5 — Interview autonomy** | invite → availability reply (approval card) + auto prep sheet via `interview` skill |
 | done | **M4 — Event wake + proactive** | SSE→inject wake, stall heuristics, strategy review, board health, rescan/retry |
 | done | **M5 — Learning-ready capture** | correction capture, journal export, subjectKey conventions frozen |
@@ -112,7 +112,7 @@ bandit — see deferred.md) is the strategy tier of that system.
 ## Done when
 
 A user writes a mandate, closes the laptop lid at night with the host running, and wakes to a
-journal: applications submitted, replies triaged, two questions awaiting one-tap answers — with
+journal: applications submitted, replies reviewed, two questions awaiting one-tap answers — with
 zero skill invocations by the user, ever.
 
 ## Notes
@@ -127,7 +127,7 @@ zero skill invocations by the user, ever.
   2FA self-expiry, live escalation badges. Code gates green; the live overnight smoke test
   (real board, host running, lid closed) is still pending — run it before starting M3.
 - 2026-07-15 — M3 (7dbe434), M3.5 (3b654e3), M4 (34f5aa5), M5 (413963b) shipped: full agenda
-  surface (inbox triage, outreach send/followup/warm-intro, promo compose/post — posting
+  surface (inbox review, outreach send/followup/warm-intro, promo compose/post — posting
   explicitly user-authorized, review-gated), interview reply+prep, SSE event wake, three-rung
   stall ladder (nudge → skip → kill), proactive quiet-agenda work (strategy review, board
   health probe-or-park via parkedBoards, rescan/retry, queue drain), admin fleet view,

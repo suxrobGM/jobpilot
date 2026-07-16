@@ -30,7 +30,7 @@ application, reply, and interview in one pipeline.
   daily caps, active hours, standing queries) and the agent runs perpetual
   sense → decide → act → record cycles: discovers and applies to jobs,
   checks for warm intros before cold applies, sends and follows up outreach,
-  triages recruiter replies, and drafts interview prep and self-promotion
+  reviews recruiter replies, and drafts interview prep and self-promotion
   posts - every action narrated in a live journal, with questions escalated
   to your phone as one-tap cards and hard caps enforced server-side.
 - **Four manual campaign modes** - search-and-review, autonomous auto-apply,

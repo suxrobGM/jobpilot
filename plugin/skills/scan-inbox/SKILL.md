@@ -4,7 +4,7 @@ description: Classify unscanned mailbox messages, fuzzy-match each to an existin
 argument-hint: "[message-id] - omit to scan all pending unscanned; pass an id to (re)scan just that message"
 ---
 
-# Scan Inbox - Triage Pending Email
+# Scan Inbox - Review Pending Email
 
 Classify recent email and link each thread to an existing `Application` when there's a confident match. This skill does **not** write `ApplicationEvent` rows or mutate `Application.status` - the user approves from `/inbox`, that's where state changes happen.
 
@@ -41,7 +41,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/messages?reviewStatus=pending&classification=null"
 ```
 
-If `data` is empty: **"Inbox is already triaged. Nothing new to classify."** and exit.
+If `data` is empty: **"Inbox is already reviewed. Nothing new to classify."** and exit.
 
 The rest of the skill runs over whatever you fetched. A re-scan overwrites the classification and resets `reviewStatus`, but never undoes an approved status move.
 

@@ -26,15 +26,15 @@ export function buildOutreachSendItems(
   }));
 }
 
-/** One batch triage item covers all pending unclassified mail. */
+/** One batch review item covers all pending unclassified mail. */
 export function buildInboxItem(inbox: AgendaInbox): AgendaItem[] {
   if (inbox.count === 0) return [];
   return [
     {
-      id: "inbox.triage",
-      kind: "inbox.triage",
-      priority: PRIORITY.inboxTriage,
-      title: `Triage ${inbox.count} inbox message(s)`,
+      id: "inbox.review",
+      kind: "inbox.review",
+      priority: PRIORITY.inboxReview,
+      title: `Review ${inbox.count} inbox message(s)`,
       subjectType: "inbox",
       subjectId: "inbox",
       payload: { messageIds: inbox.messageIds, count: inbox.count },

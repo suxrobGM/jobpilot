@@ -63,7 +63,7 @@ export interface AgendaFinalizeCampaign {
   query: string;
 }
 
-/** Unclassified synced emails awaiting a triage pass. */
+/** Unclassified synced emails awaiting a review pass. */
 export interface AgendaInbox {
   messageIds: string[];
   count: number;

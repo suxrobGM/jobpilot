@@ -20,7 +20,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Close the lid",
-    body: "The agent runs perpetual sense-decide-act cycles on your machine: it discovers and scores roles, finds warm intros before cold applies, sends and chases outreach, and triages recruiter replies - overnight, with the browser closed.",
+    body: "The agent runs perpetual sense-decide-act cycles on your machine: it discovers and scores roles, finds warm intros before cold applies, sends and chases outreach, and reviews recruiter replies - overnight, with the browser closed.",
   },
   {
     title: "Answer from your phone",
@@ -28,7 +28,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Wake to a journal",
-    body: "Every action lands in a live feed, rolled into a morning digest: applications submitted, replies triaged, questions waiting. It never sends InMail or posts publicly without your approval, and hard caps are enforced server-side.",
+    body: "Every action lands in a live feed, rolled into a morning digest: applications submitted, replies reviewed, questions waiting. It never sends InMail or posts publicly without your approval, and hard caps are enforced server-side.",
   },
 ];
 

@@ -28,7 +28,7 @@ describe("buildAgenda M3 kinds", () => {
     expect(agenda.items.map((i) => i.kind)).toEqual([
       "job.apply",
       "outreach.send",
-      "inbox.triage",
+      "inbox.review",
       "promo.post",
       "outreach.warmIntro",
       "outreach.followup",
@@ -37,9 +37,9 @@ describe("buildAgenda M3 kinds", () => {
     ]);
   });
 
-  it("emits one inbox.triage batch item carrying oldest-first ids and total count", () => {
+  it("emits one inbox.review batch item carrying oldest-first ids and total count", () => {
     const agenda = buildAgenda(base({ inbox: { messageIds: ["a", "b"], count: 5 } }));
-    const item = agenda.items.find((i) => i.kind === "inbox.triage");
+    const item = agenda.items.find((i) => i.kind === "inbox.review");
     expect(item?.payload).toEqual({ messageIds: ["a", "b"], count: 5 });
     expect(item?.subjectType).toBe("inbox");
   });

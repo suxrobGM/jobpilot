@@ -108,7 +108,7 @@ while it's enabled:
 
 - **Sense** - the agent asks the dashboard for its agenda: a prioritized list
   compiled fresh from your data every time it's asked (jobs to apply to,
-  replies to triage, follow-ups due, an interview invite awaiting a reply) -
+  replies to review, follow-ups due, an interview invite awaiting a reply) -
   there's no separate task queue or server-side cron job ticking in the
   background.
 - **Decide** - it takes the single top item.

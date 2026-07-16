@@ -20,7 +20,7 @@ perpetually. Implementation runs on branch `feat/pilot` per the approved 2026-07
 | --- | --- | --- |
 | done | M1 — Pilot spine | mandate → agenda → lease → cycle → journal; conductor + host pairing |
 | done | M2 — Away-proof | web push, phone-answerable escalations, unattended nights |
-| done | M3 — Full surface | inbox triage, outreach + warm path, self-promotion, 7am digest |
+| done | M3 — Full surface | inbox review, outreach + warm path, self-promotion, 7am digest |
 | done | M3.5 — Interview autonomy | invite → reply approval card + auto prep sheet |
 | done | M4 — Event wake + proactive | SSE wake, stall heuristics, strategy review, board health |
 | done | M5 — Learning-ready capture | correction capture, journal export, subjectKey conventions |
