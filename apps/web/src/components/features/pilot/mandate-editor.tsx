@@ -2,8 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { PilotMandateConfig, PilotState } from "@jobpilot/contracts/pilot";
-import { Add, Delete } from "@mui/icons-material";
-import { Box, Button, Grid, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Grid, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { z } from "zod/v4";
 import { api } from "@/api/client";
@@ -13,6 +12,7 @@ import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useKeyedList } from "@/hooks/use-keyed-list";
+import { MandateRowList } from "./mandate-row-list";
 
 interface MandateEditorProps {
   state: PilotState;
@@ -136,7 +136,7 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
 
   const activeHoursEnabled = useSelector(form.store, (s) => s.values.activeHoursEnabled);
   const queryCount = useSelector(form.store, (s) => s.values.standingQueries.length);
-  const { keys, onRemove } = useKeyedList(queryCount);
+  const queryList = useKeyedList(queryCount);
   const venueCount = useSelector(form.store, (s) => s.values.promotionVenues.length);
   const venueList = useKeyedList(venueCount);
 
@@ -287,64 +287,47 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
             description="Searches the pilot re-runs on its own cadence."
           >
             <form.AppField name="standingQueries" mode="array">
-              {(field) => {
-                const rows = field.state.value ?? [];
-                return (
-                  <Stack spacing={2}>
-                    {rows.map((_, i) => (
-                      <Stack key={keys[i]} direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                        <Box sx={{ flex: 2 }}>
-                          <form.AppField name={`standingQueries[${i}].query`}>
-                            {(sub) => <sub.TextField label="Query" />}
-                          </form.AppField>
-                        </Box>
-                        <Box sx={{ flex: 1 }}>
-                          <form.AppField name={`standingQueries[${i}].board`}>
-                            {(sub) => <sub.TextField label="Board (optional)" />}
-                          </form.AppField>
-                        </Box>
-                        <Box sx={{ width: { xs: "100%", sm: 140 } }}>
-                          <form.AppField name={`standingQueries[${i}].cadenceHours`}>
-                            {(sub) => (
-                              <sub.TextField
-                                label="Cadence (h)"
-                                type="number"
-                                slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                              />
-                            )}
-                          </form.AppField>
-                        </Box>
-                        <IconButton
-                          aria-label={`Remove query ${i + 1}`}
-                          size="small"
-                          sx={{ alignSelf: { xs: "flex-end", sm: "center" } }}
-                          onClick={() => {
-                            onRemove(i);
-                            field.removeValue(i);
-                          }}
-                        >
-                          <Delete fontSize="sm" />
-                        </IconButton>
-                      </Stack>
-                    ))}
-                    {rows.length === 0 && (
-                      <Typography variant="body2Muted">No standing queries yet.</Typography>
-                    )}
-                    <Box>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Add fontSize="sm" />}
-                        onClick={() => {
-                          // useKeyedList appends a key when the tracked length grows.
-                          field.pushValue({ ...EMPTY_QUERY });
-                        }}
-                      >
-                        Add query
-                      </Button>
-                    </Box>
-                  </Stack>
-                );
-              }}
+              {(field) => (
+                <MandateRowList
+                  count={field.state.value?.length ?? 0}
+                  keys={queryList.keys}
+                  emptyText="No standing queries yet."
+                  addLabel="Add query"
+                  removeAria={(i) => `Remove query ${i + 1}`}
+                  // useKeyedList appends a key when the tracked length grows.
+                  onAdd={() => field.pushValue({ ...EMPTY_QUERY })}
+                  onRemove={(i) => {
+                    queryList.onRemove(i);
+                    field.removeValue(i);
+                  }}
+                >
+                  {(i) => (
+                    <>
+                      <Box sx={{ flex: 2 }}>
+                        <form.AppField name={`standingQueries[${i}].query`}>
+                          {(sub) => <sub.TextField label="Query" />}
+                        </form.AppField>
+                      </Box>
+                      <Box sx={{ flex: 1 }}>
+                        <form.AppField name={`standingQueries[${i}].board`}>
+                          {(sub) => <sub.TextField label="Board (optional)" />}
+                        </form.AppField>
+                      </Box>
+                      <Box sx={{ width: { xs: "100%", sm: 140 } }}>
+                        <form.AppField name={`standingQueries[${i}].cadenceHours`}>
+                          {(sub) => (
+                            <sub.TextField
+                              label="Cadence (h)"
+                              type="number"
+                              slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                            />
+                          )}
+                        </form.AppField>
+                      </Box>
+                    </>
+                  )}
+                </MandateRowList>
+              )}
             </form.AppField>
           </FormSection>
 
@@ -357,83 +340,54 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
                 Autonomy: review each post before it goes out.
               </Typography>
               <form.AppField name="promotionVenues" mode="array">
-                {(field) => {
-                  const rows = field.state.value ?? [];
-                  return (
-                    <Stack spacing={2}>
-                      {rows.map((_, i) => (
-                        <Stack
-                          key={venueList.keys[i]}
-                          direction={{ xs: "column", sm: "row" }}
-                          spacing={1.5}
-                        >
-                          <Box sx={{ flex: 2 }}>
-                            <form.AppField name={`promotionVenues[${i}].venue`}>
-                              {(sub) => <sub.TextField label="Venue" />}
-                            </form.AppField>
-                          </Box>
-                          <Box sx={{ flex: 2 }}>
-                            <form.AppField name={`promotionVenues[${i}].target`}>
-                              {(sub) => <sub.TextField label="Target (optional)" />}
-                            </form.AppField>
-                          </Box>
-                          <Box sx={{ width: { xs: "100%", sm: 140 } }}>
-                            <form.AppField name={`promotionVenues[${i}].cadenceDays`}>
-                              {(sub) => (
-                                <sub.TextField
-                                  label="Cadence (d)"
-                                  type="number"
-                                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                                />
-                              )}
-                            </form.AppField>
-                          </Box>
-                          <IconButton
-                            aria-label={`Remove venue ${i + 1}`}
-                            size="small"
-                            sx={{ alignSelf: { xs: "flex-end", sm: "center" } }}
-                            onClick={() => {
-                              venueList.onRemove(i);
-                              field.removeValue(i);
-                            }}
-                          >
-                            <Delete fontSize="sm" />
-                          </IconButton>
-                        </Stack>
-                      ))}
-                      {rows.length === 0 && (
-                        <Typography variant="body2Muted">No promotion venues yet.</Typography>
-                      )}
-                      <Box>
-                        <Button
-                          variant="outlined"
-                          startIcon={<Add fontSize="sm" />}
-                          onClick={() => {
-                            field.pushValue({ ...EMPTY_VENUE });
-                          }}
-                        >
-                          Add venue
-                        </Button>
-                      </Box>
-                    </Stack>
-                  );
-                }}
+                {(field) => (
+                  <MandateRowList
+                    count={field.state.value?.length ?? 0}
+                    keys={venueList.keys}
+                    emptyText="No promotion venues yet."
+                    addLabel="Add venue"
+                    removeAria={(i) => `Remove venue ${i + 1}`}
+                    onAdd={() => field.pushValue({ ...EMPTY_VENUE })}
+                    onRemove={(i) => {
+                      venueList.onRemove(i);
+                      field.removeValue(i);
+                    }}
+                  >
+                    {(i) => (
+                      <>
+                        <Box sx={{ flex: 2 }}>
+                          <form.AppField name={`promotionVenues[${i}].venue`}>
+                            {(sub) => <sub.TextField label="Venue" />}
+                          </form.AppField>
+                        </Box>
+                        <Box sx={{ flex: 2 }}>
+                          <form.AppField name={`promotionVenues[${i}].target`}>
+                            {(sub) => <sub.TextField label="Target (optional)" />}
+                          </form.AppField>
+                        </Box>
+                        <Box sx={{ width: { xs: "100%", sm: 140 } }}>
+                          <form.AppField name={`promotionVenues[${i}].cadenceDays`}>
+                            {(sub) => (
+                              <sub.TextField
+                                label="Cadence (d)"
+                                type="number"
+                                slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                              />
+                            )}
+                          </form.AppField>
+                        </Box>
+                      </>
+                    )}
+                  </MandateRowList>
+                )}
               </form.AppField>
             </Stack>
           </FormSection>
 
           <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
-            <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting] as const}>
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={!canSubmit || isSubmitting || save.isPending}
-                >
-                  Save mandate
-                </Button>
-              )}
-            </form.Subscribe>
+            <form.AppForm>
+              <form.SubmitButton disabled={save.isPending}>Save mandate</form.SubmitButton>
+            </form.AppForm>
           </Stack>
         </Stack>
       </form>
