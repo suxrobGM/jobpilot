@@ -9,7 +9,7 @@ import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
-import { loadMandateConfig } from "@/modules/pilot/pilot.mandate";
+import { loadMandateConfig } from "@/modules/pilot/pilot.instructions";
 import { PilotService } from "@/modules/pilot/pilot.service";
 import { countSentToday } from "@/modules/pilot/pilot.stats";
 import { toOutreachMessageRow } from "../campaign.mapper";

@@ -2,7 +2,7 @@
 // stays the single import surface for every pilot schema and type.
 export * from "./agenda";
 export * from "./escalation";
+export * from "./instructions";
 export * from "./journal";
 export * from "./lease";
-export * from "./mandate";
 export * from "./promotion";

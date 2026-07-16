@@ -12,7 +12,7 @@ import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useKeyedList } from "@/hooks/use-keyed-list";
-import { MandateRowList } from "./mandate-row-list";
+import { MandateRowList } from "./instructions-row-list";
 
 interface MandateEditorProps {
   state: PilotState;
