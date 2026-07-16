@@ -22,9 +22,9 @@ export const PROMOTION_TERMINAL_STATUSES: readonly string[] = [
   "expired",
 ];
 
-/** Agent creates a draft post for a venue. */
+/** Agent creates a draft post for a platform. */
 export const createPromotionSchema = z.object({
-  venue: z.string().min(1),
+  platform: z.string().min(1),
   target: z.string().optional(),
   title: z.string().optional(),
   body: z.string().min(1),
@@ -53,7 +53,7 @@ export const promotionsQuerySchema = z.object({ status: promotionStatusSchema.op
 export const promotionSchema = z.object({
   id: z.uuid(),
   profileId: z.uuid(),
-  venue: z.string(),
+  platform: z.string(),
   target: z.string().nullable(),
   title: z.string().nullable(),
   body: z.string(),

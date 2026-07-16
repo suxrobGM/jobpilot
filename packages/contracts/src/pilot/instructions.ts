@@ -10,7 +10,7 @@ const pilotActiveHoursSchema = z.object({
   tz: z.string(),
 });
 
-const pilotStandingQuerySchema = z.object({
+const pilotSavedSearchSchema = z.object({
   query: z.string().min(1),
   board: z.string().optional(),
   // Base resume the discovered campaign scores against; campaign config requires it.
@@ -23,15 +23,15 @@ const pilotAutonomySchema = z.object({
   outreachLinkedIn: z.enum(["draft", "review"]).default("draft"),
 });
 
-const pilotPromotionVenueSchema = z.object({
-  venue: z.string().min(1),
+const pilotPromotionPlatformSchema = z.object({
+  platform: z.string().min(1),
   target: z.string().optional(),
   cadenceDays: z.number().int().min(1).default(30),
 });
 
 /** Self-promotion config. Review-only in M3: auto-posting is deliberately not offered. */
 const pilotPromotionConfigSchema = z.object({
-  venues: z.array(pilotPromotionVenueSchema).default([]),
+  platforms: z.array(pilotPromotionPlatformSchema).default([]),
   autonomy: z.literal("review").default("review"),
 });
 
@@ -45,14 +45,14 @@ export const pilotInstructionsConfigSchema = z.object({
   boards: z.array(z.string()).default([]),
   activeHours: pilotActiveHoursSchema.optional(),
   checkIntervalMinutes: z.number().int().default(30),
-  standingQueries: z.array(pilotStandingQuerySchema).default([]),
+  savedSearches: z.array(pilotSavedSearchSchema).default([]),
   // Full default so a missing key still yields both autonomy fields (zod does not re-parse defaults).
   autonomy: pilotAutonomySchema.default({ outreachEmail: "review", outreachLinkedIn: "draft" }),
   dailyOutreachCap: z.number().int().min(0).default(5),
   outreachFollowupDays: z.number().int().default(5),
   // Full default so a missing key still yields a usable promotion block (zod does not re-parse defaults).
-  promotion: pilotPromotionConfigSchema.default({ venues: [], autonomy: "review" }),
-  // Boards the user agreed to park; agenda excludes their job.apply items and standing queries.
+  promotion: pilotPromotionConfigSchema.default({ platforms: [], autonomy: "review" }),
+  // Boards the user agreed to park; agenda excludes their job.apply items and saved searches.
   parkedBoards: z.array(z.string()).default([]),
 });
 

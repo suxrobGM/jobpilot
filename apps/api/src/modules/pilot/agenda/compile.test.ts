@@ -169,17 +169,19 @@ describe("AgendaService question enrichment", () => {
 });
 
 describe("AgendaService promotion cadence", () => {
-  const venueConfig = JSON.stringify({ promotion: { venues: [{ venue: "hn", cadenceDays: 30 }] } });
+  const platformConfig = JSON.stringify({
+    promotion: { platforms: [{ platform: "hn", cadenceDays: 30 }] },
+  });
 
-  it("emits promo.compose for a venue whose cadence is due (no prior post)", async () => {
-    const agenda = await service({ instructionsConfig: venueConfig }).compile("p1");
+  it("emits promo.compose for a platform whose cadence is due (no prior post)", async () => {
+    const agenda = await service({ instructionsConfig: platformConfig }).compile("p1");
     expect(agenda.items.some((i) => i.kind === "promo.compose")).toBe(true);
   });
 
   it("suppresses promo.compose while a recent non-declined post exists", async () => {
     const agenda = await service({
-      instructionsConfig: venueConfig,
-      venuePosts: [{ venue: "hn", createdAt: new Date() }],
+      instructionsConfig: platformConfig,
+      platformPosts: [{ platform: "hn", createdAt: new Date() }],
     }).compile("p1");
     expect(agenda.items.some((i) => i.kind === "promo.compose")).toBe(false);
   });
@@ -248,7 +250,7 @@ describe("AgendaService board.health", () => {
 describe("AgendaService parkedBoards enforcement", () => {
   const parked = JSON.stringify({
     parkedBoards: ["linkedin"],
-    standingQueries: [
+    savedSearches: [
       { query: "react", board: "linkedin" },
       { query: "golang", board: "indeed" },
     ],
@@ -266,7 +268,7 @@ describe("AgendaService parkedBoards enforcement", () => {
     expect(applyKeys).toEqual(["on-live"]);
   });
 
-  it("excludes standing queries on a parked board from search.discover", async () => {
+  it("excludes saved searches on a parked board from search.discover", async () => {
     const agenda = await service({ instructionsConfig: parked }).compile("p1");
     const discovered = agenda.items
       .filter((i) => i.kind === "search.discover")

@@ -16,7 +16,7 @@ function defined(data: Record<string, unknown>): Record<string, unknown> {
 const basePost = {
   id: "promo-1",
   profileId: "p1",
-  venue: "linkedin",
+  platform: "linkedin",
   target: null,
   title: "Shipped a thing",
   body: "Original body",
@@ -64,7 +64,7 @@ describe("PromotionService correction capture", () => {
       subjectId: "promo-1",
       detail: {
         type: "promotion.declined",
-        venue: "linkedin",
+        platform: "linkedin",
         title: "Shipped a thing",
         body: "Original body",
       },
@@ -82,7 +82,7 @@ describe("PromotionService correction capture", () => {
       subjectId: "promo-1",
       detail: {
         type: "promotion.edited",
-        venue: "linkedin",
+        platform: "linkedin",
         before: { title: "Shipped a thing", body: "Original body" },
         after: { title: "Shipped a thing", body: "Revised body" },
       },

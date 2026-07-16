@@ -75,7 +75,7 @@ export function toPromotion(row: PromotionPostModel): Promotion {
   return {
     id: row.id,
     profileId: row.profileId,
-    venue: row.venue,
+    platform: row.platform,
     target: row.target,
     title: row.title,
     body: row.body,

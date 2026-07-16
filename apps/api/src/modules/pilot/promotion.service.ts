@@ -27,7 +27,7 @@ export class PromotionService {
     const row = await this.prisma.promotionPost.create({
       data: {
         profileId,
-        venue: body.venue,
+        platform: body.platform,
         target: body.target ?? null,
         title: body.title ?? null,
         body: body.body,
@@ -37,7 +37,7 @@ export class PromotionService {
     publish(pilotChannel, { profileId }, { type: "promotion.created", promotion });
     void this.push.sendToProfile(profileId, {
       title: "Post draft ready for review",
-      body: `${row.venue}: ${row.title ?? row.body}`,
+      body: `${row.platform}: ${row.title ?? row.body}`,
       url: "/pilot",
       tag: `promo-${row.id}`,
     });
@@ -96,10 +96,10 @@ export class PromotionService {
         entries: [
           {
             kind: "correction",
-            summary: `Declined ${before.venue} post draft.`,
+            summary: `Declined ${before.platform} post draft.`,
             detail: {
               type: "promotion.declined",
-              venue: before.venue,
+              platform: before.platform,
               title: before.title,
               body: before.body,
             },
@@ -119,10 +119,10 @@ export class PromotionService {
       entries: [
         {
           kind: "correction",
-          summary: `Edited ${before.venue} post draft.`,
+          summary: `Edited ${before.platform} post draft.`,
           detail: {
             type: "promotion.edited",
-            venue: before.venue,
+            platform: before.platform,
             before: { title: before.title, body: before.body },
             after: { title: after.title, body: after.body },
           },

@@ -62,7 +62,7 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
     if (input.approvedJobs.length === 0)
       items.push(...buildDiscoverItems(input.dueQueries, config));
     if (sendHeadroom > 0) items.push(...buildFollowupItems(input.followups));
-    items.push(...buildPromoComposeItems(input.dueVenues));
+    items.push(...buildPromoComposeItems(input.duePlatforms));
 
     // Quiet-agenda maintenance surfaces only when no apply / discover / queue work is queued.
     const busy = items.some(

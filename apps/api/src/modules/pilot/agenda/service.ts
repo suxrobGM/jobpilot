@@ -16,7 +16,7 @@ import { writeDigestIfDue } from "./digest";
 import { jobRef, parsePayload, revertJobToApproved, runExpiry } from "./expiry";
 import {
   attachWarmContacts,
-  dueStandingQueries,
+  dueSavedSearches,
   gatherAnsweredQuestions,
   gatherApprovedJobs,
   gatherFinalizeCampaigns,
@@ -24,7 +24,7 @@ import {
 } from "./gather";
 import { gatherInterviewPreps, gatherInterviewReplies } from "./gather-interview";
 import {
-  dueVenues,
+  duePlatforms,
   gatherApprovedOutreach,
   gatherApprovedPromotions,
   gatherFollowups,
@@ -77,7 +77,7 @@ export class AgendaService {
       outreachSentToday,
       followups,
       approvedPromotions,
-      dueVenueList,
+      duePlatformList,
       interviewReplies,
       interviewPreps,
       queue,
@@ -96,7 +96,7 @@ export class AgendaService {
       countSentToday(this.prisma, profileId, now, tz),
       gatherFollowups(this.prisma, profileId, config, now),
       gatherApprovedPromotions(this.prisma, profileId, now),
-      dueVenues(this.prisma, profileId, config, now),
+      duePlatforms(this.prisma, profileId, config, now),
       gatherInterviewReplies(this.prisma, profileId),
       gatherInterviewPreps(this.prisma, profileId),
       gatherQueueDrain(this.prisma, profileId),
@@ -108,9 +108,7 @@ export class AgendaService {
 
     // Discovery only matters when the apply pipeline is empty; skip the lease lookups otherwise.
     const dueQueries =
-      approvedJobs.length === 0
-        ? await dueStandingQueries(this.prisma, profileId, config, now)
-        : [];
+      approvedJobs.length === 0 ? await dueSavedSearches(this.prisma, profileId, config, now) : [];
 
     // Quiet-agenda maintenance runs only when nothing apply/discover/queue-shaped is pending anyway,
     // so gather its candidates only then - the builder still gates authoritatively.
@@ -143,7 +141,7 @@ export class AgendaService {
       approvedOutreach,
       outreachSentToday,
       followups,
-      dueVenues: dueVenueList,
+      duePlatforms: duePlatformList,
       approvedPromotions,
       interviewReplies,
       interviewPreps,

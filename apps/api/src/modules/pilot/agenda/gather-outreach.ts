@@ -5,8 +5,8 @@ import { GATHER_CAP } from "./constants";
 import type {
   AgendaFollowup,
   AgendaOutreachSend,
+  AgendaPromoPlatform,
   AgendaPromoPost,
-  AgendaPromoVenue,
 } from "./types";
 
 /** Approved email drafts with a deliverable address, oldest first. LinkedIn drafts are never sends. */
@@ -101,37 +101,41 @@ export async function gatherApprovedPromotions(
   });
   return rows.map((p) => ({
     id: p.id,
-    venue: p.venue,
+    platform: p.platform,
     target: p.target,
     title: p.title,
     body: p.body,
   }));
 }
 
-/** Venues whose newest non-declined post is older than their cadence (or which have none yet). */
-export async function dueVenues(
+/** Platforms whose newest non-declined post is older than their cadence (or which have none yet). */
+export async function duePlatforms(
   prisma: PrismaClient,
   profileId: string,
   config: PilotInstructionsConfig,
   now: Date,
-): Promise<AgendaPromoVenue[]> {
-  const venues = config.promotion.venues;
-  if (venues.length === 0) return [];
+): Promise<AgendaPromoPlatform[]> {
+  const platforms = config.promotion.platforms;
+  if (platforms.length === 0) return [];
   const posts = await prisma.promotionPost.findMany({
-    where: { profileId, status: { not: "declined" }, venue: { in: venues.map((v) => v.venue) } },
+    where: {
+      profileId,
+      status: { not: "declined" },
+      platform: { in: platforms.map((p) => p.platform) },
+    },
     orderBy: { createdAt: "desc" },
     take: GATHER_CAP,
-    select: { venue: true, createdAt: true },
+    select: { platform: true, createdAt: true },
   });
-  const newestByVenue = new Map<string, Date>();
+  const newestByPlatform = new Map<string, Date>();
   for (const p of posts) {
-    if (!newestByVenue.has(p.venue)) newestByVenue.set(p.venue, p.createdAt);
+    if (!newestByPlatform.has(p.platform)) newestByPlatform.set(p.platform, p.createdAt);
   }
-  const due: AgendaPromoVenue[] = [];
-  for (const v of venues) {
-    const newest = newestByVenue.get(v.venue);
-    const isDue = !newest || now.getTime() - newest.getTime() >= v.cadenceDays * DAY_MS;
-    if (isDue) due.push({ venue: v.venue, target: v.target });
+  const due: AgendaPromoPlatform[] = [];
+  for (const p of platforms) {
+    const newest = newestByPlatform.get(p.platform);
+    const isDue = !newest || now.getTime() - newest.getTime() >= p.cadenceDays * DAY_MS;
+    if (isDue) due.push({ platform: p.platform, target: p.target });
   }
   return due;
 }

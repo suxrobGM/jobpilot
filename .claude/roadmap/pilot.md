@@ -38,7 +38,7 @@ all state server-side) and does ONE agenda item.
   jobs also gain a `needs_user` status so parked work is visible. Answered questions rank
   first on the agenda.
 - **Scheduling is server-side** in the instructions/agenda (`sleepSeconds`/`nextWakeAt` from
-  activeHours + standing-query cadence) — not host cron. A phone edit to the instructions changes
+  activeHours + saved-search cadence) — not host cron. A phone edit to the instructions changes
   behavior next cycle; the host keeps one bit: enabled.
 - **One-time host pairing** solves "browser tab must be open": Enable Pilot posts the reusable
   terminal token to the host (`POST /pilot/enable`), stored DPAPI/0600; the conductor
@@ -51,9 +51,9 @@ all state server-side) and does ONE agenda item.
 One small, user-editable document in the dashboard:
 
 - **Goals**: "senior TypeScript remote role, ≥$150k, by October."
-- **Effort**: daily apply cap, active hours, check interval, standing queries.
+- **Effort**: daily apply cap, active hours, check interval, saved searches.
 - **Boundaries**: autonomy per outreach channel (email draft/review/auto; LinkedIn never
-  auto-InMail), boards to avoid, promotion venues + cadence.
+  auto-InMail), boards to avoid, promotion platforms + cadence.
 - **Question prefs**: push vs. morning digest.
 
 Soft judgment lives in the instructions text; hard limits are ALSO enforced server-side so prompt
@@ -72,7 +72,7 @@ drift can never exceed them.
 | t4-warm-path-finder | M3, scoped: free `GET /api/contacts?company=X` check before every apply; active discovery only for score ≥85, instructions-gated |
 | t4-multi-machine-fleet | Free once leases exist — the lease is the mutex. Document + test two hosts draining one campaign with no duplicate applications |
 | t5-supervisor-watchdog | The PilotConductor (M1 basic: 20-min sentinel timeout → nudge → kill; M4 heuristics: repeated-output/error loops, skip directive) |
-| t5-standing-query-campaigns | Instructions `standingQueries` → `search.discover` agenda items (M1); event-wake latency (M4). Metric: time-from-posting-to-application |
+| t5-standing-query-campaigns | Instructions `savedSearches` → `search.discover` agenda items (M1); event-wake latency (M4). Metric: time-from-posting-to-application |
 | t5-strategist-loop | `campaign.strategyReview` agenda kind (M4): low-yield telemetry summary → LLM rewrites query/tunes minScore, written back as auditable campaign events, server-bounded |
 | t5-circuit-breakers | Board-health agenda items (M4): server counts consecutive per-board failures → "probe in careful mode or park with a user-facing reason" |
 | t5-speculative-prep | Future policy: during browser waits, precompute next leased job's artifacts (resume variant, cover letter — needs lease peek). Cheapest win once leases exist; do after M4 |

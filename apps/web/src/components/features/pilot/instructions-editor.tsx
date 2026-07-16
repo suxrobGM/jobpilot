@@ -20,9 +20,9 @@ interface InstructionsEditorProps {
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-const EMPTY_QUERY = { query: "", board: "", cadenceHours: 24 };
+const EMPTY_SEARCH = { query: "", board: "", cadenceHours: 24 };
 
-const EMPTY_VENUE = { venue: "", target: "", cadenceDays: 30 };
+const EMPTY_PLATFORM = { platform: "", target: "", cadenceDays: 30 };
 
 const instructionsFormSchema = z.object({
   goals: z.string(),
@@ -37,16 +37,16 @@ const instructionsFormSchema = z.object({
   activeHoursTz: z.string(),
   outreachEmail: z.enum(["draft", "review", "auto"]),
   outreachLinkedIn: z.enum(["draft", "review"]),
-  standingQueries: z.array(
+  savedSearches: z.array(
     z.object({
       query: z.string().min(1, "Required"),
       board: z.string(),
       cadenceHours: z.number().min(1),
     }),
   ),
-  promotionVenues: z.array(
+  promotionPlatforms: z.array(
     z.object({
-      venue: z.string().min(1, "Required"),
+      platform: z.string().min(1, "Required"),
       target: z.string(),
       cadenceDays: z.number().min(1),
     }),
@@ -70,15 +70,15 @@ function toFormValues(state: PilotState): InstructionsFormValues {
     activeHoursTz: c.activeHours?.tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     outreachEmail: c.autonomy.outreachEmail,
     outreachLinkedIn: c.autonomy.outreachLinkedIn,
-    standingQueries: c.standingQueries.map((q) => ({
+    savedSearches: c.savedSearches.map((q) => ({
       query: q.query,
       board: q.board ?? "",
       cadenceHours: q.cadenceHours,
     })),
-    promotionVenues: c.promotion.venues.map((v) => ({
-      venue: v.venue,
-      target: v.target ?? "",
-      cadenceDays: v.cadenceDays,
+    promotionPlatforms: c.promotion.platforms.map((p) => ({
+      platform: p.platform,
+      target: p.target ?? "",
+      cadenceDays: p.cadenceDays,
     })),
   };
 }
@@ -112,7 +112,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
               tz: value.activeHoursTz,
             }
           : undefined,
-        standingQueries: value.standingQueries.map((q) => ({
+        savedSearches: value.savedSearches.map((q) => ({
           query: q.query.trim(),
           board: q.board.trim() || undefined,
           cadenceHours: q.cadenceHours,
@@ -122,10 +122,10 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
           outreachLinkedIn: value.outreachLinkedIn,
         },
         promotion: {
-          venues: value.promotionVenues.map((v) => ({
-            venue: v.venue.trim(),
-            target: v.target.trim() || undefined,
-            cadenceDays: v.cadenceDays,
+          platforms: value.promotionPlatforms.map((p) => ({
+            platform: p.platform.trim(),
+            target: p.target.trim() || undefined,
+            cadenceDays: p.cadenceDays,
           })),
           autonomy: "review",
         },
@@ -135,10 +135,10 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
   });
 
   const activeHoursEnabled = useSelector(form.store, (s) => s.values.activeHoursEnabled);
-  const queryCount = useSelector(form.store, (s) => s.values.standingQueries.length);
-  const queryList = useKeyedList(queryCount);
-  const venueCount = useSelector(form.store, (s) => s.values.promotionVenues.length);
-  const venueList = useKeyedList(venueCount);
+  const searchCount = useSelector(form.store, (s) => s.values.savedSearches.length);
+  const searchList = useKeyedList(searchCount);
+  const platformCount = useSelector(form.store, (s) => s.values.promotionPlatforms.length);
+  const platformList = useKeyedList(platformCount);
 
   return (
     <SectionCard title="Instructions">
@@ -283,38 +283,38 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
           </FormSection>
 
           <FormSection
-            title="Standing queries"
-            description="Searches the pilot re-runs on its own cadence."
+            title="Saved searches"
+            description="Searches the pilot re-runs on a schedule."
           >
-            <form.AppField name="standingQueries" mode="array">
+            <form.AppField name="savedSearches" mode="array">
               {(field) => (
                 <InstructionsRowList
                   count={field.state.value?.length ?? 0}
-                  keys={queryList.keys}
-                  emptyText="No standing queries yet."
-                  addLabel="Add query"
-                  removeAria={(i) => `Remove query ${i + 1}`}
+                  keys={searchList.keys}
+                  emptyText="No saved searches yet."
+                  addLabel="Add search"
+                  removeAria={(i) => `Remove search ${i + 1}`}
                   // useKeyedList appends a key when the tracked length grows.
-                  onAdd={() => field.pushValue({ ...EMPTY_QUERY })}
+                  onAdd={() => field.pushValue({ ...EMPTY_SEARCH })}
                   onRemove={(i) => {
-                    queryList.onRemove(i);
+                    searchList.onRemove(i);
                     field.removeValue(i);
                   }}
                 >
                   {(i) => (
                     <>
                       <Box sx={{ flex: 2 }}>
-                        <form.AppField name={`standingQueries[${i}].query`}>
-                          {(sub) => <sub.TextField label="Query" />}
+                        <form.AppField name={`savedSearches[${i}].query`}>
+                          {(sub) => <sub.TextField label="Search" />}
                         </form.AppField>
                       </Box>
                       <Box sx={{ flex: 1 }}>
-                        <form.AppField name={`standingQueries[${i}].board`}>
+                        <form.AppField name={`savedSearches[${i}].board`}>
                           {(sub) => <sub.TextField label="Board (optional)" />}
                         </form.AppField>
                       </Box>
                       <Box sx={{ width: { xs: "100%", sm: 140 } }}>
-                        <form.AppField name={`standingQueries[${i}].cadenceHours`}>
+                        <form.AppField name={`savedSearches[${i}].cadenceHours`}>
                           {(sub) => (
                             <sub.TextField
                               label="Cadence (h)"
@@ -332,41 +332,41 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
           </FormSection>
 
           <FormSection
-            title="Promotion venues"
+            title="Platforms"
             description="Where the pilot drafts self-promotion posts, and how often. Posts are review-only."
           >
             <Stack spacing={2}>
               <Typography variant="body2Muted">
                 Autonomy: review each post before it goes out.
               </Typography>
-              <form.AppField name="promotionVenues" mode="array">
+              <form.AppField name="promotionPlatforms" mode="array">
                 {(field) => (
                   <InstructionsRowList
                     count={field.state.value?.length ?? 0}
-                    keys={venueList.keys}
-                    emptyText="No promotion venues yet."
-                    addLabel="Add venue"
-                    removeAria={(i) => `Remove venue ${i + 1}`}
-                    onAdd={() => field.pushValue({ ...EMPTY_VENUE })}
+                    keys={platformList.keys}
+                    emptyText="No platforms yet."
+                    addLabel="Add platform"
+                    removeAria={(i) => `Remove platform ${i + 1}`}
+                    onAdd={() => field.pushValue({ ...EMPTY_PLATFORM })}
                     onRemove={(i) => {
-                      venueList.onRemove(i);
+                      platformList.onRemove(i);
                       field.removeValue(i);
                     }}
                   >
                     {(i) => (
                       <>
                         <Box sx={{ flex: 2 }}>
-                          <form.AppField name={`promotionVenues[${i}].venue`}>
-                            {(sub) => <sub.TextField label="Venue" />}
+                          <form.AppField name={`promotionPlatforms[${i}].platform`}>
+                            {(sub) => <sub.TextField label="Platform" />}
                           </form.AppField>
                         </Box>
                         <Box sx={{ flex: 2 }}>
-                          <form.AppField name={`promotionVenues[${i}].target`}>
+                          <form.AppField name={`promotionPlatforms[${i}].target`}>
                             {(sub) => <sub.TextField label="Target (optional)" />}
                           </form.AppField>
                         </Box>
                         <Box sx={{ width: { xs: "100%", sm: 140 } }}>
-                          <form.AppField name={`promotionVenues[${i}].cadenceDays`}>
+                          <form.AppField name={`promotionPlatforms[${i}].cadenceDays`}>
                             {(sub) => (
                               <sub.TextField
                                 label="Cadence (d)"

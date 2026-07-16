@@ -225,7 +225,7 @@ Save the returned contact + draft via the campaign outreach endpoints exactly as
 
 ### `promo.compose`
 
-Payload `{venue, target?}`. Compose a self-promotion post from profile + primary resume (`../../shared/setup.md`). Venue rules:
+Payload `{platform, target?}`. Compose a self-promotion post from profile + primary resume (`../../shared/setup.md`). Platform rules:
 
 - `"hn-whoishiring"` - the monthly "Ask HN: Who wants to be hired?" format: `Location:` / `Remote:` / `Willing to relocate:` / `Technologies:` / `Résumé:` / `Email:` lines + a 2-3 sentence pitch.
 - `"reddit:<sub>"` - read the subreddit's posting rules from its sidebar/wiki **before** composing and follow its title format (e.g. r/forhire wants a `[For Hire]` title prefix).
@@ -236,19 +236,19 @@ Run `humanizer` on the body, then save the draft:
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/promotions" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg v "$VENUE" --arg t "$TARGET" --arg ti "$TITLE" --arg b "$BODY" \
-    '{venue:$v, target:(if $t=="" then null else $t end), title:(if $ti=="" then null else $ti end), body:$b}')"
+  -d "$(jq -n --arg p "$PLATFORM" --arg t "$TARGET" --arg ti "$TITLE" --arg b "$BODY" \
+    '{platform:$p, target:(if $t=="" then null else $t end), title:(if $ti=="" then null else $ti end), body:$b}')"
 ```
 
 **Never post anywhere** - drafts await user review in the dashboard. Journal e.g. "Drafted hn-whoishiring post - awaiting your review."
 
 ### `promo.post`
 
-Payload `{promotionId, venue, target, title, body}` - a post the user approved in the dashboard. Post the content **verbatim** (the user approved this exact text; never rewrite it):
+Payload `{promotionId, platform, target, title, body}` - a post the user approved in the dashboard. Post the content **verbatim** (the user approved this exact text; never rewrite it):
 
-1. Log in to the venue per `../../shared/auth.md` (credentials resolver; CAPTCHA via the `solve-captcha` skill). No credentials → result `skipped` with note.
+1. Log in to the platform per `../../shared/auth.md` (credentials resolver; CAPTCHA via the `solve-captcha` skill). No credentials → result `skipped` with note.
 2. Navigate to `target`. For `hn-whoishiring`, if `target` is stale or empty, find the current month's "Ask HN: Who wants to be hired?" thread first.
-3. Submit `title`/`body` per the venue's form, then capture the permalink of the new post.
+3. Submit `title`/`body` per the platform's form, then capture the permalink of the new post.
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/promotions/$PROMO_ID/result" \
@@ -304,4 +304,4 @@ Print exactly one sentinel as the **final line of output**, then stop:
 3. Never invent agenda items; never apply without a lease. Caps are server-enforced - a refused lease (`409`) is normal, not an error.
 4. If anything wedges, journal `kind:"system"` and print the sentinel with `status=error sleep=300` - the host recovers on the next cycle.
 5. Eligibility for `job.apply`/`question.answered` follows `../../shared/eligibility.md`; never skip silently.
-6. Draft promotions only for the instructions' venues. Drafting never posts; `promo.post` publishes only a user-approved draft, verbatim - the server refuses the lease otherwise.
+6. Draft promotions only for the instructions' platforms. Drafting never posts; `promo.post` publishes only a user-approved draft, verbatim - the server refuses the lease otherwise.

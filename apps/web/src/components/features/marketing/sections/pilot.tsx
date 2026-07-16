@@ -16,7 +16,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     title: "Write your instructions",
-    body: "Goals, daily caps, active hours, standing searches, outreach autonomy, promotion venues. Write your goals once - the Pilot runs the search from there.",
+    body: "Goals, daily caps, active hours, saved searches, outreach autonomy, promotion platforms. Write your goals once - the Pilot runs the search from there.",
   },
   {
     title: "Close the lid",

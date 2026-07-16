@@ -28,7 +28,7 @@ export const promotionController = new Elysia({
     detail: {
       summary: "Create a promotion draft",
       description:
-        "Agent creates a draft self-promotion post for a venue, notifies the user for review, and returns it.",
+        "Agent creates a draft self-promotion post for a platform, notifies the user for review, and returns it.",
     },
   })
   .get(

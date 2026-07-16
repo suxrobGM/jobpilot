@@ -90,16 +90,16 @@ export interface AgendaFollowup {
   daysSince: number;
 }
 
-/** A promotion venue whose posting cadence is due (no post to attach to yet). */
-export interface AgendaPromoVenue {
-  venue: string;
+/** A promotion platform whose posting cadence is due (no post to attach to yet). */
+export interface AgendaPromoPlatform {
+  platform: string;
   target?: string;
 }
 
 /** An approved promotion post ready to publish. */
 export interface AgendaPromoPost {
   id: string;
-  venue: string;
+  platform: string;
   target: string | null;
   title: string | null;
   body: string;
@@ -155,7 +155,7 @@ export interface AgendaInput {
   approvedOutreach: AgendaOutreachSend[];
   outreachSentToday: number;
   followups: AgendaFollowup[];
-  dueVenues: AgendaPromoVenue[];
+  duePlatforms: AgendaPromoPlatform[];
   approvedPromotions: AgendaPromoPost[];
   interviewReplies: AgendaInterviewReply[];
   interviewPreps: AgendaInterviewPrep[];

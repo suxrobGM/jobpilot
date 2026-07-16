@@ -51,7 +51,7 @@ export function PromotionDraftCard(props: { promotion: Promotion }): ReactElemen
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-            <Chip size="small" label={promotion.venue} color="primary" />
+            <Chip size="small" label={promotion.platform} color="primary" />
             {promotion.target && <Chip size="small" variant="outlined" label={promotion.target} />}
             <Typography variant="captionMuted" sx={{ ml: "auto", whiteSpace: "nowrap" }}>
               {formatRelativeTime(promotion.createdAt)} ago
@@ -119,7 +119,7 @@ export function PromotionSummary(props: { promotion: Promotion }): ReactElement 
   const { promotion } = props;
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-      <Chip size="small" variant="outlined" label={promotion.venue} sx={{ minWidth: 90 }} />
+      <Chip size="small" variant="outlined" label={promotion.platform} sx={{ minWidth: 90 }} />
       <Chip
         size="small"
         label={promotion.status}

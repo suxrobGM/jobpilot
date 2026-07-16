@@ -18,10 +18,10 @@ describe("buildAgenda M3 kinds", () => {
         approvedOutreach: [send("m1")],
         inbox: { messageIds: ["e1"], count: 1 },
         approvedPromotions: [
-          { id: "p1", venue: "hn-whoishiring", target: null, title: "t", body: "b" },
+          { id: "p1", platform: "hn-whoishiring", target: null, title: "t", body: "b" },
         ],
         followups: [followup("m9")],
-        dueVenues: [{ venue: "reddit:r/forhire" }],
+        duePlatforms: [{ platform: "reddit:r/forhire" }],
         finalizeCampaigns: [{ campaignId: "c2", query: "react" }],
       }),
     );
@@ -116,10 +116,10 @@ describe("buildAgenda M3 kinds", () => {
     const agenda = buildAgenda(
       base({
         approvedPromotions: [
-          { id: "p1", venue: "hn", target: null, title: null, body: "b1" },
-          { id: "p2", venue: "reddit", target: "u", title: null, body: "b2" },
+          { id: "p1", platform: "hn", target: null, title: null, body: "b1" },
+          { id: "p2", platform: "reddit", target: "u", title: null, body: "b2" },
         ],
-        dueVenues: [{ venue: "v1" }, { venue: "v2" }],
+        duePlatforms: [{ platform: "v1" }, { platform: "v2" }],
       }),
     );
     expect(agenda.items.filter((i) => i.kind === "promo.post")).toHaveLength(2);
@@ -134,9 +134,9 @@ describe("buildAgenda M3 kinds", () => {
         config: hours,
         approvedOutreach: [send("m1")],
         inbox: { messageIds: ["e1"], count: 1 },
-        approvedPromotions: [{ id: "p1", venue: "hn", target: null, title: null, body: "b" }],
+        approvedPromotions: [{ id: "p1", platform: "hn", target: null, title: null, body: "b" }],
         followups: [followup("m9")],
-        dueVenues: [{ venue: "v1" }],
+        duePlatforms: [{ platform: "v1" }],
       }),
     );
     expect(agenda.items).toHaveLength(0);

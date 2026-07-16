@@ -37,7 +37,7 @@ export interface Over {
   followupLatest?: { contactId: string; _max: { createdAt: Date } }[];
   contacts?: Record<string, unknown>[];
   approvedPromotions?: Record<string, unknown>[];
-  venuePosts?: Record<string, unknown>[];
+  platformPosts?: Record<string, unknown>[];
   promoFindFirst?: Record<string, unknown> | null;
   messageFindFirst?: Record<string, unknown> | null;
   // Interview wiring:
@@ -193,7 +193,9 @@ export function makeAgendaDb(over: Over = {}) {
     contact: { findMany: async () => over.contacts ?? [] },
     promotionPost: {
       findMany: async (a: { where: { status?: unknown } }) =>
-        a.where.status === "approved" ? (over.approvedPromotions ?? []) : (over.venuePosts ?? []),
+        a.where.status === "approved"
+          ? (over.approvedPromotions ?? [])
+          : (over.platformPosts ?? []),
       count: async () => over.promotionsPosted ?? 0,
       findFirst: async () => over.promoFindFirst ?? null,
     },

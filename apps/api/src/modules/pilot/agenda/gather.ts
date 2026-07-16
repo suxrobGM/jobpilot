@@ -163,20 +163,20 @@ export async function attachWarmContacts(
   }
 }
 
-/** Standing queries whose cadence has elapsed since their last released discovery lease. */
-export async function dueStandingQueries(
+/** Saved searches whose cadence has elapsed since their last released discovery lease. */
+export async function dueSavedSearches(
   prisma: PrismaClient,
   profileId: string,
   config: PilotInstructionsConfig,
   now: Date,
 ): Promise<AgendaDueQuery[]> {
-  if (config.standingQueries.length === 0) return [];
+  if (config.savedSearches.length === 0) return [];
   // One read for every discovery lease, reduced to the latest per query - avoids an N+1 findFirst.
   const leases = await prisma.pilotLease.findMany({
     where: {
       profileId,
       kind: "search.discover",
-      subjectId: { in: config.standingQueries.map((q) => q.query) },
+      subjectId: { in: config.savedSearches.map((q) => q.query) },
     },
     orderBy: { grantedAt: "desc" },
     take: GATHER_CAP,
@@ -192,8 +192,8 @@ export async function dueStandingQueries(
 
   const parked = new Set(config.parkedBoards);
   const due: AgendaDueQuery[] = [];
-  for (const sq of config.standingQueries) {
-    // A standing query targeting a parked board is suppressed until the user un-parks it.
+  for (const sq of config.savedSearches) {
+    // A saved search targeting a parked board is suppressed until the user un-parks it.
     if (sq.board && parked.has(sq.board)) continue;
     const last = latest.get(sq.query);
     const cadenceMs = sq.cadenceHours * HOUR_MS;

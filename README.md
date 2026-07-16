@@ -27,7 +27,7 @@ applications, and message recruiters. The dashboard tracks every
 application, reply, and interview in one pipeline.
 
 - **The Pilot — your job search on autopilot** - write your instructions once (goals,
-  daily caps, active hours, standing queries) and the agent runs perpetual
+  daily caps, active hours, saved searches) and the agent runs perpetual
   sense → decide → act → record cycles: discovers and applies to jobs,
   checks for warm intros before cold applies, sends and follows up outreach,
   reviews recruiter replies, and drafts interview prep and self-promotion

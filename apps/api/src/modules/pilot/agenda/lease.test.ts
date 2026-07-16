@@ -51,7 +51,7 @@ describe("AgendaService leasing", () => {
 
   it("grants a promo.post lease only when the post is still approved", async () => {
     const { svc, rec } = service({
-      approvedPromotions: [{ id: "P1", venue: "hn", target: null, title: null, body: "b" }],
+      approvedPromotions: [{ id: "P1", platform: "hn", target: null, title: null, body: "b" }],
       promoFindFirst: { id: "P1" },
     });
     const lease = await svc.lease("p1", "promo.post:P1");
@@ -61,7 +61,7 @@ describe("AgendaService leasing", () => {
 
   it("409s a promo.post lease when the post is no longer approved", async () => {
     const { svc } = service({
-      approvedPromotions: [{ id: "P1", venue: "hn", target: null, title: null, body: "b" }],
+      approvedPromotions: [{ id: "P1", platform: "hn", target: null, title: null, body: "b" }],
       promoFindFirst: null,
     });
     expect(svc.lease("p1", "promo.post:P1")).rejects.toThrow();
