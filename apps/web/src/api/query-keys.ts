@@ -103,12 +103,15 @@ export const queryKeys = {
     all: ["pilot"] as const,
     state: () => [...queryKeys.pilot.all, "state"] as const,
     journal: () => [...queryKeys.pilot.all, "journal"] as const,
+    escalationsAll: () => [...queryKeys.pilot.all, "escalations"] as const,
     escalations: (filters: Record<string, unknown> = {}) =>
-      [...queryKeys.pilot.all, "escalations", filters] as const,
+      [...queryKeys.pilot.escalationsAll(), filters] as const,
+    promotionsAll: () => [...queryKeys.pilot.all, "promotions"] as const,
     promotions: (filters: Record<string, unknown> = {}) =>
-      [...queryKeys.pilot.all, "promotions", filters] as const,
-    pushKey: () => [...queryKeys.pilot.all, "push", "vapid-key"] as const,
-    pushDevices: () => [...queryKeys.pilot.all, "push", "devices"] as const,
+      [...queryKeys.pilot.promotionsAll(), filters] as const,
+    push: () => [...queryKeys.pilot.all, "push"] as const,
+    pushKey: () => [...queryKeys.pilot.push(), "vapid-key"] as const,
+    pushDevices: () => [...queryKeys.pilot.push(), "devices"] as const,
   },
 } as const;
 

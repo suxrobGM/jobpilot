@@ -38,7 +38,7 @@ export function PromotionDraftCard(props: { promotion: Promotion }): ReactElemen
 
   const patch = useApiMutation<Promotion, PatchPromotionInput>(
     (input) => api.pilot.promotions({ id: promotion.id }).patch(input),
-    { invalidate: [[...queryKeys.pilot.all, "promotions"]] },
+    { invalidate: [queryKeys.pilot.promotionsAll()] },
   );
   const busy = patch.isPending;
 

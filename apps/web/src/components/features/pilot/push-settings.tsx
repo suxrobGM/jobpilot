@@ -34,8 +34,6 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   return output;
 }
 
-const PUSH_KEY = [...queryKeys.pilot.all, "push"];
-
 export function PushSettings(): ReactNode {
   const toast = useToast();
   const [supported, setSupported] = useState(false);
@@ -52,11 +50,11 @@ export function PushSettings(): ReactNode {
 
   const subscribe = useApiMutation<PushSubscriptionDto, PushSubscriptionInput>(
     (input) => api.push.subscriptions.post(input),
-    { invalidate: [PUSH_KEY] },
+    { invalidate: [queryKeys.pilot.push()] },
   );
   const remove = useApiMutation<{ deleted: string }, string>(
     (endpoint) => api.push.subscriptions.delete({ endpoint }),
-    { invalidate: [PUSH_KEY] },
+    { invalidate: [queryKeys.pilot.push()] },
   );
 
   useEffect(() => {

@@ -17,7 +17,7 @@ export function PromotionList(): ReactElement {
   const query = useApiQuery(pilotQueries.promotions());
 
   const refresh = (): void => {
-    queryClient.invalidateQueries({ queryKey: [...queryKeys.pilot.all, "promotions"] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.pilot.promotionsAll() });
   };
 
   useSseChannel(pilotChannel, null, {

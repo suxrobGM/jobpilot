@@ -18,7 +18,7 @@ export function EscalationCard(props: EscalationCardProps): ReactElement {
 
   const answer = useApiMutation<unknown, string>(
     (value) => api.pilot.escalations({ id: escalation.id }).answer.post({ answer: value }),
-    { invalidate: [[...queryKeys.pilot.all, "escalations"]], successMessage: "Answer sent." },
+    { invalidate: [queryKeys.pilot.escalationsAll()], successMessage: "Answer sent." },
   );
 
   const hasOptions = escalation.options.length > 0;

@@ -20,7 +20,7 @@ export function useOpenEscalations(): OpenEscalations {
   const query = useApiQuery(pilotQueries.escalations("open"));
 
   const refresh = (): void => {
-    queryClient.invalidateQueries({ queryKey: [...queryKeys.pilot.all, "escalations"] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.pilot.escalationsAll() });
   };
 
   useSseChannel(pilotChannel, null, {
