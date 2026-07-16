@@ -26,7 +26,6 @@ import { AgendaService } from "./agenda/service";
 import { createPilotJournalResponseSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
 import { promotionController } from "./promotion.controller";
-import { pushController } from "./push.controller";
 
 const pilot = container.resolve(PilotService);
 const agenda = container.resolve(AgendaService);
@@ -178,9 +177,8 @@ export const pilotController = new Elysia({
       },
     },
   )
-  // ── Sub-domain controllers (promotions, web push) ─────────────────────────────
+  // ── Sub-domain controllers (promotions) ───────────────────────────────────────
   .use(promotionController)
-  .use(pushController)
   // ── Events (SSE) ────────────────────────────────────────────────────────────────
   .get("/events", ({ profileId, headers }) => sseStream(pilotChannel, { profileId }, headers), {
     detail: {

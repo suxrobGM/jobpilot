@@ -2,9 +2,9 @@ import "reflect-metadata";
 import { container } from "tsyringe";
 import { prisma } from "@/common/database";
 import { ConsoleMailer, MAILER, ResendMailer } from "@/common/mail";
+import { VAPID_CONFIG, type VapidConfigHolder } from "@/common/push";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
-import { VAPID_CONFIG, type VapidConfigHolder } from "@/modules/pilot/push.service";
 
 // Register the Prisma singleton so tsyringe resolves PrismaClient by class
 // reference in service constructors.

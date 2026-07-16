@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
-import type { PushSubscriptionDto, PushSubscriptionInput } from "@jobpilot/contracts/pilot";
+import type { PushSubscriptionDto, PushSubscriptionInput } from "@jobpilot/contracts/push";
 import { Delete } from "@mui/icons-material";
 import {
   Box,
@@ -51,11 +51,11 @@ export function PushSettings(): ReactNode {
   });
 
   const subscribe = useApiMutation<PushSubscriptionDto, PushSubscriptionInput>(
-    (input) => api.pilot.push.subscriptions.post(input),
+    (input) => api.push.subscriptions.post(input),
     { invalidate: [PUSH_KEY] },
   );
   const remove = useApiMutation<{ deleted: string }, string>(
-    (endpoint) => api.pilot.push.subscriptions.delete({ endpoint }),
+    (endpoint) => api.push.subscriptions.delete({ endpoint }),
     { invalidate: [PUSH_KEY] },
   );
 

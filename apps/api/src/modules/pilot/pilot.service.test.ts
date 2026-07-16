@@ -1,9 +1,9 @@
 // Fake-Prisma unit test for PilotService: escalation lifecycle and journal cycle accounting.
 // Injects a fake Prisma directly (no database); publish() is a no-op without subscribers.
+import type { PushPayload } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { makePush } from "./agenda/db.test-helpers";
 import { PilotService } from "./pilot.service";
-import type { PushPayload } from "./push.service";
 import { describe, expect, it } from "bun:test";
 
 interface Recorder {

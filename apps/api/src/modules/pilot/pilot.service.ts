@@ -10,6 +10,7 @@ import { pilotMandateConfigSchema } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
+import { PushService } from "@/common/push";
 import { publish } from "@/common/sse";
 import {
   type PilotJournalEntry as PilotJournalEntryModel,
@@ -18,7 +19,6 @@ import {
 } from "@/generated/prisma/client";
 import { toEscalation, toJournalEntry, toPilotState } from "./pilot.mapper";
 import { countAppliedToday } from "./pilot.stats";
-import { PushService } from "./push.service";
 
 /** 2FA codes die within minutes, so an unanswered 2FA escalation must self-expire fast; the agenda
  *  expiry sweep then cleanly skips the parked job instead of leaving it wedged in needs_user. */

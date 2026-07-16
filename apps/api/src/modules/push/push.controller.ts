@@ -4,21 +4,21 @@ import {
   pushSubscriptionSchema,
   pushUnsubscribeSchema,
   vapidKeySchema,
-} from "@jobpilot/contracts/pilot";
+} from "@jobpilot/contracts/push";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { notFound } from "@/common/errors";
 import { profileGuard } from "@/common/middleware";
+import { PushService } from "@/common/push";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { deletedResponseSchema } from "@/types/response";
-import { PushService } from "./push.service";
 
 const push = container.resolve(PushService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
-export const pushController = new Elysia({ name: "pilot-push", detail: { tags: ["Pilot"] } })
+export const pushController = new Elysia({ prefix: "/push", detail: { tags: ["Push"] } })
   .use(profileGuard)
-  .get("/push/vapid-key", () => ({ publicKey: push.publicKey }), {
+  .get("/vapid-key", () => ({ publicKey: push.publicKey }), {
     response: vapidKeySchema,
     detail: {
       summary: "Get the VAPID public key",
@@ -26,7 +26,7 @@ export const pushController = new Elysia({ name: "pilot-push", detail: { tags: [
         "The application-server key the browser subscribes with, or null when push is unconfigured.",
     },
   })
-  .post("/push/subscriptions", ({ profileId, body }) => push.subscribe(profileId, body), {
+  .post("/subscriptions", ({ profileId, body }) => push.subscribe(profileId, body), {
     body: pushSubscriptionInputSchema,
     beforeHandle: limitMutation,
     response: pushSubscriptionSchema,
@@ -37,7 +37,7 @@ export const pushController = new Elysia({ name: "pilot-push", detail: { tags: [
     },
   })
   .delete(
-    "/push/subscriptions",
+    "/subscriptions",
     async ({ profileId, body }) => {
       const deleted = await push.unsubscribe(profileId, body.endpoint);
       if (!deleted) {
@@ -55,7 +55,7 @@ export const pushController = new Elysia({ name: "pilot-push", detail: { tags: [
       },
     },
   )
-  .get("/push/subscriptions", ({ profileId }) => push.list(profileId), {
+  .get("/subscriptions", ({ profileId }) => push.list(profileId), {
     response: pushSubscriptionListSchema,
     detail: {
       summary: "List push subscriptions",

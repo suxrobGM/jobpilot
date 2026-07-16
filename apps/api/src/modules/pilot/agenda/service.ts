@@ -5,12 +5,12 @@
 } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
+import { PushService } from "@/common/push";
 import { type PilotLease, PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { toPilotLease } from "../pilot.mapper";
 import { PilotService } from "../pilot.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
-import { PushService } from "../push.service";
 import { buildAgenda } from "./build";
 import { writeDigestIfDue } from "./digest";
 import { jobRef, parsePayload, revertJobToApproved, runExpiry } from "./expiry";

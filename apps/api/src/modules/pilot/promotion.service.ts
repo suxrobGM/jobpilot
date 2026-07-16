@@ -8,11 +8,11 @@ import { PROMOTION_TERMINAL_STATUSES } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict, findOwned, unprocessable } from "@/common/errors";
+import { PushService } from "@/common/push";
 import { publish } from "@/common/sse";
 import { PrismaClient, type PromotionPost as PromotionPostModel } from "@/generated/prisma/client";
 import { toPromotion } from "./pilot.mapper";
 import { PilotService } from "./pilot.service";
-import { PushService } from "./push.service";
 
 @singleton()
 export class PromotionService {

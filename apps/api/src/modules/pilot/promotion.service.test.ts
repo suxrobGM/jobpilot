@@ -1,10 +1,11 @@
 // Fake-Prisma unit test for PromotionService correction capture: a user declining or editing a
 // draft post is recorded as a labeled "correction" journal entry (before/after in detail).
 // Injects fakes directly (no database); publish() is a no-op without subscribers.
+
+import type { PushPayload, PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { PilotService } from "./pilot.service";
 import { PromotionService } from "./promotion.service";
-import type { PushPayload, PushService } from "./push.service";
 import { describe, expect, it } from "bun:test";
 
 /** Strip `undefined` values so the fake update mirrors Prisma's skip-undefined semantics. */
