@@ -31,6 +31,50 @@ function parseJson<TEvent>(data: string): TEvent {
   return JSON.parse(data) as TEvent;
 }
 
+interface SharedSource {
+  source: EventSource;
+  onMessage: Set<(event: MessageEvent<string>) => void>;
+  onError: Set<(event: Event) => void>;
+}
+
+const sharedSources = new Map<string, SharedSource>();
+
+/** Refcount one EventSource per URL so a page with several panels holds one connection, not one per subscriber. */
+function acquireSource(
+  url: string,
+  onMessage: (event: MessageEvent<string>) => void,
+  onError: (event: Event) => void,
+): () => void {
+  let shared = sharedSources.get(url);
+
+  if (!shared) {
+    // `eventsource` (not native) for fetch-based transport: credentialed cross-origin streams + header control.
+    const source = new EventSource(url, { withCredentials: true });
+    const entry: SharedSource = { source, onMessage: new Set(), onError: new Set() };
+    shared = entry;
+    sharedSources.set(url, entry);
+    // A listener may remove itself during dispatch; Sets tolerate deletion while iterating.
+    source.onmessage = (event) => {
+      for (const listener of entry.onMessage) listener(event);
+    };
+    source.onerror = (event) => {
+      for (const listener of entry.onError) listener(event);
+    };
+  }
+
+  shared.onMessage.add(onMessage);
+  shared.onError.add(onError);
+
+  return () => {
+    shared.onMessage.delete(onMessage);
+    shared.onError.delete(onError);
+    if (shared.onMessage.size === 0) {
+      shared.source.close();
+      sharedSources.delete(url);
+    }
+  };
+}
+
 /**
  * Subscribe to a raw SSE stream by URL. Prefer {@link useSseChannel} when
  * you have a channel descriptor; reach for this only when the URL is dynamic
@@ -57,19 +101,17 @@ export function useEventSource<TEvent = unknown>(
       return;
     }
 
-    // `eventsource` (not native) for fetch-based transport: credentialed cross-origin streams + header control.
-    const source = new EventSource(url, { withCredentials: true });
-    source.onmessage = (event) => {
+    const onRawMessage = (event: MessageEvent<string>) => {
       try {
         onMessageRef.current?.(parseRef.current(event.data), event);
       } catch (err) {
         onParseErrorRef.current?.(err, event);
       }
     };
-    source.onerror = (event) => {
+    const onRawError = (event: Event) => {
       onErrorRef.current?.(event);
     };
-    return () => source.close();
+    return acquireSource(url, onRawMessage, onRawError);
   }, [url, options.enabled]);
 }
 
