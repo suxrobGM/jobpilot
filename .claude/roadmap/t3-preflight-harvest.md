@@ -12,7 +12,7 @@ apply the whole batch pause-free. Answers seed the ledger
 ## Why
 
 Converts N mid-loop interruptions into 1 up-front decision — the complement to
-[t2-needs-user-escalation.md](t2-needs-user-escalation.md): escalation handles surprises,
+[t2-needs-user-escalation.md](t2-needs-user-escalation.md): questions handle surprises,
 pre-flight prevents most of them.
 
 ## Done when
