@@ -19,7 +19,7 @@ interface DigestCounts {
   applicationsCreated: number;
   jobsFailed: number;
   jobsSkipped: number;
-  openEscalations: number;
+  openQuestions: number;
   outreachSent: number;
   outreachReplies: number;
   promotionsPosted: number;
@@ -32,7 +32,7 @@ function composeDigestSummary(c: DigestCounts): string {
     `${c.jobsFailed + c.jobsSkipped} not applied`,
     `${c.outreachSent} outreach sent (${c.outreachReplies} repl${c.outreachReplies === 1 ? "y" : "ies"})`,
     `${c.promotionsPosted} post${c.promotionsPosted === 1 ? "" : "s"} published`,
-    `${c.openEscalations} open question${c.openEscalations === 1 ? "" : "s"}`,
+    `${c.openQuestions} open question${c.openQuestions === 1 ? "" : "s"}`,
   ];
   return `Last 24h: ${parts.join(", ")}.`;
 }
@@ -47,7 +47,7 @@ export async function writeDigestIfDue(
   profileId: string,
   now: Date,
   config: PilotInstructionsConfig,
-  openEscalations: number,
+  openQuestions: number,
 ): Promise<void> {
   try {
     const tz = config.activeHours?.tz;
@@ -86,7 +86,7 @@ export async function writeDigestIfDue(
       applicationsCreated,
       jobsFailed,
       jobsSkipped,
-      openEscalations,
+      openQuestions,
       outreachSent,
       outreachReplies,
       promotionsPosted,

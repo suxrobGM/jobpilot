@@ -131,7 +131,7 @@ moment something time-sensitive happens, instead of it waiting for the next
 scheduled check.
 
 Anything the Pilot isn't sure about - a salary question, an unexpected form
-field, an interview invite - is escalated as a question, sent to your phone
+field, an interview invite - is sent to your phone as a question, delivered
 as a one-tap card, and the affected job is parked until you answer. The
 important limits aren't just instructions to the AI: daily apply/outreach
 caps, "never send a LinkedIn message automatically," and "never publish a

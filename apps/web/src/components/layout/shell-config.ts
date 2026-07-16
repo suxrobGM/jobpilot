@@ -23,8 +23,8 @@ export interface NavItem {
   icon: SvgIconComponent;
   /** Shown only to ADMIN/SUPER_ADMIN. Cosmetic - the API's requireRole is the real gate. */
   adminOnly?: boolean;
-  /** Live attention badge on the icon; "escalations" shows the open-escalation count. */
-  badge?: "escalations";
+  /** Live attention badge on the icon; "questions" shows the open-question count. */
+  badge?: "questions";
 }
 
 export interface NavGroup {
@@ -36,7 +36,7 @@ export const navGroups: NavGroup[] = [
   {
     items: [
       { label: "Workspace", href: "/workspace", icon: Dashboard },
-      { label: "Pilot", href: "/pilot", icon: FlightTakeoff, badge: "escalations" },
+      { label: "Pilot", href: "/pilot", icon: FlightTakeoff, badge: "questions" },
       { label: "Analytics", href: "/analytics", icon: Insights },
       { label: "Upwork", href: "/upwork", icon: Handshake },
       { label: "Outreach", href: "/outreach", icon: Forum },

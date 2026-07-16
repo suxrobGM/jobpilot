@@ -34,15 +34,15 @@ describe("AgendaService lazy expiry", () => {
     expect(rec.patchJob[0]).toEqual(["p1", "c1", "jobkey", { status: "approved" }]);
   });
 
-  it("skips a parked job when its escalation expires", async () => {
+  it("skips a parked job when its question expires", async () => {
     const { run, rec } = sweep({
-      expiredEscalations: [{ id: "E1", subjectType: "job", subjectId: "c1:jobkey" }],
+      expiredQuestions: [{ id: "E1", subjectType: "job", subjectId: "c1:jobkey" }],
       job: { status: "needs_user" },
     });
 
     await run();
 
-    expect(rec.escalationUpdates[0].data).toMatchObject({ status: "expired" });
+    expect(rec.questionUpdates[0].data).toMatchObject({ status: "expired" });
     expect(rec.recordResult[0]?.[0]).toBe("p1");
     expect(rec.recordResult[0]?.[3]).toMatchObject({ outcome: "skipped" });
   });

@@ -24,7 +24,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Answer from your phone",
-    body: "When it needs you - a salary answer, a login code, an InMail to approve - it escalates as a one-tap card by web push. Answer from your phone and the parked work resumes.",
+    body: "When it needs you - a salary answer, a login code, an InMail to approve - it reaches you as a one-tap card by web push. Answer from your phone and the parked work resumes.",
   },
   {
     title: "Wake to a journal",

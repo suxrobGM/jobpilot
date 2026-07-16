@@ -1,7 +1,4 @@
 import type {
-  Escalation,
-  EscalationKind,
-  EscalationStatus,
   PilotInstructionsConfig,
   PilotJournalEntry,
   PilotJournalKind,
@@ -9,13 +6,16 @@ import type {
   PilotState,
   Promotion,
   PromotionStatus,
+  Question,
+  QuestionKind,
+  QuestionStatus,
 } from "@jobpilot/contracts/pilot";
 import type {
-  Escalation as EscalationModel,
   PilotJournalEntry as PilotJournalEntryModel,
   PilotLease as PilotLeaseModel,
   PilotState as PilotStateModel,
   PromotionPost as PromotionPostModel,
+  Question as QuestionModel,
 } from "@/generated/prisma/client";
 
 export function toPilotState(
@@ -39,15 +39,15 @@ export function toPilotState(
   };
 }
 
-export function toEscalation(row: EscalationModel): Escalation {
+export function toQuestion(row: QuestionModel): Question {
   return {
     id: row.id,
     profileId: row.profileId,
-    kind: row.kind as EscalationKind,
-    status: row.status as EscalationStatus,
+    kind: row.kind as QuestionKind,
+    status: row.status as QuestionStatus,
     subjectType: row.subjectType,
     subjectId: row.subjectId,
-    question: row.question,
+    prompt: row.prompt,
     options: JSON.parse(row.options) as string[],
     deepLink: row.deepLink,
     answer: row.answer,

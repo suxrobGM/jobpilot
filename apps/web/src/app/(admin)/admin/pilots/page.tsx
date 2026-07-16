@@ -29,7 +29,7 @@ export default async function AdminPilotsPage(props: AdminPilotsPageProps): Prom
   return (
     <SectionCard
       title="Pilot fleet"
-      description="Every user's autonomous Pilot: enablement, cycle activity, and open escalations."
+      description="Every user's autonomous Pilot: enablement, cycle activity, and open questions."
     >
       <AdminPilotsTable pilots={data.items} />
 

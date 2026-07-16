@@ -8,13 +8,13 @@ the approved plan of 2026-07-15 (see Notes).
 ## The idea
 
 One **perpetual sense → decide → act → record → exit cycle** manages everything — campaigns,
-queue, inbox, outreach, self-promotion, escalations, schedules — autonomously. The user states
+queue, inbox, outreach, self-promotion, questions, schedules — autonomously. The user states
 goals once (the instructions); the Pilot runs the job search. Each cycle is stateless (fresh context,
 all state server-side) and does ONE agenda item.
 
 1. **Sense** — `GET /api/pilot/agenda`: server-compiled, prioritized, compact world state.
    Compiled on read from existing domain rows (no task table, no server cron — lazy lease and
-   escalation expiry run inside compilation, like the stale-campaign reconciler).
+   question expiry run inside compilation, like the stale-campaign reconciler).
 2. **Decide** — take the top item; the LLM breaks ties against the instructions and picks proactive
    work when the agenda is quiet.
 3. **Act** — delegate to job-worker / outreach-worker (one worker, one browser activity per
@@ -34,8 +34,8 @@ all state server-side) and does ONE agenda item.
   endpoint — it must cover jobs, outreach sends, inbox batches, discovery runs. Leases exist
   for crash/watchdog recovery, not concurrency. Grant flips the domain row (job → `applying`);
   expiry reverts it.
-- **Escalations are their own model** (kind, question, options, deepLink, expiry, answer);
-  jobs also gain a `needs_user` status so parked work is visible. Answered escalations rank
+- **Questions are their own model** (kind, prompt, options, deepLink, expiry, answer);
+  jobs also gain a `needs_user` status so parked work is visible. Answered questions rank
   first on the agenda.
 - **Scheduling is server-side** in the instructions/agenda (`sleepSeconds`/`nextWakeAt` from
   activeHours + standing-query cadence) — not host cron. A phone edit to the instructions changes
@@ -54,7 +54,7 @@ One small, user-editable document in the dashboard:
 - **Effort**: daily apply cap, active hours, check interval, standing queries.
 - **Boundaries**: autonomy per outreach channel (email draft/review/auto; LinkedIn never
   auto-InMail), boards to avoid, promotion venues + cadence.
-- **Escalation prefs**: push vs. morning digest.
+- **Question prefs**: push vs. morning digest.
 
 Soft judgment lives in the instructions text; hard limits are ALSO enforced server-side so prompt
 drift can never exceed them.
@@ -65,10 +65,10 @@ drift can never exceed them.
 | --- | --- |
 | t2-job-leases | Generic `PilotLease` (M1) — deliberately job-level, not step-level (see deferred.md) |
 | t2-stateless-step-loop | The pilot skill + conductor sentinel loop (M1) |
-| t2-needs-user-escalation | `Escalation` model + `needs_user` job status (M1); phone answering (M2) |
+| t2-needs-user-escalation | `Question` model + `needs_user` job status (M1); phone answering (M2) |
 | t2-web-push | M2 (`PushSubscription`, VAPID, service worker) |
 | t2-scheduled-runs | Server-side instructions scheduling (M1) — host cron rejected |
-| t4-mobile-decision-inbox | M2 mobile escalation inbox: push tap → one-decision card → parked job resumes |
+| t4-mobile-decision-inbox | M2 mobile question inbox: push tap → one-decision card → parked job resumes |
 | t4-warm-path-finder | M3, scoped: free `GET /api/contacts?company=X` check before every apply; active discovery only for score ≥85, instructions-gated |
 | t4-multi-machine-fleet | Free once leases exist — the lease is the mutex. Document + test two hosts draining one campaign with no duplicate applications |
 | t5-supervisor-watchdog | The PilotConductor (M1 basic: 20-min sentinel timeout → nudge → kill; M4 heuristics: repeated-output/error loops, skip directive) |
@@ -103,7 +103,7 @@ bandit — see deferred.md) is the strategy tier of that system.
 | Status | Milestone | Hook |
 | --- | --- | --- |
 | done | **M1 — Pilot spine** | instructions → agenda → lease → cycle → journal; conductor + pairing; the killer demo |
-| done | **M2 — Away-proof** | web push, phone-answerable escalations, unattended nights |
+| done | **M2 — Away-proof** | web push, phone-answerable questions, unattended nights |
 | done | **M3 — Full surface** | inbox review, outreach + warm path, self-promotion (PromotionPost, draft-first), 7am digest |
 | done | **M3.5 — Interview autonomy** | invite → availability reply (approval card) + auto prep sheet via `interview` skill |
 | done | **M4 — Event wake + proactive** | SSE→inject wake, stall heuristics, strategy review, board health, rescan/retry |
@@ -120,11 +120,11 @@ zero skill invocations by the user, ever.
 - 2026-07-15 — Roadmap consolidated around the Pilot; T2/T5 item files (and four absorbed
   T3/T4 files) folded into this doc. Implementation started on branch `feat/pilot` per the
   approved M1–M5 plan (plan file: `~/.claude/plans/i-would-like-to-lively-deer.md`).
-- 2026-07-15 — M1 shipped (fd185cd + 1f645cb): pilot module (agenda/lease/journal/escalations,
+- 2026-07-15 — M1 shipped (fd185cd + 1f645cb): pilot module (agenda/lease/journal/questions,
   SSE), PilotConductor + sentinel loop + host pairing, pilot skill, /pilot dashboard page.
   M2 shipped (f221460): web push (VAPID, service worker, device management), system-journal
-  reporting from the host watchdog, startup resume, structured needs_user escalations,
-  2FA self-expiry, live escalation badges. Code gates green; the live overnight smoke test
+  reporting from the host watchdog, startup resume, structured needs_user questions,
+  2FA self-expiry, live question badges. Code gates green; the live overnight smoke test
   (real board, host running, lid closed) is still pending — run it before starting M3.
 - 2026-07-15 — M3 (7dbe434), M3.5 (3b654e3), M4 (34f5aa5), M5 (413963b) shipped: full agenda
   surface (inbox review, outreach send/followup/warm-intro, promo compose/post — posting

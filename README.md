@@ -31,7 +31,7 @@ application, reply, and interview in one pipeline.
   sense → decide → act → record cycles: discovers and applies to jobs,
   checks for warm intros before cold applies, sends and follows up outreach,
   reviews recruiter replies, and drafts interview prep and self-promotion
-  posts - every action narrated in a live journal, with questions escalated
+  posts - every action narrated in a live journal, with questions sent
   to your phone as one-tap cards and hard caps enforced server-side.
 - **Four manual campaign modes** - search-and-review, autonomous auto-apply,
   single-job apply, and recruiter outreach.

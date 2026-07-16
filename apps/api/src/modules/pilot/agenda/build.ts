@@ -4,9 +4,9 @@ import { ACTIVE_SLEEP_SECONDS, MAX_ITEMS, MIN_IDLE_SLEEP_SECONDS } from "./const
 import { buildInterviewPrepItems, buildInterviewReplyItems } from "./items-interview";
 import {
   buildDiscoverItems,
-  buildEscalationItems,
   buildFinalizeItems,
   buildJobApplyItems,
+  buildQuestionItems,
   buildWarmIntroItems,
 } from "./items-jobs";
 import { buildFollowupItems, buildInboxItem, buildOutreachSendItems } from "./items-outreach";
@@ -30,11 +30,11 @@ function idleSleepSeconds({ now, config }: AgendaInput, within: boolean): number
  * Compile a prioritized agenda from already-fetched inputs. Pure: no I/O, so the
  * ordering, cap-suppression, budget, and sleep rules are unit-testable.
  *
- * Priority: escalation.answered > interview.reply > board.health > job.apply (by matchScore) >
+ * Priority: question.answered > interview.reply > board.health > job.apply (by matchScore) >
  * interview.prep > queue.drain > outreach.send > inbox.review > promo.post > outreach.warmIntro >
  * search.discover > outreach.followup > campaign.strategyReview > promo.compose > job.rescanSkipped >
  * job.retryFailed > campaign.finalize. The strategyReview/rescan/retry maintenance kinds surface only
- * on a quiet agenda (no apply/discover/queue work). Outside active hours only escalation/finalize items
+ * on a quiet agenda (no apply/discover/queue work). Outside active hours only question/finalize items
  * are emitted, and the agent sleeps until the window opens.
  */
 export function buildAgenda(input: AgendaInput): AgendaResponse {
@@ -44,7 +44,7 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
   // Outreach headroom is independent of the apply cap; it gates sends and followups alike.
   const sendHeadroom = Math.max(0, config.dailyOutreachCap - input.outreachSentToday);
 
-  const items: AgendaItem[] = [...buildEscalationItems(input.answeredEscalations)];
+  const items: AgendaItem[] = [...buildQuestionItems(input.answeredQuestions)];
   if (within && !capReached) items.push(...buildJobApplyItems(input.approvedJobs));
   if (within) {
     // Board health outranks apply work: a failing board should be probed before more attempts pile on.
@@ -85,7 +85,7 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
     generatedAt: now,
     items: capped,
     counts: {
-      openEscalations: input.openEscalations,
+      openQuestions: input.openQuestions,
       activeLeases: input.activeLeases,
       approvedJobs: input.approvedJobs.length,
       appliedToday: input.appliedToday,

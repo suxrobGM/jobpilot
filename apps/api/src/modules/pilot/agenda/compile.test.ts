@@ -1,4 +1,4 @@
-// Compile-level gather behavior (escalation consumption, warm-check join, promotion cadence) driven
+// Compile-level gather behavior (question consumption, warm-check join, promotion cadence) driven
 // through AgendaService.compile with a fake Prisma - no database. Loading the service transitively
 // loads `@/env`, satisfied by the local .env / ci.yml dummy env.
 
@@ -11,20 +11,20 @@ const service = (over: Over = {}) => {
   return new AgendaService(prisma, campaignJobs, pilot, push);
 };
 
-describe("AgendaService escalation consumption", () => {
-  it("keeps an answered escalation on the agenda until a lease references it", async () => {
+describe("AgendaService question consumption", () => {
+  it("keeps an answered question on the agenda until a lease references it", async () => {
     const agenda = await service({
-      answered: [{ id: "E1", kind: "question", question: "Which date?" }],
+      answered: [{ id: "E1", kind: "question", prompt: "Which date?" }],
     }).compile("p1");
-    expect(agenda.items.map((i) => i.kind)).toContain("escalation.answered");
+    expect(agenda.items.map((i) => i.kind)).toContain("question.answered");
   });
 
-  it("drops an answered escalation once a lease has referenced it", async () => {
+  it("drops an answered question once a lease has referenced it", async () => {
     const agenda = await service({
-      answered: [{ id: "E1", kind: "question", question: "Which date?" }],
-      escalationLeases: [{ subjectId: "E1" }],
+      answered: [{ id: "E1", kind: "question", prompt: "Which date?" }],
+      questionLeases: [{ subjectId: "E1" }],
     }).compile("p1");
-    expect(agenda.items.some((i) => i.kind === "escalation.answered")).toBe(false);
+    expect(agenda.items.some((i) => i.kind === "question.answered")).toBe(false);
   });
 });
 
@@ -91,10 +91,10 @@ describe("AgendaService interview replies", () => {
     expect(agenda.items.some((i) => i.kind === "interview.reply")).toBe(false);
   });
 
-  it("suppresses interview.reply while an open/answered escalation exists for the email", async () => {
+  it("suppresses interview.reply while an open/answered question exists for the email", async () => {
     const agenda = await service({
       interviewReplyApps: [replyApp()],
-      interviewEscalations: [{ subjectId: "em1" }],
+      interviewQuestions: [{ subjectId: "em1" }],
     }).compile("p1");
     expect(agenda.items.some((i) => i.kind === "interview.reply")).toBe(false);
   });
@@ -142,27 +142,27 @@ describe("AgendaService interview prep", () => {
   });
 });
 
-describe("AgendaService escalation enrichment", () => {
-  it("carries the escalation subject and Q/A into the answered payload", async () => {
+describe("AgendaService question enrichment", () => {
+  it("carries the question subject and Q/A into the answered payload", async () => {
     const agenda = await service({
       answered: [
         {
           id: "E1",
           kind: "approval",
-          question: "Send this reply?",
+          prompt: "Send this reply?",
           subjectType: "email",
           subjectId: "em1",
           answer: "yes",
         },
       ],
     }).compile("p1");
-    const item = agenda.items.find((i) => i.kind === "escalation.answered");
+    const item = agenda.items.find((i) => i.kind === "question.answered");
     expect(item?.payload).toEqual({
-      escalationId: "E1",
-      escalationKind: "approval",
+      questionId: "E1",
+      questionKind: "approval",
       subjectType: "email",
       subjectId: "em1",
-      question: "Send this reply?",
+      prompt: "Send this reply?",
       answer: "yes",
     });
   });

@@ -38,7 +38,7 @@ export const adminController = new Elysia({
     detail: {
       summary: "List Pilots (fleet view)",
       description:
-        "Returns a page of Pilots across all users: owner email, profile id, enablement, last cycle time, cycle count, and open-escalation count.",
+        "Returns a page of Pilots across all users: owner email, profile id, enablement, last cycle time, cycle count, and open-question count.",
     },
   })
   .get("/users", ({ user, query }) => svc.listUsers(user, query), {

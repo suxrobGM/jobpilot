@@ -103,9 +103,9 @@ export const queryKeys = {
     all: ["pilot"] as const,
     state: () => [...queryKeys.pilot.all, "state"] as const,
     journal: () => [...queryKeys.pilot.all, "journal"] as const,
-    escalationsAll: () => [...queryKeys.pilot.all, "escalations"] as const,
-    escalations: (filters: Record<string, unknown> = {}) =>
-      [...queryKeys.pilot.escalationsAll(), filters] as const,
+    questionsAll: () => [...queryKeys.pilot.all, "questions"] as const,
+    questions: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.pilot.questionsAll(), filters] as const,
     promotionsAll: () => [...queryKeys.pilot.all, "promotions"] as const,
     promotions: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.pilot.promotionsAll(), filters] as const,

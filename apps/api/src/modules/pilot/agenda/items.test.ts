@@ -220,14 +220,14 @@ describe("buildAgenda interview kinds", () => {
     expect(agenda.items).toHaveLength(0);
   });
 
-  it("enriches the escalation.answered payload with subject and Q/A", () => {
+  it("enriches the question.answered payload with subject and Q/A", () => {
     const agenda = buildAgenda(
       base({
-        answeredEscalations: [
+        answeredQuestions: [
           {
             id: "E1",
             kind: "approval",
-            question: "Send this reply?",
+            prompt: "Send this reply?",
             subjectType: "email",
             subjectId: "em1",
             answer: "yes",
@@ -235,22 +235,22 @@ describe("buildAgenda interview kinds", () => {
         ],
       }),
     );
-    const item = agenda.items.find((i) => i.kind === "escalation.answered");
+    const item = agenda.items.find((i) => i.kind === "question.answered");
     expect(item?.payload).toEqual({
-      escalationId: "E1",
-      escalationKind: "approval",
+      questionId: "E1",
+      questionKind: "approval",
       subjectType: "email",
       subjectId: "em1",
-      question: "Send this reply?",
+      prompt: "Send this reply?",
       answer: "yes",
     });
   });
 
-  it("defaults the enriched escalation fields to null when absent", () => {
+  it("defaults the enriched question fields to null when absent", () => {
     const agenda = buildAgenda(
-      base({ answeredEscalations: [{ id: "E2", kind: "question", question: "q" }] }),
+      base({ answeredQuestions: [{ id: "E2", kind: "question", prompt: "q" }] }),
     );
-    const item = agenda.items.find((i) => i.kind === "escalation.answered");
+    const item = agenda.items.find((i) => i.kind === "question.answered");
     expect(item?.payload).toMatchObject({ subjectType: null, subjectId: null, answer: null });
   });
 });

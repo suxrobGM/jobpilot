@@ -14,8 +14,8 @@ export const NOW = new Date("2026-07-15T12:00:00.000Z"); // noon UTC, inside a 0
 export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   now: NOW,
   config: cfg(),
-  openEscalations: 0,
-  answeredEscalations: [],
+  openQuestions: 0,
+  answeredQuestions: [],
   activeLeases: 0,
   approvedJobs: [],
   appliedToday: 0,

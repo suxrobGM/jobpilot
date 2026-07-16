@@ -1,16 +1,16 @@
 import {
   agendaResponseSchema,
-  answerEscalationSchema,
-  createEscalationSchema,
+  answerQuestionSchema,
   createPilotJournalSchema,
   createPilotLeaseSchema,
-  escalationListSchema,
-  escalationSchema,
-  escalationsQuerySchema,
+  createQuestionSchema,
   pilotJournalPageSchema,
   pilotJournalQuerySchema,
   pilotLeaseSchema,
   pilotStateSchema,
+  questionListSchema,
+  questionSchema,
+  questionsQuerySchema,
   releasePilotLeaseSchema,
   setPilotEnabledSchema,
   updatePilotInstructionsSchema,
@@ -74,7 +74,7 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Compile the agenda",
       description:
-        "Runs lazy lease/escalation expiry, then returns the prioritized agenda, budget, counts, and sleep hint for the next cycle.",
+        "Runs lazy lease/question expiry, then returns the prioritized agenda, budget, counts, and sleep hint for the next cycle.",
     },
   })
   // ── Leases ────────────────────────────────────────────────────────────────────
@@ -145,35 +145,35 @@ export const pilotController = new Elysia({
         "Streams every journal entry as newline-delimited JSON (createdAt ascending) for offline analysis.",
     },
   })
-  // ── Escalations ───────────────────────────────────────────────────────────────
-  .post("/escalations", ({ profileId, body }) => pilot.createEscalation(profileId, body), {
-    body: createEscalationSchema,
+  // ── Questions ─────────────────────────────────────────────────────────────────
+  .post("/questions", ({ profileId, body }) => pilot.createQuestion(profileId, body), {
+    body: createQuestionSchema,
     beforeHandle: limitMutation,
-    response: escalationSchema,
+    response: questionSchema,
     detail: {
-      summary: "Create an escalation",
-      description: "Opens a question/choice/2fa/approval escalation and notifies subscribers.",
+      summary: "Create a question",
+      description: "Opens a question/choice/2fa/approval question and notifies subscribers.",
     },
   })
-  .get("/escalations", ({ profileId, query }) => pilot.listEscalations(profileId, query.status), {
-    query: escalationsQuerySchema,
-    response: escalationListSchema,
+  .get("/questions", ({ profileId, query }) => pilot.listQuestions(profileId, query.status), {
+    query: questionsQuerySchema,
+    response: questionListSchema,
     detail: {
-      summary: "List escalations",
-      description: "Returns the profile's escalations, optionally filtered by status.",
+      summary: "List questions",
+      description: "Returns the profile's questions, optionally filtered by status.",
     },
   })
   .post(
-    "/escalations/:id/answer",
-    ({ profileId, params, body }) => pilot.answerEscalation(profileId, params.id, body),
+    "/questions/:id/answer",
+    ({ profileId, params, body }) => pilot.answerQuestion(profileId, params.id, body),
     {
       params: idParam,
-      body: answerEscalationSchema,
+      body: answerQuestionSchema,
       beforeHandle: limitMutation,
-      response: escalationSchema,
+      response: questionSchema,
       detail: {
-        summary: "Answer an escalation",
-        description: "Records the answer, marks the escalation answered, and notifies subscribers.",
+        summary: "Answer a question",
+        description: "Records the answer, marks the question answered, and notifies subscribers.",
       },
     },
   )
@@ -184,6 +184,6 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Stream pilot events",
       description:
-        "Server-Sent Events for the profile's Pilot: journal appends, escalation lifecycle, and state changes.",
+        "Server-Sent Events for the profile's Pilot: journal appends, question lifecycle, and state changes.",
     },
   });

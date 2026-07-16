@@ -52,7 +52,7 @@ model Profile {
   coverLetters      CoverLetter[]
   pilotState        PilotState?
   pilotLeases       PilotLease[]
-  escalations       Escalation[]
+  questions         Question[]
   pilotJournal      PilotJournalEntry[]
   pushSubscriptions PushSubscription[]
   promotionPosts    PromotionPost[]

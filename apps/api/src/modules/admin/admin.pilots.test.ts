@@ -7,19 +7,19 @@ import { describe, expect, it } from "bun:test";
 
 function fakePrisma(
   states: Record<string, unknown>[],
-  escalations: { profileId: string; _count: { _all: number } }[],
+  questions: { profileId: string; _count: { _all: number } }[],
 ) {
   return {
     pilotState: {
       findMany: async () => states,
       count: async () => states.length,
     },
-    escalation: { groupBy: async () => escalations },
+    question: { groupBy: async () => questions },
   } as unknown as PrismaClient;
 }
 
 describe("AdminService.listPilots", () => {
-  it("projects each PilotState to owner email, activity, and open-escalation count", async () => {
+  it("projects each PilotState to owner email, activity, and open-question count", async () => {
     const svc = new AdminService(
       fakePrisma(
         [
@@ -51,7 +51,7 @@ describe("AdminService.listPilots", () => {
         enabled: true,
         lastCycleAt: new Date("2026-07-15T10:00:00.000Z"),
         cycleCount: 42,
-        openEscalations: 2,
+        openQuestions: 2,
       },
       {
         userEmail: "bob@example.com",
@@ -59,7 +59,7 @@ describe("AdminService.listPilots", () => {
         enabled: false,
         lastCycleAt: null,
         cycleCount: 0,
-        openEscalations: 0,
+        openQuestions: 0,
       },
     ]);
   });

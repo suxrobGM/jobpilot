@@ -8,10 +8,10 @@ import { describe, expect, it, spyOn } from "bun:test";
 const config = pilotInstructionsConfigSchema.parse({});
 const MORNING = new Date("2026-07-15T08:00:00.000Z"); // past 07:00 UTC
 
-const run = (over: Over, now: Date, openEscalations: number) => {
+const run = (over: Over, now: Date, openQuestions: number) => {
   const { prisma, pilot, push, rec } = makeAgendaDeps(over);
   return {
-    write: () => writeDigestIfDue({ prisma, pilot, push }, "p1", now, config, openEscalations),
+    write: () => writeDigestIfDue({ prisma, pilot, push }, "p1", now, config, openQuestions),
     rec,
   };
 };
@@ -40,7 +40,7 @@ describe("AgendaService morning digest", () => {
       applicationsCreated: 3,
       jobsFailed: 1,
       jobsSkipped: 2,
-      openEscalations: 5,
+      openQuestions: 5,
       outreachSent: 4,
       outreachReplies: 1,
       promotionsPosted: 1,

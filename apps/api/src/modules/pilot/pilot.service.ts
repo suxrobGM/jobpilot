@@ -1,8 +1,8 @@
 import type {
-  AnswerEscalationInput,
-  CreateEscalationInput,
+  AnswerQuestionInput,
   CreatePilotJournalInput,
-  EscalationStatus,
+  CreateQuestionInput,
+  QuestionStatus,
   SetPilotEnabledInput,
   UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
@@ -17,17 +17,17 @@ import {
   type PilotState as PilotStateModel,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { toEscalation, toJournalEntry, toPilotState } from "./pilot.mapper";
+import { toJournalEntry, toPilotState, toQuestion } from "./pilot.mapper";
 import { countAppliedToday } from "./pilot.stats";
 
-/** 2FA codes die within minutes, so an unanswered 2FA escalation must self-expire fast; the agenda
+/** 2FA codes die within minutes, so an unanswered 2FA question must self-expire fast; the agenda
  *  expiry sweep then cleanly skips the parked job instead of leaving it wedged in needs_user. */
 const TWO_FA_TTL_MS = 5 * 60 * 1000;
 
 /** Journal export reads the history in cursor batches so a huge history never loads all at once. */
 const EXPORT_BATCH = 500;
 
-function escalationExpiry(body: CreateEscalationInput): Date | null {
+function questionExpiry(body: CreateQuestionInput): Date | null {
   if (body.expiresAt) return new Date(body.expiresAt);
   if (body.kind === "2fa") return new Date(Date.now() + TWO_FA_TTL_MS);
   return null;
@@ -99,57 +99,57 @@ export class PilotService {
     return state;
   }
 
-  // ── Escalations ───────────────────────────────────────────────────────────────
+  // ── Questions ─────────────────────────────────────────────────────────────────
 
-  async createEscalation(profileId: string, body: CreateEscalationInput) {
-    const expiresAt = escalationExpiry(body);
-    const row = await this.prisma.escalation.create({
+  async createQuestion(profileId: string, body: CreateQuestionInput) {
+    const expiresAt = questionExpiry(body);
+    const row = await this.prisma.question.create({
       data: {
         profileId,
         kind: body.kind,
         subjectType: body.subjectType ?? null,
         subjectId: body.subjectId ?? null,
-        question: body.question,
+        prompt: body.prompt,
         options: JSON.stringify(body.options),
         deepLink: body.deepLink ?? null,
         expiresAt,
       },
     });
-    const escalation = toEscalation(row);
-    publish(pilotChannel, { profileId }, { type: "escalation.created", escalation });
-    // Fire-and-forget so a slow/failed push never delays the escalation write.
+    const question = toQuestion(row);
+    publish(pilotChannel, { profileId }, { type: "question.created", question });
+    // Fire-and-forget so a slow/failed push never delays the question write.
     void this.push.sendToProfile(profileId, {
       title: "JobPilot needs you",
-      body: row.question,
+      body: row.prompt,
       url: row.deepLink ?? "/pilot",
-      tag: `escalation-${row.id}`,
+      tag: `question-${row.id}`,
     });
-    return escalation;
+    return question;
   }
 
-  async listEscalations(profileId: string, status?: EscalationStatus) {
-    const rows = await this.prisma.escalation.findMany({
+  async listQuestions(profileId: string, status?: QuestionStatus) {
+    const rows = await this.prisma.question.findMany({
       where: { profileId, ...(status ? { status } : {}) },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
-    return rows.map(toEscalation);
+    return rows.map(toQuestion);
   }
 
-  async answerEscalation(profileId: string, id: string, body: AnswerEscalationInput) {
+  async answerQuestion(profileId: string, id: string, body: AnswerQuestionInput) {
     await findOwned(
-      (where) => this.prisma.escalation.findFirst({ where, select: { id: true } }),
+      (where) => this.prisma.question.findFirst({ where, select: { id: true } }),
       { id, profileId },
-      "Escalation",
+      "Question",
     );
 
-    const row = await this.prisma.escalation.update({
+    const row = await this.prisma.question.update({
       where: { id },
       data: { status: "answered", answer: body.answer, answeredAt: new Date() },
     });
-    const escalation = toEscalation(row);
-    publish(pilotChannel, { profileId }, { type: "escalation.answered", escalation });
-    return escalation;
+    const question = toQuestion(row);
+    publish(pilotChannel, { profileId }, { type: "question.answered", question });
+    return question;
   }
 
   // ── Journal ───────────────────────────────────────────────────────────────────

@@ -119,7 +119,7 @@ public sealed class PilotLoop(IPilotEnvironment env)
 
         if (result.Outcome != PilotWaitOutcome.Sentinel)
         {
-            return false; // Timeout or a stall heuristic fired: escalate.
+            return false; // Timeout or a stall heuristic fired: ask the user.
         }
 
         ConsecutiveTimeouts = 0;

@@ -17,7 +17,7 @@ import { jobRef, parsePayload, revertJobToApproved, runExpiry } from "./expiry";
 import {
   attachWarmContacts,
   dueStandingQueries,
-  gatherAnsweredEscalations,
+  gatherAnsweredQuestions,
   gatherApprovedJobs,
   gatherFinalizeCampaigns,
   gatherInbox,
@@ -66,8 +66,8 @@ export class AgendaService {
 
     const tz = config.activeHours?.tz;
     const [
-      openEscalations,
-      answeredEscalations,
+      openQuestions,
+      answeredQuestions,
       activeLeases,
       approvedJobs,
       appliedToday,
@@ -83,8 +83,8 @@ export class AgendaService {
       queue,
       boardHealth,
     ] = await Promise.all([
-      this.prisma.escalation.count({ where: { profileId, status: "open" } }),
-      gatherAnsweredEscalations(this.prisma, profileId),
+      this.prisma.question.count({ where: { profileId, status: "open" } }),
+      gatherAnsweredQuestions(this.prisma, profileId),
       this.prisma.pilotLease.count({
         where: { profileId, releasedAt: null, expiresAt: { gt: now } },
       }),
@@ -126,14 +126,14 @@ export class AgendaService {
       profileId,
       now,
       config,
-      openEscalations,
+      openQuestions,
     );
 
     return buildAgenda({
       now,
       config,
-      openEscalations,
-      answeredEscalations,
+      openQuestions,
+      answeredQuestions,
       activeLeases,
       approvedJobs,
       appliedToday,

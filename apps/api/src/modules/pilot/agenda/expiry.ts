@@ -19,7 +19,7 @@ export function jobRef(
   return { campaignId: payload.campaignId ?? "", jobKey: payload.jobKey ?? subjectId };
 }
 
-/** Job escalation subjects are stored as `${campaignId}:${jobKey}`. */
+/** Job question subjects are stored as `${campaignId}:${jobKey}`. */
 function splitJobSubject(subjectId: string): { campaignId: string; jobKey: string } {
   const idx = subjectId.indexOf(":");
   return idx === -1
@@ -56,7 +56,7 @@ async function skipParkedJob(
   if (job?.status === "needs_user") {
     await campaignJobs.recordJobResult(profileId, campaignId, jobKey, {
       outcome: "skipped",
-      skipReason: "Escalation expired without an answer.",
+      skipReason: "Question expired without an answer.",
     });
   }
 }
@@ -81,31 +81,27 @@ async function expireLeases(deps: JobMutationDeps, profileId: string, now: Date)
   await Promise.all(reverts);
 }
 
-async function expireEscalations(
-  deps: JobMutationDeps,
-  profileId: string,
-  now: Date,
-): Promise<void> {
+async function expireQuestions(deps: JobMutationDeps, profileId: string, now: Date): Promise<void> {
   const { prisma } = deps;
-  const escalations = await prisma.escalation.findMany({
+  const questions = await prisma.question.findMany({
     where: { profileId, status: "open", expiresAt: { not: null, lt: now } },
     take: GATHER_CAP, // remainder is swept on the next compile.
     select: { id: true, subjectType: true, subjectId: true },
   });
-  if (escalations.length === 0) return;
-  await prisma.escalation.updateMany({
-    where: { id: { in: escalations.map((e) => e.id) } },
+  if (questions.length === 0) return;
+  await prisma.question.updateMany({
+    where: { id: { in: questions.map((e) => e.id) } },
     data: { status: "expired" },
   });
-  const skips = escalations
+  const skips = questions
     .filter((e) => e.subjectType === "job" && e.subjectId)
     .map((e) => skipParkedJob(deps, profileId, e.subjectId as string));
   await Promise.all(skips);
 }
 
 /**
- * Sweep overdue leases and escalations before compiling. An expired job lease
- * reverts its job to `approved`; an expired escalation whose job is parked in
+ * Sweep overdue leases and questions before compiling. An expired job lease
+ * reverts its job to `approved`; an expired question whose job is parked in
  * `needs_user` is skipped through the campaign job service. The two passes are
  * independent, so they run in parallel. Runs first so the agenda reflects the cleanup.
  */
@@ -114,5 +110,5 @@ export async function runExpiry(
   profileId: string,
   now: Date,
 ): Promise<void> {
-  await Promise.all([expireLeases(deps, profileId, now), expireEscalations(deps, profileId, now)]);
+  await Promise.all([expireLeases(deps, profileId, now), expireQuestions(deps, profileId, now)]);
 }

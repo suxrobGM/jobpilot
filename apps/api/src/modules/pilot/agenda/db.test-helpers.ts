@@ -12,7 +12,7 @@ export interface Recorder {
   claimJobForApply: unknown[][];
   leaseCreates: Record<string, unknown>[];
   leaseUpdates: { data: Record<string, unknown> }[];
-  escalationUpdates: { data: Record<string, unknown> }[];
+  questionUpdates: { data: Record<string, unknown> }[];
   journals: Record<string, unknown>[];
   pushes: { profileId: string; payload: PushPayload }[];
 }
@@ -20,8 +20,8 @@ export interface Recorder {
 export interface Over {
   instructionsConfig?: string;
   expiredLeases?: Record<string, unknown>[];
-  escalationLeases?: { subjectId: string }[];
-  expiredEscalations?: Record<string, unknown>[];
+  questionLeases?: { subjectId: string }[];
+  expiredQuestions?: Record<string, unknown>[];
   answered?: Record<string, unknown>[];
   approvedJobs?: Record<string, unknown>[];
   appliedToday?: number;
@@ -43,7 +43,7 @@ export interface Over {
   // Interview wiring:
   interviewReplyApps?: Record<string, unknown>[];
   interviewPrepApps?: Record<string, unknown>[];
-  interviewEscalations?: { subjectId: string }[];
+  interviewQuestions?: { subjectId: string }[];
   // Digest wiring:
   existingDigests?: number;
   digestApps?: number;
@@ -69,7 +69,7 @@ export function makeAgendaDb(over: Over = {}) {
     claimJobForApply: [],
     leaseCreates: [],
     leaseUpdates: [],
-    escalationUpdates: [],
+    questionUpdates: [],
     journals: [],
     pushes: [],
   };
@@ -81,11 +81,11 @@ export function makeAgendaDb(over: Over = {}) {
     },
     pilotLease: {
       findMany: async (args: { where: { subjectType?: string } }) =>
-        args.where.subjectType === "escalation"
-          ? (over.escalationLeases ?? [])
+        args.where.subjectType === "question"
+          ? (over.questionLeases ?? [])
           : (over.expiredLeases ?? []),
       count: async () => over.activeLeases ?? 0,
-      // First arg = the per-subject uniqueness guard; escalation-consumed lookups reuse findMany.
+      // First arg = the per-subject uniqueness guard; question-consumed lookups reuse findMany.
       findFirst: async () => over.activeLease ?? null,
       update: async (a: { data: Record<string, unknown> }) => {
         rec.leaseUpdates.push(a);
@@ -120,21 +120,21 @@ export function makeAgendaDb(over: Over = {}) {
         };
       },
     },
-    escalation: {
+    question: {
       count: async () => 0,
       findMany: async (args: { where: { status?: string; subjectType?: string } }) =>
         args.where.subjectType === "email"
-          ? (over.interviewEscalations ?? [])
+          ? (over.interviewQuestions ?? [])
           : args.where.status === "answered"
             ? (over.answered ?? [])
-            : (over.expiredEscalations ?? []),
+            : (over.expiredQuestions ?? []),
       update: async (a: { data: Record<string, unknown> }) => {
-        rec.escalationUpdates.push(a);
+        rec.questionUpdates.push(a);
         return {};
       },
       updateMany: async (a: { data: Record<string, unknown> }) => {
-        rec.escalationUpdates.push(a);
-        return { count: (over.expiredEscalations ?? []).length };
+        rec.questionUpdates.push(a);
+        return { count: (over.expiredQuestions ?? []).length };
       },
     },
     job: {

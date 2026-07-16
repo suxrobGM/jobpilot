@@ -5,7 +5,7 @@ import { Box, Tooltip } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { EscalationBadge } from "@/components/features/pilot/escalation-badge";
+import { QuestionBadge } from "@/components/features/pilot/question-badge";
 import { isNavItemActive, type NavItem as NavItemType } from "./shell-config";
 
 interface NavItemProps {
@@ -55,7 +55,7 @@ export function NavItem(props: NavItemProps): ReactElement {
             : undefined,
         })}
       >
-        {item.badge === "escalations" ? <EscalationBadge>{icon}</EscalationBadge> : icon}
+        {item.badge === "questions" ? <QuestionBadge>{icon}</QuestionBadge> : icon}
       </Box>
     </Tooltip>
   );

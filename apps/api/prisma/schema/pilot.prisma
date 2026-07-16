@@ -31,7 +31,7 @@ model PilotLease {
   @@map("pilot_leases")
 }
 
-model Escalation {
+model Question {
   id          String    @id @default(uuid())
   profileId   String    @map("profile_id")
   profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
@@ -39,7 +39,7 @@ model Escalation {
   status      String    @default("open")
   subjectType String?   @map("subject_type")
   subjectId   String?   @map("subject_id")
-  question    String
+  prompt      String
   options     String    @default("[]")
   deepLink    String?   @map("deep_link")
   answer      String?
@@ -48,7 +48,7 @@ model Escalation {
   createdAt   DateTime  @default(now()) @map("created_at")
 
   @@index([profileId, status])
-  @@map("escalations")
+  @@map("questions")
 }
 
 model PilotJournalEntry {

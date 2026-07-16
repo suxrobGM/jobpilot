@@ -8,7 +8,7 @@ const INTERVIEW_PREP_MARKER = "[interview-prep]";
 /**
  * Interviewing apps whose recruiter reply still needs an availability answer: the app has an
  * interview-classified inbound email, no outbound reply logged (an `email` event), and no
- * open/answered escalation on that email (a draft in flight or already approved).
+ * open/answered question on that email (a draft in flight or already approved).
  */
 export async function gatherInterviewReplies(
   prisma: PrismaClient,
@@ -36,8 +36,8 @@ export async function gatherInterviewReplies(
     .map((a) => ({ app: a, email: a.emailMessages[0] }));
   if (candidates.length === 0) return [];
 
-  // Suppress any email that already has a reply draft escalation (open) or an approved one (answered).
-  const escalations = await prisma.escalation.findMany({
+  // Suppress any email that already has a reply draft question (open) or an approved one (answered).
+  const questions = await prisma.question.findMany({
     where: {
       profileId,
       subjectType: "email",
@@ -46,7 +46,7 @@ export async function gatherInterviewReplies(
     },
     select: { subjectId: true },
   });
-  const blocked = new Set(escalations.map((e) => e.subjectId));
+  const blocked = new Set(questions.map((e) => e.subjectId));
 
   return candidates
     .filter((c) => !blocked.has(c.email.id))

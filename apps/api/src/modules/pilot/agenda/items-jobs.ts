@@ -3,27 +3,27 @@ import { MAX_WARM_INTROS, PRIORITY, WARM_INTRO_MIN_SCORE } from "./constants";
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
-  AgendaEscalation,
   AgendaFinalizeCampaign,
+  AgendaQuestion,
 } from "./types";
 
-/** Answered escalations - the highest-priority "apply the user's answer" work. */
-export function buildEscalationItems(escalations: AgendaEscalation[]): AgendaItem[] {
-  return escalations.map((esc) => ({
-    id: `escalation.answered:${esc.id}`,
-    kind: "escalation.answered",
-    priority: PRIORITY.escalation,
-    title: `Apply answer: ${esc.question}`.slice(0, 200),
-    subjectType: "escalation",
-    subjectId: esc.id,
+/** Answered questions - the highest-priority "apply the user's answer" work. */
+export function buildQuestionItems(questions: AgendaQuestion[]): AgendaItem[] {
+  return questions.map((q) => ({
+    id: `question.answered:${q.id}`,
+    kind: "question.answered",
+    priority: PRIORITY.question,
+    title: `Apply answer: ${q.prompt}`.slice(0, 200),
+    subjectType: "question",
+    subjectId: q.id,
     // Enriched with subject + Q/A so the worker can route non-job answers (email replies, outreach) directly.
     payload: {
-      escalationId: esc.id,
-      escalationKind: esc.kind,
-      subjectType: esc.subjectType ?? null,
-      subjectId: esc.subjectId ?? null,
-      question: esc.question,
-      answer: esc.answer ?? null,
+      questionId: q.id,
+      questionKind: q.kind,
+      subjectType: q.subjectType ?? null,
+      subjectId: q.subjectId ?? null,
+      prompt: q.prompt,
+      answer: q.answer ?? null,
     },
   }));
 }

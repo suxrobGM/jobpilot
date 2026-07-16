@@ -7,9 +7,9 @@ import { GATHER_CAP, WARM_INTRO_MIN_SCORE } from "./constants";
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
-  AgendaEscalation,
   AgendaFinalizeCampaign,
   AgendaInbox,
+  AgendaQuestion,
   WarmContact,
 } from "./types";
 
@@ -23,19 +23,19 @@ function normalizeCompany(s: string): string {
     .trim();
 }
 
-/** Answered escalations not yet consumed by any lease, so a claimed answer never re-appears. */
-export async function gatherAnsweredEscalations(
+/** Answered questions not yet consumed by any lease, so a claimed answer never re-appears. */
+export async function gatherAnsweredQuestions(
   prisma: PrismaClient,
   profileId: string,
-): Promise<AgendaEscalation[]> {
-  const answered = await prisma.escalation.findMany({
+): Promise<AgendaQuestion[]> {
+  const answered = await prisma.question.findMany({
     where: { profileId, status: "answered" },
     orderBy: { answeredAt: "asc" },
     take: GATHER_CAP,
     select: {
       id: true,
       kind: true,
-      question: true,
+      prompt: true,
       subjectType: true,
       subjectId: true,
       answer: true,
@@ -44,7 +44,7 @@ export async function gatherAnsweredEscalations(
   if (answered.length === 0) return [];
   // Only the answered ids can be consumed, so scope the lease lookup to them.
   const leases = await prisma.pilotLease.findMany({
-    where: { profileId, subjectType: "escalation", subjectId: { in: answered.map((e) => e.id) } },
+    where: { profileId, subjectType: "question", subjectId: { in: answered.map((e) => e.id) } },
     take: GATHER_CAP,
     select: { subjectId: true },
   });
@@ -54,7 +54,7 @@ export async function gatherAnsweredEscalations(
     .map((e) => ({
       id: e.id,
       kind: e.kind,
-      question: e.question,
+      prompt: e.prompt,
       subjectType: e.subjectType,
       subjectId: e.subjectId,
       answer: e.answer,

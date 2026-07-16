@@ -3,22 +3,22 @@
 import type { ReactElement } from "react";
 import { LinearProgress, Stack, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
-import { EscalationCard } from "./escalation-card";
-import { useOpenEscalations } from "./use-open-escalations";
+import { QuestionCard } from "./question-card";
+import { useOpenQuestions } from "./use-open-questions";
 
-export function EscalationList(): ReactElement {
-  const { escalations, isLoading } = useOpenEscalations();
+export function QuestionList(): ReactElement {
+  const { questions, isLoading } = useOpenQuestions();
 
   return (
-    <SectionCard title="Open escalations">
+    <SectionCard title="Questions">
       {isLoading ? (
         <LinearProgress />
-      ) : escalations.length === 0 ? (
+      ) : questions.length === 0 ? (
         <Typography variant="body2Muted">Nothing needs your attention right now.</Typography>
       ) : (
         <Stack spacing={2}>
-          {escalations.map((escalation) => (
-            <EscalationCard key={escalation.id} escalation={escalation} />
+          {questions.map((question) => (
+            <QuestionCard key={question.id} question={question} />
           ))}
         </Stack>
       )}

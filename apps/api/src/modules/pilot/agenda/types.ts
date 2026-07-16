@@ -1,10 +1,10 @@
 import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 
-export interface AgendaEscalation {
+export interface AgendaQuestion {
   id: string;
   kind: string;
-  question: string;
-  // Enrichment so escalation.answered leases carry the subject and Q/A without the worker re-reading.
+  prompt: string;
+  // Enrichment so question.answered leases carry the subject and Q/A without the worker re-reading.
   subjectType?: string | null;
   subjectId?: string | null;
   answer?: string | null;
@@ -144,8 +144,8 @@ export interface AgendaRetryFailed {
 export interface AgendaInput {
   now: Date;
   config: PilotInstructionsConfig;
-  openEscalations: number;
-  answeredEscalations: AgendaEscalation[];
+  openQuestions: number;
+  answeredQuestions: AgendaQuestion[];
   activeLeases: number;
   approvedJobs: AgendaApprovedJob[];
   appliedToday: number;

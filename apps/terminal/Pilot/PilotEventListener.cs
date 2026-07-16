@@ -20,7 +20,7 @@ internal sealed record PilotSsePromotion
 
 /// <summary>
 /// Long-lived listener on the API's pilot SSE feed. While the pilot is enabled+paired it holds a streaming
-/// connection and wakes the conductor the moment an escalation is answered, an approved promotion lands, or
+/// connection and wakes the conductor the moment a question is answered, an approved promotion lands, or
 /// state changes — so a sleeping conductor starts its next cycle within seconds instead of at nextWakeAt.
 /// Reconnects with exponential backoff, tears down when disabled, and never faults the host.
 /// </summary>
@@ -82,7 +82,7 @@ public sealed class PilotEventListener : BackgroundService
         var type = envelope?.Type ?? frame.Event;
         return type switch
         {
-            "escalation.answered" => true,
+            "question.answered" => true,
             "state.changed" => true,
             "promotion.updated" => string.Equals(envelope?.Promotion?.Status, "approved", StringComparison.Ordinal),
             _ => false,
@@ -120,7 +120,7 @@ public sealed class PilotEventListener : BackgroundService
                 SetConnected(false);
             }
 
-            // A stream that carried data resets backoff; a disable ends cleanly, so only a real drop escalates it.
+            // A stream that carried data resets backoff; a disable ends cleanly, so only a real drop grows it.
             if (!ShouldConnect(store.Current))
             {
                 backoff.Reset();

@@ -1,27 +1,27 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { Escalation } from "@jobpilot/contracts/pilot";
+import type { Question } from "@jobpilot/contracts/pilot";
 import { OpenInNew } from "@mui/icons-material";
 import { Button, Card, CardContent, Link, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 
-interface EscalationCardProps {
-  escalation: Escalation;
+interface QuestionCardProps {
+  question: Question;
 }
 
-export function EscalationCard(props: EscalationCardProps): ReactElement {
-  const { escalation } = props;
+export function QuestionCard(props: QuestionCardProps): ReactElement {
+  const { question } = props;
   const [freeText, setFreeText] = useState("");
 
   const answer = useApiMutation<unknown, string>(
-    (value) => api.pilot.escalations({ id: escalation.id }).answer.post({ answer: value }),
-    { invalidate: [queryKeys.pilot.escalationsAll()], successMessage: "Answer sent." },
+    (value) => api.pilot.questions({ id: question.id }).answer.post({ answer: value }),
+    { invalidate: [queryKeys.pilot.questionsAll()], successMessage: "Answer sent." },
   );
 
-  const hasOptions = escalation.options.length > 0;
+  const hasOptions = question.options.length > 0;
   const busy = answer.isPending;
 
   return (
@@ -29,15 +29,15 @@ export function EscalationCard(props: EscalationCardProps): ReactElement {
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between" }}>
-            <Typography variant="subtitle2">{escalation.question}</Typography>
+            <Typography variant="subtitle2">{question.prompt}</Typography>
             <Typography variant="captionMuted" sx={{ textTransform: "capitalize" }}>
-              {escalation.kind}
+              {question.kind}
             </Typography>
           </Stack>
 
-          {escalation.deepLink && (
+          {question.deepLink && (
             <Link
-              href={escalation.deepLink}
+              href={question.deepLink}
               target="_blank"
               rel="noopener"
               sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
@@ -53,7 +53,7 @@ export function EscalationCard(props: EscalationCardProps): ReactElement {
               spacing={1}
               sx={{ flexWrap: { sm: "wrap" }, gap: 1, alignItems: { xs: "stretch", sm: "center" } }}
             >
-              {escalation.options.map((option) => (
+              {question.options.map((option) => (
                 <Button
                   key={option}
                   variant="outlined"

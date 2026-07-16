@@ -9,12 +9,12 @@ import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { useSseChannel } from "@/lib/sse/client";
 import { BudgetTile } from "./budget-tile";
-import { EscalationList } from "./escalation-list";
 import { InstructionsEditor } from "./instructions-editor";
 import { JournalFeed } from "./journal-feed";
 import { PilotStatusCard } from "./pilot-status-card";
 import { PromotionList } from "./promotion-list";
 import { PushSettings } from "./push-settings";
+import { QuestionList } from "./question-list";
 
 export function PilotView(): ReactElement {
   const queryClient = useQueryClient();
@@ -36,8 +36,8 @@ export function PilotView(): ReactElement {
 
   const state = stateQuery.data;
 
-  // On xs, open escalations hoist above the status cards so they're reachable one-handed;
-  // md keeps DOM order (status/budget, then escalations). useFlexGap makes `order` reflow cleanly.
+  // On xs, open questions hoist above the status cards so they're reachable one-handed;
+  // md keeps DOM order (status/budget, then questions). useFlexGap makes `order` reflow cleanly.
   return (
     <Stack spacing={3} useFlexGap>
       <Grid container spacing={3} sx={{ alignItems: "stretch", order: { xs: 2, md: 0 } }}>
@@ -49,7 +49,7 @@ export function PilotView(): ReactElement {
         </Grid>
       </Grid>
       <Box sx={{ order: { xs: 1, md: 0 } }}>
-        <EscalationList />
+        <QuestionList />
       </Box>
       <Box sx={{ order: { xs: 2, md: 0 } }}>
         <PromotionList />

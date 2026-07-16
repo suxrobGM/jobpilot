@@ -92,9 +92,9 @@ public sealed class PilotEventListenerTests
     private static SseFrame Frame(string data, string? name = null) => new(name, data);
 
     [Fact]
-    public void ShouldWake_OnEscalationAnswered()
+    public void ShouldWake_OnQuestionAnswered()
     {
-        Assert.True(PilotEventListener.ShouldWake(Frame("{\"type\":\"escalation.answered\",\"escalation\":{}}")));
+        Assert.True(PilotEventListener.ShouldWake(Frame("{\"type\":\"question.answered\",\"question\":{}}")));
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class PilotEventListenerTests
 
     [Theory]
     [InlineData("{\"type\":\"journal.appended\",\"entry\":{}}")]
-    [InlineData("{\"type\":\"escalation.created\",\"escalation\":{}}")]
+    [InlineData("{\"type\":\"question.created\",\"question\":{}}")]
     [InlineData("{\"type\":\"promotion.created\",\"promotion\":{\"status\":\"draft\"}}")]
     public void ShouldNotWake_OnUnrelatedEvents(string data)
     {
@@ -223,7 +223,7 @@ public sealed class PilotEventListenerTests
         Assert.True(conductor.BuildStatus().Connected);
         var wakesBefore = conductor.WakeCount;
 
-        handler.Stream.Push("data: {\"type\":\"escalation.answered\",\"escalation\":{}}\n\n");
+        handler.Stream.Push("data: {\"type\":\"question.answered\",\"question\":{}}\n\n");
         await WaitUntil(() => conductor.WakeCount > wakesBefore);
 
         Assert.Equal("Bearer tok", handler.LastRequest?.Headers.Authorization?.ToString());

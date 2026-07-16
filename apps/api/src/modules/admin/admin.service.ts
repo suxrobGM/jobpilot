@@ -105,7 +105,7 @@ export class AdminService {
     };
   }
 
-  /** The Pilot fleet: one row per PilotState, joined to its owner's email and open-escalation count. */
+  /** The Pilot fleet: one row per PilotState, joined to its owner's email and open-question count. */
   async listPilots(query: AdminPilotQuery) {
     const { page, limit } = query;
     const [rows, total] = await Promise.all([
@@ -125,12 +125,12 @@ export class AdminService {
     ]);
 
     const profileIds = rows.map((row) => row.profileId);
-    const escalationRows = await this.prisma.escalation.groupBy({
+    const questionRows = await this.prisma.question.groupBy({
       by: ["profileId"],
       where: { profileId: { in: profileIds }, status: "open" },
       _count: { _all: true },
     });
-    const openByProfile = new Map(escalationRows.map((row) => [row.profileId, row._count._all]));
+    const openByProfile = new Map(questionRows.map((row) => [row.profileId, row._count._all]));
 
     const items = rows.map((row) => ({
       userEmail: row.profile.user.email,
@@ -138,7 +138,7 @@ export class AdminService {
       enabled: row.enabled,
       lastCycleAt: row.lastCycleAt,
       cycleCount: row.cycleCount,
-      openEscalations: openByProfile.get(row.profileId) ?? 0,
+      openQuestions: openByProfile.get(row.profileId) ?? 0,
     }));
     return createPaginatedResponse(items, { page, limit, total });
   }

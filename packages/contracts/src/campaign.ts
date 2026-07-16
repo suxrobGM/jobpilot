@@ -24,7 +24,7 @@ export const CAMPAIGN_JOB_STATUSES = [
   "applied",
   "failed",
   "skipped",
-  // Parked by the Pilot mid-apply pending a user answer (see Escalation); non-terminal.
+  // Parked by the Pilot mid-apply pending a user answer (see Question); non-terminal.
   "needs_user",
 ] as const;
 export const campaignJobStatusSchema = z.enum(CAMPAIGN_JOB_STATUSES);

@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 // ── Agenda ────────────────────────────────────────────────────────────────────
 
 const AGENDA_ITEM_KINDS = [
-  "escalation.answered",
+  "question.answered",
   "job.apply",
   "search.discover",
   "campaign.finalize",
@@ -27,7 +27,7 @@ const agendaItemKindSchema = z.enum(AGENDA_ITEM_KINDS);
 const AGENDA_SUBJECT_TYPES = [
   "job",
   "campaign",
-  "escalation",
+  "question",
   "outreach",
   "inbox",
   "promotion",
@@ -49,7 +49,7 @@ const agendaItemSchema = z.object({
 });
 
 const agendaCountsSchema = z.object({
-  openEscalations: z.number().int(),
+  openQuestions: z.number().int(),
   activeLeases: z.number().int(),
   approvedJobs: z.number().int(),
   appliedToday: z.number().int(),

@@ -1,4 +1,4 @@
-// Fake-Prisma unit test for PilotService: escalation lifecycle and journal cycle accounting.
+// Fake-Prisma unit test for PilotService: question lifecycle and journal cycle accounting.
 // Injects a fake Prisma directly (no database); publish() is a no-op without subscribers.
 import type { PushPayload } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
@@ -7,8 +7,8 @@ import { PilotService } from "./pilot.service";
 import { describe, expect, it } from "bun:test";
 
 interface Recorder {
-  escalationCreate?: Record<string, unknown>;
-  escalationUpdate?: { data: Record<string, unknown> };
+  questionCreate?: Record<string, unknown>;
+  questionUpdate?: { data: Record<string, unknown> };
   journalCreates: Record<string, unknown>[];
   stateUpserts: { create: Record<string, unknown>; update: Record<string, unknown> }[];
   pushes: { profileId: string; payload: PushPayload }[];
@@ -17,9 +17,9 @@ interface Recorder {
 function makeDb() {
   const rec: Recorder = { journalCreates: [], stateUpserts: [], pushes: [] };
   const db = {
-    escalation: {
+    question: {
       create: async (a: { data: Record<string, unknown> }) => {
-        rec.escalationCreate = a.data;
+        rec.questionCreate = a.data;
         return {
           id: "e1",
           profileId: "p1",
@@ -36,7 +36,7 @@ function makeDb() {
       },
       findFirst: async () => ({ id: "e1" }),
       update: async (a: { data: Record<string, unknown> }) => {
-        rec.escalationUpdate = a;
+        rec.questionUpdate = a;
         return {
           id: "e1",
           profileId: "p1",
@@ -44,7 +44,7 @@ function makeDb() {
           status: "answered",
           subjectType: null,
           subjectId: null,
-          question: "q",
+          prompt: "q",
           options: "[]",
           deepLink: null,
           expiresAt: null,
@@ -75,37 +75,37 @@ const service = () => {
   return { svc: new PilotService(db as unknown as PrismaClient, makePush(rec)), rec };
 };
 
-describe("PilotService escalations", () => {
-  it("creates an escalation with parsed options and open status", async () => {
+describe("PilotService questions", () => {
+  it("creates a question with parsed options and open status", async () => {
     const { svc, rec } = service();
-    const esc = await svc.createEscalation("p1", {
+    const q = await svc.createQuestion("p1", {
       kind: "choice",
-      question: "Which start date?",
+      prompt: "Which start date?",
       options: ["2 weeks", "immediately"],
     });
 
-    expect(esc.status).toBe("open");
-    expect(esc.options).toEqual(["2 weeks", "immediately"]);
-    expect(rec.escalationCreate?.options).toBe(JSON.stringify(["2 weeks", "immediately"]));
+    expect(q.status).toBe("open");
+    expect(q.options).toEqual(["2 weeks", "immediately"]);
+    expect(rec.questionCreate?.options).toBe(JSON.stringify(["2 weeks", "immediately"]));
   });
 
-  it("answers an escalation, setting status and answer", async () => {
+  it("answers a question, setting status and answer", async () => {
     const { svc, rec } = service();
-    const esc = await svc.answerEscalation("p1", "e1", { answer: "2 weeks" });
+    const q = await svc.answerQuestion("p1", "e1", { answer: "2 weeks" });
 
-    expect(esc.status).toBe("answered");
-    expect(esc.answer).toBe("2 weeks");
-    expect(rec.escalationUpdate?.data).toMatchObject({ status: "answered", answer: "2 weeks" });
-    expect(rec.escalationUpdate?.data.answeredAt).toBeInstanceOf(Date);
+    expect(q.status).toBe("answered");
+    expect(q.answer).toBe("2 weeks");
+    expect(rec.questionUpdate?.data).toMatchObject({ status: "answered", answer: "2 weeks" });
+    expect(rec.questionUpdate?.data.answeredAt).toBeInstanceOf(Date);
   });
 
   it("pushes a notification on creation, using the deep link as the url", async () => {
     const { svc, rec } = service();
-    await svc.createEscalation("p1", {
+    await svc.createQuestion("p1", {
       kind: "question",
-      question: "Approve this application?",
+      prompt: "Approve this application?",
       options: [],
-      deepLink: "/pilot/escalations/e1",
+      deepLink: "/pilot/questions/e1",
     });
 
     expect(rec.pushes).toHaveLength(1);
@@ -114,33 +114,33 @@ describe("PilotService escalations", () => {
       payload: {
         title: "JobPilot needs you",
         body: "Approve this application?",
-        url: "/pilot/escalations/e1",
-        tag: "escalation-e1",
+        url: "/pilot/questions/e1",
+        tag: "question-e1",
       },
     });
   });
 
-  it("defaults a 2fa escalation to expire in ~5 minutes when none is given", async () => {
+  it("defaults a 2fa question to expire in ~5 minutes when none is given", async () => {
     const { svc, rec } = service();
     const before = Date.now();
-    await svc.createEscalation("p1", { kind: "2fa", question: "Enter the code", options: [] });
+    await svc.createQuestion("p1", { kind: "2fa", prompt: "Enter the code", options: [] });
 
-    const expiresAt = rec.escalationCreate?.expiresAt as Date;
+    const expiresAt = rec.questionCreate?.expiresAt as Date;
     expect(expiresAt).toBeInstanceOf(Date);
     const ms = expiresAt.getTime() - before;
     expect(ms).toBeGreaterThanOrEqual(4 * 60 * 1000);
     expect(ms).toBeLessThanOrEqual(6 * 60 * 1000);
   });
 
-  it("does not default an expiry for non-2fa escalations", async () => {
+  it("does not default an expiry for non-2fa questions", async () => {
     const { svc, rec } = service();
-    await svc.createEscalation("p1", {
+    await svc.createQuestion("p1", {
       kind: "question",
-      question: "Which start date?",
+      prompt: "Which start date?",
       options: [],
     });
 
-    expect(rec.escalationCreate?.expiresAt).toBeNull();
+    expect(rec.questionCreate?.expiresAt).toBeNull();
   });
 });
 

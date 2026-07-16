@@ -1,6 +1,6 @@
-// Category bases; job.apply is offset by matchScore so higher scores sort first, still under escalations.
+// Category bases; job.apply is offset by matchScore so higher scores sort first, still under questions.
 export const PRIORITY = {
-  escalation: 1000,
+  question: 1000,
   boardHealth: 820,
   interviewReply: 850,
   jobBase: 800,

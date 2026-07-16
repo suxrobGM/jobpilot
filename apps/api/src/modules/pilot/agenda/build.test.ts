@@ -5,16 +5,16 @@ import { base, cfg, job } from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda priority", () => {
-  it("orders escalation.answered above job.apply above campaign.finalize", () => {
+  it("orders question.answered above job.apply above campaign.finalize", () => {
     const agenda = buildAgenda(
       base({
-        answeredEscalations: [{ id: "e1", kind: "question", question: "Which start date?" }],
+        answeredQuestions: [{ id: "e1", kind: "question", prompt: "Which start date?" }],
         approvedJobs: [job("j1", 80)],
         finalizeCampaigns: [{ campaignId: "c2", query: "react" }],
       }),
     );
     expect(agenda.items.map((i) => i.kind)).toEqual([
-      "escalation.answered",
+      "question.answered",
       "job.apply",
       "campaign.finalize",
     ]);
@@ -22,15 +22,15 @@ describe("buildAgenda priority", () => {
     expect(agenda.items[1].priority).toBeGreaterThan(agenda.items[2].priority);
   });
 
-  it("orders escalation.answered above search.discover when the apply pipeline is empty", () => {
+  it("orders question.answered above search.discover when the apply pipeline is empty", () => {
     const agenda = buildAgenda(
       base({
-        answeredEscalations: [{ id: "e1", kind: "question", question: "q" }],
+        answeredQuestions: [{ id: "e1", kind: "question", prompt: "q" }],
         approvedJobs: [],
         dueQueries: [{ query: "golang" }],
       }),
     );
-    expect(agenda.items.map((i) => i.kind)).toEqual(["escalation.answered", "search.discover"]);
+    expect(agenda.items.map((i) => i.kind)).toEqual(["question.answered", "search.discover"]);
   });
 
   it("ranks job.apply items by matchScore descending", () => {
@@ -71,10 +71,10 @@ describe("buildAgenda budget / cap", () => {
 
   it("reports counts from the inputs", () => {
     const agenda = buildAgenda(
-      base({ openEscalations: 2, activeLeases: 1, approvedJobs: [job("j1", 50)], appliedToday: 4 }),
+      base({ openQuestions: 2, activeLeases: 1, approvedJobs: [job("j1", 50)], appliedToday: 4 }),
     );
     expect(agenda.counts).toEqual({
-      openEscalations: 2,
+      openQuestions: 2,
       activeLeases: 1,
       approvedJobs: 1,
       appliedToday: 4,
@@ -86,16 +86,16 @@ describe("buildAgenda active hours", () => {
   const hours = cfg({ activeHours: { start: "09:00", end: "17:00", tz: "UTC" } });
   const OUTSIDE = new Date("2026-07-15T03:00:00.000Z");
 
-  it("drops job.apply and discovery outside the window but keeps escalations", () => {
+  it("drops job.apply and discovery outside the window but keeps questions", () => {
     const agenda = buildAgenda(
       base({
         now: OUTSIDE,
         config: hours,
-        answeredEscalations: [{ id: "e1", kind: "question", question: "q" }],
+        answeredQuestions: [{ id: "e1", kind: "question", prompt: "q" }],
         approvedJobs: [job("j1", 90)],
       }),
     );
-    expect(agenda.items.map((i) => i.kind)).toEqual(["escalation.answered"]);
+    expect(agenda.items.map((i) => i.kind)).toEqual(["question.answered"]);
   });
 
   it("sleeps until the window opens when idle and outside hours", () => {

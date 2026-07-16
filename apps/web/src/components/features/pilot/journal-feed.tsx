@@ -36,7 +36,7 @@ const KIND_META: Record<PilotJournalKind, { icon: SvgIconComponent; color: ChipP
   cycle: { icon: Autorenew, color: "primary" },
   action: { icon: Bolt, color: "info" },
   observation: { icon: Visibility, color: "default" },
-  escalation: { icon: NotificationImportant, color: "warning" },
+  question: { icon: NotificationImportant, color: "warning" },
   system: { icon: Terminal, color: "default" },
   digest: { icon: Summarize, color: "success" },
   correction: { icon: Rule, color: "secondary" },
@@ -56,7 +56,7 @@ function DigestCounts(props: { detail: Record<string, unknown> }): ReactElement 
     `${n(detail, "jobsFailed") + n(detail, "jobsSkipped")} not applied`,
     `${n(detail, "outreachSent")} outreach (${n(detail, "outreachReplies")} replies)`,
     `${n(detail, "promotionsPosted")} posts`,
-    `${n(detail, "openEscalations")} open`,
+    `${n(detail, "openQuestions")} open`,
   ];
   return <Typography variant="captionMuted">{parts.join(" · ")}</Typography>;
 }

@@ -102,7 +102,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
         // Boards/parked boards aren't editable here - preserve whatever the instructions already had
-        // (parkedBoards is written by the board-health escalation flow).
+        // (parkedBoards is written by the board-health question flow).
         boards: state.instructionsConfig.boards,
         parkedBoards: state.instructionsConfig.parkedBoards,
         activeHours: value.activeHoursEnabled

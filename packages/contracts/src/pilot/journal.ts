@@ -6,7 +6,7 @@ const PILOT_JOURNAL_KINDS = [
   "cycle",
   "action",
   "observation",
-  "escalation",
+  "question",
   "system",
   "digest",
   // A user override (declined/edited a draft) captured as a labeled learning signal.

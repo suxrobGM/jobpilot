@@ -34,7 +34,7 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
             <TableCell>Enabled</TableCell>
             <TableCell>Last cycle</TableCell>
             <TableCell align="right">Cycles</TableCell>
-            <TableCell align="right">Open escalations</TableCell>
+            <TableCell align="right">Open questions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -59,9 +59,9 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
               <TableCell align="right">
                 <Chip
                   size="small"
-                  variant={pilot.openEscalations > 0 ? "filled" : "outlined"}
-                  color={pilot.openEscalations > 0 ? "error" : "default"}
-                  label={pilot.openEscalations}
+                  variant={pilot.openQuestions > 0 ? "filled" : "outlined"}
+                  color={pilot.openQuestions > 0 ? "error" : "default"}
+                  label={pilot.openQuestions}
                 />
               </TableCell>
             </TableRow>
