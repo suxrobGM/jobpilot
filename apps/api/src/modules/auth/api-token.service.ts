@@ -1,7 +1,7 @@
 import type { ApiTokenCreateInput } from "@jobpilot/contracts";
 import { singleton } from "tsyringe";
 import { type AuthUser, generateOpaqueToken, hashToken } from "@/common/auth";
-import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
+import { CryptoService, KeyUnrecoverableError, SECRET_CONTEXTS } from "@/common/crypto";
 import { notFound } from "@/common/errors";
 import { logger } from "@/common/logger";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -46,8 +46,10 @@ export class ApiTokenService {
         );
         return this.minted(existing, token);
       } catch (error) {
-        // Undecryptable cipher (master-key rotation, corrupt row): revoke and re-mint
-        // instead of surfacing a 500 the user can't act on.
+        // A dead DEK can't be re-minted (encryptFor unwraps the same DEK); only a corrupt cipher is.
+        if (error instanceof KeyUnrecoverableError) {
+          throw error;
+        }
         logger.warn({ err: error, userId }, "Terminal token cipher undecryptable; rotating");
         await this.prisma.apiToken.update({
           where: { id: existing.id },

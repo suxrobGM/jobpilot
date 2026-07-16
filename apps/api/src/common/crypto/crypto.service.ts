@@ -1,6 +1,7 @@
 import { singleton } from "tsyringe";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
+import { KeyUnrecoverableError } from "./errors";
 import { decrypt, encrypt, generateDek, unwrapDek, wrapDek } from "./secret";
 
 const MASTER_KEY = Buffer.from(env.SECRET_MASTER_KEY, "base64");
@@ -33,11 +34,20 @@ export class CryptoService {
     }
 
     const dek = user.wrappedDek
-      ? unwrapDek(MASTER_KEY, user.wrappedDek)
+      ? this.unwrap(userId, user.wrappedDek)
       : await this.provisionDek(userId);
 
     this.dekCache.set(userId, dek);
     return dek;
+  }
+
+  /** Unwrap a stored DEK, translating an AES-GCM auth failure into `KeyUnrecoverableError`. */
+  private unwrap(userId: string, wrapped: string): Buffer {
+    try {
+      return unwrapDek(MASTER_KEY, wrapped);
+    } catch (cause) {
+      throw new KeyUnrecoverableError(userId, { cause });
+    }
   }
 
   /** Generate, persist (wrapped), and return a new DEK for a user that lacks one. */
@@ -56,7 +66,7 @@ export class CryptoService {
       if (!winner?.wrappedDek) {
         throw new Error(`Cannot resolve encryption key: no user ${userId}`);
       }
-      return unwrapDek(MASTER_KEY, winner.wrappedDek);
+      return this.unwrap(userId, winner.wrappedDek);
     }
     return dek;
   }

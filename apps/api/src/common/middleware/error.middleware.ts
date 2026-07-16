@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { KeyUnrecoverableError } from "@/common/crypto/errors";
 import { ErrorCodes, HttpError, prismaCode } from "@/common/errors";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
@@ -26,6 +27,16 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
         }
       }
       return { code: error.code, message: error.message, details: error.details };
+    }
+
+    // Dead DEK: a code the web/agent can act on, not a raw AES-GCM 500.
+    if (error instanceof KeyUnrecoverableError) {
+      set.status = 500;
+      logger.warn({ userId: error.userId }, "Encryption key unrecoverable");
+      return {
+        code: ErrorCodes.KEY_UNRECOVERABLE,
+        message: "Your saved secrets can't be decrypted. Re-enter your credentials to continue.",
+      };
     }
 
     if (prismaCode(error) === "P2002") {
