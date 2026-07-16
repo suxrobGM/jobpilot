@@ -182,7 +182,7 @@ export function PushSettings(): ReactNode {
                     disabled={busy}
                     onClick={() => void removeDevice(device.endpoint)}
                   >
-                    <Delete fontSize="small" />
+                    <Delete fontSize="sm" />
                   </IconButton>
                 </Tooltip>
               </Stack>

@@ -29,6 +29,7 @@ import { useApiQuery } from "@/api/hooks";
 import { PILOT_JOURNAL_PAGE_SIZE, pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
+import { useToast } from "@/providers/notification-provider";
 import { formatRelativeTime } from "@/utils/format";
 
 const KIND_META: Record<PilotJournalKind, { icon: SvgIconComponent; color: ChipProps["color"] }> = {
@@ -106,6 +107,7 @@ function JournalRow(props: { entry: PilotJournalEntry }): ReactElement {
 }
 
 export function JournalFeed(): ReactElement {
+  const toast = useToast();
   const firstPage = useApiQuery(pilotQueries.journal());
   const [live, setLive] = useState<PilotJournalEntry[]>([]);
   const [older, setOlder] = useState<PilotJournalEntry[]>([]);
@@ -129,13 +131,17 @@ export function JournalFeed(): ReactElement {
     }
     setLoadingMore(true);
     try {
-      const { data } = await api.pilot.journal.get({
+      const { data, error } = await api.pilot.journal.get({
         query: { cursor: activeCursor, limit: PILOT_JOURNAL_PAGE_SIZE },
       });
-      if (data) {
-        setOlder((prev) => [...prev, ...data.items]);
-        setCursor(data.nextCursor);
+      if (error || !data) {
+        toast.error("Couldn't load more journal entries.");
+        return;
       }
+      setOlder((prev) => [...prev, ...data.items]);
+      setCursor(data.nextCursor);
+    } catch {
+      toast.error("Couldn't load more journal entries.");
     } finally {
       setLoadingMore(false);
     }
