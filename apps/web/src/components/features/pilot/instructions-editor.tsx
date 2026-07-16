@@ -250,7 +250,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
             </Stack>
           </FormSection>
 
-          <FormSection title="Autonomy">
+          <FormSection title="Approvals">
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <form.AppField name="outreachEmail">
@@ -317,7 +317,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                         <form.AppField name={`savedSearches[${i}].cadenceHours`}>
                           {(sub) => (
                             <sub.TextField
-                              label="Cadence (h)"
+                              label="Every (hours)"
                               type="number"
                               slotProps={{ htmlInput: { min: 1, step: 1 } }}
                             />
@@ -369,7 +369,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                           <form.AppField name={`promotionPlatforms[${i}].cadenceDays`}>
                             {(sub) => (
                               <sub.TextField
-                                label="Cadence (d)"
+                                label="Every (days)"
                                 type="number"
                                 slotProps={{ htmlInput: { min: 1, step: 1 } }}
                               />

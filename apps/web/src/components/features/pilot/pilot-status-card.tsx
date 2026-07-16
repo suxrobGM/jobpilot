@@ -64,10 +64,10 @@ export function PilotStatusCard(props: PilotStatusCardProps): ReactElement {
           <Chip
             variant="outlined"
             color={pilot?.paired ? "primary" : "default"}
-            label={pilot?.paired ? "Host paired" : "Host not paired"}
+            label={pilot?.paired ? "Agent connected" : "Agent not connected"}
             size="small"
           />
-          {pilot?.conducting && <Chip color="info" label="Conducting" size="small" />}
+          {pilot?.conducting && <Chip color="info" label="Working" size="small" />}
           {typeof pilot?.consecutiveTimeouts === "number" && pilot.consecutiveTimeouts > 0 && (
             <Chip
               color="warning"

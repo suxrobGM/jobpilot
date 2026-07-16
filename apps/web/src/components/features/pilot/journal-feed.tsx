@@ -32,14 +32,17 @@ import { useSseChannel } from "@/lib/sse/client";
 import { useToast } from "@/providers/notification-provider";
 import { formatRelativeTime } from "@/utils/format";
 
-const KIND_META: Record<PilotJournalKind, { icon: SvgIconComponent; color: ChipProps["color"] }> = {
+const KIND_META: Record<
+  PilotJournalKind,
+  { icon: SvgIconComponent; color: ChipProps["color"]; label?: string }
+> = {
   cycle: { icon: Autorenew, color: "primary" },
   action: { icon: Bolt, color: "info" },
   observation: { icon: Visibility, color: "default" },
   question: { icon: NotificationImportant, color: "warning" },
   system: { icon: Terminal, color: "default" },
-  digest: { icon: Summarize, color: "success" },
-  correction: { icon: Rule, color: "secondary" },
+  digest: { icon: Summarize, color: "success", label: "Summary" },
+  correction: { icon: Rule, color: "secondary", label: "Adjustment" },
 };
 
 /** Same-site cookie rides a top-level anchor download, so no fetch/token handling is needed here. */
@@ -92,7 +95,7 @@ function JournalRow(props: { entry: PilotJournalEntry }): ReactElement {
         size="small"
         color={meta.color}
         icon={<Icon fontSize="sm" />}
-        label={entry.kind}
+        label={meta.label ?? entry.kind}
         sx={{ textTransform: "capitalize", minWidth: 110 }}
       />
       <Box sx={{ flex: 1, minWidth: 0 }}>
