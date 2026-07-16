@@ -1,4 +1,4 @@
-import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
+import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP } from "./constants";
@@ -42,7 +42,7 @@ export async function gatherApprovedOutreach(
 export async function gatherFollowups(
   prisma: PrismaClient,
   profileId: string,
-  config: PilotMandateConfig,
+  config: PilotInstructionsConfig,
   now: Date,
 ): Promise<AgendaFollowup[]> {
   const cutoff = new Date(now.getTime() - config.outreachFollowupDays * DAY_MS);
@@ -112,7 +112,7 @@ export async function gatherApprovedPromotions(
 export async function dueVenues(
   prisma: PrismaClient,
   profileId: string,
-  config: PilotMandateConfig,
+  config: PilotInstructionsConfig,
   now: Date,
 ): Promise<AgendaPromoVenue[]> {
   const venues = config.promotion.venues;

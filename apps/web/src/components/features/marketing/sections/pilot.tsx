@@ -15,7 +15,7 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: "Write one mandate",
+    title: "Write your instructions",
     body: "Goals, daily caps, active hours, standing searches, outreach autonomy, promotion venues. Write your goals once - the Pilot runs the search from there.",
   },
   {
@@ -52,9 +52,9 @@ export function Pilot(): ReactElement {
           <SectionEyebrow color="accent.primary">THE PILOT · AUTONOMOUS MODE</SectionEyebrow>
           <Typography variant="h2">Write your goals once. Close the lid.</Typography>
           <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
-            The Pilot is JobPilot's flagship autonomous mode. You write a mandate; the local agent
-            runs your entire search on its own - review-gated, capped, and journaling every move -
-            so you wake to what it did instead of driving each step by hand.
+            The Pilot is JobPilot's flagship autonomous mode. You write your instructions; the local
+            agent runs your entire search on its own - review-gated, capped, and journaling every
+            move - so you wake to what it did instead of driving each step by hand.
           </Typography>
         </Stack>
         <Grid container spacing={4}>

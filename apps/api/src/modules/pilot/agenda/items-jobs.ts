@@ -1,4 +1,4 @@
-import type { AgendaItem, PilotMandateConfig } from "@jobpilot/contracts/pilot";
+import type { AgendaItem, PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { MAX_WARM_INTROS, PRIORITY, WARM_INTRO_MIN_SCORE } from "./constants";
 import type {
   AgendaApprovedJob,
@@ -83,7 +83,7 @@ export function buildWarmIntroItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
 /** Discovery fills the pipeline only when nothing approved is left to apply to (gated by the caller). */
 export function buildDiscoverItems(
   queries: AgendaDueQuery[],
-  config: PilotMandateConfig,
+  config: PilotInstructionsConfig,
 ): AgendaItem[] {
   return queries.map((q) => ({
     id: `search.discover:${q.query}`,

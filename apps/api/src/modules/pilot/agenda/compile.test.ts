@@ -172,13 +172,13 @@ describe("AgendaService promotion cadence", () => {
   const venueConfig = JSON.stringify({ promotion: { venues: [{ venue: "hn", cadenceDays: 30 }] } });
 
   it("emits promo.compose for a venue whose cadence is due (no prior post)", async () => {
-    const agenda = await service({ mandateConfig: venueConfig }).compile("p1");
+    const agenda = await service({ instructionsConfig: venueConfig }).compile("p1");
     expect(agenda.items.some((i) => i.kind === "promo.compose")).toBe(true);
   });
 
   it("suppresses promo.compose while a recent non-declined post exists", async () => {
     const agenda = await service({
-      mandateConfig: venueConfig,
+      instructionsConfig: venueConfig,
       venuePosts: [{ venue: "hn", createdAt: new Date() }],
     }).compile("p1");
     expect(agenda.items.some((i) => i.kind === "promo.compose")).toBe(false);
@@ -238,7 +238,7 @@ describe("AgendaService board.health", () => {
 
   it("excludes a parked board from the health warning", async () => {
     const agenda = await service({
-      mandateConfig: JSON.stringify({ parkedBoards: ["linkedin"] }),
+      instructionsConfig: JSON.stringify({ parkedBoards: ["linkedin"] }),
       boardHealthJobs: [failed("a"), failed("b"), failed("c")],
     }).compile("p1");
     expect(agenda.items.some((i) => i.kind === "board.health")).toBe(false);
@@ -256,7 +256,7 @@ describe("AgendaService parkedBoards enforcement", () => {
 
   it("excludes approved jobs on a parked board from job.apply", async () => {
     const agenda = await service({
-      mandateConfig: parked,
+      instructionsConfig: parked,
       approvedJobs: [
         approvedJob({ key: "on-parked", board: "linkedin" }),
         approvedJob({ key: "on-live", board: "indeed" }),
@@ -267,7 +267,7 @@ describe("AgendaService parkedBoards enforcement", () => {
   });
 
   it("excludes standing queries on a parked board from search.discover", async () => {
-    const agenda = await service({ mandateConfig: parked }).compile("p1");
+    const agenda = await service({ instructionsConfig: parked }).compile("p1");
     const discovered = agenda.items
       .filter((i) => i.kind === "search.discover")
       .map((i) => (i.payload as { query: string }).query);

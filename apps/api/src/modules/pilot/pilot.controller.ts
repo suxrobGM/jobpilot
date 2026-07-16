@@ -13,7 +13,7 @@ import {
   pilotStateSchema,
   releasePilotLeaseSchema,
   setPilotEnabledSchema,
-  updatePilotMandateSchema,
+  updatePilotInstructionsSchema,
 } from "@jobpilot/contracts/pilot";
 import { idParam } from "@jobpilot/contracts/shared";
 import { pilotChannel } from "@jobpilot/contracts/sse";
@@ -41,7 +41,7 @@ export const pilotController = new Elysia({
   detail: { tags: ["Pilot"] },
 })
   .use(profileGuard)
-  // ── State / mandate ───────────────────────────────────────────────────────────
+  // ── State / instructions ──────────────────────────────────────────────────────
   .get("/", ({ profileId }) => pilot.getState(profileId), {
     response: pilotStateSchema,
     detail: {
@@ -49,12 +49,12 @@ export const pilotController = new Elysia({
       description: "Returns the profile's Pilot state, creating it with defaults on first read.",
     },
   })
-  .put("/mandate", ({ profileId, body }) => pilot.updateMandate(profileId, body), {
-    body: updatePilotMandateSchema,
+  .put("/instructions", ({ profileId, body }) => pilot.updateInstructions(profileId, body), {
+    body: updatePilotInstructionsSchema,
     beforeHandle: limitMutation,
     response: pilotStateSchema,
     detail: {
-      summary: "Update mandate",
+      summary: "Update instructions",
       description: "Replaces the Pilot's goals and operating config and returns the updated state.",
     },
   })

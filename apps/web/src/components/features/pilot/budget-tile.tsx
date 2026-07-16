@@ -12,7 +12,7 @@ interface BudgetTileProps {
 
 export function BudgetTile(props: BudgetTileProps): ReactElement {
   const { state } = props;
-  const { dailyApplyCap, minScore } = state.mandateConfig;
+  const { dailyApplyCap, minScore } = state.instructionsConfig;
   const { appliedToday, capReached } = state;
 
   const progress = dailyApplyCap > 0 ? Math.min(100, (appliedToday / dailyApplyCap) * 100) : 0;

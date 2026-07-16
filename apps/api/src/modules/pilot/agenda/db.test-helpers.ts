@@ -18,7 +18,7 @@ export interface Recorder {
 }
 
 export interface Over {
-  mandateConfig?: string;
+  instructionsConfig?: string;
   expiredLeases?: Record<string, unknown>[];
   escalationLeases?: { subjectId: string }[];
   expiredEscalations?: Record<string, unknown>[];
@@ -76,8 +76,8 @@ export function makeAgendaDb(over: Over = {}) {
 
   const db = {
     pilotState: {
-      upsert: async () => ({ mandateConfig: over.mandateConfig ?? "{}" }),
-      findUnique: async () => ({ mandateConfig: over.mandateConfig ?? "{}" }),
+      upsert: async () => ({ instructionsConfig: over.instructionsConfig ?? "{}" }),
+      findUnique: async () => ({ instructionsConfig: over.instructionsConfig ?? "{}" }),
     },
     pilotLease: {
       findMany: async (args: { where: { subjectType?: string } }) =>

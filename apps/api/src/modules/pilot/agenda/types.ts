@@ -1,4 +1,4 @@
-import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
+import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 
 export interface AgendaEscalation {
   id: string;
@@ -143,7 +143,7 @@ export interface AgendaRetryFailed {
 
 export interface AgendaInput {
   now: Date;
-  config: PilotMandateConfig;
+  config: PilotInstructionsConfig;
   openEscalations: number;
   answeredEscalations: AgendaEscalation[];
   activeLeases: number;

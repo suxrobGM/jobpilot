@@ -1,10 +1,13 @@
 // Pure builders for the agenda unit tests: contracts + local types only, so importing this never
 // loads `@/env` and the builder suites stay database-free.
-import { type PilotMandateConfig, pilotMandateConfigSchema } from "@jobpilot/contracts/pilot";
+import {
+  type PilotInstructionsConfig,
+  pilotInstructionsConfigSchema,
+} from "@jobpilot/contracts/pilot";
 import type { AgendaInput } from "./types";
 
-export const cfg = (over: Record<string, unknown> = {}): PilotMandateConfig =>
-  pilotMandateConfigSchema.parse(over);
+export const cfg = (over: Record<string, unknown> = {}): PilotInstructionsConfig =>
+  pilotInstructionsConfigSchema.parse(over);
 
 export const NOW = new Date("2026-07-15T12:00:00.000Z"); // noon UTC, inside a 09-17 window
 

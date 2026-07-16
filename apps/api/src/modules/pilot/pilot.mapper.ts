@@ -2,10 +2,10 @@ import type {
   Escalation,
   EscalationKind,
   EscalationStatus,
+  PilotInstructionsConfig,
   PilotJournalEntry,
   PilotJournalKind,
   PilotLease,
-  PilotMandateConfig,
   PilotState,
   Promotion,
   PromotionStatus,
@@ -21,18 +21,19 @@ import type {
 export function toPilotState(
   row: PilotStateModel,
   appliedToday: number,
-  mandateConfig: PilotMandateConfig,
+  instructionsConfig: PilotInstructionsConfig,
 ): PilotState {
   return {
     profileId: row.profileId,
     enabled: row.enabled,
-    mandateGoals: row.mandateGoals,
-    mandateConfig,
-    mandateUpdatedAt: row.mandateUpdatedAt,
+    instructionsGoals: row.instructionsGoals,
+    instructionsConfig,
+    instructionsUpdatedAt: row.instructionsUpdatedAt,
     lastCycleAt: row.lastCycleAt,
     cycleCount: row.cycleCount,
     appliedToday,
-    capReached: mandateConfig.dailyApplyCap > 0 && appliedToday >= mandateConfig.dailyApplyCap,
+    capReached:
+      instructionsConfig.dailyApplyCap > 0 && appliedToday >= instructionsConfig.dailyApplyCap,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

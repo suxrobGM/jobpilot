@@ -8,7 +8,7 @@ import { describe, expect, it } from "bun:test";
 
 interface Over {
   message: Record<string, unknown>;
-  mandateConfig?: string;
+  instructionsConfig?: string;
   sentToday?: number;
 }
 
@@ -74,7 +74,7 @@ function makeDb(over: Over) {
       findMany: async () => [],
     },
     pilotState: {
-      findUnique: async () => ({ mandateConfig: over.mandateConfig ?? "{}" }),
+      findUnique: async () => ({ instructionsConfig: over.instructionsConfig ?? "{}" }),
     },
     campaign: { update: async () => ({}) },
     $transaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(db),
@@ -112,7 +112,7 @@ describe("outreach send gate: email daily cap", () => {
   it("rejects a sent email result when the cap is already spent", () => {
     const { svc } = service({
       message: { channel: "email", status: "approved" },
-      mandateConfig: JSON.stringify({ dailyOutreachCap: 2 }),
+      instructionsConfig: JSON.stringify({ dailyOutreachCap: 2 }),
       sentToday: 2,
     });
     expect(svc.recordOutreachResult("p1", "c1", "m1", { outcome: "sent" })).rejects.toThrow();
@@ -121,7 +121,7 @@ describe("outreach send gate: email daily cap", () => {
   it("allows a sent email result while under the cap", async () => {
     const { svc } = service({
       message: { channel: "email", status: "approved" },
-      mandateConfig: JSON.stringify({ dailyOutreachCap: 5 }),
+      instructionsConfig: JSON.stringify({ dailyOutreachCap: 5 }),
       sentToday: 1,
     });
     const res = await svc.recordOutreachResult("p1", "c1", "m1", { outcome: "sent" });

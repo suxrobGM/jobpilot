@@ -18,7 +18,7 @@
 </div>
 
 JobPilot pairs a hosted dashboard with an AI agent that runs on your machine.
-Write a mandate once and the Pilot takes the job search from there -
+Write your instructions once and the Pilot takes the job search from there -
 perpetual sense-decide-act cycles running on their own. Prefer to stay
 hands-on? Four manual campaign modes cover the same ground step by step.
 Either way, the agent - Claude Code or Codex on your own subscription -
@@ -26,7 +26,7 @@ drives a real browser to search job boards, tailor your resume, fill out
 applications, and message recruiters. The dashboard tracks every
 application, reply, and interview in one pipeline.
 
-- **The Pilot — your job search on autopilot** - write a mandate once (goals,
+- **The Pilot — your job search on autopilot** - write your instructions once (goals,
   daily caps, active hours, standing queries) and the agent runs perpetual
   sense → decide → act → record cycles: discovers and applies to jobs,
   checks for warm intros before cold applies, sends and follows up outreach,

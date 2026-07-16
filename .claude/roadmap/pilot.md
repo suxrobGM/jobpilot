@@ -9,13 +9,13 @@ the approved plan of 2026-07-15 (see Notes).
 
 One **perpetual sense → decide → act → record → exit cycle** manages everything — campaigns,
 queue, inbox, outreach, self-promotion, escalations, schedules — autonomously. The user states
-goals once (the mandate); the Pilot runs the job search. Each cycle is stateless (fresh context,
+goals once (the instructions); the Pilot runs the job search. Each cycle is stateless (fresh context,
 all state server-side) and does ONE agenda item.
 
 1. **Sense** — `GET /api/pilot/agenda`: server-compiled, prioritized, compact world state.
    Compiled on read from existing domain rows (no task table, no server cron — lazy lease and
    escalation expiry run inside compilation, like the stale-campaign reconciler).
-2. **Decide** — take the top item; the LLM breaks ties against the mandate and picks proactive
+2. **Decide** — take the top item; the LLM breaks ties against the instructions and picks proactive
    work when the agenda is quiet.
 3. **Act** — delegate to job-worker / outreach-worker (one worker, one browser activity per
    cycle). Discovery is batched (board tab lives and dies within one cycle); applies are
@@ -37,16 +37,16 @@ all state server-side) and does ONE agenda item.
 - **Escalations are their own model** (kind, question, options, deepLink, expiry, answer);
   jobs also gain a `needs_user` status so parked work is visible. Answered escalations rank
   first on the agenda.
-- **Scheduling is server-side** in the mandate/agenda (`sleepSeconds`/`nextWakeAt` from
-  activeHours + standing-query cadence) — not host cron. A phone edit to the mandate changes
+- **Scheduling is server-side** in the instructions/agenda (`sleepSeconds`/`nextWakeAt` from
+  activeHours + standing-query cadence) — not host cron. A phone edit to the instructions changes
   behavior next cycle; the host keeps one bit: enabled.
 - **One-time host pairing** solves "browser tab must be open": Enable Pilot posts the reusable
   terminal token to the host (`POST /pilot/enable`), stored DPAPI/0600; the conductor
   self-starts sessions on boot/crash/wake.
 - **Hard limits at server chokepoints** (apply cap at lease grant; outreach caps + never
-  auto-send InMail in the send endpoint). Mandate text only steers the LLM.
+  auto-send InMail in the send endpoint). Instructions text only steers the LLM.
 
-## The mandate (the user's charter)
+## The instructions (the user's charter)
 
 One small, user-editable document in the dashboard:
 
@@ -56,7 +56,7 @@ One small, user-editable document in the dashboard:
   auto-InMail), boards to avoid, promotion venues + cadence.
 - **Escalation prefs**: push vs. morning digest.
 
-Soft judgment lives in the mandate text; hard limits are ALSO enforced server-side so prompt
+Soft judgment lives in the instructions text; hard limits are ALSO enforced server-side so prompt
 drift can never exceed them.
 
 ## Where the absorbed items landed
@@ -67,16 +67,16 @@ drift can never exceed them.
 | t2-stateless-step-loop | The pilot skill + conductor sentinel loop (M1) |
 | t2-needs-user-escalation | `Escalation` model + `needs_user` job status (M1); phone answering (M2) |
 | t2-web-push | M2 (`PushSubscription`, VAPID, service worker) |
-| t2-scheduled-runs | Server-side mandate scheduling (M1) — host cron rejected |
+| t2-scheduled-runs | Server-side instructions scheduling (M1) — host cron rejected |
 | t4-mobile-decision-inbox | M2 mobile escalation inbox: push tap → one-decision card → parked job resumes |
-| t4-warm-path-finder | M3, scoped: free `GET /api/contacts?company=X` check before every apply; active discovery only for score ≥85, mandate-gated |
+| t4-warm-path-finder | M3, scoped: free `GET /api/contacts?company=X` check before every apply; active discovery only for score ≥85, instructions-gated |
 | t4-multi-machine-fleet | Free once leases exist — the lease is the mutex. Document + test two hosts draining one campaign with no duplicate applications |
 | t5-supervisor-watchdog | The PilotConductor (M1 basic: 20-min sentinel timeout → nudge → kill; M4 heuristics: repeated-output/error loops, skip directive) |
-| t5-standing-query-campaigns | Mandate `standingQueries` → `search.discover` agenda items (M1); event-wake latency (M4). Metric: time-from-posting-to-application |
+| t5-standing-query-campaigns | Instructions `standingQueries` → `search.discover` agenda items (M1); event-wake latency (M4). Metric: time-from-posting-to-application |
 | t5-strategist-loop | `campaign.strategyReview` agenda kind (M4): low-yield telemetry summary → LLM rewrites query/tunes minScore, written back as auditable campaign events, server-bounded |
 | t5-circuit-breakers | Board-health agenda items (M4): server counts consecutive per-board failures → "probe in careful mode or park with a user-facing reason" |
 | t5-speculative-prep | Future policy: during browser waits, precompute next leased job's artifacts (resume variant, cover letter — needs lease peek). Cheapest win once leases exist; do after M4 |
-| t5-graduated-autonomy | Future mandate/delegation policy: per-board trust ladder observe→propose→supervised→autonomous, advanced by verified receipts, server-enforced in the lease payload |
+| t5-graduated-autonomy | Future instructions/delegation policy: per-board trust ladder observe→propose→supervised→autonomous, advanced by verified receipts, server-enforced in the lease payload |
 | t5-gearbox-effort-control | Future delegation policy: per-cycle gear (cheap model + replay on familiar boards; strong model + exploration on unknown ATS), shifts down on surprise mid-job |
 | t5-failures-become-fixtures | Learning capture (pilot-learning.md step 1): journal + worker `observations[]` (M3) persist redacted traces; one command promotes a failure to an eval fixture (with t1-eval-lab) |
 
@@ -102,7 +102,7 @@ bandit — see deferred.md) is the strategy tier of that system.
 
 | Status | Milestone | Hook |
 | --- | --- | --- |
-| done | **M1 — Pilot spine** | mandate → agenda → lease → cycle → journal; conductor + pairing; the killer demo |
+| done | **M1 — Pilot spine** | instructions → agenda → lease → cycle → journal; conductor + pairing; the killer demo |
 | done | **M2 — Away-proof** | web push, phone-answerable escalations, unattended nights |
 | done | **M3 — Full surface** | inbox review, outreach + warm path, self-promotion (PromotionPost, draft-first), 7am digest |
 | done | **M3.5 — Interview autonomy** | invite → availability reply (approval card) + auto prep sheet via `interview` skill |
@@ -111,7 +111,7 @@ bandit — see deferred.md) is the strategy tier of that system.
 
 ## Done when
 
-A user writes a mandate, closes the laptop lid at night with the host running, and wakes to a
+A user writes their instructions, closes the laptop lid at night with the host running, and wakes to a
 journal: applications submitted, replies reviewed, two questions awaiting one-tap answers — with
 zero skill invocations by the user, ever.
 

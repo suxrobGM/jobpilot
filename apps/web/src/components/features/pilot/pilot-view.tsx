@@ -10,7 +10,7 @@ import { queryKeys } from "@/api/query-keys";
 import { useSseChannel } from "@/lib/sse/client";
 import { BudgetTile } from "./budget-tile";
 import { EscalationList } from "./escalation-list";
-import { MandateEditor } from "./instructions-editor";
+import { InstructionsEditor } from "./instructions-editor";
 import { JournalFeed } from "./journal-feed";
 import { PilotStatusCard } from "./pilot-status-card";
 import { PromotionList } from "./promotion-list";
@@ -55,7 +55,7 @@ export function PilotView(): ReactElement {
         <PromotionList />
       </Box>
       <Box sx={{ order: { xs: 3, md: 0 } }}>
-        <MandateEditor state={state} />
+        <InstructionsEditor state={state} />
       </Box>
       <Box sx={{ order: { xs: 4, md: 0 } }}>
         <PushSettings />

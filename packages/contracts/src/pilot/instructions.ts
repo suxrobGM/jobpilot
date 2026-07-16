@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-// ── Mandate ───────────────────────────────────────────────────────────────────
+// ── Instructions ──────────────────────────────────────────────────────────────
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -36,10 +36,10 @@ const pilotPromotionConfigSchema = z.object({
 });
 
 /**
- * The Pilot's operating envelope, stored as JSON in `PilotState.mandateConfig`.
+ * The Pilot's operating envelope, stored as JSON in `PilotState.instructionsConfig`.
  * Every field defaults, so an empty `{}` parses to a full, usable config.
  */
-export const pilotMandateConfigSchema = z.object({
+export const pilotInstructionsConfigSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
   minScore: z.number().min(0).max(100).default(70),
   boards: z.array(z.string()).default([]),
@@ -56,9 +56,9 @@ export const pilotMandateConfigSchema = z.object({
   parkedBoards: z.array(z.string()).default([]),
 });
 
-export const updatePilotMandateSchema = z.object({
+export const updatePilotInstructionsSchema = z.object({
   goals: z.string(),
-  config: pilotMandateConfigSchema,
+  config: pilotInstructionsConfigSchema,
 });
 
 export const setPilotEnabledSchema = z.object({ enabled: z.boolean() });
@@ -66,19 +66,19 @@ export const setPilotEnabledSchema = z.object({ enabled: z.boolean() });
 export const pilotStateSchema = z.object({
   profileId: z.uuid(),
   enabled: z.boolean(),
-  mandateGoals: z.string(),
-  mandateConfig: pilotMandateConfigSchema,
-  mandateUpdatedAt: z.date().nullable(),
+  instructionsGoals: z.string(),
+  instructionsConfig: pilotInstructionsConfigSchema,
+  instructionsUpdatedAt: z.date().nullable(),
   lastCycleAt: z.date().nullable(),
   cycleCount: z.number().int(),
-  // Today's applied count (tz-aware) and whether it has reached the mandate's daily cap.
+  // Today's applied count (tz-aware) and whether it has reached the instructions' daily cap.
   appliedToday: z.number().int(),
   capReached: z.boolean(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
 
-export type PilotMandateConfig = z.infer<typeof pilotMandateConfigSchema>;
-export type UpdatePilotMandateInput = z.infer<typeof updatePilotMandateSchema>;
+export type PilotInstructionsConfig = z.infer<typeof pilotInstructionsConfigSchema>;
+export type UpdatePilotInstructionsInput = z.infer<typeof updatePilotInstructionsSchema>;
 export type SetPilotEnabledInput = z.infer<typeof setPilotEnabledSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { PilotMandateConfig, PilotState } from "@jobpilot/contracts/pilot";
+import type { PilotInstructionsConfig, PilotState } from "@jobpilot/contracts/pilot";
 import { Box, Grid, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { z } from "zod/v4";
@@ -12,9 +12,9 @@ import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useKeyedList } from "@/hooks/use-keyed-list";
-import { MandateRowList } from "./instructions-row-list";
+import { InstructionsRowList } from "./instructions-row-list";
 
-interface MandateEditorProps {
+interface InstructionsEditorProps {
   state: PilotState;
 }
 
@@ -24,7 +24,7 @@ const EMPTY_QUERY = { query: "", board: "", cadenceHours: 24 };
 
 const EMPTY_VENUE = { venue: "", target: "", cadenceDays: 30 };
 
-const mandateFormSchema = z.object({
+const instructionsFormSchema = z.object({
   goals: z.string(),
   dailyApplyCap: z.number().int().min(0),
   dailyOutreachCap: z.number().int().min(0),
@@ -53,12 +53,12 @@ const mandateFormSchema = z.object({
   ),
 });
 
-type MandateFormValues = z.infer<typeof mandateFormSchema>;
+type InstructionsFormValues = z.infer<typeof instructionsFormSchema>;
 
-function toFormValues(state: PilotState): MandateFormValues {
-  const c = state.mandateConfig;
+function toFormValues(state: PilotState): InstructionsFormValues {
+  const c = state.instructionsConfig;
   return {
-    goals: state.mandateGoals,
+    goals: state.instructionsGoals,
     dailyApplyCap: c.dailyApplyCap,
     dailyOutreachCap: c.dailyOutreachCap,
     outreachFollowupDays: c.outreachFollowupDays,
@@ -83,28 +83,28 @@ function toFormValues(state: PilotState): MandateFormValues {
   };
 }
 
-export function MandateEditor(props: MandateEditorProps): ReactElement {
+export function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const { state } = props;
 
-  const save = useApiMutation<unknown, { goals: string; config: PilotMandateConfig }>(
-    (body) => api.pilot.mandate.put(body),
-    { invalidate: [queryKeys.pilot.state()], successMessage: "Mandate saved." },
+  const save = useApiMutation<unknown, { goals: string; config: PilotInstructionsConfig }>(
+    (body) => api.pilot.instructions.put(body),
+    { invalidate: [queryKeys.pilot.state()], successMessage: "Instructions saved." },
   );
 
   const form = useAppForm({
     defaultValues: toFormValues(state),
-    validators: { onSubmit: mandateFormSchema },
+    validators: { onSubmit: instructionsFormSchema },
     onSubmit: async ({ value }) => {
-      const config: PilotMandateConfig = {
+      const config: PilotInstructionsConfig = {
         dailyApplyCap: value.dailyApplyCap,
         dailyOutreachCap: value.dailyOutreachCap,
         outreachFollowupDays: value.outreachFollowupDays,
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
-        // Boards/parked boards aren't editable here - preserve whatever the mandate already had
+        // Boards/parked boards aren't editable here - preserve whatever the instructions already had
         // (parkedBoards is written by the board-health escalation flow).
-        boards: state.mandateConfig.boards,
-        parkedBoards: state.mandateConfig.parkedBoards,
+        boards: state.instructionsConfig.boards,
+        parkedBoards: state.instructionsConfig.parkedBoards,
         activeHours: value.activeHoursEnabled
           ? {
               start: value.activeHoursStart,
@@ -141,7 +141,7 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
   const venueList = useKeyedList(venueCount);
 
   return (
-    <SectionCard title="Mandate">
+    <SectionCard title="Instructions">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -288,7 +288,7 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
           >
             <form.AppField name="standingQueries" mode="array">
               {(field) => (
-                <MandateRowList
+                <InstructionsRowList
                   count={field.state.value?.length ?? 0}
                   keys={queryList.keys}
                   emptyText="No standing queries yet."
@@ -326,7 +326,7 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
                       </Box>
                     </>
                   )}
-                </MandateRowList>
+                </InstructionsRowList>
               )}
             </form.AppField>
           </FormSection>
@@ -341,7 +341,7 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
               </Typography>
               <form.AppField name="promotionVenues" mode="array">
                 {(field) => (
-                  <MandateRowList
+                  <InstructionsRowList
                     count={field.state.value?.length ?? 0}
                     keys={venueList.keys}
                     emptyText="No promotion venues yet."
@@ -378,7 +378,7 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
                         </Box>
                       </>
                     )}
-                  </MandateRowList>
+                  </InstructionsRowList>
                 )}
               </form.AppField>
             </Stack>
@@ -386,7 +386,7 @@ export function MandateEditor(props: MandateEditorProps): ReactElement {
 
           <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
             <form.AppForm>
-              <form.SubmitButton disabled={save.isPending}>Save mandate</form.SubmitButton>
+              <form.SubmitButton disabled={save.isPending}>Save instructions</form.SubmitButton>
             </form.AppForm>
           </Stack>
         </Stack>

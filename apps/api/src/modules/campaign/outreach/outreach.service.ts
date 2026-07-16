@@ -9,7 +9,7 @@ import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
-import { loadMandateConfig } from "@/modules/pilot/pilot.instructions";
+import { loadInstructionsConfig } from "@/modules/pilot/pilot.instructions";
 import { PilotService } from "@/modules/pilot/pilot.service";
 import { countSentToday } from "@/modules/pilot/pilot.stats";
 import { toOutreachMessageRow } from "../campaign.mapper";
@@ -184,7 +184,7 @@ export class CampaignOutreachService {
       return;
     }
     if (message.channel === "email") {
-      const config = await loadMandateConfig(this.prisma, profileId);
+      const config = await loadInstructionsConfig(this.prisma, profileId);
       const sentToday = await countSentToday(
         this.prisma,
         profileId,

@@ -25,7 +25,7 @@ previous item, recorded so they aren't re-litigated:
   sends, inbox batches, and discovery runs, not just campaign jobs. Job-level (never
   step-level) granularity stands, per the entry above.
 - **Host cron for scheduled runs (ex t2-scheduled-runs):** rejected — schedule state on the
-  user's machine can't be edited from a phone. Scheduling is server-side in the mandate/agenda
+  user's machine can't be edited from a phone. Scheduling is server-side in the instructions/agenda
   (`sleepSeconds`/`nextWakeAt`); the host is a clamped sleeper holding one bit (enabled).
 - **Headless-start endpoint on the host:** unnecessary — one-time pairing persists the
   reusable terminal token on the host (DPAPI/0600) and the conductor self-starts sessions.

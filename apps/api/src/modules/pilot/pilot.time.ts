@@ -1,7 +1,7 @@
-import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
+import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { DAY_MS, startOfDay } from "@/common/date/buckets";
 
-type ActiveHours = NonNullable<PilotMandateConfig["activeHours"]>;
+type ActiveHours = NonNullable<PilotInstructionsConfig["activeHours"]>;
 
 // Intl.DateTimeFormat is immutable and its construction dominates this hot path (agenda polls
 // every cycle), so cache one formatter per tz per shape.
@@ -86,7 +86,7 @@ export function minutesOfDay(now: Date, tz?: string): number {
   return Math.floor((now.getTime() - startOfDayInTz(now, tz).getTime()) / 60_000);
 }
 
-/** Whether `now` falls inside the mandate's active window (always true when unset). Handles overnight windows. */
+/** Whether `now` falls inside the instructions' active window (always true when unset). Handles overnight windows. */
 export function isWithinActiveHours(now: Date, hours?: ActiveHours): boolean {
   if (!hours) {
     return true;

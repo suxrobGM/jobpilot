@@ -37,8 +37,8 @@ Episodes are then pruned; lessons persist. Reflection is a normal agenda item �
   patched from successful/failed traces.
 - **Strategy parameters** — score calibration, board yield priors, query effectiveness
   ([t3-outcome-calibration.md](t3-outcome-calibration.md)).
-- **Mandate amendments — proposed, never self-applied**: when corrections reveal a preference
-  the mandate doesn't state, the Pilot proposes a one-tap amendment: "You rejected 5 hybrid
+- **Instructions amendments — proposed, never self-applied**: when corrections reveal a preference
+  the instructions don't state, the Pilot proposes a one-tap amendment: "You rejected 5 hybrid
   roles I scored highly — add 'remote only, no hybrid'?" The user's charter co-evolves with
   their revealed preferences, but only with explicit approval.
 
@@ -51,7 +51,7 @@ Every artifact class has a gate proportional to its blast radius:
   including the fixture minted from the very failure that motivated the patch.
 - Strategy changes: **shadow validation** — score/rank with the new parameters alongside the old
   for a period; adopt only if the shadow would have done measurably better.
-- Mandate changes: user approval, always.
+- Instructions changes: user approval, always.
 
 ### 5. Adopt & measure (with auto-rollback)
 
@@ -68,7 +68,7 @@ Pilot earns the right to edit itself the same way it earns board autonomy.
 
 Structure-only knowledge pools across users — playbooks, board health, ghost-job signals,
 calibration priors ([t4-shared-job-index.md](t4-shared-job-index.md) territory). Personal data
-never leaves the user's account: answers, preferences, mandate, correction history stay private.
+never leaves the user's account: answers, preferences, instructions, correction history stay private.
 Fleet learning is why user #1000's Pilot is smarter on day one than user #1's was after a month.
 
 ## Mechanics — storage, update, staleness
@@ -125,14 +125,14 @@ The learning system may improve knowledge and procedures, never boundaries:
 [t4-self-healing-skills.md](t4-self-healing-skills.md) = steps 2–5 applied to procedures.
 [t5-failures-become-fixtures.md](t5-failures-become-fixtures.md) = step 1 + the gate's fuel.
 [t3-outcome-calibration.md](t3-outcome-calibration.md) = the strategy tier of step 3.
-New here: correction capture, mandate co-evolution, consolidation cycle, memory decay,
+New here: correction capture, instructions co-evolution, consolidation cycle, memory decay,
 shadow validation, auto-rollback, staged trust for self-patching, the never-touch list.
 
 ## Done when
 
 After a month of use, the Pilot demonstrably: asks fewer questions (ledger + facts), applies
 faster and cheaper on repeat ATSes (procedures), targets better (calibration), and has proposed
-at least one mandate amendment the user accepted — with every learned artifact traceable to the
+at least one instructions amendment the user accepted — with every learned artifact traceable to the
 episodes that taught it, and one rollback proven in anger.
 
 ## Notes

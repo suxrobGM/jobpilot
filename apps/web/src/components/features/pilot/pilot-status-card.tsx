@@ -32,7 +32,7 @@ export function PilotStatusCard(props: PilotStatusCardProps): ReactElement {
   return (
     <SectionCard
       title="Pilot"
-      description="Autonomous mode runs cycles on your local agent using this mandate."
+      description="Autonomous mode runs cycles on your local agent using these instructions."
       actions={
         enabled ? (
           <Button

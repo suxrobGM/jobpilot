@@ -9,7 +9,7 @@ export default function PilotPage(): ReactElement {
       <PageHeader
         eyebrow="Workspace"
         title="Pilot"
-        description="Run JobPilot autonomously: set a mandate, watch its journal, and answer escalations."
+        description="Run JobPilot autonomously: set your instructions, watch its journal, and answer escalations."
       />
       <PilotView />
     </Container>

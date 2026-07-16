@@ -1,11 +1,11 @@
 ﻿// The morning-digest writer in isolation via writeDigestIfDue with fake Prisma/Pilot/Push deps - no
 // database. Loading the digest module transitively loads `@/env`, satisfied by the dummy env.
-import { pilotMandateConfigSchema } from "@jobpilot/contracts/pilot";
+import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
 import { makeAgendaDeps, type Over } from "./db.test-helpers";
 import { writeDigestIfDue } from "./digest";
 import { describe, expect, it, spyOn } from "bun:test";
 
-const config = pilotMandateConfigSchema.parse({});
+const config = pilotInstructionsConfigSchema.parse({});
 const MORNING = new Date("2026-07-15T08:00:00.000Z"); // past 07:00 UTC
 
 const run = (over: Over, now: Date, openEscalations: number) => {

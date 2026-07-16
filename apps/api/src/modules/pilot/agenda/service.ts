@@ -1,6 +1,6 @@
 ﻿import {
-  type PilotMandateConfig,
-  pilotMandateConfigSchema,
+  type PilotInstructionsConfig,
+  pilotInstructionsConfigSchema,
   type ReleasePilotLeaseInput,
 } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
@@ -47,13 +47,13 @@ export class AgendaService {
     return { prisma: this.prisma, campaignJobs: this.campaignJobs };
   }
 
-  private async loadConfig(profileId: string): Promise<PilotMandateConfig> {
+  private async loadConfig(profileId: string): Promise<PilotInstructionsConfig> {
     const state = await this.prisma.pilotState.upsert({
       where: { profileId },
       create: { profileId },
       update: {},
     });
-    return pilotMandateConfigSchema.parse(JSON.parse(state.mandateConfig));
+    return pilotInstructionsConfigSchema.parse(JSON.parse(state.instructionsConfig));
   }
 
   async compile(profileId: string) {

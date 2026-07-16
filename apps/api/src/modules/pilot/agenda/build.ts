@@ -20,7 +20,7 @@ import {
 import { buildPromoComposeItems, buildPromoPostItems } from "./items-promo";
 import type { AgendaInput } from "./types";
 
-/** Quiet-agenda wake-up: the mandate's check interval inside active hours, else the next window. */
+/** Quiet-agenda wake-up: the instructions' check interval inside active hours, else the next window. */
 function idleSleepSeconds({ now, config }: AgendaInput, within: boolean): number {
   if (!within) return secondsUntilNextWindow(now, config.activeHours);
   return Math.max(config.checkIntervalMinutes * 60, MIN_IDLE_SLEEP_SECONDS);

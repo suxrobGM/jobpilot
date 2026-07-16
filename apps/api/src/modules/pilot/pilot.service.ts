@@ -4,9 +4,9 @@ import type {
   CreatePilotJournalInput,
   EscalationStatus,
   SetPilotEnabledInput,
-  UpdatePilotMandateInput,
+  UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
-import { pilotMandateConfigSchema } from "@jobpilot/contracts/pilot";
+import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
@@ -40,7 +40,7 @@ export class PilotService {
     private readonly push: PushService,
   ) {}
 
-  // ── State / mandate ───────────────────────────────────────────────────────────
+  // ── State / instructions ──────────────────────────────────────────────────────
 
   /**
    * Full state DTO shared by every state-returning route: the persisted row plus
@@ -48,7 +48,7 @@ export class PilotService {
    * runs after the upsert rather than in parallel with it.
    */
   private async toStateDto(profileId: string, row: PilotStateModel) {
-    const config = pilotMandateConfigSchema.parse(JSON.parse(row.mandateConfig));
+    const config = pilotInstructionsConfigSchema.parse(JSON.parse(row.instructionsConfig));
     const appliedToday = await countAppliedToday(
       this.prisma,
       profileId,
@@ -68,19 +68,19 @@ export class PilotService {
     return this.toStateDto(profileId, row);
   }
 
-  async updateMandate(profileId: string, body: UpdatePilotMandateInput) {
+  async updateInstructions(profileId: string, body: UpdatePilotInstructionsInput) {
     const row = await this.prisma.pilotState.upsert({
       where: { profileId },
       create: {
         profileId,
-        mandateGoals: body.goals,
-        mandateConfig: JSON.stringify(body.config),
-        mandateUpdatedAt: new Date(),
+        instructionsGoals: body.goals,
+        instructionsConfig: JSON.stringify(body.config),
+        instructionsUpdatedAt: new Date(),
       },
       update: {
-        mandateGoals: body.goals,
-        mandateConfig: JSON.stringify(body.config),
-        mandateUpdatedAt: new Date(),
+        instructionsGoals: body.goals,
+        instructionsConfig: JSON.stringify(body.config),
+        instructionsUpdatedAt: new Date(),
       },
     });
     const state = await this.toStateDto(profileId, row);

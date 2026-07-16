@@ -1,5 +1,5 @@
 import { CAMPAIGN_JOB_ACTIVE_STATUSES, type CampaignConfig } from "@jobpilot/contracts/campaign";
-import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
+import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { parseCampaignConfig } from "./campaign-config";
@@ -167,7 +167,7 @@ export async function attachWarmContacts(
 export async function dueStandingQueries(
   prisma: PrismaClient,
   profileId: string,
-  config: PilotMandateConfig,
+  config: PilotInstructionsConfig,
   now: Date,
 ): Promise<AgendaDueQuery[]> {
   if (config.standingQueries.length === 0) return [];

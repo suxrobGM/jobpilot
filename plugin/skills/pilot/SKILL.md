@@ -40,7 +40,7 @@ Print `[[JOBPILOT_CYCLE cycle=$CYCLE_ID status=empty sleep=<sleepSeconds>]]` as 
 
 ## 2. Decide
 
-Take the top item - the server already ranked the agenda. If several share priority, break ties with the pilot state's mandate goals text (brief judgment call, not a re-ranking pass).
+Take the top item - the server already ranked the agenda. If several share priority, break ties with the pilot state's instructions goals text (brief judgment call, not a re-ranking pass).
 
 ## 3. Lease
 
@@ -110,7 +110,7 @@ The lease payload is enriched: `{escalationId, escalationKind, subjectType, subj
 - **`job`** → delegate `job-worker` apply mode as `job.apply` above with `answer` included in its input as `answers` (pre-provided user answers the worker reads instead of asking again); record the result exactly as `job.apply`.
 - **`email`** → the answer to an `interview.reply` approval. `"Send"` → send the drafted reply (recovered from the escalation `question`) via the email module (`POST /api/email/send {to,subject,body}`, adding `threadId` when the payload carries one, else send to `from`); free-text answer → treat it as availability/corrections, adjust the draft, then send; `"Skip"` → journal the skip. Journal the sent reply.
 - **`outreach`** → `"Send"` → send the referenced draft (`subjectId` = messageId) exactly as `outreach.send`; `"Skip"` → record result `skipped`.
-- **`board`** → the answer to a `board.health` choice. `"Park board"` → `GET /api/pilot`, append the board (`subjectId`) to mandate `config.parkedBoards`, `PUT /api/pilot/mandate` with the updated config (user-approved change - allowed); `"Keep trying"` → journal only.
+- **`board`** → the answer to a `board.health` choice. `"Park board"` → `GET /api/pilot`, append the board (`subjectId`) to instructions `config.parkedBoards`, `PUT /api/pilot/instructions` with the updated config (user-approved change - allowed); `"Keep trying"` → journal only.
 
 ### `search.discover`
 
@@ -201,7 +201,7 @@ Send failure → `/result` `{outcome:"failed", failReason:"<why>"}`. Journal wit
 
 ### `outreach.followup`
 
-Payload `{campaignId, messageId, contactId, contactName, contactEmail, subject, sentAt, daysSince}`. Compose a 2-3 sentence follow-up (reference the original `subject`; `humanizer` for tone; plain ASCII), create it as a **new** draft via `POST /api/campaigns/$CID/outreach` (the shape the `outreach` skill saves a draft, channel `email`, reusing `contactId`). Then gate on the pilot state's mandate `autonomy.outreachEmail` (from step 0's `GET /api/pilot`):
+Payload `{campaignId, messageId, contactId, contactName, contactEmail, subject, sentAt, daysSince}`. Compose a 2-3 sentence follow-up (reference the original `subject`; `humanizer` for tone; plain ASCII), create it as a **new** draft via `POST /api/campaigns/$CID/outreach` (the shape the `outreach` skill saves a draft, channel `email`, reusing `contactId`). Then gate on the pilot state's instructions `autonomy.outreachEmail` (from step 0's `GET /api/pilot`):
 
 - `"auto"` → send immediately and record sent, exactly as `outreach.send` (using the new message's `id`).
 - else → POST an escalation and stop:
@@ -304,4 +304,4 @@ Print exactly one sentinel as the **final line of output**, then stop:
 3. Never invent agenda items; never apply without a lease. Caps are server-enforced - a refused lease (`409`) is normal, not an error.
 4. If anything wedges, journal `kind:"system"` and print the sentinel with `status=error sleep=300` - the host recovers on the next cycle.
 5. Eligibility for `job.apply`/`escalation.answered` follows `../../shared/eligibility.md`; never skip silently.
-6. Draft promotions only for the mandate's venues. Drafting never posts; `promo.post` publishes only a user-approved draft, verbatim - the server refuses the lease otherwise.
+6. Draft promotions only for the instructions' venues. Drafting never posts; `promo.post` publishes only a user-approved draft, verbatim - the server refuses the lease otherwise.

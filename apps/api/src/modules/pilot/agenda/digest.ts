@@ -1,4 +1,4 @@
-import type { PilotMandateConfig } from "@jobpilot/contracts/pilot";
+import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { DAY_MS } from "@/common/date/buckets";
 import type { PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
@@ -46,7 +46,7 @@ export async function writeDigestIfDue(
   { prisma, pilot, push }: DigestDeps,
   profileId: string,
   now: Date,
-  config: PilotMandateConfig,
+  config: PilotInstructionsConfig,
   openEscalations: number,
 ): Promise<void> {
   try {

@@ -78,7 +78,7 @@ export const RATE_LIMITS = {
   /** Lease/heartbeat/release bookkeeping, a few per worked item. */
   pilotLease: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
 
-  /** User- or agent-driven Pilot mutations (mandate, enable, escalations) - infrequent. */
+  /** User- or agent-driven Pilot mutations (instructions, enable, escalations) - infrequent. */
   pilotMutation: { key: byUser, limit: 120, windowMs: HOUR },
 
   /** Agent/user appends a timeline note (e.g. an interview prep sheet) to an application - infrequent. */
