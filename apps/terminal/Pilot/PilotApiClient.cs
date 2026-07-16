@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using JobPilot.Terminal.Common;
 
 namespace JobPilot.Terminal.Pilot;
 
@@ -22,7 +23,7 @@ public sealed class PilotApiClient : IDisposable
     private readonly ILogger<PilotApiClient> logger;
 
     public PilotApiClient(ILogger<PilotApiClient> logger)
-        : this(logger, PilotHttp.CreateLongLivedClient())
+        : this(logger, HttpClients.CreateLongLivedClient())
     {
     }
 

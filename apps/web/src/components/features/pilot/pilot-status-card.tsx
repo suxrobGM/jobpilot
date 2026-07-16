@@ -5,6 +5,7 @@ import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Alert, Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { ColorChip } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
+import type { PilotCycleStatus } from "@/lib/terminal";
 import { formatRelativeTime } from "@/utils/format";
 import { useTerminalHealth } from "../agent-dock/use-terminal-health";
 import { usePilotToggle } from "./use-pilot-toggle";
@@ -13,7 +14,7 @@ interface PilotStatusCardProps {
   state: PilotState;
 }
 
-const CYCLE_STATUS_COLOR: Record<string, "success" | "warning" | "error" | "default"> = {
+const CYCLE_STATUS_COLOR: Record<PilotCycleStatus, "success" | "warning" | "error" | "default"> = {
   ok: "success",
   empty: "default",
   error: "error",

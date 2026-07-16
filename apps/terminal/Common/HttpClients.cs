@@ -1,7 +1,7 @@
-namespace JobPilot.Terminal.Pilot;
+namespace JobPilot.Terminal.Common;
 
-/// <summary>Shared HTTP client construction for the pilot's long-lived connections.</summary>
-internal static class PilotHttp
+/// <summary>Shared HttpClient construction for the host's long-lived outbound connections.</summary>
+internal static class HttpClients
 {
     /// <summary>No client timeout (callers bound requests themselves); the pooled lifetime lets a long-lived host follow DNS.</summary>
     public static HttpClient CreateLongLivedClient() =>

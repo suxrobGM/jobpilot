@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using JobPilot.Terminal.Common;
 using JobPilot.Terminal.Hosting;
 
 namespace JobPilot.Terminal.Updates;
@@ -30,12 +31,7 @@ public sealed class GitHubReleaseClient : IDisposable
     {
         this.logger = logger;
 
-        // No client timeout - callers bound every request with a cancellation token. The connection
-        // lifetime keeps a long-lived host following DNS changes.
-        http = new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(15) })
-        {
-            Timeout = Timeout.InfiniteTimeSpan,
-        };
+        http = HttpClients.CreateLongLivedClient();
         http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("jobpilot-terminal", HostInstall.HostVersion));
         http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
     }

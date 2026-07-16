@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using JobPilot.Terminal.Common;
 using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal.Pilot;
@@ -41,7 +42,7 @@ public sealed class PilotEventListener : BackgroundService
 
     public PilotEventListener(PilotStore store, PilotConductor conductor, ILogger<PilotEventListener> logger)
         // The SSE stream is intentionally long-lived, so it must never be bounded by a client timeout.
-        : this(store, conductor, logger, PilotHttp.CreateLongLivedClient())
+        : this(store, conductor, logger, HttpClients.CreateLongLivedClient())
     {
     }
 

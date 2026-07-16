@@ -7,6 +7,9 @@ export const TERMINAL_PROTOCOL_URL = "jobpilot://start";
 
 export type TerminalProviderId = "claude" | "codex";
 
+/** Outcome of the pilot's last conductor cycle, as reported by the host's /healthz. */
+export type PilotCycleStatus = "ok" | "empty" | "error";
+
 export interface TerminalProviderInfo {
   id: TerminalProviderId;
   displayName: string;
@@ -18,8 +21,7 @@ export interface PilotHealth {
   paired: boolean;
   conducting: boolean;
   lastCycleAt?: string | null;
-  /** Last cycle outcome: "ok", "empty", or "error". */
-  lastCycleStatus?: string | null;
+  lastCycleStatus?: PilotCycleStatus | null;
   consecutiveTimeouts: number;
 }
 
