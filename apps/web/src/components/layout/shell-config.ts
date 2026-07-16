@@ -4,13 +4,13 @@ import {
   BusinessCenter,
   Dashboard,
   Description,
-  FlightTakeoff,
   Forum,
   Handshake,
   Inbox,
   Insights,
   Lightbulb,
   Settings,
+  SmartToy,
   Storage,
   type SvgIconComponent,
 } from "@mui/icons-material";
@@ -36,7 +36,7 @@ export const navGroups: NavGroup[] = [
   {
     items: [
       { label: "Workspace", href: "/workspace", icon: Dashboard },
-      { label: "Pilot", href: "/pilot", icon: FlightTakeoff, badge: "questions" },
+      { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "questions" },
       { label: "Analytics", href: "/analytics", icon: Insights },
       { label: "Upwork", href: "/upwork", icon: Handshake },
       { label: "Outreach", href: "/outreach", icon: Forum },

@@ -2,9 +2,9 @@
 
 import type { ReactElement } from "react";
 import type { PilotInstructionsConfig, PilotState } from "@jobpilot/contracts/pilot";
-import { Box, Grid, Stack, Typography } from "@mui/material";
+import { InfoOutlined } from "@mui/icons-material";
+import { Grid, InputAdornment, Stack, Tooltip, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
-import { z } from "zod/v4";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -12,48 +12,26 @@ import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useKeyedList } from "@/hooks/use-keyed-list";
+import { type InstructionsFormValues, instructionsFormSchema } from "./instructions-form-schema";
 import { InstructionsRowList } from "./instructions-row-list";
 
 interface InstructionsEditorProps {
   state: PilotState;
 }
 
-const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
-
 const EMPTY_SEARCH = { query: "", board: "", cadenceHours: 24 };
 
 const EMPTY_PLATFORM = { platform: "", target: "", cadenceDays: 30 };
 
-const instructionsFormSchema = z.object({
-  goals: z.string(),
-  dailyApplyCap: z.number().int().min(0),
-  dailyOutreachCap: z.number().int().min(0),
-  outreachFollowupDays: z.number().int().min(0),
-  minScore: z.number().min(0).max(100),
-  checkIntervalMinutes: z.number().int().min(1),
-  activeHoursEnabled: z.boolean(),
-  activeHoursStart: z.string().regex(HHMM, "Use HH:MM"),
-  activeHoursEnd: z.string().regex(HHMM, "Use HH:MM"),
-  activeHoursTz: z.string(),
-  outreachEmail: z.enum(["draft", "review", "auto"]),
-  outreachLinkedIn: z.enum(["draft", "review"]),
-  savedSearches: z.array(
-    z.object({
-      query: z.string().min(1, "Required"),
-      board: z.string(),
-      cadenceHours: z.number().min(1),
-    }),
-  ),
-  promotionPlatforms: z.array(
-    z.object({
-      platform: z.string().min(1, "Required"),
-      target: z.string(),
-      cadenceDays: z.number().min(1),
-    }),
-  ),
-});
-
-type InstructionsFormValues = z.infer<typeof instructionsFormSchema>;
+function FieldInfo({ title }: { title: string }): ReactElement {
+  return (
+    <InputAdornment position="end">
+      <Tooltip title={title}>
+        <InfoOutlined fontSize="sm" sx={{ color: "text.secondary", cursor: "help" }} />
+      </Tooltip>
+    </InputAdornment>
+  );
+}
 
 function toFormValues(state: PilotState): InstructionsFormValues {
   const c = state.instructionsConfig;
@@ -168,6 +146,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                     <field.TextField
                       label="Daily apply cap"
                       type="number"
+                      helperText="Max jobs applied per day."
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
                   )}
@@ -179,6 +158,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                     <field.TextField
                       label="Daily outreach cap"
                       type="number"
+                      helperText="Max outreach messages per day."
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
                   )}
@@ -190,6 +170,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                     <field.TextField
                       label="Outreach follow-up (days)"
                       type="number"
+                      helperText="Days to wait before following up."
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
                   )}
@@ -201,6 +182,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                     <field.TextField
                       label="Min score"
                       type="number"
+                      helperText="Only apply to matches at or above this (0–100)."
                       slotProps={{ htmlInput: { min: 0, max: 100, step: 1 } }}
                     />
                   )}
@@ -212,6 +194,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                     <field.TextField
                       label="Check interval (min)"
                       type="number"
+                      helperText="How often the pilot wakes to work."
                       slotProps={{ htmlInput: { min: 1, step: 1 } }}
                     />
                   )}
@@ -250,13 +233,14 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
             </Stack>
           </FormSection>
 
-          <FormSection title="Approvals">
+          <FormSection title="Approvals" description="How the pilot handles outreach it composes.">
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <form.AppField name="outreachEmail">
                   {(field) => (
                     <field.Select
                       label="Outreach email"
+                      helperText="Draft only: never sends. Review each: asks you first. Auto-send: sends automatically."
                       items={[
                         { value: "draft", label: "Draft only" },
                         { value: "review", label: "Review each" },
@@ -271,6 +255,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                   {(field) => (
                     <field.Select
                       label="Outreach LinkedIn"
+                      helperText="Draft only: never sends. Review each: asks you first."
                       items={[
                         { value: "draft", label: "Draft only" },
                         { value: "review", label: "Review each" },
@@ -284,7 +269,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
 
           <FormSection
             title="Saved searches"
-            description="Searches the pilot re-runs on a schedule."
+            description="Job searches the pilot re-runs on a schedule to discover new roles."
           >
             <form.AppField name="savedSearches" mode="array">
               {(field) => (
@@ -294,6 +279,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                   emptyText="No saved searches yet."
                   addLabel="Add search"
                   removeAria={(i) => `Remove search ${i + 1}`}
+                  rowLabel={(i) => `Search ${i + 1}`}
                   // useKeyedList appends a key when the tracked length grows.
                   onAdd={() => field.pushValue({ ...EMPTY_SEARCH })}
                   onRemove={(i) => {
@@ -303,27 +289,54 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                 >
                   {(i) => (
                     <>
-                      <Box sx={{ flex: 2 }}>
-                        <form.AppField name={`savedSearches[${i}].query`}>
-                          {(sub) => <sub.TextField label="Search" />}
-                        </form.AppField>
-                      </Box>
-                      <Box sx={{ flex: 1 }}>
-                        <form.AppField name={`savedSearches[${i}].board`}>
-                          {(sub) => <sub.TextField label="Board (optional)" />}
-                        </form.AppField>
-                      </Box>
-                      <Box sx={{ width: { xs: "100%", sm: 140 } }}>
-                        <form.AppField name={`savedSearches[${i}].cadenceHours`}>
-                          {(sub) => (
-                            <sub.TextField
-                              label="Every (hours)"
-                              type="number"
-                              slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                            />
-                          )}
-                        </form.AppField>
-                      </Box>
+                      <form.AppField name={`savedSearches[${i}].query`}>
+                        {(sub) => (
+                          <sub.TextField
+                            label="Search keywords"
+                            placeholder="senior react developer, remote"
+                            helperText="Keywords the pilot searches for."
+                          />
+                        )}
+                      </form.AppField>
+                      <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, sm: 7 }}>
+                          <form.AppField name={`savedSearches[${i}].board`}>
+                            {(sub) => (
+                              <sub.TextField
+                                label="Board"
+                                placeholder="linkedin.com"
+                                helperText="Job-board domain to search. Leave blank to let the pilot choose."
+                                slotProps={{
+                                  input: {
+                                    endAdornment: (
+                                      <FieldInfo title="A configured job board's domain, e.g. linkedin.com. Manage boards on the Boards page." />
+                                    ),
+                                  },
+                                }}
+                              />
+                            )}
+                          </form.AppField>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 5 }}>
+                          <form.AppField name={`savedSearches[${i}].cadenceHours`}>
+                            {(sub) => (
+                              <sub.TextField
+                                label="Re-run every"
+                                type="number"
+                                helperText="How often to re-run."
+                                slotProps={{
+                                  htmlInput: { min: 1, step: 1 },
+                                  input: {
+                                    endAdornment: (
+                                      <InputAdornment position="end">hours</InputAdornment>
+                                    ),
+                                  },
+                                }}
+                              />
+                            )}
+                          </form.AppField>
+                        </Grid>
+                      </Grid>
                     </>
                   )}
                 </InstructionsRowList>
@@ -333,7 +346,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
 
           <FormSection
             title="Platforms"
-            description="Where the pilot drafts self-promotion posts, and how often. Posts are review-only."
+            description="Where the pilot drafts self-promotion posts, and how often. Every post is review-only."
           >
             <Stack spacing={2}>
               <Typography variant="body2Muted">
@@ -347,6 +360,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                     emptyText="No platforms yet."
                     addLabel="Add platform"
                     removeAria={(i) => `Remove platform ${i + 1}`}
+                    rowLabel={(i) => `Platform ${i + 1}`}
                     onAdd={() => field.pushValue({ ...EMPTY_PLATFORM })}
                     onRemove={(i) => {
                       platformList.onRemove(i);
@@ -355,27 +369,54 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                   >
                     {(i) => (
                       <>
-                        <Box sx={{ flex: 2 }}>
-                          <form.AppField name={`promotionPlatforms[${i}].platform`}>
-                            {(sub) => <sub.TextField label="Platform" />}
-                          </form.AppField>
-                        </Box>
-                        <Box sx={{ flex: 2 }}>
-                          <form.AppField name={`promotionPlatforms[${i}].target`}>
-                            {(sub) => <sub.TextField label="Target (optional)" />}
-                          </form.AppField>
-                        </Box>
-                        <Box sx={{ width: { xs: "100%", sm: 140 } }}>
-                          <form.AppField name={`promotionPlatforms[${i}].cadenceDays`}>
-                            {(sub) => (
-                              <sub.TextField
-                                label="Every (days)"
-                                type="number"
-                                slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                              />
-                            )}
-                          </form.AppField>
-                        </Box>
+                        <form.AppField name={`promotionPlatforms[${i}].platform`}>
+                          {(sub) => (
+                            <sub.TextField
+                              label="Platform"
+                              placeholder="hn-whoishiring, linkedin-post, reddit:forhire"
+                              helperText="Where the pilot drafts a promo post."
+                              slotProps={{
+                                input: {
+                                  endAdornment: (
+                                    <FieldInfo title="Where to post: hn-whoishiring, linkedin-post, or reddit:<subreddit>." />
+                                  ),
+                                },
+                              }}
+                            />
+                          )}
+                        </form.AppField>
+                        <Grid container spacing={2}>
+                          <Grid size={{ xs: 12, sm: 7 }}>
+                            <form.AppField name={`promotionPlatforms[${i}].target`}>
+                              {(sub) => (
+                                <sub.TextField
+                                  label="Target"
+                                  placeholder="thread URL or subreddit"
+                                  helperText="Specific thread, subreddit, or URL (optional)."
+                                />
+                              )}
+                            </form.AppField>
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 5 }}>
+                            <form.AppField name={`promotionPlatforms[${i}].cadenceDays`}>
+                              {(sub) => (
+                                <sub.TextField
+                                  label="Draft every"
+                                  type="number"
+                                  helperText="How often to draft a new post."
+                                  slotProps={{
+                                    htmlInput: { min: 1, step: 1 },
+                                    input: {
+                                      endAdornment: (
+                                        <InputAdornment position="end">days</InputAdornment>
+                                      ),
+                                    },
+                                  }}
+                                />
+                              )}
+                            </form.AppField>
+                          </Grid>
+                        </Grid>
                       </>
                     )}
                   </InstructionsRowList>

@@ -18,7 +18,7 @@ export function BudgetTile(props: BudgetTileProps): ReactElement {
   const progress = dailyApplyCap > 0 ? Math.min(100, (appliedToday / dailyApplyCap) * 100) : 0;
 
   return (
-    <SectionCard title="Today's budget">
+    <SectionCard fullHeight title="Today's budget">
       <Stack spacing={2}>
         <Stack spacing={0.5}>
           <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>

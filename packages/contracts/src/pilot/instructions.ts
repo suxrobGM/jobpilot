@@ -41,7 +41,7 @@ const pilotPromotionConfigSchema = z.object({
  */
 export const pilotInstructionsConfigSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
-  minScore: z.number().min(0).max(100).default(70),
+  minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
   activeHours: pilotActiveHoursSchema.optional(),
   checkIntervalMinutes: z.number().int().default(30),

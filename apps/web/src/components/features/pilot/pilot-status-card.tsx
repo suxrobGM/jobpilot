@@ -31,6 +31,7 @@ export function PilotStatusCard(props: PilotStatusCardProps): ReactElement {
 
   return (
     <SectionCard
+      fullHeight
       title="Pilot"
       description="Autonomous mode runs cycles on your local agent using these instructions."
       actions={

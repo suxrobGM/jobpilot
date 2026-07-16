@@ -16,11 +16,13 @@ interface SelectProps {
   optional?: boolean;
   emptyLabel?: string;
   disabled?: boolean;
+  /** Guidance shown below the field when there is no validation error. */
+  helperText?: string;
 }
 
 /** TanStack Form-bound select - wires value/change/blur and validation errors to the field context. */
 export function Select(props: SelectProps): ReactElement {
-  const { label, items, optional, emptyLabel = "- none -", disabled } = props;
+  const { label, items, optional, emptyLabel = "- none -", disabled, helperText } = props;
   const field = useFieldContext<string | number>();
 
   return (
@@ -33,7 +35,7 @@ export function Select(props: SelectProps): ReactElement {
       onChange={(e) => field.handleChange(e.target.value)}
       onBlur={field.handleBlur}
       error={field.state.meta.errors.length > 0}
-      helperText={firstErrorMessage(field.state.meta.errors)}
+      helperText={firstErrorMessage(field.state.meta.errors) ?? helperText}
     >
       {optional && (
         <MenuItem value="">

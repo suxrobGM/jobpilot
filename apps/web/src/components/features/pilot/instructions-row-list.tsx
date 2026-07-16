@@ -2,7 +2,7 @@
 
 import type { ReactElement, ReactNode } from "react";
 import { Add, Delete } from "@mui/icons-material";
-import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Button, IconButton, Paper, Stack, Typography } from "@mui/material";
 
 interface InstructionsRowListProps {
   count: number;
@@ -11,6 +11,8 @@ interface InstructionsRowListProps {
   emptyText: string;
   addLabel: string;
   removeAria: (index: number) => string;
+  /** Heading shown atop each row group, e.g. "Search 1". */
+  rowLabel: (index: number) => string;
   onAdd: () => void;
   onRemove: (index: number) => void;
   /** Renders one row's field cells. */
@@ -18,22 +20,23 @@ interface InstructionsRowListProps {
 }
 
 export function InstructionsRowList(props: InstructionsRowListProps): ReactElement {
-  const { count, keys, emptyText, addLabel, removeAria, onAdd, onRemove, children } = props;
+  const { count, keys, emptyText, addLabel, removeAria, rowLabel, onAdd, onRemove, children } =
+    props;
 
   return (
     <Stack spacing={2}>
       {Array.from({ length: count }, (_, i) => (
-        <Stack key={keys[i]} direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          {children(i)}
-          <IconButton
-            aria-label={removeAria(i)}
-            size="small"
-            sx={{ alignSelf: { xs: "flex-end", sm: "center" } }}
-            onClick={() => onRemove(i)}
-          >
-            <Delete fontSize="sm" />
-          </IconButton>
-        </Stack>
+        <Paper key={keys[i]} variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="overlineMuted">{rowLabel(i)}</Typography>
+              <IconButton aria-label={removeAria(i)} size="small" onClick={() => onRemove(i)}>
+                <Delete fontSize="sm" />
+              </IconButton>
+            </Stack>
+            {children(i)}
+          </Stack>
+        </Paper>
       ))}
       {count === 0 && <Typography variant="body2Muted">{emptyText}</Typography>}
       <Box>
