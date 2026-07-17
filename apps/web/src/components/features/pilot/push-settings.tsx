@@ -36,7 +36,8 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
 
 export function PushSettings(): ReactNode {
   const toast = useToast();
-  const [supported, setSupported] = useState(false);
+  // null = support not probed yet; avoids flashing the unsupported caption on first paint.
+  const [supported, setSupported] = useState<boolean | null>(null);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [currentEndpoint, setCurrentEndpoint] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -45,7 +46,7 @@ export function PushSettings(): ReactNode {
   const publicKey = vapidQuery.data?.publicKey ?? null;
 
   const devicesQuery = useApiQuery(pilotQueries.pushDevices(), {
-    enabled: supported && Boolean(publicKey),
+    enabled: supported === true && Boolean(publicKey),
   });
 
   const subscribe = useApiMutation<PushSubscriptionDto, PushSubscriptionInput>(
@@ -115,8 +116,19 @@ export function PushSettings(): ReactNode {
     }
   };
 
-  if (vapidQuery.isLoading || !publicKey || !supported) {
+  if (vapidQuery.isLoading || !publicKey || supported === null) {
     return null;
+  }
+
+  if (!supported) {
+    return (
+      <SectionCard title="Notifications">
+        <Typography variant="body2Muted">
+          Push notifications aren&apos;t supported in this browser, so Pilot alerts will only appear
+          while a tab is open.
+        </Typography>
+      </SectionCard>
+    );
   }
 
   const devices = devicesQuery.data ?? [];

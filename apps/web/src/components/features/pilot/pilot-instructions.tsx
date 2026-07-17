@@ -7,7 +7,7 @@ import { pilotQueries } from "@/api/queries";
 import { InstructionsEditor } from "./instructions-editor";
 import { PushSettings } from "./push-settings";
 
-/** Instructions tab: the editor plus notification settings. Milestone 4 restructures the form. */
+/** Instructions tab: the sectioned instructions editor plus notification settings. */
 export function PilotInstructions(): ReactElement {
   // Same key as the Overview's state query; PilotLive keeps the shared cache fresh.
   const stateQuery = useApiQuery(pilotQueries.state(), {

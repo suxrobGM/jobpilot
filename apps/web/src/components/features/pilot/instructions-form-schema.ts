@@ -15,6 +15,8 @@ export const instructionsFormSchema = z.object({
   activeHoursTz: z.string(),
   outreachEmail: z.enum(["draft", "review", "auto"]),
   outreachLinkedIn: z.enum(["draft", "review"]),
+  boards: z.array(z.string()),
+  parkedBoards: z.array(z.string()),
   savedSearches: z.array(
     z.object({
       query: z.string().min(1, "Required"),
@@ -32,3 +34,23 @@ export const instructionsFormSchema = z.object({
 });
 
 export type InstructionsFormValues = z.infer<typeof instructionsFormSchema>;
+
+/** Shared `defaultValues` the withForm sections type against; real values come from pilot state. */
+export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
+  goals: "",
+  dailyApplyCap: 10,
+  dailyOutreachCap: 5,
+  outreachFollowupDays: 5,
+  minScore: 60,
+  checkIntervalMinutes: 30,
+  activeHoursEnabled: false,
+  activeHoursStart: "09:00",
+  activeHoursEnd: "17:00",
+  activeHoursTz: "UTC",
+  outreachEmail: "review",
+  outreachLinkedIn: "draft",
+  boards: [],
+  parkedBoards: [],
+  savedSearches: [],
+  promotionPlatforms: [],
+};

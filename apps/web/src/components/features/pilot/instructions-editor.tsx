@@ -2,36 +2,38 @@
 
 import type { ReactElement } from "react";
 import type { PilotInstructionsConfig, PilotState } from "@jobpilot/contracts/pilot";
-import { InfoOutlined } from "@mui/icons-material";
-import { Grid, InputAdornment, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { useKeyedList } from "@/hooks/use-keyed-list";
+import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/section-anchor-nav";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+import { useToast } from "@/providers/notification-provider";
 import { type InstructionsFormValues, instructionsFormSchema } from "./instructions-form-schema";
-import { InstructionsRowList } from "./instructions-row-list";
+import { ActiveHoursSection } from "./instructions-sections/active-hours-section";
+import { ApprovalsSection } from "./instructions-sections/approvals-section";
+import { BoardsSection } from "./instructions-sections/boards-section";
+import { GoalsSection } from "./instructions-sections/goals-section";
+import { LimitsSection } from "./instructions-sections/limits-section";
+import { PlatformsSection } from "./instructions-sections/platforms-section";
+import { SearchesSection } from "./instructions-sections/searches-section";
 
 interface InstructionsEditorProps {
   state: PilotState;
 }
 
-const EMPTY_SEARCH = { query: "", board: "", cadenceHours: 24 };
-
-const EMPTY_PLATFORM = { platform: "", target: "", cadenceDays: 30 };
-
-function FieldInfo({ title }: { title: string }): ReactElement {
-  return (
-    <InputAdornment position="end">
-      <Tooltip title={title}>
-        <InfoOutlined fontSize="sm" sx={{ color: "text.secondary", cursor: "help" }} />
-      </Tooltip>
-    </InputAdornment>
-  );
-}
+const ANCHORS: SectionAnchor[] = [
+  { id: "goals", label: "Goals" },
+  { id: "limits", label: "Operating limits" },
+  { id: "active-hours", label: "Active hours" },
+  { id: "approvals", label: "Approvals" },
+  { id: "boards", label: "Boards" },
+  { id: "searches", label: "Saved searches" },
+  { id: "platforms", label: "Platforms" },
+];
 
 function toFormValues(state: PilotState): InstructionsFormValues {
   const c = state.instructionsConfig;
@@ -48,6 +50,8 @@ function toFormValues(state: PilotState): InstructionsFormValues {
     activeHoursTz: c.activeHours?.tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     outreachEmail: c.autonomy.outreachEmail,
     outreachLinkedIn: c.autonomy.outreachLinkedIn,
+    boards: [...c.boards],
+    parkedBoards: [...c.parkedBoards],
     savedSearches: c.savedSearches.map((q) => ({
       query: q.query,
       board: q.board ?? "",
@@ -63,6 +67,7 @@ function toFormValues(state: PilotState): InstructionsFormValues {
 
 export function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const { state } = props;
+  const toast = useToast();
 
   const save = useApiMutation<unknown, { goals: string; config: PilotInstructionsConfig }>(
     (body) => api.pilot.instructions.put(body),
@@ -72,6 +77,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
   const form = useAppForm({
     defaultValues: toFormValues(state),
     validators: { onSubmit: instructionsFormSchema },
+    onSubmitInvalid: () => toast.error("Fix the highlighted fields"),
     onSubmit: async ({ value }) => {
       const config: PilotInstructionsConfig = {
         dailyApplyCap: value.dailyApplyCap,
@@ -79,10 +85,8 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         outreachFollowupDays: value.outreachFollowupDays,
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
-        // Boards/parked boards aren't editable here - preserve whatever the instructions already had
-        // (parkedBoards is written by the board-health question flow).
-        boards: state.instructionsConfig.boards,
-        parkedBoards: state.instructionsConfig.parkedBoards,
+        boards: value.boards,
+        parkedBoards: value.parkedBoards,
         activeHours: value.activeHoursEnabled
           ? {
               start: value.activeHoursStart,
@@ -109,329 +113,87 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         },
       };
       await save.mutateAsync({ goals: value.goals, config });
+      // Re-baseline the defaults so the dirty save bar hides after a successful save.
+      form.reset(value);
     },
   });
 
-  const activeHoursEnabled = useSelector(form.store, (s) => s.values.activeHoursEnabled);
-  const searchCount = useSelector(form.store, (s) => s.values.savedSearches.length);
-  const searchList = useKeyedList(searchCount);
-  const platformCount = useSelector(form.store, (s) => s.values.promotionPlatforms.length);
-  const platformList = useKeyedList(platformCount);
+  // isDefaultValue tracks the (re-baselined) defaults; isDirty latches once touched.
+  const pristine = useSelector(form.store, (s) => s.isDefaultValue);
+  const showSaveBar = !pristine || save.isPending;
+  useUnsavedChangesGuard(!pristine && !save.isPending);
 
   return (
-    <SectionCard title="Instructions">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
-        <Stack spacing={3}>
-          <form.AppField name="goals">
-            {(field) => (
-              <field.TextField
-                label="Goals"
-                multiline
-                minRows={3}
-                helperText="Plain-language direction for the pilot: roles, priorities, constraints."
-              />
-            )}
-          </form.AppField>
+    <Box
+      component="form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
+      <SectionCard title="Instructions">
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", lg: "row" },
+            gap: { xs: 2, sm: 3 },
+            alignItems: "flex-start",
+          }}
+        >
+          <SectionAnchorNav anchors={ANCHORS} />
 
-          <FormSection title="Operating limits">
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <form.AppField name="dailyApplyCap">
-                  {(field) => (
-                    <field.TextField
-                      label="Daily apply cap"
-                      type="number"
-                      helperText="Max jobs applied per day."
-                      slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                    />
-                  )}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <form.AppField name="dailyOutreachCap">
-                  {(field) => (
-                    <field.TextField
-                      label="Daily outreach cap"
-                      type="number"
-                      helperText="Max outreach messages per day."
-                      slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                    />
-                  )}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <form.AppField name="outreachFollowupDays">
-                  {(field) => (
-                    <field.TextField
-                      label="Outreach follow-up (days)"
-                      type="number"
-                      helperText="Days to wait before following up."
-                      slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                    />
-                  )}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <form.AppField name="minScore">
-                  {(field) => (
-                    <field.TextField
-                      label="Min score"
-                      type="number"
-                      helperText="Only apply to matches at or above this (0–100)."
-                      slotProps={{ htmlInput: { min: 0, max: 100, step: 1 } }}
-                    />
-                  )}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <form.AppField name="checkIntervalMinutes">
-                  {(field) => (
-                    <field.TextField
-                      label="Check interval (min)"
-                      type="number"
-                      helperText="How often the pilot wakes to work."
-                      slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                    />
-                  )}
-                </form.AppField>
-              </Grid>
-            </Grid>
-          </FormSection>
-
-          <FormSection
-            title="Active hours"
-            description="Restrict cycles to a window, or leave off to run around the clock."
-          >
-            <Stack spacing={2}>
-              <form.AppField name="activeHoursEnabled">
-                {(field) => <field.Switch label="Restrict to active hours" />}
-              </form.AppField>
-              {activeHoursEnabled && (
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <form.AppField name="activeHoursStart">
-                      {(field) => <field.TextField label="Start (HH:MM)" placeholder="09:00" />}
-                    </form.AppField>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <form.AppField name="activeHoursEnd">
-                      {(field) => <field.TextField label="End (HH:MM)" placeholder="17:00" />}
-                    </form.AppField>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <form.AppField name="activeHoursTz">
-                      {(field) => <field.TextField label="Time zone" />}
-                    </form.AppField>
-                  </Grid>
-                </Grid>
-              )}
+          <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
+            <Stack spacing={3}>
+              <Box data-section-id="goals">
+                <GoalsSection form={form} />
+              </Box>
+              <Box data-section-id="limits">
+                <LimitsSection form={form} />
+              </Box>
+              <Box data-section-id="active-hours">
+                <ActiveHoursSection form={form} />
+              </Box>
+              <Box data-section-id="approvals">
+                <ApprovalsSection form={form} />
+              </Box>
+              <Box data-section-id="boards">
+                <BoardsSection form={form} />
+              </Box>
+              <Box data-section-id="searches">
+                <SearchesSection form={form} />
+              </Box>
+              <Box data-section-id="platforms">
+                <PlatformsSection form={form} />
+              </Box>
             </Stack>
-          </FormSection>
+          </Box>
+        </Box>
+      </SectionCard>
 
-          <FormSection title="Approvals" description="How the pilot handles outreach it composes.">
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <form.AppField name="outreachEmail">
-                  {(field) => (
-                    <field.Select
-                      label="Outreach email"
-                      helperText="Draft only: never sends. Review each: asks you first. Auto-send: sends automatically."
-                      items={[
-                        { value: "draft", label: "Draft only" },
-                        { value: "review", label: "Review each" },
-                        { value: "auto", label: "Auto-send" },
-                      ]}
-                    />
-                  )}
-                </form.AppField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <form.AppField name="outreachLinkedIn">
-                  {(field) => (
-                    <field.Select
-                      label="Outreach LinkedIn"
-                      helperText="Draft only: never sends. Review each: asks you first."
-                      items={[
-                        { value: "draft", label: "Draft only" },
-                        { value: "review", label: "Review each" },
-                      ]}
-                    />
-                  )}
-                </form.AppField>
-              </Grid>
-            </Grid>
-          </FormSection>
-
-          <FormSection
-            title="Saved searches"
-            description="Job searches the pilot re-runs on a schedule to discover new roles."
-          >
-            <form.AppField name="savedSearches" mode="array">
-              {(field) => (
-                <InstructionsRowList
-                  count={field.state.value?.length ?? 0}
-                  keys={searchList.keys}
-                  emptyText="No saved searches yet."
-                  addLabel="Add search"
-                  removeAria={(i) => `Remove search ${i + 1}`}
-                  rowLabel={(i) => `Search ${i + 1}`}
-                  // useKeyedList appends a key when the tracked length grows.
-                  onAdd={() => field.pushValue({ ...EMPTY_SEARCH })}
-                  onRemove={(i) => {
-                    searchList.onRemove(i);
-                    field.removeValue(i);
-                  }}
-                >
-                  {(i) => (
-                    <>
-                      <form.AppField name={`savedSearches[${i}].query`}>
-                        {(sub) => (
-                          <sub.TextField
-                            label="Search keywords"
-                            placeholder="senior react developer, remote"
-                            helperText="Keywords the pilot searches for."
-                          />
-                        )}
-                      </form.AppField>
-                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, sm: 7 }}>
-                          <form.AppField name={`savedSearches[${i}].board`}>
-                            {(sub) => (
-                              <sub.TextField
-                                label="Board"
-                                placeholder="linkedin.com"
-                                helperText="Job-board domain to search. Leave blank to let the pilot choose."
-                                slotProps={{
-                                  input: {
-                                    endAdornment: (
-                                      <FieldInfo title="A configured job board's domain, e.g. linkedin.com. Manage boards on the Boards page." />
-                                    ),
-                                  },
-                                }}
-                              />
-                            )}
-                          </form.AppField>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 5 }}>
-                          <form.AppField name={`savedSearches[${i}].cadenceHours`}>
-                            {(sub) => (
-                              <sub.TextField
-                                label="Re-run every"
-                                type="number"
-                                helperText="How often to re-run."
-                                slotProps={{
-                                  htmlInput: { min: 1, step: 1 },
-                                  input: {
-                                    endAdornment: (
-                                      <InputAdornment position="end">hours</InputAdornment>
-                                    ),
-                                  },
-                                }}
-                              />
-                            )}
-                          </form.AppField>
-                        </Grid>
-                      </Grid>
-                    </>
-                  )}
-                </InstructionsRowList>
-              )}
-            </form.AppField>
-          </FormSection>
-
-          <FormSection
-            title="Platforms"
-            description="Where the pilot drafts self-promotion posts, and how often. Every post is review-only."
-          >
-            <Stack spacing={2}>
-              <Typography variant="body2Muted">
-                Autonomy: review each post before it goes out.
-              </Typography>
-              <form.AppField name="promotionPlatforms" mode="array">
-                {(field) => (
-                  <InstructionsRowList
-                    count={field.state.value?.length ?? 0}
-                    keys={platformList.keys}
-                    emptyText="No platforms yet."
-                    addLabel="Add platform"
-                    removeAria={(i) => `Remove platform ${i + 1}`}
-                    rowLabel={(i) => `Platform ${i + 1}`}
-                    onAdd={() => field.pushValue({ ...EMPTY_PLATFORM })}
-                    onRemove={(i) => {
-                      platformList.onRemove(i);
-                      field.removeValue(i);
-                    }}
-                  >
-                    {(i) => (
-                      <>
-                        <form.AppField name={`promotionPlatforms[${i}].platform`}>
-                          {(sub) => (
-                            <sub.TextField
-                              label="Platform"
-                              placeholder="hn-whoishiring, linkedin-post, reddit:forhire"
-                              helperText="Where the pilot drafts a promo post."
-                              slotProps={{
-                                input: {
-                                  endAdornment: (
-                                    <FieldInfo title="Where to post: hn-whoishiring, linkedin-post, or reddit:<subreddit>." />
-                                  ),
-                                },
-                              }}
-                            />
-                          )}
-                        </form.AppField>
-                        <Grid container spacing={2}>
-                          <Grid size={{ xs: 12, sm: 7 }}>
-                            <form.AppField name={`promotionPlatforms[${i}].target`}>
-                              {(sub) => (
-                                <sub.TextField
-                                  label="Target"
-                                  placeholder="thread URL or subreddit"
-                                  helperText="Specific thread, subreddit, or URL (optional)."
-                                />
-                              )}
-                            </form.AppField>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 5 }}>
-                            <form.AppField name={`promotionPlatforms[${i}].cadenceDays`}>
-                              {(sub) => (
-                                <sub.TextField
-                                  label="Draft every"
-                                  type="number"
-                                  helperText="How often to draft a new post."
-                                  slotProps={{
-                                    htmlInput: { min: 1, step: 1 },
-                                    input: {
-                                      endAdornment: (
-                                        <InputAdornment position="end">days</InputAdornment>
-                                      ),
-                                    },
-                                  }}
-                                />
-                              )}
-                            </form.AppField>
-                          </Grid>
-                        </Grid>
-                      </>
-                    )}
-                  </InstructionsRowList>
-                )}
-              </form.AppField>
-            </Stack>
-          </FormSection>
-
-          <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
-            <form.AppForm>
-              <form.SubmitButton disabled={save.isPending}>Save instructions</form.SubmitButton>
-            </form.AppForm>
-          </Stack>
+      {/* Outside the SectionCard: MUI Card clips overflow, which would break position: sticky. */}
+      {showSaveBar && (
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={(theme) => ({
+            position: "sticky",
+            bottom: 0,
+            justifyContent: "flex-end",
+            alignItems: "center",
+            paddingBlock: theme.spacing(1.5),
+            backgroundColor: theme.palette.surfaces.base,
+            borderTop: `1px solid ${theme.palette.line.divider}`,
+            zIndex: 1,
+          })}
+        >
+          <Typography variant="captionMuted">Unsaved changes</Typography>
+          <form.AppForm>
+            <form.SubmitButton disabled={save.isPending}>
+              {save.isPending ? "Saving" : "Save instructions"}
+            </form.SubmitButton>
+          </form.AppForm>
         </Stack>
-      </form>
-    </SectionCard>
+      )}
+    </Box>
   );
 }

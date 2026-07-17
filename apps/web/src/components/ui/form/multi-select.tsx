@@ -11,6 +11,8 @@ export interface MultiSelectProps {
   freeSolo?: boolean;
   label?: string;
   placeholder?: string;
+  /** Shown when there is no error; `errorText` takes its place. */
+  helperText?: string;
   errorText?: string;
   sx?: SxProps<Theme>;
 }
@@ -29,6 +31,7 @@ export function MultiSelect(props: MultiSelectProps): ReactElement {
     freeSolo = true,
     label,
     placeholder,
+    helperText,
     errorText,
     sx,
   } = props;
@@ -48,7 +51,7 @@ export function MultiSelect(props: MultiSelectProps): ReactElement {
           label={label}
           placeholder={placeholder}
           error={Boolean(errorText)}
-          helperText={errorText}
+          helperText={errorText ?? helperText}
         />
       )}
     />
