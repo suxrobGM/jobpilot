@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, Suspense } from "react";
+import { Fragment, type ReactElement, Suspense } from "react";
 import { alpha, Box, Divider, Stack } from "@mui/material";
 import NextLink from "next/link";
 import { AccountMenu } from "@/components/features/profile";
@@ -84,7 +84,10 @@ export function Rail(): ReactElement {
       <Box sx={{ flex: 1, width: "100%" }}>
         <Suspense fallback={null}>
           {groups.map((group, idx) => (
-            <NavGroup key={group.label ?? idx} group={group} />
+            <Fragment key={group.label ?? idx}>
+              {idx > 0 && <Divider flexItem sx={{ mx: 1.5, my: 0.75 }} />}
+              <NavGroup group={group} />
+            </Fragment>
           ))}
         </Suspense>
       </Box>

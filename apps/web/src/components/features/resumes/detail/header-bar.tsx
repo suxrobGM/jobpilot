@@ -43,7 +43,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
     {
       successMessage: "Resume deleted",
       invalidate: invalidations.resume,
-      onSuccess: () => router.push("/resumes"),
+      onSuccess: () => router.push("/documents/resumes"),
     },
   );
 

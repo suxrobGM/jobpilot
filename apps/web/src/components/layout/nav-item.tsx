@@ -6,7 +6,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { QuestionBadge } from "@/components/features/pilot/question-badge";
-import { isNavItemActive, type NavItem as NavItemType } from "./shell-config";
+import { isNavEntryActive, type NavItem as NavItemType } from "./shell-config";
 
 interface NavItemProps {
   item: NavItemType;
@@ -16,7 +16,7 @@ export function NavItem(props: NavItemProps): ReactElement {
   const { item } = props;
   const pathname = usePathname();
   const Icon = item.icon;
-  const active = isNavItemActive(pathname, item.href);
+  const active = isNavEntryActive(pathname, item);
   const icon = <Icon fontSize="md" />;
 
   return (

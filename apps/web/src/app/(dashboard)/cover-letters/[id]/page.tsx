@@ -27,7 +27,7 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
       <PageHeader
         eyebrow={letter.company ?? "Cover letter"}
         title={letter.jobTitle ?? "Untitled role"}
-        backHref="/cover-letters"
+        backHref="/documents/cover-letters"
         actions={
           <>
             {letter.jobUrl && (

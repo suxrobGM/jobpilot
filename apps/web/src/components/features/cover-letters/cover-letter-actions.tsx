@@ -22,7 +22,7 @@ export function CoverLetterActions(props: CoverLetterActionsProps): ReactElement
   const remove = useApiMutation<{ ok: true }, void>(() => api["cover-letters"]({ id }).delete(), {
     successMessage: "Cover letter deleted",
     invalidate: [queryKeys.coverLetters.all],
-    onSuccess: () => router.replace("/cover-letters" as Route),
+    onSuccess: () => router.replace("/documents/cover-letters" as Route),
   });
 
   const handleDelete = async () => {

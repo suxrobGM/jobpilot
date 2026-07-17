@@ -13,7 +13,7 @@ export default async function ResumeDetailPage(props: PageProps): Promise<ReactE
   return (
     <Container maxWidth="xl" sx={{ gap: 2 }}>
       <PageHeader
-        eyebrow="Resumes"
+        eyebrow="Documents"
         title="Edit resume"
         description="Structured fields render to PDF on the right. Variants tailored from this base appear below."
       />

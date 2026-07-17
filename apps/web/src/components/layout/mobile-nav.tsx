@@ -22,14 +22,14 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   feedbackLinks,
   footerNavGroups,
-  isNavItemActive,
+  isNavEntryActive,
   MOBILE_NAV_HEIGHT,
   type NavItem,
   visibleNavGroups,
 } from "./shell-config";
 
 const MORE_VALUE = "more";
-const PRIMARY_HREFS = ["/workspace", "/analytics", "/inbox", "/resumes"];
+const PRIMARY_HREFS = ["/workspace", "/pilot", "/inbox", "/analytics"];
 /** Below MUI's 0.75rem default - "Workspace" has to fit a fifth of a 360px phone. */
 const LABEL_SIZE = "0.6875rem";
 
@@ -54,9 +54,11 @@ export function MobileNav(): ReactElement {
     ...footerItems,
   ];
 
-  const activePrimary = primaryItems.find((item) => isNavItemActive(pathname, item.href));
-  const moreActive = moreItems.some((item) => isNavItemActive(pathname, item.href));
+  const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));
+  const moreActive = moreItems.some((item) => isNavEntryActive(pathname, item));
   const value = activePrimary?.href ?? (moreActive ? MORE_VALUE : false);
+  // Pilot sits on the tab bar now; only badge More when a badged item actually lives in the drawer.
+  const moreHasQuestions = moreItems.some((item) => item.badge === "questions");
 
   const renderTab = (item: NavItem): ReactElement => (
     <BottomNavigationAction
@@ -65,7 +67,15 @@ export function MobileNav(): ReactElement {
       href={item.href as Route}
       value={item.href}
       label={item.label}
-      icon={<item.icon fontSize="small" />}
+      icon={
+        item.badge === "questions" ? (
+          <Badge badgeContent={questionCount} color="error" max={99}>
+            <item.icon fontSize="small" />
+          </Badge>
+        ) : (
+          <item.icon fontSize="small" />
+        )
+      }
     />
   );
 
@@ -102,7 +112,7 @@ export function MobileNav(): ReactElement {
           value={MORE_VALUE}
           label="More"
           icon={
-            <Badge badgeContent={questionCount} color="error" max={99}>
+            <Badge badgeContent={moreHasQuestions ? questionCount : 0} color="error" max={99}>
               <MoreHoriz fontSize="small" />
             </Badge>
           }
@@ -118,7 +128,7 @@ export function MobileNav(): ReactElement {
               key={item.href}
               component={Link}
               href={item.href as Route}
-              selected={isNavItemActive(pathname, item.href)}
+              selected={isNavEntryActive(pathname, item)}
               onClick={() => setMoreOpen(false)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>

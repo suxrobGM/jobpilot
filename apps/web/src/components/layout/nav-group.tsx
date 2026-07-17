@@ -12,7 +12,13 @@ interface NavGroupProps {
 export function NavGroup(props: NavGroupProps): ReactElement {
   const { group } = props;
   return (
-    <Stack spacing={0.5} sx={{ alignItems: "center" }}>
+    // No room for visible labels on the 56px rail - expose the group name to AT only.
+    <Stack
+      spacing={0.5}
+      sx={{ alignItems: "center" }}
+      role={group.label ? "group" : undefined}
+      aria-label={group.label}
+    >
       {group.items.map((item) => (
         <NavItem key={item.href} item={item} />
       ))}

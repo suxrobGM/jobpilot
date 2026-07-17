@@ -11,7 +11,6 @@ import {
   Lightbulb,
   Settings,
   SmartToy,
-  Storage,
   type SvgIconComponent,
 } from "@mui/icons-material";
 import { BUG_REPORT_URL, FEATURE_REQUEST_URL } from "@/lib/constants";
@@ -25,6 +24,8 @@ export interface NavItem {
   adminOnly?: boolean;
   /** Live attention badge on the icon; "questions" shows the open-question count. */
   badge?: "questions";
+  /** Extra pathname prefixes that keep this item highlighted (e.g. detail routes living outside its href). */
+  matchHrefs?: string[];
 }
 
 export interface NavGroup {
@@ -34,17 +35,32 @@ export interface NavGroup {
 
 export const navGroups: NavGroup[] = [
   {
+    label: "Core",
     items: [
       { label: "Workspace", href: "/workspace", icon: Dashboard },
       { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "questions" },
+      { label: "Inbox", href: "/inbox", icon: Inbox },
       { label: "Analytics", href: "/analytics", icon: Insights },
+    ],
+  },
+  {
+    label: "Channels",
+    items: [
       { label: "Upwork", href: "/upwork", icon: Handshake },
       { label: "Outreach", href: "/outreach", icon: Forum },
-      { label: "Inbox", href: "/inbox", icon: Inbox },
-      { label: "Resumes", href: "/resumes", icon: Storage },
-      { label: "Cover Letters", href: "/cover-letters", icon: Description },
+    ],
+  },
+  {
+    label: "Library",
+    items: [
+      {
+        label: "Documents",
+        href: "/documents",
+        icon: Description,
+        // Detail routes stayed at their old prefixes; keep Documents lit while viewing them.
+        matchHrefs: ["/resumes", "/cover-letters"],
+      },
       { label: "Boards", href: "/boards", icon: BusinessCenter },
-      { label: "Settings", href: "/settings", icon: Settings },
     ],
   },
 ];
@@ -52,7 +68,10 @@ export const navGroups: NavGroup[] = [
 /** Pinned to the foot of the rail, by the feedback and account controls - not part of the app's own nav. */
 export const footerNavGroups: NavGroup[] = [
   {
-    items: [{ label: "Admin", href: "/admin", icon: AdminPanelSettings, adminOnly: true }],
+    items: [
+      { label: "Settings", href: "/settings", icon: Settings },
+      { label: "Admin", href: "/admin", icon: AdminPanelSettings, adminOnly: true },
+    ],
   },
 ];
 
@@ -84,4 +103,12 @@ export const MOBILE_NAV_HEIGHT = 56;
 export function isNavItemActive(pathname: string, href: string): boolean {
   const target = href.split("?")[0];
   return target === "/" ? pathname === "/" : pathname.startsWith(target);
+}
+
+/** Item-aware active test: the item's own href plus any matchHrefs prefixes. */
+export function isNavEntryActive(pathname: string, item: NavItem): boolean {
+  return (
+    isNavItemActive(pathname, item.href) ||
+    (item.matchHrefs?.some((href) => isNavItemActive(pathname, href)) ?? false)
+  );
 }
