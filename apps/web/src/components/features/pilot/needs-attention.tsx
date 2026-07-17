@@ -66,12 +66,8 @@ export function NeedsAttention(): ReactElement {
   const promotions = promotionsQuery.data ?? [];
   const drafts = promotions.filter((p) => p.status === "draft");
   const history = promotions.filter((p) => p.status !== "draft");
-  const expandedId =
-    userExpanded !== undefined
-      ? userExpanded
-      : drafts.length === 1
-        ? (drafts[0]?.id ?? null)
-        : null;
+  const loneDraftId = drafts.length === 1 ? (drafts[0]?.id ?? null) : null;
+  const expandedId = userExpanded === undefined ? loneDraftId : userExpanded;
   const count = questions.length + drafts.length;
   const loading = questionsLoading || promotionsQuery.isLoading;
 
