@@ -74,6 +74,7 @@ export function makeAgendaDb(over: Over = {}) {
     pushes: [],
   };
 
+  let txChain: Promise<unknown> = Promise.resolve();
   const db = {
     pilotState: {
       upsert: async () => ({ instructionsConfig: over.instructionsConfig ?? "{}" }),
@@ -200,12 +201,20 @@ export function makeAgendaDb(over: Over = {}) {
       findFirst: async () => over.promoFindFirst ?? null,
     },
     pilotJournalEntry: {
-      // Default 1 so the digest guard treats it as already written and stays quiet in unrelated tests.
-      count: async () => over.existingDigests ?? 1,
+      // Default 1 keeps the digest quiet in unrelated tests; adding this run's digest writes lets
+      // the guard observe a concurrent writer's insert (the advisory-lock race test).
+      count: async () =>
+        (over.existingDigests ?? 1) + rec.journals.filter((j) => j.kind === "digest").length,
       // Action-journal markers the quiet-candidate gather dedupes against.
       findMany: async () => over.actionMarkers ?? [],
     },
-    $transaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(db),
+    $queryRaw: async () => [],
+    // Serialized like the advisory xact lock would, so concurrent digest writes queue up.
+    $transaction: (cb: (tx: unknown) => Promise<unknown>) => {
+      const run = txChain.then(() => cb(db));
+      txChain = run.catch(() => undefined);
+      return run;
+    },
   };
 
   return { db, rec };

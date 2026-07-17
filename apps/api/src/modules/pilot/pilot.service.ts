@@ -9,7 +9,7 @@ import type {
 import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
-import { findOwned } from "@/common/errors";
+import { conflict, findOwned } from "@/common/errors";
 import { PushService } from "@/common/push";
 import { publish } from "@/common/sse";
 import {
@@ -143,10 +143,19 @@ export class PilotService {
       "Question",
     );
 
-    const row = await this.prisma.question.update({
-      where: { id },
+    // Status guard lives in the write: expiry publishes no SSE, so stale web cards and push
+    // deep-links can still POST here - never resurrect an expired/cancelled question.
+    const { count } = await this.prisma.question.updateMany({
+      where: { id, profileId, status: "open" },
       data: { status: "answered", answer: body.answer, answeredAt: new Date() },
     });
+    if (count === 0) throw conflict("Question is no longer open.");
+
+    const row = await findOwned(
+      (where) => this.prisma.question.findFirst({ where }),
+      { id, profileId },
+      "Question",
+    );
     const question = toQuestion(row);
     publish(pilotChannel, { profileId }, { type: "question.answered", question });
     return question;
@@ -206,7 +215,8 @@ export class PilotService {
   async listJournal(profileId: string, cursor: string | undefined, limit: number) {
     const rows = await this.prisma.pilotJournalEntry.findMany({
       where: { profileId },
-      orderBy: { createdAt: "desc" },
+      // id tiebreaks createdAt (batch appends share one timestamp) so cursor pages never skip rows.
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });

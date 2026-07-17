@@ -59,15 +59,15 @@ describe("buildAgenda queue.drain", () => {
 });
 
 describe("buildAgenda board.health", () => {
-  it("emits a warning ranked above a modestly-scored job.apply, carrying the probe and reasons", () => {
-    // job.apply is 800 + score, so board.health's 820 sits above a low-score apply but under a top one.
+  it("emits a warning ranked above even a top-scored job.apply, carrying the probe and reasons", () => {
+    // board.health's 920 clears jobBase + matchScore (800 + 95): probe the board before piling on.
     const agenda = buildAgenda(
-      base({ approvedJobs: [job("j1", 10)], boardHealth: [boardHealth("linkedin")] }),
+      base({ approvedJobs: [job("j1", 95)], boardHealth: [boardHealth("linkedin")] }),
     );
     const item = agenda.items.find((i) => i.kind === "board.health");
     expect(item?.subjectType).toBe("board");
     expect(item?.subjectId).toBe("linkedin");
-    expect(item?.priority).toBe(820);
+    expect(item?.priority).toBe(920);
     expect(item?.payload).toMatchObject({ board: "linkedin", consecutiveFailures: 3 });
     const kinds = agenda.items.map((i) => i.kind);
     expect(kinds.indexOf("board.health")).toBeLessThan(kinds.indexOf("job.apply"));

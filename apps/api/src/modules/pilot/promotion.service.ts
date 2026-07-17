@@ -140,14 +140,23 @@ export class PromotionService {
       { id, profileId },
       "Promotion post",
     );
-    const row = await this.prisma.promotionPost.update({
-      where: { id },
+    // Approval gate lives in the write: a draft/declined post must never flip to posted, and an
+    // already-terminal row must not be silently overwritten by a second result call.
+    const { count } = await this.prisma.promotionPost.updateMany({
+      where: { id, profileId, status: "approved" },
       data: {
         status: body.outcome,
         postedUrl: body.outcome === "posted" ? (body.postedUrl ?? null) : undefined,
         postedAt: body.outcome === "posted" ? new Date() : undefined,
       },
     });
+    if (count === 0) throw conflict("Promotion post is not approved.");
+
+    const row = await findOwned(
+      (where) => this.prisma.promotionPost.findFirst({ where }),
+      { id, profileId },
+      "Promotion post",
+    );
     const promotion = toPromotion(row);
     publish(pilotChannel, { profileId }, { type: "promotion.updated", promotion });
     return promotion;

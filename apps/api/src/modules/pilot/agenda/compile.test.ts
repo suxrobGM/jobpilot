@@ -64,7 +64,6 @@ describe("AgendaService interview replies", () => {
     id: "app1",
     company: "Acme",
     title: "Engineer",
-    events: [],
     emailMessages: [
       {
         id: "em1",
@@ -82,13 +81,6 @@ describe("AgendaService interview replies", () => {
     const item = agenda.items.find((i) => i.kind === "interview.reply");
     expect(item?.subjectId).toBe("em1");
     expect(item?.payload).toMatchObject({ applicationId: "app1", emailMessageId: "em1" });
-  });
-
-  it("suppresses interview.reply once an outbound email event is logged", async () => {
-    const agenda = await service({
-      interviewReplyApps: [replyApp({ events: [{ id: "ev1" }] })],
-    }).compile("p1");
-    expect(agenda.items.some((i) => i.kind === "interview.reply")).toBe(false);
   });
 
   it("suppresses interview.reply while an open/answered question exists for the email", async () => {

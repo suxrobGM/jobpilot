@@ -1,6 +1,6 @@
-// Fake-Prisma unit test for PromotionService correction capture: a user declining or editing a
-// draft post is recorded as a labeled "correction" journal entry (before/after in detail).
-// Injects fakes directly (no database); publish() is a no-op without subscribers.
+// Fake-Prisma unit test for PromotionService: correction capture (a decline or draft edit is
+// journaled with before/after detail) and the result approval gate (terminal outcomes only land
+// on approved posts). Injects fakes directly (no database); publish() is a no-op without subscribers.
 
 import type { PushPayload, PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
@@ -30,12 +30,17 @@ const basePost = {
 
 function makeDeps(over: Record<string, unknown> = {}) {
   const journals: Record<string, unknown>[] = [];
-  const existing = { ...basePost, ...over };
+  const existing: Record<string, unknown> = { ...basePost, ...over };
   const db = {
     promotionPost: {
       findFirst: async () => existing,
       // Prisma leaves `undefined` fields untouched; mirror that so unchanged columns survive.
       update: async (a: { data: Record<string, unknown> }) => ({ ...existing, ...defined(a.data) }),
+      updateMany: async (a: { where: { status?: string }; data: Record<string, unknown> }) => {
+        if (a.where.status && existing.status !== a.where.status) return { count: 0 };
+        Object.assign(existing, defined(a.data));
+        return { count: 1 };
+      },
     },
   };
   const push = {
@@ -48,7 +53,7 @@ function makeDeps(over: Record<string, unknown> = {}) {
     },
   } as unknown as PilotService;
   const svc = new PromotionService(db as unknown as PrismaClient, push, pilot);
-  return { svc, journals };
+  return { svc, journals, existing };
 }
 
 describe("PromotionService correction capture", () => {
@@ -94,5 +99,42 @@ describe("PromotionService correction capture", () => {
     await svc.patchPromotion("p1", "promo-1", { status: "approved" });
 
     expect(journals).toHaveLength(0);
+  });
+});
+
+describe("PromotionService result approval gate", () => {
+  it("records a posted result for an approved post", async () => {
+    const { svc } = makeDeps({ status: "approved" });
+    const res = await svc.recordPromotionResult("p1", "promo-1", {
+      outcome: "posted",
+      postedUrl: "https://linkedin.com/feed/update/1",
+    });
+
+    expect(res.status).toBe("posted");
+    expect(res.postedUrl).toBe("https://linkedin.com/feed/update/1");
+    expect(res.postedAt).toBeInstanceOf(Date);
+  });
+
+  it("rejects a result for a draft post, leaving it untouched", async () => {
+    const { svc, existing } = makeDeps();
+
+    await expect(
+      svc.recordPromotionResult("p1", "promo-1", { outcome: "posted" }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(existing.status).toBe("draft");
+    expect(existing.postedAt).toBeNull();
+  });
+
+  it("rejects a second result for an already-posted post", async () => {
+    const { svc, existing } = makeDeps({
+      status: "posted",
+      postedUrl: "https://linkedin.com/feed/update/1",
+    });
+
+    await expect(
+      svc.recordPromotionResult("p1", "promo-1", { outcome: "failed" }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(existing.status).toBe("posted");
+    expect(existing.postedUrl).toBe("https://linkedin.com/feed/update/1");
   });
 });

@@ -1,13 +1,10 @@
-﻿import {
-  type PilotInstructionsConfig,
-  pilotInstructionsConfigSchema,
-  type ReleasePilotLeaseInput,
-} from "@jobpilot/contracts/pilot";
+﻿import type { ReleasePilotLeaseInput } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
 import { PushService } from "@/common/push";
 import { type PilotLease, PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import { loadInstructionsConfig } from "../pilot.instructions";
 import { toPilotLease } from "../pilot.mapper";
 import { PilotService } from "../pilot.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
@@ -47,20 +44,11 @@ export class AgendaService {
     return { prisma: this.prisma, campaignJobs: this.campaignJobs };
   }
 
-  private async loadConfig(profileId: string): Promise<PilotInstructionsConfig> {
-    const state = await this.prisma.pilotState.upsert({
-      where: { profileId },
-      create: { profileId },
-      update: {},
-    });
-    return pilotInstructionsConfigSchema.parse(JSON.parse(state.instructionsConfig));
-  }
-
   async compile(profileId: string) {
     const now = new Date();
     // Config and the expiry sweep are independent; both must settle before the main batch.
     const [config] = await Promise.all([
-      this.loadConfig(profileId),
+      loadInstructionsConfig(this.prisma, profileId),
       runExpiry(this.jobDeps, profileId, now),
     ]);
 

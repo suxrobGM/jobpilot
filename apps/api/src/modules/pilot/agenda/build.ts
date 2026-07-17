@@ -27,15 +27,10 @@ function idleSleepSeconds({ now, config }: AgendaInput, within: boolean): number
 }
 
 /**
- * Compile a prioritized agenda from already-fetched inputs. Pure: no I/O, so the
- * ordering, cap-suppression, budget, and sleep rules are unit-testable.
- *
- * Priority: question.answered > interview.reply > board.health > job.apply (by matchScore) >
- * interview.prep > queue.drain > outreach.send > inbox.review > promo.post > outreach.warmIntro >
- * search.discover > outreach.followup > campaign.strategyReview > promo.compose > job.rescanSkipped >
- * job.retryFailed > campaign.finalize. The strategyReview/rescan/retry maintenance kinds surface only
- * on a quiet agenda (no apply/discover/queue work). Outside active hours only question/finalize items
- * are emitted, and the agent sleeps until the window opens.
+ * Compile a prioritized agenda from already-fetched inputs. Pure: no I/O, so the ordering,
+ * cap-suppression, budget, and sleep rules are unit-testable. Ranking lives in PRIORITY
+ * (./constants). Outside active hours only question/finalize items are emitted, and the
+ * agent sleeps until the window opens.
  */
 export function buildAgenda(input: AgendaInput): AgendaResponse {
   const { now, config } = input;
@@ -55,13 +50,17 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
     // User-curated URLs are proactive apply work, ranked just under the scored apply queue.
     items.push(...buildQueueDrainItem(input.queue));
     items.push(...buildWarmIntroItems(input.approvedJobs));
-    items.push(...buildOutreachSendItems(input.approvedOutreach, sendHeadroom));
+    const sendItems = buildOutreachSendItems(input.approvedOutreach, sendHeadroom);
+    items.push(...sendItems);
     items.push(...buildInboxItem(input.inbox));
     items.push(...buildPromoPostItems(input.approvedPromotions));
     // Discovery only fills the pipeline when there is nothing approved left to apply to.
     if (input.approvedJobs.length === 0)
       items.push(...buildDiscoverItems(input.dueQueries, config));
-    if (sendHeadroom > 0) items.push(...buildFollowupItems(input.followups));
+    // Followups spend the same send budget, so they only get the headroom the sends left over.
+    const followupHeadroom = sendHeadroom - sendItems.length;
+    if (followupHeadroom > 0)
+      items.push(...buildFollowupItems(input.followups.slice(0, followupHeadroom)));
     items.push(...buildPromoComposeItems(input.duePlatforms));
 
     // Quiet-agenda maintenance surfaces only when no apply / discover / queue work is queued.

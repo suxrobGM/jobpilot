@@ -9,9 +9,7 @@ import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
-import { loadInstructionsConfig } from "@/modules/pilot/pilot.instructions";
 import { PilotService } from "@/modules/pilot/pilot.service";
-import { countSentToday } from "@/modules/pilot/pilot.stats";
 import { toOutreachMessageRow } from "../campaign.mapper";
 import { recomputeOutreachSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
@@ -169,30 +167,20 @@ export class CampaignOutreachService {
   }
 
   /**
-   * Server-side send gates, enforced regardless of what the agent claims: a LinkedIn InMail
-   * may only be sent once the user approved it (InMails cost credits / are irreversible), and
-   * an email send is blocked once the profile's daily outreach cap is spent.
+   * Server-side send gate, enforced regardless of what the agent claims: a LinkedIn InMail may
+   * only be sent once the user approved it (InMails cost credits / are irreversible). The daily
+   * outreach cap is NOT checked here - this runs after the email already left, so rejecting the
+   * bookkeeping would leave sentAt null and let the agenda re-emit the message (duplicate email);
+   * the agenda's headroom slicing is the real cap gate.
    */
-  private async guardSend(
-    profileId: string,
-    message: { channel: string; linkedinKind: string | null; status: string },
-  ): Promise<void> {
+  private guardSend(message: {
+    channel: string;
+    linkedinKind: string | null;
+    status: string;
+  }): void {
     if (message.channel === "linkedin" && message.linkedinKind === "inmail") {
       if (message.status !== "approved") {
         throw unprocessable("A LinkedIn InMail can only be sent after you approve it.");
-      }
-      return;
-    }
-    if (message.channel === "email") {
-      const config = await loadInstructionsConfig(this.prisma, profileId);
-      const sentToday = await countSentToday(
-        this.prisma,
-        profileId,
-        new Date(),
-        config.activeHours?.tz,
-      );
-      if (sentToday >= config.dailyOutreachCap) {
-        throw unprocessable("Daily outreach cap reached; try again tomorrow.");
       }
     }
   }
@@ -215,7 +203,7 @@ export class CampaignOutreachService {
     );
 
     if (data.outcome === "sent") {
-      await this.guardSend(profileId, existing);
+      this.guardSend(existing);
     }
 
     const sentAt =

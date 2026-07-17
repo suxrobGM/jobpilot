@@ -32,8 +32,8 @@ export function toPilotState(
     lastCycleAt: row.lastCycleAt,
     cycleCount: row.cycleCount,
     appliedToday,
-    capReached:
-      instructionsConfig.dailyApplyCap > 0 && appliedToday >= instructionsConfig.dailyApplyCap,
+    // Cap 0 means "apply to nothing" - build.ts treats it as reached, so the mapper must too.
+    capReached: appliedToday >= instructionsConfig.dailyApplyCap,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

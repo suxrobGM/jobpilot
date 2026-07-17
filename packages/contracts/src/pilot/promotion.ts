@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { webLinkSchema } from "./web-link";
 
 // ── Promotion posts ─────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ const promotionOutcomeSchema = z.enum(PROMOTION_OUTCOMES);
 /** Agent reports the terminal outcome after posting. */
 export const promotionResultSchema = z.object({
   outcome: promotionOutcomeSchema,
-  postedUrl: z.string().optional(),
+  postedUrl: webLinkSchema.optional(),
   note: z.string().optional(),
 });
 

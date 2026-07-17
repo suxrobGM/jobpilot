@@ -2,6 +2,7 @@ import { CAMPAIGN_JOB_ACTIVE_STATUSES, type CampaignConfig } from "@jobpilot/con
 import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { parseCampaignConfig } from "./campaign-config";
 import { GATHER_CAP, WARM_INTRO_MIN_SCORE } from "./constants";
 import type {
@@ -13,16 +14,6 @@ import type {
   WarmContact,
 } from "./types";
 
-/** Lowercase, strip punctuation and common company suffixes, so "Acme, Inc." ≈ "acme". */
-function normalizeCompany(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\b(inc|llc|ltd|co|corp|corporation|company|gmbh|group|holdings)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 /** Answered questions not yet consumed by any lease, so a claimed answer never re-appears. */
 export async function gatherAnsweredQuestions(
   prisma: PrismaClient,
@@ -30,7 +21,8 @@ export async function gatherAnsweredQuestions(
 ): Promise<AgendaQuestion[]> {
   const answered = await prisma.question.findMany({
     where: { profileId, status: "answered" },
-    orderBy: { answeredAt: "asc" },
+    // Newest first: consumed rows stay "answered" forever, so oldest-first would starve new answers.
+    orderBy: { answeredAt: "desc" },
     take: GATHER_CAP,
     select: {
       id: true,
@@ -44,7 +36,16 @@ export async function gatherAnsweredQuestions(
   if (answered.length === 0) return [];
   // Only the answered ids can be consumed, so scope the lease lookup to them.
   const leases = await prisma.pilotLease.findMany({
-    where: { profileId, subjectType: "question", subjectId: { in: answered.map((e) => e.id) } },
+    where: {
+      profileId,
+      subjectType: "question",
+      subjectId: { in: answered.map((e) => e.id) },
+      // An expired/abandoned lease hands the answer back; active or completed leases consume it.
+      OR: [
+        { releasedAt: null },
+        { releasedAt: { not: null }, outcome: { notIn: ["expired", "abandoned"] } },
+      ],
+    },
     take: GATHER_CAP,
     select: { subjectId: true },
   });
@@ -149,12 +150,14 @@ export async function attachWarmContacts(
   if (hot.length === 0) return;
   const contacts = await prisma.contact.findMany({
     where: { profileId, email: { not: null }, company: { not: null } },
+    orderBy: { createdAt: "desc" },
+    take: GATHER_CAP,
     select: { id: true, name: true, title: true, email: true, company: true },
   });
   if (contacts.length === 0) return;
-  const normalized = contacts.map((c) => ({ c, norm: normalizeCompany(c.company ?? "") }));
+  const normalized = contacts.map((c) => ({ c, norm: normalizeCompanyName(c.company ?? "") }));
   for (const job of hot) {
-    const target = normalizeCompany(job.company ?? "");
+    const target = normalizeCompanyName(job.company ?? "");
     if (!target) continue;
     const matches: WarmContact[] = normalized
       .filter(({ norm }) => norm.length > 0 && (norm.includes(target) || target.includes(norm)))

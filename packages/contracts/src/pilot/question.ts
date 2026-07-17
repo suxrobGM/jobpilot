@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { webLinkSchema } from "./web-link";
 
 // ── Questions ─────────────────────────────────────────────────────────────────
 
@@ -14,7 +15,7 @@ export const createQuestionSchema = z.object({
   subjectId: z.string().optional(),
   prompt: z.string().min(1),
   options: z.array(z.string()).default([]),
-  deepLink: z.string().optional(),
+  deepLink: webLinkSchema.optional(),
   expiresAt: z.iso.datetime().optional(),
 });
 

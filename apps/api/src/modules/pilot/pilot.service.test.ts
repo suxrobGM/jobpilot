@@ -14,43 +14,37 @@ interface Recorder {
   pushes: { profileId: string; payload: PushPayload }[];
 }
 
-function makeDb() {
+function makeDb(questionOver: Record<string, unknown> = {}) {
   const rec: Recorder = { journalCreates: [], stateUpserts: [], pushes: [] };
+  // A single mutable question row so the status guard in updateMany is observable.
+  const question: Record<string, unknown> = {
+    id: "e1",
+    profileId: "p1",
+    kind: "question",
+    status: "open",
+    subjectType: null,
+    subjectId: null,
+    prompt: "q",
+    options: "[]",
+    deepLink: null,
+    answer: null,
+    answeredAt: null,
+    expiresAt: null,
+    createdAt: new Date(),
+    ...questionOver,
+  };
   const db = {
     question: {
       create: async (a: { data: Record<string, unknown> }) => {
         rec.questionCreate = a.data;
-        return {
-          id: "e1",
-          profileId: "p1",
-          status: "open",
-          subjectType: null,
-          subjectId: null,
-          deepLink: null,
-          answer: null,
-          answeredAt: null,
-          expiresAt: null,
-          createdAt: new Date(),
-          ...a.data,
-        };
+        return { ...question, ...a.data };
       },
-      findFirst: async () => ({ id: "e1" }),
-      update: async (a: { data: Record<string, unknown> }) => {
-        rec.questionUpdate = a;
-        return {
-          id: "e1",
-          profileId: "p1",
-          kind: "question",
-          status: "answered",
-          subjectType: null,
-          subjectId: null,
-          prompt: "q",
-          options: "[]",
-          deepLink: null,
-          expiresAt: null,
-          createdAt: new Date(),
-          ...a.data,
-        };
+      findFirst: async () => ({ ...question }),
+      updateMany: async (a: { where: { status?: string }; data: Record<string, unknown> }) => {
+        if (a.where.status && question.status !== a.where.status) return { count: 0 };
+        rec.questionUpdate = { data: a.data };
+        Object.assign(question, a.data);
+        return { count: 1 };
       },
     },
     pilotJournalEntry: {
@@ -67,12 +61,12 @@ function makeDb() {
     },
     $transaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(db),
   };
-  return { db, rec };
+  return { db, rec, question };
 }
 
-const service = () => {
-  const { db, rec } = makeDb();
-  return { svc: new PilotService(db as unknown as PrismaClient, makePush(rec)), rec };
+const service = (questionOver: Record<string, unknown> = {}) => {
+  const { db, rec, question } = makeDb(questionOver);
+  return { svc: new PilotService(db as unknown as PrismaClient, makePush(rec)), rec, question };
 };
 
 describe("PilotService questions", () => {
@@ -97,6 +91,17 @@ describe("PilotService questions", () => {
     expect(q.answer).toBe("2 weeks");
     expect(rec.questionUpdate?.data).toMatchObject({ status: "answered", answer: "2 weeks" });
     expect(rec.questionUpdate?.data.answeredAt).toBeInstanceOf(Date);
+  });
+
+  it("rejects answering a question that is no longer open, leaving it untouched", async () => {
+    const { svc, rec, question } = service({ status: "expired" });
+
+    await expect(svc.answerQuestion("p1", "e1", { answer: "too late" })).rejects.toMatchObject({
+      status: 409,
+    });
+    expect(question.status).toBe("expired");
+    expect(question.answer).toBeNull();
+    expect(rec.questionUpdate).toBeUndefined();
   });
 
   it("pushes a notification on creation, using the deep link as the url", async () => {

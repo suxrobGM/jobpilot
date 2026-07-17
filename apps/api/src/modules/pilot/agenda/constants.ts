@@ -1,8 +1,9 @@
 // Category bases; job.apply is offset by matchScore so higher scores sort first, still under questions.
 export const PRIORITY = {
   question: 1000,
-  boardHealth: 820,
-  interviewReply: 850,
+  interviewReply: 950,
+  // Above jobBase + a perfect matchScore (900): a failing board must outrank any apply attempt.
+  boardHealth: 920,
   jobBase: 800,
   interviewPrep: 750,
   queueDrain: 720,

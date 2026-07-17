@@ -84,6 +84,27 @@ describe("buildAgenda M3 kinds", () => {
     expect(noHeadroom.items.some((i) => i.kind === "outreach.followup")).toBe(false);
   });
 
+  it("gives followups only the headroom the emitted sends left over", () => {
+    const leftOne = buildAgenda(
+      base({
+        config: cfg({ dailyOutreachCap: 2 }),
+        approvedOutreach: [send("m1")],
+        followups: [followup("f1"), followup("f2")],
+      }),
+    );
+    expect(leftOne.items.filter((i) => i.kind === "outreach.followup")).toHaveLength(1);
+
+    const spent = buildAgenda(
+      base({
+        config: cfg({ dailyOutreachCap: 2 }),
+        approvedOutreach: [send("m1"), send("m2")],
+        followups: [followup("f1")],
+      }),
+    );
+    expect(spent.items.filter((i) => i.kind === "outreach.send")).toHaveLength(2);
+    expect(spent.items.some((i) => i.kind === "outreach.followup")).toBe(false);
+  });
+
   it("emits a warmIntro and attaches warmContacts to the apply payload only at score >= 85", () => {
     const warm = [{ id: "w1", name: "Insider", title: "Eng", email: "in@acme.test" }];
     const hot = buildAgenda(
@@ -150,7 +171,7 @@ describe("buildAgenda interview kinds", () => {
     expect(item?.id).toBe("interview.reply:em1");
     expect(item?.subjectType).toBe("email");
     expect(item?.subjectId).toBe("em1");
-    expect(item?.priority).toBe(850);
+    expect(item?.priority).toBe(950);
     expect(item?.payload).toEqual({
       applicationId: "app-em1",
       emailMessageId: "em1",
@@ -190,7 +211,6 @@ describe("buildAgenda interview kinds", () => {
   });
 
   it("ranks interview.reply above job.apply and interview.prep between apply and outreach.send", () => {
-    // job.apply is score-offset (800 + score), so a low score keeps it under interview.reply's 850.
     const agenda = buildAgenda(
       base({
         interviewReplies: [reply("em1")],
@@ -205,6 +225,14 @@ describe("buildAgenda interview kinds", () => {
       "interview.prep",
       "outreach.send",
     ]);
+  });
+
+  it("ranks interview.reply above even a top-scored job.apply", () => {
+    // 950 beats jobBase + matchScore (800 + 95): a recruiter waiting always outranks another apply.
+    const agenda = buildAgenda(
+      base({ interviewReplies: [reply("em1")], approvedJobs: [job("j1", 95)] }),
+    );
+    expect(agenda.items.map((i) => i.kind)).toEqual(["interview.reply", "job.apply"]);
   });
 
   it("gates interview kinds behind active hours", () => {

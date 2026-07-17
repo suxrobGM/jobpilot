@@ -1,6 +1,6 @@
-// Fake-Prisma unit test for the outreach send gates: InMail requires user approval, and email
-// sends are blocked once the pilot's daily outreach cap is spent. Injects a fake Prisma directly
-// (no database); guardSend runs before the transaction, so the rejection paths need no summary fakes.
+// Fake-Prisma unit test for the outreach send gate (InMail requires user approval) and terminal
+// result recording. Injects a fake Prisma directly (no database); guardSend runs before the
+// transaction, so the rejection paths need no summary fakes.
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { PilotService } from "@/modules/pilot/pilot.service";
 import { CampaignOutreachService } from "./outreach.service";
@@ -8,8 +8,6 @@ import { describe, expect, it } from "bun:test";
 
 interface Over {
   message: Record<string, unknown>;
-  instructionsConfig?: string;
-  sentToday?: number;
 }
 
 /** Fake PilotService recording journal appends (the correction-capture path). */
@@ -62,7 +60,6 @@ function makeDb(over: Over) {
   const db = {
     outreachMessage: {
       findFirst: async () => ({ ...base, ...over.message }),
-      count: async () => over.sentToday ?? 0,
       // Prisma leaves `undefined` fields untouched; mirror that so unchanged columns survive.
       update: async (a: { data: Record<string, unknown> }) => ({
         ...base,
@@ -72,9 +69,6 @@ function makeDb(over: Over) {
       }),
       groupBy: async () => [],
       findMany: async () => [],
-    },
-    pilotState: {
-      findUnique: async () => ({ instructionsConfig: over.instructionsConfig ?? "{}" }),
     },
     campaign: { update: async () => ({}) },
     $transaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(db),
@@ -108,24 +102,16 @@ describe("outreach send gate: LinkedIn InMail", () => {
   });
 });
 
-describe("outreach send gate: email daily cap", () => {
-  it("rejects a sent email result when the cap is already spent", () => {
+describe("outreach result: sent email", () => {
+  // The email already left the outbox by the time the result lands, so recording must never be
+  // rejected (a cap 422 here would leave sentAt null and let the agenda re-emit → duplicate email).
+  it("records a sent email result unconditionally, stamping sentAt", async () => {
     const { svc } = service({
       message: { channel: "email", status: "approved" },
-      instructionsConfig: JSON.stringify({ dailyOutreachCap: 2 }),
-      sentToday: 2,
-    });
-    expect(svc.recordOutreachResult("p1", "c1", "m1", { outcome: "sent" })).rejects.toThrow();
-  });
-
-  it("allows a sent email result while under the cap", async () => {
-    const { svc } = service({
-      message: { channel: "email", status: "approved" },
-      instructionsConfig: JSON.stringify({ dailyOutreachCap: 5 }),
-      sentToday: 1,
     });
     const res = await svc.recordOutreachResult("p1", "c1", "m1", { outcome: "sent" });
     expect(res.message.status).toBe("sent");
+    expect(res.message.sentAt).toBeInstanceOf(Date);
   });
 });
 

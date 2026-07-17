@@ -7,8 +7,8 @@ const INTERVIEW_PREP_MARKER = "[interview-prep]";
 
 /**
  * Interviewing apps whose recruiter reply still needs an availability answer: the app has an
- * interview-classified inbound email, no outbound reply logged (an `email` event), and no
- * open/answered question on that email (a draft in flight or already approved).
+ * interview-classified inbound email and no open/answered question on that email (a draft in
+ * flight or already approved).
  */
 export async function gatherInterviewReplies(
   prisma: PrismaClient,
@@ -20,8 +20,6 @@ export async function gatherInterviewReplies(
       id: true,
       company: true,
       title: true,
-      // An outbound reply is logged as an `email` activity event; its presence means we already replied.
-      events: { where: { kind: "email" }, select: { id: true }, take: 1 },
       emailMessages: {
         where: { classification: "interviewing" },
         orderBy: { receivedAt: "desc" },
@@ -32,7 +30,7 @@ export async function gatherInterviewReplies(
   });
 
   const candidates = apps
-    .filter((a) => a.events.length === 0 && a.emailMessages.length > 0)
+    .filter((a) => a.emailMessages.length > 0)
     .map((a) => ({ app: a, email: a.emailMessages[0] }));
   if (candidates.length === 0) return [];
 

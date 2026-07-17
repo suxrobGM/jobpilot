@@ -58,6 +58,13 @@ describe("AgendaService morning digest", () => {
     expect(rec.pushes).toHaveLength(0);
   });
 
+  it("writes exactly one digest when two compiles race at the digest hour", async () => {
+    const { write, rec } = run({ existingDigests: 0 }, MORNING, 0);
+    await Promise.all([write(), write()]);
+    expect(rec.journals).toHaveLength(1);
+    expect(rec.pushes).toHaveLength(1);
+  });
+
   it("stays quiet before the digest hour", async () => {
     const { write, rec } = run({ existingDigests: 0 }, new Date("2026-07-15T05:00:00.000Z"), 0);
     await write();
