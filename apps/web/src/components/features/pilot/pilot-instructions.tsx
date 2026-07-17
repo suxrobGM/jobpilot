@@ -4,8 +4,8 @@ import type { ReactElement } from "react";
 import { Skeleton, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { InstructionsEditor } from "./instructions-editor";
-import { PushSettings } from "./push-settings";
+import { InstructionsEditor } from "./instructions/instructions-editor";
+import { PushSettings } from "./instructions/push-settings";
 
 /** Instructions tab: the sectioned instructions editor plus notification settings. */
 export function PilotInstructions(): ReactElement {

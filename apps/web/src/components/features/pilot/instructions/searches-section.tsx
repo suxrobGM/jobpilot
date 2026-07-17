@@ -5,9 +5,9 @@ import { useSelector } from "@tanstack/react-form";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { useKeyedList } from "@/hooks/use-keyed-list";
-import { INSTRUCTIONS_FORM_DEFAULTS } from "../instructions-form-schema";
-import { InstructionsRowList } from "../instructions-row-list";
 import { FieldInfo } from "./field-info";
+import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
+import { InstructionsRowList } from "./row-list";
 
 const EMPTY_SEARCH = { query: "", board: "", cadenceHours: 24 };
 

@@ -12,14 +12,14 @@ import { SectionCard } from "@/components/ui/layout";
 import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/section-anchor-nav";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/notification-provider";
-import { type InstructionsFormValues, instructionsFormSchema } from "./instructions-form-schema";
-import { ActiveHoursSection } from "./instructions-sections/active-hours-section";
-import { ApprovalsSection } from "./instructions-sections/approvals-section";
-import { BoardsSection } from "./instructions-sections/boards-section";
-import { GoalsSection } from "./instructions-sections/goals-section";
-import { LimitsSection } from "./instructions-sections/limits-section";
-import { PlatformsSection } from "./instructions-sections/platforms-section";
-import { SearchesSection } from "./instructions-sections/searches-section";
+import { ActiveHoursSection } from "./active-hours-section";
+import { ApprovalsSection } from "./approvals-section";
+import { BoardsSection } from "./boards-section";
+import { type InstructionsFormValues, instructionsFormSchema } from "./form-schema";
+import { GoalsSection } from "./goals-section";
+import { LimitsSection } from "./limits-section";
+import { PlatformsSection } from "./platforms-section";
+import { SearchesSection } from "./searches-section";
 
 interface InstructionsEditorProps {
   state: PilotState;

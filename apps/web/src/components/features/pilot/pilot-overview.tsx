@@ -5,12 +5,12 @@ import { Box, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { useTerminalHealth } from "../agent-dock/use-terminal-health";
-import { AgendaPreview } from "./agenda-preview";
-import { NeedsAttention } from "./needs-attention";
-import { OverviewSkeleton } from "./overview-skeleton";
-import { PilotSetupChecklist } from "./pilot-setup-checklist";
-import { RecentActivity } from "./recent-activity";
-import { StatusHero } from "./status-hero";
+import { NeedsAttention } from "./attention/needs-attention";
+import { AgendaPreview } from "./overview/agenda-preview";
+import { RecentActivity } from "./overview/recent-activity";
+import { PilotSetupChecklist } from "./overview/setup-checklist";
+import { OverviewSkeleton } from "./overview/skeleton";
+import { StatusHero } from "./overview/status-hero";
 import { usePilotToggle } from "./use-pilot-toggle";
 
 export function PilotOverview(): ReactElement {

@@ -8,8 +8,8 @@ import { SectionCard } from "@/components/ui/layout";
 import type { PilotCycleStatus, SessionStatus } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime } from "@/utils/format";
-import type { TerminalHealth } from "../agent-dock/use-terminal-health";
-import type { PilotToggle } from "./use-pilot-toggle";
+import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
+import type { PilotToggle } from "../use-pilot-toggle";
 
 interface StatusHeroProps {
   state: PilotState;

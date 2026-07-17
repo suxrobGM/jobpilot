@@ -4,7 +4,7 @@ import { Grid, Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { INSTRUCTIONS_FORM_DEFAULTS } from "../instructions-form-schema";
+import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
 
 export const ActiveHoursSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,

@@ -4,7 +4,7 @@ import { useApiQuery } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { INSTRUCTIONS_FORM_DEFAULTS } from "../instructions-form-schema";
+import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
 
 export const BoardsSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,

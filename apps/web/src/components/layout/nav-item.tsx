@@ -5,7 +5,7 @@ import { Box, Tooltip } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { QuestionBadge } from "@/components/features/pilot/question-badge";
+import { QuestionBadge } from "@/components/features/pilot/attention/question-badge";
 import { isNavEntryActive, type NavItem as NavItemType } from "./shell-config";
 
 interface NavItemProps {

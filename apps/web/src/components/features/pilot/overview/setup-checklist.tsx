@@ -7,8 +7,8 @@ import { Box, Button, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
-import type { TerminalHealth } from "../agent-dock/use-terminal-health";
-import type { PilotToggle } from "./use-pilot-toggle";
+import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
+import type { PilotToggle } from "../use-pilot-toggle";
 
 interface PilotSetupChecklistProps {
   state: PilotState;

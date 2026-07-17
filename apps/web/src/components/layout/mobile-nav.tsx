@@ -17,7 +17,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
-import { useOpenQuestions } from "@/components/features/pilot/use-open-questions";
+import { useOpenQuestions } from "@/components/features/pilot/attention/use-open-questions";
 import { useAuth } from "@/hooks/use-auth";
 import {
   feedbackLinks,

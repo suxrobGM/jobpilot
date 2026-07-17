@@ -7,9 +7,9 @@ import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
-import { dedupeById, JournalRow } from "./journal-row";
-import { LiveStatusChip } from "./live-status-chip";
-import { useJournalLive } from "./use-journal-live";
+import { dedupeById, JournalRow } from "../journal/journal-row";
+import { LiveStatusChip } from "../journal/live-status-chip";
+import { useJournalLive } from "../journal/use-journal-live";
 
 const RECENT_LIMIT = 8;
 
