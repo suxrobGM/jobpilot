@@ -23,24 +23,6 @@ public sealed class PilotConductorTests : IDisposable
         temp.Dispose();
     }
 
-    private static PilotPairing Enabled() => new()
-    {
-        Provider = "claude",
-        ApiToken = "tok",
-        ApiUrl = "https://api",
-        WebUrl = "https://web",
-        Enabled = true,
-    };
-
-    private static async Task WaitUntil(Func<bool> condition)
-    {
-        for (var i = 0; i < 200 && !condition(); i++)
-        {
-            await Task.Delay(10);
-        }
-        Assert.True(condition(), "condition was not met within the timeout");
-    }
-
     [Fact]
     public async Task Conductor_StaysIdle_WhenUnpaired()
     {
@@ -60,17 +42,17 @@ public sealed class PilotConductorTests : IDisposable
     {
         await conductor.StartAsync(CancellationToken.None);
 
-        store.Save(Enabled());
+        store.Save(TestPairing.Create());
         conductor.WakeUp();
 
-        await WaitUntil(() => env.Actions.Contains("inject-cycle"));
+        await TestWait.Until(() => env.Actions.Contains("inject-cycle"));
         Assert.True(conductor.BuildStatus().Conducting);
         Assert.True(conductor.BuildStatus().Enabled);
 
         store.SetEnabled(false);
         conductor.WakeUp();
 
-        await WaitUntil(() => !conductor.BuildStatus().Conducting);
+        await TestWait.Until(() => !conductor.BuildStatus().Conducting);
         var injectsAtDisable = env.Actions.Count(a => a == "inject-cycle");
 
         // The paired session is left running; the conductor simply stops driving it.
@@ -85,12 +67,12 @@ public sealed class PilotConductorTests : IDisposable
     [Fact]
     public async Task Conductor_ResumesConducting_AtStartup_WithoutAWakeUp_WhenTheStoreIsEnabled()
     {
-        store.Save(Enabled()); // paired + enabled persisted before the host process starts
+        store.Save(TestPairing.Create()); // paired + enabled persisted before the host process starts
 
         await conductor.StartAsync(CancellationToken.None);
 
         // No WakeUp: a fresh host must resume on its own from the persisted pairing.
-        await WaitUntil(() => env.Actions.Contains("inject-cycle"));
+        await TestWait.Until(() => env.Actions.Contains("inject-cycle"));
         Assert.True(conductor.BuildStatus().Conducting);
         Assert.Contains(PilotConductor.ResumeReport, env.Reports);
 
@@ -105,10 +87,10 @@ public sealed class PilotConductorTests : IDisposable
         await conductor.StartAsync(CancellationToken.None);
 
         env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(new PilotCycle(Guid.NewGuid(), PilotCycleStatus.Empty, 3600)));
-        store.Save(Enabled());
+        store.Save(TestPairing.Create());
         conductor.WakeUp();
 
-        await WaitUntil(() => conductor.BuildStatus().LastCycleStatus == "empty");
+        await TestWait.Until(() => conductor.BuildStatus().LastCycleStatus == "empty");
         Assert.NotNull(conductor.BuildStatus().LastCycleAt);
 
         store.SetEnabled(false);
