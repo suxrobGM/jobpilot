@@ -13,7 +13,7 @@ The Pilot is JobPilot's autonomous mode: a .NET host conductor re-injects this s
 Follow `../../shared/setup.md` - health check `GET /api/health` first; abort with its standard message if down. Then generate a cycle id (uuidgen if present, else a portable fallback):
 
 ```bash
-CYCLE_ID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || python3 -c 'import uuid;print(uuid.uuid4())' 2>/dev/null || date -u +%Y%m%dT%H%M%S%N)
+CYCLE_ID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || od -An -tx1 -N16 /dev/urandom | tr -d ' \n' | sed -E 's/^(.{8})(.{4})(.{4})(.{4})(.{12})$/\1-\2-\3-\4-\5/')
 ```
 
 ```bash
@@ -109,7 +109,7 @@ The lease payload is enriched: `{questionId, questionKind, subjectType, subjectI
 
 - **`job`** → delegate `job-worker` apply mode as `job.apply` above with `answer` included in its input as `answers` (pre-provided user answers the worker reads instead of asking again); record the result exactly as `job.apply`.
 - **`email`** → the answer to an `interview.reply` approval. `"Send"` → send the drafted reply (recovered from the question `prompt`) via the email module (`POST /api/email/send {to,subject,body}`, adding `threadId` when the payload carries one, else send to `from`); free-text answer → treat it as availability/corrections, adjust the draft, then send; `"Skip"` → journal the skip. Journal the sent reply.
-- **`outreach`** → `"Send"` → send the referenced draft (`subjectId` = messageId) exactly as `outreach.send`; `"Skip"` → record result `skipped`.
+- **`outreach`** → `subjectId` = a draft outreach messageId (filed by `outreach.followup`/`outreach.warmIntro`). Recover the draft and its campaign by scanning each campaign's `GET /api/campaigns/<id>/outreach` (`GET /api/campaigns` lists them). `"Send"` → send and record exactly as `outreach.send`; `"Skip"` → record result `skipped`.
 - **`board`** → the answer to a `board.health` choice. `"Park board"` → `GET /api/pilot`, append the board (`subjectId`) to instructions `config.parkedBoards`, `PUT /api/pilot/instructions` with the updated config (user-approved change - allowed); `"Keep trying"` → journal only.
 
 ### `search.discover`
@@ -170,7 +170,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -H 'content-type: application/json' -d "$(jq -n --argjson config "$UPDATED_CONFIG" '{config:$config}')"
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CID/events" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg b "$BEFORE" --arg a "$AFTER" --arg r "$REASONING" '{type:"strategy", payload:{before:$b, after:$a, reasoning:$r}}')"
+  -d "$(jq -n --arg b "$BEFORE" --arg a "$AFTER" --arg r "$REASONING" '{type:"log", payload:{kind:"strategy", before:$b, after:$a, reasoning:$r}}')"
 ```
 
 Journal with detail `{type:"strategyReview"}` (see step 5): "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65." The `detail.type` marker is load-bearing - the server dedupes reviews on it. Larger changes than the bounds → ask the user with a `choice` question instead of applying.
@@ -201,17 +201,17 @@ Send failure → `/result` `{outcome:"failed", failReason:"<why>"}`. Journal wit
 
 ### `outreach.followup`
 
-Payload `{campaignId, messageId, contactId, contactName, contactEmail, subject, sentAt, daysSince}`. Compose a 2-3 sentence follow-up (reference the original `subject`; `humanizer` for tone; plain ASCII), create it as a **new** draft via `POST /api/campaigns/$CID/outreach` (the shape the `outreach` skill saves a draft, channel `email`, reusing `contactId`). Then gate on the pilot state's instructions `autonomy.outreachEmail` (from step 0's `GET /api/pilot`):
+Payload `{campaignId, messageId, contactId, contactName, contactEmail, subject, sentAt, daysSince}`. Compose a 2-3 sentence follow-up (reference the original `subject`; `humanizer` for tone; plain ASCII), create it as a **new** draft via `POST /api/campaigns/$CID/outreach` (the shape the `outreach` skill saves a draft, channel `email`, reusing `contactId`); capture the returned draft's `id` as `DRAFT_MSGID`. Then gate on the pilot state's instructions `autonomy.outreachEmail` (from step 0's `GET /api/pilot`):
 
-- `"auto"` → send immediately and record sent, exactly as `outreach.send` (using the new message's `id`).
-- else → POST a question and stop:
+- `"auto"` → send immediately and record sent, exactly as `outreach.send` (messageId = `$DRAFT_MSGID`).
+- else → POST a question against the draft and stop - `subjectType:"outreach"` + the draft's messageId is what lets a later cycle's `question.answered` route the answer:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/questions" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg cid "$CID" --arg sid "$CONTACT_ID" --arg q "Send follow-up to $NAME re $SUBJECT?" \
+  -d "$(jq -n --arg sid "$DRAFT_MSGID" --arg q "Send follow-up to $NAME re $SUBJECT?" \
     --arg dl "$JOBPILOT_WEB/campaigns/$CID" \
-    '{kind:"approval", subjectType:"contact", subjectId:$sid, prompt:$q, options:["Send","Skip"], deepLink:$dl}')"
+    '{kind:"approval", subjectType:"outreach", subjectId:$sid, prompt:$q, options:["Send","Skip"], deepLink:$dl}')"
 ```
 
 ### `outreach.warmIntro`
@@ -221,7 +221,7 @@ Payload `{campaignId, jobKey, company, jobTitle, jobUrl, contacts?}`. Delegate *
 - `contacts` present → compose only for the best contact (pass it as `target`, like the `outreach` skill's rewrite mode, with the job for grounding); the worker composes, never sends.
 - else → discover **and** compose for the company/job (`target:{jobUrl, title:<jobTitle>, company}`).
 
-Save the returned contact + draft via the campaign outreach endpoints exactly as the `outreach` skill's "Save the returned draft". Then apply the **same autonomy gate** as `outreach.followup` (`autonomy.outreachEmail`: `"auto"` → send + record; else ask the user with an `approval` question and stop). Journal e.g. "Found warm path to Acme: Dana Lee (Eng Manager) - intro drafted."
+Save the returned contact + draft via the campaign outreach endpoints exactly as the `outreach` skill's "Save the returned draft"; capture the saved draft's message `id`. Then apply the **same autonomy gate** as `outreach.followup` (`autonomy.outreachEmail`: `"auto"` → send + record; else POST the same `approval` question - `subjectType:"outreach"`, `subjectId` = the saved draft's message id - and stop). Journal e.g. "Found warm path to Acme: Dana Lee (Eng Manager) - intro drafted."
 
 ### `promo.compose`
 
