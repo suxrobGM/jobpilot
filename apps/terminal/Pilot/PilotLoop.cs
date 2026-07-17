@@ -22,11 +22,16 @@ public sealed class PilotLoop(IPilotEnvironment env)
     public const string SkipReport = "Pilot watchdog: still stalled after the nudge — told the agent to skip and fail the leased work.";
     public const string KillReport = "Pilot watchdog: agent unresponsive — restarted the session; the leased job will recover by TTL.";
     public const string BackoffReport = "Pilot watchdog: 3 consecutive stalls — backing off 30m.";
+    public const string ExitBackoffReport =
+        "Pilot watchdog: the provider CLI keeps exiting right after startup — check its install and auth — backing off 30m.";
 
     private readonly IPilotEnvironment env = env;
 
     /// <summary>Consecutive watchdog kills; reset by any completed cycle.</summary>
     public int ConsecutiveTimeouts { get; private set; }
+
+    /// <summary>Consecutive mid-wait session exits; reset by any completed cycle.</summary>
+    public int ConsecutiveSessionExits { get; private set; }
 
     public DateTimeOffset? LastCycleAt { get; private set; }
 
@@ -111,9 +116,17 @@ public sealed class PilotLoop(IPilotEnvironment env)
     /// <summary>Ends the cycle on a sentinel (sleep) or a dead session; returns false to climb the next ladder rung.</summary>
     private async Task<bool> TryFinishAsync(PilotWaitResult result, CancellationToken ct)
     {
-        // The session died on its own; the next iteration restarts it, so no intervention is owed.
+        // The session died on its own; the next iteration restarts it, so no intervention is owed —
+        // unless it keeps dying on startup (broken install/auth), which must back off, not hot-loop every ~15s.
         if (result.Outcome == PilotWaitOutcome.SessionExited)
         {
+            ConsecutiveSessionExits++;
+            if (ConsecutiveSessionExits >= BackoffThreshold)
+            {
+                await ReportAsync(ExitBackoffReport);
+                await env.SleepAsync(BackoffDelay, ct);
+                ConsecutiveSessionExits = 0;
+            }
             return true;
         }
 
@@ -123,6 +136,7 @@ public sealed class PilotLoop(IPilotEnvironment env)
         }
 
         ConsecutiveTimeouts = 0;
+        ConsecutiveSessionExits = 0;
         LastCycleAt = DateTimeOffset.UtcNow;
         LastCycleStatus = result.Cycle.Status;
         await env.SleepAsync(TimeSpan.FromSeconds(ClampSleep(result.Cycle.SleepSeconds)), ct);

@@ -158,6 +158,28 @@ public class StallDetectorTests
     }
 
     [Fact]
+    public void Feed_CapsNewlineFreeResidue_AndStillDetectsLaterLines()
+    {
+        var detector = new StallDetector();
+
+        // A spinner redrawing via \r never emits '\n'; the residue must cap instead of growing by megabytes.
+        var frame = new string('x', 4096) + "\r";
+        for (var i = 0; i < 600; i++)
+        {
+            var reason = detector.Feed(Bytes(frame), T0 + TimeSpan.FromSeconds(i));
+            Assert.Equal(PilotStallReason.None, reason);
+        }
+
+        var last = PilotStallReason.None;
+        for (var i = 0; i < StallDetector.RepeatThreshold; i++)
+        {
+            last = FeedLine(detector, "\nwaiting for network...", T0 + TimeSpan.FromMinutes(20 + i));
+        }
+
+        Assert.Equal(PilotStallReason.RepeatedOutput, last);
+    }
+
+    [Fact]
     public void Reset_ClearsAccumulatedEvidence()
     {
         var detector = new StallDetector();

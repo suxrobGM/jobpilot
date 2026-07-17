@@ -28,8 +28,9 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
     private readonly StallDetector stall = new();
 
     // Same output event TerminalHub taps; a single-reader channel merges sentinels and stalls into one await.
+    // Not single-writer: the PTY thread writes signals while the conductor thread re-enqueues drained sentinels.
     private readonly Channel<WaitSignal> signals = Channel.CreateUnbounded<WaitSignal>(
-        new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
+        new UnboundedChannelOptions { SingleReader = true });
 
     public PilotEnvironment(SessionManager session, PilotStore store, PilotApiClient api, ILogger<PilotEnvironment> logger)
     {
@@ -55,11 +56,19 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
         await InjectAsync(command, pairing.Provider, "cycle");
     }
 
-    public Task InjectNudgeAsync(PilotPairing pairing, CancellationToken ct) =>
-        InjectAsync(NudgeCommand, pairing.Provider, "nudge");
+    public Task InjectNudgeAsync(PilotPairing pairing, CancellationToken ct)
+    {
+        stall.Reset();
+        DrainStalledSignals();
+        return InjectAsync(NudgeCommand, pairing.Provider, "nudge");
+    }
 
-    public Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct) =>
-        InjectAsync(SkipCommand, pairing.Provider, "skip");
+    public Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct)
+    {
+        stall.Reset();
+        DrainStalledSignals();
+        return InjectAsync(SkipCommand, pairing.Provider, "skip");
+    }
 
     private async Task InjectAsync(string command, string provider, string what)
     {
@@ -72,11 +81,6 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
 
     public async Task<PilotWaitResult> AwaitSentinelAsync(TimeSpan timeout, CancellationToken ct)
     {
-        if (session.State != SessionState.Running)
-        {
-            return PilotWaitResult.Exited;
-        }
-
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var exited = false;
         void OnExit(SessionExit _)
@@ -85,9 +89,16 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
             timeoutCts.Cancel();
         }
 
+        // Subscribe before the state check: Exited is non-latching, so an exit landing between the check and the
+        // subscription would never be observed and the wait would burn the full timeout on a dead PTY.
         session.Exited += OnExit;
         try
         {
+            if (session.State != SessionState.Running)
+            {
+                return PilotWaitResult.Exited;
+            }
+
             timeoutCts.CancelAfter(timeout);
             var signal = await signals.Reader.ReadAsync(timeoutCts.Token);
             return signal.Cycle is { } cycle
@@ -125,6 +136,13 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
 
     private void OnOutput(byte[] data)
     {
+        // Interactive non-pilot sessions must not pay parser cost per chunk; enable writes the store before the
+        // first cycle inject and disable cancels the iteration, so no sentinel a live cycle depends on is lost.
+        if (store.Current is not { Enabled: true })
+        {
+            return;
+        }
+
         var sawSentinel = false;
         foreach (var cycle in parser.Feed(data))
         {
@@ -151,6 +169,28 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
     {
         while (signals.Reader.TryRead(out _))
         {
+        }
+    }
+
+    // Stall evidence re-armed during the ladder's report+inject gap would instantly consume the next grace, but a
+    // real cycle sentinel racing in during that gap must survive, so only Stalled signals are discarded.
+    private void DrainStalledSignals()
+    {
+        List<WaitSignal>? sentinels = null;
+        while (signals.Reader.TryRead(out var signal))
+        {
+            if (signal.Cycle is not null)
+            {
+                (sentinels ??= []).Add(signal);
+            }
+        }
+
+        if (sentinels is not null)
+        {
+            foreach (var signal in sentinels)
+            {
+                signals.Writer.TryWrite(signal);
+            }
         }
     }
 

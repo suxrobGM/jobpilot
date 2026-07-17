@@ -106,6 +106,53 @@ public class PilotLoopTests
     }
 
     [Fact]
+    public async Task RunIteration_ReportsAndBacksOff_AfterThreeConsecutiveSessionExits()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude" };
+        var loop = new PilotLoop(env);
+
+        for (var i = 0; i < PilotLoop.BackoffThreshold - 1; i++)
+        {
+            env.SentinelResults.Enqueue(PilotWaitResult.Exited);
+            await loop.RunIterationAsync(Claude, CancellationToken.None);
+        }
+        Assert.DoesNotContain("sleep:1800", env.Actions);
+        Assert.DoesNotContain(PilotLoop.ExitBackoffReport, env.Reports);
+
+        env.SentinelResults.Enqueue(PilotWaitResult.Exited);
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        // A CLI dying on every spawn must tell the user and back off instead of hot-looping restarts.
+        Assert.Equal(1, env.Reports.Count(r => r == PilotLoop.ExitBackoffReport));
+        Assert.Equal("sleep:1800", env.Actions[^1]);
+        Assert.Equal(0, loop.ConsecutiveSessionExits); // re-armed after the backoff
+        Assert.Equal(0, loop.ConsecutiveTimeouts);     // exits are not watchdog kills
+    }
+
+    [Fact]
+    public async Task RunIteration_ResetsTheExitCount_AfterASuccessfulCycle()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude" };
+        var loop = new PilotLoop(env);
+
+        for (var i = 0; i < PilotLoop.BackoffThreshold - 1; i++)
+        {
+            env.SentinelResults.Enqueue(PilotWaitResult.Exited);
+            await loop.RunIterationAsync(Claude, CancellationToken.None);
+        }
+        Assert.Equal(PilotLoop.BackoffThreshold - 1, loop.ConsecutiveSessionExits);
+
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(30)));
+        await loop.RunIterationAsync(Claude, CancellationToken.None); // a completed cycle breaks the run
+
+        env.SentinelResults.Enqueue(PilotWaitResult.Exited);
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal(1, loop.ConsecutiveSessionExits);
+        Assert.DoesNotContain(PilotLoop.ExitBackoffReport, env.Reports);
+    }
+
+    [Fact]
     public async Task RunIteration_PausesInsteadOfKilling_WhenTheUserRunsAnotherProvider()
     {
         var env = new FakePilotEnvironment { RunningProvider = "codex" };

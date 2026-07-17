@@ -33,6 +33,9 @@ public sealed partial class StallDetector
     // Cap the compared tail so a very long single line still matches its own repeats cheaply.
     private const int MaxLineChars = 512;
 
+    // Cap the unterminated residue: a spinner redrawing via \r never emits '\n', so nothing else shrinks pending.
+    private const int MaxPendingChars = 8192;
+
     [GeneratedRegex(@"error|exception|failed to|econn|timeout", RegexOptions.IgnoreCase)]
     private static partial Regex ErrorPattern();
 
@@ -43,48 +46,70 @@ public sealed partial class StallDetector
     [GeneratedRegex(@"\s+")]
     private static partial Regex WhitespacePattern();
 
+    // Feed runs on the PTY read thread while Reset comes from the conductor; unsynchronized mutation could
+    // corrupt a collection and the throw would kill the read loop through OnOutput's unfiltered path.
+    private readonly Lock gate = new();
+
     private readonly StringBuilder pending = new();
     private readonly Queue<DateTimeOffset> errorTimes = new();
     private string? lastLine;
     private int repeatCount;
     private DateTimeOffset repeatStart;
+    private int scanned; // Prefix of pending already searched for '\n', so newline-free feeds are not rescanned from 0.
 
     /// <summary>Feeds a raw output chunk; returns the first heuristic that fired this feed, or <c>None</c>.</summary>
     public PilotStallReason Feed(ReadOnlySpan<byte> chunk, DateTimeOffset now)
     {
         // ASCII sentinel/ANSI framing; a UTF-8 split only mangles surrounding non-ASCII, never the match.
-        pending.Append(Encoding.UTF8.GetString(chunk));
+        var text = Encoding.UTF8.GetString(chunk);
 
-        var fired = PilotStallReason.None;
-        int newline;
-        while ((newline = IndexOf(pending, '\n')) >= 0)
+        lock (gate)
         {
-            var raw = pending.ToString(0, newline);
-            pending.Remove(0, newline + 1);
+            pending.Append(text);
 
-            var normalized = Normalize(raw);
-            if (normalized.Length == 0)
+            var fired = PilotStallReason.None;
+            int newline;
+            while ((newline = IndexOf(pending, '\n', scanned)) >= 0)
             {
-                continue;
+                var raw = pending.ToString(0, newline);
+                pending.Remove(0, newline + 1);
+                scanned = 0;
+
+                var normalized = Normalize(raw);
+                if (normalized.Length == 0)
+                {
+                    continue;
+                }
+
+                var signal = Observe(normalized, now);
+                if (signal != PilotStallReason.None && fired == PilotStallReason.None)
+                {
+                    fired = signal; // Return the first crossing; residual lines still update counters for the next feed.
+                }
             }
 
-            var signal = Observe(normalized, now);
-            if (signal != PilotStallReason.None && fired == PilotStallReason.None)
+            // Trim after line processing so a complete line is never dropped; Normalize keeps a 512-char tail anyway.
+            if (pending.Length > MaxPendingChars)
             {
-                fired = signal; // Return the first crossing; residual lines still update counters for the next feed.
+                pending.Remove(0, pending.Length - MaxPendingChars);
             }
+            scanned = pending.Length;
+
+            return fired;
         }
-
-        return fired;
     }
 
     /// <summary>Clears all accumulated evidence; called on a fresh cycle and on a successful sentinel.</summary>
     public void Reset()
     {
-        pending.Clear();
-        errorTimes.Clear();
-        lastLine = null;
-        repeatCount = 0;
+        lock (gate)
+        {
+            pending.Clear();
+            errorTimes.Clear();
+            lastLine = null;
+            repeatCount = 0;
+            scanned = 0;
+        }
     }
 
     private PilotStallReason Observe(string line, DateTimeOffset now)
@@ -138,9 +163,9 @@ public sealed partial class StallDetector
         return collapsed.Length > MaxLineChars ? collapsed[^MaxLineChars..] : collapsed;
     }
 
-    private static int IndexOf(StringBuilder builder, char value)
+    private static int IndexOf(StringBuilder builder, char value, int start)
     {
-        for (var i = 0; i < builder.Length; i++)
+        for (var i = start; i < builder.Length; i++)
         {
             if (builder[i] == value)
             {

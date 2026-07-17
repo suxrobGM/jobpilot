@@ -10,12 +10,19 @@ internal sealed record PilotSseEnvelope
 {
     public string? Type { get; init; }
     public PilotSsePromotion? Promotion { get; init; }
+    public PilotSseState? State { get; init; }
 }
 
 /// <summary>The promotion status carried by a <c>promotion.updated</c> event.</summary>
 internal sealed record PilotSsePromotion
 {
     public string? Status { get; init; }
+}
+
+/// <summary>The pilot state carried by a <c>state.changed</c> event; only the enabled flag matters here.</summary>
+internal sealed record PilotSseState
+{
+    public bool? Enabled { get; init; }
 }
 
 /// <summary>
@@ -62,31 +69,49 @@ public sealed class PilotEventListener : BackgroundService
     /// <summary>Whether a parsed frame is a wake-worthy pilot event. Pure so the dispatch table is unit-testable.</summary>
     internal static bool ShouldWake(SseFrame frame)
     {
-        // Control frames (connected/ping) carry a name but no data; only domain events wake the conductor.
-        if (string.IsNullOrEmpty(frame.Data))
-        {
-            return false;
-        }
-
-        PilotSseEnvelope? envelope;
-        try
-        {
-            envelope = JsonSerializer.Deserialize(frame.Data, AppJsonContext.Default.PilotSseEnvelope);
-        }
-        catch (JsonException)
+        var envelope = TryParseEnvelope(frame);
+        if (envelope is null)
         {
             return false;
         }
 
         // The wire puts the domain type in the JSON payload; fall back to the SSE event name if a server ever names it.
-        var type = envelope?.Type ?? frame.Event;
+        var type = envelope.Type ?? frame.Event;
         return type switch
         {
             "question.answered" => true,
             "state.changed" => true,
-            "promotion.updated" => string.Equals(envelope?.Promotion?.Status, "approved", StringComparison.Ordinal),
+            "promotion.updated" => string.Equals(envelope.Promotion?.Status, "approved", StringComparison.Ordinal),
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// Whether a frame is an API-side disable that must sync to the local store. Pure so it is unit-testable.
+    /// Only disable can sync here: the listener itself only streams while the local store is enabled.
+    /// </summary>
+    internal static bool IsRemoteDisable(SseFrame frame)
+    {
+        var envelope = TryParseEnvelope(frame);
+        return (envelope?.Type ?? frame.Event) == "state.changed" && envelope?.State?.Enabled == false;
+    }
+
+    private static PilotSseEnvelope? TryParseEnvelope(SseFrame frame)
+    {
+        // Control frames (connected/ping) carry a name but no data; only domain events carry a payload.
+        if (string.IsNullOrEmpty(frame.Data))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize(frame.Data, AppJsonContext.Default.PilotSseEnvelope);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -169,6 +194,13 @@ public sealed class PilotEventListener : BackgroundService
             gotData = true;
             foreach (var frame in parser.Feed(new ReadOnlySpan<char>(buffer, 0, read)))
             {
+                // A disable from another device can't reach this host directly; mirror it into the local store
+                // before waking, or the conductor re-reads Enabled=true and keeps spawning sessions forever.
+                if (IsRemoteDisable(frame))
+                {
+                    store.SetEnabled(false);
+                }
+
                 if (ShouldWake(frame))
                 {
                     conductor.WakeUp();
