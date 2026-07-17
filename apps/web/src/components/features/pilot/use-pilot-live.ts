@@ -4,15 +4,15 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { queryKeys } from "@/api/query-keys";
-import { type SseConnectionStatus, useSseChannel } from "@/lib/sse/client";
+import { useSseChannel } from "@/lib/sse/client";
 
 /**
  * The pilot layout's single SSE subscription: fans pilot events out to query
  * invalidations so tab components don't each hold their own handler set.
- * `journal.appended` is deliberately unhandled - journal components own their
- * live buffer and merge entries without a refetch.
+ * `journal.appended` is deliberately unhandled - `useJournalLive` owns the
+ * live buffer and merges entries without a refetch.
  */
-export function usePilotLive(): SseConnectionStatus {
+export function usePilotLive(): void {
   const queryClient = useQueryClient();
 
   const invalidate = (queryKey: readonly unknown[]): void => {
@@ -44,6 +44,4 @@ export function usePilotLive(): SseConnectionStatus {
     }
     prevStatus.current = status;
   }, [status, queryClient]);
-
-  return status;
 }

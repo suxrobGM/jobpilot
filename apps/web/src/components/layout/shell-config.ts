@@ -24,6 +24,8 @@ export interface NavItem {
   adminOnly?: boolean;
   /** Live attention badge on the icon; "questions" shows the open-question count. */
   badge?: "questions";
+  /** Gets its own tab on the mobile bottom nav; the rest fall into its "More" sheet. */
+  primary?: boolean;
   /** Extra pathname prefixes that keep this item highlighted (e.g. detail routes living outside its href). */
   matchHrefs?: string[];
 }
@@ -37,10 +39,10 @@ export const navGroups: NavGroup[] = [
   {
     label: "Core",
     items: [
-      { label: "Workspace", href: "/workspace", icon: Dashboard },
-      { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "questions" },
-      { label: "Inbox", href: "/inbox", icon: Inbox },
-      { label: "Analytics", href: "/analytics", icon: Insights },
+      { label: "Workspace", href: "/workspace", icon: Dashboard, primary: true },
+      { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "questions", primary: true },
+      { label: "Inbox", href: "/inbox", icon: Inbox, primary: true },
+      { label: "Analytics", href: "/analytics", icon: Insights, primary: true },
     ],
   },
   {
@@ -99,16 +101,15 @@ export const DOCK_MIN_EXPANDED = 320;
 export const DOCK_MAX_EXPANDED = 640;
 export const MOBILE_NAV_HEIGHT = 56;
 
-/** Active-route test shared by the desktop rail and the mobile bottom nav. */
-export function isNavItemActive(pathname: string, href: string): boolean {
+function isHrefActive(pathname: string, href: string): boolean {
   const target = href.split("?")[0];
   return target === "/" ? pathname === "/" : pathname.startsWith(target);
 }
 
-/** Item-aware active test: the item's own href plus any matchHrefs prefixes. */
+/** Active-route test shared by the desktop rail and the mobile bottom nav: the item's own href plus any matchHrefs prefixes. */
 export function isNavEntryActive(pathname: string, item: NavItem): boolean {
   return (
-    isNavItemActive(pathname, item.href) ||
-    (item.matchHrefs?.some((href) => isNavItemActive(pathname, href)) ?? false)
+    isHrefActive(pathname, item.href) ||
+    (item.matchHrefs?.some((href) => isHrefActive(pathname, href)) ?? false)
   );
 }

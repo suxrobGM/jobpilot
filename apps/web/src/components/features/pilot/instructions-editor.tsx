@@ -25,14 +25,15 @@ interface InstructionsEditorProps {
   state: PilotState;
 }
 
-const ANCHORS: SectionAnchor[] = [
-  { id: "goals", label: "Goals" },
-  { id: "limits", label: "Operating limits" },
-  { id: "active-hours", label: "Active hours" },
-  { id: "approvals", label: "Approvals" },
-  { id: "boards", label: "Boards" },
-  { id: "searches", label: "Saved searches" },
-  { id: "platforms", label: "Platforms" },
+/** Drives both the anchor nav and the rendered order - one list, so an id can't drift from its section. */
+const SECTIONS: (SectionAnchor & { Section: typeof GoalsSection })[] = [
+  { id: "goals", label: "Goals", Section: GoalsSection },
+  { id: "limits", label: "Operating limits", Section: LimitsSection },
+  { id: "active-hours", label: "Active hours", Section: ActiveHoursSection },
+  { id: "approvals", label: "Approvals", Section: ApprovalsSection },
+  { id: "boards", label: "Boards", Section: BoardsSection },
+  { id: "searches", label: "Saved searches", Section: SearchesSection },
+  { id: "platforms", label: "Platforms", Section: PlatformsSection },
 ];
 
 function toFormValues(state: PilotState): InstructionsFormValues {
@@ -140,31 +141,15 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
             alignItems: "flex-start",
           }}
         >
-          <SectionAnchorNav anchors={ANCHORS} />
+          <SectionAnchorNav anchors={SECTIONS} />
 
           <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
             <Stack spacing={3}>
-              <Box data-section-id="goals">
-                <GoalsSection form={form} />
-              </Box>
-              <Box data-section-id="limits">
-                <LimitsSection form={form} />
-              </Box>
-              <Box data-section-id="active-hours">
-                <ActiveHoursSection form={form} />
-              </Box>
-              <Box data-section-id="approvals">
-                <ApprovalsSection form={form} />
-              </Box>
-              <Box data-section-id="boards">
-                <BoardsSection form={form} />
-              </Box>
-              <Box data-section-id="searches">
-                <SearchesSection form={form} />
-              </Box>
-              <Box data-section-id="platforms">
-                <PlatformsSection form={form} />
-              </Box>
+              {SECTIONS.map(({ id, Section }) => (
+                <Box key={id} data-section-id={id}>
+                  <Section form={form} />
+                </Box>
+              ))}
             </Stack>
           </Box>
         </Box>

@@ -3,11 +3,21 @@
 import type { ReactElement, ReactNode } from "react";
 import type { AgendaItem } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
-import { Box, Button, Chip, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  Divider,
+  IconButton,
+  LinearProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
-import { formatRelativeTime } from "@/utils/format";
+import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 
 const PREVIEW_COUNT = 6;
 
@@ -31,23 +41,6 @@ const AGENDA_KIND_LABELS: Record<AgendaItem["kind"], string> = {
   "job.rescanSkipped": "Rescan skipped jobs",
   "job.retryFailed": "Retry failed jobs",
 };
-
-/** Future-facing counterpart of formatRelativeTime for the next-wake timestamp. */
-function formatUntil(value: Date): string {
-  const diffSec = Math.max(1, Math.round((value.getTime() - Date.now()) / 1000));
-  if (diffSec < 60) {
-    return `${diffSec}s`;
-  }
-  const diffMin = Math.round(diffSec / 60);
-  if (diffMin < 60) {
-    return `${diffMin}m`;
-  }
-  const diffHr = Math.round(diffMin / 60);
-  if (diffHr < 24) {
-    return `${diffHr}h`;
-  }
-  return `${Math.round(diffHr / 24)}d`;
-}
 
 /** Read-only peek at the next cycle's plan. Fetched once + manual refresh: agenda compiles are costly. */
 export function AgendaPreview(): ReactElement {
@@ -75,9 +68,9 @@ export function AgendaPreview(): ReactElement {
     body = (
       <Stack spacing={2}>
         {visible.length === 0 ? (
-          <Typography variant="body2Muted">Agenda is clear.</Typography>
+          <EmptyState variant="inline" title="Agenda is clear." />
         ) : (
-          <Stack spacing={1.5} divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />}>
+          <Stack spacing={1.5} divider={<Divider />}>
             {visible.map((item, index) => (
               <Stack key={item.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                 <Typography variant="overlineMuted" sx={{ width: 16, flexShrink: 0 }}>
@@ -98,7 +91,8 @@ export function AgendaPreview(): ReactElement {
           <Typography variant="captionMuted">+{items.length - PREVIEW_COUNT} more</Typography>
         )}
         <Typography variant="captionMuted">
-          Compiled {formatRelativeTime(generatedAt)} ago · next wake in {formatUntil(nextWakeAt)}
+          Compiled {formatRelativeTime(generatedAt)} ago · next wake in{" "}
+          {formatTimeUntil(nextWakeAt)}
         </Typography>
       </Stack>
     );

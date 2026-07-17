@@ -44,15 +44,6 @@ function DigestCounts(props: { detail: Record<string, unknown> }): ReactElement 
   return <Typography variant="captionMuted">{parts.join(" · ")}</Typography>;
 }
 
-/** SSE delivers raw JSON, so `createdAt` arrives as an ISO string, not a revived Date. */
-export function fromEvent(entry: unknown): PilotJournalEntry {
-  const raw = entry as PilotJournalEntry & { createdAt: string };
-  return { ...raw, createdAt: new Date(raw.createdAt) };
-}
-
-/** Cap the live buffer so a long-lived session doesn't grow unbounded; oldest (tail) drop first. */
-export const LIVE_CAP = 100;
-
 export function dedupeById(entries: PilotJournalEntry[]): PilotJournalEntry[] {
   const seen = new Set<string>();
   const out: PilotJournalEntry[] = [];

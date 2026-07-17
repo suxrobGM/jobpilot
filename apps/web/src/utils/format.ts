@@ -1,17 +1,6 @@
-/**
- * Formats an ISO timestamp or Date as a compact relative age.
- *
- * Returns an empty string for invalid dates. Past timestamps are rounded to the
- * nearest second, minute, hour, day, or 30-day month and rendered with short
- * units such as `45s`, `12m`, `3h`, `8d`, or `2mo`.
- */
-export function formatRelativeTime(value: string | Date): string {
-  const then = new Date(value).getTime();
-  if (Number.isNaN(then)) {
-    return "";
-  }
-
-  const diffSec = Math.max(1, Math.round((Date.now() - then) / 1000));
+/** Rounds a span to its largest whole unit: `45s`, `12m`, `3h`, `8d`, `2mo` (months are 30d). */
+function formatSpan(diffMs: number): string {
+  const diffSec = Math.max(1, Math.round(diffMs / 1000));
   if (diffSec < 60) {
     return `${diffSec}s`;
   }
@@ -32,6 +21,18 @@ export function formatRelativeTime(value: string | Date): string {
   }
   const diffMon = Math.round(diffDay / 30);
   return `${diffMon}mo`;
+}
+
+/** Compact age of a past timestamp, e.g. `12m`. Empty string for invalid dates. */
+export function formatRelativeTime(value: string | Date): string {
+  const then = new Date(value).getTime();
+  return Number.isNaN(then) ? "" : formatSpan(Date.now() - then);
+}
+
+/** Compact countdown to a future timestamp, e.g. `3h`. Empty string for invalid dates. */
+export function formatTimeUntil(value: string | Date): string {
+  const target = new Date(value).getTime();
+  return Number.isNaN(target) ? "" : formatSpan(target - Date.now());
 }
 
 /** Locale short date. Takes `Date | string` because Eden types `z.date()` fields as `Date`. */

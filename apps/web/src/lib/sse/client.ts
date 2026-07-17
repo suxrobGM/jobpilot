@@ -154,8 +154,6 @@ interface UseSseChannelOptions<TEvent extends { type: string }> {
   enabled?: boolean;
   /** Called for every event, regardless of type. Fires before `on[type]`. */
   onMessage?: (event: TEvent) => void;
-  /** Called when EventSource reports a connection error or reconnect attempt. */
-  onError?: (event: Event) => void;
   /** Per-event-type handlers. Exhaustively type-checked against the channel's event union. */
   on?: SseHandlers<TEvent>;
 }
@@ -183,6 +181,5 @@ export function useSseChannel<C extends AnyChannel>(
       const handler = options.on?.[event.type as TEvent["type"]] as (e: TEvent) => void;
       handler?.(event);
     },
-    onError: options.onError,
   });
 }

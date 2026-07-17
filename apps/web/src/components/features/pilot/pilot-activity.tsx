@@ -2,18 +2,18 @@
 
 import { type ReactElement, type ReactNode, useState } from "react";
 import type { PilotJournalEntry, PilotJournalKind } from "@jobpilot/contracts/pilot";
-import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Download } from "@mui/icons-material";
-import { Box, Button, Chip, LinearProgress, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Divider, LinearProgress, Stack, Typography } from "@mui/material";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { PILOT_JOURNAL_PAGE_SIZE, pilotQueries } from "@/api/queries";
+import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
-import { useSseChannel } from "@/lib/sse/client";
 import { useToast } from "@/providers/notification-provider";
-import { dedupeById, fromEvent, JournalRow, KIND_META, LIVE_CAP } from "./journal-row";
+import { dedupeById, JournalRow, KIND_META } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
+import { useJournalLive } from "./use-journal-live";
 
 /** Same-site cookie rides a top-level anchor download, so no fetch/token handling is needed here. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
@@ -24,20 +24,12 @@ const ALL_KINDS = Object.keys(KIND_META) as PilotJournalKind[];
 export function PilotActivity(): ReactElement {
   const toast = useToast();
   const firstPage = useApiQuery(pilotQueries.journal());
-  const [live, setLive] = useState<PilotJournalEntry[]>([]);
+  const { entries: live, status } = useJournalLive();
   const [older, setOlder] = useState<PilotJournalEntry[]>([]);
   // `undefined` means paging hasn't started, so fall back to the first page's cursor.
   const [cursor, setCursor] = useState<string | null | undefined>(undefined);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedKinds, setSelectedKinds] = useState<PilotJournalKind[]>([]);
-
-  const status = useSseChannel(pilotChannel, null, {
-    on: {
-      "journal.appended": (event) => {
-        setLive((prev) => [fromEvent(event.entry), ...prev].slice(0, LIVE_CAP));
-      },
-    },
-  });
 
   const activeCursor = cursor === undefined ? (firstPage.data?.nextCursor ?? null) : cursor;
 
@@ -83,12 +75,12 @@ export function PilotActivity(): ReactElement {
 
   let body: ReactNode;
   if (entries.length === 0) {
-    body = <Typography variant="body2Muted">No journal entries yet.</Typography>;
+    body = <EmptyState variant="inline" title="No journal entries yet." />;
   } else if (visible.length === 0) {
-    body = <Typography variant="body2Muted">No entries match the selected filters.</Typography>;
+    body = <EmptyState variant="inline" title="No entries match the selected filters." />;
   } else {
     body = (
-      <Stack spacing={1.5} divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />}>
+      <Stack spacing={1.5} divider={<Divider />}>
         {visible.map((entry) => (
           <JournalRow key={entry.id} entry={entry} />
         ))}

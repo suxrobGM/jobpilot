@@ -1,16 +1,15 @@
 "use client";
 
-import { type ReactElement, type ReactNode, useState } from "react";
-import type { PilotJournalEntry } from "@jobpilot/contracts/pilot";
-import { pilotChannel } from "@jobpilot/contracts/sse";
-import { Box, LinearProgress, Stack, Typography } from "@mui/material";
+import type { ReactElement, ReactNode } from "react";
+import { Divider, LinearProgress, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
+import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
-import { useSseChannel } from "@/lib/sse/client";
-import { dedupeById, fromEvent, JournalRow, LIVE_CAP } from "./journal-row";
+import { dedupeById, JournalRow } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
+import { useJournalLive } from "./use-journal-live";
 
 const RECENT_LIMIT = 8;
 
@@ -18,15 +17,7 @@ const RECENT_LIMIT = 8;
 export function RecentActivity(): ReactElement {
   // Same query key as the Activity tab, so both share one cached first page.
   const firstPage = useApiQuery(pilotQueries.journal());
-  const [live, setLive] = useState<PilotJournalEntry[]>([]);
-
-  const status = useSseChannel(pilotChannel, null, {
-    on: {
-      "journal.appended": (event) => {
-        setLive((prev) => [fromEvent(event.entry), ...prev].slice(0, LIVE_CAP));
-      },
-    },
-  });
+  const { entries: live, status } = useJournalLive();
 
   const entries = dedupeById([...live, ...(firstPage.data?.items ?? [])]).slice(0, RECENT_LIMIT);
 
@@ -34,10 +25,10 @@ export function RecentActivity(): ReactElement {
   if (firstPage.isLoading) {
     body = <LinearProgress />;
   } else if (entries.length === 0) {
-    body = <Typography variant="body2Muted">No journal entries yet.</Typography>;
+    body = <EmptyState variant="inline" title="No journal entries yet." />;
   } else {
     body = (
-      <Stack spacing={1.5} divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />}>
+      <Stack spacing={1.5} divider={<Divider />}>
         {entries.map((entry) => (
           <JournalRow key={entry.id} entry={entry} />
         ))}

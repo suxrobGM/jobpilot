@@ -29,7 +29,6 @@ import {
 } from "./shell-config";
 
 const MORE_VALUE = "more";
-const PRIMARY_HREFS = ["/workspace", "/pilot", "/inbox", "/analytics"];
 /** Below MUI's 0.75rem default - "Workspace" has to fit a fifth of a 360px phone. */
 const LABEL_SIZE = "0.6875rem";
 
@@ -46,13 +45,10 @@ export function MobileNav(): ReactElement {
   // Derived per render, not at module scope: the visible set depends on the signed-in role.
   const allItems = visibleNavGroups(user?.role).flatMap((group) => group.items);
   const footerItems = visibleNavGroups(user?.role, footerNavGroups).flatMap((group) => group.items);
-  const primaryItems = allItems.filter((item) => PRIMARY_HREFS.includes(item.href));
+  const primaryItems = allItems.filter((item) => item.primary);
 
   // The rail pins these to its foot, so they land at the end of the drawer here.
-  const moreItems = [
-    ...allItems.filter((item) => !PRIMARY_HREFS.includes(item.href)),
-    ...footerItems,
-  ];
+  const moreItems = [...allItems.filter((item) => !item.primary), ...footerItems];
 
   const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));
   const moreActive = moreItems.some((item) => isNavEntryActive(pathname, item));

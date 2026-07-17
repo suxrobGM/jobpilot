@@ -1,22 +1,15 @@
 import type { ReactElement } from "react";
-import { Grid, Skeleton, Stack } from "@mui/material";
+import { Skeleton, Stack } from "@mui/material";
 
 /** Keyed by name, not index: Biome's `noArrayIndexKey` is on. */
 const CARD_SLOTS = ["attention", "agenda", "activity"];
 
-/** Mirrors the loaded overview: checklist bar, 7/5 hero, then the full-width cards. */
+/** Mirrors the loaded overview: checklist bar, full-width hero, then the cards. */
 export function OverviewSkeleton(): ReactElement {
   return (
     <Stack spacing={3}>
       <Skeleton variant="rectangular" height={72} />
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 7 }}>
-          <Skeleton variant="rectangular" height={180} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 5 }}>
-          <Skeleton variant="rectangular" height={180} />
-        </Grid>
-      </Grid>
+      <Skeleton variant="rectangular" height={180} />
       {CARD_SLOTS.map((slot) => (
         <Skeleton key={slot} variant="rectangular" height={140} />
       ))}

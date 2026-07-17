@@ -14,18 +14,14 @@ export function PilotInstructions(): ReactElement {
     errorMessage: "Failed to load pilot state",
   });
 
-  if (stateQuery.isLoading || !stateQuery.data) {
-    return (
-      <Stack spacing={3}>
-        <Skeleton variant="rectangular" height={480} />
-        <Skeleton variant="rectangular" height={140} />
-      </Stack>
-    );
-  }
-
+  // PushSettings reads nothing from state, so it stays outside the gate and fetches in parallel.
   return (
     <Stack spacing={3}>
-      <InstructionsEditor state={stateQuery.data} />
+      {stateQuery.isLoading || !stateQuery.data ? (
+        <Skeleton variant="rectangular" height={480} />
+      ) : (
+        <InstructionsEditor state={stateQuery.data} />
+      )}
       <PushSettings />
     </Stack>
   );

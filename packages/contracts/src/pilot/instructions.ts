@@ -2,11 +2,12 @@ import { z } from "zod/v4";
 
 // ── Instructions ──────────────────────────────────────────────────────────────
 
-const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+/** 24h wall-clock time. Exported so a form can't accept a value this config rejects. */
+export const HHMM_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const pilotActiveHoursSchema = z.object({
-  start: z.string().regex(HHMM),
-  end: z.string().regex(HHMM),
+  start: z.string().regex(HHMM_PATTERN),
+  end: z.string().regex(HHMM_PATTERN),
   tz: z.string(),
 });
 

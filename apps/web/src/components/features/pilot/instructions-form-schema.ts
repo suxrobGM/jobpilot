@@ -1,6 +1,5 @@
+import { HHMM_PATTERN } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
-
-const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const instructionsFormSchema = z.object({
   goals: z.string(),
@@ -10,8 +9,8 @@ export const instructionsFormSchema = z.object({
   minScore: z.number().min(0).max(100),
   checkIntervalMinutes: z.number().int().min(1),
   activeHoursEnabled: z.boolean(),
-  activeHoursStart: z.string().regex(HHMM, "Use HH:MM"),
-  activeHoursEnd: z.string().regex(HHMM, "Use HH:MM"),
+  activeHoursStart: z.string().regex(HHMM_PATTERN, "Use HH:MM"),
+  activeHoursEnd: z.string().regex(HHMM_PATTERN, "Use HH:MM"),
   activeHoursTz: z.string(),
   outreachEmail: z.enum(["draft", "review", "auto"]),
   outreachLinkedIn: z.enum(["draft", "review"]),
