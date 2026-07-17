@@ -134,6 +134,7 @@ export const PILOT_JOURNAL_PAGE_SIZE = 50;
 
 export const pilotQueries = {
   state: () => ({ queryKey: queryKeys.pilot.state(), queryFn: () => api.pilot.get() }),
+  agenda: () => ({ queryKey: queryKeys.pilot.agenda(), queryFn: () => api.pilot.agenda.get() }),
   journal: () => ({
     queryKey: queryKeys.pilot.journal(),
     queryFn: () => api.pilot.journal.get({ query: { limit: PILOT_JOURNAL_PAGE_SIZE } }),
