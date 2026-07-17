@@ -5,7 +5,7 @@ import { EventSource } from "eventsource";
 import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/api/base-url";
 
-/** "idle" = no connection requested; "reconnecting" = the `eventsource` package is auto-retrying. */
+/** "idle" = no connection requested; "reconnecting" = auto-retry or our backoff re-dial after a fatal close. */
 export type SseConnectionStatus = "idle" | "connecting" | "open" | "reconnecting";
 
 /**
@@ -40,9 +40,55 @@ interface SharedSource {
   onMessage: Set<(event: MessageEvent<string>) => void>;
   onError: Set<(event: Event) => void>;
   onStatus: Set<(status: SseConnectionStatus) => void>;
+  /** Pending re-dial after a fatal close; cleared when the last subscriber leaves. */
+  redialTimer: ReturnType<typeof setTimeout> | null;
+  redialDelayMs: number;
 }
 
 const sharedSources = new Map<string, SharedSource>();
+
+const REDIAL_BASE_MS = 2_000;
+const REDIAL_MAX_MS = 30_000;
+
+function setEntryStatus(entry: SharedSource, status: SseConnectionStatus): void {
+  if (entry.status === status) return;
+  entry.status = status;
+  for (const listener of entry.onStatus) listener(status);
+}
+
+/** `eventsource` (not native) for fetch-based transport: credentialed cross-origin streams + header control. */
+function openSource(url: string): EventSource {
+  return new EventSource(url, { withCredentials: true });
+}
+
+/** Wire a freshly opened source into the shared entry; the initial connect and every re-dial go through here. */
+function dial(url: string, entry: SharedSource, source: EventSource): void {
+  entry.source = source;
+  // A listener may remove itself during dispatch; Sets tolerate deletion while iterating.
+  source.onmessage = (event) => {
+    for (const listener of entry.onMessage) listener(event);
+  };
+  source.onopen = () => {
+    entry.redialDelayMs = REDIAL_BASE_MS;
+    setEntryStatus(entry, "open");
+  };
+  source.onerror = (event) => {
+    // A superseded source's late error must not clobber the live one's status.
+    if (entry.source !== source) return;
+    setEntryStatus(entry, "reconnecting");
+    // The package auto-retries only network drops; any non-200 response is a fatal
+    // close (readyState CLOSED), so re-dial with capped backoff or one bad gateway
+    // response during a deploy would kill live updates until a hard reload.
+    if (source.readyState === source.CLOSED && entry.redialTimer === null) {
+      entry.redialTimer = setTimeout(() => {
+        entry.redialTimer = null;
+        entry.redialDelayMs = Math.min(entry.redialDelayMs * 2, REDIAL_MAX_MS);
+        dial(url, entry, openSource(url));
+      }, entry.redialDelayMs);
+    }
+    for (const listener of entry.onError) listener(event);
+  };
+}
 
 /** Refcount one EventSource per URL so a page with several panels holds one connection, not one per subscriber. */
 function acquireSource(
@@ -54,34 +100,18 @@ function acquireSource(
   let shared = sharedSources.get(url);
 
   if (!shared) {
-    // `eventsource` (not native) for fetch-based transport: credentialed cross-origin streams + header control.
-    const source = new EventSource(url, { withCredentials: true });
     const entry: SharedSource = {
-      source,
+      source: openSource(url),
       status: "connecting",
       onMessage: new Set(),
       onError: new Set(),
       onStatus: new Set(),
+      redialTimer: null,
+      redialDelayMs: REDIAL_BASE_MS,
     };
     shared = entry;
     sharedSources.set(url, entry);
-    const setStatus = (status: SseConnectionStatus) => {
-      if (entry.status === status) return;
-      entry.status = status;
-      for (const listener of entry.onStatus) listener(status);
-    };
-    // A listener may remove itself during dispatch; Sets tolerate deletion while iterating.
-    source.onmessage = (event) => {
-      for (const listener of entry.onMessage) listener(event);
-    };
-    source.onopen = () => {
-      setStatus("open");
-    };
-    source.onerror = (event) => {
-      // The `eventsource` package auto-retries, so an error means "reconnecting", not "dead".
-      setStatus("reconnecting");
-      for (const listener of entry.onError) listener(event);
-    };
+    dial(url, entry, entry.source);
   }
 
   shared.onMessage.add(onMessage);
@@ -95,6 +125,10 @@ function acquireSource(
     shared.onError.delete(onError);
     shared.onStatus.delete(onStatus);
     if (shared.onMessage.size === 0) {
+      if (shared.redialTimer !== null) {
+        clearTimeout(shared.redialTimer);
+        shared.redialTimer = null;
+      }
       shared.source.close();
       sharedSources.delete(url);
     }

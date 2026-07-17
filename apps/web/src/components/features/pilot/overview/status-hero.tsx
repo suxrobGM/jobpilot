@@ -5,7 +5,7 @@ import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Alert, Box, Button, Chip, Grid, LinearProgress, Stack, Typography } from "@mui/material";
 import { ColorChip, StatCard } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
-import type { PilotCycleStatus, SessionStatus } from "@/lib/terminal";
+import { type PilotCycleStatus, providerDisplayName, type SessionStatus } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
@@ -110,9 +110,7 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
             <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap", gap: 2 }}>
               <Box>
                 <Typography variant="overlineMuted">Provider</Typography>
-                <Typography variant="body2">
-                  {toggle.provider === "codex" ? "Codex" : "Claude Code"}
-                </Typography>
+                <Typography variant="body2">{providerDisplayName(toggle.provider)}</Typography>
               </Box>
               <Box>
                 <Typography variant="overlineMuted">Cycles run</Typography>

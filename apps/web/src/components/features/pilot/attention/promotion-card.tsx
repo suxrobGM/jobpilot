@@ -17,6 +17,7 @@ import {
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
+import { ColorChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
 
 const STATUS_COLOR: Record<PromotionStatus, ChipProps["color"]> = {
@@ -120,10 +121,10 @@ export function PromotionSummary(props: { promotion: Promotion }): ReactElement 
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
       <Chip size="small" variant="outlined" label={promotion.platform} sx={{ minWidth: 90 }} />
-      <Chip
-        size="small"
-        label={promotion.status}
-        color={STATUS_COLOR[promotion.status]}
+      <ColorChip
+        value={promotion.status}
+        colors={STATUS_COLOR}
+        variant="filled"
         sx={{ textTransform: "capitalize" }}
       />
       <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>

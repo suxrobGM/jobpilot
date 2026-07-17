@@ -57,6 +57,7 @@ function toFormValues(state: PilotState): InstructionsFormValues {
       query: q.query,
       board: q.board ?? "",
       cadenceHours: q.cadenceHours,
+      resumeId: q.resumeId,
     })),
     promotionPlatforms: c.promotion.platforms.map((p) => ({
       platform: p.platform,
@@ -99,6 +100,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
           query: q.query.trim(),
           board: q.board.trim() || undefined,
           cadenceHours: q.cadenceHours,
+          resumeId: q.resumeId || undefined,
         })),
         autonomy: {
           outreachEmail: value.outreachEmail,

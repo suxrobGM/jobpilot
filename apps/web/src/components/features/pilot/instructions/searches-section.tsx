@@ -9,7 +9,7 @@ import { FieldInfo } from "./field-info";
 import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
 import { InstructionsRowList } from "./row-list";
 
-const EMPTY_SEARCH = { query: "", board: "", cadenceHours: 24 };
+const EMPTY_SEARCH = { query: "", board: "", cadenceHours: 24, resumeId: undefined };
 
 export const SearchesSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,

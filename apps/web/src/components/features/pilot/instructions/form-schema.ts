@@ -21,6 +21,8 @@ export const instructionsFormSchema = z.object({
       query: z.string().min(1, "Required"),
       board: z.string(),
       cadenceHours: z.number().min(1),
+      // No UI field; carried through because the instructions PUT is a full replace and would erase it.
+      resumeId: z.string().optional(),
     }),
   ),
   promotionPlatforms: z.array(

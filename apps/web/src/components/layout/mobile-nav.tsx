@@ -56,6 +56,13 @@ export function MobileNav(): ReactElement {
   // Pilot sits on the tab bar now; only badge More when a badged item actually lives in the drawer.
   const moreHasQuestions = moreItems.some((item) => item.badge === "questions");
 
+  // One helper over the component's single useOpenQuestions subscription; content 0 hides the badge.
+  const badged = (icon: ReactElement, show = true): ReactElement => (
+    <Badge badgeContent={show ? questionCount : 0} color="error" max={99}>
+      {icon}
+    </Badge>
+  );
+
   const renderTab = (item: NavItem): ReactElement => (
     <BottomNavigationAction
       key={item.href}
@@ -63,15 +70,7 @@ export function MobileNav(): ReactElement {
       href={item.href as Route}
       value={item.href}
       label={item.label}
-      icon={
-        item.badge === "questions" ? (
-          <Badge badgeContent={questionCount} color="error" max={99}>
-            <item.icon fontSize="small" />
-          </Badge>
-        ) : (
-          <item.icon fontSize="small" />
-        )
-      }
+      icon={badged(<item.icon fontSize="small" />, item.badge === "questions")}
     />
   );
 
@@ -107,11 +106,7 @@ export function MobileNav(): ReactElement {
         <BottomNavigationAction
           value={MORE_VALUE}
           label="More"
-          icon={
-            <Badge badgeContent={moreHasQuestions ? questionCount : 0} color="error" max={99}>
-              <MoreHoriz fontSize="small" />
-            </Badge>
-          }
+          icon={badged(<MoreHoriz fontSize="small" />, moreHasQuestions)}
           onClick={() => setMoreOpen(true)}
         />
       </BottomNavigation>
@@ -128,13 +123,7 @@ export function MobileNav(): ReactElement {
               onClick={() => setMoreOpen(false)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
-                {item.badge === "questions" ? (
-                  <Badge badgeContent={questionCount} color="error" max={99}>
-                    <item.icon fontSize="small" />
-                  </Badge>
-                ) : (
-                  <item.icon fontSize="small" />
-                )}
+                {badged(<item.icon fontSize="small" />, item.badge === "questions")}
               </ListItemIcon>
               <ListItemText primary={item.label} />
             </ListItemButton>
