@@ -2,8 +2,11 @@
 
 import type { AnyChannel, ChannelEvent, ChannelUrlParams } from "@jobpilot/contracts/sse";
 import { EventSource } from "eventsource";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/api/base-url";
+
+/** "idle" = no connection requested; "reconnecting" = the `eventsource` package is auto-retrying. */
+export type SseConnectionStatus = "idle" | "connecting" | "open" | "reconnecting";
 
 /**
  * Hook input for a channel's URL params. Channels with no URL params
@@ -33,8 +36,10 @@ function parseJson<TEvent>(data: string): TEvent {
 
 interface SharedSource {
   source: EventSource;
+  status: SseConnectionStatus;
   onMessage: Set<(event: MessageEvent<string>) => void>;
   onError: Set<(event: Event) => void>;
+  onStatus: Set<(status: SseConnectionStatus) => void>;
 }
 
 const sharedSources = new Map<string, SharedSource>();
@@ -44,30 +49,51 @@ function acquireSource(
   url: string,
   onMessage: (event: MessageEvent<string>) => void,
   onError: (event: Event) => void,
+  onStatus: (status: SseConnectionStatus) => void,
 ): () => void {
   let shared = sharedSources.get(url);
 
   if (!shared) {
     // `eventsource` (not native) for fetch-based transport: credentialed cross-origin streams + header control.
     const source = new EventSource(url, { withCredentials: true });
-    const entry: SharedSource = { source, onMessage: new Set(), onError: new Set() };
+    const entry: SharedSource = {
+      source,
+      status: "connecting",
+      onMessage: new Set(),
+      onError: new Set(),
+      onStatus: new Set(),
+    };
     shared = entry;
     sharedSources.set(url, entry);
+    const setStatus = (status: SseConnectionStatus) => {
+      if (entry.status === status) return;
+      entry.status = status;
+      for (const listener of entry.onStatus) listener(status);
+    };
     // A listener may remove itself during dispatch; Sets tolerate deletion while iterating.
     source.onmessage = (event) => {
       for (const listener of entry.onMessage) listener(event);
     };
+    source.onopen = () => {
+      setStatus("open");
+    };
     source.onerror = (event) => {
+      // The `eventsource` package auto-retries, so an error means "reconnecting", not "dead".
+      setStatus("reconnecting");
       for (const listener of entry.onError) listener(event);
     };
   }
 
   shared.onMessage.add(onMessage);
   shared.onError.add(onError);
+  shared.onStatus.add(onStatus);
+  // Replay the current status so late subscribers don't sit on a stale "idle".
+  onStatus(shared.status);
 
   return () => {
     shared.onMessage.delete(onMessage);
     shared.onError.delete(onError);
+    shared.onStatus.delete(onStatus);
     if (shared.onMessage.size === 0) {
       shared.source.close();
       sharedSources.delete(url);
@@ -83,7 +109,8 @@ function acquireSource(
 export function useEventSource<TEvent = unknown>(
   url: string | null | undefined,
   options: UseEventSourceOptions<TEvent> = {},
-): void {
+): SseConnectionStatus {
+  const [status, setStatus] = useState<SseConnectionStatus>("idle");
   const parseRef = useRef(options.parse ?? parseJson<TEvent>);
   const onMessageRef = useRef(options.onMessage);
   const onErrorRef = useRef(options.onError);
@@ -98,6 +125,7 @@ export function useEventSource<TEvent = unknown>(
 
   useEffect(() => {
     if (options.enabled === false || !url) {
+      setStatus("idle");
       return;
     }
 
@@ -111,8 +139,10 @@ export function useEventSource<TEvent = unknown>(
     const onRawError = (event: Event) => {
       onErrorRef.current?.(event);
     };
-    return acquireSource(url, onRawMessage, onRawError);
+    return acquireSource(url, onRawMessage, onRawError, setStatus);
   }, [url, options.enabled]);
+
+  return status;
 }
 
 type SseHandlers<TEvent extends { type: string }> = Partial<{
@@ -124,6 +154,8 @@ interface UseSseChannelOptions<TEvent extends { type: string }> {
   enabled?: boolean;
   /** Called for every event, regardless of type. Fires before `on[type]`. */
   onMessage?: (event: TEvent) => void;
+  /** Called when EventSource reports a connection error or reconnect attempt. */
+  onError?: (event: Event) => void;
   /** Per-event-type handlers. Exhaustively type-checked against the channel's event union. */
   on?: SseHandlers<TEvent>;
 }
@@ -137,19 +169,20 @@ export function useSseChannel<C extends AnyChannel>(
   channel: C,
   params: UrlParamsArg<C>,
   options: UseSseChannelOptions<ChannelEvent<C>> = {},
-): void {
+): SseConnectionStatus {
   type TEvent = ChannelEvent<C>;
   const url =
     options.enabled === false
       ? null
       : `${API_BASE_URL}${channel.path(params as ChannelUrlParams<C>)}`;
 
-  useEventSource<TEvent>(url, {
+  return useEventSource<TEvent>(url, {
     enabled: options.enabled,
     onMessage: (event) => {
       options.onMessage?.(event);
       const handler = options.on?.[event.type as TEvent["type"]] as (e: TEvent) => void;
       handler?.(event);
     },
+    onError: options.onError,
   });
 }
