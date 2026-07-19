@@ -133,6 +133,25 @@ describe("buildAgenda M3 kinds", () => {
     expect(agenda.items.filter((i) => i.kind === "outreach.warmIntro")).toHaveLength(1);
   });
 
+  it("suppresses every outreach kind when outreachEnabled is false", () => {
+    const warm = [{ id: "w1", name: "Insider", title: null, email: "in@acme.test" }];
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ outreachEnabled: false }),
+        approvedJobs: [{ ...job("j1", 90), company: "Acme", warmContacts: warm }],
+        approvedOutreach: [send("m1")],
+        followups: [followup("f1")],
+        inbox: { messageIds: ["e1"], count: 1 },
+      }),
+    );
+    const kinds = agenda.items.map((i) => i.kind);
+    expect(kinds).not.toContain("outreach.warmIntro");
+    expect(kinds).not.toContain("outreach.send");
+    expect(kinds).not.toContain("outreach.followup");
+    // Inbox triage is not outreach: it must still surface so interview mail is seen.
+    expect(kinds).toContain("inbox.review");
+  });
+
   it("emits promo.post per approved post and at most one promo.compose", () => {
     const agenda = buildAgenda(
       base({

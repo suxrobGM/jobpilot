@@ -75,8 +75,14 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
   }
   items.push(...buildFinalizeItems(input.finalizeCampaigns));
 
-  items.sort((a, b) => b.priority - a.priority);
-  const capped = items.slice(0, MAX_ITEMS);
+  // Opt-in outreach: one category gate covers every `outreach.*` kind by construction. `inbox.review`
+  // is deliberately outside the namespace so mail triage (interview replies) survives outreach being off.
+  const ranked = config.outreachEnabled
+    ? items
+    : items.filter((i) => !i.kind.startsWith("outreach."));
+
+  ranked.sort((a, b) => b.priority - a.priority);
+  const capped = ranked.slice(0, MAX_ITEMS);
 
   const sleepSeconds = capped.length > 0 ? ACTIVE_SLEEP_SECONDS : idleSleepSeconds(input, within);
 

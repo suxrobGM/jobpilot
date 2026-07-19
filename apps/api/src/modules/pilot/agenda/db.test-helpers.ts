@@ -74,11 +74,13 @@ export function makeAgendaDb(over: Over = {}) {
     pushes: [],
   };
 
+  // Outreach is opt-in in prod; these compile tests assert outreach behavior, so default it on.
+  const defaultConfig = '{"outreachEnabled":true}';
   let txChain: Promise<unknown> = Promise.resolve();
   const db = {
     pilotState: {
-      upsert: async () => ({ instructionsConfig: over.instructionsConfig ?? "{}" }),
-      findUnique: async () => ({ instructionsConfig: over.instructionsConfig ?? "{}" }),
+      upsert: async () => ({ instructionsConfig: over.instructionsConfig ?? defaultConfig }),
+      findUnique: async () => ({ instructionsConfig: over.instructionsConfig ?? defaultConfig }),
     },
     pilotLease: {
       findMany: async (args: { where: { subjectType?: string } }) =>

@@ -47,6 +47,8 @@ export const pilotInstructionsConfigSchema = z.object({
   activeHours: pilotActiveHoursSchema.optional(),
   checkIntervalMinutes: z.number().int().default(30),
   savedSearches: z.array(pilotSavedSearchSchema).default([]),
+  // Master switch: outreach is opt-in. Off suppresses all outreach work (compose, send, follow-up).
+  outreachEnabled: z.boolean().default(false),
   // Full default so a missing key still yields both autonomy fields (zod does not re-parse defaults).
   autonomy: pilotAutonomySchema.default({ outreachEmail: "review", outreachLinkedIn: "draft" }),
   dailyOutreachCap: z.number().int().min(0).default(5),

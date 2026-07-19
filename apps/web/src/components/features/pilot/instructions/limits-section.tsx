@@ -24,30 +24,6 @@ export const LimitsSection = withForm({
             </form.AppField>
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <form.AppField name="dailyOutreachCap">
-              {(field) => (
-                <field.TextField
-                  label="Daily outreach cap"
-                  type="number"
-                  helperText="Max outreach messages per day."
-                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                />
-              )}
-            </form.AppField>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <form.AppField name="outreachFollowupDays">
-              {(field) => (
-                <field.TextField
-                  label="Outreach follow-up (days)"
-                  type="number"
-                  helperText="Days to wait before following up."
-                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                />
-              )}
-            </form.AppField>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
             <form.AppField name="minScore">
               {(field) => (
                 <field.TextField

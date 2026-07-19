@@ -31,7 +31,7 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
 
   const pilot = hostStatus?.pilot ?? null;
   const enabled = state.enabled;
-  const { dailyApplyCap, dailyOutreachCap, minScore } = state.instructionsConfig;
+  const { dailyApplyCap, dailyOutreachCap, minScore, outreachEnabled } = state.instructionsConfig;
   const { appliedToday, capReached } = state;
   const progress = dailyApplyCap > 0 ? Math.min(100, (appliedToday / dailyApplyCap) * 100) : 0;
 
@@ -172,7 +172,11 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
               </Grid>
               <Grid size={4}>
                 {/* Cap only: no endpoint exposes outreach-sent-today, so a meter would lie. */}
-                <StatCard label="Outreach cap" value={dailyOutreachCap} hint="per day" />
+                <StatCard
+                  label="Outreach cap"
+                  value={outreachEnabled ? dailyOutreachCap : "Off"}
+                  hint={outreachEnabled ? "per day" : "disabled"}
+                />
               </Grid>
             </Grid>
           </Stack>

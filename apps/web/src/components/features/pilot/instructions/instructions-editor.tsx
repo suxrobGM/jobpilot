@@ -13,11 +13,11 @@ import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/sec
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/notification-provider";
 import { ActiveHoursSection } from "./active-hours-section";
-import { ApprovalsSection } from "./approvals-section";
 import { BoardsSection } from "./boards-section";
 import { type InstructionsFormValues, instructionsFormSchema } from "./form-schema";
 import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
+import { OutreachSection } from "./outreach-section";
 import { PlatformsSection } from "./platforms-section";
 import { SearchesSection } from "./searches-section";
 
@@ -30,7 +30,7 @@ const SECTIONS: (SectionAnchor & { Section: typeof GoalsSection })[] = [
   { id: "goals", label: "Goals", Section: GoalsSection },
   { id: "limits", label: "Operating limits", Section: LimitsSection },
   { id: "active-hours", label: "Active hours", Section: ActiveHoursSection },
-  { id: "approvals", label: "Approvals", Section: ApprovalsSection },
+  { id: "outreach", label: "Outreach", Section: OutreachSection },
   { id: "boards", label: "Boards", Section: BoardsSection },
   { id: "searches", label: "Saved searches", Section: SearchesSection },
   { id: "platforms", label: "Platforms", Section: PlatformsSection },
@@ -45,6 +45,7 @@ function toFormValues(state: PilotState): InstructionsFormValues {
     outreachFollowupDays: c.outreachFollowupDays,
     minScore: c.minScore,
     checkIntervalMinutes: c.checkIntervalMinutes,
+    outreachEnabled: c.outreachEnabled,
     activeHoursEnabled: Boolean(c.activeHours),
     activeHoursStart: c.activeHours?.start ?? "09:00",
     activeHoursEnd: c.activeHours?.end ?? "17:00",
@@ -87,6 +88,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         outreachFollowupDays: value.outreachFollowupDays,
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
+        outreachEnabled: value.outreachEnabled,
         boards: value.boards,
         parkedBoards: value.parkedBoards,
         activeHours: value.activeHoursEnabled

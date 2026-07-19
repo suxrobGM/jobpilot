@@ -80,9 +80,10 @@ export class AgendaService {
       countAppliedToday(this.prisma, profileId, now, tz),
       gatherFinalizeCampaigns(this.prisma, profileId),
       gatherInbox(this.prisma, profileId),
-      gatherApprovedOutreach(this.prisma, profileId),
-      countSentToday(this.prisma, profileId, now, tz),
-      gatherFollowups(this.prisma, profileId, config, now),
+      // Outreach off: skip its gathers (the builder gates too, but these are pure waste when disabled).
+      config.outreachEnabled ? gatherApprovedOutreach(this.prisma, profileId) : [],
+      config.outreachEnabled ? countSentToday(this.prisma, profileId, now, tz) : 0,
+      config.outreachEnabled ? gatherFollowups(this.prisma, profileId, config, now) : [],
       gatherApprovedPromotions(this.prisma, profileId, now),
       duePlatforms(this.prisma, profileId, config, now),
       gatherInterviewReplies(this.prisma, profileId),
@@ -92,7 +93,7 @@ export class AgendaService {
     ]);
 
     // Warm-check join: attach same-company contacts to high-score jobs so the builder can offer a warm intro.
-    await attachWarmContacts(this.prisma, profileId, approvedJobs);
+    if (config.outreachEnabled) await attachWarmContacts(this.prisma, profileId, approvedJobs);
 
     // Discovery only matters when the apply pipeline is empty; skip the lease lookups otherwise.
     const dueQueries =

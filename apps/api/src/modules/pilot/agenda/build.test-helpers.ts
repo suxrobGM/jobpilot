@@ -6,8 +6,10 @@ import {
 } from "@jobpilot/contracts/pilot";
 import type { AgendaInput } from "./types";
 
+// Outreach is opt-in in prod, but these builder suites predate the flag and assert outreach behavior,
+// so default it on here; a test that wants it off passes `outreachEnabled: false`.
 export const cfg = (over: Record<string, unknown> = {}): PilotInstructionsConfig =>
-  pilotInstructionsConfigSchema.parse(over);
+  pilotInstructionsConfigSchema.parse({ outreachEnabled: true, ...over });
 
 export const NOW = new Date("2026-07-15T12:00:00.000Z"); // noon UTC, inside a 09-17 window
 
