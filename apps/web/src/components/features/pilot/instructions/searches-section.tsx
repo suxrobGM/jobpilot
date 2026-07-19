@@ -2,10 +2,11 @@
 
 import { Grid, InputAdornment } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
+import { useApiQuery } from "@/api/hooks";
+import { jobBoardQueries } from "@/api/queries";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { useKeyedList } from "@/hooks/use-keyed-list";
-import { FieldInfo } from "./field-info";
 import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
 import { InstructionsRowList } from "./row-list";
 
@@ -16,6 +17,8 @@ export const SearchesSection = withForm({
   render: function SearchesSection({ form }) {
     const searchCount = useSelector(form.store, (s) => s.values.savedSearches.length);
     const searchList = useKeyedList(searchCount);
+    const boardsQuery = useApiQuery(jobBoardQueries.list());
+    const domains = boardsQuery.data?.map((board) => board.domain) ?? [];
 
     return (
       <FormSection
@@ -53,17 +56,12 @@ export const SearchesSection = withForm({
                     <Grid size={{ xs: 12, sm: 7 }}>
                       <form.AppField name={`savedSearches[${i}].board`}>
                         {(sub) => (
-                          <sub.TextField
+                          <sub.Select
                             label="Board"
-                            placeholder="linkedin.com"
-                            helperText="Job-board domain to search. Leave blank to let the pilot choose."
-                            slotProps={{
-                              input: {
-                                endAdornment: (
-                                  <FieldInfo title="A configured job board's domain, e.g. linkedin.com. Manage boards on the Boards page." />
-                                ),
-                              },
-                            }}
+                            items={domains.map((d) => ({ value: d, label: d }))}
+                            optional
+                            emptyLabel="Let the pilot choose"
+                            helperText="Configured job board to search. Leave blank to let the pilot choose."
                           />
                         )}
                       </form.AppField>
