@@ -13,14 +13,14 @@ export function countAppliedToday(
   });
 }
 
-/** Outreach messages sent for the profile since the start of its tz-local day - the daily outreach cap's numerator. */
+/** Networking messages sent for the profile since the start of its tz-local day - the daily networking cap's numerator. */
 export function countSentToday(
-  prisma: Pick<PrismaClient, "outreachMessage">,
+  prisma: Pick<PrismaClient, "networkingMessage">,
   profileId: string,
   now: Date,
   tz?: string,
 ): Promise<number> {
-  return prisma.outreachMessage.count({
+  return prisma.networkingMessage.count({
     where: { profileId, sentAt: { gte: startOfDayInTz(now, tz) } },
   });
 }

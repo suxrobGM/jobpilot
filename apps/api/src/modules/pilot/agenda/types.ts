@@ -69,7 +69,7 @@ export interface AgendaInbox {
   count: number;
 }
 
-export interface AgendaOutreachSend {
+export interface AgendaNetworkingSend {
   campaignId: string;
   messageId: string;
   contactId: string;
@@ -152,8 +152,8 @@ export interface AgendaInput {
   dueQueries: AgendaDueQuery[];
   finalizeCampaigns: AgendaFinalizeCampaign[];
   inbox: AgendaInbox;
-  approvedOutreach: AgendaOutreachSend[];
-  outreachSentToday: number;
+  approvedNetworking: AgendaNetworkingSend[];
+  networkingSentToday: number;
   followups: AgendaFollowup[];
   duePlatforms: AgendaPromoPlatform[];
   approvedPromotions: AgendaPromoPost[];

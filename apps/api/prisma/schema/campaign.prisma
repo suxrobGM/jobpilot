@@ -11,10 +11,10 @@ model Campaign {
   config      String
   summary     String    @default("{}")
 
-  jobs             Job[]
-  events           CampaignEvent[]
-  applications     Application[]
-  outreachMessages OutreachMessage[]
+  jobs               Job[]
+  events             CampaignEvent[]
+  applications       Application[]
+  networkingMessages NetworkingMessage[]
 
   @@index([profileId])
   @@map("campaigns")

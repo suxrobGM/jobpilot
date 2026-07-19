@@ -16,7 +16,7 @@ import { SectionCard } from "@/components/ui/layout";
 /** Folds a campaign's summary into a single progress reading, type-aware. */
 function progress(campaign: CampaignDto): { value: number; label: string } {
   const s = campaign.summary;
-  if (campaign.source === "outreach") {
+  if (campaign.source === "networking") {
     const total = Math.max(s.discovered, 1);
     return { value: (s.sent / total) * 100, label: `${s.sent}/${s.discovered} sent` };
   }

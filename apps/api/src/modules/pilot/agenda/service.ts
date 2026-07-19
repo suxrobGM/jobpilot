@@ -22,10 +22,10 @@ import {
 import { gatherInterviewPreps, gatherInterviewReplies } from "./gather-interview";
 import {
   duePlatforms,
-  gatherApprovedOutreach,
+  gatherApprovedNetworking,
   gatherApprovedPromotions,
   gatherFollowups,
-} from "./gather-outreach";
+} from "./gather-networking";
 import { gatherBoardHealth, gatherQueueDrain, gatherQuietCandidates } from "./gather-proactive";
 import { verifyGrant } from "./grant";
 
@@ -61,8 +61,8 @@ export class AgendaService {
       appliedToday,
       finalizeCampaigns,
       inbox,
-      approvedOutreach,
-      outreachSentToday,
+      approvedNetworking,
+      networkingSentToday,
       followups,
       approvedPromotions,
       duePlatformList,
@@ -80,10 +80,10 @@ export class AgendaService {
       countAppliedToday(this.prisma, profileId, now, tz),
       gatherFinalizeCampaigns(this.prisma, profileId),
       gatherInbox(this.prisma, profileId),
-      // Outreach off: skip its gathers (the builder gates too, but these are pure waste when disabled).
-      config.outreachEnabled ? gatherApprovedOutreach(this.prisma, profileId) : [],
-      config.outreachEnabled ? countSentToday(this.prisma, profileId, now, tz) : 0,
-      config.outreachEnabled ? gatherFollowups(this.prisma, profileId, config, now) : [],
+      // Networking off: skip its gathers (the builder gates too, but these are pure waste when disabled).
+      config.networkingEnabled ? gatherApprovedNetworking(this.prisma, profileId) : [],
+      config.networkingEnabled ? countSentToday(this.prisma, profileId, now, tz) : 0,
+      config.networkingEnabled ? gatherFollowups(this.prisma, profileId, config, now) : [],
       gatherApprovedPromotions(this.prisma, profileId, now),
       duePlatforms(this.prisma, profileId, config, now),
       gatherInterviewReplies(this.prisma, profileId),
@@ -93,7 +93,7 @@ export class AgendaService {
     ]);
 
     // Warm-check join: attach same-company contacts to high-score jobs so the builder can offer a warm intro.
-    if (config.outreachEnabled) await attachWarmContacts(this.prisma, profileId, approvedJobs);
+    if (config.networkingEnabled) await attachWarmContacts(this.prisma, profileId, approvedJobs);
 
     // Discovery only matters when the apply pipeline is empty; skip the lease lookups otherwise.
     const dueQueries =
@@ -127,8 +127,8 @@ export class AgendaService {
       dueQueries,
       finalizeCampaigns,
       inbox,
-      approvedOutreach,
-      outreachSentToday,
+      approvedNetworking,
+      networkingSentToday,
       followups,
       duePlatforms: duePlatformList,
       approvedPromotions,

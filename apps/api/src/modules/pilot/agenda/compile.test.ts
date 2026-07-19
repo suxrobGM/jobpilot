@@ -42,7 +42,7 @@ describe("AgendaService warm-check join", () => {
       approvedJobs: [approvedJob({ matchScore: 90, company: "Acme" })],
       contacts: [insider],
     }).compile("p1");
-    const warm = agenda.items.find((i) => i.kind === "outreach.warmIntro");
+    const warm = agenda.items.find((i) => i.kind === "networking.warmIntro");
     const warmContacts = warm?.payload.contacts as { id: string }[] | undefined;
     expect(warmContacts?.[0].id).toBe("ct1");
     const apply = agenda.items.find((i) => i.kind === "job.apply");
@@ -55,7 +55,7 @@ describe("AgendaService warm-check join", () => {
       approvedJobs: [approvedJob({ matchScore: 84, company: "Acme" })],
       contacts: [insider],
     }).compile("p1");
-    expect(agenda.items.some((i) => i.kind === "outreach.warmIntro")).toBe(false);
+    expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
   });
 });
 

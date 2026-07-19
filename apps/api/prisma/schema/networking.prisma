@@ -23,14 +23,14 @@ model Contact {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  messages OutreachMessage[]
+  messages NetworkingMessage[]
 
   @@index([profileId])
   @@index([profileId, company])
   @@map("contacts")
 }
 
-model OutreachMessage {
+model NetworkingMessage {
   id         String    @id @default(uuid())
   profileId  String    @map("profile_id")
   profile    Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
@@ -58,5 +58,5 @@ model OutreachMessage {
   @@index([contactId])
   @@index([threadId])
   @@index([status])
-  @@map("outreach_messages")
+  @@map("networking_messages")
 }

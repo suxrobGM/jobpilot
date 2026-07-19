@@ -1,8 +1,8 @@
 import {
-  type AddCampaignOutreachInput,
-  type OutreachMessageResultInput,
-  type PatchOutreachMessageInput,
-} from "@jobpilot/contracts/outreach";
+  type AddCampaignNetworkingInput,
+  type NetworkingMessageResultInput,
+  type PatchNetworkingMessageInput,
+} from "@jobpilot/contracts/networking";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { findOwned, notFound, unprocessable } from "@/common/errors";
@@ -10,32 +10,32 @@ import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
 import { PilotService } from "@/modules/pilot/pilot.service";
-import { toOutreachMessageRow } from "../campaign.mapper";
-import { recomputeOutreachSummary } from "../campaign.summary";
+import { toNetworkingMessageRow } from "../campaign.mapper";
+import { recomputeNetworkingSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
 
 @singleton()
-export class CampaignOutreachService {
+export class CampaignNetworkingService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly pilot: PilotService,
   ) {}
 
-  /** List the campaign's outreach messages (with their contacts) for the board. */
-  async listOutreach(profileId: string, campaignId: string) {
-    const messages = await this.prisma.outreachMessage.findMany({
+  /** List the campaign's networking messages (with their contacts) for the board. */
+  async listNetworking(profileId: string, campaignId: string) {
+    const messages = await this.prisma.networkingMessage.findMany({
       where: { campaignId, profileId },
       include: { contact: true },
       orderBy: { id: "asc" },
     });
-    return messages.map(toOutreachMessageRow);
+    return messages.map(toNetworkingMessageRow);
   }
 
   /**
    * Add a discovered contact (or attach to an existing `contactId`) plus an
    * initial draft message to the campaign, then recompute the campaign summary.
    */
-  async addOutreach(profileId: string, campaignId: string, body: AddCampaignOutreachInput) {
+  async addNetworking(profileId: string, campaignId: string, body: AddCampaignNetworkingInput) {
     await ensureCampaignOwned(this.prisma, profileId, campaignId);
 
     const { contact, contactId, message } = body;
@@ -58,7 +58,7 @@ export class CampaignOutreachService {
         resolvedContactId = created.id;
       }
 
-      const outreachMessage = await tx.outreachMessage.create({
+      const networkingMessage = await tx.networkingMessage.create({
         data: {
           profileId,
           contactId: resolvedContactId!,
@@ -72,8 +72,8 @@ export class CampaignOutreachService {
         include: { contact: true },
       });
 
-      const summary = await recomputeOutreachSummary(tx, campaignId);
-      return { outreachMessage, summary };
+      const summary = await recomputeNetworkingSummary(tx, campaignId);
+      return { networkingMessage, summary };
     });
 
     if (!result) {
@@ -81,35 +81,35 @@ export class CampaignOutreachService {
     }
 
     // Push the new contact/message to the live campaign viewer.
-    publish(campaignChannel, { campaignId }, { type: "outreach-update" });
-    return toOutreachMessageRow(result.outreachMessage);
+    publish(campaignChannel, { campaignId }, { type: "networking-update" });
+    return toNetworkingMessageRow(result.networkingMessage);
   }
 
   /**
-   * Non-terminal edits to an outreach message - draft body/subject edits,
+   * Non-terminal edits to a networking message - draft body/subject edits,
    * `draft → approved`, and (via `contactLinkedinConnection`) the parent contact's
-   * connection state. Terminal outcomes go through `recordOutreachResult`.
+   * connection state. Terminal outcomes go through `recordNetworkingResult`.
    */
-  async patchOutreach(
+  async patchNetworking(
     profileId: string,
     campaignId: string,
     messageId: string,
-    body: PatchOutreachMessageInput,
+    body: PatchNetworkingMessageInput,
   ) {
     const existing = await findOwned(
       (where) =>
-        this.prisma.outreachMessage.findFirst({
+        this.prisma.networkingMessage.findFirst({
           where,
           select: { id: true, status: true, subject: true, body: true },
         }),
       { id: messageId, campaignId, profileId },
-      "Outreach message",
+      "Networking message",
     );
 
     const { contactLinkedinConnection, ...fields } = body;
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      const message = await tx.outreachMessage.update({
+      const message = await tx.networkingMessage.update({
         where: { id: messageId },
         data: {
           status: fields.status,
@@ -132,13 +132,13 @@ export class CampaignOutreachService {
 
       // Tile counts only move on a status change; skip the recompute on draft edits.
       if (fields.status) {
-        await recomputeOutreachSummary(tx, campaignId);
+        await recomputeNetworkingSummary(tx, campaignId);
       }
       return message;
     });
 
     // Refresh the live campaign board (e.g. a regenerated draft) without a reload.
-    publish(campaignChannel, { campaignId }, { type: "outreach-update" });
+    publish(campaignChannel, { campaignId }, { type: "networking-update" });
 
     // Draft-only approximation of a user edit: the agent regenerates drafts through this same route,
     // so we can't perfectly separate the two - gate on "draft" and treat any content change as a correction.
@@ -149,27 +149,27 @@ export class CampaignOutreachService {
         entries: [
           {
             kind: "correction",
-            summary: "Edited outreach draft.",
+            summary: "Edited networking draft.",
             detail: {
-              type: "outreach.edited",
+              type: "networking.edited",
               messageId,
               before: { subject: existing.subject, body: existing.body },
               after: { subject: updated.subject, body: updated.body },
             },
-            subjectType: "outreach",
+            subjectType: "networking",
             subjectId: messageId,
           },
         ],
       });
     }
 
-    return toOutreachMessageRow(updated);
+    return toNetworkingMessageRow(updated);
   }
 
   /**
    * Server-side send gate, enforced regardless of what the agent claims: a LinkedIn InMail may
    * only be sent once the user approved it (InMails cost credits / are irreversible). The daily
-   * outreach cap is NOT checked here - this runs after the email already left, so rejecting the
+   * networking cap is NOT checked here - this runs after the email already left, so rejecting the
    * bookkeeping would leave sentAt null and let the agenda re-emit the message (duplicate email);
    * the agenda's headroom slicing is the real cap gate.
    */
@@ -186,20 +186,20 @@ export class CampaignOutreachService {
   }
 
   /**
-   * Terminal-outcome handoff for an outreach message: marks it `sent`/`failed`/
+   * Terminal-outcome handoff for a networking message: marks it `sent`/`failed`/
    * `skipped`, stamps `sentAt` + the Gmail `providerId`/`threadId`, and recomputes
    * the campaign summary. Mirrors campaigns/[id]/jobs/[key]/result.
    */
-  async recordOutreachResult(
+  async recordNetworkingResult(
     profileId: string,
     campaignId: string,
     messageId: string,
-    data: OutreachMessageResultInput,
+    data: NetworkingMessageResultInput,
   ) {
     const existing = await findOwned(
-      (where) => this.prisma.outreachMessage.findFirst({ where }),
+      (where) => this.prisma.networkingMessage.findFirst({ where }),
       { id: messageId, campaignId, profileId },
-      "Outreach message",
+      "Networking message",
     );
 
     if (data.outcome === "sent") {
@@ -210,7 +210,7 @@ export class CampaignOutreachService {
       data.outcome === "sent" ? (data.sentAt ? new Date(data.sentAt) : new Date()) : null;
 
     const result = await this.prisma.$transaction(async (tx) => {
-      const message = await tx.outreachMessage.update({
+      const message = await tx.networkingMessage.update({
         where: { id: messageId },
         data: {
           status: data.outcome,
@@ -222,12 +222,12 @@ export class CampaignOutreachService {
         },
         include: { contact: true },
       });
-      const summary = await recomputeOutreachSummary(tx, campaignId);
+      const summary = await recomputeNetworkingSummary(tx, campaignId);
       return { message, summary };
     });
 
     // Refresh the live campaign viewer on the terminal outcome.
-    publish(campaignChannel, { campaignId }, { type: "outreach-update" });
-    return { message: toOutreachMessageRow(result.message), summary: result.summary };
+    publish(campaignChannel, { campaignId }, { type: "networking-update" });
+    return { message: toNetworkingMessageRow(result.message), summary: result.summary };
   }
 }

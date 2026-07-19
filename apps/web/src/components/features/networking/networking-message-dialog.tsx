@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@jobpilot/contracts/outreach";
+import { NETWORKING_MESSAGE_TERMINAL_STATUSES } from "@jobpilot/contracts/networking";
 import { Close } from "@mui/icons-material";
 import {
   Button,
@@ -16,29 +16,29 @@ import {
 } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import type { OutreachMessageDto } from "@/api/types";
+import type { NetworkingMessageDto } from "@/api/types";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 
-interface OutreachMessageDialogProps {
+interface NetworkingMessageDialogProps {
   campaignId: string;
-  message: OutreachMessageDto;
+  message: NetworkingMessageDto;
   canSend: boolean;
   invalidate: ReadonlyArray<ReadonlyArray<unknown>>;
   onClose: () => void;
   onSkip: () => void;
 }
 
-export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactElement {
+export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): ReactElement {
   const { campaignId, message, canSend, invalidate, onClose, onSkip } = props;
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
-  const messageApi = api.campaigns({ id: campaignId }).outreach({ messageId: message.id });
+  const messageApi = api.campaigns({ id: campaignId }).networking({ messageId: message.id });
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";
-  const terminal = OUTREACH_MESSAGE_TERMINAL_STATUSES.includes(message.status);
+  const terminal = NETWORKING_MESSAGE_TERMINAL_STATUSES.includes(message.status);
 
   const save = useApiMutation<unknown, void>(
     () => messageApi.patch({ subject: subject || null, body }),
@@ -73,7 +73,7 @@ export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactE
   const canSendEmail = isEmail && canSend && !!message.contact.email && !terminal;
 
   const regenerate = (): void => {
-    void agent.injectSkill("outreach", `--campaign ${campaignId} --rewrite ${message.id}`);
+    void agent.injectSkill("networking", `--campaign ${campaignId} --rewrite ${message.id}`);
     onClose();
   };
 

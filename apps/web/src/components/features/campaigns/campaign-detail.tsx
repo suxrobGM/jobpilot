@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import { OutreachBoard } from "@/components/features/outreach";
+import { NetworkingBoard } from "@/components/features/networking";
 import { useSseChannel } from "@/lib/sse/client";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
@@ -32,8 +32,8 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
         queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
       },
       on: {
-        "outreach-update": () => {
-          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.outreach(campaignId) });
+        "networking-update": () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.networking(campaignId) });
         },
       },
     },
@@ -45,15 +45,15 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   const campaign = detail.data;
 
-  if (campaign.source === "outreach") {
+  if (campaign.source === "networking") {
     return (
       <Stack spacing={3}>
         <CampaignHeaderCard campaign={campaign} />
-        <OutreachBoard
+        <NetworkingBoard
           campaignId={campaignId}
           status={campaign.status}
           summary={campaign.summary}
-          config={campaign.config.outreach}
+          config={campaign.config.networking}
         />
       </Stack>
     );

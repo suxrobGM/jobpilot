@@ -6,10 +6,10 @@ import {
 } from "@jobpilot/contracts/pilot";
 import type { AgendaInput } from "./types";
 
-// Outreach is opt-in in prod, but these builder suites predate the flag and assert outreach behavior,
-// so default it on here; a test that wants it off passes `outreachEnabled: false`.
+// Networking is opt-in in prod, but these builder suites predate the flag and assert networking behavior,
+// so default it on here; a test that wants it off passes `networkingEnabled: false`.
 export const cfg = (over: Record<string, unknown> = {}): PilotInstructionsConfig =>
-  pilotInstructionsConfigSchema.parse({ outreachEnabled: true, ...over });
+  pilotInstructionsConfigSchema.parse({ networkingEnabled: true, ...over });
 
 export const NOW = new Date("2026-07-15T12:00:00.000Z"); // noon UTC, inside a 09-17 window
 
@@ -24,8 +24,8 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   dueQueries: [],
   finalizeCampaigns: [],
   inbox: { messageIds: [], count: 0 },
-  approvedOutreach: [],
-  outreachSentToday: 0,
+  approvedNetworking: [],
+  networkingSentToday: 0,
   followups: [],
   duePlatforms: [],
   approvedPromotions: [],

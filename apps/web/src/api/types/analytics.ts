@@ -11,7 +11,7 @@ export type AnalyticsPerDayEntry = AnalyticsStatsDto["perDay"][number];
 export type AnalyticsTopBoardEntry = AnalyticsStatsDto["topBoards"][number];
 export type AnalyticsTopReasonEntry = AnalyticsStatsDto["topRejectReasons"][number];
 
-export type AnalyticsOutreachStats = AnalyticsStatsDto["outreach"];
-export type AnalyticsOutreachTotals = AnalyticsOutreachStats["totals"];
-export type AnalyticsOutreachWeekly = AnalyticsOutreachStats["thisWeek"];
-export type AnalyticsContactSourceEntry = AnalyticsOutreachStats["topContactSources"][number];
+export type AnalyticsNetworkingStats = AnalyticsStatsDto["networking"];
+export type AnalyticsNetworkingTotals = AnalyticsNetworkingStats["totals"];
+export type AnalyticsNetworkingWeekly = AnalyticsNetworkingStats["thisWeek"];
+export type AnalyticsContactSourceEntry = AnalyticsNetworkingStats["topContactSources"][number];

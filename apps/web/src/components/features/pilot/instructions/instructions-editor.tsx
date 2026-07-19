@@ -17,7 +17,7 @@ import { BoardsSection } from "./boards-section";
 import { type InstructionsFormValues, instructionsFormSchema } from "./form-schema";
 import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
-import { OutreachSection } from "./outreach-section";
+import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
 import { SearchesSection } from "./searches-section";
 
@@ -30,7 +30,7 @@ const SECTIONS: (SectionAnchor & { Section: typeof GoalsSection })[] = [
   { id: "goals", label: "Goals", Section: GoalsSection },
   { id: "limits", label: "Operating limits", Section: LimitsSection },
   { id: "active-hours", label: "Active hours", Section: ActiveHoursSection },
-  { id: "outreach", label: "Outreach", Section: OutreachSection },
+  { id: "networking", label: "Networking", Section: NetworkingSection },
   { id: "boards", label: "Boards", Section: BoardsSection },
   { id: "searches", label: "Saved searches", Section: SearchesSection },
   { id: "platforms", label: "Platforms", Section: PlatformsSection },
@@ -41,17 +41,17 @@ function toFormValues(state: PilotState): InstructionsFormValues {
   return {
     goals: state.instructionsGoals,
     dailyApplyCap: c.dailyApplyCap,
-    dailyOutreachCap: c.dailyOutreachCap,
-    outreachFollowupDays: c.outreachFollowupDays,
+    dailyNetworkingCap: c.dailyNetworkingCap,
+    networkingFollowupDays: c.networkingFollowupDays,
     minScore: c.minScore,
     checkIntervalMinutes: c.checkIntervalMinutes,
-    outreachEnabled: c.outreachEnabled,
+    networkingEnabled: c.networkingEnabled,
     activeHoursEnabled: Boolean(c.activeHours),
     activeHoursStart: c.activeHours?.start ?? "09:00",
     activeHoursEnd: c.activeHours?.end ?? "17:00",
     activeHoursTz: c.activeHours?.tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
-    outreachEmail: c.autonomy.outreachEmail,
-    outreachLinkedIn: c.autonomy.outreachLinkedIn,
+    networkingEmail: c.autonomy.networkingEmail,
+    networkingLinkedIn: c.autonomy.networkingLinkedIn,
     boards: [...c.boards],
     parkedBoards: [...c.parkedBoards],
     savedSearches: c.savedSearches.map((q) => ({
@@ -84,11 +84,11 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
     onSubmit: async ({ value }) => {
       const config: PilotInstructionsConfig = {
         dailyApplyCap: value.dailyApplyCap,
-        dailyOutreachCap: value.dailyOutreachCap,
-        outreachFollowupDays: value.outreachFollowupDays,
+        dailyNetworkingCap: value.dailyNetworkingCap,
+        networkingFollowupDays: value.networkingFollowupDays,
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
-        outreachEnabled: value.outreachEnabled,
+        networkingEnabled: value.networkingEnabled,
         boards: value.boards,
         parkedBoards: value.parkedBoards,
         activeHours: value.activeHoursEnabled
@@ -105,8 +105,8 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
           resumeId: q.resumeId || undefined,
         })),
         autonomy: {
-          outreachEmail: value.outreachEmail,
-          outreachLinkedIn: value.outreachLinkedIn,
+          networkingEmail: value.networkingEmail,
+          networkingLinkedIn: value.networkingLinkedIn,
         },
         promotion: {
           platforms: value.promotionPlatforms.map((p) => ({

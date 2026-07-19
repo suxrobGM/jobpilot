@@ -2,7 +2,7 @@ import { db } from "@/common/database";
 import { emailNotVerified } from "@/common/errors";
 
 /**
- * Gate for outward-facing actions (creating campaigns, composing outreach):
+ * Gate for outward-facing actions (creating campaigns, composing networking messages):
  * email verification is otherwise non-blocking, so this is the only enforcement.
  */
 export async function requireVerifiedEmail(userId: string): Promise<void> {

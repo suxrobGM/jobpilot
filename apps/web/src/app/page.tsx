@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 const SOFTWARE_DESCRIPTION =
-  "JobPilot's local Pilot runs your job search autonomously on your own Claude Code or Codex subscription - finding roles, tailoring your resume, applying, sending outreach, and reviewing recruiter replies, review-gated and journaled.";
+  "JobPilot's local Pilot runs your job search autonomously on your own Claude Code or Codex subscription - finding roles, tailoring your resume, applying, sending networking messages, and reviewing recruiter replies, review-gated and journaled.";
 
 export default function LandingPage(): ReactElement {
   return (

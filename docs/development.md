@@ -93,7 +93,7 @@ flowchart LR
 ### Components
 
 - **[apps/web/](../apps/web/)** - Next.js UI: pipeline, campaigns with live
-  per-job progress, inbox, outreach, resume studio, Upwork, analytics,
+  per-job progress, inbox, networking, resume studio, Upwork, analytics,
   settings, and the agent dock (an xterm.js panel that installs, launches,
   and monitors the local agent). Browser and server both call the API
   directly via `API_BASE_URL` - no proxy.
@@ -123,7 +123,7 @@ finishes with `/reload-plugins` on Claude.
 - `skills/<name>/SKILL.md` - one workflow per directory; shared docs in
   `shared/`. Skills reference siblings by name and shared docs by
   relative path, so the same text serves both providers.
-- `agents/*.md` - worker subagents (`job-worker`, `outreach-worker`) that
+- `agents/*.md` - worker subagents (`job-worker`, `networking-worker`) that
   campaign skills delegate per-iteration work to, isolating heavy browser
   output. Claude auto-discovers them; [.codex/agents/](../.codex/agents/)
   point at the same `.md` bodies. Runtimes without subagents run inline.

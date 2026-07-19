@@ -37,7 +37,7 @@ export function ProfileChecklistCard(): ReactElement | null {
   const items: ChecklistItem[] = [
     {
       key: "verify-email",
-      label: "Verify your email - unlocks applying and outreach",
+      label: "Verify your email - unlocks applying and networking",
       done: user.emailVerified,
       href: "/verify-email" as Route,
       action: "Resend link",

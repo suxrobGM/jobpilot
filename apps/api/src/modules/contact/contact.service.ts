@@ -2,7 +2,7 @@ import {
   contactDiscoverySourceSchema,
   contactEmailSourceSchema,
   contactLinkedinConnectionSchema,
-} from "@jobpilot/contracts/outreach";
+} from "@jobpilot/contracts/networking";
 import { singleton } from "tsyringe";
 import type { z } from "zod/v4";
 import { PrismaClient } from "@/generated/prisma/client";

@@ -15,7 +15,7 @@ describe("buildAgenda M3 kinds", () => {
             warmContacts: [{ id: "w1", name: "W", title: null, email: "w@acme.test" }],
           },
         ],
-        approvedOutreach: [send("m1")],
+        approvedNetworking: [send("m1")],
         inbox: { messageIds: ["e1"], count: 1 },
         approvedPromotions: [
           { id: "p1", platform: "hn-whoishiring", target: null, title: "t", body: "b" },
@@ -27,11 +27,11 @@ describe("buildAgenda M3 kinds", () => {
     );
     expect(agenda.items.map((i) => i.kind)).toEqual([
       "job.apply",
-      "outreach.send",
+      "networking.send",
       "inbox.review",
       "promo.post",
-      "outreach.warmIntro",
-      "outreach.followup",
+      "networking.warmIntro",
+      "networking.followup",
       "promo.compose",
       "campaign.finalize",
     ]);
@@ -44,65 +44,65 @@ describe("buildAgenda M3 kinds", () => {
     expect(item?.subjectType).toBe("inbox");
   });
 
-  it("caps outreach.send at the daily headroom and never emits linkedin drafts as sends", () => {
+  it("caps networking.send at the daily headroom and never emits linkedin drafts as sends", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ dailyOutreachCap: 2 }),
-        outreachSentToday: 1,
-        approvedOutreach: [send("m1"), send("m2"), send("m3")],
+        config: cfg({ dailyNetworkingCap: 2 }),
+        networkingSentToday: 1,
+        approvedNetworking: [send("m1"), send("m2"), send("m3")],
       }),
     );
-    const sends = agenda.items.filter((i) => i.kind === "outreach.send");
+    const sends = agenda.items.filter((i) => i.kind === "networking.send");
     expect(sends).toHaveLength(1); // 2 cap - 1 sent = 1 headroom
     expect(sends[0].payload.contactEmail).toBe("dana@acme.test");
   });
 
-  it("suppresses outreach.send entirely once the outreach cap is spent", () => {
+  it("suppresses networking.send entirely once the networking cap is spent", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ dailyOutreachCap: 2 }),
-        outreachSentToday: 2,
-        approvedOutreach: [send("m1")],
+        config: cfg({ dailyNetworkingCap: 2 }),
+        networkingSentToday: 2,
+        approvedNetworking: [send("m1")],
       }),
     );
-    expect(agenda.items.some((i) => i.kind === "outreach.send")).toBe(false);
+    expect(agenda.items.some((i) => i.kind === "networking.send")).toBe(false);
   });
 
   it("emits at most 2 followups and only while send headroom exists", () => {
     const withHeadroom = buildAgenda(
       base({ followups: [followup("m1"), followup("m2"), followup("m3")] }),
     );
-    expect(withHeadroom.items.filter((i) => i.kind === "outreach.followup")).toHaveLength(2);
+    expect(withHeadroom.items.filter((i) => i.kind === "networking.followup")).toHaveLength(2);
 
     const noHeadroom = buildAgenda(
       base({
-        config: cfg({ dailyOutreachCap: 1 }),
-        outreachSentToday: 1,
+        config: cfg({ dailyNetworkingCap: 1 }),
+        networkingSentToday: 1,
         followups: [followup("m1")],
       }),
     );
-    expect(noHeadroom.items.some((i) => i.kind === "outreach.followup")).toBe(false);
+    expect(noHeadroom.items.some((i) => i.kind === "networking.followup")).toBe(false);
   });
 
   it("gives followups only the headroom the emitted sends left over", () => {
     const leftOne = buildAgenda(
       base({
-        config: cfg({ dailyOutreachCap: 2 }),
-        approvedOutreach: [send("m1")],
+        config: cfg({ dailyNetworkingCap: 2 }),
+        approvedNetworking: [send("m1")],
         followups: [followup("f1"), followup("f2")],
       }),
     );
-    expect(leftOne.items.filter((i) => i.kind === "outreach.followup")).toHaveLength(1);
+    expect(leftOne.items.filter((i) => i.kind === "networking.followup")).toHaveLength(1);
 
     const spent = buildAgenda(
       base({
-        config: cfg({ dailyOutreachCap: 2 }),
-        approvedOutreach: [send("m1"), send("m2")],
+        config: cfg({ dailyNetworkingCap: 2 }),
+        approvedNetworking: [send("m1"), send("m2")],
         followups: [followup("f1")],
       }),
     );
-    expect(spent.items.filter((i) => i.kind === "outreach.send")).toHaveLength(2);
-    expect(spent.items.some((i) => i.kind === "outreach.followup")).toBe(false);
+    expect(spent.items.filter((i) => i.kind === "networking.send")).toHaveLength(2);
+    expect(spent.items.some((i) => i.kind === "networking.followup")).toBe(false);
   });
 
   it("emits a warmIntro and attaches warmContacts to the apply payload only at score >= 85", () => {
@@ -110,14 +110,14 @@ describe("buildAgenda M3 kinds", () => {
     const hot = buildAgenda(
       base({ approvedJobs: [{ ...job("j1", 85), company: "Acme", warmContacts: warm }] }),
     );
-    expect(hot.items.some((i) => i.kind === "outreach.warmIntro")).toBe(true);
+    expect(hot.items.some((i) => i.kind === "networking.warmIntro")).toBe(true);
     const apply = hot.items.find((i) => i.kind === "job.apply");
     expect(apply?.payload.warmContacts).toEqual(warm);
 
     const cold = buildAgenda(
       base({ approvedJobs: [{ ...job("j2", 84), company: "Acme", warmContacts: warm }] }),
     );
-    expect(cold.items.some((i) => i.kind === "outreach.warmIntro")).toBe(false);
+    expect(cold.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
   });
 
   it("emits at most one warmIntro per agenda", () => {
@@ -130,25 +130,25 @@ describe("buildAgenda M3 kinds", () => {
         ],
       }),
     );
-    expect(agenda.items.filter((i) => i.kind === "outreach.warmIntro")).toHaveLength(1);
+    expect(agenda.items.filter((i) => i.kind === "networking.warmIntro")).toHaveLength(1);
   });
 
-  it("suppresses every outreach kind when outreachEnabled is false", () => {
+  it("suppresses every networking kind when networkingEnabled is false", () => {
     const warm = [{ id: "w1", name: "Insider", title: null, email: "in@acme.test" }];
     const agenda = buildAgenda(
       base({
-        config: cfg({ outreachEnabled: false }),
+        config: cfg({ networkingEnabled: false }),
         approvedJobs: [{ ...job("j1", 90), company: "Acme", warmContacts: warm }],
-        approvedOutreach: [send("m1")],
+        approvedNetworking: [send("m1")],
         followups: [followup("f1")],
         inbox: { messageIds: ["e1"], count: 1 },
       }),
     );
     const kinds = agenda.items.map((i) => i.kind);
-    expect(kinds).not.toContain("outreach.warmIntro");
-    expect(kinds).not.toContain("outreach.send");
-    expect(kinds).not.toContain("outreach.followup");
-    // Inbox triage is not outreach: it must still surface so interview mail is seen.
+    expect(kinds).not.toContain("networking.warmIntro");
+    expect(kinds).not.toContain("networking.send");
+    expect(kinds).not.toContain("networking.followup");
+    // Inbox triage is not networking: it must still surface so interview mail is seen.
     expect(kinds).toContain("inbox.review");
   });
 
@@ -172,7 +172,7 @@ describe("buildAgenda M3 kinds", () => {
       base({
         now: new Date("2026-07-15T03:00:00.000Z"),
         config: hours,
-        approvedOutreach: [send("m1")],
+        approvedNetworking: [send("m1")],
         inbox: { messageIds: ["e1"], count: 1 },
         approvedPromotions: [{ id: "p1", platform: "hn", target: null, title: null, body: "b" }],
         followups: [followup("m9")],
@@ -229,20 +229,20 @@ describe("buildAgenda interview kinds", () => {
     expect(agenda.items.filter((i) => i.kind === "interview.prep")).toHaveLength(1);
   });
 
-  it("ranks interview.reply above job.apply and interview.prep between apply and outreach.send", () => {
+  it("ranks interview.reply above job.apply and interview.prep between apply and networking.send", () => {
     const agenda = buildAgenda(
       base({
         interviewReplies: [reply("em1")],
         interviewPreps: [prep("app1")],
         approvedJobs: [job("j1", 40)],
-        approvedOutreach: [send("m1")],
+        approvedNetworking: [send("m1")],
       }),
     );
     expect(agenda.items.map((i) => i.kind)).toEqual([
       "interview.reply",
       "job.apply",
       "interview.prep",
-      "outreach.send",
+      "networking.send",
     ]);
   });
 

@@ -49,7 +49,7 @@ export function ConnectCard(): ReactElement {
     return (
       <SectionCard
         title="Email integration"
-        description="Connect a mailbox so JobPilot can track replies, auto-fill verification codes, and send outreach."
+        description="Connect a mailbox so JobPilot can track replies, auto-fill verification codes, and send networking messages."
       >
         <LoadingSpinner />
       </SectionCard>
@@ -64,7 +64,7 @@ export function ConnectCard(): ReactElement {
     return (
       <SectionCard
         title="Email integration"
-        description="JobPilot reads new mail to track replies and auto-fill verification codes, and sends outreach emails on your behalf."
+        description="JobPilot reads new mail to track replies and auto-fill verification codes, and sends networking emails on your behalf."
       >
         <Stack spacing={1.5}>
           <Box>
@@ -82,7 +82,7 @@ export function ConnectCard(): ReactElement {
           )}
           {configured && !status.canSend && (
             <Alert severity="info">
-              This mailbox is read-only, so outreach can&apos;t send email yet. Add the{" "}
+              This mailbox is read-only, so networking can&apos;t send email yet. Add the{" "}
               <code>gmail.send</code> scope to your OAuth client, then use{" "}
               <strong>Reconnect to enable sending</strong> below.
             </Alert>
@@ -107,7 +107,7 @@ export function ConnectCard(): ReactElement {
   return (
     <SectionCard
       title="Email integration"
-      description="Connect Gmail so JobPilot can track recruiter replies, auto-fill verification codes, and send outreach emails."
+      description="Connect Gmail so JobPilot can track recruiter replies, auto-fill verification codes, and send networking emails."
     >
       <Stack spacing={1.5} sx={{ maxWidth: 360 }}>
         <Select size="small" value={provider} onChange={(e) => setProvider(e.target.value)}>

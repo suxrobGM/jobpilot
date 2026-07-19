@@ -173,10 +173,10 @@ export class CampaignService {
       ),
       config: JSON.parse(campaign.config) as CampaignConfig,
       // Job-based campaigns derive the summary from their loaded jobs so the tiles
-      // always match the rows; outreach campaigns have no jobs, so their
-      // recomputed `Campaign.summary` (OutreachMessage aggregates) is authoritative.
+      // always match the rows; networking campaigns have no jobs, so their
+      // recomputed `Campaign.summary` (NetworkingMessage aggregates) is authoritative.
       summary:
-        campaign.source === "outreach"
+        campaign.source === "networking"
           ? (JSON.parse(campaign.summary) as CampaignSummary)
           : summarizeJobs(campaign.jobs),
     };
@@ -250,7 +250,7 @@ export class CampaignService {
 
   /**
    * Hard-delete a campaign and all of its related data. Prisma only cascades Job
-   * and CampaignEvent; Application and OutreachMessage use `onDelete: SetNull`, so
+   * and CampaignEvent; Application and NetworkingMessage use `onDelete: SetNull`, so
    * they (and campaign-only contacts) are deleted explicitly inside a transaction
    * before the campaign row. Synced EmailMessages are kept (matchedAppId SetNull).
    */
@@ -263,7 +263,7 @@ export class CampaignService {
 
     await this.prisma.$transaction(async (tx) => {
       const contactIds = (
-        await tx.outreachMessage.findMany({
+        await tx.networkingMessage.findMany({
           where: { campaignId: id, profileId },
           select: { contactId: true },
         })
@@ -271,7 +271,7 @@ export class CampaignService {
 
       // Cascades ApplicationEvent / ResumeVariant; SetNull on EmailMessage & Contact links.
       await tx.application.deleteMany({ where: { campaignId: id, profileId } });
-      await tx.outreachMessage.deleteMany({ where: { campaignId: id, profileId } });
+      await tx.networkingMessage.deleteMany({ where: { campaignId: id, profileId } });
 
       // Only contacts left with no messages and no related application - i.e. ones
       // that existed solely for this campaign. Skips contacts referenced elsewhere.

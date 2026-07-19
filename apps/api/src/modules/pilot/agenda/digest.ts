@@ -20,8 +20,8 @@ interface DigestCounts {
   jobsFailed: number;
   jobsSkipped: number;
   openQuestions: number;
-  outreachSent: number;
-  outreachReplies: number;
+  networkingSent: number;
+  networkingReplies: number;
   promotionsPosted: number;
 }
 
@@ -30,7 +30,7 @@ function composeDigestSummary(c: DigestCounts): string {
   const parts = [
     `${c.applicationsCreated} application${c.applicationsCreated === 1 ? "" : "s"}`,
     `${c.jobsFailed + c.jobsSkipped} not applied`,
-    `${c.outreachSent} outreach sent (${c.outreachReplies} repl${c.outreachReplies === 1 ? "y" : "ies"})`,
+    `${c.networkingSent} networking sent (${c.networkingReplies} repl${c.networkingReplies === 1 ? "y" : "ies"})`,
     `${c.promotionsPosted} post${c.promotionsPosted === 1 ? "" : "s"} published`,
     `${c.openQuestions} open question${c.openQuestions === 1 ? "" : "s"}`,
   ];
@@ -67,8 +67,8 @@ export async function writeDigestIfDue(
         applicationsCreated,
         jobsFailed,
         jobsSkipped,
-        outreachSent,
-        outreachReplies,
+        networkingSent,
+        networkingReplies,
         promotionsPosted,
       ] = await Promise.all([
         tx.application.count({ where: { profileId, appliedAt: { gte: windowStart } } }),
@@ -78,8 +78,8 @@ export async function writeDigestIfDue(
         tx.job.count({
           where: { status: "skipped", campaign: { profileId }, createdAt: { gte: windowStart } },
         }),
-        tx.outreachMessage.count({ where: { profileId, sentAt: { gte: windowStart } } }),
-        tx.outreachMessage.count({ where: { profileId, repliedAt: { gte: windowStart } } }),
+        tx.networkingMessage.count({ where: { profileId, sentAt: { gte: windowStart } } }),
+        tx.networkingMessage.count({ where: { profileId, repliedAt: { gte: windowStart } } }),
         tx.promotionPost.count({
           where: { profileId, status: "posted", postedAt: { gte: windowStart } },
         }),
@@ -90,8 +90,8 @@ export async function writeDigestIfDue(
         jobsFailed,
         jobsSkipped,
         openQuestions,
-        outreachSent,
-        outreachReplies,
+        networkingSent,
+        networkingReplies,
         promotionsPosted,
       };
       const summary = composeDigestSummary(counts);

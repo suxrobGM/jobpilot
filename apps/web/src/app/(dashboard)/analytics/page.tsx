@@ -9,7 +9,7 @@ export default function AnalyticsPage(): ReactElement {
       <PageHeader
         eyebrow="Workspace"
         title="Analytics"
-        description="Roll-up stats across your applications, campaigns, and outreach."
+        description="Roll-up stats across your applications, campaigns, and networking."
       />
       <AnalyticsView />
     </Container>

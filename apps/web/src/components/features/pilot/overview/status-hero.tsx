@@ -31,7 +31,8 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
 
   const pilot = hostStatus?.pilot ?? null;
   const enabled = state.enabled;
-  const { dailyApplyCap, dailyOutreachCap, minScore, outreachEnabled } = state.instructionsConfig;
+  const { dailyApplyCap, dailyNetworkingCap, minScore, networkingEnabled } =
+    state.instructionsConfig;
   const { appliedToday, capReached } = state;
   const progress = dailyApplyCap > 0 ? Math.min(100, (appliedToday / dailyApplyCap) * 100) : 0;
 
@@ -39,7 +40,7 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
     const ok = await confirm({
       title: "Disable the pilot?",
       description:
-        "The pilot stops running cycles: no applying, outreach, or posting until you enable it again.",
+        "The pilot stops running cycles: no applying, networking, or posting until you enable it again.",
       confirmLabel: "Disable",
       destructive: true,
     });
@@ -171,11 +172,11 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
                 <StatCard label="Daily cap" value={dailyApplyCap} />
               </Grid>
               <Grid size={4}>
-                {/* Cap only: no endpoint exposes outreach-sent-today, so a meter would lie. */}
+                {/* Cap only: no endpoint exposes networking-sent-today, so a meter would lie. */}
                 <StatCard
-                  label="Outreach cap"
-                  value={outreachEnabled ? dailyOutreachCap : "Off"}
-                  hint={outreachEnabled ? "per day" : "disabled"}
+                  label="Networking cap"
+                  value={networkingEnabled ? dailyNetworkingCap : "Off"}
+                  hint={networkingEnabled ? "per day" : "disabled"}
                 />
               </Grid>
             </Grid>

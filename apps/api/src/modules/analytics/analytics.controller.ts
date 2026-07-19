@@ -16,6 +16,6 @@ export const analyticsController = new Elysia({
     detail: {
       summary: "Get dashboard analytics summary",
       description:
-        "Aggregates the active profile's application and outreach activity into a single dashboard summary, returning totals, this-week counts, response and reply rates, stage breakdown, 30-day per-day timelines, and top boards, reject reasons, and contact sources.",
+        "Aggregates the active profile's application and networking activity into a single dashboard summary, returning totals, this-week counts, response and reply rates, stage breakdown, 30-day per-day timelines, and top boards, reject reasons, and contact sources.",
     },
   });

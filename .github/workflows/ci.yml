@@ -126,7 +126,7 @@ jobs:
                    plugin/shared/setup.md \
                    plugin/skills/auto-apply/SKILL.md \
                    .codex/agents/job-worker.toml \
-                   .codex/agents/outreach-worker.toml; do
+                   .codex/agents/networking-worker.toml; do
             test -e "$f" || { echo "missing from publish root: $f"; exit 1; }
           done
           test ! -e .agents/plugins/marketplace.json || {

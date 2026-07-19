@@ -27,10 +27,10 @@ interface CampaignRowProps {
   onOpenDetail?: (campaign: CampaignDto) => void;
 }
 
-/** Outreach campaigns track contacts/messages; job campaigns track applications. */
+/** Networking campaigns track contacts/messages; job campaigns track applications. */
 function summaryLine(campaign: CampaignDto): string {
   const s = campaign.summary;
-  if (campaign.source === "outreach") {
+  if (campaign.source === "networking") {
     return `${s.discovered} found · ${s.sent} sent · ${s.replied} replied`;
   }
   const tail = s.remaining > 0 ? ` · ${s.remaining} left` : "";

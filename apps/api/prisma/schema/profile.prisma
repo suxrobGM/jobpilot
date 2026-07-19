@@ -35,27 +35,27 @@ model Profile {
   primaryResume   Resume?  @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
   resumes         Resume[]
 
-  autoApply         AutoApplySettings?
-  applications      Application[]
-  campaigns         Campaign[]
-  credentials       Credential[]
-  jobBoards         ProfileJobBoard[]
-  queueEntries      QueueEntry[]
-  emailAccount      EmailAccount?
-  emailOAuthClient  EmailOAuthClient?
-  upworkProposals   UpworkProposal[]
-  upworkProfile     UpworkProfile?
-  references        Reference[]
-  salaryPreferences SalaryPreference[]
-  contacts          Contact[]
-  outreachMessages  OutreachMessage[]
-  coverLetters      CoverLetter[]
-  pilotState        PilotState?
-  pilotLeases       PilotLease[]
-  questions         Question[]
-  pilotJournal      PilotJournalEntry[]
-  pushSubscriptions PushSubscription[]
-  promotionPosts    PromotionPost[]
+  autoApply          AutoApplySettings?
+  applications       Application[]
+  campaigns          Campaign[]
+  credentials        Credential[]
+  jobBoards          ProfileJobBoard[]
+  queueEntries       QueueEntry[]
+  emailAccount       EmailAccount?
+  emailOAuthClient   EmailOAuthClient?
+  upworkProposals    UpworkProposal[]
+  upworkProfile      UpworkProfile?
+  references         Reference[]
+  salaryPreferences  SalaryPreference[]
+  contacts           Contact[]
+  networkingMessages NetworkingMessage[]
+  coverLetters       CoverLetter[]
+  pilotState         PilotState?
+  pilotLeases        PilotLease[]
+  questions          Question[]
+  pilotJournal       PilotJournalEntry[]
+  pushSubscriptions  PushSubscription[]
+  promotionPosts     PromotionPost[]
 
   updatedAt DateTime @updatedAt @map("updated_at")
 

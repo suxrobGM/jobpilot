@@ -5,10 +5,10 @@ import { useSelector } from "@tanstack/react-form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { COMPOSER_DEFAULT_VALUES, isBoardSelected } from "./form-config";
 
-/** Outreach campaign fields: channels, LinkedIn tier, job cap, autonomy, resume handling. */
-export const OutreachFields = withForm({
+/** Networking campaign fields: channels, LinkedIn tier, job cap, autonomy, resume handling. */
+export const NetworkingFields = withForm({
   defaultValues: COMPOSER_DEFAULT_VALUES,
-  render: function OutreachFields({ form }) {
+  render: function NetworkingFields({ form }) {
     const channels = useSelector(form.store, (s) => s.values.channels);
     const board = useSelector(form.store, (s) => s.values.board);
     const autonomy = useSelector(form.store, (s) => s.values.autonomy);

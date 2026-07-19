@@ -8,7 +8,7 @@ import type { ResendVerificationResponse } from "@/api/types";
 import { useAuth } from "@/hooks/use-auth";
 
 /**
- * Non-blocking nudge for signed-in, unverified users. Applying and outreach are
+ * Non-blocking nudge for signed-in, unverified users. Applying and networking are
  * gated server-side until the address is verified; everything else works.
  */
 export function VerifyEmailBanner(): ReactElement | null {
@@ -39,7 +39,7 @@ export function VerifyEmailBanner(): ReactElement | null {
         </Button>
       }
     >
-      Verify your email ({user.email}) to unlock applying and outreach.
+      Verify your email ({user.email}) to unlock applying and networking.
     </Alert>
   );
 }

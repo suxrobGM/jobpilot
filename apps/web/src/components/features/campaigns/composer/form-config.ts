@@ -6,7 +6,7 @@ import { slugify } from "@/utils/slug";
 
 export const composerFormSchema = z
   .object({
-    mode: z.enum(["search", "auto-apply", "outreach"]),
+    mode: z.enum(["search", "auto-apply", "networking"]),
     query: z.string().trim().min(2, "Enter a query"),
     board: z.string(),
     // Base resume the campaign scores and tailors against (mandatory, all modes).
@@ -15,24 +15,24 @@ export const composerFormSchema = z
     maxApps: z.union([z.number().int().min(1).max(500), z.null(), z.undefined()]),
     // Empty = unlimited (search until the board is exhausted), mirroring maxApps.
     maxJobs: z.union([z.number().int().min(1), z.null(), z.undefined()]),
-    // Outreach campaign settings (mode === "outreach").
+    // Networking campaign settings (mode === "networking").
     channels: z.array(z.enum(["email", "linkedin"])),
     linkedinTier: z.enum(["free", "premium"]),
     autonomy: z.enum(["draft", "review", "auto"]),
     dailyCap: z.number().int().min(1).max(100),
   })
   .superRefine((v, ctx) => {
-    // Board is required for search/auto-apply; for outreach it is optional (the
+    // Board is required for search/auto-apply; for networking it is optional (the
     // control between board-grounded and criteria-only discovery).
-    if (v.mode !== "outreach" && !v.board) {
+    if (v.mode !== "networking" && !v.board) {
       ctx.addIssue({ code: "custom", message: "Pick a board", path: ["board"] });
     }
-    if (v.mode === "outreach" && v.channels.length === 0) {
+    if (v.mode === "networking" && v.channels.length === 0) {
       ctx.addIssue({ code: "custom", message: "Pick at least one channel", path: ["channels"] });
     }
   });
 
-export type CampaignMode = Extract<CampaignSource, "search" | "auto-apply" | "outreach">;
+export type CampaignMode = Extract<CampaignSource, "search" | "auto-apply" | "networking">;
 export type ComposerFormValues = z.infer<typeof composerFormSchema>;
 
 /** Upwork is recommend-only - searched + scored, never auto-submitted. */
@@ -76,21 +76,21 @@ function hasMaxJobs(
   return values.maxJobs != null && Number.isFinite(values.maxJobs);
 }
 
-/** Whether an outreach campaign has a board picked (board-grounded vs criteria-only). */
+/** Whether a networking campaign has a board picked (board-grounded vs criteria-only). */
 export function isBoardSelected(board: string): boolean {
   return board.trim() !== "";
 }
 
 export function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest["config"] {
-  if (values.mode === "outreach") {
-    // A selected board grounds outreach in real openings; the optional cap
+  if (values.mode === "networking") {
+    // A selected board grounds networking in real openings; the optional cap
     // (reusing the maxApps field) maps to config.maxJobs - omit it to run until
     // the user stops. No board → criteria-only discovery.
     const searchesBoard = isBoardSelected(values.board);
     return {
       ...(searchesBoard ? { board: values.board } : {}),
       ...(searchesBoard && hasMaxApps(values) ? { maxJobs: values.maxApps } : {}),
-      outreach: {
+      networking: {
         channels: values.channels,
         ...(values.channels.includes("linkedin") ? { linkedinTier: values.linkedinTier } : {}),
         autonomy: values.autonomy,
@@ -110,8 +110,8 @@ export function buildCampaignConfig(values: ComposerFormValues): CreateCampaignR
 }
 
 export function buildSkillArg(values: ComposerFormValues, campaignId: string): string {
-  if (values.mode === "outreach") {
-    // The skill reads channels/tier/autonomy from the campaign's config.outreach.
+  if (values.mode === "networking") {
+    // The skill reads channels/tier/autonomy from the campaign's config.networking.
     return buildCliArgs({ positional: [values.query.trim()], flags: { campaign: campaignId } });
   }
   return buildCliArgs({
@@ -131,7 +131,7 @@ export function buildSkillArg(values: ComposerFormValues, campaignId: string): s
 export const SUBMIT_LABELS: Record<CampaignMode, string> = {
   search: "Start search",
   "auto-apply": "Start auto-apply",
-  outreach: "Start outreach",
+  networking: "Start networking",
 };
 
 export const MODE_DESCRIPTIONS: Record<CampaignMode, string> = {
@@ -139,6 +139,6 @@ export const MODE_DESCRIPTIONS: Record<CampaignMode, string> = {
     "Search a board and score matches in the selected board - nothing is sent. Review the ranked list yourself.",
   "auto-apply":
     "Search, score, then auto-submit applications to matches above your score threshold in the selected board.",
-  outreach:
-    "Find hiring managers or recruiters and message them directly. Pick a board to ground outreach in real openings, or none to reach by criteria.",
+  networking:
+    "Find hiring managers or recruiters and message them directly. Pick a board to ground networking in real openings, or none to reach by criteria.",
 };

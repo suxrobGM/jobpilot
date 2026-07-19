@@ -10,7 +10,7 @@ const limitPublicPdf = rateLimit(RATE_LIMITS.publicResumePdf);
 
 /**
  * Unauthenticated resume PDF access - the resume's v4 uuid is the capability
- * token. Used for recipient-reachable links (e.g. outreach emails) where a
+ * token. Used for recipient-reachable links (e.g. networking emails) where a
  * bearer-authed `/api/resumes/:id/pdf` would not be openable.
  */
 export const publicResumeController = new Elysia({
@@ -22,6 +22,6 @@ export const publicResumeController = new Elysia({
   detail: {
     summary: "Render resume PDF (public)",
     description:
-      "Streams a resume as a PDF without authentication, keyed by the resume's unguessable uuid, for recipient-reachable links such as outreach emails.",
+      "Streams a resume as a PDF without authentication, keyed by the resume's unguessable uuid, for recipient-reachable links such as networking emails.",
   },
 });

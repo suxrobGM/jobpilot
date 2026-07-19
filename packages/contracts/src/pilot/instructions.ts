@@ -20,8 +20,8 @@ const pilotSavedSearchSchema = z.object({
 });
 
 const pilotAutonomySchema = z.object({
-  outreachEmail: z.enum(["draft", "review", "auto"]).default("review"),
-  outreachLinkedIn: z.enum(["draft", "review"]).default("draft"),
+  networkingEmail: z.enum(["draft", "review", "auto"]).default("review"),
+  networkingLinkedIn: z.enum(["draft", "review"]).default("draft"),
 });
 
 const pilotPromotionPlatformSchema = z.object({
@@ -47,12 +47,12 @@ export const pilotInstructionsConfigSchema = z.object({
   activeHours: pilotActiveHoursSchema.optional(),
   checkIntervalMinutes: z.number().int().default(30),
   savedSearches: z.array(pilotSavedSearchSchema).default([]),
-  // Master switch: outreach is opt-in. Off suppresses all outreach work (compose, send, follow-up).
-  outreachEnabled: z.boolean().default(false),
+  // Master switch: networking is opt-in. Off suppresses all networking work (compose, send, follow-up).
+  networkingEnabled: z.boolean().default(false),
   // Full default so a missing key still yields both autonomy fields (zod does not re-parse defaults).
-  autonomy: pilotAutonomySchema.default({ outreachEmail: "review", outreachLinkedIn: "draft" }),
-  dailyOutreachCap: z.number().int().min(0).default(5),
-  outreachFollowupDays: z.number().int().default(5),
+  autonomy: pilotAutonomySchema.default({ networkingEmail: "review", networkingLinkedIn: "draft" }),
+  dailyNetworkingCap: z.number().int().min(0).default(5),
+  networkingFollowupDays: z.number().int().default(5),
   // Full default so a missing key still yields a usable promotion block (zod does not re-parse defaults).
   promotion: pilotPromotionConfigSchema.default({ platforms: [], autonomy: "review" }),
   // Boards the user agreed to park; agenda excludes their job.apply items and saved searches.

@@ -8,7 +8,7 @@ export const metadata = buildDocsMetadata("email-setup", {
 
 Connecting email powers three things: the inbox (recruiter replies are
 classified and matched to applications), verification codes (the agent reads
-sign-in codes during applies), and outreach (messages are sent from your own
+sign-in codes during applies), and networking (messages are sent from your own
 address).
 
 JobPilot connects to Gmail with **your own** Google OAuth client - it ships
@@ -29,9 +29,9 @@ once per user and takes about five minutes.
    click **Add or remove scopes**, search for `gmail.readonly` and
    `gmail.send`, tick both Gmail API rows, then **Save**. `readonly` lets
    JobPilot track replies and read verification codes; `send` lets it send
-   outreach emails and replies. Without `readonly` the Gmail API returns 403
+   networking emails and replies. Without `readonly` the Gmail API returns 403
    "insufficient scopes"; without `send` the mailbox connects read-only and
-   outreach can't send.
+   networking can't send.
 5. Keep **your** app in Testing mode and add your Gmail address under
    [Audience → Test users](https://console.cloud.google.com/auth/audience).
    Because it's your own project with you as the sole test user, no
@@ -44,7 +44,7 @@ once per user and takes about five minutes.
 ## What JobPilot can and can't do
 
 The scopes are `gmail.readonly` and `gmail.send`: JobPilot reads your mail
-and sends outreach emails and replies on your behalf, but can never delete
+and sends networking emails and replies on your behalf, but can never delete
 mail. Your client id and secret are stored encrypted per user - the secret
 never leaves the server - and the connected account is tied to your profile
 only.
@@ -58,7 +58,7 @@ only.
   Gmail scope isn't on the consent screen. Add both under **Data access**,
   then disconnect and reconnect in **Settings → Email** so a new token with
   the right scopes is issued.
-- **Mailbox connects read-only / outreach can't send** - the token was
+- **Mailbox connects read-only / networking can't send** - the token was
   issued without `gmail.send`. Add the scope under **Data access**, then use
   **Reconnect to enable sending** in **Settings → Email**.
 - **Google 500 after publishing** - you published an app that uses a

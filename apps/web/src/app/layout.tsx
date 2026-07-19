@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     "Claude Code",
     "Codex",
     "resume tailoring",
-    "AI recruiter outreach",
+    "AI recruiter networking",
     "Upwork proposals",
     "job board automation",
   ],

@@ -49,7 +49,7 @@ export const navGroups: NavGroup[] = [
     label: "Channels",
     items: [
       { label: "Upwork", href: "/upwork", icon: Handshake },
-      { label: "Outreach", href: "/outreach", icon: Forum },
+      { label: "Networking", href: "/networking", icon: Forum },
     ],
   },
   {

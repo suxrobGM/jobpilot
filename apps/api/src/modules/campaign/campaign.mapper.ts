@@ -7,9 +7,9 @@ import type {
 } from "@jobpilot/contracts/campaign";
 import type {
   contactLinkedinConnectionSchema,
-  OutreachChannel,
-  OutreachMessageStatus,
-} from "@jobpilot/contracts/outreach";
+  NetworkingChannel,
+  NetworkingMessageStatus,
+} from "@jobpilot/contracts/networking";
 import type { z } from "zod/v4";
 import type { Campaign, Contact, Job, Prisma } from "@/generated/prisma/client";
 
@@ -43,30 +43,30 @@ export type CampaignRow = Omit<
   completedAt: Date | null;
 };
 
-/** The nested contact on an OutreachMessage row, with Dates carried through as raw `Date`s. */
-type OutreachContactRow = Omit<Contact, "linkedinConnection" | "createdAt" | "updatedAt"> & {
+/** The nested contact on a NetworkingMessage row, with Dates carried through as raw `Date`s. */
+type NetworkingContactRow = Omit<Contact, "linkedinConnection" | "createdAt" | "updatedAt"> & {
   linkedinConnection: ContactLinkedinConnection;
   createdAt: Date;
   updatedAt: Date;
 };
 
 /**
- * An OutreachMessage row (with its contact) with `status`/`channel` and the nested
+ * A NetworkingMessage row (with its contact) with `status`/`channel` and the nested
  * contact's `linkedinConnection` narrowed to the contract unions, and all Dates
  * (`sentAt`/`repliedAt`/`createdAt`/`updatedAt` plus the contact's) carried through
  * as raw `Date`s (Elysia serializes them on the wire).
  */
-type OutreachMessageRow = Omit<
-  Prisma.OutreachMessageGetPayload<{ include: { contact: true } }>,
+type NetworkingMessageRow = Omit<
+  Prisma.NetworkingMessageGetPayload<{ include: { contact: true } }>,
   "sentAt" | "repliedAt" | "createdAt" | "updatedAt" | "contact"
 > & {
-  status: OutreachMessageStatus;
-  channel: OutreachChannel;
+  status: NetworkingMessageStatus;
+  channel: NetworkingChannel;
   sentAt: Date | null;
   repliedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  contact: OutreachContactRow;
+  contact: NetworkingContactRow;
 };
 
 /** Serialize a Job row's `status`/Date fields to their wire shape. */
@@ -78,14 +78,14 @@ export function toCampaignJobRow(job: Job): CampaignJobRow {
   };
 }
 
-/** Serialize an OutreachMessage row (with contact) to its wire shape. */
-export function toOutreachMessageRow(
-  message: Prisma.OutreachMessageGetPayload<{ include: { contact: true } }>,
-): OutreachMessageRow {
+/** Serialize a NetworkingMessage row (with contact) to its wire shape. */
+export function toNetworkingMessageRow(
+  message: Prisma.NetworkingMessageGetPayload<{ include: { contact: true } }>,
+): NetworkingMessageRow {
   return {
     ...message,
-    status: message.status as OutreachMessageStatus,
-    channel: message.channel as OutreachChannel,
+    status: message.status as NetworkingMessageStatus,
+    channel: message.channel as NetworkingChannel,
     sentAt: message.sentAt,
     repliedAt: message.repliedAt,
     createdAt: message.createdAt,

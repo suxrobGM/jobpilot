@@ -36,10 +36,10 @@ const MODES: Mode[] = [
     tone: "success",
   },
   {
-    tag: "outreach",
-    title: "Outreach",
+    tag: "networking",
+    title: "Networking",
     body: "Find the hiring manager and message them by email or LinkedIn.",
-    command: "/jobpilot:outreach · $outreach",
+    command: "/jobpilot:networking · $networking",
     tone: "warning",
   },
 ];

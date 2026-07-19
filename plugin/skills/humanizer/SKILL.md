@@ -246,7 +246,7 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 > The term is primarily promoted by Dutch institutions, not by the people themselves. You don't say "Netherlands, Europe" as an address, yet this mislabeling continues in official documents.
 
-**Terminal-injected text** (e.g. outreach drafts): plain ASCII only - the PTY mangles non-ASCII punctuation.
+**Terminal-injected text** (e.g. networking drafts): plain ASCII only - the PTY mangles non-ASCII punctuation.
 
 ### 14. Overuse of Boldface
 
@@ -411,7 +411,7 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 **Words to watch:** which is exactly what, precisely what your team, the same kind of X that Y needs, which aligns with, which is basically what you're describing
 
-**Problem:** In persuasive writing (letters, proposals, outreach), AI ends nearly every paragraph by mapping the content back onto the reader's stated needs. One tie-back can land; one per paragraph is a template.
+**Problem:** In persuasive writing (letters, proposals, cold emails), AI ends nearly every paragraph by mapping the content back onto the reader's stated needs. One tie-back can land; one per paragraph is a template.
 
 **Before:**
 

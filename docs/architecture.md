@@ -42,14 +42,14 @@ Why the split? Three reasons:
 
 The hosted web app at [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net).
 This is where your data lives: your profile, resumes and tailored variants,
-campaigns, the application pipeline, recruiter inbox, outreach contacts, and
+campaigns, the application pipeline, recruiter inbox, networking contacts, and
 analytics. It also has a built-in terminal panel (the "agent dock") where you
 can see and control the agent running on your machine.
 
 ### 2. The agent (the plugin)
 
 The JobPilot plugin teaches Claude Code or Codex a set of **skills** -
-commands like `search`, `auto-apply`, `cover-letter`, or `outreach`. When you
+commands like `search`, `auto-apply`, `cover-letter`, or `networking`. When you
 run one, the agent:
 
 - reads your profile and resume from the dashboard,
@@ -96,7 +96,7 @@ first (`search`, `apply`) or proceeds on its own up to a cap you set
 
 Everything above still works by hand, but you can also hand the whole loop
 over. Write your instructions once - goals, daily caps, active hours, saved
-searches, how much autonomy to give outreach, which platforms you're okay
+searches, how much autonomy to give networking, which platforms you're okay
 posting to - and the Pilot takes it from there, repeating one cycle forever
 while it's enabled:
 
@@ -114,7 +114,7 @@ while it's enabled:
 - **Decide** - it takes the single top item.
 - **Act** - it leases that item - a short-lived claim with a timeout, so a
   crash never leaves it stuck mid-work - then does the one thing: apply to a
-  job, send an outreach follow-up, draft an interview reply, and so on.
+  job, send a networking follow-up, draft an interview reply, and so on.
 - **Record** - every action lands in a live journal you can read like a diary
   of what the agent did and why.
 - **Exit** - the cycle prints a sentinel line (`[[JOBPILOT_CYCLE ...]]`) and
@@ -133,7 +133,7 @@ scheduled check.
 Anything the Pilot isn't sure about - a salary question, an unexpected form
 field, an interview invite - is sent to your phone as a question, delivered
 as a one-tap card, and the affected job is parked until you answer. The
-important limits aren't just instructions to the AI: daily apply/outreach
+important limits aren't just instructions to the AI: daily apply/networking
 caps, "never send a LinkedIn message automatically," and "never publish a
 post without my approval" are enforced by the dashboard itself, so they hold
 even if a cycle goes off-script.

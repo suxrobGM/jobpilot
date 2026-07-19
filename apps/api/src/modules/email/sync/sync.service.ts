@@ -75,8 +75,8 @@ export class EmailSyncService {
       }
     }
 
-    // Flip any sent outreach messages to "replied" when their reply just arrived.
-    await this.linkOutreachReplies(profileId, insertedForLinking);
+    // Flip any sent networking messages to "replied" when their reply just arrived.
+    await this.linkNetworkingReplies(profileId, insertedForLinking);
 
     await this.prisma.emailAccount.update({
       where: { id: active.id },
@@ -100,12 +100,12 @@ export class EmailSyncService {
   }
 
   /**
-   * Flip `sent` outreach messages to `replied` when a matching inbound email
-   * arrives. Matches first by Gmail `threadId` (the thread the outreach was sent
+   * Flip `sent` networking messages to `replied` when a matching inbound email
+   * arrives. Matches first by Gmail `threadId` (the thread the networking message was sent
    * on), then falls back to the sender address equalling a contact's email.
-   * Returns the number of outreach messages newly marked replied.
+   * Returns the number of networking messages newly marked replied.
    */
-  private async linkOutreachReplies(
+  private async linkNetworkingReplies(
     profileId: string,
     messages: InboundForLinking[],
   ): Promise<number> {
@@ -113,7 +113,7 @@ export class EmailSyncService {
 
     for (const m of messages) {
       if (m.threadId) {
-        const byThread = await this.prisma.outreachMessage.updateMany({
+        const byThread = await this.prisma.networkingMessage.updateMany({
           where: { profileId, status: "sent", threadId: m.threadId },
           data: { status: "replied", repliedAt: m.receivedAt },
         });
@@ -127,7 +127,7 @@ export class EmailSyncService {
           select: { id: true },
         });
         if (contacts.length > 0) {
-          const byEmail = await this.prisma.outreachMessage.updateMany({
+          const byEmail = await this.prisma.networkingMessage.updateMany({
             where: { profileId, status: "sent", contactId: { in: contacts.map((c) => c.id) } },
             data: { status: "replied", repliedAt: m.receivedAt },
           });

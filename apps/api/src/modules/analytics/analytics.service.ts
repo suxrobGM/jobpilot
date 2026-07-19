@@ -26,11 +26,11 @@ export class AnalyticsService {
       timelineRows,
       boardGroupRows,
       failReasonRows,
-      outreachStatusRows,
-      outreachContacts,
-      outreachWeekSent,
-      outreachWeekReplied,
-      outreachTimelineRows,
+      networkingStatusRows,
+      networkingContacts,
+      networkingWeekSent,
+      networkingWeekReplied,
+      networkingTimelineRows,
       contactSourceRows,
     ] = await Promise.all([
       this.prisma.application.count({ where: { profileId } }),
@@ -77,19 +77,19 @@ export class AnalyticsService {
         orderBy: { _count: { id: "desc" } },
         take: 5,
       }),
-      this.prisma.outreachMessage.groupBy({
+      this.prisma.networkingMessage.groupBy({
         by: ["status"],
         where: { profileId },
         _count: { _all: true },
       }),
-      this.prisma.outreachMessage.findMany({
+      this.prisma.networkingMessage.findMany({
         where: { profileId },
         select: { contactId: true },
         distinct: ["contactId"],
       }),
-      this.prisma.outreachMessage.count({ where: { profileId, sentAt: { gte: weekStart } } }),
-      this.prisma.outreachMessage.count({ where: { profileId, repliedAt: { gte: weekStart } } }),
-      this.prisma.outreachMessage.findMany({
+      this.prisma.networkingMessage.count({ where: { profileId, sentAt: { gte: weekStart } } }),
+      this.prisma.networkingMessage.count({ where: { profileId, repliedAt: { gte: weekStart } } }),
+      this.prisma.networkingMessage.findMany({
         where: { profileId, sentAt: { gte: timelineStart } },
         select: { sentAt: true },
       }),
@@ -126,19 +126,21 @@ export class AnalyticsService {
         ? Math.round((responded / (totalSubmitted + responded)) * 100)
         : 0;
 
-    const outreachByStatus = new Map(outreachStatusRows.map((r) => [r.status, r._count._all]));
-    const outreachReplied = outreachByStatus.get("replied") ?? 0;
-    const outreachBounced = outreachByStatus.get("bounced") ?? 0;
+    const networkingByStatus = new Map(networkingStatusRows.map((r) => [r.status, r._count._all]));
+    const networkingReplied = networkingByStatus.get("replied") ?? 0;
+    const networkingBounced = networkingByStatus.get("bounced") ?? 0;
     // Dispatched = every message that left: still-sent + replied + bounced.
-    const outreachSent = (outreachByStatus.get("sent") ?? 0) + outreachReplied + outreachBounced;
-    const replyRatePct = outreachSent > 0 ? Math.round((outreachReplied / outreachSent) * 100) : 0;
+    const networkingSent =
+      (networkingByStatus.get("sent") ?? 0) + networkingReplied + networkingBounced;
+    const replyRatePct =
+      networkingSent > 0 ? Math.round((networkingReplied / networkingSent) * 100) : 0;
 
     const topContactSources = contactSourceRows
       .filter((r) => r.discoverySource)
       .map((r) => ({ source: r.discoverySource as string, count: r._count._all }));
 
     const perDaySent = bucketPerDay(
-      outreachTimelineRows.map((r) => r.sentAt as Date),
+      networkingTimelineRows.map((r) => r.sentAt as Date),
       timelineStart,
     );
 
@@ -161,16 +163,16 @@ export class AnalyticsService {
       perDay,
       topBoards,
       topRejectReasons,
-      outreach: {
+      networking: {
         totals: {
-          contacts: outreachContacts.length,
-          sent: outreachSent,
-          replied: outreachReplied,
-          bounced: outreachBounced,
+          contacts: networkingContacts.length,
+          sent: networkingSent,
+          replied: networkingReplied,
+          bounced: networkingBounced,
         },
         thisWeek: {
-          sent: outreachWeekSent,
-          replied: outreachWeekReplied,
+          sent: networkingWeekSent,
+          replied: networkingWeekReplied,
         },
         replyRatePct,
         perDaySent,

@@ -5,7 +5,7 @@ export type CampaignEvent =
   | { type: "progress"; payload: Record<string, unknown> }
   | { type: "status"; payload: { status: string } }
   | { type: "job-update"; payload: { kind: "added" | "updated"; job: unknown } }
-  | { type: "outreach-update"; payload?: Record<string, unknown> };
+  | { type: "networking-update"; payload?: Record<string, unknown> };
 
 /** Live event feed scoped to a single campaign (logs, progress, job updates). */
 export const campaignChannel = defineChannel<CampaignEvent, { campaignId: string }>({

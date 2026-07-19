@@ -72,20 +72,20 @@ export async function recomputeCampaignSummary(
 }
 
 /**
- * Recompute summary for an outreach campaign (`Campaign.source === "outreach"`)
- * from its OutreachMessage-status aggregates and persist it.
+ * Recompute summary for a networking campaign (`Campaign.source === "networking"`)
+ * from its NetworkingMessage-status aggregates and persist it.
  */
-export async function recomputeOutreachSummary(
+export async function recomputeNetworkingSummary(
   client: Prisma.TransactionClient,
   campaignId: string,
 ): Promise<CampaignSummary> {
   const [counts, contacts] = await Promise.all([
-    client.outreachMessage.groupBy({
+    client.networkingMessage.groupBy({
       by: ["status"],
       where: { campaignId },
       _count: { _all: true },
     }),
-    client.outreachMessage.findMany({
+    client.networkingMessage.findMany({
       where: { campaignId },
       select: { contactId: true },
       distinct: ["contactId"],

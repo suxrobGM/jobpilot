@@ -6,40 +6,40 @@ import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
 
-export const OutreachSection = withForm({
+export const NetworkingSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
-  render: function OutreachSection({ form }) {
-    const outreachEnabled = useSelector(form.store, (s) => s.values.outreachEnabled);
+  render: function NetworkingSection({ form }) {
+    const networkingEnabled = useSelector(form.store, (s) => s.values.networkingEnabled);
 
     return (
       <FormSection
-        title="Outreach"
+        title="Networking"
         description="Let the pilot reach out to contacts at target companies, or leave it off to only apply."
       >
         <Stack spacing={2}>
-          <form.AppField name="outreachEnabled">
-            {(field) => <field.Switch label="Enable outreach" />}
+          <form.AppField name="networkingEnabled">
+            {(field) => <field.Switch label="Enable networking" />}
           </form.AppField>
 
-          {outreachEnabled ? (
+          {networkingEnabled ? (
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <form.AppField name="dailyOutreachCap">
+                <form.AppField name="dailyNetworkingCap">
                   {(field) => (
                     <field.TextField
-                      label="Daily outreach cap"
+                      label="Daily networking cap"
                       type="number"
-                      helperText="Max outreach messages per day."
+                      helperText="Max networking messages per day."
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
                   )}
                 </form.AppField>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <form.AppField name="outreachFollowupDays">
+                <form.AppField name="networkingFollowupDays">
                   {(field) => (
                     <field.TextField
-                      label="Outreach follow-up (days)"
+                      label="Networking follow-up (days)"
                       type="number"
                       helperText="Days to wait before following up."
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
@@ -48,10 +48,10 @@ export const OutreachSection = withForm({
                 </form.AppField>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <form.AppField name="outreachEmail">
+                <form.AppField name="networkingEmail">
                   {(field) => (
                     <field.Select
-                      label="Outreach email"
+                      label="Networking email"
                       helperText="Draft only: never sends. Review each: asks you first. Auto-send: sends automatically."
                       items={[
                         { value: "draft", label: "Draft only" },
@@ -63,10 +63,10 @@ export const OutreachSection = withForm({
                 </form.AppField>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <form.AppField name="outreachLinkedIn">
+                <form.AppField name="networkingLinkedIn">
                   {(field) => (
                     <field.Select
-                      label="Outreach LinkedIn"
+                      label="Networking LinkedIn"
                       helperText="Draft only: never sends. Review each: asks you first."
                       items={[
                         { value: "draft", label: "Draft only" },
@@ -79,8 +79,8 @@ export const OutreachSection = withForm({
             </Grid>
           ) : (
             <Typography variant="body2Muted">
-              The pilot won't compose, send, or follow up on outreach - it only searches and
-              applies.
+              The pilot won't compose, send, or follow up on networking messages - it only searches
+              and applies.
             </Typography>
           )}
         </Stack>

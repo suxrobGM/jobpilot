@@ -36,7 +36,7 @@ export const applicationSchema = z.object({
   location: z.string().nullable(),
   board: z.string().nullable(),
   // Free-text column: stores ApplicationSource values *and* campaign sources
-  // ("search"/"outreach") written when an Application is created from a campaign job.
+  // ("search"/"networking") written when an Application is created from a campaign job.
   source: z.string(),
   appliedAt: z.date(),
   status: statusSchema,

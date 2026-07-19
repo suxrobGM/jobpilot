@@ -4,17 +4,17 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP } from "./constants";
 import type {
   AgendaFollowup,
-  AgendaOutreachSend,
+  AgendaNetworkingSend,
   AgendaPromoPlatform,
   AgendaPromoPost,
 } from "./types";
 
 /** Approved email drafts with a deliverable address, oldest first. LinkedIn drafts are never sends. */
-export async function gatherApprovedOutreach(
+export async function gatherApprovedNetworking(
   prisma: PrismaClient,
   profileId: string,
-): Promise<AgendaOutreachSend[]> {
-  const rows = await prisma.outreachMessage.findMany({
+): Promise<AgendaNetworkingSend[]> {
+  const rows = await prisma.networkingMessage.findMany({
     where: { profileId, channel: "email", status: "approved", contact: { email: { not: null } } },
     orderBy: { createdAt: "asc" },
     take: GATHER_CAP,
@@ -45,8 +45,8 @@ export async function gatherFollowups(
   config: PilotInstructionsConfig,
   now: Date,
 ): Promise<AgendaFollowup[]> {
-  const cutoff = new Date(now.getTime() - config.outreachFollowupDays * DAY_MS);
-  const candidates = await prisma.outreachMessage.findMany({
+  const cutoff = new Date(now.getTime() - config.networkingFollowupDays * DAY_MS);
+  const candidates = await prisma.networkingMessage.findMany({
     where: { profileId, channel: "email", repliedAt: null, sentAt: { not: null, lt: cutoff } },
     orderBy: { sentAt: "asc" },
     take: GATHER_CAP,
@@ -64,7 +64,7 @@ export async function gatherFollowups(
 
   // "No later message" = the candidate is still the newest message on its contact.
   const contactIds = [...new Set(candidates.map((c) => c.contactId))];
-  const latest = await prisma.outreachMessage.groupBy({
+  const latest = await prisma.networkingMessage.groupBy({
     by: ["contactId"],
     where: { contactId: { in: contactIds } },
     _max: { createdAt: true },

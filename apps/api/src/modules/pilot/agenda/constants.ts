@@ -7,7 +7,7 @@ export const PRIORITY = {
   jobBase: 800,
   interviewPrep: 750,
   queueDrain: 720,
-  outreachSend: 700,
+  networkingSend: 700,
   inboxReview: 650,
   promoPost: 600,
   warmIntro: 550,

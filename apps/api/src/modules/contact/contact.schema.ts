@@ -2,7 +2,7 @@ import {
   contactDiscoverySourceSchema,
   contactEmailSourceSchema,
   contactLinkedinConnectionSchema,
-} from "@jobpilot/contracts/outreach";
+} from "@jobpilot/contracts/networking";
 import { z } from "zod/v4";
 
 // ── Response schemas ──────────────────────────────────────────────────────────

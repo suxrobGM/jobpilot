@@ -6,7 +6,7 @@ import { useApiQuery } from "@/api/hooks";
 import { analyticsQueries } from "@/api/queries";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { ApplicationsTimelineChart } from "./applications-timeline-chart";
-import { OutreachStatTiles } from "./outreach-stat-tiles";
+import { NetworkingStatTiles } from "./networking-stat-tiles";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
 import { TopBoardsList } from "./top-boards-list";
 
@@ -66,24 +66,24 @@ export function AnalyticsView(): ReactElement {
       </Grid>
 
       <Typography variant="overlineMuted" sx={{ mt: 1 }}>
-        Outreach
+        Networking
       </Typography>
-      <OutreachStatTiles outreach={stats.outreach} />
+      <NetworkingStatTiles networking={stats.networking} />
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <ApplicationsTimelineChart
-            data={stats.outreach.perDaySent}
+            data={stats.networking.perDaySent}
             title="Messages over time"
             metricLabel="sent"
-            emptyMessage="No outreach messages sent yet."
+            emptyMessage="No networking messages sent yet."
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <TopBoardsList
             eyebrow="Distribution"
             title="Contact sources"
-            entries={toEntries(stats.outreach.topContactSources, (s) => s.source)}
+            entries={toEntries(stats.networking.topContactSources, (s) => s.source)}
             emptyMessage="No contacts discovered yet."
           />
         </Grid>

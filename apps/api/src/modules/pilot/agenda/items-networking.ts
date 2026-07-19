@@ -1,18 +1,18 @@
 import type { AgendaItem } from "@jobpilot/contracts/pilot";
 import { MAX_FOLLOWUPS, PRIORITY } from "./constants";
-import type { AgendaFollowup, AgendaInbox, AgendaOutreachSend } from "./types";
+import type { AgendaFollowup, AgendaInbox, AgendaNetworkingSend } from "./types";
 
-/** Approved email sends, capped by the caller's remaining daily outreach headroom. */
-export function buildOutreachSendItems(
-  sends: AgendaOutreachSend[],
+/** Approved email sends, capped by the caller's remaining daily networking headroom. */
+export function buildNetworkingSendItems(
+  sends: AgendaNetworkingSend[],
   headroom: number,
 ): AgendaItem[] {
   return sends.slice(0, headroom).map((m) => ({
-    id: `outreach.send:${m.messageId}`,
-    kind: "outreach.send",
-    priority: PRIORITY.outreachSend,
-    title: `Send outreach: ${m.contactName}`.slice(0, 200),
-    subjectType: "outreach",
+    id: `networking.send:${m.messageId}`,
+    kind: "networking.send",
+    priority: PRIORITY.networkingSend,
+    title: `Send networking message: ${m.contactName}`.slice(0, 200),
+    subjectType: "networking",
     subjectId: m.messageId,
     payload: {
       campaignId: m.campaignId,
@@ -45,11 +45,11 @@ export function buildInboxItem(inbox: AgendaInbox): AgendaItem[] {
 /** Capped so one cycle can't drown in nudges; caller gates on remaining send headroom. */
 export function buildFollowupItems(followups: AgendaFollowup[]): AgendaItem[] {
   return followups.slice(0, MAX_FOLLOWUPS).map((f) => ({
-    id: `outreach.followup:${f.messageId}`,
-    kind: "outreach.followup",
+    id: `networking.followup:${f.messageId}`,
+    kind: "networking.followup",
     priority: PRIORITY.followup,
     title: `Follow up: ${f.contactName}`.slice(0, 200),
-    subjectType: "outreach",
+    subjectType: "networking",
     subjectId: f.messageId,
     payload: {
       campaignId: f.campaignId,

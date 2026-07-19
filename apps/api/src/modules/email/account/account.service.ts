@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { OAuthClientUpsertInput } from "@jobpilot/contracts/email";
-import type { SendEmailInput } from "@jobpilot/contracts/outreach";
+import type { SendEmailInput } from "@jobpilot/contracts/networking";
 import { singleton } from "tsyringe";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { badRequest, conflict, ErrorCodes, HttpError } from "@/common/errors";
@@ -39,7 +39,7 @@ export class EmailAccountService {
 
   /**
    * Send an outbound email from the profile's connected mailbox. Used by the
-   * outreach skill (and the outreach board's "approve & send" action). Refreshes
+   * networking skill (and the networking board's "approve & send" action). Refreshes
    * an expired token first and 4xxs with an actionable message when the account
    * lacks send scope (needs reconnecting).
    */

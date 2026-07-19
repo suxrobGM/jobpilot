@@ -14,7 +14,7 @@ export function AttentionStrip(): ReactNode {
   const rows = campaigns.data ?? [];
 
   const interrupted = rows.filter((c) => c.status === "interrupted");
-  const draftCampaigns = rows.filter((c) => c.source === "outreach" && c.summary.drafted > 0);
+  const draftCampaigns = rows.filter((c) => c.source === "networking" && c.summary.drafted > 0);
   const totalDrafts = draftCampaigns.reduce((n, c) => n + c.summary.drafted, 0);
 
   if (interrupted.length === 0 && draftCampaigns.length === 0) {
@@ -56,7 +56,7 @@ export function AttentionStrip(): ReactNode {
             ) : null
           }
         >
-          {totalDrafts} outreach draft{totalDrafts === 1 ? "" : "s"} awaiting send across{" "}
+          {totalDrafts} networking draft{totalDrafts === 1 ? "" : "s"} awaiting send across{" "}
           {draftCampaigns.length} campaign{draftCampaigns.length === 1 ? "" : "s"}.
         </Alert>
       )}

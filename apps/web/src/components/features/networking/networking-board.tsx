@@ -3,25 +3,25 @@
 import { type ReactElement, useState } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import {
-  OUTREACH_MESSAGE_TERMINAL_STATUSES,
-  type OutreachMessageStatus,
-} from "@jobpilot/contracts/outreach";
+  NETWORKING_MESSAGE_TERMINAL_STATUSES,
+  type NetworkingMessageStatus,
+} from "@jobpilot/contracts/networking";
 import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
 import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries, emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { CampaignSummaryDto, OutreachConfigDto, OutreachMessageDto } from "@/api/types";
+import type { CampaignSummaryDto, NetworkingConfigDto, NetworkingMessageDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { DataTable } from "@/components/ui/data/data-table";
 import { ColorChip, ExternalLink, StatCard } from "@/components/ui/display";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
-import { OutreachMessageDialog } from "./outreach-message-dialog";
+import { NetworkingMessageDialog } from "./networking-message-dialog";
 
 const STATUS_COLOR: Record<
-  OutreachMessageStatus,
+  NetworkingMessageStatus,
   "default" | "info" | "primary" | "success" | "error" | "warning"
 > = {
   draft: "default",
@@ -43,25 +43,25 @@ function emptyMessage(status: CampaignStatus): string {
   return "No contacts were added.";
 }
 
-interface OutreachBoardProps {
+interface NetworkingBoardProps {
   campaignId: string;
   status: CampaignStatus;
   summary: CampaignSummaryDto;
-  config?: OutreachConfigDto;
+  config?: NetworkingConfigDto;
 }
 
-export function OutreachBoard(props: OutreachBoardProps): ReactElement {
+export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
   const { campaignId, status, summary, config } = props;
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
   const [openId, setOpenId] = useState<string | null>(null);
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
-  const messagesQuery = useApiQuery(campaignQueries.outreach(campaignId));
+  const messagesQuery = useApiQuery(campaignQueries.networking(campaignId));
   const accountQuery = useApiQuery(emailQueries.account());
 
   const invalidate = [
-    queryKeys.campaigns.outreach(campaignId),
+    queryKeys.campaigns.networking(campaignId),
     queryKeys.campaigns.detail(campaignId),
   ];
 
@@ -69,7 +69,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
     (id) =>
       api
         .campaigns({ id: campaignId })
-        .outreach({ messageId: id })
+        .networking({ messageId: id })
         .result.post({ outcome: "skipped" }),
     { invalidate, successMessage: "Skipped" },
   );
@@ -77,7 +77,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
   const approveSelected = useApiMutation<string[], string[]>(
     async (ids) => {
       for (const id of ids) {
-        const res = await api.campaigns({ id: campaignId }).outreach({ messageId: id }).patch({
+        const res = await api.campaigns({ id: campaignId }).networking({ messageId: id }).patch({
           status: "approved",
         });
         if (res.error) {
@@ -97,18 +97,18 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
   const canSend = accountQuery.data?.canSend ?? false;
   const openMessage = messages.find((m) => m.id === openId) ?? null;
   const selectedIds = resolveSelectedRows(selection, messages)
-    .filter((m) => !OUTREACH_MESSAGE_TERMINAL_STATUSES.includes(m.status))
+    .filter((m) => !NETWORKING_MESSAGE_TERMINAL_STATUSES.includes(m.status))
     .map((m) => m.id);
 
   const regenerateSelected = (): void => {
     void agent.injectSkill(
-      "outreach",
+      "networking",
       `--campaign ${campaignId} --rewrite ${selectedIds.join(",")}`,
     );
     setSelection(EMPTY_SELECTION);
   };
 
-  const columns: GridColDef<OutreachMessageDto>[] = [
+  const columns: GridColDef<NetworkingMessageDto>[] = [
     {
       field: "status",
       headerName: "Status",
@@ -243,7 +243,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
       />
 
       {openMessage && (
-        <OutreachMessageDialog
+        <NetworkingMessageDialog
           campaignId={campaignId}
           message={openMessage}
           canSend={canSend}

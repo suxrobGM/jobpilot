@@ -37,7 +37,7 @@ function DigestCounts(props: { detail: Record<string, unknown> }): ReactElement 
   const parts = [
     `${n(detail, "applicationsCreated")} applied`,
     `${n(detail, "jobsFailed") + n(detail, "jobsSkipped")} not applied`,
-    `${n(detail, "outreachSent")} outreach (${n(detail, "outreachReplies")} replies)`,
+    `${n(detail, "networkingSent")} networking (${n(detail, "networkingReplies")} replies)`,
     `${n(detail, "promotionsPosted")} posts`,
     `${n(detail, "openQuestions")} open`,
   ];

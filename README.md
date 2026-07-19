@@ -132,7 +132,7 @@ In Codex, use `/skills` to browse installed skills. To run one directly, use the
 | `apply`             | Apply to one job (URL or pasted posting) with a fit review, or drain the queue. |
 | `resume`            | Resume an interrupted campaign and finish its remaining approved jobs.          |
 | `rescan-skipped`    | Re-score a campaign's skipped jobs and promote the wrongly dropped ones.        |
-| `outreach`          | Find the hiring manager or recruiter and send a personalized message.           |
+| `networking`        | Find the hiring manager or recruiter and send a personalized message.           |
 | **Writing**         |                                                                                 |
 | `cover-letter`      | Draft a natural, job-specific one-page cover letter.                            |
 | `interview`         | Build a prep sheet: behavioral, technical, system design, company.              |
@@ -150,7 +150,7 @@ In Codex, use `/skills` to browse installed skills. To run one directly, use the
 | `solve-captcha`     | Solve captchas - free vision path first, token service fallback.                |
 | `humanizer`         | Make generated text sound more natural; used by the writing skills.             |
 
-Inbox scanning, verification codes, and outreach email require your own Google
+Inbox scanning, verification codes, and networking emails require your own Google
 OAuth client. Follow the
 [email setup guide](https://jobpilot.suxrobgm.net/docs/email-setup) to connect
 it.

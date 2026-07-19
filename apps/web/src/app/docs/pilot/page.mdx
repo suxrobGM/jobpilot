@@ -10,7 +10,7 @@ export const metadata = buildDocsMetadata("pilot", {
 The Pilot is JobPilot's autonomous mode. Instead of running a skill each time,
 you write your **instructions** once - your goals and limits - and the local agent runs
 your search on its own: perpetual cycles that discover and score roles, apply,
-find warm intros before cold applies, send and follow up on outreach, review
+find warm intros before cold applies, send and follow up on networking, review
 recruiter replies, and draft interview replies, prep sheets, and self-promotion
 posts. It journals every action, sends the few decisions only you can make
 to your phone as questions, and keeps going overnight with the browser closed. You wake to a
@@ -43,7 +43,7 @@ Your instructions are one small document that steers everything. Its fields:
   Pilot checks for work.
 - **Active hours** - restrict cycles to a window (with a time zone), or leave
   off to run around the clock.
-- **Outreach** - off by default. Turn it on to let the Pilot reach out to
+- **Networking** - off by default. Turn it on to let the Pilot reach out to
   contacts at target companies, then set the daily cap, follow-up delay, and
   per-channel autonomy. Email can be **draft** (compose only), **review** (ask
   before each send), or **auto** (send within your cap). LinkedIn is always
@@ -64,8 +64,8 @@ on the next cycle.
 | Runs on its own | Always asks you |
 | --- | --- |
 | Applies to matching roles within your daily cap | A 2FA / login code (a one-tap card, ~5-minute window) |
-| Sends outreach emails you set to auto, within your cap | Salary and screening questions on an application |
-| Follows up on outreach per your autonomy setting | Sending a LinkedIn InMail |
+| Sends networking emails you set to auto, within your cap | Salary and screening questions on an application |
+| Follows up on networking messages per your autonomy setting | Sending a LinkedIn InMail |
 | Reviews recruiter replies in your inbox (proposes moves) | Posting any self-promotion publicly |
 | Drafts everything - emails, follow-ups, interview replies, prep sheets, posts | Parking a board that keeps failing |
 
@@ -91,7 +91,7 @@ Every action the Pilot takes lands in the **journal** - a live feed you can
 watch in real time ("Applied to Staff TypeScript Engineer at Acme - score 87",
 "Reviewed 7 replies - 1 interview invite", "Parked Stripe - needs your salary
 answer"). Once a day it rolls the last 24 hours into a **morning digest**:
-applications submitted, replies reviewed, outreach sent, and questions waiting.
+applications submitted, replies reviewed, networking messages sent, and questions waiting.
 
 The Pilot's **Activity** tab holds the full journal - filter it by kind, and
 use **Export** there to download the whole history as a file for your own

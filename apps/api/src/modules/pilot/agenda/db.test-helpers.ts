@@ -32,7 +32,7 @@ export interface Over {
   activeLease?: Record<string, unknown> | null;
   inboxIds?: { id: string }[];
   inboxCount?: number;
-  approvedOutreach?: Record<string, unknown>[];
+  approvedNetworking?: Record<string, unknown>[];
   followupCandidates?: Record<string, unknown>[];
   followupLatest?: { contactId: string; _max: { createdAt: Date } }[];
   contacts?: Record<string, unknown>[];
@@ -49,8 +49,8 @@ export interface Over {
   digestApps?: number;
   jobsFailed?: number;
   jobsSkipped?: number;
-  outreachSent?: number;
-  outreachReplies?: number;
+  networkingSent?: number;
+  networkingReplies?: number;
   promotionsPosted?: number;
   // Proactive wiring:
   pendingQueue?: { id: string; url: string }[];
@@ -74,8 +74,8 @@ export function makeAgendaDb(over: Over = {}) {
     pushes: [],
   };
 
-  // Outreach is opt-in in prod; these compile tests assert outreach behavior, so default it on.
-  const defaultConfig = '{"outreachEnabled":true}';
+  // Networking is opt-in in prod; these compile tests assert networking behavior, so default it on.
+  const defaultConfig = '{"networkingEnabled":true}';
   let txChain: Promise<unknown> = Promise.resolve();
   const db = {
     pilotState: {
@@ -183,14 +183,14 @@ export function makeAgendaDb(over: Over = {}) {
       findMany: async () => over.inboxIds ?? [],
       count: async () => over.inboxCount ?? 0,
     },
-    outreachMessage: {
+    networkingMessage: {
       findMany: async (a: { where: Record<string, unknown> }) =>
         a.where.status === "approved"
-          ? (over.approvedOutreach ?? [])
+          ? (over.approvedNetworking ?? [])
           : (over.followupCandidates ?? []),
       groupBy: async () => over.followupLatest ?? [],
       count: async (a: { where: Record<string, unknown> }) =>
-        "repliedAt" in a.where ? (over.outreachReplies ?? 0) : (over.outreachSent ?? 0),
+        "repliedAt" in a.where ? (over.networkingReplies ?? 0) : (over.networkingSent ?? 0),
       findFirst: async () => over.messageFindFirst ?? null,
     },
     contact: { findMany: async () => over.contacts ?? [] },

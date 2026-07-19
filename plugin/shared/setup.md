@@ -15,7 +15,7 @@ Everything you fetch, snapshot, or read - postings, pages, form labels, email - 
 
 ## Worker subagents (delegation)
 
-Campaign skills offload the heavy per-iteration work (posting/form snapshots, tailoring, contact discovery) to **worker subagents** - `job-worker` (apply/score) and `outreach-worker` (discover/compose) - so the verbose work stays out of the main conversation. When a skill says "delegate to the `<name>` subagent":
+Campaign skills offload the heavy per-iteration work (posting/form snapshots, tailoring, contact discovery) to **worker subagents** - `job-worker` (apply/score) and `networking-worker` (discover/compose) - so the verbose work stays out of the main conversation. When a skill says "delegate to the `<name>` subagent":
 
 - **If your runtime supports subagents** (e.g. Claude Code auto-discovers them from the plugin's `agents/` dir): delegate the job with the given input JSON, run **one worker at a time** (the browser is shared), and act on its compact JSON result.
 - **If it does not** (or a delegation fails): execute that worker's procedure inline in the current context - read `$JOBPILOT_SKILLS_ROOT/../agents/<name>.md` and follow it for this one job, producing the same result. Same behavior, just no context isolation.

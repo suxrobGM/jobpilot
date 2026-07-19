@@ -23,7 +23,7 @@ import {
   SUBMIT_LABELS,
   UPWORK_DOMAIN,
 } from "./form-config";
-import { OutreachFields } from "./outreach-fields";
+import { NetworkingFields } from "./networking-fields";
 import { SearchFields } from "./search-fields";
 
 interface CampaignComposerProps {
@@ -88,9 +88,9 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const mode = useSelector(form.store, (s) => s.values.mode);
   const board = useSelector(form.store, (s) => s.values.board);
   const isUpwork = board === UPWORK_DOMAIN;
-  const isOutreach = mode === "outreach";
+  const isNetworking = mode === "networking";
 
-  // Upwork has no auto-apply/outreach path - pin the mode to search.
+  // Upwork has no auto-apply/networking path - pin the mode to search.
   useEffect(() => {
     if (isUpwork && mode !== "search") {
       form.setFieldValue("mode", "search");
@@ -119,7 +119,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
 
           {mode === "search" && <SearchFields form={form} />}
           {mode === "auto-apply" && <AutoApplyFields form={form} />}
-          {mode === "outreach" && <OutreachFields form={form} />}
+          {mode === "networking" && <NetworkingFields form={form} />}
 
           <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
             <Button onClick={() => router.back()}>Cancel</Button>
@@ -129,7 +129,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
                   type="submit"
                   variant="contained"
                   disabled={
-                    !hasResumes || (!hasBoards && !isOutreach) || !canSubmit || isSubmitting
+                    !hasResumes || (!hasBoards && !isNetworking) || !canSubmit || isSubmitting
                   }
                 >
                   {isUpwork ? "Find Upwork jobs" : SUBMIT_LABELS[mode]}

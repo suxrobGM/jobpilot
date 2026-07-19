@@ -23,7 +23,7 @@ export const CampaignBasicsFields = withForm({
     const mode = useSelector(form.store, (s) => s.values.mode);
     const board = useSelector(form.store, (s) => s.values.board);
     const isUpwork = board === UPWORK_DOMAIN;
-    const isOutreach = mode === "outreach";
+    const isNetworking = mode === "networking";
 
     return (
       <>
@@ -38,7 +38,7 @@ export const CampaignBasicsFields = withForm({
                     : [
                         { value: "search", label: "Search only" },
                         { value: "auto-apply", label: "Auto-apply" },
-                        { value: "outreach", label: "Outreach" },
+                        { value: "networking", label: "Networking" },
                       ]
                 }
               />
@@ -53,9 +53,9 @@ export const CampaignBasicsFields = withForm({
           <form.AppField name="query">
             {(field) => (
               <field.TextField
-                label={isOutreach ? "Target criteria" : "Query"}
+                label={isNetworking ? "Target criteria" : "Query"}
                 placeholder={
-                  isOutreach
+                  isNetworking
                     ? "Hiring managers at NYC fintech startups"
                     : "Senior React TypeScript remote"
                 }
@@ -81,7 +81,7 @@ export const CampaignBasicsFields = withForm({
           )}
         </Stack>
 
-        {/* One board control: required for search/auto-apply, optional for outreach
+        {/* One board control: required for search/auto-apply, optional for networking
             (where it toggles board-grounded vs criteria-only discovery). */}
         {boards.length > 0 ? (
           <Stack spacing={0.75}>
@@ -89,21 +89,21 @@ export const CampaignBasicsFields = withForm({
               {(field) => (
                 <field.Select
                   label="Board"
-                  optional={isOutreach}
+                  optional={isNetworking}
                   emptyLabel="No board - reach by criteria"
                   items={boards.map((b) => ({ value: b.domain, label: b.name }))}
                 />
               )}
             </form.AppField>
-            {isOutreach && (
+            {isNetworking && (
               <Typography variant="captionMuted">
-                With a board, each contact is grounded in a matching opening; without one, outreach
-                uses your criteria alone.
+                With a board, each contact is grounded in a matching opening; without one,
+                networking uses your criteria alone.
               </Typography>
             )}
           </Stack>
         ) : (
-          !isOutreach && (
+          !isNetworking && (
             <Typography variant="body2Muted">
               No boards configured. Add one on the Boards page first.
             </Typography>
@@ -111,7 +111,7 @@ export const CampaignBasicsFields = withForm({
         )}
 
         {/* Resume is mandatory for every mode - it drives scoring and is tailored
-            per application (search/auto-apply) or shared as a link (outreach). */}
+            per application (search/auto-apply) or shared as a link (networking). */}
         {resumes.length > 0 ? (
           <Stack spacing={0.75}>
             <form.AppField name="resumeId">

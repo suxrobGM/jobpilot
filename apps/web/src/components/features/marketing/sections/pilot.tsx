@@ -16,11 +16,11 @@ interface Step {
 const STEPS: Step[] = [
   {
     title: "Write your instructions",
-    body: "Goals, daily caps, active hours, saved searches, outreach autonomy, promotion platforms. Write your goals once - the Pilot runs the search from there.",
+    body: "Goals, daily caps, active hours, saved searches, networking autonomy, promotion platforms. Write your goals once - the Pilot runs the search from there.",
   },
   {
     title: "Close the lid",
-    body: "The agent runs perpetual sense-decide-act cycles on your machine: it discovers and scores roles, finds warm intros before cold applies, sends and chases outreach, and reviews recruiter replies - overnight, with the browser closed.",
+    body: "The agent runs perpetual sense-decide-act cycles on your machine: it discovers and scores roles, finds warm intros before cold applies, sends and chases networking messages, and reviews recruiter replies - overnight, with the browser closed.",
   },
   {
     title: "Answer from your phone",

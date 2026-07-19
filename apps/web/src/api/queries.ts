@@ -63,9 +63,9 @@ export const campaignQueries = {
     queryKey: queryKeys.campaigns.detail(id),
     queryFn: () => api.campaigns({ id }).get(),
   }),
-  outreach: (campaignId: string) => ({
-    queryKey: queryKeys.campaigns.outreach(campaignId),
-    queryFn: () => api.campaigns({ id: campaignId }).outreach.get(),
+  networking: (campaignId: string) => ({
+    queryKey: queryKeys.campaigns.networking(campaignId),
+    queryFn: () => api.campaigns({ id: campaignId }).networking.get(),
   }),
 };
 

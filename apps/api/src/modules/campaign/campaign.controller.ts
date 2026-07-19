@@ -20,7 +20,7 @@ import {
 } from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
 import { campaignJobController } from "./jobs/job.controller";
-import { campaignOutreachController } from "./outreach/outreach.controller";
+import { campaignNetworkingController } from "./networking/networking.controller";
 
 const svc = container.resolve(CampaignService);
 
@@ -81,7 +81,7 @@ export const campaignController = new Elysia({
     detail: {
       summary: "Delete campaign",
       description:
-        "Hard-deletes the campaign and its related jobs, events, applications, outreach messages, and campaign-only contacts, returning a deletion acknowledgement.",
+        "Hard-deletes the campaign and its related jobs, events, applications, networking messages, and campaign-only contacts, returning a deletion acknowledgement.",
     },
   })
   // ── Events (SSE stream + event record) ────────────────────────────────────────
@@ -96,7 +96,7 @@ export const campaignController = new Elysia({
       detail: {
         summary: "Stream campaign events",
         description:
-          "Opens a Server-Sent Events stream of live campaign events (status, progress, job, and outreach updates) for the owned campaign.",
+          "Opens a Server-Sent Events stream of live campaign events (status, progress, job, and networking updates) for the owned campaign.",
       },
     },
   )
@@ -114,6 +114,6 @@ export const campaignController = new Elysia({
       },
     },
   )
-  // ── Sub-domain controllers (jobs, outreach) ───────────────────────────────────
+  // ── Sub-domain controllers (jobs, networking) ─────────────────────────────────
   .use(campaignJobController)
-  .use(campaignOutreachController);
+  .use(campaignNetworkingController);

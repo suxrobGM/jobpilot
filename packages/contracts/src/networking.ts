@@ -4,22 +4,22 @@ import { cleanReplacementChars } from "./utils/text";
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-// ── Campaign-level enums (stored in Campaign.config.outreach) ────────────────────
+// ── Campaign-level enums (stored in Campaign.config.networking) ──────────────────
 
-export const OUTREACH_CHANNELS = ["email", "linkedin"] as const;
-export const outreachChannelSchema = z.enum(OUTREACH_CHANNELS);
+export const NETWORKING_CHANNELS = ["email", "linkedin"] as const;
+export const networkingChannelSchema = z.enum(NETWORKING_CHANNELS);
 
 export const LINKEDIN_TIERS = ["free", "premium"] as const;
 export const linkedinTierSchema = z.enum(LINKEDIN_TIERS);
 
-export const OUTREACH_AUTONOMY = ["draft", "review", "auto"] as const;
-export const outreachAutonomySchema = z.enum(OUTREACH_AUTONOMY);
+export const NETWORKING_AUTONOMY = ["draft", "review", "auto"] as const;
+export const networkingAutonomySchema = z.enum(NETWORKING_AUTONOMY);
 
-/** Shape of `Campaign.config.outreach` - the per-campaign mode selector. */
-export const outreachConfigSchema = z.object({
-  channels: z.array(outreachChannelSchema).min(1),
+/** Shape of `Campaign.config.networking` - the per-campaign mode selector. */
+export const networkingConfigSchema = z.object({
+  channels: z.array(networkingChannelSchema).min(1),
   linkedinTier: linkedinTierSchema.optional(),
-  autonomy: outreachAutonomySchema.default("draft"),
+  autonomy: networkingAutonomySchema.default("draft"),
   dailyCap: z.number().int().min(1).max(100).optional(),
 });
 
@@ -28,7 +28,7 @@ export const outreachConfigSchema = z.object({
 export const LINKEDIN_KINDS = ["inmail", "connect_note", "dm"] as const;
 export const linkedinKindSchema = z.enum(LINKEDIN_KINDS);
 
-export const OUTREACH_MESSAGE_STATUSES = [
+export const NETWORKING_MESSAGE_STATUSES = [
   "draft",
   "approved",
   "sent",
@@ -37,10 +37,10 @@ export const OUTREACH_MESSAGE_STATUSES = [
   "failed",
   "skipped",
 ] as const;
-export const outreachMessageStatusSchema = z.enum(OUTREACH_MESSAGE_STATUSES);
+export const networkingMessageStatusSchema = z.enum(NETWORKING_MESSAGE_STATUSES);
 
 /** Statuses past which a message is locked (no further editing or sending). */
-export const OUTREACH_MESSAGE_TERMINAL_STATUSES: readonly string[] = [
+export const NETWORKING_MESSAGE_TERMINAL_STATUSES: readonly string[] = [
   "sent",
   "replied",
   "bounced",
@@ -83,34 +83,34 @@ export const contactFieldsSchema = z.object({
 
 export const createContactSchema = contactFieldsSchema;
 
-// ── Outreach message ─────────────────────────────────────────────────────────
+// ── Networking message ───────────────────────────────────────────────────────
 
-export const outreachMessageFieldsSchema = z.object({
-  channel: outreachChannelSchema,
+export const networkingMessageFieldsSchema = z.object({
+  channel: networkingChannelSchema,
   linkedinKind: linkedinKindSchema.optional().nullable(),
   subject: reasonText.optional().nullable(),
   body: reasonText.default(""),
-  status: outreachMessageStatusSchema.optional(),
+  status: networkingMessageStatusSchema.optional(),
 });
 
 /**
- * POST /api/campaigns/[id]/outreach - add a discovered contact (or attach to an
+ * POST /api/campaigns/[id]/networking - add a discovered contact (or attach to an
  * existing one via `contactId`) plus an initial draft message. Mirrors the
  * `addCampaignJobSchema` create-and-relate shape.
  */
-export const addCampaignOutreachSchema = z
+export const addCampaignNetworkingSchema = z
   .object({
     contactId: z.uuid().optional(),
     contact: createContactSchema.optional(),
-    message: outreachMessageFieldsSchema,
+    message: networkingMessageFieldsSchema,
   })
   .refine((v) => v.contactId != null || v.contact != null, {
     message: "Provide either contactId or contact.",
   });
 
-/** PATCH /api/campaigns/[id]/outreach/[messageId] - non-terminal edits. */
-export const patchOutreachMessageSchema = z.object({
-  status: outreachMessageStatusSchema.optional(),
+/** PATCH /api/campaigns/[id]/networking/[messageId] - non-terminal edits. */
+export const patchNetworkingMessageSchema = z.object({
+  status: networkingMessageStatusSchema.optional(),
   subject: reasonText.optional().nullable(),
   body: reasonText.optional(),
   failReason: reasonText.optional().nullable(),
@@ -120,13 +120,13 @@ export const patchOutreachMessageSchema = z.object({
   contactLinkedinConnection: contactLinkedinConnectionSchema.optional(),
 });
 
-export const OUTREACH_MESSAGE_OUTCOMES = ["sent", "failed", "skipped"] as const;
-export const outreachMessageOutcomeSchema = z.enum(OUTREACH_MESSAGE_OUTCOMES);
+export const NETWORKING_MESSAGE_OUTCOMES = ["sent", "failed", "skipped"] as const;
+export const networkingMessageOutcomeSchema = z.enum(NETWORKING_MESSAGE_OUTCOMES);
 
-/** POST /api/campaigns/[id]/outreach/[messageId]/result - terminal outcome. */
-export const outreachMessageResultSchema = z
+/** POST /api/campaigns/[id]/networking/[messageId]/result - terminal outcome. */
+export const networkingMessageResultSchema = z
   .object({
-    outcome: outreachMessageOutcomeSchema,
+    outcome: networkingMessageOutcomeSchema,
     sentAt: z.iso.datetime().optional(),
     providerId: z.string().optional(),
     threadId: z.string().optional(),
@@ -154,14 +154,14 @@ export const sendEmailSchema = z.object({
     .optional(),
 });
 
-export type OutreachConfig = z.infer<typeof outreachConfigSchema>;
-export type OutreachChannel = z.infer<typeof outreachChannelSchema>;
+export type NetworkingConfig = z.infer<typeof networkingConfigSchema>;
+export type NetworkingChannel = z.infer<typeof networkingChannelSchema>;
 export type LinkedinTier = z.infer<typeof linkedinTierSchema>;
-export type OutreachAutonomy = z.infer<typeof outreachAutonomySchema>;
-export type OutreachMessageStatus = z.infer<typeof outreachMessageStatusSchema>;
+export type NetworkingAutonomy = z.infer<typeof networkingAutonomySchema>;
+export type NetworkingMessageStatus = z.infer<typeof networkingMessageStatusSchema>;
 export type CreateContactInput = z.infer<typeof createContactSchema>;
-export type AddCampaignOutreachInput = z.infer<typeof addCampaignOutreachSchema>;
-export type PatchOutreachMessageInput = z.infer<typeof patchOutreachMessageSchema>;
-export type OutreachMessageOutcome = z.infer<typeof outreachMessageOutcomeSchema>;
-export type OutreachMessageResultInput = z.infer<typeof outreachMessageResultSchema>;
+export type AddCampaignNetworkingInput = z.infer<typeof addCampaignNetworkingSchema>;
+export type PatchNetworkingMessageInput = z.infer<typeof patchNetworkingMessageSchema>;
+export type NetworkingMessageOutcome = z.infer<typeof networkingMessageOutcomeSchema>;
+export type NetworkingMessageResultInput = z.infer<typeof networkingMessageResultSchema>;
 export type SendEmailInput = z.infer<typeof sendEmailSchema>;

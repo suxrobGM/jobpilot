@@ -14,7 +14,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Can it read and send email?",
-    a: "Yes, through your own Google OAuth client - no shared app touches your mail. Reading powers the inbox and verification codes; sending powers outreach.",
+    a: "Yes, through your own Google OAuth client - no shared app touches your mail. Reading powers the inbox and verification codes; sending powers networking.",
   },
   {
     q: "What about captchas?",

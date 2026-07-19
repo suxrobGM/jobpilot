@@ -9,7 +9,7 @@ import {
   buildQuestionItems,
   buildWarmIntroItems,
 } from "./items-jobs";
-import { buildFollowupItems, buildInboxItem, buildOutreachSendItems } from "./items-outreach";
+import { buildFollowupItems, buildInboxItem, buildNetworkingSendItems } from "./items-networking";
 import {
   buildBoardHealthItems,
   buildQueueDrainItem,
@@ -36,8 +36,8 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
   const { now, config } = input;
   const within = isWithinActiveHours(now, config.activeHours);
   const capReached = input.appliedToday >= config.dailyApplyCap;
-  // Outreach headroom is independent of the apply cap; it gates sends and followups alike.
-  const sendHeadroom = Math.max(0, config.dailyOutreachCap - input.outreachSentToday);
+  // Networking headroom is independent of the apply cap; it gates sends and followups alike.
+  const sendHeadroom = Math.max(0, config.dailyNetworkingCap - input.networkingSentToday);
 
   const items: AgendaItem[] = [...buildQuestionItems(input.answeredQuestions)];
   if (within && !capReached) items.push(...buildJobApplyItems(input.approvedJobs));
@@ -50,7 +50,7 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
     // User-curated URLs are proactive apply work, ranked just under the scored apply queue.
     items.push(...buildQueueDrainItem(input.queue));
     items.push(...buildWarmIntroItems(input.approvedJobs));
-    const sendItems = buildOutreachSendItems(input.approvedOutreach, sendHeadroom);
+    const sendItems = buildNetworkingSendItems(input.approvedNetworking, sendHeadroom);
     items.push(...sendItems);
     items.push(...buildInboxItem(input.inbox));
     items.push(...buildPromoPostItems(input.approvedPromotions));
@@ -75,11 +75,11 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
   }
   items.push(...buildFinalizeItems(input.finalizeCampaigns));
 
-  // Opt-in outreach: one category gate covers every `outreach.*` kind by construction. `inbox.review`
-  // is deliberately outside the namespace so mail triage (interview replies) survives outreach being off.
-  const ranked = config.outreachEnabled
+  // Opt-in networking: one category gate covers every `networking.*` kind by construction. `inbox.review`
+  // is deliberately outside the namespace so mail triage (interview replies) survives networking being off.
+  const ranked = config.networkingEnabled
     ? items
-    : items.filter((i) => !i.kind.startsWith("outreach."));
+    : items.filter((i) => !i.kind.startsWith("networking."));
 
   ranked.sort((a, b) => b.priority - a.priority);
   const capped = ranked.slice(0, MAX_ITEMS);

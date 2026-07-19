@@ -1,4 +1,4 @@
-import { sendEmailSchema } from "@jobpilot/contracts/outreach";
+import { sendEmailSchema } from "@jobpilot/contracts/networking";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";

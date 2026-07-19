@@ -1,15 +1,15 @@
 import { campaignSummarySchema } from "@jobpilot/contracts/campaign";
 import {
   contactLinkedinConnectionSchema,
-  outreachChannelSchema,
-  outreachMessageStatusSchema,
-} from "@jobpilot/contracts/outreach";
+  networkingChannelSchema,
+  networkingMessageStatusSchema,
+} from "@jobpilot/contracts/networking";
 import { z } from "zod/v4";
 
 // ── Response schemas ──────────────────────────────────────────────────────────
 
-/** The nested contact on an outreach message (mirrors the mapper's `OutreachContactRow`). */
-export const outreachContactSchema = z.object({
+/** The nested contact on a networking message (mirrors the mapper's `NetworkingContactRow`). */
+export const networkingContactSchema = z.object({
   id: z.uuid(),
   profileId: z.uuid(),
   name: z.string(),
@@ -30,20 +30,20 @@ export const outreachContactSchema = z.object({
 });
 
 /**
- * An outreach message with its contact (mirrors the mapper's `OutreachMessageRow`).
+ * A networking message with its contact (mirrors the mapper's `NetworkingMessageRow`).
  * `status`/`channel` are narrowed to the contract unions and all dates are
  * serialized to ISO.
  */
-export const outreachMessageSchema = z.object({
+export const networkingMessageSchema = z.object({
   id: z.uuid(),
   profileId: z.uuid(),
   contactId: z.uuid(),
   campaignId: z.string().nullable(),
-  channel: outreachChannelSchema,
+  channel: networkingChannelSchema,
   linkedinKind: z.string().nullable(),
   subject: z.string().nullable(),
   body: z.string(),
-  status: outreachMessageStatusSchema,
+  status: networkingMessageStatusSchema,
   failReason: z.string().nullable(),
   providerId: z.string().nullable(),
   threadId: z.string().nullable(),
@@ -51,17 +51,17 @@ export const outreachMessageSchema = z.object({
   repliedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  contact: outreachContactSchema,
+  contact: networkingContactSchema,
 });
 
-/** A list of outreach messages (the `listOutreach` route). */
-export const outreachMessageListSchema = z.array(outreachMessageSchema);
+/** A list of networking messages (the `listNetworking` route). */
+export const networkingMessageListSchema = z.array(networkingMessageSchema);
 
 /**
- * Result of recording an outreach message's terminal outcome - the updated
+ * Result of recording a networking message's terminal outcome - the updated
  * message and the recomputed campaign summary.
  */
-export const outreachMessageResultResponseSchema = z.object({
-  message: outreachMessageSchema,
+export const networkingMessageResultResponseSchema = z.object({
+  message: networkingMessageSchema,
   summary: campaignSummarySchema,
 });

@@ -1,4 +1,4 @@
-import type { CreateContactInput } from "@jobpilot/contracts/outreach";
+import type { CreateContactInput } from "@jobpilot/contracts/networking";
 
 /**
  * Map a validated contact payload to Prisma `Contact` create fields (sans

@@ -1,14 +1,14 @@
 ---
-name: outreach
+name: networking
 description: Find a hiring manager/recruiter for a role (or company) and send a personalized message via cold email or LinkedIn, with per-campaign channels and autonomy.
 argument-hint: "<target criteria> --campaign <campaign-id>"
 ---
 
-# Outreach - Direct Hiring-Manager / Recruiter Contact
+# Networking - Direct Hiring-Manager / Recruiter Contact
 
 Discover a contact, draft a personalized message, and send it via **email** and/or
 **LinkedIn** (Premium InMail or free connect-then-DM). Reaches people the ATS funnel hides.
-Backed by a `Campaign` (`source: "outreach"`); each contacted person + message is tracked.
+Backed by a `Campaign` (`source: "networking"`); each contacted person + message is tracked.
 
 ## Setup
 
@@ -32,7 +32,7 @@ JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
 CONFIG=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.config')
 ```
 
-`config.outreach` = `{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium",
+`config.networking` = `{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium",
 autonomy:"draft"|"review"|"auto", dailyCap? }`. `config` also carries the campaign's selected
 `resumeId` - build its public link `RESUME_URL="$JOBPILOT_API/api/public/resumes/$(echo "$CONFIG" | jq -r '.resumeId')/pdf"` and append it to the email body (skip when it is a `localhost` URL - dev only). `config` may also carry `board`
 (domain to search) and optional `maxJobs` (cap; absent = run until stopped).
@@ -43,8 +43,8 @@ no `board` → discover from criteria, grounding only if an opening turns up. Sk
 messaged on this campaign.
 
 **Rewrite mode** (`--rewrite <id[,id...]>`): skip discovery; for each non-terminal message delegate
-to `outreach-worker` for compose only (pass the existing contact as `target`), then
-`PATCH .../outreach/<id>` the new `subject`/`body` (keep `status`). Don't discover or send.
+to `networking-worker` for compose only (pass the existing contact as `target`), then
+`PATCH .../networking/<id>` the new `subject`/`body` (keep `status`). Don't discover or send.
 
 ## Phase 0.5: Open the board (when `config.board` set)
 
@@ -59,7 +59,7 @@ the query, and `browser_snapshot` the results (narrowed, per `../../shared/brows
 
 ## Phase 1: Discover, compose, save
 
-Per target, delegate discovery **and** compose to the `outreach-worker` subagent - it runs the multi-modal contact sweep (`WebSearch`/`WebFetch`/rendered pages) and writes the personalized, humanized draft per channel in isolated context, returning only `{found, contact, messages}`. **One worker at a time** (shared browser). Save and gate its result here.
+Per target, delegate discovery **and** compose to the `networking-worker` subagent - it runs the multi-modal contact sweep (`WebSearch`/`WebFetch`/rendered pages) and writes the personalized, humanized draft per channel in isolated context, returning only `{found, contact, messages}`. **One worker at a time** (shared browser). Save and gate its result here.
 
 ### With a board - loop over results
 
@@ -74,7 +74,7 @@ COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-On `.applied`, keep `.match.application.id` as `relatedAppId` - **don't skip** (outreach
+On `.applied`, keep `.match.application.id` as `relatedAppId` - **don't skip** (networking
 complements applying).
 
 2. Save the job (stable, shell-safe `key`):
@@ -87,12 +87,12 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
     '{key:$key,title:$title,company:$company,location:$location,url:$url,board:$board,status:"pending"}')"
 ```
 
-3. Delegate to `outreach-worker`:
+3. Delegate to `networking-worker`:
 
 ```json
 { "campaignId": "<campaign-id>",
   "target": { "jobUrl": "<job-url>", "title": "<title>", "company": "<company>", "digest": <digest-or-null> },
-  "channels": <config.outreach.channels>, "linkedinTier": "<config.outreach.linkedinTier>", "resumeUrl": "<RESUME_URL>" }
+  "channels": <config.networking.channels>, "linkedinTier": "<config.networking.linkedinTier>", "resumeUrl": "<RESUME_URL>" }
 ```
 
 `{found:false}` → log and continue. Otherwise save the returned draft (below), then gate (Phase 3).
@@ -103,7 +103,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 
 ### Without a board - discover from criteria
 
-Derive target companies/roles from the criteria; per target, delegate to `outreach-worker` with
+Derive target companies/roles from the criteria; per target, delegate to `networking-worker` with
 `target:{ "criteria": "<...>" }` (optionally add a matching opening's `jobUrl` for grounding +
 applied-check for `relatedAppId`). Save + gate as above.
 
@@ -112,7 +112,7 @@ applied-check for `relatedAppId`). Save + gate as above.
 Persist the worker's `contact` + each `message` (body already composed and humanized):
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/networking" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg name "<contact.name>" --arg title "<contact.title>" --arg company "<contact.company>" \
     --arg li "<contact.linkedinUrl>" --arg email "<contact.email-or-empty>" --arg esrc "<contact.emailSource-or-guessed>" \
@@ -129,7 +129,7 @@ Add `relatedAppId:<id>` when applied-check matched. Keep the returned `id` (mess
 `contactId`. Post one message per channel the worker returned, reusing the same `contactId`.
 
 **Rewrite mode** reuses the worker for compose only: delegate with the existing contact's
-`target` (no new discovery needed), then `PATCH .../outreach/<id>` the returned `subject`/`body`.
+`target` (no new discovery needed), then `PATCH .../networking/<id>` the returned `subject`/`body`.
 
 ## Phase 3: Approval gate (by `autonomy`)
 
@@ -153,7 +153,7 @@ For each message to send:
     -d "$(jq -n --arg to "<email>" --arg s "<subject>" --arg b "<body>" \
       '{to:$to,subject:$s,body:$b}')")
   PID=$(echo "$SENT" | jq -r '.providerId'); TID=$(echo "$SENT" | jq -r '.threadId')
-  curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach/<messageId>/result" \
+  curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/networking/<messageId>/result" \
     -H 'content-type: application/json' \
     -d "$(jq -n --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg p "$PID" --arg th "$TID" \
       '{outcome:"sent",sentAt:$t,providerId:$p,threadId:$th}')"
@@ -162,7 +162,7 @@ For each message to send:
   `/result` `{outcome:"sent",sentAt}`.
 - **LinkedIn free** - not connected: click Connect, add the note if offered, send; then mark the
   parent contact pending and the message sent:
-  `PATCH .../outreach/<messageId> {"contactLinkedinConnection":"pending"}` then POST `/result`
+  `PATCH .../networking/<messageId> {"contactLinkedinConnection":"pending"}` then POST `/result`
   `sent`. Already connected: send the DM. On a re-run, re-check `pending` contacts - when
   messaging is available, set `"connected"` and send the queued DM.
 

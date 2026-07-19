@@ -16,7 +16,7 @@ export function buildQuestionItems(questions: AgendaQuestion[]): AgendaItem[] {
     title: `Apply answer: ${q.prompt}`.slice(0, 200),
     subjectType: "question",
     subjectId: q.id,
-    // Enriched with subject + Q/A so the worker can route non-job answers (email replies, outreach) directly.
+    // Enriched with subject + Q/A so the worker can route non-job answers (email replies, networking) directly.
     payload: {
       questionId: q.id,
       questionKind: q.kind,
@@ -61,11 +61,11 @@ export function buildWarmIntroItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
     if (warm.length === 0 || (job.matchScore ?? 0) < WARM_INTRO_MIN_SCORE) continue;
     if (items.length >= MAX_WARM_INTROS) break;
     items.push({
-      id: `outreach.warmIntro:${job.campaignId}:${job.key}`,
-      kind: "outreach.warmIntro",
+      id: `networking.warmIntro:${job.campaignId}:${job.key}`,
+      kind: "networking.warmIntro",
       priority: PRIORITY.warmIntro,
       title: `Warm intro: ${job.title}`.slice(0, 200),
-      subjectType: "outreach",
+      subjectType: "networking",
       subjectId: `${job.campaignId}:${job.key}`,
       payload: {
         campaignId: job.campaignId,

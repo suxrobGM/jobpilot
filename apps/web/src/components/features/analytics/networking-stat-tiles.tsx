@@ -2,16 +2,16 @@
 
 import type { ReactElement } from "react";
 import { Grid } from "@mui/material";
-import type { AnalyticsOutreachStats } from "@/api/types";
+import type { AnalyticsNetworkingStats } from "@/api/types";
 import { StatTile } from "./stat-tile";
 
-interface OutreachStatTilesProps {
-  outreach: AnalyticsOutreachStats;
+interface NetworkingStatTilesProps {
+  networking: AnalyticsNetworkingStats;
 }
 
-export function OutreachStatTiles(props: OutreachStatTilesProps): ReactElement {
-  const { outreach } = props;
-  const { totals, thisWeek, replyRatePct } = outreach;
+export function NetworkingStatTiles(props: NetworkingStatTilesProps): ReactElement {
+  const { networking } = props;
+  const { totals, thisWeek, replyRatePct } = networking;
 
   return (
     <Grid container spacing={1.5}>

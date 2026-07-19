@@ -10,7 +10,7 @@ import { z } from "zod/v4";
 export const campaignParams = z.object({ id: z.string() });
 export const campaignJobParams = z.object({ id: z.string(), key: z.string() });
 
-export const outreachMessageParams = z.object({
+export const networkingMessageParams = z.object({
   id: z.string(),
   messageId: z.uuid(),
 });

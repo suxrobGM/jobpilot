@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { outreachConfigSchema } from "./outreach";
+import { networkingConfigSchema } from "./networking";
 import { cleanReplacementChars } from "./utils/text";
 
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
@@ -14,7 +14,7 @@ export const CAMPAIGN_STATUSES = [
 ] as const;
 export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
 
-export const CAMPAIGN_SOURCES = ["search", "auto-apply", "apply", "outreach"] as const;
+export const CAMPAIGN_SOURCES = ["search", "auto-apply", "apply", "networking"] as const;
 export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 
 export const CAMPAIGN_JOB_STATUSES = [
@@ -38,7 +38,7 @@ export const campaignConfigSchema = z.object({
   maxApplications: z.number().int().min(1).max(500).optional(),
   // No upper cap: absent = unlimited (search runs until the board is exhausted).
   maxJobs: z.number().int().min(1).optional(),
-  outreach: outreachConfigSchema.optional(),
+  networking: networkingConfigSchema.optional(),
 });
 
 export const campaignSummarySchema = z.object({
@@ -48,7 +48,7 @@ export const campaignSummarySchema = z.object({
   failed: z.number().int().min(0).default(0),
   skipped: z.number().int().min(0).default(0),
   remaining: z.number().int().min(0).default(0),
-  // Outreach campaigns (source === "outreach") fold their own counts here.
+  // Networking campaigns (source === "networking") fold their own counts here.
   discovered: z.number().int().min(0).default(0),
   drafted: z.number().int().min(0).default(0),
   sent: z.number().int().min(0).default(0),
@@ -57,7 +57,7 @@ export const campaignSummarySchema = z.object({
 });
 
 /** Composer-driven sources require a user-selected base resume; `apply` tailors per job. */
-const RESUME_REQUIRED_SOURCES: readonly CampaignSource[] = ["search", "auto-apply", "outreach"];
+const RESUME_REQUIRED_SOURCES: readonly CampaignSource[] = ["search", "auto-apply", "networking"];
 
 export const createCampaignSchema = z
   .object({
@@ -67,7 +67,7 @@ export const createCampaignSchema = z
     config: campaignConfigSchema.optional(),
   })
   .refine((v) => !RESUME_REQUIRED_SOURCES.includes(v.source) || !!v.config?.resumeId, {
-    message: "config.resumeId is required for search, auto-apply, and outreach campaigns.",
+    message: "config.resumeId is required for search, auto-apply, and networking campaigns.",
     path: ["config", "resumeId"],
   });
 
