@@ -13,7 +13,7 @@ interface StatCardProps {
 export function StatCard(props: StatCardProps): ReactElement {
   const { label, value, hint, trend } = props;
   return (
-    <Card>
+    <Card sx={{ height: "100%" }}>
       <CardContent>
         <Stack spacing={0.5}>
           <Typography variant="overlineMuted">{label}</Typography>

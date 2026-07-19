@@ -15,6 +15,7 @@ export const GoalsSection = withForm({
               label="Goals"
               multiline
               minRows={3}
+              placeholder="e.g. Prioritize senior frontend roles at Series A-C startups, remote or NYC. Must sponsor F1/OPT. Skip crypto and agencies. Lead with my React and design-systems work."
               helperText="Plain-language direction for the pilot: roles, priorities, constraints."
             />
           )}
