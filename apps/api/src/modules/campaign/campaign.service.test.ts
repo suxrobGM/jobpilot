@@ -78,14 +78,13 @@ describe("CampaignService reconcile (pilot enabled)", () => {
     expect(rec.campaignUpdateMany).toHaveLength(0);
   });
 
-  it("selfHealForPilot does nothing when the pilot is disabled", async () => {
+  it("selfHealForPilot heals directly without re-querying pilotState (compile is enabled-only)", async () => {
     const { svc, rec } = service({
-      enabled: false,
       interrupted: [{ campaignId: "c1", source: "auto-apply" }],
     });
     const healed = await svc.selfHealForPilot("p1");
-    expect(healed).toBe(0);
-    expect(rec.campaignUpdateMany).toHaveLength(0);
+    expect(healed).toBe(1);
+    expect(rec.campaignUpdateMany[0]?.data).toEqual({ status: "in_progress" });
   });
 });
 

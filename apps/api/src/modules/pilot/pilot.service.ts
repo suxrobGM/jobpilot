@@ -99,31 +99,31 @@ export class PilotService {
    * (a slow apply, a heartbeating worker) from a real stall before it climbs the nudge/kill ladder.
    */
   async getActivity(userId: string) {
-    const now = new Date();
-    const [leaseAgg, journalAgg, campaignAgg, jobAgg, activeLeases] = await Promise.all([
-      this.prisma.pilotLease.aggregate({
+    // One read for the (few) unreleased leases covers both the newest lease timestamp and the count.
+    const [leases, journalAgg, campaignAgg, jobAgg] = await Promise.all([
+      this.prisma.pilotLease.findMany({
         where: { userId, releasedAt: null },
-        _max: { grantedAt: true, heartbeatAt: true },
+        select: { grantedAt: true, heartbeatAt: true, expiresAt: true },
       }),
       this.prisma.pilotJournalEntry.aggregate({ where: { userId }, _max: { createdAt: true } }),
       this.prisma.campaign.aggregate({ where: { userId }, _max: { updatedAt: true } }),
       this.prisma.job.aggregate({ where: { campaign: { userId } }, _max: { createdAt: true } }),
-      this.prisma.pilotLease.count({
-        where: { userId, releasedAt: null, expiresAt: { gt: now } },
-      }),
     ]);
 
     const times = [
-      leaseAgg._max.grantedAt,
-      leaseAgg._max.heartbeatAt,
+      ...leases.flatMap((l) => [l.grantedAt, l.heartbeatAt]),
       journalAgg._max.createdAt,
       campaignAgg._max.updatedAt,
       jobAgg._max.createdAt,
-    ].filter((d): d is Date => d != null);
-    const lastActivityAt =
-      times.length > 0 ? new Date(Math.max(...times.map((d) => d.getTime()))) : null;
+    ];
+    const lastActivityAt = times.reduce<Date | null>(
+      (max, d) => (d != null && (max == null || d > max) ? d : max),
+      null,
+    );
 
-    return { lastActivityAt, activeLeases };
+    // Expired-but-unswept leases still count toward lastActivityAt but not as "active".
+    const now = new Date();
+    return { lastActivityAt, activeLeases: leases.filter((l) => l.expiresAt > now).length };
   }
 
   // ── Questions ─────────────────────────────────────────────────────────────────

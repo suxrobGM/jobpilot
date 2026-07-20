@@ -68,21 +68,7 @@ export class CampaignService {
     ]);
 
     for (const r of stale) {
-      publish(
-        campaignChannel,
-        { campaignId: r.campaignId },
-        { type: "status", payload: { status: "interrupted" } },
-      );
-      publish(
-        workspaceChannel,
-        { userId },
-        {
-          type: "campaign.updated",
-          campaignId: r.campaignId,
-          status: "interrupted",
-          source: r.source,
-        },
-      );
+      this.publishCampaignStatus(userId, r.campaignId, r.source as CampaignSource, "interrupted");
     }
 
     return stale.length;
@@ -94,6 +80,17 @@ export class CampaignService {
       select: { enabled: true },
     });
     return state?.enabled ?? false;
+  }
+
+  /** Two-channel status fan-out (campaign feed + user workspace) shared by the reconcile and heal sweeps. */
+  private publishCampaignStatus(
+    userId: string,
+    campaignId: string,
+    source: CampaignSource,
+    status: CampaignStatus,
+  ): void {
+    publish(campaignChannel, { campaignId }, { type: "status", payload: { status } });
+    publish(workspaceChannel, { userId }, { type: "campaign.updated", campaignId, status, source });
   }
 
   /**
@@ -116,34 +113,18 @@ export class CampaignService {
     });
 
     for (const r of interrupted) {
-      publish(
-        campaignChannel,
-        { campaignId: r.campaignId },
-        { type: "status", payload: { status: "in_progress" } },
-      );
-      publish(
-        workspaceChannel,
-        { userId },
-        {
-          type: "campaign.updated",
-          campaignId: r.campaignId,
-          status: "in_progress",
-          source: r.source as CampaignSource,
-        },
-      );
+      this.publishCampaignStatus(userId, r.campaignId, r.source as CampaignSource, "in_progress");
     }
 
     return interrupted.length;
   }
 
   /**
-   * Pilot entrypoint (called from the agenda compile): self-heal interrupted auto-apply campaigns
-   * when the pilot is enabled, so recovery never waits on the user visiting the campaigns page.
+   * Pilot entrypoint, called from the agenda compile where the pilot is definitionally enabled - so it
+   * heals directly without re-querying pilotState (the compile only runs for an enabled pilot). Recovery
+   * of interrupted auto-apply campaigns never waits on the user visiting the campaigns page.
    */
-  async selfHealForPilot(userId: string): Promise<number> {
-    if (!(await this.isPilotEnabled(userId))) {
-      return 0;
-    }
+  selfHealForPilot(userId: string): Promise<number> {
     return this.healInterruptedCampaigns(userId);
   }
 

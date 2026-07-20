@@ -106,15 +106,7 @@ export function buildScorePendingItems(campaigns: AgendaScorePending[]): AgendaI
     title: `Score discovered jobs: ${c.query}`.slice(0, 200),
     subjectType: "campaign",
     subjectId: c.campaignId,
-    payload: {
-      campaignId: c.campaignId,
-      query: c.query,
-      board: c.board,
-      resumeId: c.resumeId,
-      minScore: c.minScore,
-      pendingCount: c.pendingCount,
-      entries: c.entries,
-    },
+    payload: { ...c },
   }));
 }
 

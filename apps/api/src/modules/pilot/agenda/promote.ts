@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import { parseCampaignConfig } from "./campaign-config";
+import { resolveMinScore } from "./campaign-config";
 import { GATHER_CAP } from "./constants";
 
 /** Deps for the job-status mutations, mirroring the expiry sweep's shape. */
@@ -43,7 +43,7 @@ export async function promoteScoredPendingJobs(
   const decisions = rows.map((job) => {
     let threshold = thresholdByCampaign.get(job.campaignId);
     if (threshold === undefined) {
-      threshold = parseCampaignConfig(job.campaign.config)?.minScore ?? fallbackMinScore;
+      threshold = resolveMinScore(job.campaign.config, fallbackMinScore);
       thresholdByCampaign.set(job.campaignId, threshold);
     }
     const score = job.matchScore ?? 0;

@@ -166,17 +166,18 @@ export function makeAgendaDb(over: Over = {}) {
     job: {
       // A matchScore filter is the promote sweep (scored-pending rows); a status `in` filter is the
       // board-health scan; everything else is the approved-job gather.
-      findMany: async (a: { where: { status?: unknown; matchScore?: unknown } }) =>
-        "matchScore" in a.where
-          ? (over.scoredPendingJobs ?? [])
-          : a.where.status && typeof a.where.status === "object"
-            ? (over.boardHealthJobs ?? [])
-            : (over.approvedJobs ?? []),
+      findMany: async (a: { where: { status?: unknown; matchScore?: unknown } }) => {
+        if ("matchScore" in a.where) return over.scoredPendingJobs ?? [];
+        if (a.where.status && typeof a.where.status === "object") return over.boardHealthJobs ?? [];
+        return over.approvedJobs ?? [];
+      },
       findFirst: async () => over.job ?? null,
       update: async () => ({}),
       // groupBy by ["campaignId"] alone is the score-pending count; ["campaignId","skipReason"] is skip reasons.
-      groupBy: async (a: { by: string[] }) =>
-        a.by.length === 1 ? (over.scorePendingCounts ?? []) : (over.skipReasonRows ?? []),
+      groupBy: async (a: { by: string[] }) => {
+        if (a.by.length === 1) return over.scorePendingCounts ?? [];
+        return over.skipReasonRows ?? [];
+      },
       count: async (a: { where: { status?: string } }) =>
         a.where.status === "failed"
           ? (over.jobsFailed ?? 0)
@@ -200,14 +201,12 @@ export function makeAgendaDb(over: Over = {}) {
     campaign: {
       // Split the campaign gathers by their distinguishing where-clause: interrupted (self-heal),
       // source auto-apply (score-pending), a `jobs` clause (finalize), else the quiet-candidate gather.
-      findMany: async (a: { where: { status?: string; source?: string; jobs?: unknown } }) =>
-        a.where.status === "interrupted"
-          ? (over.interruptedCampaigns ?? [])
-          : a.where.source === "auto-apply"
-            ? (over.scorePendingCampaigns ?? [])
-            : "jobs" in a.where
-              ? (over.finalizeCampaigns ?? [])
-              : (over.quietCampaigns ?? []),
+      findMany: async (a: { where: { status?: string; source?: string; jobs?: unknown } }) => {
+        if (a.where.status === "interrupted") return over.interruptedCampaigns ?? [];
+        if (a.where.source === "auto-apply") return over.scorePendingCampaigns ?? [];
+        if ("jobs" in a.where) return over.finalizeCampaigns ?? [];
+        return over.quietCampaigns ?? [];
+      },
       findFirst: async () => over.campaignFindFirst ?? null,
       update: async () => ({}),
       updateMany: async () => ({ count: (over.interruptedCampaigns ?? []).length }),

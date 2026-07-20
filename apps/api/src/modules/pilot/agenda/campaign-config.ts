@@ -9,3 +9,8 @@ export function parseCampaignConfig(raw: string | null | undefined): CampaignCon
     return null;
   }
 }
+
+/** Effective apply threshold: the campaign config's own minScore, falling back to the pilot default. */
+export function resolveMinScore(raw: string | null | undefined, fallback: number): number {
+  return parseCampaignConfig(raw)?.minScore ?? fallback;
+}
