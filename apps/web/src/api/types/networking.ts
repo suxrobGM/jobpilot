@@ -8,7 +8,7 @@ export type ContactDto = Data<typeof api.contacts.get>[number];
 /** A networking message with its contact, from `GET /api/campaigns/:id/networking`. */
 export type NetworkingMessageDto = Data<
   ReturnType<typeof api.campaigns>["networking"]["get"]
->[number];
+>["items"][number];
 
 /** The networking sub-config carried inside a campaign config. */
 export type NetworkingConfigDto = NonNullable<CampaignConfigDto["networking"]>;

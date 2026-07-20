@@ -1,49 +1,91 @@
-﻿// Exercises the lazy expiry sweep in isolation via runExpiry with a fake Prisma + CampaignJobService,
-// so no database is touched. Importing the campaign service transitively loads `@/env`, satisfied by
-// the local .env / ci.yml dummy env.
-
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { Over } from "./db.test-helpers";
-import { makeAgendaDb, makeCampaignJobs } from "./db.test-helpers";
 import { runExpiry } from "./expiry";
 import { describe, expect, it } from "bun:test";
 
-const sweep = (over: Over) => {
-  const { db, rec } = makeAgendaDb(over);
-  const deps = { prisma: db as unknown as PrismaClient, campaignJobs: makeCampaignJobs(rec, over) };
-  return { run: () => runExpiry(deps, "p1", new Date()), rec };
-};
+function setup(options: {
+  leases?: Record<string, unknown>[];
+  questions?: Record<string, unknown>[];
+}) {
+  const jobWrites: Record<string, unknown>[] = [];
+  const queueWrites: Record<string, unknown>[] = [];
+  const leaseWrites: Record<string, unknown>[] = [];
+  const questionWrites: Record<string, unknown>[] = [];
+  let transactions = 0;
+  const db = {
+    pilotLease: {
+      findMany: async () => options.leases ?? [],
+      updateMany: async (args: Record<string, unknown>) => {
+        leaseWrites.push(args);
+        return { count: options.leases?.length ?? 0 };
+      },
+    },
+    question: {
+      findMany: async () => options.questions ?? [],
+      updateMany: async (args: Record<string, unknown>) => {
+        questionWrites.push(args);
+        return { count: options.questions?.length ?? 0 };
+      },
+    },
+    job: {
+      findFirst: async () => ({ url: "https://example.test/job" }),
+      updateMany: async (args: Record<string, unknown>) => {
+        jobWrites.push(args);
+        return { count: 1 };
+      },
+    },
+    queueEntry: {
+      updateMany: async (args: Record<string, unknown>) => {
+        queueWrites.push(args);
+        return { count: 1 };
+      },
+    },
+    $transaction: async (work: (tx: unknown) => Promise<unknown>) => {
+      transactions += 1;
+      return work(db);
+    },
+  };
+  const run = () => runExpiry(db as unknown as PrismaClient, "u1", new Date());
+  return {
+    run,
+    jobWrites,
+    queueWrites,
+    leaseWrites,
+    questionWrites,
+    get transactions() {
+      return transactions;
+    },
+  };
+}
 
-describe("AgendaService lazy expiry", () => {
-  it("reverts an applying job to approved when its lease has expired", async () => {
-    const { run, rec } = sweep({
-      expiredLeases: [
+describe("agenda expiry", () => {
+  it("releases an expired lease and reverts its applying job in one transaction", async () => {
+    const state = setup({
+      leases: [
         {
-          id: "L1",
+          id: "l1",
           kind: "job.apply",
-          subjectId: "jobkey",
-          payload: JSON.stringify({ campaignId: "c1", jobKey: "jobkey" }),
+          subjectId: "j1",
+          payload: { campaignId: "c1", jobKey: "j1" },
         },
       ],
-      job: { status: "applying" },
     });
-
-    await run();
-
-    expect(rec.leaseUpdates[0].data).toMatchObject({ outcome: "expired" });
-    expect(rec.patchJob[0]).toEqual(["p1", "c1", "jobkey", { status: "approved" }]);
+    await state.run();
+    expect(state.transactions).toBe(1);
+    expect(state.leaseWrites[0]).toMatchObject({ data: { outcome: "expired" } });
+    expect(state.jobWrites[0]).toMatchObject({
+      where: { campaignId: "c1", key: "j1", status: "applying" },
+      data: { status: "approved" },
+    });
   });
 
-  it("skips a parked job when its question expires", async () => {
-    const { run, rec } = sweep({
-      expiredQuestions: [{ id: "E1", subjectType: "job", subjectId: "c1:jobkey" }],
-      job: { status: "needs_user" },
+  it("expires a question and skips its parked job and queue entry atomically", async () => {
+    const state = setup({
+      questions: [{ id: "q1", subjectType: "job", subjectId: "c1:j1" }],
     });
-
-    await run();
-
-    expect(rec.questionUpdates[0].data).toMatchObject({ status: "expired" });
-    expect(rec.recordResult[0]?.[0]).toBe("p1");
-    expect(rec.recordResult[0]?.[3]).toMatchObject({ outcome: "skipped" });
+    await state.run();
+    expect(state.transactions).toBe(1);
+    expect(state.questionWrites[0]).toMatchObject({ data: { status: "expired" } });
+    expect(state.jobWrites[0]).toMatchObject({ data: { status: "skipped" } });
+    expect(state.queueWrites[0]).toMatchObject({ data: { status: "skipped" } });
   });
 });

@@ -14,7 +14,7 @@ function row(id: string, minute: number): Record<string, unknown> {
     cycleId: null,
     kind: "action",
     summary: `entry ${id}`,
-    detail: "{}",
+    detail: {},
     subjectType: null,
     subjectId: null,
     createdAt: new Date(Date.UTC(2026, 0, 1, 0, minute)),

@@ -47,7 +47,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const stop = useApiMutation<unknown, void>(
     () =>
-      campaignResource.patch({
+      campaignResource.status.post({
         status: "paused" satisfies CampaignStatus,
       }),
     {
@@ -58,9 +58,8 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const complete = useApiMutation<unknown, void>(
     () =>
-      campaignResource.patch({
+      campaignResource.status.post({
         status: "completed" satisfies CampaignStatus,
-        completedAt: new Date().toISOString(),
       }),
     {
       successMessage: "Campaign marked as done",
@@ -72,7 +71,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const [minScore, setMinScore] = useState(campaign.config.minScore ?? 60);
 
   const rescan = useApiMutation<unknown, void>(
-    () => campaignResource.patch({ config: { minScore } }),
+    () => campaignResource.patch({ config: { ...campaign.config, minScore } }),
     { invalidate: [queryKeys.campaigns.detail(campaign.campaignId), queryKeys.campaigns.all] },
   );
 
@@ -83,10 +82,10 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   });
 
   const failedCount = campaign.jobs.filter((j) => j.status === "failed").length;
-  const skippedCount = campaign.summary.skipped;
+  const skippedCount = campaign.summary.kind === "jobs" ? campaign.summary.skipped : 0;
   const isInProgress = campaign.status === "in_progress";
   const isAutoApply = campaign.source === "auto-apply";
-  const isStopped = campaign.status === "paused" || campaign.status === "interrupted";
+  const isStopped = campaign.status === "paused";
   const hasActionItems =
     isStopped ||
     (agentAvailable && ((isAutoApply && failedCount > 0) || (!isInProgress && skippedCount > 0)));
@@ -95,7 +94,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     const confirmed = await confirm({
       title: "Mark campaign as done?",
       description:
-        "It stops counting as interrupted and won't be resumable. Use this for campaigns you stopped on purpose.",
+        "This closes the campaign permanently. Use it for campaigns you stopped on purpose.",
       confirmLabel: "Mark as done",
     });
     if (confirmed) {

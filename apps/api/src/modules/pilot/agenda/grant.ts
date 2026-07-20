@@ -1,9 +1,11 @@
 import { conflict } from "@/common/errors";
 import type { PrismaClient } from "@/generated/prisma/client";
 
+type GrantClient = Pick<PrismaClient, "promotionPost" | "networkingMessage" | "campaign">;
+
 interface GrantGate {
   /** True when the backing row is still in a leasable state; false triggers the 409 below. */
-  verify(prisma: PrismaClient, userId: string, subjectId: string): Promise<boolean>;
+  verify(prisma: GrantClient, userId: string, subjectId: string): Promise<boolean>;
   message: string;
 }
 
@@ -47,7 +49,7 @@ const GRANT_GATES: Record<string, GrantGate> = {
 };
 
 export async function verifyGrant(
-  prisma: PrismaClient,
+  prisma: GrantClient,
   userId: string,
   kind: string,
   subjectId: string,

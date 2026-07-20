@@ -1,12 +1,9 @@
 import { z } from "zod/v4";
 
-// ── Agenda ────────────────────────────────────────────────────────────────────
-
 const AGENDA_ITEM_KINDS = [
   "question.answered",
   "job.apply",
   "search.discover",
-  // Score an existing campaign's discovered-but-unscored pending rows (mid-batch abandonment / thin listings).
   "campaign.scorePending",
   "campaign.finalize",
   "inbox.review",
@@ -17,16 +14,13 @@ const AGENDA_ITEM_KINDS = [
   "promo.post",
   "interview.reply",
   "interview.prep",
-  // M4 proactive work + board health.
   "queue.drain",
   "board.health",
   "campaign.strategyReview",
   "job.rescanSkipped",
   "job.retryFailed",
-  // Self-setup: derive goals/saved searches when the pipeline is empty and none exist.
   "strategy.bootstrap",
 ] as const;
-const agendaItemKindSchema = z.enum(AGENDA_ITEM_KINDS);
 
 const AGENDA_SUBJECT_TYPES = [
   "job",
@@ -39,51 +33,256 @@ const AGENDA_SUBJECT_TYPES = [
   "email",
   "queue",
   "board",
-  // The pilot's own instructions (strategy.bootstrap subjects itself, not a row).
   "pilot",
 ] as const;
-const agendaSubjectTypeSchema = z.enum(AGENDA_SUBJECT_TYPES);
 
-const agendaItemSchema = z.object({
+const nullableString = z.string().nullable();
+const optionalString = z.string().optional();
+const warmContactSchema = z.object({
   id: z.string(),
-  kind: agendaItemKindSchema,
-  priority: z.number(),
-  title: z.string(),
-  subjectType: agendaSubjectTypeSchema,
-  subjectId: z.string(),
-  payload: z.record(z.string(), z.unknown()),
+  name: z.string(),
+  title: nullableString,
+  email: nullableString,
 });
 
-const agendaCountsSchema = z.object({
-  openQuestions: z.number().int(),
-  activeLeases: z.number().int(),
-  approvedJobs: z.number().int(),
-  appliedToday: z.number().int(),
-});
+const agendaItem = <K extends (typeof AGENDA_ITEM_KINDS)[number], P extends z.ZodType>(
+  kind: K,
+  subjectType: (typeof AGENDA_SUBJECT_TYPES)[number],
+  payload: P,
+) =>
+  z.object({
+    kind: z.literal(kind),
+    subjectType: z.literal(subjectType),
+    subjectId: z.string(),
+    payload,
+  });
 
-const agendaBudgetSchema = z.object({
-  dailyApplyCap: z.number().int(),
-  appliedToday: z.number().int(),
-  capReached: z.boolean(),
-  resetsAt: z.date(),
-});
+export const agendaLeaseFieldsSchema = z.discriminatedUnion("kind", [
+  agendaItem(
+    "question.answered",
+    "question",
+    z.object({
+      questionId: z.string(),
+      questionKind: z.string(),
+      subjectType: nullableString,
+      subjectId: nullableString,
+      prompt: z.string(),
+      answer: nullableString,
+    }),
+  ),
+  agendaItem(
+    "job.apply",
+    "job",
+    z.object({
+      campaignId: z.string(),
+      jobKey: z.string(),
+      url: z.string(),
+      board: nullableString,
+      digest: nullableString,
+      resumeId: optionalString,
+      matchScore: z.number().nullable(),
+      warmContacts: z.array(warmContactSchema).optional(),
+    }),
+  ),
+  agendaItem(
+    "search.discover",
+    "campaign",
+    z.object({
+      query: z.string(),
+      board: optionalString,
+      resumeId: optionalString,
+      minScore: z.number(),
+    }),
+  ),
+  agendaItem(
+    "campaign.scorePending",
+    "campaign",
+    z.object({
+      campaignId: z.string(),
+      query: z.string(),
+      board: nullableString,
+      resumeId: optionalString,
+      minScore: z.number(),
+      pendingCount: z.number().int(),
+      entries: z.array(z.object({ key: z.string(), url: z.string(), title: z.string() })),
+    }),
+  ),
+  agendaItem("campaign.finalize", "campaign", z.object({ campaignId: z.string() })),
+  agendaItem(
+    "inbox.review",
+    "inbox",
+    z.object({ messageIds: z.array(z.string()), count: z.number().int() }),
+  ),
+  agendaItem(
+    "networking.send",
+    "networking",
+    z.object({
+      campaignId: z.string(),
+      messageId: z.string(),
+      contactId: z.string(),
+      contactName: z.string(),
+      contactEmail: z.string(),
+      subject: nullableString,
+      body: z.string(),
+    }),
+  ),
+  agendaItem(
+    "networking.followup",
+    "networking",
+    z.object({
+      campaignId: z.string(),
+      messageId: z.string(),
+      contactId: z.string(),
+      contactName: z.string(),
+      contactEmail: z.string(),
+      subject: nullableString,
+      sentAt: z.date(),
+      daysSince: z.number().int(),
+    }),
+  ),
+  agendaItem(
+    "networking.warmIntro",
+    "networking",
+    z.object({
+      campaignId: z.string(),
+      jobKey: z.string(),
+      company: nullableString,
+      jobTitle: z.string(),
+      jobUrl: z.string(),
+      contacts: z.array(warmContactSchema),
+    }),
+  ),
+  agendaItem(
+    "promo.compose",
+    "promotion",
+    z.object({ platform: z.string(), target: optionalString }),
+  ),
+  agendaItem(
+    "promo.post",
+    "promotion",
+    z.object({
+      promotionId: z.string(),
+      platform: z.string(),
+      target: nullableString,
+      title: nullableString,
+      body: z.string(),
+    }),
+  ),
+  agendaItem(
+    "interview.reply",
+    "email",
+    z.object({
+      applicationId: z.string(),
+      emailMessageId: z.string(),
+      threadId: nullableString,
+      from: z.string(),
+      subject: z.string(),
+      receivedAt: z.date(),
+      company: z.string(),
+      jobTitle: z.string(),
+    }),
+  ),
+  agendaItem(
+    "interview.prep",
+    "application",
+    z.object({
+      applicationId: z.string(),
+      company: z.string(),
+      jobTitle: z.string(),
+      jobUrl: nullableString,
+      resumeId: nullableString,
+    }),
+  ),
+  agendaItem(
+    "queue.drain",
+    "queue",
+    z.object({
+      entries: z.array(z.object({ id: z.string(), url: z.string() })),
+      pendingCount: z.number().int(),
+    }),
+  ),
+  agendaItem(
+    "board.health",
+    "board",
+    z.object({
+      board: z.string(),
+      consecutiveFailures: z.number().int(),
+      recentFailReasons: z.array(z.string()),
+      probeJob: z
+        .object({ campaignId: z.string(), jobKey: z.string(), url: z.string() })
+        .nullable(),
+    }),
+  ),
+  agendaItem(
+    "campaign.strategyReview",
+    "campaign",
+    z.object({
+      campaignId: z.string(),
+      query: z.string(),
+      config: z.object({ minScore: z.number().nullable(), board: nullableString }),
+      counts: z.object({
+        totalFound: z.number().int(),
+        qualified: z.number().int(),
+        applied: z.number().int(),
+        skipped: z.number().int(),
+      }),
+      topSkipReasons: z.array(z.string()),
+    }),
+  ),
+  agendaItem(
+    "job.rescanSkipped",
+    "campaign",
+    z.object({ campaignId: z.string(), skippedCount: z.number().int() }),
+  ),
+  agendaItem(
+    "job.retryFailed",
+    "campaign",
+    z.object({ campaignId: z.string(), failedCount: z.number().int() }),
+  ),
+  agendaItem(
+    "strategy.bootstrap",
+    "pilot",
+    z.object({
+      goals: z.string(),
+      hasGoals: z.boolean(),
+      boards: z.array(z.string()),
+      minScore: z.number(),
+    }),
+  ),
+]);
 
-/**
- * Why the agenda has no items, decided server-side so clients don't re-infer suppression rules:
- * `capReached` (apply budget spent), `awaitingSetup` (no saved searches yet, bootstrap still
- * pending), `clear` (everything's done). Null when the agenda is non-empty.
- */
-const agendaEmptyReasonSchema = z.enum(["capReached", "awaitingSetup", "clear"]);
+export const agendaItemSchema = z.intersection(
+  z.object({ id: z.string(), priority: z.number(), title: z.string() }),
+  agendaLeaseFieldsSchema,
+);
 
-export const agendaResponseSchema = z.object({
+export const agendaContentSchema = z.object({
   generatedAt: z.date(),
   items: z.array(agendaItemSchema),
-  counts: agendaCountsSchema,
-  budget: agendaBudgetSchema,
-  emptyReason: agendaEmptyReasonSchema.nullable(),
+  counts: z.object({
+    openQuestions: z.number().int(),
+    activeLeases: z.number().int(),
+    approvedJobs: z.number().int(),
+    appliedToday: z.number().int(),
+  }),
+  budget: z.object({
+    dailyApplyCap: z.number().int(),
+    appliedToday: z.number().int(),
+    capReached: z.boolean(),
+    resetsAt: z.date(),
+  }),
+  emptyReason: z.enum(["capReached", "awaitingSetup", "clear"]).nullable(),
   sleepSeconds: z.number(),
   nextWakeAt: z.date(),
 });
 
+export const agendaResponseSchema = agendaContentSchema.extend({
+  version: z.uuid(),
+  expiresAt: z.date(),
+});
+
+export const currentAgendaResponseSchema = z.object({ agenda: agendaResponseSchema.nullable() });
+
 export type AgendaItem = z.infer<typeof agendaItemSchema>;
+export type AgendaContent = z.infer<typeof agendaContentSchema>;
 export type AgendaResponse = z.infer<typeof agendaResponseSchema>;

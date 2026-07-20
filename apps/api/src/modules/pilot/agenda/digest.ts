@@ -93,7 +93,7 @@ export async function writeDigestIfDue(
       const summary = composeDigestSummary(counts);
       // Reuse the journal write path so SSE fires; then push the glanceable summary to the phone.
       await pilot.appendJournal(userId, {
-        entries: [{ kind: "digest", summary, detail: { ...counts } as Record<string, unknown> }],
+        entries: [{ kind: "digest", summary, detail: { ...counts } }],
       });
       void push.sendToUser(userId, {
         title: "Your Pilot's morning digest",

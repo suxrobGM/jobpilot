@@ -1,10 +1,55 @@
+enum PilotLeaseOutcome {
+  done
+  failed
+  abandoned
+  expired
+}
+
+enum QuestionKind {
+  question
+  choice
+  two_factor @map("2fa")
+  approval
+}
+
+enum QuestionStatus {
+  open
+  answered
+  expired
+  cancelled
+}
+
+enum PilotJournalKind {
+  cycle
+  action
+  observation
+  question
+  system
+  digest
+  correction
+}
+
+enum PromotionStatus {
+  draft
+  approved
+  declined
+  posted
+  failed
+  skipped
+  expired
+}
+
 model PilotState {
   userId                String    @id @map("user_id")
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   enabled               Boolean   @default(false)
   instructionsGoals     String    @default("") @map("instructions_goals")
-  instructionsConfig    String    @default("{}") @map("instructions_config")
+  instructionsConfig    Json      @default("{}") @map("instructions_config")
   instructionsUpdatedAt DateTime? @map("instructions_updated_at")
+  agendaVersion         String?   @map("agenda_version")
+  agendaGeneratedAt     DateTime? @map("agenda_generated_at")
+  agendaExpiresAt       DateTime? @map("agenda_expires_at")
+  agendaSnapshot        Json?     @map("agenda_snapshot")
   lastCycleAt           DateTime? @map("last_cycle_at")
   cycleCount            Int       @default(0) @map("cycle_count")
   createdAt             DateTime  @default(now()) @map("created_at")
@@ -14,73 +59,75 @@ model PilotState {
 }
 
 model PilotLease {
-  id          String    @id @default(uuid())
-  userId      String    @map("user_id")
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String             @id @default(uuid())
+  userId      String             @map("user_id")
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind        String
-  subjectType String    @map("subject_type")
-  subjectId   String    @map("subject_id")
-  payload     String    @default("{}")
-  grantedAt   DateTime  @default(now()) @map("granted_at")
-  heartbeatAt DateTime? @map("heartbeat_at")
-  expiresAt   DateTime  @map("expires_at")
-  releasedAt  DateTime? @map("released_at")
-  outcome     String?
+  subjectType String             @map("subject_type")
+  subjectId   String             @map("subject_id")
+  payload     Json               @default("{}")
+  grantedAt   DateTime           @default(now()) @map("granted_at")
+  heartbeatAt DateTime?          @map("heartbeat_at")
+  expiresAt   DateTime           @map("expires_at")
+  releasedAt  DateTime?          @map("released_at")
+  outcome     PilotLeaseOutcome?
 
   @@index([userId, expiresAt])
+  @@index([userId, subjectType, subjectId])
   @@map("pilot_leases")
 }
 
 model Question {
-  id          String    @id @default(uuid())
-  userId      String    @map("user_id")
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind        String
-  status      String    @default("open")
-  subjectType String?   @map("subject_type")
-  subjectId   String?   @map("subject_id")
+  id          String         @id @default(uuid())
+  userId      String         @map("user_id")
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        QuestionKind
+  status      QuestionStatus @default(open)
+  subjectType String?        @map("subject_type")
+  subjectId   String?        @map("subject_id")
   prompt      String
-  options     String    @default("[]")
-  deepLink    String?   @map("deep_link")
+  options     Json           @default("[]")
+  deepLink    String?        @map("deep_link")
   answer      String?
-  answeredAt  DateTime? @map("answered_at")
-  expiresAt   DateTime? @map("expires_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  answeredAt  DateTime?      @map("answered_at")
+  expiresAt   DateTime?      @map("expires_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
 
   @@index([userId, status])
+  @@index([status, expiresAt])
   @@map("questions")
 }
 
 model PilotJournalEntry {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cycleId     String?  @map("cycle_id")
-  kind        String
+  id          String           @id @default(uuid())
+  userId      String           @map("user_id")
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycleId     String?          @map("cycle_id")
+  kind        PilotJournalKind
   summary     String
-  detail      String   @default("{}")
-  subjectType String?  @map("subject_type")
-  subjectId   String?  @map("subject_id")
-  createdAt   DateTime @default(now()) @map("created_at")
+  detail      Json             @default("{}")
+  subjectType String?          @map("subject_type")
+  subjectId   String?          @map("subject_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
   @@map("pilot_journal_entries")
 }
 
 model PromotionPost {
-  id           String    @id @default(uuid())
-  userId       String    @map("user_id")
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform     String // "hn-whoishiring" | "reddit:r/forhire" | "linkedin-post"
-  target       String? // thread/subreddit URL when known
+  id           String          @id @default(uuid())
+  userId       String          @map("user_id")
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform     String
+  target       String?
   title        String?
   body         String
-  status       String    @default("draft") // draft | approved | declined | posted | failed | skipped | expired
-  postedUrl    String?   @map("posted_url")
-  scheduledFor DateTime? @map("scheduled_for")
-  postedAt     DateTime? @map("posted_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  status       PromotionStatus @default(draft)
+  postedUrl    String?         @map("posted_url")
+  scheduledFor DateTime?       @map("scheduled_for")
+  postedAt     DateTime?       @map("posted_at")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
 
   @@index([userId, status])
   @@map("promotion_posts")

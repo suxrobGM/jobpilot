@@ -9,13 +9,34 @@ import type {
   AgendaPromoPost,
 } from "./types";
 
+function requireCampaignId(campaignId: string | null): string {
+  if (!campaignId) throw new Error("Campaign-scoped networking query returned no campaign id.");
+  return campaignId;
+}
+
+function requireDate(value: Date | null, field: string): Date {
+  if (!value) throw new Error(`Networking query returned no ${field}.`);
+  return value;
+}
+
+function requireString(value: string | null, field: string): string {
+  if (!value) throw new Error(`Networking query returned no ${field}.`);
+  return value;
+}
+
 /** Approved email drafts with a deliverable address, oldest first. LinkedIn drafts are never sends. */
 export async function gatherApprovedNetworking(
   prisma: PrismaClient,
   userId: string,
 ): Promise<AgendaNetworkingSend[]> {
   const rows = await prisma.networkingMessage.findMany({
-    where: { userId, channel: "email", status: "approved", contact: { email: { not: null } } },
+    where: {
+      userId,
+      campaignId: { not: null },
+      channel: "email",
+      status: "approved",
+      contact: { email: { not: null } },
+    },
     orderBy: { createdAt: "asc" },
     take: GATHER_CAP,
     select: {
@@ -28,11 +49,11 @@ export async function gatherApprovedNetworking(
     },
   });
   return rows.map((m) => ({
-    campaignId: m.campaignId ?? "",
+    campaignId: requireCampaignId(m.campaignId),
     messageId: m.id,
     contactId: m.contactId,
     contactName: m.contact.name,
-    contactEmail: m.contact.email ?? "",
+    contactEmail: requireString(m.contact.email, "contact email"),
     subject: m.subject,
     body: m.body,
   }));
@@ -47,7 +68,13 @@ export async function gatherFollowups(
 ): Promise<AgendaFollowup[]> {
   const cutoff = new Date(now.getTime() - config.networkingFollowupDays * DAY_MS);
   const candidates = await prisma.networkingMessage.findMany({
-    where: { userId, channel: "email", repliedAt: null, sentAt: { not: null, lt: cutoff } },
+    where: {
+      userId,
+      campaignId: { not: null },
+      channel: "email",
+      repliedAt: null,
+      sentAt: { not: null, lt: cutoff },
+    },
     orderBy: { sentAt: "asc" },
     take: GATHER_CAP,
     select: {
@@ -73,16 +100,19 @@ export async function gatherFollowups(
 
   return candidates
     .filter((c) => latestByContact.get(c.contactId)?.getTime() === c.createdAt.getTime())
-    .map((c) => ({
-      campaignId: c.campaignId ?? "",
-      messageId: c.id,
-      contactId: c.contactId,
-      contactName: c.contact.name,
-      contactEmail: c.contact.email ?? "",
-      subject: c.subject,
-      sentAt: c.sentAt as Date,
-      daysSince: Math.floor((now.getTime() - (c.sentAt as Date).getTime()) / DAY_MS),
-    }));
+    .map((c) => {
+      const sentAt = requireDate(c.sentAt, "sent timestamp");
+      return {
+        campaignId: requireCampaignId(c.campaignId),
+        messageId: c.id,
+        contactId: c.contactId,
+        contactName: c.contact.name,
+        contactEmail: requireString(c.contact.email, "contact email"),
+        subject: c.subject,
+        sentAt,
+        daysSince: Math.floor((now.getTime() - sentAt.getTime()) / DAY_MS),
+      };
+    });
 }
 
 /** Approved posts whose schedule (if any) has arrived. */

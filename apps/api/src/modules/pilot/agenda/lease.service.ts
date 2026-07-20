@@ -1,102 +1,104 @@
-import type { ReleasePilotLeaseInput } from "@jobpilot/contracts/pilot";
+import { type ReleasePilotLeaseInput } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
-import { conflict, findOwned } from "@/common/errors";
-import { type PilotLease, PrismaClient } from "@/generated/prisma/client";
+import { z } from "zod/v4";
+import { conflict, findOwned, isPrismaError, PRISMA_ERRORS } from "@/common/errors";
+import { toInputJson } from "@/common/json";
+import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { toPilotLease } from "../pilot.mapper";
-import { jobRef, parsePayload, revertJobToApproved } from "./expiry";
 import { verifyGrant } from "./grant";
-import { AgendaService } from "./service";
+import { parseJobPayload } from "./job-mutations";
+import { parseAgendaSnapshot } from "./service";
 
 const LEASE_TTL_MS = 15 * 60 * 1000;
 
-/**
- * The agenda's claim lifecycle: grant a lease over one compiled item, keep it alive, release it.
- * Split from AgendaService because compiling an agenda and owning a claim share no state beyond
- * Prisma - leasing only calls back into the compile to re-derive the item it is asked for.
- */
+/** Atomically claims versioned agenda items and manages lease heartbeats and release. */
 @singleton()
 export class LeaseService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly campaignJobs: CampaignJobService,
-    private readonly agenda: AgendaService,
   ) {}
 
-  private get jobDeps() {
-    return { prisma: this.prisma, campaignJobs: this.campaignJobs };
-  }
-
-  async lease(userId: string, itemId: string) {
-    const agenda = await this.agenda.compile(userId);
-    const item = agenda.items.find((i) => i.id === itemId);
-    if (!item) {
-      throw conflict("Agenda item is no longer available.");
-    }
-
-    // One active lease per subject: refuses a second worker taking the same item (409).
-    const active = await this.prisma.pilotLease.findFirst({
-      where: {
-        userId,
-        subjectType: item.subjectType,
-        subjectId: item.subjectId,
-        releasedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      select: { id: true },
-    });
-    if (active) {
-      throw conflict("This item is already leased.");
-    }
-
-    // Server-side grant gates: re-verify the row is still in a leasable state, ignoring agent claims.
-    await verifyGrant(this.prisma, userId, item.kind, item.subjectId);
-
-    const { campaignId, jobKey } = item.payload as { campaignId?: string; jobKey?: string };
-    // Single-writer claim first: only one lease can flip approved->applying (409 on a lost race).
-    const jobClaim =
-      item.kind === "job.apply" && campaignId && jobKey ? { campaignId, jobKey } : null;
-    if (jobClaim) {
-      await this.campaignJobs.claimJobForApply(userId, jobClaim.campaignId, jobClaim.jobKey);
-    }
-
-    let lease: PilotLease;
+  async lease(userId: string, agendaVersion: string, itemId: string) {
     try {
-      lease = await this.prisma.pilotLease.create({
-        data: {
-          userId,
-          kind: item.kind,
-          subjectType: item.subjectType,
-          subjectId: item.subjectId,
-          payload: JSON.stringify(item.payload),
-          expiresAt: new Date(Date.now() + LEASE_TTL_MS),
-        },
-      });
-    } catch (err) {
-      // A claim without a lease row would strand the job in applying; hand it back to the agenda.
-      if (jobClaim) {
-        await revertJobToApproved(this.jobDeps, userId, jobClaim.campaignId, jobClaim.jobKey);
-      }
-      throw err;
-    }
+      const result = await this.prisma.$transaction(async (tx) => {
+        const now = new Date();
+        const locked = await tx.pilotState.updateMany({
+          where: {
+            userId,
+            enabled: true,
+            agendaVersion,
+            agendaExpiresAt: { gt: now },
+          },
+          data: { agendaVersion },
+        });
+        if (locked.count === 0) {
+          const current = await tx.pilotState.findUnique({
+            where: { userId },
+            select: { enabled: true },
+          });
+          if (!current?.enabled) throw conflict("Pilot is disabled.");
+          throw conflict("Agenda snapshot is stale; refresh it before leasing.");
+        }
+        const state = await tx.pilotState.findUniqueOrThrow({ where: { userId } });
+        if (!state.agendaSnapshot) {
+          throw conflict("Agenda snapshot is stale; refresh it before leasing.");
+        }
+        const item = parseAgendaSnapshot(state.agendaSnapshot).items.find(
+          (candidate) => candidate.id === itemId,
+        );
+        if (!item) throw conflict("Agenda item is no longer available.");
 
-    return { ...toPilotLease(lease), payload: item.payload };
+        await verifyGrant(tx, userId, item.kind, item.subjectId);
+        let claimedJob = null;
+        if (item.kind === "job.apply") {
+          claimedJob = await this.campaignJobs.claimJobForApplyInTransaction(
+            tx,
+            userId,
+            item.payload.campaignId,
+            item.payload.jobKey,
+          );
+        }
+        const lease = await tx.pilotLease.create({
+          data: {
+            userId,
+            kind: item.kind,
+            subjectType: item.subjectType,
+            subjectId: item.subjectId,
+            payload: toInputJson(item.payload),
+            expiresAt: new Date(now.getTime() + LEASE_TTL_MS),
+          },
+        });
+        return { lease, item, claimedJob };
+      });
+      if (result.claimedJob && result.item.kind === "job.apply") {
+        this.campaignJobs.publishClaimedJob(
+          userId,
+          result.item.payload.campaignId,
+          result.claimedJob,
+        );
+      }
+      return toPilotLease(result.lease);
+    } catch (error) {
+      if (isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) {
+        throw conflict("This item is already leased.");
+      }
+      throw error;
+    }
   }
 
   async heartbeat(userId: string, id: string) {
-    const existing = await findOwned(
-      (where) =>
-        this.prisma.pilotLease.findFirst({ where, select: { id: true, releasedAt: true } }),
-      { id, userId },
-      "Lease",
-    );
-    // A released lease must not get its TTL resurrected by a late worker heartbeat.
-    if (existing.releasedAt) throw conflict("Lease is already released.");
-    const lease = await this.prisma.pilotLease.update({
-      where: { id },
+    const updated = await this.prisma.pilotLease.updateMany({
+      where: { id, userId, releasedAt: null },
       data: { heartbeatAt: new Date(), expiresAt: new Date(Date.now() + LEASE_TTL_MS) },
     });
-    return toPilotLease(lease);
+    if (updated.count === 0) {
+      const existing = await this.prisma.pilotLease.findFirst({ where: { id, userId } });
+      if (!existing) await findOwned(() => Promise.resolve(null), { id, userId }, "Lease");
+      throw conflict("Lease is already released.");
+    }
+    return toPilotLease(await this.prisma.pilotLease.findUniqueOrThrow({ where: { id } }));
   }
 
   async release(userId: string, id: string, body: ReleasePilotLeaseInput) {
@@ -105,24 +107,35 @@ export class LeaseService {
       { id, userId },
       "Lease",
     );
-    // A released lease is terminal; a second release must not overwrite its recorded outcome.
-    if (existing.releasedAt) throw conflict("Lease is already released.");
-
-    const parsed = parsePayload(existing.payload);
-    const { campaignId, jobKey } = jobRef(parsed, existing.subjectId);
-    // "abandoned" un-claims the work; the terminal result for done/failed arrives via the campaign result route.
-    if (body.outcome === "abandoned" && existing.kind === "job.apply" && campaignId) {
-      await revertJobToApproved(this.jobDeps, userId, campaignId, jobKey);
+    if (existing.releasedAt) {
+      if (existing.outcome === body.outcome) return toPilotLease(existing);
+      throw conflict(`Lease already released with outcome ${existing.outcome}.`);
     }
-
-    const payload = body.note
-      ? JSON.stringify({ ...parsed, releaseNote: body.note })
-      : existing.payload;
-
-    const lease = await this.prisma.pilotLease.update({
-      where: { id },
-      data: { releasedAt: new Date(), outcome: body.outcome, payload },
+    const payload = z.record(z.string(), z.json()).parse(existing.payload);
+    const updated = await this.prisma.$transaction(async (tx) => {
+      if (body.outcome === "abandoned" && existing.kind === "job.apply") {
+        const jobRef = parseJobPayload(payload);
+        await tx.job.updateMany({
+          where: {
+            campaignId: jobRef.campaignId,
+            key: jobRef.jobKey,
+            status: "applying",
+            campaign: { userId },
+          },
+          data: { status: "approved" },
+        });
+      }
+      const changed = await tx.pilotLease.updateMany({
+        where: { id, userId, releasedAt: null },
+        data: {
+          releasedAt: new Date(),
+          outcome: body.outcome,
+          payload: toInputJson(body.note ? { ...payload, releaseNote: body.note } : payload),
+        },
+      });
+      if (changed.count === 0) throw conflict("Lease was released concurrently.");
+      return tx.pilotLease.findUniqueOrThrow({ where: { id } });
     });
-    return toPilotLease(lease);
+    return toPilotLease(updated);
   }
 }

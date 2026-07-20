@@ -47,7 +47,7 @@ your approval.
 | `search`          | Search a board, rank results against your resume, save them for review.  |
 | `auto-apply`      | Search and apply autonomously until done, paused, or capped.             |
 | `apply`           | Apply to one job with a fit review, or drain the saved-URL queue.        |
-| `resume`          | Resume an interrupted campaign and finish its remaining approved jobs.   |
+| `resume`          | Resume a paused campaign and finish its remaining approved jobs.         |
 | `rescan-skipped`  | Re-score a campaign's skipped jobs and promote the wrongly dropped ones. |
 | `networking`      | Find the hiring contact for a role and draft a personalized message.     |
 | `scan-inbox`      | Classify new mail, match it to applications, propose status moves.       |
@@ -81,7 +81,7 @@ approve one and the application updates. Nothing changes status without you.
 
 ## Recovering a campaign
 
-- **Paused or interrupted?** Run the `resume` skill with the campaign id. It
+- **Paused?** Run the `resume` skill with the campaign id. It
   picks the apply loop back up on the remaining approved jobs without
   re-asking anything.
 - **Skipped too much?** Run `rescan-skipped`. It re-scores the campaign's

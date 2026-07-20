@@ -46,7 +46,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   const campaign = detail.data;
 
-  if (campaign.source === "networking") {
+  if (campaign.summary.kind === "networking") {
     return (
       <Stack spacing={3}>
         <CampaignHeaderCard campaign={campaign} />

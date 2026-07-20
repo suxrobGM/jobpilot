@@ -53,7 +53,7 @@ export function AutoApplyStopPill(): ReactNode {
       if (!active) {
         throw new Error("No active auto-apply campaign");
       }
-      return api.campaigns({ id: active.campaignId }).patch({
+      return api.campaigns({ id: active.campaignId }).status.post({
         status: "paused" satisfies CampaignStatus,
       });
     },

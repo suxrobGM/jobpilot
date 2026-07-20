@@ -16,7 +16,7 @@ import { SectionCard } from "@/components/ui/layout";
 /** Folds a campaign's summary into a single progress reading, type-aware. */
 function progress(campaign: CampaignDto): { value: number; label: string } {
   const s = campaign.summary;
-  if (campaign.source === "networking") {
+  if (s.kind === "networking") {
     const total = Math.max(s.discovered, 1);
     return { value: (s.sent / total) * 100, label: `${s.sent}/${s.discovered} sent` };
   }
@@ -49,7 +49,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
   const p = progress(campaign);
 
   const pause = useApiMutation<{ campaignId: string; status: string }, void>(
-    () => api.campaigns({ id: campaign.campaignId }).patch({ status: "paused" }),
+    () => api.campaigns({ id: campaign.campaignId }).status.post({ status: "paused" }),
     {
       successMessage: "Campaign paused",
       invalidate: invalidations.campaign,

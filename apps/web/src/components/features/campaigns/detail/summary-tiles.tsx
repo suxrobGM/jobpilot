@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactNode } from "react";
 import { Grid } from "@mui/material";
 import type { CampaignDetailDto } from "@/api/types";
 import { StatCard } from "@/components/ui/display";
@@ -9,9 +9,12 @@ interface CampaignSummaryTilesProps {
   campaign: CampaignDetailDto;
 }
 
-export function CampaignSummaryTiles(props: CampaignSummaryTilesProps): ReactElement {
+export function CampaignSummaryTiles(props: CampaignSummaryTilesProps): ReactNode {
   const { campaign } = props;
   const s = campaign.summary;
+  if (s.kind !== "jobs") {
+    return null;
+  }
   const showRemaining = typeof campaign.config.maxApplications === "number";
   const tileSize = { xs: 6, sm: 4, md: 2 };
 

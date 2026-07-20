@@ -5,8 +5,7 @@ import {
   networkingMessageStatusSchema,
 } from "@jobpilot/contracts/networking";
 import { z } from "zod/v4";
-
-// ── Response schemas ──────────────────────────────────────────────────────────
+import { paginatedResponseSchema } from "@/types/response";
 
 /** The nested contact on a networking message (mirrors the mapper's `NetworkingContactRow`). */
 export const networkingContactSchema = z.object({
@@ -55,11 +54,11 @@ export const networkingMessageSchema = z.object({
 });
 
 /** A list of networking messages (the `listNetworking` route). */
-export const networkingMessageListSchema = z.array(networkingMessageSchema);
+export const networkingMessageListSchema = paginatedResponseSchema(networkingMessageSchema);
 
 /**
  * Result of recording a networking message's terminal outcome - the updated
- * message and the recomputed campaign summary.
+ * message and the current summary derived from message rows.
  */
 export const networkingMessageResultResponseSchema = z.object({
   message: networkingMessageSchema,

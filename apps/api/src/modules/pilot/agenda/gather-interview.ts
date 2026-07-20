@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import { parseCampaignConfig } from "./campaign-config";
+import { parseCampaignConfig } from "@/modules/campaign/campaign.config";
 import type { AgendaInterviewPrep, AgendaInterviewReply } from "./types";
 
 /** Prefix marking an ApplicationEvent note as a generated interview prep sheet. */
@@ -85,6 +85,6 @@ export async function gatherInterviewPreps(
     company: a.company,
     jobTitle: a.title,
     jobUrl: a.url,
-    resumeId: parseCampaignConfig(a.campaign?.config)?.resumeId ?? null,
+    resumeId: a.campaign ? (parseCampaignConfig(a.campaign.config).resumeId ?? null) : null,
   }));
 }

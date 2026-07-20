@@ -1,5 +1,5 @@
 import type { AgendaItem } from "@jobpilot/contracts/pilot";
-import { PRIORITY } from "./constants";
+import { MAX_PROMO_COMPOSE, PRIORITY } from "./constants";
 import type { AgendaPromoPlatform, AgendaPromoPost } from "./types";
 
 /** Approved posts ready to publish. */
@@ -23,7 +23,7 @@ export function buildPromoPostItems(posts: AgendaPromoPost[]): AgendaItem[] {
 
 /** Compose a fresh post; one per agenda so drafts don't pile up unreviewed. */
 export function buildPromoComposeItems(platforms: AgendaPromoPlatform[]): AgendaItem[] {
-  return platforms.slice(0, 1).map((p) => ({
+  return platforms.slice(0, MAX_PROMO_COMPOSE).map((p) => ({
     id: `promo.compose:${p.platform}`,
     kind: "promo.compose",
     priority: PRIORITY.promoCompose,

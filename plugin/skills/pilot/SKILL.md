@@ -25,7 +25,8 @@ If `.enabled` is `false`: journal nothing, print `[[JOBPILOT_CYCLE cycle=$CYCLE_
 ## 1. Sense
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/pilot/agenda"
+AGENDA=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/agenda/refresh")
+AGENDA_VERSION=$(echo "$AGENDA" | jq -r '.version')
 ```
 
 If `.items` is empty:
@@ -45,8 +46,9 @@ Take the top item - the server already ranked the agenda. If several share prior
 ## 3. Lease
 
 ```bash
-LEASE=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease" \
-  -H 'content-type: application/json' -d "$(jq -n --arg id "<itemId>" '{itemId:$id}')")
+LEASE=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/leases" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg id "<itemId>" --arg version "$AGENDA_VERSION" '{itemId:$id,agendaVersion:$version}')")
 LEASE_ID=$(echo "$LEASE" | jq -r '.id')
 ```
 
@@ -88,7 +90,7 @@ The `[interview-prep]` marker prefix is load-bearing - the server dedupes on it.
 Delegate ONE `job-worker` invocation in apply mode, same input JSON auto-apply builds (campaignId, jobKey, url, board, digest, resumeId, plus profile fields per `../../shared/setup.md`) plus `leaseId:$LEASE_ID` (lets the worker heartbeat through a long apply), all read from the lease payload. Heartbeat once more when it returns:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/$LEASE_ID/heartbeat"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/leases/$LEASE_ID/heartbeat"
 ```
 
 Handle the four outcomes exactly as auto-apply's 2.4:
@@ -116,7 +118,7 @@ The lease payload is enriched: `{questionId, questionKind, subjectType, subjectI
 
 - **`job`** → delegate `job-worker` apply mode as `job.apply` above with `answer` included in its input as `answers` (pre-provided user answers the worker reads instead of asking again); record the result exactly as `job.apply`.
 - **`email`** → the answer to an `interview.reply` approval. `"Send"` → send the drafted reply (recovered from the question `prompt`) via the email module (`POST /api/email/send {to,subject,body}`, adding `threadId` when the payload carries one, else send to `from`); free-text answer → treat it as availability/corrections, adjust the draft, then send; `"Skip"` → journal the skip. Journal the sent reply.
-- **`networking`** → `subjectId` = a draft networking messageId (filed by `networking.followup`/`networking.warmIntro`). Recover the draft and its campaign by scanning each campaign's `GET /api/campaigns/<id>/networking` (`GET /api/campaigns` lists them). `"Send"` → send and record exactly as `networking.send`; `"Skip"` → record result `skipped`.
+- **`networking`** → `subjectId` = a draft networking messageId (filed by `networking.followup`/`networking.warmIntro`). Recover the draft and its campaign from paginated campaign `.items` and `GET /api/campaigns/<id>/networking?page=1&limit=100` `.items`. `"Send"` → send and record exactly as `networking.send`; `"Skip"` → record result `skipped`.
 - **`board`** → the answer to a `board.health` choice. `"Park board"` → `GET /api/pilot`, append the board (`subjectId`) to instructions `config.parkedBoards`, `PUT /api/pilot/instructions` with the updated config (user-approved change - allowed); `"Keep trying"` → journal only.
 - **`pilot`** → the answer to a `strategy.bootstrap` question: treat the answer text as the goals. Derive 1-3 saved searches from it exactly as `strategy.bootstrap`, then ONE `PUT /api/pilot/instructions` writing `{goals: <answer>, config: <config + new savedSearches>}`. Journal both facts.
 
@@ -125,16 +127,17 @@ The lease payload is enriched: `{questionId, questionKind, subjectType, subjectI
 Run ONE bounded board search, modeled on the `search` skill (login per `../../shared/auth.md`). If the payload doesn't name an existing campaign, create one first:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
+CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg id "<campaignId>" --arg q "<query>" --arg rid "<resumeId>" --argjson minScore <n> --arg board "<board>" \
-    '{campaignId:$id, query:$q, source:"auto-apply", config:{resumeId:$rid, minScore:$minScore, board:$board}}')"
+  -d "$(jq -n --arg q "<query>" --arg rid "<resumeId>" --argjson minScore <n> --arg board "<board>" \
+    '{query:$q, source:"auto-apply", config:{resumeId:$rid, minScore:$minScore, board:$board}}')")
+CID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
-Cap ONE results page (~10 rows, no pagination). Score every row **in-context** - no per-job navigation, no worker delegation: spawning a worker per row just repeats the same fixed setup cost, and the shared browser tab would serialize them anyway. Per row: dedupe via `GET /api/applied/check` (already-applied → save `status:"skipped"`, no scoring); else build the digest from the results snapshot alone (digest-schema.md), `POST /api/score-fit`, and save per eligibility.md - ineligible (hard blocker) → `status:"skipped"` with the reason; else `status:"pending"` with the score (save shape matches `job-worker`'s score-mode create body, `../../agents/job-worker.md`). The server auto-promotes `pending` rows scoring ≥ threshold to `approved` on the next agenda compile, so **do not apply** in this cycle. A row too thin to score confidently → save `pending` **without** `matchScore`; `campaign.scorePending` (below) batch-scores those later. Heartbeat after each row and at least every ~10 minutes:
+Cap ONE results page (~10 rows, no pagination). Score every row **in-context** - no per-job navigation, no worker delegation: spawning a worker per row just repeats the same fixed setup cost, and the shared browser tab would serialize them anyway. Per row: dedupe via `GET /api/applied/check`; build and create every Job as a non-terminal `pending` row. For an already-applied or ineligible row, immediately POST its `skipped` outcome and reason to `/jobs/<key>/result`. Eligible rows keep their score and remain `pending`. The server auto-promotes rows scoring ≥ threshold to `approved` on the next agenda refresh, so **do not apply** in this cycle. A row too thin to score confidently stays `pending` without `matchScore`; `campaign.scorePending` batch-scores it later. Heartbeat after each row and at least every ~10 minutes:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/$LEASE_ID/heartbeat"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/leases/$LEASE_ID/heartbeat"
 ```
 
 ### `campaign.scorePending`
@@ -142,7 +145,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 Payload `{campaignId, query, board, resumeId, minScore, pendingCount, entries: [{key,url,title}]}` - unscored `pending` rows left behind by `search.discover` (thin listings) or a mid-batch abandonment. Delegate ONE `job-worker` batch score invocation: `{mode:"score", campaignId, jobs:<entries mapped to {jobKey:key,url,title}, ≤5>, resumeId, minMatchScore:<minScore>, save:"patch", leaseId:$LEASE_ID}`. **Do not apply** this cycle - promotion of newly-scored rows to `approved` happens server-side on the next agenda compile. Heartbeat after the worker returns:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/$LEASE_ID/heartbeat"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/leases/$LEASE_ID/heartbeat"
 ```
 
 Journal like the other kinds: "Scored 5 unscored jobs for 'senior typescript remote' - 3 now ≥ threshold, promote next cycle."
@@ -150,9 +153,8 @@ Journal like the other kinds: "Scored 5 unscored jobs for 'senior typescript rem
 ### `campaign.finalize`
 
 ```bash
-NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CID" \
-  -H 'content-type: application/json' -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CID/status" \
+  -H 'content-type: application/json' -d '{"status":"completed"}'
 ```
 
 ### `queue.drain`
@@ -161,7 +163,7 @@ Payload `{entries: [{id, url}], pendingCount}` - user-queued URLs. Resolve the t
 
 ```bash
 CID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=in_progress" \
-  | jq -r '[.[] | select(.source=="auto-apply")] | sort_by(.startedAt) | last | .campaignId // ""')
+  | jq -r '[.items[] | select(.source=="auto-apply")] | sort_by(.startedAt) | last | .campaignId // ""')
 ```
 
 Delegate ONE `job-worker` batch score invocation over the entries (≤5): `{mode:"score", campaignId:$CID, jobs:[{jobKey:<entry id>, url}...], save:"create", leaseId:$LEASE_ID}` - it dedupes and saves each row itself. Scored jobs above threshold auto-promote to `approved` server-side on the next agenda compile and enter the normal `job.apply` pipeline in later cycles - **do not apply here**. Queue entries auto-consume server-side when their job reaches a terminal result - never mark them manually. Heartbeat after the worker returns (same curl as `search.discover`, above). Journal: "Scored 4 queued jobs - 3 eligible."
@@ -190,9 +192,6 @@ Payload `{campaignId, query, config, counts, topSkipReasons}`. Quiet-agenda deep
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CID" \
   -H 'content-type: application/json' -d "$(jq -n --argjson config "$UPDATED_CONFIG" '{config:$config}')"
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CID/events" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg b "$BEFORE" --arg a "$AFTER" --arg r "$REASONING" '{type:"log", payload:{kind:"strategy", before:$b, after:$a, reasoning:$r}}')"
 ```
 
 Journal with detail `{type:"strategyReview"}` (see step 5): "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65." The `detail.type` marker is load-bearing - the server dedupes reviews on it. Larger changes than the bounds → ask the user with a `choice` question instead of applying.
@@ -222,7 +221,7 @@ Payload `{campaignId, skippedCount}`. Run the `rescan-skipped` skill's procedure
 
 ### `job.retryFailed`
 
-Payload `{campaignId, failedCount}`. Follow `auto-apply`'s retry-failed mode for this campaign, but score/queue only - flip retryable `failed` jobs back to `approved` (`PATCH` each job `{status:"approved"}`) so normal `job.apply` cycles retry them; do **not** apply this cycle. Retryable = transient `failReason`s (timeouts, 5xx, session lost), never eligibility skips. Journal with detail `{type:"retryFailed"}`.
+Payload `{campaignId, failedCount}`. Follow `auto-apply`'s retry-failed mode for this campaign, but score/queue only - POST each retryable job's `/retry` command so normal `job.apply` cycles retry it; do **not** apply this cycle. Retryable = transient `failReason`s (timeouts, 5xx, session lost), never eligibility skips. Journal with detail `{type:"retryFailed"}`.
 
 ### `inbox.review`
 
@@ -322,7 +321,7 @@ If the worker returned `observations`, append each to the **same** journal POST 
 ## 6. Release
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/$LEASE_ID/release" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/leases/$LEASE_ID/release" \
   -H 'content-type: application/json' -d '{"outcome":"done"}'
 ```
 

@@ -5,18 +5,21 @@ import type {
   SetPilotEnabledInput,
   UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
-import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
 import { PushService } from "@/common/push";
 import { publish } from "@/common/sse";
-import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
+import {
+  type PilotState as PilotStateModel,
+  Prisma,
+  PrismaClient,
+} from "@/generated/prisma/client";
+import { parseInstructionsConfig } from "./pilot.instructions";
 import { toPilotState, toQuestion } from "./pilot.mapper";
 import { countAppliedToday } from "./pilot.stats";
 
-/** 2FA codes die within minutes, so an unanswered 2FA question must self-expire fast; the agenda
- *  expiry sweep then cleanly skips the parked job instead of leaving it wedged in needs_user. */
+/** Expiring unanswered 2FA questions keeps their parked jobs from staying wedged. */
 const TWO_FA_TTL_MS = 5 * 60 * 1000;
 
 function questionExpiry(body: CreateQuestionInput): Date | null {
@@ -25,6 +28,7 @@ function questionExpiry(body: CreateQuestionInput): Date | null {
   return null;
 }
 
+/** Owns Pilot state, instructions, activity reads, and question lifecycle. */
 @singleton()
 export class PilotService {
   constructor(
@@ -32,14 +36,8 @@ export class PilotService {
     private readonly push: PushService,
   ) {}
 
-  // ── State / instructions ──────────────────────────────────────────────────────
-
-  /**
-   * Full state DTO shared by every state-returning route: the persisted row plus
-   * today's applied count (UTC day).
-   */
   private async toStateDto(userId: string, row: PilotStateModel) {
-    const config = pilotInstructionsConfigSchema.parse(JSON.parse(row.instructionsConfig));
+    const config = parseInstructionsConfig(row.instructionsConfig);
     const appliedToday = await countAppliedToday(this.prisma, userId, new Date());
     return toPilotState(row, appliedToday, config);
   }
@@ -60,13 +58,21 @@ export class PilotService {
       create: {
         userId,
         instructionsGoals: body.goals,
-        instructionsConfig: JSON.stringify(body.config),
+        instructionsConfig: body.config,
         instructionsUpdatedAt: new Date(),
+        agendaVersion: null,
+        agendaGeneratedAt: null,
+        agendaExpiresAt: null,
+        agendaSnapshot: Prisma.DbNull,
       },
       update: {
         instructionsGoals: body.goals,
-        instructionsConfig: JSON.stringify(body.config),
+        instructionsConfig: body.config,
         instructionsUpdatedAt: new Date(),
+        agendaVersion: null,
+        agendaGeneratedAt: null,
+        agendaExpiresAt: null,
+        agendaSnapshot: Prisma.DbNull,
       },
     });
     const state = await this.toStateDto(userId, row);
@@ -78,21 +84,20 @@ export class PilotService {
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
       create: { userId, enabled: body.enabled },
-      update: { enabled: body.enabled },
+      update: {
+        enabled: body.enabled,
+        agendaVersion: null,
+        agendaGeneratedAt: null,
+        agendaExpiresAt: null,
+        agendaSnapshot: Prisma.DbNull,
+      },
     });
     const state = await this.toStateDto(userId, row);
     publish(pilotChannel, { userId }, { type: "state.changed", state });
     return state;
   }
 
-  /**
-   * Server-side liveness for the terminal watchdog: the newest agent activity across leases, the
-   * journal, campaign writes, and job *creation*, plus the current active-lease count. Lets the host
-   * tell a live long cycle (a slow apply, a heartbeating worker) from a real stall before it climbs
-   * the nudge/kill ladder. Job status transitions are invisible here - Job has no `updatedAt` column -
-   * but every one of them bumps its campaign's `updatedAt` via the summary recompute, and a worker
-   * mid-apply heartbeats its lease, so both paths are still covered.
-   */
+  /** Newest persisted activity lets the terminal distinguish a slow live cycle from a stall. */
   async getActivity(userId: string) {
     // One read for the (few) unreleased leases covers both the newest lease timestamp and the count.
     const [leases, journalAgg, campaignAgg, jobAgg] = await Promise.all([
@@ -102,14 +107,14 @@ export class PilotService {
       }),
       this.prisma.pilotJournalEntry.aggregate({ where: { userId }, _max: { createdAt: true } }),
       this.prisma.campaign.aggregate({ where: { userId }, _max: { updatedAt: true } }),
-      this.prisma.job.aggregate({ where: { campaign: { userId } }, _max: { createdAt: true } }),
+      this.prisma.job.aggregate({ where: { campaign: { userId } }, _max: { updatedAt: true } }),
     ]);
 
     const times = [
       ...leases.flatMap((l) => [l.grantedAt, l.heartbeatAt]),
       journalAgg._max.createdAt,
       campaignAgg._max.updatedAt,
-      jobAgg._max.createdAt,
+      jobAgg._max.updatedAt,
     ];
     const lastActivityAt = times.reduce<Date | null>(
       (max, d) => (d != null && (max == null || d > max) ? d : max),
@@ -121,18 +126,16 @@ export class PilotService {
     return { lastActivityAt, activeLeases: leases.filter((l) => l.expiresAt > now).length };
   }
 
-  // ── Questions ─────────────────────────────────────────────────────────────────
-
   async createQuestion(userId: string, body: CreateQuestionInput) {
     const expiresAt = questionExpiry(body);
     const row = await this.prisma.question.create({
       data: {
         userId,
-        kind: body.kind,
+        kind: body.kind === "2fa" ? "two_factor" : body.kind,
         subjectType: body.subjectType ?? null,
         subjectId: body.subjectId ?? null,
         prompt: body.prompt,
-        options: JSON.stringify(body.options),
+        options: body.options,
         deepLink: body.deepLink ?? null,
         expiresAt,
       },

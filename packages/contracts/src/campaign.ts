@@ -5,13 +5,7 @@ import { cleanReplacementChars } from "./utils/text";
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-export const CAMPAIGN_STATUSES = [
-  "in_progress",
-  "paused",
-  "interrupted",
-  "completed",
-  "failed",
-] as const;
+export const CAMPAIGN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
 export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
 
 export const CAMPAIGN_SOURCES = ["search", "auto-apply", "apply", "networking"] as const;
@@ -31,8 +25,6 @@ export const campaignJobStatusSchema = z.enum(CAMPAIGN_JOB_STATUSES);
 
 export const campaignConfigSchema = z.object({
   board: z.string().min(1).optional(),
-  // Base resume the campaign scores and tailors against; optional for read
-  // back-compat (older/agent-created campaigns fall back to the primary resume).
   resumeId: z.uuid().optional(),
   minScore: z.number().int().min(0).max(100).optional(),
   maxApplications: z.number().int().min(1).max(500).optional(),
@@ -41,14 +33,18 @@ export const campaignConfigSchema = z.object({
   networking: networkingConfigSchema.optional(),
 });
 
-export const campaignSummarySchema = z.object({
+export const campaignJobSummarySchema = z.object({
+  kind: z.literal("jobs"),
   totalFound: z.number().int().min(0).default(0),
   qualified: z.number().int().min(0).default(0),
   applied: z.number().int().min(0).default(0),
   failed: z.number().int().min(0).default(0),
   skipped: z.number().int().min(0).default(0),
   remaining: z.number().int().min(0).default(0),
-  // Networking campaigns (source === "networking") fold their own counts here.
+});
+
+export const campaignNetworkingSummarySchema = z.object({
+  kind: z.literal("networking"),
   discovered: z.number().int().min(0).default(0),
   drafted: z.number().int().min(0).default(0),
   sent: z.number().int().min(0).default(0),
@@ -56,56 +52,39 @@ export const campaignSummarySchema = z.object({
   bounced: z.number().int().min(0).default(0),
 });
 
+export const campaignSummarySchema = z.discriminatedUnion("kind", [
+  campaignJobSummarySchema,
+  campaignNetworkingSummarySchema,
+]);
+
 /** Composer-driven sources require a user-selected base resume; `apply` tailors per job. */
 const RESUME_REQUIRED_SOURCES: readonly CampaignSource[] = ["search", "auto-apply", "networking"];
 
+/** Returns whether a configuration satisfies its source's required fields. */
+export function campaignConfigSupportsSource(
+  source: CampaignSource,
+  config: CampaignConfig,
+): boolean {
+  return !RESUME_REQUIRED_SOURCES.includes(source) || !!config.resumeId;
+}
+
 export const createCampaignSchema = z
   .object({
-    campaignId: z.string().min(1),
     query: z.string().min(1),
     source: campaignSourceSchema,
     config: campaignConfigSchema.optional(),
   })
-  .refine((v) => !RESUME_REQUIRED_SOURCES.includes(v.source) || !!v.config?.resumeId, {
+  .refine((v) => campaignConfigSupportsSource(v.source, v.config ?? {}), {
     message: "config.resumeId is required for search, auto-apply, and networking campaigns.",
     path: ["config", "resumeId"],
   });
 
-export const updateCampaignSchema = z.object({
-  status: campaignStatusSchema.optional(),
-  summary: campaignSummarySchema.partial().optional(),
-  config: campaignConfigSchema.partial().optional(),
-  completedAt: z.iso.datetime().optional().nullable(),
+export const updateCampaignConfigSchema = z.object({
+  config: campaignConfigSchema,
 });
 
-export const addCampaignJobSchema = z.object({
-  key: z.string().min(1),
-  title: z.string().min(1),
-  company: z.string().min(1),
-  location: z.string().optional().nullable(),
-  salary: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
-  url: z.url(),
-  board: z.string().optional().nullable(),
-  matchScore: z.number().int().min(0).max(100).optional().nullable(),
-  matchReason: reasonText.optional().nullable(),
-  status: campaignJobStatusSchema.optional(),
-  failReason: reasonText.optional().nullable(),
-  skipReason: reasonText.optional().nullable(),
-  description: z.string().optional().nullable(),
-  digest: z.string().optional().nullable(),
-});
-
-export const patchCampaignJobSchema = z.object({
-  status: campaignJobStatusSchema.optional(),
-  appliedAt: z.iso.datetime().optional().nullable(),
-  failReason: reasonText.optional().nullable(),
-  retryNotes: reasonText.optional().nullable(),
-  skipReason: reasonText.optional().nullable(),
-  matchScore: z.number().int().min(0).max(100).optional().nullable(),
-  matchReason: reasonText.optional().nullable(),
-  description: z.string().optional().nullable(),
-  digest: z.string().optional().nullable(),
+export const campaignStatusCommandSchema = z.object({
+  status: campaignStatusSchema,
 });
 
 export const CAMPAIGN_JOB_TERMINAL_OUTCOMES = ["applied", "failed", "skipped"] as const;
@@ -118,6 +97,49 @@ export const CAMPAIGN_JOB_ACTIVE_STATUSES = [
   "applying",
   "needs_user",
 ] as const;
+
+export const addCampaignJobSchema = z.object({
+  key: z.string().min(1),
+  title: z.string().min(1),
+  company: z.string().min(1),
+  location: z.string().optional().nullable(),
+  salary: z.string().optional().nullable(),
+  type: z.string().optional().nullable(),
+  url: z.url(),
+  board: z.string().optional().nullable(),
+  matchScore: z.number().int().min(0).max(100).optional().nullable(),
+  matchReason: reasonText.optional().nullable(),
+  status: z.enum(CAMPAIGN_JOB_ACTIVE_STATUSES).optional(),
+  description: z.string().optional().nullable(),
+  digest: z.string().optional().nullable(),
+});
+
+export const patchCampaignJobSchema = z.object({
+  status: z.enum(CAMPAIGN_JOB_ACTIVE_STATUSES).optional(),
+  retryNotes: reasonText.optional().nullable(),
+  matchScore: z.number().int().min(0).max(100).optional().nullable(),
+  matchReason: reasonText.optional().nullable(),
+  description: z.string().optional().nullable(),
+  digest: z.string().optional().nullable(),
+});
+
+export const rescanCampaignJobSchema = z
+  .object({
+    decision: z.enum(["approved", "skipped"]),
+    matchScore: z.number().int().min(0).max(100),
+    matchReason: reasonText,
+    skipReason: z.string().min(1).transform(cleanReplacementChars).optional(),
+    description: z.string().optional().nullable(),
+    digest: z.string().optional().nullable(),
+  })
+  .refine((value) => value.decision !== "skipped" || !!value.skipReason, {
+    message: "A skipped rescan decision requires skipReason.",
+    path: ["skipReason"],
+  });
+
+export const retryCampaignJobSchema = z.object({
+  retryNotes: reasonText.optional().nullable(),
+});
 
 export const campaignJobResultSchema = z
   .object({
@@ -142,22 +164,17 @@ export const campaignJobResultSchema = z
 export type CampaignJobOutcome = z.infer<typeof campaignJobOutcomeSchema>;
 export type CampaignJobResultInput = z.infer<typeof campaignJobResultSchema>;
 
-export const CAMPAIGN_EVENT_TYPES = ["log", "progress", "status", "job-update"] as const;
-export const campaignEventTypeSchema = z.enum(CAMPAIGN_EVENT_TYPES);
-
-export const campaignEventSchema = z.object({
-  type: campaignEventTypeSchema,
-  payload: z.record(z.string(), z.unknown()),
-});
-
 export type CampaignStatus = z.infer<typeof campaignStatusSchema>;
 export type CampaignJobStatus = z.infer<typeof campaignJobStatusSchema>;
 export type CampaignConfig = z.infer<typeof campaignConfigSchema>;
 export type CampaignSummary = z.infer<typeof campaignSummarySchema>;
+export type CampaignJobSummary = z.infer<typeof campaignJobSummarySchema>;
+export type CampaignNetworkingSummary = z.infer<typeof campaignNetworkingSummarySchema>;
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
-export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
+export type UpdateCampaignConfigInput = z.infer<typeof updateCampaignConfigSchema>;
+export type CampaignStatusCommandInput = z.infer<typeof campaignStatusCommandSchema>;
 export type AddCampaignJobInput = z.infer<typeof addCampaignJobSchema>;
 export type PatchCampaignJobInput = z.infer<typeof patchCampaignJobSchema>;
+export type RescanCampaignJobInput = z.infer<typeof rescanCampaignJobSchema>;
+export type RetryCampaignJobInput = z.infer<typeof retryCampaignJobSchema>;
 export type CampaignSource = z.infer<typeof campaignSourceSchema>;
-export type CampaignEventType = z.infer<typeof campaignEventTypeSchema>;
-export type CampaignEventInput = z.infer<typeof campaignEventSchema>;

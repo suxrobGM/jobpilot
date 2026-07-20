@@ -61,6 +61,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
     ? resolveSelectedRows(selection, campaign.jobs, visible).filter((j) => isReapplicable(j.status))
     : [];
   const selectedSkipped = selected.filter((j) => j.status === "skipped");
+  const selectedForReapply = selected.filter((job) => job.status !== "skipped");
   const hasFilters = statusFilter !== null || term !== "";
 
   const resetSelection = (): void => {
@@ -71,16 +72,17 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const reapply = useApiMutation<number, void>(
     async () => {
       const results = await Promise.all(
-        selected.map((job) =>
-          api.campaigns({ id: campaign.campaignId }).jobs({ key: job.key }).patch({
-            status: "approved",
-          }),
-        ),
+        selectedForReapply.map((job) => {
+          const endpoint = api.campaigns({ id: campaign.campaignId }).jobs({ key: job.key });
+          if (job.status === "failed") return endpoint.retry.post({});
+          if (job.status === "approved") return Promise.resolve({ data: job, error: null });
+          return endpoint.patch({ status: "approved" });
+        }),
       );
       const failure = results.find((r) => r.error);
       return failure?.error
         ? { data: null, error: failure.error }
-        : { data: selected.length, error: null };
+        : { data: selectedForReapply.length, error: null };
     },
     {
       invalidate: [queryKeys.campaigns.detail(campaign.campaignId)],
@@ -168,14 +170,14 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
             Rescan selected ({selectedSkipped.length})
           </Button>
         )}
-        {canReapply && selected.length > 0 && (
+        {canReapply && selectedForReapply.length > 0 && (
           <Button
             variant="contained"
             startIcon={<Replay fontSize="sm" />}
             disabled={reapply.isPending}
             onClick={() => reapply.mutate()}
           >
-            Re-apply selected ({selected.length})
+            Re-apply selected ({selectedForReapply.length})
           </Button>
         )}
         <Typography variant="captionMuted">{plural(visible.length, "job")}</Typography>

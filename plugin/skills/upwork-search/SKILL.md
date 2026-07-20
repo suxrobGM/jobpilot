@@ -15,7 +15,7 @@ Find Upwork jobs the user can win - qualify on fit **and** client quality, drop 
    - `--board upwork.com` - required.
    - `--max-jobs <N>` - cap on results to evaluate. Absent = unlimited (evaluate until results run dry).
    - `--campaign <id>` - campaign to save to. The UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else create one (a `source:"search"` create requires `config.resumeId` - default to the profile's `primaryResumeId`).
-3. Resolve the board: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq '.[] | select(.domain=="upwork.com")'`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign` was given, PATCH it to `failed` with `failReason:"Board upwork.com not configured"` first.
+3. Resolve the board: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq '.[] | select(.domain=="upwork.com")'`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign` was given, first command it to `failed` with `POST /api/campaigns/<id>/status {"status":"failed"}`.
 
 ## Phase 1: Parse Query
 
@@ -43,7 +43,7 @@ COMPANY_ENCODED=$(jq -rn --arg v "<clientName>" '$v|@uri')
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-`.applied` → save with `status:"skipped"`, `skipReason:"Already applied (<kind>)"`; skip the rest.
+`.applied` → create the row as `pending`, POST `/jobs/<key>/result` with `{outcome:"skipped",skipReason:"Already applied (<kind>)"}`, then skip the rest.
 
 ### 3.2 Client quality (smart filter)
 
@@ -57,7 +57,7 @@ QUALITY=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOB
 VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 ```
 
-`proposalsBucket` is one of `<5 | 5-10 | 10-15 | 15-20 | 20-50 | 50+`. The scorer hard-skips unverified payment, 50+ proposals (saturated), low hire-rate-but-many-jobs (unresponsive), and unproven+unverified clients. If `VERDICT == "skip"`, save the Job `status:"skipped"` with `skipReason` = `.skipReason` and move on - don't score fit.
+`proposalsBucket` is one of `<5 | 5-10 | 10-15 | 15-20 | 20-50 | 50+`. The scorer hard-skips unverified payment, 50+ proposals (saturated), low hire-rate-but-many-jobs (unresponsive), and unproven+unverified clients. If `VERDICT == "skip"`, create the Job as `pending`, record `.skipReason` through `/jobs/<key>/result`, and move on - don't score fit.
 
 ### 3.3 Fit
 
@@ -99,10 +99,8 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 ## Phase 4: Close & Hand Off
 
 ```bash
-NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" -H 'content-type: application/json' \
-  -d "$(jq -n --argjson found <total> --argjson qualified <pending_count> --arg t "$NOW" \
-    '{status:"completed", completedAt:$t, summary:{totalFound:$found, qualified:$qualified}}')"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/status" \
+  -H 'content-type: application/json' -d '{"status":"completed"}'
 ```
 
 Print a compact ranked table and link to `$JOBPILOT_WEB/campaigns/<campaign-id>` - nothing else. The user reviews, hits **Draft proposal** on the ones they want, and applies on Upwork.

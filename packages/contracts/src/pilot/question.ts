@@ -1,8 +1,6 @@
 import { z } from "zod/v4";
 import { webLinkSchema } from "./web-link";
 
-// ── Questions ─────────────────────────────────────────────────────────────────
-
 const QUESTION_KINDS = ["question", "choice", "2fa", "approval"] as const;
 const questionKindSchema = z.enum(QUESTION_KINDS);
 

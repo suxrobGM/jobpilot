@@ -1,33 +1,35 @@
+enum CampaignSource {
+  search
+  auto_apply @map("auto-apply")
+  apply
+  networking
+}
+
+enum CampaignStatus {
+  in_progress
+  paused
+  completed
+  failed
+}
+
 model Campaign {
-  campaignId  String    @id @map("campaign_id")
-  userId      String    @map("user_id")
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaignId  String         @id @default(uuid()) @map("campaign_id")
+  userId      String         @map("user_id")
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   query       String
-  source      String
-  status      String    @default("in_progress")
-  startedAt   DateTime  @default(now()) @map("started_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  completedAt DateTime? @map("completed_at")
-  config      String
-  summary     String    @default("{}")
+  source      CampaignSource
+  status      CampaignStatus @default(in_progress)
+  startedAt   DateTime       @default(now()) @map("started_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  completedAt DateTime?      @map("completed_at")
+  config      Json           @default("{}")
 
   jobs               Job[]
-  events             CampaignEvent[]
   applications       Application[]
   networkingMessages NetworkingMessage[]
 
-  @@index([userId])
+  @@index([userId, startedAt])
+  @@index([userId, status, startedAt])
+  @@index([userId, source, startedAt])
   @@map("campaigns")
-}
-
-model CampaignEvent {
-  id         String   @id @default(uuid())
-  campaignId String   @map("campaign_id")
-  campaign   Campaign @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
-  type       String
-  payload    String
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  @@index([campaignId, createdAt])
-  @@map("campaign_events")
 }

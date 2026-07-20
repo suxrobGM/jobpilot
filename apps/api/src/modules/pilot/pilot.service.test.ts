@@ -23,7 +23,7 @@ function makeDb(questionOver: Record<string, unknown> = {}) {
     subjectType: null,
     subjectId: null,
     prompt: "q",
-    options: "[]",
+    options: [],
     deepLink: null,
     answer: null,
     answeredAt: null,
@@ -65,7 +65,7 @@ describe("PilotService questions", () => {
 
     expect(q.status).toBe("open");
     expect(q.options).toEqual(["2 weeks", "immediately"]);
-    expect(rec.questionCreate?.options).toBe(JSON.stringify(["2 weeks", "immediately"]));
+    expect(rec.questionCreate?.options).toEqual(["2 weeks", "immediately"]);
   });
 
   it("answers a question, setting status and answer", async () => {

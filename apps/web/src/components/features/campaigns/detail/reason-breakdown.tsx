@@ -4,7 +4,7 @@ import { type ReactElement, type ReactNode, useState } from "react";
 import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
-import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
+import { type CampaignDetailDto, type CampaignJobDto, jobSummary } from "@/api/types";
 import { SectionCard } from "@/components/ui/layout";
 
 interface ReasonCount {
@@ -77,6 +77,7 @@ export function CampaignReasonBreakdown(props: CampaignReasonBreakdownProps): Re
 
   const skipped = groupReasons(campaign.jobs, "skipped", (j) => j.skipReason);
   const failed = groupReasons(campaign.jobs, "failed", (j) => j.failReason);
+  const summary = jobSummary(campaign);
 
   if (skipped.length === 0 && failed.length === 0) {
     return null;
@@ -99,10 +100,13 @@ export function CampaignReasonBreakdown(props: CampaignReasonBreakdownProps): Re
       <Collapse in={open}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <ReasonList title={`Skipped (${campaign.summary.skipped})`} reasons={skipped} />
+            <ReasonList
+              title={`Skipped (${summary?.skipped ?? skipped.length})`}
+              reasons={skipped}
+            />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <ReasonList title={`Failed (${campaign.summary.failed})`} reasons={failed} />
+            <ReasonList title={`Failed (${summary?.failed ?? failed.length})`} reasons={failed} />
           </Grid>
         </Grid>
       </Collapse>

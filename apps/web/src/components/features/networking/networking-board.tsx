@@ -3,7 +3,7 @@
 import { type ReactElement, useState } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import {
-  NETWORKING_MESSAGE_TERMINAL_STATUSES,
+  isTerminalNetworkingStatus,
   type NetworkingMessageStatus,
 } from "@jobpilot/contracts/networking";
 import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
@@ -37,7 +37,7 @@ function emptyMessage(status: CampaignStatus): string {
   if (status === "in_progress") {
     return "Discovering contacts…";
   }
-  if (status === "paused" || status === "interrupted") {
+  if (status === "paused") {
     return "No contacts yet - use Resume above to discover contacts and draft messages.";
   }
   return "No contacts were added.";
@@ -46,7 +46,7 @@ function emptyMessage(status: CampaignStatus): string {
 interface NetworkingBoardProps {
   campaignId: string;
   status: CampaignStatus;
-  summary: CampaignSummaryDto;
+  summary: Extract<CampaignSummaryDto, { kind: "networking" }>;
   config?: NetworkingConfigDto;
 }
 
@@ -97,7 +97,7 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
   const canSend = accountQuery.data?.canSend ?? false;
   const openMessage = messages.find((m) => m.id === openId) ?? null;
   const selectedIds = resolveSelectedRows(selection, messages)
-    .filter((m) => !NETWORKING_MESSAGE_TERMINAL_STATUSES.includes(m.status))
+    .filter((m) => !isTerminalNetworkingStatus(m.status))
     .map((m) => m.id);
 
   const regenerateSelected = (): void => {

@@ -16,7 +16,10 @@ export function StatTiles(): ReactElement {
 
   const active = rows.filter((c) => c.status === "in_progress" || c.status === "paused").length;
   const interviewing = apps.filter((a) => INTERVIEW_STATUSES.has(a.status)).length;
-  const replies = rows.reduce((n, c) => n + c.summary.replied, 0);
+  const replies = rows.reduce(
+    (n, c) => n + (c.summary.kind === "networking" ? c.summary.replied : 0),
+    0,
+  );
 
   return (
     <Grid container spacing={1.5}>

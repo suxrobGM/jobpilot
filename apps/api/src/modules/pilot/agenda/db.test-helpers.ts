@@ -3,13 +3,13 @@
 
 import type { PushPayload, PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { CampaignService } from "@/modules/campaign/campaign.service";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { PilotJournalService } from "../journal.service";
 
 export interface Recorder {
   patchJob: unknown[][];
   recordResult: unknown[][];
+  promoteScoredJobs: unknown[][];
   claimJobForApply: unknown[][];
   leaseCreates: Record<string, unknown>[];
   leaseUpdates: { data: Record<string, unknown> }[];
@@ -19,7 +19,7 @@ export interface Recorder {
 }
 
 export interface Over {
-  instructionsConfig?: string;
+  instructionsConfig?: unknown;
   instructionsGoals?: string;
   expiredLeases?: Record<string, unknown>[];
   questionLeases?: { subjectId: string }[];
@@ -34,9 +34,7 @@ export interface Over {
   scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
   // Prior campaign.scorePending leases, gating the per-campaign cooldown.
   scorePendingLeases?: { subjectId: string; grantedAt: Date; releasedAt: Date | null }[];
-  // Pilot self-heal (compile) reads `pilotState.enabled` and flips these interrupted campaigns back.
   pilotEnabled?: boolean;
-  interruptedCampaigns?: Record<string, unknown>[];
   // verifyGrant's leasability check for campaign.scorePending (null = 409, no unscored rows left).
   campaignFindFirst?: Record<string, unknown> | null;
   // Scored-but-pending rows swept by promoteScoredPendingJobs (job.findMany with a matchScore filter).
@@ -71,7 +69,8 @@ export interface Over {
   pendingQueueCount?: number;
   boardHealthJobs?: Record<string, unknown>[];
   quietCampaigns?: Record<string, unknown>[];
-  actionMarkers?: { subjectId: string | null; detail: string }[];
+  quietJobCounts?: Record<string, unknown>[];
+  actionMarkers?: { subjectId: string | null; detail: unknown }[];
   skipReasonRows?: { campaignId: string; skipReason: string | null; _count: { _all: number } }[];
   // Bootstrap wiring:
   bootstrapLease?: { id: string } | null;
@@ -83,6 +82,7 @@ export function makeAgendaDb(over: Over = {}) {
   const rec: Recorder = {
     patchJob: [],
     recordResult: [],
+    promoteScoredJobs: [],
     claimJobForApply: [],
     leaseCreates: [],
     leaseUpdates: [],
@@ -92,7 +92,7 @@ export function makeAgendaDb(over: Over = {}) {
   };
 
   // Networking is opt-in in prod; these compile tests assert networking behavior, so default it on.
-  const defaultConfig = '{"networkingEnabled":true}';
+  const defaultConfig = { networkingEnabled: true };
   let txChain: Promise<unknown> = Promise.resolve();
   const db = {
     pilotState: {
@@ -100,8 +100,9 @@ export function makeAgendaDb(over: Over = {}) {
       findUnique: async () => ({
         instructionsConfig: over.instructionsConfig ?? defaultConfig,
         instructionsGoals: over.instructionsGoals ?? "",
-        enabled: over.pilotEnabled ?? false,
+        enabled: over.pilotEnabled ?? true,
       }),
+      update: async () => ({}),
     },
     pilotLease: {
       // The score-pending cooldown reads its own lease history by kind; the rest split on subjectType.
@@ -179,9 +180,21 @@ export function makeAgendaDb(over: Over = {}) {
       findFirst: async () => over.job ?? null,
       update: async () => ({}),
       // groupBy by ["campaignId"] alone is the score-pending count; ["campaignId","skipReason"] is skip reasons.
+      updateMany: async () => ({ count: over.claimCount ?? 1 }),
+      findUniqueOrThrow: async () => over.job ?? approvedJob(),
       groupBy: async (a: { by: string[] }) => {
         if (a.by.length === 1) return over.scorePendingCounts ?? [];
-        return over.skipReasonRows ?? [];
+        if (a.by.includes("skipReason")) return over.skipReasonRows ?? [];
+        return (
+          over.quietJobCounts ??
+          (over.quietCampaigns?.length
+            ? [
+                { campaignId: "c1", status: "applied", _count: { _all: 1 } },
+                { campaignId: "c1", status: "skipped", _count: { _all: 36 } },
+                { campaignId: "c1", status: "failed", _count: { _all: 3 } },
+              ]
+            : [])
+        );
       },
       count: async (a: { where: { status?: string } }) =>
         a.where.status === "failed"
@@ -204,21 +217,22 @@ export function makeAgendaDb(over: Over = {}) {
             : (over.interviewReplyApps ?? []),
     },
     campaign: {
-      // Split the campaign gathers by their distinguishing where-clause: interrupted (self-heal),
-      // source auto-apply (score-pending), a `jobs` clause (finalize), else the quiet-candidate gather.
-      findMany: async (a: { where: { status?: string; source?: string; jobs?: unknown } }) => {
-        if (a.where.status === "interrupted") return over.interruptedCampaigns ?? [];
-        if (a.where.source === "auto-apply") return over.scorePendingCampaigns ?? [];
-        if ("jobs" in a.where) return over.finalizeCampaigns ?? [];
+      // Split campaign gathers by source auto-apply (score-pending), an `OR` finalization
+      // clause, or the quiet-candidate gather.
+      findMany: async (a: {
+        where: { status?: string; source?: string; jobs?: unknown; OR?: unknown };
+      }) => {
+        if (a.where.source === "auto_apply") return over.scorePendingCampaigns ?? [];
+        if ("OR" in a.where) return over.finalizeCampaigns ?? [];
         return over.quietCampaigns ?? [];
       },
       findFirst: async () => over.campaignFindFirst ?? null,
       update: async () => ({}),
-      updateMany: async () => ({ count: (over.interruptedCampaigns ?? []).length }),
     },
     queueEntry: {
       findMany: async () => over.pendingQueue ?? [],
       count: async () => over.pendingQueueCount ?? 0,
+      updateMany: async () => ({ count: 1 }),
     },
     emailMessage: {
       findMany: async () => over.inboxIds ?? [],
@@ -272,6 +286,9 @@ export function makeCampaignJobs(rec: Recorder, over: Over = {}): CampaignJobSer
     recordJobResult: async (...a: unknown[]) => {
       rec.recordResult.push(a);
     },
+    promoteScoredJobs: async (...a: unknown[]) => {
+      rec.promoteScoredJobs.push(a);
+    },
     claimJobForApply: async (...a: unknown[]) => {
       rec.claimJobForApply.push(a);
       if ((over.claimCount ?? 1) === 0) {
@@ -279,14 +296,6 @@ export function makeCampaignJobs(rec: Recorder, over: Over = {}): CampaignJobSer
       }
     },
   } as unknown as CampaignJobService;
-}
-
-/** Fake CampaignService: the agenda compile only calls `selfHealForPilot`, a no-op in most tests. */
-export function makeCampaignService(over: Over = {}): CampaignService {
-  return {
-    selfHealForPilot: async () =>
-      over.pilotEnabled ? (over.interruptedCampaigns ?? []).length : 0,
-  } as unknown as CampaignService;
 }
 
 /** Fake PilotJournalService recording journal appends (the digest write path). */
@@ -316,7 +325,6 @@ export function makeAgendaDeps(over: Over = {}) {
     campaignJobs: makeCampaignJobs(rec, over),
     pilot: makePilot(rec),
     push: makePush(rec),
-    campaigns: makeCampaignService(over),
     rec,
   };
 }
@@ -330,6 +338,6 @@ export const approvedJob = (over: Record<string, unknown> = {}) => ({
   digest: null,
   company: "Acme",
   matchScore: 80,
-  campaign: { config: "{}" },
+  campaign: { config: {} },
   ...over,
 });

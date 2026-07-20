@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { NETWORKING_MESSAGE_TERMINAL_STATUSES } from "@jobpilot/contracts/networking";
+import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Close } from "@mui/icons-material";
 import {
   Button,
@@ -38,7 +38,7 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   const messageApi = api.campaigns({ id: campaignId }).networking({ messageId: message.id });
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";
-  const terminal = NETWORKING_MESSAGE_TERMINAL_STATUSES.includes(message.status);
+  const terminal = isTerminalNetworkingStatus(message.status);
 
   const save = useApiMutation<unknown, void>(
     () => messageApi.patch({ subject: subject || null, body }),

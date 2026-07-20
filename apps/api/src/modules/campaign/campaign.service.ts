@@ -1,320 +1,179 @@
 import type {
-  CampaignEventInput,
   CampaignSource,
-  CampaignStatus,
-  CampaignSummary,
+  CampaignStatusCommandInput,
   CreateCampaignInput,
-  UpdateCampaignInput,
+  UpdateCampaignConfigInput,
 } from "@jobpilot/contracts/campaign";
-import { type CampaignEvent, campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
-import { cleanReplacementCharsNullable } from "@jobpilot/contracts/utils/text";
+import { campaignConfigSupportsSource } from "@jobpilot/contracts/campaign";
+import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
-import { findOwned } from "@/common/errors";
+import { conflict, findOwned, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { type CampaignJobRow, toCampaignJobRow, toCampaignRow } from "./campaign.mapper";
-import { summarizeJobs } from "./campaign.summary";
+import {
+  type Campaign,
+  type CampaignStatus,
+  type Prisma,
+  PrismaClient,
+} from "@/generated/prisma/client";
+import { createPaginatedResponse } from "@/types/response";
+import { toCampaignRow, toPrismaCampaignSource, toWireCampaignSource } from "./campaign.mapper";
+import {
+  deriveCampaignSummary,
+  emptyJobSummary,
+  emptyNetworkingSummary,
+  loadCampaignSummaries,
+} from "./campaign.summary";
 import { ensureCampaignOwned } from "./campaign.utils";
 
-// Matches the pilot lease TTL: one long apply can pass between a campaign's status writes.
-const STALE_THRESHOLD_MS = 15 * 60 * 1000;
+function requireSummary(
+  summaries: Awaited<ReturnType<typeof loadCampaignSummaries>>,
+  campaignId: string,
+) {
+  const summary = summaries.get(campaignId);
+  if (!summary) throw new Error(`Missing derived summary for campaign ${campaignId}.`);
+  return summary;
+}
 
+const STATUS_TRANSITIONS: Record<CampaignStatus, readonly CampaignStatus[]> = {
+  in_progress: ["paused", "completed", "failed"],
+  paused: ["in_progress", "completed", "failed"],
+  completed: [],
+  failed: [],
+};
+
+/** Owns campaign CRUD, validated lifecycle commands, pagination, and derived DTOs. */
 @singleton()
 export class CampaignService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  // ── Reconcile ───────────────────────────────────────────────────────────────
-
-  /**
-   * Flip `in_progress` campaigns whose `updatedAt` is older than the stale
-   * threshold to `interrupted`, and revert their `applying` jobs to `approved`
-   * so `/resume <campaignId>` can pick them up. Emits SSE per campaign.
-   *
-   * Pilot-aware: under an enabled pilot we never flip and instead self-heal, because the pilot's
-   * idle cadence (30min+) far exceeds any sane staleness window and `interrupted` would hide the
-   * campaign from the agenda gathers - lease expiry already owns reverting a stranded applying job.
-   */
-  private async reconcileStaleCampaigns(userId: string): Promise<number> {
-    if (await this.isPilotEnabled(userId)) {
-      return this.healInterruptedCampaigns(userId);
-    }
-
-    const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
-
-    const stale = await this.prisma.campaign.findMany({
-      where: {
-        userId,
-        status: "in_progress",
-        updatedAt: { lt: cutoff },
-      },
-      select: { campaignId: true, source: true },
-    });
-
-    if (stale.length === 0) {
-      return 0;
-    }
-
-    await this.prisma.$transaction([
-      this.prisma.campaign.updateMany({
-        where: { campaignId: { in: stale.map((r) => r.campaignId) } },
-        data: { status: "interrupted" },
-      }),
-      this.prisma.job.updateMany({
-        where: { campaignId: { in: stale.map((r) => r.campaignId) }, status: "applying" },
-        data: { status: "approved" },
-      }),
-    ]);
-
-    for (const r of stale) {
-      this.publishCampaignStatus(userId, r.campaignId, r.source as CampaignSource, "interrupted");
-    }
-
-    return stale.length;
-  }
-
-  private async isPilotEnabled(userId: string): Promise<boolean> {
-    const state = await this.prisma.pilotState.findUnique({
-      where: { userId },
-      select: { enabled: true },
-    });
-    return state?.enabled ?? false;
-  }
-
-  /** Two-channel status fan-out (campaign feed + user workspace) shared by the reconcile and heal sweeps. */
-  private publishCampaignStatus(
+  async list(
     userId: string,
-    campaignId: string,
-    source: CampaignSource,
-    status: CampaignStatus,
-  ): void {
-    publish(campaignChannel, { campaignId }, { type: "status", payload: { status } });
-    publish(workspaceChannel, { userId }, { type: "campaign.updated", campaignId, status, source });
+    query: { page: number; limit: number; status?: CampaignStatus; source?: CampaignSource },
+  ) {
+    const where: Prisma.CampaignWhereInput = {
+      userId,
+      status: query.status,
+      source: query.source ? toPrismaCampaignSource(query.source) : undefined,
+    };
+    const [campaigns, total] = await Promise.all([
+      this.prisma.campaign.findMany({
+        where,
+        orderBy: { startedAt: "desc" },
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+      }),
+      this.prisma.campaign.count({ where }),
+    ]);
+    const summaries = await loadCampaignSummaries(this.prisma, campaigns);
+    return createPaginatedResponse(
+      campaigns.map((campaign) =>
+        toCampaignRow(campaign, requireSummary(summaries, campaign.campaignId)),
+      ),
+      { page: query.page, limit: query.limit, total },
+    );
   }
 
-  /**
-   * Flip the user's `interrupted` auto-apply campaigns back to `in_progress` so a campaign stuck
-   * interrupted (a pre-fix stale sweep, a host restart) rejoins the agenda without the user opening
-   * the campaigns page. Emits SSE per campaign, matching the reconcile publish shape.
-   */
-  private async healInterruptedCampaigns(userId: string): Promise<number> {
-    const interrupted = await this.prisma.campaign.findMany({
-      where: { userId, status: "interrupted", source: "auto-apply" },
-      select: { campaignId: true, source: true },
-    });
-    if (interrupted.length === 0) {
-      return 0;
-    }
-
-    await this.prisma.campaign.updateMany({
-      where: { campaignId: { in: interrupted.map((r) => r.campaignId) } },
-      data: { status: "in_progress" },
-    });
-
-    for (const r of interrupted) {
-      this.publishCampaignStatus(userId, r.campaignId, r.source as CampaignSource, "in_progress");
-    }
-
-    return interrupted.length;
-  }
-
-  /**
-   * Pilot entrypoint, called from the agenda compile where the pilot is definitionally enabled - so it
-   * heals directly without re-querying pilotState (the compile only runs for an enabled pilot). Recovery
-   * of interrupted auto-apply campaigns never waits on the user visiting the campaigns page.
-   */
-  selfHealForPilot(userId: string): Promise<number> {
-    return this.healInterruptedCampaigns(userId);
-  }
-
-  // ── Campaign list / create ───────────────────────────────────────────────────
-
-  async list(userId: string, query: { status?: string; source?: string }) {
-    await this.reconcileStaleCampaigns(userId);
-
-    const where: Prisma.CampaignWhereInput = { userId };
-
-    if (query.status) where.status = query.status;
-    if (query.source) where.source = query.source;
-
-    const campaigns = await this.prisma.campaign.findMany({
-      where,
-      orderBy: { startedAt: "desc" },
-      take: 200,
-    });
-
-    return campaigns.map(toCampaignRow);
-  }
-
-  /** Unlike the other reads this leaves `config`/`summary` as stored JSON strings - see `campaignCreatedSchema`. */
   async create(userId: string, body: CreateCampaignInput) {
     const campaign = await this.prisma.campaign.create({
       data: {
-        campaignId: body.campaignId,
         userId,
         query: body.query,
-        source: body.source,
-        config: JSON.stringify(body.config ?? {}),
+        source: toPrismaCampaignSource(body.source),
+        config: body.config ?? {},
       },
     });
-
-    return {
-      ...campaign,
-      status: campaign.status as CampaignStatus,
-      source: campaign.source as CampaignSource,
-    };
+    // A just-created campaign provably has no jobs or messages; skip the aggregate round trip.
+    return toCampaignRow(
+      campaign,
+      campaign.source === "networking" ? emptyNetworkingSummary() : emptyJobSummary(),
+    );
   }
-
-  // ── Single campaign get / patch / delete ─────────────────────────────────────
 
   async get(userId: string, id: string) {
-    await this.reconcileStaleCampaigns(userId);
-
-    const campaign = await findOwned(
-      (where) =>
-        this.prisma.campaign.findFirst({
-          where,
-          include: { jobs: { orderBy: { id: "asc" } } },
-        }),
-      { campaignId: id, userId },
-      "Campaign",
-    );
-
-    return {
-      ...toCampaignRow(campaign),
-      // Clean replacement-char artifacts in historical rows written before the
-      // schema-level sanitizer landed, so the UI never shows mojibake.
-      jobs: campaign.jobs.map(
-        (job): CampaignJobRow => ({
-          ...toCampaignJobRow(job),
-          skipReason: cleanReplacementCharsNullable(job.skipReason),
-          failReason: cleanReplacementCharsNullable(job.failReason),
-          matchReason: cleanReplacementCharsNullable(job.matchReason),
-          retryNotes: cleanReplacementCharsNullable(job.retryNotes),
-        }),
-      ),
-      // Job-based campaigns derive the summary from their loaded jobs so the tiles
-      // always match the rows; networking campaigns have no jobs, so their
-      // recomputed `Campaign.summary` (NetworkingMessage aggregates) is authoritative.
-      summary:
-        campaign.source === "networking"
-          ? (JSON.parse(campaign.summary) as CampaignSummary)
-          : summarizeJobs(campaign.jobs),
-    };
+    return this.toRow(await this.findCampaign(userId, id));
   }
 
-  async update(userId: string, id: string, body: UpdateCampaignInput) {
-    const existing = await findOwned(
-      (where) => this.prisma.campaign.findFirst({ where }),
-      { campaignId: id, userId },
-      "Campaign",
-    );
-
-    const update: Prisma.CampaignUpdateInput = { status: body.status };
-
-    if (body.summary) {
-      update.summary = JSON.stringify({ ...JSON.parse(existing.summary), ...body.summary });
+  async updateConfig(userId: string, id: string, body: UpdateCampaignConfigInput) {
+    const existing = await this.findCampaign(userId, id);
+    if (!campaignConfigSupportsSource(toWireCampaignSource(existing.source), body.config)) {
+      throw unprocessable(
+        "config.resumeId is required for search, auto-apply, and networking campaigns.",
+      );
     }
-    if (body.config) {
-      update.config = JSON.stringify({ ...JSON.parse(existing.config), ...body.config });
-    }
-    if (body.completedAt !== undefined) {
-      update.completedAt = body.completedAt ? new Date(body.completedAt) : null;
-    }
-
     const campaign = await this.prisma.campaign.update({
       where: { campaignId: id },
-      data: update,
+      data: { config: body.config },
     });
-
-    if (body.status) {
-      publish(
-        campaignChannel,
-        { campaignId: id },
-        {
-          type: "status",
-          payload: { status: body.status },
-        },
-      );
-      publish(
-        workspaceChannel,
-        { userId },
-        body.status === "completed"
-          ? { type: "campaign.completed", campaignId: id }
-          : {
-              type: "campaign.updated",
-              campaignId: id,
-              status: body.status,
-              source: existing.source,
-            },
-      );
-    }
-    if (body.summary) {
-      publish(
-        campaignChannel,
-        { campaignId: id },
-        { type: "progress", payload: JSON.parse(campaign.summary) },
-      );
-    }
-
-    return toCampaignRow(campaign);
+    return this.toRow(campaign);
   }
 
-  /**
-   * Hard-delete a campaign and all of its related data. Prisma only cascades Job
-   * and CampaignEvent; Application and NetworkingMessage use `onDelete: SetNull`, so
-   * they (and campaign-only contacts) are deleted explicitly inside a transaction
-   * before the campaign row. Synced EmailMessages are kept (matchedAppId SetNull).
-   */
-  async remove(userId: string, id: string) {
-    await findOwned(
-      (where) => this.prisma.campaign.findFirst({ where }),
-      { campaignId: id, userId },
-      "Campaign",
+  async commandStatus(userId: string, id: string, body: CampaignStatusCommandInput) {
+    const existing = await this.findCampaign(userId, id);
+    if (existing.status === body.status) return this.toRow(existing);
+    if (!STATUS_TRANSITIONS[existing.status].includes(body.status)) {
+      throw conflict(`Campaign cannot transition from ${existing.status} to ${body.status}.`);
+    }
+    const updated = await this.prisma.campaign.updateMany({
+      where: { campaignId: id, userId, status: existing.status },
+      data: {
+        status: body.status,
+        completedAt: body.status === "completed" || body.status === "failed" ? new Date() : null,
+      },
+    });
+    if (updated.count === 0) throw conflict("Campaign status changed concurrently.");
+    const campaign = await this.prisma.campaign.findUniqueOrThrow({ where: { campaignId: id } });
+    const source = toWireCampaignSource(campaign.source);
+    publish(
+      campaignChannel,
+      { campaignId: id },
+      { type: "status", payload: { status: body.status } },
     );
+    publish(
+      workspaceChannel,
+      { userId },
+      body.status === "completed"
+        ? { type: "campaign.completed", campaignId: id }
+        : { type: "campaign.updated", campaignId: id, status: body.status, source },
+    );
+    return this.toRow(campaign);
+  }
 
+  async remove(userId: string, id: string) {
+    await this.ensureCampaignOwned(userId, id);
     await this.prisma.$transaction(async (tx) => {
       const contactIds = (
         await tx.networkingMessage.findMany({
           where: { campaignId: id, userId },
           select: { contactId: true },
         })
-      ).map((m) => m.contactId);
-
-      // Cascades ApplicationEvent / ResumeVariant; SetNull on EmailMessage & Contact links.
+      ).map((message) => message.contactId);
       await tx.application.deleteMany({ where: { campaignId: id, userId } });
       await tx.networkingMessage.deleteMany({ where: { campaignId: id, userId } });
-
-      // Only contacts left with no messages and no related application - i.e. ones
-      // that existed solely for this campaign. Skips contacts referenced elsewhere.
       await tx.contact.deleteMany({
         where: { id: { in: contactIds }, userId, messages: { none: {} }, relatedAppId: null },
       });
-
-      // Cascades Job + CampaignEvent.
       await tx.campaign.delete({ where: { campaignId: id } });
     });
-
     publish(workspaceChannel, { userId }, { type: "campaign.deleted", campaignId: id });
     return { deleted: true, campaignId: id };
   }
 
-  // ── Campaign events (SSE record) ─────────────────────────────────────────────
-
-  /** Ownership check used before subscribing to a campaign's SSE feed. */
-  ensureCampaignOwned(userId: string, campaignId: string): Promise<void> {
-    return ensureCampaignOwned(this.prisma, userId, campaignId);
+  async ensureCampaignOwned(userId: string, campaignId: string): Promise<void> {
+    await ensureCampaignOwned(this.prisma, userId, campaignId);
   }
 
-  async recordCampaignEvent(userId: string, campaignId: string, event: CampaignEventInput) {
-    await this.ensureCampaignOwned(userId, campaignId);
+  private findCampaign(userId: string, campaignId: string) {
+    return findOwned(
+      (where) => this.prisma.campaign.findFirst({ where }),
+      { campaignId, userId },
+      "Campaign",
+    );
+  }
 
-    const created = await this.prisma.campaignEvent.create({
-      data: { campaignId, type: event.type, payload: JSON.stringify(event.payload) },
-    });
-    publish(campaignChannel, { campaignId }, {
-      type: event.type,
-      payload: event.payload,
-    } as CampaignEvent);
-    return { id: created.id };
+  private async toRow(campaign: Campaign) {
+    return toCampaignRow(
+      campaign,
+      await deriveCampaignSummary(this.prisma, campaign.campaignId, campaign.source),
+    );
   }
 }

@@ -1,4 +1,5 @@
 import type { CreateContactInput } from "@jobpilot/contracts/networking";
+import type { ContactDiscoverySource } from "@/generated/prisma/client";
 
 /**
  * Map a validated contact payload to Prisma `Contact` create fields (sans
@@ -7,6 +8,8 @@ import type { CreateContactInput } from "@jobpilot/contracts/networking";
  * override individual fields after spreading (e.g. `discoverySource`).
  */
 export function createContactPayload(c: CreateContactInput) {
+  const discoverySource: ContactDiscoverySource | null =
+    c.discoverySource === "company-site" ? "company_site" : (c.discoverySource ?? null);
   return {
     name: c.name,
     title: c.title ?? null,
@@ -16,7 +19,7 @@ export function createContactPayload(c: CreateContactInput) {
     emailSource: c.emailSource ?? null,
     emailConfidence: c.emailConfidence ?? null,
     linkedinConnection: c.linkedinConnection ?? "none",
-    discoverySource: c.discoverySource ?? null,
+    discoverySource,
     matchConfidence: c.matchConfidence ?? null,
     relatedAppId: c.relatedAppId ?? null,
     relatedJobUrl: c.relatedJobUrl ?? null,

@@ -1,22 +1,19 @@
 import {
-  campaignEventSchema,
+  campaignStatusCommandSchema,
   createCampaignSchema,
-  updateCampaignSchema,
+  updateCampaignConfigSchema,
 } from "@jobpilot/contracts/campaign";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { authGuard, requireVerifiedEmail } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
-import { idResponseSchema } from "@/types/response";
 import {
-  campaignCreatedSchema,
   campaignDeletedSchema,
   campaignListSchema,
   campaignParams,
   campaignSchema,
   campaignsQuery,
-  campaignWithJobsSchema,
 } from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
 import { campaignJobController } from "./jobs/job.controller";
@@ -29,14 +26,13 @@ export const campaignController = new Elysia({
   detail: { tags: ["Campaigns"] },
 })
   .use(authGuard)
-  // ── Collection ──────────────────────────────────────────────────────────────
   .get("/", ({ user, query }) => svc.list(user.id, query), {
     query: campaignsQuery,
     response: campaignListSchema,
     detail: {
       summary: "List campaigns",
       description:
-        "Returns the profile's campaigns (optionally filtered by status and source), reconciling any stale in-progress campaigns to interrupted before responding.",
+        "Returns one validated page of owned campaigns with summaries derived from current job or networking rows.",
     },
   })
   .post(
@@ -47,32 +43,41 @@ export const campaignController = new Elysia({
     },
     {
       body: createCampaignSchema,
-      response: campaignCreatedSchema,
+      response: campaignSchema,
       detail: {
         summary: "Create campaign",
         description:
-          "Creates a new campaign for the profile and returns the created campaign row. Requires a verified email address.",
+          "Creates a server-identified campaign and returns the same parsed campaign DTO used by every campaign route.",
       },
     },
   )
-  // ── Single campaign ───────────────────────────────────────────────────────────
   .get("/:id", ({ user, params }) => svc.get(user.id, params.id), {
     params: campaignParams,
-    response: campaignWithJobsSchema,
+    response: campaignSchema,
     detail: {
       summary: "Get campaign",
       description:
-        "Returns a single owned campaign with its jobs and a derived summary, or 404 if it is not owned by the profile.",
+        "Returns one owned campaign with its current derived summary; jobs and networking messages are paginated subresources.",
     },
   })
-  .patch("/:id", ({ user, params, body }) => svc.update(user.id, params.id, body), {
+  .patch("/:id", ({ user, params, body }) => svc.updateConfig(user.id, params.id, body), {
     params: campaignParams,
-    body: updateCampaignSchema,
+    body: updateCampaignConfigSchema,
     response: campaignSchema,
     detail: {
-      summary: "Update campaign",
+      summary: "Replace campaign configuration",
       description:
-        "Updates a campaign's status, summary, config, or completion time, emits status/progress events, and returns the updated campaign.",
+        "Replaces the campaign configuration with a fully validated configuration without changing lifecycle status.",
+    },
+  })
+  .post("/:id/status", ({ user, params, body }) => svc.commandStatus(user.id, params.id, body), {
+    params: campaignParams,
+    body: campaignStatusCommandSchema,
+    response: campaignSchema,
+    detail: {
+      summary: "Transition campaign status",
+      description:
+        "Applies a validated, conditional lifecycle transition and rejects invalid or concurrent transitions.",
     },
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
@@ -81,10 +86,9 @@ export const campaignController = new Elysia({
     detail: {
       summary: "Delete campaign",
       description:
-        "Hard-deletes the campaign and its related jobs, events, applications, networking messages, and campaign-only contacts, returning a deletion acknowledgement.",
+        "Deletes the owned campaign and its campaign-scoped jobs, applications, networking messages, and orphaned contacts.",
     },
   })
-  // ── Events (SSE stream + event record) ────────────────────────────────────────
   .get(
     "/:id/events",
     async ({ user, params, headers }) => {
@@ -96,24 +100,9 @@ export const campaignController = new Elysia({
       detail: {
         summary: "Stream campaign events",
         description:
-          "Opens a Server-Sent Events stream of live campaign events (status, progress, job, and networking updates) for the owned campaign.",
+          "Streams live campaign status, progress, job, and networking updates without persisting an event log.",
       },
     },
   )
-  .post(
-    "/:id/events",
-    ({ user, params, body }) => svc.recordCampaignEvent(user.id, params.id, body),
-    {
-      params: campaignParams,
-      body: campaignEventSchema,
-      response: idResponseSchema,
-      detail: {
-        summary: "Record campaign event",
-        description:
-          "Persists a campaign event, broadcasts it to the campaign's SSE subscribers, and returns the new event id.",
-      },
-    },
-  )
-  // ── Sub-domain controllers (jobs, networking) ─────────────────────────────────
   .use(campaignJobController)
   .use(campaignNetworkingController);

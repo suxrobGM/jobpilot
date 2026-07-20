@@ -1,7 +1,5 @@
 import { z } from "zod/v4";
 
-// ── Journal ───────────────────────────────────────────────────────────────────
-
 const PILOT_JOURNAL_KINDS = [
   "cycle",
   "action",
@@ -17,7 +15,7 @@ const pilotJournalKindSchema = z.enum(PILOT_JOURNAL_KINDS);
 const pilotJournalEntryInputSchema = z.object({
   kind: pilotJournalKindSchema,
   summary: z.string(),
-  detail: z.record(z.string(), z.unknown()).optional(),
+  detail: z.record(z.string(), z.json()).optional(),
   subjectType: z.string().optional(),
   subjectId: z.string().optional(),
 });
@@ -33,7 +31,7 @@ export const pilotJournalEntrySchema = z.object({
   cycleId: z.string().nullable(),
   kind: pilotJournalKindSchema,
   summary: z.string(),
-  detail: z.record(z.string(), z.unknown()),
+  detail: z.record(z.string(), z.json()),
   subjectType: z.string().nullable(),
   subjectId: z.string().nullable(),
   createdAt: z.date(),

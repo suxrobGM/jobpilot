@@ -1,6 +1,6 @@
-import { resolveMinScore } from "./campaign-config";
+import { resolveMinScore } from "@/modules/campaign/campaign.config";
 import { GATHER_CAP } from "./constants";
-import type { JobMutationDeps } from "./expiry";
+import type { JobMutationDeps } from "./job-mutations";
 
 /**
  * Promote already-scored pending jobs of in-progress auto-apply campaigns before the gathers, so a
@@ -19,7 +19,7 @@ export async function promoteScoredPendingJobs(
     where: {
       status: "pending",
       matchScore: { not: null },
-      campaign: { userId, status: "in_progress", source: "auto-apply" },
+      campaign: { userId, status: "in_progress", source: "auto_apply" },
     },
     take: GATHER_CAP,
     select: {
@@ -31,10 +31,8 @@ export async function promoteScoredPendingJobs(
   });
   if (rows.length === 0) return;
 
-  // Jobs of the same campaign share one threshold; parse each campaign's config at most once.
+  const batches = new Map<string, { key: string; matchScore: number; threshold: number }[]>();
   const thresholdByCampaign = new Map<string, number>();
-  // Sequential: recordJobResult opens an interactive transaction, so a whole discovery batch fired
-  // at once would exhaust the Prisma pool (P2024) and race same-campaign summary recomputes.
   for (const job of rows) {
     let threshold = thresholdByCampaign.get(job.campaignId);
     if (threshold === undefined) {
@@ -42,13 +40,11 @@ export async function promoteScoredPendingJobs(
       thresholdByCampaign.set(job.campaignId, threshold);
     }
     const score = job.matchScore ?? 0;
-    if (score >= threshold) {
-      await campaignJobs.patchJob(userId, job.campaignId, job.key, { status: "approved" });
-    } else {
-      await campaignJobs.recordJobResult(userId, job.campaignId, job.key, {
-        outcome: "skipped",
-        skipReason: `Below minimum match score (${score} < ${threshold})`,
-      });
-    }
+    const batch = batches.get(job.campaignId) ?? [];
+    batch.push({ key: job.key, matchScore: score, threshold });
+    batches.set(job.campaignId, batch);
+  }
+  for (const [campaignId, candidates] of batches) {
+    await campaignJobs.promoteScoredJobs(userId, campaignId, candidates);
   }
 }

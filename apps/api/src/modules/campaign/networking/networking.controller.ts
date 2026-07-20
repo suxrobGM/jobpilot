@@ -6,7 +6,7 @@ import {
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { authGuard, requireVerifiedEmail } from "@/common/middleware";
-import { campaignParams, networkingMessageParams } from "../campaign.schema";
+import { campaignParams, networkingMessageParams, paginationQuery } from "../campaign.schema";
 import {
   networkingMessageListSchema,
   networkingMessageResultResponseSchema,
@@ -21,15 +21,20 @@ export const campaignNetworkingController = new Elysia({
   detail: { tags: ["Campaigns"] },
 })
   .use(authGuard)
-  .get("/:id/networking", ({ user, params }) => svc.listNetworking(user.id, params.id), {
-    params: campaignParams,
-    response: networkingMessageListSchema,
-    detail: {
-      summary: "List networking messages",
-      description:
-        "Returns the campaign's networking messages with their contacts, ordered by creation.",
+  .get(
+    "/:id/networking",
+    ({ user, params, query }) => svc.listNetworking(user.id, params.id, query),
+    {
+      params: campaignParams,
+      query: paginationQuery,
+      response: networkingMessageListSchema,
+      detail: {
+        summary: "List networking messages",
+        description:
+          "Returns one page of the campaign's networking messages with contacts, ordered by creation.",
+      },
     },
-  })
+  )
   .post(
     "/:id/networking",
     async ({ user, params, body }) => {
@@ -43,7 +48,7 @@ export const campaignNetworkingController = new Elysia({
       detail: {
         summary: "Add networking message",
         description:
-          "Adds a contact (new or existing) and an initial draft networking message to the campaign, recomputes the networking summary, emits an SSE update, and returns the created message. Requires a verified email address.",
+          "Atomically adds a contact (new or existing) and an initial non-terminal networking message, emits an SSE update, and returns it. Requires a verified email address.",
       },
     },
   )
@@ -57,7 +62,7 @@ export const campaignNetworkingController = new Elysia({
       detail: {
         summary: "Update networking message",
         description:
-          "Applies a non-terminal edit to a networking message (draft body/subject, draft-to-approved, or the contact's LinkedIn connection state), recomputes the summary on status changes, and returns the updated message.",
+          "Applies a conditional non-terminal message edit or contact connection update and returns the updated message. Terminal outcomes are accepted only by the result route.",
       },
     },
   )
@@ -72,7 +77,7 @@ export const campaignNetworkingController = new Elysia({
       detail: {
         summary: "Record networking message result",
         description:
-          "Records a networking message's terminal outcome (sent/failed/skipped), stamps the send time and Gmail provider/thread ids, recomputes the summary, and returns the message and summary.",
+          "Conditionally records an idempotent terminal outcome, stamps delivery identifiers when sent, and returns the message with its current derived summary.",
       },
     },
   );

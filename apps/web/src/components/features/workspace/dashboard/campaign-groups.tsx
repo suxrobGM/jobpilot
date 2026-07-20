@@ -16,7 +16,6 @@ import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
 
 const GROUPS: ReadonlyArray<{ label: string; statuses: CampaignStatus[] }> = [
   { label: "Active", statuses: ["in_progress", "paused"] },
-  { label: "Needs attention", statuses: ["interrupted"] },
   { label: "Completed", statuses: ["completed", "failed"] },
 ];
 

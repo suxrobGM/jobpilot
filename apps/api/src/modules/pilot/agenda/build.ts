@@ -1,4 +1,4 @@
-import type { AgendaItem, AgendaResponse } from "@jobpilot/contracts/pilot";
+import type { AgendaContent, AgendaItem } from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
 import { ACTIVE_SLEEP_SECONDS, MAX_ITEMS, MIN_IDLE_SLEEP_SECONDS } from "./constants";
 import { buildInterviewPrepItems, buildInterviewReplyItems } from "./items-interview";
@@ -31,7 +31,7 @@ function agendaEmptyReason(
   itemCount: number,
   capReached: boolean,
   savedSearchCount: number,
-): AgendaResponse["emptyReason"] {
+): AgendaContent["emptyReason"] {
   if (itemCount > 0) return null;
   if (capReached) return "capReached";
   if (savedSearchCount === 0) return "awaitingSetup";
@@ -43,7 +43,7 @@ function agendaEmptyReason(
  * cap-suppression, budget, and sleep rules are unit-testable. Ranking lives in PRIORITY
  * (./constants).
  */
-export function buildAgenda(input: AgendaInput): AgendaResponse {
+export function buildAgenda(input: AgendaInput): AgendaContent {
   const { now, config } = input;
   const capReached = input.appliedToday >= config.dailyApplyCap;
   // Networking headroom is independent of the apply cap; it gates sends and followups alike.

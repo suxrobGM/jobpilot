@@ -4,8 +4,6 @@ import { cleanReplacementChars } from "./utils/text";
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-// ── Campaign-level enums (stored in Campaign.config.networking) ──────────────────
-
 export const NETWORKING_CHANNELS = ["email", "linkedin"] as const;
 export const networkingChannelSchema = z.enum(NETWORKING_CHANNELS);
 
@@ -23,8 +21,6 @@ export const networkingConfigSchema = z.object({
   dailyCap: z.number().int().min(1).max(100).optional(),
 });
 
-// ── Message / contact enums ─────────────────────────────────────────────────
-
 export const LINKEDIN_KINDS = ["inmail", "connect_note", "dm"] as const;
 export const linkedinKindSchema = z.enum(LINKEDIN_KINDS);
 
@@ -40,13 +36,19 @@ export const NETWORKING_MESSAGE_STATUSES = [
 export const networkingMessageStatusSchema = z.enum(NETWORKING_MESSAGE_STATUSES);
 
 /** Statuses past which a message is locked (no further editing or sending). */
-export const NETWORKING_MESSAGE_TERMINAL_STATUSES: readonly string[] = [
+export const NETWORKING_MESSAGE_TERMINAL_STATUSES = [
   "sent",
   "replied",
   "bounced",
   "failed",
   "skipped",
-];
+] as const;
+
+/** Whether a message has reached a locked status. Accepts any status string so callers
+ * need not narrow first; the tuple above stays exact for Prisma `notIn` filters. */
+export function isTerminalNetworkingStatus(status: string): boolean {
+  return (NETWORKING_MESSAGE_TERMINAL_STATUSES as readonly string[]).includes(status);
+}
 
 export const CONTACT_LINKEDIN_CONNECTIONS = ["none", "pending", "connected"] as const;
 export const contactLinkedinConnectionSchema = z.enum(CONTACT_LINKEDIN_CONNECTIONS);
@@ -62,8 +64,6 @@ export const CONTACT_DISCOVERY_SOURCES = [
   "manual",
 ] as const;
 export const contactDiscoverySourceSchema = z.enum(CONTACT_DISCOVERY_SOURCES);
-
-// ── Contact CRUD ────────────────────────────────────────────────────────────
 
 export const contactFieldsSchema = z.object({
   name: z.string().min(1),
@@ -83,14 +83,12 @@ export const contactFieldsSchema = z.object({
 
 export const createContactSchema = contactFieldsSchema;
 
-// ── Networking message ───────────────────────────────────────────────────────
-
 export const networkingMessageFieldsSchema = z.object({
   channel: networkingChannelSchema,
   linkedinKind: linkedinKindSchema.optional().nullable(),
   subject: reasonText.optional().nullable(),
   body: reasonText.default(""),
-  status: networkingMessageStatusSchema.optional(),
+  status: z.enum(["draft", "approved"]).optional(),
 });
 
 /**
@@ -110,12 +108,9 @@ export const addCampaignNetworkingSchema = z
 
 /** PATCH /api/campaigns/[id]/networking/[messageId] - non-terminal edits. */
 export const patchNetworkingMessageSchema = z.object({
-  status: networkingMessageStatusSchema.optional(),
+  status: z.enum(["draft", "approved"]).optional(),
   subject: reasonText.optional().nullable(),
   body: reasonText.optional(),
-  failReason: reasonText.optional().nullable(),
-  providerId: z.string().optional().nullable(),
-  threadId: z.string().optional().nullable(),
   /** Convenience: when set, also updates the parent contact's connection state. */
   contactLinkedinConnection: contactLinkedinConnectionSchema.optional(),
 });
@@ -135,8 +130,6 @@ export const networkingMessageResultSchema = z
   .refine((v) => v.outcome !== "failed" || !!v.failReason, {
     message: "failed requires failReason.",
   });
-
-// ── Email send (POST /api/email/send) ────────────────────────────────────────
 
 export const sendEmailSchema = z.object({
   to: z.email(),
@@ -159,6 +152,7 @@ export type NetworkingChannel = z.infer<typeof networkingChannelSchema>;
 export type LinkedinTier = z.infer<typeof linkedinTierSchema>;
 export type NetworkingAutonomy = z.infer<typeof networkingAutonomySchema>;
 export type NetworkingMessageStatus = z.infer<typeof networkingMessageStatusSchema>;
+export type ContactDiscoverySource = z.infer<typeof contactDiscoverySourceSchema>;
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type AddCampaignNetworkingInput = z.infer<typeof addCampaignNetworkingSchema>;
 export type PatchNetworkingMessageInput = z.infer<typeof patchNetworkingMessageSchema>;

@@ -12,7 +12,7 @@ const scored = (over: Record<string, unknown> = {}) => ({
   campaignId: "c1",
   key: "jobkey",
   matchScore: 80,
-  campaign: { config: "{}" },
+  campaign: { config: {} },
   ...over,
 });
 
@@ -26,38 +26,37 @@ describe("promoteScoredPendingJobs", () => {
   it("promotes a pending job at/above the fallback threshold to approved", async () => {
     const { go, rec } = run({ scoredPendingJobs: [scored({ matchScore: 75 })] });
     await go();
-    expect(rec.patchJob[0]).toEqual(["p1", "c1", "jobkey", { status: "approved" }]);
-    expect(rec.recordResult).toHaveLength(0);
+    expect(rec.promoteScoredJobs[0]).toEqual([
+      "p1",
+      "c1",
+      [{ key: "jobkey", matchScore: 75, threshold: 60 }],
+    ]);
   });
 
   it("skips a pending job below the threshold with the score in the reason", async () => {
     const { go, rec } = run({ scoredPendingJobs: [scored({ matchScore: 40 })] });
     await go();
-    expect(rec.patchJob).toHaveLength(0);
-    expect(rec.recordResult[0]).toEqual([
+    expect(rec.promoteScoredJobs[0]).toEqual([
       "p1",
       "c1",
-      "jobkey",
-      { outcome: "skipped", skipReason: "Below minimum match score (40 < 60)" },
+      [{ key: "jobkey", matchScore: 40, threshold: 60 }],
     ]);
   });
 
   it("prefers the campaign's own minScore over the fallback", async () => {
     const { go, rec } = run({
       // Score 75 clears the fallback 60 but not the campaign's 80, so it is skipped against 80.
-      scoredPendingJobs: [scored({ matchScore: 75, campaign: { config: '{"minScore":80}' } })],
+      scoredPendingJobs: [scored({ matchScore: 75, campaign: { config: { minScore: 80 } } })],
     });
     await go();
-    expect(rec.patchJob).toHaveLength(0);
-    expect(rec.recordResult[0]?.[3]).toMatchObject({
-      skipReason: "Below minimum match score (75 < 80)",
-    });
+    expect(rec.promoteScoredJobs[0]?.[2]).toEqual([
+      { key: "jobkey", matchScore: 75, threshold: 80 },
+    ]);
   });
 
   it("does nothing when there are no scored pending jobs", async () => {
     const { go, rec } = run({ scoredPendingJobs: [] });
     await go();
-    expect(rec.patchJob).toHaveLength(0);
-    expect(rec.recordResult).toHaveLength(0);
+    expect(rec.promoteScoredJobs).toHaveLength(0);
   });
 });

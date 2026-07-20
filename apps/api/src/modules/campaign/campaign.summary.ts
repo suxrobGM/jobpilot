@@ -1,123 +1,141 @@
-import type { CampaignJobStatus, CampaignSummary } from "@jobpilot/contracts/campaign";
-import type { Prisma } from "@/generated/prisma/client";
+import type {
+  CampaignJobSummary,
+  CampaignNetworkingSummary,
+  CampaignSummary,
+} from "@jobpilot/contracts/campaign";
+import { type CampaignSource, Prisma } from "@/generated/prisma/client";
 
-export function emptySummary(): CampaignSummary {
+type SummaryClient = Pick<Prisma.TransactionClient, "$queryRaw" | "job" | "networkingMessage">;
+type ContactCount = { campaignId: string; discovered: number };
+
+function requireJobSummary(
+  summaries: Map<string, CampaignSummary>,
+  campaignId: string,
+): CampaignJobSummary {
+  const summary = summaries.get(campaignId);
+  if (summary?.kind !== "jobs") {
+    throw new Error(`Missing job summary accumulator for campaign ${campaignId}.`);
+  }
+  return summary;
+}
+
+function requireNetworkingSummary(
+  summaries: Map<string, CampaignSummary>,
+  campaignId: string | null,
+): CampaignNetworkingSummary {
+  if (!campaignId) throw new Error("Campaign summary query returned no campaign id.");
+  const summary = summaries.get(campaignId);
+  if (summary?.kind !== "networking") {
+    throw new Error(`Missing networking summary accumulator for campaign ${campaignId}.`);
+  }
+  return summary;
+}
+
+/** Returns the zero-value summary for a job campaign. */
+export function emptyJobSummary(): CampaignJobSummary {
   return {
+    kind: "jobs",
     totalFound: 0,
     qualified: 0,
     applied: 0,
     failed: 0,
     skipped: 0,
     remaining: 0,
-    discovered: 0,
-    drafted: 0,
-    sent: 0,
-    replied: 0,
-    bounced: 0,
   };
 }
 
-export function fold(summary: CampaignSummary, status: CampaignJobStatus, n: number): void {
-  summary.totalFound += n;
+/** Returns the zero-value summary for a networking campaign. */
+export function emptyNetworkingSummary(): CampaignNetworkingSummary {
+  return { kind: "networking", discovered: 0, drafted: 0, sent: 0, replied: 0, bounced: 0 };
+}
 
-  if (status !== "skipped") {
-    summary.qualified += n;
-  }
-  if (status === "applied") {
-    summary.applied += n;
-  } else if (status === "failed") {
-    summary.failed += n;
-  } else if (status === "skipped") {
-    summary.skipped += n;
-  } else if (status === "approved" || status === "applying" || status === "needs_user") {
-    summary.remaining += n;
+function foldJob(summary: CampaignJobSummary, status: string, count: number): void {
+  summary.totalFound += count;
+  if (status !== "skipped") summary.qualified += count;
+  if (status === "applied") summary.applied += count;
+  else if (status === "failed") summary.failed += count;
+  else if (status === "skipped") summary.skipped += count;
+  else if (status === "approved" || status === "applying" || status === "needs_user") {
+    summary.remaining += count;
   }
 }
 
-/** Derive a {@link CampaignSummary} from already-loaded job rows. Pure; no I/O. */
-export function summarizeJobs(jobs: { status: string }[]): CampaignSummary {
-  const summary = emptySummary();
-  for (const job of jobs) {
-    fold(summary, job.status as CampaignJobStatus, 1);
-  }
+/** Folds job rows into the public job-summary shape. */
+export function summarizeJobs(jobs: { status: string }[]): CampaignJobSummary {
+  const summary = emptyJobSummary();
+  for (const job of jobs) foldJob(summary, job.status, 1);
   return summary;
 }
 
-/**
- * Recompute a campaign's {@link CampaignSummary} from its current Job-status
- * aggregates and persist it to `Campaign.summary`. Accepts a transaction client
- * or the bare prisma client.
- */
-export async function recomputeCampaignSummary(
-  client: Prisma.TransactionClient,
+function foldNetworking(summary: CampaignNetworkingSummary, status: string, count: number): void {
+  if (status === "draft" || status === "approved") summary.drafted += count;
+  else if (status === "sent") summary.sent += count;
+  else if (status === "replied") summary.replied += count;
+  else if (status === "bounced") summary.bounced += count;
+}
+
+/** Derives one campaign summary from current rows. */
+export async function deriveCampaignSummary(
+  client: SummaryClient,
   campaignId: string,
+  source: CampaignSource,
 ): Promise<CampaignSummary> {
-  const counts = await client.job.groupBy({
-    by: ["status"],
-    where: { campaignId },
-    _count: { _all: true },
-  });
-
-  const summary = emptySummary();
-  for (const row of counts) {
-    fold(summary, row.status as CampaignJobStatus, row._count._all);
-  }
-
-  await client.campaign.update({
-    where: { campaignId },
-    data: { summary: JSON.stringify(summary) },
-  });
-
+  const summaries = await loadCampaignSummaries(client, [{ campaignId, source }]);
+  const summary = summaries.get(campaignId);
+  if (!summary) throw new Error(`Missing derived summary for campaign ${campaignId}.`);
   return summary;
 }
 
-/**
- * Recompute summary for a networking campaign (`Campaign.source === "networking"`)
- * from its NetworkingMessage-status aggregates and persist it.
- */
-export async function recomputeNetworkingSummary(
-  client: Prisma.TransactionClient,
-  campaignId: string,
-): Promise<CampaignSummary> {
-  const [counts, contacts] = await Promise.all([
-    client.networkingMessage.groupBy({
-      by: ["status"],
-      where: { campaignId },
-      _count: { _all: true },
-    }),
-    client.networkingMessage.findMany({
-      where: { campaignId },
-      select: { contactId: true },
-      distinct: ["contactId"],
-    }),
+/** Derives summaries for a bounded campaign page with aggregate queries. */
+export async function loadCampaignSummaries(
+  client: SummaryClient,
+  campaigns: { campaignId: string; source: CampaignSource }[],
+): Promise<Map<string, CampaignSummary>> {
+  const jobIds = campaigns
+    .filter((campaign) => campaign.source !== "networking")
+    .map((c) => c.campaignId);
+  const networkingIds = campaigns
+    .filter((campaign) => campaign.source === "networking")
+    .map((c) => c.campaignId);
+  const [jobCounts, messageCounts, contacts] = await Promise.all([
+    jobIds.length
+      ? client.job.groupBy({
+          by: ["campaignId", "status"],
+          where: { campaignId: { in: jobIds } },
+          _count: { _all: true },
+        })
+      : [],
+    networkingIds.length
+      ? client.networkingMessage.groupBy({
+          by: ["campaignId", "status"],
+          where: { campaignId: { in: networkingIds } },
+          _count: { _all: true },
+        })
+      : [],
+    networkingIds.length
+      ? client.$queryRaw<ContactCount[]>(Prisma.sql`
+          SELECT campaign_id AS "campaignId", COUNT(DISTINCT contact_id)::integer AS discovered
+          FROM networking_messages
+          WHERE campaign_id IN (${Prisma.join(networkingIds)})
+          GROUP BY campaign_id
+        `)
+      : [],
   ]);
 
-  const summary = emptySummary();
-  summary.discovered = contacts.length;
-  for (const row of counts) {
-    const n = row._count._all;
-    summary.totalFound += n;
-    switch (row.status) {
-      case "draft":
-      case "approved":
-        summary.drafted += n;
-        break;
-      case "sent":
-        summary.sent += n;
-        break;
-      case "replied":
-        summary.replied += n;
-        break;
-      case "bounced":
-        summary.bounced += n;
-        break;
-    }
+  const summaries = new Map<string, CampaignSummary>();
+  for (const id of jobIds) summaries.set(id, emptyJobSummary());
+  for (const id of networkingIds) summaries.set(id, emptyNetworkingSummary());
+  for (const row of jobCounts) {
+    foldJob(requireJobSummary(summaries, row.campaignId), row.status, row._count._all);
   }
-
-  await client.campaign.update({
-    where: { campaignId },
-    data: { summary: JSON.stringify(summary) },
-  });
-
-  return summary;
+  for (const row of contacts)
+    requireNetworkingSummary(summaries, row.campaignId).discovered = row.discovered;
+  for (const row of messageCounts) {
+    foldNetworking(
+      requireNetworkingSummary(summaries, row.campaignId),
+      row.status,
+      row._count._all,
+    );
+  }
+  return summaries;
 }

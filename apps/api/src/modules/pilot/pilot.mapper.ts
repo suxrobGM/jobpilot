@@ -1,17 +1,14 @@
-import type {
-  PilotInstructionsConfig,
-  PilotJournalEntry,
-  PilotJournalKind,
-  PilotLease,
-  PilotState,
-  Promotion,
-  PromotionStatus,
-  Question,
-  QuestionKind,
-  QuestionStatus,
+import {
+  type PilotInstructionsConfig,
+  type PilotLease,
+  type PilotState,
+  type Promotion,
+  pilotLeaseSchema,
+  type Question,
 } from "@jobpilot/contracts/pilot";
+import { z } from "zod/v4";
+import { reviveJsonDates } from "@/common/json";
 import type {
-  PilotJournalEntry as PilotJournalEntryModel,
   PilotLease as PilotLeaseModel,
   PilotState as PilotStateModel,
   PromotionPost as PromotionPostModel,
@@ -41,33 +38,9 @@ export function toPilotState(
 
 export function toQuestion(row: QuestionModel): Question {
   return {
-    id: row.id,
-    userId: row.userId,
-    kind: row.kind as QuestionKind,
-    status: row.status as QuestionStatus,
-    subjectType: row.subjectType,
-    subjectId: row.subjectId,
-    prompt: row.prompt,
-    options: JSON.parse(row.options) as string[],
-    deepLink: row.deepLink,
-    answer: row.answer,
-    answeredAt: row.answeredAt,
-    expiresAt: row.expiresAt,
-    createdAt: row.createdAt,
-  };
-}
-
-export function toJournalEntry(row: PilotJournalEntryModel): PilotJournalEntry {
-  return {
-    id: row.id,
-    userId: row.userId,
-    cycleId: row.cycleId,
-    kind: row.kind as PilotJournalKind,
-    summary: row.summary,
-    detail: JSON.parse(row.detail) as Record<string, unknown>,
-    subjectType: row.subjectType,
-    subjectId: row.subjectId,
-    createdAt: row.createdAt,
+    ...row,
+    kind: row.kind === "two_factor" ? "2fa" : row.kind,
+    options: z.array(z.string()).parse(row.options),
   };
 }
 
@@ -79,7 +52,7 @@ export function toPromotion(row: PromotionPostModel): Promotion {
     target: row.target,
     title: row.title,
     body: row.body,
-    status: row.status as PromotionStatus,
+    status: row.status,
     postedUrl: row.postedUrl,
     scheduledFor: row.scheduledFor,
     postedAt: row.postedAt,
@@ -89,17 +62,5 @@ export function toPromotion(row: PromotionPostModel): Promotion {
 }
 
 export function toPilotLease(row: PilotLeaseModel): PilotLease {
-  return {
-    id: row.id,
-    userId: row.userId,
-    kind: row.kind,
-    subjectType: row.subjectType,
-    subjectId: row.subjectId,
-    payload: JSON.parse(row.payload) as Record<string, unknown>,
-    grantedAt: row.grantedAt,
-    heartbeatAt: row.heartbeatAt,
-    expiresAt: row.expiresAt,
-    releasedAt: row.releasedAt,
-    outcome: row.outcome,
-  };
+  return pilotLeaseSchema.parse({ ...row, payload: reviveJsonDates(row.payload) });
 }

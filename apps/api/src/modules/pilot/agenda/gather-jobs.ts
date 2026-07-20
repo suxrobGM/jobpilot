@@ -2,8 +2,8 @@ import { type CampaignConfig } from "@jobpilot/contracts/campaign";
 import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { parseCampaignConfig } from "@/modules/campaign/campaign.config";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
-import { parseCampaignConfig } from "./campaign-config";
 import {
   GATHER_CAP,
   SCORE_PENDING_BATCH,
@@ -16,7 +16,7 @@ import type { AgendaApprovedJob, AgendaDueQuery, AgendaScorePending, WarmContact
 export async function gatherApprovedJobs(
   prisma: PrismaClient,
   userId: string,
-  parkedBoards: string[] = [],
+  parkedBoards: string[],
 ): Promise<AgendaApprovedJob[]> {
   const rows = await prisma.job.findMany({
     where: { status: "approved", campaign: { userId, status: "in_progress" } },
@@ -37,12 +37,12 @@ export async function gatherApprovedJobs(
   // A parked board's jobs are excluded here; null-board jobs are never parked (park keys on board name).
   const parked = new Set(parkedBoards);
   // Jobs of the same campaign share one config; parse each campaign's JSON at most once.
-  const configByCampaign = new Map<string, CampaignConfig | null>();
+  const configByCampaign = new Map<string, CampaignConfig>();
   return rows
     .filter((job) => !(job.board && parked.has(job.board)))
     .map((job) => {
       let cfg = configByCampaign.get(job.campaignId);
-      if (cfg === undefined) {
+      if (!cfg) {
         cfg = parseCampaignConfig(job.campaign.config);
         configByCampaign.set(job.campaignId, cfg);
       }
@@ -54,7 +54,7 @@ export async function gatherApprovedJobs(
         board: job.board,
         digest: job.digest,
         matchScore: job.matchScore,
-        resumeId: cfg?.resumeId,
+        resumeId: cfg.resumeId,
         company: job.company,
       };
     });
@@ -91,28 +91,19 @@ async function latestLeaseBySubject(
  * Rate-limited per campaign off lease history, like {@link dueSavedSearches}: a row nothing can score
  * (dead URL, login wall) keeps `matchScore: null` forever, and scorePending outranks discovery - without
  * a cooldown that one row would re-win every cycle and starve discovery permanently.
-
-/**
- * In-progress auto-apply campaigns carrying discovered-but-unscored pending rows (`matchScore: null`) -
- * mid-batch abandonment or thin listings. Each carries ≤{@link SCORE_PENDING_BATCH} sampled entries plus
- * the total unscored count; parked-board campaigns are skipped (park keys on the campaign's config board).
- *
- * Rate-limited per campaign off lease history, like {@link dueSavedSearches}: a row nothing can score
- * (dead URL, login wall) keeps `matchScore: null` forever, and scorePending outranks discovery - without
- * a cooldown that one row would re-win every cycle and starve discovery permanently.
  */
 export async function gatherScorePendingCampaigns(
   prisma: PrismaClient,
   userId: string,
   fallbackMinScore: number,
   now: Date,
-  parkedBoards: string[] = [],
+  parkedBoards: string[],
 ): Promise<AgendaScorePending[]> {
   const campaigns = await prisma.campaign.findMany({
     where: {
       userId,
       status: "in_progress",
-      source: "auto-apply",
+      source: "auto_apply",
       jobs: { some: { status: "pending", matchScore: null } },
     },
     take: GATHER_CAP,
@@ -152,7 +143,7 @@ export async function gatherScorePendingCampaigns(
   const out: AgendaScorePending[] = [];
   for (const c of campaigns) {
     const config = parseCampaignConfig(c.config);
-    const board = config?.board ?? null;
+    const board = config.board ?? null;
     // A campaign targeting a parked board is suppressed until the user un-parks it.
     if (board && parked.has(board)) continue;
     // An open lease means a batch is still running; a recent one means we just scored what we could.
@@ -168,8 +159,8 @@ export async function gatherScorePendingCampaigns(
       campaignId: c.campaignId,
       query: c.query,
       board,
-      resumeId: config?.resumeId,
-      minScore: config?.minScore ?? fallbackMinScore,
+      resumeId: config.resumeId,
+      minScore: config.minScore ?? fallbackMinScore,
       pendingCount: countByCampaign.get(c.campaignId) ?? c.jobs.length,
       entries: c.jobs,
     });

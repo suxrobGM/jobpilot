@@ -22,7 +22,7 @@ Search a single board (picked by the user when launching the campaign) and rank 
    curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.[] | select(.domain == $d)'
    ```
 
-   If no row matches, abort with: "Board `<domain>` is not configured. Add it on /boards or run again with a different `--board`." When a `--campaign` id was given, PATCH it to `failed` with `failReason:"Board <domain> not configured"` first.
+   If no row matches, abort with: "Board `<domain>` is not configured. Add it on /boards or run again with a different `--board`." When a `--campaign` id was given, first command it to `failed` with `POST /api/campaigns/<id>/status {"status":"failed"}`.
 
 ## Phase 1: Parse Query
 
@@ -45,7 +45,7 @@ COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-If `.applied`, tag with "Previously Applied" (note `.match.kind`: `url` for exact, `fuzzy` with score for title+company). These are saved as `skipped` in Phase 5, not offered for apply.
+If `.applied`, tag with "Previously Applied" (note `.match.kind`: `url` for exact, `fuzzy` with score for title+company). In Phase 5, create these rows as `pending`, then record `skipped` through `/jobs/<key>/result`; do not offer them for apply.
 
 ## Phase 4: Fit Review
 
@@ -64,14 +64,12 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
     '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
 ```
 
-Previously-applied results (Phase 3) → save with `status:"skipped"`, `skipReason:"Already applied (<kind>)"`. Then close the campaign:
+Previously-applied results (Phase 3) → create as `pending`, then POST `/jobs/<key>/result` with `{outcome:"skipped",skipReason:"Already applied (<kind>)"}`. Then close the campaign:
 
 ```bash
-NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/status" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --argjson found <total> --argjson qualified <pending_count> --arg t "$NOW" \
-    '{status:"completed", completedAt:$t, summary:{totalFound:$found, qualified:$qualified}}')"
+  -d '{"status":"completed"}'
 ```
 
 ## Phase 6: Hand Off

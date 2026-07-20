@@ -1,95 +1,79 @@
+import type {
+  AddCampaignNetworkingInput,
+  NetworkingMessageResultInput,
+  PatchNetworkingMessageInput,
+} from "@jobpilot/contracts/networking";
 import {
-  type AddCampaignNetworkingInput,
-  type NetworkingMessageResultInput,
-  type PatchNetworkingMessageInput,
+  isTerminalNetworkingStatus,
+  NETWORKING_MESSAGE_TERMINAL_STATUSES,
 } from "@jobpilot/contracts/networking";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
-import { findOwned, notFound, unprocessable } from "@/common/errors";
+import { publishActivity, writeActivity } from "@/common/activity-log";
+import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
-import { PilotJournalService } from "@/modules/pilot/journal.service";
+import { createPaginatedResponse } from "@/types/response";
 import { toNetworkingMessageRow } from "../campaign.mapper";
-import { recomputeNetworkingSummary } from "../campaign.summary";
+import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
 
+/** Owns paginated campaign networking writes and idempotent terminal outcomes. */
 @singleton()
 export class CampaignNetworkingService {
-  constructor(
-    private readonly prisma: PrismaClient,
-    private readonly pilot: PilotJournalService,
-  ) {}
+  constructor(private readonly prisma: PrismaClient) {}
 
-  /** List the campaign's networking messages (with their contacts) for the board. */
-  async listNetworking(userId: string, campaignId: string) {
-    const messages = await this.prisma.networkingMessage.findMany({
-      where: { campaignId, userId },
-      include: { contact: true },
-      orderBy: { id: "asc" },
-    });
-    return messages.map(toNetworkingMessageRow);
+  async listNetworking(userId: string, campaignId: string, query: { page: number; limit: number }) {
+    await ensureCampaignOwned(this.prisma, userId, campaignId);
+    const where = { campaignId, userId };
+    const [messages, total] = await Promise.all([
+      this.prisma.networkingMessage.findMany({
+        where,
+        include: { contact: true },
+        orderBy: { createdAt: "asc" },
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+      }),
+      this.prisma.networkingMessage.count({ where }),
+    ]);
+    return createPaginatedResponse(messages.map(toNetworkingMessageRow), { ...query, total });
   }
 
-  /**
-   * Add a discovered contact (or attach to an existing `contactId`) plus an
-   * initial draft message to the campaign, then recompute the campaign summary.
-   */
   async addNetworking(userId: string, campaignId: string, body: AddCampaignNetworkingInput) {
     await ensureCampaignOwned(this.prisma, userId, campaignId);
-
-    const { contact, contactId, message } = body;
-
-    const result = await this.prisma.$transaction(async (tx) => {
-      let resolvedContactId = contactId;
-
-      if (resolvedContactId != null) {
-        const existing = await tx.contact.findFirst({
-          where: { id: resolvedContactId, userId },
+    const networkingMessage = await this.prisma.$transaction(async (tx) => {
+      let contactId = body.contactId;
+      if (contactId) {
+        const owned = await tx.contact.findFirst({
+          where: { id: contactId, userId },
           select: { id: true },
         });
-        if (!existing) {
-          return null;
-        }
-      } else if (contact) {
-        const created = await tx.contact.create({
-          data: { userId, ...createContactPayload(contact) },
-        });
-        resolvedContactId = created.id;
+        if (!owned) throw notFound("Contact not found");
+      } else if (body.contact) {
+        contactId = (
+          await tx.contact.create({ data: { userId, ...createContactPayload(body.contact) } })
+        ).id;
       }
-
-      const networkingMessage = await tx.networkingMessage.create({
+      if (!contactId) throw unprocessable("A contact is required.");
+      return tx.networkingMessage.create({
         data: {
           userId,
-          contactId: resolvedContactId!,
+          contactId,
           campaignId,
-          channel: message.channel,
-          linkedinKind: message.linkedinKind ?? null,
-          subject: message.subject ?? null,
-          body: message.body,
-          status: message.status ?? "draft",
+          channel: body.message.channel,
+          linkedinKind: body.message.linkedinKind ?? null,
+          subject: body.message.subject ?? null,
+          body: body.message.body,
+          status: body.message.status ?? "draft",
         },
         include: { contact: true },
       });
-
-      const summary = await recomputeNetworkingSummary(tx, campaignId);
-      return { networkingMessage, summary };
     });
-
-    if (!result) {
-      throw notFound("Contact not found");
-    }
-
-    // Push the new contact/message to the live campaign viewer.
     publish(campaignChannel, { campaignId }, { type: "networking-update" });
-    return toNetworkingMessageRow(result.networkingMessage);
+    return toNetworkingMessageRow(networkingMessage);
   }
 
-  /**
-   * Non-terminal edits to a networking message - draft body/subject edits,
-   * `draft → approved`, and (via `contactLinkedinConnection`) the parent contact's
-   * connection state. Terminal outcomes go through `recordNetworkingResult`.
-   */
   async patchNetworking(
     userId: string,
     campaignId: string,
@@ -97,99 +81,61 @@ export class CampaignNetworkingService {
     body: PatchNetworkingMessageInput,
   ) {
     const existing = await findOwned(
-      (where) =>
-        this.prisma.networkingMessage.findFirst({
-          where,
-          select: { id: true, status: true, subject: true, body: true },
-        }),
+      (where) => this.prisma.networkingMessage.findFirst({ where }),
       { id: messageId, campaignId, userId },
       "Networking message",
     );
-
-    const { contactLinkedinConnection, ...fields } = body;
-
-    const updated = await this.prisma.$transaction(async (tx) => {
+    if (isTerminalNetworkingStatus(existing.status)) {
+      throw conflict("Terminal networking messages cannot be edited.");
+    }
+    const subjectChanged = body.subject !== undefined && body.subject !== existing.subject;
+    const bodyChanged = body.body !== undefined && body.body !== existing.body;
+    const result = await this.prisma.$transaction(async (tx) => {
+      if (body.status && body.status !== existing.status) {
+        const changed = await tx.networkingMessage.updateMany({
+          where: { id: messageId, status: existing.status },
+          data: { status: body.status },
+        });
+        if (changed.count === 0) throw conflict("Networking message changed concurrently.");
+      }
       const message = await tx.networkingMessage.update({
         where: { id: messageId },
-        data: {
-          status: fields.status,
-          subject: fields.subject,
-          body: fields.body,
-          failReason: fields.failReason,
-          providerId: fields.providerId,
-          threadId: fields.threadId,
-        },
+        data: { subject: body.subject, body: body.body },
         include: { contact: true },
       });
-
-      if (contactLinkedinConnection) {
+      if (body.contactLinkedinConnection) {
         await tx.contact.update({
           where: { id: message.contactId },
-          data: { linkedinConnection: contactLinkedinConnection },
+          data: { linkedinConnection: body.contactLinkedinConnection },
         });
-        message.contact.linkedinConnection = contactLinkedinConnection;
+        message.contact.linkedinConnection = body.contactLinkedinConnection;
       }
-
-      // Tile counts only move on a status change; skip the recompute on draft edits.
-      if (fields.status) {
-        await recomputeNetworkingSummary(tx, campaignId);
-      }
-      return message;
+      const activity =
+        existing.status === "draft" && (subjectChanged || bodyChanged)
+          ? await writeActivity(tx, userId, {
+              entries: [
+                {
+                  kind: "correction",
+                  summary: "Edited networking draft.",
+                  detail: {
+                    type: "networking.edited",
+                    messageId,
+                    before: { subject: existing.subject, body: existing.body },
+                    after: { subject: message.subject, body: message.body },
+                  },
+                  subjectType: "networking",
+                  subjectId: messageId,
+                },
+              ],
+            })
+          : [];
+      return { message, activity };
     });
-
-    // Refresh the live campaign board (e.g. a regenerated draft) without a reload.
     publish(campaignChannel, { campaignId }, { type: "networking-update" });
-
-    // Draft-only approximation of a user edit: the agent regenerates drafts through this same route,
-    // so we can't perfectly separate the two - gate on "draft" and treat any content change as a correction.
-    const subjectChanged = fields.subject != null && fields.subject !== existing.subject;
-    const bodyChanged = fields.body != null && fields.body !== existing.body;
-    if (existing.status === "draft" && (subjectChanged || bodyChanged)) {
-      await this.pilot.appendJournal(userId, {
-        entries: [
-          {
-            kind: "correction",
-            summary: "Edited networking draft.",
-            detail: {
-              type: "networking.edited",
-              messageId,
-              before: { subject: existing.subject, body: existing.body },
-              after: { subject: updated.subject, body: updated.body },
-            },
-            subjectType: "networking",
-            subjectId: messageId,
-          },
-        ],
-      });
-    }
-
-    return toNetworkingMessageRow(updated);
+    publishActivity(userId, result.activity);
+    return toNetworkingMessageRow(result.message);
   }
 
-  /**
-   * Server-side send gate, enforced regardless of what the agent claims: a LinkedIn InMail may
-   * only be sent once the user approved it (InMails cost credits / are irreversible). The daily
-   * networking cap is NOT checked here - this runs after the email already left, so rejecting the
-   * bookkeeping would leave sentAt null and let the agenda re-emit the message (duplicate email);
-   * the agenda's headroom slicing is the real cap gate.
-   */
-  private guardSend(message: {
-    channel: string;
-    linkedinKind: string | null;
-    status: string;
-  }): void {
-    if (message.channel === "linkedin" && message.linkedinKind === "inmail") {
-      if (message.status !== "approved") {
-        throw unprocessable("A LinkedIn InMail can only be sent after you approve it.");
-      }
-    }
-  }
-
-  /**
-   * Terminal-outcome handoff for a networking message: marks it `sent`/`failed`/
-   * `skipped`, stamps `sentAt` + the Gmail `providerId`/`threadId`, and recomputes
-   * the campaign summary. Mirrors campaigns/[id]/jobs/[key]/result.
-   */
   async recordNetworkingResult(
     userId: string,
     campaignId: string,
@@ -197,36 +143,63 @@ export class CampaignNetworkingService {
     data: NetworkingMessageResultInput,
   ) {
     const existing = await findOwned(
-      (where) => this.prisma.networkingMessage.findFirst({ where }),
+      (where) =>
+        this.prisma.networkingMessage.findFirst({
+          where,
+          include: { campaign: true, contact: true },
+        }),
       { id: messageId, campaignId, userId },
       "Networking message",
     );
-
-    if (data.outcome === "sent") {
-      this.guardSend(existing);
+    if (!existing.campaign) {
+      throw new Error("Campaign-scoped networking message has no campaign relation.");
     }
-
-    const sentAt =
-      data.outcome === "sent" ? (data.sentAt ? new Date(data.sentAt) : new Date()) : null;
-
+    const campaignSource = existing.campaign.source;
+    if (isTerminalNetworkingStatus(existing.status)) {
+      if (existing.status !== data.outcome) {
+        throw conflict(`Networking message already finished with outcome ${existing.status}.`);
+      }
+      return {
+        message: toNetworkingMessageRow(existing),
+        summary: await deriveCampaignSummary(this.prisma, campaignId, campaignSource),
+      };
+    }
+    if (
+      data.outcome === "sent" &&
+      existing.channel === "linkedin" &&
+      existing.linkedinKind === "inmail"
+    ) {
+      if (existing.status !== "approved") {
+        throw unprocessable("A LinkedIn InMail can only be sent after approval.");
+      }
+    }
     const result = await this.prisma.$transaction(async (tx) => {
-      const message = await tx.networkingMessage.update({
-        where: { id: messageId },
+      const changed = await tx.networkingMessage.updateMany({
+        where: { id: messageId, status: { notIn: [...NETWORKING_MESSAGE_TERMINAL_STATUSES] } },
         data: {
           status: data.outcome,
-          sentAt,
+          sentAt: data.outcome === "sent" ? new Date(data.sentAt ?? Date.now()) : null,
           providerId: data.outcome === "sent" ? (data.providerId ?? existing.providerId) : null,
           threadId:
             data.outcome === "sent" ? (data.threadId ?? existing.threadId) : existing.threadId,
           failReason: data.outcome === "failed" ? data.failReason : null,
         },
+      });
+      if (changed.count === 0) {
+        const raced = await tx.networkingMessage.findUniqueOrThrow({ where: { id: messageId } });
+        if (raced.status !== data.outcome) {
+          throw conflict(`Networking message already finished with outcome ${raced.status}.`);
+        }
+      }
+      const message = await tx.networkingMessage.findUniqueOrThrow({
+        where: { id: messageId },
         include: { contact: true },
       });
-      const summary = await recomputeNetworkingSummary(tx, campaignId);
-      return { message, summary };
+      return {
+        message,
+        summary: await deriveCampaignSummary(tx, campaignId, campaignSource),
+      };
     });
-
-    // Refresh the live campaign viewer on the terminal outcome.
     publish(campaignChannel, { campaignId }, { type: "networking-update" });
     return { message: toNetworkingMessageRow(result.message), summary: result.summary };
   }

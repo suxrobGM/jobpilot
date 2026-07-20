@@ -65,7 +65,8 @@ function buildRows(campaign: CampaignDetailDto): { rows: Row[]; max: number } {
   const applying = counts.applying + counts.applied + counts.failed;
   const approved = counts.approved + counts.needs_user + applying;
   const scored = Math.max(scoredCount, approved + counts.skipped);
-  const found = Math.max(campaign.summary.totalFound, campaign.jobs.length, scored);
+  const totalFound = campaign.summary.kind === "jobs" ? campaign.summary.totalFound : 0;
+  const found = Math.max(totalFound, campaign.jobs.length, scored);
 
   // The single in-flight frontier, so only one stage pulses while running.
   const active = inProgress ? (ACTIVE_FRONTIER.find((s) => s.has(counts))?.key ?? null) : null;

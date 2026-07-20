@@ -75,13 +75,6 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
             {campaign.status === "paused" && (
               <Typography variant="captionMuted">Paused - resume to continue.</Typography>
             )}
-
-            {campaign.status === "interrupted" && (
-              <Typography variant="captionMuted">
-                Interrupted - the agent stopped before finishing. Resume to continue, or mark it
-                done.
-              </Typography>
-            )}
           </Stack>
 
           <CampaignActionsBar campaign={campaign} />

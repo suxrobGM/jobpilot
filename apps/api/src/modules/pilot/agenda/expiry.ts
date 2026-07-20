@@ -1,110 +1,77 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { GATHER_CAP } from "./constants";
+import { parseJobPayload } from "./job-mutations";
 
-/** Deps for the job-status mutations shared by expiry, promotion, lease grant, and release. */
-export interface JobMutationDeps {
-  prisma: PrismaClient;
-  campaignJobs: CampaignJobService;
-}
-
-export function parsePayload(payload: string): { campaignId?: string; jobKey?: string } {
-  return JSON.parse(payload) as { campaignId?: string; jobKey?: string };
-}
-
-export function jobRef(
-  payload: { campaignId?: string; jobKey?: string },
-  subjectId: string,
-): { campaignId: string; jobKey: string } {
-  return { campaignId: payload.campaignId ?? "", jobKey: payload.jobKey ?? subjectId };
-}
-
-/** Job question subjects are stored as `${campaignId}:${jobKey}`. */
-function splitJobSubject(subjectId: string): { campaignId: string; jobKey: string } {
-  const idx = subjectId.indexOf(":");
-  return idx === -1
-    ? { campaignId: subjectId, jobKey: "" }
-    : { campaignId: subjectId.slice(0, idx), jobKey: subjectId.slice(idx + 1) };
-}
-
-export async function revertJobToApproved(
-  { prisma, campaignJobs }: JobMutationDeps,
-  userId: string,
-  campaignId: string,
-  jobKey: string,
-): Promise<void> {
-  const job = await prisma.job.findFirst({
-    where: { campaignId, key: jobKey, campaign: { userId } },
-    select: { status: true },
-  });
-  if (job?.status === "applying") {
-    await campaignJobs.patchJob(userId, campaignId, jobKey, { status: "approved" });
+function splitJobSubject(subjectId: string) {
+  const separator = subjectId.indexOf(":");
+  if (separator <= 0 || separator === subjectId.length - 1) {
+    throw new Error(`Invalid job question subject: ${subjectId}`);
   }
+  return {
+    campaignId: subjectId.slice(0, separator),
+    jobKey: subjectId.slice(separator + 1),
+  };
 }
 
-async function skipParkedJob(
-  { prisma, campaignJobs }: JobMutationDeps,
-  userId: string,
-  subjectId: string,
-): Promise<void> {
-  const { campaignId, jobKey } = splitJobSubject(subjectId);
-  if (!campaignId || !jobKey) return;
-  const job = await prisma.job.findFirst({
-    where: { campaignId, key: jobKey, campaign: { userId } },
-    select: { status: true },
-  });
-  if (job?.status === "needs_user") {
-    await campaignJobs.recordJobResult(userId, campaignId, jobKey, {
-      outcome: "skipped",
-      skipReason: "Question expired without an answer.",
+/** Releases expired leases and questions, returning their subjects to a workable state. */
+export async function runExpiry(prisma: PrismaClient, userId: string, now: Date): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const leases = await tx.pilotLease.findMany({
+      where: { userId, releasedAt: null, expiresAt: { lt: now } },
+      take: GATHER_CAP,
+      select: { id: true, kind: true, subjectId: true, payload: true },
     });
-  }
-}
+    if (leases.length) {
+      await tx.pilotLease.updateMany({
+        where: { id: { in: leases.map((lease) => lease.id) }, releasedAt: null },
+        data: { releasedAt: now, outcome: "expired" },
+      });
+      for (const lease of leases) {
+        if (lease.kind !== "job.apply") continue;
+        const ref = parseJobPayload(lease.payload);
+        await tx.job.updateMany({
+          where: {
+            campaignId: ref.campaignId,
+            key: ref.jobKey,
+            status: "applying",
+            campaign: { userId },
+          },
+          data: { status: "approved" },
+        });
+      }
+    }
 
-async function expireLeases(deps: JobMutationDeps, userId: string, now: Date): Promise<void> {
-  const { prisma } = deps;
-  const leases = await prisma.pilotLease.findMany({
-    where: { userId, releasedAt: null, expiresAt: { lt: now } },
-    take: GATHER_CAP, // remainder is swept on the next compile.
-    select: { id: true, kind: true, subjectId: true, payload: true },
+    const questions = await tx.question.findMany({
+      where: { userId, status: "open", expiresAt: { not: null, lt: now } },
+      take: GATHER_CAP,
+      select: { id: true, subjectType: true, subjectId: true },
+    });
+    if (!questions.length) return;
+    await tx.question.updateMany({
+      where: { id: { in: questions.map((question) => question.id) }, status: "open" },
+      data: { status: "expired" },
+    });
+    for (const question of questions) {
+      if (question.subjectType !== "job" || !question.subjectId) continue;
+      const ref = splitJobSubject(question.subjectId);
+      const job = await tx.job.findFirst({
+        where: {
+          campaignId: ref.campaignId,
+          key: ref.jobKey,
+          status: "needs_user",
+          campaign: { userId },
+        },
+        select: { url: true },
+      });
+      if (!job) continue;
+      await tx.job.updateMany({
+        where: { campaignId: ref.campaignId, key: ref.jobKey, status: "needs_user" },
+        data: { status: "skipped", skipReason: "Question expired without an answer." },
+      });
+      await tx.queueEntry.updateMany({
+        where: { userId, url: job.url, status: "pending" },
+        data: { status: "skipped", consumedAt: null },
+      });
+    }
   });
-  if (leases.length === 0) return;
-  await prisma.pilotLease.updateMany({
-    where: { id: { in: leases.map((l) => l.id) } },
-    data: { releasedAt: now, outcome: "expired" },
-  });
-  const reverts = leases
-    .filter((l) => l.kind === "job.apply")
-    .map((l) => jobRef(parsePayload(l.payload), l.subjectId))
-    .filter((ref) => ref.campaignId)
-    .map((ref) => revertJobToApproved(deps, userId, ref.campaignId, ref.jobKey));
-  await Promise.all(reverts);
-}
-
-async function expireQuestions(deps: JobMutationDeps, userId: string, now: Date): Promise<void> {
-  const { prisma } = deps;
-  const questions = await prisma.question.findMany({
-    where: { userId, status: "open", expiresAt: { not: null, lt: now } },
-    take: GATHER_CAP, // remainder is swept on the next compile.
-    select: { id: true, subjectType: true, subjectId: true },
-  });
-  if (questions.length === 0) return;
-  await prisma.question.updateMany({
-    where: { id: { in: questions.map((e) => e.id) } },
-    data: { status: "expired" },
-  });
-  const skips = questions
-    .filter((e) => e.subjectType === "job" && e.subjectId)
-    .map((e) => skipParkedJob(deps, userId, e.subjectId as string));
-  await Promise.all(skips);
-}
-
-/**
- * Sweep overdue leases and questions before compiling. An expired job lease
- * reverts its job to `approved`; an expired question whose job is parked in
- * `needs_user` is skipped through the campaign job service. The two passes are
- * independent, so they run in parallel. Runs first so the agenda reflects the cleanup.
- */
-export async function runExpiry(deps: JobMutationDeps, userId: string, now: Date): Promise<void> {
-  await Promise.all([expireLeases(deps, userId, now), expireQuestions(deps, userId, now)]);
 }

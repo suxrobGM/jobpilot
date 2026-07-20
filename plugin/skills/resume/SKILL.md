@@ -1,12 +1,12 @@
 ---
 name: resume
-description: Resume an interrupted or paused JobPilot campaign by id. Re-flips the campaign to in_progress and replays the apply loop on any remaining approved jobs without re-asking for fit confirmation.
+description: Resume a paused JobPilot campaign by id. Re-flips the campaign to in_progress and replays the apply loop on any remaining approved jobs without re-asking for fit confirmation.
 argument-hint: "<campaign-id>"
 ---
 
-# Resume - Continue an Interrupted Campaign
+# Resume - Continue a Paused Campaign
 
-Resumes a `paused` or `interrupted` Campaign by replaying the apply loop on jobs that
+Resumes a `paused` Campaign by replaying the apply loop on jobs that
 are still `approved` (or `pending` if approval was implicit). The user already
 approved the fit when the campaign was first launched, so no re-confirmation gate.
 
@@ -28,7 +28,7 @@ Argument is `<campaign-id>`. If missing, list candidates and ask:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns" \
-  | jq -r '.[] | select(.status=="paused" or .status=="interrupted")
+  | jq -r '.items[] | select(.status=="paused")
            | "\(.campaignId)\t\(.status)\t\(.source)\t\(.query)"'
 ```
 
@@ -37,26 +37,26 @@ Fetch the campaign + jobs:
 ```bash
 CAMPAIGN_ID="<campaign-id>"
 CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID")
+JOBS=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs?page=1&limit=100")
 ```
 
-Verify status is `paused` or `interrupted`. If `completed` or `failed`, stop:
+Verify status is `paused`. If `completed` or `failed`, stop:
 **"Campaign <id> is already <status>. Nothing to resume."** If `in_progress`, stop:
-**"Campaign <id> is still in progress. If the agent crashed, wait for the
-auto-reconciler (5 min) or stop the campaign from the UI first."**
+**"Campaign <id> is still in progress. Stop the campaign from the UI first."**
 
 Refuse to resume if there are no resumable jobs (`approved`, `pending`, or `applying`):
 
 ```bash
-RESUMABLE=$(echo "$CAMPAIGN" | jq '[.jobs[] | select(.status=="approved" or .status=="pending" or .status=="applying")] | length')
+RESUMABLE=$(echo "$JOBS" | jq '[.items[] | select(.status=="approved" or .status=="pending" or .status=="applying")] | length')
 [ "$RESUMABLE" = "0" ] && { echo "No resumable jobs (approved/pending/applying). If none were ever added, start fresh with the auto-apply skill."; exit 0; }
 ```
 
 ## Phase 1: Re-open the Campaign
 
-PATCH status back to `in_progress`:
+Command status back to `in_progress`:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
   -H 'content-type: application/json' \
   -d '{"status":"in_progress"}'
 ```
@@ -82,7 +82,7 @@ For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-
 
 (`digest` omitted → the worker fetches it from the saved Job.)
 
-3. **Record result** - map the worker's `outcome` to POST `/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` (`applied`/`failed`/`skipped`; a `skipped` MUST carry a non-empty `skipReason`). Atomic: updates the Job, creates the Application, marks the queue, recomputes the summary. `needs_user`: `salary` (no profile salary preference matched) → ask once then re-delegate; `2FA`/`payment` → pause/record as the apply skill does. The worker closed its tabs; re-select tab 0.
+3. **Record result** - map the worker's `outcome` to POST `/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` (`applied`/`failed`/`skipped`; a `skipped` MUST carry a non-empty `skipReason`). Atomic: updates the Job, creates the Application and initial event on applied, and marks the queue. `needs_user`: `salary` (no profile salary preference matched) → ask once then re-delegate; `2FA`/`payment` → pause/record as the apply skill does. The worker closed its tabs; re-select tab 0.
 4. **Limit** - if `MAX_APPS` set and `summary.applied >= MAX_APPS`, POST `/result` `outcome:"skipped"`, `skipReason:"Max applications limit reached"` for each remaining `approved` job and end the loop.
 
 The `/result` endpoint preserves the campaign's original `source` (`"apply"` vs `"auto-apply"`) on the created Application row automatically - no separate source-passthrough needed.
@@ -102,10 +102,9 @@ fi
 ## Phase 3: Summary
 
 ```bash
-NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
+  -d '{"status":"completed"}'
 ```
 
 Print a summary table and the campaign link `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
@@ -117,4 +116,4 @@ Suggest re-running the `auto-apply` skill in `retry-failed <CAMPAIGN_ID>` mode i
 2. **Preserve `source`** when recording applications - a resumed `apply` campaign still records `source:"apply"`, not `"resume"`.
 3. **Idempotent.** Resuming the same campaign a second time should be a no-op when no `approved` jobs remain.
 4. **Never skip silently.** Every `skipped` write carries a non-empty `skipReason`.
-5. **The Campaign is the audit trail.** PATCH after every state change so the SSE viewer reflects reality.
+5. **The Campaign is the audit trail.** Use explicit status commands, non-terminal job PATCHes, and terminal result writes so SSE reflects reality.

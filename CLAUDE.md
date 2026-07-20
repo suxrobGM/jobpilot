@@ -71,7 +71,7 @@ otherwise rediscover the hard way. Never the *what*; the code says that.
 - Credential lookup: board override → `Credential.scope === <domain>` → `Credential.scope === "default"`.
 - Log in proactively before searching/applying.
 - Dedupe applied jobs via `GET /api/applied/check` (exact URL + fuzzy title+company, 30-day window).
-- During campaigns, `PATCH /api/campaigns/[id]/jobs/[jobKey]` for non-terminal status transitions (pending → approved → applying). On terminal outcome (applied / failed / skipped), `POST /api/campaigns/[id]/jobs/[jobKey]/result` - one call updates the Job, creates the Application row (when applied), marks the queue entry, and recomputes the campaign summary.
+- During campaigns, `PATCH /api/campaigns/[id]/jobs/[jobKey]` for non-terminal status transitions (pending → approved → applying). On terminal outcome (applied / failed / skipped), `POST /api/campaigns/[id]/jobs/[jobKey]/result` - one call updates the Job, creates the Application and initial event when applied, and marks the queue entry. Campaign summaries are derived from current rows, never persisted.
 - Browser automation: use `browser_snapshot` (with `ref` for large pages), not screenshots.
 
 ## Backend layout (`apps/api/src/`)

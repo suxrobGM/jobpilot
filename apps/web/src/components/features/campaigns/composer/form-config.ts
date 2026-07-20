@@ -2,7 +2,6 @@ import type { CampaignSource } from "@jobpilot/contracts/campaign";
 import { z } from "zod/v4";
 import type { CreateCampaignRequest } from "@/api/types";
 import { buildCliArgs } from "@/utils/cli-args";
-import { slugify } from "@/utils/slug";
 
 export const composerFormSchema = z
   .object({
@@ -58,11 +57,6 @@ export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   autonomy: "draft",
   dailyCap: 20,
 };
-
-export function makeCampaignId(query: string): string {
-  const ts = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "");
-  return `${ts}_${slugify(query, { maxLength: 40, fallback: "campaign" })}`;
-}
 
 function hasMaxApps(
   values: ComposerFormValues,

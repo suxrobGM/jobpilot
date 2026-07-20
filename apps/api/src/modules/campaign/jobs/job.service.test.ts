@@ -1,192 +1,169 @@
-// Like admin.guard.test.ts, importing the service transitively loads `@/env`, so this needs the dummy
-// env block in ci.yml - but it issues NO real query: a fake Prisma is injected and the $transaction
-// callback runs against it. That keeps `recordJobResult`'s branch logic under test with no database.
-import type { CampaignJobResultInput } from "@jobpilot/contracts/campaign";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { JobListingIngestService } from "@/modules/job-listing";
-import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
 import { CampaignJobService } from "./job.service";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
-const PROFILE = "profile-1";
-const CAMPAIGN = "campaign-1";
-const KEY = "job-key-1";
+const APPLIED_AT = "2026-07-20T12:00:00.000Z";
 
-const baseJob = {
-  id: 1,
-  campaignId: CAMPAIGN,
-  key: KEY,
-  title: "Senior Frontend Engineer",
-  company: "Acme Inc",
-  location: "Remote",
-  salary: null,
-  type: null,
-  url: "https://acme.example/jobs/1",
-  board: "greenhouse",
-  matchScore: 88,
-  matchReason: "strong overlap",
-  status: "applying",
-  failReason: null,
-  skipReason: null,
-  retryNotes: null,
-  description: null,
-  digest: null,
-  appliedAt: null,
-};
-
-interface Recorder {
-  applicationCreateCount: number;
-  applicationCreate?: Record<string, unknown>;
-  queueUpdate?: { data: Record<string, unknown> };
-  jobUpdate?: { data: Record<string, unknown> };
-  jobUpdateMany?: { where: Record<string, unknown>; data: Record<string, unknown> };
-  groupByCount: number;
-}
-
-function makeDb(existingApplication: Record<string, unknown> | null = null, claimCount = 1) {
-  const rec: Recorder = { applicationCreateCount: 0, groupByCount: 0 };
+function setup() {
+  let job = {
+    id: "j-id",
+    campaignId: "c1",
+    key: "j1",
+    title: "Engineer",
+    company: "Acme",
+    location: null,
+    salary: null,
+    type: null,
+    url: "https://example.test/jobs/1",
+    board: "example",
+    matchScore: 90,
+    matchReason: "fit",
+    status: "applying",
+    appliedAt: null,
+    failReason: null,
+    retryNotes: null,
+    skipReason: null,
+    description: null,
+    digest: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  let application: Record<string, unknown> | null = null;
+  let applicationUpserts = 0;
+  const queueWrites: Record<string, unknown>[] = [];
+  const campaign = { source: "auto_apply" as const };
   const db = {
     job: {
-      findFirst: async () => ({ ...baseJob, campaign: { source: "auto-apply", summary: "{}" } }),
-      findUniqueOrThrow: async () => ({ ...baseJob, status: "applying" }),
-      update: async (args: { data: Record<string, unknown> }) => {
-        rec.jobUpdate = args;
-        return { ...baseJob, ...args.data };
-      },
-      updateMany: async (args: {
-        where: Record<string, unknown>;
+      findFirst: async () => ({ ...job, campaign }),
+      updateMany: async ({
+        where,
+        data,
+      }: {
+        where: { status?: unknown };
         data: Record<string, unknown>;
       }) => {
-        rec.jobUpdateMany = args;
-        return { count: claimCount };
+        if (where.status && typeof where.status === "object" && "notIn" in where.status) {
+          if (["applied", "failed", "skipped"].includes(job.status)) return { count: 0 };
+        } else if (typeof where.status === "string" && job.status !== where.status) {
+          return { count: 0 };
+        }
+        job = { ...job, ...data } as typeof job;
+        return { count: 1 };
       },
-      groupBy: async () => {
-        rec.groupByCount += 1;
-        return [{ status: "applied", _count: { _all: 1 } }];
-      },
+      findUniqueOrThrow: async () => job,
+      groupBy: async () => [
+        { campaignId: job.campaignId, status: job.status, _count: { _all: 1 } },
+      ],
     },
     application: {
-      findUnique: async () => existingApplication,
-      create: async (args: { data: Record<string, unknown> }) => {
-        rec.applicationCreate = args.data;
-        rec.applicationCreateCount += 1;
-        return { id: "app-created", ...args.data };
+      findUnique: async () => application,
+      upsert: async ({ create }: { create: Record<string, unknown> }) => {
+        applicationUpserts += 1;
+        application = { id: "app1", ...create };
+        return application;
       },
     },
     queueEntry: {
-      updateMany: async (args: { data: Record<string, unknown> }) => {
-        rec.queueUpdate = args;
+      updateMany: async ({ data }: { data: Record<string, unknown> }) => {
+        queueWrites.push(data);
         return { count: 1 };
       },
     },
-    campaign: { update: async () => ({}) },
-    $transaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(db),
+    $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
-  return { db, rec };
+  const listings = { ingestInBackground: () => undefined } as unknown as JobListingIngestService;
+  return {
+    service: new CampaignJobService(db as unknown as PrismaClient, listings),
+    get job() {
+      return job;
+    },
+    get applicationUpserts() {
+      return applicationUpserts;
+    },
+    queueWrites,
+  };
 }
 
-const listings = { ingestInBackground() {} } as unknown as JobListingIngestService;
-
-const service = (db: unknown) => new CampaignJobService(db as unknown as PrismaClient, listings);
-
-const APPLIED_AT = "2026-07-15T10:00:00.000Z";
-const input = (over: Partial<CampaignJobResultInput>): CampaignJobResultInput =>
-  ({ outcome: "applied", appliedAt: APPLIED_AT, ...over }) as CampaignJobResultInput;
-
-describe("recordJobResult", () => {
-  let db: ReturnType<typeof makeDb>["db"];
-  let rec: Recorder;
-
-  beforeEach(() => {
-    ({ db, rec } = makeDb());
-  });
-
-  it("applied: updates the job, creates an Application, and consumes the queue entry", async () => {
-    const result = await service(db).recordJobResult(
-      PROFILE,
-      CAMPAIGN,
-      KEY,
-      input({ matchScore: 90 }),
-    );
-
-    expect(result.campaignJob.status).toBe("applied");
-    expect(result.campaignJob.appliedAt).toEqual(new Date(APPLIED_AT));
-
-    expect(rec.applicationCreateCount).toBe(1);
-    expect(rec.applicationCreate).toMatchObject({
-      userId: PROFILE,
-      url: baseJob.url,
-      source: "auto-apply",
-      normalizedTitle: normalizeJobTitle(baseJob.title),
-      normalizedCompany: normalizeCompanyName(baseJob.company),
+describe("CampaignJobService terminal results", () => {
+  it("atomically records an application, its first event, and the queue outcome", async () => {
+    const state = setup();
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
     });
-    expect(rec.applicationCreate?.appliedAt).toEqual(new Date(APPLIED_AT));
-    expect(result.application).toMatchObject({ id: "app-created" });
-
-    // Terminal-but-not-skipped outcomes consume the pending queue entry.
-    expect(rec.queueUpdate?.data).toMatchObject({ status: "consumed" });
-    expect(rec.queueUpdate?.data.consumedAt).toBeInstanceOf(Date);
-
-    expect(result.summary.applied).toBe(1);
-
-    // The shared emit path reuses the transaction-computed summary; it must not recompute.
-    expect(rec.groupByCount).toBe(1);
+    expect(result.campaignJob.status).toBe("applied");
+    expect(result.application).toMatchObject({
+      events: { create: { kind: "status_change", toStatus: "applied", source: "campaign" } },
+    });
+    expect(state.queueWrites[0]).toMatchObject({ status: "consumed" });
+    expect(result.summary).toMatchObject({ kind: "jobs", applied: 1 });
   });
 
-  it("applied with an existing Application: reuses it instead of creating a duplicate", async () => {
-    const { db: db2, rec: rec2 } = makeDb({ id: "app-existing", url: baseJob.url });
-
-    const result = await service(db2).recordJobResult(PROFILE, CAMPAIGN, KEY, input({}));
-
-    expect(rec2.applicationCreateCount).toBe(0);
-    expect(result.application?.id).toBe("app-existing");
+  it("returns the same result idempotently without a second application upsert", async () => {
+    const state = setup();
+    const input = { outcome: "applied" as const, appliedAt: APPLIED_AT };
+    await state.service.recordJobResult("u1", "c1", "j1", input);
+    await state.service.recordJobResult("u1", "c1", "j1", input);
+    expect(state.applicationUpserts).toBe(1);
   });
 
-  it("skipped: marks the queue entry skipped and creates no Application", async () => {
-    const result = await service(db).recordJobResult(
-      PROFILE,
-      CAMPAIGN,
-      KEY,
-      input({ outcome: "skipped", appliedAt: undefined, skipReason: "not a fit" }),
-    );
-
-    expect(result.campaignJob.status).toBe("skipped");
-    expect(rec.applicationCreateCount).toBe(0);
-    expect(result.application).toBeNull();
-    expect(rec.queueUpdate?.data).toMatchObject({ status: "skipped", consumedAt: null });
+  it("rejects a different outcome after the job is terminal", async () => {
+    const state = setup();
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "failed",
+      failReason: "blocked",
+    });
+    await expect(
+      state.service.recordJobResult("u1", "c1", "j1", {
+        outcome: "skipped",
+        skipReason: "duplicate",
+      }),
+    ).rejects.toThrow("already finished");
   });
 
-  it("failed: consumes the queue entry and creates no Application", async () => {
-    const result = await service(db).recordJobResult(
-      PROFILE,
-      CAMPAIGN,
-      KEY,
-      input({ outcome: "failed", appliedAt: undefined, failReason: "form error" }),
-    );
-
-    expect(result.campaignJob.status).toBe("failed");
-    expect(rec.applicationCreateCount).toBe(0);
-    expect(result.application).toBeNull();
-    expect(rec.queueUpdate?.data).toMatchObject({ status: "consumed" });
-  });
-});
-
-describe("claimJobForApply", () => {
-  it("claims an approved job, flips it to applying, and recomputes the summary", async () => {
-    const { db, rec } = makeDb();
-
-    const row = await service(db).claimJobForApply(PROFILE, CAMPAIGN, KEY);
-
-    // The conditional claim only matches an approved row, guarding the single-writer invariant.
-    expect(rec.jobUpdateMany?.where).toMatchObject({ status: "approved", key: KEY });
-    expect(rec.jobUpdateMany?.data).toEqual({ status: "applying" });
-    expect(row.status).toBe("applying");
-    // Emission parity with patchJob: the shared path recomputes the campaign summary.
-    expect(rec.groupByCount).toBe(1);
+  it("does not allow PATCH to rewrite an applied job", async () => {
+    const state = setup();
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+    });
+    await expect(
+      state.service.patchJob("u1", "c1", "j1", { description: "late edit" }),
+    ).rejects.toThrow("Terminal jobs cannot be edited");
   });
 
-  it("409s when the row is no longer approved (claim matched zero rows)", async () => {
-    const { db } = makeDb(null, 0);
-    expect(service(db).claimJobForApply(PROFILE, CAMPAIGN, KEY)).rejects.toThrow();
+  it("retries a failed job only through the explicit retry command", async () => {
+    const state = setup();
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "failed",
+      failReason: "timeout",
+    });
+    const retried = await state.service.retryJob("u1", "c1", "j1", {
+      retryNotes: "Try after login refresh",
+    });
+    expect(retried).toMatchObject({
+      status: "approved",
+      failReason: null,
+      retryNotes: "Try after login refresh",
+    });
+  });
+
+  it("rescans a skipped job only through the explicit rescan command", async () => {
+    const state = setup();
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "skipped",
+      skipReason: "Old score",
+    });
+    const rescanned = await state.service.rescanJob("u1", "c1", "j1", {
+      decision: "approved",
+      matchScore: 88,
+      matchReason: "Fresh posting supports the match",
+    });
+    expect(rescanned).toMatchObject({
+      status: "approved",
+      matchScore: 88,
+      skipReason: null,
+    });
   });
 });

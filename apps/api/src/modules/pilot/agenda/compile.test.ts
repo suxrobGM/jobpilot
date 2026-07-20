@@ -1,5 +1,5 @@
 // Compile-level gather behavior (question consumption, warm-check join, promotion cadence) driven
-// through AgendaService.compile with a fake Prisma - no database. Loading the service transitively
+// through AgendaService.refresh with a fake Prisma - no database. Loading the service transitively
 // loads `@/env`, satisfied by the local .env / ci.yml dummy env.
 
 import { approvedJob, makeAgendaDeps, type Over } from "./db.test-helpers";
@@ -7,15 +7,15 @@ import { AgendaService } from "./service";
 import { describe, expect, it } from "bun:test";
 
 const service = (over: Over = {}) => {
-  const { prisma, campaignJobs, pilot, push, campaigns } = makeAgendaDeps(over);
-  return new AgendaService(prisma, campaignJobs, pilot, push, campaigns);
+  const { prisma, campaignJobs, pilot, push } = makeAgendaDeps(over);
+  return new AgendaService(prisma, campaignJobs, pilot, push);
 };
 
 describe("AgendaService question consumption", () => {
   it("keeps an answered question on the agenda until a lease references it", async () => {
     const agenda = await service({
       answered: [{ id: "E1", kind: "question", prompt: "Which date?" }],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.map((i) => i.kind)).toContain("question.answered");
   });
 
@@ -23,7 +23,7 @@ describe("AgendaService question consumption", () => {
     const agenda = await service({
       answered: [{ id: "E1", kind: "question", prompt: "Which date?" }],
       questionLeases: [{ subjectId: "E1" }],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "question.answered")).toBe(false);
   });
 });
@@ -41,7 +41,7 @@ describe("AgendaService warm-check join", () => {
     const agenda = await service({
       approvedJobs: [approvedJob({ matchScore: 90, company: "Acme" })],
       contacts: [insider],
-    }).compile("p1");
+    }).refresh("p1");
     const warm = agenda.items.find((i) => i.kind === "networking.warmIntro");
     const warmContacts = warm?.payload.contacts as { id: string }[] | undefined;
     expect(warmContacts?.[0].id).toBe("ct1");
@@ -54,7 +54,7 @@ describe("AgendaService warm-check join", () => {
     const agenda = await service({
       approvedJobs: [approvedJob({ matchScore: 84, company: "Acme" })],
       contacts: [insider],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
   });
 });
@@ -77,7 +77,7 @@ describe("AgendaService interview replies", () => {
   });
 
   it("emits interview.reply for an interviewing app with an unreplied inbound email", async () => {
-    const agenda = await service({ interviewReplyApps: [replyApp()] }).compile("p1");
+    const agenda = await service({ interviewReplyApps: [replyApp()] }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "interview.reply");
     expect(item?.subjectId).toBe("em1");
     expect(item?.payload).toMatchObject({ applicationId: "app1", emailMessageId: "em1" });
@@ -87,14 +87,14 @@ describe("AgendaService interview replies", () => {
     const agenda = await service({
       interviewReplyApps: [replyApp()],
       interviewQuestions: [{ subjectId: "em1" }],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "interview.reply")).toBe(false);
   });
 
   it("emits no interview.reply for an app without a matched interview email", async () => {
     const agenda = await service({
       interviewReplyApps: [replyApp({ emailMessages: [] })],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "interview.reply")).toBe(false);
   });
 });
@@ -110,10 +110,10 @@ describe("AgendaService interview prep", () => {
           company: "Acme",
           title: "Engineer",
           url: "https://x/1",
-          campaign: { config: JSON.stringify({ resumeId }) },
+          campaign: { config: { resumeId } },
         },
       ],
-    }).compile("p1");
+    }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "interview.prep");
     expect(item?.subjectId).toBe("app1");
     expect(item?.payload).toMatchObject({
@@ -128,7 +128,7 @@ describe("AgendaService interview prep", () => {
       interviewPrepApps: [
         { id: "app1", company: "Acme", title: "Engineer", url: "https://x/1", campaign: null },
       ],
-    }).compile("p1");
+    }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "interview.prep");
     expect(item?.payload.resumeId).toBeNull();
   });
@@ -147,7 +147,7 @@ describe("AgendaService question enrichment", () => {
           answer: "yes",
         },
       ],
-    }).compile("p1");
+    }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "question.answered");
     expect(item?.payload).toEqual({
       questionId: "E1",
@@ -161,12 +161,12 @@ describe("AgendaService question enrichment", () => {
 });
 
 describe("AgendaService promotion cadence", () => {
-  const platformConfig = JSON.stringify({
+  const platformConfig = {
     promotion: { platforms: [{ platform: "hn", cadenceDays: 30 }] },
-  });
+  };
 
   it("emits promo.compose for a platform whose cadence is due (no prior post)", async () => {
-    const agenda = await service({ instructionsConfig: platformConfig }).compile("p1");
+    const agenda = await service({ instructionsConfig: platformConfig }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "promo.compose")).toBe(true);
   });
 
@@ -174,7 +174,7 @@ describe("AgendaService promotion cadence", () => {
     const agenda = await service({
       instructionsConfig: platformConfig,
       platformPosts: [{ platform: "hn", createdAt: new Date() }],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "promo.compose")).toBe(false);
   });
 });
@@ -184,7 +184,7 @@ describe("AgendaService queue.drain", () => {
     const agenda = await service({
       pendingQueue: [{ id: "q1", url: "https://x/1" }],
       pendingQueueCount: 3,
-    }).compile("p1");
+    }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "queue.drain");
     expect(item?.payload).toEqual({
       entries: [{ id: "q1", url: "https://x/1" }],
@@ -193,7 +193,7 @@ describe("AgendaService queue.drain", () => {
   });
 
   it("emits no queue.drain when nothing is pending", async () => {
-    const agenda = await service({}).compile("p1");
+    const agenda = await service({}).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "queue.drain")).toBe(false);
   });
 });
@@ -205,12 +205,12 @@ describe("AgendaService campaign.scorePending", () => {
         {
           campaignId: "c1",
           query: "react",
-          config: JSON.stringify({ board: "linkedin", minScore: 70 }),
+          config: { board: "linkedin", minScore: 70 },
           jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
         },
       ],
       scorePendingCounts: [{ campaignId: "c1", _count: { _all: 9 } }],
-    }).compile("p1");
+    }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "campaign.scorePending");
     expect(item?.subjectType).toBe("campaign");
     expect(item?.subjectId).toBe("c1");
@@ -230,7 +230,7 @@ describe("AgendaService campaign.scorePending", () => {
       {
         campaignId: "c1",
         query: "react",
-        config: "{}",
+        config: {},
         jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
       },
     ],
@@ -241,7 +241,7 @@ describe("AgendaService campaign.scorePending", () => {
     const agenda = await service({
       ...scorePendingOver,
       scorePendingLeases: [{ subjectId: "c1", grantedAt: new Date(), releasedAt: null }],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(false);
   });
 
@@ -255,7 +255,7 @@ describe("AgendaService campaign.scorePending", () => {
           releasedAt: new Date(Date.now() - 10 * 60_000),
         },
       ],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(false);
   });
 
@@ -269,23 +269,23 @@ describe("AgendaService campaign.scorePending", () => {
           releasedAt: new Date(Date.now() - 4 * 60 * 60_000),
         },
       ],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(true);
   });
 
   it("suppresses scorePending on a campaign whose config board is parked", async () => {
     const agenda = await service({
-      instructionsConfig: JSON.stringify({ parkedBoards: ["linkedin"] }),
+      instructionsConfig: { parkedBoards: ["linkedin"] },
       scorePendingCampaigns: [
         {
           campaignId: "c1",
           query: "react",
-          config: JSON.stringify({ board: "linkedin" }),
+          config: { board: "linkedin" },
           jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
         },
       ],
       scorePendingCounts: [{ campaignId: "c1", _count: { _all: 2 } }],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(false);
   });
 });
@@ -305,7 +305,7 @@ describe("AgendaService board.health", () => {
   it("flags a board with 3+ consecutive apply failures", async () => {
     const agenda = await service({
       boardHealthJobs: [failed("a"), failed("b"), failed("c")],
-    }).compile("p1");
+    }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "board.health");
     expect(item?.subjectId).toBe("linkedin");
     expect(item?.payload).toMatchObject({
@@ -318,27 +318,27 @@ describe("AgendaService board.health", () => {
   it("does not flag when a recent success breaks the failure streak", async () => {
     const agenda = await service({
       boardHealthJobs: [failed("a"), failed("b"), applied("c"), failed("d")],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "board.health")).toBe(false);
   });
 
   it("excludes a parked board from the health warning", async () => {
     const agenda = await service({
-      instructionsConfig: JSON.stringify({ parkedBoards: ["linkedin"] }),
+      instructionsConfig: { parkedBoards: ["linkedin"] },
       boardHealthJobs: [failed("a"), failed("b"), failed("c")],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "board.health")).toBe(false);
   });
 });
 
 describe("AgendaService parkedBoards enforcement", () => {
-  const parked = JSON.stringify({
+  const parked = {
     parkedBoards: ["linkedin"],
     savedSearches: [
       { query: "react", board: "linkedin" },
       { query: "golang", board: "indeed" },
     ],
-  });
+  };
 
   it("excludes approved jobs on a parked board from job.apply", async () => {
     const agenda = await service({
@@ -347,13 +347,13 @@ describe("AgendaService parkedBoards enforcement", () => {
         approvedJob({ key: "on-parked", board: "linkedin" }),
         approvedJob({ key: "on-live", board: "indeed" }),
       ],
-    }).compile("p1");
+    }).refresh("p1");
     const applyKeys = agenda.items.filter((i) => i.kind === "job.apply").map((i) => i.subjectId);
     expect(applyKeys).toEqual(["on-live"]);
   });
 
   it("excludes saved searches on a parked board from search.discover", async () => {
-    const agenda = await service({ instructionsConfig: parked }).compile("p1");
+    const agenda = await service({ instructionsConfig: parked }).refresh("p1");
     const discovered = agenda.items
       .filter((i) => i.kind === "search.discover")
       .map((i) => (i.payload as { query: string }).query);
@@ -362,25 +362,24 @@ describe("AgendaService parkedBoards enforcement", () => {
 });
 
 describe("AgendaService quiet-agenda candidates", () => {
-  // 40 found, 4 qualified (ratio 0.1 < 0.2), 36 skipped, 5 failed - trips every maintenance threshold.
+  // 40 found, 4 qualified (ratio 0.1 < 0.2), 36 skipped, 3 failed - trips every maintenance threshold.
   const laggard = {
     campaignId: "c1",
     query: "react",
-    config: JSON.stringify({ minScore: 70, board: "linkedin" }),
-    summary: JSON.stringify({
-      totalFound: 40,
-      qualified: 4,
-      applied: 1,
-      skipped: 36,
-      failed: 5,
-    }),
+    config: { minScore: 70, board: "linkedin" },
+    source: "search",
   };
 
   it("emits strategyReview with counts and top skip reasons for a poorly-converting campaign", async () => {
     const agenda = await service({
       quietCampaigns: [laggard],
+      quietJobCounts: [
+        { campaignId: "c1", status: "applied", _count: { _all: 1 } },
+        { campaignId: "c1", status: "skipped", _count: { _all: 36 } },
+        { campaignId: "c1", status: "failed", _count: { _all: 3 } },
+      ],
       skipReasonRows: [{ campaignId: "c1", skipReason: "overqualified", _count: { _all: 20 } }],
-    }).compile("p1");
+    }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "campaign.strategyReview");
     expect(item?.payload).toMatchObject({
       campaignId: "c1",
@@ -390,15 +389,15 @@ describe("AgendaService quiet-agenda candidates", () => {
     });
   });
 
-  it("emits rescanSkipped and retryFailed from the persisted summary", async () => {
-    const agenda = await service({ quietCampaigns: [laggard] }).compile("p1");
+  it("emits rescanSkipped and retryFailed from current job aggregates", async () => {
+    const agenda = await service({ quietCampaigns: [laggard] }).refresh("p1");
     expect(agenda.items.find((i) => i.kind === "job.rescanSkipped")?.payload).toMatchObject({
       campaignId: "c1",
       skippedCount: 36,
     });
     expect(agenda.items.find((i) => i.kind === "job.retryFailed")?.payload).toMatchObject({
       campaignId: "c1",
-      failedCount: 5,
+      failedCount: 3,
     });
   });
 
@@ -406,11 +405,11 @@ describe("AgendaService quiet-agenda candidates", () => {
     const agenda = await service({
       quietCampaigns: [laggard],
       actionMarkers: [
-        { subjectId: "c1", detail: JSON.stringify({ type: "strategyReview" }) },
-        { subjectId: "c1", detail: JSON.stringify({ type: "rescanSkipped" }) },
-        { subjectId: "c1", detail: JSON.stringify({ type: "retryFailed" }) },
+        { subjectId: "c1", detail: { type: "strategyReview" } },
+        { subjectId: "c1", detail: { type: "rescanSkipped" } },
+        { subjectId: "c1", detail: { type: "retryFailed" } },
       ],
-    }).compile("p1");
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.strategyReview")).toBe(false);
     expect(agenda.items.some((i) => i.kind === "job.rescanSkipped")).toBe(false);
     expect(agenda.items.some((i) => i.kind === "job.retryFailed")).toBe(false);
@@ -419,8 +418,8 @@ describe("AgendaService quiet-agenda candidates", () => {
   it("keeps candidates when the only markers are for unrelated subjects", async () => {
     const agenda = await service({
       quietCampaigns: [laggard],
-      actionMarkers: [{ subjectId: "other", detail: JSON.stringify({ type: "strategyReview" }) }],
-    }).compile("p1");
+      actionMarkers: [{ subjectId: "other", detail: { type: "strategyReview" } }],
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.strategyReview")).toBe(true);
   });
 });
@@ -428,9 +427,9 @@ describe("AgendaService quiet-agenda candidates", () => {
 describe("AgendaService strategy.bootstrap", () => {
   it("emits the bootstrap item with the goals when none of the guards trip", async () => {
     const agenda = await service({
-      instructionsConfig: JSON.stringify({ boards: ["linkedin"], minScore: 70 }),
+      instructionsConfig: { boards: ["linkedin"], minScore: 70 },
       instructionsGoals: "Senior TS roles, remote",
-    }).compile("p1");
+    }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "strategy.bootstrap");
     expect(item?.subjectType).toBe("pilot");
     expect(item?.subjectId).toBe("bootstrap");
@@ -443,30 +442,30 @@ describe("AgendaService strategy.bootstrap", () => {
   });
 
   it("marks hasGoals false when the goals are blank", async () => {
-    const agenda = await service({ instructionsGoals: "   " }).compile("p1");
+    const agenda = await service({ instructionsGoals: "   " }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "strategy.bootstrap");
     expect(item?.payload).toMatchObject({ goals: "", hasGoals: false });
   });
 
   it("suppresses bootstrap once a saved search exists", async () => {
     const agenda = await service({
-      instructionsConfig: JSON.stringify({ savedSearches: [{ query: "react" }] }),
-    }).compile("p1");
+      instructionsConfig: { savedSearches: [{ query: "react" }] },
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 
   it("suppresses bootstrap while its question is open", async () => {
-    const agenda = await service({ pilotBootstrapQuestion: { id: "q1" } }).compile("p1");
+    const agenda = await service({ pilotBootstrapQuestion: { id: "q1" } }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 
   it("suppresses bootstrap after a recent bootstrap lease", async () => {
-    const agenda = await service({ bootstrapLease: { id: "l1" } }).compile("p1");
+    const agenda = await service({ bootstrapLease: { id: "l1" } }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 
   it("suppresses bootstrap while the pipeline is busy", async () => {
-    const agenda = await service({ approvedJobs: [approvedJob()] }).compile("p1");
+    const agenda = await service({ approvedJobs: [approvedJob()] }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 });

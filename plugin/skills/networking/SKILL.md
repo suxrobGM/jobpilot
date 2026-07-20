@@ -52,7 +52,7 @@ to `networking-worker` for compose only (pass the existing contact as `target`),
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<config.board>" '.[] | select(.domain == $d)'
 ```
 
-No row → PATCH campaign `failed`, `failReason:"Board <domain> not configured"`, stop. Else
+No row → POST `/api/campaigns/<campaign-id>/status` with `{status:"failed"}`, stop. Else
 `browser_navigate` to its `searchUrl` in **tab 1** (keep open), log in (`../../shared/auth.md`), submit
 the query, and `browser_snapshot` the results (narrowed, per `../../shared/browser-tips.md`) for
 `{ title, company, location, url }` per row.
@@ -172,9 +172,9 @@ will surface later via inbox sync.
 ## Phase 5: Summary
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/status" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{status:"completed",completedAt:$t}')"
+  -d '{"status":"completed"}'
 ```
 
 Print a table (contact, channel, status) and link to `$JOBPILOT_WEB/campaigns/<campaign-id>`.

@@ -77,11 +77,11 @@ If `.applied === true`, surface the match (title + company + appliedAt + `.match
 ### 1.3 Create Campaign-of-1
 
 ```bash
-CAMPAIGN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_apply)
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
+CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg campaignId "$CAMPAIGN_ID" --arg query "<title> at <company>" \
-    '{campaignId:$campaignId, query:$query, source:"apply", config:{maxApplications:1}}')"
+  -d "$(jq -n --arg query "<title> at <company>" \
+    '{query:$query, source:"apply", config:{maxApplications:1}}')")
+CAMPAIGN_ID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
 ### 1.4 Add the Job
@@ -114,11 +114,10 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/queu
 ### 2.2 Create Campaign
 
 ```bash
-CAMPAIGN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_apply)
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
+CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg campaignId "$CAMPAIGN_ID" \
-    '{campaignId:$campaignId, query:"apply queue", source:"apply", config:{minScore:6, maxApplications:10}}')"
+  -d '{"query":"apply queue","source":"apply","config":{"minScore":6,"maxApplications":10}}')
+CAMPAIGN_ID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
 ## Phase 3: Visit and Score (Batch Only)
@@ -132,7 +131,7 @@ URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED"
 ```
 
-If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped Job with `skipReason:"Already applied (<kind>)"`, then continue - don't spawn a worker.
+If applied, mark the queue entry consumed, create the Job as `pending`, then POST its `/result` with `outcome:"skipped"`, `skipReason:"Already applied (<kind>)"`; continue without spawning a worker.
 
 ### 3.2 Score (delegate to `job-worker`)
 
@@ -162,12 +161,12 @@ Visited <total> jobs. <qualified> qualify (score >= minMatchScore/100).
 **Commands:** "go" | "go 1,3,5" | "remove 3" | "details 2" | "stop"
 ```
 
-PATCH `Job.status` accordingly:
+Use PATCH only for approval; record every skip through `/result`:
 
 - `go` → all qualified to `approved`
 - `go N,M` → selected to `approved`; rest to `skipped` (`"Not selected by user"`)
 - `remove N` → that job to `skipped` (`"Removed by user"`); re-present table
-- `stop` → PATCH campaign `status:"paused"` and stop
+- `stop` → POST `/api/campaigns/$CAMPAIGN_ID/status` with `{status:"paused"}` and stop
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
@@ -197,7 +196,7 @@ Delegate to the `job-worker` subagent and wait for its compact result - it navig
 
 (`digest` omitted → the worker fetches it from the saved Job.)
 
-**Single-job pre-submit review:** when `preSubmitReview` is true the worker fills everything, leaves the form open, and returns `needs_user reason:"review"` with a field summary. Present:
+**Single-job pre-submit review:** when `preSubmitReview` is true the worker fills everything, leaves the form open, and returns `needs_user category:"review"` with a field summary in `context`. Present:
 
 ```
 ## Ready to Submit: [Title] at [Company]
@@ -209,7 +208,7 @@ Delegate to the `job-worker` subagent and wait for its compact result - it navig
 
 ### 5.3 Record Result
 
-Map the worker's `outcome` to `/result` (the worker never writes it). The server atomically updates the Job, creates the Application (on `applied`), marks the queue, and recomputes the summary.
+Map the worker's `outcome` to `/result` (the worker never writes it). The server atomically updates the Job, creates the Application and initial event on `applied`, and marks the queue; responses derive summaries from current rows.
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -221,7 +220,7 @@ jq -n --arg r "<failReason>" --arg notes "<retryNotes>" '{outcome:"failed", fail
 jq -n --arg r "<skipReason>" '{outcome:"skipped", skipReason:$r}'
 ```
 
-`needs_user`: `reason:"salary"` (no profile salary preference matched) → ask once, remember for the campaign, re-delegate 5.2 with `salaryExpectation`; `reason:"2FA"` or email verification → pause and ask; `reason:"payment"` → POST `/result` `failed` `"Payment required"`. The worker closed its tabs; re-select tab 0, then continue.
+`needs_user`: `category:"salary"` (no profile salary preference matched) → ask once, remember for the campaign, re-delegate 5.2 with `salaryExpectation`; `category:"verification"` → pause and ask; `category:"payment"` → POST `/result` `failed` `"Payment required"`. The worker closed its tabs; re-select tab 0, then continue.
 
 ### 5.4 Limit
 
@@ -230,10 +229,9 @@ If `config.maxApplications` is set and `applied >= config.maxApplications`, stop
 ## Phase 6: Summary
 
 ```bash
-NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
+  -d '{"status":"completed"}'
 ```
 
 Print a summary table and link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
@@ -242,8 +240,8 @@ Print a summary table and link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
 
 1. **Up-front confirmation mandatory** (1.1 or Phase 4); single-job mode adds pre-submit review (5.2).
 2. **Create accounts when needed** - the `job-worker` follows `../../shared/auth.md`: register when no account exists (without asking), run forgot-password when the stored password is stale.
-3. **Never process payments** - on `needs_user reason:"payment"`, POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
-4. **CAPTCHAs / email verification** - the worker attempts `solve-captcha` and returns `skipped` when unsolved; for `needs_user reason:"2FA"` or email verification, pause and ask (see `../../shared/auth.md`).
+3. **Never process payments** - on `needs_user category:"payment"`, POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
+4. **CAPTCHAs / email verification** - the worker attempts `solve-captcha` and returns `skipped` when unsolved; for `needs_user category:"verification"`, pause and ask (see `../../shared/auth.md`).
 5. **Be honest about match scores.**
 6. **Pace** 3-5s between submissions on the same domain.
 7. **The Campaign is the audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.

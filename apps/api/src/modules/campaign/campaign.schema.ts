@@ -6,30 +6,25 @@ import {
   campaignSummarySchema,
 } from "@jobpilot/contracts/campaign";
 import { z } from "zod/v4";
+import { paginatedResponseSchema } from "@/types/response";
 
-export const campaignParams = z.object({ id: z.string() });
-export const campaignJobParams = z.object({ id: z.string(), key: z.string() });
+export const campaignParams = z.object({ id: z.uuid() });
+export const campaignJobParams = z.object({ id: z.uuid(), key: z.string() });
+export const networkingMessageParams = z.object({ id: z.uuid(), messageId: z.uuid() });
 
-export const networkingMessageParams = z.object({
-  id: z.string(),
-  messageId: z.uuid(),
+export const paginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
 });
 
-export const campaignsQuery = z.object({
-  status: z.string().optional(),
-  source: z.string().optional(),
+export const campaignsQuery = paginationQuery.extend({
+  status: campaignStatusSchema.optional(),
+  source: campaignSourceSchema.optional(),
 });
 
-// ── Response schemas ──────────────────────────────────────────────────────────
-
-/**
- * A campaign job row (mirrors the service's `CampaignJobRow`). `status` is the
- * job-status union and `appliedAt` is serialized to ISO, but `createdAt` is the
- * raw Prisma `Date` (the mapper spreads it through without stringifying).
- */
 export const campaignJobSchema = z.object({
   id: z.uuid(),
-  campaignId: z.string(),
+  campaignId: z.uuid(),
   key: z.string(),
   title: z.string(),
   company: z.string(),
@@ -48,11 +43,11 @@ export const campaignJobSchema = z.object({
   description: z.string().nullable(),
   digest: z.string().nullable(),
   createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
-/** A campaign row with `config`/`summary` parsed and dates serialized (mirrors `CampaignRow`). */
 export const campaignSchema = z.object({
-  campaignId: z.string(),
+  campaignId: z.uuid(),
   userId: z.uuid(),
   query: z.string(),
   source: campaignSourceSchema,
@@ -64,34 +59,5 @@ export const campaignSchema = z.object({
   summary: campaignSummarySchema,
 });
 
-/** A list of campaigns (the `list` route). */
-export const campaignListSchema = z.array(campaignSchema);
-
-/**
- * Result of creating a campaign - the raw created row with dates serialized but
- * `config`/`summary` left as the stored JSON strings (the service does not parse
- * them on create).
- */
-export const campaignCreatedSchema = z.object({
-  campaignId: z.string(),
-  userId: z.uuid(),
-  query: z.string(),
-  source: campaignSourceSchema,
-  status: campaignStatusSchema,
-  startedAt: z.date(),
-  updatedAt: z.date(),
-  completedAt: z.date().nullable(),
-  config: z.string(),
-  summary: z.string(),
-});
-
-/** A single campaign with its jobs and derived summary (the `get` route). */
-export const campaignWithJobsSchema = campaignSchema.extend({
-  jobs: z.array(campaignJobSchema),
-});
-
-/** Result of deleting a campaign - `deleted` flag plus the removed campaign id. */
-export const campaignDeletedSchema = z.object({
-  deleted: z.boolean(),
-  campaignId: z.string(),
-});
+export const campaignListSchema = paginatedResponseSchema(campaignSchema);
+export const campaignDeletedSchema = z.object({ deleted: z.boolean(), campaignId: z.uuid() });

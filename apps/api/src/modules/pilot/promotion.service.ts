@@ -14,6 +14,7 @@ import { PrismaClient, type PromotionPost as PromotionPostModel } from "@/genera
 import { PilotJournalService } from "./journal.service";
 import { toPromotion } from "./pilot.mapper";
 
+/** Owns promotion drafts, approval edits, and idempotent posting results. */
 @singleton()
 export class PromotionService {
   constructor(
@@ -135,13 +136,16 @@ export class PromotionService {
 
   /** Agent records the terminal outcome after posting; stamps postedAt on success. */
   async recordPromotionResult(userId: string, id: string, body: PromotionResultInput) {
-    await findOwned(
-      (where) => this.prisma.promotionPost.findFirst({ where, select: { id: true } }),
+    const existing = await findOwned(
+      (where) => this.prisma.promotionPost.findFirst({ where }),
       { id, userId },
       "Promotion post",
     );
-    // Approval gate lives in the write: a draft/declined post must never flip to posted, and an
-    // already-terminal row must not be silently overwritten by a second result call.
+    if (PROMOTION_TERMINAL_STATUSES.includes(existing.status)) {
+      if (existing.status === body.outcome) return toPromotion(existing);
+      throw conflict(`Promotion post already finished with outcome ${existing.status}.`);
+    }
+    if (existing.status !== "approved") throw conflict("Promotion post is not approved.");
     const { count } = await this.prisma.promotionPost.updateMany({
       where: { id, userId, status: "approved" },
       data: {
@@ -150,7 +154,11 @@ export class PromotionService {
         postedAt: body.outcome === "posted" ? new Date() : undefined,
       },
     });
-    if (count === 0) throw conflict("Promotion post is not approved.");
+    if (count === 0) {
+      const raced = await this.prisma.promotionPost.findFirst({ where: { id, userId } });
+      if (raced?.status === body.outcome) return toPromotion(raced);
+      throw conflict(`Promotion post already finished with outcome ${raced?.status ?? "unknown"}.`);
+    }
 
     const row = await findOwned(
       (where) => this.prisma.promotionPost.findFirst({ where }),

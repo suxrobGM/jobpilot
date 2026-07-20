@@ -1,3 +1,44 @@
+enum NetworkingChannel {
+  email
+  linkedin
+}
+
+enum LinkedinMessageKind {
+  inmail
+  connect_note
+  dm
+}
+
+enum NetworkingMessageStatus {
+  draft
+  approved
+  sent
+  replied
+  bounced
+  failed
+  skipped
+}
+
+enum ContactEmailSource {
+  guessed
+  verified
+  provided
+}
+
+enum ContactLinkedinConnection {
+  none
+  pending
+  connected
+}
+
+enum ContactDiscoverySource {
+  google
+  company_site @map("company-site")
+  web
+  linkedin
+  manual
+}
+
 model Contact {
   id        String  @id @default(uuid())
   userId    String  @map("user_id")
@@ -8,14 +49,14 @@ model Contact {
   company         String?
   linkedinUrl     String? @map("linkedin_url")
   email           String?
-  emailSource     String? @map("email_source") // "guessed" | "verified" | "provided"
+  emailSource     ContactEmailSource? @map("email_source")
   emailConfidence Float?  @map("email_confidence")
 
-  linkedinConnection String  @default("none") @map("linkedin_connection") // none | pending | connected
-  discoverySource    String? @map("discovery_source") // "google" | "company-site" | "web" | "linkedin" | "manual"
-  matchConfidence    Float?  @map("match_confidence") // confidence we found the right person
+  linkedinConnection ContactLinkedinConnection @default(none) @map("linkedin_connection")
+  discoverySource    ContactDiscoverySource?    @map("discovery_source")
+  matchConfidence    Float?                     @map("match_confidence")
 
-  relatedAppId  String?      @map("related_app_id") // job-tied scope
+  relatedAppId  String?      @map("related_app_id")
   relatedApp    Application? @relation(fields: [relatedAppId], references: [id], onDelete: SetNull)
   relatedJobUrl String?      @map("related_job_url")
 
@@ -39,24 +80,24 @@ model NetworkingMessage {
   campaignId String?   @map("campaign_id")
   campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
 
-  channel      String // "email" | "linkedin"
-  linkedinKind String? @map("linkedin_kind") // "inmail" | "connect_note" | "dm"
+  channel      NetworkingChannel
+  linkedinKind LinkedinMessageKind? @map("linkedin_kind")
   subject      String?
-  body         String  @default("")
+  body         String               @default("")
 
-  status     String    @default("draft") // draft | approved | sent | replied | bounced | failed | skipped
-  failReason String?   @map("fail_reason")
-  providerId String?   @map("provider_id") // Gmail message id (sent)
-  threadId   String?   @map("thread_id") // Gmail thread id - used for reply matching
-  sentAt     DateTime? @map("sent_at")
-  repliedAt  DateTime? @map("replied_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  status     NetworkingMessageStatus @default(draft)
+  failReason String?                 @map("fail_reason")
+  providerId String?                 @map("provider_id")
+  threadId   String?                 @map("thread_id")
+  sentAt     DateTime?               @map("sent_at")
+  repliedAt  DateTime?               @map("replied_at")
+  createdAt  DateTime                @default(now()) @map("created_at")
+  updatedAt  DateTime                @updatedAt @map("updated_at")
 
-  @@index([userId])
-  @@index([campaignId])
+  @@index([userId, createdAt])
+  @@index([campaignId, status])
   @@index([contactId])
   @@index([threadId])
-  @@index([status])
+  @@index([userId, status, sentAt])
   @@map("networking_messages")
 }

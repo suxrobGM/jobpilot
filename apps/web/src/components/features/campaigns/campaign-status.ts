@@ -6,7 +6,6 @@ export const CAMPAIGN_STATUS_COLOR: Record<
 > = {
   in_progress: "info",
   paused: "default",
-  interrupted: "warning",
   completed: "success",
   failed: "error",
 };
@@ -14,7 +13,6 @@ export const CAMPAIGN_STATUS_COLOR: Record<
 export const CAMPAIGN_STATUS_LABEL: Record<CampaignStatus, string> = {
   in_progress: "in progress",
   paused: "paused",
-  interrupted: "interrupted",
   completed: "completed",
   failed: "failed",
 };

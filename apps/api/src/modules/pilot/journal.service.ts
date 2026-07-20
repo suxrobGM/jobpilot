@@ -1,22 +1,13 @@
 import type { CreatePilotJournalInput } from "@jobpilot/contracts/pilot";
-import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
+import { publishActivity, toActivityEntry, writeActivity } from "@/common/activity-log";
 import { PushService } from "@/common/push";
-import { publish } from "@/common/sse";
-import {
-  type PilotJournalEntry as PilotJournalEntryModel,
-  PrismaClient,
-} from "@/generated/prisma/client";
-import { toJournalEntry } from "./pilot.mapper";
+import { PrismaClient } from "@/generated/prisma/client";
 
 /** Journal export reads the history in cursor batches so a huge history never loads all at once. */
 const EXPORT_BATCH = 500;
 
-/**
- * The pilot's activity log: append (the agent's per-cycle narration), paginated reads, and the
- * NDJSON export. Split from PilotService because every non-controller caller - the agenda compile,
- * networking, promotions, the digest - only ever appends.
- */
+/** Owns transactional activity appends, paginated reads, and streaming export. */
 @singleton()
 export class PilotJournalService {
   constructor(
@@ -25,39 +16,8 @@ export class PilotJournalService {
   ) {}
 
   async appendJournal(userId: string, body: CreatePilotJournalInput) {
-    const cycleEntries = body.entries.filter((e) => e.kind === "cycle").length;
-    const now = new Date();
-
-    // id/createdAt generated app-side so the rows are fully known in-hand for the SSE publishes below.
-    const rows: PilotJournalEntryModel[] = body.entries.map((entry) => ({
-      id: crypto.randomUUID(),
-      userId,
-      cycleId: body.cycleId ?? null,
-      kind: entry.kind,
-      summary: entry.summary,
-      detail: JSON.stringify(entry.detail ?? {}),
-      subjectType: entry.subjectType ?? null,
-      subjectId: entry.subjectId ?? null,
-      createdAt: now,
-    }));
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.pilotJournalEntry.createMany({ data: rows });
-
-      // A "cycle" entry marks a completed loop iteration; advance cycle accounting once per such entry.
-      if (cycleEntries > 0) {
-        await tx.pilotState.upsert({
-          where: { userId },
-          create: { userId, lastCycleAt: now, cycleCount: cycleEntries },
-          update: { lastCycleAt: now, cycleCount: { increment: cycleEntries } },
-        });
-      }
-    });
-
-    const items = rows.map(toJournalEntry);
-    for (const entry of items) {
-      publish(pilotChannel, { userId }, { type: "journal.appended", entry });
-    }
+    const rows = await this.prisma.$transaction((tx) => writeActivity(tx, userId, body));
+    const items = publishActivity(userId, rows);
     // System entries are how the terminal host surfaces watchdog kills/restarts ("pilot stopped
     // unexpectedly") - push them so the alert reaches the phone. Fire-and-forget off the hot path.
     for (const entry of items) {
@@ -85,7 +45,7 @@ export class PilotJournalService {
     const hasMore = rows.length > limit;
     const page = hasMore ? rows.slice(0, limit) : rows;
     return {
-      items: page.map(toJournalEntry),
+      items: page.map(toActivityEntry),
       nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
     };
   }
@@ -116,7 +76,7 @@ export class PilotJournalService {
           return;
         }
         for (const row of rows) {
-          controller.enqueue(encoder.encode(`${JSON.stringify(toJournalEntry(row))}\n`));
+          controller.enqueue(encoder.encode(`${JSON.stringify(toActivityEntry(row))}\n`));
         }
         cursor = rows[rows.length - 1]?.id;
       },

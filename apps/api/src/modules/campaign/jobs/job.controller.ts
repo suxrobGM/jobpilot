@@ -2,11 +2,18 @@ import {
   addCampaignJobSchema,
   campaignJobResultSchema,
   patchCampaignJobSchema,
+  rescanCampaignJobSchema,
+  retryCampaignJobSchema,
 } from "@jobpilot/contracts/campaign";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
-import { campaignJobParams, campaignJobSchema, campaignParams } from "../campaign.schema";
+import {
+  campaignJobParams,
+  campaignJobSchema,
+  campaignParams,
+  paginationQuery,
+} from "../campaign.schema";
 import { campaignJobListSchema, campaignJobResultResponseSchema } from "./job.schema";
 import { CampaignJobService } from "./job.service";
 
@@ -17,12 +24,13 @@ export const campaignJobController = new Elysia({
   detail: { tags: ["Campaigns"] },
 })
   .use(authGuard)
-  .get("/:id/jobs", ({ user, params }) => svc.listJobs(user.id, params.id), {
+  .get("/:id/jobs", ({ user, params, query }) => svc.listJobs(user.id, params.id, query), {
     params: campaignParams,
+    query: paginationQuery,
     response: campaignJobListSchema,
     detail: {
       summary: "List campaign jobs",
-      description: "Returns all queued jobs for the owned campaign, ordered by creation.",
+      description: "Returns one page of jobs for the owned campaign, ordered by creation.",
     },
   })
   .post("/:id/jobs", ({ user, params, body }) => svc.addJob(user.id, params.id, body), {
@@ -45,7 +53,7 @@ export const campaignJobController = new Elysia({
       detail: {
         summary: "Update campaign job",
         description:
-          "Applies a non-terminal update to a campaign job (e.g. status, match data, notes), recomputes the summary on status changes, emits SSE updates, and returns the updated job.",
+          "Applies a validated non-terminal status transition or content update, emits SSE updates, and returns the updated job. Terminal outcomes are accepted only by the result route.",
       },
     },
   )
@@ -59,7 +67,35 @@ export const campaignJobController = new Elysia({
       detail: {
         summary: "Record campaign job result",
         description:
-          "Records a job's terminal outcome (applied/failed/skipped), upserts the Application row when applied, marks the queue entry, recomputes the summary, and returns the job, application, and summary.",
+          "Conditionally records an idempotent terminal outcome, atomically upserts the Application and initial event when applied, marks the queue entry, and returns the current derived summary.",
+      },
+    },
+  )
+  .post(
+    "/:id/jobs/:key/retry",
+    ({ user, params, body }) => svc.retryJob(user.id, params.id, params.key, body),
+    {
+      params: campaignJobParams,
+      body: retryCampaignJobSchema,
+      response: campaignJobSchema,
+      detail: {
+        summary: "Retry a failed campaign job",
+        description:
+          "Conditionally returns a failed job to the approved queue and clears its terminal failure fields. This is the only failed-to-active transition.",
+      },
+    },
+  )
+  .post(
+    "/:id/jobs/:key/rescan",
+    ({ user, params, body }) => svc.rescanJob(user.id, params.id, params.key, body),
+    {
+      params: campaignJobParams,
+      body: rescanCampaignJobSchema,
+      response: campaignJobSchema,
+      detail: {
+        summary: "Record a skipped-job rescan",
+        description:
+          "Conditionally records a fresh score for a skipped job and either promotes it to approved or keeps it skipped with a new reason.",
       },
     },
   );

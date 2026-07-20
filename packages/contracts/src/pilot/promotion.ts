@@ -1,8 +1,6 @@
 import { z } from "zod/v4";
 import { webLinkSchema } from "./web-link";
 
-// ── Promotion posts ─────────────────────────────────────────────────────────────
-
 const PROMOTION_STATUSES = [
   "draft",
   "approved",

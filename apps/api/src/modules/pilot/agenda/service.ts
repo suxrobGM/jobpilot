@@ -1,15 +1,23 @@
+import { type AgendaResponse, agendaResponseSchema } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
+import { conflict } from "@/common/errors";
+import { reviveJsonDates, toInputJson } from "@/common/json";
 import { PushService } from "@/common/push";
 import { PrismaClient } from "@/generated/prisma/client";
-import { CampaignService } from "@/modules/campaign/campaign.service";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { PilotJournalService } from "../journal.service";
 import { loadInstructions } from "../pilot.instructions";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { buildAgenda } from "./build";
+import { gatherBoardHealth } from "./candidates-board";
+import { gatherBootstrap } from "./candidates-bootstrap";
+import { gatherFinalizeCampaigns } from "./candidates-finalize";
+import { gatherInbox } from "./candidates-inbox";
+import { gatherQuietCandidates } from "./candidates-maintenance";
+import { gatherAnsweredQuestions } from "./candidates-questions";
+import { gatherQueueDrain } from "./candidates-queue";
 import { writeDigestIfDue } from "./digest";
 import { runExpiry } from "./expiry";
-import { gatherAnsweredQuestions, gatherFinalizeCampaigns, gatherInbox } from "./gather";
 import { gatherInterviewPreps, gatherInterviewReplies } from "./gather-interview";
 import {
   attachWarmContacts,
@@ -23,14 +31,16 @@ import {
   gatherApprovedPromotions,
   gatherFollowups,
 } from "./gather-networking";
-import {
-  gatherBoardHealth,
-  gatherBootstrap,
-  gatherQueueDrain,
-  gatherQuietCandidates,
-} from "./gather-proactive";
 import { promoteScoredPendingJobs } from "./promote";
 
+export const AGENDA_SNAPSHOT_TTL_MS = 5 * 60 * 1000;
+
+/** Validates a stored agenda snapshot and restores its date fields. */
+export function parseAgendaSnapshot(value: unknown): AgendaResponse {
+  return agendaResponseSchema.parse(reviveJsonDates(value));
+}
+
+/** Reads immutable snapshots and explicitly refreshes the mutating agenda pipeline. */
 @singleton()
 export class AgendaService {
   constructor(
@@ -38,24 +48,31 @@ export class AgendaService {
     private readonly campaignJobs: CampaignJobService,
     private readonly pilot: PilotJournalService,
     private readonly push: PushService,
-    private readonly campaigns: CampaignService,
   ) {}
 
   private get jobDeps() {
     return { prisma: this.prisma, campaignJobs: this.campaignJobs };
   }
 
-  async compile(userId: string) {
+  async getCurrent(userId: string) {
+    const state = await this.prisma.pilotState.findUnique({ where: { userId } });
+    if (!state?.enabled) throw conflict("Pilot is disabled.");
+    if (!state.agendaSnapshot || !state.agendaExpiresAt || state.agendaExpiresAt <= new Date()) {
+      return { agenda: null };
+    }
+    return { agenda: parseAgendaSnapshot(state.agendaSnapshot) };
+  }
+
+  async refresh(userId: string): Promise<AgendaResponse> {
+    const state = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { enabled: true },
+    });
+    if (!state?.enabled) throw conflict("Pilot is disabled.");
+
     const now = new Date();
-    // Pre-gather mutations so the compiled agenda reflects them. Config, expiry, and self-heal are
-    // mutually independent; promotion trails all three - it needs config.minScore and only sees a
-    // campaign the heal already flipped back to in_progress. It flips scored-pending rows to
-    // approved so they surface as apply work this same cycle.
-    const [{ config, goals }] = await Promise.all([
-      loadInstructions(this.prisma, userId),
-      runExpiry(this.jobDeps, userId, now),
-      this.campaigns.selfHealForPilot(userId),
-    ]);
+    const { config, goals } = await loadInstructions(this.prisma, userId);
+    await runExpiry(this.prisma, userId, now);
     await promoteScoredPendingJobs(this.jobDeps, userId, config.minScore);
 
     const { prisma } = this;
@@ -84,7 +101,6 @@ export class AgendaService {
       countAppliedToday(prisma, userId, now),
       gatherFinalizeCampaigns(prisma, userId),
       gatherInbox(prisma, userId),
-      // Networking off: skip its gathers (the builder gates too, but these are pure waste when disabled).
       config.networkingEnabled ? gatherApprovedNetworking(prisma, userId) : [],
       config.networkingEnabled ? countSentToday(prisma, userId, now) : 0,
       config.networkingEnabled ? gatherFollowups(prisma, userId, config, now) : [],
@@ -96,11 +112,7 @@ export class AgendaService {
       gatherBoardHealth(prisma, userId, config.parkedBoards),
     ]);
 
-    // Warm-check join: attach same-company contacts to high-score jobs so the builder can offer a warm intro.
     if (config.networkingEnabled) await attachWarmContacts(prisma, userId, approvedJobs);
-
-    // Discovery and scoring existing pending rows only matter when the apply pipeline is empty; skip
-    // both lookups otherwise. Scoring the found-but-unscored backlog ranks above fresh discovery.
     const [dueQueries, scorePending] =
       approvedJobs.length === 0
         ? await Promise.all([
@@ -108,9 +120,6 @@ export class AgendaService {
             gatherScorePendingCampaigns(prisma, userId, config.minScore, now, config.parkedBoards),
           ])
         : [[], []];
-
-    // Quiet-agenda maintenance runs only when nothing apply/discover/score/queue-shaped is pending
-    // anyway, so gather its candidates only then - the builder still gates authoritatively.
     const pipelineQuiet =
       approvedJobs.length === 0 &&
       dueQueries.length === 0 &&
@@ -123,15 +132,13 @@ export class AgendaService {
         ])
       : [{ strategyReviews: [], rescanSkipped: [], retryFailed: [] }, null];
 
-    // Idempotent per UTC day; fire-and-forget so a slow push never delays the agenda response.
     void writeDigestIfDue(
       { prisma, pilot: this.pilot, push: this.push },
       userId,
       now,
       openQuestions,
     );
-
-    return buildAgenda({
+    const content = buildAgenda({
       now,
       config,
       openQuestions,
@@ -157,5 +164,20 @@ export class AgendaService {
       retryFailed: quiet.retryFailed,
       bootstrap,
     });
+    const agenda: AgendaResponse = {
+      ...content,
+      version: crypto.randomUUID(),
+      expiresAt: new Date(now.getTime() + AGENDA_SNAPSHOT_TTL_MS),
+    };
+    await prisma.pilotState.update({
+      where: { userId },
+      data: {
+        agendaVersion: agenda.version,
+        agendaGeneratedAt: agenda.generatedAt,
+        agendaExpiresAt: agenda.expiresAt,
+        agendaSnapshot: toInputJson(agenda),
+      },
+    });
+    return agenda;
   }
 }

@@ -16,14 +16,13 @@ export interface UseCampaignsListResult {
   resetFilters: () => void;
   allRows: CampaignDto[];
   filteredRows: CampaignDto[];
-  interruptedCount: number;
   isLoading: boolean;
   pagination: Pagination<CampaignDto>;
 }
 
 /**
  * Campaigns list state: status/source filtering over the cached campaigns query, the
- * interrupted-campaign count, and client-side pagination. Consumed by the workspace
+ * client-side pagination. Consumed by the workspace
  * Campaigns rail. SSE invalidation lives with the page-level subscription, not here.
  */
 export function useCampaignsList(pageSize: number): UseCampaignsListResult {
@@ -33,7 +32,6 @@ export function useCampaignsList(pageSize: number): UseCampaignsListResult {
   const campaigns = useApiQuery(campaignQueries.list());
 
   const allRows = campaigns.data ?? [];
-  const interruptedCount = allRows.filter((r) => r.status === "interrupted").length;
 
   const filteredRows = allRows.filter((r) => {
     if (statusFilter && r.status !== statusFilter) {
@@ -72,7 +70,6 @@ export function useCampaignsList(pageSize: number): UseCampaignsListResult {
     resetFilters,
     allRows,
     filteredRows,
-    interruptedCount,
     isLoading: campaigns.isLoading,
     pagination,
   };

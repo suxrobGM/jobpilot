@@ -13,8 +13,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { api } from "@/api/client";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { queryKeys } from "@/api/query-keys";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
@@ -93,11 +95,14 @@ export function AgendaPreview(): ReactElement {
     refetchOnWindowFocus: false,
     retry: false,
   });
+  const refresh = useApiMutation<AgendaResponse, void>(() => api.pilot.agenda.refresh.post(), {
+    invalidate: [queryKeys.pilot.agenda()],
+  });
 
   let body: ReactNode;
   if (query.isLoading) {
     body = <LinearProgress />;
-  } else if (query.isError || !query.data) {
+  } else if (query.isError) {
     body = (
       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
         <Typography variant="body2Muted">Couldn't load the agenda.</Typography>
@@ -105,6 +110,14 @@ export function AgendaPreview(): ReactElement {
           Retry
         </Button>
       </Stack>
+    );
+  } else if (!query.data) {
+    body = (
+      <EmptyState
+        variant="inline"
+        title="No current agenda snapshot."
+        description="Refresh to compile the pilot's next versioned agenda."
+      />
     );
   } else {
     const { items, generatedAt, nextWakeAt, budget, emptyReason } = query.data;
@@ -149,8 +162,8 @@ export function AgendaPreview(): ReactElement {
       actions={
         <IconButton
           aria-label="Refresh agenda"
-          disabled={query.isFetching}
-          onClick={() => void query.refetch()}
+          disabled={query.isFetching || refresh.isPending}
+          onClick={() => refresh.mutate()}
         >
           <Refresh fontSize="sm" />
         </IconButton>

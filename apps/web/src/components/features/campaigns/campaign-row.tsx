@@ -30,7 +30,7 @@ interface CampaignRowProps {
 /** Networking campaigns track contacts/messages; job campaigns track applications. */
 function summaryLine(campaign: CampaignDto): string {
   const s = campaign.summary;
-  if (campaign.source === "networking") {
+  if (s.kind === "networking") {
     return `${s.discovered} found · ${s.sent} sent · ${s.replied} replied`;
   }
   const tail = s.remaining > 0 ? ` · ${s.remaining} left` : "";

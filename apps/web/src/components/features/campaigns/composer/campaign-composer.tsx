@@ -8,7 +8,7 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries, jobBoardQueries, userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { CreateCampaignRequest } from "@/api/types";
+import type { CampaignDto, CreateCampaignRequest } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
@@ -19,7 +19,6 @@ import {
   buildSkillArg,
   COMPOSER_DEFAULT_VALUES,
   composerFormSchema,
-  makeCampaignId,
   SUBMIT_LABELS,
   UPWORK_DOMAIN,
 } from "./form-config";
@@ -40,7 +39,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const profileQuery = useApiQuery(userQueries.detail());
   const recentCampaignsQuery = useApiQuery(campaignQueries.list());
 
-  const createCampaign = useApiMutation<unknown, CreateCampaignRequest>(
+  const createCampaign = useApiMutation<CampaignDto, CreateCampaignRequest>(
     (body) => api.campaigns.post(body),
     { invalidate: [queryKeys.campaigns.all] },
   );
@@ -69,14 +68,13 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
       // dedicated upwork-search skill regardless of the toggle.
       const upwork = value.board === UPWORK_DOMAIN;
       const effective = upwork ? { ...value, mode: "search" as const } : value;
-      const campaignId = makeCampaignId(value.query);
-      await createCampaign.mutateAsync({
-        campaignId,
+      const campaign = await createCampaign.mutateAsync({
         query: value.query.trim(),
         source: effective.mode,
         // resumeId is campaign-wide (mandatory for every mode), not mode-specific.
         config: { resumeId: effective.resumeId, ...buildCampaignConfig(effective) },
       });
+      const campaignId = campaign.campaignId;
       router.push(`/campaigns/${encodeURIComponent(campaignId)}`);
       void agent.injectSkill(
         upwork ? "upwork-search" : effective.mode,

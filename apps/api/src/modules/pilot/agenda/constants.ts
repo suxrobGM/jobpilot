@@ -29,6 +29,10 @@ export const MAX_BOARD_HEALTH = 1;
 export const MAX_STRATEGY_REVIEWS = 1;
 export const MAX_RESCAN_SKIPPED = 1;
 export const MAX_RETRY_FAILED = 1;
+export const MAX_PROMO_COMPOSE = 1;
+export const INBOX_BATCH = 10;
+export const QUEUE_BATCH = 5;
+export const REASON_CAP = 3;
 /** A board is unhealthy once its most recent apply outcomes are this many failures deep. */
 export const BOARD_HEALTH_MIN_FAILURES = 3;
 

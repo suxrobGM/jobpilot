@@ -72,15 +72,32 @@ export const applicationQueries = {
 export const campaignQueries = {
   list: (filters: { status?: CampaignStatus; source?: CampaignSource } = {}) => ({
     queryKey: queryKeys.campaigns.list(filters),
-    queryFn: () => api.campaigns.get({ query: filters }),
+    queryFn: async () => {
+      const result = await api.campaigns.get({ query: { ...filters, page: 1, limit: 100 } });
+      return { ...result, data: result.data?.items ?? null };
+    },
   }),
   detail: (id: string) => ({
     queryKey: queryKeys.campaigns.detail(id),
-    queryFn: () => api.campaigns({ id }).get(),
+    queryFn: async () => {
+      const [campaign, jobs] = await Promise.all([
+        api.campaigns({ id }).get(),
+        api.campaigns({ id }).jobs.get({ query: { page: 1, limit: 100 } }),
+      ]);
+      return {
+        ...campaign,
+        data: campaign.data && jobs.data ? { ...campaign.data, jobs: jobs.data.items } : null,
+      };
+    },
   }),
   networking: (campaignId: string) => ({
     queryKey: queryKeys.campaigns.networking(campaignId),
-    queryFn: () => api.campaigns({ id: campaignId }).networking.get(),
+    queryFn: async () => {
+      const result = await api.campaigns({ id: campaignId }).networking.get({
+        query: { page: 1, limit: 100 },
+      });
+      return { ...result, data: result.data?.items ?? null };
+    },
   }),
 };
 
@@ -149,7 +166,13 @@ export const PILOT_JOURNAL_PAGE_SIZE = 50;
 
 export const pilotQueries = {
   state: () => ({ queryKey: queryKeys.pilot.state(), queryFn: () => api.pilot.get() }),
-  agenda: () => ({ queryKey: queryKeys.pilot.agenda(), queryFn: () => api.pilot.agenda.get() }),
+  agenda: () => ({
+    queryKey: queryKeys.pilot.agenda(),
+    queryFn: async () => {
+      const result = await api.pilot.agenda.get();
+      return { ...result, data: result.data?.agenda ?? null };
+    },
+  }),
   journal: () => ({
     queryKey: queryKeys.pilot.journal(),
     queryFn: () => api.pilot.journal.get({ query: { limit: PILOT_JOURNAL_PAGE_SIZE } }),

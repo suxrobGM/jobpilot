@@ -1,12 +1,11 @@
 import { statusSchema } from "@jobpilot/contracts/application";
 import { campaignSummarySchema } from "@jobpilot/contracts/campaign";
 import { z } from "zod/v4";
+import { paginatedResponseSchema } from "@/types/response";
 import { campaignJobSchema } from "../campaign.schema";
 
-// ── Response schemas ──────────────────────────────────────────────────────────
-
 /** A list of campaign jobs (the `listJobs` route). */
-export const campaignJobListSchema = z.array(campaignJobSchema);
+export const campaignJobListSchema = paginatedResponseSchema(campaignJobSchema);
 
 /**
  * The raw `Application` Prisma row returned (un-serialized) inside a job-result
@@ -37,7 +36,7 @@ export const campaignApplicationSchema = z
 
 /**
  * Result of recording a job's terminal outcome - the updated job, the Application
- * row (when applied), and the recomputed campaign summary.
+ * row (when applied), and the current derived campaign summary.
  */
 export const campaignJobResultResponseSchema = z.object({
   campaignJob: campaignJobSchema,

@@ -1,7 +1,5 @@
 import { z } from "zod/v4";
 
-// ── Instructions ──────────────────────────────────────────────────────────────
-
 const pilotSavedSearchSchema = z.object({
   query: z.string().min(1),
   board: z.string().optional(),

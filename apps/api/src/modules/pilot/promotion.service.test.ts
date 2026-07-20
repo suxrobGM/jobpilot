@@ -137,4 +137,13 @@ describe("PromotionService result approval gate", () => {
     expect(existing.status).toBe("posted");
     expect(existing.postedUrl).toBe("https://linkedin.com/feed/update/1");
   });
+
+  it("returns a repeated posted outcome idempotently", async () => {
+    const { svc } = makeDeps({
+      status: "posted",
+      postedUrl: "https://linkedin.com/feed/update/1",
+    });
+    const result = await svc.recordPromotionResult("p1", "promo-1", { outcome: "posted" });
+    expect(result.status).toBe("posted");
+  });
 });
