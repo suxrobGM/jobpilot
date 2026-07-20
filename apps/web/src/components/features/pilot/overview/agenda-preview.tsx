@@ -1,24 +1,15 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import type { AgendaItem, AgendaResponse } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  IconButton,
-  LinearProgress,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Chip, Divider, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 
@@ -99,61 +90,8 @@ export function AgendaPreview(): ReactElement {
     invalidate: [queryKeys.pilot.agenda()],
   });
 
-  let body: ReactNode;
-  if (query.isLoading) {
-    body = <LinearProgress />;
-  } else if (query.isError) {
-    body = (
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-        <Typography variant="body2Muted">Couldn't load the agenda.</Typography>
-        <Button variant="text" size="small" onClick={() => void query.refetch()}>
-          Retry
-        </Button>
-      </Stack>
-    );
-  } else if (!query.data) {
-    body = (
-      <EmptyState
-        variant="inline"
-        title="No current agenda snapshot."
-        description="Refresh to compile the pilot's next versioned agenda."
-      />
-    );
-  } else {
-    const { items, generatedAt, nextWakeAt, budget, emptyReason } = query.data;
-    const visible = items.slice(0, PREVIEW_COUNT);
-    body = (
-      <Stack spacing={2}>
-        {visible.length === 0 ? (
-          <AgendaEmpty reason={emptyReason} budget={budget} nextWakeAt={nextWakeAt} />
-        ) : (
-          <Stack spacing={1.5} divider={<Divider />}>
-            {visible.map((item, index) => (
-              <Stack key={item.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                <Typography variant="overlineMuted" sx={{ width: 16, flexShrink: 0 }}>
-                  {index + 1}
-                </Typography>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="captionMuted">{AGENDA_KIND_LABELS[item.kind]}</Typography>
-                  <Typography variant="body2" noWrap>
-                    {item.title}
-                  </Typography>
-                </Box>
-                <Chip size="small" variant="outlined" label={item.subjectType} />
-              </Stack>
-            ))}
-          </Stack>
-        )}
-        {items.length > PREVIEW_COUNT && (
-          <Typography variant="captionMuted">+{items.length - PREVIEW_COUNT} more</Typography>
-        )}
-        <Typography variant="captionMuted">
-          Compiled {formatRelativeTime(generatedAt)} ago · next wake in{" "}
-          {formatTimeUntil(nextWakeAt)}
-        </Typography>
-      </Stack>
-    );
-  }
+  const agenda = query.data;
+  const visible = agenda?.items.slice(0, PREVIEW_COUNT) ?? [];
 
   return (
     <SectionCard
@@ -169,7 +107,60 @@ export function AgendaPreview(): ReactElement {
         </IconButton>
       }
     >
-      {body}
+      <QuerySection
+        isLoading={query.isLoading}
+        isError={query.isError}
+        onRetry={() => void query.refetch()}
+        errorTitle="Couldn't load the agenda."
+        isEmpty={!agenda}
+        empty={
+          <EmptyState
+            variant="inline"
+            title="No current agenda snapshot."
+            description="Refresh to compile the pilot's next versioned agenda."
+          />
+        }
+      >
+        {agenda && (
+          <Stack spacing={2}>
+            {visible.length === 0 ? (
+              <AgendaEmpty
+                reason={agenda.emptyReason}
+                budget={agenda.budget}
+                nextWakeAt={agenda.nextWakeAt}
+              />
+            ) : (
+              <Stack spacing={1.5} divider={<Divider />}>
+                {visible.map((item, index) => (
+                  <Stack key={item.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                    <Typography variant="overlineMuted" sx={{ width: 16, flexShrink: 0 }}>
+                      {index + 1}
+                    </Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="captionMuted">
+                        {AGENDA_KIND_LABELS[item.kind]}
+                      </Typography>
+                      <Typography variant="body2" noWrap>
+                        {item.title}
+                      </Typography>
+                    </Box>
+                    <Chip size="small" variant="outlined" label={item.subjectType} />
+                  </Stack>
+                ))}
+              </Stack>
+            )}
+            {agenda.items.length > PREVIEW_COUNT && (
+              <Typography variant="captionMuted">
+                +{agenda.items.length - PREVIEW_COUNT} more
+              </Typography>
+            )}
+            <Typography variant="captionMuted">
+              Compiled {formatRelativeTime(agenda.generatedAt)} ago · next wake in{" "}
+              {formatTimeUntil(agenda.nextWakeAt)}
+            </Typography>
+          </Stack>
+        )}
+      </QuerySection>
     </SectionCard>
   );
 }

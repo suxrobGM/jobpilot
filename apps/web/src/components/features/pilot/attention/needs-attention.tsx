@@ -1,21 +1,12 @@
 "use client";
 
-import { type ReactElement, type ReactNode, useState } from "react";
+import { type ReactElement, useState } from "react";
 import type { Promotion } from "@jobpilot/contracts/pilot";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Chip,
-  Collapse,
-  IconButton,
-  LinearProgress,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Chip, Collapse, IconButton, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime } from "@/utils/format";
 import { PromotionDraftCard, PromotionSummary } from "./promotion-card";
@@ -57,7 +48,8 @@ function DraftRow(props: DraftRowProps): ReactElement {
 
 /** One queue for everything blocking the pilot: open questions first, then draft posts. */
 export function NeedsAttention(): ReactElement {
-  const { questions, isLoading: questionsLoading } = useOpenQuestions();
+  const questionsQuery = useOpenQuestions();
+  const { questions } = questionsQuery;
   // PilotLive already invalidates promotions on SSE events; no subscription needed here.
   const promotionsQuery = useApiQuery(pilotQueries.promotions());
   // `undefined` = no user choice yet, so a lone draft starts expanded.
@@ -70,39 +62,45 @@ export function NeedsAttention(): ReactElement {
   const loneDraftId = drafts.length === 1 ? (drafts[0]?.id ?? null) : null;
   const expandedId = userExpanded === undefined ? loneDraftId : userExpanded;
   const count = questions.length + drafts.length;
-  const loading = questionsLoading || promotionsQuery.isLoading;
+  const loading = questionsQuery.isLoading || promotionsQuery.isLoading;
+  // Either query failing must not render as "nothing needs your attention" - this is
+  // the one card whose whole job is to not miss things.
+  const isError = questionsQuery.isError || promotionsQuery.isError;
 
-  let body: ReactNode;
-  if (loading) {
-    body = <LinearProgress />;
-  } else if (count === 0) {
-    body = <EmptyState variant="inline" title="Nothing needs your attention." />;
-  } else {
-    body = (
-      <Stack spacing={2}>
-        {questions.map((question) => (
-          <QuestionCard key={question.id} question={question} />
-        ))}
-        {drafts.map((promotion) => (
-          <DraftRow
-            key={promotion.id}
-            promotion={promotion}
-            expanded={expandedId === promotion.id}
-            onToggle={() => setUserExpanded(expandedId === promotion.id ? null : promotion.id)}
-          />
-        ))}
-      </Stack>
-    );
-  }
+  const retry = (): void => {
+    questionsQuery.refetch();
+    void promotionsQuery.refetch();
+  };
 
   return (
     <SectionCard
       title="Needs attention"
-      actions={count > 0 ? <Chip size="small" color="warning" label={count} /> : undefined}
+      actions={count > 0 && <Chip size="small" color="warning" label={count} />}
     >
       <Stack spacing={2}>
-        {body}
-        {!loading && history.length > 0 && (
+        <QuerySection
+          isLoading={loading}
+          isError={isError}
+          onRetry={retry}
+          errorTitle="Couldn't load what needs your attention."
+          isEmpty={count === 0}
+          empty={<EmptyState variant="inline" title="Nothing needs your attention." />}
+        >
+          <Stack spacing={2}>
+            {questions.map((question) => (
+              <QuestionCard key={question.id} question={question} />
+            ))}
+            {drafts.map((promotion) => (
+              <DraftRow
+                key={promotion.id}
+                promotion={promotion}
+                expanded={expandedId === promotion.id}
+                onToggle={() => setUserExpanded(expandedId === promotion.id ? null : promotion.id)}
+              />
+            ))}
+          </Stack>
+        </QuerySection>
+        {!loading && !isError && history.length > 0 && (
           <Box>
             <Button
               variant="text"

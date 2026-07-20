@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, type ReactNode, useState } from "react";
+import { type ReactElement, useState } from "react";
 import type { PilotJournalEntry, PilotJournalKind } from "@jobpilot/contracts/pilot";
 import { Download } from "@mui/icons-material";
 import {
@@ -8,7 +8,6 @@ import {
   Button,
   Chip,
   Divider,
-  LinearProgress,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
@@ -18,7 +17,7 @@ import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { PILOT_JOURNAL_PAGE_SIZE, pilotQueries } from "@/api/queries";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/notification-provider";
 import { dedupeById } from "@/utils/array";
@@ -74,34 +73,12 @@ export function JournalFeed(): ReactElement {
     );
   };
 
-  if (firstPage.isLoading) {
-    return (
-      <SectionCard title="Journal">
-        <LinearProgress />
-      </SectionCard>
-    );
-  }
-
   const entries = dedupeById([...live, ...(firstPage.data?.items ?? []), ...older]);
   const visible =
     selectedKinds.length === 0 ? entries : entries.filter((e) => selectedKinds.includes(e.kind));
 
-  let body: ReactNode;
-  if (entries.length === 0) {
-    body = <EmptyState variant="inline" title="No journal entries yet." />;
-  } else if (visible.length === 0) {
-    body = <EmptyState variant="inline" title="No entries match the selected filters." />;
-  } else if (view === "cycle") {
-    body = <CycleTimeline entries={visible} />;
-  } else {
-    body = (
-      <Stack spacing={1.5} divider={<Divider />}>
-        {visible.map((entry) => (
-          <JournalRow key={entry.id} entry={entry} />
-        ))}
-      </Stack>
-    );
-  }
+  const emptyMessage =
+    entries.length === 0 ? "No journal entries yet." : "No entries match the selected filters.";
 
   return (
     <SectionCard
@@ -154,7 +131,24 @@ export function JournalFeed(): ReactElement {
           <ToggleButton value="flat">Flat feed</ToggleButton>
           <ToggleButton value="cycle">By cycle</ToggleButton>
         </ToggleButtonGroup>
-        {body}
+        <QuerySection
+          isLoading={firstPage.isLoading}
+          isError={firstPage.isError}
+          onRetry={() => void firstPage.refetch()}
+          errorTitle="Couldn't load the journal."
+          isEmpty={visible.length === 0}
+          empty={<EmptyState variant="inline" title={emptyMessage} />}
+        >
+          {view === "cycle" ? (
+            <CycleTimeline entries={visible} />
+          ) : (
+            <Stack spacing={1.5} divider={<Divider />}>
+              {visible.map((entry) => (
+                <JournalRow key={entry.id} entry={entry} />
+              ))}
+            </Stack>
+          )}
+        </QuerySection>
         {activeCursor && (
           <Box>
             <Button variant="text" disabled={loadingMore} onClick={() => loadMore()}>

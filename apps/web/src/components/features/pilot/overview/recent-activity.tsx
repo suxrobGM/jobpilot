@@ -1,11 +1,11 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
-import { Divider, LinearProgress, Stack } from "@mui/material";
+import type { ReactElement } from "react";
+import { Divider, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { dedupeById } from "@/utils/array";
 import { JournalRow } from "../journal/journal-row";
@@ -22,21 +22,6 @@ export function RecentActivity(): ReactElement {
 
   const entries = dedupeById([...live, ...(firstPage.data?.items ?? [])]).slice(0, RECENT_LIMIT);
 
-  let body: ReactNode;
-  if (firstPage.isLoading) {
-    body = <LinearProgress />;
-  } else if (entries.length === 0) {
-    body = <EmptyState variant="inline" title="No journal entries yet." />;
-  } else {
-    body = (
-      <Stack spacing={1.5} divider={<Divider />}>
-        {entries.map((entry) => (
-          <JournalRow key={entry.id} entry={entry} />
-        ))}
-      </Stack>
-    );
-  }
-
   return (
     <SectionCard
       title="Recent activity"
@@ -49,7 +34,20 @@ export function RecentActivity(): ReactElement {
         </Stack>
       }
     >
-      {body}
+      <QuerySection
+        isLoading={firstPage.isLoading}
+        isError={firstPage.isError}
+        onRetry={() => void firstPage.refetch()}
+        errorTitle="Couldn't load the journal."
+        isEmpty={entries.length === 0}
+        empty={<EmptyState variant="inline" title="No journal entries yet." />}
+      >
+        <Stack spacing={1.5} divider={<Divider />}>
+          {entries.map((entry) => (
+            <JournalRow key={entry.id} entry={entry} />
+          ))}
+        </Stack>
+      </QuerySection>
     </SectionCard>
   );
 }
