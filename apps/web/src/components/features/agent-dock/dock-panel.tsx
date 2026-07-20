@@ -147,7 +147,8 @@ export function DockPanel(): ReactElement {
                 size="small"
                 onClick={() => {
                   beginPending("stopping");
-                  void stop();
+                  // A stop that left the host up has no "went down" edge to clear the card.
+                  void stop().then((down) => !down && beginPending(null));
                 }}
                 aria-label="Stop"
               >

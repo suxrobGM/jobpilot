@@ -114,7 +114,13 @@ export class AgendaService {
       approvedJobs.length === 0
         ? await Promise.all([
             dueSavedSearches(this.prisma, userId, config, now),
-            gatherScorePendingCampaigns(this.prisma, userId, config.minScore, config.parkedBoards),
+            gatherScorePendingCampaigns(
+              this.prisma,
+              userId,
+              config.minScore,
+              now,
+              config.parkedBoards,
+            ),
           ])
         : [[], []];
 

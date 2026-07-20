@@ -32,6 +32,8 @@ export interface Over {
   // Score-pending gather (in_progress auto-apply campaigns with unscored pending rows) + its count groupBy.
   scorePendingCampaigns?: Record<string, unknown>[];
   scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
+  // Prior campaign.scorePending leases, gating the per-campaign cooldown.
+  scorePendingLeases?: { subjectId: string; grantedAt: Date; releasedAt: Date | null }[];
   // Pilot self-heal (compile) reads `pilotState.enabled` and flips these interrupted campaigns back.
   pilotEnabled?: boolean;
   interruptedCampaigns?: Record<string, unknown>[];
@@ -102,10 +104,13 @@ export function makeAgendaDb(over: Over = {}) {
       }),
     },
     pilotLease: {
-      findMany: async (args: { where: { subjectType?: string } }) =>
-        args.where.subjectType === "question"
+      // The score-pending cooldown reads its own lease history by kind; the rest split on subjectType.
+      findMany: async (args: { where: { subjectType?: string; kind?: string } }) => {
+        if (args.where.kind === "campaign.scorePending") return over.scorePendingLeases ?? [];
+        return args.where.subjectType === "question"
           ? (over.questionLeases ?? [])
-          : (over.expiredLeases ?? []),
+          : (over.expiredLeases ?? []);
+      },
       count: async () => over.activeLeases ?? 0,
       // Bootstrap-damper lookups filter on kind; everything else is the per-subject uniqueness guard.
       findFirst: async (a: { where: { kind?: string } }) =>

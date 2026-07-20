@@ -11,7 +11,8 @@ const PENDING_RESTART_TIMEOUT_MS = 45_000;
 export interface DockHealthState extends TerminalHealthState {
   /** Expected host state change in flight (dashboard-triggered update, Start agent, or Stop agent). */
   pending: PendingAction | null;
-  beginPending: (action: PendingAction) => void;
+  /** `null` cancels a pending action whose host change never happened (e.g. a failed stop). */
+  beginPending: (action: PendingAction | null) => void;
   /** True while the host is not answering (checking, offline, or uninstalled). */
   unreachable: boolean;
 }
@@ -29,7 +30,7 @@ export function useDockHealth(): DockHealthState {
   const { health } = healthState;
   const unreachable = health !== "reachable" && health !== "degraded";
 
-  const beginPending = (action: PendingAction): void => {
+  const beginPending = (action: PendingAction | null): void => {
     sawHostDown.current = unreachable;
     setPending(action);
   };

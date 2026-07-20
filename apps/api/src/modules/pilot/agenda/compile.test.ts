@@ -223,6 +223,56 @@ describe("AgendaService campaign.scorePending", () => {
     });
   });
 
+  // An unscorable row keeps matchScore null forever, and scorePending outranks discovery - the
+  // cooldown is what stops one such row from starving discovery on every cycle.
+  const scorePendingOver = {
+    scorePendingCampaigns: [
+      {
+        campaignId: "c1",
+        query: "react",
+        config: "{}",
+        jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
+      },
+    ],
+    scorePendingCounts: [{ campaignId: "c1", _count: { _all: 4 } }],
+  };
+
+  it("suppresses scorePending while its previous lease is still open", async () => {
+    const agenda = await service({
+      ...scorePendingOver,
+      scorePendingLeases: [{ subjectId: "c1", grantedAt: new Date(), releasedAt: null }],
+    }).compile("p1");
+    expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(false);
+  });
+
+  it("suppresses scorePending inside the cooldown after the last run released", async () => {
+    const agenda = await service({
+      ...scorePendingOver,
+      scorePendingLeases: [
+        {
+          subjectId: "c1",
+          grantedAt: new Date(Date.now() - 20 * 60_000),
+          releasedAt: new Date(Date.now() - 10 * 60_000),
+        },
+      ],
+    }).compile("p1");
+    expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(false);
+  });
+
+  it("re-emits scorePending once the cooldown has elapsed", async () => {
+    const agenda = await service({
+      ...scorePendingOver,
+      scorePendingLeases: [
+        {
+          subjectId: "c1",
+          grantedAt: new Date(Date.now() - 5 * 60 * 60_000),
+          releasedAt: new Date(Date.now() - 4 * 60 * 60_000),
+        },
+      ],
+    }).compile("p1");
+    expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(true);
+  });
+
   it("suppresses scorePending on a campaign whose config board is parked", async () => {
     const agenda = await service({
       instructionsConfig: JSON.stringify({ parkedBoards: ["linkedin"] }),

@@ -34,7 +34,8 @@ export interface AgentDockContextValue {
   provider: TerminalProviderId;
   switchProvider: (next: TerminalProviderId) => Promise<void>;
   restart: () => Promise<void>;
-  stop: () => Promise<void>;
+  /** Resolves true when the host is shutting down, false when it stayed up (failure or legacy fallback). */
+  stop: () => Promise<boolean>;
   terminalRevision: number;
   expanded: boolean;
   expand: () => void;
@@ -80,9 +81,12 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
   const expanded = useSyncExternalStore(subscribeAgentStorage, getStoredExpanded, () => false);
   const [terminalRevision, setTerminalRevision] = useState(0);
 
-  const stop = async (): Promise<void> => {
+  // Resolves true only when the host is actually going down, so the dock knows whether to keep its
+  // "Stopping…" card up: on every other path the host stays reachable and nothing would ever clear it.
+  const stop = async (): Promise<boolean> => {
     try {
       await shutdownHost();
+      return true;
     } catch (error) {
       // Older host without /shutdown - fall back to closing just the session.
       if (error instanceof TerminalApiError && error.status === 404) {
@@ -94,13 +98,14 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
         toast.error(
           "This agent doesn't support fully stopping yet. Closed the session - update the agent to also close the terminal app.",
         );
-        return;
+        return false;
       }
       toast.error(
         error instanceof TerminalApiError
           ? `Couldn't stop the terminal: ${error.message}`
           : "The JobPilot agent isn't reachable, so there is nothing to stop.",
       );
+      return false;
     }
   };
 

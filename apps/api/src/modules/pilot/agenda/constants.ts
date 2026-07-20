@@ -38,6 +38,13 @@ export const GATHER_CAP = 200;
 /** One score-pending cycle scores at most this many of a campaign's unscored rows (bounded per cycle). */
 export const SCORE_PENDING_BATCH = 5;
 
+/**
+ * Minimum gap between score-pending runs on one campaign. Rows nothing can score stay `matchScore: null`
+ * forever, so without a cooldown they would out-rank discovery every cycle; a backlog still drains at
+ * SCORE_PENDING_BATCH per hour, far above the pilot's apply rate.
+ */
+export const SCORE_PENDING_COOLDOWN_MS = 60 * 60 * 1000;
+
 export const MAX_ITEMS = 10;
 /** A job needs a strong match before its company is worth a warm-intro detour. */
 export const WARM_INTRO_MIN_SCORE = 85;

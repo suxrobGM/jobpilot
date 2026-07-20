@@ -94,9 +94,12 @@ export class PilotService {
   }
 
   /**
-   * Server-side liveness for the terminal watchdog: the newest agent activity across leases, journal,
-   * and campaign/job writes, plus the current active-lease count. Lets the host tell a live long cycle
-   * (a slow apply, a heartbeating worker) from a real stall before it climbs the nudge/kill ladder.
+   * Server-side liveness for the terminal watchdog: the newest agent activity across leases, the
+   * journal, campaign writes, and job *creation*, plus the current active-lease count. Lets the host
+   * tell a live long cycle (a slow apply, a heartbeating worker) from a real stall before it climbs
+   * the nudge/kill ladder. Job status transitions are invisible here - Job has no `updatedAt` column -
+   * but every one of them bumps its campaign's `updatedAt` via the summary recompute, and a worker
+   * mid-apply heartbeats its lease, so both paths are still covered.
    */
   async getActivity(userId: string) {
     // One read for the (few) unreleased leases covers both the newest lease timestamp and the count.

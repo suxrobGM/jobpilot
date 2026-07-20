@@ -4,7 +4,12 @@ import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { parseCampaignConfig } from "./campaign-config";
-import { GATHER_CAP, SCORE_PENDING_BATCH, WARM_INTRO_MIN_SCORE } from "./constants";
+import {
+  GATHER_CAP,
+  SCORE_PENDING_BATCH,
+  SCORE_PENDING_COOLDOWN_MS,
+  WARM_INTRO_MIN_SCORE,
+} from "./constants";
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
@@ -111,15 +116,43 @@ export async function gatherApprovedJobs(
     });
 }
 
+/** Newest lease per subject for one kind - one read instead of an N+1 findFirst per subject. */
+async function latestLeaseBySubject(
+  prisma: PrismaClient,
+  userId: string,
+  kind: string,
+  subjectIds: string[],
+): Promise<Map<string, { grantedAt: Date; releasedAt: Date | null }>> {
+  const leases = await prisma.pilotLease.findMany({
+    where: { userId, kind, subjectId: { in: subjectIds } },
+    orderBy: { grantedAt: "desc" },
+    take: GATHER_CAP,
+    select: { subjectId: true, grantedAt: true, releasedAt: true },
+  });
+  const latest = new Map<string, { grantedAt: Date; releasedAt: Date | null }>();
+  for (const l of leases) {
+    const prev = latest.get(l.subjectId);
+    if (!prev || l.grantedAt > prev.grantedAt) {
+      latest.set(l.subjectId, { grantedAt: l.grantedAt, releasedAt: l.releasedAt });
+    }
+  }
+  return latest;
+}
+
 /**
  * In-progress auto-apply campaigns carrying discovered-but-unscored pending rows (`matchScore: null`) -
  * mid-batch abandonment or thin listings. Each carries ≤{@link SCORE_PENDING_BATCH} sampled entries plus
  * the total unscored count; parked-board campaigns are skipped (park keys on the campaign's config board).
+ *
+ * Rate-limited per campaign off lease history, like {@link dueSavedSearches}: a row nothing can score
+ * (dead URL, login wall) keeps `matchScore: null` forever, and scorePending outranks discovery - without
+ * a cooldown that one row would re-win every cycle and starve discovery permanently.
  */
 export async function gatherScorePendingCampaigns(
   prisma: PrismaClient,
   userId: string,
   fallbackMinScore: number,
+  now: Date,
   parkedBoards: string[] = [],
 ): Promise<AgendaScorePending[]> {
   const campaigns = await prisma.campaign.findMany({
@@ -155,6 +188,12 @@ export async function gatherScorePendingCampaigns(
     _count: { _all: true },
   });
   const countByCampaign = new Map(counts.map((r) => [r.campaignId, r._count._all]));
+  const latest = await latestLeaseBySubject(
+    prisma,
+    userId,
+    "campaign.scorePending",
+    campaigns.map((c) => c.campaignId),
+  );
 
   const parked = new Set(parkedBoards);
   const out: AgendaScorePending[] = [];
@@ -163,6 +202,15 @@ export async function gatherScorePendingCampaigns(
     const board = config?.board ?? null;
     // A campaign targeting a parked board is suppressed until the user un-parks it.
     if (board && parked.has(board)) continue;
+    // An open lease means a batch is still running; a recent one means we just scored what we could.
+    const last = latest.get(c.campaignId);
+    if (
+      last &&
+      (last.releasedAt == null ||
+        now.getTime() - last.releasedAt.getTime() < SCORE_PENDING_COOLDOWN_MS)
+    ) {
+      continue;
+    }
     out.push({
       campaignId: c.campaignId,
       query: c.query,
@@ -240,24 +288,12 @@ export async function dueSavedSearches(
   now: Date,
 ): Promise<AgendaDueQuery[]> {
   if (config.savedSearches.length === 0) return [];
-  // One read for every discovery lease, reduced to the latest per query - avoids an N+1 findFirst.
-  const leases = await prisma.pilotLease.findMany({
-    where: {
-      userId,
-      kind: "search.discover",
-      subjectId: { in: config.savedSearches.map((q) => q.query) },
-    },
-    orderBy: { grantedAt: "desc" },
-    take: GATHER_CAP,
-    select: { subjectId: true, grantedAt: true, releasedAt: true },
-  });
-  const latest = new Map<string, { grantedAt: Date; releasedAt: Date | null }>();
-  for (const l of leases) {
-    const prev = latest.get(l.subjectId);
-    if (!prev || l.grantedAt > prev.grantedAt) {
-      latest.set(l.subjectId, { grantedAt: l.grantedAt, releasedAt: l.releasedAt });
-    }
-  }
+  const latest = await latestLeaseBySubject(
+    prisma,
+    userId,
+    "search.discover",
+    config.savedSearches.map((q) => q.query),
+  );
 
   const parked = new Set(config.parkedBoards);
   const due: AgendaDueQuery[] = [];
