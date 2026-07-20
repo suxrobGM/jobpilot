@@ -3,6 +3,7 @@
 
 import type { PushPayload, PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
+import type { CampaignService } from "@/modules/campaign/campaign.service";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { PilotService } from "../pilot.service";
 
@@ -28,6 +29,16 @@ export interface Over {
   appliedToday?: number;
   activeLeases?: number;
   finalizeCampaigns?: Record<string, unknown>[];
+  // Score-pending gather (in_progress auto-apply campaigns with unscored pending rows) + its count groupBy.
+  scorePendingCampaigns?: Record<string, unknown>[];
+  scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
+  // Pilot self-heal (compile) reads `pilotState.enabled` and flips these interrupted campaigns back.
+  pilotEnabled?: boolean;
+  interruptedCampaigns?: Record<string, unknown>[];
+  // verifyGrant's leasability check for campaign.scorePending (null = 409, no unscored rows left).
+  campaignFindFirst?: Record<string, unknown> | null;
+  // Scored-but-pending rows swept by promoteScoredPendingJobs (job.findMany with a matchScore filter).
+  scoredPendingJobs?: Record<string, unknown>[];
   job?: Record<string, unknown> | null;
   claimCount?: number;
   activeLease?: Record<string, unknown> | null;
@@ -87,6 +98,7 @@ export function makeAgendaDb(over: Over = {}) {
       findUnique: async () => ({
         instructionsConfig: over.instructionsConfig ?? defaultConfig,
         instructionsGoals: over.instructionsGoals ?? "",
+        enabled: over.pilotEnabled ?? false,
       }),
     },
     pilotLease: {
@@ -152,14 +164,19 @@ export function makeAgendaDb(over: Over = {}) {
       },
     },
     job: {
-      // Board-health scans applied/failed rows (status is an `in` filter); everything else is the approved gather.
-      findMany: async (a: { where: { status?: unknown } }) =>
-        a.where.status && typeof a.where.status === "object"
-          ? (over.boardHealthJobs ?? [])
-          : (over.approvedJobs ?? []),
+      // A matchScore filter is the promote sweep (scored-pending rows); a status `in` filter is the
+      // board-health scan; everything else is the approved-job gather.
+      findMany: async (a: { where: { status?: unknown; matchScore?: unknown } }) =>
+        "matchScore" in a.where
+          ? (over.scoredPendingJobs ?? [])
+          : a.where.status && typeof a.where.status === "object"
+            ? (over.boardHealthJobs ?? [])
+            : (over.approvedJobs ?? []),
       findFirst: async () => over.job ?? null,
       update: async () => ({}),
-      groupBy: async () => over.skipReasonRows ?? [],
+      // groupBy by ["campaignId"] alone is the score-pending count; ["campaignId","skipReason"] is skip reasons.
+      groupBy: async (a: { by: string[] }) =>
+        a.by.length === 1 ? (over.scorePendingCounts ?? []) : (over.skipReasonRows ?? []),
       count: async (a: { where: { status?: string } }) =>
         a.where.status === "failed"
           ? (over.jobsFailed ?? 0)
@@ -181,10 +198,19 @@ export function makeAgendaDb(over: Over = {}) {
             : (over.interviewReplyApps ?? []),
     },
     campaign: {
-      // Finalize gather filters on a `jobs` none-clause; the quiet-candidate gather does not - split on that.
-      findMany: async (a: { where: Record<string, unknown> }) =>
-        "jobs" in a.where ? (over.finalizeCampaigns ?? []) : (over.quietCampaigns ?? []),
+      // Split the campaign gathers by their distinguishing where-clause: interrupted (self-heal),
+      // source auto-apply (score-pending), a `jobs` clause (finalize), else the quiet-candidate gather.
+      findMany: async (a: { where: { status?: string; source?: string; jobs?: unknown } }) =>
+        a.where.status === "interrupted"
+          ? (over.interruptedCampaigns ?? [])
+          : a.where.source === "auto-apply"
+            ? (over.scorePendingCampaigns ?? [])
+            : "jobs" in a.where
+              ? (over.finalizeCampaigns ?? [])
+              : (over.quietCampaigns ?? []),
+      findFirst: async () => over.campaignFindFirst ?? null,
       update: async () => ({}),
+      updateMany: async () => ({ count: (over.interruptedCampaigns ?? []).length }),
     },
     queueEntry: {
       findMany: async () => over.pendingQueue ?? [],
@@ -251,6 +277,14 @@ export function makeCampaignJobs(rec: Recorder, over: Over = {}): CampaignJobSer
   } as unknown as CampaignJobService;
 }
 
+/** Fake CampaignService: the agenda compile only calls `selfHealForPilot`, a no-op in most tests. */
+export function makeCampaignService(over: Over = {}): CampaignService {
+  return {
+    selfHealForPilot: async () =>
+      over.pilotEnabled ? (over.interruptedCampaigns ?? []).length : 0,
+  } as unknown as CampaignService;
+}
+
 /** Fake PilotService recording journal appends (the digest write path). */
 export function makePilot(rec: Pick<Recorder, "journals">): PilotService {
   return {
@@ -278,6 +312,7 @@ export function makeAgendaDeps(over: Over = {}) {
     campaignJobs: makeCampaignJobs(rec, over),
     pilot: makePilot(rec),
     push: makePush(rec),
+    campaigns: makeCampaignService(over),
     rec,
   };
 }

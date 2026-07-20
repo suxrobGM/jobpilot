@@ -18,7 +18,8 @@ import { type CampaignJobRow, type CampaignRow } from "./campaign.mapper";
 import { summarizeJobs } from "./campaign.summary";
 import { ensureCampaignOwned } from "./campaign.utils";
 
-const STALE_THRESHOLD_MS = 5 * 60 * 1000;
+// Matches the pilot lease TTL: one long apply can pass between a campaign's status writes.
+const STALE_THRESHOLD_MS = 15 * 60 * 1000;
 
 @singleton()
 export class CampaignService {
@@ -30,8 +31,16 @@ export class CampaignService {
    * Flip `in_progress` campaigns whose `updatedAt` is older than the stale
    * threshold to `interrupted`, and revert their `applying` jobs to `approved`
    * so `/resume <campaignId>` can pick them up. Emits SSE per campaign.
+   *
+   * Pilot-aware: under an enabled pilot we never flip and instead self-heal, because the pilot's
+   * idle cadence (30min+) far exceeds any sane staleness window and `interrupted` would hide the
+   * campaign from the agenda gathers - lease expiry already owns reverting a stranded applying job.
    */
   private async reconcileStaleCampaigns(userId: string): Promise<number> {
+    if (await this.isPilotEnabled(userId)) {
+      return this.healInterruptedCampaigns(userId);
+    }
+
     const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
 
     const stale = await this.prisma.campaign.findMany({
@@ -77,6 +86,65 @@ export class CampaignService {
     }
 
     return stale.length;
+  }
+
+  private async isPilotEnabled(userId: string): Promise<boolean> {
+    const state = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { enabled: true },
+    });
+    return state?.enabled ?? false;
+  }
+
+  /**
+   * Flip the user's `interrupted` auto-apply campaigns back to `in_progress` so a campaign stuck
+   * interrupted (a pre-fix stale sweep, a host restart) rejoins the agenda without the user opening
+   * the campaigns page. Emits SSE per campaign, matching the reconcile publish shape.
+   */
+  private async healInterruptedCampaigns(userId: string): Promise<number> {
+    const interrupted = await this.prisma.campaign.findMany({
+      where: { userId, status: "interrupted", source: "auto-apply" },
+      select: { campaignId: true, source: true },
+    });
+    if (interrupted.length === 0) {
+      return 0;
+    }
+
+    await this.prisma.campaign.updateMany({
+      where: { campaignId: { in: interrupted.map((r) => r.campaignId) } },
+      data: { status: "in_progress" },
+    });
+
+    for (const r of interrupted) {
+      publish(
+        campaignChannel,
+        { campaignId: r.campaignId },
+        { type: "status", payload: { status: "in_progress" } },
+      );
+      publish(
+        workspaceChannel,
+        { userId },
+        {
+          type: "campaign.updated",
+          campaignId: r.campaignId,
+          status: "in_progress",
+          source: r.source as CampaignSource,
+        },
+      );
+    }
+
+    return interrupted.length;
+  }
+
+  /**
+   * Pilot entrypoint (called from the agenda compile): self-heal interrupted auto-apply campaigns
+   * when the pilot is enabled, so recovery never waits on the user visiting the campaigns page.
+   */
+  async selfHealForPilot(userId: string): Promise<number> {
+    if (!(await this.isPilotEnabled(userId))) {
+      return 0;
+    }
+    return this.healInterruptedCampaigns(userId);
   }
 
   // ── Campaign list / create ───────────────────────────────────────────────────
