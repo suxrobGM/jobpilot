@@ -4,17 +4,17 @@ import type { ReactElement } from "react";
 import { Box, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { useTerminalHealth } from "../agent-dock/use-terminal-health";
-import { NeedsAttention } from "./attention/needs-attention";
-import { AgendaPreview } from "./overview/agenda-preview";
-import { OrchestrationPanel } from "./overview/orchestration-panel";
-import { RecentActivity } from "./overview/recent-activity";
-import { PilotSetupChecklist } from "./overview/setup-checklist";
-import { OverviewSkeleton } from "./overview/skeleton";
-import { StatusHero } from "./overview/status-hero";
-import { usePilotToggle } from "./use-pilot-toggle";
+import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
+import { NeedsAttention } from "../attention/needs-attention";
+import { usePilotToggle } from "../use-pilot-toggle";
+import { AgendaPreview } from "./agenda-preview";
+import { OrchestrationPanel } from "./orchestration-panel";
+import { OverviewSkeleton } from "./overview-skeleton";
+import { RecentActivity } from "./recent-activity";
+import { PilotSetupChecklist } from "./setup-checklist";
+import { StatusHero } from "./status-hero";
 
-export function PilotOverview(): ReactElement {
+export function OverviewTab(): ReactElement {
   // Toggle + health are hoisted so the hero and the checklist share one host poll.
   const toggle = usePilotToggle();
   const { health, status } = useTerminalHealth(toggle.busy);

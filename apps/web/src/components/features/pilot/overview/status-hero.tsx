@@ -8,7 +8,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { type PilotCycleStatus, providerDisplayName, type SessionStatus } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
-import { isHostOffline, PILOT_HOST_OFFLINE_MESSAGE, PILOT_STARTING_UP_LABEL } from "../status";
+import { isHostOffline, PILOT_HOST_OFFLINE_MESSAGE, PILOT_STARTING_UP_LABEL } from "../host-status";
 import type { PilotToggle } from "../use-pilot-toggle";
 
 interface StatusHeroProps {

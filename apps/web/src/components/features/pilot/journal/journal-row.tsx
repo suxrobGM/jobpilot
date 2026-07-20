@@ -45,18 +45,6 @@ function DigestCounts(props: { detail: Record<string, unknown> }): ReactElement 
   return <Typography variant="captionMuted">{parts.join(" · ")}</Typography>;
 }
 
-export function dedupeById(entries: PilotJournalEntry[]): PilotJournalEntry[] {
-  const seen = new Set<string>();
-  const out: PilotJournalEntry[] = [];
-  for (const entry of entries) {
-    if (!seen.has(entry.id)) {
-      seen.add(entry.id);
-      out.push(entry);
-    }
-  }
-  return out;
-}
-
 export function JournalRow(props: { entry: PilotJournalEntry }): ReactElement {
   const { entry } = props;
   const meta = KIND_META[entry.kind];

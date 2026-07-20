@@ -2,12 +2,10 @@
 
 import { Grid, InputAdornment, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
-import { FormSection } from "@/components/ui/form";
+import { FieldInfo, FieldRowList, FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { useKeyedList } from "@/hooks/use-keyed-list";
-import { FieldInfo } from "./field-info";
 import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
-import { InstructionsRowList } from "./row-list";
 
 const EMPTY_PLATFORM = { platform: "", target: "", cadenceDays: 30 };
 
@@ -28,7 +26,7 @@ export const PlatformsSection = withForm({
           </Typography>
           <form.AppField name="promotionPlatforms" mode="array">
             {(field) => (
-              <InstructionsRowList
+              <FieldRowList
                 count={field.state.value?.length ?? 0}
                 keys={platformList.keys}
                 emptyText="No platforms yet."
@@ -93,7 +91,7 @@ export const PlatformsSection = withForm({
                     </Grid>
                   </>
                 )}
-              </InstructionsRowList>
+              </FieldRowList>
             )}
           </form.AppField>
         </Stack>

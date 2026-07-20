@@ -34,8 +34,6 @@ export const composerFormSchema = z
 export type CampaignMode = Extract<CampaignSource, "search" | "auto-apply" | "networking">;
 export type ComposerFormValues = z.infer<typeof composerFormSchema>;
 
-/** Upwork is recommend-only - searched + scored, never auto-submitted. */
-export const UPWORK_DOMAIN = "upwork.com";
 export const UPWORK_MODE_DESCRIPTION =
   "JobPilot searches Upwork, filters out low-quality and unresponsive clients, and ranks the rest by fit. Review the recommendations, then draft a proposal per job - you submit on Upwork yourself.";
 

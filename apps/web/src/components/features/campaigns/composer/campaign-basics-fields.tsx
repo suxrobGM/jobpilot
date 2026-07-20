@@ -4,12 +4,8 @@ import { Chip, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import type { JobBoardDto, UserAggregateResponse } from "@/api/types";
 import { withForm } from "@/components/ui/form/tanstack";
-import {
-  COMPOSER_DEFAULT_VALUES,
-  MODE_DESCRIPTIONS,
-  UPWORK_DOMAIN,
-  UPWORK_MODE_DESCRIPTION,
-} from "./form-config";
+import { UPWORK_DOMAIN } from "../constants";
+import { COMPOSER_DEFAULT_VALUES, MODE_DESCRIPTIONS, UPWORK_MODE_DESCRIPTION } from "./form-config";
 
 /** Always-shown campaign basics: mode, query (+ recent), board, and resume. */
 export const CampaignBasicsFields = withForm({

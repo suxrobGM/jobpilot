@@ -20,19 +20,8 @@ import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/notification-provider";
+import { urlBase64ToUint8Array } from "@/utils/base64";
 import { formatRelativeTime } from "@/utils/format";
-
-/** Decode a VAPID base64url key into the byte array `pushManager.subscribe` expects. */
-function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
-  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
-  const normalized = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(normalized);
-  const output = new Uint8Array(new ArrayBuffer(raw.length));
-  for (let i = 0; i < raw.length; i++) {
-    output[i] = raw.charCodeAt(i);
-  }
-  return output;
-}
 
 export function PushSettings(): ReactNode {
   const toast = useToast();

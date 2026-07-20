@@ -21,10 +21,11 @@ import { PILOT_JOURNAL_PAGE_SIZE, pilotQueries } from "@/api/queries";
 import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/notification-provider";
-import { CycleTimeline } from "./journal/cycle-timeline";
-import { dedupeById, JournalRow, KIND_META } from "./journal/journal-row";
-import { LiveStatusChip } from "./journal/live-status-chip";
-import { useJournalLive } from "./journal/use-journal-live";
+import { dedupeById } from "@/utils/array";
+import { CycleTimeline } from "./cycle-timeline";
+import { JournalRow, KIND_META } from "./journal-row";
+import { LiveStatusChip } from "./live-status-chip";
+import { useJournalLive } from "./use-journal-live";
 
 /** Same-site cookie rides a top-level anchor download, so no fetch/token handling is needed here. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
@@ -32,7 +33,7 @@ const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
 const ALL_KINDS = Object.keys(KIND_META) as PilotJournalKind[];
 
 /** Full journal feed with client-side kind filters; the server has no kind query param. */
-export function PilotActivity(): ReactElement {
+export function JournalFeed(): ReactElement {
   const toast = useToast();
   const firstPage = useApiQuery(pilotQueries.journal());
   const { entries: live, status } = useJournalLive();

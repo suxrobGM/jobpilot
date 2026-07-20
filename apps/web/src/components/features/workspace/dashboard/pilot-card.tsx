@@ -8,6 +8,11 @@ import Link from "next/link";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import {
+  isHostOffline,
+  PILOT_HOST_OFFLINE_MESSAGE,
+  PILOT_STARTING_UP_LABEL,
+} from "@/components/features/pilot/host-status";
 import { LinkButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
@@ -17,11 +22,6 @@ import type { PilotHealth, SessionStatus } from "@/lib/terminal";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { type TerminalHealth, useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { useOpenQuestions } from "../../pilot/attention/use-open-questions";
-import {
-  isHostOffline,
-  PILOT_HOST_OFFLINE_MESSAGE,
-  PILOT_STARTING_UP_LABEL,
-} from "../../pilot/status";
 
 interface PilotIndicator {
   tone: PulseDotTone;

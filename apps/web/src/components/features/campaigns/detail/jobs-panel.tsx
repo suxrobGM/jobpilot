@@ -20,7 +20,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
-import { UPWORK_DOMAIN } from "../composer/form-config";
+import { UPWORK_DOMAIN } from "../constants";
 import { CampaignJobsTable, isReapplicable } from "./jobs-table";
 
 const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<CampaignJobStatus>> =

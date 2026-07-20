@@ -1,5 +1,5 @@
-export { PilotActivity } from "./pilot-activity";
-export { PilotInstructions } from "./pilot-instructions";
+export { InstructionsTab } from "./instructions/instructions-tab";
+export { JournalFeed } from "./journal/journal-feed";
+export { OverviewTab } from "./overview/overview-tab";
 export { PilotLive } from "./pilot-live";
-export { PilotOverview } from "./pilot-overview";
 export { PilotTabs } from "./pilot-tabs";

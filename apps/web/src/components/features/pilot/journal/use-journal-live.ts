@@ -7,7 +7,7 @@ import { useState } from "react";
 import { PILOT_JOURNAL_PAGE_SIZE } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { type SseConnectionStatus, useSseChannel } from "@/lib/sse/client";
-import { dedupeById } from "./journal-row";
+import { dedupeById } from "@/utils/array";
 
 /** Cap the live buffer so a long-lived session doesn't grow unbounded; oldest (tail) drop first. */
 const LIVE_CAP = 100;

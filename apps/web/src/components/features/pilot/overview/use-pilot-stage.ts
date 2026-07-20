@@ -7,8 +7,8 @@ import { pilotQueries } from "@/api/queries";
 import type { SessionStatus } from "@/lib/terminal";
 import { formatTimeUntil, humanizeIsoInText } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
+import { isHostOffline } from "../host-status";
 import { useJournalLive } from "../journal/use-journal-live";
-import { isHostOffline } from "../status";
 
 export type PilotStageNode = "conductor" | "agent" | "worker" | "results";
 type PilotStageMode = "off" | "offline" | "working" | "sleeping";

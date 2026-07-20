@@ -12,6 +12,7 @@ import type { CampaignDto, CreateCampaignRequest } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
+import { UPWORK_DOMAIN } from "../constants";
 import { AutoApplyFields } from "./auto-apply-fields";
 import { CampaignBasicsFields } from "./campaign-basics-fields";
 import {
@@ -20,7 +21,6 @@ import {
   COMPOSER_DEFAULT_VALUES,
   composerFormSchema,
   SUBMIT_LABELS,
-  UPWORK_DOMAIN,
 } from "./form-config";
 import { NetworkingFields } from "./networking-fields";
 import { SearchFields } from "./search-fields";

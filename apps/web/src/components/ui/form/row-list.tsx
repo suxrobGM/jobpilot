@@ -4,7 +4,7 @@ import type { ReactElement, ReactNode } from "react";
 import { Add, Delete } from "@mui/icons-material";
 import { Box, Button, IconButton, Paper, Stack, Typography } from "@mui/material";
 
-interface InstructionsRowListProps {
+interface FieldRowListProps {
   count: number;
   /** Positional row keys from useKeyedList. */
   keys: readonly string[];
@@ -19,7 +19,7 @@ interface InstructionsRowListProps {
   children: (index: number) => ReactNode;
 }
 
-export function InstructionsRowList(props: InstructionsRowListProps): ReactElement {
+export function FieldRowList(props: FieldRowListProps): ReactElement {
   const { count, keys, emptyText, addLabel, removeAria, rowLabel, onAdd, onRemove, children } =
     props;
 

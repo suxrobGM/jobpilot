@@ -1,3 +1,16 @@
+/** Keeps the first occurrence of each `id`, preserving order. */
+export function dedupeById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const item of items) {
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
+      out.push(item);
+    }
+  }
+  return out;
+}
+
 /**
  * Returns a new array with the element at `idx` swapped with its neighbor
  * in `direction` (-1 for previous, 1 for next). If the swap would land out
