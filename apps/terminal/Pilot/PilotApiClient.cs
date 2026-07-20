@@ -11,6 +11,9 @@ internal sealed record PilotJournalRequest(PilotJournalEntry[] Entries);
 /// <summary>One journal entry; the host only ever writes <c>kind=system</c>.</summary>
 internal sealed record PilotJournalEntry(string Kind, string Summary);
 
+/// <summary>Body of a GET /api/pilot/activity response: the newest agent activity and open lease count.</summary>
+internal sealed record PilotActivityResponse(DateTimeOffset? LastActivityAt, int ActiveLeases);
+
 /// <summary>
 /// Posts the conductor's own interventions to the API journal so the user's phone hears about them.
 /// Best-effort: a briefly unreachable API logs a warning and never throws into the conductor loop.
@@ -63,6 +66,42 @@ public sealed class PilotApiClient : IDisposable
         catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
         {
             logger.LogWarning(ex, "Pilot journal report could not be delivered.");
+        }
+    }
+
+    /// <summary>
+    /// Probes the API for the newest agent activity, gating the watchdog ladder. Never throws: any failure
+    /// returns null so the caller falls open to the old timeout behavior instead of blocking a cycle.
+    /// </summary>
+    public async Task<DateTimeOffset?> GetLastActivityAsync(string apiUrl, string apiToken)
+    {
+        if (string.IsNullOrWhiteSpace(apiUrl) || string.IsNullOrWhiteSpace(apiToken))
+        {
+            return null; // Unpaired or a legacy pairing with no API URL; no activity channel to consult.
+        }
+
+        try
+        {
+            using var cts = new CancellationTokenSource(RequestTimeout);
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"{apiUrl.TrimEnd('/')}/api/pilot/activity");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
+
+            using var response = await http.SendAsync(request, cts.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Pilot activity probe was rejected ({Status}).", (int)response.StatusCode);
+                return null;
+            }
+
+            var json = await response.Content.ReadAsStringAsync(cts.Token);
+            var activity = JsonSerializer.Deserialize(json, AppJsonContext.Default.PilotActivityResponse);
+            return activity?.LastActivityAt;
+        }
+        catch (Exception ex)
+        {
+            // Fail-open on anything (transport, timeout, malformed body): the watchdog then uses its heuristics alone.
+            logger.LogWarning(ex, "Pilot activity probe could not be delivered.");
+            return null;
         }
     }
 

@@ -30,13 +30,18 @@ public sealed partial class StallDetector
     public const int ErrorThreshold = 5;
     public static readonly TimeSpan ErrorWindow = TimeSpan.FromMinutes(2);
 
+    // A real retry loop repeats a few lines; varied error-shaped narration does not. Require the burst to collapse
+    // to at most this many distinct normalized lines so job text and prose that merely mention errors do not fire.
+    public const int MaxDistinctErrorLines = 2;
+
     // Cap the compared tail so a very long single line still matches its own repeats cheaply.
     private const int MaxLineChars = 512;
 
     // Cap the unterminated residue: a spinner redrawing via \r never emits '\n', so nothing else shrinks pending.
     private const int MaxPendingChars = 8192;
 
-    [GeneratedRegex(@"error|exception|failed to|econn|timeout", RegexOptions.IgnoreCase)]
+    // Word-boundary anchored so substrings ("terror", "mirrored") never count; covers the common transport errors.
+    [GeneratedRegex(@"\b(error|exception|failed to|econn(refused|reset)?|etimedout|timed? ?out)\b", RegexOptions.IgnoreCase)]
     private static partial Regex ErrorPattern();
 
     // CSI/OSC and two-char escapes; the rest of normalization collapses remaining whitespace.
@@ -51,7 +56,7 @@ public sealed partial class StallDetector
     private readonly Lock gate = new();
 
     private readonly StringBuilder pending = new();
-    private readonly Queue<DateTimeOffset> errorTimes = new();
+    private readonly Queue<(DateTimeOffset Time, string Line)> errorTimes = new();
     private string? lastLine;
     private int repeatCount;
     private DateTimeOffset repeatStart;
@@ -116,13 +121,13 @@ public sealed partial class StallDetector
     {
         if (ErrorPattern().IsMatch(line))
         {
-            errorTimes.Enqueue(now);
-            while (errorTimes.Count > 0 && now - errorTimes.Peek() > ErrorWindow)
+            errorTimes.Enqueue((now, line));
+            while (errorTimes.Count > 0 && now - errorTimes.Peek().Time > ErrorWindow)
             {
                 errorTimes.Dequeue();
             }
 
-            if (errorTimes.Count >= ErrorThreshold)
+            if (errorTimes.Count >= ErrorThreshold && DistinctErrorLines() <= MaxDistinctErrorLines)
             {
                 errorTimes.Clear(); // Re-arm: a second burst must re-accumulate before firing again.
                 return PilotStallReason.ErrorLoop;
@@ -147,6 +152,16 @@ public sealed partial class StallDetector
         }
 
         return PilotStallReason.None;
+    }
+
+    private int DistinctErrorLines()
+    {
+        var seen = new HashSet<string>();
+        foreach (var (_, line) in errorTimes)
+        {
+            seen.Add(line);
+        }
+        return seen.Count;
     }
 
     private static string Normalize(string line)

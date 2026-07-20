@@ -69,6 +69,82 @@ public sealed class PilotApiClientTests
         await b.ReportSystemAsync("https://api.example.test", "tok", "slow"); // must not throw
     }
 
+    [Fact]
+    public async Task GetLastActivityAsync_ParsesTheTimestamp_WithABearerHeader()
+    {
+        HttpRequestMessage? seen = null;
+        var handler = new StubHandler((request, _) =>
+        {
+            seen = request;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"lastActivityAt":"2026-07-19T18:34:43Z","activeLeases":2}"""),
+            });
+        });
+        using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(handler));
+
+        var at = await client.GetLastActivityAsync("https://api.example.test/", "secret-token");
+
+        Assert.NotNull(seen);
+        Assert.Equal(HttpMethod.Get, seen!.Method);
+        Assert.Equal("https://api.example.test/api/pilot/activity", seen.RequestUri!.ToString());
+        Assert.Equal("secret-token", seen.Headers.Authorization!.Parameter);
+        Assert.Equal(new DateTimeOffset(2026, 7, 19, 18, 34, 43, TimeSpan.Zero), at);
+    }
+
+    [Fact]
+    public async Task GetLastActivityAsync_ReturnsNull_WhenTheServerReportsNoActivity()
+    {
+        var handler = new StubHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"lastActivityAt":null,"activeLeases":0}"""),
+        }));
+        using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(handler));
+
+        Assert.Null(await client.GetLastActivityAsync("https://api.example.test", "tok"));
+    }
+
+    [Fact]
+    public async Task GetLastActivityAsync_ReturnsNull_WhenUnpaired()
+    {
+        var called = false;
+        var handler = new StubHandler((_, _) =>
+        {
+            called = true;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        });
+        using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(handler));
+
+        Assert.Null(await client.GetLastActivityAsync("", ""));
+        Assert.Null(await client.GetLastActivityAsync("https://api.example.test", ""));
+        Assert.False(called);
+    }
+
+    [Fact]
+    public async Task GetLastActivityAsync_ReturnsNull_OnNonSuccessOrTransportFailure()
+    {
+        var rejected = new StubHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)));
+        using var a = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(rejected));
+        Assert.Null(await a.GetLastActivityAsync("https://api.example.test", "tok"));
+
+        var refused = new StubHandler((_, _) => throw new HttpRequestException("connection refused"));
+        using var b = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(refused));
+        Assert.Null(await b.GetLastActivityAsync("https://api.example.test", "tok"));
+    }
+
+    [Fact]
+    public async Task GetLastActivityAsync_ReturnsNull_OnAMalformedBody()
+    {
+        var handler = new StubHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("not json at all"),
+        }));
+        using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(handler));
+
+        Assert.Null(await client.GetLastActivityAsync("https://api.example.test", "tok"));
+    }
+
     private sealed class StubHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond)
         : HttpMessageHandler
     {

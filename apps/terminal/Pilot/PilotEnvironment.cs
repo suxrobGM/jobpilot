@@ -143,6 +143,12 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
         }
     }
 
+    public async Task<DateTimeOffset?> GetLastActivityAsync(CancellationToken ct)
+    {
+        var pairing = store.Current;
+        return pairing is null ? null : await api.GetLastActivityAsync(pairing.ApiUrl, pairing.ApiToken);
+    }
+
     private void OnOutput(byte[] data)
     {
         // Interactive non-pilot sessions must not pay parser cost per chunk; enable writes the store before the

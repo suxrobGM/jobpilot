@@ -16,6 +16,19 @@ internal sealed class FakePilotEnvironment : IPilotEnvironment
     /// <summary>Results returned by successive AwaitSentinelAsync calls; empty dequeues to a timeout.</summary>
     public Queue<PilotWaitResult> SentinelResults { get; } = new();
 
+    /// <summary>
+    /// Activity timestamps returned by successive GetLastActivityAsync calls; empty dequeues to
+    /// <see cref="DefaultActivity"/> (null by default, so the old ladder behavior stands). Probes are kept out of
+    /// <see cref="Actions"/> so existing sequence asserts remain stable.
+    /// </summary>
+    public Queue<DateTimeOffset?> ActivityResults { get; } = new();
+
+    /// <summary>Value returned by GetLastActivityAsync once <see cref="ActivityResults"/> is drained.</summary>
+    public DateTimeOffset? DefaultActivity { get; set; }
+
+    /// <summary>When true, GetLastActivityAsync throws, to prove a failed probe falls open to the ladder.</summary>
+    public bool ActivityThrows { get; set; }
+
     public string? RunningProvider { get; set; }
 
     /// <summary>Whether StartSession marks the session running (mirrors a successful spawn).</summary>
@@ -98,6 +111,15 @@ internal sealed class FakePilotEnvironment : IPilotEnvironment
             throw new InvalidOperationException("simulated journal failure");
         }
         return Task.CompletedTask;
+    }
+
+    public Task<DateTimeOffset?> GetLastActivityAsync(CancellationToken ct)
+    {
+        if (ActivityThrows)
+        {
+            throw new InvalidOperationException("simulated activity probe failure");
+        }
+        return Task.FromResult(ActivityResults.Count > 0 ? ActivityResults.Dequeue() : DefaultActivity);
     }
 
     private static async Task<PilotWaitResult> WaitForCancelAsync(CancellationToken ct)

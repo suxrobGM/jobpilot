@@ -65,6 +65,13 @@ public sealed record PilotStatus
     public bool Connected { get; init; }
 }
 
+/// <summary>Acknowledges a host shutdown request; the process exits shortly after this response flushes.</summary>
+public sealed record ShutdownResult
+{
+    /// <summary>Always true; the host is shutting down.</summary>
+    public required bool Ok { get; init; }
+}
+
 /// <summary>Result of a runtime update request.</summary>
 public sealed record UpdateResult
 {

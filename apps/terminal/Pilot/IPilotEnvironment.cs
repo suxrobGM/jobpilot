@@ -59,4 +59,7 @@ public interface IPilotEnvironment
 
     /// <summary>Reports a conductor intervention to the API journal. Best-effort; never throws.</summary>
     Task ReportSystemAsync(string summary);
+
+    /// <summary>Newest server-side agent activity, or null on any failure (fail-open to the timeout ladder).</summary>
+    Task<DateTimeOffset?> GetLastActivityAsync(CancellationToken ct);
 }

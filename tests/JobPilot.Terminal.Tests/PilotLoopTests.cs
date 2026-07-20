@@ -17,6 +17,125 @@ public class PilotLoopTests
     private static PilotCycle Cycle(int sleep, PilotCycleStatus status = PilotCycleStatus.Ok) =>
         new(Guid.NewGuid(), status, sleep);
 
+    private static DateTimeOffset Fresh => DateTimeOffset.UtcNow;
+    private static DateTimeOffset Stale => DateTimeOffset.UtcNow - PilotLoop.LivenessWindow - TimeSpan.FromMinutes(5);
+
+    [Fact]
+    public async Task RunIteration_ExtendsTheWait_WhenTheCycleTimesOutButActivityIsFresh()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude", DefaultActivity = Fresh };
+        env.SentinelResults.Enqueue(PilotWaitResult.Timeout);              // first cap lapses
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(20)));  // the extended await catches the sentinel
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        // A second await instead of a nudge; no ladder intervention.
+        Assert.Equal(["inject-cycle", "await", "await", "sleep:20"], env.Actions);
+        Assert.Equal([PilotLoop.ExtendReport], env.Reports);
+        Assert.DoesNotContain(PilotLoop.NudgeReport, env.Reports);
+        Assert.DoesNotContain("stop", env.Actions);
+        Assert.Equal(0, loop.ConsecutiveTimeouts);
+    }
+
+    [Fact]
+    public async Task RunIteration_ExtendsTheWait_WhenAStallFiresButActivityIsFresh()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude", DefaultActivity = Fresh };
+        env.SentinelResults.Enqueue(PilotWaitResult.Stalled);
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(45)));
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal(["inject-cycle", "await", "await", "sleep:45"], env.Actions);
+        Assert.Equal([PilotLoop.ExtendReport], env.Reports);
+        Assert.DoesNotContain("inject-nudge", env.Actions);
+    }
+
+    [Fact]
+    public async Task RunIteration_ClimbsTheLadder_WhenActivityIsStale()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude", DefaultActivity = Stale };
+        var loop = new PilotLoop(env); // every await times out
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal(
+            ["inject-cycle", "await", "inject-nudge", "await", "inject-skip", "await", "stop"],
+            env.Actions);
+        Assert.DoesNotContain(PilotLoop.ExtendReport, env.Reports);
+        Assert.Equal(1, loop.ConsecutiveTimeouts);
+    }
+
+    [Fact]
+    public async Task RunIteration_ClimbsTheLadder_WhenActivityIsNull()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude" }; // DefaultActivity is null
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal(
+            ["inject-cycle", "await", "inject-nudge", "await", "inject-skip", "await", "stop"],
+            env.Actions);
+        Assert.DoesNotContain(PilotLoop.ExtendReport, env.Reports);
+    }
+
+    [Fact]
+    public async Task RunIteration_ClimbsTheLadder_WhenFreshButTheCycleCapIsExceeded()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude", DefaultActivity = Fresh };
+        var loop = new PilotLoop(env); // every await times out, so extension runs to the cap
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        // Two extension re-awaits (20 -> 40 -> 60) then the cap forces the nudge/skip/kill ladder.
+        Assert.Equal(
+            ["inject-cycle", "await", "await", "await", "inject-nudge", "await", "inject-skip", "await", "stop"],
+            env.Actions);
+        Assert.Equal(1, env.Reports.Count(r => r == PilotLoop.ExtendReport)); // journaled at most once per cycle
+        Assert.Contains(PilotLoop.KillReport, env.Reports);
+        Assert.Equal(1, loop.ConsecutiveTimeouts);
+    }
+
+    [Fact]
+    public async Task RunIteration_ClimbsTheLadder_WhenTheActivityProbeThrows()
+    {
+        var env = new FakePilotEnvironment { RunningProvider = "claude", ActivityThrows = true };
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        // A throwing probe falls open to the ladder exactly like a stale one.
+        Assert.Equal(
+            ["inject-cycle", "await", "inject-nudge", "await", "inject-skip", "await", "stop"],
+            env.Actions);
+        Assert.DoesNotContain(PilotLoop.ExtendReport, env.Reports);
+        Assert.Equal(1, loop.ConsecutiveTimeouts);
+    }
+
+    [Fact]
+    public async Task RunIteration_ProbesBeforeSkip_WhenActivityGoesFreshAfterTheNudge()
+    {
+        // Stale at the first probe (so the nudge fires), then fresh before the skip: the second probe extends.
+        var env = new FakePilotEnvironment { RunningProvider = "claude" };
+        env.ActivityResults.Enqueue(Stale);  // probe A: still stale -> nudge
+        env.ActivityResults.Enqueue(Fresh);  // probe B (before skip): fresh -> extend
+        env.SentinelResults.Enqueue(PilotWaitResult.Timeout);              // initial cap
+        env.SentinelResults.Enqueue(PilotWaitResult.Timeout);              // nudge grace
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(30)));  // extended await catches the sentinel
+        var loop = new PilotLoop(env);
+
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Equal(
+            ["inject-cycle", "await", "inject-nudge", "await", "await", "sleep:30"],
+            env.Actions);
+        Assert.Equal([PilotLoop.NudgeReport, PilotLoop.ExtendReport], env.Reports);
+        Assert.DoesNotContain("inject-skip", env.Actions);
+    }
+
     [Fact]
     public async Task RunIteration_StartsThenInjectsThenSleepsOnSentinel()
     {

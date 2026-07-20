@@ -93,11 +93,35 @@ public class StallDetectorTests
     }
 
     [Fact]
-    public void ErrorLoop_FiresOnFiveErrorLinesWithinTheWindow()
+    public void ErrorLoop_FiresOnFiveErrorHitsAcrossAtMostTwoLines()
     {
         var detector = new StallDetector();
         var last = PilotStallReason.None;
 
+        // A real retry loop: two error lines alternating (a request that keeps refusing then timing out).
+        string[] lines =
+        [
+            "Error: connect ECONNREFUSED",
+            "request timeout after 30s",
+            "Error: connect ECONNREFUSED",
+            "request timeout after 30s",
+            "Error: connect ECONNREFUSED",
+        ];
+        for (var i = 0; i < lines.Length; i++)
+        {
+            last = FeedLine(detector, lines[i], T0 + TimeSpan.FromSeconds(20 * i));
+        }
+
+        Assert.Equal(PilotStallReason.ErrorLoop, last);
+    }
+
+    [Fact]
+    public void ErrorLoop_DoesNotFire_WhenFiveDistinctErrorLines()
+    {
+        var detector = new StallDetector();
+        var last = PilotStallReason.None;
+
+        // Five error-shaped but all-different lines: benign narration or varied job text, not a retry loop.
         string[] lines =
         [
             "Error: connect ECONNREFUSED",
@@ -111,7 +135,47 @@ public class StallDetectorTests
             last = FeedLine(detector, lines[i], T0 + TimeSpan.FromSeconds(20 * i));
         }
 
+        Assert.Equal(PilotStallReason.None, last);
+    }
+
+    [Fact]
+    public void ErrorLoop_MatchesTimeoutAndEconnVariants_OnWordBoundaries()
+    {
+        var detector = new StallDetector();
+        var last = PilotStallReason.None;
+
+        // Two distinct lines exercising the timed-out / ETIMEDOUT variants; five hits across two lines fires.
+        string[] lines =
+        [
+            "operation timed out",
+            "socket ETIMEDOUT",
+            "operation timed out",
+            "socket ETIMEDOUT",
+            "operation timed out",
+        ];
+        for (var i = 0; i < lines.Length; i++)
+        {
+            last = FeedLine(detector, lines[i], T0 + TimeSpan.FromSeconds(15 * i));
+        }
+
         Assert.Equal(PilotStallReason.ErrorLoop, last);
+    }
+
+    [Fact]
+    public void ErrorLoop_RequiresWholeWordMatch_NotSubstring()
+    {
+        var detector = new StallDetector();
+        var last = PilotStallReason.None;
+
+        // "terror"/"mirror" embed "error" as a substring but are not the word; the word-boundary regex ignores them.
+        // Two lines alternating (never 6 in a row, so RepeatedOutput cannot fire either).
+        string[] nearMisses = ["the terrorized queue", "mirrored the config again"];
+        for (var i = 0; i < 6; i++)
+        {
+            last = FeedLine(detector, nearMisses[i % 2], T0 + TimeSpan.FromSeconds(10 * i));
+        }
+
+        Assert.Equal(PilotStallReason.None, last);
     }
 
     [Fact]
