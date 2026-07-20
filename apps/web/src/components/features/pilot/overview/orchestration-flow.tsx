@@ -131,7 +131,7 @@ export function OrchestrationFlow(props: OrchestrationFlowProps): ReactElement {
         proOptions={{ hideAttribution: true }}
         minZoom={0.5}
         maxZoom={1.5}
-        colorMode="dark"
+        colorMode={theme.palette.mode}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1} color={dim} />
       </ReactFlow>

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Box, Stack, Typography } from "@mui/material";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
@@ -183,7 +183,7 @@ interface PipelineFunnelProps {
 }
 
 /** Funnel of the campaign's job pipeline (found → applied) with skip/fail drop-off branches. */
-export function PipelineFunnel(props: PipelineFunnelProps): ReactElement | null {
+export function PipelineFunnel(props: PipelineFunnelProps): ReactNode {
   const { campaign } = props;
   const { rows, max } = buildRows(campaign);
 

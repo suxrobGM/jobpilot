@@ -1,13 +1,6 @@
-import type { PrismaClient } from "@/generated/prisma/client";
-import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { resolveMinScore } from "./campaign-config";
 import { GATHER_CAP } from "./constants";
-
-/** Deps for the job-status mutations, mirroring the expiry sweep's shape. */
-interface JobMutationDeps {
-  prisma: PrismaClient;
-  campaignJobs: CampaignJobService;
-}
+import type { JobMutationDeps } from "./expiry";
 
 /**
  * Promote already-scored pending jobs of in-progress auto-apply campaigns before the gathers, so a
@@ -40,7 +33,9 @@ export async function promoteScoredPendingJobs(
 
   // Jobs of the same campaign share one threshold; parse each campaign's config at most once.
   const thresholdByCampaign = new Map<string, number>();
-  const decisions = rows.map((job) => {
+  // Sequential: recordJobResult opens an interactive transaction, so a whole discovery batch fired
+  // at once would exhaust the Prisma pool (P2024) and race same-campaign summary recomputes.
+  for (const job of rows) {
     let threshold = thresholdByCampaign.get(job.campaignId);
     if (threshold === undefined) {
       threshold = resolveMinScore(job.campaign.config, fallbackMinScore);
@@ -48,12 +43,12 @@ export async function promoteScoredPendingJobs(
     }
     const score = job.matchScore ?? 0;
     if (score >= threshold) {
-      return campaignJobs.patchJob(userId, job.campaignId, job.key, { status: "approved" });
+      await campaignJobs.patchJob(userId, job.campaignId, job.key, { status: "approved" });
+    } else {
+      await campaignJobs.recordJobResult(userId, job.campaignId, job.key, {
+        outcome: "skipped",
+        skipReason: `Below minimum match score (${score} < ${threshold})`,
+      });
     }
-    return campaignJobs.recordJobResult(userId, job.campaignId, job.key, {
-      outcome: "skipped",
-      skipReason: `Below minimum match score (${score} < ${threshold})`,
-    });
-  });
-  await Promise.all(decisions);
+  }
 }

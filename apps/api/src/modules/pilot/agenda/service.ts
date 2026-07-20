@@ -55,16 +55,16 @@ export class AgendaService {
 
   async compile(userId: string) {
     const now = new Date();
-    const { config, goals } = await loadInstructions(this.prisma, userId);
-
-    // Pre-gather mutations so the compiled agenda reflects them. Self-heal first (a rescued campaign's
-    // pending rows then get promoted); expiry and promotion are independent, so run them in parallel.
-    // Promotion flips scored-pending rows to approved so they surface as apply work this same cycle.
-    await this.campaigns.selfHealForPilot(userId);
-    await Promise.all([
+    // Pre-gather mutations so the compiled agenda reflects them. Config, expiry, and self-heal are
+    // mutually independent; promotion trails all three - it needs config.minScore and only sees a
+    // campaign the heal already flipped back to in_progress. It flips scored-pending rows to
+    // approved so they surface as apply work this same cycle.
+    const [{ config, goals }] = await Promise.all([
+      loadInstructions(this.prisma, userId),
       runExpiry(this.jobDeps, userId, now),
-      promoteScoredPendingJobs(this.jobDeps, userId, config.minScore),
+      this.campaigns.selfHealForPilot(userId),
     ]);
+    await promoteScoredPendingJobs(this.jobDeps, userId, config.minScore);
 
     const [
       openQuestions,

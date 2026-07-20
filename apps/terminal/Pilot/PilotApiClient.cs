@@ -59,17 +59,17 @@ public sealed class PilotApiClient : IDisposable
     /// Probes the API for the newest agent activity, gating the watchdog ladder. Never throws: any failure
     /// returns null so the caller falls open to the old timeout behavior instead of blocking a cycle.
     /// </summary>
-    public async Task<DateTimeOffset?> GetLastActivityAsync(string apiUrl, string apiToken)
+    public async Task<DateTimeOffset?> GetLastActivityAsync(string apiUrl, string apiToken, CancellationToken ct = default)
     {
         try
         {
             return await SendGuardedAsync<DateTimeOffset?>(apiUrl, apiToken, HttpMethod.Get, "/api/pilot/activity",
-                content: null, "Pilot activity probe was rejected ({Status}).", async (response, ct) =>
+                content: null, "Pilot activity probe was rejected ({Status}).", async (response, token) =>
                 {
-                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var json = await response.Content.ReadAsStringAsync(token);
                     var activity = JsonSerializer.Deserialize(json, AppJsonContext.Default.PilotActivityResponse);
                     return activity?.LastActivityAt;
-                });
+                }, ct);
         }
         catch (Exception ex)
         {
@@ -92,14 +92,17 @@ public sealed class PilotApiClient : IDisposable
         string path,
         HttpContent? content,
         string rejectedLog,
-        Func<HttpResponseMessage, CancellationToken, Task<T?>> onSuccess)
+        Func<HttpResponseMessage, CancellationToken, Task<T?>> onSuccess,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(apiUrl) || string.IsNullOrWhiteSpace(apiToken))
         {
             return default; // Unpaired or a legacy pairing with no API URL; no channel to consult.
         }
 
-        using var cts = new CancellationTokenSource(RequestTimeout);
+        // Linked so a cancelled conductor aborts the probe instead of waiting out the request timeout.
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(RequestTimeout);
         using var request = new HttpRequestMessage(method, $"{apiUrl.TrimEnd('/')}{path}") { Content = content };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
 

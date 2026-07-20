@@ -40,8 +40,8 @@ public sealed partial class StallDetector
     // Cap the unterminated residue: a spinner redrawing via \r never emits '\n', so nothing else shrinks pending.
     private const int MaxPendingChars = 8192;
 
-    // Word-boundary anchored so substrings ("terror", "mirrored") never count; covers the common transport errors.
-    [GeneratedRegex(@"\b(error|exception|failed to|econn(refused|reset)?|etimedout|timed? ?out)\b", RegexOptions.IgnoreCase)]
+    // Leading \b only, so "terror"/"mirrored" never count while suffixes still do ("errors", "ECONNABORTED").
+    [GeneratedRegex(@"\b(error\w*|exception\w*|failed to|econn\w*|etimedout|timed? ?out)\b", RegexOptions.IgnoreCase)]
     private static partial Regex ErrorPattern();
 
     // CSI/OSC and two-char escapes; the rest of normalization collapses remaining whitespace.

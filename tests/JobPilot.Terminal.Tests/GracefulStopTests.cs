@@ -4,14 +4,14 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-public class HostShutdownTests
+public class GracefulStopTests
 {
     [Fact]
-    public async Task BeginShutdown_StopsTheApplication_AfterTheResponseFlushDelay()
+    public async Task Schedule_StopsTheApplication_AfterTheResponseFlushDelay()
     {
         var lifetime = new FakeLifetime();
 
-        HostShutdown.BeginShutdown(lifetime);
+        GracefulStop.Schedule(lifetime);
 
         // The stop is deferred behind a short flush delay; it must land shortly after, not synchronously.
         Assert.False(lifetime.Stopped);

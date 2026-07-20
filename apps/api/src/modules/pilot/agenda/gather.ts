@@ -3,7 +3,7 @@ import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
-import { parseCampaignConfig, resolveMinScore } from "./campaign-config";
+import { parseCampaignConfig } from "./campaign-config";
 import { GATHER_CAP, SCORE_PENDING_BATCH, WARM_INTRO_MIN_SCORE } from "./constants";
 import type {
   AgendaApprovedJob,
@@ -168,7 +168,7 @@ export async function gatherScorePendingCampaigns(
       query: c.query,
       board,
       resumeId: config?.resumeId,
-      minScore: resolveMinScore(c.config, fallbackMinScore),
+      minScore: config?.minScore ?? fallbackMinScore,
       pendingCount: countByCampaign.get(c.campaignId) ?? c.jobs.length,
       entries: c.jobs,
     });

@@ -146,7 +146,7 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
     public async Task<DateTimeOffset?> GetLastActivityAsync(CancellationToken ct)
     {
         var pairing = store.Current;
-        return pairing is null ? null : await api.GetLastActivityAsync(pairing.ApiUrl, pairing.ApiToken);
+        return pairing is null ? null : await api.GetLastActivityAsync(pairing.ApiUrl, pairing.ApiToken, ct);
     }
 
     private void OnOutput(byte[] data)

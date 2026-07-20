@@ -25,9 +25,13 @@ export function formatRelativeTime(value: string | Date): string {
     : formatDistanceToNowStrict(date, { locale: compactLocale });
 }
 
-/** Compact countdown to a future timestamp, e.g. `3h`. Empty string for invalid dates - same clock, read as a countdown at the call site. */
+/** Compact countdown to a future timestamp, e.g. `3h`. Strict distance is unsigned, so an already-passed target floors at `0s` rather than reading as time remaining. */
 export function formatTimeUntil(value: string | Date): string {
-  return formatRelativeTime(value);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return date.getTime() <= Date.now() ? "0s" : formatRelativeTime(date);
 }
 
 /** Compact elapsed span between two timestamps, e.g. `1m 20s`. Empty string if either is invalid. */
@@ -40,13 +44,15 @@ export function formatSpanBetween(start: string | Date, end: string | Date): str
   return formatDistanceStrict(from, to, { locale: compactLocale });
 }
 
-/** Human-readable date, e.g. `Jul 19, 2026`. Takes `Date | string` because Eden types `z.date()` fields as `Date`. */
+/** Human-readable date in the viewer's locale, e.g. `Jul 19, 2026`. Takes `Date | string` because Eden types `z.date()` fields as `Date`. */
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) {
     return "-";
   }
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "-" : format(date, "MMM d, yyyy");
+  return Number.isNaN(date.getTime())
+    ? "-"
+    : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
 /** Locale month + day for a timeline bucket. UTC-pinned: the bucket is UTC midnight, which localises to the previous day west of Greenwich. */

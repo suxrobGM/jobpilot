@@ -143,7 +143,7 @@ public static class TerminalEndpoints
             // Stop the PTY now; StopApplication then cancels the pilot conductor loop. pilot.json's Enabled flag is
             // deliberately left as-is so a later start resumes the pilot via ResumeIfEnabledAsync.
             session.Stop();
-            HostShutdown.BeginShutdown(lifetime);
+            GracefulStop.Schedule(lifetime);
             return TypedResults.Ok(new ShutdownResult { Ok = true });
         });
 
