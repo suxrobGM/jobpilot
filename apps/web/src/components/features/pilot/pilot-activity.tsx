@@ -3,7 +3,17 @@
 import { type ReactElement, type ReactNode, useState } from "react";
 import type { PilotJournalEntry, PilotJournalKind } from "@jobpilot/contracts/pilot";
 import { Download } from "@mui/icons-material";
-import { Box, Button, Chip, Divider, LinearProgress, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  Divider,
+  LinearProgress,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
@@ -11,6 +21,7 @@ import { PILOT_JOURNAL_PAGE_SIZE, pilotQueries } from "@/api/queries";
 import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/notification-provider";
+import { CycleTimeline } from "./journal/cycle-timeline";
 import { dedupeById, JournalRow, KIND_META } from "./journal/journal-row";
 import { LiveStatusChip } from "./journal/live-status-chip";
 import { useJournalLive } from "./journal/use-journal-live";
@@ -30,6 +41,7 @@ export function PilotActivity(): ReactElement {
   const [cursor, setCursor] = useState<string | null | undefined>(undefined);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedKinds, setSelectedKinds] = useState<PilotJournalKind[]>([]);
+  const [view, setView] = useState<"flat" | "cycle">("flat");
 
   const activeCursor = cursor === undefined ? (firstPage.data?.nextCursor ?? null) : cursor;
 
@@ -78,6 +90,8 @@ export function PilotActivity(): ReactElement {
     body = <EmptyState variant="inline" title="No journal entries yet." />;
   } else if (visible.length === 0) {
     body = <EmptyState variant="inline" title="No entries match the selected filters." />;
+  } else if (view === "cycle") {
+    body = <CycleTimeline entries={visible} />;
   } else {
     body = (
       <Stack spacing={1.5} divider={<Divider />}>
@@ -129,6 +143,16 @@ export function PilotActivity(): ReactElement {
             </Typography>
           )}
         </Stack>
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={view}
+          onChange={(_e, next) => next && setView(next)}
+          aria-label="Journal view"
+        >
+          <ToggleButton value="flat">Flat feed</ToggleButton>
+          <ToggleButton value="cycle">By cycle</ToggleButton>
+        </ToggleButtonGroup>
         {body}
         {activeCursor && (
           <Box>
