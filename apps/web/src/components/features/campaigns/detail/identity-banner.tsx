@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { PersonOutlined } from "@mui/icons-material";
+import { PersonOutlined, WarningAmberOutlined } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
@@ -14,6 +14,17 @@ import { userQueries } from "@/api/queries";
 export function CampaignIdentityBanner(): ReactNode {
   const query = useApiQuery(userQueries.detail());
   const profile = query.data?.user;
+
+  // Staying silent on failure reads as "identity confirmed", which is the one thing
+  // this banner exists to rule out.
+  if (query.isError) {
+    return (
+      <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
+        <WarningAmberOutlined fontSize="sm" color="warning" />
+        <Typography variant="body2">Couldn't confirm which profile is applying.</Typography>
+      </Stack>
+    );
+  }
 
   if (!profile) {
     return null;

@@ -50,12 +50,29 @@ export function PushSettings(): ReactNode {
   useEffect(() => {
     const ok = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
     setSupported(ok);
-    if (ok) {
-      setPermission(Notification.permission);
-      navigator.serviceWorker.getRegistration().then((reg) => {
-        reg?.pushManager.getSubscription().then((sub) => setCurrentEndpoint(sub?.endpoint ?? null));
-      });
+    if (!ok) {
+      return;
     }
+    setPermission(Notification.permission);
+
+    // getRegistration/getSubscription reject in some privacy modes; treating that as
+    // "no device subscribed" is the safe read, but it must not outlive the mount.
+    let alive = true;
+    const readEndpoint = async (): Promise<string | null> => {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      return sub?.endpoint ?? null;
+    };
+    readEndpoint()
+      .catch(() => null)
+      .then((endpoint) => {
+        if (alive) {
+          setCurrentEndpoint(endpoint);
+        }
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const enable = async (): Promise<void> => {
@@ -91,13 +108,15 @@ export function PushSettings(): ReactNode {
   const removeDevice = async (endpoint: string): Promise<void> => {
     setBusy(true);
     try {
+      // Server first: unsubscribing locally mints a new endpoint on re-enable, so a
+      // failure after the local teardown would orphan the row and keep pushing to it.
+      await remove.mutateAsync(endpoint);
       if (endpoint === currentEndpoint) {
         const reg = await navigator.serviceWorker.getRegistration();
         const sub = await reg?.pushManager.getSubscription();
         await sub?.unsubscribe();
         setCurrentEndpoint(null);
       }
-      await remove.mutateAsync(endpoint);
     } catch {
       toast.error("Could not remove that device.");
     } finally {

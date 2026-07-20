@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useRef, useState } from "react";
 import { CAMPAIGN_JOB_STATUSES, type CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Autorenew, Clear, Replay } from "@mui/icons-material";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
@@ -70,10 +70,19 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const visible = jobs.data?.items ?? [];
   const total = jobs.data?.pagination.total ?? 0;
 
+  // The grid keeps off-page ids selected (keepNonExistentRowsSelected), so resolving
+  // against the current page alone would silently drop selections made on other pages.
+  const seenJobs = useRef(new Map<string, CampaignJobDto>());
+  for (const job of visible) {
+    seenJobs.current.set(job.id, job);
+  }
+
   // Re-apply / rescan drive the agent, so they're desktop-only.
   const canReapply = campaign.status !== "in_progress" && agentAvailable;
   const selected = canReapply
-    ? resolveSelectedRows(selection, visible).filter((j) => isReapplicable(j.status))
+    ? resolveSelectedRows(selection, [...seenJobs.current.values()], visible).filter((j) =>
+        isReapplicable(j.status),
+      )
     : [];
   const selectedSkipped = selected.filter((j) => j.status === "skipped");
   const selectedForReapply = selected.filter((job) => job.status !== "skipped");
@@ -87,9 +96,11 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
     for (const key of invalidations.campaign) queryClient.invalidateQueries({ queryKey: key });
   };
 
-  const reapply = useApiMutation<number, void>(
+  // Per-job requests commit independently, so a rejection can't invalidate the whole
+  // batch - report the split instead of surfacing the first error as a total failure.
+  const reapply = useApiMutation<{ ok: number; failed: number }, void>(
     async () => {
-      const results = await Promise.all(
+      const results = await Promise.allSettled(
         selectedForReapply.map((job) => {
           const endpoint = api.campaigns({ id: campaign.campaignId }).jobs({ key: job.key });
           if (job.status === "failed") return endpoint.retry.post({});
@@ -97,16 +108,19 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
           return endpoint.patch({ status: "approved" });
         }),
       );
-      const failure = results.find((r) => r.error);
-      return failure?.error
-        ? { data: null, error: failure.error }
-        : { data: selectedForReapply.length, error: null };
+      const ok = results.filter((r) => r.status === "fulfilled" && !r.value.error).length;
+      return { data: { ok, failed: results.length - ok }, error: null };
     },
     {
       invalidate: invalidations.campaign,
-      successMessage: (n) => `Re-applying ${plural(n, "job")}`,
-      onSuccess: () => {
-        void agent.injectSkill("apply", `campaign ${campaign.campaignId}`);
+      successMessage: ({ ok, failed }) =>
+        failed === 0
+          ? `Re-applying ${plural(ok, "job")}`
+          : `Re-applying ${ok} of ${plural(ok + failed, "job")} - ${failed} failed`,
+      onSuccess: ({ ok }) => {
+        if (ok > 0) {
+          void agent.injectSkill("apply", `campaign ${campaign.campaignId}`);
+        }
         setSelection(EMPTY_SELECTION);
       },
     },

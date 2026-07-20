@@ -85,12 +85,13 @@ export function usePilotToggle(): PilotToggle {
       }
       try {
         await pilotDisable();
+        refreshState();
+        toast.success("Pilot disabled.");
       } catch (error) {
         // API is already off; a missing host just means nothing is driving the loop.
-        toast.error(describeHostError(error));
+        refreshState();
+        toast.warning(`Pilot disabled on the server. ${describeHostError(error)}`);
       }
-      refreshState();
-      toast.success("Pilot disabled.");
     } finally {
       setBusy(false);
     }
