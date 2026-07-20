@@ -49,7 +49,7 @@ public sealed record PilotStatus
     /// <summary>Whether a provider pairing is stored.</summary>
     public required bool Paired { get; init; }
 
-    /// <summary>Whether the conductor is actively driving a session right now.</summary>
+    /// <summary>Whether the coordinator is actively driving a session right now.</summary>
     public required bool Conducting { get; init; }
 
     /// <summary>When the last cycle sentinel was seen.</summary>
@@ -61,8 +61,6 @@ public sealed record PilotStatus
     /// <summary>Consecutive watchdog kills; reset by a completed cycle.</summary>
     public required int ConsecutiveTimeouts { get; init; }
 
-    /// <summary>Whether the pilot event stream (SSE wake channel) is connected. Additive; absent on older hosts.</summary>
-    public bool Connected { get; init; }
 }
 
 /// <summary>Acknowledges a host shutdown request; the process exits shortly after this response flushes.</summary>

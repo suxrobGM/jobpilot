@@ -107,4 +107,16 @@ public sealed class PilotStoreTests : IDisposable
         var mode = File.GetUnixFileMode(path);
         Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, mode);
     }
+
+    [Fact]
+    public void Save_AtomicallyReplacesThePairing_WithoutLeavingTemporaryFiles()
+    {
+        var store = NewStore();
+        store.Save(Pairing());
+
+        store.Save(Pairing(enabled: false));
+
+        Assert.False(NewStore().Current!.Enabled);
+        Assert.Empty(Directory.EnumerateFiles(temp.Root, ".pilot.json.*.tmp"));
+    }
 }

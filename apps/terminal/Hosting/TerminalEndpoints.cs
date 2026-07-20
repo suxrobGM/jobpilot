@@ -6,7 +6,7 @@ using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Updates;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace JobPilot.Terminal;
+namespace JobPilot.Terminal.Hosting;
 
 /// <summary>Maps the terminal host API.</summary>
 public static class TerminalEndpoints
@@ -16,9 +16,9 @@ public static class TerminalEndpoints
     /// <summary>Maps health, session, update, and WebSocket endpoints.</summary>
     public static WebApplication MapTerminalEndpoints(this WebApplication app)
     {
-        app.MapGet("/healthz", (SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotConductor pilot) => TypedResults.Ok(CurrentStatus(session, install, registrar, pilot)));
+        app.MapGet("/healthz", (SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotCoordinator pilot) => TypedResults.Ok(CurrentStatus(session, install, registrar, pilot)));
 
-        app.MapPost("/sessions/start", Results<Ok<SessionStatus>, ProblemHttpResult> (StartSessionRequest request, SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotConductor pilot) =>
+        app.MapPost("/sessions/start", Results<Ok<SessionStatus>, ProblemHttpResult> (StartSessionRequest request, SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotCoordinator pilot) =>
         {
             if (!Viewport.IsValid(request.Cols, request.Rows))
             {
@@ -27,7 +27,13 @@ public static class TerminalEndpoints
 
             try
             {
-                session.Start(request.Provider, request.Cols, request.Rows, request.ApiToken, request.WebUrl, request.ApiUrl);
+                session.Start(new SessionStartOptions(
+                    request.Provider,
+                    request.Cols,
+                    request.Rows,
+                    request.ApiToken,
+                    request.ApiUrl,
+                    request.WebUrl));
             }
             catch (ArgumentException ex)
             {
@@ -43,7 +49,8 @@ public static class TerminalEndpoints
             return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
         });
 
-        app.MapPost("/sessions/inject", async Task<Results<Ok, ProblemHttpResult>> (InjectRequest request, SessionManager session) =>
+        app.MapPost("/sessions/inject", async Task<Results<Ok, ProblemHttpResult>> (
+            InjectRequest request, SessionManager session, CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(request.Command))
             {
@@ -58,7 +65,7 @@ public static class TerminalEndpoints
             InjectResult result;
             try
             {
-                result = await session.Inject(request.Command, request.Provider);
+                result = await session.Inject(request.Command, request.Provider, ct);
             }
             catch (ArgumentException ex)
             {
@@ -73,14 +80,14 @@ public static class TerminalEndpoints
             };
         });
 
-        app.MapDelete("/sessions/current", (SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotConductor pilot) =>
+        app.MapDelete("/sessions/current", (SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotCoordinator pilot) =>
         {
             session.Stop();
             return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
         });
 
         app.MapPost("/pilot/enable", Results<Ok<SessionStatus>, ProblemHttpResult> (
-            PilotEnableRequest request, PilotStore store, PilotConductor pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
+            PilotEnableRequest request, PilotStore store, PilotCoordinator pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
         {
             string provider;
             try
@@ -97,21 +104,31 @@ public static class TerminalEndpoints
                 return BadRequest("apiToken must be a non-empty string.");
             }
 
+            if (!IsHttpUrl(request.ApiUrl))
+            {
+                return BadRequest("apiUrl must be an absolute HTTP(S) URL.");
+            }
+
+            if (!IsHttpUrl(request.WebUrl))
+            {
+                return BadRequest("webUrl must be an absolute HTTP(S) URL.");
+            }
+
             store.Save(new PilotPairing
             {
                 Provider = provider,
                 ApiToken = request.ApiToken,
-                ApiUrl = request.ApiUrl ?? string.Empty,
-                WebUrl = request.WebUrl ?? string.Empty,
+                ApiUrl = request.ApiUrl!,
+                WebUrl = request.WebUrl!,
                 Enabled = true,
             });
             pilot.WakeUp();
             return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
         });
 
-        app.MapPost("/pilot/disable", (PilotStore store, PilotConductor pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
+        app.MapPost("/pilot/disable", (PilotStore store, PilotCoordinator pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
         {
-            // Keep the pairing and the session; the conductor interrupts a mid-cycle turn and stops driving.
+            // Keep the pairing and the session; the coordinator interrupts a mid-cycle turn and stops driving.
             store.SetEnabled(false);
             pilot.WakeUp();
             return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
@@ -140,7 +157,7 @@ public static class TerminalEndpoints
 
         app.MapPost("/shutdown", (SessionManager session, IHostApplicationLifetime lifetime) =>
         {
-            // Stop the PTY now; StopApplication then cancels the pilot conductor loop. pilot.json's Enabled flag is
+            // Stop the PTY now; StopApplication then cancels the Pilot coordinator. pilot.json's Enabled flag is
             // deliberately left as-is so a later start resumes the pilot via ResumeIfEnabledAsync.
             session.Stop();
             GracefulStop.Schedule(lifetime);
@@ -168,7 +185,11 @@ public static class TerminalEndpoints
     private static ProblemHttpResult Conflict(string detail) => TypedResults.Problem(
         title: "Inject rejected", detail: detail, statusCode: StatusCodes.Status409Conflict);
 
-    private static SessionStatus CurrentStatus(SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotConductor pilot) => new()
+    internal static bool IsHttpUrl(string? value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+
+    private static SessionStatus CurrentStatus(SessionManager session, HostInstall install, ProtocolRegistrar registrar, PilotCoordinator pilot) => new()
     {
         Status = install.PathsError is null ? SessionStatus.StatusOk : SessionStatus.StatusDegraded,
         Session = session.State == SessionState.Running ? SessionStatus.SessionRunning : SessionStatus.SessionStopped,

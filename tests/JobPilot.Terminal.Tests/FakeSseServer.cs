@@ -60,6 +60,15 @@ internal sealed class FakeSseStream : Stream
     public override int Read(byte[] buffer, int offset, int count) =>
         ReadAsync(buffer.AsMemory(offset, count)).AsTask().GetAwaiter().GetResult();
 
+    /// <summary>Set when the listener releases the response, which is how a teardown is observed.</summary>
+    public bool Disposed { get; private set; }
+
+    protected override void Dispose(bool disposing)
+    {
+        Disposed = true;
+        base.Dispose(disposing);
+    }
+
     public override bool CanRead => true;
     public override bool CanSeek => false;
     public override bool CanWrite => false;

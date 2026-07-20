@@ -33,6 +33,19 @@ public class InstallPathsTests
     }
 
     [Fact]
+    public void CandidateRoots_PrefersTheExecutableLayout_OverTheLaunchDirectory()
+    {
+        using var published = new TempDir();
+        using var checkout = new TempDir();
+        published.WriteValidPluginTree();
+        checkout.WriteValidPluginTree();
+
+        var paths = InstallPaths.ResolveFrom(InstallPaths.CandidateRoots(published.Root, checkout.Root));
+
+        Assert.Equal(published.Root, paths.WorkingDir);
+    }
+
+    [Fact]
     public void ResolveFrom_SkipsRootsMissingTheCodexManifest()
     {
         using var incomplete = new TempDir();

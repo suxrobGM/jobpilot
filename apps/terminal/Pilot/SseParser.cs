@@ -5,29 +5,6 @@ namespace JobPilot.Terminal.Pilot;
 /// <summary>One parsed SSE frame: its optional <c>event:</c> name and joined <c>data:</c> payload.</summary>
 internal readonly record struct SseFrame(string? Event, string Data);
 
-/// <summary>Exponential reconnect backoff: 5s doubling to a 5min cap. Pure so the schedule is unit-testable.</summary>
-internal struct SseBackoff
-{
-    private int failures;
-
-    public readonly TimeSpan Peek()
-    {
-        var seconds = Math.Min(
-            PilotEventListener.InitialBackoff.TotalSeconds * Math.Pow(2, failures),
-            PilotEventListener.MaxBackoff.TotalSeconds);
-        return TimeSpan.FromSeconds(seconds);
-    }
-
-    public TimeSpan Next()
-    {
-        var delay = Peek();
-        failures++;
-        return delay;
-    }
-
-    public void Reset() => failures = 0;
-}
-
 /// <summary>
 /// Incremental SSE frame parser. Buffers partial lines so a frame split across arbitrary read chunks still
 /// dispatches on its terminating blank line; comment and unknown-field lines are ignored.

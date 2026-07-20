@@ -22,7 +22,7 @@ public readonly record struct PilotWaitResult(PilotWaitOutcome Outcome, PilotCyc
 }
 
 /// <summary>Side effects the Pilot loop drives, abstracted from the real PTY so the state machine is testable.</summary>
-public interface IPilotEnvironment
+public interface IPilotRuntime
 {
     /// <summary>Provider of the running session, or null when stopped.</summary>
     string? RunningProvider { get; }
@@ -57,8 +57,8 @@ public interface IPilotEnvironment
     /// <summary>Polls briefly while conducting is paused (user-driven provider mismatch).</summary>
     Task PauseAsync(CancellationToken ct);
 
-    /// <summary>Reports a conductor intervention to the API journal. Best-effort; never throws.</summary>
-    Task ReportSystemAsync(string summary);
+    /// <summary>Reports a coordinator intervention to the API journal. Best-effort; never throws.</summary>
+    Task ReportSystemAsync(string summary, CancellationToken ct);
 
     /// <summary>Newest server-side agent activity, or null on any failure (fail-open to the timeout ladder).</summary>
     Task<DateTimeOffset?> GetLastActivityAsync(CancellationToken ct);

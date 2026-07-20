@@ -4,17 +4,17 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-public sealed class PilotConductorTests : IDisposable
+public sealed class PilotCoordinatorTests : IDisposable
 {
     private readonly TempDir temp = new();
     private readonly PilotStore store;
-    private readonly FakePilotEnvironment env = new() { BlockWhenScriptless = true };
-    private readonly PilotConductor conductor;
+    private readonly FakePilotRuntime env = new() { BlockWhenScriptless = true };
+    private readonly PilotCoordinator conductor;
 
-    public PilotConductorTests()
+    public PilotCoordinatorTests()
     {
         store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
-        conductor = new PilotConductor(store, env, NullLogger<PilotConductor>.Instance);
+        conductor = new PilotCoordinator(store, env, NullLogger<PilotCoordinator>.Instance);
     }
 
     public void Dispose()
@@ -114,7 +114,7 @@ public sealed class PilotConductorTests : IDisposable
         // No WakeUp: a fresh host must resume on its own from the persisted pairing.
         await TestWait.Until(() => env.Actions.Contains("inject-cycle"));
         Assert.True(conductor.BuildStatus().Conducting);
-        Assert.Contains(PilotConductor.ResumeReport, env.Reports);
+        Assert.Contains(PilotCoordinator.ResumeReport, env.Reports);
 
         store.SetEnabled(false);
         conductor.WakeUp();
@@ -136,5 +136,17 @@ public sealed class PilotConductorTests : IDisposable
         store.SetEnabled(false);
         conductor.WakeUp();
         await conductor.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public void WakeUp_CoalescesABurstIntoOnePendingPulse()
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            conductor.WakeUp();
+        }
+
+        Assert.Equal(100, conductor.WakeCount);
+        Assert.Equal(1, conductor.PendingWakeCount);
     }
 }

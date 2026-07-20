@@ -75,7 +75,6 @@ public sealed class PilotEventListenerTests
     {
         await using var h = await Harness.StartAsync();
 
-        Assert.True(h.Conductor.BuildStatus().Connected);
         var wakesBefore = h.Conductor.WakeCount;
 
         h.Push("data: {\"type\":\"question.answered\",\"question\":{}}\n\n");
@@ -106,8 +105,7 @@ public sealed class PilotEventListenerTests
         // A heartbeat unblocks the read so the listener re-checks the pairing and tears down.
         h.Push("event: ping\n\n");
 
-        await TestWait.Until(() => !h.Listener.Connected);
-        Assert.False(h.Conductor.BuildStatus().Connected);
+        await TestWait.Until(() => h.Handler.Stream.Disposed);
     }
 
     [Fact]
@@ -121,7 +119,6 @@ public sealed class PilotEventListenerTests
 
         await TestWait.Until(() => h.Store.Current is { Enabled: false });
         await TestWait.Until(() => h.Conductor.WakeCount > wakesBefore);
-        await TestWait.Until(() => !h.Listener.Connected); // the now-disabled store also tears the stream down
     }
 
     [Fact]
@@ -134,7 +131,22 @@ public sealed class PilotEventListenerTests
         await TestWait.Until(() => h.Conductor.WakeCount > wakesBefore);
 
         Assert.True(h.Store.Current is { Enabled: true });
-        Assert.True(h.Listener.Connected);
+    }
+
+    [Fact]
+    public async Task Listener_ReconnectsWithTheNewPairing_AfterTheNextHeartbeat()
+    {
+        await using var h = await Harness.StartAsync();
+
+        h.Store.Save(TestPairing.Create(apiUrl: "https://next-api", apiToken: "next-token"));
+        await Task.Delay(25);
+        Assert.Equal(1, h.Handler.Calls); // A blocked stream is intentionally heartbeat-bounded.
+
+        h.Push("event: ping\n\n");
+
+        await TestWait.Until(() => h.Handler.Calls >= 2);
+        Assert.Equal("https://next-api/api/pilot/events", h.Handler.LastRequest?.RequestUri?.ToString());
+        Assert.Equal("Bearer next-token", h.Handler.LastRequest?.Headers.Authorization?.ToString());
     }
 
     [Fact]
@@ -145,7 +157,7 @@ public sealed class PilotEventListenerTests
         await TestWait.Until(() => h.Handler.Calls > 0);
         await Task.Delay(50);
 
-        Assert.False(h.Listener.Connected);
+        Assert.Equal(1, h.Handler.Calls);
     }
 
     /// <summary>A started, paired listener over a fake SSE stream; disposal stops and cleans everything up.</summary>
@@ -155,14 +167,14 @@ public sealed class PilotEventListenerTests
 
         public FakeSseHandler Handler { get; }
         public PilotEventListener Listener { get; }
-        public PilotConductor Conductor { get; }
+        public PilotCoordinator Conductor { get; }
         public PilotStore Store { get; }
 
         private Harness(HttpStatusCode status)
         {
             Handler = new FakeSseHandler { Status = status };
             Store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
-            Conductor = new PilotConductor(Store, new FakePilotEnvironment(), NullLogger<PilotConductor>.Instance);
+            Conductor = new PilotCoordinator(Store, new FakePilotRuntime(), NullLogger<PilotCoordinator>.Instance);
             Listener = new PilotEventListener(Store, Conductor, NullLogger<PilotEventListener>.Instance, new HttpClient(Handler));
         }
 
@@ -174,8 +186,7 @@ public sealed class PilotEventListenerTests
             await harness.Listener.StartAsync(CancellationToken.None);
             if (status == HttpStatusCode.OK)
             {
-                harness.Push("event: connected\n\n");
-                await TestWait.Until(() => harness.Listener.Connected);
+                await TestWait.Until(() => harness.Handler.Calls > 0);
             }
             return harness;
         }

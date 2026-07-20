@@ -43,19 +43,6 @@ function Install-Terminal {
         # Archive holds the binary plus the bundled plugin/ tree; extract it all.
         Expand-Archive -Path $archivePath -DestinationPath $InstallDir -Force
 
-        # Releases before the public Codex marketplace carried all skills shipped a repo-local catalog.
-        # Remove only that obsolete file; preserve any unrelated state under the install directory.
-        $legacyMarketplace = Join-Path $InstallDir ".agents\plugins\marketplace.json"
-        Remove-Item -LiteralPath $legacyMarketplace -Force -ErrorAction SilentlyContinue
-        foreach ($legacyDir in @(
-            (Join-Path $InstallDir ".agents\plugins"),
-            (Join-Path $InstallDir ".agents")
-        )) {
-            if ((Test-Path -LiteralPath $legacyDir) -and
-                -not (Get-ChildItem -LiteralPath $legacyDir -Force | Select-Object -First 1)) {
-                Remove-Item -LiteralPath $legacyDir -Force
-            }
-        }
     }
     finally {
         if (Test-Path $tempDir) {

@@ -88,18 +88,6 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
       await shutdownHost();
       return true;
     } catch (error) {
-      // Older host without /shutdown - fall back to closing just the session.
-      if (error instanceof TerminalApiError && error.status === 404) {
-        try {
-          await killSession();
-        } catch {
-          // unreachable or already stopped - the toast below still explains the situation
-        }
-        toast.error(
-          "This agent doesn't support fully stopping yet. Closed the session - update the agent to also close the terminal app.",
-        );
-        return false;
-      }
       toast.error(
         error instanceof TerminalApiError
           ? `Couldn't stop the terminal: ${error.message}`

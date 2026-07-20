@@ -5,7 +5,7 @@ using JobPilot.Terminal.Sessions;
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>Drives the real PTY for the Pilot loop, detecting cycle sentinels in the session's output stream.</summary>
-public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
+public sealed class PilotRuntime : IPilotRuntime, IDisposable
 {
     private const string PilotSkill = "pilot";
     private const int PilotCols = 220;
@@ -23,16 +23,16 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
     private readonly SessionManager session;
     private readonly PilotStore store;
     private readonly PilotApiClient api;
-    private readonly ILogger<PilotEnvironment> logger;
+    private readonly ILogger<PilotRuntime> logger;
     private readonly SentinelParser parser = new();
     private readonly StallDetector stall = new();
 
     // Same output event TerminalHub taps; a single-reader channel merges sentinels and stalls into one await.
-    // Not single-writer: the PTY thread writes signals while the conductor thread re-enqueues drained sentinels.
+    // Not single-writer: the PTY thread writes signals while the coordinator re-enqueues drained sentinels.
     private readonly Channel<WaitSignal> signals = Channel.CreateUnbounded<WaitSignal>(
         new UnboundedChannelOptions { SingleReader = true });
 
-    public PilotEnvironment(SessionManager session, PilotStore store, PilotApiClient api, ILogger<PilotEnvironment> logger)
+    public PilotRuntime(SessionManager session, PilotStore store, PilotApiClient api, ILogger<PilotRuntime> logger)
     {
         this.session = session;
         this.store = store;
@@ -43,8 +43,13 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
 
     public string? RunningProvider => session.State == SessionState.Running ? session.ActiveProvider : null;
 
-    public void StartSession(PilotPairing pairing) =>
-        session.Start(pairing.Provider, PilotCols, PilotRows, pairing.ApiToken, pairing.WebUrl, pairing.ApiUrl);
+    public void StartSession(PilotPairing pairing) => session.Start(new SessionStartOptions(
+        pairing.Provider,
+        PilotCols,
+        PilotRows,
+        pairing.ApiToken,
+        pairing.ApiUrl,
+        pairing.WebUrl));
 
     public Task WaitStartupGraceAsync(CancellationToken ct) => Task.Delay(StartupGrace, ct);
 
@@ -53,26 +58,26 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
         DrainSignals();  // Discard any signal buffered before this injection so the await only sees the new cycle.
         stall.Reset();
         var command = TerminalProviders.FormatSkillCommand(pairing.Provider, PilotSkill);
-        await InjectAsync(command, pairing.Provider, "cycle");
+        await InjectAsync(command, pairing.Provider, "cycle", ct);
     }
 
     public Task InjectNudgeAsync(PilotPairing pairing, CancellationToken ct)
     {
         stall.Reset();
         DrainStalledSignals();
-        return InjectAsync(NudgeCommand, pairing.Provider, "nudge");
+        return InjectAsync(NudgeCommand, pairing.Provider, "nudge", ct);
     }
 
     public Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct)
     {
         stall.Reset();
         DrainStalledSignals();
-        return InjectAsync(SkipCommand, pairing.Provider, "skip");
+        return InjectAsync(SkipCommand, pairing.Provider, "skip", ct);
     }
 
-    private async Task InjectAsync(string command, string provider, string what)
+    private async Task InjectAsync(string command, string provider, string what, CancellationToken ct)
     {
-        var result = await session.Inject(command, provider);
+        var result = await session.Inject(command, provider, ct);
         if (result != InjectResult.Injected)
         {
             logger.LogWarning("Pilot {What} inject was rejected ({Result}).", what, result);
@@ -134,12 +139,12 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
 
     public Task PauseAsync(CancellationToken ct) => Task.Delay(MismatchPoll, ct);
 
-    public async Task ReportSystemAsync(string summary)
+    public async Task ReportSystemAsync(string summary, CancellationToken ct)
     {
         var pairing = store.Current;
         if (pairing is not null)
         {
-            await api.ReportSystemAsync(pairing.ApiUrl, pairing.ApiToken, summary);
+            await api.ReportSystemAsync(pairing.ApiUrl, pairing.ApiToken, summary, ct);
         }
     }
 

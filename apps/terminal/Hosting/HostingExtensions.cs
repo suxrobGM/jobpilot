@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
-namespace JobPilot.Terminal;
+namespace JobPilot.Terminal.Hosting;
 
 /// <summary>Configures and runs the terminal host.</summary>
 public static class HostingExtensions
@@ -35,9 +35,9 @@ public static class HostingExtensions
             PilotStore.ResolvePath(sp.GetRequiredService<HostInstall>()),
             sp.GetRequiredService<ILogger<PilotStore>>()));
         services.AddSingleton<PilotApiClient>();
-        services.AddSingleton<IPilotEnvironment, PilotEnvironment>();
-        services.AddSingleton<PilotConductor>();
-        services.AddHostedService(sp => sp.GetRequiredService<PilotConductor>());
+        services.AddSingleton<IPilotRuntime, PilotRuntime>();
+        services.AddSingleton<PilotCoordinator>();
+        services.AddHostedService(sp => sp.GetRequiredService<PilotCoordinator>());
         services.AddSingleton<PilotEventListener>();
         services.AddHostedService(sp => sp.GetRequiredService<PilotEventListener>());
         services.ConfigureHttpJsonOptions(c =>

@@ -50,14 +50,18 @@ public sealed record InstallPaths
             && IsCodexPluginDir(pluginDir);
     }
 
-    private static IEnumerable<string> CandidateRoots()
+    private static IEnumerable<string> CandidateRoots() =>
+        CandidateRoots(AppContext.BaseDirectory, Environment.CurrentDirectory);
+
+    /// <summary>Orders executable-relative roots before launch-directory fallbacks.</summary>
+    internal static IEnumerable<string> CandidateRoots(string baseDirectory, string currentDirectory)
     {
-        foreach (var root in Ancestors(Environment.CurrentDirectory))
+        foreach (var root in Ancestors(baseDirectory))
         {
             yield return root;
         }
 
-        foreach (var root in Ancestors(AppContext.BaseDirectory))
+        foreach (var root in Ancestors(currentDirectory))
         {
             yield return root;
         }

@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using JobPilot.Terminal.Common;
@@ -25,10 +26,27 @@ internal sealed record PilotSseState
     public bool? Enabled { get; init; }
 }
 
+/// <summary>Exponential reconnect backoff: 5s doubling to a 5min cap.</summary>
+internal struct SseBackoff
+{
+    private int failures;
+
+    public TimeSpan Next()
+    {
+        var seconds = Math.Min(
+            PilotEventListener.InitialBackoff.TotalSeconds * Math.Pow(2, failures),
+            PilotEventListener.MaxBackoff.TotalSeconds);
+        failures++;
+        return TimeSpan.FromSeconds(seconds);
+    }
+
+    public void Reset() => failures = 0;
+}
+
 /// <summary>
 /// Long-lived listener on the API's pilot SSE feed. While the pilot is enabled+paired it holds a streaming
-/// connection and wakes the conductor the moment a question is answered, an approved promotion lands, or
-/// state changes - so a sleeping conductor starts its next cycle within seconds instead of at nextWakeAt.
+/// connection and wakes the coordinator the moment a question is answered, an approved promotion lands, or
+/// state changes - so a sleeping coordinator starts its next cycle within seconds instead of at nextWakeAt.
 /// Reconnects with exponential backoff, tears down when disabled, and never faults the host.
 /// </summary>
 public sealed class PilotEventListener : BackgroundService
@@ -40,24 +58,21 @@ public sealed class PilotEventListener : BackgroundService
     internal static readonly TimeSpan MaxBackoff = TimeSpan.FromMinutes(5);
 
     private readonly PilotStore store;
-    private readonly PilotConductor conductor;
+    private readonly PilotCoordinator coordinator;
     private readonly ILogger<PilotEventListener> logger;
     private readonly HttpClient http;
 
-    /// <summary>Whether the event stream is currently connected. Surfaced on /healthz via the conductor.</summary>
-    public bool Connected { get; private set; }
-
-    public PilotEventListener(PilotStore store, PilotConductor conductor, ILogger<PilotEventListener> logger)
+    public PilotEventListener(PilotStore store, PilotCoordinator coordinator, ILogger<PilotEventListener> logger)
         // The SSE stream is intentionally long-lived, so it must never be bounded by a client timeout.
-        : this(store, conductor, logger, HttpClients.CreateLongLivedClient())
+        : this(store, coordinator, logger, HttpClients.CreateLongLivedClient())
     {
     }
 
     /// <summary>Test seam: inject the client (and its message handler) that backs the stream.</summary>
-    internal PilotEventListener(PilotStore store, PilotConductor conductor, ILogger<PilotEventListener> logger, HttpClient http)
+    internal PilotEventListener(PilotStore store, PilotCoordinator coordinator, ILogger<PilotEventListener> logger, HttpClient http)
     {
         this.store = store;
-        this.conductor = conductor;
+        this.coordinator = coordinator;
         this.logger = logger;
         this.http = http;
     }
@@ -140,13 +155,9 @@ public sealed class PilotEventListener : BackgroundService
             {
                 logger.LogDebug(ex, "Pilot event stream dropped; will reconnect.");
             }
-            finally
-            {
-                SetConnected(false);
-            }
-
-            // A stream that carried data resets backoff; a disable ends cleanly, so only a real drop grows it.
-            if (!ShouldConnect(store.Current))
+            // A changed pairing reconnects immediately after the heartbeat that exposed it; transport drops back off.
+            var current = store.Current;
+            if (!ShouldConnect(current) || current != pairing)
             {
                 backoff.Reset();
             }
@@ -166,8 +177,8 @@ public sealed class PilotEventListener : BackgroundService
     private async Task<bool> StreamAsync(PilotPairing pairing, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, $"{pairing.ApiUrl.TrimEnd('/')}/api/pilot/events");
-        request.Headers.TryAddWithoutValidation("authorization", $"Bearer {pairing.ApiToken}");
-        request.Headers.TryAddWithoutValidation("accept", "text/event-stream");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", pairing.ApiToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
 
         using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
         if (!response.IsSuccessStatusCode)
@@ -176,7 +187,6 @@ public sealed class PilotEventListener : BackgroundService
             return false;
         }
 
-        SetConnected(true);
         await using var stream = await response.Content.ReadAsStreamAsync(ct);
         using var reader = new StreamReader(stream, Encoding.UTF8);
         var parser = new SseParser();
@@ -195,7 +205,7 @@ public sealed class PilotEventListener : BackgroundService
             foreach (var frame in parser.Feed(new ReadOnlySpan<char>(buffer, 0, read)))
             {
                 // A disable from another device can't reach this host directly; mirror it into the local store
-                // before waking, or the conductor re-reads Enabled=true and keeps spawning sessions forever.
+                // before waking, or the coordinator re-reads Enabled=true and keeps spawning sessions forever.
                 if (IsRemoteDisable(frame))
                 {
                     store.SetEnabled(false);
@@ -203,29 +213,18 @@ public sealed class PilotEventListener : BackgroundService
 
                 if (ShouldWake(frame))
                 {
-                    conductor.WakeUp();
+                    coordinator.WakeUp();
                 }
             }
 
-            // Tear down promptly once disabled; the broker's ~15s heartbeat guarantees this re-check runs.
-            if (!ShouldConnect(store.Current))
+            // Pairing changes are heartbeat-bounded so this stream never keeps using stale credentials indefinitely.
+            if (store.Current != pairing)
             {
                 break;
             }
         }
 
         return gotData;
-    }
-
-    private void SetConnected(bool value)
-    {
-        if (Connected == value)
-        {
-            return;
-        }
-
-        Connected = value;
-        conductor.SetEventStreamConnected(value);
     }
 
     private static async Task QuietDelayAsync(TimeSpan delay, CancellationToken ct)

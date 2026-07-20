@@ -99,12 +99,46 @@ public sealed class PilotStore
             Protected = isProtected,
         };
 
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-        File.WriteAllText(filePath, JsonSerializer.Serialize(file, AppJsonContext.Default.PilotStateFile));
+        var directory = Path.GetDirectoryName(filePath)
+            ?? throw new InvalidOperationException("Pilot pairing path has no parent directory.");
+        Directory.CreateDirectory(directory);
 
-        if (!OperatingSystem.IsWindows())
+        var tempPath = Path.Combine(directory, $".{Path.GetFileName(filePath)}.{Guid.NewGuid():N}.tmp");
+        try
         {
-            File.SetUnixFileMode(filePath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            var options = new FileStreamOptions
+            {
+                Mode = FileMode.CreateNew,
+                Access = FileAccess.Write,
+                Share = FileShare.None,
+            };
+            if (!OperatingSystem.IsWindows())
+            {
+                options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            }
+
+            var json = JsonSerializer.Serialize(file, AppJsonContext.Default.PilotStateFile);
+            using (var stream = new FileStream(tempPath, options))
+            {
+                stream.Write(Encoding.UTF8.GetBytes(json));
+                stream.Flush(flushToDisk: true);
+            }
+
+            File.Move(tempPath, filePath, overwrite: true);
+        }
+        catch
+        {
+            // A successful Move consumes the temp file, so only a failed write leaves one behind.
+            try
+            {
+                File.Delete(tempPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                logger.LogDebug(ex, "Could not remove temporary Pilot pairing file {File}.", tempPath);
+            }
+
+            throw;
         }
     }
 

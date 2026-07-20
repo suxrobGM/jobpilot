@@ -51,13 +51,13 @@ public sealed class SessionManager : IDisposable
 
     /// <summary>Starts a provider unless that provider is already running.</summary>
     /// <exception cref="PtyStartException">Thrown when the PTY provider fails to spawn the process.</exception>
-    public void Start(string? provider, int cols, int rows, string? apiToken = null, string? webUrl = null, string? apiUrl = null)
+    public void Start(SessionStartOptions options)
     {
         lock (stateLock)
         {
             var sessionPaths = install.RequirePaths();
 
-            var normalizedProvider = TerminalProviders.Normalize(provider);
+            var normalizedProvider = TerminalProviders.Normalize(options.Provider);
             if (state == SessionState.Running && activeProvider == normalizedProvider)
             {
                 logger.LogInformation("{Provider} session already running; Start is a no-op.", normalizedProvider);
@@ -86,8 +86,8 @@ public sealed class SessionManager : IDisposable
                 spec.Command,
                 string.Join(" ", spec.Args),
                 sessionPaths.SharedSkillsDir,
-                cols,
-                rows);
+                options.Cols,
+                options.Rows);
 
             static string FromRequestOrEnv(string? passed, string envKey, string fallback) =>
                 !string.IsNullOrEmpty(passed) ? passed : Environment.GetEnvironmentVariable(envKey) ?? fallback;
@@ -96,16 +96,16 @@ public sealed class SessionManager : IDisposable
             {
                 ["JOBPILOT_SKILLS_ROOT"] = sessionPaths.SharedSkillsDir,
                 ["JOBPILOT_WORKSPACE_ROOT"] = workingDir,
-                ["JOBPILOT_API"] = FromRequestOrEnv(apiUrl, "JOBPILOT_API", "http://localhost:4101"),
-                ["JOBPILOT_API_TOKEN"] = FromRequestOrEnv(apiToken, "JOBPILOT_API_TOKEN", ""),
-                ["JOBPILOT_WEB"] = FromRequestOrEnv(webUrl, "JOBPILOT_WEB", "http://localhost:4100")
+                ["JOBPILOT_API"] = FromRequestOrEnv(options.ApiUrl, "JOBPILOT_API", "http://localhost:4101"),
+                ["JOBPILOT_API_TOKEN"] = FromRequestOrEnv(options.ApiToken, "JOBPILOT_API_TOKEN", ""),
+                ["JOBPILOT_WEB"] = FromRequestOrEnv(options.WebUrl, "JOBPILOT_WEB", "http://localhost:4100")
             };
 
             Starting?.Invoke();
 
             try
             {
-                liveGeneration = pty.Start(spec.Command, spec.Args, workingDir, cols, rows, env);
+                liveGeneration = pty.Start(spec.Command, spec.Args, workingDir, options.Cols, options.Rows, env);
             }
             catch (PtyStartException ex)
             {
@@ -122,7 +122,10 @@ public sealed class SessionManager : IDisposable
 
     /// <summary>Writes and submits a command to the active session.</summary>
     /// <exception cref="ArgumentException">The expected provider id is not a known provider.</exception>
-    public async Task<InjectResult> Inject(string command, string? expectedProvider = null)
+    public async Task<InjectResult> Inject(
+        string command,
+        string? expectedProvider = null,
+        CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(command);
 
@@ -148,7 +151,7 @@ public sealed class SessionManager : IDisposable
             pty.Write(Encoding.UTF8.GetBytes(command));
         }
 
-        await Task.Delay(SubmitKeyDelay);
+        await Task.Delay(SubmitKeyDelay, ct);
 
         lock (stateLock)
         {
@@ -165,27 +168,24 @@ public sealed class SessionManager : IDisposable
         return InjectResult.Injected;
     }
 
-    /// <summary>Resizes the active PTY.</summary>
     public void Resize(int cols, int rows)
     {
         pty.Resize(cols, rows);
     }
 
-    /// <summary>Writes raw input to the active PTY.</summary>
     public void WriteInput(byte[] data)
     {
         pty.Write(data);
     }
 
-    /// <summary>Stops the active session.</summary>
     public void Stop()
     {
         lock (stateLock)
         {
             if (state == SessionState.Stopped) return;
             logger.LogInformation("Stopping {Provider} session.", activeProvider);
-            pty.Stop();
             state = SessionState.Stopped;
+            pty.Stop();
         }
     }
 
@@ -194,6 +194,7 @@ public sealed class SessionManager : IDisposable
     private void OnPtyExit(PtyExit exit)
     {
         string provider;
+        bool requested;
         lock (stateLock)
         {
             // Ignore exits from replaced or already-reported PTYs.
@@ -201,10 +202,12 @@ public sealed class SessionManager : IDisposable
 
             liveGeneration = 0;
             provider = activeProvider;
+            // Stop() marks Stopped before killing the PTY, so a live generation still Running exited on its own.
+            requested = state == SessionState.Stopped;
             state = SessionState.Stopped;
         }
 
-        Exited?.Invoke(new SessionExit(TerminalProviders.GetDisplayName(provider), exit.ExitCode));
+        Exited?.Invoke(new SessionExit(TerminalProviders.GetDisplayName(provider), exit.ExitCode, requested));
     }
 
     public void Dispose()

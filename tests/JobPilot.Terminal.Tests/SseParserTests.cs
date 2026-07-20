@@ -3,7 +3,7 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>Covers SseParser and SseBackoff, which share Pilot/SseParser.cs.</summary>
+/// <summary>Covers SSE frame parsing and reconnect backoff.</summary>
 public sealed class SseParserTests
 {
     private static List<SseFrame> FeedAll(SseParser parser, params string[] chunks)

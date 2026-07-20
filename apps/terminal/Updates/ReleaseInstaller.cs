@@ -35,7 +35,6 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
             {
                 CopyOver(staging, installDir);
                 PruneRemovedPluginFiles(staging, installDir);
-                RemoveLegacyCodexMarketplace(installDir);
             }
             catch
             {
@@ -161,34 +160,6 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
         }
 
         DeleteEmptyDirectories(installedPlugin);
-    }
-
-    /// <summary>
-    /// Removes the obsolete repo-local Codex marketplace shipped before the public marketplace
-    /// carried the full plugin. Only this known file and now-empty parent directories are touched.
-    /// </summary>
-    internal static void RemoveLegacyCodexMarketplace(string installDir)
-    {
-        var agentsDir = Path.Combine(installDir, ".agents");
-        var pluginsDir = Path.Combine(agentsDir, "plugins");
-
-        // File.Delete throws DirectoryNotFoundException on a missing parent, so guard: installs
-        // past the first cleanup have no .agents/ and this runs inside the update rollback block.
-        if (Directory.Exists(pluginsDir))
-        {
-            File.Delete(Path.Combine(pluginsDir, "marketplace.json"));
-        }
-
-        DeleteIfEmpty(pluginsDir);
-        DeleteIfEmpty(agentsDir);
-    }
-
-    private static void DeleteIfEmpty(string dir)
-    {
-        if (Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any())
-        {
-            Directory.Delete(dir);
-        }
     }
 
     private static void DeleteEmptyDirectories(string root)

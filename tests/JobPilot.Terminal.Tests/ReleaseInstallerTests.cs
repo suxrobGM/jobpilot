@@ -58,45 +58,6 @@ public class ReleaseInstallerTests
     }
 
     [Fact]
-    public void RemoveLegacyCodexMarketplace_RemovesOnlyTheObsoleteCatalog()
-    {
-        using var temp = new TempDir();
-
-        temp.File(Path.Combine("install", ".agents", "plugins", "marketplace.json"), "legacy");
-        temp.File(Path.Combine("install", ".agents", "keep.txt"), "user state");
-
-        ReleaseInstaller.RemoveLegacyCodexMarketplace(Install(temp));
-
-        Assert.False(File.Exists(Path.Combine(Install(temp), ".agents", "plugins", "marketplace.json")));
-        Assert.False(Directory.Exists(Path.Combine(Install(temp), ".agents", "plugins")));
-        Assert.Equal("user state", File.ReadAllText(Path.Combine(Install(temp), ".agents", "keep.txt")));
-    }
-
-    [Fact]
-    public void RemoveLegacyCodexMarketplace_RemovesEmptyParentDirectories()
-    {
-        using var temp = new TempDir();
-
-        temp.File(Path.Combine("install", ".agents", "plugins", "marketplace.json"), "legacy");
-
-        ReleaseInstaller.RemoveLegacyCodexMarketplace(Install(temp));
-
-        Assert.False(Directory.Exists(Path.Combine(Install(temp), ".agents")));
-    }
-
-    [Fact]
-    public void RemoveLegacyCodexMarketplace_IsANoOpWhenAlreadyAbsent()
-    {
-        using var temp = new TempDir();
-
-        temp.File(Path.Combine("install", "jobpilot"), "host");
-
-        ReleaseInstaller.RemoveLegacyCodexMarketplace(Install(temp));
-
-        Assert.Equal("host", File.ReadAllText(Path.Combine(Install(temp), "jobpilot")));
-    }
-
-    [Fact]
     public void IsValidHost_RequiresBothTheBinaryAndTheClaudeManifest()
     {
         using var temp = new TempDir();

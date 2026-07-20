@@ -11,12 +11,12 @@ internal sealed record PilotJournalRequest(PilotJournalEntry[] Entries);
 /// <summary>One journal entry; the host only ever writes <c>kind=system</c>.</summary>
 internal sealed record PilotJournalEntry(string Kind, string Summary);
 
-/// <summary>Body of a GET /api/pilot/activity response: the newest agent activity and open lease count.</summary>
-internal sealed record PilotActivityResponse(DateTimeOffset? LastActivityAt, int ActiveLeases);
+/// <summary>Body of a GET /api/pilot/activity response.</summary>
+internal sealed record PilotActivityResponse(DateTimeOffset? LastActivityAt);
 
 /// <summary>
-/// Posts the conductor's own interventions to the API journal so the user's phone hears about them.
-/// Best-effort: a briefly unreachable API logs a warning and never throws into the conductor loop.
+/// Posts the coordinator's own interventions to the API journal so the user's phone hears about them.
+/// Best-effort: a briefly unreachable API logs a warning and never throws into the coordinator loop.
 /// </summary>
 public sealed class PilotApiClient : IDisposable
 {
@@ -38,7 +38,11 @@ public sealed class PilotApiClient : IDisposable
     }
 
     /// <summary>Reports a system-journal entry to the paired API. Never throws.</summary>
-    public async Task ReportSystemAsync(string apiUrl, string apiToken, string summary)
+    public async Task ReportSystemAsync(
+        string apiUrl,
+        string apiToken,
+        string summary,
+        CancellationToken ct = default)
     {
         try
         {
@@ -47,9 +51,10 @@ public sealed class PilotApiClient : IDisposable
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             await SendGuardedAsync<bool>(apiUrl, apiToken, HttpMethod.Post, "/api/pilot/journal", content,
-                "Pilot journal report was rejected ({Status}).", static (_, _) => Task.FromResult<bool>(default));
+                "Pilot journal report was rejected ({Status}).", static (_, _) => Task.FromResult<bool>(default), ct);
         }
-        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+        catch (Exception ex) when (
+            ex is HttpRequestException or OperationCanceledException && !Cancellation.IsCallerCancellation(ex, ct))
         {
             logger.LogWarning(ex, "Pilot journal report could not be delivered.");
         }
@@ -71,7 +76,7 @@ public sealed class PilotApiClient : IDisposable
                     return activity?.LastActivityAt;
                 }, ct);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!Cancellation.IsCallerCancellation(ex, ct))
         {
             // Fail-open on anything (transport, timeout, malformed body): the watchdog then uses its heuristics alone.
             logger.LogWarning(ex, "Pilot activity probe could not be delivered.");
@@ -100,7 +105,7 @@ public sealed class PilotApiClient : IDisposable
             return default; // Unpaired or a legacy pairing with no API URL; no channel to consult.
         }
 
-        // Linked so a cancelled conductor aborts the probe instead of waiting out the request timeout.
+        // Linked so a cancelled coordinator aborts the probe instead of waiting out the request timeout.
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(RequestTimeout);
         using var request = new HttpRequestMessage(method, $"{apiUrl.TrimEnd('/')}{path}") { Content = content };

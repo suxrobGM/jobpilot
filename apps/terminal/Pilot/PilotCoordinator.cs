@@ -1,5 +1,6 @@
 using JobPilot.Terminal.Contracts;
 using Microsoft.Extensions.Hosting;
+using System.Threading.Channels;
 
 namespace JobPilot.Terminal.Pilot;
 
@@ -7,7 +8,7 @@ namespace JobPilot.Terminal.Pilot;
 /// Background loop that keeps re-injecting the pilot skill while pilot mode is enabled and recovers a wedged
 /// session. Reacts to enable/disable without a host restart via <see cref="WakeUp"/>.
 /// </summary>
-public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILogger<PilotConductor> logger) : BackgroundService
+public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogger<PilotCoordinator> logger) : BackgroundService
 {
     private static readonly TimeSpan ErrorBackoff = TimeSpan.FromSeconds(30);
 
@@ -17,33 +18,35 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
     /// <summary>Journal summary pushed when a restarted host resumes conducting on its own.</summary>
     public const string ResumeReport = "Pilot conductor resumed after host restart.";
 
-    private readonly PilotLoop loop = new(env);
+    private readonly PilotCycleRunner loop = new(env);
 
-    // Released to start from idle or to interrupt a running iteration when the pairing changes.
-    private readonly SemaphoreSlim wake = new(0);
+    // A pulse starts the idle loop or restarts an iteration. Capacity one coalesces bursts without stale permits.
+    private readonly Channel<bool> wake = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
+    {
+        SingleReader = true,
+        SingleWriter = false,
+        FullMode = BoundedChannelFullMode.DropWrite,
+    });
     private readonly Lock ctsGate = new();
     private CancellationTokenSource? iterationCts;
     private volatile bool driving;
-    private volatile bool eventStreamConnected;
-
     private int wakeCount;
 
     /// <summary>Count of wake signals received; a test seam to observe event-driven wakes.</summary>
     internal int WakeCount => Volatile.Read(ref wakeCount);
 
+    internal int PendingWakeCount => wake.Reader.Count;
+
     /// <summary>Signals the loop to re-read the pairing (after enable/disable).</summary>
     public void WakeUp()
     {
         Interlocked.Increment(ref wakeCount);
-        wake.Release();
+        wake.Writer.TryWrite(true);
         lock (ctsGate)
         {
             iterationCts?.Cancel();
         }
     }
-
-    /// <summary>Records whether the SSE event stream is currently connected, for /healthz. Set by the listener.</summary>
-    public void SetEventStreamConnected(bool connected) => eventStreamConnected = connected;
 
     /// <summary>Snapshot of pilot state for /healthz.</summary>
     public PilotStatus BuildStatus()
@@ -57,7 +60,6 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
             LastCycleAt = loop.LastCycleAt,
             LastCycleStatus = StatusName(loop.LastCycleStatus),
             ConsecutiveTimeouts = loop.ConsecutiveTimeouts,
-            Connected = eventStreamConnected,
         };
     }
 
@@ -81,12 +83,15 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
             if (pairing is null || !pairing.Enabled)
             {
                 driving = false;
-                if (!await AwaitUnlessCanceledAsync(wake.WaitAsync(stoppingToken)))
+                if (!await AwaitUnlessCanceledAsync(wake.Reader.ReadAsync(stoppingToken).AsTask()))
                 {
                     return;
                 }
                 continue;
             }
+
+            // Reading the current enabled pairing satisfies any pulse that arrived before this iteration.
+            wake.Reader.TryRead(out _);
 
             try
             {
@@ -133,7 +138,7 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
 
         try
         {
-            await env.ReportSystemAsync(ResumeReport);
+            await env.ReportSystemAsync(ResumeReport, stoppingToken);
         }
         catch
         {
@@ -165,7 +170,6 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
 
     public override void Dispose()
     {
-        wake.Dispose();
         lock (ctsGate)
         {
             iterationCts?.Dispose();

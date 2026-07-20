@@ -25,12 +25,9 @@ public interface IPty : IDisposable
         int rows,
         IReadOnlyDictionary<string, string>? environment = null);
 
-    /// <summary>Writes raw input to the active PTY.</summary>
     void Write(byte[] data);
 
-    /// <summary>Resizes the active PTY.</summary>
     void Resize(int cols, int rows);
 
-    /// <summary>Stops the active PTY.</summary>
     void Stop();
 }

@@ -147,10 +147,16 @@ public sealed class TerminalHub : IDisposable
 
     private void OnSessionExited(SessionExit exit)
     {
-        var message =
-            $"\r\n\e[31m[JobPilot.Terminal] {exit.ProviderDisplayName} exited with code {exit.ExitCode}. Use Restart to reopen.\e[0m\r\n";
-        Broadcast(Encoding.UTF8.GetBytes(message));
+        var message = FormatExitMessage(exit);
+        if (message is not null)
+        {
+            Broadcast(Encoding.UTF8.GetBytes(message));
+        }
     }
+
+    internal static string? FormatExitMessage(SessionExit exit) => exit.Requested
+        ? null
+        : $"\r\n\e[31m[JobPilot.Terminal] {exit.ProviderDisplayName} exited with code {exit.ExitCode}. Use Restart to reopen.\e[0m\r\n";
 
     private async Task SendLoopAsync(WebSocket socket, Channel<byte[]> outbox, CancellationToken ct)
     {

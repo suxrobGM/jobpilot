@@ -145,6 +145,24 @@ public sealed class PilotApiClientTests
         Assert.Null(await client.GetLastActivityAsync("https://api.example.test", "tok"));
     }
 
+    [Fact]
+    public async Task Requests_PropagateCallerCancellation()
+    {
+        var blocked = new StubHandler(async (_, ct) =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(blocked));
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            client.GetLastActivityAsync("https://api.example.test", "tok", cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            client.ReportSystemAsync("https://api.example.test", "tok", "stop", cts.Token));
+    }
+
     private sealed class StubHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond)
         : HttpMessageHandler
     {

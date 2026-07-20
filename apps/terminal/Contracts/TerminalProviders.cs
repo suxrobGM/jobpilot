@@ -55,7 +55,7 @@ public static class TerminalProviders
     /// <exception cref="ArgumentException">The provider id is not a known provider.</exception>
     public static string FormatSkillCommand(string provider, string skill, string? args = null)
     {
-        var command = Find(Normalize(provider)).Id == Codex ? $"${skill}" : $"/jobpilot:{skill}";
+        var command = Normalize(provider) == Codex ? $"${skill}" : $"/jobpilot:{skill}";
         var suffix = args?.Trim();
         return string.IsNullOrEmpty(suffix) ? command : $"{command} {suffix}";
     }
