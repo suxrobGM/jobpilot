@@ -7,6 +7,7 @@ import type { GridColDef, GridPaginationModel, GridRowSelectionModel } from "@mu
 import type { CampaignJobDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
 import { ColorChip } from "@/components/ui/display";
+import { CAMPAIGN_JOB_STATUS_COLOR } from "../campaign-status";
 
 /** Statuses that can still be applied to from the campaigns detail page. */
 function isApplicable(status: CampaignJobStatus): boolean {
@@ -17,19 +18,6 @@ function isApplicable(status: CampaignJobStatus): boolean {
 export function isReapplicable(status: CampaignJobStatus): boolean {
   return status !== "applied" && status !== "applying";
 }
-
-const STATUS_COLOR: Record<
-  CampaignJobStatus,
-  "default" | "info" | "primary" | "success" | "error" | "warning"
-> = {
-  pending: "default",
-  approved: "info",
-  applying: "primary",
-  needs_user: "warning",
-  applied: "success",
-  failed: "error",
-  skipped: "warning",
-};
 
 interface CampaignJobsTableProps {
   rows: ReadonlyArray<CampaignJobDto>;
@@ -69,7 +57,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       field: "status",
       headerName: "Status",
       width: 130,
-      renderCell: (p) => <ColorChip value={p.row.status} colors={STATUS_COLOR} />,
+      renderCell: (p) => <ColorChip value={p.row.status} colors={CAMPAIGN_JOB_STATUS_COLOR} />,
       sortable: false,
     },
     {

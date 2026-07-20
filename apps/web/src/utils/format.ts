@@ -17,6 +17,11 @@ const compactLocale = {
     `${Math.max(1, count)}${COMPACT_UNIT[token] ?? ""}`,
 };
 
+/** `3 jobs` / `1 job` - regular plurals only. */
+export function plural(count: number, word: string): string {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
 /** Compact age of a past timestamp, e.g. `12m`. Empty string for invalid dates. */
 export function formatRelativeTime(value: string | Date): string {
   const date = new Date(value);

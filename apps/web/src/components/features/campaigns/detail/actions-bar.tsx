@@ -11,17 +11,7 @@ import {
   PlayArrow,
   Replay,
 } from "@mui/icons-material";
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Slider,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Button, IconButton, Stack } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
@@ -31,6 +21,10 @@ import { type CampaignDetailDto, jobSummary } from "@/api/types";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
+import { RescanDialog } from "./rescan-dialog";
+
+/** Matches the composer's default so a campaign created without one rescans from the same floor. */
+const DEFAULT_MIN_SCORE = 60;
 
 interface CampaignActionsBarProps {
   campaign: CampaignDetailDto;
@@ -68,10 +62,9 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   );
 
   const [rescanOpen, setRescanOpen] = useState(false);
-  const [minScore, setMinScore] = useState(campaign.config.minScore ?? 60);
 
-  const rescan = useApiMutation<unknown, void>(
-    () => campaignResource.patch({ config: { ...campaign.config, minScore } }),
+  const rescan = useApiMutation<unknown, number>(
+    (minScore) => campaignResource.patch({ config: { ...campaign.config, minScore } }),
     { invalidate: invalidations.campaign },
   );
 
@@ -117,8 +110,13 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     }
   };
 
-  const handleRescanConfirm = async (): Promise<void> => {
-    await rescan.mutateAsync();
+  const handleRescanConfirm = async (minScore: number): Promise<void> => {
+    try {
+      await rescan.mutateAsync(minScore);
+    } catch {
+      // onError already toasted; keep the dialog open so the threshold isn't lost.
+      return;
+    }
     void agent.injectSkill("rescan-skipped", campaign.campaignId);
     setRescanOpen(false);
   };
@@ -200,39 +198,14 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
         />
       )}
 
-      <Dialog open={rescanOpen} onClose={() => setRescanOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Rescan skipped jobs</DialogTitle>
-        <DialogContent>
-          <Stack spacing={1} sx={{ pt: 1 }}>
-            <Typography variant="body2Muted">
-              Re-scores the {skippedCount} skipped {skippedCount === 1 ? "job" : "jobs"} against a
-              new threshold and sets eligible ones to <strong>approved</strong> - apply them from
-              the jobs list or with Re-apply selected. Lower the threshold to recover jobs dropped
-              just below the cutoff.
-            </Typography>
-            <Typography variant="body2">Min match score: {minScore}</Typography>
-            <Slider
-              value={minScore}
-              min={0}
-              max={100}
-              step={5}
-              marks
-              valueLabelDisplay="auto"
-              onChange={(_, v) => setMinScore(v as number)}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRescanOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            disabled={rescan.isPending}
-            onClick={() => void handleRescanConfirm()}
-          >
-            Rescan
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <RescanDialog
+        open={rescanOpen}
+        onClose={() => setRescanOpen(false)}
+        skippedCount={skippedCount}
+        defaultMinScore={campaign.config.minScore ?? DEFAULT_MIN_SCORE}
+        pending={rescan.isPending}
+        onConfirm={(minScore) => void handleRescanConfirm(minScore)}
+      />
     </Stack>
   );
 }

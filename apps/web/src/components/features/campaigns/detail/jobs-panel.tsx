@@ -19,6 +19,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
+import { plural } from "@/utils/format";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { UPWORK_DOMAIN } from "../constants";
 import { CampaignJobsTable, isReapplicable } from "./jobs-table";
@@ -28,8 +29,6 @@ const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<CampaignJobStatus>> =
     value: s,
     label: s,
   }));
-
-const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 const DEFAULT_PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
