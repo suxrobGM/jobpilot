@@ -13,7 +13,8 @@ import {
   Visibility,
 } from "@mui/icons-material";
 import { Box, Chip, type ChipProps, Stack, Typography } from "@mui/material";
-import { formatRelativeTime } from "@/utils/format";
+import { RelativeTime } from "@/components/ui/display";
+import { humanizeIsoInText } from "@/utils/format";
 
 export const KIND_META: Record<
   PilotJournalKind,
@@ -70,12 +71,10 @@ export function JournalRow(props: { entry: PilotJournalEntry }): ReactElement {
         sx={{ minWidth: 110 }}
       />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2">{entry.summary}</Typography>
+        <Typography variant="body2">{humanizeIsoInText(entry.summary)}</Typography>
         {entry.kind === "digest" && <DigestCounts detail={entry.detail} />}
       </Box>
-      <Typography variant="captionMuted" sx={{ whiteSpace: "nowrap" }}>
-        {formatRelativeTime(entry.createdAt)} ago
-      </Typography>
+      <RelativeTime value={entry.createdAt} sx={{ whiteSpace: "nowrap" }} />
     </Stack>
   );
 }

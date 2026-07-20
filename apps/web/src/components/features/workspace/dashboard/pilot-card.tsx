@@ -9,12 +9,12 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { LinkButton } from "@/components/ui/buttons";
+import { RelativeTime } from "@/components/ui/display";
 import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import type { PilotHealth, SessionStatus } from "@/lib/terminal";
 import { useAgentAvailable } from "@/providers/agent-provider";
-import { formatRelativeTime } from "@/utils/format";
 import { type TerminalHealth, useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { useOpenQuestions } from "../../pilot/attention/use-open-questions";
 import {
@@ -115,9 +115,11 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
           </Stack>
           <Stack spacing={0.25}>
             <Typography variant="overlineMuted">Last cycle</Typography>
-            <Typography variant="body2">
-              {state.lastCycleAt ? `${formatRelativeTime(state.lastCycleAt)} ago` : "-"}
-            </Typography>
+            {state.lastCycleAt ? (
+              <RelativeTime value={state.lastCycleAt} variant="body2" />
+            ) : (
+              <Typography variant="body2">-</Typography>
+            )}
           </Stack>
           {openQuestions > 0 && (
             <Chip

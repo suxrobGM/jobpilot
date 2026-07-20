@@ -3,11 +3,10 @@
 import type { ReactElement } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Alert, Box, Button, Chip, Grid, LinearProgress, Stack, Typography } from "@mui/material";
-import { ColorChip, StatCard } from "@/components/ui/display";
+import { ColorChip, RelativeTime, StatCard } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { type PilotCycleStatus, providerDisplayName, type SessionStatus } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
-import { formatRelativeTime } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { isHostOffline, PILOT_HOST_OFFLINE_MESSAGE, PILOT_STARTING_UP_LABEL } from "../status";
 import type { PilotToggle } from "../use-pilot-toggle";
@@ -127,9 +126,11 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
               <Box>
                 <Typography variant="overlineMuted">Last cycle</Typography>
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                  <Typography variant="body2">
-                    {state.lastCycleAt ? `${formatRelativeTime(state.lastCycleAt)} ago` : "-"}
-                  </Typography>
+                  {state.lastCycleAt ? (
+                    <RelativeTime value={state.lastCycleAt} variant="body2" />
+                  ) : (
+                    <Typography variant="body2">-</Typography>
+                  )}
                   {pilot?.lastCycleStatus && (
                     <ColorChip
                       value={pilot.lastCycleStatus}
