@@ -40,6 +40,10 @@ export function useDockHealth(): DockHealthState {
     }
     if (unreachable) {
       sawHostDown.current = true;
+      // Stopping has no "back up" state to wait for - clear as soon as the host is confirmed down.
+      if (pending === "stopping") {
+        setPending(null);
+      }
       return;
     }
     if (sawHostDown.current) {

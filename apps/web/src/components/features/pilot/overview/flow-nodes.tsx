@@ -1,10 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { Theme } from "@mui/material";
 import { Paper, Stack, Typography } from "@mui/material";
 import { Handle, type Node, type NodeProps, Position } from "@xyflow/react";
-import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
+import { PulseDot, type PulseDotTone, toneColor } from "@/components/ui/feedback";
 
 export interface StageNodeData extends Record<string, unknown> {
   title: string;
@@ -16,25 +15,6 @@ export interface StageNodeData extends Record<string, unknown> {
 }
 
 export type StageFlowNode = Node<StageNodeData, "stage">;
-
-/** Theme token for a node's accent, mirroring PulseDot's tone map (vars for SSR-stable standard keys). */
-function toneToken(theme: Theme, tone: PulseDotTone): string {
-  const vars = theme.vars ?? theme;
-  switch (tone) {
-    case "violet":
-      return theme.palette.accent.primary;
-    case "green":
-      return vars.palette.success.main;
-    case "amber":
-      return vars.palette.warning.main;
-    case "blue":
-      return vars.palette.info.main;
-    case "red":
-      return vars.palette.error.main;
-    default:
-      return vars.palette.text.disabled;
-  }
-}
 
 /** Invisible connection point - edges need a handle to anchor to, but the diagram hides its chrome. */
 const HANDLE_STYLE = { opacity: 0, pointerEvents: "none" as const, border: 0 };
@@ -50,7 +30,7 @@ function StageNode(props: NodeProps<StageFlowNode>): ReactElement {
       <Paper
         elevation={0}
         sx={(theme) => {
-          const accent = toneToken(theme, tone);
+          const accent = toneColor(theme, tone);
           return {
             width: 160,
             px: 1.5,

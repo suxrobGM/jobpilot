@@ -1,7 +1,7 @@
 "use client";
 
 import "@xyflow/react/dist/style.css";
-import { type ReactElement, useMemo } from "react";
+import type { ReactElement } from "react";
 import { Box, useTheme } from "@mui/material";
 import { Background, BackgroundVariant, type Edge, ReactFlow } from "@xyflow/react";
 import { type StageFlowNode, stageNodeTypes } from "./flow-nodes";
@@ -75,39 +75,33 @@ export function OrchestrationFlow(props: OrchestrationFlowProps): ReactElement {
   const dim = theme.palette.divider;
   const muted = stage.mode === "off" || stage.mode === "offline";
 
-  const nodes = useMemo<StageFlowNode[]>(
-    () =>
-      ORDER.map((id) => ({
-        id,
-        type: "stage",
-        position: POSITION[id],
-        data: {
-          ...NODE_META[id],
-          caption: captionFor(id, stage),
-          active: stage.mode === "working" && stage.activeNode === id,
-          muted,
-          tone: TONE[id],
-        },
-        draggable: false,
-        selectable: false,
-      })),
-    [stage, muted],
-  );
+  const nodes: StageFlowNode[] = ORDER.map((id) => ({
+    id,
+    type: "stage",
+    position: POSITION[id],
+    data: {
+      ...NODE_META[id],
+      caption: captionFor(id, stage),
+      active: stage.mode === "working" && stage.activeNode === id,
+      muted,
+      tone: TONE[id],
+    },
+    draggable: false,
+    selectable: false,
+  }));
 
-  const edges = useMemo<Edge[]>(() => {
-    const activeIndex = stage.mode === "working" ? ORDER.indexOf(stage.activeNode) : 0;
-    return ORDER.slice(0, -1).map((from, i) => {
-      const lit = i < activeIndex;
-      return {
-        id: `${from}-${ORDER[i + 1]}`,
-        source: from,
-        target: ORDER[i + 1],
-        type: "smoothstep",
-        animated: lit,
-        style: { stroke: lit ? flame : dim, strokeWidth: lit ? 2 : 1.5 },
-      };
-    });
-  }, [stage.mode, stage.activeNode, flame, dim]);
+  const activeIndex = stage.mode === "working" ? ORDER.indexOf(stage.activeNode) : 0;
+  const edges: Edge[] = ORDER.slice(0, -1).map((from, i) => {
+    const lit = i < activeIndex;
+    return {
+      id: `${from}-${ORDER[i + 1]}`,
+      source: from,
+      target: ORDER[i + 1],
+      type: "smoothstep",
+      animated: lit,
+      style: { stroke: lit ? flame : dim, strokeWidth: lit ? 2 : 1.5 },
+    };
+  });
 
   return (
     <Box

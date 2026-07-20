@@ -64,12 +64,6 @@ export function usePilotStage(params: UsePilotStageParams): PilotStage {
     retry: false,
   });
 
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30_000);
-    return () => clearInterval(id);
-  }, []);
-
   const newest = live[0] ?? journal.data?.items[0] ?? null;
   const conducting = hostStatus?.pilot?.conducting ?? false;
 
@@ -88,6 +82,18 @@ export function usePilotStage(params: UsePilotStageParams): PilotStage {
     mode === "working" && newest ? NODE_BY_KIND[newest.kind] : "conductor";
 
   const nextWakeAt = agenda.data?.nextWakeAt ?? null;
+  const nextWakeMs = nextWakeAt?.getTime() ?? null;
+
+  // Only sleeping mode needs a fresh render for the countdown label; other modes have nothing to tick.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (mode !== "sleeping" || nextWakeMs === null) {
+      return;
+    }
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, [mode, nextWakeMs]);
+
   const sleepLabel =
     mode === "sleeping" && nextWakeAt ? `wakes in ${formatTimeUntil(nextWakeAt)}` : null;
 

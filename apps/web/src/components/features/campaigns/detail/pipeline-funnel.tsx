@@ -19,8 +19,11 @@ interface Row {
   active?: boolean;
 }
 
-function countByStatus(jobs: ReadonlyArray<CampaignJobDto>): Record<CampaignJobStatus, number> {
-  const counts = {
+function countByStatus(jobs: ReadonlyArray<CampaignJobDto>): {
+  byStatus: Record<CampaignJobStatus, number>;
+  scoredCount: number;
+} {
+  const byStatus = {
     pending: 0,
     approved: 0,
     applying: 0,
@@ -29,40 +32,43 @@ function countByStatus(jobs: ReadonlyArray<CampaignJobDto>): Record<CampaignJobS
     skipped: 0,
     needs_user: 0,
   } as Record<CampaignJobStatus, number>;
+  let scoredCount = 0;
   for (const job of jobs) {
-    counts[job.status] += 1;
+    byStatus[job.status] += 1;
+    if (job.matchScore != null) {
+      scoredCount += 1;
+    }
   }
-  return counts;
+  return { byStatus, scoredCount };
 }
+
+/** Single in-flight funnel stage while a campaign runs, checked in frontier order (furthest along wins). */
+const ACTIVE_FRONTIER: ReadonlyArray<{
+  key: "applying" | "approved" | "scored";
+  has: (c: Record<CampaignJobStatus, number>) => boolean;
+}> = [
+  { key: "applying", has: (c) => c.applying > 0 },
+  { key: "approved", has: (c) => c.approved > 0 },
+  { key: "scored", has: (c) => c.pending > 0 },
+];
 
 /**
  * Cumulative "reached at least this stage" counts, clamped monotonic so the funnel never widens
  * downstream. A failed job passed through applying; a skipped job was dropped at scoring.
  */
 function buildRows(campaign: CampaignDetailDto): { rows: Row[]; max: number } {
-  const counts = countByStatus(campaign.jobs);
+  const { byStatus: counts, scoredCount } = countByStatus(campaign.jobs);
   const applies = campaign.source !== "search";
   const inProgress = campaign.status === "in_progress";
 
   const applied = counts.applied;
   const applying = counts.applying + counts.applied + counts.failed;
   const approved = counts.approved + counts.needs_user + applying;
-  const scored = Math.max(
-    campaign.jobs.filter((j) => j.matchScore != null).length,
-    approved + counts.skipped,
-  );
+  const scored = Math.max(scoredCount, approved + counts.skipped);
   const found = Math.max(campaign.summary.totalFound, campaign.jobs.length, scored);
 
   // The single in-flight frontier, so only one stage pulses while running.
-  const active = inProgress
-    ? counts.applying > 0
-      ? "applying"
-      : counts.approved > 0
-        ? "approved"
-        : counts.pending > 0
-          ? "scored"
-          : null
-    : null;
+  const active = inProgress ? (ACTIVE_FRONTIER.find((s) => s.has(counts))?.key ?? null) : null;
 
   const rows: Row[] = [
     { key: "found", label: "Found", count: found, color: "pipeline" },

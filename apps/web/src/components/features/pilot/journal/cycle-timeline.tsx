@@ -5,7 +5,11 @@ import type { PilotJournalEntry, PilotJournalKind } from "@jobpilot/contracts/pi
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Chip, Collapse, Divider, Paper, Stack, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
+import { formatSpanBetween } from "@/utils/format";
 import { JournalRow, KIND_META } from "./journal-row";
+
+/** Stable display order for kind chips, indexed once instead of per comparison. */
+const KIND_ORDER: PilotJournalKind[] = Object.keys(KIND_META) as PilotJournalKind[];
 
 type Block =
   | { type: "cycle"; cycleId: string; entries: PilotJournalEntry[] }
@@ -34,20 +38,12 @@ function toBlocks(entries: PilotJournalEntry[]): Block[] {
   return blocks;
 }
 
-/** Compact elapsed span between a cycle's first and last entry, e.g. `1m 20s`. */
+/** Compact elapsed span between a cycle's first and last entry, e.g. `1m`. */
 function cycleDuration(entries: PilotJournalEntry[]): string {
   if (entries.length < 2) {
     return "";
   }
-  const newest = new Date(entries[0].createdAt).getTime();
-  const oldest = new Date(entries[entries.length - 1].createdAt).getTime();
-  const seconds = Math.max(0, Math.round((newest - oldest) / 1000));
-  if (seconds < 60) {
-    return `${seconds}s`;
-  }
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds % 60;
-  return rest ? `${minutes}m ${rest}s` : `${minutes}m`;
+  return formatSpanBetween(entries[entries.length - 1].createdAt, entries[0].createdAt);
 }
 
 /** One chip per kind present in the cycle, counting occurrences. */
@@ -57,9 +53,7 @@ function KindSummary(props: { entries: PilotJournalEntry[] }): ReactElement {
   for (const entry of entries) {
     counts.set(entry.kind, (counts.get(entry.kind) ?? 0) + 1);
   }
-  const kinds = [...counts.keys()].sort(
-    (a, b) => Object.keys(KIND_META).indexOf(a) - Object.keys(KIND_META).indexOf(b),
-  );
+  const kinds = KIND_ORDER.filter((kind) => counts.has(kind));
   return (
     <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.75 }}>
       {kinds.map((kind) => (

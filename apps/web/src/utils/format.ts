@@ -1,4 +1,5 @@
-import { format, formatDistanceToNowStrict, isSameDay, type Locale } from "date-fns";
+import { format, formatDistanceStrict, formatDistanceToNowStrict, isSameDay } from "date-fns";
+import { enUS } from "date-fns/locale/en-US";
 
 const COMPACT_UNIT: Record<string, string> = {
   xSeconds: "s",
@@ -11,24 +12,32 @@ const COMPACT_UNIT: Record<string, string> = {
 
 /** Minimal date-fns locale rendering strict-distance tokens as compact units ("3h") instead of words ("3 hours"). */
 const compactLocale = {
-  formatDistance: (token, count) => `${Math.max(1, count)}${COMPACT_UNIT[token] ?? ""}`,
-} as Locale;
+  ...enUS,
+  formatDistance: (token: string, count: number) =>
+    `${Math.max(1, count)}${COMPACT_UNIT[token] ?? ""}`,
+};
 
-function compactDistance(value: string | Date): string {
+/** Compact age of a past timestamp, e.g. `12m`. Empty string for invalid dates. */
+export function formatRelativeTime(value: string | Date): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? ""
     : formatDistanceToNowStrict(date, { locale: compactLocale });
 }
 
-/** Compact age of a past timestamp, e.g. `12m`. Empty string for invalid dates. */
-export function formatRelativeTime(value: string | Date): string {
-  return compactDistance(value);
+/** Compact countdown to a future timestamp, e.g. `3h`. Empty string for invalid dates - same clock, read as a countdown at the call site. */
+export function formatTimeUntil(value: string | Date): string {
+  return formatRelativeTime(value);
 }
 
-/** Compact countdown to a future timestamp, e.g. `3h`. Empty string for invalid dates. */
-export function formatTimeUntil(value: string | Date): string {
-  return compactDistance(value);
+/** Compact elapsed span between two timestamps, e.g. `1m 20s`. Empty string if either is invalid. */
+export function formatSpanBetween(start: string | Date, end: string | Date): string {
+  const from = new Date(start);
+  const to = new Date(end);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+    return "";
+  }
+  return formatDistanceStrict(from, to, { locale: compactLocale });
 }
 
 /** Human-readable date, e.g. `Jul 19, 2026`. Takes `Date | string` because Eden types `z.date()` fields as `Date`. */
