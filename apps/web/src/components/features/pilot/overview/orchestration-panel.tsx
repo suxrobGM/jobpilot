@@ -1,24 +1,14 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Box, Skeleton, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
-import type { SessionStatus } from "@/lib/terminal";
-import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { OrchestrationFlow } from "./orchestration-flow";
 import { usePilotStage } from "./use-pilot-stage";
 
-interface OrchestrationPanelProps {
-  state: PilotState;
-  health: TerminalHealth;
-  hostStatus: SessionStatus | null;
-}
-
 /** Live simulation of the pilot loop: conductor wakes the agent, which delegates to a worker acting on the board. */
-export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement {
-  const { state, health, hostStatus } = props;
-  const stage = usePilotStage({ state, health, hostStatus });
+export function OrchestrationPanel(): ReactElement {
+  const stage = usePilotStage();
 
   // ReactFlow measures the DOM on mount; hold the canvas until the client has mounted so it
   // never renders during SSR/prerender.

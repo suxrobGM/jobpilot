@@ -1,22 +1,13 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Alert, Box, Button, Chip, Grid, LinearProgress, Stack, Typography } from "@mui/material";
 import { ColorChip, RelativeTime, StatCard } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
-import { type PilotCycleStatus, providerDisplayName, type SessionStatus } from "@/lib/terminal";
+import { type PilotCycleStatus, providerDisplayName } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
-import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { isHostOffline, PILOT_HOST_OFFLINE_MESSAGE, PILOT_STARTING_UP_LABEL } from "../host-status";
-import type { PilotToggle } from "../use-pilot-toggle";
-
-interface StatusHeroProps {
-  state: PilotState;
-  toggle: PilotToggle;
-  health: TerminalHealth;
-  hostStatus: SessionStatus | null;
-}
+import { usePilotStatus } from "./pilot-status-context";
 
 const CYCLE_STATUS_COLOR: Record<PilotCycleStatus, "success" | "warning" | "error" | "default"> = {
   ok: "success",
@@ -25,8 +16,8 @@ const CYCLE_STATUS_COLOR: Record<PilotCycleStatus, "success" | "warning" | "erro
 };
 
 /** State + controls on the left, today's budget on the right; the one card that answers "is it working?". */
-export function StatusHero(props: StatusHeroProps): ReactElement {
-  const { state, toggle, health, hostStatus } = props;
+export function StatusHero(): ReactElement {
+  const { state, toggle, health, hostStatus } = usePilotStatus();
   const confirm = useConfirm();
 
   const pilot = hostStatus?.pilot ?? null;

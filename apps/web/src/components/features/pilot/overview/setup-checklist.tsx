@@ -1,20 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { PilotState } from "@jobpilot/contracts/pilot";
 import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
-import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
-import type { PilotToggle } from "../use-pilot-toggle";
-
-interface PilotSetupChecklistProps {
-  state: PilotState;
-  toggle: PilotToggle;
-  health: TerminalHealth;
-}
+import { usePilotStatus } from "./pilot-status-context";
 
 interface ChecklistStep {
   id: string;
@@ -25,8 +17,8 @@ interface ChecklistStep {
 }
 
 /** Onboarding card; renders nothing once the pilot is fully set up. */
-export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode {
-  const { state, toggle, health } = props;
+export function PilotSetupChecklist(): ReactNode {
+  const { state, toggle, health } = usePilotStatus();
   const dock = useAgentDock();
   const agentAvailable = useAgentAvailable();
 

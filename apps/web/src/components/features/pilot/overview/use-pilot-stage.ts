@@ -1,14 +1,13 @@
 "use client";
 
-import type { PilotJournalKind, PilotState } from "@jobpilot/contracts/pilot";
+import type { PilotJournalKind } from "@jobpilot/contracts/pilot";
 import { useEffect, useState } from "react";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import type { SessionStatus } from "@/lib/terminal";
 import { formatTimeUntil, humanizeIsoInText } from "@/utils/format";
-import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { isHostOffline } from "../host-status";
 import { useJournalLive } from "../journal/use-journal-live";
+import { usePilotStatus } from "./pilot-status-context";
 
 export type PilotStageNode = "conductor" | "agent" | "worker" | "results";
 type PilotStageMode = "off" | "offline" | "working" | "sleeping";
@@ -37,20 +36,14 @@ export interface PilotStage {
   dailyCap: number;
 }
 
-interface UsePilotStageParams {
-  state: PilotState;
-  health: TerminalHealth;
-  hostStatus: SessionStatus | null;
-}
-
 /**
  * Derives the orchestration diagram's state from data the overview already holds -
  * pilot state, hoisted terminal health, the shared live journal buffer, and the
  * cached agenda query. Opens no new poller or SSE connection; a 30s tick keeps the
  * sleep countdown fresh.
  */
-export function usePilotStage(params: UsePilotStageParams): PilotStage {
-  const { state, health, hostStatus } = params;
+export function usePilotStage(): PilotStage {
+  const { state, health, hostStatus } = usePilotStatus();
 
   // Same cached key the Activity feed / RecentActivity use; the live buffer shares
   // the refcounted pilot SSE connection, so nothing new is fetched here.
