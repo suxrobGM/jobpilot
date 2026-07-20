@@ -10,8 +10,7 @@ interface FieldRowListProps {
   keys: readonly string[];
   emptyText: string;
   addLabel: string;
-  removeAria: (index: number) => string;
-  /** Heading shown atop each row group, e.g. "Search 1". */
+  /** Heading shown atop each row group, e.g. "Search 1"; also names the remove button. */
   rowLabel: (index: number) => string;
   onAdd: () => void;
   onRemove: (index: number) => void;
@@ -20,8 +19,7 @@ interface FieldRowListProps {
 }
 
 export function FieldRowList(props: FieldRowListProps): ReactElement {
-  const { count, keys, emptyText, addLabel, removeAria, rowLabel, onAdd, onRemove, children } =
-    props;
+  const { count, keys, emptyText, addLabel, rowLabel, onAdd, onRemove, children } = props;
 
   return (
     <Stack spacing={2}>
@@ -30,7 +28,11 @@ export function FieldRowList(props: FieldRowListProps): ReactElement {
           <Stack spacing={2}>
             <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
               <Typography variant="overlineMuted">{rowLabel(i)}</Typography>
-              <IconButton aria-label={removeAria(i)} size="small" onClick={() => onRemove(i)}>
+              <IconButton
+                aria-label={`Remove ${rowLabel(i)}`}
+                size="small"
+                onClick={() => onRemove(i)}
+              >
                 <Delete fontSize="sm" />
               </IconButton>
             </Stack>

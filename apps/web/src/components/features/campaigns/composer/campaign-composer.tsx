@@ -23,7 +23,6 @@ import {
   SUBMIT_LABELS,
 } from "./form-config";
 import { NetworkingFields } from "./networking-fields";
-import { SearchFields } from "./search-fields";
 
 interface CampaignComposerProps {
   /** Preselect a board (e.g. from /campaigns/new?board=upwork.com). */
@@ -115,7 +114,18 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
             recentQueries={recentQueries}
           />
 
-          {mode === "search" && <SearchFields form={form} />}
+          {mode === "search" && (
+            <form.AppField name="maxJobs">
+              {(field) => (
+                <field.TextField
+                  label="Jobs to search"
+                  type="number"
+                  helperText="How many results to rank. Leave empty for unlimited."
+                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                />
+              )}
+            </form.AppField>
+          )}
           {mode === "auto-apply" && <AutoApplyFields form={form} />}
           {mode === "networking" && <NetworkingFields form={form} />}
 

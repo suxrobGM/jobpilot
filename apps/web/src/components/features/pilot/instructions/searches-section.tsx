@@ -31,7 +31,6 @@ export const SearchesSection = withForm({
               keys={searchList.keys}
               emptyText="None yet - the pilot will create them on its next quiet cycle."
               addLabel="Add search"
-              removeAria={(i) => `Remove search ${i + 1}`}
               rowLabel={(i) => `Search ${i + 1}`}
               // useKeyedList appends a key when the tracked length grows.
               onAdd={() => field.pushValue({ ...EMPTY_SEARCH })}

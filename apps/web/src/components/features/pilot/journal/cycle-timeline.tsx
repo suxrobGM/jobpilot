@@ -6,10 +6,7 @@ import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Chip, Collapse, Divider, Paper, Stack, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
 import { formatSpanBetween } from "@/utils/format";
-import { JournalRow, KIND_META } from "./journal-row";
-
-/** Stable display order for kind chips, indexed once instead of per comparison. */
-const KIND_ORDER: PilotJournalKind[] = Object.keys(KIND_META) as PilotJournalKind[];
+import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 
 type Block =
   | { type: "cycle"; cycleId: string; entries: PilotJournalEntry[] }

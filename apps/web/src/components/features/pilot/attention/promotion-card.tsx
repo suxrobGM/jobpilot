@@ -31,7 +31,11 @@ const STATUS_COLOR: Record<PromotionStatus, ChipProps["color"]> = {
 };
 
 /** Editable draft card: edit title/body, then Save (edits only) or Approve (edits + approval). */
-export function PromotionDraftCard(props: { promotion: Promotion }): ReactElement {
+interface PromotionCardProps {
+  promotion: Promotion;
+}
+
+export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
   const { promotion } = props;
   const hasTitle = promotion.title !== null;
   const [title, setTitle] = useState(promotion.title ?? "");
@@ -87,7 +91,16 @@ export function PromotionDraftCard(props: { promotion: Promotion }): ReactElemen
               variant="text"
               size="small"
               disabled={busy || !dirty || !canSave}
-              onClick={() => patch.mutate(edits, { onSuccess: (p) => setBody(p.body) })}
+              // Resync both fields: a server-normalized title would otherwise keep
+              // `dirty` true forever and never re-disable Save.
+              onClick={() =>
+                patch.mutate(edits, {
+                  onSuccess: (p) => {
+                    setBody(p.body);
+                    setTitle(p.title ?? "");
+                  },
+                })
+              }
             >
               Save
             </Button>

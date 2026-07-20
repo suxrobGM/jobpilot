@@ -31,7 +31,6 @@ export const PlatformsSection = withForm({
                 keys={platformList.keys}
                 emptyText="No platforms yet."
                 addLabel="Add platform"
-                removeAria={(i) => `Remove platform ${i + 1}`}
                 rowLabel={(i) => `Platform ${i + 1}`}
                 onAdd={() => field.pushValue({ ...EMPTY_PLATFORM })}
                 onRemove={(i) => {

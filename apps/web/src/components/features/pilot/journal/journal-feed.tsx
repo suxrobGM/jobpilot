@@ -22,14 +22,12 @@ import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/notification-provider";
 import { dedupeById } from "@/utils/array";
 import { CycleTimeline } from "./cycle-timeline";
-import { JournalRow, KIND_META } from "./journal-row";
+import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
 import { useJournalLive } from "./use-journal-live";
 
 /** Same-site cookie rides a top-level anchor download, so no fetch/token handling is needed here. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
-
-const ALL_KINDS = Object.keys(KIND_META) as PilotJournalKind[];
 
 /** Full journal feed with client-side kind filters; the server has no kind query param. */
 export function JournalFeed(): ReactElement {
@@ -101,7 +99,7 @@ export function JournalFeed(): ReactElement {
       <Stack spacing={2}>
         <Stack spacing={0.75}>
           <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
-            {ALL_KINDS.map((kind) => {
+            {KIND_ORDER.map((kind) => {
               const selected = selectedKinds.includes(kind);
               return (
                 <Chip

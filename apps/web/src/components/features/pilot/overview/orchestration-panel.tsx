@@ -4,7 +4,15 @@ import { type ReactElement, useEffect, useState } from "react";
 import { Box, Skeleton, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
 import { OrchestrationFlow } from "./orchestration-flow";
-import { usePilotStage } from "./use-pilot-stage";
+import { type PilotStage, usePilotStage } from "./use-pilot-stage";
+
+/** Only the blocked modes get a call to action; running ones fall back to the generic caption. */
+const MODE_HINTS: Record<PilotStage["mode"], string | null> = {
+  off: "Enable the pilot to watch it run cycles.",
+  offline: "Start the JobPilot agent so the pilot can run cycles.",
+  working: null,
+  sleeping: null,
+};
 
 /** Live simulation of the pilot loop: conductor wakes the agent, which delegates to a worker acting on the board. */
 export function OrchestrationPanel(): ReactElement {
@@ -15,12 +23,7 @@ export function OrchestrationPanel(): ReactElement {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const hint =
-    stage.mode === "off"
-      ? "Enable the pilot to watch it run cycles."
-      : stage.mode === "offline"
-        ? "Start the JobPilot agent so the pilot can run cycles."
-        : null;
+  const hint = MODE_HINTS[stage.mode];
 
   return (
     <SectionCard title="Orchestration" description="How the pilot works a cycle, live.">

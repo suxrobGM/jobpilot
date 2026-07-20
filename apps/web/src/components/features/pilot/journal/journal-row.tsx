@@ -29,11 +29,22 @@ export const KIND_META: Record<
   correction: { icon: Rule, color: "secondary", label: "Adjustment" },
 };
 
-const n = (detail: Record<string, unknown>, key: string): number =>
-  typeof detail[key] === "number" ? (detail[key] as number) : 0;
+/** Declaration order of KIND_META, which drives both the filter chips and the cycle summary. */
+export const KIND_ORDER = Object.keys(KIND_META) as PilotJournalKind[];
+
+type JournalDetail = PilotJournalEntry["detail"];
+
+function n(detail: JournalDetail, key: string): number {
+  const value = detail[key];
+  return typeof value === "number" ? value : 0;
+}
+
+interface DigestCountsProps {
+  detail: JournalDetail;
+}
 
 /** Glanceable counts from a digest entry's 24h detail, mirroring the summary's fields. */
-function DigestCounts(props: { detail: Record<string, unknown> }): ReactElement {
+function DigestCounts(props: DigestCountsProps): ReactElement {
   const { detail } = props;
   const parts = [
     `${n(detail, "applicationsCreated")} applied`,
@@ -45,7 +56,11 @@ function DigestCounts(props: { detail: Record<string, unknown> }): ReactElement 
   return <Typography variant="captionMuted">{parts.join(" · ")}</Typography>;
 }
 
-export function JournalRow(props: { entry: PilotJournalEntry }): ReactElement {
+interface JournalRowProps {
+  entry: PilotJournalEntry;
+}
+
+export function JournalRow(props: JournalRowProps): ReactElement {
   const { entry } = props;
   const meta = KIND_META[entry.kind];
   const Icon = meta.icon;
