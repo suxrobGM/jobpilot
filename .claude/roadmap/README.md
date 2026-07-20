@@ -29,6 +29,7 @@ perpetually. Implementation runs on branch `feat/pilot` per the approved 2026-07
 
 | Status | Item | Hook |
 | --- | --- | --- |
+| todo | [Dashboard aggregates](t1-dashboard-aggregates.md) | tiles/strip count a 100-row page; needs `/campaigns/stats` |
 | todo | [Agent eval laboratory](t1-eval-lab.md) | replayable ATS fixtures, graded scorecard; the autonomy immune system |
 | todo | [Step telemetry](t1-step-telemetry.md) | OTel GenAI metrics per job |
 | todo | [MCP tool server](t3-mcp-tool-server.md) | typed tools generated from Zod contracts |
