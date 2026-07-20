@@ -2,7 +2,7 @@
 // pulling in cursor batches. The fake returns small chunks so multi-batch cursor walking is exercised.
 import type { PrismaClient } from "@/generated/prisma/client";
 import { makePush } from "./agenda/db.test-helpers";
-import { PilotService } from "./pilot.service";
+import { PilotJournalService } from "./journal.service";
 import { describe, expect, it } from "bun:test";
 
 const CHUNK = 2;
@@ -35,7 +35,7 @@ function makeDb(rows: Record<string, unknown>[]) {
 
 function service(rows: Record<string, unknown>[]) {
   const db = makeDb(rows) as unknown as PrismaClient;
-  return new PilotService(db, makePush({ pushes: [] }));
+  return new PilotJournalService(db, makePush({ pushes: [] }));
 }
 
 describe("PilotService journal export", () => {

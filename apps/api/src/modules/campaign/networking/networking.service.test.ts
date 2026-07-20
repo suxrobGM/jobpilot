@@ -2,7 +2,7 @@
 // result recording. Injects a fake Prisma directly (no database); guardSend runs before the
 // transaction, so the rejection paths need no summary fakes.
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { PilotService } from "@/modules/pilot/pilot.service";
+import type { PilotJournalService } from "@/modules/pilot/journal.service";
 import { CampaignNetworkingService } from "./networking.service";
 import { describe, expect, it } from "bun:test";
 
@@ -11,13 +11,13 @@ interface Over {
 }
 
 /** Fake PilotService recording journal appends (the correction-capture path). */
-function makePilot(journals: Record<string, unknown>[]): PilotService {
+function makePilot(journals: Record<string, unknown>[]): PilotJournalService {
   return {
     appendJournal: async (_p: string, body: { entries: Record<string, unknown>[] }) => {
       journals.push(...body.entries);
       return { items: [] };
     },
-  } as unknown as PilotService;
+  } as unknown as PilotJournalService;
 }
 
 function makeDb(over: Over) {

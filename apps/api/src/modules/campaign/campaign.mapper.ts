@@ -69,6 +69,20 @@ type NetworkingMessageRow = Omit<
   contact: NetworkingContactRow;
 };
 
+/**
+ * Serialize a Campaign row to its wire shape: narrow the `status`/`source` unions and parse the
+ * `config`/`summary` JSON columns. Dates pass through raw - Elysia serializes them.
+ */
+export function toCampaignRow(campaign: Campaign): CampaignRow {
+  return {
+    ...campaign,
+    status: campaign.status as CampaignStatus,
+    source: campaign.source as CampaignSource,
+    config: JSON.parse(campaign.config) as CampaignConfig,
+    summary: JSON.parse(campaign.summary) as CampaignSummary,
+  };
+}
+
 /** Serialize a Job row's `status`/Date fields to their wire shape. */
 export function toCampaignJobRow(job: Job): CampaignJobRow {
   return {

@@ -11,15 +11,15 @@ import { conflict, findOwned, unprocessable } from "@/common/errors";
 import { PushService } from "@/common/push";
 import { publish } from "@/common/sse";
 import { PrismaClient, type PromotionPost as PromotionPostModel } from "@/generated/prisma/client";
+import { PilotJournalService } from "./journal.service";
 import { toPromotion } from "./pilot.mapper";
-import { PilotService } from "./pilot.service";
 
 @singleton()
 export class PromotionService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly push: PushService,
-    private readonly pilot: PilotService,
+    private readonly pilot: PilotJournalService,
   ) {}
 
   /** Agent creates a draft post for review; notifies the user to look it over. */

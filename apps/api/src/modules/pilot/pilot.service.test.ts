@@ -1,4 +1,4 @@
-// Fake-Prisma unit test for PilotService: question lifecycle and journal cycle accounting.
+// Fake-Prisma unit test for PilotService: the question lifecycle (journal lives in journal.service.test.ts).
 // Injects a fake Prisma directly (no database); publish() is a no-op without subscribers.
 import type { PushPayload } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
@@ -9,13 +9,11 @@ import { describe, expect, it } from "bun:test";
 interface Recorder {
   questionCreate?: Record<string, unknown>;
   questionUpdate?: { data: Record<string, unknown> };
-  journalCreates: Record<string, unknown>[];
-  stateUpserts: { create: Record<string, unknown>; update: Record<string, unknown> }[];
   pushes: { userId: string; payload: PushPayload }[];
 }
 
 function makeDb(questionOver: Record<string, unknown> = {}) {
-  const rec: Recorder = { journalCreates: [], stateUpserts: [], pushes: [] };
+  const rec: Recorder = { pushes: [] };
   // A single mutable question row so the status guard in updateMany is observable.
   const question: Record<string, unknown> = {
     id: "e1",
@@ -47,19 +45,6 @@ function makeDb(questionOver: Record<string, unknown> = {}) {
         return { count: 1 };
       },
     },
-    pilotJournalEntry: {
-      createMany: async (a: { data: Record<string, unknown>[] }) => {
-        rec.journalCreates.push(...a.data);
-        return { count: a.data.length };
-      },
-    },
-    pilotState: {
-      upsert: async (a: { create: Record<string, unknown>; update: Record<string, unknown> }) => {
-        rec.stateUpserts.push(a);
-        return {};
-      },
-    },
-    $transaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(db),
   };
   return { db, rec, question };
 }
@@ -146,53 +131,5 @@ describe("PilotService questions", () => {
     });
 
     expect(rec.questionCreate?.expiresAt).toBeNull();
-  });
-});
-
-describe("PilotService journal", () => {
-  it("advances cycle accounting when a cycle entry is written", async () => {
-    const { svc, rec } = service();
-    const res = await svc.appendJournal("p1", {
-      cycleId: "cycle-1",
-      entries: [
-        { kind: "cycle", summary: "Completed cycle 1" },
-        { kind: "action", summary: "Applied to job" },
-      ],
-    });
-
-    expect(res.items).toHaveLength(2);
-    expect(rec.journalCreates).toHaveLength(2);
-    expect(rec.stateUpserts).toHaveLength(1);
-    expect(rec.stateUpserts[0].update.cycleCount).toEqual({ increment: 1 });
-    expect(rec.stateUpserts[0].update.lastCycleAt).toBeInstanceOf(Date);
-  });
-
-  it("does not touch cycle accounting without a cycle entry", async () => {
-    const { svc, rec } = service();
-    await svc.appendJournal("p1", { entries: [{ kind: "action", summary: "did a thing" }] });
-
-    expect(rec.journalCreates).toHaveLength(1);
-    expect(rec.stateUpserts).toHaveLength(0);
-  });
-
-  it("pushes an alert for a system entry but not for other kinds", async () => {
-    const { svc, rec } = service();
-    await svc.appendJournal("p1", {
-      entries: [
-        { kind: "action", summary: "applied to a job" },
-        { kind: "system", summary: "Pilot stopped unexpectedly (watchdog)" },
-      ],
-    });
-
-    expect(rec.pushes).toHaveLength(1);
-    expect(rec.pushes[0]).toMatchObject({
-      userId: "p1",
-      payload: {
-        title: "Pilot alert",
-        body: "Pilot stopped unexpectedly (watchdog)",
-        url: "/pilot",
-        tag: "pilot-system",
-      },
-    });
   });
 });

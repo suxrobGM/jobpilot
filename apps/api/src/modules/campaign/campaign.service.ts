@@ -1,7 +1,5 @@
 import type {
-  CampaignConfig,
   CampaignEventInput,
-  CampaignJobStatus,
   CampaignSource,
   CampaignStatus,
   CampaignSummary,
@@ -13,8 +11,8 @@ import { cleanReplacementCharsNullable } from "@jobpilot/contracts/utils/text";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { type Campaign, type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { type CampaignJobRow, type CampaignRow } from "./campaign.mapper";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type CampaignJobRow, toCampaignJobRow, toCampaignRow } from "./campaign.mapper";
 import { summarizeJobs } from "./campaign.summary";
 import { ensureCampaignOwned } from "./campaign.utils";
 
@@ -144,20 +142,10 @@ export class CampaignService {
       take: 200,
     });
 
-    return campaigns.map(
-      (r): CampaignRow => ({
-        ...r,
-        status: r.status as CampaignStatus,
-        source: r.source as CampaignSource,
-        config: JSON.parse(r.config) as CampaignConfig,
-        summary: JSON.parse(r.summary) as CampaignSummary,
-        startedAt: r.startedAt,
-        updatedAt: r.updatedAt,
-        completedAt: r.completedAt,
-      }),
-    );
+    return campaigns.map(toCampaignRow);
   }
 
+  /** Unlike the other reads this leaves `config`/`summary` as stored JSON strings - see `campaignCreatedSchema`. */
   async create(userId: string, body: CreateCampaignInput) {
     const campaign = await this.prisma.campaign.create({
       data: {
@@ -173,15 +161,6 @@ export class CampaignService {
       ...campaign,
       status: campaign.status as CampaignStatus,
       source: campaign.source as CampaignSource,
-      startedAt: campaign.startedAt,
-      updatedAt: campaign.updatedAt,
-      completedAt: campaign.completedAt,
-    } satisfies Omit<Campaign, "startedAt" | "updatedAt" | "completedAt"> & {
-      status: CampaignStatus;
-      source: CampaignSource;
-      startedAt: Date;
-      updatedAt: Date;
-      completedAt: Date | null;
     };
   }
 
@@ -201,26 +180,18 @@ export class CampaignService {
     );
 
     return {
-      ...campaign,
-      status: campaign.status as CampaignStatus,
-      source: campaign.source as CampaignSource,
-      startedAt: campaign.startedAt,
-      updatedAt: campaign.updatedAt,
-      completedAt: campaign.completedAt,
+      ...toCampaignRow(campaign),
       // Clean replacement-char artifacts in historical rows written before the
       // schema-level sanitizer landed, so the UI never shows mojibake.
       jobs: campaign.jobs.map(
         (job): CampaignJobRow => ({
-          ...job,
-          status: job.status as CampaignJobStatus,
-          appliedAt: job.appliedAt,
+          ...toCampaignJobRow(job),
           skipReason: cleanReplacementCharsNullable(job.skipReason),
           failReason: cleanReplacementCharsNullable(job.failReason),
           matchReason: cleanReplacementCharsNullable(job.matchReason),
           retryNotes: cleanReplacementCharsNullable(job.retryNotes),
         }),
       ),
-      config: JSON.parse(campaign.config) as CampaignConfig,
       // Job-based campaigns derive the summary from their loaded jobs so the tiles
       // always match the rows; networking campaigns have no jobs, so their
       // recomputed `Campaign.summary` (NetworkingMessage aggregates) is authoritative.
@@ -285,16 +256,7 @@ export class CampaignService {
       );
     }
 
-    return {
-      ...campaign,
-      status: campaign.status as CampaignStatus,
-      source: campaign.source as CampaignSource,
-      config: JSON.parse(campaign.config) as CampaignConfig,
-      summary: JSON.parse(campaign.summary) as CampaignSummary,
-      startedAt: campaign.startedAt,
-      updatedAt: campaign.updatedAt,
-      completedAt: campaign.completedAt,
-    } satisfies CampaignRow;
+    return toCampaignRow(campaign);
   }
 
   /**

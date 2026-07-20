@@ -1,17 +1,19 @@
-// Lease grant path: a fake Prisma and CampaignJobService are injected into AgendaService, so lease
-// grant/claim/verify logic runs with no database. Loading the service transitively loads `@/env`,
-// satisfied by the local .env / ci.yml dummy env.
+// Lease grant path: a fake Prisma and CampaignJobService are injected into LeaseService (over a real
+// AgendaService, since a grant re-compiles the agenda), so grant/claim/verify logic runs with no
+// database. Loading the services transitively loads `@/env`, satisfied by the local .env / ci.yml dummy env.
 
 import { approvedJob, makeAgendaDeps, type Over } from "./db.test-helpers";
+import { LeaseService } from "./lease.service";
 import { AgendaService } from "./service";
 import { describe, expect, it } from "bun:test";
 
 const service = (over: Over = {}) => {
   const { prisma, campaignJobs, pilot, push, campaigns, rec } = makeAgendaDeps(over);
-  return { svc: new AgendaService(prisma, campaignJobs, pilot, push, campaigns), rec };
+  const agenda = new AgendaService(prisma, campaignJobs, pilot, push, campaigns);
+  return { svc: new LeaseService(prisma, campaignJobs, agenda), rec };
 };
 
-describe("AgendaService leasing", () => {
+describe("LeaseService grant", () => {
   it("grants a job.apply lease and flips the job to applying", async () => {
     const { svc, rec } = service({
       approvedJobs: [approvedJob()],
@@ -96,7 +98,7 @@ describe("AgendaService leasing", () => {
   });
 });
 
-describe("AgendaService lease lifecycle", () => {
+describe("LeaseService lifecycle", () => {
   it("409s a heartbeat on an already-released lease and records no update", async () => {
     const { svc, rec } = service({ activeLease: { id: "L1", releasedAt: new Date() } });
     await expect(svc.heartbeat("p1", "L1")).rejects.toThrow();

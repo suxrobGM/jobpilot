@@ -4,7 +4,7 @@
 
 import type { PushPayload, PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { PilotService } from "./pilot.service";
+import type { PilotJournalService } from "./journal.service";
 import { PromotionService } from "./promotion.service";
 import { describe, expect, it } from "bun:test";
 
@@ -51,7 +51,7 @@ function makeDeps(over: Record<string, unknown> = {}) {
       journals.push(...body.entries);
       return { items: [] };
     },
-  } as unknown as PilotService;
+  } as unknown as PilotJournalService;
   const svc = new PromotionService(db as unknown as PrismaClient, push, pilot);
   return { svc, journals, existing };
 }

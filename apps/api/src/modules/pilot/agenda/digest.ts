@@ -1,7 +1,7 @@
 import { DAY_MS, minutesOfDay, startOfDay } from "@/common/date/buckets";
 import type { PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { PilotService } from "../pilot.service";
+import type { PilotJournalService } from "../journal.service";
 
 /** The morning digest is composed once the UTC clock passes this hour. */
 const DIGEST_HOUR = 7;
@@ -9,7 +9,7 @@ const DIGEST_HOUR = 7;
 /** Deps for writing the digest journal entry and pushing its summary. */
 interface DigestDeps {
   prisma: PrismaClient;
-  pilot: PilotService;
+  pilot: PilotJournalService;
   push: PushService;
 }
 

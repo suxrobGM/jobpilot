@@ -22,13 +22,17 @@ import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
+import { LeaseService } from "./agenda/lease.service";
 import { AgendaService } from "./agenda/service";
+import { PilotJournalService } from "./journal.service";
 import { createPilotJournalResponseSchema, pilotActivityResponseSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
 import { promotionController } from "./promotion.controller";
 
 const pilot = container.resolve(PilotService);
+const journal = container.resolve(PilotJournalService);
 const agenda = container.resolve(AgendaService);
+const leases = container.resolve(LeaseService);
 
 const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
 const limitJournal = rateLimit(RATE_LIMITS.pilotJournal);
@@ -88,7 +92,7 @@ export const pilotController = new Elysia({
     },
   })
   // ── Leases ────────────────────────────────────────────────────────────────────
-  .post("/lease", ({ user, body }) => agenda.lease(user.id, body.itemId), {
+  .post("/lease", ({ user, body }) => leases.lease(user.id, body.itemId), {
     body: createPilotLeaseSchema,
     beforeHandle: limitLease,
     response: pilotLeaseSchema,
@@ -98,7 +102,7 @@ export const pilotController = new Elysia({
         "Re-validates and leases an agenda item for 15 minutes, applying grant side effects. 409 if the item is no longer available.",
     },
   })
-  .post("/lease/:id/heartbeat", ({ user, params }) => agenda.heartbeat(user.id, params.id), {
+  .post("/lease/:id/heartbeat", ({ user, params }) => leases.heartbeat(user.id, params.id), {
     params: idParam,
     beforeHandle: limitLease,
     response: pilotLeaseSchema,
@@ -109,7 +113,7 @@ export const pilotController = new Elysia({
   })
   .post(
     "/lease/:id/release",
-    ({ user, params, body }) => agenda.release(user.id, params.id, body),
+    ({ user, params, body }) => leases.release(user.id, params.id, body),
     {
       params: idParam,
       body: releasePilotLeaseSchema,
@@ -123,7 +127,7 @@ export const pilotController = new Elysia({
     },
   )
   // ── Journal ───────────────────────────────────────────────────────────────────
-  .post("/journal", ({ user, body }) => pilot.appendJournal(user.id, body), {
+  .post("/journal", ({ user, body }) => journal.appendJournal(user.id, body), {
     body: createPilotJournalSchema,
     beforeHandle: limitJournal,
     response: createPilotJournalResponseSchema,
@@ -133,7 +137,7 @@ export const pilotController = new Elysia({
         "Writes a batch of journal entries, advances cycle accounting on 'cycle' entries, and broadcasts each entry.",
     },
   })
-  .get("/journal", ({ user, query }) => pilot.listJournal(user.id, query.cursor, query.limit), {
+  .get("/journal", ({ user, query }) => journal.listJournal(user.id, query.cursor, query.limit), {
     query: pilotJournalQuerySchema,
     beforeHandle: limitAgenda,
     response: pilotJournalPageSchema,
@@ -143,7 +147,7 @@ export const pilotController = new Elysia({
     },
   })
   // Streams the whole history as NDJSON; no `response` schema (raw streaming Response).
-  .get("/journal/export", ({ user }) => pilot.streamJournalExport(user.id), {
+  .get("/journal/export", ({ user }) => journal.streamJournalExport(user.id), {
     beforeHandle: limitJournalExport,
     detail: {
       summary: "Export the journal",

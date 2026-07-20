@@ -9,7 +9,7 @@ import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
-import { PilotService } from "@/modules/pilot/pilot.service";
+import { PilotJournalService } from "@/modules/pilot/journal.service";
 import { toNetworkingMessageRow } from "../campaign.mapper";
 import { recomputeNetworkingSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
@@ -18,7 +18,7 @@ import { ensureCampaignOwned } from "../campaign.utils";
 export class CampaignNetworkingService {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly pilot: PilotService,
+    private readonly pilot: PilotJournalService,
   ) {}
 
   /** List the campaign's networking messages (with their contacts) for the board. */

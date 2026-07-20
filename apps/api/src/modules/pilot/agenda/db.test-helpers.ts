@@ -5,7 +5,7 @@ import type { PushPayload, PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignService } from "@/modules/campaign/campaign.service";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import type { PilotService } from "../pilot.service";
+import type { PilotJournalService } from "../journal.service";
 
 export interface Recorder {
   patchJob: unknown[][];
@@ -289,14 +289,14 @@ export function makeCampaignService(over: Over = {}): CampaignService {
   } as unknown as CampaignService;
 }
 
-/** Fake PilotService recording journal appends (the digest write path). */
-export function makePilot(rec: Pick<Recorder, "journals">): PilotService {
+/** Fake PilotJournalService recording journal appends (the digest write path). */
+export function makePilot(rec: Pick<Recorder, "journals">): PilotJournalService {
   return {
     appendJournal: async (_p: string, body: { entries: Record<string, unknown>[] }) => {
       rec.journals.push(...body.entries);
       return { items: [] };
     },
-  } as unknown as PilotService;
+  } as unknown as PilotJournalService;
 }
 
 /** Fake PushService recording sendToUser calls without any web-push/env dependency. */
