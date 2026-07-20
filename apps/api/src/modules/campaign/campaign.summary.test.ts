@@ -49,4 +49,29 @@ describe("campaign summaries", () => {
       },
     });
   });
+
+  // The roll-ups ship on the wire for the installed agent skills, but they are a projection of
+  // byStatus; this pins that they cannot drift apart for any mix of statuses.
+  it("keeps every roll-up consistent with byStatus", () => {
+    const summary = summarizeJobs([
+      { status: "pending" },
+      { status: "pending" },
+      { status: "approved" },
+      { status: "applying" },
+      { status: "applied" },
+      { status: "applied" },
+      { status: "failed" },
+      { status: "skipped" },
+      { status: "skipped" },
+      { status: "needs_user" },
+    ]);
+    const c = summary.byStatus;
+
+    expect(summary.totalFound).toBe(10);
+    expect(summary.qualified).toBe(10 - c.skipped);
+    expect(summary.applied).toBe(c.applied);
+    expect(summary.failed).toBe(c.failed);
+    expect(summary.skipped).toBe(c.skipped);
+    expect(summary.remaining).toBe(c.approved + c.applying + c.needs_user);
+  });
 });

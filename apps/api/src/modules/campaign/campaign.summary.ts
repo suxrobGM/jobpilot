@@ -58,21 +58,29 @@ export function emptyNetworkingSummary(): CampaignNetworkingSummary {
 
 function foldJob(summary: CampaignJobSummary, status: string, count: number): void {
   summary.byStatus[status as CampaignJobStatus] += count;
-  summary.totalFound += count;
-  if (status !== "skipped") summary.qualified += count;
-  if (status === "applied") summary.applied += count;
-  else if (status === "failed") summary.failed += count;
-  else if (status === "skipped") summary.skipped += count;
-  else if (status === "approved" || status === "applying" || status === "needs_user") {
-    summary.remaining += count;
-  }
+}
+
+/**
+ * Recomputes the six roll-ups from `byStatus`. They stay on the wire because the installed
+ * agent skills read them (`summary.applied` gates the max-applications cap), but they are a
+ * projection - deriving them here is what keeps them from drifting out of step with `byStatus`.
+ */
+function finalizeJobSummary(summary: CampaignJobSummary): CampaignJobSummary {
+  const counts = summary.byStatus;
+  summary.totalFound = CAMPAIGN_JOB_STATUSES.reduce((n, status) => n + counts[status], 0);
+  summary.qualified = summary.totalFound - counts.skipped;
+  summary.applied = counts.applied;
+  summary.failed = counts.failed;
+  summary.skipped = counts.skipped;
+  summary.remaining = counts.approved + counts.applying + counts.needs_user;
+  return summary;
 }
 
 /** Folds job rows into the public job-summary shape. */
 export function summarizeJobs(jobs: { status: string }[]): CampaignJobSummary {
   const summary = emptyJobSummary();
   for (const job of jobs) foldJob(summary, job.status, 1);
-  return summary;
+  return finalizeJobSummary(summary);
 }
 
 function foldNetworking(summary: CampaignNetworkingSummary, status: string, count: number): void {
@@ -146,6 +154,9 @@ export async function loadCampaignSummaries(
     const summary = requireJobSummary(summaries, row.campaignId);
     foldJob(summary, row.status, row._count._all);
     summary.scored += row._count.matchScore;
+  }
+  for (const id of jobIds) {
+    finalizeJobSummary(requireJobSummary(summaries, id));
   }
   for (const row of contacts) {
     requireNetworkingSummary(summaries, row.campaignId).discovered = row.discovered;
