@@ -23,7 +23,11 @@ function groupReasons(
     if (job.status !== status) {
       continue;
     }
-    const reason = pick(job)?.trim() || "Unspecified";
+    // Strip numeric parentheticals ("(35 < 50)") so score-threshold variants collapse into one bucket.
+    const reason =
+      pick(job)
+        ?.replace(/\s*\([^)]*\d[^)]*\)\s*$/, "")
+        .trim() || "Unspecified";
     counts.set(reason, (counts.get(reason) ?? 0) + 1);
   }
 
