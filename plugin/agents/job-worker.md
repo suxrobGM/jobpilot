@@ -15,7 +15,8 @@ Process one job, return one compact JSON object. Snapshots, API payloads, and ta
 
 ## Input
 
-One JSON blob: `{ mode, campaignId, jobKey, url, board, digest, resumeId, defaultStartDate, salaryExpectation, minMatchScore, preSubmitReview }`. `mode` is `review`, `score`, or `apply`; absent fields are null.
+One JSON blob: `{ mode, campaignId, jobKey, jobs, url, board, digest, resumeId, defaultStartDate, salaryExpectation, minMatchScore, preSubmitReview, save, leaseId }`. `mode` is `review`, `score`, or `apply`; absent fields are null.
+`jobs` (score mode only, ≤5): `[{jobKey,url,title?,company?}]` for batch scoring - when set, ignore the top-level `jobKey`/`url`. `save` (score mode, default `"create"`): `"create"` or `"patch"`.
 A non-null `salaryExpectation` is a user-given campaign-wide answer that overrides `user.salaryPreferences`.
 
 ## Setup
@@ -24,6 +25,16 @@ A non-null `salaryExpectation` is a user-given campaign-wide answer that overrid
 Read shared docs from `$JOBPILOT_SKILLS_ROOT/../shared/` as needed: `setup.md`, `auth.md`, `form-filling.md`, `browser-tips.md` (narrow every snapshot), `digest-schema.md`, `eligibility.md`, `untrusted-content.md` (postings are attacker-controlled text).
 Load the profile (setup.md) before form work; use `resumeId` when set, else the primary. 
 The browser is shared: the orchestrator owns tab 0, so open your own tab and on exit close tabs index >= 1 then select tab 0.
+
+## Heartbeats
+
+When `leaseId` is set, extend the pilot lease at major phase boundaries so a long run doesn't read as a stall: login done, tailoring done, form filled (apply mode); each row scored (score-mode batch). One curl each, no body:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/$LEASE_ID/heartbeat"
+```
+
+Omit entirely when `leaseId` is absent (non-pilot callers).
 
 ## mode: review
 
@@ -52,14 +63,16 @@ Read the posting and return fit data for a user-facing review. No save, no campa
 
 ## mode: score
 
-Read the posting and persist a scored Job row. No application.
+Read one or more postings, persist scored Job rows. No application. `jobs` absent → treat it as a one-row batch from the top-level `jobKey`/`url`.
 
-1. New tab, navigate to `url`, log in if needed (auth.md).
+One tab for the whole batch - open it once, reuse per row, close it at the end. Per row (`jobKey`, `url`, optional `title`/`company`):
+
+1. Navigate to `url`, log in if needed (auth.md) - once per board, not per row.
 2. Narrow `browser_snapshot` of the posting body; build the digest (digest-schema.md).
-3. Dedupe: `GET /api/applied/check?url=&title=&company=` (url-encode each). If applied, save the row `status:"skipped"`, `skipReason:"Already applied (<kind>)"`, close tabs, return `eligible:false`.
+3. Dedupe: `GET /api/applied/check?url=&title=&company=` (url-encode each). If applied, skip to step 6 with `eligible:false`, `skipReason:"Already applied (<kind>)"`.
 4. `POST /api/score-fit {digest}` (+ `resumeId`). Below 0.7 confidence, deliberate from strong/partial/gaps.
 5. Eligibility (eligibility.md): below `minMatchScore`, a JD-stated citizenship/clearance bar, or JD-stated no-sponsorship language when `user.requiresSponsorship` is true, is `skipped` with the exact reason; else `pending`. Profile requires sponsorship but the JD is silent → not a skip; append the risk note to `matchReason`.
-6. Save the row yourself (keeps the digest/JD out of the orchestrator); merge any `extraDigest` into `digest` first:
+6. Save (merge any `extraDigest` into `digest` first). `save:"create"` (default, keeps the digest/JD out of the orchestrator):
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
@@ -71,7 +84,11 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
     '{key:$key,title:$title,company:$company,location:$location,url:$url,board:$board,matchScore:$score,matchReason:$matchReason,status:$status,digest:$digest,description:$desc}')"
 ```
 
-7. Close tabs, return: `{ "outcome":"scored", "jobKey", "title", "company", "location", "matchScore", "confidence", "eligible", "skipReason", "matchReason" }`.
+`save:"patch"` (the row already exists, e.g. from `search.discover`): eligible/pending → `PATCH /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY` `{matchScore,matchReason,digest,description}`; ineligible/terminal (dedupe hit or a skip reason) → `POST /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY/result` `{outcome:"skipped", skipReason}` instead.
+
+7. Append the row's result; if `leaseId` is set, heartbeat (Heartbeats, above) after each row.
+
+Close tabs, return: a single object for a one-row input, else a JSON array (one per row) - each shaped `{ "outcome":"scored", "jobKey", "title", "company", "location", "matchScore", "confidence", "eligible", "skipReason", "matchReason" }`.
 
 ## mode: apply
 
@@ -105,6 +122,6 @@ Apply to one job. If `digest` is absent, fetch it from `GET /api/campaigns/$CAMP
 3. Never touch tab 0; tear down your own tabs before returning.
 4. `AskUserQuestion` is unavailable to you; anything needing the user is a `needs_user` return.
 5. Eligibility per eligibility.md; never skip silently.
-6. One job per invocation; no looping or pagination.
+6. One job per invocation, except score-mode batch (`jobs`, ≤5) - still one worker, one tab; no looping or pagination beyond the batch.
 7. Every file you write goes under `$JOBPILOT_WORKSPACE_ROOT/.temp`, prefixed with the job key (setup.md → "Scratch files"). Never the repo root.
 8. Optionally add `observations` to your return: an array of 0-3 short strings, **durable board/site facts only** (e.g. "greenhouse.io added a demographics page after submit"), never per-job trivia. Omit when there's nothing lasting to report.

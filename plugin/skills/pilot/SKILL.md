@@ -45,11 +45,12 @@ Take the top item - the server already ranked the agenda. If several share prior
 ## 3. Lease
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease" \
-  -H 'content-type: application/json' -d "$(jq -n --arg id "<itemId>" '{itemId:$id}')"
+LEASE=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease" \
+  -H 'content-type: application/json' -d "$(jq -n --arg id "<itemId>" '{itemId:$id}')")
+LEASE_ID=$(echo "$LEASE" | jq -r '.id')
 ```
 
-On `409`, re-fetch the agenda once; if still nothing leasable, treat this as an empty cycle (step 1's journal + sentinel).
+On `409`, re-fetch the agenda once; if still nothing leasable, treat this as an empty cycle (step 1's journal + sentinel). `LEASE_ID` feeds the heartbeat calls in long branches (step 4) and step 6's release.
 
 ## 4. Act
 
@@ -84,7 +85,13 @@ The `[interview-prep]` marker prefix is load-bearing - the server dedupes on it.
 
 ### `job.apply`
 
-Delegate ONE `job-worker` invocation in apply mode, same input JSON auto-apply builds (campaignId, jobKey, url, board, digest, resumeId, plus profile fields per `../../shared/setup.md`), all read from the lease payload. Handle the four outcomes exactly as auto-apply's 2.4:
+Delegate ONE `job-worker` invocation in apply mode, same input JSON auto-apply builds (campaignId, jobKey, url, board, digest, resumeId, plus profile fields per `../../shared/setup.md`) plus `leaseId:$LEASE_ID` (lets the worker heartbeat through a long apply), all read from the lease payload. Heartbeat once more when it returns:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/$LEASE_ID/heartbeat"
+```
+
+Handle the four outcomes exactly as auto-apply's 2.4:
 
 - `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` per `../../skills/auto-apply/SKILL.md` (2.4 payload shapes).
 - `needs_user` → ask the user, then park the job:
@@ -115,7 +122,7 @@ The lease payload is enriched: `{questionId, questionKind, subjectType, subjectI
 
 ### `search.discover`
 
-Run ONE bounded board search, modeled on the `search` skill (login per `../../shared/auth.md`, paginate per **Pagination & infinite scroll** in `../../shared/browser-tips.md`). If the payload doesn't name an existing campaign, create one first:
+Run ONE bounded board search, modeled on the `search` skill (login per `../../shared/auth.md`). If the payload doesn't name an existing campaign, create one first:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
@@ -124,7 +131,21 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
     '{campaignId:$id, query:$q, source:"auto-apply", config:{resumeId:$rid, minScore:$minScore, board:$board}}')"
 ```
 
-Score and save each row via `job-worker` score mode, one worker at a time, exactly as auto-apply's discovery phase. Cap the batch (first 2 pages or 20 rows, whichever comes first) - the next cycle continues from where this one left off. **Do not apply** in this cycle.
+Cap ONE results page (~10 rows, no pagination). Score every row **in-context** - no per-job navigation, no worker delegation: spawning a worker per row just repeats the same fixed setup cost, and the shared browser tab would serialize them anyway. Per row: dedupe via `GET /api/applied/check` (already-applied → save `status:"skipped"`, no scoring); else build the digest from the results snapshot alone (digest-schema.md), `POST /api/score-fit`, and save per eligibility.md - ineligible (hard blocker) → `status:"skipped"` with the reason; else `status:"pending"` with the score (save shape matches `job-worker`'s score-mode create body, `../../agents/job-worker.md`). The server auto-promotes `pending` rows scoring ≥ threshold to `approved` on the next agenda compile, so **do not apply** in this cycle. A row too thin to score confidently → save `pending` **without** `matchScore`; `campaign.scorePending` (below) batch-scores those later. Heartbeat after each row and at least every ~10 minutes:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/$LEASE_ID/heartbeat"
+```
+
+### `campaign.scorePending`
+
+Payload `{campaignId, query, board, resumeId, minScore, pendingCount, entries: [{key,url,title}]}` - unscored `pending` rows left behind by `search.discover` (thin listings) or a mid-batch abandonment. Delegate ONE `job-worker` batch score invocation: `{mode:"score", campaignId, jobs:<entries mapped to {jobKey:key,url,title}, ≤5>, resumeId, minMatchScore:<minScore>, save:"patch", leaseId:$LEASE_ID}`. **Do not apply** this cycle - promotion of newly-scored rows to `approved` happens server-side on the next agenda compile. Heartbeat after the worker returns:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/$LEASE_ID/heartbeat"
+```
+
+Journal like the other kinds: "Scored 5 unscored jobs for 'senior typescript remote' - 3 now ≥ threshold, promote next cycle."
 
 ### `campaign.finalize`
 
@@ -143,7 +164,7 @@ CID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/ap
   | jq -r '[.[] | select(.source=="auto-apply")] | sort_by(.startedAt) | last | .campaignId // ""')
 ```
 
-For each entry (≤5): dedupe via `GET /api/applied/check`, then delegate ONE `job-worker` score mode (input as the `apply` skill's batch score - `campaignId:$CID`, `jobKey:<entry id>`, `url`) to score + save the Job. One worker at a time. Scored jobs enter the normal `job.apply` pipeline in later cycles - **do not apply here**. Queue entries auto-consume server-side when their job reaches a terminal result - never mark them manually. Journal: "Scored 4 queued jobs - 3 eligible."
+Delegate ONE `job-worker` batch score invocation over the entries (≤5): `{mode:"score", campaignId:$CID, jobs:[{jobKey:<entry id>, url}...], save:"create", leaseId:$LEASE_ID}` - it dedupes and saves each row itself. Scored jobs above threshold auto-promote to `approved` server-side on the next agenda compile and enter the normal `job.apply` pipeline in later cycles - **do not apply here**. Queue entries auto-consume server-side when their job reaches a terminal result - never mark them manually. Heartbeat after the worker returns (same curl as `search.discover`, above). Journal: "Scored 4 queued jobs - 3 eligible."
 
 ### `board.health`
 
@@ -301,7 +322,7 @@ If the worker returned `observations`, append each to the **same** journal POST 
 ## 6. Release
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/<leaseId>/release" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/lease/$LEASE_ID/release" \
   -H 'content-type: application/json' -d '{"outcome":"done"}'
 ```
 
@@ -325,3 +346,4 @@ Print exactly one sentinel as the **final line of output**, then stop:
 4. If anything wedges, journal `kind:"system"` and print the sentinel with `status=error sleep=300` - the host recovers on the next cycle.
 5. Eligibility for `job.apply`/`question.answered` follows `../../shared/eligibility.md`; never skip silently.
 6. Draft promotions only for the instructions' platforms. Drafting never posts; `promo.post` publishes only a user-approved draft, verbatim - the server refuses the lease otherwise.
+7. Heartbeat `$LEASE_ID` during long branches (`search.discover`, `campaign.scorePending`, `queue.drain`, `job.apply`) - after each worker return/row and at least every ~10 minutes - or the watchdog reads legitimate long work as a stall.

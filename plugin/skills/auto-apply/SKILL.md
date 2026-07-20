@@ -110,7 +110,14 @@ SCORE=$(echo "$FIT" | jq -r '.score')
 CONF=$(echo "$FIT" | jq -r '.confidence')
 ```
 
-If `CONF >= 0.7` and `SCORE` is ≥10 from `minMatchScore` either side, use it directly; otherwise rescore using `strongMatches`/`partialMatches`/`gaps`. A thin/generic row is **not** a skip - read the full posting (from the tab-1 detail, or open it briefly if truly needed), rebuild the digest, and rescore first. Below `minMatchScore` after a fair read → add with `status:"skipped"`, `skipReason:"Below minimum match score ($SCORE < $MIN_SCORE)"` and move on (no tab). Otherwise add it (status `applying`) and apply (2.3):
+If `CONF >= 0.7` and `SCORE` is ≥10 from `minMatchScore` either side, use it directly; otherwise rescore using `strongMatches`/`partialMatches`/`gaps`. A thin/generic row is **not** a skip. When a full posting read is genuinely needed, delegate the row to `job-worker` `mode:"score"` (`{campaignId:$CAMPAIGN_ID, jobKey:<key>, url, resumeId:$RESUME_ID, minMatchScore:$MIN_SCORE}`) instead of opening the posting in this conversation - it reads the posting, rescores, and saves the row itself. Ineligible → already saved `status:"skipped"`, move on. Eligible → already saved `status:"pending"`; PATCH it to `applying`, then go straight to apply (2.3) - the worker fetches the digest from the campaign job when it needs one:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
+  -H 'content-type: application/json' -d '{"status":"applying"}'
+```
+
+Otherwise (scoreable from the listing/tab-1 snapshot alone): below `minMatchScore` after a fair read → add with `status:"skipped"`, `skipReason:"Below minimum match score ($SCORE < $MIN_SCORE)"` and move on (no tab). Otherwise add it (status `applying`) and apply (2.3):
 
 ```bash
 DIGEST=<stringified digest>
