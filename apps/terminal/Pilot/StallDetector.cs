@@ -154,15 +154,8 @@ public sealed partial class StallDetector
         return PilotStallReason.None;
     }
 
-    private int DistinctErrorLines()
-    {
-        var seen = new HashSet<string>();
-        foreach (var (_, line) in errorTimes)
-        {
-            seen.Add(line);
-        }
-        return seen.Count;
-    }
+    // Small window (bounded by ErrorThreshold-ish arrivals), so a plain distinct count reads clearer than a HashSet.
+    private int DistinctErrorLines() => errorTimes.Select(e => e.Line).Distinct().Count();
 
     private static string Normalize(string line)
     {

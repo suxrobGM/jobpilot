@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using JobPilot.Terminal.Hosting;
 
 namespace JobPilot.Terminal.Updates;
 
@@ -11,7 +12,6 @@ public static class HostHandoff
     private static readonly TimeSpan MaxWait = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan Poll = TimeSpan.FromMilliseconds(150);
     private static readonly TimeSpan SocketDrain = TimeSpan.FromMilliseconds(300);
-    private static readonly TimeSpan ResponseFlush = TimeSpan.FromMilliseconds(500);
 
     /// <summary>
     /// Whether this process is an update relaunch. A relaunched child skips its own startup update check:
@@ -19,17 +19,8 @@ public static class HostHandoff
     /// </summary>
     public static bool IsUpdateRelaunch => Environment.GetEnvironmentVariable(AwaitPidVar) is not null;
 
-    /// <summary>Stops the parent after its update response has flushed.</summary>
-    public static void BeginRelease(IHostApplicationLifetime lifetime)
-    {
-        // The child is already waiting on this PID. Request cancellation must not prevent the parent from
-        // releasing the port.
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(ResponseFlush, CancellationToken.None);
-            lifetime.StopApplication(); // -> ApplicationStopping -> SessionManager.Stop() -> exit
-        }, CancellationToken.None);
-    }
+    /// <summary>Stops the parent after its update response has flushed so the waiting child can bind the port.</summary>
+    public static void BeginRelease(IHostApplicationLifetime lifetime) => GracefulStop.Schedule(lifetime);
 
     /// <summary>Waits briefly for the predecessor to release the port.</summary>
     public static async Task WaitForParentExitAsync(ILogger logger)

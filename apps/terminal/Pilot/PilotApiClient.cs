@@ -40,28 +40,14 @@ public sealed class PilotApiClient : IDisposable
     /// <summary>Reports a system-journal entry to the paired API. Never throws.</summary>
     public async Task ReportSystemAsync(string apiUrl, string apiToken, string summary)
     {
-        if (string.IsNullOrWhiteSpace(apiUrl) || string.IsNullOrWhiteSpace(apiToken))
-        {
-            return; // Unpaired or a legacy pairing with no API URL; nothing to report to.
-        }
-
         try
         {
-            using var cts = new CancellationTokenSource(RequestTimeout);
             var body = new PilotJournalRequest([new PilotJournalEntry("system", summary)]);
             var json = JsonSerializer.Serialize(body, AppJsonContext.Default.PilotJournalRequest);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, $"{apiUrl.TrimEnd('/')}/api/pilot/journal")
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json"),
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
-
-            using var response = await http.SendAsync(request, cts.Token);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning("Pilot journal report was rejected ({Status}).", (int)response.StatusCode);
-            }
+            await SendGuardedAsync<bool>(apiUrl, apiToken, HttpMethod.Post, "/api/pilot/journal", content,
+                "Pilot journal report was rejected ({Status}).", static (_, _) => Task.FromResult<bool>(default));
         }
         catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
         {
@@ -75,27 +61,15 @@ public sealed class PilotApiClient : IDisposable
     /// </summary>
     public async Task<DateTimeOffset?> GetLastActivityAsync(string apiUrl, string apiToken)
     {
-        if (string.IsNullOrWhiteSpace(apiUrl) || string.IsNullOrWhiteSpace(apiToken))
-        {
-            return null; // Unpaired or a legacy pairing with no API URL; no activity channel to consult.
-        }
-
         try
         {
-            using var cts = new CancellationTokenSource(RequestTimeout);
-            using var request = new HttpRequestMessage(HttpMethod.Get, $"{apiUrl.TrimEnd('/')}/api/pilot/activity");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
-
-            using var response = await http.SendAsync(request, cts.Token);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning("Pilot activity probe was rejected ({Status}).", (int)response.StatusCode);
-                return null;
-            }
-
-            var json = await response.Content.ReadAsStringAsync(cts.Token);
-            var activity = JsonSerializer.Deserialize(json, AppJsonContext.Default.PilotActivityResponse);
-            return activity?.LastActivityAt;
+            return await SendGuardedAsync<DateTimeOffset?>(apiUrl, apiToken, HttpMethod.Get, "/api/pilot/activity",
+                content: null, "Pilot activity probe was rejected ({Status}).", async (response, ct) =>
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var activity = JsonSerializer.Deserialize(json, AppJsonContext.Default.PilotActivityResponse);
+                    return activity?.LastActivityAt;
+                });
         }
         catch (Exception ex)
         {
@@ -103,6 +77,40 @@ public sealed class PilotApiClient : IDisposable
             logger.LogWarning(ex, "Pilot activity probe could not be delivered.");
             return null;
         }
+    }
+
+    /// <summary>
+    /// Shared scaffolding for the two best-effort calls: unpaired guard, request timeout, base-URL join, Bearer
+    /// header, and the non-success warning. Returns <c>default</c> when unpaired or rejected; otherwise the result
+    /// of <paramref name="onSuccess"/>, run while the response and its timeout token are still alive. Transport and
+    /// timeout exceptions propagate to the caller's own catch so each keeps its distinct failure log.
+    /// </summary>
+    private async Task<T?> SendGuardedAsync<T>(
+        string apiUrl,
+        string apiToken,
+        HttpMethod method,
+        string path,
+        HttpContent? content,
+        string rejectedLog,
+        Func<HttpResponseMessage, CancellationToken, Task<T?>> onSuccess)
+    {
+        if (string.IsNullOrWhiteSpace(apiUrl) || string.IsNullOrWhiteSpace(apiToken))
+        {
+            return default; // Unpaired or a legacy pairing with no API URL; no channel to consult.
+        }
+
+        using var cts = new CancellationTokenSource(RequestTimeout);
+        using var request = new HttpRequestMessage(method, $"{apiUrl.TrimEnd('/')}{path}") { Content = content };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
+
+        using var response = await http.SendAsync(request, cts.Token);
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(rejectedLog, (int)response.StatusCode);
+            return default;
+        }
+
+        return await onSuccess(response, cts.Token);
     }
 
     public void Dispose() => http.Dispose();

@@ -74,31 +74,11 @@ public sealed class PilotLoop(IPilotEnvironment env)
 
         // Positive liveness gates the ladder: a wedge that the API still shows as active is a slow cycle, not a
         // stuck one, so re-await instead of nudging - but only up to MaxCycleWait, and journal the extension once.
-        var totalWaited = TimeSpan.Zero;
-        var extended = false;
-
-        // Re-awaits while the wedge coincides with fresh server activity and the cycle stays under its hard cap;
-        // returns once the cycle finishes, activity goes stale/unavailable, or the cap is hit.
-        async Task<PilotWaitResult> ExtendWhileLiveAsync(PilotWaitResult current)
-        {
-            while (IsWedge(current) && totalWaited < MaxCycleWait && await IsActivityFreshAsync(ct))
-            {
-                if (!extended)
-                {
-                    await ReportAsync(ExtendReport);
-                    extended = true;
-                }
-
-                current = await env.AwaitSentinelAsync(SentinelTimeout, ct);
-                totalWaited += SentinelTimeout;
-            }
-            return current;
-        }
+        // The wait owns that budget and one-shot flag so the ladder below reads as plain rungs.
+        var wait = new CycleWait(this, ct);
 
         // T5 ladder: each wedge (timeout or a stall heuristic firing early) climbs one rung - nudge, then skip, then kill.
-        var result = await env.AwaitSentinelAsync(SentinelTimeout, ct);
-        totalWaited += SentinelTimeout;
-        result = await ExtendWhileLiveAsync(result);
+        var result = await wait.ExtendWhileLiveAsync(await wait.AwaitAsync(SentinelTimeout));
         if (await TryFinishAsync(result, ct))
         {
             return; // slept until the next cycle, or the session died and restarts next iteration
@@ -107,15 +87,14 @@ public sealed class PilotLoop(IPilotEnvironment env)
         // Rung 1: nudge exactly once, then a shorter grace.
         await ReportAsync(NudgeReport);
         await env.InjectNudgeAsync(pairing, ct);
-        result = await env.AwaitSentinelAsync(NudgeGrace, ct);
-        totalWaited += NudgeGrace;
+        result = await wait.AwaitAsync(NudgeGrace);
         if (await TryFinishAsync(result, ct))
         {
             return;
         }
 
         // Probe once more before skipping: the agent may have resumed writing during or after the nudge grace.
-        result = await ExtendWhileLiveAsync(result);
+        result = await wait.ExtendWhileLiveAsync(result);
         if (await TryFinishAsync(result, ct))
         {
             return;
@@ -124,7 +103,7 @@ public sealed class PilotLoop(IPilotEnvironment env)
         // Rung 2: the nudge did not unstick it - force the leased work failed so the next cycle can move on.
         await ReportAsync(SkipReport);
         await env.InjectSkipAsync(pairing, ct);
-        result = await env.AwaitSentinelAsync(NudgeGrace, ct);
+        result = await wait.AwaitAsync(NudgeGrace);
         if (await TryFinishAsync(result, ct))
         {
             return;
@@ -199,5 +178,39 @@ public sealed class PilotLoop(IPilotEnvironment env)
         LastCycleStatus = result.Cycle.Status;
         await env.SleepAsync(TimeSpan.FromSeconds(ClampSleep(result.Cycle.SleepSeconds)), ct);
         return true;
+    }
+
+    // Owns one cycle's wait-budget accounting and the once-per-cycle extend journal. A class, not a struct: its
+    // async methods mutate these fields across awaits, which a struct would lose to state-machine copies.
+    private sealed class CycleWait(PilotLoop loop, CancellationToken ct)
+    {
+        private TimeSpan totalWaited;
+        private bool extended;
+
+        // Awaits one sentinel window and books it against the cycle's hard cap.
+        public async Task<PilotWaitResult> AwaitAsync(TimeSpan window)
+        {
+            var result = await loop.env.AwaitSentinelAsync(window, ct);
+            totalWaited += window;
+            return result;
+        }
+
+        // Re-awaits while the wedge coincides with fresh server activity and the cycle stays under MaxCycleWait,
+        // journaling the extension once; returns once the cycle finishes, activity goes stale, or the cap is hit.
+        public async Task<PilotWaitResult> ExtendWhileLiveAsync(PilotWaitResult current)
+        {
+            while (IsWedge(current) && totalWaited < MaxCycleWait && await loop.IsActivityFreshAsync(ct))
+            {
+                if (!extended)
+                {
+                    await loop.ReportAsync(ExtendReport);
+                    extended = true;
+                }
+
+                current = await AwaitAsync(SentinelTimeout);
+            }
+
+            return current;
+        }
     }
 }
