@@ -7,6 +7,7 @@ import { pilotQueries } from "@/api/queries";
 import { useTerminalHealth } from "../agent-dock/use-terminal-health";
 import { NeedsAttention } from "./attention/needs-attention";
 import { AgendaPreview } from "./overview/agenda-preview";
+import { OrchestrationPanel } from "./overview/orchestration-panel";
 import { RecentActivity } from "./overview/recent-activity";
 import { PilotSetupChecklist } from "./overview/setup-checklist";
 import { OverviewSkeleton } from "./overview/skeleton";
@@ -35,13 +36,16 @@ export function PilotOverview(): ReactElement {
       <Box sx={{ order: { xs: 2, md: 0 } }}>
         <StatusHero state={state} toggle={toggle} health={health} hostStatus={status} />
       </Box>
+      <Box sx={{ order: { xs: 3, md: 0 } }}>
+        <OrchestrationPanel state={state} health={health} hostStatus={status} />
+      </Box>
       <Box sx={{ order: { xs: 1, md: 0 } }}>
         <NeedsAttention />
       </Box>
-      <Box sx={{ order: { xs: 3, md: 0 } }}>
+      <Box sx={{ order: { xs: 4, md: 0 } }}>
         <AgendaPreview />
       </Box>
-      <Box sx={{ order: { xs: 4, md: 0 } }}>
+      <Box sx={{ order: { xs: 5, md: 0 } }}>
         <RecentActivity />
       </Box>
     </Stack>
