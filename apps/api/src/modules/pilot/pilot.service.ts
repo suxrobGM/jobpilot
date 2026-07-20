@@ -93,6 +93,39 @@ export class PilotService {
     return state;
   }
 
+  /**
+   * Server-side liveness for the terminal watchdog: the newest agent activity across leases, journal,
+   * and campaign/job writes, plus the current active-lease count. Lets the host tell a live long cycle
+   * (a slow apply, a heartbeating worker) from a real stall before it climbs the nudge/kill ladder.
+   */
+  async getActivity(userId: string) {
+    const now = new Date();
+    const [leaseAgg, journalAgg, campaignAgg, jobAgg, activeLeases] = await Promise.all([
+      this.prisma.pilotLease.aggregate({
+        where: { userId, releasedAt: null },
+        _max: { grantedAt: true, heartbeatAt: true },
+      }),
+      this.prisma.pilotJournalEntry.aggregate({ where: { userId }, _max: { createdAt: true } }),
+      this.prisma.campaign.aggregate({ where: { userId }, _max: { updatedAt: true } }),
+      this.prisma.job.aggregate({ where: { campaign: { userId } }, _max: { createdAt: true } }),
+      this.prisma.pilotLease.count({
+        where: { userId, releasedAt: null, expiresAt: { gt: now } },
+      }),
+    ]);
+
+    const times = [
+      leaseAgg._max.grantedAt,
+      leaseAgg._max.heartbeatAt,
+      journalAgg._max.createdAt,
+      campaignAgg._max.updatedAt,
+      jobAgg._max.createdAt,
+    ].filter((d): d is Date => d != null);
+    const lastActivityAt =
+      times.length > 0 ? new Date(Math.max(...times.map((d) => d.getTime()))) : null;
+
+    return { lastActivityAt, activeLeases };
+  }
+
   // ── Questions ─────────────────────────────────────────────────────────────────
 
   async createQuestion(userId: string, body: CreateQuestionInput) {

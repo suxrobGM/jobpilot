@@ -23,7 +23,7 @@ import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
 import { AgendaService } from "./agenda/service";
-import { createPilotJournalResponseSchema } from "./pilot.schema";
+import { createPilotJournalResponseSchema, pilotActivityResponseSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
 import { promotionController } from "./promotion.controller";
 
@@ -75,6 +75,16 @@ export const pilotController = new Elysia({
       summary: "Compile the agenda",
       description:
         "Runs lazy lease/question expiry, then returns the prioritized agenda, budget, counts, and sleep hint for the next cycle.",
+    },
+  })
+  // ── Activity (watchdog liveness) ───────────────────────────────────────────────
+  .get("/activity", ({ user }) => pilot.getActivity(user.id), {
+    beforeHandle: limitAgenda,
+    response: pilotActivityResponseSchema,
+    detail: {
+      summary: "Pilot liveness activity",
+      description:
+        "Newest server-side agent activity (leases, journal, campaign/job writes) plus the active-lease count, so the terminal watchdog can tell a live long cycle from a real stall.",
     },
   })
   // ── Leases ────────────────────────────────────────────────────────────────────
