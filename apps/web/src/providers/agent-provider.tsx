@@ -19,6 +19,7 @@ import {
   formatSkillCommand,
   injectCommand,
   killSession,
+  shutdownHost,
   TerminalApiError,
   type TerminalProviderId,
 } from "@/lib/terminal";
@@ -81,8 +82,20 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
 
   const stop = async (): Promise<void> => {
     try {
-      await killSession();
+      await shutdownHost();
     } catch (error) {
+      // Older host without /shutdown - fall back to closing just the session.
+      if (error instanceof TerminalApiError && error.status === 404) {
+        try {
+          await killSession();
+        } catch {
+          // unreachable or already stopped - the toast below still explains the situation
+        }
+        toast.error(
+          "This agent doesn't support fully stopping yet. Closed the session - update the agent to also close the terminal app.",
+        );
+        return;
+      }
       toast.error(
         error instanceof TerminalApiError
           ? `Couldn't stop the terminal: ${error.message}`

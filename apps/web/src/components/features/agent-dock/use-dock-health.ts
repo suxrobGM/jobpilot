@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { type TerminalHealthState, useTerminalHealth } from "./use-terminal-health";
 
-export type PendingAction = "updating" | "starting";
+export type PendingAction = "updating" | "starting" | "stopping";
 
 /** How long an expected restart may keep the calmer pending card up before the real offline card returns. */
 const PENDING_RESTART_TIMEOUT_MS = 45_000;
 
 export interface DockHealthState extends TerminalHealthState {
-  /** Expected host restart in flight (dashboard-triggered update or Start agent). */
+  /** Expected host state change in flight (dashboard-triggered update, Start agent, or Stop agent). */
   pending: PendingAction | null;
   beginPending: (action: PendingAction) => void;
   /** True while the host is not answering (checking, offline, or uninstalled). */

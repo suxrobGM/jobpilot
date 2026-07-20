@@ -119,6 +119,11 @@ export function killSession(): Promise<SessionStatus> {
   return send<SessionStatus>("DELETE", "/sessions/current");
 }
 
+/** Stops the session and the pilot loop, then exits the host app entirely (pairing/pilot-enabled state survives for the next launch). */
+export function shutdownHost(): Promise<void> {
+  return send<void>("POST", "/shutdown");
+}
+
 interface PilotEnableOptions {
   provider: TerminalProviderId;
   /** Per-user agent PAT the pilot loop authenticates with. */

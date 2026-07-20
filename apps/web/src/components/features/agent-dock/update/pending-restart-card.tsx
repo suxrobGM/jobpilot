@@ -11,7 +11,9 @@ export function PendingRestartCard(props: { action: PendingAction }): ReactEleme
     <Stack spacing={1.5} sx={{ flex: 1, alignItems: "center", justifyContent: "center", p: 2 }}>
       <LoadingSpinner />
       <Typography variant="body2Muted">
-        {props.action === "updating" ? "Updating the agent…" : "Starting the agent…"}
+        {props.action === "updating" && "Updating the agent…"}
+        {props.action === "starting" && "Starting the agent…"}
+        {props.action === "stopping" && "Stopping the agent…"}
       </Typography>
     </Stack>
   );
