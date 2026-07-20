@@ -1,5 +1,6 @@
 import type { CampaignStatus, PrismaClient } from "@/generated/prisma/client";
 import { CampaignService } from "./campaign.service";
+import { emptyJobSummary } from "./campaign.summary";
 import { describe, expect, it } from "bun:test";
 
 const row = {
@@ -39,15 +40,7 @@ describe("CampaignService", () => {
     const { service } = makeService();
     const result = await service.list("u1", { page: 1, limit: 25 });
     expect(result.pagination).toMatchObject({ page: 1, limit: 25, total: 1, totalPages: 1 });
-    expect(result.items[0]?.summary).toEqual({
-      kind: "jobs",
-      totalFound: 0,
-      qualified: 0,
-      applied: 0,
-      failed: 0,
-      skipped: 0,
-      remaining: 0,
-    });
+    expect(result.items[0]?.summary).toEqual(emptyJobSummary());
   });
 
   it("applies an allowed status command", async () => {

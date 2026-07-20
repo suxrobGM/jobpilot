@@ -11,10 +11,14 @@ import { authGuard } from "@/common/middleware";
 import {
   campaignJobParams,
   campaignJobSchema,
+  campaignJobsQuery,
   campaignParams,
-  paginationQuery,
 } from "../campaign.schema";
-import { campaignJobListSchema, campaignJobResultResponseSchema } from "./job.schema";
+import {
+  campaignJobListSchema,
+  campaignJobReasonListSchema,
+  campaignJobResultResponseSchema,
+} from "./job.schema";
 import { CampaignJobService } from "./job.service";
 
 const svc = container.resolve(CampaignJobService);
@@ -26,11 +30,20 @@ export const campaignJobController = new Elysia({
   .use(authGuard)
   .get("/:id/jobs", ({ user, params, query }) => svc.listJobs(user.id, params.id, query), {
     params: campaignParams,
-    query: paginationQuery,
+    query: campaignJobsQuery,
     response: campaignJobListSchema,
     detail: {
       summary: "List campaign jobs",
-      description: "Returns one page of jobs for the owned campaign, ordered by creation.",
+      description:
+        "Returns one page of jobs for the owned campaign, ordered by creation. Optional status and title/company search filters apply across the whole campaign.",
+    },
+  })
+  .get("/:id/jobs/reasons", ({ user, params }) => svc.listJobReasons(user.id, params.id), {
+    params: campaignParams,
+    response: campaignJobReasonListSchema,
+    detail: {
+      summary: "List campaign skip/fail reasons",
+      description: "Returns every skip and fail reason with its job count, most frequent first.",
     },
   })
   .post("/:id/jobs", ({ user, params, body }) => svc.addJob(user.id, params.id, body), {

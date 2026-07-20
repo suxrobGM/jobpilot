@@ -11,7 +11,7 @@ export function StatTiles(): ReactElement {
   const campaigns = useApiQuery(campaignQueries.list());
   const applications = useApiQuery(applicationQueries.list());
 
-  const rows = campaigns.data ?? [];
+  const rows = campaigns.data?.items ?? [];
   const apps = applications.data ?? [];
 
   const active = rows.filter((c) => c.status === "in_progress" || c.status === "paused").length;

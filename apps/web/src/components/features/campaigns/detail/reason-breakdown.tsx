@@ -1,10 +1,11 @@
 "use client";
 
 import { type ReactElement, type ReactNode, useState } from "react";
-import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
-import { type CampaignDetailDto, type CampaignJobDto, jobSummary } from "@/api/types";
+import { useApiQuery } from "@/api/hooks";
+import { campaignQueries } from "@/api/queries";
+import { type CampaignDetailDto, type CampaignJobReasonDto, jobSummary } from "@/api/types";
 import { SectionCard } from "@/components/ui/layout";
 
 interface ReasonCount {
@@ -12,23 +13,20 @@ interface ReasonCount {
   count: number;
 }
 
+/** Re-collapses the server's per-reason groups: it counts raw strings, but score-threshold
+ * variants ("(35 < 50)", "(40 < 50)") read as one cause, so strip the numeric tail and sum. */
 function groupReasons(
-  jobs: ReadonlyArray<CampaignJobDto>,
-  status: CampaignJobStatus,
-  pick: (job: CampaignJobDto) => string | null,
+  rows: ReadonlyArray<CampaignJobReasonDto>,
+  kind: CampaignJobReasonDto["kind"],
 ): ReasonCount[] {
   const counts = new Map<string, number>();
 
-  for (const job of jobs) {
-    if (job.status !== status) {
+  for (const row of rows) {
+    if (row.kind !== kind) {
       continue;
     }
-    // Strip numeric parentheticals ("(35 < 50)") so score-threshold variants collapse into one bucket.
-    const reason =
-      pick(job)
-        ?.replace(/\s*\([^)]*\d[^)]*\)\s*$/, "")
-        .trim() || "Unspecified";
-    counts.set(reason, (counts.get(reason) ?? 0) + 1);
+    const reason = row.reason.replace(/\s*\([^)]*\d[^)]*\)\s*$/, "").trim() || "Unspecified";
+    counts.set(reason, (counts.get(reason) ?? 0) + row.count);
   }
 
   return [...counts.entries()]
@@ -75,8 +73,10 @@ export function CampaignReasonBreakdown(props: CampaignReasonBreakdownProps): Re
   const { campaign } = props;
   const [open, setOpen] = useState(true);
 
-  const skipped = groupReasons(campaign.jobs, "skipped", (j) => j.skipReason);
-  const failed = groupReasons(campaign.jobs, "failed", (j) => j.failReason);
+  const reasons = useApiQuery(campaignQueries.reasons(campaign.campaignId));
+  const rows = reasons.data ?? [];
+  const skipped = groupReasons(rows, "skipped");
+  const failed = groupReasons(rows, "failed");
   const summary = jobSummary(campaign);
 
   if (skipped.length === 0 && failed.length === 0) {

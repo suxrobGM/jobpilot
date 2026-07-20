@@ -26,8 +26,8 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { invalidations, queryKeys } from "@/api/query-keys";
-import type { CampaignDetailDto } from "@/api/types";
+import { invalidations } from "@/api/query-keys";
+import { type CampaignDetailDto, jobSummary } from "@/api/types";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -72,7 +72,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const rescan = useApiMutation<unknown, void>(
     () => campaignResource.patch({ config: { ...campaign.config, minScore } }),
-    { invalidate: [queryKeys.campaigns.detail(campaign.campaignId), queryKeys.campaigns.all] },
+    { invalidate: invalidations.campaign },
   );
 
   const remove = useApiMutation<unknown, void>(() => campaignResource.delete(), {
@@ -81,8 +81,9 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     onSuccess: () => router.replace("/" as Route),
   });
 
-  const failedCount = campaign.jobs.filter((j) => j.status === "failed").length;
-  const skippedCount = campaign.summary.kind === "jobs" ? campaign.summary.skipped : 0;
+  const summary = jobSummary(campaign);
+  const failedCount = summary?.failed ?? 0;
+  const skippedCount = summary?.skipped ?? 0;
   const isInProgress = campaign.status === "in_progress";
   const isAutoApply = campaign.source === "auto-apply";
   const isStopped = campaign.status === "paused";

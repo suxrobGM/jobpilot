@@ -28,7 +28,7 @@ export function ApplicationsPanel(): ReactElement {
     : null;
 
   const rows = apps.data ?? [];
-  const campaignLabel = new Map((campaigns.data ?? []).map((c) => [c.campaignId, c.query]));
+  const campaignLabel = new Map((campaigns.data?.items ?? []).map((c) => [c.campaignId, c.query]));
 
   const counts = FUNNEL_GROUPS.reduce(
     (acc, g) => {
@@ -67,7 +67,7 @@ export function ApplicationsPanel(): ReactElement {
 
   const campaignOptions: SelectFieldOption[] = [
     { value: SINGLE, label: "Single applies" },
-    ...(campaigns.data ?? []).map((c) => ({ value: c.campaignId, label: c.query })),
+    ...(campaigns.data?.items ?? []).map((c) => ({ value: c.campaignId, label: c.query })),
   ];
   const boardOptions: SelectFieldOption[] = (boards.data ?? []).map((b) => ({
     value: b.name,

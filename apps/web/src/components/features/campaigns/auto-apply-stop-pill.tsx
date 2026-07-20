@@ -46,7 +46,7 @@ export function AutoApplyStopPill(): ReactNode {
 
   const campaigns = useApiQuery(campaignQueries.list(FILTERS));
 
-  const active = campaigns.data?.[0] ?? null;
+  const active = campaigns.data?.items[0] ?? null;
 
   const stop = useApiMutation<{ campaignId: string; status: string }, void>(
     () => {

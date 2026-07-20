@@ -47,7 +47,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const boards = boardsQuery.data ?? [];
   const resumes = profileQuery.data?.resumes ?? [];
   const recentQueries = Array.from(
-    new Set((recentCampaignsQuery.data ?? []).map((r) => r.query)),
+    new Set((recentCampaignsQuery.data?.items ?? []).map((r) => r.query)),
   ).slice(0, 5);
   const hasBoards = boards.length > 0;
   const hasResumes = resumes.length > 0;

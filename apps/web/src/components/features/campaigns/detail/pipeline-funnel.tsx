@@ -3,7 +3,7 @@
 import type { ReactElement, ReactNode } from "react";
 import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Box, Stack, Typography } from "@mui/material";
-import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
+import { type CampaignDetailDto, type CampaignJobSummaryDto, jobSummary } from "@/api/types";
 import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 
@@ -17,29 +17,6 @@ interface Row {
   /** Drop-off branches indent under the stage they leave. */
   branch?: boolean;
   active?: boolean;
-}
-
-function countByStatus(jobs: ReadonlyArray<CampaignJobDto>): {
-  byStatus: Record<CampaignJobStatus, number>;
-  scoredCount: number;
-} {
-  const byStatus = {
-    pending: 0,
-    approved: 0,
-    applying: 0,
-    applied: 0,
-    failed: 0,
-    skipped: 0,
-    needs_user: 0,
-  } as Record<CampaignJobStatus, number>;
-  let scoredCount = 0;
-  for (const job of jobs) {
-    byStatus[job.status] += 1;
-    if (job.matchScore != null) {
-      scoredCount += 1;
-    }
-  }
-  return { byStatus, scoredCount };
 }
 
 /** Single in-flight funnel stage while a campaign runs, checked in frontier order (furthest along wins). */
@@ -56,17 +33,19 @@ const ACTIVE_FRONTIER: ReadonlyArray<{
  * Cumulative "reached at least this stage" counts, clamped monotonic so the funnel never widens
  * downstream. A failed job passed through applying; a skipped job was dropped at scoring.
  */
-function buildRows(campaign: CampaignDetailDto): { rows: Row[]; max: number } {
-  const { byStatus: counts, scoredCount } = countByStatus(campaign.jobs);
+function buildRows(
+  campaign: CampaignDetailDto,
+  summary: CampaignJobSummaryDto,
+): { rows: Row[]; max: number } {
+  const counts = summary.byStatus;
   const applies = campaign.source !== "search";
   const inProgress = campaign.status === "in_progress";
 
   const applied = counts.applied;
   const applying = counts.applying + counts.applied + counts.failed;
   const approved = counts.approved + counts.needs_user + applying;
-  const scored = Math.max(scoredCount, approved + counts.skipped);
-  const totalFound = campaign.summary.kind === "jobs" ? campaign.summary.totalFound : 0;
-  const found = Math.max(totalFound, campaign.jobs.length, scored);
+  const scored = Math.max(summary.scored, approved + counts.skipped);
+  const found = Math.max(summary.totalFound, scored);
 
   // The single in-flight frontier, so only one stage pulses while running.
   const active = inProgress ? (ACTIVE_FRONTIER.find((s) => s.has(counts))?.key ?? null) : null;
@@ -186,9 +165,12 @@ interface PipelineFunnelProps {
 /** Funnel of the campaign's job pipeline (found → applied) with skip/fail drop-off branches. */
 export function PipelineFunnel(props: PipelineFunnelProps): ReactNode {
   const { campaign } = props;
-  const { rows, max } = buildRows(campaign);
+  const summary = jobSummary(campaign);
+  if (!summary) return null;
 
-  if (max <= 1 && campaign.jobs.length === 0) {
+  const { rows, max } = buildRows(campaign, summary);
+
+  if (max <= 1 && summary.totalFound === 0) {
     return null;
   }
 

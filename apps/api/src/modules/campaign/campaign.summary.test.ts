@@ -11,6 +11,16 @@ describe("campaign summaries", () => {
       failed: 0,
       skipped: 0,
       remaining: 0,
+      scored: 0,
+      byStatus: {
+        pending: 0,
+        approved: 0,
+        applying: 0,
+        applied: 0,
+        failed: 0,
+        skipped: 0,
+        needs_user: 0,
+      },
     });
   });
 
@@ -23,13 +33,20 @@ describe("campaign summaries", () => {
         { status: "skipped" },
       ]),
     ).toEqual({
-      kind: "jobs",
+      ...emptyJobSummary(),
       totalFound: 4,
       qualified: 3,
       applied: 1,
       failed: 1,
       skipped: 1,
       remaining: 1,
+      byStatus: {
+        ...emptyJobSummary().byStatus,
+        approved: 1,
+        applied: 1,
+        failed: 1,
+        skipped: 1,
+      },
     });
   });
 });

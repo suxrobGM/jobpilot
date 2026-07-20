@@ -22,6 +22,12 @@ export const campaignsQuery = paginationQuery.extend({
   source: campaignSourceSchema.optional(),
 });
 
+/** Jobs list filters. Applied server-side so a page reflects the whole campaign, not one page of it. */
+export const campaignJobsQuery = paginationQuery.extend({
+  status: campaignJobStatusSchema.optional(),
+  search: z.string().trim().min(1).optional(),
+});
+
 export const campaignJobSchema = z.object({
   id: z.uuid(),
   campaignId: z.uuid(),

@@ -29,10 +29,20 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
     campaignChannel,
     { campaignId },
     {
-      onMessage: () => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
-      },
+      // Scoped per event type: a scoring pass emits one `job-update` per job, so a blanket
+      // `campaigns.all` here would refetch every cached list, page and aggregate on each one.
       on: {
+        progress: () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
+        },
+        "job-update": () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.jobs(campaignId) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.reasons(campaignId) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
+        },
+        status: () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
+        },
         "networking-update": () => {
           queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.networking(campaignId) });
         },

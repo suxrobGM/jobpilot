@@ -54,6 +54,9 @@ export const queryKeys = {
     list: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.campaigns.all, "list", filters] as const,
     detail: (campaignId: string) => [...queryKeys.campaigns.all, "detail", campaignId] as const,
+    jobs: (campaignId: string, filters: Record<string, unknown> = {}) =>
+      [...queryKeys.campaigns.all, "jobs", campaignId, filters] as const,
+    reasons: (campaignId: string) => [...queryKeys.campaigns.all, "reasons", campaignId] as const,
     networking: (campaignId: string) =>
       [...queryKeys.campaigns.all, "networking", campaignId] as const,
     stats: () => [...queryKeys.campaigns.all, "stats"] as const,

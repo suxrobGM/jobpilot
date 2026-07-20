@@ -41,6 +41,10 @@ export const campaignJobSummarySchema = z.object({
   failed: z.number().int().min(0).default(0),
   skipped: z.number().int().min(0).default(0),
   remaining: z.number().int().min(0).default(0),
+  /** Per-status totals across every job, not just a loaded page - the funnel reads these. */
+  byStatus: z.record(campaignJobStatusSchema, z.number().int().min(0)),
+  /** Jobs carrying a match score, however they were later resolved. */
+  scored: z.number().int().min(0).default(0),
 });
 
 export const campaignNetworkingSummarySchema = z.object({
@@ -141,6 +145,13 @@ export const retryCampaignJobSchema = z.object({
   retryNotes: reasonText.optional().nullable(),
 });
 
+/** One skip/fail reason with how many of the campaign's jobs carry it. */
+export const campaignJobReasonSchema = z.object({
+  kind: z.enum(["skipped", "failed"]),
+  reason: z.string(),
+  count: z.number().int().min(0),
+});
+
 export const campaignJobResultSchema = z
   .object({
     outcome: campaignJobOutcomeSchema,
@@ -169,6 +180,7 @@ export type CampaignJobStatus = z.infer<typeof campaignJobStatusSchema>;
 export type CampaignConfig = z.infer<typeof campaignConfigSchema>;
 export type CampaignSummary = z.infer<typeof campaignSummarySchema>;
 export type CampaignJobSummary = z.infer<typeof campaignJobSummarySchema>;
+export type CampaignJobReason = z.infer<typeof campaignJobReasonSchema>;
 export type CampaignNetworkingSummary = z.infer<typeof campaignNetworkingSummarySchema>;
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
 export type UpdateCampaignConfigInput = z.infer<typeof updateCampaignConfigSchema>;

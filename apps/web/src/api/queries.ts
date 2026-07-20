@@ -1,4 +1,8 @@
-import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
+import type {
+  CampaignJobStatus,
+  CampaignSource,
+  CampaignStatus,
+} from "@jobpilot/contracts/campaign";
 import type { ReviewStatus } from "@jobpilot/contracts/email";
 import type { PromotionStatus, QuestionStatus } from "@jobpilot/contracts/pilot";
 import type { QueueStatus } from "@jobpilot/contracts/queue";
@@ -69,26 +73,38 @@ export const applicationQueries = {
   }),
 };
 
+/** Dashboard widgets read the campaign list unpaginated; this bounds that read. */
+const DEFAULT_CAMPAIGN_PAGE_SIZE = 100;
+
 export const campaignQueries = {
-  list: (filters: { status?: CampaignStatus; source?: CampaignSource } = {}) => ({
+  list: (
+    filters: {
+      page?: number;
+      limit?: number;
+      status?: CampaignStatus;
+      source?: CampaignSource;
+    } = {},
+  ) => ({
     queryKey: queryKeys.campaigns.list(filters),
-    queryFn: async () => {
-      const result = await api.campaigns.get({ query: { ...filters, page: 1, limit: 100 } });
-      return { ...result, data: result.data?.items ?? null };
-    },
+    queryFn: () =>
+      api.campaigns.get({ query: { page: 1, limit: DEFAULT_CAMPAIGN_PAGE_SIZE, ...filters } }),
   }),
   detail: (id: string) => ({
     queryKey: queryKeys.campaigns.detail(id),
-    queryFn: async () => {
-      const [campaign, jobs] = await Promise.all([
-        api.campaigns({ id }).get(),
-        api.campaigns({ id }).jobs.get({ query: { page: 1, limit: 100 } }),
-      ]);
-      return {
-        ...campaign,
-        data: campaign.data && jobs.data ? { ...campaign.data, jobs: jobs.data.items } : null,
-      };
-    },
+    queryFn: () => api.campaigns({ id }).get(),
+  }),
+  /** One server-filtered page of a campaign's jobs; filters apply across the whole campaign. */
+  jobs: (
+    id: string,
+    params: { page: number; limit: number; status?: CampaignJobStatus; search?: string },
+  ) => ({
+    queryKey: queryKeys.campaigns.jobs(id, params),
+    queryFn: () => api.campaigns({ id }).jobs.get({ query: params }),
+  }),
+  /** Skip/fail reasons aggregated server-side, so counts cover every job rather than one page. */
+  reasons: (id: string) => ({
+    queryKey: queryKeys.campaigns.reasons(id),
+    queryFn: () => api.campaigns({ id }).jobs.reasons.get(),
   }),
   networking: (campaignId: string) => ({
     queryKey: queryKeys.campaigns.networking(campaignId),

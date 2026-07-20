@@ -1,11 +1,14 @@
 import { statusSchema } from "@jobpilot/contracts/application";
-import { campaignSummarySchema } from "@jobpilot/contracts/campaign";
+import { campaignJobReasonSchema, campaignSummarySchema } from "@jobpilot/contracts/campaign";
 import { z } from "zod/v4";
 import { paginatedResponseSchema } from "@/types/response";
 import { campaignJobSchema } from "../campaign.schema";
 
 /** A list of campaign jobs (the `listJobs` route). */
 export const campaignJobListSchema = paginatedResponseSchema(campaignJobSchema);
+
+/** Every skip/fail reason for a campaign with its count (the `listJobReasons` route). */
+export const campaignJobReasonListSchema = z.array(campaignJobReasonSchema);
 
 /**
  * The raw `Application` Prisma row returned (un-serialized) inside a job-result

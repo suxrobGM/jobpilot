@@ -11,7 +11,7 @@ import { LinkButton } from "@/components/ui/buttons";
 /** Surfaces campaigns that need user action. Renders nothing when all clear. */
 export function AttentionStrip(): ReactNode {
   const campaigns = useApiQuery(campaignQueries.list());
-  const rows = campaigns.data ?? [];
+  const rows = campaigns.data?.items ?? [];
 
   const draftCampaigns = rows.filter((c) => (networkingSummary(c)?.drafted ?? 0) > 0);
   if (draftCampaigns.length === 0) return null;

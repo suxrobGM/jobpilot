@@ -1,10 +1,11 @@
 import type { RescanCampaignJobInput, RetryCampaignJobInput } from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
 import type { CampaignJobStatus, Prisma, PrismaClient } from "@/generated/prisma/client";
+import { deriveCampaignSummary } from "../campaign.summary";
 
 async function findJob(prisma: PrismaClient, userId: string, campaignId: string, key: string) {
   return findOwned(
-    (where) => prisma.job.findFirst({ where }),
+    (where) => prisma.job.findFirst({ where, include: { campaign: { select: { source: true } } } }),
     { campaignId, key, campaign: { userId } },
     "Campaign job",
   );
@@ -22,7 +23,8 @@ interface JobTransition {
   rejection: (status: CampaignJobStatus) => string;
 }
 
-/** Applies a guarded status transition, absorbing repeat commands and lost races idempotently. */
+/** Applies a guarded status transition, absorbing repeat commands and lost races idempotently.
+ * Returns the campaign summary on a real change so callers can publish live totals. */
 async function applyJobTransition(
   prisma: PrismaClient,
   userId: string,
@@ -31,7 +33,9 @@ async function applyJobTransition(
   transition: JobTransition,
 ) {
   const existing = await findJob(prisma, userId, campaignId, key);
-  if (existing.status === transition.idempotentAt) return { job: existing, changed: false };
+  if (existing.status === transition.idempotentAt) {
+    return { job: existing, changed: false, summary: null };
+  }
   if (existing.status !== transition.from) throw conflict(transition.rejection(existing.status));
 
   const changed = await prisma.job.updateMany({
@@ -42,10 +46,14 @@ async function applyJobTransition(
     where: { campaignId_key: { campaignId, key } },
   });
   if (changed.count === 0) {
-    if (job.status === transition.to) return { job, changed: false };
+    if (job.status === transition.to) return { job, changed: false, summary: null };
     throw conflict(`Job changed concurrently to ${job.status}.`);
   }
-  return { job, changed: true };
+  return {
+    job,
+    changed: true,
+    summary: await deriveCampaignSummary(prisma, campaignId, existing.campaign.source),
+  };
 }
 
 /** Conditionally requeues a failed job; repeated successful commands are idempotent. */

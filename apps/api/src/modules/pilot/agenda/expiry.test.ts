@@ -27,10 +27,13 @@ function setup(options: {
       },
     },
     job: {
-      findFirst: async () => ({ url: "https://example.test/job" }),
       updateMany: async (args: Record<string, unknown>) => {
         jobWrites.push(args);
         return { count: 1 };
+      },
+      updateManyAndReturn: async (args: Record<string, unknown>) => {
+        jobWrites.push(args);
+        return [{ url: "https://example.test/job" }];
       },
     },
     queueEntry: {
@@ -73,7 +76,7 @@ describe("agenda expiry", () => {
     expect(state.transactions).toBe(1);
     expect(state.leaseWrites[0]).toMatchObject({ data: { outcome: "expired" } });
     expect(state.jobWrites[0]).toMatchObject({
-      where: { campaignId: "c1", key: "j1", status: "applying" },
+      where: { status: "applying", OR: [{ campaignId: "c1", key: "j1" }] },
       data: { status: "approved" },
     });
   });

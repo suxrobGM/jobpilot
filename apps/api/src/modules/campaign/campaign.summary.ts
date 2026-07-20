@@ -1,8 +1,10 @@
 import type {
+  CampaignJobStatus,
   CampaignJobSummary,
   CampaignNetworkingSummary,
   CampaignSummary,
 } from "@jobpilot/contracts/campaign";
+import { CAMPAIGN_JOB_STATUSES } from "@jobpilot/contracts/campaign";
 import { type CampaignSource, Prisma } from "@/generated/prisma/client";
 
 type SummaryClient = Pick<Prisma.TransactionClient, "$queryRaw" | "job" | "networkingMessage">;
@@ -41,6 +43,11 @@ export function emptyJobSummary(): CampaignJobSummary {
     failed: 0,
     skipped: 0,
     remaining: 0,
+    byStatus: Object.fromEntries(CAMPAIGN_JOB_STATUSES.map((status) => [status, 0])) as Record<
+      CampaignJobStatus,
+      number
+    >,
+    scored: 0,
   };
 }
 
@@ -50,6 +57,7 @@ export function emptyNetworkingSummary(): CampaignNetworkingSummary {
 }
 
 function foldJob(summary: CampaignJobSummary, status: string, count: number): void {
+  summary.byStatus[status as CampaignJobStatus] += count;
   summary.totalFound += count;
   if (status !== "skipped") summary.qualified += count;
   if (status === "applied") summary.applied += count;
@@ -97,14 +105,17 @@ export async function loadCampaignSummaries(
   const networkingIds = campaigns
     .filter((campaign) => campaign.source === "networking")
     .map((c) => c.campaignId);
+
   const [jobCounts, messageCounts, contacts] = await Promise.all([
     jobIds.length
       ? client.job.groupBy({
           by: ["campaignId", "status"],
           where: { campaignId: { in: jobIds } },
-          _count: { _all: true },
+          // `matchScore` counts non-nulls, so `scored` rides along with the status fold.
+          _count: { _all: true, matchScore: true },
         })
       : [],
+
     networkingIds.length
       ? client.networkingMessage.groupBy({
           by: ["campaignId", "status"],
@@ -112,6 +123,7 @@ export async function loadCampaignSummaries(
           _count: { _all: true },
         })
       : [],
+
     networkingIds.length
       ? client.$queryRaw<ContactCount[]>(Prisma.sql`
           SELECT campaign_id AS "campaignId", COUNT(DISTINCT contact_id)::integer AS discovered
@@ -123,13 +135,21 @@ export async function loadCampaignSummaries(
   ]);
 
   const summaries = new Map<string, CampaignSummary>();
-  for (const id of jobIds) summaries.set(id, emptyJobSummary());
-  for (const id of networkingIds) summaries.set(id, emptyNetworkingSummary());
-  for (const row of jobCounts) {
-    foldJob(requireJobSummary(summaries, row.campaignId), row.status, row._count._all);
+
+  for (const id of jobIds) {
+    summaries.set(id, emptyJobSummary());
   }
-  for (const row of contacts)
+  for (const id of networkingIds) {
+    summaries.set(id, emptyNetworkingSummary());
+  }
+  for (const row of jobCounts) {
+    const summary = requireJobSummary(summaries, row.campaignId);
+    foldJob(summary, row.status, row._count._all);
+    summary.scored += row._count.matchScore;
+  }
+  for (const row of contacts) {
     requireNetworkingSummary(summaries, row.campaignId).discovered = row.discovered;
+  }
   for (const row of messageCounts) {
     foldNetworking(
       requireNetworkingSummary(summaries, row.campaignId),

@@ -4,14 +4,16 @@ import type { api } from "@/api/client";
 /** A campaign list row, inferred from `GET /api/campaigns`. */
 export type CampaignDto = Data<typeof api.campaigns.get>["items"][number];
 
-/** A campaign with its jobs, from `GET /api/campaigns/:id`. */
-export type CampaignDetailDto = Data<ReturnType<typeof api.campaigns>["get"]> & {
-  jobs: Data<ReturnType<typeof api.campaigns>["jobs"]["get"]>["items"];
-};
+/** A campaign, from `GET /api/campaigns/:id`. Jobs are fetched separately and paginated
+ * server-side - a campaign can hold far more than one page of them. */
+export type CampaignDetailDto = Data<ReturnType<typeof api.campaigns>["get"]>;
 
 export type CampaignConfigDto = CampaignDto["config"];
 export type CampaignSummaryDto = CampaignDto["summary"];
-export type CampaignJobDto = CampaignDetailDto["jobs"][number];
+export type CampaignJobDto = Data<ReturnType<typeof api.campaigns>["jobs"]["get"]>["items"][number];
+export type CampaignJobReasonDto = Data<
+  ReturnType<typeof api.campaigns>["jobs"]["reasons"]["get"]
+>[number];
 
 export type CampaignJobSummaryDto = Extract<CampaignSummaryDto, { kind: "jobs" }>;
 export type CampaignNetworkingSummaryDto = Extract<CampaignSummaryDto, { kind: "networking" }>;

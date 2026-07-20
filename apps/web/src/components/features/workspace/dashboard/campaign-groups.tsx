@@ -24,7 +24,7 @@ export function CampaignGroups(): ReactElement {
   const { expand } = useAgentDock();
   const agentAvailable = useAgentAvailable();
   const campaigns = useApiQuery(campaignQueries.list());
-  const rows = campaigns.data ?? [];
+  const rows = campaigns.data?.items ?? [];
 
   const open = (c: CampaignDto): void => {
     router.push(`/campaigns/${encodeURIComponent(c.campaignId)}` as Route);
