@@ -11,7 +11,7 @@ import { useJournalLive } from "../journal/use-journal-live";
 import { isHostOffline } from "../status";
 
 export type PilotStageNode = "conductor" | "agent" | "worker" | "results";
-export type PilotStageMode = "off" | "offline" | "working" | "sleeping";
+type PilotStageMode = "off" | "offline" | "working" | "sleeping";
 
 /** Which diagram node the newest journal entry lights up. */
 const NODE_BY_KIND: Record<PilotJournalKind, PilotStageNode> = {
@@ -28,7 +28,6 @@ export interface PilotStage {
   mode: PilotStageMode;
   /** The node currently doing work (or resting at the conductor when idle). */
   activeNode: PilotStageNode;
-  nextWakeAt: Date | null;
   /** e.g. "wakes in 43m" - only while sleeping. */
   sleepLabel: string | null;
   topAgendaItem: string | null;
@@ -100,7 +99,6 @@ export function usePilotStage(params: UsePilotStageParams): PilotStage {
   return {
     mode,
     activeNode,
-    nextWakeAt,
     sleepLabel,
     topAgendaItem: agenda.data?.items[0]?.title ?? null,
     latestAction: newest ? humanizeIsoInText(newest.summary) : null,

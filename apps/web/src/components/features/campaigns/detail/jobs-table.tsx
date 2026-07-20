@@ -9,7 +9,7 @@ import { DataTable } from "@/components/ui/data/data-table";
 import { ColorChip } from "@/components/ui/display";
 
 /** Statuses that can still be applied to from the campaigns detail page. */
-export function isApplicable(status: CampaignJobStatus): boolean {
+function isApplicable(status: CampaignJobStatus): boolean {
   return status === "pending" || status === "approved";
 }
 

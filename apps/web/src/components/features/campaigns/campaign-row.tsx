@@ -19,8 +19,6 @@ import { CAMPAIGN_STATUS_COLOR, CAMPAIGN_STATUS_LABEL } from "./campaign-status"
 
 interface CampaignRowProps {
   campaign: CampaignDto;
-  /** Highlights the row as the active board scope. */
-  selected?: boolean;
   /** Primary click - e.g. open the campaign. */
   onSelect?: (campaign: CampaignDto) => void;
   /** Secondary affordance - open the full campaign detail. */
@@ -38,21 +36,11 @@ function summaryLine(campaign: CampaignDto): string {
 }
 
 export function CampaignRow(props: CampaignRowProps): ReactElement {
-  const { campaign, selected = false, onSelect, onOpenDetail } = props;
+  const { campaign, onSelect, onOpenDetail } = props;
 
   return (
-    <Card
-      variant="interactive"
-      sx={(theme) => ({
-        position: "relative",
-        ...(selected && {
-          borderColor: theme.palette.accent.primary,
-          backgroundColor: "action.selected",
-        }),
-      })}
-    >
+    <Card variant="interactive" sx={{ position: "relative" }}>
       <CardActionArea
-        aria-pressed={selected}
         onClick={() => onSelect?.(campaign)}
         sx={{ padding: 1.25, paddingRight: onOpenDetail ? 4.5 : 1.25 }}
       >

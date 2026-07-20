@@ -59,7 +59,6 @@ export const queryKeys = {
     reasons: (campaignId: string) => [...queryKeys.campaigns.all, "reasons", campaignId] as const,
     networking: (campaignId: string) =>
       [...queryKeys.campaigns.all, "networking", campaignId] as const,
-    stats: () => [...queryKeys.campaigns.all, "stats"] as const,
   },
 
   contacts: {

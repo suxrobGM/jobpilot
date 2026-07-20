@@ -5,7 +5,7 @@ import { Paper, Stack, Typography } from "@mui/material";
 import { Handle, type Node, type NodeProps, Position } from "@xyflow/react";
 import { PulseDot, type PulseDotTone, toneColor } from "@/components/ui/feedback";
 
-export interface StageNodeData extends Record<string, unknown> {
+interface StageNodeData extends Record<string, unknown> {
   title: string;
   role: string;
   caption?: string | null;
