@@ -7,8 +7,8 @@ import { AgendaService } from "./service";
 import { describe, expect, it } from "bun:test";
 
 const service = (over: Over = {}) => {
-  const { prisma, campaignJobs, pilot, push } = makeAgendaDeps(over);
-  return new AgendaService(prisma, campaignJobs, pilot, push);
+  const { prisma, campaignJobs, pilot, push, campaigns } = makeAgendaDeps(over);
+  return new AgendaService(prisma, campaignJobs, pilot, push, campaigns);
 };
 
 describe("AgendaService question consumption", () => {
@@ -195,6 +195,48 @@ describe("AgendaService queue.drain", () => {
   it("emits no queue.drain when nothing is pending", async () => {
     const agenda = await service({}).compile("p1");
     expect(agenda.items.some((i) => i.kind === "queue.drain")).toBe(false);
+  });
+});
+
+describe("AgendaService campaign.scorePending", () => {
+  it("emits scorePending for an auto-apply campaign with unscored pending rows", async () => {
+    const agenda = await service({
+      scorePendingCampaigns: [
+        {
+          campaignId: "c1",
+          query: "react",
+          config: JSON.stringify({ board: "linkedin", minScore: 70 }),
+          jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
+        },
+      ],
+      scorePendingCounts: [{ campaignId: "c1", _count: { _all: 9 } }],
+    }).compile("p1");
+    const item = agenda.items.find((i) => i.kind === "campaign.scorePending");
+    expect(item?.subjectType).toBe("campaign");
+    expect(item?.subjectId).toBe("c1");
+    expect(item?.payload).toMatchObject({
+      campaignId: "c1",
+      board: "linkedin",
+      minScore: 70,
+      pendingCount: 9,
+      entries: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
+    });
+  });
+
+  it("suppresses scorePending on a campaign whose config board is parked", async () => {
+    const agenda = await service({
+      instructionsConfig: JSON.stringify({ parkedBoards: ["linkedin"] }),
+      scorePendingCampaigns: [
+        {
+          campaignId: "c1",
+          query: "react",
+          config: JSON.stringify({ board: "linkedin" }),
+          jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
+        },
+      ],
+      scorePendingCounts: [{ campaignId: "c1", _count: { _all: 2 } }],
+    }).compile("p1");
+    expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(false);
   });
 });
 

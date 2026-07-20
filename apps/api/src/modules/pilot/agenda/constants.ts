@@ -13,6 +13,8 @@ export const PRIORITY = {
   warmIntro: 550,
   // Only fires on a quiet pipeline (no apply/discover/queue), so its exact rank is cosmetic.
   strategyBootstrap: 520,
+  // Scoring an existing campaign's pending rows outranks fresh discovery: finish what's found first.
+  scorePending: 510,
   discover: 500,
   followup: 400,
   strategyReview: 350,
@@ -32,6 +34,9 @@ export const BOARD_HEALTH_MIN_FAILURES = 3;
 
 /** Row cap for unbounded gather/expiry scans, matching the module's take: 200 list precedent. */
 export const GATHER_CAP = 200;
+
+/** One score-pending cycle scores at most this many of a campaign's unscored rows (bounded per cycle). */
+export const SCORE_PENDING_BATCH = 5;
 
 export const MAX_ITEMS = 10;
 /** A job needs a strong match before its company is worth a warm-intro detour. */

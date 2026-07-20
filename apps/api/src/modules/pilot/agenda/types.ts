@@ -63,6 +63,17 @@ export interface AgendaFinalizeCampaign {
   query: string;
 }
 
+/** An in-progress auto-apply campaign carrying discovered-but-unscored pending rows (≤5 sampled entries). */
+export interface AgendaScorePending {
+  campaignId: string;
+  query: string;
+  board: string | null;
+  resumeId?: string;
+  minScore: number;
+  pendingCount: number;
+  entries: { key: string; url: string; title: string }[];
+}
+
 /** Unclassified synced emails awaiting a review pass. */
 export interface AgendaInbox {
   messageIds: string[];
@@ -158,6 +169,8 @@ export interface AgendaInput {
   approvedJobs: AgendaApprovedJob[];
   appliedToday: number;
   dueQueries: AgendaDueQuery[];
+  // Existing campaigns with unscored pending rows; emitted only when the apply pipeline is empty.
+  scorePending: AgendaScorePending[];
   finalizeCampaigns: AgendaFinalizeCampaign[];
   inbox: AgendaInbox;
   approvedNetworking: AgendaNetworkingSend[];

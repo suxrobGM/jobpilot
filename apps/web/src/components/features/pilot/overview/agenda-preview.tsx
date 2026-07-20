@@ -27,6 +27,7 @@ const AGENDA_KIND_LABELS: Record<AgendaItem["kind"], string> = {
   "question.answered": "Act on answered question",
   "job.apply": "Apply to job",
   "search.discover": "Run saved search",
+  "campaign.scorePending": "Score discovered jobs",
   "campaign.finalize": "Finalize campaign",
   "inbox.review": "Review inbox email",
   "networking.send": "Send networking message",

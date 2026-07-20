@@ -27,5 +27,19 @@ export async function verifyGrant(
       select: { id: true },
     });
     if (!message) throw conflict("Networking message is no longer approved.");
+    return;
+  }
+  if (kind === "campaign.scorePending") {
+    // Only leasable while the campaign is still in progress AND has at least one unscored pending row.
+    const campaign = await prisma.campaign.findFirst({
+      where: {
+        campaignId: subjectId,
+        userId,
+        status: "in_progress",
+        jobs: { some: { status: "pending", matchScore: null } },
+      },
+      select: { campaignId: true },
+    });
+    if (!campaign) throw conflict("Campaign has no unscored jobs to score.");
   }
 }

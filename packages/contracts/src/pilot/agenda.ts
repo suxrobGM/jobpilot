@@ -6,6 +6,8 @@ const AGENDA_ITEM_KINDS = [
   "question.answered",
   "job.apply",
   "search.discover",
+  // Score an existing campaign's discovered-but-unscored pending rows (mid-batch abandonment / thin listings).
+  "campaign.scorePending",
   "campaign.finalize",
   "inbox.review",
   "networking.send",

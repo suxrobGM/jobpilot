@@ -4,13 +4,14 @@ import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { parseCampaignConfig } from "./campaign-config";
-import { GATHER_CAP, WARM_INTRO_MIN_SCORE } from "./constants";
+import { GATHER_CAP, SCORE_PENDING_BATCH, WARM_INTRO_MIN_SCORE } from "./constants";
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
   AgendaFinalizeCampaign,
   AgendaInbox,
   AgendaQuestion,
+  AgendaScorePending,
   WarmContact,
 } from "./types";
 
@@ -108,6 +109,71 @@ export async function gatherApprovedJobs(
         company: job.company,
       };
     });
+}
+
+/**
+ * In-progress auto-apply campaigns carrying discovered-but-unscored pending rows (`matchScore: null`) -
+ * mid-batch abandonment or thin listings. Each carries ≤{@link SCORE_PENDING_BATCH} sampled entries plus
+ * the total unscored count; parked-board campaigns are skipped (park keys on the campaign's config board).
+ */
+export async function gatherScorePendingCampaigns(
+  prisma: PrismaClient,
+  userId: string,
+  fallbackMinScore: number,
+  parkedBoards: string[] = [],
+): Promise<AgendaScorePending[]> {
+  const campaigns = await prisma.campaign.findMany({
+    where: {
+      userId,
+      status: "in_progress",
+      source: "auto-apply",
+      jobs: { some: { status: "pending", matchScore: null } },
+    },
+    take: GATHER_CAP,
+    select: {
+      campaignId: true,
+      query: true,
+      config: true,
+      jobs: {
+        where: { status: "pending", matchScore: null },
+        orderBy: { createdAt: "asc" },
+        take: SCORE_PENDING_BATCH,
+        select: { key: true, url: true, title: true },
+      },
+    },
+  });
+  if (campaigns.length === 0) return [];
+
+  // One grouped count for every candidate's total unscored backlog, avoiding an N+1 per campaign.
+  const counts = await prisma.job.groupBy({
+    by: ["campaignId"],
+    where: {
+      campaignId: { in: campaigns.map((c) => c.campaignId) },
+      status: "pending",
+      matchScore: null,
+    },
+    _count: { _all: true },
+  });
+  const countByCampaign = new Map(counts.map((r) => [r.campaignId, r._count._all]));
+
+  const parked = new Set(parkedBoards);
+  const out: AgendaScorePending[] = [];
+  for (const c of campaigns) {
+    const config = parseCampaignConfig(c.config);
+    const board = config?.board ?? null;
+    // A campaign targeting a parked board is suppressed until the user un-parks it.
+    if (board && parked.has(board)) continue;
+    out.push({
+      campaignId: c.campaignId,
+      query: c.query,
+      board,
+      resumeId: config?.resumeId,
+      minScore: config?.minScore ?? fallbackMinScore,
+      pendingCount: countByCampaign.get(c.campaignId) ?? c.jobs.length,
+      entries: c.jobs.map((j) => ({ key: j.key, url: j.url, title: j.title })),
+    });
+  }
+  return out;
 }
 
 /** In-progress campaigns with no active jobs left - ready to finalize. */

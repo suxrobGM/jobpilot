@@ -1,7 +1,7 @@
 // Pure agenda orchestrator: no Prisma, no env. Priority ordering, cap suppression, budget,
 // empty-reason, and sleep rules against hand-built inputs.
 import { buildAgenda } from "./build";
-import { base, cfg, job } from "./build.test-helpers";
+import { base, bootstrapCandidate, cfg, job } from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda priority", () => {
@@ -48,6 +48,42 @@ describe("buildAgenda priority", () => {
       base({ approvedJobs: [job("j1", 80)], dueQueries: [{ query: "golang" }] }),
     );
     expect(agenda.items.some((i) => i.kind === "search.discover")).toBe(false);
+  });
+});
+
+describe("buildAgenda campaign.scorePending", () => {
+  const scorePending = (over: Record<string, unknown> = {}) => ({
+    campaignId: "c1",
+    query: "react",
+    board: null,
+    minScore: 60,
+    pendingCount: 9,
+    entries: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
+    ...over,
+  });
+
+  it("emits scorePending on an empty apply pipeline, ranked above discovery", () => {
+    const agenda = buildAgenda(
+      base({ approvedJobs: [], scorePending: [scorePending()], dueQueries: [{ query: "golang" }] }),
+    );
+    expect(agenda.items.map((i) => i.kind)).toEqual(["campaign.scorePending", "search.discover"]);
+    expect(agenda.items[0].priority).toBeGreaterThan(agenda.items[1].priority);
+    expect(agenda.items[0].payload).toMatchObject({ campaignId: "c1", pendingCount: 9 });
+  });
+
+  it("suppresses scorePending while approved jobs remain", () => {
+    const agenda = buildAgenda(
+      base({ approvedJobs: [job("j1", 80)], scorePending: [scorePending()] }),
+    );
+    expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(false);
+  });
+
+  it("marks the pipeline busy so quiet-agenda bootstrap is suppressed", () => {
+    const agenda = buildAgenda(
+      base({ approvedJobs: [], scorePending: [scorePending()], bootstrap: bootstrapCandidate() }),
+    );
+    expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(true);
+    expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 });
 

@@ -7,8 +7,8 @@ import { AgendaService } from "./service";
 import { describe, expect, it } from "bun:test";
 
 const service = (over: Over = {}) => {
-  const { prisma, campaignJobs, pilot, push, rec } = makeAgendaDeps(over);
-  return { svc: new AgendaService(prisma, campaignJobs, pilot, push), rec };
+  const { prisma, campaignJobs, pilot, push, campaigns, rec } = makeAgendaDeps(over);
+  return { svc: new AgendaService(prisma, campaignJobs, pilot, push, campaigns), rec };
 };
 
 describe("AgendaService leasing", () => {
@@ -65,6 +65,34 @@ describe("AgendaService leasing", () => {
       promoFindFirst: null,
     });
     expect(svc.lease("p1", "promo.post:P1")).rejects.toThrow();
+  });
+
+  const scorePendingOver: Over = {
+    scorePendingCampaigns: [
+      {
+        campaignId: "c1",
+        query: "react",
+        config: "{}",
+        jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
+      },
+    ],
+    scorePendingCounts: [{ campaignId: "c1", _count: { _all: 3 } }],
+  };
+
+  it("grants a campaign.scorePending lease while unscored pending rows remain", async () => {
+    const { svc, rec } = service({ ...scorePendingOver, campaignFindFirst: { campaignId: "c1" } });
+    const lease = await svc.lease("p1", "campaign.scorePending:c1");
+    expect(rec.leaseCreates[0]).toMatchObject({
+      kind: "campaign.scorePending",
+      subjectType: "campaign",
+      subjectId: "c1",
+    });
+    expect(lease.subjectId).toBe("c1");
+  });
+
+  it("409s a campaign.scorePending lease once no unscored pending rows are left", async () => {
+    const { svc } = service({ ...scorePendingOver, campaignFindFirst: null });
+    expect(svc.lease("p1", "campaign.scorePending:c1")).rejects.toThrow();
   });
 });
 

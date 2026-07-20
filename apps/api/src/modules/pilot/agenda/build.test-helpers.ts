@@ -22,6 +22,7 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   approvedJobs: [],
   appliedToday: 0,
   dueQueries: [],
+  scorePending: [],
   finalizeCampaigns: [],
   inbox: { messageIds: [], count: 0 },
   approvedNetworking: [],

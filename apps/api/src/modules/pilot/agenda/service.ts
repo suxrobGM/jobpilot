@@ -3,6 +3,7 @@ import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
 import { PushService } from "@/common/push";
 import { type PilotLease, PrismaClient } from "@/generated/prisma/client";
+import { CampaignService } from "@/modules/campaign/campaign.service";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { loadInstructions } from "../pilot.instructions";
 import { toPilotLease } from "../pilot.mapper";
@@ -18,6 +19,7 @@ import {
   gatherApprovedJobs,
   gatherFinalizeCampaigns,
   gatherInbox,
+  gatherScorePendingCampaigns,
 } from "./gather";
 import { gatherInterviewPreps, gatherInterviewReplies } from "./gather-interview";
 import {
@@ -33,6 +35,7 @@ import {
   gatherQuietCandidates,
 } from "./gather-proactive";
 import { verifyGrant } from "./grant";
+import { promoteScoredPendingJobs } from "./promote";
 
 const LEASE_TTL_MS = 15 * 60 * 1000;
 
@@ -43,6 +46,7 @@ export class AgendaService {
     private readonly campaignJobs: CampaignJobService,
     private readonly pilot: PilotService,
     private readonly push: PushService,
+    private readonly campaigns: CampaignService,
   ) {}
 
   private get jobDeps() {
@@ -51,10 +55,15 @@ export class AgendaService {
 
   async compile(userId: string) {
     const now = new Date();
-    // Config and the expiry sweep are independent; both must settle before the main batch.
-    const [{ config, goals }] = await Promise.all([
-      loadInstructions(this.prisma, userId),
+    const { config, goals } = await loadInstructions(this.prisma, userId);
+
+    // Pre-gather mutations so the compiled agenda reflects them. Self-heal first (a rescued campaign's
+    // pending rows then get promoted); expiry and promotion are independent, so run them in parallel.
+    // Promotion flips scored-pending rows to approved so they surface as apply work this same cycle.
+    await this.campaigns.selfHealForPilot(userId);
+    await Promise.all([
       runExpiry(this.jobDeps, userId, now),
+      promoteScoredPendingJobs(this.jobDeps, userId, config.minScore),
     ]);
 
     const [
@@ -99,14 +108,23 @@ export class AgendaService {
     // Warm-check join: attach same-company contacts to high-score jobs so the builder can offer a warm intro.
     if (config.networkingEnabled) await attachWarmContacts(this.prisma, userId, approvedJobs);
 
-    // Discovery only matters when the apply pipeline is empty; skip the lease lookups otherwise.
-    const dueQueries =
-      approvedJobs.length === 0 ? await dueSavedSearches(this.prisma, userId, config, now) : [];
+    // Discovery and scoring existing pending rows only matter when the apply pipeline is empty; skip
+    // both lookups otherwise. Scoring the found-but-unscored backlog ranks above fresh discovery.
+    const [dueQueries, scorePending] =
+      approvedJobs.length === 0
+        ? await Promise.all([
+            dueSavedSearches(this.prisma, userId, config, now),
+            gatherScorePendingCampaigns(this.prisma, userId, config.minScore, config.parkedBoards),
+          ])
+        : [[], []];
 
-    // Quiet-agenda maintenance runs only when nothing apply/discover/queue-shaped is pending anyway,
-    // so gather its candidates only then - the builder still gates authoritatively.
+    // Quiet-agenda maintenance runs only when nothing apply/discover/score/queue-shaped is pending
+    // anyway, so gather its candidates only then - the builder still gates authoritatively.
     const pipelineQuiet =
-      approvedJobs.length === 0 && dueQueries.length === 0 && queue.pendingCount === 0;
+      approvedJobs.length === 0 &&
+      dueQueries.length === 0 &&
+      scorePending.length === 0 &&
+      queue.pendingCount === 0;
     const [quiet, bootstrap] = pipelineQuiet
       ? await Promise.all([
           gatherQuietCandidates(this.prisma, userId, now),
@@ -131,6 +149,7 @@ export class AgendaService {
       approvedJobs,
       appliedToday,
       dueQueries,
+      scorePending,
       finalizeCampaigns,
       inbox,
       approvedNetworking,
