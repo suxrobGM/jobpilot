@@ -38,12 +38,12 @@ export function WorkspaceView(): ReactElement {
       <Tabs
         value={tab}
         onChange={(_, value: WorkspaceTab) => setTab(value === "overview" ? null : value)}
-        sx={{ paddingInline: 2.5, borderBottom: 1, borderColor: "divider" }}
+        sx={{ borderBottom: 1, borderColor: "divider" }}
       >
         <Tab value="overview" label="Overview" />
         <Tab value="applications" label="Applications" />
       </Tabs>
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", paddingInline: 2.5, paddingBlock: 2 }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", paddingBlock: 2 }}>
         {tab === "overview" ? <OverviewPanel /> : <ApplicationsPanel />}
       </Box>
     </Box>
