@@ -11,7 +11,7 @@ export function UpworkPanel(): ReactElement {
       <Stack spacing={1.5}>
         <Box sx={[panelCellSx, { padding: 1.5 }]}>
           <Stack spacing={1}>
-            <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600 }}>
+            <Typography variant="body1Strong">
               Build a Next.js dashboard for a logistics startup
             </Typography>
             <Typography variant="captionMuted">Fixed price · $4,500 · Expert</Typography>

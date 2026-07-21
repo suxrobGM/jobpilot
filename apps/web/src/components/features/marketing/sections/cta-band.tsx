@@ -43,7 +43,7 @@ export function CtaBand(): ReactElement {
           }}
         />
         <Stack spacing={3} sx={{ position: "relative", alignItems: "flex-start" }}>
-          <Typography variant="h2" sx={{ fontSize: { xs: "1.9rem", md: "2.5rem" }, maxWidth: 620 }}>
+          <Typography variant="displayMd" sx={{ maxWidth: 620 }}>
             Put your job search on autopilot.
           </Typography>
           <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem", maxWidth: 520 }}>

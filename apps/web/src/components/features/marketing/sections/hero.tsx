@@ -42,7 +42,7 @@ export function Hero(): ReactElement {
           <Grid size={{ xs: 12, md: 6 }}>
             <Stack spacing={3}>
               <SectionEyebrow color="accent.primary">AUTONOMOUS · LOCAL-FIRST</SectionEyebrow>
-              <Typography variant="h1" sx={{ fontSize: { xs: "2.25rem", md: "3.25rem" } }}>
+              <Typography variant="displayLg">
                 Your job search on autopilot, running on your machine.
               </Typography>
               <Typography variant="body1Muted" sx={{ fontSize: "1.05rem", maxWidth: 520 }}>

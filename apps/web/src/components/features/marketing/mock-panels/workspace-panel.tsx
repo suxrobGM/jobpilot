@@ -64,7 +64,7 @@ export function WorkspacePanel(): ReactElement {
               ]}
             >
               <Box sx={{ minWidth: 0 }}>
-                <Typography sx={{ fontSize: "0.75rem", fontWeight: 600 }} noWrap>
+                <Typography variant="body2Strong" noWrap>
                   {app.company}
                 </Typography>
                 <Typography variant="captionMuted" noWrap sx={{ display: "block" }}>

@@ -41,7 +41,7 @@ export function InboxPanel(): ReactElement {
           <Box key={message.from} sx={[panelCellSx, { padding: 1.25 }]}>
             <Stack spacing={0.75}>
               <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between" }}>
-                <Typography sx={{ fontSize: "0.75rem", fontWeight: 600 }} noWrap>
+                <Typography variant="body2Strong" noWrap>
                   {message.from}
                 </Typography>
                 {message.approve && (
