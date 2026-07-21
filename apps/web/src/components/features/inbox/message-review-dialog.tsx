@@ -2,7 +2,7 @@
 
 import { type ReactNode, useState } from "react";
 import { CLASSIFICATION_TO_STATUS } from "@jobpilot/contracts/email";
-import { Autocomplete, Box, Button, Chip, Stack, TextField, Typography } from "@mui/material";
+import { Autocomplete, Button, Chip, Paper, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { applicationQueries, emailQueries } from "@/api/queries";
@@ -152,7 +152,8 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             isOptionEqualToValue={(a, b) => a.id === b.id}
           />
 
-          <Box
+          <Paper
+            variant="panel"
             sx={(t) => ({
               p: 2,
               maxHeight: 320,
@@ -160,13 +161,11 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
               whiteSpace: "pre-wrap",
               fontFamily: "monospace",
               fontSize: "0.85rem",
-              borderRadius: t.radii.sm,
-              border: `1px solid ${t.palette.line.divider}`,
               backgroundColor: t.palette.surfaces.elevated,
             })}
           >
             {m.rawBody || m.snippet}
-          </Box>
+          </Paper>
         </>
       ) : (
         <Typography variant="body2Muted">Loading</Typography>

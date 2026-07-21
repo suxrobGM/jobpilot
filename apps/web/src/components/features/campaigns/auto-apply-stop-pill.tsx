@@ -70,6 +70,7 @@ export function AutoApplyStopPill(): ReactNode {
 
   return (
     <Paper
+      variant="panel"
       elevation={8}
       sx={(t) => ({
         display: { xs: "none", md: "flex" },
@@ -77,10 +78,8 @@ export function AutoApplyStopPill(): ReactNode {
         bottom: 16,
         right: rightOffset,
         zIndex: t.zIndex.snackbar,
-        borderRadius: t.radii.md,
         padding: 1.5,
         backgroundColor: "background.paper",
-        border: `1px solid ${t.palette.line.divider}`,
       })}
     >
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>

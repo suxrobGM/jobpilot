@@ -2,7 +2,7 @@
 
 import { type ReactElement, type ReactNode, useState } from "react";
 import { ExpandMore } from "@mui/icons-material";
-import { Box, Button, Collapse, Stack, Tab, Tabs, Typography } from "@mui/material";
+import { Box, Button, Collapse, Paper, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { CopyField } from "@/components/ui/display";
 import { HostInstallCommands } from "./host-install-commands";
@@ -17,15 +17,7 @@ interface InstallStepProps {
 function InstallStep(props: InstallStepProps): ReactElement {
   const { number, title, children } = props;
   return (
-    <Stack
-      spacing={1.5}
-      sx={(theme) => ({
-        padding: { xs: 2.5, md: 3 },
-        borderRadius: theme.radii.lg,
-        border: `1px solid ${theme.palette.line.divider}`,
-        backgroundColor: theme.palette.surfaces.card,
-      })}
-    >
+    <Paper component={Stack} variant="panel" spacing={1.5} sx={{ padding: { xs: 2.5, md: 3 } }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
         <Box
           sx={(theme) => ({
@@ -47,7 +39,7 @@ function InstallStep(props: InstallStepProps): ReactElement {
         </Typography>
       </Stack>
       {children}
-    </Stack>
+    </Paper>
   );
 }
 

@@ -2,7 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import { ExpandMore } from "@mui/icons-material";
-import { Box, Collapse, Link, Stack, Typography } from "@mui/material";
+import { Box, Collapse, Link, Paper, Stack, Typography } from "@mui/material";
 import { usePathname } from "next/navigation";
 import { DOCS_LINKS } from "./docs-nav";
 
@@ -25,16 +25,15 @@ export function DocsMobileNav(): ReactElement {
   const controlledPanelId = open ? PANEL_ID : undefined;
 
   return (
-    <Box
+    <Paper
       component="nav"
       aria-label="Documentation"
-      sx={(t) => ({
+      variant="panel"
+      sx={{
         display: { xs: "block", md: "none" },
-        borderRadius: t.radii.md,
-        border: `1px solid ${t.palette.line.divider}`,
         backgroundColor: "surfaces.elevated",
         overflow: "hidden",
-      })}
+      }}
     >
       <Box
         component="button"
@@ -108,6 +107,6 @@ export function DocsMobileNav(): ReactElement {
           })}
         </Stack>
       </Collapse>
-    </Box>
+    </Paper>
   );
 }

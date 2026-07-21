@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { OpenInNew } from "@mui/icons-material";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Button, Paper, Stack, Typography } from "@mui/material";
 import { resumePdfUrl } from "@/api/resume-urls";
 import { SectionCard } from "@/components/ui/layout";
 
@@ -31,16 +31,15 @@ export function ResumePdfPreview(props: ResumePdfPreviewProps): ReactElement {
       }
     >
       <Stack spacing={1}>
-        <Box
+        <Paper
           component="iframe"
+          variant="panel"
           src={src}
-          sx={(t) => ({
+          sx={{
             width: "100%",
             aspectRatio: "8.5/11",
-            border: `1px solid ${t.palette.line.divider}`,
-            borderRadius: t.radii.sm,
             bgcolor: "background.default",
-          })}
+          }}
         />
         <Typography variant="captionMuted">
           Reflects the most recently saved structure. Save the editor to refresh.

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps, ReactElement } from "react";
-import { Box, Divider, Link, Typography } from "@mui/material";
+import { Box, Divider, Link, Paper, Typography } from "@mui/material";
 import type { Route } from "next";
 import { fontFamilies } from "@/theme";
 
@@ -87,16 +87,14 @@ export function DocsCode(props: ComponentProps<"code">): ReactElement {
 
 export function DocsPre(props: ComponentProps<"pre">): ReactElement {
   return (
-    <Box
+    <Paper
       component="pre"
-      sx={(theme) => ({
+      variant="panel"
+      sx={{
         margin: 0,
         marginBottom: 2,
         padding: 2,
         overflowX: "auto",
-        borderRadius: `${theme.radii.md}px`,
-        border: `1px solid ${theme.palette.line.border}`,
-        backgroundColor: theme.palette.surfaces.card,
         fontFamily: fontFamilies.mono,
         fontSize: "0.8125rem",
         lineHeight: 1.6,
@@ -108,7 +106,7 @@ export function DocsPre(props: ComponentProps<"pre">): ReactElement {
           backgroundColor: "transparent",
           fontSize: "inherit",
         },
-      })}
+      }}
       {...props}
     />
   );
