@@ -1,4 +1,4 @@
-import { cron } from "@elysiajs/cron";
+import { cron, Patterns } from "@elysiajs/cron";
 import { logger } from "@/common/logger";
 import { pruneGeneratedCache } from "@/common/storage";
 
@@ -27,7 +27,7 @@ async function prunePdfCache(): Promise<void> {
 /** Daily job (03:00 server time) that prunes the regenerable generated-PDF cache. */
 export const resumeJob = cron({
   name: "prune-pdf-cache",
-  pattern: "0 3 * * *",
+  pattern: Patterns.everyDayAt("03:00"),
   run() {
     prunePdfCache().catch((err) => logger.error({ err }, "Generated-PDF cache prune failed"));
   },
