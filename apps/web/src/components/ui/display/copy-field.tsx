@@ -29,7 +29,7 @@ export function CopyField(props: CopyFieldProps): ReactElement {
           minWidth: 0,
           px: 1.5,
           py: 1,
-          borderRadius: `${theme.radii.xs}px`,
+          borderRadius: theme.radii.xs,
           bgcolor: "action.hover",
           fontFamily: "monospace",
           fontSize: 13,

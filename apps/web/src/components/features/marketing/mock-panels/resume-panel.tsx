@@ -28,7 +28,7 @@ function PagePreview(): ReactElement {
         width: 104,
         flexShrink: 0,
         aspectRatio: "3 / 4",
-        borderRadius: `${radii.xs}px`,
+        borderRadius: radii.xs,
         backgroundColor: editorial.paper,
         padding: 1.25,
         display: "flex",

@@ -15,7 +15,7 @@ export function CtaBand(): ReactElement {
         sx={{
           position: "relative",
           overflow: "hidden",
-          borderRadius: `${radii.lg}px`,
+          borderRadius: radii.lg,
           border: `1px solid ${accent.primary}40`,
           backgroundColor: "surfaces.card",
           boxShadow: `0 24px 64px -32px ${accent.primary}33`,

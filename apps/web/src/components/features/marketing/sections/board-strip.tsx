@@ -23,7 +23,7 @@ const chipSx = {
   whiteSpace: "nowrap",
   paddingInline: 1.25,
   paddingBlock: 0.5,
-  borderRadius: `${radii.pill}px`,
+  borderRadius: radii.pill,
 } as const;
 
 /**

@@ -26,8 +26,9 @@ const baseTheme = createTheme({
     line,
     stages,
   },
-  // Global default = the sm token; component overrides pin larger radii (card md, dialog lg) explicitly.
-  shape: { borderRadius: radii.sm },
+  // Keep the sx multiplier at 1 so a `radii` token in sx means that many px, exactly as in
+  // styleOverrides. Component overrides pin the real radii (card md, dialog lg) explicitly.
+  shape: { borderRadius: 1 },
   typography,
   gradients,
   motion,

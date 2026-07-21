@@ -76,7 +76,7 @@ export function DocsCode(props: ComponentProps<"code">): ReactElement {
         fontSize: "0.85em",
         paddingInline: 0.6,
         paddingBlock: 0.1,
-        borderRadius: `${theme.radii.sm}px`,
+        borderRadius: theme.radii.sm,
         border: `1px solid ${theme.palette.line.divider}`,
         backgroundColor: theme.palette.surfaces.elevated,
       })}
@@ -102,7 +102,7 @@ export function DocsPre(props: ComponentProps<"pre">): ReactElement {
         "& code": {
           border: 0,
           padding: 0,
-          borderRadius: "0px",
+          borderRadius: 0,
           backgroundColor: "transparent",
           fontSize: "inherit",
         },

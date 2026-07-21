@@ -39,7 +39,7 @@ export function TopBoardsList(props: TopBoardsListProps): ReactElement {
                     value={pct}
                     sx={(t) => ({
                       height: 4,
-                      borderRadius: `${t.radii.xs}px`,
+                      borderRadius: t.radii.xs,
                       backgroundColor: t.palette.line.divider,
                       "& .MuiLinearProgress-bar": {
                         backgroundColor: t.palette.accent.primary,

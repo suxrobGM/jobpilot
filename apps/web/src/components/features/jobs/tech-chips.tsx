@@ -11,7 +11,7 @@ const techChipSx = {
   whiteSpace: "nowrap",
   paddingInline: 1,
   paddingBlock: 0.25,
-  borderRadius: `${radii.pill}px`,
+  borderRadius: radii.pill,
   color: "text.secondary",
   border: 1,
   borderColor: "line.border",

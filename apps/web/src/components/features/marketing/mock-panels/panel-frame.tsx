@@ -15,7 +15,7 @@ export function PanelFrame(props: PanelFrameProps): ReactElement {
     <Box
       aria-hidden
       sx={{
-        borderRadius: `${radii.lg}px`,
+        borderRadius: radii.lg,
         border: `1px solid ${line.border}`,
         backgroundColor: "surfaces.card",
         boxShadow: shadows.lg,
@@ -47,7 +47,7 @@ export function PanelFrame(props: PanelFrameProps): ReactElement {
 
 /** Inset-card surface shared by every mock panel; merge with a `padding` override. */
 export const panelCellSx = {
-  borderRadius: `${radii.sm}px`,
+  borderRadius: radii.sm,
   border: `1px solid ${line.divider}`,
   backgroundColor: "surfaces.elevated",
 } satisfies SxProps<Theme>;
@@ -75,7 +75,7 @@ export function PanelBadge(props: PanelBadgeProps): ReactElement {
           color,
           border: "1px solid",
           borderColor: borderColor ?? color,
-          borderRadius: `${radii.pill}px`,
+          borderRadius: radii.pill,
           paddingInline: 1,
           paddingBlock: 0.25,
           whiteSpace: "nowrap",

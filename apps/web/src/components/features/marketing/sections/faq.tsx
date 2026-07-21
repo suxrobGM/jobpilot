@@ -30,7 +30,7 @@ export function Faq(): ReactElement {
             elevation={0}
             sx={(theme) => ({
               border: `1px solid ${theme.palette.line.border}`,
-              borderRadius: `${theme.radii.md}px`,
+              borderRadius: theme.radii.md,
               backgroundColor: theme.palette.surfaces.card,
               transition: theme.motion.fast,
               "&:hover": { borderColor: theme.palette.line.borderHi },

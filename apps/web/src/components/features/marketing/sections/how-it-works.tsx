@@ -57,7 +57,7 @@ export function HowItWorks(): ReactElement {
                     color: "text.secondary",
                     backgroundColor: "surfaces.elevated",
                     border: `1px solid ${line.divider}`,
-                    borderRadius: `${radii.sm}px`,
+                    borderRadius: radii.sm,
                     paddingInline: 1,
                     paddingBlock: 0.5,
                   }}
