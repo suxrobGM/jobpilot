@@ -18,7 +18,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { applicationQueries } from "@/api/queries";
 import { invalidations } from "@/api/query-keys";
 import { EmptyState } from "@/components/ui/data/empty-state";
-import { StatusChip } from "@/components/ui/display";
+import { LabelValue, StatusChip } from "@/components/ui/display";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
@@ -117,15 +117,14 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               <StatusChip status={app.status} />
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ flexWrap: "wrap" }}>
-              <Field label="Board" value={app.board ?? ""} />
-              <Field label="Source" value={app.source} />
-              <Field label="Location" value={app.location ?? ""} />
-              <Field
-                label="Match score"
-                value={app.matchScore !== null ? `${app.matchScore}/100` : ""}
-              />
-              <Field label="Applied at" value={formatAbsoluteTime(app.appliedAt)} />
-              {app.campaignId && <Field label="Campaign" value={app.campaignId} />}
+              <LabelValue label="Board">{app.board ?? ""}</LabelValue>
+              <LabelValue label="Source">{app.source}</LabelValue>
+              <LabelValue label="Location">{app.location ?? ""}</LabelValue>
+              <LabelValue label="Match score">
+                {app.matchScore !== null ? `${app.matchScore}/100` : ""}
+              </LabelValue>
+              <LabelValue label="Applied at">{formatAbsoluteTime(app.appliedAt)}</LabelValue>
+              {app.campaignId && <LabelValue label="Campaign">{app.campaignId}</LabelValue>}
             </Stack>
             {app.matchReason && (
               <Box>
@@ -155,20 +154,5 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
         submitting={updateStatus.isPending}
       />
     </>
-  );
-}
-
-interface FieldProps {
-  label: string;
-  value: string;
-}
-
-function Field(props: FieldProps): ReactElement {
-  const { label, value } = props;
-  return (
-    <Box>
-      <Typography variant="overlineMuted">{label}</Typography>
-      <Typography variant="body2">{value}</Typography>
-    </Box>
   );
 }

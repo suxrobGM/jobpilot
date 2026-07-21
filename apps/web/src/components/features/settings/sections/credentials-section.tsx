@@ -3,13 +3,15 @@
 import { type ReactElement, useState } from "react";
 import type { CredentialInput } from "@jobpilot/contracts/credential";
 import { Add, Delete, Key, Lock } from "@mui/icons-material";
-import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Button, List, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { credentialQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
+import { ItemRow } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -82,12 +84,19 @@ export function CredentialsSection(): ReactElement {
           {logins.length > 0 && (
             <CredentialGroup title="Job board logins">
               {logins.map((c) => (
-                <CredentialRow
+                <ItemRow
                   key={c.id}
-                  credential={c}
                   icon={<Lock fontSize="small" color="action" />}
-                  subtitle={c.email ?? ""}
-                  onDelete={() => void handleDelete(c)}
+                  primary={c.scope}
+                  secondary={c.email ?? ""}
+                  action={
+                    <TooltipIconButton
+                      title="Delete credential"
+                      onClick={() => void handleDelete(c)}
+                    >
+                      <Delete fontSize="small" />
+                    </TooltipIconButton>
+                  }
                 />
               ))}
             </CredentialGroup>
@@ -95,12 +104,19 @@ export function CredentialsSection(): ReactElement {
           {services.length > 0 && (
             <CredentialGroup title="Captcha services">
               {services.map((c) => (
-                <CredentialRow
+                <ItemRow
                   key={c.id}
-                  credential={c}
                   icon={<Key fontSize="small" color="action" />}
-                  subtitle={`API key ••••${c.apiKey?.slice(-4) ?? ""}`}
-                  onDelete={() => void handleDelete(c)}
+                  primary={c.scope}
+                  secondary={`API key ••••${c.apiKey?.slice(-4) ?? ""}`}
+                  action={
+                    <TooltipIconButton
+                      title="Delete credential"
+                      onClick={() => void handleDelete(c)}
+                    >
+                      <Delete fontSize="small" />
+                    </TooltipIconButton>
+                  }
                 />
               ))}
             </CredentialGroup>
@@ -130,36 +146,9 @@ function CredentialGroup(props: CredentialGroupProps): ReactElement {
       <Typography variant="subtitle2" sx={{ mb: 1 }}>
         {title}
       </Typography>
-      <Stack spacing={1}>{children}</Stack>
+      <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        {children}
+      </List>
     </Box>
-  );
-}
-
-interface CredentialRowProps {
-  credential: CredentialDto;
-  icon: ReactElement;
-  subtitle: string;
-  onDelete: () => void;
-}
-
-function CredentialRow(props: CredentialRowProps): ReactElement {
-  const { credential, icon, subtitle, onDelete } = props;
-  return (
-    <Card>
-      <CardContent>
-        <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-          {icon}
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              {credential.scope}
-            </Typography>
-            <Typography variant="captionMuted">{subtitle}</Typography>
-          </Box>
-          <IconButton onClick={onDelete} aria-label="Delete credential">
-            <Delete fontSize="small" />
-          </IconButton>
-        </Stack>
-      </CardContent>
-    </Card>
   );
 }

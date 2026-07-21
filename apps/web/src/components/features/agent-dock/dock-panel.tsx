@@ -8,10 +8,10 @@ import {
   Select,
   type SelectChangeEvent,
   Stack,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { TerminalPanel } from "@/components/features/terminal";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import { readAgentStorage } from "@/lib/agent-storage";
 import { providerDisplayName } from "@/lib/terminal";
@@ -137,24 +137,26 @@ export function DockPanel(): ReactElement {
               <MenuItem value="claude">Claude Code</MenuItem>
               <MenuItem value="codex">Codex</MenuItem>
             </Select>
-            <Tooltip title={`Restart ${providerLabel}`}>
-              <IconButton size="small" onClick={() => void restart()} aria-label="Restart">
-                <RestartAlt fontSize="sm" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Stop agent (closes the terminal app)">
-              <IconButton
-                size="small"
-                onClick={() => {
-                  beginPending("stopping");
-                  // A stop that left the host up has no "went down" edge to clear the card.
-                  void stop().then((down) => !down && beginPending(null));
-                }}
-                aria-label="Stop"
-              >
-                <StopCircle fontSize="sm" />
-              </IconButton>
-            </Tooltip>
+            <TooltipIconButton
+              title={`Restart ${providerLabel}`}
+              size="small"
+              onClick={() => void restart()}
+              aria-label="Restart"
+            >
+              <RestartAlt fontSize="sm" />
+            </TooltipIconButton>
+            <TooltipIconButton
+              title="Stop agent (closes the terminal app)"
+              size="small"
+              onClick={() => {
+                beginPending("stopping");
+                // A stop that left the host up has no "went down" edge to clear the card.
+                void stop().then((down) => !down && beginPending(null));
+              }}
+              aria-label="Stop"
+            >
+              <StopCircle fontSize="sm" />
+            </TooltipIconButton>
           </Stack>
           <TerminalPanel key={`${provider}-${terminalRevision}`} provider={provider} />
         </>

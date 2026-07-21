@@ -7,17 +7,18 @@ import {
   Box,
   Chip,
   FormControlLabel,
-  IconButton,
   LinearProgress,
+  List,
   Stack,
   Switch,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import { TooltipIconButton } from "@/components/ui/buttons";
+import { ItemRow } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/notification-provider";
@@ -187,53 +188,39 @@ export function PushSettings(): ReactNode {
         {devices.length > 0 && (
           <Stack spacing={1}>
             <Typography variant="overlineMuted">Registered devices</Typography>
-            {devices.map((device) => (
-              <Stack
-                key={device.id}
-                direction="row"
-                spacing={1.5}
-                sx={{
-                  alignItems: "center",
-                  border: 1,
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  px: 1.5,
-                  py: 1,
-                }}
-              >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
-                    <Typography variant="body2" noWrap>
-                      {device.userAgent ?? "Unknown device"}
-                    </Typography>
-                    {device.endpoint === currentEndpoint && (
-                      <Chip
-                        label="This device"
-                        size="small"
-                        color="primary"
-                        sx={{ flexShrink: 0 }}
-                      />
-                    )}
-                  </Stack>
-                  <Typography variant="captionMuted">
-                    Added {formatRelativeTime(device.createdAt)} ago
-                  </Typography>
-                </Box>
-                {/* Tooltips need an enabled child for pointer events; `busy` disables the button. */}
-                <Tooltip title="Remove device">
-                  <Box component="span" sx={{ display: "inline-flex", flexShrink: 0 }}>
-                    <IconButton
+            <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {devices.map((device) => (
+                <ItemRow
+                  key={device.id}
+                  primary={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                      <Typography variant="body2Strong" noWrap>
+                        {device.userAgent ?? "Unknown device"}
+                      </Typography>
+                      {device.endpoint === currentEndpoint && (
+                        <Chip
+                          label="This device"
+                          size="small"
+                          color="primary"
+                          sx={{ flexShrink: 0 }}
+                        />
+                      )}
+                    </Box>
+                  }
+                  secondary={`Added ${formatRelativeTime(device.createdAt)} ago`}
+                  action={
+                    <TooltipIconButton
+                      title="Remove device"
                       size="small"
                       disabled={busy}
-                      aria-label="Remove device"
                       onClick={() => void removeDevice(device.endpoint)}
                     >
                       <Delete fontSize="sm" />
-                    </IconButton>
-                  </Box>
-                </Tooltip>
-              </Stack>
-            ))}
+                    </TooltipIconButton>
+                  }
+                />
+              ))}
+            </List>
           </Stack>
         )}
 
