@@ -1,4 +1,4 @@
-﻿import type { ReactElement } from "react";
+import type { ReactElement } from "react";
 import { Box, Card, CardContent, Chip, Divider, Stack, Typography } from "@mui/material";
 import type { JobListingDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
@@ -105,7 +105,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
           </Typography>
         )}
         <Typography variant="captionMuted">
-          Seen {formatRelativeTime(job.lastSeenAt)} ago Â· first found {formatDate(job.firstSeenAt)}
+          Seen {formatRelativeTime(job.lastSeenAt)} ago · first found {formatDate(job.firstSeenAt)}
         </Typography>
       </Stack>
     </Stack>

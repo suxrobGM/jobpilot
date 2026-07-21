@@ -5,14 +5,14 @@ import type { CampaignJobStatus, CampaignStatus } from "@jobpilot/contracts/camp
 import type { ChipProps } from "@mui/material";
 import { ColorChip } from "@/components/ui/display";
 
-export const CAMPAIGN_STATUS_COLOR: Record<CampaignStatus, ChipProps["color"]> = {
+const CAMPAIGN_STATUS_COLOR: Record<CampaignStatus, ChipProps["color"]> = {
   in_progress: "info",
   paused: "default",
   completed: "success",
   failed: "error",
 };
 
-export const CAMPAIGN_STATUS_LABEL: Record<CampaignStatus, string> = {
+const CAMPAIGN_STATUS_LABEL: Record<CampaignStatus, string> = {
   in_progress: "in progress",
   paused: "paused",
   completed: "completed",
@@ -34,7 +34,7 @@ export function CampaignStatusChip(props: CampaignStatusChipProps): ReactElement
   );
 }
 
-export const CAMPAIGN_JOB_STATUS_COLOR: Record<CampaignJobStatus, ChipProps["color"]> = {
+const CAMPAIGN_JOB_STATUS_COLOR: Record<CampaignJobStatus, ChipProps["color"]> = {
   pending: "default",
   approved: "info",
   applying: "primary",

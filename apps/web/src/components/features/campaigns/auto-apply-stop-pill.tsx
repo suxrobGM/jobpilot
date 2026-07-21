@@ -71,7 +71,6 @@ export function AutoApplyStopPill(): ReactNode {
   return (
     <Paper
       variant="panel"
-      elevation={8}
       sx={(t) => ({
         display: { xs: "none", md: "flex" },
         position: "fixed",
@@ -80,6 +79,8 @@ export function AutoApplyStopPill(): ReactNode {
         zIndex: t.zIndex.snackbar,
         padding: 1.5,
         backgroundColor: "background.paper",
+        // Paper only wires `elevation` up under variant="elevation"; a floating pill still needs lift.
+        boxShadow: t.shadows[8],
       })}
     >
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>

@@ -18,7 +18,9 @@ export function ItemRow(props: ItemRowProps): ReactElement {
         border: 1,
         borderColor: "line.border",
         borderRadius: (theme) => `${theme.radii.md}px`,
-        px: 1.5,
+        pl: 1.5,
+        // secondaryAction is absolutely positioned; 6 clears it, or noWrap text slides underneath.
+        pr: action ? 6 : 1.5,
         py: 1,
       }}
     >
