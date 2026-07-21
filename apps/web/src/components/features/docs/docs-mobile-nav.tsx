@@ -3,19 +3,8 @@
 import { type ReactElement, useState } from "react";
 import { ExpandMore } from "@mui/icons-material";
 import { Box, Collapse, Link, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
 import { usePathname } from "next/navigation";
-import { DOCS_NAV } from "./docs-nav";
-
-interface NavLink {
-  href: Route;
-  label: string;
-}
-
-const LINKS: NavLink[] = [
-  { href: "/docs", label: "Overview" },
-  ...DOCS_NAV.map((entry) => ({ href: entry.href, label: entry.title })),
-];
+import { DOCS_LINKS } from "./docs-nav";
 
 const PANEL_ID = "docs-mobile-nav-panel";
 
@@ -31,7 +20,7 @@ export function DocsMobileNav(): ReactElement {
     setOpen(false);
   }
 
-  const current = LINKS.find((link) => link.href === pathname)?.label ?? "Overview";
+  const current = DOCS_LINKS.find((link) => link.href === pathname)?.label ?? "Overview";
 
   return (
     <Box
@@ -88,7 +77,7 @@ export function DocsMobileNav(): ReactElement {
           spacing={0}
           sx={{ borderTop: 1, borderColor: "line.divider", paddingBlock: 0.75 }}
         >
-          {LINKS.map((link) => {
+          {DOCS_LINKS.map((link) => {
             const active = link.href === pathname;
             return (
               <Link

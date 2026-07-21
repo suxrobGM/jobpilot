@@ -31,36 +31,33 @@ internal sealed class InterventionLadder(
     /// <summary>Climbs the ladder for a stuck cycle, returning how it resolved.</summary>
     public async Task<CycleResolution> ClimbAsync(PilotPairing pairing, CycleWaiter waiter, CancellationToken ct)
     {
-        // Rung 1: check-in exactly once, then a shorter grace. Each rung first honors a completion that just landed.
-        if (await GuardAsync(waiter, ct) is { Finished: true } guard1)
-        {
-            return guard1;
-        }
-        await report(PilotReports.CheckIn, ct);
-        await env.InjectCheckInAsync(pairing, ct);
-        var resolution = await finish(await waiter.WaitAsync(PilotCycleRunner.CheckInGrace, ct), ct);
-        if (resolution.Finished)
-        {
-            return resolution;
-        }
+        // Rungs 1-2: check in once, then force the claimed task failed so the next cycle can move on. Each rung
+        // first honors a completion that just landed, then allows a shorter grace before escalating.
+        (string Report, Func<PilotPairing, CancellationToken, Task> Inject)[] rungs =
+        [
+            (PilotReports.CheckIn, env.InjectCheckInAsync),
+            (PilotReports.Skip, env.InjectSkipAsync),
+        ];
 
-        // Rung 2: the check-in did not unstick it - force the claimed task failed so the next cycle can move on.
-        if (await GuardAsync(waiter, ct) is { Finished: true } guard2)
+        foreach (var (summary, inject) in rungs)
         {
-            return guard2;
-        }
-        await report(PilotReports.Skip, ct);
-        await env.InjectSkipAsync(pairing, ct);
-        resolution = await finish(await waiter.WaitAsync(PilotCycleRunner.CheckInGrace, ct), ct);
-        if (resolution.Finished)
-        {
-            return resolution;
+            if (await GuardAsync(waiter, ct) is { Finished: true } guarded)
+            {
+                return guarded;
+            }
+            await report(summary, ct);
+            await inject(pairing, ct);
+            var resolution = await finish(await waiter.WaitAsync(PilotCycleRunner.CheckInGrace, ct), ct);
+            if (resolution.Finished)
+            {
+                return resolution;
+            }
         }
 
         // Rung 3: still stuck - restart for a clean session, and back off once repeated restarts prove the install is broken.
-        if (await GuardAsync(waiter, ct) is { Finished: true } guard3)
+        if (await GuardAsync(waiter, ct) is { Finished: true } guard)
         {
-            return guard3;
+            return guard;
         }
         ConsecutiveRestarts++;
         await report(PilotReports.Restart, ct);

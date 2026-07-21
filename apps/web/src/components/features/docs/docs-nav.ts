@@ -39,3 +39,9 @@ export const DOCS_NAV: DocsNavEntry[] = [
     description: "Common questions about the agent, boards, and your data.",
   },
 ];
+
+/** Every docs destination in nav order - the desktop rail and the mobile navigator render the same list. */
+export const DOCS_LINKS: { href: Route; label: string }[] = [
+  { href: "/docs", label: "Overview" },
+  ...DOCS_NAV.map((entry) => ({ href: entry.href, label: entry.title })),
+];

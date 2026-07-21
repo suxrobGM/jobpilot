@@ -48,8 +48,7 @@ internal sealed class CompletionTracker
             return TimeSpan.Zero;
         }
 
-        // A completion with no sleep hint is a skill bug; treat it as the minimum so resume owes at most a brief wait.
-        var planned = TimeSpan.FromSeconds(PilotCycleRunner.ClampSleep(last.SleepSeconds ?? PilotCycleRunner.MinSleepSeconds));
+        var planned = TimeSpan.FromSeconds(PilotCycleRunner.ClampSleep(PlannedSleepSeconds(last)));
         var remaining = planned - (DateTimeOffset.UtcNow - last.CompletedAt);
         if (remaining <= TimeSpan.Zero)
         {
@@ -73,13 +72,10 @@ internal sealed class CompletionTracker
     private static PilotCycle Synthesize(PilotCompletedCycle completed)
     {
         var id = Guid.TryParse(completed.CycleId, out var parsed) ? parsed : Guid.Empty;
-        var status = completed.Status switch
-        {
-            "empty" => PilotCycleStatus.Empty,
-            "error" => PilotCycleStatus.Error,
-            _ => PilotCycleStatus.Ok,
-        };
-        // A completion with no sleep hint is a skill bug; fall back to the minimum clamp so the next cycle runs soon.
-        return new PilotCycle(id, status, completed.SleepSeconds ?? PilotCycleRunner.MinSleepSeconds);
+        return new PilotCycle(id, SentinelParser.ParseStatus(completed.Status.AsSpan()), PlannedSleepSeconds(completed));
     }
+
+    // A completion with no sleep hint is a skill bug; fall back to the minimum so the next cycle still runs soon.
+    private static int PlannedSleepSeconds(PilotCompletedCycle completed) =>
+        completed.SleepSeconds ?? PilotCycleRunner.MinSleepSeconds;
 }

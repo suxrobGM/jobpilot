@@ -24,22 +24,16 @@ public sealed partial class SentinelParser
     private const int MaxTailChars = 32768;
 
     // > the max sentinels that fit in the tail, so an id never evicts before its match scrolls out (no refire).
-    private const int MaxSeenIds = 256;
+    private const int MaxSeenIds = 512;
 
     private readonly StringBuilder tail = new();
     private readonly HashSet<Guid> seen = [];
     private readonly Queue<Guid> seenOrder = new();
 
-    [GeneratedRegex(@"\[\[JOBPILOT_CYCLE cycle=([0-9a-fA-F-]{36}) status=(ok|empty|error) sleep=(\d+)\]\]")]
-    private static partial Regex SentinelPattern();
-
-    // Second pass over a whitespace-removed projection: the TUI may wrap the sentinel with a newline+indent
-    // anywhere (even mid-GUID), so collapsing whitespace lets these fragments reunite into a match.
+    // Matched against a whitespace-free projection of the tail: the TUI wraps the sentinel with a newline+indent
+    // anywhere (even mid-GUID), so the fragments only reunite once every space is gone.
     [GeneratedRegex(@"\[\[JOBPILOT_CYCLEcycle=([0-9a-fA-F-]{36})status=(ok|empty|error)sleep=(\d+)\]\]")]
-    private static partial Regex WrappedSentinelPattern();
-
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex WhitespacePattern();
+    private static partial Regex SentinelPattern();
 
     /// <summary>Feeds a raw output chunk and returns any newly detected cycles (usually none).</summary>
     public IReadOnlyList<PilotCycle> Feed(ReadOnlySpan<byte> chunk)
@@ -51,20 +45,8 @@ public sealed partial class SentinelParser
             tail.Remove(0, tail.Length - MaxTailChars);
         }
 
-        var stripped = StripControl(tail.ToString());
-
-        // Strict pass first (fast path); then the wrapped pass over the condensed tail. The shared seen set
-        // dedupes a cycle that both passes catch, so each id still fires at most once.
         List<PilotCycle>? cycles = null;
-        Collect(SentinelPattern().Matches(stripped), ref cycles);
-        Collect(WrappedSentinelPattern().Matches(WhitespacePattern().Replace(stripped, string.Empty)), ref cycles);
-
-        return (IReadOnlyList<PilotCycle>?)cycles ?? [];
-    }
-
-    private void Collect(MatchCollection matches, ref List<PilotCycle>? cycles)
-    {
-        foreach (Match match in matches)
+        foreach (Match match in SentinelPattern().Matches(Condense(tail.ToString())))
         {
             if (!Guid.TryParse(match.Groups[1].ValueSpan, out var cycleId) || !seen.Add(cycleId))
             {
@@ -79,9 +61,12 @@ public sealed partial class SentinelParser
 
             (cycles ??= []).Add(new PilotCycle(cycleId, ParseStatus(match.Groups[2].ValueSpan), ParseSleep(match.Groups[3].ValueSpan)));
         }
+
+        return (IReadOnlyList<PilotCycle>?)cycles ?? [];
     }
 
-    private static PilotCycleStatus ParseStatus(ReadOnlySpan<char> value) => value switch
+    /// <summary>Shared by the API-confirmed completion path, which reads the same status vocabulary off the wire.</summary>
+    internal static PilotCycleStatus ParseStatus(ReadOnlySpan<char> value) => value switch
     {
         "empty" => PilotCycleStatus.Empty,
         "error" => PilotCycleStatus.Error,
@@ -91,8 +76,9 @@ public sealed partial class SentinelParser
     // The runner re-clamps; an overflowing count still caps at the ceiling rather than dropping the cycle.
     private static int ParseSleep(ReadOnlySpan<char> value) => int.TryParse(value, out var seconds) ? seconds : int.MaxValue;
 
-    /// <summary>Removes ESC sequences (CSI/OSC and two-char escapes) and redraw control bytes, keeping newlines.</summary>
-    private static string StripControl(ReadOnlySpan<char> input)
+    /// <summary>Projects the tail to the form the pattern matches: ESC sequences (CSI/OSC and two-char escapes),
+    /// redraw control bytes, and all whitespace removed, so a wrapped or repainted sentinel reads as one token.</summary>
+    private static string Condense(ReadOnlySpan<char> input)
     {
         var output = new StringBuilder(input.Length);
         for (var i = 0; i < input.Length; i++)
@@ -104,8 +90,7 @@ public sealed partial class SentinelParser
                 continue;
             }
 
-            // \r/\b/\a/\0 come from in-place redraws; \n stays so unrelated lines cannot fuse into a false match.
-            if (c is not ('\r' or '\b' or '\a' or '\0'))
+            if (!char.IsWhiteSpace(c) && c is not ('\b' or '\a' or '\0'))
             {
                 output.Append(c);
             }

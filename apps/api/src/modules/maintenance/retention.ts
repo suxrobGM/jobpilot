@@ -1,9 +1,8 @@
 // Pure retention windows + where-clause builders for the aggressive cleanup policy. No env/db
 // imports here - CI runs `bun test` with no database and no environment. The `Prisma` namespace
 // is a type-only import (erased at compile time), so it carries no runtime dependency.
+import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma } from "@/generated/prisma/client";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const RETENTION_DAYS = {
   journal: 30,
@@ -13,37 +12,22 @@ export const RETENTION_DAYS = {
   // delete could re-fire a long-cadence saved search early - keep those 90d instead.
   claimDiscover: 90,
   question: 30,
-  tokenGrace: 3,
+  /** Grace past expiry/consumption before a token row is swept. */
+  token: 3,
   promotion: 30,
   emailBody: 60,
   applicationEvent: 90,
 } as const;
 
-export interface RetentionCutoffs {
-  journal: Date;
-  journalDigest: Date;
-  claim: Date;
-  claimDiscover: Date;
-  question: Date;
-  token: Date;
-  promotion: Date;
-  emailBody: Date;
-  applicationEvent: Date;
-}
+export type RetentionCutoffs = Record<keyof typeof RETENTION_DAYS, Date>;
 
+/** One cutoff per configured window, so a new rule cannot be given a window and then never swept. */
 export function cutoffs(now: Date): RetentionCutoffs {
-  const before = (days: number) => new Date(now.getTime() - days * DAY_MS);
-  return {
-    journal: before(RETENTION_DAYS.journal),
-    journalDigest: before(RETENTION_DAYS.journalDigest),
-    claim: before(RETENTION_DAYS.claim),
-    claimDiscover: before(RETENTION_DAYS.claimDiscover),
-    question: before(RETENTION_DAYS.question),
-    token: before(RETENTION_DAYS.tokenGrace),
-    promotion: before(RETENTION_DAYS.promotion),
-    emailBody: before(RETENTION_DAYS.emailBody),
-    applicationEvent: before(RETENTION_DAYS.applicationEvent),
-  };
+  const entries = Object.entries(RETENTION_DAYS).map(([rule, days]) => [
+    rule,
+    new Date(now.getTime() - days * DAY_MS),
+  ]);
+  return Object.fromEntries(entries) as RetentionCutoffs;
 }
 
 export function journalOldWhere(c: RetentionCutoffs): Prisma.PilotJournalEntryWhereInput {

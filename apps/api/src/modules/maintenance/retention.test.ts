@@ -1,3 +1,4 @@
+import { DAY_MS } from "@/common/date/buckets";
 import {
   applicationEventWhere,
   claimDiscoverWhere,
@@ -15,7 +16,6 @@ import {
 import { describe, expect, it } from "bun:test";
 
 const NOW = new Date("2026-07-21T00:00:00.000Z");
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 function daysBefore(days: number): Date {
   return new Date(NOW.getTime() - days * DAY_MS);
@@ -29,7 +29,7 @@ describe("cutoffs", () => {
     expect(c.claim).toEqual(daysBefore(RETENTION_DAYS.claim));
     expect(c.claimDiscover).toEqual(daysBefore(RETENTION_DAYS.claimDiscover));
     expect(c.question).toEqual(daysBefore(RETENTION_DAYS.question));
-    expect(c.token).toEqual(daysBefore(RETENTION_DAYS.tokenGrace));
+    expect(c.token).toEqual(daysBefore(RETENTION_DAYS.token));
     expect(c.promotion).toEqual(daysBefore(RETENTION_DAYS.promotion));
     expect(c.emailBody).toEqual(daysBefore(RETENTION_DAYS.emailBody));
     expect(c.applicationEvent).toEqual(daysBefore(RETENTION_DAYS.applicationEvent));

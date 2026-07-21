@@ -51,10 +51,14 @@ export type PilotJournalKind = z.infer<typeof pilotJournalKindSchema>;
 export type CreatePilotJournalInput = z.infer<typeof createPilotJournalSchema>;
 export type PilotJournalEntry = z.infer<typeof pilotJournalEntrySchema>;
 
+/** Terminal outcome of one orchestrator cycle - the vocabulary shared by the journal detail and the host's sentinel. */
+export const PILOT_CYCLE_STATUSES = ["ok", "empty", "error"] as const;
+export const pilotCycleStatusSchema = z.enum(PILOT_CYCLE_STATUSES);
+
 // kind="cycle" entry `detail`: the skill's authoritative completion signal, read by the host as an API fallback when the sentinel is mangled.
 export const pilotCycleDetailSchema = z
   .object({
-    status: z.enum(["ok", "empty", "error"]).optional(),
+    status: pilotCycleStatusSchema.optional(),
     sleepSeconds: z.number().int().optional(),
   })
   .loose();

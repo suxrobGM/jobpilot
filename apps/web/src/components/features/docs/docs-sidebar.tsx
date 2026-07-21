@@ -5,7 +5,7 @@ import { Box, Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { DocsMobileNav } from "./docs-mobile-nav";
-import { DOCS_NAV } from "./docs-nav";
+import { DOCS_LINKS } from "./docs-nav";
 
 interface SidebarLinkProps {
   href: Route;
@@ -49,13 +49,12 @@ export function DocsSidebar(): ReactElement {
           Docs
         </Typography>
         <Stack spacing={0}>
-          <SidebarLink href="/docs" label="Overview" active={pathname === "/docs"} />
-          {DOCS_NAV.map((entry) => (
+          {DOCS_LINKS.map((link) => (
             <SidebarLink
-              key={entry.href}
-              href={entry.href}
-              label={entry.title}
-              active={pathname === entry.href}
+              key={link.href}
+              href={link.href}
+              label={link.label}
+              active={pathname === link.href}
             />
           ))}
         </Stack>

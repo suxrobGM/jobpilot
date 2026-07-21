@@ -1,4 +1,4 @@
-import { pilotJournalEntrySchema } from "@jobpilot/contracts/pilot";
+import { pilotCycleStatusSchema, pilotJournalEntrySchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 
 /** Rows created by a batch journal append. */
@@ -15,7 +15,7 @@ export const pilotActivityResponseSchema = z.object({
     .object({
       cycleId: z.string().nullable(),
       completedAt: z.date(),
-      status: z.enum(["ok", "empty", "error"]).nullable(),
+      status: pilotCycleStatusSchema.nullable(),
       sleepSeconds: z.number().int().nullable(),
     })
     .nullable(),
