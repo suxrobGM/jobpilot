@@ -3,15 +3,7 @@
 import { type ReactElement, useState } from "react";
 import type { ApplicationStatus, StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Container,
-  IconButton,
-  LinearProgress,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Button, IconButton, LinearProgress, Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
@@ -19,7 +11,7 @@ import { applicationQueries } from "@/api/queries";
 import { invalidations } from "@/api/query-keys";
 import { EmptyState } from "@/components/ui/data/empty-state";
 import { LabelValue, StatusChip } from "@/components/ui/display";
-import { PageHeader, SectionCard } from "@/components/ui/layout";
+import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
 import { ActivityTimeline } from "./activity-timeline";
@@ -74,18 +66,18 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
 
   if (!app) {
     return (
-      <Container maxWidth="lg">
+      <PageShell maxWidth="lg">
         <EmptyState
           title="Application not found"
           description="It may have been deleted, or the link is incorrect."
         />
-      </Container>
+      </PageShell>
     );
   }
 
   return (
     <>
-      <Container maxWidth="lg" sx={{ gap: 2 }}>
+      <PageShell maxWidth="lg">
         <PageHeader
           eyebrow={app.company}
           title={app.title}
@@ -126,25 +118,15 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               <LabelValue label="Applied at">{formatAbsoluteTime(app.appliedAt)}</LabelValue>
               {app.campaignId && <LabelValue label="Campaign">{app.campaignId}</LabelValue>}
             </Stack>
-            {app.matchReason && (
-              <Box>
-                <Typography variant="overlineMuted">Match reason</Typography>
-                <Typography variant="body2">{app.matchReason}</Typography>
-              </Box>
-            )}
-            {app.failReason && (
-              <Box>
-                <Typography variant="overlineMuted">Fail reason</Typography>
-                <Typography variant="body2">{app.failReason}</Typography>
-              </Box>
-            )}
+            {app.matchReason && <LabelValue label="Match reason">{app.matchReason}</LabelValue>}
+            {app.failReason && <LabelValue label="Fail reason">{app.failReason}</LabelValue>}
           </Stack>
         </SectionCard>
 
         <SectionCard title="Activity">
           <ActivityTimeline events={app.events} />
         </SectionCard>
-      </Container>
+      </PageShell>
 
       <StatusTransitionDialog
         open={statusDialogOpen}

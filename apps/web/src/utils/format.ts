@@ -72,20 +72,23 @@ export function formatDayBucket(value: Date): string {
   });
 }
 
+// Constructing the formatter is the expensive half, and RelativeTime builds one per rendered row.
+const absoluteTimeFormat = new Intl.DateTimeFormat(undefined, {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+  timeZoneName: "short",
+});
+
 /** Absolute local timestamp with timezone, e.g. `Jul 19, 2026, 6:34 PM GMT+5`. Component options only - `dateStyle` + `timeZoneName` throws. */
 export function formatAbsoluteTime(value: string | Date): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return "";
   }
-  return new Intl.DateTimeFormat(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    timeZoneName: "short",
-  }).format(date);
+  return absoluteTimeFormat.format(date);
 }
 
 // ISO timestamps WITH a UTC offset (Z or ±hh:mm) only - offset-less strings parse as local already.

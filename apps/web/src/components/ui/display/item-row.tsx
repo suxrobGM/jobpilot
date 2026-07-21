@@ -1,5 +1,20 @@
 import type { ReactElement, ReactNode } from "react";
-import { ListItem, ListItemIcon, ListItemText } from "@mui/material";
+import { List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
+import { radii } from "@/theme";
+
+interface ItemListProps {
+  children: ReactNode;
+}
+
+/** ItemRow renders a ListItem, so it needs a List parent - this is that parent. */
+export function ItemList(props: ItemListProps): ReactElement {
+  const { children } = props;
+  return (
+    <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+      {children}
+    </List>
+  );
+}
 
 interface ItemRowProps {
   icon?: ReactNode;
@@ -17,7 +32,7 @@ export function ItemRow(props: ItemRowProps): ReactElement {
       sx={{
         border: 1,
         borderColor: "line.border",
-        borderRadius: (theme) => `${theme.radii.md}px`,
+        borderRadius: radii.md,
         pl: 1.5,
         // secondaryAction is absolutely positioned; 6 clears it, or noWrap text slides underneath.
         pr: action ? 6 : 1.5,

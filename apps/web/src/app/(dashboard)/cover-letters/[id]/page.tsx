@@ -8,6 +8,7 @@ import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
 import { CoverLetterActions } from "@/components/features/cover-letters";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
+import { formatAbsoluteTime } from "@/utils/format";
 
 export const metadata: Metadata = { title: "Cover letter" };
 
@@ -75,7 +76,7 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
           {letter.content}
         </Typography>
         <Typography variant="captionMuted" sx={{ display: "block", mt: 2 }}>
-          Saved {new Date(letter.createdAt).toLocaleString()}
+          Saved {formatAbsoluteTime(letter.createdAt)}
         </Typography>
       </SectionCard>
     </PageShell>

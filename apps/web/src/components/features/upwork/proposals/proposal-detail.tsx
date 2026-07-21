@@ -3,15 +3,7 @@
 import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
 import { AutoAwesome, ContentCopy, Delete, Launch } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Container,
-  IconButton,
-  LinearProgress,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
@@ -20,7 +12,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
-import { PageHeader, SectionCard } from "@/components/ui/layout";
+import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -71,9 +63,9 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const proposal = detail.data;
   if (!proposal) {
     return (
-      <Container maxWidth="md">
+      <PageShell maxWidth="md">
         <Typography variant="body1Muted">Proposal not found.</Typography>
-      </Container>
+      </PageShell>
     );
   }
 
@@ -95,7 +87,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   };
 
   return (
-    <Container maxWidth="md" sx={{ gap: 2 }}>
+    <PageShell maxWidth="md">
       <PageHeader
         eyebrow={proposal.clientName ?? "Upwork"}
         title={proposal.jobTitle}
@@ -183,6 +175,6 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
       )}
 
       <ProposalNotes id={id} notes={proposal.notes} />
-    </Container>
+    </PageShell>
   );
 }

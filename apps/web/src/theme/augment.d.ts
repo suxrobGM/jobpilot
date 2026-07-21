@@ -97,6 +97,7 @@ declare module "@mui/material/Paper" {
     lift: true;
     /** Flame-accent border, for inline CTA cards. */
     accent: true;
+    /** Bordered, radius-md surface for inline panels and framed blocks. */
     panel: true;
   }
 }

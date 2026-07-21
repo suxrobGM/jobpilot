@@ -3,7 +3,7 @@
 import { type ReactElement, useState } from "react";
 import type { CredentialInput } from "@jobpilot/contracts/credential";
 import { Add, Delete, Key, Lock } from "@mui/icons-material";
-import { Box, Button, List, Stack, Typography } from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { credentialQueries } from "@/api/queries";
@@ -11,7 +11,7 @@ import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
-import { ItemRow } from "@/components/ui/display";
+import { ItemList, ItemRow } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -53,8 +53,20 @@ export function CredentialsSection(): ReactElement {
   };
 
   const rows = credentials.data ?? [];
-  const logins = rows.filter((c) => !c.apiKey);
-  const services = rows.filter((c) => c.apiKey);
+  const groups = [
+    {
+      title: "Job board logins",
+      items: rows.filter((c) => !c.apiKey),
+      icon: <Lock fontSize="small" color="action" />,
+      secondary: (c: CredentialDto) => c.email ?? "",
+    },
+    {
+      title: "Captcha services",
+      items: rows.filter((c) => c.apiKey),
+      icon: <Key fontSize="small" color="action" />,
+      secondary: (c: CredentialDto) => `API key ••••${c.apiKey?.slice(-4) ?? ""}`,
+    },
+  ];
 
   return (
     <SectionCard
@@ -81,46 +93,28 @@ export function CredentialsSection(): ReactElement {
         />
       ) : (
         <Stack spacing={3}>
-          {logins.length > 0 && (
-            <CredentialGroup title="Job board logins">
-              {logins.map((c) => (
-                <ItemRow
-                  key={c.id}
-                  icon={<Lock fontSize="small" color="action" />}
-                  primary={c.scope}
-                  secondary={c.email ?? ""}
-                  action={
-                    <TooltipIconButton
-                      title="Delete credential"
-                      onClick={() => void handleDelete(c)}
-                    >
-                      <Delete fontSize="small" />
-                    </TooltipIconButton>
-                  }
-                />
-              ))}
-            </CredentialGroup>
-          )}
-          {services.length > 0 && (
-            <CredentialGroup title="Captcha services">
-              {services.map((c) => (
-                <ItemRow
-                  key={c.id}
-                  icon={<Key fontSize="small" color="action" />}
-                  primary={c.scope}
-                  secondary={`API key ••••${c.apiKey?.slice(-4) ?? ""}`}
-                  action={
-                    <TooltipIconButton
-                      title="Delete credential"
-                      onClick={() => void handleDelete(c)}
-                    >
-                      <Delete fontSize="small" />
-                    </TooltipIconButton>
-                  }
-                />
-              ))}
-            </CredentialGroup>
-          )}
+          {groups
+            .filter((group) => group.items.length > 0)
+            .map((group) => (
+              <CredentialGroup key={group.title} title={group.title}>
+                {group.items.map((c) => (
+                  <ItemRow
+                    key={c.id}
+                    icon={group.icon}
+                    primary={c.scope}
+                    secondary={group.secondary(c)}
+                    action={
+                      <TooltipIconButton
+                        title="Delete credential"
+                        onClick={() => void handleDelete(c)}
+                      >
+                        <Delete fontSize="small" />
+                      </TooltipIconButton>
+                    }
+                  />
+                ))}
+              </CredentialGroup>
+            ))}
         </Stack>
       )}
 
@@ -146,9 +140,7 @@ function CredentialGroup(props: CredentialGroupProps): ReactElement {
       <Typography variant="overlineMuted" sx={{ mb: 1 }}>
         {title}
       </Typography>
-      <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-        {children}
-      </List>
+      <ItemList>{children}</ItemList>
     </Box>
   );
 }

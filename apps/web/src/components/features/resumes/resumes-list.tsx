@@ -127,9 +127,7 @@ export function ResumesList(): ReactElement {
                     sx={{ flex: 1, minWidth: 0, textDecoration: "none", color: "inherit" }}
                   >
                     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                      <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                        {r.label}
-                      </Typography>
+                      <Typography variant="body1Strong">{r.label}</Typography>
                       {r.isPrimary && <Chip label="Primary" size="small" color="primary" />}
                       {!r.hasData && <Chip label="No structure" size="small" variant="outlined" />}
                       {r.variantCount > 0 && (

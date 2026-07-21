@@ -8,7 +8,6 @@ import {
   Chip,
   FormControlLabel,
   LinearProgress,
-  List,
   Stack,
   Switch,
   Typography,
@@ -18,7 +17,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { ItemRow } from "@/components/ui/display";
+import { ItemList, ItemRow } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/notification-provider";
@@ -188,7 +187,7 @@ export function PushSettings(): ReactNode {
         {devices.length > 0 && (
           <Stack spacing={1}>
             <Typography variant="overlineMuted">Registered devices</Typography>
-            <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <ItemList>
               {devices.map((device) => (
                 <ItemRow
                   key={device.id}
@@ -220,7 +219,7 @@ export function PushSettings(): ReactNode {
                   }
                 />
               ))}
-            </List>
+            </ItemList>
           </Stack>
         )}
 

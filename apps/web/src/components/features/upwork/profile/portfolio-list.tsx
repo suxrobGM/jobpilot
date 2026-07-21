@@ -3,8 +3,8 @@
 import type { ReactElement } from "react";
 import type { PortfolioProject } from "@jobpilot/contracts/upwork";
 import { Launch } from "@mui/icons-material";
-import { Box, Chip, Link, List, Stack, Typography } from "@mui/material";
-import { ItemRow } from "@/components/ui/display";
+import { Box, Chip, Link, Stack, Typography } from "@mui/material";
+import { ItemList, ItemRow } from "@/components/ui/display";
 
 interface PortfolioListProps {
   items: PortfolioProject[];
@@ -21,7 +21,7 @@ export function PortfolioList(props: PortfolioListProps): ReactElement {
     );
   }
   return (
-    <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+    <ItemList>
       {items.map((p) => (
         <ItemRow
           key={p.title}
@@ -31,18 +31,16 @@ export function PortfolioList(props: PortfolioListProps): ReactElement {
             </Typography>
           }
           secondary={
-            (p.description || (p.skills && p.skills.length > 0)) && (
-              <Stack spacing={1} sx={{ mt: 0.5 }}>
-                {p.description && <Box>{p.description}</Box>}
-                {p.skills && p.skills.length > 0 && (
-                  <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
-                    {p.skills.map((s) => (
-                      <Chip key={s} size="small" label={s} variant="outlined" />
-                    ))}
-                  </Stack>
-                )}
-              </Stack>
-            )
+            <Stack spacing={1} sx={{ mt: 0.5 }}>
+              {p.description && <Box>{p.description}</Box>}
+              {p.skills && p.skills.length > 0 && (
+                <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
+                  {p.skills.map((s) => (
+                    <Chip key={s} size="small" label={s} variant="outlined" />
+                  ))}
+                </Stack>
+              )}
+            </Stack>
           }
           action={
             p.url && (
@@ -53,6 +51,6 @@ export function PortfolioList(props: PortfolioListProps): ReactElement {
           }
         />
       ))}
-    </List>
+    </ItemList>
   );
 }
