@@ -81,7 +81,7 @@ preference | strategy_prior | market_fact), `body` (JSON), `confidence` (0–1),
 `evidence` (episode/receipt ids, for and against), `lastConfirmedAt`, `expiresAt?`.
 Unique on `(scope, subjectKey, kind, version)`.
 
-**Retrieval** - deterministic keyed lookup, no vector infra: the lease/delegation payload
+**Retrieval** - deterministic keyed lookup, no vector infra: the claim/delegation payload
 includes a `knowledge` block - server selects active facts for the job's board/ATS keys
 (user scope first, then fleet), ranked by effective confidence, capped (~2KB). Each fact is
 rendered with its age + confidence ("confirmed 2d ago, high confidence") and the prompt rule is:

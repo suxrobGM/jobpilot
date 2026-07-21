@@ -13,7 +13,7 @@ goals once (the instructions); the Pilot runs the job search. Each cycle is stat
 all state server-side) and does ONE agenda item.
 
 1. **Sense** - `GET /api/pilot/agenda`: server-compiled, prioritized, compact world state.
-   Compiled on read from existing domain rows (no task table, no server cron - lazy lease and
+   Compiled on read from existing domain rows (no task table, no server cron - lazy claim and
    question expiry run inside compilation, like the stale-campaign reconciler).
 2. **Decide** - take the top item; the LLM breaks ties against the instructions and picks proactive
    work when the agenda is quiet.
@@ -25,14 +25,15 @@ all state server-side) and does ONE agenda item.
    (kind/subject/detail) so they double as the future learning system's episodic capture.
 5. **Exit** - the skill prints a sentinel line
    `[[JOBPILOT_CYCLE cycle=<uuid> status=ok|empty|error sleep=<seconds>]]`; the host's
-   **PilotConductor** re-injects the skill after a clamped sleep. The conductor is also the
-   deterministic watchdog (no sentinel → nudge → kill + restart; lease TTL recovers the work).
+   **PilotCoordinator** (the orchestrator) re-injects the skill after a clamped sleep, and is also the
+   deterministic supervisor for stuck runs (no sentinel → check-in → skip → restart; claim TTL
+   recovers the work).
 
 ## Key architecture decisions (settled 2026-07-15, don't re-litigate)
 
-- **Generic `PilotLease`** (kind + subject + TTL + payload), not a campaign-scoped lease
-  endpoint - it must cover jobs, outreach sends, inbox batches, discovery runs. Leases exist
-  for crash/watchdog recovery, not concurrency. Grant flips the domain row (job → `applying`);
+- **Generic `PilotClaim`** (kind + subject + TTL + payload), not a campaign-scoped claim
+  endpoint - it must cover jobs, outreach sends, inbox batches, discovery runs. Claims exist
+  for crash/orchestrator recovery, not concurrency. Grant flips the domain row (job → `applying`);
   expiry reverts it.
 - **Questions are their own model** (kind, prompt, options, deepLink, expiry, answer);
   jobs also gain a `needs_user` status so parked work is visible. Answered questions rank
@@ -42,9 +43,9 @@ all state server-side) and does ONE agenda item.
   behavior next cycle; the host keeps one bit: enabled. (Active hours removed 2026-07-19 -
   noisy config; the pilot runs around the clock.)
 - **One-time host pairing** solves "browser tab must be open": Enable Pilot posts the reusable
-  terminal token to the host (`POST /pilot/enable`), stored DPAPI/0600; the conductor
+  terminal token to the host (`POST /pilot/enable`), stored DPAPI/0600; the orchestrator
   self-starts sessions on boot/crash/wake.
-- **Hard limits at server chokepoints** (apply cap at lease grant; outreach caps + never
+- **Hard limits at server chokepoints** (apply cap at claim grant; outreach caps + never
   auto-send InMail in the send endpoint). Instructions text only steers the LLM.
 
 ## The instructions (the user's charter)
@@ -64,20 +65,20 @@ drift can never exceed them.
 
 | Former item | Landed as |
 | --- | --- |
-| t2-job-leases | Generic `PilotLease` (M1) - deliberately job-level, not step-level (see deferred.md) |
-| t2-stateless-step-loop | The pilot skill + conductor sentinel loop (M1) |
+| t2-job-leases | Generic `PilotClaim` (M1) - deliberately job-level, not step-level (see deferred.md) |
+| t2-stateless-step-loop | The pilot skill + orchestrator sentinel loop (M1) |
 | t2-needs-user-escalation | `Question` model + `needs_user` job status (M1); phone answering (M2) |
 | t2-web-push | M2 (`PushSubscription`, VAPID, service worker) |
 | t2-scheduled-runs | Server-side instructions scheduling (M1) - host cron rejected |
 | t4-mobile-decision-inbox | M2 mobile question inbox: push tap → one-decision card → parked job resumes |
 | t4-warm-path-finder | M3, scoped: free `GET /api/contacts?company=X` check before every apply; active discovery only for score ≥85, instructions-gated |
-| t4-multi-machine-fleet | Free once leases exist - the lease is the mutex. Document + test two hosts draining one campaign with no duplicate applications |
-| t5-supervisor-watchdog | The PilotConductor (M1 basic: 20-min sentinel timeout → nudge → kill; M4 heuristics: repeated-output/error loops, skip directive) |
+| t4-multi-machine-fleet | Free once claims exist - the claim is the mutex. Document + test two hosts draining one campaign with no duplicate applications |
+| t5-supervisor-watchdog | The PilotCoordinator (the orchestrator) (M1 basic: 20-min sentinel timeout → check-in → restart; M4 heuristics: repeated-output/error loops, skip directive) |
 | t5-standing-query-campaigns | Instructions `savedSearches` → `search.discover` agenda items (M1); event-wake latency (M4). Metric: time-from-posting-to-application |
 | t5-strategist-loop | `campaign.strategyReview` agenda kind (M4): low-yield telemetry summary → LLM rewrites query/tunes minScore, written back as auditable campaign events, server-bounded |
 | t5-circuit-breakers | Board-health agenda items (M4): server counts consecutive per-board failures → "probe in careful mode or park with a user-facing reason" |
-| t5-speculative-prep | Future policy: during browser waits, precompute next leased job's artifacts (resume variant, cover letter - needs lease peek). Cheapest win once leases exist; do after M4 |
-| t5-graduated-autonomy | Future instructions/delegation policy: per-board trust ladder observe→propose→supervised→autonomous, advanced by verified receipts, server-enforced in the lease payload |
+| t5-speculative-prep | Future policy: during browser waits, precompute next claimed job's artifacts (resume variant, cover letter - needs claim peek). Cheapest win once claims exist; do after M4 |
+| t5-graduated-autonomy | Future instructions/delegation policy: per-board trust ladder observe→propose→supervised→autonomous, advanced by verified receipts, server-enforced in the claim payload |
 | t5-gearbox-effort-control | Future delegation policy: per-cycle gear (cheap model + replay on familiar boards; strong model + exploration on unknown ATS), shifts down on surprise mid-job |
 | t5-failures-become-fixtures | Learning capture (pilot-learning.md step 1): journal + worker `observations[]` (M3) persist redacted traces; one command promotes a failure to an eval fixture (with t1-eval-lab) |
 
@@ -85,7 +86,7 @@ drift can never exceed them.
 
 - **Workers** (job-worker / outreach-worker): isolation for token reasons; the Pilot delegates
   exactly as orchestrator skills do today.
-- **PilotConductor watchdog layer**: deterministic on purpose - something non-LLM must watch
+- **PilotCoordinator orchestrator layer**: deterministic on purpose - something non-LLM must watch
   the watcher.
 - **Server-side hard limits**: the Pilot proposes, the API disposes.
 - Existing skills remain manual entry points; the Pilot supersedes rather than replaces them.
@@ -103,11 +104,11 @@ bandit - see deferred.md) is the strategy tier of that system.
 
 | Status | Milestone | Hook |
 | --- | --- | --- |
-| done | **M1 - Pilot spine** | instructions → agenda → lease → cycle → journal; conductor + pairing; the killer demo |
+| done | **M1 - Pilot spine** | instructions → agenda → claim → cycle → journal; orchestrator + pairing; the killer demo |
 | done | **M2 - Away-proof** | web push, phone-answerable questions, unattended nights |
 | done | **M3 - Full surface** | inbox review, outreach + warm path, self-promotion (PromotionPost, draft-first), 7am digest |
 | done | **M3.5 - Interview autonomy** | invite → availability reply (approval card) + auto prep sheet via `interview` skill |
-| done | **M4 - Event wake + proactive** | SSE→inject wake, stall heuristics, strategy review, board health, rescan/retry |
+| done | **M4 - Event wake + proactive** | SSE→inject wake, stuck heuristics, strategy review, board health, rescan/retry |
 | done | **M5 - Learning-ready capture** | correction capture, journal export, subjectKey conventions frozen |
 
 ## Done when
@@ -134,3 +135,11 @@ zero skill invocations by the user, ever.
   health probe-or-park via parkedBoards, rescan/retry, queue drain), admin fleet view,
   correction capture + NDJSON journal export + frozen subjectKeys. All M1–M5 code-complete;
   the LIVE OVERNIGHT SMOKE TEST remains the outstanding gate before calling the Pilot done.
+- 2026-07-21 - Resilience + vocabulary overhaul (branch `fix/pilot-resilience-rename`): the
+  orchestrator now confirms cycle completion via the API (journal cycle entries carry
+  `detail:{status,sleepSeconds}`; `GET /pilot/activity` exposes `lastCycle`) so a TUI-mangled
+  sentinel can't trigger the false stuck ladder that nudged/killed sleeping pilots every ~30 min
+  in prod; wake no longer aborts live cycles and restart honors the announced sleep; crash-ended
+  claims retry after 2 h instead of damping 24 h. Full rename shipped: lease→claim (table/routes),
+  Question→PilotQuestion, stall→stuck, nudge→check-in, watchdog/conductor→orchestrator, plus
+  aggressive retention cleanup cron (`retention-cleanup`, 03:30 daily).

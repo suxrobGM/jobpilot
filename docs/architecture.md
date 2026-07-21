@@ -103,7 +103,7 @@ while it's enabled:
 ```text
   sense ──► decide ──► act ──► record ──► exit
     ▲                                        │
-    └──── PilotConductor re-injects ◄────────┘
+    └──── the orchestrator re-injects ◄───────┘
 ```
 
 - **Sense** - the agent asks the dashboard for its agenda: a prioritized list
@@ -112,16 +112,20 @@ while it's enabled:
   there's no separate task queue or server-side cron job ticking in the
   background.
 - **Decide** - it takes the single top item.
-- **Act** - it leases that item - a short-lived claim with a timeout, so a
-  crash never leaves it stuck mid-work - then does the one thing: apply to a
-  job, send a networking follow-up, draft an interview reply, and so on.
+- **Act** - it claims that item - a short-lived task claim with a built-in
+  timeout, so a crash never leaves work stuck halfway - then does the one
+  thing: apply to a job, send a networking follow-up, draft an interview
+  reply, and so on.
 - **Record** - every action lands in a live journal you can read like a diary
   of what the agent did and why.
 - **Exit** - the cycle prints a sentinel line (`[[JOBPILOT_CYCLE ...]]`) and
-  stops. A small watchdog on your machine, the **PilotConductor**, drives the
-  loop from there: it reads the sentinel and starts the next cycle. If a
-  cycle goes quiet or gets stuck, the conductor nudges it, then restarts it -
-  the lease timeout makes sure any half-finished work is picked back up.
+  stops. A small **orchestrator** on your machine (the Pilot coordinator) drives
+  the loop from there: it reads the sentinel and starts the next run, also
+  confirming completion with the server so garbled terminal output can't be
+  mistaken for a stuck run. If a run goes quiet or gets stuck, the orchestrator
+  sends the agent a check-in reminder, then restarts the session if that
+  doesn't help - the claim's timeout makes sure any half-finished task is
+  picked back up.
 
 Two things make this run without a browser tab open: **one-time pairing**
 stores your login token securely with the host the first time you enable the

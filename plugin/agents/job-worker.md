@@ -15,7 +15,7 @@ Process one job, return one compact JSON object. Snapshots, API payloads, and ta
 
 ## Input
 
-One JSON blob: `{ mode, campaignId, jobKey, jobs, url, board, digest, resumeId, defaultStartDate, salaryExpectation, minMatchScore, preSubmitReview, save, leaseId }`. `mode` is `review`, `score`, or `apply`; absent fields are null.
+One JSON blob: `{ mode, campaignId, jobKey, jobs, url, board, digest, resumeId, defaultStartDate, salaryExpectation, minMatchScore, preSubmitReview, save, claimId }`. `mode` is `review`, `score`, or `apply`; absent fields are null.
 `jobs` (score mode only, ≤5): `[{jobKey,url,title?,company?}]` for batch scoring - when set, ignore the top-level `jobKey`/`url`. `save` (score mode, default `"create"`): `"create"` or `"patch"`.
 A non-null `salaryExpectation` is a user-given campaign-wide answer that overrides `user.salaryPreferences`.
 
@@ -28,13 +28,13 @@ The browser is shared: the orchestrator owns tab 0, so open your own tab and on 
 
 ## Heartbeats
 
-When `leaseId` is set, extend the pilot lease at major phase boundaries so a long run doesn't read as a stall: login done, tailoring done, form filled (apply mode); each row scored (score-mode batch). One curl each, no body:
+When `claimId` is set, extend the pilot claim's heartbeat at major phase boundaries so a long run doesn't look stuck to the orchestrator: login done, tailoring done, form filled (apply mode); each row scored (score-mode batch). One curl each, no body:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/leases/$LEASE_ID/heartbeat"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/heartbeat"
 ```
 
-Omit entirely when `leaseId` is absent (non-pilot callers).
+Omit entirely when `claimId` is absent (non-pilot callers).
 
 ## mode: review
 
@@ -88,7 +88,7 @@ If the scored row is ineligible, follow that successful create with `POST /api/c
 
 `save:"patch"` (the row already exists, e.g. from `search.discover`): eligible/pending → `PATCH /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY` `{matchScore,matchReason,digest,description}`; ineligible/terminal (dedupe hit or a skip reason) → `POST /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY/result` `{outcome:"skipped", skipReason}` instead.
 
-7. Append the row's result; if `leaseId` is set, heartbeat (Heartbeats, above) after each row.
+7. Append the row's result; if `claimId` is set, heartbeat (Heartbeats, above) after each row.
 
 Close tabs, return: a single object for a one-row input, else a JSON array (one per row) - each shaped `{ "outcome":"scored", "jobKey", "title", "company", "location", "matchScore", "confidence", "eligible", "skipReason", "matchReason" }`.
 

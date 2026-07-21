@@ -9,7 +9,7 @@ and sync via the API. Login state survives restarts and moves across machines.
 
 ## Why
 
-Most loop stalls are auth/2FA - this attacks the root cause and reduces how often
+Most stuck loops are auth/2FA - this attacks the root cause and reduces how often
 [t2-needs-user-escalation.md](t2-needs-user-escalation.md) even fires.
 
 ## Security
