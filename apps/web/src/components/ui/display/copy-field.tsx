@@ -24,18 +24,18 @@ export function CopyField(props: CopyFieldProps): ReactElement {
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
       <Box
-        sx={{
+        sx={(theme) => ({
           flex: 1,
           minWidth: 0,
           px: 1.5,
           py: 1,
-          borderRadius: 1,
+          borderRadius: `${theme.radii.xs}px`,
           bgcolor: "action.hover",
           fontFamily: "monospace",
           fontSize: 13,
           overflowX: "auto",
           whiteSpace: "nowrap",
-        }}
+        })}
       >
         {value}
       </Box>

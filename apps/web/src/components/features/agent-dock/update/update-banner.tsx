@@ -73,7 +73,7 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
   return (
     <Alert
       severity="info"
-      sx={{ borderRadius: 0, py: 0.5, "& .MuiAlert-message": { width: "100%" } }}
+      sx={{ borderRadius: "0px", py: 0.5, "& .MuiAlert-message": { width: "100%" } }}
       action={
         <IconButton
           size="small"

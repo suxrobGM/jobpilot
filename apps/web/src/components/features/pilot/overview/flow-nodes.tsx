@@ -35,7 +35,7 @@ function StageNode(props: NodeProps<StageFlowNode>): ReactElement {
             width: 160,
             px: 1.5,
             py: 1.25,
-            borderRadius: 2,
+            borderRadius: `${theme.radii.xs}px`,
             backgroundColor: "background.paper",
             border: "1px solid",
             borderColor: active ? accent : "divider",

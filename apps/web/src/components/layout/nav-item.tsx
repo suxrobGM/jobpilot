@@ -49,7 +49,7 @@ export function NavItem(props: NavItemProps): ReactElement {
                 top: 8,
                 bottom: 8,
                 width: 2,
-                borderRadius: 2,
+                borderRadius: `${theme.radii.xs}px`,
                 background: theme.palette.accent.primary,
               }
             : undefined,

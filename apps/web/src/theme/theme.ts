@@ -26,7 +26,8 @@ const baseTheme = createTheme({
     line,
     stages,
   },
-  shape: { borderRadius: 1 },
+  // Global default = the sm token; component overrides pin larger radii (card md, dialog lg) explicitly.
+  shape: { borderRadius: radii.sm },
   typography,
   gradients,
   motion,

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { serializeTechParam } from "@jobpilot/contracts/job-listing";
 import { Box, Link } from "@mui/material";
-import { fontFamilies, motion } from "@/theme";
+import { fontFamilies, motion, radii } from "@/theme";
 import { jobsHref } from "./jobs-href";
 
 /** Mono pill, matching the board strip on the landing page - the agent's machine voice. */
@@ -11,7 +11,7 @@ const techChipSx = {
   whiteSpace: "nowrap",
   paddingInline: 1,
   paddingBlock: 0.25,
-  borderRadius: 999,
+  borderRadius: `${radii.pill}px`,
   color: "text.secondary",
   border: 1,
   borderColor: "line.border",

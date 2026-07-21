@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Box, Container, Stack, Typography } from "@mui/material";
-import { accent, fontFamilies, line } from "@/theme";
+import { accent, fontFamilies, line, radii } from "@/theme";
 
 const BOARDS = [
   "LinkedIn",
@@ -23,7 +23,7 @@ const chipSx = {
   whiteSpace: "nowrap",
   paddingInline: 1.25,
   paddingBlock: 0.5,
-  borderRadius: 999,
+  borderRadius: `${radii.pill}px`,
 } as const;
 
 /**

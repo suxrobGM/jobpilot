@@ -102,7 +102,7 @@ export function DocsPre(props: ComponentProps<"pre">): ReactElement {
         "& code": {
           border: 0,
           padding: 0,
-          borderRadius: 0,
+          borderRadius: "0px",
           backgroundColor: "transparent",
           fontSize: "inherit",
         },

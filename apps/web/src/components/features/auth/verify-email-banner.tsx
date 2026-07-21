@@ -27,7 +27,7 @@ export function VerifyEmailBanner(): ReactElement | null {
     <Alert
       severity="warning"
       onClose={() => setDismissed(true)}
-      sx={{ borderRadius: 0 }}
+      sx={{ borderRadius: "0px" }}
       action={
         <Button
           color="inherit"

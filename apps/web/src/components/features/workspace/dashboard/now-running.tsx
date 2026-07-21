@@ -72,7 +72,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
         <LinearProgress
           variant="determinate"
           value={Math.min(100, p.value)}
-          sx={{ mt: 0.75, borderRadius: 1 }}
+          sx={(theme) => ({ mt: 0.75, borderRadius: `${theme.radii.xs}px` })}
         />
       </Box>
       <LinkButton
