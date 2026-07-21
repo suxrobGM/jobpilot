@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
 import type { ApplicationEventDto } from "@/api/types";
-import { StatusChip } from "@/components/ui/display";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 
 interface ActivityTimelineProps {
   events: ReadonlyArray<ApplicationEventDto>;
@@ -33,9 +33,7 @@ export function ActivityTimeline(props: ActivityTimelineProps): ReactElement {
               )}
               <Box sx={{ flex: 1 }}>
                 {e.note && <Typography variant="body2">{e.note}</Typography>}
-                <Typography variant="captionMuted">
-                  {new Date(e.createdAt).toLocaleString()}
-                </Typography>
+                <RelativeTime value={e.createdAt} />
               </Box>
             </Stack>
           </CardContent>

@@ -2,11 +2,12 @@
 
 import { type ReactElement, useEffect, useRef } from "react";
 import type { VerifyEmailInput } from "@jobpilot/contracts/auth";
-import { Alert, Box, Button, CircularProgress, Link, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Link, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { ResendVerificationResponse, VerifyEmailResponse } from "@/api/types";
+import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAuth } from "@/hooks/use-auth";
 
 interface VerifyEmailViewProps {
@@ -77,7 +78,7 @@ function VerifyTokenView(props: { token: string }): ReactElement {
 
   return (
     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 3, gap: 2 }}>
-      <CircularProgress size={20} />
+      <LoadingSpinner size={20} py={0} />
       <Typography variant="body2Muted">Verifying your email…</Typography>
     </Box>
   );

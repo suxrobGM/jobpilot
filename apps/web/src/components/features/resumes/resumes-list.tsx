@@ -22,6 +22,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { invalidations, queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
+import { RelativeTime } from "@/components/ui/display";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
@@ -141,7 +142,7 @@ export function ResumesList(): ReactElement {
                     </Stack>
                     <Typography variant="captionMuted">
                       {r.sourceFilename ?? "no source PDF"} · updated{" "}
-                      {new Date(r.updatedAt).toLocaleDateString()}
+                      <RelativeTime value={r.updatedAt} />
                     </Typography>
                   </Box>
                   <IconButton

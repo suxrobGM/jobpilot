@@ -10,7 +10,7 @@ import { useApiQuery } from "@/api/hooks";
 import { coverLetterQueries } from "@/api/queries";
 import type { CoverLetterListItem } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ColorChip } from "@/components/ui/display";
+import { ColorChip, RelativeTime } from "@/components/ui/display";
 
 const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "success"> = {
   manual: "default",
@@ -29,7 +29,7 @@ export function CoverLettersTable(): ReactElement {
       field: "createdAt",
       headerName: "Date",
       width: 160,
-      valueGetter: (_v, row) => new Date(row.createdAt).toLocaleDateString(),
+      renderCell: (p) => <RelativeTime value={p.row.createdAt} />,
     },
     {
       field: "company",

@@ -21,6 +21,7 @@ import { EmptyState } from "@/components/ui/data/empty-state";
 import { StatusChip } from "@/components/ui/display";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
+import { formatAbsoluteTime } from "@/utils/format";
 import { ActivityTimeline } from "./activity-timeline";
 import { StatusTransitionDialog } from "./status-transition-dialog";
 
@@ -123,7 +124,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
                 label="Match score"
                 value={app.matchScore !== null ? `${app.matchScore}/100` : ""}
               />
-              <Field label="Applied at" value={new Date(app.appliedAt).toLocaleString()} />
+              <Field label="Applied at" value={formatAbsoluteTime(app.appliedAt)} />
               {app.campaignId && <Field label="Campaign" value={app.campaignId} />}
             </Stack>
             {app.matchReason && (

@@ -6,6 +6,7 @@ import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types
 import { ColorChip } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
+import { formatAbsoluteTime } from "@/utils/format";
 import { OUTCOME_OPTIONS, STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-status";
 
 interface ProposalStatusBarProps {
@@ -42,7 +43,7 @@ export function ProposalStatusBar(props: ProposalStatusBarProps): ReactElement {
         )}
         <Box sx={{ flex: 1 }} />
         <Typography variant="captionMuted">
-          Updated {new Date(proposal.updatedAt).toLocaleString()}
+          Updated {formatAbsoluteTime(proposal.updatedAt)}
         </Typography>
       </Stack>
     </SectionCard>

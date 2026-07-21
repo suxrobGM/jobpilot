@@ -2,21 +2,11 @@
 
 import { type ReactElement, useState } from "react";
 import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
-import { Close } from "@mui/icons-material";
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Button, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { NetworkingMessageDto } from "@/api/types";
+import { FormDialogShell } from "@/components/ui/form";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 
 interface NetworkingMessageDialogProps {
@@ -78,84 +68,76 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ pr: 6 }}>
-        {message.contact.name}
-        {message.contact.title && (
-          <Typography variant="captionMuted" component="div">
-            {message.contact.title}
-            {message.contact.company ? ` · ${message.contact.company}` : ""}
-          </Typography>
-        )}
-        <IconButton
-          aria-label="Close"
-          onClick={onClose}
-          sx={{ position: "absolute", right: 8, top: 8 }}
-        >
-          <Close fontSize="sm" />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {isEmail && (
-            <TextField
-              label="Subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              fullWidth
-              disabled={terminal}
-            />
-          )}
-          <TextField
-            label="Message"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            fullWidth
-            multiline
-            minRows={6}
-            disabled={terminal}
-            helperText={
-              isConnectNote
-                ? `${body.length}/300 - LinkedIn connect notes are capped at 300 characters.`
-                : undefined
-            }
-          />
-          {!isEmail && !terminal && (
-            <Typography variant="captionMuted">
-              LinkedIn messages are sent through the agent in the browser - approve here, then run
-              the agent to send.
-            </Typography>
-          )}
-        </Stack>
-      </DialogContent>
-      {!terminal && (
-        <DialogActions sx={{ justifyContent: "space-between", px: 3, pb: 2 }}>
+    <FormDialogShell
+      open
+      title={message.contact.name}
+      onClose={onClose}
+      onSubmit={() => {
+        if (terminal) return;
+        if (canSendEmail) {
+          send.mutate();
+        } else {
+          approve.mutate();
+        }
+      }}
+      submit={
+        !terminal && (
           <Stack direction="row" spacing={1}>
             <Button onClick={onSkip} color="warning">
               Skip
             </Button>
             {agentAvailable && <Button onClick={regenerate}>Regenerate</Button>}
-          </Stack>
-          <Stack direction="row" spacing={1}>
             <Button variant="outlined" onClick={() => save.mutate()} disabled={save.isPending}>
               Save
             </Button>
             {canSendEmail ? (
-              <Button variant="contained" onClick={() => send.mutate()} disabled={send.isPending}>
+              <Button type="submit" variant="contained" disabled={send.isPending}>
                 Send
               </Button>
             ) : (
-              <Button
-                variant="contained"
-                onClick={() => approve.mutate()}
-                disabled={approve.isPending}
-              >
+              <Button type="submit" variant="contained" disabled={approve.isPending}>
                 Approve
               </Button>
             )}
           </Stack>
-        </DialogActions>
+        )
+      }
+    >
+      {message.contact.title && (
+        <Typography variant="captionMuted">
+          {message.contact.title}
+          {message.contact.company ? ` · ${message.contact.company}` : ""}
+        </Typography>
       )}
-    </Dialog>
+      {isEmail && (
+        <TextField
+          label="Subject"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          fullWidth
+          disabled={terminal}
+        />
+      )}
+      <TextField
+        label="Message"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        fullWidth
+        multiline
+        minRows={6}
+        disabled={terminal}
+        helperText={
+          isConnectNote
+            ? `${body.length}/300 - LinkedIn connect notes are capped at 300 characters.`
+            : undefined
+        }
+      />
+      {!isEmail && !terminal && (
+        <Typography variant="captionMuted">
+          LinkedIn messages are sent through the agent in the browser - approve here, then run the
+          agent to send.
+        </Typography>
+      )}
+    </FormDialogShell>
   );
 }

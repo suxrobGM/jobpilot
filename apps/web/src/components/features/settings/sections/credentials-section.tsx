@@ -9,6 +9,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { credentialQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
+import { EmptyState } from "@/components/ui/data";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -71,12 +72,11 @@ export function CredentialsSection(): ReactElement {
       {credentials.isLoading ? (
         <LoadingSpinner />
       ) : rows.length === 0 ? (
-        <Box sx={{ py: 3, textAlign: "center" }}>
-          <Typography variant="body2Muted">
-            No credentials yet. Add a &ldquo;default&rdquo; credential, or one per board domain
-            (e.g. <code>linkedin.com</code>).
-          </Typography>
-        </Box>
+        <EmptyState
+          variant="inline"
+          title="No credentials yet"
+          description="Add a “default” credential, or one per board domain (e.g. linkedin.com)."
+        />
       ) : (
         <Stack spacing={3}>
           {logins.length > 0 && (
