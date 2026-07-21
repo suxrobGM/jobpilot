@@ -59,5 +59,6 @@ model ApplicationEvent {
   createdAt     DateTime           @default(now()) @map("created_at")
 
   @@index([applicationId, createdAt])
+  @@index([createdAt])
   @@map("application_events")
 }

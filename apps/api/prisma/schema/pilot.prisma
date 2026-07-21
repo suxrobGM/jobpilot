@@ -1,18 +1,18 @@
-enum PilotLeaseOutcome {
+enum PilotClaimOutcome {
   done
   failed
   abandoned
   expired
 }
 
-enum QuestionKind {
+enum PilotQuestionKind {
   question
   choice
   two_factor @map("2fa")
   approval
 }
 
-enum QuestionStatus {
+enum PilotQuestionStatus {
   open
   answered
   expired
@@ -58,7 +58,7 @@ model PilotState {
   @@map("pilot_states")
 }
 
-model PilotLease {
+model PilotClaim {
   id          String             @id @default(uuid())
   userId      String             @map("user_id")
   user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -70,34 +70,35 @@ model PilotLease {
   heartbeatAt DateTime?          @map("heartbeat_at")
   expiresAt   DateTime           @map("expires_at")
   releasedAt  DateTime?          @map("released_at")
-  outcome     PilotLeaseOutcome?
+  outcome     PilotClaimOutcome?
 
   @@index([userId, expiresAt])
   @@index([userId, subjectType, subjectId])
-  // No @@unique on (userId, kind, subject): one lease per subject is an *open*-lease rule, and
-  // rows are kept as history for the retry damper. LeaseService enforces it in-transaction.
-  @@map("pilot_leases")
+  @@index([releasedAt])
+  // No @@unique on (userId, kind, subject): one open claim per subject is an *open*-claim rule, and
+  // released rows are kept as history for the retry damper. ClaimService enforces it in-transaction.
+  @@map("pilot_claims")
 }
 
-model Question {
-  id          String         @id @default(uuid())
-  userId      String         @map("user_id")
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind        QuestionKind
-  status      QuestionStatus @default(open)
-  subjectType String?        @map("subject_type")
-  subjectId   String?        @map("subject_id")
+model PilotQuestion {
+  id          String              @id @default(uuid())
+  userId      String              @map("user_id")
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        PilotQuestionKind
+  status      PilotQuestionStatus @default(open)
+  subjectType String?             @map("subject_type")
+  subjectId   String?             @map("subject_id")
   prompt      String
-  options     Json           @default("[]")
-  deepLink    String?        @map("deep_link")
+  options     Json                @default("[]")
+  deepLink    String?             @map("deep_link")
   answer      String?
-  answeredAt  DateTime?      @map("answered_at")
-  expiresAt   DateTime?      @map("expires_at")
-  createdAt   DateTime       @default(now()) @map("created_at")
+  answeredAt  DateTime?           @map("answered_at")
+  expiresAt   DateTime?           @map("expires_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
 
   @@index([userId, status])
   @@index([status, expiresAt])
-  @@map("questions")
+  @@map("pilot_questions")
 }
 
 model PilotJournalEntry {
@@ -113,6 +114,7 @@ model PilotJournalEntry {
   createdAt   DateTime         @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
+  @@index([createdAt])
   @@map("pilot_journal_entries")
 }
 

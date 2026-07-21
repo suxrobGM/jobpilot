@@ -81,8 +81,8 @@ model User {
   networkingMessages NetworkingMessage[]
   coverLetters       CoverLetter[]
   pilotState         PilotState?
-  pilotLeases        PilotLease[]
-  questions          Question[]
+  pilotClaims        PilotClaim[]
+  pilotQuestions     PilotQuestion[]
   pilotJournal       PilotJournalEntry[]
   pushSubscriptions  PushSubscription[]
   promotionPosts     PromotionPost[]
