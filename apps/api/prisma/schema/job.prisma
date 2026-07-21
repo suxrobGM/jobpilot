@@ -35,5 +35,7 @@ model Job {
   @@unique([campaignId, key])
   @@index([campaignId, status])
   @@index([status, updatedAt])
+  // The pilot activity probe takes MAX(updatedAt) across a user's campaigns every two minutes.
+  @@index([campaignId, updatedAt])
   @@map("jobs")
 }

@@ -42,5 +42,7 @@ model Campaign {
   @@index([userId, startedAt])
   @@index([userId, status, startedAt])
   @@index([userId, source, startedAt])
+  // The pilot activity probe takes MAX(updatedAt) per user every two minutes.
+  @@index([userId, updatedAt])
   @@map("campaigns")
 }

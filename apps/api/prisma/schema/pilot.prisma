@@ -134,5 +134,6 @@ model PromotionPost {
   updatedAt    DateTime        @updatedAt @map("updated_at")
 
   @@index([userId, status])
+  @@index([updatedAt]) // Retention sweep; the userId-leading index cannot serve it.
   @@map("promotion_posts")
 }

@@ -65,5 +65,6 @@ model EmailMessage {
   @@index([matchedAppId])
   @@index([fromDomain, receivedAt])
   @@index([verificationDomain, receivedAt])
+  @@index([receivedAt]) // Retention sweep; every other index leads with a column it does not filter on.
   @@map("email_messages")
 }
