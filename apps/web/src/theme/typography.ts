@@ -122,4 +122,34 @@ export const typography: TypographyVariantsOptions = {
     fontWeight: 600,
     color: textColors.secondary,
   },
+  body1Strong: {
+    fontFamily: fontFamilies.body,
+    fontSize: "0.8125rem",
+    lineHeight: 1.55,
+    fontWeight: 600,
+  },
+  body2Strong: {
+    fontFamily: fontFamilies.body,
+    fontSize: "0.75rem",
+    lineHeight: 1.5,
+    fontWeight: 600,
+  },
+  displayLg: {
+    fontFamily: fontFamilies.display,
+    fontStretch: displayStretch,
+    fontWeight: 700,
+    // Plain clamp() keeps this out of responsiveFontSizes; bounds track hero.tsx's h1 (2.25rem→3.25rem).
+    fontSize: "clamp(2.25rem, 1.6rem + 3vw, 3.25rem)",
+    lineHeight: 1.1,
+    letterSpacing: "-0.025em",
+  },
+  displayMd: {
+    fontFamily: fontFamilies.display,
+    fontStretch: displayStretch,
+    fontWeight: 700,
+    // Min tracks job-detail.tsx's 1.75rem heading; max matches the cta-band h2 ceiling.
+    fontSize: "clamp(1.75rem, 1.3rem + 2vw, 2.5rem)",
+    lineHeight: 1.15,
+    letterSpacing: "-0.02em",
+  },
 };

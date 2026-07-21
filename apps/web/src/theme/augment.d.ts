@@ -41,6 +41,10 @@ declare module "@mui/material/styles" {
     overlineMuted: CSSProperties;
     statValue: CSSProperties;
     statLabel: CSSProperties;
+    body1Strong: CSSProperties;
+    body2Strong: CSSProperties;
+    displayLg: CSSProperties;
+    displayMd: CSSProperties;
   }
   interface TypographyVariantsOptions {
     body1Muted?: CSSProperties;
@@ -50,6 +54,10 @@ declare module "@mui/material/styles" {
     overlineMuted?: CSSProperties;
     statValue?: CSSProperties;
     statLabel?: CSSProperties;
+    body1Strong?: CSSProperties;
+    body2Strong?: CSSProperties;
+    displayLg?: CSSProperties;
+    displayMd?: CSSProperties;
   }
 }
 
@@ -62,6 +70,10 @@ declare module "@mui/material/Typography" {
     overlineMuted: true;
     statValue: true;
     statLabel: true;
+    body1Strong: true;
+    body2Strong: true;
+    displayLg: true;
+    displayMd: true;
   }
 }
 
@@ -85,5 +97,6 @@ declare module "@mui/material/Paper" {
     lift: true;
     /** Flame-accent border, for inline CTA cards. */
     accent: true;
+    panel: true;
   }
 }

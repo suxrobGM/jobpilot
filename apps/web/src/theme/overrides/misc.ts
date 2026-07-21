@@ -80,6 +80,15 @@ export const paperOverrides: Components<Theme>["MuiPaper"] = {
       backgroundColor: theme.palette.surfaces.card,
     }),
   },
+  variants: [
+    {
+      props: { variant: "panel" },
+      style: ({ theme }) => ({
+        border: `1px solid ${theme.palette.line.border}`,
+        borderRadius: theme.radii.md,
+      }),
+    },
+  ],
 };
 
 /**
@@ -98,6 +107,10 @@ export const typographyOverrides: Components<Theme>["MuiTypography"] = {
       captionMuted: "span",
       overline: "span",
       overlineMuted: "span",
+      body1Strong: "p",
+      body2Strong: "p",
+      displayLg: "h1",
+      displayMd: "h2",
     },
   },
 };

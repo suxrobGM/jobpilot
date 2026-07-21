@@ -39,10 +39,7 @@ export function PageHeader(props: PageHeaderProps): ReactElement {
       >
         <Box>
           {eyebrow && <Typography variant="overlineMuted">{eyebrow}</Typography>}
-          <Typography
-            variant="h1"
-            sx={{ fontSize: { xs: "1.4rem", sm: "1.75rem" }, mt: eyebrow ? 0.5 : 0 }}
-          >
+          <Typography variant="h2" component="h1" sx={{ mt: eyebrow ? 0.5 : 0 }}>
             {title}
           </Typography>
           {description &&
