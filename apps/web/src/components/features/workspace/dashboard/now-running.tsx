@@ -62,7 +62,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
       <PulseDot tone="green" pulsing />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "baseline" }}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+          <Typography variant="body2Strong" noWrap>
             {campaign.query}
           </Typography>
           <Typography variant="captionMuted" noWrap>

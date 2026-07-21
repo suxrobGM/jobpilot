@@ -59,7 +59,7 @@ export function DocsMobileNav(): ReactElement {
       >
         <Stack spacing={0.25} sx={{ minWidth: 0 }}>
           <Typography variant="overlineMuted">Docs</Typography>
-          <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }} noWrap>
+          <Typography variant="body2Strong" sx={{ color: "text.primary" }} noWrap>
             {current}
           </Typography>
         </Stack>

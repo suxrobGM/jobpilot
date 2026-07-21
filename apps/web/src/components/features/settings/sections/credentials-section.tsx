@@ -143,7 +143,7 @@ function CredentialGroup(props: CredentialGroupProps): ReactElement {
   const { title, children } = props;
   return (
     <Box>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+      <Typography variant="overlineMuted" sx={{ mb: 1 }}>
         {title}
       </Typography>
       <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 1 }}>

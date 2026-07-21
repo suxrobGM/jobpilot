@@ -106,9 +106,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
                     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {v.label}
-                          </Typography>
+                          <Typography variant="body2Strong">{v.label}</Typography>
                           {v.applicationId && (
                             <Chip
                               label={`Application #${v.applicationId}`}

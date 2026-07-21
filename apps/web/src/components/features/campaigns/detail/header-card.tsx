@@ -39,10 +39,7 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
               sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
             >
               <CampaignStatusChip status={campaign.status} />
-              <Typography
-                variant="body1"
-                sx={{ fontWeight: 600, minWidth: 0, wordBreak: "break-word" }}
-              >
+              <Typography variant="body1Strong" sx={{ minWidth: 0, wordBreak: "break-word" }}>
                 {campaign.query}
               </Typography>
             </Stack>

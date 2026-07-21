@@ -85,7 +85,7 @@ export function AutoApplyStopPill(): ReactNode {
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
         <Stack spacing={0}>
           <Typography variant="captionMuted">Auto-apply running</Typography>
-          <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }} noWrap>
+          <Typography variant="body2Strong" sx={{ maxWidth: 240 }} noWrap>
             {active.query}
           </Typography>
         </Stack>

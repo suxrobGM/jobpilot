@@ -44,7 +44,7 @@ export const ReferencesSection = withForm({
                 {refs.map((_, i) => (
                   <Card key={keys[i]}>
                     <CardHeader
-                      title={<Typography variant="subtitle2">Reference {i + 1}</Typography>}
+                      title={<Typography variant="overlineMuted">Reference {i + 1}</Typography>}
                       action={
                         <IconButton
                           aria-label={`Remove reference ${i + 1}`}

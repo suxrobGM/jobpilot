@@ -57,9 +57,7 @@ export function DockPanel(): ReactElement {
         <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
           <AgentOrb size="xxl" />
           <Stack sx={{ minWidth: 0 }}>
-            <Typography variant="h6" sx={{ fontSize: "0.8125rem", fontWeight: 500 }}>
-              Agent
-            </Typography>
+            <Typography variant="h6">Agent</Typography>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", marginTop: "2px" }}>
               <PulseDot
                 tone="muted"

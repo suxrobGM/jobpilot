@@ -116,9 +116,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
       {m ? (
         <>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              {m.fromName || m.fromAddress}
-            </Typography>
+            <Typography variant="body2Strong">{m.fromName || m.fromAddress}</Typography>
             <Typography variant="captionMuted">·</Typography>
             <Typography variant="captionMuted">{m.fromDomain}</Typography>
             <Typography variant="captionMuted">·</Typography>

@@ -40,7 +40,7 @@ export function AuthCard(props: AuthCardProps): ReactElement {
             <CardContent sx={{ p: 4 }}>
               <Stack spacing={3}>
                 <Stack spacing={0.5}>
-                  <Typography variant="h2" sx={{ fontSize: "1.35rem" }}>
+                  <Typography variant="h3" component="h2">
                     {title}
                   </Typography>
                   {subtitle && <Typography variant="body2Muted">{subtitle}</Typography>}

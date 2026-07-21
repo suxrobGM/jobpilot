@@ -69,9 +69,7 @@ export function ConnectCard(): ReactElement {
       >
         <Stack spacing={1.5}>
           <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              {status.email}
-            </Typography>
+            <Typography variant="body2Strong">{status.email}</Typography>
             <Typography variant="captionMuted">
               {status.provider} · last synced {last}
             </Typography>

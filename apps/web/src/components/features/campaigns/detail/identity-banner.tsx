@@ -39,9 +39,7 @@ export function CampaignIdentityBanner(): ReactNode {
       sx={{ alignItems: "center", flexWrap: "wrap", gap: 0.75 }}
     >
       <PersonOutlined fontSize="sm" color="action" />
-      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-        Applying as {name || "your profile"}
-      </Typography>
+      <Typography variant="body2Strong">Applying as {name || "your profile"}</Typography>
       <Chip size="small" label={profile.contactEmail} variant="outlined" />
     </Stack>
   );

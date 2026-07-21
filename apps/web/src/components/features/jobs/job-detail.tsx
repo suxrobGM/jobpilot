@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+﻿import type { ReactElement } from "react";
 import { Box, Card, CardContent, Chip, Divider, Stack, Typography } from "@mui/material";
 import type { JobListingDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
@@ -17,10 +17,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
   return (
     <Stack spacing={4}>
       <Stack spacing={1.5}>
-        <Typography
-          variant="h1"
-          sx={{ fontSize: { xs: "1.75rem", md: "2.25rem" }, overflowWrap: "anywhere" }}
-        >
+        <Typography variant="displayMd" sx={{ overflowWrap: "anywhere" }}>
           {job.title}
         </Typography>
         <Typography variant="h2" sx={{ fontSize: "1.15rem", color: "text.secondary" }}>
@@ -46,7 +43,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
             sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}
           >
             <Stack spacing={0.5}>
-              <Typography variant="h3" sx={{ fontSize: "1.05rem" }}>
+              <Typography variant="h4" component="h3">
                 Apply with JobPilot
               </Typography>
               <Typography variant="body2Muted">
@@ -63,7 +60,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
 
       {job.techStack.length > 0 && (
         <Stack spacing={1.5}>
-          <Typography variant="h3" sx={{ fontSize: "1rem" }}>
+          <Typography variant="h4" component="h3">
             Tech stack
           </Typography>
           <TechChips tech={job.techStack} linked />
@@ -72,7 +69,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
 
       {job.descriptionExcerpt && (
         <Stack spacing={1.5}>
-          <Typography variant="h3" sx={{ fontSize: "1rem" }}>
+          <Typography variant="h4" component="h3">
             About the role
           </Typography>
           {/* pre-line alone still only wraps at whitespace: one long scraped token would overflow. */}
@@ -88,7 +85,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
       <Divider />
 
       <Stack spacing={1.5}>
-        <Typography variant="h3" sx={{ fontSize: "1rem" }}>
+        <Typography variant="h4" component="h3">
           Where this was posted
         </Typography>
         <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "grid", gap: 1 }}>
@@ -108,7 +105,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
           </Typography>
         )}
         <Typography variant="captionMuted">
-          Seen {formatRelativeTime(job.lastSeenAt)} ago · first found {formatDate(job.firstSeenAt)}
+          Seen {formatRelativeTime(job.lastSeenAt)} ago Â· first found {formatDate(job.firstSeenAt)}
         </Typography>
       </Stack>
     </Stack>

@@ -24,7 +24,7 @@ export function JobCard(props: JobCardProps): ReactElement {
         <CardContent sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Stack spacing={0.5}>
             {/* Scraped titles can be one long unbroken token; on a phone that overflows the card. */}
-            <Typography variant="h3" sx={{ fontSize: "1.05rem", overflowWrap: "anywhere" }}>
+            <Typography variant="h4" component="h3" sx={{ overflowWrap: "anywhere" }}>
               {job.title}
             </Typography>
             <Typography variant="body2Muted">{job.company}</Typography>

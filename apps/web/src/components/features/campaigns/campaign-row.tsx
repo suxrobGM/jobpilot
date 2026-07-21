@@ -54,7 +54,7 @@ export function CampaignRow(props: CampaignRowProps): ReactElement {
               {formatRelativeTime(campaign.startedAt)}
             </Typography>
           </Stack>
-          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+          <Typography variant="body2Strong" noWrap>
             {campaign.query}
           </Typography>
           <Typography variant="captionMuted">{summaryLine(campaign)}</Typography>

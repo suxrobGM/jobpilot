@@ -125,7 +125,7 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
         </Box>
 
         <Box>
-          <Typography variant="subtitle2" gutterBottom>
+          <Typography variant="overlineMuted" gutterBottom>
             Redirect URI
           </Typography>
           <CopyField
@@ -136,7 +136,7 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
         </Box>
 
         <Box>
-          <Typography variant="subtitle2" gutterBottom>
+          <Typography variant="overlineMuted" gutterBottom>
             Scopes
           </Typography>
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>

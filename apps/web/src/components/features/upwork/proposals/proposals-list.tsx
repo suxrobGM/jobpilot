@@ -106,7 +106,7 @@ export function ProposalsList(): ReactElement {
                         <Chip size="small" label={p.clientName} variant="outlined" />
                       )}
                     </Stack>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                    <Typography variant="body2Strong" noWrap>
                       {p.jobTitle}
                     </Typography>
                     <Typography variant="captionMuted">

@@ -51,9 +51,7 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
           <>
             <PictureAsPdf sx={{ color: "text.secondary" }} fontSize="lg" />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {resume.sourceFilename}
-              </Typography>
+              <Typography variant="body2Strong">{resume.sourceFilename}</Typography>
               <Typography variant="captionMuted">
                 {resume.sourceSizeBytes
                   ? `${(resume.sourceSizeBytes / 1024).toFixed(0)} KB`

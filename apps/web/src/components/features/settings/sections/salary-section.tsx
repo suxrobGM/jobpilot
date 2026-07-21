@@ -64,7 +64,7 @@ export const SalarySection = withForm({
                 {prefs.map((pref, i) => (
                   <Card key={keys[i]}>
                     <CardHeader
-                      title={<Typography variant="subtitle2">Preference {i + 1}</Typography>}
+                      title={<Typography variant="overlineMuted">Preference {i + 1}</Typography>}
                       action={
                         <IconButton
                           aria-label={`Remove salary preference ${i + 1}`}
