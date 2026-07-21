@@ -183,6 +183,12 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
     /// <summary>Sleeps between cycles; a wake cancels <see cref="interSleepCts"/> to end it early, a disable via <paramref name="ct"/>.</summary>
     private async Task SleepRacingWakeAsync(TimeSpan duration, CancellationToken ct)
     {
+        // A wake during the cycle found interSleepCts null, so the pulse is its only trace.
+        if (wake.Reader.TryRead(out _))
+        {
+            return;
+        }
+
         using var sleepCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         lock (ctsGate)
         {

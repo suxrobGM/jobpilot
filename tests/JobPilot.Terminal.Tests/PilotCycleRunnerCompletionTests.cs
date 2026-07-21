@@ -93,6 +93,28 @@ public class PilotCycleRunnerCompletionTests
     }
 
     [Fact]
+    public async Task RunIteration_IgnoresAnOlderCompletion_WhenTheBaselineProbeFailsAfterAnEarlierCycle()
+    {
+        // Nothing refreshes the baseline when a cycle ends via its sentinel, so a failed baseline probe must not
+        // leave the next cycle armed against the completion the previous one recorded.
+        var env = new FakePilotRuntime { RunningProvider = "claude" };
+        env.ActivityResults.Enqueue(Live(Stale, Completed(30))); // cycle 1 baseline
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(30)));
+        var loop = Runner(env);
+        await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        env.Actions.Clear();
+        env.ActivityResults.Enqueue(null);                    // cycle 2 baseline probe fails
+        env.DefaultActivity = Live(Stale, Completed(900));    // server still shows cycle 1's completion
+
+        var sleep = await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        Assert.Null(sleep);
+        Assert.DoesNotContain(PilotReports.Completion, env.Reports);
+        Assert.Contains("inject-check-in", env.Actions);
+    }
+
+    [Fact]
     public async Task RunIteration_PropagatesCancellationDuringTheActivityProbe()
     {
         var env = new FakePilotRuntime { RunningProvider = "claude", BlockActivity = true };

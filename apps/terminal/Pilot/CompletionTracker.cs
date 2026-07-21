@@ -12,18 +12,16 @@ internal sealed class CompletionTracker
 
     /// <summary>
     /// Memoizes the server's current completion as the baseline before a cycle injects. A failed probe (null
-    /// snapshot) with no prior baseline disarms the tracker for the cycle, so only the sentinel can end it.
+    /// snapshot) disarms the tracker for the cycle, so only the sentinel can end it.
     /// </summary>
     public void Prime(PilotActivitySnapshot? snapshot)
     {
+        // A carried-over baseline is one cycle stale (the sentinel path never refreshes it), so staying
+        // armed would read the previous cycle's completion as this one's once a probe recovers.
+        armed = snapshot is not null;
         if (snapshot is { } snap)
         {
             baseline = snap.LastCycle;
-            armed = true;
-        }
-        else
-        {
-            armed = baseline is not null;
         }
     }
 

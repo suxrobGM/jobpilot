@@ -21,6 +21,8 @@ export function DocsMobileNav(): ReactElement {
   }
 
   const current = DOCS_LINKS.find((link) => link.href === pathname)?.label ?? "Overview";
+  // Collapse unmounts the panel; aria-controls pointing at a missing id strands screen readers.
+  const controlledPanelId = open ? PANEL_ID : undefined;
 
   return (
     <Box
@@ -39,7 +41,7 @@ export function DocsMobileNav(): ReactElement {
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        aria-controls={PANEL_ID}
+        aria-controls={controlledPanelId}
         sx={(t) => ({
           appearance: "none",
           background: "transparent",

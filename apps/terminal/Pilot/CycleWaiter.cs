@@ -28,11 +28,17 @@ internal sealed class CycleWaiter(
         while (true)
         {
             var result = await env.AwaitSentinelAsync(slice, ct);
-            totalWaited += slice;
-            quiet += slice;
             if (result.Outcome is PilotWaitOutcome.Sentinel or PilotWaitOutcome.SessionExited)
             {
                 return result;
+            }
+
+            // A stuck heuristic returns the moment it fires; booking that as elapsed would let one noisy
+            // burst spend the whole cycle budget in seconds.
+            if (result.Outcome is PilotWaitOutcome.Timeout)
+            {
+                totalWaited += slice;
+                quiet += slice;
             }
 
             var snapshot = await probe(ct);
@@ -57,9 +63,10 @@ internal sealed class CycleWaiter(
 
                 quiet = TimeSpan.Zero; // Proof of life resets the quiet budget.
             }
-            else if (quiet >= quietBudget)
+            else if (quiet >= quietBudget || result.Outcome is PilotWaitOutcome.StuckDetected)
             {
-                return result; // Quiet for a full budget with no proof of life: surface the stuck/timeout.
+                // No proof of life: a fired stuck heuristic escalates now, a plain timeout after a full quiet budget.
+                return result;
             }
         }
     }

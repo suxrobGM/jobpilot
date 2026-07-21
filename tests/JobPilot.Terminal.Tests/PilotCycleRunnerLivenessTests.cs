@@ -38,8 +38,29 @@ public class PilotCycleRunnerLivenessTests
 
         Assert.Equal(["inject-cycle", "await", "await"], env.Actions);
         Assert.Equal(TimeSpan.FromSeconds(45), sleep);
-        Assert.Equal([PilotReports.Extend], env.Reports);
+        // A stuck signal is not elapsed time, so nothing has run long enough to announce an extension.
+        Assert.Empty(env.Reports);
         Assert.DoesNotContain("inject-check-in", env.Actions);
+    }
+
+    [Fact]
+    public async Task RunIteration_DoesNotSpendTheCycleBudget_WhenStuckFiresRepeatedlyButActivityIsFresh()
+    {
+        var env = new FakePilotRuntime { RunningProvider = "claude", DefaultActivity = Live(Fresh) };
+        for (var i = 0; i < 40; i++)
+        {
+            env.SentinelResults.Enqueue(PilotWaitResult.Stuck); // a noisy retry burst on a live run
+        }
+        env.SentinelResults.Enqueue(PilotWaitResult.Sentinel(Cycle(60)));
+        var loop = Runner(env);
+
+        var sleep = await loop.RunIterationAsync(Claude, CancellationToken.None);
+
+        // The burst must never reach MaxCycleWait and hand a progressing run to the ladder.
+        Assert.Equal(TimeSpan.FromSeconds(60), sleep);
+        Assert.DoesNotContain("inject-check-in", env.Actions);
+        Assert.DoesNotContain("stop", env.Actions);
+        Assert.Empty(env.Reports);
     }
 
     [Fact]
@@ -107,7 +128,7 @@ public class PilotCycleRunnerLivenessTests
     }
 
     [Fact]
-    public async Task RunIteration_ExtendsBeforeSkip_WhenActivityGoesFreshAfterTheCheckIn()
+    public async Task RunIteration_KeepsWaitingBeforeSkip_WhenActivityGoesFreshAfterTheCheckIn()
     {
         var env = new FakePilotRuntime { RunningProvider = "claude" };
         env.SentinelResults.Enqueue(PilotWaitResult.Stuck);               // initial stuck -> check-in
@@ -123,7 +144,7 @@ public class PilotCycleRunnerLivenessTests
 
         Assert.Equal(["inject-cycle", "await", "inject-check-in", "await", "await"], env.Actions);
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
-        Assert.Equal([PilotReports.CheckIn, PilotReports.Extend], env.Reports);
+        Assert.Equal([PilotReports.CheckIn], env.Reports);
         Assert.DoesNotContain("inject-skip", env.Actions);
     }
 }

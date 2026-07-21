@@ -20,7 +20,14 @@ CYCLE_ID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null |
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/pilot"
 ```
 
-If `.enabled` is `false`: journal nothing, print `[[JOBPILOT_CYCLE cycle=$CYCLE_ID status=empty sleep=3600]]` as the final line, stop.
+If `.enabled` is `false`, record the cycle (the host reads this back to confirm completion), then print `[[JOBPILOT_CYCLE cycle=$CYCLE_ID status=empty sleep=3600]]` as the final line and stop:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg cid "$CYCLE_ID" \
+    '{cycleId:$cid, entries:[{kind:"cycle", summary:"Pilot is off - idling.", detail:{status:"empty", sleepSeconds:3600}}]}')"
+```
 
 ## 1. Sense
 
@@ -338,11 +345,12 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 
 Write one `action` entry, human and specific ("Applied to Staff TypeScript Engineer at Acme - score 87.", "Discovered 14 jobs for 'senior typescript remote', 9 scored ≥70.", "Parked Stripe application - needs your salary answer."), and one `cycle` entry summarizing the whole cycle. Both carry `cycleId`; the action entry also carries `subjectType`/`subjectId`. The `cycle` entry's `detail:{status, sleepSeconds}` is the authoritative completion signal - the host reads it back through the API to know the cycle finished, so this journal write and the step 7 sentinel are both mandatory (the sentinel is only the fast path).
 
-An action entry may also carry a `detail` object (the entries schema allows it) - required for the load-bearing markers on `campaign.strategyReview` / `job.rescanSkipped` / `job.retryFailed`:
+An action entry may also carry a `detail` object (the entries schema allows it) - required for the load-bearing markers on `campaign.strategyReview` / `job.rescanSkipped` / `job.retryFailed`. It is an extra field on the action entry, never a replacement for the batch - the `cycle` entry still ships in the same POST:
 
 ```bash
-jq -n --arg cid "$CYCLE_ID" --arg sid "$CID" --arg a "$NARRATIVE" --argjson detail '{"type":"strategyReview"}' \
-  '{cycleId:$cid, entries:[{kind:"action", subjectType:"campaign", subjectId:$sid, summary:$a, detail:$detail}]}'
+jq -n --arg cid "$CYCLE_ID" --arg sid "$CID" --arg a "$NARRATIVE" --arg c "<cycle summary>" \
+  --argjson detail '{"type":"strategyReview"}' --argjson cdetail "$(echo "$AGENDA" | jq '{status:"ok", sleepSeconds:.sleepSeconds}')" \
+  '{cycleId:$cid, entries:[{kind:"action", subjectType:"campaign", subjectId:$sid, summary:$a, detail:$detail}, {kind:"cycle", summary:$c, detail:$cdetail}]}'
 ```
 
 If the worker returned `observations`, append each to the **same** journal POST as an extra entry `{kind:"observation", summary:<text>, subjectType:"board", subjectId:<board domain>}` - durable board/site facts only, not per-job trivia.
