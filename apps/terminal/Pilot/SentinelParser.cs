@@ -20,8 +20,8 @@ public readonly record struct PilotCycle(Guid CycleId, PilotCycleStatus Status, 
 /// </summary>
 public sealed partial class SentinelParser
 {
-    // ~8KB tail: far larger than the ~70-char sentinel, so a match is never split by the window edge.
-    private const int MaxTailChars = 8192;
+    // 32KB tail: a single styled 220x50 repaint frame can be ~8KB, so keep several so a match is never split out.
+    private const int MaxTailChars = 32768;
 
     // > the max sentinels that fit in the tail, so an id never evicts before its match scrolls out (no refire).
     private const int MaxSeenIds = 256;
@@ -32,6 +32,14 @@ public sealed partial class SentinelParser
 
     [GeneratedRegex(@"\[\[JOBPILOT_CYCLE cycle=([0-9a-fA-F-]{36}) status=(ok|empty|error) sleep=(\d+)\]\]")]
     private static partial Regex SentinelPattern();
+
+    // Second pass over a whitespace-removed projection: the TUI may wrap the sentinel with a newline+indent
+    // anywhere (even mid-GUID), so collapsing whitespace lets these fragments reunite into a match.
+    [GeneratedRegex(@"\[\[JOBPILOT_CYCLEcycle=([0-9a-fA-F-]{36})status=(ok|empty|error)sleep=(\d+)\]\]")]
+    private static partial Regex WrappedSentinelPattern();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespacePattern();
 
     /// <summary>Feeds a raw output chunk and returns any newly detected cycles (usually none).</summary>
     public IReadOnlyList<PilotCycle> Feed(ReadOnlySpan<byte> chunk)
@@ -45,8 +53,18 @@ public sealed partial class SentinelParser
 
         var stripped = StripControl(tail.ToString());
 
+        // Strict pass first (fast path); then the wrapped pass over the condensed tail. The shared seen set
+        // dedupes a cycle that both passes catch, so each id still fires at most once.
         List<PilotCycle>? cycles = null;
-        foreach (Match match in SentinelPattern().Matches(stripped))
+        Collect(SentinelPattern().Matches(stripped), ref cycles);
+        Collect(WrappedSentinelPattern().Matches(WhitespacePattern().Replace(stripped, string.Empty)), ref cycles);
+
+        return (IReadOnlyList<PilotCycle>?)cycles ?? [];
+    }
+
+    private void Collect(MatchCollection matches, ref List<PilotCycle>? cycles)
+    {
+        foreach (Match match in matches)
         {
             if (!Guid.TryParse(match.Groups[1].ValueSpan, out var cycleId) || !seen.Add(cycleId))
             {
@@ -61,8 +79,6 @@ public sealed partial class SentinelParser
 
             (cycles ??= []).Add(new PilotCycle(cycleId, ParseStatus(match.Groups[2].ValueSpan), ParseSleep(match.Groups[3].ValueSpan)));
         }
-
-        return (IReadOnlyList<PilotCycle>?)cycles ?? [];
     }
 
     private static PilotCycleStatus ParseStatus(ReadOnlySpan<char> value) => value switch
@@ -72,7 +88,7 @@ public sealed partial class SentinelParser
         _ => PilotCycleStatus.Ok,
     };
 
-    // The conductor re-clamps; an overflowing count still caps at the ceiling rather than dropping the cycle.
+    // The runner re-clamps; an overflowing count still caps at the ceiling rather than dropping the cycle.
     private static int ParseSleep(ReadOnlySpan<char> value) => int.TryParse(value, out var seconds) ? seconds : int.MaxValue;
 
     /// <summary>Removes ESC sequences (CSI/OSC and two-char escapes) and redraw control bytes, keeping newlines.</summary>

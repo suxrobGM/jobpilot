@@ -15,10 +15,12 @@ flow back through the hub to the same session.
 
 ### Pilot
 
-`PilotStore` persists the provider pairing and enabled flag. `PilotCoordinator` owns the background lifecycle and
-runs `PilotCycleRunner` while enabled. The runner contains the sentinel, liveness, nudge, skip, kill, and backoff
-policy; `IPilotRuntime` performs its PTY, timing, and API side effects. `PilotEventListener` consumes the API SSE
-feed and sends coalesced wake pulses when new work can resume a cycle.
+`PilotStore` persists the provider pairing and enabled flag. `PilotCoordinator` owns the background lifecycle,
+runs `PilotCycleRunner` while enabled, and owns the inter-cycle sleep so a wake can end it early. The runner
+orchestrates one cycle: `CompletionTracker` and `CycleWaiter` cover the sentinel wait, the server-reported
+completion fallback, and liveness; `InterventionLadder` climbs check-in, skip, then restart, with backoff. Its
+side effects (PTY, timing, API) live behind `IPilotRuntime`. `PilotEventListener` consumes the API SSE feed and
+sends coalesced wake pulses when new work can resume a cycle.
 
 ### Self-update
 
@@ -42,6 +44,6 @@ root may be user state and must not be pruned.
 - Explicit session stops still raise a requested exit for Pilot waiters, but never produce a crash banner.
 - Provider replacement disowns the outgoing PTY generation before stopping it.
 - A caller cancellation must propagate through Pilot probes, reports, and command submission; transport failures
-  alone fail open to the watchdog ladder.
+  alone fail open to the orchestrator ladder.
 - SSE re-pairing is heartbeat-bounded: the next frame detects changed credentials and reconnects without backoff.
 - `pilot.json` keeps its stable wire shape, is DPAPI-protected on Windows, and is created with mode `0600` on Unix.

@@ -21,21 +21,24 @@ internal sealed class FakePilotRuntime : IPilotRuntime
     public Queue<PilotWaitResult> SentinelResults { get; } = new();
 
     /// <summary>
-    /// Activity timestamps returned by successive GetLastActivityAsync calls; empty dequeues to
-    /// <see cref="DefaultActivity"/> (null by default, so the old ladder behavior stands). Probes are kept out of
-    /// <see cref="Actions"/> so existing sequence asserts remain stable.
+    /// Activity snapshots returned by successive GetActivityAsync calls; empty dequeues to
+    /// <see cref="DefaultActivity"/> (null by default, so completion detection stays disabled). Probes are kept out
+    /// of <see cref="Actions"/> so existing sequence asserts remain stable.
     /// </summary>
-    public Queue<DateTimeOffset?> ActivityResults { get; } = new();
+    public Queue<PilotActivitySnapshot?> ActivityResults { get; } = new();
 
-    /// <summary>Value returned by GetLastActivityAsync once <see cref="ActivityResults"/> is drained.</summary>
-    public DateTimeOffset? DefaultActivity { get; set; }
+    /// <summary>Value returned by GetActivityAsync once <see cref="ActivityResults"/> is drained.</summary>
+    public PilotActivitySnapshot? DefaultActivity { get; set; }
 
-    /// <summary>When true, GetLastActivityAsync throws, to prove a failed probe falls open to the ladder.</summary>
+    /// <summary>When true, GetActivityAsync throws, to prove a failed probe falls open to the ladder.</summary>
     public bool ActivityThrows { get; set; }
 
     public bool BlockActivity { get; set; }
 
     public TaskCompletionSource ActivityStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>When true, SleepAsync blocks until the token cancels, to observe a wake ending an inter-cycle sleep.</summary>
+    public bool BlockSleep { get; set; }
 
     public string? RunningProvider { get; set; }
 
@@ -66,9 +69,9 @@ internal sealed class FakePilotRuntime : IPilotRuntime
         return Task.CompletedTask;
     }
 
-    public Task InjectNudgeAsync(PilotPairing pairing, CancellationToken ct)
+    public Task InjectCheckInAsync(PilotPairing pairing, CancellationToken ct)
     {
-        Actions.Add("inject-nudge");
+        Actions.Add("inject-check-in");
         return Task.CompletedTask;
     }
 
@@ -88,10 +91,15 @@ internal sealed class FakePilotRuntime : IPilotRuntime
         return BlockWhenScriptless ? WaitForCancelAsync(ct) : Task.FromResult(PilotWaitResult.Timeout);
     }
 
-    public Task SleepAsync(TimeSpan duration, CancellationToken ct)
+    public async Task SleepAsync(TimeSpan duration, CancellationToken ct)
     {
         Actions.Add($"sleep:{(int)duration.TotalSeconds}");
-        return Task.CompletedTask;
+        // BlockSleep models a long inter-cycle sleep that only a wake or disable ends; short setup sleeps (the
+        // startup resume grace) still pass through instantly.
+        if (BlockSleep && duration > TimeSpan.FromMinutes(1))
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+        }
     }
 
     public void StopSession()
@@ -125,7 +133,7 @@ internal sealed class FakePilotRuntime : IPilotRuntime
         }
     }
 
-    public async Task<DateTimeOffset?> GetLastActivityAsync(CancellationToken ct)
+    public async Task<PilotActivitySnapshot?> GetActivityAsync(CancellationToken ct)
     {
         ActivityStarted.TrySetResult();
         if (BlockActivity)

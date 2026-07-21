@@ -68,6 +68,36 @@ public class SentinelParserTests
     }
 
     [Fact]
+    public void Feed_DetectsASentinelWrappedByTheTui_WithNewlineIndentsMidToken()
+    {
+        var parser = new SentinelParser();
+        // The TUI hard-wraps the line, inserting a newline + indent anywhere, including mid-GUID.
+        var wrapped = $"[[JOBPILOT_CYCLE cycle=1f2e3d4c-5b6a-7089-\n    90ab-cdef01234567 status=ok\n    sleep=30]]";
+
+        var cycle = Assert.Single(parser.Feed(Bytes(wrapped)));
+
+        Assert.Equal(Guid.Parse(CycleId), cycle.CycleId);
+        Assert.Equal(30, cycle.SleepSeconds);
+    }
+
+    [Fact]
+    public void Feed_DetectsASentinel_WhenAStyledRepaintLargerThanTheOldTailSitsBetweenItsHalves()
+    {
+        var parser = new SentinelParser();
+        var full = Sentinel(sleep: 300);
+
+        // > 8KB of pure ANSI/whitespace repaint between the halves: the old 8KB tail would have evicted the first
+        // half before the second arrived. StripControl drops the escapes and the condensed pass reunites the halves.
+        var styling = string.Concat(Enumerable.Repeat("\x1b[2K\x1b[0m\n", 1200));
+        parser.Feed(Bytes(full[..40]));
+        parser.Feed(Bytes(styling));
+        var cycle = Assert.Single(parser.Feed(Bytes(full[40..])));
+
+        Assert.Equal(Guid.Parse(CycleId), cycle.CycleId);
+        Assert.Equal(300, cycle.SleepSeconds);
+    }
+
+    [Fact]
     public void Feed_FiresEachCycleIdOnce_WhenTheLineIsEchoed()
     {
         var parser = new SentinelParser();

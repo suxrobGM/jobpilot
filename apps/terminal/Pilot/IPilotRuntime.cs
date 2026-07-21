@@ -7,8 +7,8 @@ public enum PilotWaitOutcome
     Timeout,
     SessionExited,
 
-    /// <summary>A deterministic stall heuristic fired before the sentinel cap lapsed.</summary>
-    StallDetected,
+    /// <summary>A deterministic stuck heuristic fired before the sentinel cap lapsed.</summary>
+    StuckDetected,
 }
 
 /// <summary>Result of awaiting a cycle sentinel.</summary>
@@ -16,10 +16,16 @@ public readonly record struct PilotWaitResult(PilotWaitOutcome Outcome, PilotCyc
 {
     public static readonly PilotWaitResult Timeout = new(PilotWaitOutcome.Timeout);
     public static readonly PilotWaitResult Exited = new(PilotWaitOutcome.SessionExited);
-    public static readonly PilotWaitResult Stalled = new(PilotWaitOutcome.StallDetected);
+    public static readonly PilotWaitResult Stuck = new(PilotWaitOutcome.StuckDetected);
 
     public static PilotWaitResult Sentinel(PilotCycle cycle) => new(PilotWaitOutcome.Sentinel, cycle);
 }
+
+/// <summary>A server-recorded cycle completion; the sentinel-loss fallback compares these server values only.</summary>
+public readonly record struct PilotCompletedCycle(string? CycleId, DateTimeOffset CompletedAt, string? Status, int? SleepSeconds);
+
+/// <summary>Runtime-neutral snapshot of the newest server-side agent activity.</summary>
+public readonly record struct PilotActivitySnapshot(DateTimeOffset? LastActivityAt, PilotCompletedCycle? LastCycle);
 
 /// <summary>Side effects the Pilot loop drives, abstracted from the real PTY so the state machine is testable.</summary>
 public interface IPilotRuntime
@@ -36,10 +42,10 @@ public interface IPilotRuntime
     /// <summary>Injects the pilot skill command.</summary>
     Task InjectCycleAsync(PilotPairing pairing, CancellationToken ct);
 
-    /// <summary>Injects the one-shot unstick nudge.</summary>
-    Task InjectNudgeAsync(PilotPairing pairing, CancellationToken ct);
+    /// <summary>Injects the one-shot check-in reminder that asks a seemingly stuck agent to release and move on.</summary>
+    Task InjectCheckInAsync(PilotPairing pairing, CancellationToken ct);
 
-    /// <summary>Injects the skip directive that forces the leased work failed after a nudge fails to unstick.</summary>
+    /// <summary>Injects the skip directive that forces the claimed task failed after a check-in fails to unstick it.</summary>
     Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct);
 
     /// <summary>Waits for the next cycle sentinel, the timeout, or the session exiting.</summary>
@@ -61,5 +67,5 @@ public interface IPilotRuntime
     Task ReportSystemAsync(string summary, CancellationToken ct);
 
     /// <summary>Newest server-side agent activity, or null on any failure (fail-open to the timeout ladder).</summary>
-    Task<DateTimeOffset?> GetLastActivityAsync(CancellationToken ct);
+    Task<PilotActivitySnapshot?> GetActivityAsync(CancellationToken ct);
 }

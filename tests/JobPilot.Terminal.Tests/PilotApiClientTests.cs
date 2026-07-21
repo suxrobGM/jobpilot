@@ -70,7 +70,7 @@ public sealed class PilotApiClientTests
     }
 
     [Fact]
-    public async Task GetLastActivityAsync_ParsesTheTimestamp_WithABearerHeader()
+    public async Task GetActivityAsync_ParsesTheSnapshot_WithABearerHeader()
     {
         HttpRequestMessage? seen = null;
         var handler = new StubHandler((request, _) =>
@@ -78,34 +78,47 @@ public sealed class PilotApiClientTests
             seen = request;
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"lastActivityAt":"2026-07-19T18:34:43Z","activeLeases":2}"""),
+                Content = new StringContent(
+                    """{"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"cycleId":"1f2e3d4c-5b6a-7089-90ab-cdef01234567","completedAt":"2026-07-19T18:30:00Z","status":"ok","sleepSeconds":300},"activeClaims":2}"""),
             });
         });
         using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(handler));
 
-        var at = await client.GetLastActivityAsync("https://api.example.test/", "secret-token");
+        var snapshot = await client.GetActivityAsync("https://api.example.test/", "secret-token");
 
         Assert.NotNull(seen);
         Assert.Equal(HttpMethod.Get, seen!.Method);
         Assert.Equal("https://api.example.test/api/pilot/activity", seen.RequestUri!.ToString());
         Assert.Equal("secret-token", seen.Headers.Authorization!.Parameter);
-        Assert.Equal(new DateTimeOffset(2026, 7, 19, 18, 34, 43, TimeSpan.Zero), at);
+        Assert.NotNull(snapshot);
+        Assert.Equal(new DateTimeOffset(2026, 7, 19, 18, 34, 43, TimeSpan.Zero), snapshot!.Value.LastActivityAt);
+        var cycle = snapshot.Value.LastCycle;
+        Assert.NotNull(cycle);
+        Assert.Equal("1f2e3d4c-5b6a-7089-90ab-cdef01234567", cycle!.Value.CycleId);
+        Assert.Equal(new DateTimeOffset(2026, 7, 19, 18, 30, 0, TimeSpan.Zero), cycle.Value.CompletedAt);
+        Assert.Equal("ok", cycle.Value.Status);
+        Assert.Equal(300, cycle.Value.SleepSeconds);
     }
 
     [Fact]
-    public async Task GetLastActivityAsync_ReturnsNull_WhenTheServerReportsNoActivity()
+    public async Task GetActivityAsync_ReturnsANullLastCycle_WhenTheUserHasNoCompletedCycleYet()
     {
         var handler = new StubHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("""{"lastActivityAt":null,"activeLeases":0}"""),
+            Content = new StringContent("""{"lastActivityAt":null,"lastCycle":null,"activeClaims":0}"""),
         }));
         using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(handler));
 
-        Assert.Null(await client.GetLastActivityAsync("https://api.example.test", "tok"));
+        var snapshot = await client.GetActivityAsync("https://api.example.test", "tok");
+
+        // A successful probe with no data is a snapshot, not a failure, so the fallback stays armed.
+        Assert.NotNull(snapshot);
+        Assert.Null(snapshot!.Value.LastActivityAt);
+        Assert.Null(snapshot.Value.LastCycle);
     }
 
     [Fact]
-    public async Task GetLastActivityAsync_ReturnsNull_WhenUnpaired()
+    public async Task GetActivityAsync_ReturnsNull_WhenUnpaired()
     {
         var called = false;
         var handler = new StubHandler((_, _) =>
@@ -115,26 +128,26 @@ public sealed class PilotApiClientTests
         });
         using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(handler));
 
-        Assert.Null(await client.GetLastActivityAsync("", ""));
-        Assert.Null(await client.GetLastActivityAsync("https://api.example.test", ""));
+        Assert.Null(await client.GetActivityAsync("", ""));
+        Assert.Null(await client.GetActivityAsync("https://api.example.test", ""));
         Assert.False(called);
     }
 
     [Fact]
-    public async Task GetLastActivityAsync_ReturnsNull_OnNonSuccessOrTransportFailure()
+    public async Task GetActivityAsync_ReturnsNull_OnNonSuccessOrTransportFailure()
     {
         var rejected = new StubHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)));
         using var a = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(rejected));
-        Assert.Null(await a.GetLastActivityAsync("https://api.example.test", "tok"));
+        Assert.Null(await a.GetActivityAsync("https://api.example.test", "tok"));
 
         var refused = new StubHandler((_, _) => throw new HttpRequestException("connection refused"));
         using var b = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(refused));
-        Assert.Null(await b.GetLastActivityAsync("https://api.example.test", "tok"));
+        Assert.Null(await b.GetActivityAsync("https://api.example.test", "tok"));
     }
 
     [Fact]
-    public async Task GetLastActivityAsync_ReturnsNull_OnAMalformedBody()
+    public async Task GetActivityAsync_ReturnsNull_OnAMalformedBody()
     {
         var handler = new StubHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -142,7 +155,7 @@ public sealed class PilotApiClientTests
         }));
         using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(handler));
 
-        Assert.Null(await client.GetLastActivityAsync("https://api.example.test", "tok"));
+        Assert.Null(await client.GetActivityAsync("https://api.example.test", "tok"));
     }
 
     [Fact]
@@ -158,7 +171,7 @@ public sealed class PilotApiClientTests
         cts.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            client.GetLastActivityAsync("https://api.example.test", "tok", cts.Token));
+            client.GetActivityAsync("https://api.example.test", "tok", cts.Token));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             client.ReportSystemAsync("https://api.example.test", "tok", "stop", cts.Token));
     }

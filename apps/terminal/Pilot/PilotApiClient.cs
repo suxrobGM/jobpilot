@@ -12,7 +12,10 @@ internal sealed record PilotJournalRequest(PilotJournalEntry[] Entries);
 internal sealed record PilotJournalEntry(string Kind, string Summary);
 
 /// <summary>Body of a GET /api/pilot/activity response.</summary>
-internal sealed record PilotActivityResponse(DateTimeOffset? LastActivityAt);
+internal sealed record PilotActivityResponse(DateTimeOffset? LastActivityAt, PilotLastCycleResponse? LastCycle);
+
+/// <summary>The newest server-recorded cycle completion, or null when the user has no completed cycle yet.</summary>
+internal sealed record PilotLastCycleResponse(string? CycleId, DateTimeOffset CompletedAt, string? Status, int? SleepSeconds);
 
 /// <summary>
 /// Posts the coordinator's own interventions to the API journal so the user's phone hears about them.
@@ -61,24 +64,33 @@ public sealed class PilotApiClient : IDisposable
     }
 
     /// <summary>
-    /// Probes the API for the newest agent activity, gating the watchdog ladder. Never throws: any failure
-    /// returns null so the caller falls open to the old timeout behavior instead of blocking a cycle.
+    /// Probes the API for the newest agent activity, gating the orchestrator ladder and the sentinel-loss completion
+    /// fallback. Never throws: any failure returns null so the caller falls open to the timeout behavior instead
+    /// of blocking a cycle. A struct-valued result (even with all-null fields) still means the probe succeeded.
     /// </summary>
-    public async Task<DateTimeOffset?> GetLastActivityAsync(string apiUrl, string apiToken, CancellationToken ct = default)
+    public async Task<PilotActivitySnapshot?> GetActivityAsync(string apiUrl, string apiToken, CancellationToken ct = default)
     {
         try
         {
-            return await SendGuardedAsync<DateTimeOffset?>(apiUrl, apiToken, HttpMethod.Get, "/api/pilot/activity",
+            return await SendGuardedAsync<PilotActivitySnapshot?>(apiUrl, apiToken, HttpMethod.Get, "/api/pilot/activity",
                 content: null, "Pilot activity probe was rejected ({Status}).", async (response, token) =>
                 {
                     var json = await response.Content.ReadAsStringAsync(token);
                     var activity = JsonSerializer.Deserialize(json, AppJsonContext.Default.PilotActivityResponse);
-                    return activity?.LastActivityAt;
+                    if (activity is null)
+                    {
+                        return null;
+                    }
+
+                    var last = activity.LastCycle is { } c
+                        ? new PilotCompletedCycle(c.CycleId, c.CompletedAt, c.Status, c.SleepSeconds)
+                        : (PilotCompletedCycle?)null;
+                    return new PilotActivitySnapshot(activity.LastActivityAt, last);
                 }, ct);
         }
         catch (Exception ex) when (!Cancellation.IsCallerCancellation(ex, ct))
         {
-            // Fail-open on anything (transport, timeout, malformed body): the watchdog then uses its heuristics alone.
+            // Fail-open on anything (transport, timeout, malformed body): the orchestrator then uses its heuristics alone.
             logger.LogWarning(ex, "Pilot activity probe could not be delivered.");
             return null;
         }

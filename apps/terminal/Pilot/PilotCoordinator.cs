@@ -1,12 +1,13 @@
+using System.Threading.Channels;
 using JobPilot.Terminal.Contracts;
 using Microsoft.Extensions.Hosting;
-using System.Threading.Channels;
 
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>
-/// Background loop that keeps re-injecting the pilot skill while pilot mode is enabled and recovers a wedged
-/// session. Reacts to enable/disable without a host restart via <see cref="WakeUp"/>.
+/// Background loop that keeps re-injecting the pilot skill while pilot mode is enabled and recovers a stuck
+/// session - the Pilot's local orchestrator. Reacts to enable/disable without a host restart via <see cref="WakeUp"/>,
+/// and owns the inter-cycle sleep so a wake can end it early and start the next cycle promptly.
 /// </summary>
 public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogger<PilotCoordinator> logger) : BackgroundService
 {
@@ -16,11 +17,11 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
     private static readonly TimeSpan StartupResumeDelay = TimeSpan.FromSeconds(10);
 
     /// <summary>Journal summary pushed when a restarted host resumes conducting on its own.</summary>
-    public const string ResumeReport = "Pilot conductor resumed after host restart.";
+    public const string ResumeReport = "Pilot resumed after the app restarted.";
 
     private readonly PilotCycleRunner loop = new(env);
 
-    // A pulse starts the idle loop or restarts an iteration. Capacity one coalesces bursts without stale permits.
+    // A pulse wakes the idle loop. Capacity one coalesces bursts without stale permits.
     private readonly Channel<bool> wake = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
     {
         SingleReader = true,
@@ -29,6 +30,7 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
     });
     private readonly Lock ctsGate = new();
     private CancellationTokenSource? iterationCts;
+    private CancellationTokenSource? interSleepCts;
     private volatile bool driving;
     private int wakeCount;
 
@@ -37,14 +39,20 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
 
     internal int PendingWakeCount => wake.Reader.Count;
 
-    /// <summary>Signals the loop to re-read the pairing (after enable/disable).</summary>
+    /// <summary>Signals the loop to re-read the pairing (after enable/disable) and ends any inter-cycle sleep early.</summary>
     public void WakeUp()
     {
         Interlocked.Increment(ref wakeCount);
         wake.Writer.TryWrite(true);
         lock (ctsGate)
         {
-            iterationCts?.Cancel();
+            // Any wake ends an inter-cycle sleep early so the next cycle starts now; only a disable/unpair also
+            // aborts a live cycle. An enabled wake must never interrupt a live turn.
+            interSleepCts?.Cancel();
+            if (store.Current is not { Enabled: true })
+            {
+                iterationCts?.Cancel();
+            }
         }
     }
 
@@ -96,7 +104,12 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
             try
             {
                 driving = true;
-                await loop.RunIterationAsync(pairing, cts.Token);
+                var sleep = await loop.RunIterationAsync(pairing, cts.Token);
+                if (sleep is { } duration && duration > TimeSpan.Zero)
+                {
+                    // A wake (question answered, approved promotion, etc.) ends this sleep early; a disable cancels it.
+                    await SleepRacingWakeAsync(duration, cts.Token);
+                }
             }
             catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
             {
@@ -122,7 +135,10 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
         }
     }
 
-    /// <summary>On a fresh start already paired+enabled, resumes conducting after a short bind grace and journals it.</summary>
+    /// <summary>
+    /// On a fresh start already paired+enabled, resumes conducting after a short bind grace and journals it. If a
+    /// planned inter-cycle break was still owed when the host restarted, waits out the remainder before the first inject.
+    /// </summary>
     private async Task ResumeIfEnabledAsync(CancellationToken stoppingToken)
     {
         var pairing = store.Current;
@@ -136,13 +152,57 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
             return; // host shutting down before the grace elapsed
         }
 
+        TimeSpan remaining;
         try
         {
-            await env.ReportSystemAsync(ResumeReport, stoppingToken);
+            remaining = await loop.PrimeResumeAsync(stoppingToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        var report = remaining > TimeSpan.Zero
+            ? $"{ResumeReport} Waiting out the planned break until {(DateTimeOffset.UtcNow + remaining):u} first."
+            : ResumeReport;
+        try
+        {
+            await env.ReportSystemAsync(report, stoppingToken);
         }
         catch
         {
             // Best-effort; a failed resume report must not fault the background service.
+        }
+
+        if (remaining > TimeSpan.Zero)
+        {
+            await SleepRacingWakeAsync(remaining, stoppingToken);
+        }
+    }
+
+    /// <summary>Sleeps between cycles; a wake cancels <see cref="interSleepCts"/> to end it early, a disable via <paramref name="ct"/>.</summary>
+    private async Task SleepRacingWakeAsync(TimeSpan duration, CancellationToken ct)
+    {
+        using var sleepCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        lock (ctsGate)
+        {
+            interSleepCts = sleepCts;
+        }
+
+        try
+        {
+            await env.SleepAsync(duration, sleepCts.Token);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            // A wake ended the inter-cycle sleep early; the loop starts the next cycle now.
+        }
+        finally
+        {
+            lock (ctsGate)
+            {
+                interSleepCts = null;
+            }
         }
     }
 

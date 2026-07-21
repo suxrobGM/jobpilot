@@ -3,42 +3,52 @@ using JobPilot.Terminal.Common;
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>
-/// The Pilot's per-cycle state machine: ensure a session, inject the skill, await its sentinel, and on a wedge
-/// nudge then kill. Pure of timing and PTY details (both live behind <see cref="IPilotRuntime"/>) so the
-/// sentinel/nudge/kill ordering and backoff can be unit-tested.
+/// Orchestrates one Pilot cycle: pick up or restart the session, probe the completion baseline, inject the skill,
+/// wait for the sentinel, and hand a stuck run to the intervention ladder. The heavy wait/completion logic lives in
+/// <see cref="CycleWaiter"/> and <see cref="CompletionTracker"/>; the ladder in <see cref="InterventionLadder"/>. The
+/// runner returns the inter-cycle sleep to the coordinator instead of sleeping itself, so a wake can end it early.
 /// </summary>
-public sealed class PilotCycleRunner(IPilotRuntime env)
+public sealed class PilotCycleRunner
 {
     public static readonly TimeSpan SentinelTimeout = TimeSpan.FromMinutes(20);
-    public static readonly TimeSpan NudgeGrace = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan CheckInGrace = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan BackoffDelay = TimeSpan.FromMinutes(30);
 
-    // A cycle whose last server-side activity is fresher than this is working, not wedged; the ladder is deferred.
+    // How long each sentinel-wait slice runs before consulting the server for a completion the TUI may have garbled.
+    public static readonly TimeSpan CompletionPollInterval = TimeSpan.FromMinutes(2);
+
+    // A cycle whose last server-side activity is fresher than this is working, not stuck; the ladder is deferred.
     public static readonly TimeSpan LivenessWindow = TimeSpan.FromMinutes(5);
 
     // Hard cap on how long one cycle may keep extending on positive liveness before the ladder runs regardless.
     public static readonly TimeSpan MaxCycleWait = TimeSpan.FromMinutes(60);
 
-    // Back off only after a broken install kills this many cycles in a row, so recovery does not hot-loop.
+    // Back off only after a broken install restarts this many cycles in a row, so recovery does not hot-loop.
     public const int BackoffThreshold = 3;
 
     public const int MinSleepSeconds = 15;
     public const int MaxSleepSeconds = 21600;
 
-    // Stable, user-facing intervention summaries pushed to the API journal (the phone hears about these).
-    public const string NudgeReport = "Pilot watchdog: cycle stalled - nudged the agent.";
-    public const string SkipReport = "Pilot watchdog: still stalled after the nudge - told the agent to skip and fail the leased work.";
-    public const string KillReport = "Pilot watchdog: agent unresponsive - restarted the session; the leased job will recover by TTL.";
-    public const string BackoffReport = "Pilot watchdog: 3 consecutive stalls - backing off 30m.";
-    public const string ExitBackoffReport =
-        "Pilot watchdog: the provider CLI keeps exiting right after startup - check its install and auth - backing off 30m.";
-    public const string ExtendReport =
-        "Pilot watchdog: cycle running long but the API shows activity - extending the wait.";
+    private readonly IPilotRuntime env;
+    private readonly TimeSpan pollInterval;
+    private readonly CompletionTracker completion = new();
+    private readonly InterventionLadder ladder;
 
-    private readonly IPilotRuntime env = env;
+    public PilotCycleRunner(IPilotRuntime env)
+        : this(env, CompletionPollInterval)
+    {
+    }
 
-    /// <summary>Consecutive watchdog kills; reset by any completed cycle.</summary>
-    public int ConsecutiveTimeouts { get; private set; }
+    // Test seam: a poll interval >= the wait windows collapses each wait to a single slice for deterministic asserts.
+    internal PilotCycleRunner(IPilotRuntime env, TimeSpan pollInterval)
+    {
+        this.env = env;
+        this.pollInterval = pollInterval;
+        ladder = new InterventionLadder(env, FinishAsync, ReportAsync);
+    }
+
+    /// <summary>Consecutive restarts; reset by any completed cycle.</summary>
+    public int ConsecutiveTimeouts => ladder.ConsecutiveRestarts;
 
     /// <summary>Consecutive mid-wait session exits; reset by any completed cycle.</summary>
     internal int ConsecutiveSessionExits { get; private set; }
@@ -52,8 +62,11 @@ public sealed class PilotCycleRunner(IPilotRuntime env)
 
     public static int ClampSleep(int seconds) => Math.Clamp(seconds, MinSleepSeconds, MaxSleepSeconds);
 
-    /// <summary>Runs one cycle; the caller loops while pilot mode stays enabled.</summary>
-    public async Task RunIterationAsync(PilotPairing pairing, CancellationToken ct)
+    /// <summary>
+    /// Runs one cycle; the caller loops while pilot mode stays enabled. Returns the inter-cycle sleep to await
+    /// (already clamped), or null to loop immediately (paused, restarted, or backed off internally).
+    /// </summary>
+    public async Task<TimeSpan?> RunIterationAsync(PilotPairing pairing, CancellationToken ct)
     {
         // Never fight a user who manually launched the other provider: pause instead of killing their session.
         var running = env.RunningProvider;
@@ -61,7 +74,7 @@ public sealed class PilotCycleRunner(IPilotRuntime env)
         {
             Conducting = false;
             await env.PauseAsync(ct);
-            return;
+            return null;
         }
 
         Conducting = true;
@@ -72,70 +85,66 @@ public sealed class PilotCycleRunner(IPilotRuntime env)
             await env.WaitStartupGraceAsync(ct);
         }
 
+        // Memoize the server's current completion before injecting so the fallback can tell a fresh finish from an old one.
+        completion.Prime(await ProbeAsync(ct));
         await env.InjectCycleAsync(pairing, ct);
 
-        // Positive liveness gates the ladder: a wedge that the API still shows as active is a slow cycle, not a
-        // stuck one, so re-await instead of nudging - but only up to MaxCycleWait, and journal the extension once.
-        // The wait owns that budget and one-shot flag so the ladder below reads as plain rungs.
-        var wait = new CycleWait(this, ct);
-
-        // T5 ladder: each wedge (timeout or a stall heuristic firing early) climbs one rung - nudge, then skip, then kill.
-        var result = await wait.ExtendWhileLiveAsync(await wait.AwaitAsync(SentinelTimeout));
-        if (await TryFinishAsync(result, ct))
+        var waiter = new CycleWaiter(env, completion, pollInterval, ProbeAsync, ReportAsync);
+        var resolution = await FinishAsync(await waiter.WaitAsync(SentinelTimeout, ct), ct);
+        if (!resolution.Finished)
         {
-            return; // slept until the next cycle, or the session died and restarts next iteration
+            resolution = await ladder.ClimbAsync(pairing, waiter, ct);
         }
 
-        // Rung 1: nudge exactly once, then a shorter grace.
-        await ReportAsync(NudgeReport, ct);
-        await env.InjectNudgeAsync(pairing, ct);
-        result = await wait.AwaitAsync(NudgeGrace);
-        if (await TryFinishAsync(result, ct))
-        {
-            return;
-        }
-
-        // Probe once more before skipping: the agent may have resumed writing during or after the nudge grace.
-        result = await wait.ExtendWhileLiveAsync(result);
-        if (await TryFinishAsync(result, ct))
-        {
-            return;
-        }
-
-        // Rung 2: the nudge did not unstick it - force the leased work failed so the next cycle can move on.
-        await ReportAsync(SkipReport, ct);
-        await env.InjectSkipAsync(pairing, ct);
-        result = await wait.AwaitAsync(NudgeGrace);
-        if (await TryFinishAsync(result, ct))
-        {
-            return;
-        }
-
-        // Rung 3: still wedged - kill for a clean restart, and back off once repeated kills prove the install is broken.
-        ConsecutiveTimeouts++;
-        await ReportAsync(KillReport, ct);
-        env.StopSession();
-        if (ConsecutiveTimeouts >= BackoffThreshold)
-        {
-            await ReportAsync(BackoffReport, ct);
-            await env.SleepAsync(BackoffDelay, ct);
-        }
+        return resolution.Sleep;
     }
 
-    private static bool IsWedge(PilotWaitResult result) =>
-        result.Outcome is PilotWaitOutcome.Timeout or PilotWaitOutcome.StallDetected;
+    /// <summary>
+    /// On resume after a host restart, primes the completion baseline from a fresh probe and returns how much of a
+    /// previously announced inter-cycle sleep is still owed, so a restart does not skip a planned break.
+    /// </summary>
+    public async Task<TimeSpan> PrimeResumeAsync(CancellationToken ct) =>
+        completion.PrimeResume(await ProbeAsync(ct));
 
-    // Best-effort like ReportAsync: a probe that throws or returns null is treated as "not fresh" so the ladder runs.
-    private async Task<bool> IsActivityFreshAsync(CancellationToken ct)
+    /// <summary>Interprets a wait result: finish on a sentinel or a dead session, otherwise let the ladder climb.</summary>
+    private async Task<CycleResolution> FinishAsync(PilotWaitResult result, CancellationToken ct)
+    {
+        // The session died on its own; the next iteration restarts it, so no intervention is owed -
+        // unless it keeps dying on startup (broken install/auth), which must back off, not hot-loop every ~15s.
+        if (result.Outcome == PilotWaitOutcome.SessionExited)
+        {
+            ConsecutiveSessionExits++;
+            if (ConsecutiveSessionExits >= BackoffThreshold)
+            {
+                await ReportAsync(PilotReports.ExitBackoff, ct);
+                await env.SleepAsync(BackoffDelay, ct);
+                ConsecutiveSessionExits = 0;
+            }
+            return CycleResolution.LoopNow;
+        }
+
+        if (result.Outcome != PilotWaitOutcome.Sentinel)
+        {
+            return CycleResolution.Climb; // Timeout or a stuck heuristic fired: climb the ladder.
+        }
+
+        ladder.Reset();
+        ConsecutiveSessionExits = 0;
+        LastCycleAt = DateTimeOffset.UtcNow;
+        LastCycleStatus = result.Cycle.Status;
+        return CycleResolution.SleepFor(TimeSpan.FromSeconds(ClampSleep(result.Cycle.SleepSeconds)));
+    }
+
+    // Best-effort probe: swallows a probe that throws or returns null; caller cancellation propagates.
+    private async Task<PilotActivitySnapshot?> ProbeAsync(CancellationToken ct)
     {
         try
         {
-            var lastActivity = await env.GetLastActivityAsync(ct);
-            return lastActivity is { } at && DateTimeOffset.UtcNow - at < LivenessWindow;
+            return await env.GetActivityAsync(ct);
         }
         catch (Exception ex) when (!Cancellation.IsCallerCancellation(ex, ct))
         {
-            return false;
+            return null;
         }
     }
 
@@ -149,70 +158,6 @@ public sealed class PilotCycleRunner(IPilotRuntime env)
         }
         catch (Exception ex) when (!Cancellation.IsCallerCancellation(ex, ct))
         {
-        }
-    }
-
-    /// <summary>Ends the cycle on a sentinel (sleep) or a dead session; returns false to climb the next ladder rung.</summary>
-    private async Task<bool> TryFinishAsync(PilotWaitResult result, CancellationToken ct)
-    {
-        // The session died on its own; the next iteration restarts it, so no intervention is owed -
-        // unless it keeps dying on startup (broken install/auth), which must back off, not hot-loop every ~15s.
-        if (result.Outcome == PilotWaitOutcome.SessionExited)
-        {
-            ConsecutiveSessionExits++;
-            if (ConsecutiveSessionExits >= BackoffThreshold)
-            {
-                await ReportAsync(ExitBackoffReport, ct);
-                await env.SleepAsync(BackoffDelay, ct);
-                ConsecutiveSessionExits = 0;
-            }
-            return true;
-        }
-
-        if (result.Outcome != PilotWaitOutcome.Sentinel)
-        {
-            return false; // Timeout or a stall heuristic fired: ask the user.
-        }
-
-        ConsecutiveTimeouts = 0;
-        ConsecutiveSessionExits = 0;
-        LastCycleAt = DateTimeOffset.UtcNow;
-        LastCycleStatus = result.Cycle.Status;
-        await env.SleepAsync(TimeSpan.FromSeconds(ClampSleep(result.Cycle.SleepSeconds)), ct);
-        return true;
-    }
-
-    // Owns one cycle's wait-budget accounting and the once-per-cycle extend journal. A class, not a struct: its
-    // async methods mutate these fields across awaits, which a struct would lose to state-machine copies.
-    private sealed class CycleWait(PilotCycleRunner loop, CancellationToken ct)
-    {
-        private TimeSpan totalWaited;
-        private bool extended;
-
-        // Awaits one sentinel window and books it against the cycle's hard cap.
-        public async Task<PilotWaitResult> AwaitAsync(TimeSpan window)
-        {
-            var result = await loop.env.AwaitSentinelAsync(window, ct);
-            totalWaited += window;
-            return result;
-        }
-
-        // Re-awaits while the wedge coincides with fresh server activity and the cycle stays under MaxCycleWait,
-        // journaling the extension once; returns once the cycle finishes, activity goes stale, or the cap is hit.
-        public async Task<PilotWaitResult> ExtendWhileLiveAsync(PilotWaitResult current)
-        {
-            while (IsWedge(current) && totalWaited < MaxCycleWait && await loop.IsActivityFreshAsync(ct))
-            {
-                if (!extended)
-                {
-                    await loop.ReportAsync(ExtendReport, ct);
-                    extended = true;
-                }
-
-                current = await AwaitAsync(SentinelTimeout);
-            }
-
-            return current;
         }
     }
 }

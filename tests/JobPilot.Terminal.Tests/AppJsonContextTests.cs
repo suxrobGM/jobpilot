@@ -1,11 +1,38 @@
 using System.Text.Json;
 using JobPilot.Terminal.Contracts;
+using JobPilot.Terminal.Pilot;
 using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
 public class AppJsonContextTests
 {
+    [Fact]
+    public void PilotActivityResponse_DeserializesTheLastCycleTheServerSends()
+    {
+        var response = JsonSerializer.Deserialize(
+            """{"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"cycleId":"1f2e3d4c-5b6a-7089-90ab-cdef01234567","completedAt":"2026-07-19T18:30:00Z","status":"empty","sleepSeconds":3600}}""",
+            AppJsonContext.Default.PilotActivityResponse);
+
+        Assert.NotNull(response);
+        Assert.Equal(new DateTimeOffset(2026, 7, 19, 18, 34, 43, TimeSpan.Zero), response!.LastActivityAt);
+        Assert.NotNull(response.LastCycle);
+        Assert.Equal("1f2e3d4c-5b6a-7089-90ab-cdef01234567", response.LastCycle!.CycleId);
+        Assert.Equal("empty", response.LastCycle.Status);
+        Assert.Equal(3600, response.LastCycle.SleepSeconds);
+    }
+
+    [Fact]
+    public void PilotActivityResponse_LeavesLastCycleNull_WhenTheUserHasNoCompletedCycleYet()
+    {
+        var response = JsonSerializer.Deserialize(
+            """{"lastActivityAt":null,"lastCycle":null}""", AppJsonContext.Default.PilotActivityResponse);
+
+        Assert.NotNull(response);
+        Assert.Null(response!.LastActivityAt);
+        Assert.Null(response.LastCycle);
+    }
+
     [Fact]
     public void TerminalClientMessage_DeserializesTheInputEnvelopeTheBrowserSends()
     {

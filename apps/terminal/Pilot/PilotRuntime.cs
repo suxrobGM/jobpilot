@@ -14,20 +14,20 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
     private static readonly TimeSpan StartupGrace = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan MismatchPoll = TimeSpan.FromSeconds(5);
 
-    // Nudge and skip are graduated unstick directives; the skip forces the leased work failed so the cycle moves on.
-    private const string NudgeCommand =
-        "You appear stuck. Release your lease, journal the failure, and print the cycle sentinel.";
+    // Check-in and skip are graduated unstick directives; the skip forces the claimed task failed so the cycle moves on.
+    private const string CheckInCommand =
+        "Checking in: you appear stuck. Release your claim, journal the failure, and print the cycle sentinel.";
     private const string SkipCommand =
-        "Stop the current action. Record the leased work as failed, journal why, and print the cycle sentinel.";
+        "Stop the current action. Record the claimed task as failed, journal why, and print the cycle sentinel.";
 
     private readonly SessionManager session;
     private readonly PilotStore store;
     private readonly PilotApiClient api;
     private readonly ILogger<PilotRuntime> logger;
     private readonly SentinelParser parser = new();
-    private readonly StallDetector stall = new();
+    private readonly StuckDetector stuck = new();
 
-    // Same output event TerminalHub taps; a single-reader channel merges sentinels and stalls into one await.
+    // Same output event TerminalHub taps; a single-reader channel merges sentinels and stuck signals into one await.
     // Not single-writer: the PTY thread writes signals while the coordinator re-enqueues drained sentinels.
     private readonly Channel<WaitSignal> signals = Channel.CreateUnbounded<WaitSignal>(
         new UnboundedChannelOptions { SingleReader = true });
@@ -56,22 +56,22 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
     public async Task InjectCycleAsync(PilotPairing pairing, CancellationToken ct)
     {
         DrainSignals();  // Discard any signal buffered before this injection so the await only sees the new cycle.
-        stall.Reset();
+        stuck.Reset();
         var command = TerminalProviders.FormatSkillCommand(pairing.Provider, PilotSkill);
         await InjectAsync(command, pairing.Provider, "cycle", ct);
     }
 
-    public Task InjectNudgeAsync(PilotPairing pairing, CancellationToken ct)
+    public Task InjectCheckInAsync(PilotPairing pairing, CancellationToken ct)
     {
-        stall.Reset();
-        DrainStalledSignals();
-        return InjectAsync(NudgeCommand, pairing.Provider, "nudge", ct);
+        stuck.Reset();
+        DrainStuckSignals();
+        return InjectAsync(CheckInCommand, pairing.Provider, "check-in", ct);
     }
 
     public Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct)
     {
-        stall.Reset();
-        DrainStalledSignals();
+        stuck.Reset();
+        DrainStuckSignals();
         return InjectAsync(SkipCommand, pairing.Provider, "skip", ct);
     }
 
@@ -108,7 +108,7 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
             var signal = await signals.Reader.ReadAsync(timeoutCts.Token);
             return signal.Cycle is { } cycle
                 ? PilotWaitResult.Sentinel(cycle)
-                : PilotWaitResult.Stalled;
+                : PilotWaitResult.Stuck;
         }
         catch (OperationCanceledException)
         {
@@ -148,10 +148,10 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
         }
     }
 
-    public async Task<DateTimeOffset?> GetLastActivityAsync(CancellationToken ct)
+    public async Task<PilotActivitySnapshot?> GetActivityAsync(CancellationToken ct)
     {
         var pairing = store.Current;
-        return pairing is null ? null : await api.GetLastActivityAsync(pairing.ApiUrl, pairing.ApiToken, ct);
+        return pairing is null ? null : await api.GetActivityAsync(pairing.ApiUrl, pairing.ApiToken, ct);
     }
 
     private void OnOutput(byte[] data)
@@ -170,18 +170,18 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
             signals.Writer.TryWrite(WaitSignal.Sentinel(cycle));
         }
 
-        // A completed cycle clears stall evidence before the next one accumulates its own.
+        // A completed cycle clears stuck evidence before the next one accumulates its own.
         if (sawSentinel)
         {
-            stall.Reset();
+            stuck.Reset();
             return;
         }
 
-        var reason = stall.Feed(data, DateTimeOffset.UtcNow);
-        if (reason != PilotStallReason.None)
+        var reason = stuck.Feed(data, DateTimeOffset.UtcNow);
+        if (reason != PilotStuckReason.None)
         {
-            logger.LogDebug("Pilot stall heuristic fired ({Reason}).", reason);
-            signals.Writer.TryWrite(WaitSignal.Stalled);
+            logger.LogDebug("Pilot stuck heuristic fired ({Reason}).", reason);
+            signals.Writer.TryWrite(WaitSignal.Stuck);
         }
     }
 
@@ -192,9 +192,9 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
         }
     }
 
-    // Stall evidence re-armed during the ladder's report+inject gap would instantly consume the next grace, but a
-    // real cycle sentinel racing in during that gap must survive, so only Stalled signals are discarded.
-    private void DrainStalledSignals()
+    // Stuck evidence re-armed during the ladder's report+inject gap would instantly consume the next grace, but a
+    // real cycle sentinel racing in during that gap must survive, so only stuck signals are discarded.
+    private void DrainStuckSignals()
     {
         List<WaitSignal>? sentinels = null;
         while (signals.Reader.TryRead(out var signal))
@@ -216,11 +216,11 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
 
     public void Dispose() => session.Output -= OnOutput;
 
-    /// <summary>A sentinel cycle or a fired stall heuristic, merged onto one channel so the await sees whichever wins.</summary>
+    /// <summary>A sentinel cycle or a fired stuck heuristic, merged onto one channel so the await sees whichever wins.</summary>
     private readonly record struct WaitSignal(PilotCycle? Cycle)
     {
         public static WaitSignal Sentinel(PilotCycle cycle) => new(cycle);
 
-        public static readonly WaitSignal Stalled = new(null);
+        public static readonly WaitSignal Stuck = new(null);
     }
 }

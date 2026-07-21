@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 
 namespace JobPilot.Terminal.Pilot;
 
-/// <summary>Why a deterministic stall heuristic fired.</summary>
-public enum PilotStallReason
+/// <summary>Why a deterministic stuck heuristic fired.</summary>
+public enum PilotStuckReason
 {
     None,
 
@@ -16,11 +16,11 @@ public enum PilotStallReason
 }
 
 /// <summary>
-/// Cheap, deterministic wedge detection fed the same PTY chunks as <see cref="SentinelParser"/>. Two signals fire
+/// Cheap, deterministic stuck detection fed the same PTY chunks as <see cref="SentinelParser"/>. Two signals fire
 /// earlier than the 20-minute sentinel cap: an identical output line looping, or a burst of error-shaped lines.
 /// Pure of PTY/timing details (the caller supplies <c>now</c>) so the thresholds are unit-testable.
 /// </summary>
-public sealed partial class StallDetector
+public sealed partial class StuckDetector
 {
     // The same normalized line recurring this many times across this window signals a wedged agent redraw loop.
     public const int RepeatThreshold = 6;
@@ -33,6 +33,10 @@ public sealed partial class StallDetector
     // A real retry loop repeats a few lines; varied error-shaped narration does not. Require the burst to collapse
     // to at most this many distinct normalized lines so job text and prose that merely mention errors do not fire.
     public const int MaxDistinctErrorLines = 2;
+
+    // A TUI diff-repaint can echo one on-screen error line many times in a burst. Only count an error line when it
+    // differs from the last counted one or at least this long has passed, so a repaint burst cannot fire on its own.
+    public static readonly TimeSpan ErrorEchoDedupe = TimeSpan.FromSeconds(2);
 
     // Cap the compared tail so a very long single line still matches its own repeats cheaply.
     private const int MaxLineChars = 512;
@@ -51,7 +55,7 @@ public sealed partial class StallDetector
     [GeneratedRegex(@"\s+")]
     private static partial Regex WhitespacePattern();
 
-    // Feed runs on the PTY read thread while Reset comes from the conductor; unsynchronized mutation could
+    // Feed runs on the PTY read thread while Reset comes from the coordinator; unsynchronized mutation could
     // corrupt a collection and the throw would kill the read loop through OnOutput's unfiltered path.
     private readonly Lock gate = new();
 
@@ -60,10 +64,12 @@ public sealed partial class StallDetector
     private string? lastLine;
     private int repeatCount;
     private DateTimeOffset repeatStart;
+    private string? lastErrorLine;
+    private DateTimeOffset lastErrorTime;
     private int scanned; // Prefix of pending already searched for '\n', so newline-free feeds are not rescanned from 0.
 
     /// <summary>Feeds a raw output chunk; returns the first heuristic that fired this feed, or <c>None</c>.</summary>
-    public PilotStallReason Feed(ReadOnlySpan<byte> chunk, DateTimeOffset now)
+    public PilotStuckReason Feed(ReadOnlySpan<byte> chunk, DateTimeOffset now)
     {
         // ASCII sentinel/ANSI framing; a UTF-8 split only mangles surrounding non-ASCII, never the match.
         var text = Encoding.UTF8.GetString(chunk);
@@ -72,7 +78,7 @@ public sealed partial class StallDetector
         {
             pending.Append(text);
 
-            var fired = PilotStallReason.None;
+            var fired = PilotStuckReason.None;
             int newline;
             while ((newline = IndexOf(pending, '\n', scanned)) >= 0)
             {
@@ -87,7 +93,7 @@ public sealed partial class StallDetector
                 }
 
                 var signal = Observe(normalized, now);
-                if (signal != PilotStallReason.None && fired == PilotStallReason.None)
+                if (signal != PilotStuckReason.None && fired == PilotStuckReason.None)
                 {
                     fired = signal; // Return the first crossing; residual lines still update counters for the next feed.
                 }
@@ -113,24 +119,33 @@ public sealed partial class StallDetector
             errorTimes.Clear();
             lastLine = null;
             repeatCount = 0;
+            lastErrorLine = null;
             scanned = 0;
         }
     }
 
-    private PilotStallReason Observe(string line, DateTimeOffset now)
+    private PilotStuckReason Observe(string line, DateTimeOffset now)
     {
         if (ErrorPattern().IsMatch(line))
         {
-            errorTimes.Enqueue((now, line));
-            while (errorTimes.Count > 0 && now - errorTimes.Peek().Time > ErrorWindow)
-            {
-                errorTimes.Dequeue();
-            }
+            // A repaint echo of the same line within the dedupe window is one on-screen line, not a fresh retry.
+            var echo = line == lastErrorLine && now - lastErrorTime < ErrorEchoDedupe;
+            lastErrorLine = line;
+            lastErrorTime = now;
 
-            if (errorTimes.Count >= ErrorThreshold && DistinctErrorLines() <= MaxDistinctErrorLines)
+            if (!echo)
             {
-                errorTimes.Clear(); // Re-arm: a second burst must re-accumulate before firing again.
-                return PilotStallReason.ErrorLoop;
+                errorTimes.Enqueue((now, line));
+                while (errorTimes.Count > 0 && now - errorTimes.Peek().Time > ErrorWindow)
+                {
+                    errorTimes.Dequeue();
+                }
+
+                if (errorTimes.Count >= ErrorThreshold && DistinctErrorLines() <= MaxDistinctErrorLines)
+                {
+                    errorTimes.Clear(); // Re-arm: a second burst must re-accumulate before firing again.
+                    return PilotStuckReason.ErrorLoop;
+                }
             }
         }
 
@@ -141,7 +156,7 @@ public sealed partial class StallDetector
             {
                 repeatCount = 1; // Re-arm from this occurrence so the next fire needs a fresh run.
                 repeatStart = now;
-                return PilotStallReason.RepeatedOutput;
+                return PilotStuckReason.RepeatedOutput;
             }
         }
         else
@@ -151,7 +166,7 @@ public sealed partial class StallDetector
             repeatStart = now;
         }
 
-        return PilotStallReason.None;
+        return PilotStuckReason.None;
     }
 
     // Small window (bounded by ErrorThreshold-ish arrivals), so a plain distinct count reads clearer than a HashSet.
