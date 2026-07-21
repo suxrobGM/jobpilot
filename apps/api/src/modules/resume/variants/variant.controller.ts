@@ -12,6 +12,7 @@ const svc = container.resolve(ResumeVariantService);
 
 export const resumeVariantController = new Elysia({
   name: "resume-variants",
+  prefix: "/resumes",
   detail: { tags: ["Resumes"] },
 })
   .use(authGuard)

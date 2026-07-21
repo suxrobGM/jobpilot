@@ -18,7 +18,7 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   config: cfg(),
   openQuestions: 0,
   answeredQuestions: [],
-  activeLeases: 0,
+  activeClaims: 0,
   approvedJobs: [],
   appliedToday: 0,
   dueQueries: [],

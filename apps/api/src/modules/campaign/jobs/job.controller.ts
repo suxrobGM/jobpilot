@@ -25,6 +25,7 @@ const svc = container.resolve(CampaignJobService);
 
 export const campaignJobController = new Elysia({
   name: "campaign-jobs",
+  prefix: "/campaigns",
   detail: { tags: ["Campaigns"] },
 })
   .use(authGuard)

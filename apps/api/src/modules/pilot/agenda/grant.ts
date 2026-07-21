@@ -11,8 +11,8 @@ interface GrantGate {
 
 /**
  * Grant gates for kinds whose leasability depends on a mutable row state the agent must not be
- * trusted to assert (a promo.post/networking.send lease requires the row still `approved`, a
- * campaign.scorePending lease requires an in-progress campaign with unscored rows). Config-derived
+ * trusted to assert (a promo.post/networking.send claim requires the row still `approved`, a
+ * campaign.scorePending claim requires an in-progress campaign with unscored rows). Config-derived
  * kinds (e.g. strategy.bootstrap) have no entry here and fall through as leasable.
  */
 const GRANT_GATES: Record<string, GrantGate> = {

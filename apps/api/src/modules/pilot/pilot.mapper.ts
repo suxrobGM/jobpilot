@@ -1,18 +1,18 @@
 import {
+  type PilotClaim,
   type PilotInstructionsConfig,
-  type PilotLease,
+  type PilotQuestion,
   type PilotState,
   type Promotion,
-  pilotLeaseSchema,
-  type Question,
+  pilotClaimSchema,
 } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { reviveJsonDates } from "@/common/json";
 import type {
-  PilotLease as PilotLeaseModel,
+  PilotClaim as PilotClaimModel,
+  PilotQuestion as PilotQuestionModel,
   PilotState as PilotStateModel,
   PromotionPost as PromotionPostModel,
-  Question as QuestionModel,
 } from "@/generated/prisma/client";
 
 export function toPilotState(
@@ -36,7 +36,7 @@ export function toPilotState(
   };
 }
 
-export function toQuestion(row: QuestionModel): Question {
+export function toPilotQuestion(row: PilotQuestionModel): PilotQuestion {
   return {
     ...row,
     kind: row.kind === "two_factor" ? "2fa" : row.kind,
@@ -61,6 +61,6 @@ export function toPromotion(row: PromotionPostModel): Promotion {
   };
 }
 
-export function toPilotLease(row: PilotLeaseModel): PilotLease {
-  return pilotLeaseSchema.parse({ ...row, payload: reviveJsonDates(row.payload) });
+export function toPilotClaim(row: PilotClaimModel): PilotClaim {
+  return pilotClaimSchema.parse({ ...row, payload: reviveJsonDates(row.payload) });
 }

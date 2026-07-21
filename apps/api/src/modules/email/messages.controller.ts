@@ -21,6 +21,7 @@ const sync = container.resolve(EmailSyncService);
 
 /** Inbox messages (list/get/scan/approve/deny), inbound sync, and the events stream. */
 export const emailMessagesController = new Elysia({
+  prefix: "/email",
   detail: { tags: ["Email"] },
 })
   .use(authGuard)

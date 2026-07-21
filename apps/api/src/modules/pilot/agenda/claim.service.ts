@@ -1,26 +1,26 @@
-import { type ReleasePilotLeaseInput } from "@jobpilot/contracts/pilot";
+import { type ReleasePilotClaimInput } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { z } from "zod/v4";
 import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import { toPilotLease } from "../pilot.mapper";
+import { toPilotClaim } from "../pilot.mapper";
 import { verifyGrant } from "./grant";
 import { parseJobPayload } from "./job-mutations";
 import { parseAgendaSnapshot } from "./service";
 
-const LEASE_TTL_MS = 15 * 60 * 1000;
+const CLAIM_TTL_MS = 15 * 60 * 1000;
 
-/** Atomically claims versioned agenda items and manages lease heartbeats and release. */
+/** Atomically claims versioned agenda items and manages claim heartbeats and release. */
 @singleton()
-export class LeaseService {
+export class ClaimService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly campaignJobs: CampaignJobService,
   ) {}
 
-  async lease(userId: string, agendaVersion: string, itemId: string) {
+  async claim(userId: string, agendaVersion: string, itemId: string) {
     const result = await this.prisma.$transaction(async (tx) => {
       const now = new Date();
       const locked = await tx.pilotState.updateMany({
@@ -38,11 +38,11 @@ export class LeaseService {
           select: { enabled: true },
         });
         if (!current?.enabled) throw conflict("Pilot is disabled.");
-        throw conflict("Agenda snapshot is stale; refresh it before leasing.");
+        throw conflict("Agenda snapshot is stale; refresh it before claiming.");
       }
       const state = await tx.pilotState.findUniqueOrThrow({ where: { userId } });
       if (!state.agendaSnapshot) {
-        throw conflict("Agenda snapshot is stale; refresh it before leasing.");
+        throw conflict("Agenda snapshot is stale; refresh it before claiming.");
       }
       const item = parseAgendaSnapshot(state.agendaSnapshot).items.find(
         (candidate) => candidate.id === itemId,
@@ -50,8 +50,8 @@ export class LeaseService {
       if (!item) throw conflict("Agenda item is no longer available.");
 
       // Safe as a read-then-write: the pilotState update above locks this user's row for the
-      // rest of the transaction, so concurrent lease() calls for one user serialize here.
-      const open = await tx.pilotLease.findFirst({
+      // rest of the transaction, so concurrent claim() calls for one user serialize here.
+      const open = await tx.pilotClaim.findFirst({
         where: {
           userId,
           kind: item.kind,
@@ -61,7 +61,7 @@ export class LeaseService {
         },
         select: { id: true },
       });
-      if (open) throw conflict("This item is already leased.");
+      if (open) throw conflict("This item is already claimed.");
 
       await verifyGrant(tx, userId, item.kind, item.subjectId);
       let claimedJob = null;
@@ -73,17 +73,17 @@ export class LeaseService {
           item.payload.jobKey,
         );
       }
-      const lease = await tx.pilotLease.create({
+      const claim = await tx.pilotClaim.create({
         data: {
           userId,
           kind: item.kind,
           subjectType: item.subjectType,
           subjectId: item.subjectId,
           payload: toInputJson(item.payload),
-          expiresAt: new Date(now.getTime() + LEASE_TTL_MS),
+          expiresAt: new Date(now.getTime() + CLAIM_TTL_MS),
         },
       });
-      return { lease, item, claimedJob };
+      return { claim, item, claimedJob };
     });
     if (result.claimedJob && result.item.kind === "job.apply") {
       this.campaignJobs.publishClaimedJob(
@@ -92,31 +92,31 @@ export class LeaseService {
         result.claimedJob,
       );
     }
-    return toPilotLease(result.lease);
+    return toPilotClaim(result.claim);
   }
 
   async heartbeat(userId: string, id: string) {
-    const updated = await this.prisma.pilotLease.updateMany({
+    const updated = await this.prisma.pilotClaim.updateMany({
       where: { id, userId, releasedAt: null },
-      data: { heartbeatAt: new Date(), expiresAt: new Date(Date.now() + LEASE_TTL_MS) },
+      data: { heartbeatAt: new Date(), expiresAt: new Date(Date.now() + CLAIM_TTL_MS) },
     });
     if (updated.count === 0) {
-      const existing = await this.prisma.pilotLease.findFirst({ where: { id, userId } });
-      if (!existing) await findOwned(() => Promise.resolve(null), { id, userId }, "Lease");
-      throw conflict("Lease is already released.");
+      const existing = await this.prisma.pilotClaim.findFirst({ where: { id, userId } });
+      if (!existing) await findOwned(() => Promise.resolve(null), { id, userId }, "Claim");
+      throw conflict("Claim is already released.");
     }
-    return toPilotLease(await this.prisma.pilotLease.findUniqueOrThrow({ where: { id } }));
+    return toPilotClaim(await this.prisma.pilotClaim.findUniqueOrThrow({ where: { id } }));
   }
 
-  async release(userId: string, id: string, body: ReleasePilotLeaseInput) {
+  async release(userId: string, id: string, body: ReleasePilotClaimInput) {
     const existing = await findOwned(
-      (where) => this.prisma.pilotLease.findFirst({ where }),
+      (where) => this.prisma.pilotClaim.findFirst({ where }),
       { id, userId },
-      "Lease",
+      "Claim",
     );
     if (existing.releasedAt) {
-      if (existing.outcome === body.outcome) return toPilotLease(existing);
-      throw conflict(`Lease already released with outcome ${existing.outcome}.`);
+      if (existing.outcome === body.outcome) return toPilotClaim(existing);
+      throw conflict(`Claim already released with outcome ${existing.outcome}.`);
     }
     const payload = z.record(z.string(), z.json()).parse(existing.payload);
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -132,7 +132,7 @@ export class LeaseService {
           data: { status: "approved" },
         });
       }
-      const changed = await tx.pilotLease.updateMany({
+      const changed = await tx.pilotClaim.updateMany({
         where: { id, userId, releasedAt: null },
         data: {
           releasedAt: new Date(),
@@ -140,9 +140,9 @@ export class LeaseService {
           payload: toInputJson(body.note ? { ...payload, releaseNote: body.note } : payload),
         },
       });
-      if (changed.count === 0) throw conflict("Lease was released concurrently.");
-      return tx.pilotLease.findUniqueOrThrow({ where: { id } });
+      if (changed.count === 0) throw conflict("Claim was released concurrently.");
+      return tx.pilotClaim.findUniqueOrThrow({ where: { id } });
     });
-    return toPilotLease(updated);
+    return toPilotClaim(updated);
   }
 }

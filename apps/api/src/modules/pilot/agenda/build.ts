@@ -114,7 +114,7 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
     items: capped,
     counts: {
       openQuestions: input.openQuestions,
-      activeLeases: input.activeLeases,
+      activeClaims: input.activeClaims,
       approvedJobs: input.approvedJobs.length,
       appliedToday: input.appliedToday,
     },

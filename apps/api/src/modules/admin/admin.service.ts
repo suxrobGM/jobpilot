@@ -123,7 +123,7 @@ export class AdminService {
     ]);
 
     const userIds = rows.map((row) => row.userId);
-    const questionRows = await this.prisma.question.groupBy({
+    const questionRows = await this.prisma.pilotQuestion.groupBy({
       by: ["userId"],
       where: { userId: { in: userIds }, status: "open" },
       _count: { _all: true },

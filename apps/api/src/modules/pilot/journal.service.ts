@@ -18,7 +18,7 @@ export class PilotJournalService {
   async appendJournal(userId: string, body: CreatePilotJournalInput) {
     const rows = await this.prisma.$transaction((tx) => writeActivity(tx, userId, body));
     const items = publishActivity(userId, rows);
-    // System entries are how the terminal host surfaces watchdog kills/restarts ("pilot stopped
+    // System entries are how the terminal host surfaces orchestrator restarts ("pilot stopped
     // unexpectedly") - push them so the alert reaches the phone. Fire-and-forget off the hot path.
     for (const entry of items) {
       if (entry.kind === "system") {

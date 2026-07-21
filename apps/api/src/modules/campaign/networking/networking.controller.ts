@@ -18,6 +18,7 @@ const svc = container.resolve(CampaignNetworkingService);
 
 export const campaignNetworkingController = new Elysia({
   name: "campaign-networking",
+  prefix: "/campaigns",
   detail: { tags: ["Campaigns"] },
 })
   .use(authGuard)

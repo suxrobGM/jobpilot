@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { parseCampaignConfig } from "@/modules/campaign/campaign.config";
 import { MAX_PAUSED_REVIEWS, PAUSED_REVIEW_CANDIDATES, PAUSED_REVIEW_RETRY_MS } from "./constants";
-import { latestLeaseBySubject, leaseDamped } from "./gather-jobs";
+import { claimDamped, latestClaimBySubject } from "./gather-jobs";
 import type { AgendaPausedCampaign } from "./types";
 
 /** Paused auto-apply campaigns nobody is working; every other campaign gather sees only `in_progress`. */
@@ -21,7 +21,7 @@ export async function gatherPausedCampaigns(
   const ids = campaigns.map((c) => c.campaignId);
 
   const [questions, latest] = await Promise.all([
-    prisma.question.findMany({
+    prisma.pilotQuestion.findMany({
       where: {
         userId,
         subjectType: "campaign",
@@ -31,7 +31,7 @@ export async function gatherPausedCampaigns(
       take: PAUSED_REVIEW_CANDIDATES,
       select: { subjectId: true, status: true, answeredAt: true },
     }),
-    latestLeaseBySubject(prisma, userId, "campaign.reviewPaused", ids),
+    latestClaimBySubject(prisma, userId, "campaign.reviewPaused", ids),
   ]);
 
   const questionsByCampaign = new Map<string, typeof questions>();
@@ -58,7 +58,7 @@ export async function gatherPausedCampaigns(
     );
     if (decided) continue;
 
-    if (leaseDamped(latest.get(c.campaignId), now, PAUSED_REVIEW_RETRY_MS)) continue;
+    if (claimDamped(latest.get(c.campaignId), now, PAUSED_REVIEW_RETRY_MS)) continue;
 
     out.push({ campaignId: c.campaignId, query: c.query, board, pausedAt: c.updatedAt });
   }

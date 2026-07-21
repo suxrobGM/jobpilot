@@ -68,7 +68,7 @@ describe("PilotJournalService append", () => {
     await svc.appendJournal("p1", {
       entries: [
         { kind: "action", summary: "applied to a job" },
-        { kind: "system", summary: "Pilot stopped unexpectedly (watchdog)" },
+        { kind: "system", summary: "Pilot stopped unexpectedly (orchestrator)" },
       ],
     });
 
@@ -77,7 +77,7 @@ describe("PilotJournalService append", () => {
       userId: "p1",
       payload: {
         title: "Pilot alert",
-        body: "Pilot stopped unexpectedly (watchdog)",
+        body: "Pilot stopped unexpectedly (orchestrator)",
         url: "/pilot",
         tag: "pilot-system",
       },

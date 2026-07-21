@@ -18,6 +18,7 @@ const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const promotionController = new Elysia({
   name: "pilot-promotions",
+  prefix: "/pilot",
   detail: { tags: ["Pilot"] },
 })
   .use(authGuard)

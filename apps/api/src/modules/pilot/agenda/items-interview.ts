@@ -2,7 +2,7 @@ import type { AgendaItem } from "@jobpilot/contracts/pilot";
 import { MAX_INTERVIEW_PREPS, MAX_INTERVIEW_REPLIES, PRIORITY } from "./constants";
 import type { AgendaInterviewPrep, AgendaInterviewReply } from "./types";
 
-/** Availability-reply drafts for interview invites; subject is the email so the lease pairs with it. */
+/** Availability-reply drafts for interview invites; subject is the email so the claim pairs with it. */
 export function buildInterviewReplyItems(replies: AgendaInterviewReply[]): AgendaItem[] {
   return replies.slice(0, MAX_INTERVIEW_REPLIES).map((r) => ({
     id: `interview.reply:${r.emailMessageId}`,

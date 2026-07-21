@@ -9,6 +9,7 @@ const account = container.resolve(EmailAccountService);
 
 /** Mailbox account status, disconnect, and outbound send. */
 export const emailAccountController = new Elysia({
+  prefix: "/email",
   detail: { tags: ["Email"] },
 })
   .use(authGuard)

@@ -69,7 +69,7 @@ export const RATE_LIMITS = {
     message: "Too many CAPTCHA solves in flight. Slow the loop down.",
   },
 
-  /** Pilot polls the agenda once per cycle; burst covers a tight lease-then-repoll loop. */
+  /** Pilot polls the agenda once per cycle; burst covers a tight claim-then-repoll loop. */
   pilotAgenda: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
 
   /** Batched journal writes, several per cycle - the loosest Pilot limit. */
@@ -78,8 +78,8 @@ export const RATE_LIMITS = {
   /** Full-history NDJSON export - heavy (streams every row), user-initiated, rarely needed. */
   pilotJournalExport: { key: byUser, limit: 10, windowMs: HOUR },
 
-  /** Lease/heartbeat/release bookkeeping, a few per worked item. */
-  pilotLease: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
+  /** Claim/heartbeat/release bookkeeping, a few per worked item. */
+  pilotClaim: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
 
   /** User- or agent-driven Pilot mutations (instructions, enable, questions) - infrequent. */
   pilotMutation: { key: byUser, limit: 120, windowMs: HOUR },

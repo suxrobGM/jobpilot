@@ -170,11 +170,11 @@ describe("buildAgenda budget / cap", () => {
 
   it("reports counts from the inputs", () => {
     const agenda = buildAgenda(
-      base({ openQuestions: 2, activeLeases: 1, approvedJobs: [job("j1", 50)], appliedToday: 4 }),
+      base({ openQuestions: 2, activeClaims: 1, approvedJobs: [job("j1", 50)], appliedToday: 4 }),
     );
     expect(agenda.counts).toEqual({
       openQuestions: 2,
-      activeLeases: 1,
+      activeClaims: 1,
       approvedJobs: 1,
       appliedToday: 4,
     });

@@ -17,6 +17,7 @@ const OAUTH_COOKIE_PATH = "/api/email/oauth";
 
 /** Bring-your-own Google OAuth client config + the connect (authorize/callback) flow. */
 export const emailOAuthController = new Elysia({
+  prefix: "/email",
   detail: { tags: ["Email"] },
 })
   .use(authGuard)

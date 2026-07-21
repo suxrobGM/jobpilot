@@ -1,9 +1,10 @@
-import type {
-  AnswerQuestionInput,
-  CreateQuestionInput,
-  QuestionStatus,
-  SetPilotEnabledInput,
-  UpdatePilotInstructionsInput,
+import {
+  type AnswerPilotQuestionInput,
+  type CreatePilotQuestionInput,
+  type PilotQuestionStatus,
+  pilotCycleDetailSchema,
+  type SetPilotEnabledInput,
+  type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
@@ -16,13 +17,13 @@ import {
   PrismaClient,
 } from "@/generated/prisma/client";
 import { parseInstructionsConfig } from "./pilot.instructions";
-import { toPilotState, toQuestion } from "./pilot.mapper";
+import { toPilotQuestion, toPilotState } from "./pilot.mapper";
 import { countAppliedToday } from "./pilot.stats";
 
 /** Expiring unanswered 2FA questions keeps their parked jobs from staying wedged. */
 const TWO_FA_TTL_MS = 5 * 60 * 1000;
 
-function questionExpiry(body: CreateQuestionInput): Date | null {
+function questionExpiry(body: CreatePilotQuestionInput): Date | null {
   if (body.expiresAt) return new Date(body.expiresAt);
   if (body.kind === "2fa") return new Date(Date.now() + TWO_FA_TTL_MS);
   return null;
@@ -97,21 +98,26 @@ export class PilotService {
     return state;
   }
 
-  /** Newest persisted activity lets the terminal distinguish a slow live cycle from a stall. */
+  /** Newest persisted activity lets the terminal distinguish a slow live cycle from a stuck one. */
   async getActivity(userId: string) {
-    // One read for the (few) unreleased leases covers both the newest lease timestamp and the count.
-    const [leases, journalAgg, campaignAgg, jobAgg] = await Promise.all([
-      this.prisma.pilotLease.findMany({
+    // One read for the (few) unreleased claims covers both the newest claim timestamp and the count.
+    const [claims, journalAgg, campaignAgg, jobAgg, cycleEntry] = await Promise.all([
+      this.prisma.pilotClaim.findMany({
         where: { userId, releasedAt: null },
         select: { grantedAt: true, heartbeatAt: true, expiresAt: true },
       }),
       this.prisma.pilotJournalEntry.aggregate({ where: { userId }, _max: { createdAt: true } }),
       this.prisma.campaign.aggregate({ where: { userId }, _max: { updatedAt: true } }),
       this.prisma.job.aggregate({ where: { campaign: { userId } }, _max: { updatedAt: true } }),
+      this.prisma.pilotJournalEntry.findFirst({
+        where: { userId, kind: "cycle" },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        select: { cycleId: true, createdAt: true, detail: true },
+      }),
     ]);
 
     const times = [
-      ...leases.flatMap((l) => [l.grantedAt, l.heartbeatAt]),
+      ...claims.flatMap((c) => [c.grantedAt, c.heartbeatAt]),
       journalAgg._max.createdAt,
       campaignAgg._max.updatedAt,
       jobAgg._max.updatedAt,
@@ -121,14 +127,29 @@ export class PilotService {
       null,
     );
 
-    // Expired-but-unswept leases still count toward lastActivityAt but not as "active".
+    // Old skills wrote `detail: {}`; a parse miss yields null fields rather than throwing.
+    const detail = cycleEntry ? pilotCycleDetailSchema.safeParse(cycleEntry.detail) : null;
+    const lastCycle = cycleEntry
+      ? {
+          cycleId: cycleEntry.cycleId,
+          completedAt: cycleEntry.createdAt,
+          status: detail?.success ? (detail.data.status ?? null) : null,
+          sleepSeconds: detail?.success ? (detail.data.sleepSeconds ?? null) : null,
+        }
+      : null;
+
+    // Expired-but-unswept claims still count toward lastActivityAt but not as "active".
     const now = new Date();
-    return { lastActivityAt, activeLeases: leases.filter((l) => l.expiresAt > now).length };
+    return {
+      lastActivityAt,
+      activeClaims: claims.filter((c) => c.expiresAt > now).length,
+      lastCycle,
+    };
   }
 
-  async createQuestion(userId: string, body: CreateQuestionInput) {
+  async createQuestion(userId: string, body: CreatePilotQuestionInput) {
     const expiresAt = questionExpiry(body);
-    const row = await this.prisma.question.create({
+    const row = await this.prisma.pilotQuestion.create({
       data: {
         userId,
         kind: body.kind === "2fa" ? "two_factor" : body.kind,
@@ -140,7 +161,7 @@ export class PilotService {
         expiresAt,
       },
     });
-    const question = toQuestion(row);
+    const question = toPilotQuestion(row);
     publish(pilotChannel, { userId }, { type: "question.created", question });
     // Fire-and-forget so a slow/failed push never delays the question write.
     void this.push.sendToUser(userId, {
@@ -152,36 +173,36 @@ export class PilotService {
     return question;
   }
 
-  async listQuestions(userId: string, status?: QuestionStatus) {
-    const rows = await this.prisma.question.findMany({
+  async listQuestions(userId: string, status?: PilotQuestionStatus) {
+    const rows = await this.prisma.pilotQuestion.findMany({
       where: { userId, ...(status ? { status } : {}) },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
-    return rows.map(toQuestion);
+    return rows.map(toPilotQuestion);
   }
 
-  async answerQuestion(userId: string, id: string, body: AnswerQuestionInput) {
+  async answerQuestion(userId: string, id: string, body: AnswerPilotQuestionInput) {
     await findOwned(
-      (where) => this.prisma.question.findFirst({ where, select: { id: true } }),
+      (where) => this.prisma.pilotQuestion.findFirst({ where, select: { id: true } }),
       { id, userId },
       "Question",
     );
 
     // Status guard lives in the write: expiry publishes no SSE, so stale web cards and push
     // deep-links can still POST here - never resurrect an expired/cancelled question.
-    const { count } = await this.prisma.question.updateMany({
+    const { count } = await this.prisma.pilotQuestion.updateMany({
       where: { id, userId, status: "open" },
       data: { status: "answered", answer: body.answer, answeredAt: new Date() },
     });
     if (count === 0) throw conflict("Question is no longer open.");
 
     const row = await findOwned(
-      (where) => this.prisma.question.findFirst({ where }),
+      (where) => this.prisma.pilotQuestion.findFirst({ where }),
       { id, userId },
       "Question",
     );
-    const question = toQuestion(row);
+    const question = toPilotQuestion(row);
     publish(pilotChannel, { userId }, { type: "question.answered", question });
     return question;
   }

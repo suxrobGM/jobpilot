@@ -16,8 +16,6 @@ import {
   campaignsQuery,
 } from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
-import { campaignJobController } from "./jobs/job.controller";
-import { campaignNetworkingController } from "./networking/networking.controller";
 
 const svc = container.resolve(CampaignService);
 
@@ -103,6 +101,4 @@ export const campaignController = new Elysia({
           "Streams live campaign status, progress, job, and networking updates without persisting an event log.",
       },
     },
-  )
-  .use(campaignJobController)
-  .use(campaignNetworkingController);
+  );

@@ -6,7 +6,7 @@ export const PRIORITY = {
   interviewReply: 950,
   // Above jobBase + a perfect matchScore (900): a failing board must outrank any apply attempt.
   boardHealth: 920,
-  // Also above 900: a stalled (paused) campaign must not be starved out of a full apply agenda
+  // Also above 900: a stranded (paused) campaign must not be starved out of a full apply agenda
   // by the MAX_ITEMS cap. Below boardHealth/interviewReply: active failures and humans come first.
   reviewPaused: 910,
   jobBase: 800,
@@ -64,7 +64,7 @@ export const MAX_FOLLOWUPS = 2;
 export const MAX_INTERVIEW_REPLIES = 2;
 export const MAX_INTERVIEW_PREPS = 1;
 
-/** After any bootstrap lease, don't re-offer it for a day - stops a failing agent from looping. */
+/** After any bootstrap claim, don't re-offer it for a day - stops a failing agent from looping. */
 export const BOOTSTRAP_RETRY_MS = DAY_MS;
 
 /** One paused-campaign review per agenda; multiple paused campaigns drain over successive cycles. */
@@ -73,17 +73,20 @@ export const MAX_PAUSED_REVIEWS = 1;
 /** Over-fetch for the paused gather: rows come longest-paused first, so suppression rarely rejects this many. */
 export const PAUSED_REVIEW_CANDIDATES = 20;
 
-/** After any paused-review lease, don't re-offer the campaign for a day - damps resume/re-pause loops. */
+/** After any paused-review claim, don't re-offer the campaign for a day - damps resume/re-pause loops. */
 export const PAUSED_REVIEW_RETRY_MS = DAY_MS;
+
+// Crash-recovered work (a claim that ended expired/abandoned, not a deliberate outcome) retries sooner than the full damper.
+export const CRASH_RETRY_MS = 2 * 60 * 60 * 1000;
 
 /** Finalize only idle campaigns: recent job activity means someone may be mid-session on it. */
 export const FINALIZE_IDLE_MS = 10 * 60 * 1000;
 
-/** An `applying` job with no open lease and no update for this long is stranded (crashed driver). */
+/** An `applying` job with no open claim and no update for this long is stranded (crashed driver). */
 export const STALE_APPLYING_MS = 30 * 60 * 1000;
 
-/** Each open apply lease becomes a NOT clause in the stale sweep; the pilot never holds many at once. */
-export const MAX_OPEN_APPLY_LEASES = 20;
+/** Each open apply claim becomes a NOT clause in the stale sweep; the pilot never holds many at once. */
+export const MAX_OPEN_APPLY_CLAIMS = 20;
 
 /** Idle poll cadence has a floor so a tiny `checkIntervalMinutes` can't spin the loop. */
 export const MIN_IDLE_SLEEP_SECONDS = 30;

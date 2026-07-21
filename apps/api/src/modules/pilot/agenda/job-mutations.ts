@@ -12,7 +12,7 @@ const jobPayloadSchema = z.object({
   jobKey: z.string().min(1),
 });
 
-/** Validates the job reference carried by a typed lease payload. */
+/** Validates the job reference carried by a typed claim payload. */
 export function parseJobPayload(payload: unknown) {
   return jobPayloadSchema.parse(payload);
 }

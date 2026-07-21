@@ -14,7 +14,7 @@ function fakePrisma(
       findMany: async () => states,
       count: async () => states.length,
     },
-    question: { groupBy: async () => questions },
+    pilotQuestion: { groupBy: async () => questions },
   } as unknown as PrismaClient;
 }
 

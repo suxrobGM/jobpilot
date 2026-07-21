@@ -7,7 +7,7 @@ import { describe, expect, it } from "bun:test";
 
 describe("AgendaService promotion cadence", () => {
   const platformConfig = {
-    promotion: { platforms: [{ platform: "hn", cadenceDays: 30 }] },
+    promotion: { platforms: [{ platform: "hn", postEveryDays: 30 }] },
   };
 
   it("emits promo.compose for a platform whose cadence is due (no prior post)", async () => {
@@ -182,8 +182,8 @@ describe("AgendaService strategy.bootstrap", () => {
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 
-  it("suppresses bootstrap after a recent bootstrap lease", async () => {
-    const agenda = await service({ bootstrapLease: { id: "l1" } }).refresh("p1");
+  it("suppresses bootstrap after a recent bootstrap claim", async () => {
+    const agenda = await service({ bootstrapClaim: { id: "l1" } }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 

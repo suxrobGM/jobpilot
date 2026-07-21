@@ -3,26 +3,26 @@ import { runExpiry } from "./expiry";
 import { describe, expect, it } from "bun:test";
 
 function setup(options: {
-  leases?: Record<string, unknown>[];
+  claims?: Record<string, unknown>[];
   questions?: Record<string, unknown>[];
-  openApplyLeases?: Record<string, unknown>[];
+  openApplyClaims?: Record<string, unknown>[];
 }) {
   const jobWrites: Record<string, unknown>[] = [];
   const queueWrites: Record<string, unknown>[] = [];
-  const leaseWrites: Record<string, unknown>[] = [];
+  const claimWrites: Record<string, unknown>[] = [];
   const questionWrites: Record<string, unknown>[] = [];
   let transactions = 0;
   const db = {
-    pilotLease: {
-      // The expired-lease scan has no kind filter; the stale-applying sweep reads open job.apply leases.
+    pilotClaim: {
+      // The expired-claim scan has no kind filter; the stale-applying sweep reads open job.apply claims.
       findMany: async (args: { where: { kind?: string } }) =>
-        args.where.kind === "job.apply" ? (options.openApplyLeases ?? []) : (options.leases ?? []),
+        args.where.kind === "job.apply" ? (options.openApplyClaims ?? []) : (options.claims ?? []),
       updateMany: async (args: Record<string, unknown>) => {
-        leaseWrites.push(args);
-        return { count: options.leases?.length ?? 0 };
+        claimWrites.push(args);
+        return { count: options.claims?.length ?? 0 };
       },
     },
-    question: {
+    pilotQuestion: {
       findMany: async () => options.questions ?? [],
       updateMany: async (args: Record<string, unknown>) => {
         questionWrites.push(args);
@@ -55,7 +55,7 @@ function setup(options: {
     run,
     jobWrites,
     queueWrites,
-    leaseWrites,
+    claimWrites,
     questionWrites,
     get transactions() {
       return transactions;
@@ -64,9 +64,9 @@ function setup(options: {
 }
 
 describe("agenda expiry", () => {
-  it("releases an expired lease and reverts its applying job in one transaction", async () => {
+  it("releases an expired claim and reverts its applying job in one transaction", async () => {
     const state = setup({
-      leases: [
+      claims: [
         {
           id: "l1",
           kind: "job.apply",
@@ -77,7 +77,7 @@ describe("agenda expiry", () => {
     });
     await state.run();
     expect(state.transactions).toBe(1);
-    expect(state.leaseWrites[0]).toMatchObject({ data: { outcome: "expired" } });
+    expect(state.claimWrites[0]).toMatchObject({ data: { outcome: "expired" } });
     expect(state.jobWrites[0]).toMatchObject({
       where: { status: "applying", OR: [{ campaignId: "c1", key: "j1" }] },
       data: { status: "approved" },
@@ -96,9 +96,9 @@ describe("agenda expiry", () => {
     expect(state.queueWrites[0]).toMatchObject({ data: { status: "skipped" } });
   });
 
-  it("reverts stale applying jobs while sparing ones under an open apply lease", async () => {
+  it("reverts stale applying jobs while sparing ones under an open apply claim", async () => {
     const state = setup({
-      openApplyLeases: [{ payload: { campaignId: "c1", jobKey: "held" } }],
+      openApplyClaims: [{ payload: { campaignId: "c1", jobKey: "held" } }],
     });
     await state.run();
     const sweep = state.jobWrites.find(

@@ -11,8 +11,8 @@ export interface Recorder {
   recordResult: unknown[][];
   promoteScoredJobs: unknown[][];
   claimJobForApply: unknown[][];
-  leaseCreates: Record<string, unknown>[];
-  leaseUpdates: { data: Record<string, unknown> }[];
+  claimCreates: Record<string, unknown>[];
+  claimUpdates: { data: Record<string, unknown> }[];
   questionUpdates: { data: Record<string, unknown> }[];
   journals: Record<string, unknown>[];
   pushes: { userId: string; payload: PushPayload }[];
@@ -21,33 +21,43 @@ export interface Recorder {
 export interface Over {
   instructionsConfig?: unknown;
   instructionsGoals?: string;
-  expiredLeases?: Record<string, unknown>[];
-  questionLeases?: { subjectId: string }[];
+  expiredClaims?: Record<string, unknown>[];
+  questionClaims?: { subjectId: string }[];
   expiredQuestions?: Record<string, unknown>[];
   answered?: Record<string, unknown>[];
   approvedJobs?: Record<string, unknown>[];
   appliedToday?: number;
-  activeLeases?: number;
+  activeClaims?: number;
   finalizeCampaigns?: Record<string, unknown>[];
   // Score-pending gather (in_progress auto-apply campaigns with unscored pending rows) + its count groupBy.
   scorePendingCampaigns?: Record<string, unknown>[];
   scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
-  // Prior campaign.scorePending leases, gating the per-campaign cooldown.
-  scorePendingLeases?: { subjectId: string; grantedAt: Date; releasedAt: Date | null }[];
-  // Paused-campaign review gather: paused auto-apply campaigns + their questions/lease dampers.
+  // Prior campaign.scorePending claims, gating the per-campaign cooldown. `outcome` drives the crash-retry cap.
+  scorePendingClaims?: {
+    subjectId: string;
+    grantedAt: Date;
+    releasedAt: Date | null;
+    outcome?: string | null;
+  }[];
+  // Paused-campaign review gather: paused auto-apply campaigns + their questions/claim dampers.
   pausedCampaigns?: Record<string, unknown>[];
   campaignQuestions?: { subjectId: string; status: string; answeredAt: Date | null }[];
-  pausedReviewLeases?: { subjectId: string; grantedAt: Date; releasedAt: Date | null }[];
-  // Open job.apply leases protecting in-flight applies from the stale-`applying` sweep.
-  openApplyLeases?: Record<string, unknown>[];
+  pausedReviewClaims?: {
+    subjectId: string;
+    grantedAt: Date;
+    releasedAt: Date | null;
+    outcome?: string | null;
+  }[];
+  // Open job.apply claims protecting in-flight applies from the stale-`applying` sweep.
+  openApplyClaims?: Record<string, unknown>[];
   pilotEnabled?: boolean;
-  // verifyGrant's leasability check for campaign kinds (null = 409, the row left the leasable state).
+  // verifyGrant's claimability check for campaign kinds (null = 409, the row left the claimable state).
   campaignFindFirst?: Record<string, unknown> | null;
   // Scored-but-pending rows swept by promoteScoredPendingJobs (job.findMany with a matchScore filter).
   scoredPendingJobs?: Record<string, unknown>[];
   job?: Record<string, unknown> | null;
   claimCount?: number;
-  activeLease?: Record<string, unknown> | null;
+  activeClaim?: Record<string, unknown> | null;
   inboxIds?: { id: string }[];
   inboxCount?: number;
   approvedNetworking?: Record<string, unknown>[];
@@ -79,12 +89,12 @@ export interface Over {
   actionMarkers?: { subjectId: string | null; detail: unknown }[];
   skipReasonRows?: { campaignId: string; skipReason: string | null; _count: { _all: number } }[];
   // Bootstrap wiring:
-  bootstrapLease?: { id: string } | null;
+  bootstrapClaim?: { id: string } | null;
   pilotBootstrapQuestion?: { id: string } | null;
 }
 
 // Per-model fakes, composed by makeAgendaDb. Each covers every query the agenda pipeline
-// (expiry, gather, lease, digest) issues against that model.
+// (expiry, gather, claim, digest) issues against that model.
 
 function fakePilotState(over: Over) {
   // Networking is opt-in in prod; these compile tests assert networking behavior, so default it on.
@@ -100,27 +110,27 @@ function fakePilotState(over: Over) {
   };
 }
 
-function fakePilotLease(over: Over, rec: Recorder) {
+function fakePilotClaim(over: Over, rec: Recorder) {
   return {
-    // The cooldown gathers read their own lease history by kind; the rest split on subjectType.
+    // The cooldown gathers read their own claim history by kind; the rest split on subjectType.
     findMany: async (args: { where: { subjectType?: string; kind?: string } }) => {
-      if (args.where.kind === "campaign.scorePending") return over.scorePendingLeases ?? [];
-      if (args.where.kind === "campaign.reviewPaused") return over.pausedReviewLeases ?? [];
-      if (args.where.kind === "job.apply") return over.openApplyLeases ?? [];
-      if (args.where.subjectType === "question") return over.questionLeases ?? [];
-      return over.expiredLeases ?? [];
+      if (args.where.kind === "campaign.scorePending") return over.scorePendingClaims ?? [];
+      if (args.where.kind === "campaign.reviewPaused") return over.pausedReviewClaims ?? [];
+      if (args.where.kind === "job.apply") return over.openApplyClaims ?? [];
+      if (args.where.subjectType === "question") return over.questionClaims ?? [];
+      return over.expiredClaims ?? [];
     },
-    count: async () => over.activeLeases ?? 0,
+    count: async () => over.activeClaims ?? 0,
     // Bootstrap-damper lookups filter on kind; everything else is the per-subject uniqueness guard.
     findFirst: async (a: { where: { kind?: string } }) =>
       a.where.kind === "strategy.bootstrap"
-        ? (over.bootstrapLease ?? null)
-        : (over.activeLease ?? null),
+        ? (over.bootstrapClaim ?? null)
+        : (over.activeClaim ?? null),
     update: async (a: { data: Record<string, unknown> }) => {
-      rec.leaseUpdates.push(a);
-      // Full merged row so toPilotLease can map heartbeat/release results.
+      rec.claimUpdates.push(a);
+      // Full merged row so toPilotClaim can map heartbeat/release results.
       return {
-        id: "lease-1",
+        id: "claim-1",
         kind: "job.apply",
         subjectType: "job",
         subjectId: "s1",
@@ -134,13 +144,13 @@ function fakePilotLease(over: Over, rec: Recorder) {
       };
     },
     updateMany: async (a: { data: Record<string, unknown> }) => {
-      rec.leaseUpdates.push(a);
-      return { count: (over.expiredLeases ?? []).length };
+      rec.claimUpdates.push(a);
+      return { count: (over.expiredClaims ?? []).length };
     },
     create: async (a: { data: Record<string, unknown> }) => {
-      rec.leaseCreates.push(a.data);
+      rec.claimCreates.push(a.data);
       return {
-        id: "lease-1",
+        id: "claim-1",
         grantedAt: new Date(),
         heartbeatAt: null,
         releasedAt: null,
@@ -151,7 +161,7 @@ function fakePilotLease(over: Over, rec: Recorder) {
   };
 }
 
-function fakeQuestion(over: Over, rec: Recorder) {
+function fakePilotQuestion(over: Over, rec: Recorder) {
   return {
     count: async () => 0,
     findFirst: async () => over.pilotBootstrapQuestion ?? null,
@@ -261,15 +271,15 @@ function fakePromotionPost(over: Over) {
   };
 }
 
-/** A fake Prisma covering every query the agenda pipeline (expiry, gather, lease, digest) issues. */
+/** A fake Prisma covering every query the agenda pipeline (expiry, gather, claim, digest) issues. */
 export function makeAgendaDb(over: Over = {}) {
   const rec: Recorder = {
     patchJob: [],
     recordResult: [],
     promoteScoredJobs: [],
     claimJobForApply: [],
-    leaseCreates: [],
-    leaseUpdates: [],
+    claimCreates: [],
+    claimUpdates: [],
     questionUpdates: [],
     journals: [],
     pushes: [],
@@ -278,8 +288,8 @@ export function makeAgendaDb(over: Over = {}) {
   let txChain: Promise<unknown> = Promise.resolve();
   const db = {
     pilotState: fakePilotState(over),
-    pilotLease: fakePilotLease(over, rec),
-    question: fakeQuestion(over, rec),
+    pilotClaim: fakePilotClaim(over, rec),
+    pilotQuestion: fakePilotQuestion(over, rec),
     job: fakeJob(over),
     application: fakeApplication(over),
     campaign: fakeCampaign(over),

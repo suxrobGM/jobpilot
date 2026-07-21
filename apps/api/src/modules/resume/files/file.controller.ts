@@ -10,6 +10,7 @@ const svc = container.resolve(ResumeFileService);
 
 export const resumeFileController = new Elysia({
   name: "resume-files",
+  prefix: "/resumes",
   detail: { tags: ["Resumes"] },
 })
   .use(authGuard)

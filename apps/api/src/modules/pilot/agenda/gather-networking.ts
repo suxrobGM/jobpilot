@@ -164,7 +164,7 @@ export async function duePlatforms(
   const due: AgendaPromoPlatform[] = [];
   for (const p of platforms) {
     const newest = newestByPlatform.get(p.platform);
-    const isDue = !newest || now.getTime() - newest.getTime() >= p.cadenceDays * DAY_MS;
+    const isDue = !newest || now.getTime() - newest.getTime() >= p.postEveryDays * DAY_MS;
     if (isDue) due.push({ platform: p.platform, target: p.target });
   }
   return due;

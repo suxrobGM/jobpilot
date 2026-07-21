@@ -4,7 +4,7 @@ export interface AgendaQuestion {
   id: string;
   kind: string;
   prompt: string;
-  // Enrichment so question.answered leases carry the subject and Q/A without the worker re-reading.
+  // Enrichment so question.answered claims carry the subject and Q/A without the worker re-reading.
   subjectType?: string | null;
   subjectId?: string | null;
   answer?: string | null;
@@ -173,7 +173,7 @@ export interface AgendaInput {
   config: PilotInstructionsConfig;
   openQuestions: number;
   answeredQuestions: AgendaQuestion[];
-  activeLeases: number;
+  activeClaims: number;
   approvedJobs: AgendaApprovedJob[];
   appliedToday: number;
   dueQueries: AgendaDueQuery[];

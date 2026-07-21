@@ -5,6 +5,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { parseCampaignConfig } from "@/modules/campaign/campaign.config";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import {
+  CRASH_RETRY_MS,
   GATHER_CAP,
   SCORE_PENDING_BATCH,
   SCORE_PENDING_COOLDOWN_MS,
@@ -62,39 +63,52 @@ export async function gatherApprovedJobs(
     });
 }
 
-/** Newest lease per subject for one kind - one read instead of an N+1 findFirst per subject. */
-export async function latestLeaseBySubject(
+export interface LatestClaim {
+  grantedAt: Date;
+  releasedAt: Date | null;
+  outcome: string | null;
+}
+
+/** Newest claim per subject for one kind - one read instead of an N+1 findFirst per subject. */
+export async function latestClaimBySubject(
   prisma: PrismaClient,
   userId: string,
   kind: string,
   subjectIds: string[],
-): Promise<Map<string, { grantedAt: Date; releasedAt: Date | null }>> {
-  const leases = await prisma.pilotLease.findMany({
+): Promise<Map<string, LatestClaim>> {
+  const claims = await prisma.pilotClaim.findMany({
     where: { userId, kind, subjectId: { in: subjectIds } },
     orderBy: { grantedAt: "desc" },
     take: GATHER_CAP,
-    select: { subjectId: true, grantedAt: true, releasedAt: true },
+    select: { subjectId: true, grantedAt: true, releasedAt: true, outcome: true },
   });
 
-  const latest = new Map<string, { grantedAt: Date; releasedAt: Date | null }>();
+  const latest = new Map<string, LatestClaim>();
 
-  for (const l of leases) {
-    const prev = latest.get(l.subjectId);
-    if (!prev || l.grantedAt > prev.grantedAt) {
-      latest.set(l.subjectId, { grantedAt: l.grantedAt, releasedAt: l.releasedAt });
+  for (const c of claims) {
+    const prev = latest.get(c.subjectId);
+    if (!prev || c.grantedAt > prev.grantedAt) {
+      latest.set(c.subjectId, {
+        grantedAt: c.grantedAt,
+        releasedAt: c.releasedAt,
+        outcome: c.outcome,
+      });
     }
   }
   return latest;
 }
 
-/** An unreleased lease means the work is still running; a recently released one damps a re-run loop. */
-export function leaseDamped(
-  last: { releasedAt: Date | null } | undefined,
-  now: Date,
-  cooldownMs: number,
-): boolean {
+/**
+ * An unreleased claim means the work is still running; a recently released one damps a re-run loop.
+ * Claims that ended `expired`/`abandoned` are crash recovery, not a deliberate decision, so their
+ * cooldown is capped at CRASH_RETRY_MS - crash-recovered work retries within hours, not days.
+ */
+export function claimDamped(last: LatestClaim | undefined, now: Date, cooldownMs: number): boolean {
   if (!last) return false;
-  return last.releasedAt == null || now.getTime() - last.releasedAt.getTime() < cooldownMs;
+  if (last.releasedAt == null) return true;
+  const crashRecovered = last.outcome === "expired" || last.outcome === "abandoned";
+  const cap = crashRecovered ? Math.min(cooldownMs, CRASH_RETRY_MS) : cooldownMs;
+  return now.getTime() - last.releasedAt.getTime() < cap;
 }
 
 /**
@@ -102,7 +116,7 @@ export function leaseDamped(
  * mid-batch abandonment or thin listings. Each carries ≤{@link SCORE_PENDING_BATCH} sampled entries plus
  * the total unscored count; parked-board campaigns are skipped (park keys on the campaign's config board).
  *
- * Rate-limited per campaign off lease history, like {@link dueSavedSearches}: a row nothing can score
+ * Rate-limited per campaign off claim history, like {@link dueSavedSearches}: a row nothing can score
  * (dead URL, login wall) keeps `matchScore: null` forever, and scorePending outranks discovery - without
  * a cooldown that one row would re-win every cycle and starve discovery permanently.
  */
@@ -147,7 +161,7 @@ export async function gatherScorePendingCampaigns(
   });
 
   const countByCampaign = new Map(counts.map((r) => [r.campaignId, r._count._all]));
-  const latest = await latestLeaseBySubject(
+  const latest = await latestClaimBySubject(
     prisma,
     userId,
     "campaign.scorePending",
@@ -162,7 +176,7 @@ export async function gatherScorePendingCampaigns(
     const board = config.board ?? null;
     // A campaign targeting a parked board is suppressed until the user un-parks it.
     if (board && parked.has(board)) continue;
-    if (leaseDamped(latest.get(c.campaignId), now, SCORE_PENDING_COOLDOWN_MS)) continue;
+    if (claimDamped(latest.get(c.campaignId), now, SCORE_PENDING_COOLDOWN_MS)) continue;
     out.push({
       campaignId: c.campaignId,
       query: c.query,
@@ -213,7 +227,7 @@ export async function attachWarmContacts(
   }
 }
 
-/** Saved searches whose cadence has elapsed since their last released discovery lease. */
+/** Saved searches whose cadence has elapsed since their last released discovery claim. */
 export async function dueSavedSearches(
   prisma: PrismaClient,
   userId: string,
@@ -221,7 +235,7 @@ export async function dueSavedSearches(
   now: Date,
 ): Promise<AgendaDueQuery[]> {
   if (config.savedSearches.length === 0) return [];
-  const latest = await latestLeaseBySubject(
+  const latest = await latestClaimBySubject(
     prisma,
     userId,
     "search.discover",
@@ -233,7 +247,7 @@ export async function dueSavedSearches(
   for (const sq of config.savedSearches) {
     // A saved search targeting a parked board is suppressed until the user un-parks it.
     if (sq.board && parked.has(sq.board)) continue;
-    if (leaseDamped(latest.get(sq.query), now, sq.cadenceHours * HOUR_MS)) continue;
+    if (claimDamped(latest.get(sq.query), now, sq.checkEveryHours * HOUR_MS)) continue;
     due.push({ query: sq.query, board: sq.board, resumeId: sq.resumeId });
   }
   return due;

@@ -35,7 +35,7 @@ export async function gatherInterviewReplies(
   if (candidates.length === 0) return [];
 
   // Suppress any email that already has a reply draft question (open) or an approved one (answered).
-  const questions = await prisma.question.findMany({
+  const questions = await prisma.pilotQuestion.findMany({
     where: {
       userId,
       subjectType: "email",

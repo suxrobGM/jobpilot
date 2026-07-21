@@ -12,7 +12,7 @@ const snapshot: AgendaResponse = {
   generatedAt: now,
   expiresAt: new Date(now.getTime() + 60_000),
   items: [],
-  counts: { openQuestions: 0, activeLeases: 0, approvedJobs: 0, appliedToday: 0 },
+  counts: { openQuestions: 0, activeClaims: 0, approvedJobs: 0, appliedToday: 0 },
   budget: { dailyApplyCap: 10, appliedToday: 0, capReached: false, resetsAt: now },
   emptyReason: "clear",
   sleepSeconds: 60,

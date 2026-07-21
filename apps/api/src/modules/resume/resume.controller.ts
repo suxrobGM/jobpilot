@@ -5,7 +5,6 @@ import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
 import { deletedResponseSchema, idResponseSchema } from "@/types/response";
-import { resumeFileController } from "./files/file.controller";
 import {
   createResumeSchema,
   resumeDetailSchema,
@@ -15,7 +14,6 @@ import {
 } from "./resume.schema";
 import { ResumeService } from "./resume.service";
 import { readUpload } from "./resume.upload";
-import { resumeVariantController } from "./variants/variant.controller";
 
 const svc = container.resolve(ResumeService);
 
@@ -103,7 +101,4 @@ export const resumeController = new Elysia({
           "Opens a Server-Sent Events stream that emits content-change events for the resume after verifying the active profile owns it.",
       },
     },
-  )
-  // ── Sub-domain controllers (source files + master PDF, variants + tailoring) ───
-  .use(resumeFileController)
-  .use(resumeVariantController);
+  );

@@ -32,7 +32,7 @@ function makeDb(questionOver: Record<string, unknown> = {}) {
     ...questionOver,
   };
   const db = {
-    question: {
+    pilotQuestion: {
       create: async (a: { data: Record<string, unknown> }) => {
         rec.questionCreate = a.data;
         return { ...question, ...a.data };
@@ -131,5 +131,55 @@ describe("PilotService questions", () => {
     });
 
     expect(rec.questionCreate?.expiresAt).toBeNull();
+  });
+});
+
+function activityService(cycleEntry: Record<string, unknown> | null) {
+  const noMax = { _max: { createdAt: null, updatedAt: null } };
+  const db = {
+    pilotClaim: { findMany: async () => [] },
+    pilotJournalEntry: {
+      aggregate: async () => noMax,
+      findFirst: async () => cycleEntry,
+    },
+    campaign: { aggregate: async () => noMax },
+    job: { aggregate: async () => noMax },
+  };
+  return new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] }));
+}
+
+describe("PilotService.getActivity lastCycle", () => {
+  const completedAt = new Date("2026-07-20T12:00:00Z");
+
+  it("maps the newest cycle entry's detail into lastCycle", async () => {
+    const svc = activityService({
+      cycleId: "cyc-1",
+      createdAt: completedAt,
+      detail: { status: "ok", sleepSeconds: 300 },
+    });
+    const { lastCycle } = await svc.getActivity("p1");
+    expect(lastCycle).toEqual({
+      cycleId: "cyc-1",
+      completedAt,
+      status: "ok",
+      sleepSeconds: 300,
+    });
+  });
+
+  it("nulls status and sleepSeconds when detail is malformed (old skills wrote {})", async () => {
+    const svc = activityService({ cycleId: null, createdAt: completedAt, detail: {} });
+    const { lastCycle } = await svc.getActivity("p1");
+    expect(lastCycle).toEqual({
+      cycleId: null,
+      completedAt,
+      status: null,
+      sleepSeconds: null,
+    });
+  });
+
+  it("returns null lastCycle when no cycle entry exists", async () => {
+    const svc = activityService(null);
+    const { lastCycle } = await svc.getActivity("p1");
+    expect(lastCycle).toBeNull();
   });
 });

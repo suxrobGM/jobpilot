@@ -43,10 +43,10 @@ describe("AgendaService campaign.scorePending", () => {
     scorePendingCounts: [{ campaignId: "c1", _count: { _all: 4 } }],
   };
 
-  it("suppresses scorePending while its previous lease is still open", async () => {
+  it("suppresses scorePending while its previous claim is still open", async () => {
     const agenda = await service({
       ...scorePendingOver,
-      scorePendingLeases: [{ subjectId: "c1", grantedAt: new Date(), releasedAt: null }],
+      scorePendingClaims: [{ subjectId: "c1", grantedAt: new Date(), releasedAt: null }],
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(false);
   });
@@ -54,7 +54,7 @@ describe("AgendaService campaign.scorePending", () => {
   it("suppresses scorePending inside the cooldown after the last run released", async () => {
     const agenda = await service({
       ...scorePendingOver,
-      scorePendingLeases: [
+      scorePendingClaims: [
         {
           subjectId: "c1",
           grantedAt: new Date(Date.now() - 20 * 60_000),
@@ -68,7 +68,7 @@ describe("AgendaService campaign.scorePending", () => {
   it("re-emits scorePending once the cooldown has elapsed", async () => {
     const agenda = await service({
       ...scorePendingOver,
-      scorePendingLeases: [
+      scorePendingClaims: [
         {
           subjectId: "c1",
           grantedAt: new Date(Date.now() - 5 * 60 * 60_000),
@@ -142,26 +142,26 @@ describe("AgendaService campaign.reviewPaused", () => {
     expect(agenda.items.some((i) => i.kind === "campaign.reviewPaused")).toBe(true);
   });
 
-  it("suppresses the review while a review lease is open or released within a day", async () => {
+  it("suppresses the review while a review claim is open or released within a day", async () => {
     const open = await service({
       pausedCampaigns: [paused()],
-      pausedReviewLeases: [{ subjectId: "c9", grantedAt: new Date(), releasedAt: null }],
+      pausedReviewClaims: [{ subjectId: "c9", grantedAt: new Date(), releasedAt: null }],
     }).refresh("p1");
     expect(open.items.some((i) => i.kind === "campaign.reviewPaused")).toBe(false);
 
     const recent = await service({
       pausedCampaigns: [paused()],
-      pausedReviewLeases: [
+      pausedReviewClaims: [
         { subjectId: "c9", grantedAt: new Date(), releasedAt: new Date(Date.now() - 60 * 60_000) },
       ],
     }).refresh("p1");
     expect(recent.items.some((i) => i.kind === "campaign.reviewPaused")).toBe(false);
   });
 
-  it("re-emits once the lease damper has elapsed (released >24h ago)", async () => {
+  it("re-emits once the claim damper has elapsed (released >24h ago)", async () => {
     const agenda = await service({
       pausedCampaigns: [paused()],
-      pausedReviewLeases: [
+      pausedReviewClaims: [
         {
           subjectId: "c9",
           grantedAt: new Date(Date.now() - 26 * 60 * 60_000),
@@ -170,6 +170,37 @@ describe("AgendaService campaign.reviewPaused", () => {
       ],
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.reviewPaused")).toBe(true);
+  });
+
+  // Crash recovery (expired/abandoned) caps the 24h damper at CRASH_RETRY_MS (2h), unlike a deliberate outcome.
+  it("re-emits a crash-recovered (expired) review after 2h despite the 24h damper", async () => {
+    const agenda = await service({
+      pausedCampaigns: [paused()],
+      pausedReviewClaims: [
+        {
+          subjectId: "c9",
+          grantedAt: new Date(Date.now() - 4 * 60 * 60_000),
+          releasedAt: new Date(Date.now() - 3 * 60 * 60_000),
+          outcome: "expired",
+        },
+      ],
+    }).refresh("p1");
+    expect(agenda.items.some((i) => i.kind === "campaign.reviewPaused")).toBe(true);
+  });
+
+  it("keeps damping a deliberately-closed (done) review inside the 24h window", async () => {
+    const agenda = await service({
+      pausedCampaigns: [paused()],
+      pausedReviewClaims: [
+        {
+          subjectId: "c9",
+          grantedAt: new Date(Date.now() - 4 * 60 * 60_000),
+          releasedAt: new Date(Date.now() - 3 * 60 * 60_000),
+          outcome: "done",
+        },
+      ],
+    }).refresh("p1");
+    expect(agenda.items.some((i) => i.kind === "campaign.reviewPaused")).toBe(false);
   });
 
   it("suppresses the review for a campaign whose config board is parked", async () => {

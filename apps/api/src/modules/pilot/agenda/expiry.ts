@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import { GATHER_CAP, MAX_OPEN_APPLY_LEASES, STALE_APPLYING_MS } from "./constants";
+import { GATHER_CAP, MAX_OPEN_APPLY_CLAIMS, STALE_APPLYING_MS } from "./constants";
 import { parseJobPayload } from "./job-mutations";
 
 function splitJobSubject(subjectId: string) {
@@ -13,24 +13,24 @@ function splitJobSubject(subjectId: string) {
   };
 }
 
-/** Releases expired leases and questions, returning their subjects to a workable state. */
+/** Releases expired claims and questions, returning their subjects to a workable state. */
 export async function runExpiry(prisma: PrismaClient, userId: string, now: Date): Promise<void> {
   await prisma.$transaction(async (tx) => {
-    const leases = await tx.pilotLease.findMany({
+    const claims = await tx.pilotClaim.findMany({
       where: { userId, releasedAt: null, expiresAt: { lt: now } },
       take: GATHER_CAP,
       select: { id: true, kind: true, subjectId: true, payload: true },
     });
 
-    if (leases.length) {
-      await tx.pilotLease.updateMany({
-        where: { id: { in: leases.map((lease) => lease.id) }, releasedAt: null },
+    if (claims.length) {
+      await tx.pilotClaim.updateMany({
+        where: { id: { in: claims.map((claim) => claim.id) }, releasedAt: null },
         data: { releasedAt: now, outcome: "expired" },
       });
 
-      const jobRefs = leases
-        .filter((lease) => lease.kind === "job.apply")
-        .map((lease) => parseJobPayload(lease.payload));
+      const jobRefs = claims
+        .filter((claim) => claim.kind === "job.apply")
+        .map((claim) => parseJobPayload(claim.payload));
 
       if (jobRefs.length) {
         await tx.job.updateMany({
@@ -44,15 +44,15 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       }
     }
 
-    // Stranded `applying` jobs: the terminal loop takes no lease, so a crashed session leaves the
+    // Stranded `applying` jobs: the terminal loop takes no claim, so a crashed session leaves the
     // job stuck (blocking finalize) with no recovery path. Revert stale ones not covered by an
-    // open pilot lease; the pilot's own in-flight applies are protected by that lease check.
-    const openApplyLeases = await tx.pilotLease.findMany({
+    // open pilot claim; the pilot's own in-flight applies are protected by that claim check.
+    const openApplyClaims = await tx.pilotClaim.findMany({
       where: { userId, kind: "job.apply", releasedAt: null, expiresAt: { gte: now } },
-      take: MAX_OPEN_APPLY_LEASES,
+      take: MAX_OPEN_APPLY_CLAIMS,
       select: { payload: true },
     });
-    const openApplyRefs = openApplyLeases.map((lease) => parseJobPayload(lease.payload));
+    const openApplyRefs = openApplyClaims.map((claim) => parseJobPayload(claim.payload));
 
     await tx.job.updateMany({
       where: {
@@ -64,14 +64,14 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       data: { status: "approved" },
     });
 
-    const questions = await tx.question.findMany({
+    const questions = await tx.pilotQuestion.findMany({
       where: { userId, status: "open", expiresAt: { not: null, lt: now } },
       take: GATHER_CAP,
       select: { id: true, subjectType: true, subjectId: true },
     });
     if (!questions.length) return;
 
-    await tx.question.updateMany({
+    await tx.pilotQuestion.updateMany({
       where: { id: { in: questions.map((question) => question.id) }, status: "open" },
       data: { status: "expired" },
     });

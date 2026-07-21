@@ -1,18 +1,18 @@
 import {
   agendaResponseSchema,
-  answerQuestionSchema,
+  answerPilotQuestionSchema,
+  createPilotClaimSchema,
   createPilotJournalSchema,
-  createPilotLeaseSchema,
-  createQuestionSchema,
+  createPilotQuestionSchema,
   currentAgendaResponseSchema,
+  pilotClaimSchema,
   pilotJournalPageSchema,
   pilotJournalQuerySchema,
-  pilotLeaseSchema,
+  pilotQuestionListSchema,
+  pilotQuestionSchema,
+  pilotQuestionsQuerySchema,
   pilotStateSchema,
-  questionListSchema,
-  questionSchema,
-  questionsQuerySchema,
-  releasePilotLeaseSchema,
+  releasePilotClaimSchema,
   setPilotEnabledSchema,
   updatePilotInstructionsSchema,
 } from "@jobpilot/contracts/pilot";
@@ -23,22 +23,21 @@ import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
-import { LeaseService } from "./agenda/lease.service";
+import { ClaimService } from "./agenda/claim.service";
 import { AgendaService } from "./agenda/service";
 import { PilotJournalService } from "./journal.service";
 import { createPilotJournalResponseSchema, pilotActivityResponseSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
-import { promotionController } from "./promotion.controller";
 
 const pilot = container.resolve(PilotService);
 const journal = container.resolve(PilotJournalService);
 const agenda = container.resolve(AgendaService);
-const leases = container.resolve(LeaseService);
+const claims = container.resolve(ClaimService);
 
 const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
 const limitJournal = rateLimit(RATE_LIMITS.pilotJournal);
 const limitJournalExport = rateLimit(RATE_LIMITS.pilotJournalExport);
-const limitLease = rateLimit(RATE_LIMITS.pilotLease);
+const limitClaim = rateLimit(RATE_LIMITS.pilotClaim);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pilotController = new Elysia({
@@ -95,40 +94,40 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Pilot liveness activity",
       description:
-        "Newest server-side agent activity (leases, journal, campaign/job writes) plus the active-lease count, so the terminal watchdog can tell a live long cycle from a real stall.",
+        "Newest server-side agent activity (claims, journal, campaign/job writes) plus the active-claim count, so the terminal orchestrator can tell a live long run from a genuinely stuck one.",
     },
   })
-  .post("/leases", ({ user, body }) => leases.lease(user.id, body.agendaVersion, body.itemId), {
-    body: createPilotLeaseSchema,
-    beforeHandle: limitLease,
-    response: pilotLeaseSchema,
+  .post("/claims", ({ user, body }) => claims.claim(user.id, body.agendaVersion, body.itemId), {
+    body: createPilotClaimSchema,
+    beforeHandle: limitClaim,
+    response: pilotClaimSchema,
     detail: {
-      summary: "Lease an agenda item",
+      summary: "Claim an agenda item",
       description:
-        "Atomically claims an item from the supplied agenda version and creates its 15-minute lease; stale versions and races return 409.",
+        "Atomically claims an item from the supplied agenda version and creates its 15-minute claim; stale versions and races return 409.",
     },
   })
-  .post("/leases/:id/heartbeat", ({ user, params }) => leases.heartbeat(user.id, params.id), {
+  .post("/claims/:id/heartbeat", ({ user, params }) => claims.heartbeat(user.id, params.id), {
     params: idParam,
-    beforeHandle: limitLease,
-    response: pilotLeaseSchema,
+    beforeHandle: limitClaim,
+    response: pilotClaimSchema,
     detail: {
-      summary: "Heartbeat a lease",
-      description: "Extends the lease TTL by 15 minutes and records the heartbeat.",
+      summary: "Heartbeat a claim",
+      description: "Extends the claim TTL by 15 minutes and records the heartbeat.",
     },
   })
   .post(
-    "/leases/:id/release",
-    ({ user, params, body }) => leases.release(user.id, params.id, body),
+    "/claims/:id/release",
+    ({ user, params, body }) => claims.release(user.id, params.id, body),
     {
       params: idParam,
-      body: releasePilotLeaseSchema,
-      beforeHandle: limitLease,
-      response: pilotLeaseSchema,
+      body: releasePilotClaimSchema,
+      beforeHandle: limitClaim,
+      response: pilotClaimSchema,
       detail: {
-        summary: "Release a lease",
+        summary: "Release a claim",
         description:
-          "Closes a lease (done/failed/abandoned); abandoned reverts the job to approved. Bookkeeping only - terminal job results go through the campaign result route.",
+          "Closes a claim (done/failed/abandoned); abandoned reverts the job to approved. Bookkeeping only - terminal job results go through the campaign result route.",
       },
     },
   )
@@ -161,17 +160,17 @@ export const pilotController = new Elysia({
     },
   })
   .post("/questions", ({ user, body }) => pilot.createQuestion(user.id, body), {
-    body: createQuestionSchema,
+    body: createPilotQuestionSchema,
     beforeHandle: limitMutation,
-    response: questionSchema,
+    response: pilotQuestionSchema,
     detail: {
       summary: "Create a question",
       description: "Opens a question/choice/2fa/approval question and notifies subscribers.",
     },
   })
   .get("/questions", ({ user, query }) => pilot.listQuestions(user.id, query.status), {
-    query: questionsQuerySchema,
-    response: questionListSchema,
+    query: pilotQuestionsQuerySchema,
+    response: pilotQuestionListSchema,
     detail: {
       summary: "List questions",
       description: "Returns the profile's questions, optionally filtered by status.",
@@ -182,16 +181,15 @@ export const pilotController = new Elysia({
     ({ user, params, body }) => pilot.answerQuestion(user.id, params.id, body),
     {
       params: idParam,
-      body: answerQuestionSchema,
+      body: answerPilotQuestionSchema,
       beforeHandle: limitMutation,
-      response: questionSchema,
+      response: pilotQuestionSchema,
       detail: {
         summary: "Answer a question",
         description: "Records the answer, marks the question answered, and notifies subscribers.",
       },
     },
   )
-  .use(promotionController)
   .get("/events", ({ user, headers }) => sseStream(pilotChannel, { userId: user.id }, headers), {
     detail: {
       summary: "Stream pilot events",
