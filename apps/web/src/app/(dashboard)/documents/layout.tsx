@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
-import { Container } from "@mui/material";
 import { DocumentsTabs } from "@/components/features/documents";
-import { PageHeader } from "@/components/ui/layout/page-header";
+import { PageHeader, PageShell } from "@/components/ui/layout";
 
 interface DocumentsLayoutProps {
   children: ReactNode;
@@ -10,7 +9,7 @@ interface DocumentsLayoutProps {
 export default function DocumentsLayout(props: DocumentsLayoutProps): ReactElement {
   const { children } = props;
   return (
-    <Container maxWidth="lg">
+    <PageShell maxWidth="lg">
       <PageHeader
         eyebrow="Library"
         title="Documents"
@@ -18,6 +17,6 @@ export default function DocumentsLayout(props: DocumentsLayoutProps): ReactEleme
       />
       <DocumentsTabs />
       {children}
-    </Container>
+    </PageShell>
   );
 }

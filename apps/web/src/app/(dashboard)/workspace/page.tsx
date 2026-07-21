@@ -1,7 +1,10 @@
 import type { ReactElement } from "react";
 import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { WorkspaceActionsProvider, WorkspaceView } from "@/components/features/workspace";
 import { PageHeader } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Workspace" };
 
 export default function WorkspacePage(): ReactElement {
   return (

@@ -1,13 +1,16 @@
 import type { ReactElement } from "react";
 import { Add, ManageAccounts, TravelExplore } from "@mui/icons-material";
-import { Container, Stack } from "@mui/material";
+import { Stack } from "@mui/material";
+import type { Metadata } from "next";
 import { ProposalsList } from "@/components/features/upwork";
 import { LinkButton } from "@/components/ui/buttons";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Upwork" };
 
 export default function UpworkPage(): ReactElement {
   return (
-    <Container maxWidth="lg" sx={{ gap: 2 }}>
+    <PageShell maxWidth="lg">
       <PageHeader
         eyebrow="Upwork"
         title="Proposals"
@@ -36,6 +39,6 @@ export default function UpworkPage(): ReactElement {
         }
       />
       <ProposalsList />
-    </Container>
+    </PageShell>
   );
 }

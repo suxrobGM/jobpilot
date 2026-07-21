@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
@@ -7,6 +8,8 @@ import { SectionCard } from "@/components/ui/layout";
 import { pageParam } from "@/utils/search-params";
 
 const PAGE_SIZE = 20;
+
+export const metadata: Metadata = { title: "Pilots" };
 
 interface AdminPilotsPageProps {
   searchParams: Promise<{ page?: string }>;

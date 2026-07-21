@@ -1,11 +1,13 @@
 import type { ReactElement } from "react";
-import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { AddBoardButton, BoardsContent } from "@/components/features/boards";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Boards" };
 
 export default function BoardsPage(): ReactElement {
   return (
-    <Container maxWidth="lg" sx={{ gap: 2 }}>
+    <PageShell maxWidth="lg">
       <PageHeader
         eyebrow="Configure"
         title="Job boards"
@@ -13,6 +15,6 @@ export default function BoardsPage(): ReactElement {
         actions={<AddBoardButton />}
       />
       <BoardsContent />
-    </Container>
+    </PageShell>
   );
 }

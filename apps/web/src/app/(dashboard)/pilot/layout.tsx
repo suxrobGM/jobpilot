@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
-import { Container } from "@mui/material";
 import { PilotLive, PilotTabs } from "@/components/features/pilot";
-import { PageHeader } from "@/components/ui/layout/page-header";
+import { PageHeader, PageShell } from "@/components/ui/layout";
 
 interface PilotLayoutProps {
   children: ReactNode;
@@ -10,7 +9,7 @@ interface PilotLayoutProps {
 export default function PilotLayout(props: PilotLayoutProps): ReactElement {
   const { children } = props;
   return (
-    <Container maxWidth="lg">
+    <PageShell maxWidth="lg">
       <PageHeader
         eyebrow="Workspace"
         title="Pilot"
@@ -20,6 +19,6 @@ export default function PilotLayout(props: PilotLayoutProps): ReactElement {
       {/* Lives in the layout so the shared pilot SSE subscription survives tab navigation. */}
       <PilotLive />
       {children}
-    </Container>
+    </PageShell>
   );
 }

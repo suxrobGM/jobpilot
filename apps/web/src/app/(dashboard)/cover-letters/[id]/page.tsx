@@ -1,12 +1,15 @@
 import type { ReactElement } from "react";
 import { Launch, PictureAsPdf } from "@mui/icons-material";
-import { Button, Chip, Container, Typography } from "@mui/material";
+import { Button, Chip, Typography } from "@mui/material";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
 import { CoverLetterActions } from "@/components/features/cover-letters";
-import { PageHeader, SectionCard } from "@/components/ui/layout";
+import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Cover letter" };
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -23,7 +26,7 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
   }
 
   return (
-    <Container maxWidth="md" sx={{ gap: 2 }}>
+    <PageShell maxWidth="md">
       <PageHeader
         eyebrow={letter.company ?? "Cover letter"}
         title={letter.jobTitle ?? "Untitled role"}
@@ -75,6 +78,6 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
           Saved {new Date(letter.createdAt).toLocaleString()}
         </Typography>
       </SectionCard>
-    </Container>
+    </PageShell>
   );
 }

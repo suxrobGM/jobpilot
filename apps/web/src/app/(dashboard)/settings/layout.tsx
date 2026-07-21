@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
-import { Container } from "@mui/material";
 import { SettingsTabs } from "@/components/features/settings/settings-tabs";
-import { PageHeader } from "@/components/ui/layout/page-header";
+import { PageHeader, PageShell } from "@/components/ui/layout";
 
 interface SettingsLayoutProps {
   children: ReactNode;
@@ -10,7 +9,7 @@ interface SettingsLayoutProps {
 export default function SettingsLayout(props: SettingsLayoutProps): ReactElement {
   const { children } = props;
   return (
-    <Container maxWidth="md">
+    <PageShell maxWidth="md">
       <PageHeader
         eyebrow="Account"
         title="Settings"
@@ -18,6 +17,6 @@ export default function SettingsLayout(props: SettingsLayoutProps): ReactElement
       />
       <SettingsTabs />
       {children}
-    </Container>
+    </PageShell>
   );
 }

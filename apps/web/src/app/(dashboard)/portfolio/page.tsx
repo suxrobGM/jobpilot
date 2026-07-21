@@ -1,17 +1,19 @@
 import type { ReactElement } from "react";
-import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { PortfolioSettings } from "@/components/features/portfolio";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Portfolio" };
 
 export default function PortfolioPage(): ReactElement {
   return (
-    <Container maxWidth="md" sx={{ gap: 2 }}>
+    <PageShell maxWidth="md">
       <PageHeader
         eyebrow="Share"
         title="Portfolio"
         description="Your public hire-me page, built from your active resume and job-search activity."
       />
       <PortfolioSettings />
-    </Container>
+    </PageShell>
   );
 }

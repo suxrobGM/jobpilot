@@ -1,7 +1,9 @@
 import type { ReactElement } from "react";
-import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { ResumeDetail } from "@/components/features/resumes";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Resume" };
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -11,13 +13,13 @@ export default async function ResumeDetailPage(props: PageProps): Promise<ReactE
   const { id } = await props.params;
 
   return (
-    <Container maxWidth="xl" sx={{ gap: 2 }}>
+    <PageShell maxWidth="xl">
       <PageHeader
         eyebrow="Documents"
         title="Edit resume"
         description="Structured fields render to PDF on the right. Variants tailored from this base appear below."
       />
       <ResumeDetail resumeId={id} />
-    </Container>
+    </PageShell>
   );
 }

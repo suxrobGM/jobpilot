@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { Grid, Stack } from "@mui/material";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
@@ -7,6 +8,8 @@ import { ApplicationsTimelineChart } from "@/components/features/analytics/appli
 import { StatTile } from "@/components/features/analytics/stat-tile";
 import { StatusBreakdownChart } from "@/components/features/analytics/status-breakdown-chart";
 import { TopBoardsList } from "@/components/features/analytics/top-boards-list";
+
+export const metadata: Metadata = { title: "Overview" };
 
 /** Read-only, so it renders entirely on the server; only the charts ship as client leaves. */
 export default async function AdminOverviewPage(): Promise<ReactElement> {

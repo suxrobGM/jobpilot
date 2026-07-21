@@ -1,11 +1,13 @@
 import type { ReactElement } from "react";
-import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { ProfileEnhancer } from "@/components/features/upwork";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Upwork profile" };
 
 export default function UpworkProfilePage(): ReactElement {
   return (
-    <Container maxWidth="lg" sx={{ gap: 2 }}>
+    <PageShell maxWidth="lg">
       <PageHeader
         eyebrow="Upwork"
         title="Profile enhancement"
@@ -14,6 +16,6 @@ export default function UpworkProfilePage(): ReactElement {
         backLabel="Proposals"
       />
       <ProfileEnhancer />
-    </Container>
+    </PageShell>
   );
 }

@@ -1,6 +1,9 @@
 import type { ReactElement } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProposalDetail } from "@/components/features/upwork";
+
+export const metadata: Metadata = { title: "Proposal" };
 
 interface PageProps {
   params: Promise<{ id: string }>;

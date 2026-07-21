@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
@@ -13,6 +14,8 @@ import { SectionCard } from "@/components/ui/layout";
 import { pageParam } from "@/utils/search-params";
 
 const PAGE_SIZE = 10;
+
+export const metadata: Metadata = { title: "Boards" };
 
 interface AdminBoardsPageProps {
   searchParams: Promise<{ page?: string; q?: string }>;

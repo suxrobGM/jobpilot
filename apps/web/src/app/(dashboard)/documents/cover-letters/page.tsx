@@ -1,6 +1,9 @@
 import type { ReactElement } from "react";
 import { Typography } from "@mui/material";
+import type { Metadata } from "next";
 import { CoverLettersTable } from "@/components/features/cover-letters";
+
+export const metadata: Metadata = { title: "Cover letters" };
 
 export default function DocumentsCoverLettersPage(): ReactElement {
   return (

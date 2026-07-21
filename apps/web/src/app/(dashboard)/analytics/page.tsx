@@ -1,17 +1,19 @@
 import type { ReactElement } from "react";
-import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { AnalyticsView } from "@/components/features/analytics";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Analytics" };
 
 export default function AnalyticsPage(): ReactElement {
   return (
-    <Container maxWidth="xl" sx={{ gap: 2 }}>
+    <PageShell maxWidth="xl">
       <PageHeader
         eyebrow="Workspace"
         title="Analytics"
         description="Roll-up stats across your applications, campaigns, and networking."
       />
       <AnalyticsView />
-    </Container>
+    </PageShell>
   );
 }

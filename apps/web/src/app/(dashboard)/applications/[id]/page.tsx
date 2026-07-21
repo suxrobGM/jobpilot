@@ -1,6 +1,9 @@
 import type { ReactElement } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ApplicationDetail } from "@/components/features/applications";
+
+export const metadata: Metadata = { title: "Application" };
 
 interface PageProps {
   params: Promise<{ id: string }>;

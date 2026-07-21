@@ -1,7 +1,9 @@
 import type { ReactElement } from "react";
-import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { CampaignDetail } from "@/components/features/campaigns";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Campaign" };
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -10,9 +12,9 @@ interface PageProps {
 export default async function CampaignDetailPage(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
   return (
-    <Container maxWidth="lg" sx={{ gap: 2 }}>
+    <PageShell maxWidth="lg">
       <PageHeader eyebrow="Campaign" title={id} backHref="/workspace" backLabel="Workspace" />
       <CampaignDetail campaignId={id} />
-    </Container>
+    </PageShell>
   );
 }

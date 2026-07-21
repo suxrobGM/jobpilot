@@ -1,17 +1,19 @@
 import type { ReactElement } from "react";
-import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { ContactsTable } from "@/components/features/networking";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "Networking" };
 
 export default function NetworkingPage(): ReactElement {
   return (
-    <Container maxWidth="lg" sx={{ gap: 2 }}>
+    <PageShell maxWidth="lg">
       <PageHeader
         eyebrow="Networking"
         title="Contacts"
         description="Hiring managers and recruiters discovered across your networking campaigns. Start a campaign in Networking mode to find more."
       />
       <ContactsTable />
-    </Container>
+    </PageShell>
   );
 }

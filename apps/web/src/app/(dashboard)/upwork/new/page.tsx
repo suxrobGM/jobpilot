@@ -1,11 +1,13 @@
 import type { ReactElement } from "react";
-import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { ProposalComposer } from "@/components/features/upwork";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "New proposal" };
 
 export default function NewProposalPage(): ReactElement {
   return (
-    <Container maxWidth="md" sx={{ gap: 2 }}>
+    <PageShell maxWidth="md">
       <PageHeader
         eyebrow="Upwork"
         title="New proposal"
@@ -14,6 +16,6 @@ export default function NewProposalPage(): ReactElement {
         backLabel="Proposals"
       />
       <ProposalComposer />
-    </Container>
+    </PageShell>
   );
 }

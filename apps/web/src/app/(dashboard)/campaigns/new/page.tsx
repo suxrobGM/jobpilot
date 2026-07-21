@@ -1,7 +1,9 @@
 import type { ReactElement } from "react";
-import { Container } from "@mui/material";
+import type { Metadata } from "next";
 import { CampaignComposer } from "@/components/features/campaigns";
-import { PageHeader } from "@/components/ui/layout";
+import { PageHeader, PageShell } from "@/components/ui/layout";
+
+export const metadata: Metadata = { title: "New campaign" };
 
 interface NewCampaignPageProps {
   searchParams: Promise<{ board?: string }>;
@@ -10,13 +12,13 @@ interface NewCampaignPageProps {
 export default async function NewCampaignPage(props: NewCampaignPageProps): Promise<ReactElement> {
   const { board } = await props.searchParams;
   return (
-    <Container maxWidth="md" sx={{ gap: 2 }}>
+    <PageShell maxWidth="md">
       <PageHeader
         eyebrow="Campaign"
         title="Start a new campaign"
         description="Search a job board, score matches, and optionally batch-apply."
       />
       <CampaignComposer defaultBoard={board} />
-    </Container>
+    </PageShell>
   );
 }
