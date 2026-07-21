@@ -55,7 +55,7 @@ function ParkedBoards(props: ParkedBoardsProps): ReactNode {
 
   return (
     <Stack spacing={1} sx={{ alignItems: "flex-start" }}>
-      <Typography variant="subtitle2">Parked boards</Typography>
+      <Typography variant="overlineMuted">Parked boards</Typography>
       <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
         {parked.map((domain) => (
           <Chip key={domain} label={domain} onDelete={() => onRemove(domain)} />

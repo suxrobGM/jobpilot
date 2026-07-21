@@ -28,7 +28,7 @@ export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
   return (
     <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2, overflowY: "auto" }}>
       <Stack spacing={0.5}>
-        <Typography variant="subtitle2">Agent is offline</Typography>
+        <Typography variant="body1Strong">Agent is offline</Typography>
         <Typography variant="body2Muted">
           Your JobPilot agent is installed but not running. Start it and it reconnects here
           automatically.

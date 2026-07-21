@@ -20,7 +20,7 @@ export function PortfolioView(props: PortfolioViewProps): ReactElement {
       <PortfolioCard portfolio={portfolio} />
 
       <Stack spacing={2}>
-        <Typography variant="h3" sx={{ fontSize: "1rem" }}>
+        <Typography variant="h4" component="h3">
           Activity
         </Typography>
         <PortfolioStatsRow stats={portfolio.stats} />

@@ -180,7 +180,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                 >
                   <AccordionSummary expandIcon={<ExpandMore />}>
                     <Stack spacing={0.25}>
-                      <Typography variant="subtitle2">Advanced settings</Typography>
+                      <Typography variant="body1Strong">Advanced settings</Typography>
                       <Typography variant="captionMuted">
                         Caps, networking, boards, saved searches, platforms - the defaults work for
                         most people.

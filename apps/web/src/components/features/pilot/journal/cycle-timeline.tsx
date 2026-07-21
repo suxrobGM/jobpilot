@@ -95,9 +95,7 @@ function CycleCard(props: { entries: PilotJournalEntry[]; defaultOpen: boolean }
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", flexWrap: "wrap" }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              Cycle
-            </Typography>
+            <Typography variant="body1Strong">Cycle</Typography>
             {started && <RelativeTime value={started} />}
             {duration && <Typography variant="captionMuted">· {duration}</Typography>}
           </Stack>

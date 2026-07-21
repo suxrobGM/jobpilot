@@ -92,7 +92,7 @@ export function PilotSetupChecklist(): ReactNode {
               <RadioButtonUnchecked fontSize="small" sx={{ color: "text.disabled" }} />
             )}
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="subtitle2">{step.label}</Typography>
+              <Typography variant="body1Strong">{step.label}</Typography>
               <Typography variant="captionMuted">{step.description}</Typography>
             </Box>
             {!step.done && step.action}

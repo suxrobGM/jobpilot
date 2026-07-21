@@ -35,7 +35,7 @@ export function PrivacyGrid(): ReactElement {
             <Card sx={{ height: "100%" }}>
               <CardContent>
                 <Stack spacing={1}>
-                  <Typography variant="h3" sx={{ fontSize: "1.05rem" }}>
+                  <Typography variant="h4" component="h3">
                     {fact.title}
                   </Typography>
                   <Typography variant="body2Muted">{fact.body}</Typography>

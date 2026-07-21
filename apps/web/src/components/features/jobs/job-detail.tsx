@@ -20,7 +20,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
         <Typography variant="displayMd" sx={{ overflowWrap: "anywhere" }}>
           {job.title}
         </Typography>
-        <Typography variant="h2" sx={{ fontSize: "1.15rem", color: "text.secondary" }}>
+        <Typography variant="h4" component="h2" sx={{ color: "text.secondary" }}>
           {job.company}
         </Typography>
         <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>

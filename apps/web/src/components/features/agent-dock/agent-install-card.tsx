@@ -21,7 +21,7 @@ export function AgentInstallCard(props: AgentInstallCardProps): ReactElement {
   return (
     <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2, overflowY: "auto" }}>
       <Stack spacing={0.5}>
-        <Typography variant="subtitle2">{title ?? "Install the JobPilot agent"}</Typography>
+        <Typography variant="body1Strong">{title ?? "Install the JobPilot agent"}</Typography>
         <Typography variant="body2Muted">
           {description ??
             "Add the JobPilot plugin to Claude Code or Codex, then run setup - it installs and starts the local agent, which connects here automatically."}

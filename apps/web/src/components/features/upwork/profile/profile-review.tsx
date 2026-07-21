@@ -48,13 +48,13 @@ export function ProfileReview(props: ProfileReviewProps): ReactElement {
     <Stack spacing={3}>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
         <Stack spacing={1.5} sx={{ flex: 1 }}>
-          <Typography variant="subtitle2">Current</Typography>
+          <Typography variant="overlineMuted">Current</Typography>
           <ReadonlyField label="Title" value={profile.currentTitle} />
           <ReadonlyField label="Hourly rate" value={profile.currentHourlyRate} />
           <ReadonlyField label="Overview" value={profile.currentOverview} multiline />
         </Stack>
         <Stack spacing={1.5} sx={{ flex: 1 }}>
-          <Typography variant="subtitle2">Suggested</Typography>
+          <Typography variant="overlineMuted">Suggested</Typography>
           <TextField
             label="Title"
             size="small"
@@ -84,11 +84,11 @@ export function ProfileReview(props: ProfileReviewProps): ReactElement {
 
       <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
         <Stack spacing={1} sx={{ flex: 1 }}>
-          <Typography variant="subtitle2">Current portfolio</Typography>
+          <Typography variant="overlineMuted">Current portfolio</Typography>
           <PortfolioList items={profile.currentPortfolio} />
         </Stack>
         <Stack spacing={1} sx={{ flex: 1 }}>
-          <Typography variant="subtitle2">Suggested portfolio</Typography>
+          <Typography variant="overlineMuted">Suggested portfolio</Typography>
           <PortfolioList items={profile.suggestedPortfolio} />
         </Stack>
       </Stack>

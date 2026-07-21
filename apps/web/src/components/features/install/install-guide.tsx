@@ -34,7 +34,7 @@ function InstallStep(props: InstallStepProps): ReactElement {
         >
           {number}
         </Box>
-        <Typography variant="h6" sx={{ fontSize: "1.0625rem" }}>
+        <Typography variant="h4" component="h6">
           {title}
         </Typography>
       </Stack>

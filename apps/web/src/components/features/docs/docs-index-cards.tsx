@@ -14,7 +14,7 @@ export function DocsIndexCards(): ReactElement {
             <CardActionArea href={entry.href} sx={{ height: "100%" }}>
               <CardContent>
                 <Stack spacing={1}>
-                  <Typography variant="h3" sx={{ fontSize: "1.05rem" }}>
+                  <Typography variant="h4" component="h3">
                     {entry.title}
                   </Typography>
                   <Typography variant="body2Muted">{entry.description}</Typography>

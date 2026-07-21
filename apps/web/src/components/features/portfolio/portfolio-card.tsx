@@ -31,7 +31,7 @@ export function PortfolioCard(props: PortfolioCardProps): ReactElement {
             <AvailabilityBadge availability={portfolio.availability} />
           </Stack>
           {portfolio.headline && (
-            <Typography variant="h2" sx={{ fontSize: "1.1rem", color: "text.secondary" }}>
+            <Typography variant="h4" component="h2" sx={{ color: "text.secondary" }}>
               {portfolio.headline}
             </Typography>
           )}

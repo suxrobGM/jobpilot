@@ -29,7 +29,7 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
-            <Typography variant="subtitle2" sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body1Strong" sx={{ flex: 1, minWidth: 0 }}>
               {question.prompt}
             </Typography>
             <Typography
