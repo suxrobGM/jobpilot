@@ -1,14 +1,14 @@
 import { z } from "zod/v4";
 import { webLinkSchema } from "./web-link";
 
-const QUESTION_KINDS = ["question", "choice", "2fa", "approval"] as const;
-const questionKindSchema = z.enum(QUESTION_KINDS);
+const PILOT_QUESTION_KINDS = ["question", "choice", "2fa", "approval"] as const;
+const pilotQuestionKindSchema = z.enum(PILOT_QUESTION_KINDS);
 
-const QUESTION_STATUSES = ["open", "answered", "expired", "cancelled"] as const;
-const questionStatusSchema = z.enum(QUESTION_STATUSES);
+const PILOT_QUESTION_STATUSES = ["open", "answered", "expired", "cancelled"] as const;
+const pilotQuestionStatusSchema = z.enum(PILOT_QUESTION_STATUSES);
 
-export const createQuestionSchema = z.object({
-  kind: questionKindSchema,
+export const createPilotQuestionSchema = z.object({
+  kind: pilotQuestionKindSchema,
   subjectType: z.string().optional(),
   subjectId: z.string().optional(),
   prompt: z.string().min(1),
@@ -17,15 +17,17 @@ export const createQuestionSchema = z.object({
   expiresAt: z.iso.datetime().optional(),
 });
 
-export const answerQuestionSchema = z.object({ answer: z.string().min(1) });
+export const answerPilotQuestionSchema = z.object({ answer: z.string().min(1) });
 
-export const questionsQuerySchema = z.object({ status: questionStatusSchema.optional() });
+export const pilotQuestionsQuerySchema = z.object({
+  status: pilotQuestionStatusSchema.optional(),
+});
 
-export const questionSchema = z.object({
+export const pilotQuestionSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
-  kind: questionKindSchema,
-  status: questionStatusSchema,
+  kind: pilotQuestionKindSchema,
+  status: pilotQuestionStatusSchema,
   subjectType: z.string().nullable(),
   subjectId: z.string().nullable(),
   prompt: z.string(),
@@ -37,10 +39,10 @@ export const questionSchema = z.object({
   createdAt: z.date(),
 });
 
-export const questionListSchema = z.array(questionSchema);
+export const pilotQuestionListSchema = z.array(pilotQuestionSchema);
 
-export type QuestionKind = z.infer<typeof questionKindSchema>;
-export type QuestionStatus = z.infer<typeof questionStatusSchema>;
-export type CreateQuestionInput = z.infer<typeof createQuestionSchema>;
-export type AnswerQuestionInput = z.infer<typeof answerQuestionSchema>;
-export type Question = z.infer<typeof questionSchema>;
+export type PilotQuestionKind = z.infer<typeof pilotQuestionKindSchema>;
+export type PilotQuestionStatus = z.infer<typeof pilotQuestionStatusSchema>;
+export type CreatePilotQuestionInput = z.infer<typeof createPilotQuestionSchema>;
+export type AnswerPilotQuestionInput = z.infer<typeof answerPilotQuestionSchema>;
+export type PilotQuestion = z.infer<typeof pilotQuestionSchema>;

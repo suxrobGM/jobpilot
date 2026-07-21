@@ -58,7 +58,7 @@ const agendaItem = <K extends (typeof AGENDA_ITEM_KINDS)[number], P extends z.Zo
     payload,
   });
 
-export const agendaLeaseFieldsSchema = z.discriminatedUnion("kind", [
+export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
   agendaItem(
     "question.answered",
     "question",
@@ -265,7 +265,7 @@ export const agendaLeaseFieldsSchema = z.discriminatedUnion("kind", [
 
 export const agendaItemSchema = z.intersection(
   z.object({ id: z.string(), priority: z.number(), title: z.string() }),
-  agendaLeaseFieldsSchema,
+  agendaClaimFieldsSchema,
 );
 
 export const agendaContentSchema = z.object({
@@ -273,7 +273,7 @@ export const agendaContentSchema = z.object({
   items: z.array(agendaItemSchema),
   counts: z.object({
     openQuestions: z.number().int(),
-    activeLeases: z.number().int(),
+    activeClaims: z.number().int(),
     approvedJobs: z.number().int(),
     appliedToday: z.number().int(),
   }),

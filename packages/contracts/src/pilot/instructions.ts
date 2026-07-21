@@ -5,7 +5,7 @@ const pilotSavedSearchSchema = z.object({
   board: z.string().optional(),
   // Base resume the discovered campaign scores against; campaign config requires it.
   resumeId: z.string().optional(),
-  cadenceHours: z.number().default(24),
+  checkEveryHours: z.number().default(24),
 });
 
 const pilotAutonomySchema = z.object({
@@ -16,7 +16,7 @@ const pilotAutonomySchema = z.object({
 const pilotPromotionPlatformSchema = z.object({
   platform: z.string().min(1),
   target: z.string().optional(),
-  cadenceDays: z.number().int().min(1).default(30),
+  postEveryDays: z.number().int().min(1).default(30),
 });
 
 /** Self-promotion config. Review-only in M3: auto-posting is deliberately not offered. */

@@ -50,3 +50,13 @@ export const pilotJournalPageSchema = z.object({
 export type PilotJournalKind = z.infer<typeof pilotJournalKindSchema>;
 export type CreatePilotJournalInput = z.infer<typeof createPilotJournalSchema>;
 export type PilotJournalEntry = z.infer<typeof pilotJournalEntrySchema>;
+
+// kind="cycle" entry `detail`: the skill's authoritative completion signal, read by the host as an API fallback when the sentinel is mangled.
+export const pilotCycleDetailSchema = z
+  .object({
+    status: z.enum(["ok", "empty", "error"]).optional(),
+    sleepSeconds: z.number().int().optional(),
+  })
+  .loose();
+
+export type PilotCycleDetail = z.infer<typeof pilotCycleDetailSchema>;
