@@ -3,13 +3,9 @@
 import type { ReactElement } from "react";
 import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { CampaignDetailDto } from "@/api/types";
-import { ColorChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
-import {
-  CAMPAIGN_ACTOR_LABEL,
-  CAMPAIGN_STATUS_COLOR,
-  CAMPAIGN_STATUS_LABEL,
-} from "../campaign-status";
+import { CAMPAIGN_ACTOR_LABEL } from "../campaign-status";
+import { CampaignStatusChip } from "../campaign-status-chip";
 import { PilotBadge } from "../pilot-badge";
 import { CampaignActionsBar } from "./actions-bar";
 import { CampaignIdentityBanner } from "./identity-banner";
@@ -42,11 +38,7 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
               spacing={1}
               sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
             >
-              <ColorChip
-                value={campaign.status}
-                colors={CAMPAIGN_STATUS_COLOR}
-                label={CAMPAIGN_STATUS_LABEL[campaign.status]}
-              />
+              <CampaignStatusChip status={campaign.status} />
               <Typography
                 variant="body1"
                 sx={{ fontWeight: 600, minWidth: 0, wordBreak: "break-word" }}

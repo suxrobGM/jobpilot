@@ -2,10 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
-import {
-  isTerminalNetworkingStatus,
-  type NetworkingMessageStatus,
-} from "@jobpilot/contracts/networking";
+import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
 import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { api } from "@/api/client";
@@ -15,23 +12,11 @@ import { queryKeys } from "@/api/query-keys";
 import type { CampaignSummaryDto, NetworkingConfigDto, NetworkingMessageDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ColorChip, ExternalLink, StatCard } from "@/components/ui/display";
+import { ExternalLink, StatCard } from "@/components/ui/display";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { NetworkingMessageDialog } from "./networking-message-dialog";
-
-const STATUS_COLOR: Record<
-  NetworkingMessageStatus,
-  "default" | "info" | "primary" | "success" | "error" | "warning"
-> = {
-  draft: "default",
-  approved: "info",
-  sent: "primary",
-  replied: "success",
-  bounced: "warning",
-  failed: "error",
-  skipped: "default",
-};
+import { NetworkingStatusChip } from "./networking-status-chip";
 
 function emptyMessage(status: CampaignStatus): string {
   if (status === "in_progress") {
@@ -114,7 +99,7 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
       headerName: "Status",
       width: 110,
       sortable: false,
-      renderCell: (p) => <ColorChip value={p.row.status} colors={STATUS_COLOR} />,
+      renderCell: (p) => <NetworkingStatusChip status={p.row.status} />,
     },
     {
       field: "name",

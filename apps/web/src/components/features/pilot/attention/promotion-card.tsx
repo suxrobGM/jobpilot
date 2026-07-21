@@ -1,34 +1,14 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { PatchPromotionInput, Promotion, PromotionStatus } from "@jobpilot/contracts/pilot";
+import type { PatchPromotionInput, Promotion } from "@jobpilot/contracts/pilot";
 import { OpenInNew } from "@mui/icons-material";
-import {
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  type ChipProps,
-  Link,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Button, Card, CardContent, Chip, Link, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import { ColorChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
-
-const STATUS_COLOR: Record<PromotionStatus, ChipProps["color"]> = {
-  draft: "warning",
-  approved: "info",
-  declined: "default",
-  posted: "success",
-  failed: "error",
-  skipped: "default",
-  expired: "default",
-};
+import { PromotionStatusChip } from "./promotion-status-chip";
 
 /** Editable draft card: edit title/body, then Save (edits only) or Approve (edits + approval). */
 interface PromotionCardProps {
@@ -134,12 +114,7 @@ export function PromotionSummary(props: { promotion: Promotion }): ReactElement 
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
       <Chip size="small" variant="outlined" label={promotion.platform} sx={{ minWidth: 90 }} />
-      <ColorChip
-        value={promotion.status}
-        colors={STATUS_COLOR}
-        variant="filled"
-        sx={{ textTransform: "capitalize" }}
-      />
+      <PromotionStatusChip status={promotion.status} />
       <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
         {promotion.title ?? promotion.body}
       </Typography>

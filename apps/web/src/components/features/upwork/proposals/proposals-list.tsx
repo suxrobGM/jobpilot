@@ -12,13 +12,13 @@ import { useApiQuery } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
-import { ColorChip } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePagination } from "@/hooks/use-pagination";
 import { useSseChannel } from "@/lib/sse/client";
 import { formatRelativeTime } from "@/utils/format";
-import { STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-status";
+import { STATUS_OPTIONS } from "./proposal-status";
+import { ProposalStatusChip } from "./proposal-status-chip";
 
 const PAGE_SIZE = 12;
 
@@ -101,11 +101,7 @@ export function ProposalsList(): ReactElement {
                       spacing={1}
                       sx={{ alignItems: "center", flexWrap: "wrap" }}
                     >
-                      <ColorChip
-                        value={p.status}
-                        colors={STATUS_COLOR}
-                        label={STATUS_LABEL[p.status]}
-                      />
+                      <ProposalStatusChip status={p.status} />
                       {p.clientName && (
                         <Chip size="small" label={p.clientName} variant="outlined" />
                       )}

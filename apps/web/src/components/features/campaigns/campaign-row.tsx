@@ -13,9 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 import type { CampaignDto } from "@/api/types";
-import { ColorChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
-import { CAMPAIGN_STATUS_COLOR, CAMPAIGN_STATUS_LABEL } from "./campaign-status";
+import { CampaignStatusChip } from "./campaign-status-chip";
 import { PilotBadge } from "./pilot-badge";
 
 interface CampaignRowProps {
@@ -47,11 +46,7 @@ export function CampaignRow(props: CampaignRowProps): ReactElement {
       >
         <Stack spacing={0.5} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
-            <ColorChip
-              value={campaign.status}
-              colors={CAMPAIGN_STATUS_COLOR}
-              label={CAMPAIGN_STATUS_LABEL[campaign.status]}
-            />
+            <CampaignStatusChip status={campaign.status} />
             <Chip size="small" label={campaign.source} variant="outlined" />
             <PilotBadge createdBy={campaign.createdBy} />
             <Box sx={{ flex: 1 }} />

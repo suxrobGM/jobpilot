@@ -7,13 +7,7 @@ import { useApiQuery } from "@/api/hooks";
 import { contactQueries } from "@/api/queries";
 import type { ContactDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ColorChip } from "@/components/ui/display";
-
-const CONNECTION_COLOR: Record<ContactDto["linkedinConnection"], "default" | "info" | "success"> = {
-  none: "default",
-  pending: "info",
-  connected: "success",
-};
+import { NetworkingConnectionChip } from "./networking-status-chip";
 
 export function ContactsTable(): ReactElement {
   const contactsQuery = useApiQuery(contactQueries.list());
@@ -48,7 +42,7 @@ export function ContactsTable(): ReactElement {
       field: "linkedinConnection",
       headerName: "LinkedIn",
       width: 130,
-      renderCell: (p) => <ColorChip value={p.row.linkedinConnection} colors={CONNECTION_COLOR} />,
+      renderCell: (p) => <NetworkingConnectionChip connection={p.row.linkedinConnection} />,
     },
     {
       field: "discoverySource",

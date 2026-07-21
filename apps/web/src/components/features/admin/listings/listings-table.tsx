@@ -14,6 +14,7 @@ import type { AdminJobListingDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { formatDate } from "@/utils/format";
 import { AdminListingActions } from "./listing-actions";
+import { ListingStatusChip } from "./listing-status-chip";
 
 interface AdminListingsTableProps {
   listings: AdminJobListingDto[];
@@ -59,12 +60,7 @@ export function AdminListingsTable(props: AdminListingsTableProps): ReactElement
               </TableCell>
               <TableCell align="right">{listing.sourceCount}</TableCell>
               <TableCell>
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  color={listing.status === "published" ? "primary" : "default"}
-                  label={listing.status}
-                />
+                <ListingStatusChip status={listing.status} />
               </TableCell>
               <TableCell sx={{ whiteSpace: "nowrap" }}>{formatDate(listing.lastSeenAt)}</TableCell>
               <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>

@@ -6,8 +6,7 @@ import { Button, Link } from "@mui/material";
 import type { GridColDef, GridPaginationModel, GridRowSelectionModel } from "@mui/x-data-grid";
 import type { CampaignJobDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ColorChip } from "@/components/ui/display";
-import { CAMPAIGN_JOB_STATUS_COLOR } from "../campaign-status";
+import { CampaignJobStatusChip } from "../campaign-status-chip";
 
 /** Statuses that can still be applied to from the campaigns detail page. */
 function isApplicable(status: CampaignJobStatus): boolean {
@@ -57,7 +56,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       field: "status",
       headerName: "Status",
       width: 130,
-      renderCell: (p) => <ColorChip value={p.row.status} colors={CAMPAIGN_JOB_STATUS_COLOR} />,
+      renderCell: (p) => <CampaignJobStatusChip status={p.row.status} />,
       sortable: false,
     },
     {
