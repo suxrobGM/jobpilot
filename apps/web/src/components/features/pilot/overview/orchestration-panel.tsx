@@ -14,7 +14,7 @@ const MODE_HINTS: Record<PilotStage["mode"], string | null> = {
   sleeping: null,
 };
 
-/** Live simulation of the pilot loop: conductor wakes the agent, which delegates to a worker acting on the board. */
+/** Live simulation of the pilot loop: orchestrator wakes the agent, which delegates to a worker acting on the board. */
 export function OrchestrationPanel(): ReactElement {
   const stage = usePilotStage();
 
@@ -33,8 +33,8 @@ export function OrchestrationPanel(): ReactElement {
           <Typography variant="body2Muted">{hint}</Typography>
         ) : (
           <Typography variant="captionMuted">
-            Each cycle the conductor wakes the agent, which senses the agenda and delegates a worker
-            to act on the job board.
+            Each cycle the orchestrator wakes the agent, which senses the agenda and delegates a
+            worker to act on the job board.
           </Typography>
         )}
       </Box>

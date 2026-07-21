@@ -9,7 +9,7 @@ import { isHostOffline } from "../host-status";
 import { useJournalLive } from "../journal/use-journal-live";
 import { usePilotStatus } from "./pilot-status-context";
 
-export type PilotStageNode = "conductor" | "agent" | "worker" | "results";
+export type PilotStageNode = "orchestrator" | "agent" | "worker" | "results";
 type PilotStageMode = "off" | "offline" | "working" | "sleeping";
 
 /** Which diagram node the newest journal entry lights up. */
@@ -20,12 +20,12 @@ const NODE_BY_KIND: Record<PilotJournalKind, PilotStageNode> = {
   digest: "results",
   question: "results",
   correction: "results",
-  system: "conductor",
+  system: "orchestrator",
 };
 
 export interface PilotStage {
   mode: PilotStageMode;
-  /** The node currently doing work (or resting at the conductor when idle). */
+  /** The node currently doing work (or resting at the orchestrator when idle). */
   activeNode: PilotStageNode;
   /** e.g. "wakes in 43m" - only while sleeping. */
   sleepLabel: string | null;
@@ -71,7 +71,7 @@ export function usePilotStage(): PilotStage {
   }
 
   const activeNode: PilotStageNode =
-    mode === "working" && newest ? NODE_BY_KIND[newest.kind] : "conductor";
+    mode === "working" && newest ? NODE_BY_KIND[newest.kind] : "orchestrator";
 
   const nextWakeAt = agenda.data?.nextWakeAt ?? null;
   const nextWakeMs = nextWakeAt?.getTime() ?? null;

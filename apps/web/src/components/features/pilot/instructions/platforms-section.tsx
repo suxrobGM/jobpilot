@@ -7,7 +7,7 @@ import { withForm } from "@/components/ui/form/tanstack";
 import { useKeyedList } from "@/hooks/use-keyed-list";
 import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
 
-const EMPTY_PLATFORM = { platform: "", target: "", cadenceDays: 30 };
+const EMPTY_PLATFORM = { platform: "", target: "", postEveryDays: 30 };
 
 export const PlatformsSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
@@ -69,10 +69,10 @@ export const PlatformsSection = withForm({
                         </form.AppField>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 5 }}>
-                        <form.AppField name={`promotionPlatforms[${i}].cadenceDays`}>
+                        <form.AppField name={`promotionPlatforms[${i}].postEveryDays`}>
                           {(sub) => (
                             <sub.TextField
-                              label="Draft every"
+                              label="Post every (days)"
                               type="number"
                               helperText="How often to draft a new post."
                               slotProps={{

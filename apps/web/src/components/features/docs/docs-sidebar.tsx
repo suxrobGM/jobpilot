@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { Box, Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
+import { DocsMobileNav } from "./docs-mobile-nav";
 import { DOCS_NAV } from "./docs-nav";
 
 interface SidebarLinkProps {
@@ -18,6 +19,7 @@ function SidebarLink(props: SidebarLinkProps): ReactElement {
     <Link
       href={href}
       underline="none"
+      aria-current={active ? "page" : undefined}
       sx={{
         display: "block",
         whiteSpace: "nowrap",
@@ -26,10 +28,8 @@ function SidebarLink(props: SidebarLinkProps): ReactElement {
         paddingInline: 1.5,
         color: active ? "text.primary" : "text.secondary",
         fontWeight: active ? 600 : 400,
-        borderRadius: { xs: 99, md: 0 },
-        backgroundColor: { xs: active ? "surfaces.elevated" : "transparent", md: "transparent" },
-        borderLeft: { xs: 0, md: 2 },
-        borderLeftColor: { md: active ? "accent.primary" : "line.divider" },
+        borderLeft: 2,
+        borderLeftColor: active ? "accent.primary" : "line.divider",
         "&:hover": { color: "text.primary" },
       }}
     >
@@ -38,29 +38,28 @@ function SidebarLink(props: SidebarLinkProps): ReactElement {
   );
 }
 
-/** Docs navigation: sticky rail on md+, horizontal scrollable pill row on xs. */
+/** Docs navigation: sticky vertical rail on md+, collapsible section navigator on xs-sm. */
 export function DocsSidebar(): ReactElement {
   const pathname = usePathname();
   return (
-    <Box component="nav" aria-label="Documentation">
-      <Typography variant="overlineMuted" sx={{ display: { xs: "none", md: "block" }, mb: 1.5 }}>
-        Docs
-      </Typography>
-      <Stack
-        direction={{ xs: "row", md: "column" }}
-        spacing={{ xs: 1, md: 0 }}
-        sx={{ overflowX: { xs: "auto", md: "visible" }, paddingBottom: { xs: 1, md: 0 } }}
-      >
-        <SidebarLink href="/docs" label="Overview" active={pathname === "/docs"} />
-        {DOCS_NAV.map((entry) => (
-          <SidebarLink
-            key={entry.href}
-            href={entry.href}
-            label={entry.title}
-            active={pathname === entry.href}
-          />
-        ))}
-      </Stack>
-    </Box>
+    <>
+      <DocsMobileNav />
+      <Box component="nav" aria-label="Documentation" sx={{ display: { xs: "none", md: "block" } }}>
+        <Typography variant="overlineMuted" sx={{ display: "block", mb: 1.5 }}>
+          Docs
+        </Typography>
+        <Stack spacing={0}>
+          <SidebarLink href="/docs" label="Overview" active={pathname === "/docs"} />
+          {DOCS_NAV.map((entry) => (
+            <SidebarLink
+              key={entry.href}
+              href={entry.href}
+              label={entry.title}
+              active={pathname === entry.href}
+            />
+          ))}
+        </Stack>
+      </Box>
+    </>
   );
 }

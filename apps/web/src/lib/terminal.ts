@@ -7,7 +7,7 @@ export const TERMINAL_PROTOCOL_URL = "jobpilot://start";
 
 export type TerminalProviderId = "claude" | "codex";
 
-/** Outcome of the pilot's last conductor cycle, as reported by the host's /healthz. */
+/** Outcome of the pilot's last orchestrator cycle, as reported by the host's /healthz. */
 export type PilotCycleStatus = "ok" | "empty" | "error";
 
 export interface TerminalProviderInfo {

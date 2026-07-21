@@ -1,6 +1,6 @@
 "use client";
 
-import type { Question } from "@jobpilot/contracts/pilot";
+import type { PilotQuestion } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
@@ -9,7 +9,7 @@ import { queryKeys } from "@/api/query-keys";
 import { useSseChannel } from "@/lib/sse/client";
 
 interface OpenQuestions {
-  questions: Question[];
+  questions: PilotQuestion[];
   count: number;
   isLoading: boolean;
   isError: boolean;

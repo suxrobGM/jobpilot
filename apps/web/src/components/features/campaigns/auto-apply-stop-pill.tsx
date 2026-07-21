@@ -72,6 +72,7 @@ export function AutoApplyStopPill(): ReactNode {
     <Paper
       elevation={8}
       sx={(t) => ({
+        display: { xs: "none", md: "flex" },
         position: "fixed",
         bottom: 16,
         right: rightOffset,

@@ -70,13 +70,13 @@ function toFormValues(state: PilotState): InstructionsFormValues {
     savedSearches: c.savedSearches.map((q) => ({
       query: q.query,
       board: q.board ?? "",
-      cadenceHours: q.cadenceHours,
+      checkEveryHours: q.checkEveryHours,
       resumeId: q.resumeId,
     })),
     promotionPlatforms: c.promotion.platforms.map((p) => ({
       platform: p.platform,
       target: p.target ?? "",
-      cadenceDays: p.cadenceDays,
+      postEveryDays: p.postEveryDays,
     })),
   };
 }
@@ -111,7 +111,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         savedSearches: value.savedSearches.map((q) => ({
           query: q.query.trim(),
           board: q.board.trim() || undefined,
-          cadenceHours: q.cadenceHours,
+          checkEveryHours: q.checkEveryHours,
           resumeId: q.resumeId || undefined,
         })),
         autonomy: {
@@ -122,7 +122,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
           platforms: value.promotionPlatforms.map((p) => ({
             platform: p.platform.trim(),
             target: p.target.trim() || undefined,
-            cadenceDays: p.cadenceDays,
+            postEveryDays: p.postEveryDays,
           })),
           autonomy: "review",
         },

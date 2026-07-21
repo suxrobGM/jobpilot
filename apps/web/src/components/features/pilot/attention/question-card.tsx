@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { Question } from "@jobpilot/contracts/pilot";
+import type { PilotQuestion } from "@jobpilot/contracts/pilot";
 import { OpenInNew } from "@mui/icons-material";
 import { Button, Card, CardContent, Link, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
@@ -9,7 +9,7 @@ import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 
 interface QuestionCardProps {
-  question: Question;
+  question: PilotQuestion;
 }
 
 export function QuestionCard(props: QuestionCardProps): ReactElement {

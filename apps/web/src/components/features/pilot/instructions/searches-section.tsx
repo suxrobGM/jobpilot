@@ -9,7 +9,7 @@ import { withForm } from "@/components/ui/form/tanstack";
 import { useKeyedList } from "@/hooks/use-keyed-list";
 import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
 
-const EMPTY_SEARCH = { query: "", board: "", cadenceHours: 24, resumeId: undefined };
+const EMPTY_SEARCH = { query: "", board: "", checkEveryHours: 24, resumeId: undefined };
 
 export const SearchesSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
@@ -65,10 +65,10 @@ export const SearchesSection = withForm({
                       </form.AppField>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 5 }}>
-                      <form.AppField name={`savedSearches[${i}].cadenceHours`}>
+                      <form.AppField name={`savedSearches[${i}].checkEveryHours`}>
                         {(sub) => (
                           <sub.TextField
-                            label="Re-run every"
+                            label="Check every (hours)"
                             type="number"
                             helperText="How often to re-run."
                             slotProps={{

@@ -4,7 +4,7 @@ import type {
   CampaignStatus,
 } from "@jobpilot/contracts/campaign";
 import type { ReviewStatus } from "@jobpilot/contracts/email";
-import type { PromotionStatus, QuestionStatus } from "@jobpilot/contracts/pilot";
+import type { PilotQuestionStatus, PromotionStatus } from "@jobpilot/contracts/pilot";
 import type { QueueStatus } from "@jobpilot/contracts/queue";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
@@ -193,7 +193,7 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.journal(),
     queryFn: () => api.pilot.journal.get({ query: { limit: PILOT_JOURNAL_PAGE_SIZE } }),
   }),
-  questions: (status?: QuestionStatus) => ({
+  questions: (status?: PilotQuestionStatus) => ({
     queryKey: queryKeys.pilot.questions({ status: status ?? "all" }),
     queryFn: () => api.pilot.questions.get({ query: status ? { status } : {} }),
   }),

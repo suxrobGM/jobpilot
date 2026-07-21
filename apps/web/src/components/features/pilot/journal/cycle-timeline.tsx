@@ -14,7 +14,7 @@ type Block =
 
 /**
  * Groups a newest-first entry list into cycle blocks anchored at each cycle's newest entry;
- * cycle-less entries (host watchdog / system) stay standalone in their chronological position.
+ * cycle-less entries (host orchestrator / system) stay standalone in their chronological position.
  */
 function toBlocks(entries: PilotJournalEntry[]): Block[] {
   const blocks: Block[] = [];

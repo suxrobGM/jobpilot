@@ -7,10 +7,10 @@ import { Background, BackgroundVariant, type Edge, ReactFlow } from "@xyflow/rea
 import { type StageFlowNode, stageNodeTypes } from "./flow-nodes";
 import type { PilotStage, PilotStageNode } from "./use-pilot-stage";
 
-const ORDER: PilotStageNode[] = ["conductor", "agent", "worker", "results"];
+const ORDER: PilotStageNode[] = ["orchestrator", "agent", "worker", "results"];
 
 const POSITION: Record<PilotStageNode, { x: number; y: number }> = {
-  conductor: { x: 0, y: 40 },
+  orchestrator: { x: 0, y: 40 },
   agent: { x: 220, y: 40 },
   worker: { x: 440, y: 40 },
   results: { x: 660, y: 40 },
@@ -18,7 +18,7 @@ const POSITION: Record<PilotStageNode, { x: number; y: number }> = {
 
 /** Distinct hues for the four agents; adjacency stays legible and every node also carries a text label. */
 const TONE: Record<PilotStageNode, StageFlowNode["data"]["tone"]> = {
-  conductor: "blue",
+  orchestrator: "blue",
   agent: "violet",
   worker: "amber",
   results: "green",
@@ -28,7 +28,7 @@ function truncate(text: string, max = 72): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
 
-function conductorCaption(stage: PilotStage): string {
+function orchestratorCaption(stage: PilotStage): string {
   switch (stage.mode) {
     case "off":
       return "Pilot disabled";
@@ -43,8 +43,8 @@ function conductorCaption(stage: PilotStage): string {
 
 function captionFor(node: PilotStageNode, stage: PilotStage): string {
   switch (node) {
-    case "conductor":
-      return conductorCaption(stage);
+    case "orchestrator":
+      return orchestratorCaption(stage);
     case "agent":
       return stage.topAgendaItem
         ? `Next: ${truncate(stage.topAgendaItem, 60)}`
@@ -57,7 +57,7 @@ function captionFor(node: PilotStageNode, stage: PilotStage): string {
 }
 
 const NODE_META: Record<PilotStageNode, { title: string; role: string }> = {
-  conductor: { title: "Conductor", role: "Host loop" },
+  orchestrator: { title: "Orchestrator", role: "Host loop" },
   agent: { title: "Agent", role: "Cycle" },
   worker: { title: "Worker", role: "Subagent" },
   results: { title: "Results", role: "Board / API" },

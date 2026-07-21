@@ -16,7 +16,7 @@ export const instructionsFormSchema = z.object({
     z.object({
       query: z.string().min(1, "Required"),
       board: z.string(),
-      cadenceHours: z.number().min(1),
+      checkEveryHours: z.number().min(1),
       // No UI field; carried through because the instructions PUT is a full replace and would erase it.
       resumeId: z.string().optional(),
     }),
@@ -25,7 +25,7 @@ export const instructionsFormSchema = z.object({
     z.object({
       platform: z.string().min(1, "Required"),
       target: z.string(),
-      cadenceDays: z.number().min(1),
+      postEveryDays: z.number().min(1),
     }),
   ),
 });
