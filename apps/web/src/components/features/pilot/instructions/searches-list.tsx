@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { PilotSearch } from "@jobpilot/contracts/pilot";
-import { Box, Chip, Divider, Skeleton, Stack, Typography } from "@mui/material";
+import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { EmptyState, QuerySection } from "@/components/ui/data";
@@ -10,9 +10,6 @@ import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 
 // Consecutive empty runs at which the pilot starts backing a search off (see contracts/pilot/search).
 const BACKOFF_THRESHOLD = 3;
-
-// Stable keys for the loading placeholder so the skeleton rows aren't keyed by array index.
-const SKELETON_KEYS = ["a", "b", "c"];
 
 interface SearchStatus {
   label: string;
@@ -88,21 +85,11 @@ export function SearchesList(): ReactElement {
     errorMessage: "Failed to load pilot searches",
   });
 
-  if (query.isLoading) {
-    return (
-      <Stack spacing={1.5}>
-        {SKELETON_KEYS.map((key) => (
-          <Skeleton key={key} variant="rectangular" height={64} />
-        ))}
-      </Stack>
-    );
-  }
-
   const searches = query.data ?? [];
 
   return (
     <QuerySection
-      isLoading={false}
+      isLoading={query.isLoading}
       isError={query.isError}
       onRetry={() => void query.refetch()}
       errorTitle="Couldn't load the pilot's searches."

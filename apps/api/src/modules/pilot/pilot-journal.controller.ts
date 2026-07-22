@@ -15,7 +15,6 @@ const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
 const limitJournal = rateLimit(RATE_LIMITS.pilotJournal);
 const limitJournalExport = rateLimit(RATE_LIMITS.pilotJournalExport);
 
-// Self-contained `/pilot` group mounted standalone in app.ts, like the other pilot controllers.
 export const pilotJournalController = new Elysia({ prefix: "/pilot", detail: { tags: ["Pilot"] } })
   .use(authGuard)
   .post("/journal", ({ user, body }) => journal.appendJournal(user.id, body), {

@@ -10,11 +10,8 @@ import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
 import { PushService } from "@/common/push";
 import { publish } from "@/common/sse";
-import {
-  type PilotState as PilotStateModel,
-  Prisma,
-  PrismaClient,
-} from "@/generated/prisma/client";
+import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
+import { AGENDA_SNAPSHOT_RESET } from "./agenda/snapshot";
 import { parseInstructionsConfig } from "./pilot.instructions";
 import { toPilotQuestion, toPilotState } from "./pilot.mapper";
 import { countAppliedToday } from "./pilot.stats";
@@ -52,35 +49,28 @@ export class PilotService {
     return this.toStateDto(userId, row);
   }
 
-  async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
-    // The searches were chosen for the old goals - a change makes them all due and clears backoff.
-    const prev = await this.prisma.pilotState.findUnique({
+  private async readGoals(userId: string): Promise<string> {
+    const row = await this.prisma.pilotState.findUnique({
       where: { userId },
       select: { instructionsGoals: true },
     });
-    const goalsChanged = (prev?.instructionsGoals ?? "") !== body.goals;
+    return row?.instructionsGoals ?? "";
+  }
 
+  async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
+    // The searches were chosen for the old goals - a change makes them all due and clears backoff.
+    const goalsChanged = (await this.readGoals(userId)) !== body.goals;
+
+    const instructions = {
+      instructionsGoals: body.goals,
+      instructionsConfig: body.config,
+      instructionsUpdatedAt: new Date(),
+      ...AGENDA_SNAPSHOT_RESET,
+    };
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
-      create: {
-        userId,
-        instructionsGoals: body.goals,
-        instructionsConfig: body.config,
-        instructionsUpdatedAt: new Date(),
-        agendaVersion: null,
-        agendaGeneratedAt: null,
-        agendaExpiresAt: null,
-        agendaSnapshot: Prisma.DbNull,
-      },
-      update: {
-        instructionsGoals: body.goals,
-        instructionsConfig: body.config,
-        instructionsUpdatedAt: new Date(),
-        agendaVersion: null,
-        agendaGeneratedAt: null,
-        agendaExpiresAt: null,
-        agendaSnapshot: Prisma.DbNull,
-      },
+      create: { userId, ...instructions },
+      update: instructions,
     });
     if (goalsChanged) {
       await this.prisma.pilotSearch.updateMany({
@@ -95,11 +85,7 @@ export class PilotService {
 
   /** Start the loop. Goals are mandatory: the pilot has nothing to steer by without them. */
   async start(userId: string) {
-    const prev = await this.prisma.pilotState.findUnique({
-      where: { userId },
-      select: { instructionsGoals: true },
-    });
-    if ((prev?.instructionsGoals ?? "").trim() === "") {
+    if ((await this.readGoals(userId)).trim() === "") {
       throw conflict("Write the pilot's goals before starting it.");
     }
     return this.setRunning(userId, true);
@@ -114,13 +100,7 @@ export class PilotService {
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
       create: { userId, running },
-      update: {
-        running,
-        agendaVersion: null,
-        agendaGeneratedAt: null,
-        agendaExpiresAt: null,
-        agendaSnapshot: Prisma.DbNull,
-      },
+      update: { running, ...AGENDA_SNAPSHOT_RESET },
     });
     const state = await this.toStateDto(userId, row);
     publish(pilotChannel, { userId }, { type: "state.changed", state });

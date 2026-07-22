@@ -254,6 +254,14 @@ export async function duePilotSearches(
     where: { userId },
     orderBy: { nextRunAt: "asc" },
     take: GATHER_CAP,
+    select: {
+      id: true,
+      query: true,
+      board: true,
+      resumeId: true,
+      nextRunAt: true,
+      lastRunAt: true,
+    },
   });
   const parked = new Set(config.parkedBoards);
   // A search targeting a parked board is suppressed until the user un-parks it.
@@ -285,10 +293,8 @@ export async function duePilotSearches(
     campaignId: campaignByQuery.get(r.query),
   });
 
-  const nextSearchRunAt = live.reduce<Date | null>(
-    (min, r) => (min == null || r.nextRunAt < min ? r.nextRunAt : min),
-    null,
-  );
+  // Rows arrive ordered by nextRunAt and `live` is an order-preserving filter, so the head is the earliest.
+  const nextSearchRunAt = live[0].nextRunAt;
 
   const due = live.filter((r) => r.nextRunAt <= now && claimable(r)).map(toEntry);
   if (due.length > 0) return { due, nextSearchRunAt };

@@ -5,13 +5,14 @@ import type {
 } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
-import { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient } from "@/generated/prisma/client";
 import {
   EMPTY_RUN_BACKOFF_MS,
   GOOD_RUN_NEW_JOBS,
   RERUN_GOOD_SEARCH_MS,
-  RERUN_REACHED_END_MS,
+  RERUN_SLOW_SEARCH_MS,
 } from "./agenda/constants";
+import { AGENDA_SNAPSHOT_RESET } from "./agenda/snapshot";
 
 export interface ScheduleRunInput {
   /** Consecutive empty runs recorded *before* this run. */
@@ -39,20 +40,19 @@ export function scheduleNextRun(input: ScheduleRunInput): ScheduleRunResult {
   const at = (ms: number) => new Date(now.getTime() + ms);
   const base = { lastRunAt: now, lastJobsSeen: jobsSeen, lastNewJobs: newJobs };
 
-  if (newJobs >= GOOD_RUN_NEW_JOBS) {
-    return {
-      ...base,
-      emptyRuns: 0,
-      nextRunAt: at(reachedEnd ? RERUN_REACHED_END_MS : RERUN_GOOD_SEARCH_MS),
-    };
+  if (newJobs === 0) {
+    // Step up the backoff ladder, holding at its last rung.
+    const next = emptyRuns + 1;
+    const rung = EMPTY_RUN_BACKOFF_MS[Math.min(next - 1, EMPTY_RUN_BACKOFF_MS.length - 1)];
+    return { ...base, emptyRuns: next, nextRunAt: at(rung) };
   }
-  if (newJobs >= 1) {
-    return { ...base, emptyRuns: 0, nextRunAt: at(RERUN_REACHED_END_MS) };
-  }
-  // Zero new jobs: step up the backoff ladder, holding at its last rung.
-  const next = emptyRuns + 1;
-  const rung = EMPTY_RUN_BACKOFF_MS[Math.min(next - 1, EMPTY_RUN_BACKOFF_MS.length - 1)];
-  return { ...base, emptyRuns: next, nextRunAt: at(rung) };
+
+  const stillYielding = newJobs >= GOOD_RUN_NEW_JOBS && !reachedEnd;
+  return {
+    ...base,
+    emptyRuns: 0,
+    nextRunAt: at(stillYielding ? RERUN_GOOD_SEARCH_MS : RERUN_SLOW_SEARCH_MS),
+  };
 }
 
 /** Owns the pilot's self-managed searches: CRUD plus applying a run's result to its schedule. */
@@ -62,15 +62,7 @@ export class PilotSearchService {
 
   /** A search mutation invalidates the cached agenda, same as an instructions edit. */
   private nullAgenda(userId: string) {
-    return this.prisma.pilotState.updateMany({
-      where: { userId },
-      data: {
-        agendaVersion: null,
-        agendaGeneratedAt: null,
-        agendaExpiresAt: null,
-        agendaSnapshot: Prisma.DbNull,
-      },
-    });
+    return this.prisma.pilotState.updateMany({ where: { userId }, data: AGENDA_SNAPSHOT_RESET });
   }
 
   /** No DB unique on (userId, query, board) - the nullable board makes NULLs distinct - so guard here. */
@@ -121,11 +113,12 @@ export class PilotSearchService {
 
     const row = await this.prisma.pilotSearch.update({
       where: { id },
+      // An undefined field is Prisma's "leave unchanged", which is exactly the patch semantics.
       data: {
-        ...(input.query !== undefined ? { query: input.query } : {}),
-        ...(input.board !== undefined ? { board: input.board } : {}),
-        ...(input.resumeId !== undefined ? { resumeId: input.resumeId } : {}),
-        ...(input.reason !== undefined ? { reason: input.reason } : {}),
+        query: input.query,
+        board: input.board,
+        resumeId: input.resumeId,
+        reason: input.reason,
         // A different query/board is a different search: restart its scheduling from now.
         ...(scheduleReset
           ? { emptyRuns: 0, nextRunAt: new Date(), lastJobsSeen: null, lastNewJobs: null }

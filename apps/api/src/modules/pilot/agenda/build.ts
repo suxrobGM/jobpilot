@@ -31,18 +31,17 @@ import type { AgendaInput } from "./types";
 
 /**
  * Name why the agenda is empty so clients render it instead of re-deriving suppression rules.
- * No searches or no goals + empty means the pilot still needs setup: bootstrap was gathered but
- * suppressed (recent attempt), otherwise it would be an item.
+ * Awaiting setup + empty means bootstrap was gathered but suppressed (recent attempt), otherwise
+ * it would be an item.
  */
 function agendaEmptyReason(
   itemCount: number,
   capReached: boolean,
-  searchCount: number,
-  goalsPresent: boolean,
+  awaitingSetup: boolean,
 ): AgendaContent["emptyReason"] {
   if (itemCount > 0) return null;
   if (capReached) return "capReached";
-  if (searchCount === 0 || !goalsPresent) return "awaitingSetup";
+  if (awaitingSetup) return "awaitingSetup";
   return "clear";
 }
 
@@ -88,6 +87,7 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
     );
     items.push(...buildDiscoverItems(input.dueQueries, config, newJobsTarget));
   }
+
   // Followups spend the same send budget, so they only get the headroom the sends left over.
   const followupHeadroom = sendHeadroom - sendItems.length;
   if (followupHeadroom > 0)
@@ -102,6 +102,7 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
       i.kind === "campaign.scorePending" ||
       i.kind === "queue.drain",
   );
+
   if (!busy) {
     items.push(...buildBootstrapItem(input.bootstrap));
     items.push(...buildStrategyReviewItems(input.strategyReviews));
@@ -118,22 +119,19 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   ranked.sort((a, b) => b.priority - a.priority);
   const capped = ranked.slice(0, MAX_ITEMS);
 
-  const emptyReason = agendaEmptyReason(
-    capped.length,
-    capReached,
-    input.searchCount,
-    input.goalsPresent,
-  );
+  const emptyReason = agendaEmptyReason(capped.length, capReached, input.awaitingSetup);
 
   // Idle sleep wakes at the sooner of the poll cadence and the next search due, clamped both ways.
   const secondsUntilSearch = input.nextSearchRunAt
     ? Math.max(0, Math.round((input.nextSearchRunAt.getTime() - now.getTime()) / 1000))
     : Number.POSITIVE_INFINITY;
+
   const idleSleep = clamp(
     Math.min(config.checkIntervalMinutes * 60, secondsUntilSearch),
     MIN_IDLE_SLEEP_SECONDS,
     MAX_IDLE_SLEEP_SECONDS,
   );
+
   const sleepSeconds = capped.length > 0 ? ACTIVE_SLEEP_SECONDS : idleSleep;
 
   return {

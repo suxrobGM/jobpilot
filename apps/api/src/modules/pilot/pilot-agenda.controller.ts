@@ -8,7 +8,6 @@ import { AgendaService } from "./agenda/service";
 const agenda = container.resolve(AgendaService);
 const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
 
-// Self-contained `/pilot` group mounted standalone in app.ts, like the other pilot controllers.
 export const pilotAgendaController = new Elysia({ prefix: "/pilot", detail: { tags: ["Pilot"] } })
   .use(authGuard)
   .get("/agenda", ({ user }) => agenda.getCurrent(user.id), {

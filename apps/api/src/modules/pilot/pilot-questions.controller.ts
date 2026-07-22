@@ -15,7 +15,6 @@ import { PilotService } from "./pilot.service";
 const pilot = container.resolve(PilotService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
-// Self-contained `/pilot` group mounted standalone in app.ts, like the other pilot controllers.
 export const pilotQuestionsController = new Elysia({
   prefix: "/pilot",
   detail: { tags: ["Pilot"] },

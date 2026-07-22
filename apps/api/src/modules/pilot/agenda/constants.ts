@@ -106,7 +106,7 @@ export const GOOD_RUN_NEW_JOBS = 3;
 /** Re-run a good, still-yielding search after 2h to keep the apply queue fed. */
 export const RERUN_GOOD_SEARCH_MS = 2 * HOUR_MS;
 /** A thin run, or a good one that hit the board's end, waits 8h before another pass. */
-export const RERUN_REACHED_END_MS = 8 * HOUR_MS;
+export const RERUN_SLOW_SEARCH_MS = 8 * HOUR_MS;
 /** Backoff ladder for consecutive empty runs (0 new jobs): 8h, 24h, then 48h and holds. */
 export const EMPTY_RUN_BACKOFF_MS = [8 * HOUR_MS, 24 * HOUR_MS, 48 * HOUR_MS];
 /** Hungry override floor: with apply headroom left, re-run a search idle at least this long. */

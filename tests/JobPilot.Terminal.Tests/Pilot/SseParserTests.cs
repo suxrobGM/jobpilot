@@ -1,3 +1,4 @@
+using JobPilot.Terminal.Common;
 using JobPilot.Terminal.Pilot;
 using Xunit;
 
@@ -6,6 +7,9 @@ namespace JobPilot.Terminal.Tests;
 /// <summary>Covers SSE frame parsing and reconnect backoff.</summary>
 public sealed class SseParserTests
 {
+    private static ExponentialBackoff SseBackoff() =>
+        new(PilotEventListener.InitialBackoff, PilotEventListener.MaxBackoff);
+
     private static List<SseFrame> FeedAll(SseParser parser, params string[] chunks)
     {
         var frames = new List<SseFrame>();
@@ -85,7 +89,7 @@ public sealed class SseParserTests
     [Fact]
     public void Backoff_DoublesFromFiveSecondsToFiveMinuteCap()
     {
-        var backoff = new SseBackoff();
+        var backoff = SseBackoff();
 
         Assert.Equal(TimeSpan.FromSeconds(5), backoff.Next());
         Assert.Equal(TimeSpan.FromSeconds(10), backoff.Next());
@@ -100,7 +104,7 @@ public sealed class SseParserTests
     [Fact]
     public void Backoff_ResetsToFiveSeconds()
     {
-        var backoff = new SseBackoff();
+        var backoff = SseBackoff();
         backoff.Next();
         backoff.Next();
 

@@ -117,21 +117,19 @@ export class AgendaService {
       gatherBoardHealth(prisma, userId, config.parkedBoards),
       prisma.pilotSearch.count({ where: { userId } }),
     ]);
-    const goalsPresent = goals.trim().length > 0;
+    const awaitingSetup = searchCount === 0 || goals.trim() === "";
 
     if (config.networkingEnabled) {
       await attachWarmContacts(prisma, userId, approvedJobs);
     }
 
-    const [dueSearches, scorePending] =
+    const [{ due: dueQueries, nextSearchRunAt }, scorePending] =
       approvedJobs.length === 0
         ? await Promise.all([
             duePilotSearches(prisma, userId, config, now, appliedToday),
             gatherScorePendingCampaigns(prisma, userId, config.minScore, now, config.parkedBoards),
           ])
         : [{ due: [], nextSearchRunAt: null }, []];
-
-    const dueQueries = dueSearches.due;
 
     const pipelineQuiet =
       approvedJobs.length === 0 &&
@@ -162,9 +160,8 @@ export class AgendaService {
       approvedJobs,
       appliedToday,
       dueQueries,
-      searchCount,
-      goalsPresent,
-      nextSearchRunAt: dueSearches.nextSearchRunAt,
+      awaitingSetup,
+      nextSearchRunAt,
       scorePending,
       pausedCampaigns,
       inbox,

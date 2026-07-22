@@ -17,7 +17,6 @@ const searches = container.resolve(PilotSearchService);
 const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
-// Self-contained `/pilot` group mounted standalone in app.ts, like the other pilot controllers.
 export const pilotSearchController = new Elysia({ prefix: "/pilot", detail: { tags: ["Pilot"] } })
   .use(authGuard)
   .get("/searches", ({ user }) => searches.list(user.id), {

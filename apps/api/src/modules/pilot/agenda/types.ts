@@ -175,9 +175,8 @@ export interface AgendaInput {
   approvedJobs: AgendaApprovedJob[];
   appliedToday: number;
   dueQueries: AgendaDueQuery[];
-  // Total pilot searches and whether goals are set - together they key the awaitingSetup empty reason.
-  searchCount: number;
-  goalsPresent: boolean;
+  // No searches yet, or no goals to derive them from: the pilot still needs setup.
+  awaitingSetup: boolean;
   // Earliest nextRunAt across live searches; the idle sleep clamps to it so a backed-off pilot wakes on time.
   nextSearchRunAt: Date | null;
   // Existing campaigns with unscored pending rows; emitted only when the apply pipeline is empty.

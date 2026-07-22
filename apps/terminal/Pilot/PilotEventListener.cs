@@ -26,23 +26,6 @@ internal sealed record PilotSseState
     public bool? Running { get; init; }
 }
 
-/// <summary>Exponential reconnect backoff: 5s doubling to a 5min cap.</summary>
-internal struct SseBackoff
-{
-    private int failures;
-
-    public TimeSpan Next()
-    {
-        var seconds = Math.Min(
-            PilotEventListener.InitialBackoff.TotalSeconds * Math.Pow(2, failures),
-            PilotEventListener.MaxBackoff.TotalSeconds);
-        failures++;
-        return TimeSpan.FromSeconds(seconds);
-    }
-
-    public void Reset() => failures = 0;
-}
-
 /// <summary>
 /// Long-lived listener on the API's pilot SSE feed. While the pilot is running+paired it holds a streaming
 /// connection and wakes the coordinator the moment a question is answered, an approved promotion lands, or
@@ -131,7 +114,7 @@ public sealed class PilotEventListener : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var backoff = new SseBackoff();
+        var backoff = new ExponentialBackoff(InitialBackoff, MaxBackoff);
 
         while (!stoppingToken.IsCancellationRequested)
         {

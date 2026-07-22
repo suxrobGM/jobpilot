@@ -13,7 +13,6 @@ import { ClaimService } from "./agenda/claim.service";
 const claims = container.resolve(ClaimService);
 const limitClaim = rateLimit(RATE_LIMITS.pilotClaim);
 
-// Self-contained `/pilot` group mounted standalone in app.ts, like the other pilot controllers.
 export const pilotClaimsController = new Elysia({ prefix: "/pilot", detail: { tags: ["Pilot"] } })
   .use(authGuard)
   .post("/claims", ({ user, body }) => claims.claim(user.id, body.agendaVersion, body.itemId), {

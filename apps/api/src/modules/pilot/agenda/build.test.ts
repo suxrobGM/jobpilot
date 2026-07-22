@@ -185,20 +185,12 @@ describe("buildAgenda emptyReason", () => {
     expect(agenda.emptyReason).toBe("capReached");
   });
 
-  it("is awaitingSetup when empty with no searches", () => {
-    expect(buildAgenda(base({ searchCount: 0, goalsPresent: true })).emptyReason).toBe(
-      "awaitingSetup",
-    );
-  });
-
-  it("is awaitingSetup when empty with searches but blank goals", () => {
-    expect(buildAgenda(base({ searchCount: 1, goalsPresent: false })).emptyReason).toBe(
-      "awaitingSetup",
-    );
+  it("is awaitingSetup when empty and setup is unfinished", () => {
+    expect(buildAgenda(base({ awaitingSetup: true })).emptyReason).toBe("awaitingSetup");
   });
 
   it("is clear when empty but searches and goals exist", () => {
-    const agenda = buildAgenda(base({ searchCount: 1, goalsPresent: true }));
+    const agenda = buildAgenda(base({ awaitingSetup: false }));
     expect(agenda.emptyReason).toBe("clear");
   });
 });

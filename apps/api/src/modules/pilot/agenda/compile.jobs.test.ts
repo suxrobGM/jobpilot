@@ -1,15 +1,15 @@
 // Apply-pipeline gathers through AgendaService.refresh (fake Prisma, no DB): the warm-check
 // contact join and parked-board enforcement.
 
+import { HOUR_MS } from "@/common/date/buckets";
 import { service } from "./compile.test-helpers";
 import { approvedJob, pilotSearchRow } from "./db.test-helpers";
 import { describe, expect, it } from "bun:test";
 
-const HOUR = 60 * 60 * 1000;
 const dueRow = (over: Record<string, unknown> = {}) =>
-  pilotSearchRow({ nextRunAt: new Date(Date.now() - HOUR), ...over });
+  pilotSearchRow({ nextRunAt: new Date(Date.now() - HOUR_MS), ...over });
 const futureRow = (over: Record<string, unknown> = {}) =>
-  pilotSearchRow({ nextRunAt: new Date(Date.now() + HOUR), ...over });
+  pilotSearchRow({ nextRunAt: new Date(Date.now() + HOUR_MS), ...over });
 
 describe("AgendaService warm-check join", () => {
   const insider = {

@@ -1,9 +1,9 @@
 // Fake-Prisma unit test for PilotSearchService and its pure scheduleNextRun policy (no database).
+import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { PilotSearchService, scheduleNextRun } from "./pilot-search.service";
 import { describe, expect, it } from "bun:test";
 
-const HOUR = 60 * 60 * 1000;
 const NOW = new Date("2026-07-15T12:00:00.000Z");
 
 describe("scheduleNextRun", () => {
@@ -16,7 +16,7 @@ describe("scheduleNextRun", () => {
       now: NOW,
       ...over,
     });
-  const gapHours = (r: { nextRunAt: Date }) => (r.nextRunAt.getTime() - NOW.getTime()) / HOUR;
+  const gapHours = (r: { nextRunAt: Date }) => (r.nextRunAt.getTime() - NOW.getTime()) / HOUR_MS;
 
   const cases: {
     name: string;
