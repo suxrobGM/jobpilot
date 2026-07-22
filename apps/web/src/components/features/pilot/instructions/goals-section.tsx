@@ -14,9 +14,12 @@ export const GoalsSection = withForm({
             <field.TextField
               label="Goals"
               multiline
-              minRows={3}
+              minRows={6}
+              maxRows={20}
               placeholder="e.g. Prioritize senior frontend roles at Series A-C startups, remote or NYC. Must sponsor F1/OPT. Skip crypto and agencies. Lead with my React and design-systems work."
-              helperText="Plain-language direction: roles, priorities, constraints. The pilot derives its saved searches from this - leave it empty and it works from your resume instead."
+              helperText="Plain-language direction: roles, priorities, constraints. The pilot creates and re-runs its own searches from these goals, so give it the full picture."
+              // Goals are the pilot's whole steering input, so let the user drag the box taller.
+              sx={{ "& textarea": { resize: "vertical" } }}
             />
           )}
         </form.AppField>

@@ -19,6 +19,7 @@ import { useSelector } from "@tanstack/react-form";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
+import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/section-anchor-nav";
@@ -30,6 +31,7 @@ import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
+import { SearchesList } from "./searches-list";
 
 interface InstructionsEditorProps {
   state: PilotState;
@@ -45,6 +47,7 @@ const ADVANCED_SECTIONS: { id: string; Section: typeof GoalsSection }[] = [
 
 const NAV_ANCHORS: SectionAnchor[] = [
   { id: "goals", label: "Goals" },
+  { id: "searches", label: "Searches" },
   { id: "advanced", label: "Advanced settings" },
 ];
 
@@ -150,6 +153,16 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
             <Stack spacing={3}>
               <Box data-section-id="goals">
                 <GoalsSection form={form} />
+              </Box>
+
+              {/* Server data, not form state: the pilot owns these, so they render outside the form. */}
+              <Box data-section-id="searches">
+                <FormSection
+                  title="Searches"
+                  description="The pilot creates and maintains these from your goals - shown read-only."
+                >
+                  <SearchesList />
+                </FormSection>
               </Box>
 
               <Box data-section-id="advanced">

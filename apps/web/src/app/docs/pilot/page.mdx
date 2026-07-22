@@ -7,8 +7,8 @@ export const metadata = buildDocsMetadata("pilot", {
 
 # The Pilot
 
-The Pilot is JobPilot's autonomous mode. Write your **instructions** once - goals,
-limits, saved searches - and the local agent runs your whole search on its own:
+The Pilot is JobPilot's autonomous mode. Write your **instructions** once - goals
+and limits - and the local agent runs your whole search on its own:
 it discovers and scores roles, applies, finds warm intros, networks and follows
 up, reviews recruiter replies, and drafts interview replies, prep sheets, and
 self-promotion posts. Everything it does lands in a live journal; the few
@@ -56,8 +56,10 @@ One small document steers everything:
 - **Networking** - off by default. When on: daily cap, follow-up delay, and
   per-channel autonomy - email can be **draft**, **review**, or **auto**;
   LinkedIn is always review.
-- **Saved searches** - re-run on a schedule so new postings get scored and
-  applied to automatically.
+- **Searches** - the Pilot creates these from your goals and re-runs them on
+  demand: soon after a run that turns up new roles, backing off when a search
+  keeps coming up dry. The Instructions page shows them read-only, with each
+  one's recent yield and next check.
 - **Platforms** - where the Pilot drafts self-promotion posts. Posting is
   always review-only.
 

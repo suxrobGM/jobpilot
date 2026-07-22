@@ -186,6 +186,10 @@ export const PILOT_JOURNAL_PAGE_SIZE = 50;
 
 export const pilotQueries = {
   state: () => ({ queryKey: queryKeys.pilot.state(), queryFn: () => api.pilot.get() }),
+  searches: () => ({
+    queryKey: queryKeys.pilot.searches(),
+    queryFn: () => api.pilot.searches.get(),
+  }),
   agenda: () => ({
     queryKey: queryKeys.pilot.agenda(),
     queryFn: async () => {
