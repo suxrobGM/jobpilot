@@ -22,6 +22,15 @@ export interface Recorder {
 export interface Over {
   instructionsConfig?: unknown;
   instructionsGoals?: string;
+  // Pilot-search rows for the duePilotSearches gather (id/query/board/resumeId/nextRunAt/lastRunAt...).
+  pilotSearches?: Record<string, unknown>[];
+  // Prior search.discover claims, keyed by search id, gating the in-flight/crash damper.
+  searchClaims?: {
+    subjectId: string;
+    grantedAt: Date;
+    releasedAt: Date | null;
+    outcome?: string | null;
+  }[];
   expiredClaims?: Record<string, unknown>[];
   questionClaims?: { subjectId: string }[];
   expiredQuestions?: Record<string, unknown>[];
@@ -119,6 +128,7 @@ function fakePilotClaim(over: Over, rec: Recorder) {
     findMany: async (args: { where: { subjectType?: string; kind?: string } }) => {
       if (args.where.kind === "campaign.scorePending") return over.scorePendingClaims ?? [];
       if (args.where.kind === "campaign.reviewPaused") return over.pausedReviewClaims ?? [];
+      if (args.where.kind === "search.discover") return over.searchClaims ?? [];
       if (args.where.kind === "job.apply") return over.openApplyClaims ?? [];
       if (args.where.subjectType === "question") return over.questionClaims ?? [];
       return over.expiredClaims ?? [];
@@ -161,6 +171,13 @@ function fakePilotClaim(over: Over, rec: Recorder) {
         ...a.data,
       };
     },
+  };
+}
+
+function fakePilotSearch(over: Over) {
+  return {
+    findMany: async () => over.pilotSearches ?? [],
+    count: async () => (over.pilotSearches ?? []).length,
   };
 }
 
@@ -297,6 +314,7 @@ export function makeAgendaDb(over: Over = {}) {
   let txChain: Promise<unknown> = Promise.resolve();
   const db = {
     pilotState: fakePilotState(over),
+    pilotSearch: fakePilotSearch(over),
     pilotClaim: fakePilotClaim(over, rec),
     pilotQuestion: fakePilotQuestion(over, rec),
     job: fakeJob(over),
@@ -386,6 +404,17 @@ export function makeAgendaDeps(over: Over = {}) {
     rec,
   };
 }
+
+/** A PilotSearch row for the duePilotSearches gather; `nextRunAt` defaults due (epoch), board null. */
+export const pilotSearchRow = (over: Record<string, unknown> = {}) => ({
+  id: "s1",
+  query: "react",
+  board: null,
+  resumeId: null,
+  lastRunAt: null,
+  nextRunAt: new Date(0),
+  ...over,
+});
 
 export const approvedJob = (over: Record<string, unknown> = {}) => ({
   campaignId: "c1",

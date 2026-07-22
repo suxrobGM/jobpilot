@@ -1,7 +1,7 @@
 // Pure agenda orchestrator: no Prisma, no env. Priority ordering, cap suppression, budget,
 // empty-reason, and sleep rules against hand-built inputs.
 import { buildAgenda } from "./build";
-import { base, bootstrapCandidate, cfg, job, pausedCampaign } from "./build.test-helpers";
+import { base, bootstrapCandidate, cfg, dueQuery, job, pausedCampaign } from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda priority", () => {
@@ -21,7 +21,7 @@ describe("buildAgenda priority", () => {
       base({
         answeredQuestions: [{ id: "e1", kind: "question", prompt: "q" }],
         approvedJobs: [],
-        dueQueries: [{ query: "golang" }],
+        dueQueries: [dueQuery("golang")],
       }),
     );
     expect(agenda.items.map((i) => i.kind)).toEqual(["question.answered", "search.discover"]);
@@ -39,7 +39,7 @@ describe("buildAgenda priority", () => {
 
   it("suppresses discovery while approved jobs remain", () => {
     const agenda = buildAgenda(
-      base({ approvedJobs: [job("j1", 80)], dueQueries: [{ query: "golang" }] }),
+      base({ approvedJobs: [job("j1", 80)], dueQueries: [dueQuery("golang")] }),
     );
     expect(agenda.items.some((i) => i.kind === "search.discover")).toBe(false);
   });
@@ -58,7 +58,7 @@ describe("buildAgenda campaign.scorePending", () => {
 
   it("emits scorePending on an empty apply pipeline, ranked above discovery", () => {
     const agenda = buildAgenda(
-      base({ approvedJobs: [], scorePending: [scorePending()], dueQueries: [{ query: "golang" }] }),
+      base({ approvedJobs: [], scorePending: [scorePending()], dueQueries: [dueQuery("golang")] }),
     );
     expect(agenda.items.map((i) => i.kind)).toEqual(["campaign.scorePending", "search.discover"]);
     expect(agenda.items[0].priority).toBeGreaterThan(agenda.items[1].priority);
@@ -185,12 +185,20 @@ describe("buildAgenda emptyReason", () => {
     expect(agenda.emptyReason).toBe("capReached");
   });
 
-  it("is awaitingSetup when empty with no saved searches", () => {
-    expect(buildAgenda(base()).emptyReason).toBe("awaitingSetup");
+  it("is awaitingSetup when empty with no searches", () => {
+    expect(buildAgenda(base({ searchCount: 0, goalsPresent: true })).emptyReason).toBe(
+      "awaitingSetup",
+    );
   });
 
-  it("is clear when empty but saved searches exist", () => {
-    const agenda = buildAgenda(base({ config: cfg({ savedSearches: [{ query: "golang" }] }) }));
+  it("is awaitingSetup when empty with searches but blank goals", () => {
+    expect(buildAgenda(base({ searchCount: 1, goalsPresent: false })).emptyReason).toBe(
+      "awaitingSetup",
+    );
+  });
+
+  it("is clear when empty but searches and goals exist", () => {
+    const agenda = buildAgenda(base({ searchCount: 1, goalsPresent: true }));
     expect(agenda.emptyReason).toBe("clear");
   });
 });
@@ -200,9 +208,30 @@ describe("buildAgenda sleep", () => {
     expect(buildAgenda(base({ approvedJobs: [job("j1", 80)] })).sleepSeconds).toBe(15);
   });
 
-  it("uses the check interval when idle", () => {
+  it("uses the check interval when idle and no search is sooner", () => {
     const agenda = buildAgenda(base({ config: cfg({ checkIntervalMinutes: 30 }) }));
     expect(agenda.sleepSeconds).toBe(1800);
     expect(agenda.nextWakeAt).toEqual(new Date(agenda.generatedAt.getTime() + 1800 * 1000));
+  });
+
+  it("clamps the idle sleep down to the next search coming due", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ checkIntervalMinutes: 30 }),
+        // 5 min out - sooner than the 30-min poll cadence, so the sleep shrinks to it.
+        nextSearchRunAt: new Date(base().now.getTime() + 5 * 60 * 1000),
+      }),
+    );
+    expect(agenda.sleepSeconds).toBe(300);
+  });
+
+  it("floors the idle sleep when a search is already overdue", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ checkIntervalMinutes: 30 }),
+        nextSearchRunAt: new Date(base().now.getTime() - 60 * 1000),
+      }),
+    );
+    expect(agenda.sleepSeconds).toBe(30);
   });
 });

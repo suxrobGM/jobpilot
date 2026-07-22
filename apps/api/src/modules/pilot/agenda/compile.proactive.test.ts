@@ -2,7 +2,7 @@
 // cadence, queue drain, board health, quiet-agenda candidates, and strategy bootstrap.
 
 import { service } from "./compile.test-helpers";
-import { approvedJob } from "./db.test-helpers";
+import { approvedJob, pilotSearchRow } from "./db.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("AgendaService promotion cadence", () => {
@@ -158,37 +158,38 @@ describe("AgendaService strategy.bootstrap", () => {
     expect(item?.subjectId).toBe("bootstrap");
     expect(item?.payload).toEqual({
       goals: "Senior TS roles, remote",
-      hasGoals: true,
       boards: ["linkedin"],
       minScore: 70,
     });
   });
 
-  it("marks hasGoals false when the goals are blank", async () => {
+  it("suppresses bootstrap when goals are blank (awaitingSetup covers it, no item)", async () => {
     const agenda = await service({ instructionsGoals: "   " }).refresh("p1");
-    const item = agenda.items.find((i) => i.kind === "strategy.bootstrap");
-    expect(item?.payload).toMatchObject({ goals: "", hasGoals: false });
+    expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
+    expect(agenda.emptyReason).toBe("awaitingSetup");
   });
 
-  it("suppresses bootstrap once a saved search exists", async () => {
+  it("suppresses bootstrap once a search exists", async () => {
     const agenda = await service({
-      instructionsConfig: { savedSearches: [{ query: "react" }] },
+      instructionsGoals: "Senior TS roles",
+      pilotSearches: [pilotSearchRow()],
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 
-  it("suppresses bootstrap while its question is open", async () => {
-    const agenda = await service({ pilotBootstrapQuestion: { id: "q1" } }).refresh("p1");
-    expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
-  });
-
   it("suppresses bootstrap after a recent bootstrap claim", async () => {
-    const agenda = await service({ bootstrapClaim: { id: "l1" } }).refresh("p1");
+    const agenda = await service({
+      instructionsGoals: "Senior TS roles",
+      bootstrapClaim: { id: "l1" },
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 
   it("suppresses bootstrap while the pipeline is busy", async () => {
-    const agenda = await service({ approvedJobs: [approvedJob()] }).refresh("p1");
+    const agenda = await service({
+      instructionsGoals: "Senior TS roles",
+      approvedJobs: [approvedJob()],
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 });

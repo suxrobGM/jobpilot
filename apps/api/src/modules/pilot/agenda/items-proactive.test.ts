@@ -1,7 +1,14 @@
 // Pure builder behavior for the M4 proactive kinds through buildAgenda: queue.drain emission + rank,
 // board.health cap + rank, and quiet-agenda gating of strategyReview/rescan/retry. No Prisma, no env.
 import { buildAgenda } from "./build";
-import { base, boardHealth, bootstrapCandidate, job, strategyReview } from "./build.test-helpers";
+import {
+  base,
+  boardHealth,
+  bootstrapCandidate,
+  dueQuery,
+  job,
+  strategyReview,
+} from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda queue.drain", () => {
@@ -112,7 +119,7 @@ describe("buildAgenda quiet-agenda gating", () => {
   });
 
   it("suppresses maintenance kinds when search.discover work exists", () => {
-    const agenda = buildAgenda(base({ ...quietWork, dueQueries: [{ query: "golang" }] }));
+    const agenda = buildAgenda(base({ ...quietWork, dueQueries: [dueQuery("golang")] }));
     expect(agenda.items.some((i) => i.kind === "campaign.strategyReview")).toBe(false);
   });
 
@@ -155,14 +162,13 @@ describe("buildAgenda strategy.bootstrap", () => {
     expect(item?.id).toBe("strategy.bootstrap");
     expect(item?.subjectType).toBe("pilot");
     expect(item?.priority).toBe(520);
-    expect(item?.title).toBe("Set up saved searches from your goals");
-    expect(item?.payload).toMatchObject({ hasGoals: true, boards: ["linkedin"] });
-  });
-
-  it("titles the goal-less variant from the profile", () => {
-    const agenda = buildAgenda(base({ bootstrap: bootstrapCandidate({ hasGoals: false }) }));
-    const item = agenda.items.find((i) => i.kind === "strategy.bootstrap");
-    expect(item?.title).toBe("Set up the pilot from your profile");
+    expect(item?.title).toBe("Set up searches from your goals");
+    expect(item?.payload).toMatchObject({
+      goals: "Senior TypeScript roles, remote",
+      boards: ["linkedin"],
+    });
+    // No goals-empty variant: goals are mandatory, so the payload never carries a hasGoals flag.
+    expect(item?.payload).not.toHaveProperty("hasGoals");
   });
 
   it("suppresses bootstrap when apply work is queued", () => {

@@ -1,5 +1,11 @@
 import type { AgendaItem, PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
-import { MAX_PAUSED_REVIEWS, MAX_WARM_INTROS, PRIORITY, WARM_INTRO_MIN_SCORE } from "./constants";
+import {
+  MAX_PAUSED_REVIEWS,
+  MAX_WARM_INTROS,
+  PRIORITY,
+  SEARCH_MAX_PAGES,
+  WARM_INTRO_MIN_SCORE,
+} from "./constants";
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
@@ -81,24 +87,32 @@ export function buildWarmIntroItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
   return items;
 }
 
-/** Discovery fills the pipeline only when nothing approved is left to apply to (gated by the caller). */
+/**
+ * Discovery fills the pipeline only when nothing approved is left to apply to (gated by the caller).
+ * Item id / claim subject is the search id; `newJobsTarget` (demand-derived by the caller) and the
+ * page cap steer the paginated crawl.
+ */
 export function buildDiscoverItems(
   queries: AgendaDueQuery[],
   config: PilotInstructionsConfig,
+  newJobsTarget: number,
 ): AgendaItem[] {
   return queries.map((q) => ({
-    id: `search.discover:${q.query}`,
+    id: `search.discover:${q.searchId}`,
     kind: "search.discover",
     priority: PRIORITY.discover,
     title: `Discover: ${q.query}`,
     subjectType: "campaign",
-    subjectId: q.query,
+    subjectId: q.searchId,
     payload: {
+      searchId: q.searchId,
       query: q.query,
       board: q.board,
       resumeId: q.resumeId,
       minScore: config.minScore,
       campaignId: q.campaignId,
+      newJobsTarget,
+      maxPages: SEARCH_MAX_PAGES,
     },
   }));
 }

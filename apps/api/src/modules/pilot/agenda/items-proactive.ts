@@ -81,7 +81,7 @@ export function buildRescanSkippedItems(rescans: AgendaRescanSkipped[]): AgendaI
   }));
 }
 
-/** One self-setup item; the agent derives searches from goals (or goals from the resume, or asks). */
+/** One self-setup item: derive searches from the (always-present) goals. Gated by gatherBootstrap. */
 export function buildBootstrapItem(bootstrap: AgendaStrategyBootstrap | null): AgendaItem[] {
   if (!bootstrap) return [];
   return [
@@ -89,14 +89,11 @@ export function buildBootstrapItem(bootstrap: AgendaStrategyBootstrap | null): A
       id: "strategy.bootstrap",
       kind: "strategy.bootstrap",
       priority: PRIORITY.strategyBootstrap,
-      title: bootstrap.hasGoals
-        ? "Set up saved searches from your goals"
-        : "Set up the pilot from your profile",
+      title: "Set up searches from your goals",
       subjectType: "pilot",
       subjectId: "bootstrap",
       payload: {
         goals: bootstrap.goals,
-        hasGoals: bootstrap.hasGoals,
         boards: bootstrap.boards,
         minScore: bootstrap.minScore,
       },

@@ -130,11 +130,10 @@ The claim payload is enriched: `{questionId, questionKind, subjectType, subjectI
 - **`networking`** → `subjectId` = a draft networking messageId (filed by `networking.followup`/`networking.warmIntro`). Recover the draft and its campaign from paginated campaign `.items` and `GET /api/campaigns/<id>/networking?page=1&limit=100` `.items`. `"Send"` → send and record exactly as `networking.send`; `"Skip"` → record result `skipped`.
 - **`campaign`** → a `campaign.reviewPaused` answer; `subjectId` = the campaignId. `"Resume"` → `POST /api/campaigns/$SID/status {"status":"in_progress","actor":"pilot"}`; `"Complete campaign"` → same route with `completed`; `"Keep paused"` → journal only; free text → interpret as one of the three. Journal the outcome.
 - **`board`** → the answer to a `board.health` choice. `"Park board"` → `GET /api/pilot`, append the board (`subjectId`) to instructions `config.parkedBoards`, `PUT /api/pilot/instructions` with the updated config (user-approved change - allowed); `"Keep trying"` → journal only.
-- **`pilot`** → the answer to a `strategy.bootstrap` question: treat the answer text as the goals. Derive 1-3 saved searches from it exactly as `strategy.bootstrap`, then ONE `PUT /api/pilot/instructions` writing `{goals: <answer>, config: <config + new savedSearches>}`. Journal both facts.
 
 ### `search.discover`
 
-Run ONE bounded board search, modeled on the `search` skill (login per `../../shared/auth.md`). When the payload carries `campaignId`, reuse it (`CID=<payload.campaignId>`) - never create a second campaign for the same query. Only when `campaignId` is absent, create one first:
+Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`. Run ONE board search, modeled on the `search` skill (login per `../../shared/auth.md`). Note `SEARCH_ID=<payload.searchId>` - the run is reported against it before Record. When the payload carries `campaignId`, reuse it (`CID=<payload.campaignId>`) - never create a second campaign for the same query. Only when `campaignId` is absent, create one first:
 
 ```bash
 CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
@@ -144,11 +143,23 @@ CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JO
 CID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
-Cap ONE results page (~10 rows, no pagination). Score every row **in-context** - no per-job navigation, no worker delegation: spawning a worker per row just repeats the same fixed setup cost, and the shared browser tab would serialize them anyway. Per row: dedupe via `GET /api/applied/check`; build and create every Job as a non-terminal `pending` row. For an already-applied or ineligible row, immediately POST its `skipped` outcome and reason to `/jobs/<key>/result`. Eligible rows keep their score and remain `pending`. The server auto-promotes rows scoring ≥ threshold to `approved` on the next agenda refresh, so **do not apply** in this cycle. A row too thin to score confidently stays `pending` without `matchScore`; `campaign.scorePending` batch-scores it later. Heartbeat after each row and at least every ~10 minutes:
+Paginate the results per `../../shared/browser-tips.md` (**Pagination & infinite scroll**) up to `maxPages` pages. Score every row **in-context** - no per-job navigation, no worker delegation: spawning a worker per row just repeats the same fixed setup cost, and the shared browser tab would serialize them anyway. Per row: dedupe via `GET /api/applied/check`; build and create every Job as a non-terminal `pending` row. For an already-applied or ineligible row, immediately POST its `skipped` outcome and reason to `/jobs/<key>/result`. Eligible rows keep their score and remain `pending`. The server auto-promotes rows scoring ≥ threshold to `approved` on the next agenda refresh, so **do not apply** in this cycle. A row too thin to score confidently stays `pending` without `matchScore`; `campaign.scorePending` batch-scores it later.
+
+Track `JOBS_SEEN` (rows read) and `NEW_JOBS` (fresh eligible `pending` rows you created - not dupes or ineligible rows). Stop when `NEW_JOBS >= newJobsTarget`, the page cap (`maxPages`) is hit, or the board has no next page (`REACHED_END=true`; leave it `false` if you stopped for either other reason). Heartbeat after each page and at least every ~10 minutes:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/heartbeat"
 ```
+
+Before step 5 (Record), report the run - a `404` means the search was deleted mid-run, so journal that and move on:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/searches/$SEARCH_ID/run-result" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --argjson seen $JOBS_SEEN --argjson new $NEW_JOBS --argjson end $REACHED_END '{jobsSeen:$seen,newJobs:$new,reachedEnd:$end}')"
+```
+
+The journal narrative should include the pages read and new-jobs count.
 
 ### `campaign.scorePending`
 
@@ -224,24 +235,20 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
 
 Journal with detail `{type:"strategyReview"}` (see step 5): "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65." The `detail.type` marker is load-bearing - the server dedupes reviews on it. Larger changes than the bounds → ask the user with a `choice` question instead of applying.
 
+**Search stewardship.** When the diagnosis implicates the search itself - the query is fundamentally dry or mistargeted, not merely campaign tuning - the pilot may make ONE search change per cycle via the search endpoints instead of (or in addition to) config tuning: `POST`/`PATCH`/`DELETE $JOBPILOT_API/api/pilot/searches[/:id]` (list them via `GET /api/pilot/searches` to find ids). Update `reason` to say why, and journal the change. The campaign-config tuning rules above are unchanged.
+
 ### `strategy.bootstrap`
 
-Payload `{goals, hasGoals, boards, minScore}` - no saved searches configured yet. Config work, **no browser**, no worker. Load the profile and primary resume per `../../shared/setup.md`, then:
-
-- `hasGoals` true → derive 1-3 saved searches from the goals + profile + resume: each `{query, board?, checkEveryHours: 24, resumeId: <primary resume id>}`, `board` only from the payload's `boards` when one clearly fits, queries concrete enough to paste into a board search ("senior typescript remote", not "good jobs"). `GET /api/pilot`, append to `config.savedSearches`, `PUT /api/pilot/instructions` with the goals verbatim and the **full** config (preserve every other field, as the board-park flow does). Journal: "Bootstrapped 2 saved searches from your goals: 'senior typescript remote', 'dotnet engineer remote'."
-- `hasGoals` false but a primary resume exists → derive draft goals from the resume (titles, seniority, stack, remote/location), then the searches from those; ONE `PUT /api/pilot/instructions` writing both `goals` and `config`. Journal: "Set up goals and 2 saved searches from your resume - edit anytime."
-- No goals and no resume → POST a question and journal "No goals or resume yet - asked what to hunt for.":
+Payload `{goals, boards, minScore}` - goals are set (mandatory before start) but no searches configured yet. Config work, **no browser**, no worker. Load the profile and primary resume per `../../shared/setup.md`, then derive 1-3 searches from the goals + profile + resume and create each via `POST /api/pilot/searches`. Body `{query, board?, resumeId, reason}`: `query` concrete enough to paste into a board search ("senior typescript remote", not "good jobs"); `board` only from the payload's `boards` when one clearly fits (omit otherwise); `resumeId` the primary resume id; `reason` one user-facing sentence on why the pilot chose this search. Journal: "Set up 2 searches from your goals: 'senior typescript remote', 'dotnet engineer remote'."
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/questions" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/searches" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg dl "$JOBPILOT_WEB/pilot/instructions" \
-    '{kind:"question", subjectType:"pilot", subjectId:"bootstrap",
-      prompt:"What roles should the pilot hunt for? A sentence on titles, seniority, and remote/location is enough.",
-      options:[], deepLink:$dl}')"
+  -d "$(jq -n --arg q "<query>" --arg board "<board>" --arg rid "<primary resume id>" --arg reason "<why>" \
+    '{query:$q, board:(if $board=="" then null else $board end), resumeId:$rid, reason:$reason}')"
 ```
 
-The `pilot` answer is handled in `question.answered`. Discovery starts on the next cycle - do not search here.
+Discovery starts on the next cycle - do not search here.
 
 ### `job.rescanSkipped`
 

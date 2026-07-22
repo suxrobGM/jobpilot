@@ -30,7 +30,6 @@ import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
-import { SearchesSection } from "./searches-section";
 
 interface InstructionsEditorProps {
   state: PilotState;
@@ -41,7 +40,6 @@ const ADVANCED_SECTIONS: { id: string; Section: typeof GoalsSection }[] = [
   { id: "limits", Section: LimitsSection },
   { id: "networking", Section: NetworkingSection },
   { id: "boards", Section: BoardsSection },
-  { id: "searches", Section: SearchesSection },
   { id: "platforms", Section: PlatformsSection },
 ];
 
@@ -67,12 +65,6 @@ function toFormValues(state: PilotState): InstructionsFormValues {
     networkingLinkedIn: c.autonomy.networkingLinkedIn,
     boards: [...c.boards],
     parkedBoards: [...c.parkedBoards],
-    savedSearches: c.savedSearches.map((q) => ({
-      query: q.query,
-      board: q.board ?? "",
-      checkEveryHours: q.checkEveryHours,
-      resumeId: q.resumeId,
-    })),
     promotionPlatforms: c.promotion.platforms.map((p) => ({
       platform: p.platform,
       target: p.target ?? "",
@@ -108,12 +100,6 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         networkingEnabled: value.networkingEnabled,
         boards: value.boards,
         parkedBoards: value.parkedBoards,
-        savedSearches: value.savedSearches.map((q) => ({
-          query: q.query.trim(),
-          board: q.board.trim() || undefined,
-          checkEveryHours: q.checkEveryHours,
-          resumeId: q.resumeId || undefined,
-        })),
         autonomy: {
           networkingEmail: value.networkingEmail,
           networkingLinkedIn: value.networkingLinkedIn,
@@ -182,8 +168,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
                     <Stack spacing={0.25}>
                       <Typography variant="body1Strong">Advanced settings</Typography>
                       <Typography variant="captionMuted">
-                        Caps, networking, boards, saved searches, platforms - the defaults work for
-                        most people.
+                        Caps, networking, boards, platforms - the defaults work for most people.
                       </Typography>
                     </Stack>
                   </AccordionSummary>

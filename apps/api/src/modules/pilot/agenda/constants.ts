@@ -1,4 +1,4 @@
-import { DAY_MS } from "@/common/date/buckets";
+import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 
 // Category bases; job.apply is offset by matchScore so higher scores sort first, still under questions.
 export const PRIORITY = {
@@ -89,5 +89,27 @@ export const MAX_OPEN_APPLY_CLAIMS = 20;
 
 /** Idle poll cadence has a floor so a tiny `checkIntervalMinutes` can't spin the loop. */
 export const MIN_IDLE_SLEEP_SECONDS = 30;
+/** Idle sleep ceiling (6h) so a backed-off pilot still wakes to re-check within the day. */
+export const MAX_IDLE_SLEEP_SECONDS = 6 * 60 * 60;
 /** When work is queued the agent should return quickly after finishing it. */
 export const ACTIVE_SLEEP_SECONDS = 15;
+
+// Pilot-search discovery scheduling
+
+/** A discovery run's new-jobs target tracks remaining daily headroom, clamped to this band. */
+export const NEW_JOBS_TARGET_MIN = 5;
+export const NEW_JOBS_TARGET_MAX = 20;
+/** Deepest page the crawl walks before stopping, even if the target isn't met. */
+export const SEARCH_MAX_PAGES = 5;
+/** A run producing this many fresh rows is "good": re-run it soon while the board is yielding. */
+export const GOOD_RUN_NEW_JOBS = 3;
+/** Re-run a good, still-yielding search after 2h to keep the apply queue fed. */
+export const RERUN_GOOD_SEARCH_MS = 2 * HOUR_MS;
+/** A thin run, or a good one that hit the board's end, waits 8h before another pass. */
+export const RERUN_REACHED_END_MS = 8 * HOUR_MS;
+/** Backoff ladder for consecutive empty runs (0 new jobs): 8h, 24h, then 48h and holds. */
+export const EMPTY_RUN_BACKOFF_MS = [8 * HOUR_MS, 24 * HOUR_MS, 48 * HOUR_MS];
+/** Hungry override floor: with apply headroom left, re-run a search idle at least this long. */
+export const HUNGRY_RERUN_MS = 6 * HOUR_MS;
+/** Claim damper for discovery: an in-flight/crashed run guard only, not a cadence knob. */
+export const SEARCH_CLAIM_COOLDOWN_MS = 2 * HOUR_MS;

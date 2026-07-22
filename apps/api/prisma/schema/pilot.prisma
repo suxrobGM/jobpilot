@@ -58,6 +58,28 @@ model PilotState {
   @@map("pilot_states")
 }
 
+model PilotSearch {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query        String
+  board        String?
+  resumeId     String?   @map("resume_id")
+  // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
+  reason       String    @default("")
+  lastRunAt    DateTime? @map("last_run_at")
+  lastJobsSeen Int?      @map("last_jobs_seen")
+  lastNewJobs  Int?      @map("last_new_jobs")
+  // Consecutive runs with zero new jobs; drives the dry-search backoff, "backing off" >= 3.
+  emptyRuns    Int       @default(0) @map("empty_runs")
+  nextRunAt    DateTime  @default(now()) @map("next_run_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId, nextRunAt])
+  @@map("pilot_searches")
+}
+
 model PilotClaim {
   id          String             @id @default(uuid())
   userId      String             @map("user_id")

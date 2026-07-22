@@ -18,20 +18,18 @@ model User {
   // Dropping it (account delete) crypto-shreds those secrets.
   wrappedDek    String?  @map("wrapped_dek")
 
-  // Public portfolio ("hire me" page): username is the /u/[username] slug. Auto-assigned at
-  // registration (random), user-editable; every account has an always-public portfolio.
   username     String  @unique @map("username")
   availability String? @map("availability") // "open" | "not_looking"; null = unset
 
   // Applicant profile (merged from the former Profile model): populated at onboarding.
-  firstName String  @default("") @map("first_name")
-  lastName  String  @default("") @map("last_name")
+  firstName    String  @default("") @map("first_name")
+  lastName     String  @default("") @map("last_name")
   // Distinct from `email` (login); the contact address shown on applications.
-  contactEmail String @default("") @map("contact_email")
-  phone     String?
-  website   String?
-  linkedin  String?
-  github    String?
+  contactEmail String  @default("") @map("contact_email")
+  phone        String?
+  website      String?
+  linkedin     String?
+  github       String?
 
   street  String?
   aptUnit String? @map("apt_unit")
@@ -54,11 +52,11 @@ model User {
   eeoVeteranStatus    String? @map("eeo_veteran_status")
   eeoDisabilityStatus String? @map("eeo_disability_status")
 
-  primaryResumeId String?  @unique @map("primary_resume_id")
-  primaryResume   Resume?  @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
+  primaryResumeId String? @unique @map("primary_resume_id")
+  primaryResume   Resume? @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
 
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   refreshTokens      RefreshToken[]
   apiTokens          ApiToken[]
@@ -81,6 +79,7 @@ model User {
   networkingMessages NetworkingMessage[]
   coverLetters       CoverLetter[]
   pilotState         PilotState?
+  pilotSearches      PilotSearch[]
   pilotClaims        PilotClaim[]
   pilotQuestions     PilotQuestion[]
   pilotJournal       PilotJournalEntry[]

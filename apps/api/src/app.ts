@@ -27,7 +27,15 @@ import { healthController } from "@/modules/health";
 import { adminBoardController, jobBoardController } from "@/modules/job-board";
 import { adminJobListingController, publicJobListingController } from "@/modules/job-listing";
 import { cleanupJob } from "@/modules/maintenance";
-import { pilotController, promotionController } from "@/modules/pilot";
+import {
+  pilotAgendaController,
+  pilotClaimsController,
+  pilotController,
+  pilotJournalController,
+  pilotQuestionsController,
+  pilotSearchController,
+  promotionController,
+} from "@/modules/pilot";
 import { publicPortfolioController } from "@/modules/portfolio";
 import { pushController } from "@/modules/push";
 import { queueController } from "@/modules/queue";
@@ -81,6 +89,11 @@ const app = new Elysia()
       .use(campaignJobController)
       .use(campaignNetworkingController)
       .use(pilotController)
+      .use(pilotSearchController)
+      .use(pilotAgendaController)
+      .use(pilotClaimsController)
+      .use(pilotJournalController)
+      .use(pilotQuestionsController)
       .use(promotionController)
       .use(pushController)
       .use(workspaceController)

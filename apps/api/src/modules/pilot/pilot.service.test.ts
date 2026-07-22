@@ -1,5 +1,6 @@
 // Fake-Prisma unit test for PilotService: the question lifecycle (journal lives in journal.service.test.ts).
 // Injects a fake Prisma directly (no database); publish() is a no-op without subscribers.
+import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
 import type { PushPayload } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { makePush } from "./agenda/db.test-helpers";
@@ -147,6 +148,52 @@ function activityService(cycleEntry: Record<string, unknown> | null) {
   };
   return new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] }));
 }
+
+function instructionsService(prevGoals: string) {
+  const rec = { searchResets: 0 };
+  const stateRow = (goals: string) => ({
+    userId: "p1",
+    enabled: false,
+    instructionsGoals: goals,
+    instructionsConfig: {},
+    instructionsUpdatedAt: new Date(),
+    lastCycleAt: null,
+    cycleCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  const db = {
+    pilotState: {
+      findUnique: async () => ({ instructionsGoals: prevGoals }),
+      upsert: async (a: { update: { instructionsGoals: string } }) =>
+        stateRow(a.update.instructionsGoals),
+    },
+    pilotSearch: {
+      updateMany: async () => {
+        rec.searchResets++;
+        return { count: 0 };
+      },
+    },
+    application: { count: async () => 0 },
+  };
+  return { svc: new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] })), rec };
+}
+
+describe("PilotService.updateInstructions", () => {
+  const body = (goals: string) => ({ goals, config: pilotInstructionsConfigSchema.parse({}) });
+
+  it("resets every search's scheduling when the goals change", async () => {
+    const { svc, rec } = instructionsService("old goals");
+    await svc.updateInstructions("p1", body("new goals"));
+    expect(rec.searchResets).toBe(1);
+  });
+
+  it("leaves searches untouched when the goals are unchanged", async () => {
+    const { svc, rec } = instructionsService("same goals");
+    await svc.updateInstructions("p1", body("same goals"));
+    expect(rec.searchResets).toBe(0);
+  });
+});
 
 describe("PilotService.getActivity lastCycle", () => {
   const completedAt = new Date("2026-07-20T12:00:00Z");

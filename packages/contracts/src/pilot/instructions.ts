@@ -1,13 +1,5 @@
 import { z } from "zod/v4";
 
-const pilotSavedSearchSchema = z.object({
-  query: z.string().min(1),
-  board: z.string().optional(),
-  // Base resume the discovered campaign scores against; campaign config requires it.
-  resumeId: z.string().optional(),
-  checkEveryHours: z.number().default(24),
-});
-
 const pilotAutonomySchema = z.object({
   networkingEmail: z.enum(["draft", "review", "auto"]).default("review"),
   networkingLinkedIn: z.enum(["draft", "review"]).default("draft"),
@@ -34,7 +26,6 @@ export const pilotInstructionsConfigSchema = z.object({
   minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
   checkIntervalMinutes: z.number().int().default(30),
-  savedSearches: z.array(pilotSavedSearchSchema).default([]),
   // Master switch: networking is opt-in. Off suppresses all networking work (compose, send, follow-up).
   networkingEnabled: z.boolean().default(false),
   // Full default so a missing key still yields both autonomy fields (zod does not re-parse defaults).
@@ -43,7 +34,7 @@ export const pilotInstructionsConfigSchema = z.object({
   networkingFollowupDays: z.number().int().default(5),
   // Full default so a missing key still yields a usable promotion block (zod does not re-parse defaults).
   promotion: pilotPromotionConfigSchema.default({ platforms: [], autonomy: "review" }),
-  // Boards the user agreed to park; agenda excludes their job.apply items and saved searches.
+  // Boards the user agreed to park; agenda excludes their job.apply items and pilot searches.
   parkedBoards: z.array(z.string()).default([]),
 });
 

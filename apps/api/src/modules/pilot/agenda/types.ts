@@ -53,6 +53,8 @@ export interface AgendaApprovedJob {
 }
 
 export interface AgendaDueQuery {
+  /** The PilotSearch row id - the discover item's id and claim subject. */
+  searchId: string;
   query: string;
   board?: string;
   resumeId?: string;
@@ -157,10 +159,9 @@ export interface AgendaRetryFailed {
   failedCount: number;
 }
 
-/** Empty pipeline + zero saved searches: the agent derives searches from goals (or goals from the resume). */
+/** Empty pipeline + zero searches: the agent derives searches from goals, or asks when goals are blank. */
 export interface AgendaStrategyBootstrap {
   goals: string;
-  hasGoals: boolean;
   boards: string[];
   minScore: number;
 }
@@ -174,6 +175,11 @@ export interface AgendaInput {
   approvedJobs: AgendaApprovedJob[];
   appliedToday: number;
   dueQueries: AgendaDueQuery[];
+  // Total pilot searches and whether goals are set - together they key the awaitingSetup empty reason.
+  searchCount: number;
+  goalsPresent: boolean;
+  // Earliest nextRunAt across live searches; the idle sleep clamps to it so a backed-off pilot wakes on time.
+  nextSearchRunAt: Date | null;
   // Existing campaigns with unscored pending rows; emitted only when the apply pipeline is empty.
   scorePending: AgendaScorePending[];
   // Paused campaigns needing a resume-or-ask decision; emitted ungated so they can't be starved.

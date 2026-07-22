@@ -12,15 +12,6 @@ export const instructionsFormSchema = z.object({
   networkingLinkedIn: z.enum(["draft", "review"]),
   boards: z.array(z.string()),
   parkedBoards: z.array(z.string()),
-  savedSearches: z.array(
-    z.object({
-      query: z.string().min(1, "Required"),
-      board: z.string(),
-      checkEveryHours: z.number().min(1),
-      // No UI field; carried through because the instructions PUT is a full replace and would erase it.
-      resumeId: z.string().optional(),
-    }),
-  ),
   promotionPlatforms: z.array(
     z.object({
       platform: z.string().min(1, "Required"),
@@ -45,6 +36,5 @@ export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
   networkingLinkedIn: "draft",
   boards: [],
   parkedBoards: [],
-  savedSearches: [],
   promotionPlatforms: [],
 };

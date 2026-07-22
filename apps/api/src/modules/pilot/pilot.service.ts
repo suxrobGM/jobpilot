@@ -54,6 +54,14 @@ export class PilotService {
   }
 
   async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
+    // Goals are the pilot's whole steering input, so a change makes every search due for a fresh
+    // pass and clears its backoff - the searches were chosen for the old goals.
+    const prev = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { instructionsGoals: true },
+    });
+    const goalsChanged = (prev?.instructionsGoals ?? "") !== body.goals;
+
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
       create: {
@@ -76,6 +84,12 @@ export class PilotService {
         agendaSnapshot: Prisma.DbNull,
       },
     });
+    if (goalsChanged) {
+      await this.prisma.pilotSearch.updateMany({
+        where: { userId },
+        data: { emptyRuns: 0, nextRunAt: new Date() },
+      });
+    }
     const state = await this.toStateDto(userId, row);
     publish(pilotChannel, { userId }, { type: "state.changed", state });
     return state;

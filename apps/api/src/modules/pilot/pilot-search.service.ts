@@ -1,0 +1,162 @@
+import type {
+  CreatePilotSearchInput,
+  ReportPilotSearchRunInput,
+  UpdatePilotSearchInput,
+} from "@jobpilot/contracts/pilot";
+import { singleton } from "tsyringe";
+import { conflict, findOwned } from "@/common/errors";
+import { Prisma, PrismaClient } from "@/generated/prisma/client";
+import {
+  EMPTY_RUN_BACKOFF_MS,
+  GOOD_RUN_NEW_JOBS,
+  RERUN_GOOD_SEARCH_MS,
+  RERUN_REACHED_END_MS,
+} from "./agenda/constants";
+
+export interface ScheduleRunInput {
+  /** Consecutive empty runs recorded *before* this run. */
+  emptyRuns: number;
+  jobsSeen: number;
+  newJobs: number;
+  reachedEnd: boolean;
+  now: Date;
+}
+
+export interface ScheduleRunResult {
+  emptyRuns: number;
+  nextRunAt: Date;
+  lastRunAt: Date;
+  lastJobsSeen: number;
+  lastNewJobs: number;
+}
+
+/**
+ * Pure next-run policy for one discovery run - demand-driven with exhaustion-aware backoff, no
+ * user cadence knob. A good, still-yielding board re-runs soon; a dry board backs off up the
+ * 8h/24h/48h ladder. DB-less so the ladder is unit-testable.
+ */
+export function scheduleNextRun(input: ScheduleRunInput): ScheduleRunResult {
+  const { emptyRuns, jobsSeen, newJobs, reachedEnd, now } = input;
+  const at = (ms: number) => new Date(now.getTime() + ms);
+  const base = { lastRunAt: now, lastJobsSeen: jobsSeen, lastNewJobs: newJobs };
+
+  if (newJobs >= GOOD_RUN_NEW_JOBS) {
+    return {
+      ...base,
+      emptyRuns: 0,
+      nextRunAt: at(reachedEnd ? RERUN_REACHED_END_MS : RERUN_GOOD_SEARCH_MS),
+    };
+  }
+  if (newJobs >= 1) {
+    return { ...base, emptyRuns: 0, nextRunAt: at(RERUN_REACHED_END_MS) };
+  }
+  // Zero new jobs: step up the backoff ladder, holding at its last rung.
+  const next = emptyRuns + 1;
+  const rung = EMPTY_RUN_BACKOFF_MS[Math.min(next - 1, EMPTY_RUN_BACKOFF_MS.length - 1)];
+  return { ...base, emptyRuns: next, nextRunAt: at(rung) };
+}
+
+/** Owns the pilot's self-managed searches: CRUD plus applying a run's result to its schedule. */
+@singleton()
+export class PilotSearchService {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  /** A search mutation invalidates the cached agenda, same as an instructions edit. */
+  private nullAgenda(userId: string) {
+    return this.prisma.pilotState.updateMany({
+      where: { userId },
+      data: {
+        agendaVersion: null,
+        agendaGeneratedAt: null,
+        agendaExpiresAt: null,
+        agendaSnapshot: Prisma.DbNull,
+      },
+    });
+  }
+
+  /** No DB unique on (userId, query, board) - the nullable board makes NULLs distinct - so guard here. */
+  private async assertUnique(
+    userId: string,
+    query: string,
+    board: string | null,
+    excludeId?: string,
+  ) {
+    const clash = await this.prisma.pilotSearch.findFirst({
+      where: { userId, query, board, ...(excludeId ? { id: { not: excludeId } } : {}) },
+      select: { id: true },
+    });
+    if (clash) throw conflict("A search with this query and board already exists.");
+  }
+
+  list(userId: string) {
+    return this.prisma.pilotSearch.findMany({ where: { userId }, orderBy: { nextRunAt: "asc" } });
+  }
+
+  async create(userId: string, input: CreatePilotSearchInput) {
+    const board = input.board ?? null;
+    await this.assertUnique(userId, input.query, board);
+    const row = await this.prisma.pilotSearch.create({
+      data: {
+        userId,
+        query: input.query,
+        board,
+        resumeId: input.resumeId ?? null,
+        reason: input.reason,
+      },
+    });
+    await this.nullAgenda(userId);
+    return row;
+  }
+
+  async update(userId: string, id: string, input: UpdatePilotSearchInput) {
+    const existing = await findOwned(
+      (where) => this.prisma.pilotSearch.findFirst({ where }),
+      { id, userId },
+      "Search",
+    );
+
+    const nextQuery = input.query ?? existing.query;
+    const nextBoard = input.board !== undefined ? input.board : existing.board;
+    const scheduleReset = nextQuery !== existing.query || nextBoard !== existing.board;
+    if (scheduleReset) await this.assertUnique(userId, nextQuery, nextBoard, id);
+
+    const row = await this.prisma.pilotSearch.update({
+      where: { id },
+      data: {
+        ...(input.query !== undefined ? { query: input.query } : {}),
+        ...(input.board !== undefined ? { board: input.board } : {}),
+        ...(input.resumeId !== undefined ? { resumeId: input.resumeId } : {}),
+        ...(input.reason !== undefined ? { reason: input.reason } : {}),
+        // A different query/board is a different search: restart its scheduling from now.
+        ...(scheduleReset
+          ? { emptyRuns: 0, nextRunAt: new Date(), lastJobsSeen: null, lastNewJobs: null }
+          : {}),
+      },
+    });
+    await this.nullAgenda(userId);
+    return row;
+  }
+
+  async remove(userId: string, id: string) {
+    await findOwned(
+      (where) => this.prisma.pilotSearch.findFirst({ where, select: { id: true } }),
+      { id, userId },
+      "Search",
+    );
+    await this.prisma.pilotSearch.delete({ where: { id } });
+    await this.nullAgenda(userId);
+    return { deleted: id };
+  }
+
+  async reportRun(userId: string, id: string, input: ReportPilotSearchRunInput) {
+    const existing = await findOwned(
+      (where) => this.prisma.pilotSearch.findFirst({ where, select: { emptyRuns: true } }),
+      { id, userId },
+      "Search",
+    );
+    const schedule = scheduleNextRun({ emptyRuns: existing.emptyRuns, now: new Date(), ...input });
+    const row = await this.prisma.pilotSearch.update({ where: { id }, data: schedule });
+    await this.nullAgenda(userId);
+    return row;
+  }
+}

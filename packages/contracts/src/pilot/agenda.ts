@@ -88,12 +88,16 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
     "search.discover",
     "campaign",
     z.object({
+      searchId: z.string(),
       query: z.string(),
       board: optionalString,
       resumeId: optionalString,
       minScore: z.number(),
       // Existing in-progress campaign for this query; the agent reuses it instead of creating one.
       campaignId: optionalString,
+      // Fresh non-duplicate rows this run aims for, and the page cap for the paginated crawl.
+      newJobsTarget: z.number().int(),
+      maxPages: z.number().int(),
     }),
   ),
   agendaItem(
@@ -256,7 +260,6 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
     "pilot",
     z.object({
       goals: z.string(),
-      hasGoals: z.boolean(),
       boards: z.array(z.string()),
       minScore: z.number(),
     }),

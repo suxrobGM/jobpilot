@@ -1,6 +1,13 @@
 import type { AgendaContent, AgendaItem } from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
-import { ACTIVE_SLEEP_SECONDS, MAX_ITEMS, MIN_IDLE_SLEEP_SECONDS } from "./constants";
+import {
+  ACTIVE_SLEEP_SECONDS,
+  MAX_IDLE_SLEEP_SECONDS,
+  MAX_ITEMS,
+  MIN_IDLE_SLEEP_SECONDS,
+  NEW_JOBS_TARGET_MAX,
+  NEW_JOBS_TARGET_MIN,
+} from "./constants";
 import { buildInterviewPrepItems, buildInterviewReplyItems } from "./items-interview";
 import {
   buildDiscoverItems,
@@ -24,19 +31,22 @@ import type { AgendaInput } from "./types";
 
 /**
  * Name why the agenda is empty so clients render it instead of re-deriving suppression rules.
- * No saved searches + empty means bootstrap was gathered but suppressed (recent attempt / open
- * question) - otherwise it would be an item; either way the pilot still needs setup.
+ * No searches or no goals + empty means the pilot still needs setup: bootstrap was gathered but
+ * suppressed (recent attempt), otherwise it would be an item.
  */
 function agendaEmptyReason(
   itemCount: number,
   capReached: boolean,
-  savedSearchCount: number,
+  searchCount: number,
+  goalsPresent: boolean,
 ): AgendaContent["emptyReason"] {
   if (itemCount > 0) return null;
   if (capReached) return "capReached";
-  if (savedSearchCount === 0) return "awaitingSetup";
+  if (searchCount === 0 || !goalsPresent) return "awaitingSetup";
   return "clear";
 }
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 /**
  * Compile a prioritized agenda from already-fetched inputs. Pure: no I/O, so the ordering,
@@ -64,11 +74,20 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   items.push(...sendItems);
   items.push(...buildInboxItem(input.inbox));
   items.push(...buildPromoPostItems(input.approvedPromotions));
+
   // Scoring an existing campaign's pending rows and fresh discovery both only matter when there is
   // nothing approved left to apply to; scoring ranks first so found-but-unscored work finishes first.
   if (input.approvedJobs.length === 0) {
     items.push(...buildScorePendingItems(input.scorePending));
-    items.push(...buildDiscoverItems(input.dueQueries, config));
+
+    // Demand-derived target: discovery feeds the apply queue, so aim for the remaining daily headroom
+    // (clamped to keep one in-context scoring run bounded; backlog drains via the 2h good-search re-run).
+    const newJobsTarget = clamp(
+      config.dailyApplyCap - input.appliedToday,
+      NEW_JOBS_TARGET_MIN,
+      NEW_JOBS_TARGET_MAX,
+    );
+    items.push(...buildDiscoverItems(input.dueQueries, config, newJobsTarget));
   }
   // Followups spend the same send budget, so they only get the headroom the sends left over.
   const followupHeadroom = sendHeadroom - sendItems.length;
@@ -100,12 +119,24 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   ranked.sort((a, b) => b.priority - a.priority);
   const capped = ranked.slice(0, MAX_ITEMS);
 
-  const emptyReason = agendaEmptyReason(capped.length, capReached, config.savedSearches.length);
+  const emptyReason = agendaEmptyReason(
+    capped.length,
+    capReached,
+    input.searchCount,
+    input.goalsPresent,
+  );
 
-  const sleepSeconds =
-    capped.length > 0
-      ? ACTIVE_SLEEP_SECONDS
-      : Math.max(config.checkIntervalMinutes * 60, MIN_IDLE_SLEEP_SECONDS);
+  // Idle sleep wakes at the sooner of the poll cadence and the next search coming due, so a
+  // backed-off pilot doesn't oversleep a scheduled re-run; floored and capped either way.
+  const secondsUntilSearch = input.nextSearchRunAt
+    ? Math.max(0, Math.round((input.nextSearchRunAt.getTime() - now.getTime()) / 1000))
+    : Number.POSITIVE_INFINITY;
+  const idleSleep = clamp(
+    Math.min(config.checkIntervalMinutes * 60, secondsUntilSearch),
+    MIN_IDLE_SLEEP_SECONDS,
+    MAX_IDLE_SLEEP_SECONDS,
+  );
+  const sleepSeconds = capped.length > 0 ? ACTIVE_SLEEP_SECONDS : idleSleep;
 
   return {
     generatedAt: now,
