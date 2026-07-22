@@ -103,7 +103,7 @@ public class PilotCycleRunnerCompletionTests
         var loop = Runner(env);
         await loop.RunIterationAsync(Claude, CancellationToken.None);
 
-        env.Actions.Clear();
+        env.ClearActions();
         env.ActivityResults.Enqueue(null);                    // cycle 2 baseline probe fails
         env.DefaultActivity = Live(Stale, Completed(900));    // server still shows cycle 1's completion
 

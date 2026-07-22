@@ -36,8 +36,8 @@ root may be user state and must not be pruned.
   exits cannot stop a replacement session.
 - `TerminalHub.replayLock` orders replay-buffer writes with WebSocket registration and protects the client map.
 - `PilotStore.gate` owns the immutable in-memory pairing snapshot and serializes atomic `pilot.json` replacement.
-- `PilotCoordinator.ctsGate` owns the current iteration cancellation source. Its capacity-one wake channel
-  coalesces event bursts; the separate runtime `WaitSignal` channel remains lossless for cycle sentinels.
+- `PilotWakeSignal.gate` owns the current iteration and inter-cycle-sleep cancellation sources. Its capacity-one
+  pulse channel coalesces event bursts; the separate runtime `WaitSignal` channel remains lossless for cycle sentinels.
 
 ## Invariants
 

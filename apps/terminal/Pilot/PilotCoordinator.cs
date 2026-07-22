@@ -1,4 +1,3 @@
-using System.Threading.Channels;
 using JobPilot.Terminal.Common;
 using JobPilot.Terminal.Contracts;
 using Microsoft.Extensions.Hosting;
@@ -28,42 +27,16 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
     public const string StandingDownReport = "Pilot is stopped on the server - standing down.";
 
     private readonly PilotCycleRunner loop = new(env);
-    private ProbeBackoff probeBackoff;
-
-    // A pulse wakes the idle loop. Capacity one coalesces bursts without stale permits.
-    private readonly Channel<bool> wake = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
-    {
-        SingleReader = true,
-        SingleWriter = false,
-        FullMode = BoundedChannelFullMode.DropWrite,
-    });
-    private readonly Lock ctsGate = new();
-    private CancellationTokenSource? iterationCts;
-    private CancellationTokenSource? interSleepCts;
+    private readonly PilotWakeSignal wake = new();
+    private ExponentialBackoff probeBackoff = new(ProbeBackoffInitial, ProbeBackoffMax);
     private volatile bool driving;
-    private int wakeCount;
 
-    /// <summary>Count of wake signals received; a test seam to observe event-driven wakes.</summary>
-    internal int WakeCount => Volatile.Read(ref wakeCount);
+    internal int WakeCount => wake.Count;
 
-    internal int PendingWakeCount => wake.Reader.Count;
+    internal int PendingWakeCount => wake.Pending;
 
     /// <summary>Signals the loop to re-read the pairing (after start/stop) and ends any inter-cycle sleep early.</summary>
-    public void WakeUp()
-    {
-        Interlocked.Increment(ref wakeCount);
-        wake.Writer.TryWrite(true);
-        lock (ctsGate)
-        {
-            // Any wake ends an inter-cycle sleep early so the next cycle starts now; only a stop/unpair also
-            // aborts a live cycle. A wake that keeps the pilot running must never interrupt a live turn.
-            interSleepCts?.Cancel();
-            if (store.Current is not { Running: true })
-            {
-                iterationCts?.Cancel();
-            }
-        }
-    }
+    public void WakeUp() => wake.Pulse(() => store.Current is not { Running: true });
 
     /// <summary>Snapshot of pilot state for /healthz.</summary>
     public PilotStatus BuildStatus()
@@ -86,21 +59,13 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            // Publish the fresh CTS before reading the store: a WakeUp then either cancels the CTS this iteration
-            // will actually use or happens-before the read, which then sees the new state - no lost wake window.
-            CancellationTokenSource cts;
-            lock (ctsGate)
-            {
-                iterationCts?.Dispose();
-                iterationCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                cts = iterationCts;
-            }
+            var cts = wake.BeginIteration(stoppingToken);
+            driving = false;
 
             var pairing = store.Current;
-            if (pairing is null || !pairing.Running)
+            if (pairing is not { Running: true })
             {
-                driving = false;
-                if (!await AwaitUnlessCanceledAsync(wake.Reader.ReadAsync(stoppingToken).AsTask()))
+                if (!await AwaitUnlessCanceledAsync(wake.WaitAsync(stoppingToken)))
                 {
                     return;
                 }
@@ -113,32 +78,21 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
                 var runState = await ProbeRunStateAsync(cts.Token);
                 if (runState == false)
                 {
-                    // Mirror the server-side stop so the next iteration parks. A stop-wake cancels cts, so report on stoppingToken.
-                    store.SetRunning(false);
-                    driving = false;
-                    probeBackoff.Reset();
-                    try
-                    {
-                        await env.ReportSystemAsync(StandingDownReport, stoppingToken);
-                    }
-                    catch
-                    {
-                        // Best-effort; a failed stand-down report must not fault the background service.
-                    }
+                    // A stop-wake cancels cts, so the stand-down reports on stoppingToken instead.
+                    await StandDownAsync(stoppingToken);
                     continue;
                 }
 
                 if (runState is null)
                 {
                     // API unreachable: injecting would just burn a cycle - back off; a wake re-probes early.
-                    driving = false;
                     await SleepRacingWakeAsync(probeBackoff.Next(), cts.Token);
                     continue;
                 }
 
                 probeBackoff.Reset();
                 // Reading the current running pairing satisfies any pulse that arrived before this iteration.
-                wake.Reader.TryRead(out _);
+                wake.TryConsume();
 
                 driving = true;
                 var sleep = await loop.RunIterationAsync(pairing, cts.Token);
@@ -178,8 +132,7 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
     /// </summary>
     private async Task ResumeIfRunningAsync(CancellationToken stoppingToken)
     {
-        var pairing = store.Current;
-        if (pairing is null || !pairing.Running)
+        if (store.Current is not { Running: true })
         {
             return;
         }
@@ -199,53 +152,42 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
             return;
         }
 
-        var report = remaining > TimeSpan.Zero
-            ? $"{ResumeReport} Waiting out the planned break until {(DateTimeOffset.UtcNow + remaining):u} first."
-            : ResumeReport;
-        try
+        if (remaining <= TimeSpan.Zero)
         {
-            await env.ReportSystemAsync(report, stoppingToken);
-        }
-        catch
-        {
-            // Best-effort; a failed resume report must not fault the background service.
+            await ReportAsync(ResumeReport, stoppingToken);
+            return;
         }
 
-        if (remaining > TimeSpan.Zero)
-        {
-            await SleepRacingWakeAsync(remaining, stoppingToken);
-        }
+        var until = DateTimeOffset.UtcNow + remaining;
+        await ReportAsync($"{ResumeReport} Waiting out the planned break until {until:u} first.", stoppingToken);
+        await SleepRacingWakeAsync(remaining, stoppingToken);
     }
 
-    /// <summary>Sleeps between cycles; a wake cancels <see cref="interSleepCts"/> to end it early, a disable via <paramref name="ct"/>.</summary>
+    /// <summary>Mirrors a server-side stop into the local store so the next iteration parks, and journals it.</summary>
+    private async Task StandDownAsync(CancellationToken stoppingToken)
+    {
+        store.SetRunning(false);
+        probeBackoff.Reset();
+        await ReportAsync(StandingDownReport, stoppingToken);
+    }
+
+    /// <summary>Sleeps between cycles; a wake ends it early, a stop cancels it through <paramref name="ct"/>.</summary>
     private async Task SleepRacingWakeAsync(TimeSpan duration, CancellationToken ct)
     {
-        // A wake during the cycle found interSleepCts null, so the pulse is its only trace.
-        if (wake.Reader.TryRead(out _))
+        // A wake during the cycle found no sleep to cancel, so the queued pulse is its only trace.
+        if (wake.TryConsume())
         {
             return;
         }
 
-        using var sleepCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        lock (ctsGate)
-        {
-            interSleepCts = sleepCts;
-        }
-
+        using var sleep = wake.BeginSleep(ct);
         try
         {
-            await env.SleepAsync(duration, sleepCts.Token);
+            await env.SleepAsync(duration, sleep.Token);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             // A wake ended the inter-cycle sleep early; the loop starts the next cycle now.
-        }
-        finally
-        {
-            lock (ctsGate)
-            {
-                interSleepCts = null;
-            }
         }
     }
 
@@ -259,6 +201,19 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
         catch (Exception ex) when (!Cancellation.IsCallerCancellation(ex, ct))
         {
             return null;
+        }
+    }
+
+    /// <summary>Journals a coordinator intervention; a failed report must never fault the background service.</summary>
+    private async Task ReportAsync(string summary, CancellationToken ct)
+    {
+        try
+        {
+            await env.ReportSystemAsync(summary, ct);
+        }
+        catch
+        {
+            // Best-effort by contract, so a throwing runtime still can't take the loop down.
         }
     }
 
@@ -286,27 +241,7 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
 
     public override void Dispose()
     {
-        lock (ctsGate)
-        {
-            iterationCts?.Dispose();
-        }
+        wake.Dispose();
         base.Dispose();
-    }
-
-    /// <summary>Escalating backoff for an unreachable API: 30s doubling to a 10min cap, reset once the server answers.</summary>
-    private struct ProbeBackoff
-    {
-        private int failures;
-
-        public TimeSpan Next()
-        {
-            var seconds = Math.Min(
-                ProbeBackoffInitial.TotalSeconds * Math.Pow(2, failures),
-                ProbeBackoffMax.TotalSeconds);
-            failures++;
-            return TimeSpan.FromSeconds(seconds);
-        }
-
-        public void Reset() => failures = 0;
     }
 }

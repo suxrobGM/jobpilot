@@ -5,10 +5,59 @@ namespace JobPilot.Terminal.Tests;
 /// <summary>Scriptable <see cref="IPilotRuntime"/> that records the actions the loop drives.</summary>
 internal sealed class FakePilotRuntime : IPilotRuntime
 {
-    public List<string> Actions { get; } = [];
+    // The coordinator records from its background loop while the test thread asserts, so both logs are read as
+    // snapshots taken under this gate - enumerating the live lists throws once a cycle lands mid-assert.
+    private readonly Lock gate = new();
+    private readonly List<string> actions = [];
+    private readonly List<string> reports = [];
+
+    public List<string> Actions
+    {
+        get
+        {
+            lock (gate)
+            {
+                return [.. actions];
+            }
+        }
+    }
 
     /// <summary>Journal summaries passed to ReportSystemAsync, kept apart from Actions so sequence asserts stay stable.</summary>
-    public List<string> Reports { get; } = [];
+    public List<string> Reports
+    {
+        get
+        {
+            lock (gate)
+            {
+                return [.. reports];
+            }
+        }
+    }
+
+    /// <summary>Drops the recorded actions so a test can assert only on what a later phase drives.</summary>
+    public void ClearActions()
+    {
+        lock (gate)
+        {
+            actions.Clear();
+        }
+    }
+
+    private void Record(string action)
+    {
+        lock (gate)
+        {
+            actions.Add(action);
+        }
+    }
+
+    private void RecordReport(string summary)
+    {
+        lock (gate)
+        {
+            reports.Add(summary);
+        }
+    }
 
     /// <summary>When true, ReportSystemAsync throws after recording, to prove a failed report never breaks a cycle.</summary>
     public bool ReportThrows { get; set; }
@@ -64,7 +113,7 @@ internal sealed class FakePilotRuntime : IPilotRuntime
 
     public void StartSession(PilotPairing pairing)
     {
-        Actions.Add("start");
+        Record("start");
         if (StartMakesRunning)
         {
             RunningProvider = pairing.Provider;
@@ -73,31 +122,31 @@ internal sealed class FakePilotRuntime : IPilotRuntime
 
     public Task WaitStartupGraceAsync(CancellationToken ct)
     {
-        Actions.Add("grace");
+        Record("grace");
         return Task.CompletedTask;
     }
 
     public Task InjectCycleAsync(PilotPairing pairing, CancellationToken ct)
     {
-        Actions.Add("inject-cycle");
+        Record("inject-cycle");
         return Task.CompletedTask;
     }
 
     public Task InjectCheckInAsync(PilotPairing pairing, CancellationToken ct)
     {
-        Actions.Add("inject-check-in");
+        Record("inject-check-in");
         return Task.CompletedTask;
     }
 
     public Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct)
     {
-        Actions.Add("inject-skip");
+        Record("inject-skip");
         return Task.CompletedTask;
     }
 
     public Task<PilotWaitResult> AwaitSentinelAsync(TimeSpan timeout, CancellationToken ct)
     {
-        Actions.Add("await");
+        Record("await");
         if (SentinelResults.Count > 0)
         {
             return Task.FromResult(SentinelResults.Dequeue());
@@ -107,7 +156,7 @@ internal sealed class FakePilotRuntime : IPilotRuntime
 
     public async Task SleepAsync(TimeSpan duration, CancellationToken ct)
     {
-        Actions.Add($"sleep:{(int)duration.TotalSeconds}");
+        Record($"sleep:{(int)duration.TotalSeconds}");
         // BlockSleep models a long inter-cycle sleep that only a wake or disable ends; short setup sleeps (the
         // startup resume grace) still pass through instantly.
         if (BlockSleep && duration > TimeSpan.FromMinutes(1))
@@ -118,24 +167,24 @@ internal sealed class FakePilotRuntime : IPilotRuntime
 
     public void StopSession()
     {
-        Actions.Add("stop");
+        Record("stop");
         RunningProvider = null;
     }
 
     public void InterruptSession()
     {
-        Actions.Add("interrupt");
+        Record("interrupt");
     }
 
     public Task PauseAsync(CancellationToken ct)
     {
-        Actions.Add("pause");
+        Record("pause");
         return Task.CompletedTask;
     }
 
     public async Task ReportSystemAsync(string summary, CancellationToken ct)
     {
-        Reports.Add(summary);
+        RecordReport(summary);
         ReportStarted.TrySetResult();
         if (BlockReport)
         {

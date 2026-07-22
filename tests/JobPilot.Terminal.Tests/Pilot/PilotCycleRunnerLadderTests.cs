@@ -149,7 +149,7 @@ public class PilotCycleRunnerLadderTests
         Assert.Equal(2, loop.ConsecutiveTimeouts);
         Assert.DoesNotContain("sleep:1800", env.Actions);
 
-        env.Actions.Clear();
+        env.ClearActions();
         await loop.RunIterationAsync(Claude, CancellationToken.None);
         Assert.Equal(3, loop.ConsecutiveTimeouts);
         Assert.Equal("sleep:1800", env.Actions[^1]); // 30-minute backoff after the third restart
