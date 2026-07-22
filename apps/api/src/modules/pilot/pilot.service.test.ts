@@ -195,6 +195,47 @@ describe("PilotService.updateInstructions", () => {
   });
 });
 
+function enabledService(goals: string) {
+  const stateRow = (enabled: boolean) => ({
+    userId: "p1",
+    enabled,
+    instructionsGoals: goals,
+    instructionsConfig: {},
+    instructionsUpdatedAt: new Date(),
+    lastCycleAt: null,
+    cycleCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  const db = {
+    pilotState: {
+      findUnique: async () => ({ instructionsGoals: goals }),
+      upsert: async (a: { update: { enabled: boolean } }) => stateRow(a.update.enabled),
+    },
+    application: { count: async () => 0 },
+  };
+  return new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] }));
+}
+
+describe("PilotService.setEnabled goals guard", () => {
+  it("rejects enabling when the goals are empty", async () => {
+    const svc = enabledService("   ");
+    await expect(svc.setEnabled("p1", { enabled: true })).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("enables when the goals are non-empty", async () => {
+    const svc = enabledService("ship senior frontend roles");
+    const state = await svc.setEnabled("p1", { enabled: true });
+    expect(state.enabled).toBe(true);
+  });
+
+  it("disables without guarding on empty goals", async () => {
+    const svc = enabledService("");
+    const state = await svc.setEnabled("p1", { enabled: false });
+    expect(state.enabled).toBe(false);
+  });
+});
+
 describe("PilotService.getActivity lastCycle", () => {
   const completedAt = new Date("2026-07-20T12:00:00Z");
 

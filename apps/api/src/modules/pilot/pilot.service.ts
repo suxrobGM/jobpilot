@@ -96,6 +96,17 @@ export class PilotService {
   }
 
   async setEnabled(userId: string, body: SetPilotEnabledInput) {
+    // Goals are mandatory to start: the pilot has nothing to steer by without them. Stopping never guards.
+    // (Guard moves to `start` in a later milestone.)
+    if (body.enabled) {
+      const prev = await this.prisma.pilotState.findUnique({
+        where: { userId },
+        select: { instructionsGoals: true },
+      });
+      if ((prev?.instructionsGoals ?? "").trim() === "") {
+        throw conflict("Write the pilot's goals before starting it.");
+      }
+    }
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
       create: { userId, enabled: body.enabled },

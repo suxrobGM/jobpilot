@@ -1,7 +1,17 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Alert, Box, Button, Chip, Grid, LinearProgress, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Grid,
+  LinearProgress,
+  Stack,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { ColorChip, RelativeTime, StatCard } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { CYCLE_STATUS_COLOR, providerDisplayName } from "@/lib/terminal";
@@ -19,6 +29,7 @@ export function StatusHero(): ReactElement {
 
   const pilot = hostStatus?.pilot ?? null;
   const enabled = state.enabled;
+  const goalsEmpty = state.instructionsGoals.trim() === "";
   const { dailyApplyCap, dailyNetworkingCap, minScore, networkingEnabled } =
     state.instructionsConfig;
   const { appliedToday, capReached } = state;
@@ -52,13 +63,18 @@ export function StatusHero(): ReactElement {
             Disable
           </Button>
         ) : (
-          <Button
-            variant="contained"
-            disabled={toggle.busy || health !== "reachable"}
-            onClick={() => void toggle.enable()}
-          >
-            Enable
-          </Button>
+          // A disabled button emits no pointer events, so the tooltip needs an enabled span to hover over.
+          <Tooltip title={goalsEmpty ? "Write the pilot's goals before starting it." : ""}>
+            <Box component="span" sx={{ display: "inline-flex" }}>
+              <Button
+                variant="contained"
+                disabled={toggle.busy || health !== "reachable" || goalsEmpty}
+                onClick={() => void toggle.enable()}
+              >
+                Enable
+              </Button>
+            </Box>
+          </Tooltip>
         )
       }
     >

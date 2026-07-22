@@ -13,6 +13,7 @@ export const GoalsSection = withForm({
           {(field) => (
             <field.TextField
               label="Goals"
+              required
               multiline
               minRows={6}
               maxRows={20}

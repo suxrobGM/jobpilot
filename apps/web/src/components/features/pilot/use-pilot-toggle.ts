@@ -1,6 +1,8 @@
 "use client";
 
+import type { PilotState } from "@jobpilot/contracts/pilot";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
@@ -40,6 +42,7 @@ function describeHostError(error: unknown): string {
 export function usePilotToggle(): PilotToggle {
   const toast = useToast();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const { provider } = useAgentDock();
 
@@ -48,6 +51,13 @@ export function usePilotToggle(): PilotToggle {
   };
 
   const enable = async (): Promise<void> => {
+    // Goals are mandatory: skip the token/pairing round-trip and point the user at Goals instead.
+    const cached = queryClient.getQueryData<PilotState>(queryKeys.pilot.state());
+    if ((cached?.instructionsGoals ?? "").trim() === "") {
+      toast.error("Write the pilot's goals before starting it.");
+      router.push("/pilot/instructions");
+      return;
+    }
     setBusy(true);
     try {
       const { data, error } = await api.auth.tokens.terminal.post();

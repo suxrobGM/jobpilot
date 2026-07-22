@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 
 export const instructionsFormSchema = z.object({
-  goals: z.string(),
+  goals: z.string().trim().min(1, "Required"),
   dailyApplyCap: z.number().int().min(0),
   dailyNetworkingCap: z.number().int().min(0),
   networkingFollowupDays: z.number().int().min(0),

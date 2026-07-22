@@ -24,11 +24,9 @@ export function PilotSetupChecklist(): ReactNode {
 
   const hostReady = health === "reachable";
   const enabled = state.enabled;
-  const instructionsDone =
-    state.instructionsUpdatedAt !== null || state.instructionsGoals.trim() !== "";
+  const goalsDone = state.instructionsGoals.trim() !== "";
 
   // "checking" counts as provisionally done so a set-up pilot doesn't flash the checklist on load.
-  // Instructions are optional (the pilot bootstraps its own goals/searches), so they never gate this.
   if ((hostReady || health === "checking") && enabled) {
     return null;
   }
@@ -50,6 +48,17 @@ export function PilotSetupChecklist(): ReactNode {
       ),
     },
     {
+      id: "goals",
+      label: "Write your goals",
+      description: "Goals steer the pilot - it creates and re-runs its own searches from them.",
+      done: goalsDone,
+      action: (
+        <LinkButton size="small" variant="outlined" href="/pilot/instructions">
+          Write goals
+        </LinkButton>
+      ),
+    },
+    {
       id: "enable",
       label: "Enable the pilot",
       description: "Turns on autonomous cycles on your own Claude or Codex subscription.",
@@ -58,22 +67,11 @@ export function PilotSetupChecklist(): ReactNode {
         <Button
           size="small"
           variant="contained"
-          disabled={toggle.busy || !hostReady}
+          disabled={toggle.busy || !hostReady || !goalsDone}
           onClick={() => void toggle.enable()}
         >
           Enable
         </Button>
-      ),
-    },
-    {
-      id: "instructions",
-      label: "Steer with goals (optional)",
-      description: "The pilot sets up its own goals and searches - write goals to steer it.",
-      done: instructionsDone,
-      action: (
-        <LinkButton size="small" variant="outlined" href="/pilot/instructions">
-          Write goals
-        </LinkButton>
       ),
     },
   ];

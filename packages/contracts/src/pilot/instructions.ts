@@ -39,7 +39,8 @@ export const pilotInstructionsConfigSchema = z.object({
 });
 
 export const updatePilotInstructionsSchema = z.object({
-  goals: z.string(),
+  // Goals are mandatory and the pilot's whole steering input: an empty save is rejected.
+  goals: z.string().trim().min(1, "Write the pilot's goals before saving."),
   config: pilotInstructionsConfigSchema,
 });
 
