@@ -135,6 +135,19 @@ zero skill invocations by the user, ever.
   health probe-or-park via parkedBoards, rescan/retry, queue drain), admin fleet view,
   correction capture + NDJSON journal export + frozen subjectKeys. All M1–M5 code-complete;
   the LIVE OVERNIGHT SMOKE TEST remains the outstanding gate before calling the Pilot done.
+- 2026-07-22 - Dynamic discovery overhaul (branch `feat/pilot-dynamic-discovery`, 32d570b →
+  9d1747f; plan file `~/.claude/plans/okay-let-s-build-a-stateless-meerkat.md`): saved searches
+  moved from instructions JSON to a pilot-owned `pilot_searches` table (CRUD + run-result
+  routes; read-only list in the web with per-search `reason`); the fixed 24 h `checkEveryHours`
+  damper replaced by `scheduleNextRun` (good run → 2 h, thin/harvested → 8 h, empty runs back
+  off 8/24/48 h) plus a hungry override when the apply cap has headroom; discovery paginates to
+  a demand-derived new-jobs target (cap−applied, clamped 5–20, ≤5 pages) instead of one ~10-row
+  page; goals are mandatory (bootstrap always derives searches from goals; resume-derived goals
+  and the bootstrap question deleted); enable/disable renamed start/stop end-to-end
+  (`pilot_states.running`, `POST /pilot/start|stop`, `usePilotControls`) and the host now
+  probes `GET /api/pilot` before every inject - a stopped pilot burns zero LLM cycles (the
+  skill's hourly idle check is gone). Pilot controller split into per-domain controllers
+  mounted in app.ts. Rename invalidates existing host pairings: one Start click re-pairs.
 - 2026-07-21 - Resilience + vocabulary overhaul (branch `fix/pilot-resilience-rename`): the
   orchestrator now confirms cycle completion via the API (journal cycle entries carry
   `detail:{status,sleepSeconds}`; `GET /pilot/activity` exposes `lastCycle`) so a TUI-mangled
