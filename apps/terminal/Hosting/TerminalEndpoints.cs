@@ -86,8 +86,8 @@ public static class TerminalEndpoints
             return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
         });
 
-        app.MapPost("/pilot/enable", Results<Ok<SessionStatus>, ProblemHttpResult> (
-            PilotEnableRequest request, PilotStore store, PilotCoordinator pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
+        app.MapPost("/pilot/start", Results<Ok<SessionStatus>, ProblemHttpResult> (
+            PilotStartRequest request, PilotStore store, PilotCoordinator pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
         {
             string provider;
             try
@@ -120,16 +120,16 @@ public static class TerminalEndpoints
                 ApiToken = request.ApiToken,
                 ApiUrl = request.ApiUrl!,
                 WebUrl = request.WebUrl!,
-                Enabled = true,
+                Running = true,
             });
             pilot.WakeUp();
             return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
         });
 
-        app.MapPost("/pilot/disable", (PilotStore store, PilotCoordinator pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
+        app.MapPost("/pilot/stop", (PilotStore store, PilotCoordinator pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
         {
             // Keep the pairing and the session; the coordinator interrupts a mid-cycle turn and stops driving.
-            store.SetEnabled(false);
+            store.SetRunning(false);
             pilot.WakeUp();
             return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));
         });
@@ -157,8 +157,8 @@ public static class TerminalEndpoints
 
         app.MapPost("/shutdown", (SessionManager session, IHostApplicationLifetime lifetime) =>
         {
-            // Stop the PTY now; StopApplication then cancels the Pilot coordinator. pilot.json's Enabled flag is
-            // deliberately left as-is so a later start resumes the pilot via ResumeIfEnabledAsync.
+            // Stop the PTY now; StopApplication then cancels the Pilot coordinator. pilot.json's Running flag is
+            // deliberately left as-is so a later start resumes the pilot via ResumeIfRunningAsync.
             session.Stop();
             GracefulStop.Schedule(lifetime);
             return TypedResults.Ok(new ShutdownResult { Ok = true });

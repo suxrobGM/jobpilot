@@ -5,14 +5,14 @@ using JobPilot.Terminal.Hosting;
 
 namespace JobPilot.Terminal.Pilot;
 
-/// <summary>Persisted Pilot pairing: which provider drives, its credentials, and whether the loop is enabled.</summary>
+/// <summary>Persisted Pilot pairing: which provider drives, its credentials, and whether the loop is running.</summary>
 public sealed record PilotPairing
 {
     public required string Provider { get; init; }
     public required string ApiToken { get; init; }
     public required string ApiUrl { get; init; }
     public required string WebUrl { get; init; }
-    public bool Enabled { get; init; }
+    public bool Running { get; init; }
 }
 
 /// <summary>On-disk shape; the token is DPAPI-wrapped on Windows and 0600 plaintext elsewhere.</summary>
@@ -21,7 +21,7 @@ internal sealed record PilotStateFile
     public required string Provider { get; init; }
     public required string ApiUrl { get; init; }
     public required string WebUrl { get; init; }
-    public required bool Enabled { get; init; }
+    public required bool Running { get; init; }
     public required string Token { get; init; }
     public required bool Protected { get; init; }
 }
@@ -70,17 +70,17 @@ public sealed class PilotStore
         }
     }
 
-    /// <summary>Flips the enabled flag while keeping the pairing; a no-op when unpaired.</summary>
-    public void SetEnabled(bool enabled)
+    /// <summary>Flips the running flag while keeping the pairing; a no-op when unpaired.</summary>
+    public void SetRunning(bool running)
     {
         lock (gate)
         {
-            if (current is null || current.Enabled == enabled)
+            if (current is null || current.Running == running)
             {
                 return;
             }
 
-            var updated = current with { Enabled = enabled };
+            var updated = current with { Running = running };
             Persist(updated);
             current = updated;
         }
@@ -94,7 +94,7 @@ public sealed class PilotStore
             Provider = pairing.Provider,
             ApiUrl = pairing.ApiUrl,
             WebUrl = pairing.WebUrl,
-            Enabled = pairing.Enabled,
+            Running = pairing.Running,
             Token = token,
             Protected = isProtected,
         };
@@ -170,7 +170,7 @@ public sealed class PilotStore
                 ApiToken = token,
                 ApiUrl = file.ApiUrl,
                 WebUrl = file.WebUrl,
-                Enabled = file.Enabled,
+                Running = file.Running,
             };
         }
         catch (Exception ex) when (ex is JsonException or IOException or FormatException)

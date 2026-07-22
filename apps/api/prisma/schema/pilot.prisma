@@ -42,7 +42,7 @@ enum PromotionStatus {
 model PilotState {
   userId                String    @id @map("user_id")
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enabled               Boolean   @default(false)
+  running               Boolean   @default(false)
   instructionsGoals     String    @default("") @map("instructions_goals")
   instructionsConfig    Json      @default("{}") @map("instructions_config")
   instructionsUpdatedAt DateTime? @map("instructions_updated_at")

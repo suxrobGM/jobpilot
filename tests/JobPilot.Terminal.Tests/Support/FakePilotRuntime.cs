@@ -37,6 +37,23 @@ internal sealed class FakePilotRuntime : IPilotRuntime
 
     public TaskCompletionSource ActivityStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    /// <summary>
+    /// Server run-states returned by successive GetRunStateAsync calls; empty dequeues to <see cref="DefaultRunState"/>.
+    /// Probes stay out of <see cref="Actions"/> so existing sequence asserts remain stable.
+    /// </summary>
+    public Queue<bool?> RunStates { get; } = new();
+
+    /// <summary>Value GetRunStateAsync returns once <see cref="RunStates"/> is drained; true so cycles inject by default.</summary>
+    public bool? DefaultRunState { get; set; } = true;
+
+    /// <summary>Number of GetRunStateAsync calls, so a test can observe the gate re-probing on wake.</summary>
+    public int RunStateProbeCount;
+
+    public bool BlockRunState { get; set; }
+
+    /// <summary>When true, GetRunStateAsync throws, to prove a failed probe falls open to the backoff (null).</summary>
+    public bool RunStateThrows { get; set; }
+
     /// <summary>When true, SleepAsync blocks until the token cancels, to observe a wake ending an inter-cycle sleep.</summary>
     public bool BlockSleep { get; set; }
 
@@ -145,6 +162,20 @@ internal sealed class FakePilotRuntime : IPilotRuntime
             throw new InvalidOperationException("simulated activity probe failure");
         }
         return ActivityResults.Count > 0 ? ActivityResults.Dequeue() : DefaultActivity;
+    }
+
+    public async Task<bool?> GetRunStateAsync(CancellationToken ct)
+    {
+        Interlocked.Increment(ref RunStateProbeCount);
+        if (BlockRunState)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+        }
+        if (RunStateThrows)
+        {
+            throw new InvalidOperationException("simulated run-state probe failure");
+        }
+        return RunStates.Count > 0 ? RunStates.Dequeue() : DefaultRunState;
     }
 
     private static async Task<PilotWaitResult> WaitForCancelAsync(CancellationToken ct)

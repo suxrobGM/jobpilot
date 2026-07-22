@@ -45,13 +45,13 @@ function setup(version = VERSION, openClaim: { id: string } | null = null) {
         return { count: where.agendaVersion === version ? 1 : 0 };
       },
       findUnique: async () => ({
-        enabled: true,
+        running: true,
         agendaVersion: version,
         agendaSnapshot: snapshot,
         agendaExpiresAt: snapshot.expiresAt,
       }),
       findUniqueOrThrow: async () => ({
-        enabled: true,
+        running: true,
         agendaVersion: version,
         agendaSnapshot: snapshot,
         agendaExpiresAt: snapshot.expiresAt,
@@ -93,7 +93,7 @@ describe("ClaimService snapshots", () => {
       "job.apply:c1:j1",
     );
     expect(creates[0]).toMatchObject({ kind: "job.apply", subjectId: "j1" });
-    expect(locks[0]).toMatchObject({ enabled: true, agendaVersion: VERSION });
+    expect(locks[0]).toMatchObject({ running: true, agendaVersion: VERSION });
     expect(claim.payload).toMatchObject({ campaignId: "c1", jobKey: "j1" });
   });
 

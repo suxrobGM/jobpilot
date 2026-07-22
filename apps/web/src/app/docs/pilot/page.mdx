@@ -36,15 +36,15 @@ next cycle picks up exactly where the last one stopped. A small orchestrator on
 your machine drives the loop, restarts stuck runs, and starts cycles on its own
 after a reboot, so no browser tab needs to stay open.
 
-## Enabling it
+## Starting it
 
 1. Make sure your local agent terminal is running (the dock in the dashboard's
    bottom corner) - see [Getting started](/docs/getting-started) if it's offline.
 2. Open **Pilot** in the workspace, write your instructions, and save.
-3. Click **Enable**.
+3. Click **Start**.
 
-Enabling pairs your machine with the Pilot once; after that the host runs
-cycles on boot, crash, or wake until you disable it.
+Starting pairs your machine with the Pilot once; after that the host runs
+cycles on boot, crash, or wake until you stop it.
 
 ## Your instructions
 
@@ -111,7 +111,7 @@ company notes) and attaches it to the application.
   own once the host is back.
 - **Pilot paused after repeated stuck runs** - the host takes a break to
   protect your machine. Check the dock terminal for what got stuck, then
-  re-enable.
+  start it again.
 - **A board keeps failing** - the Pilot probes it once, then asks whether to
   park it. Parked boards are skipped until you clear them; everything else
   keeps running.

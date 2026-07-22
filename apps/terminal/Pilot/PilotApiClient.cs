@@ -17,6 +17,9 @@ internal sealed record PilotActivityResponse(DateTimeOffset? LastActivityAt, Pil
 /// <summary>The newest server-recorded cycle completion, or null when the user has no completed cycle yet.</summary>
 internal sealed record PilotLastCycleResponse(string? CycleId, DateTimeOffset CompletedAt, string? Status, int? SleepSeconds);
 
+/// <summary>Body of a GET /api/pilot response; only the run-state flag the host gate reads is deserialized.</summary>
+internal sealed record PilotStateResponse(bool Running);
+
 /// <summary>
 /// Posts the coordinator's own interventions to the API journal so the user's phone hears about them.
 /// Best-effort: a briefly unreachable API logs a warning and never throws into the coordinator loop.
@@ -97,7 +100,32 @@ public sealed class PilotApiClient : IDisposable
     }
 
     /// <summary>
-    /// Shared scaffolding for the two best-effort calls: unpaired guard, request timeout, base-URL join, Bearer
+    /// Probes the server for whether the pilot is running, gating each cycle so a stopped pilot burns nothing. Never
+    /// throws: any failure returns null so the coordinator treats an unreachable API as "do not inject" and backs off.
+    /// A non-null bool is an authoritative server answer; null means the probe could not be resolved.
+    /// </summary>
+    public async Task<bool?> GetRunningAsync(string apiUrl, string apiToken, CancellationToken ct = default)
+    {
+        try
+        {
+            return await SendGuardedAsync<bool?>(apiUrl, apiToken, HttpMethod.Get, "/api/pilot",
+                content: null, "Pilot run-state probe was rejected ({Status}).", async (response, token) =>
+                {
+                    var json = await response.Content.ReadAsStringAsync(token);
+                    var state = JsonSerializer.Deserialize(json, AppJsonContext.Default.PilotStateResponse);
+                    return state is null ? null : state.Running;
+                }, ct);
+        }
+        catch (Exception ex) when (!Cancellation.IsCallerCancellation(ex, ct))
+        {
+            // Fail-open on anything (transport, timeout, malformed body): the coordinator backs off instead of injecting.
+            logger.LogWarning(ex, "Pilot run-state probe could not be delivered.");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Shared scaffolding for the best-effort calls: unpaired guard, request timeout, base-URL join, Bearer
     /// header, and the non-success warning. Returns <c>default</c> when unpaired or rejected; otherwise the result
     /// of <paramref name="onSuccess"/>, run while the response and its timeout token are still alive. Transport and
     /// timeout exceptions propagate to the caller's own catch so each keeps its distinct failure log.

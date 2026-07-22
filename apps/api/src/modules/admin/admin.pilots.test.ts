@@ -25,14 +25,14 @@ describe("AdminService.listPilots", () => {
         [
           {
             userId: "p1",
-            enabled: true,
+            running: true,
             lastCycleAt: new Date("2026-07-15T10:00:00.000Z"),
             cycleCount: 42,
             user: { email: "alice@example.com" },
           },
           {
             userId: "p2",
-            enabled: false,
+            running: false,
             lastCycleAt: null,
             cycleCount: 0,
             user: { email: "bob@example.com" },
@@ -48,7 +48,7 @@ describe("AdminService.listPilots", () => {
       {
         userEmail: "alice@example.com",
         userId: "p1",
-        enabled: true,
+        running: true,
         lastCycleAt: new Date("2026-07-15T10:00:00.000Z"),
         cycleCount: 42,
         openQuestions: 2,
@@ -56,7 +56,7 @@ describe("AdminService.listPilots", () => {
       {
         userEmail: "bob@example.com",
         userId: "p2",
-        enabled: false,
+        running: false,
         lastCycleAt: null,
         cycleCount: 0,
         openQuestions: 0,

@@ -62,7 +62,7 @@ export interface Over {
   }[];
   // Open job.apply claims protecting in-flight applies from the stale-`applying` sweep.
   openApplyClaims?: Record<string, unknown>[];
-  pilotEnabled?: boolean;
+  pilotRunning?: boolean;
   // verifyGrant's claimability check for campaign kinds (null = 409, the row left the claimable state).
   campaignFindFirst?: Record<string, unknown> | null;
   // Scored-but-pending rows swept by promoteScoredPendingJobs (job.findMany with a matchScore filter).
@@ -116,7 +116,7 @@ function fakePilotState(over: Over) {
     findUnique: async () => ({
       instructionsConfig: over.instructionsConfig ?? defaultConfig,
       instructionsGoals: over.instructionsGoals ?? "",
-      enabled: over.pilotEnabled ?? true,
+      running: over.pilotRunning ?? true,
     }),
     update: async () => ({}),
   };

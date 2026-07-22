@@ -8,7 +8,7 @@ argument-hint: "(none - injected by the terminal host)"
 
 The Pilot is JobPilot's autonomous mode: the .NET host orchestrator re-injects this skill perpetually. Each invocation is **one stateless cycle** - sense, decide, act, record, exit. All state lives in the API; nothing survives between invocations except what you write there. Do **exactly one** agenda item (at most one worker delegation, one browser activity), journal it, and exit by printing the sentinel. Never loop, never process a second item.
 
-## 0. Setup + Enabled Check
+## 0. Setup
 
 Follow `../../shared/setup.md` - health check `GET /api/health` first; abort with its standard message if down. Then generate a cycle id (uuidgen if present, else a portable fallback):
 
@@ -16,17 +16,10 @@ Follow `../../shared/setup.md` - health check `GET /api/health` first; abort wit
 CYCLE_ID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || od -An -tx1 -N16 /dev/urandom | tr -d ' \n' | sed -E 's/^(.{8})(.{4})(.{4})(.{4})(.{12})$/\1-\2-\3-\4-\5/')
 ```
 
+Load the pilot state - later steps read its instructions (`autonomy`, `parkedBoards`). No run-state check here: the host gates the loop, so a stopped pilot is never injected in the first place.
+
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/pilot"
-```
-
-If `.enabled` is `false`, record the cycle (the host reads this back to confirm completion), then print `[[JOBPILOT_CYCLE cycle=$CYCLE_ID status=empty sleep=3600]]` as the final line and stop:
-
-```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg cid "$CYCLE_ID" \
-    '{cycleId:$cid, entries:[{kind:"cycle", summary:"Pilot is off - idling.", detail:{status:"empty", sleepSeconds:3600}}]}')"
 ```
 
 ## 1. Sense
@@ -35,6 +28,17 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 AGENDA=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/agenda/refresh")
 AGENDA_VERSION=$(echo "$AGENDA" | jq -r '.version')
 ```
+
+A `409` from `POST /api/pilot/agenda/refresh` means the pilot was stopped mid-cycle - a rare race the host normally gates. Treat it as a stopped pilot: journal the cycle and exit empty.
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg cid "$CYCLE_ID" \
+    '{cycleId:$cid, entries:[{kind:"cycle", summary:"Pilot is stopped.", detail:{status:"empty", sleepSeconds:3600}}]}')"
+```
+
+Print `[[JOBPILOT_CYCLE cycle=$CYCLE_ID status=empty sleep=3600]]` as the final line, stop.
 
 If `.items` is empty:
 
@@ -372,7 +376,7 @@ Print exactly one sentinel as the **final line of output**, then stop:
 [[JOBPILOT_CYCLE cycle=$CYCLE_ID status=ok sleep=<agenda.sleepSeconds>]]
 ```
 
-`status=empty` for the no-agenda/no-claimable-item paths (steps 0-1/3). `status=error` when the cycle failed unexpectedly.
+`status=empty` for the stopped/no-agenda/no-claimable-item paths (steps 1/3). `status=error` when the cycle failed unexpectedly.
 
 Error hardening: any API call that fails with a non-2xx other than the documented `409`s, a transport failure, or an orchestrator check-in you can't recover from, ends the cycle. Journal ONE batch with both a `kind:"system"` entry naming what failed and a `kind:"cycle"` entry carrying the error detail - never omit that `detail`, it is what the host reads back to confirm the cycle finished:
 

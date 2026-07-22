@@ -1,12 +1,13 @@
 using System.Threading.Channels;
+using JobPilot.Terminal.Common;
 using JobPilot.Terminal.Contracts;
 using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>
-/// Background loop that keeps re-injecting the pilot skill while pilot mode is enabled and recovers a stuck
-/// session - the Pilot's local orchestrator. Reacts to enable/disable without a host restart via <see cref="WakeUp"/>,
+/// Background loop that keeps re-injecting the pilot skill while pilot mode is running and recovers a stuck
+/// session - the Pilot's local orchestrator. Reacts to start/stop without a host restart via <see cref="WakeUp"/>,
 /// and owns the inter-cycle sleep so a wake can end it early and start the next cycle promptly.
 /// </summary>
 public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogger<PilotCoordinator> logger) : BackgroundService
@@ -16,10 +17,19 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
     // A restarted host waits this long before its first resumed cycle so Kestrel finishes binding first.
     private static readonly TimeSpan StartupResumeDelay = TimeSpan.FromSeconds(10);
 
+    // When the server can't be reached, a cycle would inject with no API to talk to; back off on this escalating
+    // ladder instead (30s doubling to a 10min cap) and re-probe on wake, mirroring the SSE reconnect shape.
+    internal static readonly TimeSpan ProbeBackoffInitial = TimeSpan.FromSeconds(30);
+    internal static readonly TimeSpan ProbeBackoffMax = TimeSpan.FromMinutes(10);
+
     /// <summary>Journal summary pushed when a restarted host resumes conducting on its own.</summary>
     public const string ResumeReport = "Pilot resumed after the app restarted.";
 
+    /// <summary>Journal summary pushed when the server-side run-state probe reports the pilot stopped.</summary>
+    public const string StandingDownReport = "Pilot is stopped on the server - standing down.";
+
     private readonly PilotCycleRunner loop = new(env);
+    private ProbeBackoff probeBackoff;
 
     // A pulse wakes the idle loop. Capacity one coalesces bursts without stale permits.
     private readonly Channel<bool> wake = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
@@ -39,17 +49,17 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
 
     internal int PendingWakeCount => wake.Reader.Count;
 
-    /// <summary>Signals the loop to re-read the pairing (after enable/disable) and ends any inter-cycle sleep early.</summary>
+    /// <summary>Signals the loop to re-read the pairing (after start/stop) and ends any inter-cycle sleep early.</summary>
     public void WakeUp()
     {
         Interlocked.Increment(ref wakeCount);
         wake.Writer.TryWrite(true);
         lock (ctsGate)
         {
-            // Any wake ends an inter-cycle sleep early so the next cycle starts now; only a disable/unpair also
-            // aborts a live cycle. An enabled wake must never interrupt a live turn.
+            // Any wake ends an inter-cycle sleep early so the next cycle starts now; only a stop/unpair also
+            // aborts a live cycle. A wake that keeps the pilot running must never interrupt a live turn.
             interSleepCts?.Cancel();
-            if (store.Current is not { Enabled: true })
+            if (store.Current is not { Running: true })
             {
                 iterationCts?.Cancel();
             }
@@ -62,7 +72,7 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
         var pairing = store.Current;
         return new PilotStatus
         {
-            Enabled = pairing?.Enabled ?? false,
+            Running = pairing?.Running ?? false,
             Paired = pairing is not null,
             Conducting = driving && loop.Conducting,
             LastCycleAt = loop.LastCycleAt,
@@ -73,7 +83,7 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await ResumeIfEnabledAsync(stoppingToken);
+        await ResumeIfRunningAsync(stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -88,7 +98,7 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
             }
 
             var pairing = store.Current;
-            if (pairing is null || !pairing.Enabled)
+            if (pairing is null || !pairing.Running)
             {
                 driving = false;
                 if (!await AwaitUnlessCanceledAsync(wake.Reader.ReadAsync(stoppingToken).AsTask()))
@@ -98,23 +108,53 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
                 continue;
             }
 
-            // Reading the current enabled pairing satisfies any pulse that arrived before this iteration.
-            wake.Reader.TryRead(out _);
-
             try
             {
+                // Gate before every inject so a stopped pilot burns zero cycles. The server is authoritative: local
+                // Running is only a fast path, and a cycle with no reachable API is pure token burn.
+                var runState = await ProbeRunStateAsync(cts.Token);
+                if (runState == false)
+                {
+                    // The server (or another device) stopped the pilot; mirror it so the next iteration parks, and
+                    // announce the stand-down once. A stop-wake cancels cts, so report on stoppingToken instead.
+                    store.SetRunning(false);
+                    driving = false;
+                    probeBackoff.Reset();
+                    try
+                    {
+                        await env.ReportSystemAsync(StandingDownReport, stoppingToken);
+                    }
+                    catch
+                    {
+                        // Best-effort; a failed stand-down report must not fault the background service.
+                    }
+                    continue;
+                }
+
+                if (runState is null)
+                {
+                    // API unreachable: do not inject. Back off on the escalating ladder; a wake ends it early to re-probe.
+                    driving = false;
+                    await SleepRacingWakeAsync(probeBackoff.Next(), cts.Token);
+                    continue;
+                }
+
+                probeBackoff.Reset();
+                // Reading the current running pairing satisfies any pulse that arrived before this iteration.
+                wake.Reader.TryRead(out _);
+
                 driving = true;
                 var sleep = await loop.RunIterationAsync(pairing, cts.Token);
                 if (sleep is { } duration && duration > TimeSpan.Zero)
                 {
-                    // A wake (question answered, approved promotion, etc.) ends this sleep early; a disable cancels it.
+                    // A wake (question answered, approved promotion, etc.) ends this sleep early; a stop cancels it.
                     await SleepRacingWakeAsync(duration, cts.Token);
                 }
             }
             catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
             {
-                // A disable aborts the in-flight turn; Conducting keeps Esc out of a user-driven mismatch session.
-                if (loop.Conducting && store.Current is not { Enabled: true })
+                // A stop aborts the in-flight turn; Conducting keeps Esc out of a user-driven mismatch session.
+                if (loop.Conducting && store.Current is not { Running: true })
                 {
                     env.InterruptSession();
                 }
@@ -139,10 +179,10 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
     /// On a fresh start already paired+enabled, resumes conducting after a short bind grace and journals it. If a
     /// planned inter-cycle break was still owed when the host restarted, waits out the remainder before the first inject.
     /// </summary>
-    private async Task ResumeIfEnabledAsync(CancellationToken stoppingToken)
+    private async Task ResumeIfRunningAsync(CancellationToken stoppingToken)
     {
         var pairing = store.Current;
-        if (pairing is null || !pairing.Enabled)
+        if (pairing is null || !pairing.Running)
         {
             return;
         }
@@ -212,6 +252,22 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
         }
     }
 
+    /// <summary>
+    /// Probes the server for the pilot's run-state, swallowing any non-cancellation failure to null so the caller
+    /// backs off instead of injecting. Caller cancellation (a stop or host shutdown) propagates.
+    /// </summary>
+    private async Task<bool?> ProbeRunStateAsync(CancellationToken ct)
+    {
+        try
+        {
+            return await env.GetRunStateAsync(ct);
+        }
+        catch (Exception ex) when (!Cancellation.IsCallerCancellation(ex, ct))
+        {
+            return null;
+        }
+    }
+
     /// <summary>Awaits a cancelable operation; returns false when it is canceled (host shutdown / wake).</summary>
     private static async Task<bool> AwaitUnlessCanceledAsync(Task operation)
     {
@@ -241,5 +297,22 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
             iterationCts?.Dispose();
         }
         base.Dispose();
+    }
+
+    /// <summary>Escalating backoff for an unreachable API: 30s doubling to a 10min cap, reset once the server answers.</summary>
+    private struct ProbeBackoff
+    {
+        private int failures;
+
+        public TimeSpan Next()
+        {
+            var seconds = Math.Min(
+                ProbeBackoffInitial.TotalSeconds * Math.Pow(2, failures),
+                ProbeBackoffMax.TotalSeconds);
+            failures++;
+            return TimeSpan.FromSeconds(seconds);
+        }
+
+        public void Reset() => failures = 0;
     }
 }

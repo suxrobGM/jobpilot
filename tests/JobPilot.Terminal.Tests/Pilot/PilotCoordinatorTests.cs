@@ -1,4 +1,4 @@
-using JobPilot.Terminal.Pilot;
+﻿using JobPilot.Terminal.Pilot;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -38,7 +38,7 @@ public sealed class PilotCoordinatorTests : IDisposable
     }
 
     [Fact]
-    public async Task Enable_StartsConducting_AndDisableStopsInjecting()
+    public async Task Start_StartsConducting_AndStopStopsInjecting()
     {
         await coordinator.StartAsync(CancellationToken.None);
 
@@ -47,9 +47,9 @@ public sealed class PilotCoordinatorTests : IDisposable
 
         await TestWait.Until(() => env.Actions.Contains("inject-cycle"));
         Assert.True(coordinator.BuildStatus().Conducting);
-        Assert.True(coordinator.BuildStatus().Enabled);
+        Assert.True(coordinator.BuildStatus().Running);
 
-        store.SetEnabled(false);
+        store.SetRunning(false);
         coordinator.WakeUp();
 
         await TestWait.Until(() => !coordinator.BuildStatus().Conducting);
@@ -80,7 +80,7 @@ public sealed class PilotCoordinatorTests : IDisposable
         Assert.Equal(1, env.Actions.Count(a => a == "inject-cycle")); // the live turn is neither restarted...
         Assert.DoesNotContain("interrupt", env.Actions);              // ...nor aborted
 
-        store.SetEnabled(false);
+        store.SetRunning(false);
         coordinator.WakeUp();
         await coordinator.StopAsync(CancellationToken.None);
     }
@@ -103,13 +103,13 @@ public sealed class PilotCoordinatorTests : IDisposable
         await TestWait.Until(() => env.Actions.Count(a => a == "inject-cycle") >= 2); // the next cycle starts at once
         Assert.DoesNotContain("interrupt", env.Actions);
 
-        store.SetEnabled(false);
+        store.SetRunning(false);
         coordinator.WakeUp();
         await coordinator.StopAsync(CancellationToken.None);
     }
 
     [Fact]
-    public async Task Disable_DoesNotInterrupt_WhilePausedOnProviderMismatch()
+    public async Task Stop_DoesNotInterrupt_WhilePausedOnProviderMismatch()
     {
         env.RunningProvider = "codex"; // the user drives the other provider; the pilot pairs claude
         await coordinator.StartAsync(CancellationToken.None);
@@ -118,10 +118,10 @@ public sealed class PilotCoordinatorTests : IDisposable
         coordinator.WakeUp();
         await TestWait.Until(() => env.Actions.Contains("pause"));
 
-        store.SetEnabled(false);
+        store.SetRunning(false);
         coordinator.WakeUp();
 
-        await TestWait.Until(() => !coordinator.BuildStatus().Enabled);
+        await TestWait.Until(() => !coordinator.BuildStatus().Running);
         await Task.Delay(50);
         Assert.DoesNotContain("interrupt", env.Actions);
 
@@ -140,7 +140,7 @@ public sealed class PilotCoordinatorTests : IDisposable
         Assert.True(coordinator.BuildStatus().Conducting);
         Assert.Contains(PilotCoordinator.ResumeReport, env.Reports); // the plain report: no planned-break wording
 
-        store.SetEnabled(false);
+        store.SetRunning(false);
         coordinator.WakeUp();
         await coordinator.StopAsync(CancellationToken.None);
     }
@@ -164,7 +164,7 @@ public sealed class PilotCoordinatorTests : IDisposable
             && int.Parse(a["sleep:".Length..]) > 60);
         Assert.InRange(breakSleep, 0, env.Actions.IndexOf("inject-cycle") - 1);
 
-        store.SetEnabled(false);
+        store.SetRunning(false);
         coordinator.WakeUp();
         await coordinator.StopAsync(CancellationToken.None);
     }
@@ -181,7 +181,54 @@ public sealed class PilotCoordinatorTests : IDisposable
         await TestWait.Until(() => coordinator.BuildStatus().LastCycleStatus == "empty");
         Assert.NotNull(coordinator.BuildStatus().LastCycleAt);
 
-        store.SetEnabled(false);
+        store.SetRunning(false);
+        coordinator.WakeUp();
+        await coordinator.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ServerStopped_StandsDown_WithoutInjecting_AndMirrorsTheStopLocally()
+    {
+        env.DefaultRunState = false; // the server reports the pilot stopped when the gate probes
+        await coordinator.StartAsync(CancellationToken.None);
+
+        store.Save(TestPairing.Create());
+        coordinator.WakeUp();
+
+        // The gate probes, mirrors the stop into the local store, and journals the stand-down - no cycle is injected.
+        await TestWait.Until(() => store.Current is { Running: false });
+        await TestWait.Until(() => env.Reports.Contains(PilotCoordinator.StandingDownReport));
+        await Task.Delay(50);
+        Assert.DoesNotContain("inject-cycle", env.Actions);
+        Assert.False(coordinator.BuildStatus().Conducting);
+        Assert.True(coordinator.BuildStatus().Paired); // the pairing is kept
+
+        await coordinator.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ApiUnreachable_BacksOffWithoutInjecting_AndAWakeReprobes()
+    {
+        env.BlockSleep = true;        // the escalating backoff sleep blocks until a wake ends it
+        env.DefaultRunState = null;   // the API is unreachable: the gate must not inject
+        await coordinator.StartAsync(CancellationToken.None);
+
+        store.Save(TestPairing.Create());
+        coordinator.WakeUp();
+
+        // The gate keeps probing and backing off; it never injects while the API stays unreachable.
+        await TestWait.Until(() => env.Actions.Any(a => a.StartsWith("sleep:", StringComparison.Ordinal)));
+        await TestWait.Until(() => env.RunStateProbeCount > 0);
+        Assert.DoesNotContain("inject-cycle", env.Actions);
+        Assert.True(store.Current is { Running: true }); // local state is untouched: the server was never consulted
+
+        // The API comes back and a wake ends the backoff early, so the next probe runs a real cycle.
+        env.DefaultRunState = true;
+        coordinator.WakeUp();
+
+        await TestWait.Until(() => env.Actions.Contains("inject-cycle"));
+
+        store.SetRunning(false);
         coordinator.WakeUp();
         await coordinator.StopAsync(CancellationToken.None);
     }

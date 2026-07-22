@@ -20,10 +20,10 @@ internal sealed record PilotSsePromotion
     public string? Status { get; init; }
 }
 
-/// <summary>The pilot state carried by a <c>state.changed</c> event; only the enabled flag matters here.</summary>
+/// <summary>The pilot state carried by a <c>state.changed</c> event; only the running flag matters here.</summary>
 internal sealed record PilotSseState
 {
-    public bool? Enabled { get; init; }
+    public bool? Running { get; init; }
 }
 
 /// <summary>Exponential reconnect backoff: 5s doubling to a 5min cap.</summary>
@@ -44,10 +44,10 @@ internal struct SseBackoff
 }
 
 /// <summary>
-/// Long-lived listener on the API's pilot SSE feed. While the pilot is enabled+paired it holds a streaming
+/// Long-lived listener on the API's pilot SSE feed. While the pilot is running+paired it holds a streaming
 /// connection and wakes the coordinator the moment a question is answered, an approved promotion lands, or
 /// state changes - so a sleeping coordinator starts its next cycle within seconds instead of at nextWakeAt.
-/// Reconnects with exponential backoff, tears down when disabled, and never faults the host.
+/// Reconnects with exponential backoff, tears down when stopped, and never faults the host.
 /// </summary>
 public sealed class PilotEventListener : BackgroundService
 {
@@ -77,9 +77,9 @@ public sealed class PilotEventListener : BackgroundService
         this.http = http;
     }
 
-    /// <summary>True when a stored, enabled pairing with an API URL can be streamed from.</summary>
+    /// <summary>True when a stored, running pairing with an API URL can be streamed from.</summary>
     internal static bool ShouldConnect(PilotPairing? pairing) =>
-        pairing is { Enabled: true } && !string.IsNullOrWhiteSpace(pairing.ApiUrl);
+        pairing is { Running: true } && !string.IsNullOrWhiteSpace(pairing.ApiUrl);
 
     /// <summary>Whether a parsed frame is a wake-worthy pilot event. Pure so the dispatch table is unit-testable.</summary>
     internal static bool ShouldWake(SseFrame frame)
@@ -102,13 +102,13 @@ public sealed class PilotEventListener : BackgroundService
     }
 
     /// <summary>
-    /// Whether a frame is an API-side disable that must sync to the local store. Pure so it is unit-testable.
-    /// Only disable can sync here: the listener itself only streams while the local store is enabled.
+    /// Whether a frame is an API-side stop that must sync to the local store. Pure so it is unit-testable.
+    /// Only a stop can sync here: the listener itself only streams while the local store is running.
     /// </summary>
-    internal static bool IsRemoteDisable(SseFrame frame)
+    internal static bool IsRemoteStop(SseFrame frame)
     {
         var envelope = TryParseEnvelope(frame);
-        return (envelope?.Type ?? frame.Event) == "state.changed" && envelope?.State?.Enabled == false;
+        return (envelope?.Type ?? frame.Event) == "state.changed" && envelope?.State?.Running == false;
     }
 
     private static PilotSseEnvelope? TryParseEnvelope(SseFrame frame)
@@ -204,11 +204,11 @@ public sealed class PilotEventListener : BackgroundService
             gotData = true;
             foreach (var frame in parser.Feed(new ReadOnlySpan<char>(buffer, 0, read)))
             {
-                // A disable from another device can't reach this host directly; mirror it into the local store
-                // before waking, or the coordinator re-reads Enabled=true and keeps spawning sessions forever.
-                if (IsRemoteDisable(frame))
+                // A stop from another device can't reach this host directly; mirror it into the local store
+                // before waking, or the coordinator re-reads Running=true and keeps spawning sessions forever.
+                if (IsRemoteStop(frame))
                 {
-                    store.SetEnabled(false);
+                    store.SetRunning(false);
                 }
 
                 if (ShouldWake(frame))

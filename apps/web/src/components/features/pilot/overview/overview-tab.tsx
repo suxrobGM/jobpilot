@@ -6,7 +6,7 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { NeedsAttention } from "../attention/needs-attention";
-import { usePilotToggle } from "../use-pilot-toggle";
+import { usePilotControls } from "../use-pilot-controls";
 import { AgendaPreview } from "./agenda-preview";
 import { OrchestrationPanel } from "./orchestration-panel";
 import { OverviewSkeleton } from "./overview-skeleton";
@@ -16,9 +16,9 @@ import { PilotSetupChecklist } from "./setup-checklist";
 import { StatusHero } from "./status-hero";
 
 export function OverviewTab(): ReactElement {
-  // Toggle + health are hoisted so the hero and the checklist share one host poll.
-  const toggle = usePilotToggle();
-  const { health, status } = useTerminalHealth(toggle.busy);
+  // Controls + health are hoisted so the hero and the checklist share one host poll.
+  const controls = usePilotControls();
+  const { health, status } = useTerminalHealth(controls.busy);
   const stateQuery = useApiQuery(pilotQueries.state(), {
     errorMessage: "Failed to load pilot state",
   });
@@ -32,7 +32,7 @@ export function OverviewTab(): ReactElement {
   // On xs, Needs-attention hoists above the hero so it's reachable one-handed;
   // md keeps DOM order. useFlexGap makes `order` reflow cleanly.
   return (
-    <PilotStatusProvider state={state} toggle={toggle} health={health} hostStatus={status}>
+    <PilotStatusProvider state={state} controls={controls} health={health} hostStatus={status}>
       <Stack spacing={3} useFlexGap>
         <PilotSetupChecklist />
         <Box sx={{ order: { xs: 2, md: 0 } }}>

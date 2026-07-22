@@ -113,7 +113,7 @@ export class AdminService {
         take: limit,
         select: {
           userId: true,
-          enabled: true,
+          running: true,
           lastCycleAt: true,
           cycleCount: true,
           user: { select: { email: true } },
@@ -133,7 +133,7 @@ export class AdminService {
     const items = rows.map((row) => ({
       userEmail: row.user.email,
       userId: row.userId,
-      enabled: row.enabled,
+      running: row.running,
       lastCycleAt: row.lastCycleAt,
       cycleCount: row.cycleCount,
       openQuestions: openByUser.get(row.userId) ?? 0,

@@ -29,8 +29,8 @@ public sealed record StartSessionRequest
 /// <param name="Provider">Optional provider id for the intended session.</param>
 public sealed record InjectRequest(string? Command, string? Provider = null);
 
-/// <summary>Request to enable pilot mode with a provider pairing.</summary>
-public sealed record PilotEnableRequest
+/// <summary>Request to start pilot mode with a provider pairing.</summary>
+public sealed record PilotStartRequest
 {
     /// <summary>Provider that drives the pilot loop. Defaults to Claude.</summary>
     public string? Provider { get; init; }

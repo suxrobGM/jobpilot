@@ -167,11 +167,17 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
         return pairing is null ? null : await api.GetActivityAsync(pairing.ApiUrl, pairing.ApiToken, ct);
     }
 
+    public async Task<bool?> GetRunStateAsync(CancellationToken ct)
+    {
+        var pairing = store.Current;
+        return pairing is null ? null : await api.GetRunningAsync(pairing.ApiUrl, pairing.ApiToken, ct);
+    }
+
     private void OnOutput(byte[] data)
     {
-        // Interactive non-pilot sessions must not pay parser cost per chunk; enable writes the store before the
-        // first cycle inject and disable cancels the iteration, so no sentinel a live cycle depends on is lost.
-        if (store.Current is not { Enabled: true })
+        // Interactive non-pilot sessions must not pay parser cost per chunk; start writes the store before the
+        // first cycle inject and stop cancels the iteration, so no sentinel a live cycle depends on is lost.
+        if (store.Current is not { Running: true })
         {
             return;
         }

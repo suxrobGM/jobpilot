@@ -26,7 +26,7 @@ export interface TerminalProviderInfo {
 
 /** Autonomous pilot-mode health from the host's /healthz. Additive; absent on older hosts. */
 export interface PilotHealth {
-  enabled: boolean;
+  running: boolean;
   paired: boolean;
   conducting: boolean;
   lastCycleAt?: string | null;
@@ -128,12 +128,12 @@ export function killSession(): Promise<SessionStatus> {
   return send<SessionStatus>("DELETE", "/sessions/current");
 }
 
-/** Stops the session and the pilot loop, then exits the host app entirely (pairing/pilot-enabled state survives for the next launch). */
+/** Stops the session and the pilot loop, then exits the host app entirely (pairing/pilot run state survives for the next launch). */
 export function shutdownHost(): Promise<void> {
   return send<void>("POST", "/shutdown");
 }
 
-interface PilotEnableOptions {
+interface PilotStartOptions {
   provider: TerminalProviderId;
   /** Per-user agent PAT the pilot loop authenticates with. */
   apiToken: string;
@@ -144,13 +144,13 @@ interface PilotEnableOptions {
 }
 
 /** Store the provider pairing and start the local pilot loop. */
-export function pilotEnable(options: PilotEnableOptions): Promise<SessionStatus> {
-  return send<SessionStatus>("POST", "/pilot/enable", options);
+export function pilotStart(options: PilotStartOptions): Promise<SessionStatus> {
+  return send<SessionStatus>("POST", "/pilot/start", options);
 }
 
 /** Stop the local pilot loop; the host keeps the pairing and any mid-cycle session. */
-export function pilotDisable(): Promise<SessionStatus> {
-  return send<SessionStatus>("POST", "/pilot/disable");
+export function pilotStop(): Promise<SessionStatus> {
+  return send<SessionStatus>("POST", "/pilot/stop");
 }
 
 /** Ask the running host to self-update and relaunch; on `updating: true` poll health to see it return on the new version. */

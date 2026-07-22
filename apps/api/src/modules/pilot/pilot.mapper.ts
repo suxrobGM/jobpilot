@@ -22,7 +22,7 @@ export function toPilotState(
 ): PilotState {
   return {
     userId: row.userId,
-    enabled: row.enabled,
+    running: row.running,
     instructionsGoals: row.instructionsGoals,
     instructionsConfig,
     instructionsUpdatedAt: row.instructionsUpdatedAt,

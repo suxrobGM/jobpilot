@@ -31,7 +31,7 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
         <TableHead>
           <TableRow>
             <TableCell>Email</TableCell>
-            <TableCell>Enabled</TableCell>
+            <TableCell>Status</TableCell>
             <TableCell>Last cycle</TableCell>
             <TableCell align="right">Cycles</TableCell>
             <TableCell align="right">Open questions</TableCell>
@@ -44,8 +44,8 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
               <TableCell>
                 <Chip
                   size="small"
-                  color={pilot.enabled ? "success" : "default"}
-                  label={pilot.enabled ? "Enabled" : "Disabled"}
+                  color={pilot.running ? "success" : "default"}
+                  label={pilot.running ? "Running" : "Stopped"}
                 />
               </TableCell>
               <TableCell>

@@ -61,7 +61,7 @@ export function usePilotStage(): PilotStage {
   const conducting = hostStatus?.pilot?.conducting ?? false;
 
   let mode: PilotStageMode;
-  if (!state.enabled) {
+  if (!state.running) {
     mode = "off";
   } else if (isHostOffline(health)) {
     mode = "offline";

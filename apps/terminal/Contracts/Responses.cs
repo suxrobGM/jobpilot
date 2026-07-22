@@ -43,8 +43,8 @@ public sealed record SessionStatus
 /// <summary>Autonomous pilot-mode status surfaced on /healthz.</summary>
 public sealed record PilotStatus
 {
-    /// <summary>Whether the pilot loop is enabled.</summary>
-    public required bool Enabled { get; init; }
+    /// <summary>Whether the pilot loop is running.</summary>
+    public required bool Running { get; init; }
 
     /// <summary>Whether a provider pairing is stored.</summary>
     public required bool Paired { get; init; }

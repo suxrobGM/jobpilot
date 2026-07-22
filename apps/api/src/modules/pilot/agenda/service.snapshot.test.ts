@@ -43,7 +43,7 @@ function service(row: Record<string, unknown> | null) {
 describe("AgendaService current snapshot", () => {
   it("returns the typed current snapshot with one read and no maintenance writes", async () => {
     const fixture = service({
-      enabled: true,
+      running: true,
       agendaSnapshot: snapshot,
       agendaExpiresAt: snapshot.expiresAt,
     });
@@ -54,7 +54,7 @@ describe("AgendaService current snapshot", () => {
 
   it("returns no agenda after the snapshot expires", async () => {
     const fixture = service({
-      enabled: true,
+      running: true,
       agendaSnapshot: snapshot,
       agendaExpiresAt: new Date(now.getTime() - 1),
     });
@@ -62,8 +62,8 @@ describe("AgendaService current snapshot", () => {
     expect(await fixture.agenda.getCurrent("u1")).toEqual({ agenda: null });
   });
 
-  it("rejects reads while the pilot is disabled", async () => {
-    const fixture = service({ enabled: false });
-    await expect(fixture.agenda.getCurrent("u1")).rejects.toThrow("disabled");
+  it("rejects reads while the pilot is stopped", async () => {
+    const fixture = service({ running: false });
+    await expect(fixture.agenda.getCurrent("u1")).rejects.toThrow("stopped");
   });
 });

@@ -3,7 +3,6 @@ import {
   type CreatePilotQuestionInput,
   type PilotQuestionStatus,
   pilotCycleDetailSchema,
-  type SetPilotEnabledInput,
   type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
@@ -95,23 +94,29 @@ export class PilotService {
     return state;
   }
 
-  async setEnabled(userId: string, body: SetPilotEnabledInput) {
-    // Goals are mandatory to start: the pilot has nothing to steer by without them. Stopping never guards.
-    // (Guard moves to `start` in a later milestone.)
-    if (body.enabled) {
-      const prev = await this.prisma.pilotState.findUnique({
-        where: { userId },
-        select: { instructionsGoals: true },
-      });
-      if ((prev?.instructionsGoals ?? "").trim() === "") {
-        throw conflict("Write the pilot's goals before starting it.");
-      }
+  /** Start the loop. Goals are mandatory: the pilot has nothing to steer by without them. */
+  async start(userId: string) {
+    const prev = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { instructionsGoals: true },
+    });
+    if ((prev?.instructionsGoals ?? "").trim() === "") {
+      throw conflict("Write the pilot's goals before starting it.");
     }
+    return this.setRunning(userId, true);
+  }
+
+  /** Stop the loop. Never guards - a stopped pilot injects zero cycles. */
+  async stop(userId: string) {
+    return this.setRunning(userId, false);
+  }
+
+  private async setRunning(userId: string, running: boolean) {
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
-      create: { userId, enabled: body.enabled },
+      create: { userId, running },
       update: {
-        enabled: body.enabled,
+        running,
         agendaVersion: null,
         agendaGeneratedAt: null,
         agendaExpiresAt: null,

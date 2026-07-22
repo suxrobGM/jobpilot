@@ -29,21 +29,21 @@ interface PilotIndicator {
   pulsing?: boolean;
 }
 
-/** Precedence: off > host offline > working > starting up > connected > waiting > enabled. */
+/** Precedence: off > host offline > working > starting up > connected > waiting > running. */
 function deriveIndicator(
-  enabled: boolean,
+  running: boolean,
   cycleCount: number,
   health: TerminalHealth | null,
   pilot: PilotHealth | null,
 ): PilotIndicator {
-  if (!enabled) return { tone: "muted", label: "Off" };
+  if (!running) return { tone: "muted", label: "Off" };
   if (isHostOffline(health)) return { tone: "amber", label: "Host offline" };
   if (pilot?.conducting) return { tone: "violet", label: "Working", pulsing: true };
   if (cycleCount === 0) return { tone: "blue", label: PILOT_STARTING_UP_LABEL, pulsing: true };
   if (pilot?.paired) return { tone: "green", label: "Connected" };
   if (health === "reachable") return { tone: "blue", label: "Waiting for agent" };
   // Mobile (no host visibility) or first probe still in flight.
-  return { tone: "green", label: "Enabled" };
+  return { tone: "green", label: "Running" };
 }
 
 /** Compact read-only pilot presence for the workspace overview; controls live on /pilot. */
@@ -80,7 +80,7 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
   if (!state) return null;
 
   const indicator = deriveIndicator(
-    state.enabled,
+    state.running,
     state.cycleCount,
     health,
     hostStatus?.pilot ?? null,

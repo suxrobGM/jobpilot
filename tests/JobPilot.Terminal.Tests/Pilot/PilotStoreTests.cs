@@ -18,13 +18,13 @@ public sealed class PilotStoreTests : IDisposable
 
     private PilotStore NewStore() => new(path, NullLogger<PilotStore>.Instance);
 
-    private static PilotPairing Pairing(bool enabled = true) => new()
+    private static PilotPairing Pairing(bool running = true) => new()
     {
         Provider = "codex",
         ApiToken = "secret-token",
         ApiUrl = "https://api.example",
         WebUrl = "https://web.example",
-        Enabled = enabled,
+        Running = running,
     };
 
     [Fact]
@@ -45,28 +45,28 @@ public sealed class PilotStoreTests : IDisposable
         Assert.Equal("secret-token", reloaded.ApiToken);
         Assert.Equal("https://api.example", reloaded.ApiUrl);
         Assert.Equal("https://web.example", reloaded.WebUrl);
-        Assert.True(reloaded.Enabled);
+        Assert.True(reloaded.Running);
     }
 
     [Fact]
-    public void SetEnabled_KeepsThePairing_AndPersists()
+    public void SetRunning_KeepsThePairing_AndPersists()
     {
         var store = NewStore();
         store.Save(Pairing());
 
-        store.SetEnabled(false);
+        store.SetRunning(false);
 
-        Assert.False(store.Current!.Enabled);
+        Assert.False(store.Current!.Running);
         Assert.Equal("secret-token", store.Current.ApiToken);
-        Assert.False(NewStore().Current!.Enabled); // survived a reload
+        Assert.False(NewStore().Current!.Running); // survived a reload
     }
 
     [Fact]
-    public void SetEnabled_IsANoOp_WhenUnpaired()
+    public void SetRunning_IsANoOp_WhenUnpaired()
     {
         var store = NewStore();
 
-        store.SetEnabled(false);
+        store.SetRunning(false);
 
         Assert.Null(store.Current);
         Assert.False(File.Exists(path));
@@ -77,6 +77,19 @@ public sealed class PilotStoreTests : IDisposable
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, "{ this is not valid json ");
+
+        Assert.Null(NewStore().Current);
+    }
+
+    [Fact]
+    public void Load_TreatsALegacyEnabledFileAsUnpaired()
+    {
+        // A pre-rename pilot.json carries "enabled" and no "running"; the required member is then missing, so the
+        // file fails to deserialize and is treated as unpaired (accepted churn - the user starts once to re-pair).
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(
+            path,
+            """{"provider":"codex","apiUrl":"https://api.example","webUrl":"https://web.example","enabled":true,"token":"secret-token","protected":false}""");
 
         Assert.Null(NewStore().Current);
     }
@@ -114,9 +127,9 @@ public sealed class PilotStoreTests : IDisposable
         var store = NewStore();
         store.Save(Pairing());
 
-        store.Save(Pairing(enabled: false));
+        store.Save(Pairing(running: false));
 
-        Assert.False(NewStore().Current!.Enabled);
+        Assert.False(NewStore().Current!.Running);
         Assert.Empty(Directory.EnumerateFiles(temp.Root, ".pilot.json.*.tmp"));
     }
 }

@@ -4,11 +4,11 @@ import { createContext, type ReactElement, type ReactNode, use } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import type { SessionStatus } from "@/lib/terminal";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
-import type { PilotToggle } from "../use-pilot-toggle";
+import type { PilotControls } from "../use-pilot-controls";
 
 interface PilotStatus {
   state: PilotState;
-  toggle: PilotToggle;
+  controls: PilotControls;
   health: TerminalHealth;
   hostStatus: SessionStatus | null;
 }

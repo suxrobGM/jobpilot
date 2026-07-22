@@ -57,7 +57,7 @@ export class AgendaService {
 
   async getCurrent(userId: string) {
     const state = await this.prisma.pilotState.findUnique({ where: { userId } });
-    if (!state?.enabled) throw conflict("Pilot is disabled.");
+    if (!state?.running) throw conflict("Pilot is stopped.");
     if (!state.agendaSnapshot || !state.agendaExpiresAt || state.agendaExpiresAt <= new Date()) {
       return { agenda: null };
     }
@@ -67,9 +67,9 @@ export class AgendaService {
   async refresh(userId: string): Promise<AgendaResponse> {
     const state = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { enabled: true },
+      select: { running: true },
     });
-    if (!state?.enabled) throw conflict("Pilot is disabled.");
+    if (!state?.running) throw conflict("Pilot is stopped.");
 
     const now = new Date();
     const { config, goals } = await loadInstructions(this.prisma, userId);

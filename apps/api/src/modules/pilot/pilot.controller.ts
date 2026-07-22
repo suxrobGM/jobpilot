@@ -1,8 +1,4 @@
-import {
-  pilotStateSchema,
-  setPilotEnabledSchema,
-  updatePilotInstructionsSchema,
-} from "@jobpilot/contracts/pilot";
+import { pilotStateSchema, updatePilotInstructionsSchema } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
@@ -40,13 +36,21 @@ export const pilotController = new Elysia({
       description: "Replaces the Pilot's goals and operating config and returns the updated state.",
     },
   })
-  .post("/enabled", ({ user, body }) => pilot.setEnabled(user.id, body), {
-    body: setPilotEnabledSchema,
+  .post("/start", ({ user }) => pilot.start(user.id), {
     beforeHandle: limitMutation,
     response: pilotStateSchema,
     detail: {
-      summary: "Enable or disable the pilot",
-      description: "Toggles the autonomous loop on or off and returns the updated state.",
+      summary: "Start the pilot",
+      description:
+        "Starts the autonomous loop and returns the updated state. Rejects with 409 when the pilot's goals are empty.",
+    },
+  })
+  .post("/stop", ({ user }) => pilot.stop(user.id), {
+    beforeHandle: limitMutation,
+    response: pilotStateSchema,
+    detail: {
+      summary: "Stop the pilot",
+      description: "Stops the autonomous loop and returns the updated state.",
     },
   })
   .get("/activity", ({ user }) => pilot.getActivity(user.id), {

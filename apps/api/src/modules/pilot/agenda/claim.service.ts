@@ -26,7 +26,7 @@ export class ClaimService {
       const locked = await tx.pilotState.updateMany({
         where: {
           userId,
-          enabled: true,
+          running: true,
           agendaVersion,
           agendaExpiresAt: { gt: now },
         },
@@ -35,9 +35,9 @@ export class ClaimService {
       if (locked.count === 0) {
         const current = await tx.pilotState.findUnique({
           where: { userId },
-          select: { enabled: true },
+          select: { running: true },
         });
-        if (!current?.enabled) throw conflict("Pilot is disabled.");
+        if (!current?.running) throw conflict("Pilot is stopped.");
         throw conflict("Agenda snapshot is stale; refresh it before claiming.");
       }
       const state = await tx.pilotState.findUniqueOrThrow({ where: { userId } });

@@ -44,11 +44,9 @@ export const updatePilotInstructionsSchema = z.object({
   config: pilotInstructionsConfigSchema,
 });
 
-export const setPilotEnabledSchema = z.object({ enabled: z.boolean() });
-
 export const pilotStateSchema = z.object({
   userId: z.uuid(),
-  enabled: z.boolean(),
+  running: z.boolean(),
   instructionsGoals: z.string(),
   instructionsConfig: pilotInstructionsConfigSchema,
   instructionsUpdatedAt: z.date().nullable(),
@@ -63,5 +61,4 @@ export const pilotStateSchema = z.object({
 
 export type PilotInstructionsConfig = z.infer<typeof pilotInstructionsConfigSchema>;
 export type UpdatePilotInstructionsInput = z.infer<typeof updatePilotInstructionsSchema>;
-export type SetPilotEnabledInput = z.infer<typeof setPilotEnabledSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;

@@ -18,16 +18,16 @@ interface ChecklistStep {
 
 /** Onboarding card; renders nothing once the pilot is fully set up. */
 export function PilotSetupChecklist(): ReactNode {
-  const { state, toggle, health } = usePilotStatus();
+  const { state, controls, health } = usePilotStatus();
   const dock = useAgentDock();
   const agentAvailable = useAgentAvailable();
 
   const hostReady = health === "reachable";
-  const enabled = state.enabled;
+  const running = state.running;
   const goalsDone = state.instructionsGoals.trim() !== "";
 
   // "checking" counts as provisionally done so a set-up pilot doesn't flash the checklist on load.
-  if ((hostReady || health === "checking") && enabled) {
+  if ((hostReady || health === "checking") && running) {
     return null;
   }
 
@@ -59,18 +59,18 @@ export function PilotSetupChecklist(): ReactNode {
       ),
     },
     {
-      id: "enable",
-      label: "Enable the pilot",
+      id: "start",
+      label: "Start the pilot",
       description: "Turns on autonomous cycles on your own Claude or Codex subscription.",
-      done: enabled,
+      done: running,
       action: (
         <Button
           size="small"
           variant="contained"
-          disabled={toggle.busy || !hostReady || !goalsDone}
-          onClick={() => void toggle.enable()}
+          disabled={controls.busy || !hostReady || !goalsDone}
+          onClick={() => void controls.start()}
         >
-          Enable
+          Start
         </Button>
       ),
     },
@@ -79,7 +79,7 @@ export function PilotSetupChecklist(): ReactNode {
   return (
     <SectionCard
       title="Set up the pilot"
-      description="Install the agent and enable the pilot - it handles the rest."
+      description="Install the agent and start the pilot - it handles the rest."
     >
       <Stack spacing={2}>
         {steps.map((step) => (

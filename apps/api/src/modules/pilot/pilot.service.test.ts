@@ -153,7 +153,7 @@ function instructionsService(prevGoals: string) {
   const rec = { searchResets: 0 };
   const stateRow = (goals: string) => ({
     userId: "p1",
-    enabled: false,
+    running: false,
     instructionsGoals: goals,
     instructionsConfig: {},
     instructionsUpdatedAt: new Date(),
@@ -195,10 +195,10 @@ describe("PilotService.updateInstructions", () => {
   });
 });
 
-function enabledService(goals: string) {
-  const stateRow = (enabled: boolean) => ({
+function runStateService(goals: string) {
+  const stateRow = (running: boolean) => ({
     userId: "p1",
-    enabled,
+    running,
     instructionsGoals: goals,
     instructionsConfig: {},
     instructionsUpdatedAt: new Date(),
@@ -210,29 +210,29 @@ function enabledService(goals: string) {
   const db = {
     pilotState: {
       findUnique: async () => ({ instructionsGoals: goals }),
-      upsert: async (a: { update: { enabled: boolean } }) => stateRow(a.update.enabled),
+      upsert: async (a: { update: { running: boolean } }) => stateRow(a.update.running),
     },
     application: { count: async () => 0 },
   };
   return new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] }));
 }
 
-describe("PilotService.setEnabled goals guard", () => {
-  it("rejects enabling when the goals are empty", async () => {
-    const svc = enabledService("   ");
-    await expect(svc.setEnabled("p1", { enabled: true })).rejects.toMatchObject({ status: 409 });
+describe("PilotService.start goals guard", () => {
+  it("rejects starting when the goals are empty", async () => {
+    const svc = runStateService("   ");
+    await expect(svc.start("p1")).rejects.toMatchObject({ status: 409 });
   });
 
-  it("enables when the goals are non-empty", async () => {
-    const svc = enabledService("ship senior frontend roles");
-    const state = await svc.setEnabled("p1", { enabled: true });
-    expect(state.enabled).toBe(true);
+  it("starts when the goals are non-empty", async () => {
+    const svc = runStateService("ship senior frontend roles");
+    const state = await svc.start("p1");
+    expect(state.running).toBe(true);
   });
 
-  it("disables without guarding on empty goals", async () => {
-    const svc = enabledService("");
-    const state = await svc.setEnabled("p1", { enabled: false });
-    expect(state.enabled).toBe(false);
+  it("stops without guarding on empty goals", async () => {
+    const svc = runStateService("");
+    const state = await svc.stop("p1");
+    expect(state.running).toBe(false);
   });
 });
 

@@ -23,28 +23,28 @@ import { useNextWake } from "./use-next-wake";
 
 /** State + controls on the left, today's budget on the right; the one card that answers "is it working?". */
 export function StatusHero(): ReactElement {
-  const { state, toggle, health, hostStatus } = usePilotStatus();
+  const { state, controls, health, hostStatus } = usePilotStatus();
   const confirm = useConfirm();
   const nextWakeAt = useNextWake();
 
   const pilot = hostStatus?.pilot ?? null;
-  const enabled = state.enabled;
+  const running = state.running;
   const goalsEmpty = state.instructionsGoals.trim() === "";
   const { dailyApplyCap, dailyNetworkingCap, minScore, networkingEnabled } =
     state.instructionsConfig;
   const { appliedToday, capReached } = state;
   const progress = dailyApplyCap > 0 ? Math.min(100, (appliedToday / dailyApplyCap) * 100) : 0;
 
-  const disableWithConfirm = async (): Promise<void> => {
+  const stopWithConfirm = async (): Promise<void> => {
     const ok = await confirm({
-      title: "Disable the pilot?",
+      title: "Stop the pilot?",
       description:
-        "The pilot stops running cycles: no applying, networking, or posting until you enable it again.",
-      confirmLabel: "Disable",
+        "The pilot stops running cycles: no applying, networking, or posting until you start it again.",
+      confirmLabel: "Stop",
       destructive: true,
     });
     if (ok) {
-      await toggle.disable();
+      await controls.stop();
     }
   };
 
@@ -53,14 +53,14 @@ export function StatusHero(): ReactElement {
       title="Pilot"
       description="Autonomous mode runs cycles on your local agent using these instructions."
       actions={
-        enabled ? (
+        running ? (
           <Button
             color="error"
             variant="outlined"
-            disabled={toggle.busy}
-            onClick={() => void disableWithConfirm()}
+            disabled={controls.busy}
+            onClick={() => void stopWithConfirm()}
           >
-            Disable
+            Stop
           </Button>
         ) : (
           // A disabled button emits no pointer events, so the tooltip needs an enabled span to hover over.
@@ -68,10 +68,10 @@ export function StatusHero(): ReactElement {
             <Box component="span" sx={{ display: "inline-flex" }}>
               <Button
                 variant="contained"
-                disabled={toggle.busy || health !== "reachable" || goalsEmpty}
-                onClick={() => void toggle.enable()}
+                disabled={controls.busy || health !== "reachable" || goalsEmpty}
+                onClick={() => void controls.start()}
               >
-                Enable
+                Start
               </Button>
             </Box>
           </Tooltip>
@@ -83,8 +83,8 @@ export function StatusHero(): ReactElement {
           <Stack spacing={2}>
             <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
               <Chip
-                color={enabled ? "success" : "default"}
-                label={enabled ? "Enabled" : "Disabled"}
+                color={running ? "success" : "default"}
+                label={running ? "Running" : "Stopped"}
                 size="small"
               />
               <Chip
@@ -94,8 +94,8 @@ export function StatusHero(): ReactElement {
                 size="small"
               />
               {pilot?.conducting && <Chip color="info" label="Working" size="small" />}
-              {/* First-cycle feedback: right after Enable there is no history yet - say so instead of looking idle. */}
-              {enabled && state.cycleCount === 0 && !pilot?.conducting && (
+              {/* First-cycle feedback: right after Start there is no history yet - say so instead of looking idle. */}
+              {running && state.cycleCount === 0 && !pilot?.conducting && (
                 <Chip
                   color="info"
                   variant="outlined"
@@ -113,15 +113,15 @@ export function StatusHero(): ReactElement {
               )}
             </Stack>
 
-            {/* The disabled + offline case is the setup checklist's job; only warn when cycles should be running. */}
-            {enabled && isHostOffline(health) && (
+            {/* The stopped + offline case is the setup checklist's job; only warn when cycles should be running. */}
+            {running && isHostOffline(health) && (
               <Alert severity="warning">{PILOT_HOST_OFFLINE_MESSAGE}</Alert>
             )}
 
             <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap", gap: 2 }}>
               <Box>
                 <Typography variant="overlineMuted">Provider</Typography>
-                <Typography variant="body2">{providerDisplayName(toggle.provider)}</Typography>
+                <Typography variant="body2">{providerDisplayName(controls.provider)}</Typography>
               </Box>
               <Box>
                 <Typography variant="overlineMuted">Cycles run</Typography>
@@ -146,7 +146,7 @@ export function StatusHero(): ReactElement {
                 </Stack>
               </Box>
               {/* Hidden mid-cycle: the "Working" chip already covers that state. */}
-              {enabled && nextWakeAt && !pilot?.conducting && (
+              {running && nextWakeAt && !pilot?.conducting && (
                 <Box>
                   <Typography variant="overlineMuted">Next wake</Typography>
                   <Typography variant="body2">

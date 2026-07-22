@@ -38,23 +38,23 @@ public sealed class PilotEventListenerTests
         Assert.False(PilotEventListener.ShouldWake(Frame(string.Empty, "ping")));
     }
 
-    // --- IsRemoteDisable: only a state.changed carrying enabled=false syncs the local store ---
+    // --- IsRemoteStop: only a state.changed carrying running=false syncs the local store ---
 
     [Fact]
-    public void IsRemoteDisable_OnStateChangedWithEnabledFalse()
+    public void IsRemoteStop_OnStateChangedWithRunningFalse()
     {
-        Assert.True(PilotEventListener.IsRemoteDisable(
-            Frame("{\"type\":\"state.changed\",\"state\":{\"enabled\":false}}")));
+        Assert.True(PilotEventListener.IsRemoteStop(
+            Frame("{\"type\":\"state.changed\",\"state\":{\"running\":false}}")));
     }
 
     [Theory]
-    [InlineData("{\"type\":\"state.changed\",\"state\":{\"enabled\":true}}")]
+    [InlineData("{\"type\":\"state.changed\",\"state\":{\"running\":true}}")]
     [InlineData("{\"type\":\"state.changed\",\"state\":{}}")]
     [InlineData("{\"type\":\"question.answered\",\"question\":{}}")]
     [InlineData("{not json")]
-    public void IsRemoteDisable_IsFalse_ForEverythingElse(string data)
+    public void IsRemoteStop_IsFalse_ForEverythingElse(string data)
     {
-        Assert.False(PilotEventListener.IsRemoteDisable(Frame(data)));
+        Assert.False(PilotEventListener.IsRemoteStop(Frame(data)));
     }
 
     // --- ShouldConnect: connect only when enabled, paired, and addressable ---
@@ -64,7 +64,7 @@ public sealed class PilotEventListenerTests
     {
         Assert.True(PilotEventListener.ShouldConnect(TestPairing.Create()));
         Assert.False(PilotEventListener.ShouldConnect(null));
-        Assert.False(PilotEventListener.ShouldConnect(TestPairing.Create(enabled: false)));
+        Assert.False(PilotEventListener.ShouldConnect(TestPairing.Create(running: false)));
         Assert.False(PilotEventListener.ShouldConnect(TestPairing.Create(apiUrl: "")));
     }
 
@@ -101,7 +101,7 @@ public sealed class PilotEventListenerTests
     {
         await using var h = await Harness.StartAsync();
 
-        h.Store.SetEnabled(false);
+        h.Store.SetRunning(false);
         // A heartbeat unblocks the read so the listener re-checks the pairing and tears down.
         h.Push("event: ping\n\n");
 
@@ -109,28 +109,28 @@ public sealed class PilotEventListenerTests
     }
 
     [Fact]
-    public async Task Listener_SyncsTheLocalStore_AndWakes_OnARemoteDisable()
+    public async Task Listener_SyncsTheLocalStore_AndWakes_OnARemoteStop()
     {
         await using var h = await Harness.StartAsync();
         var wakesBefore = h.Conductor.WakeCount;
 
-        // Disabled from another device: the API-side state must win over the stale local Enabled=true.
-        h.Push("data: {\"type\":\"state.changed\",\"state\":{\"enabled\":false}}\n\n");
+        // Stopped from another device: the API-side state must win over the stale local Running=true.
+        h.Push("data: {\"type\":\"state.changed\",\"state\":{\"running\":false}}\n\n");
 
-        await TestWait.Until(() => h.Store.Current is { Enabled: false });
+        await TestWait.Until(() => h.Store.Current is { Running: false });
         await TestWait.Until(() => h.Conductor.WakeCount > wakesBefore);
     }
 
     [Fact]
-    public async Task Listener_KeepsTheLocalStoreEnabled_OnAStateChangedThatStaysEnabled()
+    public async Task Listener_KeepsTheLocalStoreRunning_OnAStateChangedThatStaysRunning()
     {
         await using var h = await Harness.StartAsync();
         var wakesBefore = h.Conductor.WakeCount;
 
-        h.Push("data: {\"type\":\"state.changed\",\"state\":{\"enabled\":true}}\n\n");
+        h.Push("data: {\"type\":\"state.changed\",\"state\":{\"running\":true}}\n\n");
         await TestWait.Until(() => h.Conductor.WakeCount > wakesBefore);
 
-        Assert.True(h.Store.Current is { Enabled: true });
+        Assert.True(h.Store.Current is { Running: true });
     }
 
     [Fact]
