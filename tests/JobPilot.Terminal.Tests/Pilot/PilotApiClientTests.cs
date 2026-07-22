@@ -167,7 +167,7 @@ public sealed class PilotApiClientTests
             seen = request;
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""{"running":true,"instructionsGoals":"ship it"}"""),
+                Content = new StringContent("""{"running":true,"activeClaims":0,"lastCycle":null}"""),
             });
         });
         using var client = new PilotApiClient(NullLogger<PilotApiClient>.Instance, new HttpClient(handler));
@@ -176,7 +176,8 @@ public sealed class PilotApiClientTests
 
         Assert.NotNull(seen);
         Assert.Equal(HttpMethod.Get, seen!.Method);
-        Assert.Equal("https://api.example.test/api/pilot", seen.RequestUri!.ToString());
+        // The gate reads run-state off the activity probe; GET /api/pilot would write a row per check.
+        Assert.Equal("https://api.example.test/api/pilot/activity", seen.RequestUri!.ToString());
         Assert.Equal("secret-token", seen.Headers.Authorization!.Parameter);
         Assert.True(running);
     }

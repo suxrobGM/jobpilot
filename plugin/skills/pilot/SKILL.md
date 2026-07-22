@@ -137,13 +137,13 @@ The claim payload is enriched: `{questionId, questionKind, subjectType, subjectI
 
 ### `search.discover`
 
-Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`. Run ONE board search, modeled on the `search` skill (login per `../../shared/auth.md`). Note `SEARCH_ID=<payload.searchId>` - the run is reported against it before Record. When the payload carries `campaignId`, reuse it (`CID=<payload.campaignId>`) - never create a second campaign for the same query. Only when `campaignId` is absent, create one first:
+Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`. Run ONE board search, modeled on the `search` skill (login per `../../shared/auth.md`). Note `SEARCH_ID=<payload.searchId>` - the run is reported against it before Record. When the payload carries `campaignId`, reuse it (`CID=<payload.campaignId>`) - never create a second campaign for the same search. Only when `campaignId` is absent, create one first - `pilotSearchId` is load-bearing, it is how the next cycle finds this campaign again:
 
 ```bash
 CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg q "<query>" --arg rid "<resumeId>" --argjson minScore <n> --arg board "<board>" \
-    '{query:$q, source:"auto-apply", createdBy:"pilot", config:{resumeId:$rid, minScore:$minScore, board:$board}}')")
+  -d "$(jq -n --arg q "<query>" --arg rid "<resumeId>" --argjson minScore <n> --arg board "<board>" --arg sid "$SEARCH_ID" \
+    '{query:$q, source:"auto-apply", createdBy:"pilot", pilotSearchId:$sid, config:{resumeId:$rid, minScore:$minScore, board:$board}}')")
 CID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 ```
 

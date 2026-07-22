@@ -65,7 +65,12 @@ export class PilotSearchService {
     return this.prisma.pilotState.updateMany({ where: { userId }, data: AGENDA_SNAPSHOT_RESET });
   }
 
-  /** No DB unique on (userId, query, board) - the nullable board makes NULLs distinct - so guard here. */
+  /**
+   * A plain DB unique on (userId, query, board) would treat two NULL boards as distinct, and an
+   * expression index on COALESCE(board, '') is not expressible in schema.prisma - it would read as
+   * permanent drift. So the check lives here; the pilot is the only writer, so a losing race is a
+   * duplicate search, not corruption.
+   */
   private async assertUnique(
     userId: string,
     query: string,

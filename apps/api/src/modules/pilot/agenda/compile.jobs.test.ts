@@ -116,27 +116,36 @@ describe("AgendaService discover campaign reuse", () => {
       | { campaignId?: string }
       | undefined;
 
-  it("carries the existing in-progress campaign for the query", async () => {
+  it("carries the in-progress campaign the search spawned", async () => {
     const agenda = await service({
-      pilotSearches: [dueRow({ query: "react" })],
-      dueQueryCampaigns: [{ campaignId: "c-old", query: "react" }],
+      pilotSearches: [dueRow({ id: "s1", query: "react" })],
+      dueSearchCampaigns: [{ campaignId: "c-old", pilotSearchId: "s1" }],
     }).refresh("p1");
     expect(discoverPayload(agenda)?.campaignId).toBe("c-old");
   });
 
-  it("prefers the newest campaign when several match the query", async () => {
+  it("prefers the newest campaign when the search spawned several", async () => {
     const agenda = await service({
-      pilotSearches: [dueRow({ query: "react" })],
+      pilotSearches: [dueRow({ id: "s1", query: "react" })],
       // The gather orders by startedAt asc, so the later row is the newest and wins the overwrite.
-      dueQueryCampaigns: [
-        { campaignId: "c-old", query: "react" },
-        { campaignId: "c-new", query: "react" },
+      dueSearchCampaigns: [
+        { campaignId: "c-old", pilotSearchId: "s1" },
+        { campaignId: "c-new", pilotSearchId: "s1" },
       ],
     }).refresh("p1");
     expect(discoverPayload(agenda)?.campaignId).toBe("c-new");
   });
 
-  it("omits campaignId when no in-progress campaign matches", async () => {
+  it("keeps the campaign after the pilot rewrites the search's query", async () => {
+    const agenda = await service({
+      pilotSearches: [dueRow({ id: "s1", query: "senior react" })],
+      // The campaign was opened under the old query; only the id still ties them together.
+      dueSearchCampaigns: [{ campaignId: "c-old", pilotSearchId: "s1" }],
+    }).refresh("p1");
+    expect(discoverPayload(agenda)?.campaignId).toBe("c-old");
+  });
+
+  it("omits campaignId when the search has no in-progress campaign", async () => {
     const agenda = await service({ pilotSearches: [dueRow({ query: "react" })] }).refresh("p1");
     const payload = discoverPayload(agenda);
     expect(payload).toBeDefined();

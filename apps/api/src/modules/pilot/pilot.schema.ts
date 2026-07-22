@@ -10,6 +10,8 @@ export const createPilotJournalResponseSchema = z.object({
 export const pilotActivityResponseSchema = z.object({
   lastActivityAt: z.date().nullable(),
   activeClaims: z.number().int(),
+  // The host's pre-inject gate reads run-state from here, so a probe costs no PilotState write.
+  running: z.boolean(),
   // Newest kind=cycle journal entry - the durable completion signal the host reads when the sentinel is mangled.
   lastCycle: z
     .object({

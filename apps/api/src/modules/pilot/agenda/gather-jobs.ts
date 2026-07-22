@@ -269,20 +269,20 @@ export async function duePilotSearches(
   if (live.length === 0) return { due: [], nextSearchRunAt: null };
 
   const ids = live.map((r) => r.id);
-  const queries = [...new Set(live.map((r) => r.query))];
   const [latest, existing] = await Promise.all([
     latestClaimBySubject(prisma, userId, "search.discover", ids),
-    // Reuse each query's campaign so discovery doesn't spawn duplicates. All queries, not just due
-    // ones - same round-trip.
+    // Reuse each search's campaign so discovery doesn't spawn duplicates. Keyed by the search id the
+    // campaign was created under, so rewriting a search's query can't orphan it. All searches, not
+    // just due ones - same round-trip.
     prisma.campaign.findMany({
-      where: { userId, status: "in_progress", source: "auto_apply", query: { in: queries } },
+      where: { userId, status: "in_progress", source: "auto_apply", pilotSearchId: { in: ids } },
       orderBy: { startedAt: "asc" },
-      select: { campaignId: true, query: true },
+      select: { campaignId: true, pilotSearchId: true },
     }),
   ]);
 
   // Ascending order ⇒ the newest campaign wins the overwrite.
-  const campaignByQuery = new Map(existing.map((c) => [c.query, c.campaignId]));
+  const campaignBySearch = new Map(existing.map((c) => [c.pilotSearchId, c.campaignId]));
   const claimable = (r: (typeof live)[number]) =>
     !claimDamped(latest.get(r.id), now, SEARCH_CLAIM_COOLDOWN_MS);
   const toEntry = (r: (typeof live)[number]): AgendaDueQuery => ({
@@ -290,7 +290,7 @@ export async function duePilotSearches(
     query: r.query,
     board: r.board ?? undefined,
     resumeId: r.resumeId ?? undefined,
-    campaignId: campaignByQuery.get(r.query),
+    campaignId: campaignBySearch.get(r.id),
   });
 
   // Rows arrive ordered by nextRunAt and `live` is an order-preserving filter, so the head is the earliest.

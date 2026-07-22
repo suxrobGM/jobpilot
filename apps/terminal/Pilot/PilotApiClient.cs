@@ -11,14 +11,11 @@ internal sealed record PilotJournalRequest(PilotJournalEntry[] Entries);
 /// <summary>One journal entry; the host only ever writes <c>kind=system</c>.</summary>
 internal sealed record PilotJournalEntry(string Kind, string Summary);
 
-/// <summary>Body of a GET /api/pilot/activity response.</summary>
-internal sealed record PilotActivityResponse(DateTimeOffset? LastActivityAt, PilotLastCycleResponse? LastCycle);
+/// <summary>Body of a GET /api/pilot/activity response; carries the run-state the pre-inject gate reads.</summary>
+internal sealed record PilotActivityResponse(bool Running, DateTimeOffset? LastActivityAt, PilotLastCycleResponse? LastCycle);
 
 /// <summary>The newest server-recorded cycle completion, or null when the user has no completed cycle yet.</summary>
 internal sealed record PilotLastCycleResponse(string? CycleId, DateTimeOffset CompletedAt, string? Status, int? SleepSeconds);
-
-/// <summary>Body of a GET /api/pilot response; only the run-state flag the host gate reads is deserialized.</summary>
-internal sealed record PilotStateResponse(bool Running);
 
 /// <summary>
 /// Posts the coordinator's own interventions to the API journal so the user's phone hears about them.
@@ -99,17 +96,21 @@ public sealed class PilotApiClient : IDisposable
         }
     }
 
-    /// <summary>The server's pilot run-state. Never throws: null on any failure, so the caller backs off instead of injecting.</summary>
+    /// <summary>
+    /// The server's pilot run-state, read off the activity probe: GET /api/pilot would upsert a PilotState row and
+    /// serialize the whole DTO on every gate check. Never throws: null on any failure, so the caller backs off
+    /// instead of injecting.
+    /// </summary>
     public async Task<bool?> GetRunningAsync(string apiUrl, string apiToken, CancellationToken ct = default)
     {
         try
         {
-            return await SendGuardedAsync<bool?>(apiUrl, apiToken, HttpMethod.Get, "/api/pilot",
+            return await SendGuardedAsync<bool?>(apiUrl, apiToken, HttpMethod.Get, "/api/pilot/activity",
                 content: null, "Pilot run-state probe was rejected ({Status}).", async (response, token) =>
                 {
                     var json = await response.Content.ReadAsStringAsync(token);
-                    var state = JsonSerializer.Deserialize(json, AppJsonContext.Default.PilotStateResponse);
-                    return state is null ? null : state.Running;
+                    var activity = JsonSerializer.Deserialize(json, AppJsonContext.Default.PilotActivityResponse);
+                    return activity is null ? null : activity.Running;
                 }, ct);
         }
         catch (Exception ex) when (!Cancellation.IsCallerCancellation(ex, ct))

@@ -81,6 +81,7 @@ export class CampaignService {
         source: toPrismaCampaignSource(body.source),
         config: body.config ?? {},
         createdBy: body.createdBy,
+        pilotSearchId: body.pilotSearchId ?? null,
       },
     });
     // A just-created campaign provably has no jobs or messages; skip the aggregate round trip.

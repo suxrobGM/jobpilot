@@ -110,7 +110,7 @@ export class PilotService {
   /** Newest persisted activity lets the terminal distinguish a slow live cycle from a stuck one. */
   async getActivity(userId: string) {
     // One read for the (few) unreleased claims covers both the newest claim timestamp and the count.
-    const [claims, journalAgg, campaignAgg, jobAgg, cycleEntry] = await Promise.all([
+    const [claims, journalAgg, campaignAgg, jobAgg, cycleEntry, state] = await Promise.all([
       this.prisma.pilotClaim.findMany({
         where: { userId, releasedAt: null },
         select: { grantedAt: true, heartbeatAt: true, expiresAt: true },
@@ -123,6 +123,7 @@ export class PilotService {
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         select: { cycleId: true, createdAt: true, detail: true },
       }),
+      this.prisma.pilotState.findUnique({ where: { userId }, select: { running: true } }),
     ]);
 
     const times = [
@@ -153,6 +154,8 @@ export class PilotService {
     return {
       lastActivityAt,
       activeClaims: claims.filter((c) => c.expiresAt > now).length,
+      // No row yet means the pilot was never started, so the host's gate must read it as stopped.
+      running: state?.running ?? false,
       lastCycle,
     };
   }

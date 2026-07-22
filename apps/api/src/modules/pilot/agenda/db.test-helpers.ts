@@ -39,8 +39,8 @@ export interface Over {
   appliedToday?: number;
   activeClaims?: number;
   finalizeCampaigns?: Record<string, unknown>[];
-  // Existing in-progress campaigns matched by query for the discover-reuse lookup.
-  dueQueryCampaigns?: { campaignId: string; query: string }[];
+  // Existing in-progress campaigns keyed by their pilot search, for the discover-reuse lookup.
+  dueSearchCampaigns?: { campaignId: string; pilotSearchId: string }[];
   // Score-pending gather (in_progress auto-apply campaigns with unscored pending rows) + its count groupBy.
   scorePendingCampaigns?: Record<string, unknown>[];
   scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
@@ -259,7 +259,7 @@ function fakeCampaign(over: Over, rec: Recorder) {
       where: { status?: string; source?: string; query?: unknown; jobs?: unknown; OR?: unknown };
     }) => {
       if (a.where.status === "paused") return over.pausedCampaigns ?? [];
-      if ("query" in a.where) return over.dueQueryCampaigns ?? [];
+      if ("pilotSearchId" in a.where) return over.dueSearchCampaigns ?? [];
       if ("OR" in a.where) return over.finalizeCampaigns ?? [];
       if ("jobs" in a.where) return over.scorePendingCampaigns ?? [];
       return over.quietCampaigns ?? [];

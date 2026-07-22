@@ -135,7 +135,10 @@ describe("PilotService questions", () => {
   });
 });
 
-function activityService(cycleEntry: Record<string, unknown> | null) {
+function activityService(
+  cycleEntry: Record<string, unknown> | null,
+  state: { running: boolean } | null = { running: true },
+) {
   const noMax = { _max: { createdAt: null, updatedAt: null } };
   const db = {
     pilotClaim: { findMany: async () => [] },
@@ -145,6 +148,7 @@ function activityService(cycleEntry: Record<string, unknown> | null) {
     },
     campaign: { aggregate: async () => noMax },
     job: { aggregate: async () => noMax },
+    pilotState: { findUnique: async () => state },
   };
   return new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] }));
 }
@@ -269,5 +273,16 @@ describe("PilotService.getActivity lastCycle", () => {
     const svc = activityService(null);
     const { lastCycle } = await svc.getActivity("p1");
     expect(lastCycle).toBeNull();
+  });
+});
+
+describe("PilotService.getActivity running", () => {
+  it("carries the run-state the host's pre-inject gate reads", async () => {
+    expect((await activityService(null, { running: true }).getActivity("p1")).running).toBe(true);
+    expect((await activityService(null, { running: false }).getActivity("p1")).running).toBe(false);
+  });
+
+  it("reads a profile with no PilotState row as stopped", async () => {
+    expect((await activityService(null, null).getActivity("p1")).running).toBe(false);
   });
 });

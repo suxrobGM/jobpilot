@@ -173,6 +173,16 @@ describe("PilotSearchService.update", () => {
       status: 404,
     });
   });
+
+  it("409s when the edited query collides with another search", async () => {
+    const { svc } = makeDb({
+      existing: { id: "s1", query: "react", board: null },
+      clash: { id: "dupe" },
+    });
+    await expect(svc.update("p1", "s1", { query: "golang" })).rejects.toMatchObject({
+      status: 409,
+    });
+  });
 });
 
 describe("PilotSearchService.reportRun", () => {

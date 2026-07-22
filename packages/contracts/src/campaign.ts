@@ -82,6 +82,8 @@ export const createCampaignSchema = z
     source: campaignSourceSchema,
     config: campaignConfigSchema.optional(),
     createdBy: campaignActorSchema.default("user"),
+    /** Set by the pilot's discovery cycle so the search can find this campaign again by id. */
+    pilotSearchId: z.uuid().optional(),
   })
   .refine((v) => campaignConfigSupportsSource(v.source, v.config ?? {}), {
     message: "config.resumeId is required for search, auto-apply, and networking campaigns.",

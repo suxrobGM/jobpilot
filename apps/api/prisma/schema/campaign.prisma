@@ -21,27 +21,32 @@ enum CampaignActor {
 }
 
 model Campaign {
-  campaignId   String         @id @default(uuid()) @map("campaign_id")
-  userId       String         @map("user_id")
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  query        String
-  source       CampaignSource
-  status       CampaignStatus @default(in_progress)
-  createdBy    CampaignActor  @default(user) @map("created_by")
-  statusActor  CampaignActor? @map("status_actor")
-  statusReason String?        @map("status_reason")
-  startedAt    DateTime       @default(now()) @map("started_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
-  completedAt  DateTime?      @map("completed_at")
-  config       Json           @default("{}")
+  campaignId    String         @id @default(uuid()) @map("campaign_id")
+  userId        String         @map("user_id")
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query         String
+  source        CampaignSource
+  status        CampaignStatus @default(in_progress)
+  createdBy     CampaignActor  @default(user) @map("created_by")
+  statusActor   CampaignActor? @map("status_actor")
+  statusReason  String?        @map("status_reason")
+  startedAt     DateTime       @default(now()) @map("started_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  completedAt   DateTime?      @map("completed_at")
+  config        Json           @default("{}")
+  // The pilot search that spawned this campaign. Discovery reuses a campaign by this id, never by
+  // matching query strings: the pilot may rewrite a search's query, which would orphan the campaign.
+  pilotSearchId String?        @map("pilot_search_id")
 
   jobs               Job[]
   applications       Application[]
   networkingMessages NetworkingMessage[]
+  pilotSearch        PilotSearch?        @relation(fields: [pilotSearchId], references: [id], onDelete: SetNull)
 
   @@index([userId, startedAt])
   @@index([userId, status, startedAt])
   @@index([userId, source, startedAt])
+  @@index([userId, pilotSearchId])
   // The pilot activity probe takes MAX(updatedAt) per user every two minutes.
   @@index([userId, updatedAt])
   @@map("campaigns")
