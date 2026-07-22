@@ -1,5 +1,4 @@
-// Fake-Prisma unit test for PilotSearchService and its pure scheduleNextRun policy. DB-less: the
-// service is imported directly and injected with a hand-built fake, and scheduleNextRun is pure.
+// Fake-Prisma unit test for PilotSearchService and its pure scheduleNextRun policy (no database).
 import type { PrismaClient } from "@/generated/prisma/client";
 import { PilotSearchService, scheduleNextRun } from "./pilot-search.service";
 import { describe, expect, it } from "bun:test";

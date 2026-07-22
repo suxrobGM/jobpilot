@@ -37,16 +37,13 @@ internal sealed class FakePilotRuntime : IPilotRuntime
 
     public TaskCompletionSource ActivityStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    /// <summary>
-    /// Server run-states returned by successive GetRunStateAsync calls; empty dequeues to <see cref="DefaultRunState"/>.
-    /// Probes stay out of <see cref="Actions"/> so existing sequence asserts remain stable.
-    /// </summary>
+    /// <summary>Run-states dequeued per probe; kept out of <see cref="Actions"/> so sequence asserts stay stable.</summary>
     public Queue<bool?> RunStates { get; } = new();
 
-    /// <summary>Value GetRunStateAsync returns once <see cref="RunStates"/> is drained; true so cycles inject by default.</summary>
+    /// <summary>Returned once <see cref="RunStates"/> is drained; true so cycles inject by default.</summary>
     public bool? DefaultRunState { get; set; } = true;
 
-    /// <summary>Number of GetRunStateAsync calls, so a test can observe the gate re-probing on wake.</summary>
+    /// <summary>Probe call count, so a test can observe the gate re-probing on wake.</summary>
     public int RunStateProbeCount;
 
     public bool BlockRunState { get; set; }

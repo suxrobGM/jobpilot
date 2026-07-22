@@ -99,11 +99,7 @@ public sealed class PilotApiClient : IDisposable
         }
     }
 
-    /// <summary>
-    /// Probes the server for whether the pilot is running, gating each cycle so a stopped pilot burns nothing. Never
-    /// throws: any failure returns null so the coordinator treats an unreachable API as "do not inject" and backs off.
-    /// A non-null bool is an authoritative server answer; null means the probe could not be resolved.
-    /// </summary>
+    /// <summary>The server's pilot run-state. Never throws: null on any failure, so the caller backs off instead of injecting.</summary>
     public async Task<bool?> GetRunningAsync(string apiUrl, string apiToken, CancellationToken ct = default)
     {
         try

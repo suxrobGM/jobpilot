@@ -239,10 +239,9 @@ export interface DuePilotSearches {
 }
 
 /**
- * Searches whose `nextRunAt` has come due, plus a hungry-override fallback. The claim damper is an
- * in-flight/crash guard only (SEARCH_CLAIM_COOLDOWN_MS), keyed on the search id; cadence lives in
- * `nextRunAt`, owned by {@link scheduleNextRun}. When nothing is due but apply headroom remains, the
- * single most-overdue idle search is emitted so a backed-off pilot still fills the pipeline.
+ * Searches whose `nextRunAt` has come due, plus a hungry-override fallback when nothing is due but
+ * apply headroom remains. The claim damper is an in-flight/crash guard only; cadence lives in
+ * `nextRunAt`, owned by scheduleNextRun.
  */
 export async function duePilotSearches(
   prisma: PrismaClient,
@@ -294,8 +293,7 @@ export async function duePilotSearches(
   const due = live.filter((r) => r.nextRunAt <= now && claimable(r)).map(toEntry);
   if (due.length > 0) return { due, nextSearchRunAt };
 
-  // Hungry override: nothing due, but the apply queue is empty and the cap is unspent - re-run the
-  // single most-overdue search idle at least HUNGRY_RERUN_MS (live is nextRunAt-ascending).
+  // Hungry override: cap unspent, so re-run the most-overdue search idle at least HUNGRY_RERUN_MS.
   if (appliedToday < config.dailyApplyCap) {
     const floor = now.getTime() - HUNGRY_RERUN_MS;
     const hungry = live.find(

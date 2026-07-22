@@ -22,7 +22,7 @@ export interface Recorder {
 export interface Over {
   instructionsConfig?: unknown;
   instructionsGoals?: string;
-  // Pilot-search rows for the duePilotSearches gather (id/query/board/resumeId/nextRunAt/lastRunAt...).
+  // Pilot-search rows for the duePilotSearches gather.
   pilotSearches?: Record<string, unknown>[];
   // Prior search.discover claims, keyed by search id, gating the in-flight/crash damper.
   searchClaims?: {

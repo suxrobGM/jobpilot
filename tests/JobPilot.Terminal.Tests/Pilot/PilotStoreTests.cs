@@ -84,8 +84,7 @@ public sealed class PilotStoreTests : IDisposable
     [Fact]
     public void Load_TreatsALegacyEnabledFileAsUnpaired()
     {
-        // A pre-rename pilot.json carries "enabled" and no "running"; the required member is then missing, so the
-        // file fails to deserialize and is treated as unpaired (accepted churn - the user starts once to re-pair).
+        // A pre-rename pilot.json lacks "running", fails deserialize, and is treated as unpaired (accepted churn).
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(
             path,

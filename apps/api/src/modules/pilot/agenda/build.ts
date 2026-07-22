@@ -80,8 +80,7 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   if (input.approvedJobs.length === 0) {
     items.push(...buildScorePendingItems(input.scorePending));
 
-    // Demand-derived target: discovery feeds the apply queue, so aim for the remaining daily headroom
-    // (clamped to keep one in-context scoring run bounded; backlog drains via the 2h good-search re-run).
+    // Discovery targets the remaining daily headroom; the clamp keeps one scoring run bounded.
     const newJobsTarget = clamp(
       config.dailyApplyCap - input.appliedToday,
       NEW_JOBS_TARGET_MIN,
@@ -126,8 +125,7 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
     input.goalsPresent,
   );
 
-  // Idle sleep wakes at the sooner of the poll cadence and the next search coming due, so a
-  // backed-off pilot doesn't oversleep a scheduled re-run; floored and capped either way.
+  // Idle sleep wakes at the sooner of the poll cadence and the next search due, clamped both ways.
   const secondsUntilSearch = input.nextSearchRunAt
     ? Math.max(0, Math.round((input.nextSearchRunAt.getTime() - now.getTime()) / 1000))
     : Number.POSITIVE_INFINITY;

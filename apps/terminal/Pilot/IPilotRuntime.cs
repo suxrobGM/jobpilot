@@ -69,9 +69,6 @@ public interface IPilotRuntime
     /// <summary>Newest server-side agent activity, or null on any failure (fail-open to the timeout ladder).</summary>
     Task<PilotActivitySnapshot?> GetActivityAsync(CancellationToken ct);
 
-    /// <summary>
-    /// Whether the pilot is running per the server: true run the cycle, false stand down, null when the API could not
-    /// be reached (the coordinator then backs off rather than injecting a cycle with no API to talk to).
-    /// </summary>
+    /// <summary>Server run-state: true → run the cycle, false → stand down, null → API unreachable (back off).</summary>
     Task<bool?> GetRunStateAsync(CancellationToken ct);
 }

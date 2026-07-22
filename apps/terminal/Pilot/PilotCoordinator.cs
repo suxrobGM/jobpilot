@@ -17,8 +17,7 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
     // A restarted host waits this long before its first resumed cycle so Kestrel finishes binding first.
     private static readonly TimeSpan StartupResumeDelay = TimeSpan.FromSeconds(10);
 
-    // When the server can't be reached, a cycle would inject with no API to talk to; back off on this escalating
-    // ladder instead (30s doubling to a 10min cap) and re-probe on wake, mirroring the SSE reconnect shape.
+    // Injecting with no reachable API is pure burn; back off instead, mirroring the SSE reconnect shape.
     internal static readonly TimeSpan ProbeBackoffInitial = TimeSpan.FromSeconds(30);
     internal static readonly TimeSpan ProbeBackoffMax = TimeSpan.FromMinutes(10);
 
@@ -110,13 +109,11 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
 
             try
             {
-                // Gate before every inject so a stopped pilot burns zero cycles. The server is authoritative: local
-                // Running is only a fast path, and a cycle with no reachable API is pure token burn.
+                // Gate on the authoritative server run-state so a stopped pilot burns zero cycles.
                 var runState = await ProbeRunStateAsync(cts.Token);
                 if (runState == false)
                 {
-                    // The server (or another device) stopped the pilot; mirror it so the next iteration parks, and
-                    // announce the stand-down once. A stop-wake cancels cts, so report on stoppingToken instead.
+                    // Mirror the server-side stop so the next iteration parks. A stop-wake cancels cts, so report on stoppingToken.
                     store.SetRunning(false);
                     driving = false;
                     probeBackoff.Reset();
@@ -133,7 +130,7 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
 
                 if (runState is null)
                 {
-                    // API unreachable: do not inject. Back off on the escalating ladder; a wake ends it early to re-probe.
+                    // API unreachable: injecting would just burn a cycle - back off; a wake re-probes early.
                     driving = false;
                     await SleepRacingWakeAsync(probeBackoff.Next(), cts.Token);
                     continue;
@@ -252,10 +249,7 @@ public sealed class PilotCoordinator(PilotStore store, IPilotRuntime env, ILogge
         }
     }
 
-    /// <summary>
-    /// Probes the server for the pilot's run-state, swallowing any non-cancellation failure to null so the caller
-    /// backs off instead of injecting. Caller cancellation (a stop or host shutdown) propagates.
-    /// </summary>
+    /// <summary>Run-state probe; any non-cancellation failure becomes null so the caller backs off.</summary>
     private async Task<bool?> ProbeRunStateAsync(CancellationToken ct)
     {
         try

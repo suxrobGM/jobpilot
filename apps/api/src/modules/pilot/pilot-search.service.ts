@@ -31,9 +31,8 @@ export interface ScheduleRunResult {
 }
 
 /**
- * Pure next-run policy for one discovery run - demand-driven with exhaustion-aware backoff, no
- * user cadence knob. A good, still-yielding board re-runs soon; a dry board backs off up the
- * 8h/24h/48h ladder. DB-less so the ladder is unit-testable.
+ * Pure next-run policy for one discovery run: a good, still-yielding search re-runs soon; a dry
+ * one backs off up the 8h/24h/48h ladder. No user cadence knob.
  */
 export function scheduleNextRun(input: ScheduleRunInput): ScheduleRunResult {
   const { emptyRuns, jobsSeen, newJobs, reachedEnd, now } = input;

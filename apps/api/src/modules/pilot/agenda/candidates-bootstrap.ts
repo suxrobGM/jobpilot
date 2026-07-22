@@ -14,8 +14,7 @@ export async function gatherBootstrap(
   searchCount: number,
 ): Promise<AgendaStrategyBootstrap | null> {
   const trimmedGoals = goals.trim();
-  // Goals are mandatory before the pilot starts, so a blank-goals account needs no bootstrap item -
-  // emptyReason "awaitingSetup" already flags it. Only offer setup with goals present but no searches.
+  // Blank goals need no item - emptyReason "awaitingSetup" already flags them.
   if (searchCount > 0 || trimmedGoals.length === 0) {
     return null;
   }

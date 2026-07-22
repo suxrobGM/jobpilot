@@ -53,8 +53,7 @@ export class PilotService {
   }
 
   async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
-    // Goals are the pilot's whole steering input, so a change makes every search due for a fresh
-    // pass and clears its backoff - the searches were chosen for the old goals.
+    // The searches were chosen for the old goals - a change makes them all due and clears backoff.
     const prev = await this.prisma.pilotState.findUnique({
       where: { userId },
       select: { instructionsGoals: true },
