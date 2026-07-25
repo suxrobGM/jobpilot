@@ -10,7 +10,7 @@ A worker wrote raw browser snapshots to the repo root (`job-header.md`, `results
 **Correction:** those two files no longer existed and were never committed (`git log --all` is empty
 for both). The work was **prevention**, not deletion.
 
-The rule *did* exist - but only once, in `plugin/shared/setup.md`, and only `form-filling.md` linked
+The rule *did* exist - but only once, in `plugin/skills/_shared/setup.md`, and only `form-filling.md` linked
 to it. Neither worker agent mentioned `.temp` at all. That is exactly what a stated-but-unenforced
 rule looks like: `.temp/` holds 38 correctly-placed files from the same runs that leaked two to the
 root.

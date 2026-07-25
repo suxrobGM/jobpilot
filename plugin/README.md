@@ -21,9 +21,11 @@ can launch and control the agent from the dashboard's agent dock.
 
 ## Layout
 
-- `skills/<name>/SKILL.md` - one workflow per directory; shared docs live in
-  `shared/` and are referenced by relative path so the same text serves both
-  providers.
+- `skills/<name>/SKILL.md` - one workflow per directory, referenced by name so
+  the same text serves both providers.
+- `skills/_shared/*.md` - reference docs several skills pull in, by relative
+  path (`../_shared/setup.md`). No `SKILL.md`, so neither provider lists the
+  directory as a skill.
 - `agents/*.md` - worker subagents that campaign skills delegate per-job work
   to, keeping heavy browser output out of the main session.
 - `.mcp.json` - the Playwright MCP server the skills use to drive the browser.

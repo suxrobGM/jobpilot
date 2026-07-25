@@ -7,7 +7,7 @@ paths:
 
 One provider-neutral tree serves Claude (`--plugin-dir plugin`; marketplace ships the
 self-contained `skills/setup` bootstrap) and Codex (`jobpilot@sukhrob-codex-plugins`; its
-marketplace gets `.codex-plugin`, `.mcp.json`, `shared/`, and the full `skills/` tree). The tree
+marketplace gets `.codex-plugin`, `.mcp.json`, and the full `skills/` tree). The tree
 also ships inside terminal archives - the host exposes it via `JOBPILOT_SKILLS_ROOT`. No
 generation step - edit here directly.
 
