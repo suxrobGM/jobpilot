@@ -10,7 +10,7 @@ Read a resume's uploaded source PDF and produce JSON matching the JobPilot resum
 
 ## Setup
 
-Follow `../../shared/setup.md`. The profile response provides `user.primaryResumeId`, `primaryResumeSourceAbsolutePath`, and `resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
+Follow `../_shared/setup.md`. The profile response provides `user.primaryResumeId`, `primaryResumeSourceAbsolutePath`, and `resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
 
 ## Step 1: Resolve Target
 

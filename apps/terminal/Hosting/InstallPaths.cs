@@ -38,7 +38,7 @@ public sealed record InstallPaths
         }
 
         throw new DirectoryNotFoundException(
-            "Could not find JobPilot provider assets: a plugin/ directory with skills/, shared/, .claude-plugin/, and .codex-plugin/.");
+            "Could not find JobPilot provider assets: a plugin/ directory with skills/, skills/_shared/, .claude-plugin/, and .codex-plugin/.");
     }
 
     /// <summary>Whether a directory holds a complete plugin tree.</summary>
@@ -69,7 +69,7 @@ public sealed record InstallPaths
 
     private static bool HasRuntimeResources(string pluginDir, string skillsDir)
     {
-        return File.Exists(Path.Combine(pluginDir, "shared", "setup.md"))
+        return File.Exists(Path.Combine(skillsDir, "_shared", "setup.md"))
             && File.Exists(Path.Combine(skillsDir, "auto-apply", "SKILL.md"));
     }
 

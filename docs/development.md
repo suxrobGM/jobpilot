@@ -125,8 +125,9 @@ finishes with `/reload-plugins` on Claude.
 [plugin/](../plugin/) is one provider-neutral tree, no generation step:
 
 - `skills/<name>/SKILL.md` - one workflow per directory; shared docs in
-  `shared/`. Skills reference siblings by name and shared docs by
-  relative path, so the same text serves both providers.
+  `skills/_shared/` (no `SKILL.md`, so neither provider lists them as skills).
+  Skills reference siblings by name and shared docs by relative path
+  (`../_shared/<doc>.md`), so the same text serves both providers.
 - `agents/*.md` - worker subagents (`job-worker`, `networking-worker`) that
   campaign skills delegate per-iteration work to, isolating heavy browser
   output. Claude auto-discovers them; [.codex/agents/](../.codex/agents/)
@@ -146,7 +147,7 @@ Standalone installs come from the
 [claude-plugins](https://github.com/suxrobGM/claude-plugins) /
 [codex-plugins](https://github.com/suxrobGM/codex-plugins) marketplaces,
 synced from `plugin/` on each release tag: Claude receives the setup bootstrap
-and Codex receives the full skill tree, its `shared/` references, and MCP
+and Codex receives the full skill tree, its `_shared/` references, and MCP
 configuration. Root
 `.claude/settings.json` grants the permissions the skills need - the plugin
 owns behavior, the repo owns trust policy.
@@ -178,7 +179,7 @@ channels (`inbox`, `pipeline`, `resume`, `upwork`) follow the same pattern.
 
 ### Skills layer
 
-`plugin/shared/setup.md` is the single source of truth for config
+`plugin/skills/_shared/setup.md` is the single source of truth for config
 loading: `/api/health` → `GET /api/profile` → `GET /api/credentials`; resumes
 via `data.defaultResumeAbsolutePath` or `GET /api/resumes/[id]/file`.
 `auth.md`, `form-filling.md`, and `browser-tips.md` cover cross-cutting

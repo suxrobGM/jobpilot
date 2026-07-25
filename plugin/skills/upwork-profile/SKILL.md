@@ -10,11 +10,11 @@ Two modes. Default (**generate**) drafts suggestions for review; **apply** (argu
 
 ## Setup
 
-Follow `../../shared/setup.md` (`$JOBPILOT_API` is injected by the terminal). `Read` the resume at `primaryResumeSourceAbsolutePath` for identity, summary, experience, skills, and **projects** (the portfolio source). Log in to Upwork via `../../shared/auth.md` (resolve via `/api/credentials/resolve?domain=upwork.com`).
+Follow `../_shared/setup.md` (`$JOBPILOT_API` is injected by the terminal). `Read` the resume at `primaryResumeSourceAbsolutePath` for identity, summary, experience, skills, and **projects** (the portfolio source). Log in to Upwork via `../_shared/auth.md` (resolve via `/api/credentials/resolve?domain=upwork.com`).
 
 ## Mode: generate (default)
 
-1. **Read the current profile.** `browser_navigate` to the user's Upwork profile, `browser_snapshot` (`../../shared/browser-tips.md`), and capture the current `title`, `overview`, `hourlyRate`, and `portfolio` projects.
+1. **Read the current profile.** `browser_navigate` to the user's Upwork profile, `browser_snapshot` (`../_shared/browser-tips.md`), and capture the current `title`, `overview`, `hourlyRate`, and `portfolio` projects.
 2. **Generate suggestions** grounded only in resume facts (no fabrication):
    - **Title** - concise, role + top stack (e.g. "Senior React/Node Engineer - SaaS & APIs").
    - **Overview** - lead with the client's outcome, then proof (real projects/metrics from the resume), then a clear CTA. Then invoke the `humanizer` skill on it to strip AI tells.
@@ -35,7 +35,7 @@ Follow `../../shared/setup.md` (`$JOBPILOT_API` is injected by the terminal). `R
 
 1. `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/profile"` → require `.status == "approved"`. If not, tell the user to review and approve on `/upwork/profile` first, then stop.
 2. Use the `suggested*` fields as the source of truth (the user may have edited them in the UI).
-3. `browser_navigate` to the Upwork profile editor and write each section via `../../shared/form-filling.md`: title, overview, hourly rate (if suggested), and portfolio projects (add/update). `browser_wait_for` and re-snapshot after each save. Pause and ask the user on 2FA; attempt the `solve-captcha` skill on a CAPTCHA.
+3. `browser_navigate` to the Upwork profile editor and write each section via `../_shared/form-filling.md`: title, overview, hourly rate (if suggested), and portfolio projects (add/update). `browser_wait_for` and re-snapshot after each save. Pause and ask the user on 2FA; attempt the `solve-captcha` skill on a CAPTCHA.
 4. On success, mark it applied:
 
    ```bash
@@ -50,4 +50,4 @@ Follow `../../shared/setup.md` (`$JOBPILOT_API` is injected by the terminal). `R
 1. **Approval gate.** Only `apply` writes to Upwork, and only when `status == "approved"`.
 2. **No fabrication.** Every claim traces to the resume; no invented metrics, links, or experience.
 3. **Humanize the overview** via the `humanizer` skill - no "passionate/dedicated/leverage", no AI symmetry, no functional emoji bullets.
-4. **Account handling** - `../../shared/auth.md`.
+4. **Account handling** - `../_shared/auth.md`.

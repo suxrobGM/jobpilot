@@ -10,8 +10,8 @@ Keep the chosen board open in tab 1; for each result that qualifies, delegate th
 
 ## Setup
 
-Follow `../../shared/setup.md`. Shared campaign mechanics (applied-check, result writes, worker
-input, rules) live in `../../shared/campaign-flow.md`. Read `autoApply` (defaults applied per field):
+Follow `../_shared/setup.md`. Shared campaign mechanics (applied-check, result writes, worker
+input, rules) live in `../_shared/campaign-flow.md`. Read `autoApply` (defaults applied per field):
 
 | Setting                      | Default            | Notes                                                                                     |
 | ---------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
@@ -73,23 +73,23 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-
 If no row matches, command the campaign to `failed` with `POST /api/campaigns/$CAMPAIGN_ID/status {"status":"failed"}` and stop.
 
 1. `browser_navigate` to `searchUrl` (this is **tab 1** - keep it open for the whole campaign).
-2. Follow `../../shared/auth.md` - logs in, and **registers a new account when none exists, without asking**.
+2. Follow `../_shared/auth.md` - logs in, and **registers a new account when none exists, without asking**.
 3. Fill the search fields and submit.
-4. Take a `browser_snapshot` narrowed to the results list (per `../../shared/browser-tips.md`) to read `{ title, company, location, url }` per row. This is one viewport - scroll/paginate per **Pagination & infinite scroll** in `../../shared/browser-tips.md` as the loop drains rows (see **Stop Conditions**); never treat the first batch as all jobs.
+4. Take a `browser_snapshot` narrowed to the results list (per `../_shared/browser-tips.md`) to read `{ title, company, location, url }` per row. This is one viewport - scroll/paginate per **Pagination & infinite scroll** in `../_shared/browser-tips.md` as the loop drains rows (see **Stop Conditions**); never treat the first batch as all jobs.
 
 ## Phase 2: Apply Loop (on demand)
 
-Walk the tab-1 results top to bottom; at the last loaded row, scroll/page for more (per **Pagination & infinite scroll** in `../../shared/browser-tips.md`) before concluding. For each result:
+Walk the tab-1 results top to bottom; at the last loaded row, scroll/page for more (per **Pagination & infinite scroll** in `../_shared/browser-tips.md`) before concluding. For each result:
 
 ### 2.1 Pre-filter (no tab)
 
 Dedupe in-board by normalized title+company, then run the applied-check
-(`../../shared/campaign-flow.md`). If `.applied`, record the default already-applied skip and
+(`../_shared/campaign-flow.md`). If `.applied`, record the default already-applied skip and
 move on - **don't open a tab.**
 
 ### 2.2 Score
 
-If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the digest (`../../shared/digest-schema.md`), then score server-side:
+If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the digest (`../_shared/digest-schema.md`), then score server-side:
 
 ```bash
 FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
@@ -100,7 +100,7 @@ SCORE=$(echo "$FIT" | jq -r '.score')
 CONF=$(echo "$FIT" | jq -r '.confidence')
 ```
 
-Branch on the result (eligibility per `../../shared/eligibility.md` - a thin/generic row is **not** a skip):
+Branch on the result (eligibility per `../_shared/eligibility.md` - a thin/generic row is **not** a skip):
 
 - **Confident** - `CONF >= 0.7` and `SCORE` at least 10 points from `minMatchScore` on either side → use the score directly.
 - **Uncertain** → rescore yourself from `strongMatches`/`partialMatches`/`gaps`.
@@ -130,14 +130,14 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 
 Hand the job to the `job-worker` subagent and wait for its compact result. It opens its own tab and runs auth, CAPTCHA, tailoring, form-fill, and submit in isolated context, so the form/posting snapshots never enter this conversation. **One worker at a time** - the browser is shared; never delegate the next job until this one returns.
 
-Delegate with the apply-mode input from `../../shared/campaign-flow.md`, passing the `digest`
+Delegate with the apply-mode input from `../_shared/campaign-flow.md`, passing the `digest`
 built in 2.2 and `preSubmitReview: false`. It returns one of `applied` / `failed` / `skipped` /
 `needs_user` - handle in 2.4.
 
 ### 2.4 Record + Continue
 
 The worker already closed its apply tab(s); re-select tab 0. Map its `outcome` to a terminal
-`/result` write and route `needs_user` per `../../shared/campaign-flow.md`, with these
+`/result` write and route `needs_user` per `../_shared/campaign-flow.md`, with these
 campaign-loop specifics:
 
 - `salary` → re-delegate 2.3 with `salaryExpectation` set.
@@ -154,7 +154,7 @@ The loop ends **only** on one of these. Before picking the next result, refetch 
 
 1. `status === "paused"` → POST `/result` `outcome:"skipped"`, `skipReason:"Campaign paused by user"` for any in-flight `applying` job, exit.
 2. `config.maxApplications` set AND `summary.applied >= config.maxApplications` → end. Unset (default) = no cap; keep going.
-3. Board exhausted - per **Pagination & infinite scroll** in `../../shared/browser-tips.md` (2 consecutive scrolls with no new rows). First batch done ≠ exhausted. With `maxApplications` unset, paginate until genuinely dry.
+3. Board exhausted - per **Pagination & infinite scroll** in `../_shared/browser-tips.md` (2 consecutive scrolls with no new rows). First batch done ≠ exhausted. With `maxApplications` unset, paginate until genuinely dry.
 
 ## Phase 3: Summary
 
@@ -168,7 +168,7 @@ Print a summary table, link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`, suggest 
 
 ## Rules
 
-The shared campaign rules (`../../shared/campaign-flow.md`) apply throughout. On top of them:
+The shared campaign rules (`../_shared/campaign-flow.md`) apply throughout. On top of them:
 
 1. **Autonomous after launch.** No per-job or batch confirmation; the UI launch is the approval.
 2. **Board stays in tab 1.** Each application runs in the `job-worker`'s own tab, which it closes before returning.

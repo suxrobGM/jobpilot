@@ -20,8 +20,7 @@ mkdir -p \
   "$claude_stage/.claude-plugin" \
   "$claude_stage/skills/setup" \
   "$codex_stage/.codex-plugin" \
-  "$codex_stage/skills" \
-  "$codex_stage/shared"
+  "$codex_stage/skills"
 
 # Claude's marketplace is the setup bootstrap. Dashboard Claude loads the bundled full plugin.
 rsync -a --checksum "$repo_root/plugin/.claude-plugin/" "$claude_stage/.claude-plugin/"
@@ -31,7 +30,6 @@ rsync -a --checksum "$repo_root/plugin/skills/setup/" "$claude_stage/skills/setu
 rsync -a --checksum "$repo_root/plugin/.codex-plugin/" "$codex_stage/.codex-plugin/"
 cp "$repo_root/plugin/.mcp.json" "$codex_stage/.mcp.json"
 rsync -a --checksum "$repo_root/plugin/skills/" "$codex_stage/skills/"
-rsync -a --checksum "$repo_root/plugin/shared/" "$codex_stage/shared/"
 
 # --checksum is intentional: release manifests often retain size and checkout-time mtimes while content changes.
 rsync -a --checksum --delete "$claude_stage/" "$claude_root/plugins/jobpilot/"
@@ -45,7 +43,7 @@ test "$(jq -er '.version' "$codex_root/plugins/jobpilot/.codex-plugin/plugin.jso
 
 cmp "$repo_root/plugin/.codex-plugin/plugin.json" "$codex_root/plugins/jobpilot/.codex-plugin/plugin.json"
 cmp "$repo_root/plugin/.mcp.json" "$codex_root/plugins/jobpilot/.mcp.json"
-cmp "$repo_root/plugin/shared/setup.md" "$codex_root/plugins/jobpilot/shared/setup.md"
+cmp "$repo_root/plugin/skills/_shared/setup.md" "$codex_root/plugins/jobpilot/skills/_shared/setup.md"
 
 for skill in setup search auto-apply apply; do
   test -f "$codex_root/plugins/jobpilot/skills/$skill/SKILL.md"

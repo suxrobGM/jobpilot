@@ -10,7 +10,7 @@ Write a concise, winning Upwork proposal that directly addresses the client's ne
 
 ## Setup
 
-Follow `../../shared/setup.md`. Then `Read` the resume at `primaryResumeSourceAbsolutePath` for full context (identity, skills, experience, projects, research).
+Follow `../_shared/setup.md`. Then `Read` the resume at `primaryResumeSourceAbsolutePath` for full context (identity, skills, experience, projects, research).
 
 ## Step 1: Resolve the Input
 

@@ -15,8 +15,8 @@ User approves once up front. No per-job confirmation after that.
 
 ## Setup
 
-Follow `../../shared/setup.md` to load profile, resume, credentials. Shared campaign mechanics
-(applied-check, result writes, worker input, rules) live in `../../shared/campaign-flow.md`.
+Follow `../_shared/setup.md` to load profile, resume, credentials. Shared campaign mechanics
+(applied-check, result writes, worker input, rules) live in `../_shared/campaign-flow.md`.
 
 Read `autoApply` for config (defaults applied per field):
 
@@ -26,7 +26,7 @@ Read `autoApply` for config (defaults applied per field):
 | `maxApplicationsPerCampaign` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
 | `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                       |
 
-For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`; the `job-worker` handles login/registration there per `../../shared/auth.md`.
+For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`; the `job-worker` handles login/registration there per `../_shared/auth.md`.
 
 ## Phase 0: Dispatch
 
@@ -44,7 +44,7 @@ If the argument is pasted content (HTML / text), extract description, Apply URL,
 
 **URL input** → delegate to the `job-worker` subagent with `mode:"review"` so the posting snapshot stays out of this conversation: `{ "mode":"review", "url":"<job-url>", "resumeId":"<primary-or-empty>" }`. Use its returned `matchScore`/`strongMatches`/`partialMatches`/`gaps`/`blockers`/`visaRisk`/`verdict` to fill the review below; keep its `digest` as `DIGEST` for 1.4.
 
-**Pasted input** → parse the fields yourself (the content is already in hand), build the digest (`../../shared/digest-schema.md`), and `POST /api/score-fit` for the score. Keep the digest in `DIGEST=...` for 1.4.
+**Pasted input** → parse the fields yourself (the content is already in hand), build the digest (`../_shared/digest-schema.md`), and `POST /api/score-fit` for the score. Keep the digest in `DIGEST=...` for 1.4.
 
 ```
 ## Job Fit Review: [Title] at [Company]
@@ -62,7 +62,7 @@ Ask: **"Want me to proceed with the application?"** - `yes`/`go` continue, anyth
 
 ### 1.2 Dedupe Check
 
-Run the applied-check (`../../shared/campaign-flow.md`) with url + title + company. If
+Run the applied-check (`../_shared/campaign-flow.md`) with url + title + company. If
 `.applied === true`, surface the match (title + company + appliedAt + `.match.kind`) and ask
 whether to proceed anyway. Stop on no.
 
@@ -119,13 +119,13 @@ For each queue URL:
 
 ### 3.1 Pre-dedupe (no tab)
 
-Run the applied-check (`../../shared/campaign-flow.md`) with the URL alone. If applied, mark the
+Run the applied-check (`../_shared/campaign-flow.md`) with the URL alone. If applied, mark the
 queue entry consumed and record the default already-applied skip; continue without spawning a
 worker.
 
 ### 3.2 Score (delegate to `job-worker`)
 
-Delegate the visit + score to the `job-worker` subagent - it opens its own tab, reads the posting, fuzzy-dedupes by title+company, scores, applies eligibility (`../../shared/eligibility.md`), and **saves the Job row itself** (so the full posting/digest never enters this conversation). One worker at a time. Input JSON:
+Delegate the visit + score to the `job-worker` subagent - it opens its own tab, reads the posting, fuzzy-dedupes by title+company, scores, applies eligibility (`../_shared/eligibility.md`), and **saves the Job row itself** (so the full posting/digest never enters this conversation). One worker at a time. Input JSON:
 
 ```json
 { "mode": "score", "campaignId": "<CAMPAIGN_ID>", "jobKey": "<entry-id>", "url": "<job-url>",
@@ -176,7 +176,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
 
 ### 5.2 Apply (delegate to `job-worker`)
 
-Delegate to the `job-worker` subagent and wait for its compact result - it navigates, authenticates, tailors, fills, and submits in its own tab/context (keeping the form snapshots out of this conversation). One worker at a time. Use the apply-mode input from `../../shared/campaign-flow.md` with `digest` omitted (the worker fetches it from the saved Job) and `preSubmitReview: <true when config.maxApplications === 1, else false>`.
+Delegate to the `job-worker` subagent and wait for its compact result - it navigates, authenticates, tailors, fills, and submits in its own tab/context (keeping the form snapshots out of this conversation). One worker at a time. Use the apply-mode input from `../_shared/campaign-flow.md` with `digest` omitted (the worker fetches it from the saved Job) and `preSubmitReview: <true when config.maxApplications === 1, else false>`.
 
 **Single-job pre-submit review:** when `preSubmitReview` is true the worker fills everything, leaves the form open, and returns `needs_user category:"review"` with a field summary in `context`. Present:
 
@@ -191,7 +191,7 @@ Delegate to the `job-worker` subagent and wait for its compact result - it navig
 ### 5.3 Record Result
 
 Map the worker's `outcome` to a terminal `/result` write and route `needs_user` per
-`../../shared/campaign-flow.md` (the worker never writes results itself; on `salary`,
+`../_shared/campaign-flow.md` (the worker never writes results itself; on `salary`,
 re-delegate 5.2 with `salaryExpectation` set).
 
 ### 5.4 Limit
@@ -210,6 +210,6 @@ Print a summary table and link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
 
 ## Rules
 
-The shared campaign rules (`../../shared/campaign-flow.md`) apply throughout. On top of them:
+The shared campaign rules (`../_shared/campaign-flow.md`) apply throughout. On top of them:
 
 1. **Up-front confirmation mandatory** (1.1 or Phase 4); single-job mode adds pre-submit review (5.2).

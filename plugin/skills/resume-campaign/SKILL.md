@@ -14,7 +14,7 @@ Live view: `$JOBPILOT_WEB/campaigns/<campaign-id>`.
 
 ## Setup
 
-Follow `../../shared/setup.md` to load profile, resume, credentials - its health check
+Follow `../_shared/setup.md` to load profile, resume, credentials - its health check
 aborts with the standard message if the backend is unreachable.
 
 ## Phase 0: Resolve Campaign
@@ -68,11 +68,11 @@ For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-
 
 1. **Mark applying** - PATCH the job to `applying`.
 2. **Apply** - delegate to `job-worker` with the apply-mode input from
-   `../../shared/campaign-flow.md`, `digest` omitted (the worker fetches it from the saved Job)
+   `../_shared/campaign-flow.md`, `digest` omitted (the worker fetches it from the saved Job)
    and `preSubmitReview: <true when MAX_APPS === 1, else false>`.
 
 3. **Record result** - map the worker's `outcome` to a terminal `/result` write and route
-   `needs_user` per `../../shared/campaign-flow.md` (on `salary`, ask once then re-delegate).
+   `needs_user` per `../_shared/campaign-flow.md` (on `salary`, ask once then re-delegate).
 4. **Limit** - if `MAX_APPS` set and `summary.applied >= MAX_APPS`, POST `/result` `outcome:"skipped"`, `skipReason:"Max applications limit reached"` for each remaining `approved` job and end the loop.
 
 The `/result` endpoint preserves the campaign's original `source` (`"apply"` vs `"auto-apply"`) on the created Application row automatically - no separate source-passthrough needed.
@@ -102,7 +102,7 @@ Suggest re-running the `auto-apply` skill in `retry-failed <CAMPAIGN_ID>` mode i
 
 ## Rules
 
-The shared campaign rules (`../../shared/campaign-flow.md`) apply throughout. On top of them:
+The shared campaign rules (`../_shared/campaign-flow.md`) apply throughout. On top of them:
 
 1. **No new confirmation gate.** The user already approved the fit when the campaign was first launched.
 2. **Preserve `source`** when recording applications - a resumed `apply` campaign still records `source:"apply"`, not `"resume"`.

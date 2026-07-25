@@ -81,4 +81,4 @@ hCaptcha uses `h-captcha-response`; Turnstile uses `cf-turnstile-response`. `bro
 - **Retry at most 3 rounds**, then **unsolved**. Never loop indefinitely.
 - **Trusted clicks on widgets** - `browser_click` a `ref` only. Never fake a widget click with `browser_evaluate` / `.click()` / `scrollIntoView`; reCAPTCHA flags synthetic clicks and hard-fails. JS is only for reading the sitekey and injecting a service token.
 - **unsolved** → leave the page as-is for the caller to take over.
-- Service solves cost ~$1–3 / 1000. Narrow snapshots (`../../shared/browser-tips.md`).
+- Service solves cost ~$1–3 / 1000. Narrow snapshots (`../_shared/browser-tips.md`).

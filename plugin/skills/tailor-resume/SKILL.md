@@ -10,14 +10,14 @@ Choose or produce a resume for a specific job. You decide reuse vs create; the u
 
 ## Setup
 
-Follow `../../shared/setup.md`. The profile response includes `resumes` (every base with `label`, `hasData`, `variantCount`, `isPrimary`).
+Follow `../_shared/setup.md`. The profile response includes `resumes` (every base with `label`, `hasData`, `variantCount`, `isPrimary`).
 
 ## Step 1: Build the JD object
 
 Detect the argument shape:
 
 - Starts with `{` → parse as digest JSON. **No navigation, no snapshot.**
-- Starts with `http` → `browser_navigate`, then `browser_snapshot` the posting body (per `../../shared/browser-tips.md`) and build the digest (`../../shared/digest-schema.md`) from it.
+- Starts with `http` → `browser_navigate`, then `browser_snapshot` the posting body (per `../_shared/browser-tips.md`) and build the digest (`../_shared/digest-schema.md`) from it.
 - Otherwise → pasted JD text; parse the same fields manually.
 
 From the digest (`title`, `requirements[]`, `responsibilities[]`, `techStack[]`, `yearsExperience`, `descriptionExcerpt`), assemble:

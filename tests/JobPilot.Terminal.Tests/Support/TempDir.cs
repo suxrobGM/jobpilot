@@ -21,7 +21,7 @@ internal sealed class TempDir : IDisposable
 
     public void WriteValidPluginTree()
     {
-        File(Path.Combine("plugin", "shared", "setup.md"), "# setup");
+        File(Path.Combine("plugin", "skills", "_shared", "setup.md"), "# setup");
         File(Path.Combine("plugin", "skills", "auto-apply", "SKILL.md"), "# auto-apply");
         File(Path.Combine("plugin", ".claude-plugin", "plugin.json"));
         File(Path.Combine("plugin", ".codex-plugin", "plugin.json"));

@@ -2,7 +2,7 @@ node_modules/
 .playwright-mcp/
 .playwright-mcp-test/
 
-# Skill scratch output. The rule lives in plugin/shared/setup.md "Scratch files".
+# Skill scratch output. The rule lives in plugin/skills/_shared/setup.md "Scratch files".
 .temp/
 *.pdf
 *.csv

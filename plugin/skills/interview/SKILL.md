@@ -10,7 +10,7 @@ Generate interview prep tailored to a JD and the candidate's resume.
 
 ## Setup
 
-Follow `../../shared/setup.md`. Then `Read` the resume file at `primaryResumeSourceAbsolutePath` for the candidate's full background.
+Follow `../_shared/setup.md`. Then `Read` the resume file at `primaryResumeSourceAbsolutePath` for the candidate's full background.
 
 ## Step 1: Analyze the Role
 
