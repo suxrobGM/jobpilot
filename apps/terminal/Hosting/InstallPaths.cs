@@ -6,11 +6,11 @@ public sealed record InstallPaths
     /// <summary>Default working directory for a launched session.</summary>
     public required string WorkingDir { get; init; }
 
-    /// <summary>Skills tree used as the JOBPILOT_SKILLS_ROOT anchor (plugin/skills).</summary>
-    public required string SharedSkillsDir { get; init; }
-
     /// <summary>Bundled plugin dir Claude loads and JobPilot workers use; Codex loads its user-installed public copy.</summary>
-    public required string ClaudePluginDir { get; init; }
+    public required string PluginDir { get; init; }
+
+    /// <summary>Skills tree used as the JOBPILOT_SKILLS_ROOT anchor; shared docs live under its _shared/.</summary>
+    public string SkillsDir => SkillsDirOf(PluginDir);
 
     /// <summary>Finds the repository or published plugin layout.</summary>
     public static InstallPaths Resolve()
@@ -27,12 +27,10 @@ public sealed record InstallPaths
         {
             if (IsInstallRoot(root))
             {
-                var pluginDir = Path.Combine(root, "plugin");
                 return new InstallPaths
                 {
                     WorkingDir = root,
-                    SharedSkillsDir = Path.Combine(pluginDir, "skills"),
-                    ClaudePluginDir = pluginDir,
+                    PluginDir = Path.Combine(root, "plugin"),
                 };
             }
         }
@@ -45,10 +43,12 @@ public sealed record InstallPaths
     public static bool IsInstallRoot(string root)
     {
         var pluginDir = Path.Combine(root, "plugin");
-        return HasRuntimeResources(pluginDir, Path.Combine(pluginDir, "skills"))
+        return HasRuntimeResources(pluginDir)
             && IsClaudePluginDir(pluginDir)
             && IsCodexPluginDir(pluginDir);
     }
+
+    private static string SkillsDirOf(string pluginDir) => Path.Combine(pluginDir, "skills");
 
     private static IEnumerable<string> CandidateRoots() =>
         CandidateRoots(AppContext.BaseDirectory, Environment.CurrentDirectory);
@@ -67,8 +67,9 @@ public sealed record InstallPaths
         }
     }
 
-    private static bool HasRuntimeResources(string pluginDir, string skillsDir)
+    private static bool HasRuntimeResources(string pluginDir)
     {
+        var skillsDir = SkillsDirOf(pluginDir);
         return File.Exists(Path.Combine(skillsDir, "_shared", "setup.md"))
             && File.Exists(Path.Combine(skillsDir, "auto-apply", "SKILL.md"));
     }

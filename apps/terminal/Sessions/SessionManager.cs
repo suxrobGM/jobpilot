@@ -79,15 +79,15 @@ public sealed class SessionManager : IDisposable
 
             var workingDir = sessionPaths.WorkingDir;
             scratch.CleanSessionStart(workingDir);
-            var spec = TerminalProviders.GetLaunchSpec(normalizedProvider, sessionPaths.ClaudePluginDir, workingDir);
+            var spec = TerminalProviders.GetLaunchSpec(normalizedProvider, sessionPaths.PluginDir, workingDir);
 
             logger.LogInformation(
-                "Starting {Provider}: cwd={Cwd} command={Command} args={Args} sharedSkillsDir={SharedSkillsDir} cols={Cols} rows={Rows}",
+                "Starting {Provider}: cwd={Cwd} command={Command} args={Args} skillsDir={SkillsDir} cols={Cols} rows={Rows}",
                 spec.Provider.DisplayName,
                 workingDir,
                 spec.Command,
                 string.Join(" ", spec.Args),
-                sessionPaths.SharedSkillsDir,
+                sessionPaths.SkillsDir,
                 options.Cols,
                 options.Rows);
 
@@ -96,7 +96,7 @@ public sealed class SessionManager : IDisposable
 
             var env = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["JOBPILOT_SKILLS_ROOT"] = sessionPaths.SharedSkillsDir,
+                ["JOBPILOT_SKILLS_ROOT"] = sessionPaths.SkillsDir,
                 ["JOBPILOT_WORKSPACE_ROOT"] = workingDir,
                 ["JOBPILOT_API"] = FromRequestOrEnv(options.ApiUrl, "JOBPILOT_API", "http://localhost:4101"),
                 ["JOBPILOT_API_TOKEN"] = FromRequestOrEnv(options.ApiToken, "JOBPILOT_API_TOKEN", ""),

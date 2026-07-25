@@ -21,8 +21,7 @@ public sealed class SessionManagerTests : IDisposable
         var paths = new InstallPaths
         {
             WorkingDir = temp.Root,
-            SharedSkillsDir = Path.Combine(temp.Root, "plugin", "skills"),
-            ClaudePluginDir = Path.Combine(temp.Root, "plugin"),
+            PluginDir = Path.Combine(temp.Root, "plugin"),
         };
         session = new SessionManager(pty, new HostInstall(paths), MakeCleaner(), NullLogger<SessionManager>.Instance);
     }
