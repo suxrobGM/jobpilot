@@ -12,7 +12,7 @@ const scored = (over: Record<string, unknown> = {}) => ({
   campaignId: "c1",
   key: "jobkey",
   matchScore: 80,
-  campaign: { config: {} },
+  campaign: { config: {}, source: "auto_apply" },
   ...over,
 });
 
@@ -29,6 +29,7 @@ describe("promoteScoredPendingJobs", () => {
     expect(rec.promoteScoredJobs[0]).toEqual([
       "p1",
       "c1",
+      "auto_apply",
       [{ key: "jobkey", matchScore: 75, threshold: 60 }],
     ]);
   });
@@ -39,6 +40,7 @@ describe("promoteScoredPendingJobs", () => {
     expect(rec.promoteScoredJobs[0]).toEqual([
       "p1",
       "c1",
+      "auto_apply",
       [{ key: "jobkey", matchScore: 40, threshold: 60 }],
     ]);
   });
@@ -46,10 +48,12 @@ describe("promoteScoredPendingJobs", () => {
   it("prefers the campaign's own minScore over the fallback", async () => {
     const { go, rec } = run({
       // Score 75 clears the fallback 60 but not the campaign's 80, so it is skipped against 80.
-      scoredPendingJobs: [scored({ matchScore: 75, campaign: { config: { minScore: 80 } } })],
+      scoredPendingJobs: [
+        scored({ matchScore: 75, campaign: { config: { minScore: 80 }, source: "auto_apply" } }),
+      ],
     });
     await go();
-    expect(rec.promoteScoredJobs[0]?.[2]).toEqual([
+    expect(rec.promoteScoredJobs[0]?.[3]).toEqual([
       { key: "jobkey", matchScore: 75, threshold: 80 },
     ]);
   });

@@ -27,6 +27,10 @@ export function toWireCampaignSource(source: CampaignSource): WireCampaignSource
   return source === "auto_apply" ? "auto-apply" : source;
 }
 
+/** Campaign kinds whose scored `pending` rows the pilot promotes on its own - auto-apply from
+ *  discovery, apply from pasted links. Search and networking never promote. */
+export const PROMOTABLE_SOURCES: CampaignSource[] = ["auto_apply", "apply"];
+
 export function toCampaignRow(campaign: Campaign, summary: CampaignSummary): CampaignRow {
   return {
     ...campaign,

@@ -1,6 +1,14 @@
+import type { CampaignSource } from "@/generated/prisma/client";
 import { resolveMinScore } from "@/modules/campaign/campaign.config";
+import { PROMOTABLE_SOURCES } from "@/modules/campaign/campaign.mapper";
 import { GATHER_CAP } from "./constants";
 import type { JobMutationDeps } from "./job-mutations";
+
+interface CampaignBatch {
+  source: CampaignSource;
+  threshold: number;
+  candidates: { key: string; matchScore: number; threshold: number }[];
+}
 
 /**
  * Promote scored pending jobs of in-progress auto-apply and apply campaigns before the gathers:
@@ -17,33 +25,39 @@ export async function promoteScoredPendingJobs(
     where: {
       status: "pending",
       matchScore: { not: null },
-      // Apply campaigns too: queue.drain scores pasted links into them; promotion moves them on.
-      campaign: { userId, status: "in_progress", source: { in: ["auto_apply", "apply"] } },
+      campaign: { userId, status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
     },
     take: GATHER_CAP,
     select: {
       campaignId: true,
       key: true,
       matchScore: true,
-      campaign: { select: { config: true } },
+      // The summary the promotion write derives is typed by the campaign's own source.
+      campaign: { select: { config: true, source: true } },
     },
   });
   if (rows.length === 0) return;
 
-  const batches = new Map<string, { key: string; matchScore: number; threshold: number }[]>();
-  const thresholdByCampaign = new Map<string, number>();
+  const batches = new Map<string, CampaignBatch>();
+
   for (const job of rows) {
-    let threshold = thresholdByCampaign.get(job.campaignId);
-    if (threshold === undefined) {
-      threshold = resolveMinScore(job.campaign.config, fallbackMinScore);
-      thresholdByCampaign.set(job.campaignId, threshold);
+    let batch = batches.get(job.campaignId);
+    if (!batch) {
+      batch = {
+        source: job.campaign.source,
+        threshold: resolveMinScore(job.campaign.config, fallbackMinScore),
+        candidates: [],
+      };
+      batches.set(job.campaignId, batch);
     }
-    const score = job.matchScore ?? 0;
-    const batch = batches.get(job.campaignId) ?? [];
-    batch.push({ key: job.key, matchScore: score, threshold });
-    batches.set(job.campaignId, batch);
+    batch.candidates.push({
+      key: job.key,
+      matchScore: job.matchScore ?? 0,
+      threshold: batch.threshold,
+    });
   }
-  for (const [campaignId, candidates] of batches) {
-    await campaignJobs.promoteScoredJobs(userId, campaignId, candidates);
+
+  for (const [campaignId, batch] of batches) {
+    await campaignJobs.promoteScoredJobs(userId, campaignId, batch.source, batch.candidates);
   }
 }

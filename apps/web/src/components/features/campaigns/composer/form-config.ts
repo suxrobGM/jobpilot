@@ -1,42 +1,31 @@
-import type { CampaignSource } from "@jobpilot/contracts/campaign";
+import { applyUrlsSchema, type CampaignSource, MAX_APPLY_URLS } from "@jobpilot/contracts/campaign";
 import { z } from "zod/v4";
 import type { CreateCampaignRequest } from "@/api/types";
 import { buildCliArgs } from "@/utils/cli-args";
+import { UPWORK_DOMAIN } from "../constants";
 
-/** Splits pasted text on whitespace/commas, trims, and dedupes - shared by validation and submit. */
+/** Splits pasted text on whitespace/commas and dedupes - shared by validation and submit. */
 export function parseUrls(raw: string): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
+  return [...new Set(raw.split(/[\s,]+/).filter(Boolean))];
+}
 
-  for (const token of raw.split(/[\s,]+/)) {
-    const t = token.trim();
-    if (!t || seen.has(t)) {
-      continue;
-    }
-    seen.add(t);
-    out.push(t);
+function hostname(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    // Unparseable URLs already failed form validation; skip rather than crash.
+    return null;
   }
-  return out;
 }
 
 /** First two distinct hostnames from a batch of pasted URLs, for a readable fallback campaign name. */
 export function deriveApplyQuery(urls: string[]): string {
-  const hosts: string[] = [];
-  for (const url of urls) {
-    try {
-      const host = new URL(url).hostname;
-      if (!hosts.includes(host)) {
-        hosts.push(host);
-      }
-    } catch {
-      // Unparseable URLs already failed form validation; skip rather than crash.
-    }
-  }
+  const hosts = [...new Set(urls.map(hostname).filter((h) => h !== null))];
   if (hosts.length === 0) {
     return "Pasted links";
   }
-  const shown = hosts.slice(0, 2).join(", ");
   const rest = hosts.length - 2;
+  const shown = hosts.slice(0, 2).join(", ");
   return rest > 0 ? `Pasted links: ${shown} +${rest} more` : `Pasted links: ${shown}`;
 }
 
@@ -62,10 +51,12 @@ export const composerFormSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.mode === "apply") {
-      const urls = parseUrls(v.urlsText);
-      const allValid = urls.length > 0 && urls.every((u) => z.url().safeParse(u).success);
-      if (!allValid || urls.length > 50) {
-        ctx.addIssue({ code: "custom", message: "Add 1-50 job links.", path: ["urlsText"] });
+      if (!applyUrlsSchema.safeParse(parseUrls(v.urlsText)).success) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Add 1-${MAX_APPLY_URLS} job links.`,
+          path: ["urlsText"],
+        });
       }
       return;
     }
@@ -125,6 +116,14 @@ function hasMaxJobs(
   values: ComposerFormValues,
 ): values is ComposerFormValues & { maxJobs: number } {
   return values.maxJobs != null && Number.isFinite(values.maxJobs);
+}
+
+/**
+ * Whether the composer is set up to run Upwork's dedicated search skill. Apply never sources from
+ * a board, so a board value left over from another mode must not hijack it into an Upwork search.
+ */
+export function isUpworkSearch(values: Pick<ComposerFormValues, "mode" | "board">): boolean {
+  return values.mode !== "apply" && values.board === UPWORK_DOMAIN;
 }
 
 /** Whether a networking campaign has a board picked (board-grounded vs criteria-only). */

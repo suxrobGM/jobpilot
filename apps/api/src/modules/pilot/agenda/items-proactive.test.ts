@@ -35,7 +35,6 @@ describe("buildAgenda queue.drain", () => {
     expect(item?.priority).toBe(720);
     expect(item?.payload).toEqual({
       campaignId: "c9",
-      query: "Pasted links",
       resumeId: "r1",
       minScore: 60,
       queuedCount: 7,

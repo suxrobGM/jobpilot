@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { parseCampaignConfig, resolveMinScore } from "@/modules/campaign/campaign.config";
 import { GATHER_CAP, QUEUE_BATCH, SCORE_PENDING_COOLDOWN_MS } from "./constants";
-import { claimDamped, latestClaimBySubject } from "./gather-jobs";
+import { claimableCampaigns } from "./gather-jobs";
 import type { AgendaQueueDrain } from "./types";
 
 const QUEUED = { status: "queued" } satisfies Prisma.JobWhereInput;
@@ -19,8 +19,9 @@ export async function gatherQueueDrain(
     take: GATHER_CAP,
     select: {
       campaignId: true,
-      query: true,
       config: true,
+      // Total backlog beside the sampled entries, without a second round trip.
+      _count: { select: { jobs: { where: QUEUED } } },
       jobs: {
         where: QUEUED,
         orderBy: { createdAt: "asc" },
@@ -29,32 +30,20 @@ export async function gatherQueueDrain(
       },
     },
   });
-  if (campaigns.length === 0) {
-    return [];
-  }
 
-  const counts = await prisma.job.groupBy({
-    by: ["campaignId"],
-    where: { campaignId: { in: campaigns.map((c) => c.campaignId) }, ...QUEUED },
-    _count: { _all: true },
-  });
-
-  const countByCampaign = new Map(counts.map((r) => [r.campaignId, r._count._all]));
-  const latest = await latestClaimBySubject(
+  const claimable = await claimableCampaigns(
     prisma,
     userId,
     "queue.drain",
-    campaigns.map((c) => c.campaignId),
+    SCORE_PENDING_COOLDOWN_MS,
+    now,
+    campaigns,
   );
-
-  return campaigns
-    .filter((c) => !claimDamped(latest.get(c.campaignId), now, SCORE_PENDING_COOLDOWN_MS))
-    .map((c) => ({
-      campaignId: c.campaignId,
-      query: c.query,
-      resumeId: parseCampaignConfig(c.config).resumeId,
-      minScore: resolveMinScore(c.config, fallbackMinScore),
-      queuedCount: countByCampaign.get(c.campaignId) ?? c.jobs.length,
-      entries: c.jobs,
-    }));
+  return claimable.map((c) => ({
+    campaignId: c.campaignId,
+    resumeId: parseCampaignConfig(c.config).resumeId,
+    minScore: resolveMinScore(c.config, fallbackMinScore),
+    queuedCount: c._count.jobs,
+    entries: c.jobs,
+  }));
 }

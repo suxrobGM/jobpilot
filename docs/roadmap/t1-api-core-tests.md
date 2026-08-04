@@ -12,7 +12,7 @@ purely about coverage now.
 Cover the load-bearing API core first:
 
 - `recordJobResult` transaction (`modules/campaign/jobs/job.service.ts`) - job status, Application
-  upsert, QueueEntry consumption, summary recompute, all atomic
+  upsert, summary recompute, all atomic
 - `campaign.summary.ts` folding (pure functions - easy wins)
 - Crypto envelope (`common/crypto` - DEK wrap/unwrap, AAD context binding, crypto-shredding)
 - Auth guards + ownership (`common/middleware`, `findOwned`)
@@ -30,8 +30,8 @@ Cover the load-bearing API core first:
   `errors/owned.test.ts` (ownership-or-404) with `errors/http.error.test.ts` + `rate-limit/limiter.test.ts`
   as adjacent wins, and `campaign/jobs/job.service.test.ts` for `recordJobResult`. The transaction is
   exercised via a **hand-rolled fake Prisma** injected into the service - CI has no DB container, so a
-  real `$transaction` can't run; the fake drives the outcome routing, Application dedupe, queue-status
-  mapping, and summary recompute. Only `job.service.test.ts` needs the dummy env block (it loads
+  real `$transaction` can't run; the fake drives the outcome routing, Application dedupe, and summary
+  recompute. Only `job.service.test.ts` needs the dummy env block (it loads
   `@/env` transitively, like `admin.guard.test.ts`); the rest import their module by relative path and
   run with no env at all.
 - 2026-07-12 - Harness bootstrapped by the T0 SSE fix. The existing suite runs with **no database and

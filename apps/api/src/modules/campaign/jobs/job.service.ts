@@ -13,8 +13,14 @@ import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { type Job, type Prisma, PrismaClient } from "@/generated/prisma/client";
+import {
+  type CampaignSource,
+  type Job,
+  type Prisma,
+  PrismaClient,
+} from "@/generated/prisma/client";
 import { JobListingPublisher } from "@/modules/job-listing";
+import { PROMOTABLE_SOURCES } from "../campaign.mapper";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
 import { writeJobRescan, writeJobRetry } from "./job-commands";
@@ -243,6 +249,7 @@ export class CampaignJobService {
   async promoteScoredJobs(
     userId: string,
     campaignId: string,
+    source: CampaignSource,
     candidates: ScoredJobPromotion[],
   ): Promise<void> {
     if (candidates.length === 0) return;
@@ -267,12 +274,6 @@ export class CampaignJobService {
       groups.set(groupKey, group);
     }
 
-    // Apply campaigns promote too, so the summary is typed by the real source, not auto-apply.
-    const { source } = await this.prisma.campaign.findFirstOrThrow({
-      where: { campaignId, userId },
-      select: { source: true },
-    });
-
     const result = await this.prisma.$transaction(async (tx) => {
       const jobs: Job[] = [];
 
@@ -283,7 +284,7 @@ export class CampaignJobService {
             status: "pending",
             matchScore: group.score,
             key: { in: group.keys },
-            campaign: { userId, status: "in_progress", source: { in: ["auto_apply", "apply"] } },
+            campaign: { userId, status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
           },
           data: group.approved
             ? { status: "approved" }

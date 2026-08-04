@@ -180,8 +180,7 @@ describe("CampaignService create with pasted urls", () => {
     expect(campaign.summary).toMatchObject({ totalFound: 2 });
   });
 
-  it("seeds the rows in one bulk write, so none reaches the listings publisher", async () => {
-    // Queued rows are bare URLs with placeholder titles; indexing them would publish junk.
+  it("seeds every link in one bulk write, so a half-written batch cannot strand them", async () => {
     const { service, jobBatches } = makeService();
     await service.create("u1", create(["https://x.test/1", "https://x.test/2"]));
     expect(jobBatches).toHaveLength(1);

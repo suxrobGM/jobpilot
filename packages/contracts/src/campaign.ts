@@ -88,6 +88,12 @@ export function campaignConfigSupportsSource(
   return !RESUME_REQUIRED_SOURCES.includes(source) || !!config.resumeId;
 }
 
+/** How many pasted links one apply campaign accepts. The composer states it in its helper text. */
+export const MAX_APPLY_URLS = 50;
+
+/** The pasted links of an apply campaign - the composer validates against this same schema. */
+export const applyUrlsSchema = z.array(z.url()).min(1).max(MAX_APPLY_URLS);
+
 export const createCampaignSchema = z
   .object({
     query: z.string().min(1),
@@ -97,7 +103,7 @@ export const createCampaignSchema = z
     /** Set by the pilot's discovery cycle so the search can find this campaign again by id. */
     pilotSearchId: z.uuid().optional(),
     /** Pasted links seeded as `queued` jobs, before anything is known about the posting. */
-    urls: z.array(z.url()).min(1).max(50).optional(),
+    urls: applyUrlsSchema.optional(),
   })
   .refine((v) => campaignConfigSupportsSource(v.source, v.config ?? {}), {
     message: "config.resumeId is required for search, auto-apply, and networking campaigns.",

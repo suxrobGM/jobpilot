@@ -109,6 +109,27 @@ export function claimDamped(last: LatestClaim | undefined, now: Date, cooldownMs
   return now.getTime() - last.releasedAt.getTime() < cap;
 }
 
+/** Campaigns whose newest claim of `kind` no longer damps them - see {@link claimDamped}. */
+export async function claimableCampaigns<T extends { campaignId: string }>(
+  prisma: PrismaClient,
+  userId: string,
+  kind: string,
+  cooldownMs: number,
+  now: Date,
+  campaigns: T[],
+): Promise<T[]> {
+  if (campaigns.length === 0) {
+    return [];
+  }
+  const latest = await latestClaimBySubject(
+    prisma,
+    userId,
+    kind,
+    campaigns.map((c) => c.campaignId),
+  );
+  return campaigns.filter((c) => !claimDamped(latest.get(c.campaignId), now, cooldownMs));
+}
+
 /** Pending rows a worker must open the posting for: never scored, or scored off a results row and
  *  left without the digest the public index needs. Terminal rows are out - PATCH refuses them. */
 const NEEDS_WORKER_VISIT = {
@@ -142,6 +163,8 @@ export async function gatherScorePendingCampaigns(
       campaignId: true,
       query: true,
       config: true,
+      // Total backlog beside the sampled entries, without a second round trip.
+      _count: { select: { jobs: { where: NEEDS_WORKER_VISIT } } },
       jobs: {
         where: NEEDS_WORKER_VISIT,
         orderBy: { createdAt: "asc" },
@@ -150,39 +173,27 @@ export async function gatherScorePendingCampaigns(
       },
     },
   });
-  if (campaigns.length === 0) {
-    return [];
-  }
 
-  // One grouped count for every candidate's total backlog, avoiding an N+1 per campaign.
-  const counts = await prisma.job.groupBy({
-    by: ["campaignId"],
-    where: { campaignId: { in: campaigns.map((c) => c.campaignId) }, ...NEEDS_WORKER_VISIT },
-    _count: { _all: true },
-  });
-
-  const countByCampaign = new Map(counts.map((r) => [r.campaignId, r._count._all]));
-  const latest = await latestClaimBySubject(
+  const claimable = await claimableCampaigns(
     prisma,
     userId,
     "campaign.scorePending",
-    campaigns.map((c) => c.campaignId),
+    SCORE_PENDING_COOLDOWN_MS,
+    now,
+    campaigns,
   );
-
-  return campaigns
-    .filter((c) => !claimDamped(latest.get(c.campaignId), now, SCORE_PENDING_COOLDOWN_MS))
-    .map((c) => {
-      const config = parseCampaignConfig(c.config);
-      return {
-        campaignId: c.campaignId,
-        query: c.query,
-        board: config.board ?? null,
-        resumeId: config.resumeId,
-        minScore: config.minScore ?? fallbackMinScore,
-        pendingCount: countByCampaign.get(c.campaignId) ?? c.jobs.length,
-        entries: c.jobs,
-      };
-    });
+  return claimable.map((c) => {
+    const config = parseCampaignConfig(c.config);
+    return {
+      campaignId: c.campaignId,
+      query: c.query,
+      board: config.board ?? null,
+      resumeId: config.resumeId,
+      minScore: config.minScore ?? fallbackMinScore,
+      pendingCount: c._count.jobs,
+      entries: c.jobs,
+    };
+  });
 }
 
 /**

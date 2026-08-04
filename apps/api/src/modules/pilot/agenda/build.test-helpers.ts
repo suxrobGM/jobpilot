@@ -137,7 +137,6 @@ export const pausedCampaign = (campaignId: string, over: Record<string, unknown>
 /** An apply campaign holding pasted links; `entries` are the sampled `queued` rows. */
 export const queueDrain = (campaignId: string, over: Record<string, unknown> = {}) => ({
   campaignId,
-  query: "Pasted links",
   minScore: 60,
   queuedCount: 1,
   entries: [{ key: "q1", url: "https://x/1" }],

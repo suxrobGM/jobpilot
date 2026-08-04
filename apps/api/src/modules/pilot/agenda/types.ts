@@ -127,7 +127,6 @@ export interface AgendaPromoPost {
 /** An in-progress apply campaign holding pasted links nothing has visited yet (≤5 sampled entries). */
 export interface AgendaQueueDrain {
   campaignId: string;
-  query: string;
   resumeId?: string;
   minScore: number;
   queuedCount: number;

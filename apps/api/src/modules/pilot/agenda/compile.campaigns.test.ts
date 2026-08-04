@@ -12,10 +12,10 @@ describe("AgendaService campaign.scorePending", () => {
           campaignId: "c1",
           query: "react",
           config: { board: "linkedin", minScore: 70 },
+          _count: { jobs: 9 },
           jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
         },
       ],
-      scorePendingCounts: [{ campaignId: "c1", _count: { _all: 9 } }],
     }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "campaign.scorePending");
     expect(item?.subjectType).toBe("campaign");
@@ -37,10 +37,10 @@ describe("AgendaService campaign.scorePending", () => {
         campaignId: "c1",
         query: "react",
         config: {},
+        _count: { jobs: 4 },
         jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
       },
     ],
-    scorePendingCounts: [{ campaignId: "c1", _count: { _all: 4 } }],
   };
 
   it("suppresses scorePending while its previous claim is still open", async () => {

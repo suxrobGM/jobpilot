@@ -53,9 +53,8 @@ export interface Over {
   finalizeCampaigns?: Record<string, unknown>[];
   // Existing in-progress campaigns keyed by their pilot search, for the discover-reuse lookup.
   dueSearchCampaigns?: { campaignId: string; pilotSearchId: string }[];
-  // Score-pending gather (in_progress auto-apply campaigns with unscored pending rows) + its count groupBy.
+  // Score-pending gather: in_progress auto-apply campaigns with unscored pending rows.
   scorePendingCampaigns?: Record<string, unknown>[];
-  scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
   // Prior campaign.scorePending claims, gating the per-campaign cooldown. `outcome` drives the crash-retry cap.
   scorePendingClaims?: {
     subjectId: string;
@@ -105,9 +104,8 @@ export interface Over {
   networkingReplies?: number;
   promotionsPosted?: number;
   // Proactive wiring:
-  // Queue-drain gather: in-progress apply campaigns holding `queued` rows, + their count groupBy.
+  // Queue-drain gather: in-progress apply campaigns holding `queued` rows.
   queuedCampaigns?: Record<string, unknown>[];
-  queuedCounts?: { campaignId: string; _count: { _all: number } }[];
   queueDrainClaims?: {
     subjectId: string;
     grantedAt: Date;
@@ -237,12 +235,7 @@ function fakeJob(over: Over) {
     update: async () => ({}),
     updateMany: async () => ({ count: over.claimCount ?? 1 }),
     findUniqueOrThrow: async () => over.job ?? approvedJob(),
-    // groupBy by ["campaignId"] alone is a backlog count (queued vs unscored); ["campaignId","skipReason"] is skip reasons.
-    groupBy: async (a: { by: string[]; where: { status?: unknown } }) => {
-      if (a.by.length === 1) {
-        if (a.where.status === "queued") return over.queuedCounts ?? [];
-        return over.scorePendingCounts ?? [];
-      }
+    groupBy: async (a: { by: string[] }) => {
       if (a.by.includes("skipReason")) return over.skipReasonRows ?? [];
       if (over.quietJobCounts) return over.quietJobCounts;
       if (!over.quietCampaigns?.length) return [];

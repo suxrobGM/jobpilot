@@ -6,11 +6,11 @@ import { PageHeader, PageShell } from "@/components/ui/layout";
 export const metadata: Metadata = { title: "New campaign" };
 
 interface NewCampaignPageProps {
-  searchParams: Promise<{ board?: string; source?: string }>;
+  searchParams: Promise<{ board?: string }>;
 }
 
 export default async function NewCampaignPage(props: NewCampaignPageProps): Promise<ReactElement> {
-  const { board, source } = await props.searchParams;
+  const { board } = await props.searchParams;
   return (
     <PageShell maxWidth="md">
       <PageHeader
@@ -18,10 +18,7 @@ export default async function NewCampaignPage(props: NewCampaignPageProps): Prom
         title="Start a new campaign"
         description="Search a job board, score matches, and optionally batch-apply."
       />
-      <CampaignComposer
-        defaultBoard={board}
-        defaultMode={source === "apply" ? "apply" : undefined}
-      />
+      <CampaignComposer defaultBoard={board} />
     </PageShell>
   );
 }

@@ -26,7 +26,6 @@ export function buildQueueDrainItems(campaigns: AgendaQueueDrain[]): AgendaItem[
     subjectId: c.campaignId,
     payload: {
       campaignId: c.campaignId,
-      query: c.query,
       resumeId: c.resumeId,
       minScore: c.minScore,
       queuedCount: c.queuedCount,

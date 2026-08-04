@@ -221,7 +221,6 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
     "campaign",
     z.object({
       campaignId: z.string(),
-      query: z.string(),
       resumeId: optionalString,
       minScore: z.number(),
       queuedCount: z.number().int(),

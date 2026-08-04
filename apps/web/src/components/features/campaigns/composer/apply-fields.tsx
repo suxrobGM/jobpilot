@@ -1,5 +1,6 @@
 "use client";
 
+import { MAX_APPLY_URLS } from "@jobpilot/contracts/campaign";
 import { Stack } from "@mui/material";
 import { withForm } from "@/components/ui/form/tanstack";
 import { COMPOSER_DEFAULT_VALUES } from "./form-config";
@@ -19,7 +20,7 @@ export const ApplyFields = withForm({
               placeholder={
                 "https://www.linkedin.com/jobs/view/...\nhttps://boards.greenhouse.io/..."
               }
-              helperText="One link per line, up to 50. Extra spaces and commas are fine."
+              helperText={`One link per line, up to ${MAX_APPLY_URLS}. Extra spaces and commas are fine.`}
             />
           )}
         </form.AppField>
