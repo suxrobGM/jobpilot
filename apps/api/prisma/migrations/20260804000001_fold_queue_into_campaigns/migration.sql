@@ -23,8 +23,7 @@ WHERE q."status" = 'pending';
 
 DROP TABLE "queue_entries";
 
--- agenda_snapshot persists a whole AgendaResponse, so one holding the old queue-subject item
--- 500s on read until it expires. Discarding is lossless - the next refresh rebuilds it.
+-- A snapshot holding an old queue-subject item 500s on read; the next refresh rebuilds it.
 UPDATE "pilot_states"
 SET "agenda_snapshot" = NULL,
     "agenda_expires_at" = NULL

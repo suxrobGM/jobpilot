@@ -6,13 +6,8 @@ import type { AgendaQueueDrain } from "./types";
 
 const QUEUED = { status: "queued" } satisfies Prisma.JobWhereInput;
 
-/**
- * In-progress apply campaigns holding pasted links nothing has visited yet. Each carries
- * ≤{@link QUEUE_BATCH} sampled entries plus the total backlog count.
- *
- * Claim-damped per campaign like the score-pending gather: a link nothing can open (dead URL,
- * login wall) stays queued forever, and without a cooldown it would re-win every cycle.
- */
+/** Apply campaigns with unvisited pasted links. Claim-damped: a dead URL stays queued forever
+ *  and would re-win every cycle without a cooldown. */
 export async function gatherQueueDrain(
   prisma: PrismaClient,
   userId: string,
@@ -38,7 +33,6 @@ export async function gatherQueueDrain(
     return [];
   }
 
-  // One grouped count for every candidate's total backlog, avoiding an N+1 per campaign.
   const counts = await prisma.job.groupBy({
     by: ["campaignId"],
     where: { campaignId: { in: campaigns.map((c) => c.campaignId) }, ...QUEUED },

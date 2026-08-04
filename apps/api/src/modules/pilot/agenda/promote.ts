@@ -3,12 +3,10 @@ import { GATHER_CAP } from "./constants";
 import type { JobMutationDeps } from "./job-mutations";
 
 /**
- * Promote already-scored pending jobs of in-progress auto-apply campaigns before the gathers, so a
- * fresh score decides the job in the same compile: at/above the threshold it becomes `approved` (and
- * surfaces as apply work this cycle); below, it is skipped with the score in the reason. The threshold
- * is the campaign's own `minScore`, falling back to the pilot's. Without this a scored-but-pending row
- * stays `pending` (an active status) - invisible to the agenda and blocking finalize - until the 24h
- * discover cadence re-fires. Idempotent (only touches `pending` rows); capped at {@link GATHER_CAP}.
+ * Promote scored pending jobs of in-progress auto-apply and apply campaigns before the gathers:
+ * at/above the campaign's `minScore` (pilot fallback) they turn `approved`, below they are skipped
+ * with the score in the reason. Without this a scored row stays `pending` - invisible to the agenda,
+ * blocking finalize - until the 24h discover cadence re-fires. Idempotent; caps at {@link GATHER_CAP}.
  */
 export async function promoteScoredPendingJobs(
   { prisma, campaignJobs }: JobMutationDeps,
@@ -19,8 +17,7 @@ export async function promoteScoredPendingJobs(
     where: {
       status: "pending",
       matchScore: { not: null },
-      // Apply campaigns too: the queue.drain pass scores pasted links into them, and promotion
-      // is what moves a scored row onward.
+      // Apply campaigns too: queue.drain scores pasted links into them; promotion moves them on.
       campaign: { userId, status: "in_progress", source: { in: ["auto_apply", "apply"] } },
     },
     take: GATHER_CAP,

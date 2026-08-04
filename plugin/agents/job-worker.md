@@ -88,7 +88,7 @@ If the scored row is ineligible, follow that successful create with `POST /api/c
 
 `save:"patch"` (the row already exists, e.g. from `search.discover`): eligible/pending → `PATCH /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY` `{matchScore,matchReason,digest,description}`; ineligible/terminal (dedupe hit or a skip reason) → `POST /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY/result` `{outcome:"skipped", skipReason}` instead.
 
-A row still in status `queued` (a pasted link - its title is only a hostname placeholder and it has no company) is the pre-discovery case: the same PATCH must also carry the real `title`, `company`, `location`, `board` read from the posting plus `status:"pending"`, since this pass is what first learns them. Ineligible queued rows still go through `/result` as skipped - unchanged.
+A `queued` row (pasted link, hostname placeholder title, no company) is pre-discovery: the same PATCH must also carry the real `title`, `company`, `location`, `board` from the posting plus `status:"pending"`. Ineligible queued rows still go through `/result` as skipped.
 
 7. Append the row's result; if `claimId` is set, heartbeat (Heartbeats, above) after each row.
 

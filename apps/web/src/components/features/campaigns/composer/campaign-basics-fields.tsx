@@ -19,8 +19,7 @@ export const CampaignBasicsFields = withForm({
     const mode = useSelector(form.store, (s) => s.values.mode);
     const board = useSelector(form.store, (s) => s.values.board);
     const isApply = mode === "apply";
-    // Apply mode never sources from a board, so a stale board value (e.g. left over from
-    // switching modes) must not pin it to Upwork's search-only toggle.
+    // A board value left over from another mode must not pin apply to Upwork's search-only toggle.
     const isUpwork = !isApply && board === UPWORK_DOMAIN;
     const isNetworking = mode === "networking";
 

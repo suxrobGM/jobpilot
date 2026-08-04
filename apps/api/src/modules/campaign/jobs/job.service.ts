@@ -267,8 +267,7 @@ export class CampaignJobService {
       groups.set(groupKey, group);
     }
 
-    // Apply campaigns promote too (the queue.drain pass scores pasted links into them), so the
-    // summary has to be typed by this campaign's own source rather than assuming auto-apply.
+    // Apply campaigns promote too, so the summary is typed by the real source, not auto-apply.
     const { source } = await this.prisma.campaign.findFirstOrThrow({
       where: { campaignId, userId },
       select: { source: true },

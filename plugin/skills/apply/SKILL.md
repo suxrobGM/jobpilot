@@ -98,9 +98,9 @@ Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `$JOBPILOT_WEB/campaigns/<CAMPAIG
 
 ## Phase 2: Batch Mode
 
-The campaign already exists: pasting job links in the new-campaign dialog creates an
-`apply`-source campaign whose rows start `queued` - a URL, a hostname placeholder for a title, no
-company. This skill never creates it. Phase 3 turns those rows into real, scored `pending` jobs.
+The campaign already exists (the new-campaign dialog creates it); its rows start `queued` - a
+bare URL with a hostname placeholder title. This skill never creates one. Phase 3 turns those
+rows into real, scored `pending` jobs.
 
 ### 2.1 Resolve the Campaign
 
@@ -113,9 +113,9 @@ CAMPAIGN_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
   | jq -r '[.items[] | select((.summary.byStatus.queued // 0) > 0)] | first | .campaignId // ""')
 ```
 
-Empty → **"Nothing queued. Start a campaign at $JOBPILOT_WEB/campaigns/new, pick Apply to links,
-and run this again."** and
-stop. Otherwise read `config` off that same campaign row: `minScore` overrides `minMatchScore`,
+Empty → **"Nothing queued. Start a campaign at $JOBPILOT_WEB/campaigns/new, pick Apply to
+links, and run this again."** and stop. Otherwise read `config` off that same campaign row:
+`minScore` overrides `minMatchScore`,
 `resumeId` overrides the primary resume, `maxApplications` caps Phase 5.
 
 ### 2.2 Load the Queued Rows
@@ -133,8 +133,7 @@ Announce: **"Found N queued links. Visiting each to gather details..."**
 ### 3.1 Pre-dedupe (no tab)
 
 For each queued row, run the applied-check (`../_shared/campaign-flow.md`) with the URL alone. On
-`.applied`, post the terminal result straight from `queued` (a terminal result is legal from any
-non-terminal status, and the row already exists - nothing to create):
+`.applied`, post the terminal result straight from `queued` (legal from any non-terminal status):
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result" \
@@ -158,9 +157,9 @@ Input JSON:
   "minMatchScore": <minMatchScore>, "resumeId": "<RESUME_ID>" }
 ```
 
-`save:"patch"` is what keeps this on the existing rows: the worker PATCHes the real title,
-company, location, board, score, and digest onto each eligible row and moves it `queued` →
-`pending`; an ineligible or already-applied row gets a `/result` `skipped` instead.
+`save:"patch"` keeps this on the existing rows: the worker PATCHes the real title, company,
+location, board, score, and digest onto each eligible row (`queued` → `pending`); an ineligible
+or already-applied row gets a `/result` `skipped` instead.
 
 It returns one `{ outcome:"scored", jobKey, title, company, location, matchScore, confidence, eligible, skipReason, matchReason }` per row. Collect these summaries for the ranked table (Phase 4).
 

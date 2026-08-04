@@ -68,8 +68,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     },
     validators: { onSubmit: composerFormSchema },
     onSubmit: async ({ value }) => {
-      // Upwork is recommend-only: it runs a search campaign driven by the dedicated
-      // upwork-search skill regardless of the toggle. Apply never sources from a board,
+      // Upwork always runs the dedicated search skill; apply never sources from a board,
       // so a stale board value must not hijack it into a search campaign.
       const upwork = value.mode !== "apply" && value.board === UPWORK_DOMAIN;
       const effective = upwork ? { ...value, mode: "search" as const } : value;

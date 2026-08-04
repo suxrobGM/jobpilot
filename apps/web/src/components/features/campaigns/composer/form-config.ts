@@ -45,8 +45,7 @@ export const composerFormSchema = z
     mode: z.enum(["search", "auto-apply", "networking", "apply"]),
     query: z.string().trim(),
     board: z.string(),
-    // Base resume the campaign scores and tailors against - mandatory for every mode
-    // except apply, which tailors per pasted job with no base resume selected up front.
+    // Base resume to score/tailor against; apply tailors per pasted job, so none up front.
     resumeId: z.string(),
     minScore: z.number().int().min(0).max(100),
     maxApps: z.union([z.number().int().min(1).max(500), z.null(), z.undefined()]),
@@ -57,7 +56,7 @@ export const composerFormSchema = z
     linkedinTier: z.enum(["free", "premium"]),
     autonomy: z.enum(["draft", "review", "auto"]),
     dailyCap: z.number().int().min(1).max(100),
-    // Apply campaign settings (mode === "apply"): raw pasted text and an optional campaign name.
+    // Apply campaign settings (mode === "apply").
     urlsText: z.string(),
     applyLabel: z.string(),
   })
