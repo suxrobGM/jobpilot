@@ -53,14 +53,14 @@ export class CampaignService {
     query: PaginationQuery & {
       status?: CampaignStatus[];
       source?: CampaignSource;
-      hasJobStatus?: CampaignJobStatus;
+      jobStatus?: CampaignJobStatus;
     },
   ) {
     const where: Prisma.CampaignWhereInput = {
       userId,
       status: query.status?.length ? { in: query.status } : undefined,
       source: query.source ? toPrismaCampaignSource(query.source) : undefined,
-      jobs: query.hasJobStatus ? { some: { status: query.hasJobStatus } } : undefined,
+      jobs: query.jobStatus ? { some: { status: query.jobStatus } } : undefined,
     };
     const [campaigns, total] = await Promise.all([
       this.prisma.campaign.findMany({

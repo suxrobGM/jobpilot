@@ -77,7 +77,7 @@ describe("CampaignService", () => {
 
   it("filters to campaigns still holding a job of the requested status, in SQL", async () => {
     const { service, listWheres } = makeService();
-    await service.list("u1", { page: 1, limit: 25, source: "apply", hasJobStatus: "queued" });
+    await service.list("u1", { page: 1, limit: 25, source: "apply", jobStatus: "queued" });
     expect(listWheres[0]).toMatchObject({ jobs: { some: { status: "queued" } } });
   });
 

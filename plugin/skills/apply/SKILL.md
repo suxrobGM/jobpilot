@@ -109,7 +109,7 @@ Skip this when the `campaign <id>` dispatch already set `CAMPAIGN_ID`. Otherwise
 
 ```bash
 CAMPAIGN_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
-  "$JOBPILOT_API/api/campaigns?status=in_progress&source=apply&hasJobStatus=queued&page=1&limit=1" \
+  "$JOBPILOT_API/api/campaigns?status=in_progress&source=apply&jobStatus=queued&page=1&limit=1" \
   | jq -r '.items[0].campaignId // ""')
 ```
 
