@@ -137,8 +137,7 @@ export class CampaignJobService {
       },
     });
 
-    // A queued row is a bare URL with a placeholder title - nothing worth indexing until it's visited.
-    if (job.status !== "queued") this.listings.publishInBackground(job);
+    this.listings.publishInBackground(job);
     this.publishJob(userId, campaignId, job, "added");
     return job;
   }

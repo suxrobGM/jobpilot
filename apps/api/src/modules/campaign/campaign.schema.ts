@@ -17,6 +17,8 @@ export const campaignsQuery = paginationQuerySchema.extend({
   // The workspace pages Active (in_progress+paused) and Completed as two separate lists.
   status: csvArray(campaignStatusSchema).optional(),
   source: campaignSourceSchema.optional(),
+  // "Still has work of this kind", in SQL: a caller filtering its page only sees that page.
+  hasJobStatus: campaignJobStatusSchema.optional(),
 });
 
 /** Jobs list filters. Applied server-side so a page reflects the whole campaign, not one page of it. */

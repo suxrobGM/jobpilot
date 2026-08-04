@@ -109,8 +109,8 @@ Skip this when the `campaign <id>` dispatch already set `CAMPAIGN_ID`. Otherwise
 
 ```bash
 CAMPAIGN_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
-  "$JOBPILOT_API/api/campaigns?status=in_progress&source=apply&page=1&limit=50" \
-  | jq -r '[.items[] | select((.summary.byStatus.queued // 0) > 0)] | first | .campaignId // ""')
+  "$JOBPILOT_API/api/campaigns?status=in_progress&source=apply&hasJobStatus=queued&page=1&limit=1" \
+  | jq -r '.items[0].campaignId // ""')
 ```
 
 Empty → **"Nothing queued. Start a campaign at $JOBPILOT_WEB/campaigns/new, pick Apply to

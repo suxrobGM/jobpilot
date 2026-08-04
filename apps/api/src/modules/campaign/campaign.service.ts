@@ -12,6 +12,7 @@ import { conflict, findOwned, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import {
   type Campaign,
+  type CampaignJobStatus,
   type CampaignStatus,
   type Prisma,
   PrismaClient,
@@ -49,12 +50,17 @@ export class CampaignService {
 
   async list(
     userId: string,
-    query: PaginationQuery & { status?: CampaignStatus[]; source?: CampaignSource },
+    query: PaginationQuery & {
+      status?: CampaignStatus[];
+      source?: CampaignSource;
+      hasJobStatus?: CampaignJobStatus;
+    },
   ) {
     const where: Prisma.CampaignWhereInput = {
       userId,
       status: query.status?.length ? { in: query.status } : undefined,
       source: query.source ? toPrismaCampaignSource(query.source) : undefined,
+      jobs: query.hasJobStatus ? { some: { status: query.hasJobStatus } } : undefined,
     };
     const [campaigns, total] = await Promise.all([
       this.prisma.campaign.findMany({

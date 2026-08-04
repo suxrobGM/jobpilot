@@ -19,9 +19,13 @@ function makeService(current = row) {
   const updates: Record<string, unknown>[] = [];
   const wheres: Record<string, unknown>[] = [];
   const jobBatches: Record<string, unknown>[][] = [];
+  const listWheres: Record<string, unknown>[] = [];
   const db = {
     campaign: {
-      findMany: async () => [current],
+      findMany: async ({ where }: { where: Record<string, unknown> }) => {
+        listWheres.push(where);
+        return [current];
+      },
       count: async () => 1,
       findFirst: async () => current,
       create: async ({ data }: { data: Record<string, unknown> }) => ({ ...current, ...data }),
@@ -58,6 +62,7 @@ function makeService(current = row) {
     service: new CampaignService(db as unknown as PrismaClient),
     updates,
     wheres,
+    listWheres,
     jobBatches,
   };
 }
@@ -68,6 +73,18 @@ describe("CampaignService", () => {
     const result = await service.list("u1", { page: 1, limit: 25 });
     expect(result.pagination).toMatchObject({ page: 1, limit: 25, total: 1, totalPages: 1 });
     expect(result.items[0]?.summary).toEqual(emptyJobSummary());
+  });
+
+  it("filters to campaigns still holding a job of the requested status, in SQL", async () => {
+    const { service, listWheres } = makeService();
+    await service.list("u1", { page: 1, limit: 25, source: "apply", hasJobStatus: "queued" });
+    expect(listWheres[0]).toMatchObject({ jobs: { some: { status: "queued" } } });
+  });
+
+  it("leaves the job filter off when no job status is asked for", async () => {
+    const { service, listWheres } = makeService();
+    await service.list("u1", { page: 1, limit: 25 });
+    expect(listWheres[0]?.jobs).toBeUndefined();
   });
 
   it("applies an allowed status command with actor attribution", async () => {

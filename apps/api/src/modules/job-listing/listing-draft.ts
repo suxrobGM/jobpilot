@@ -35,6 +35,7 @@ export interface ListingSourceJob {
   title: string;
   company: string;
   url: string;
+  status?: string;
   location?: string | null;
   salary?: string | null;
   type?: string | null;
@@ -104,11 +105,15 @@ function yearsExperience(value: number | undefined): number | null {
 }
 
 /**
- * Build the draft, or null when the job is too thin to publish. No digest means a search-results
- * stub the agent never opened; skip it rather than store it hidden - the PATCH that adds the digest
- * re-runs this.
+ * Build the draft, or null when the job is too thin to publish - the one gate every publish path
+ * routes through, so callers never pre-filter. A stub the agent never opened has no digest; the
+ * PATCH that adds one re-runs this.
  */
 export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
+  // A queued row is a bare pasted URL with a placeholder title; nothing to index until it's visited.
+  if (job.status === "queued") {
+    return null;
+  }
   const title = clean(job.title);
   const company = clean(job.company);
   const url = clean(job.url);

@@ -32,6 +32,10 @@ describe("quality gate", () => {
     expect(buildListingDraft(job({ digest: JSON.stringify({ skills: [] }) }))).toBeNull();
   });
 
+  it("rejects a queued row even when it is otherwise publishable", () => {
+    expect(buildListingDraft(job({ status: "queued" }))).toBeNull();
+  });
+
   it("rejects malformed digest JSON instead of throwing", () => {
     expect(buildListingDraft(job({ digest: "{not json" }))).toBeNull();
   });
