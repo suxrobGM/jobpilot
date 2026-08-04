@@ -43,13 +43,13 @@ Responses are the **bare payload** (no `{ ok, data }` wrapper) - read fields at 
 
 ## Profile
 
-Each account has exactly one profile; the API resolves it from your token automatically - no id threading, no profile switching. Endpoints (`/api/user`, `/api/resumes`, `/api/applied`, `/api/campaigns`, `/api/queue`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) are all scoped to it.
+Each account has exactly one profile; the API resolves it from your token automatically - no id threading, no profile switching. Endpoints (`/api/user`, `/api/resumes`, `/api/applied`, `/api/campaigns`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) are all scoped to it.
 
 **Don't invent endpoints.** Settings = `GET /api/user` → `autoApply`. Resumes = `resumes` or `GET /api/resumes`.
 
 **Growing lists are paginated** - `applied`, `campaigns` (+ `/jobs`, `/networking`), `email/messages`, `contacts`, `cover-letters`, `upwork/proposals`, `pilot/promotions`.
 They answer `{items, pagination:{page,limit,total,totalPages}}` and take `?page=&limit=` (1-based, max 100): read `.items`, page on while `page < totalPages`.
-Short lists are bare arrays - `resumes`, `credentials`, `job-boards`, `queue`, `pilot/questions`.
+Short lists are bare arrays - `resumes`, `credentials`, `job-boards`, `pilot/questions`.
 
 ## 1. Health Check
 

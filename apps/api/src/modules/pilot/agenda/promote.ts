@@ -19,7 +19,9 @@ export async function promoteScoredPendingJobs(
     where: {
       status: "pending",
       matchScore: { not: null },
-      campaign: { userId, status: "in_progress", source: "auto_apply" },
+      // Apply campaigns too: the queue.drain pass scores pasted links into them, and promotion
+      // is what moves a scored row onward.
+      campaign: { userId, status: "in_progress", source: { in: ["auto_apply", "apply"] } },
     },
     take: GATHER_CAP,
     select: {

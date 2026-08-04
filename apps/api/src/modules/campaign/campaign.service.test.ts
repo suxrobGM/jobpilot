@@ -18,11 +18,13 @@ const row = {
 function makeService(current = row) {
   const updates: Record<string, unknown>[] = [];
   const wheres: Record<string, unknown>[] = [];
+  const jobBatches: Record<string, unknown>[][] = [];
   const db = {
     campaign: {
       findMany: async () => [current],
       count: async () => 1,
       findFirst: async () => current,
+      create: async ({ data }: { data: Record<string, unknown> }) => ({ ...current, ...data }),
       updateMany: async ({
         where,
         data,
@@ -42,10 +44,22 @@ function makeService(current = row) {
       update: async ({ data }: { data: Record<string, unknown> }) => ({ ...current, ...data }),
       findUniqueOrThrow: async () => ({ ...current, ...updates.at(-1) }),
     },
-    job: { groupBy: async () => [] },
+    job: {
+      groupBy: async () => [],
+      createMany: async ({ data }: { data: Record<string, unknown>[] }) => {
+        jobBatches.push(data);
+        return { count: data.length };
+      },
+    },
     networkingMessage: { groupBy: async () => [], findMany: async () => [] },
+    $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
-  return { service: new CampaignService(db as unknown as PrismaClient), updates, wheres };
+  return {
+    service: new CampaignService(db as unknown as PrismaClient),
+    updates,
+    wheres,
+    jobBatches,
+  };
 }
 
 describe("CampaignService", () => {
@@ -117,5 +131,59 @@ describe("CampaignService", () => {
       config: { resumeId: "b0f1c2d3-4e5a-4b6c-8d7e-9f0a1b2c3d4e" },
     });
     expect(wheres.at(-1)).toEqual({ campaignId: "c1", userId: "u1" });
+  });
+});
+
+describe("CampaignService create with pasted urls", () => {
+  const create = (urls: string[]) => ({
+    query: "Pasted links",
+    source: "apply" as const,
+    createdBy: "user" as const,
+    urls,
+  });
+
+  it("seeds each link as a queued job titled by its host, with no company yet", async () => {
+    const { service, jobBatches } = makeService();
+    await service.create("u1", create(["https://boards.acme.test/jobs/1"]));
+    expect(jobBatches[0]).toEqual([
+      {
+        campaignId: "c1",
+        key: expect.any(String),
+        title: "boards.acme.test",
+        company: "",
+        url: "https://boards.acme.test/jobs/1",
+        status: "queued",
+      },
+    ]);
+  });
+
+  it("counts the queued rows into the returned summary", async () => {
+    const { service } = makeService();
+    const campaign = await service.create(
+      "u1",
+      create(["https://x.test/1", "https://x.test/2", "https://x.test/3"]),
+    );
+    expect(campaign.summary).toMatchObject({
+      kind: "jobs",
+      totalFound: 3,
+      byStatus: { queued: 3 },
+    });
+  });
+
+  it("dedupes a repeated link so one paste cannot queue it twice", async () => {
+    const { service, jobBatches } = makeService();
+    const campaign = await service.create(
+      "u1",
+      create(["https://x.test/1", "https://x.test/1", "https://x.test/2"]),
+    );
+    expect(jobBatches[0]?.map((j) => j.url)).toEqual(["https://x.test/1", "https://x.test/2"]);
+    expect(campaign.summary).toMatchObject({ totalFound: 2 });
+  });
+
+  it("seeds the rows in one bulk write, so none reaches the listings publisher", async () => {
+    // Queued rows are bare URLs with placeholder titles; indexing them would publish junk.
+    const { service, jobBatches } = makeService();
+    await service.create("u1", create(["https://x.test/1", "https://x.test/2"]));
+    expect(jobBatches).toHaveLength(1);
   });
 });

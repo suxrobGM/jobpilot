@@ -38,7 +38,6 @@ import {
 } from "@/modules/pilot";
 import { publicPortfolioController } from "@/modules/portfolio";
 import { pushController } from "@/modules/push";
-import { queueController } from "@/modules/queue";
 import {
   publicResumeController,
   resumeController,
@@ -72,7 +71,6 @@ const app = new Elysia()
       .use(healthController)
       .use(jobBoardController)
       .use(credentialController)
-      .use(queueController)
       .use(contactController)
       .use(analyticsController)
       .use(captchaController)

@@ -82,7 +82,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
 
     if (!jobRefs.length) return;
 
-    const skipped = await tx.job.updateManyAndReturn({
+    await tx.job.updateMany({
       where: {
         status: "needs_user",
         campaign: { userId },
@@ -90,12 +90,5 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       },
       data: { status: "skipped", skipReason: "Question expired without an answer." },
     });
-
-    if (skipped.length) {
-      await tx.queueEntry.updateMany({
-        where: { userId, url: { in: skipped.map((job) => job.url) }, status: "pending" },
-        data: { status: "skipped", consumedAt: null },
-      });
-    }
   });
 }

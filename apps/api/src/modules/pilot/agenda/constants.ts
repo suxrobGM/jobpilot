@@ -42,6 +42,7 @@ export const INBOX_BATCH = 10;
  */
 export const INBOX_SYNC_STALE_MS = 30 * 60 * 1000;
 
+/** One queue-drain cycle visits at most this many of a campaign's `queued` (pasted-link) rows. */
 export const QUEUE_BATCH = 5;
 export const REASON_CAP = 3;
 /** A board is unhealthy once its most recent apply outcomes are this many failures deep. */

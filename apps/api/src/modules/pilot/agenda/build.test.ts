@@ -1,7 +1,15 @@
 // Pure agenda orchestrator: no Prisma, no env. Priority ordering, cap suppression, budget,
 // empty-reason, and sleep rules against hand-built inputs.
 import { buildAgenda } from "./build";
-import { base, bootstrapCandidate, cfg, dueQuery, job, pausedCampaign } from "./build.test-helpers";
+import {
+  base,
+  bootstrapCandidate,
+  cfg,
+  dueQuery,
+  job,
+  pausedCampaign,
+  queueDrain,
+} from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda priority", () => {
@@ -124,7 +132,7 @@ describe("buildAgenda campaign.reviewPaused", () => {
         answeredQuestions: [{ id: "e1", kind: "question", prompt: "q" }],
         approvedJobs: [job("j1", 100)],
         pausedCampaigns: [pausedCampaign("c9")],
-        queue: { entries: [{ id: "q1", url: "https://x/q1" }], pendingCount: 1 },
+        queueDrains: [queueDrain("c8")],
         boardHealth: [
           {
             board: "linkedin",

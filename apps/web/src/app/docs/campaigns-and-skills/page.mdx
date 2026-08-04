@@ -16,7 +16,7 @@ You don't type skill names. After `setup`, every skill is dispatched by an
 action in the dashboard (creating a campaign, applying to a job, scanning your
 inbox) and the agent carries it out in the dock while you watch.
 
-## The three campaign modes
+## The four campaign modes
 
 **Search.** The agent searches a board and scores every role against your
 resume, but doesn't apply. You review the ranked list on the campaign page
@@ -28,13 +28,13 @@ at a time, skipping weak matches and jobs you already applied to. It stops
 when the board is exhausted, you pause it, or it hits your application cap.
 This is what the composer opens on.
 
+**Apply.** Already found the jobs yourself? Paste the links into the new
+campaign dialog instead of picking a board - the agent reviews fit, tailors
+your resume, and applies to each one in turn. No board or base resume needed.
+
 **Networking.** The agent finds the hiring manager or recruiter behind a role
 and drafts a personalized email or LinkedIn message. Nothing is sent without
 your approval.
-
-Applying to one job needs no campaign at all. Paste a job URL into your
-workspace queue and press apply; the agent reviews fit, tailors your resume,
-and applies. **Apply all** drains the whole queue, one job at a time.
 
 ## What each dashboard action runs
 
@@ -44,7 +44,7 @@ and applies. **Apply all** drains the whole queue, one job at a time.
 | **New campaign → Auto-apply** (`auto-apply`) | Searches, then applies one job at a time until done, paused, or capped. |
 | **New campaign → Networking** (`networking`) | Finds the hiring contact for each role and drafts a personalized message. |
 | **New campaign** on Upwork (`upwork-search`) | Searches Upwork, filters out low-quality clients, ranks the rest. |
-| **Apply all**, or apply one URL (`apply`) | Applies to a single job after a fit review. |
+| **New campaign → Apply to links** (`apply`) | Applies to each pasted job after a fit review. |
 | **Campaign → Resume** (`resume-campaign`) | Picks a paused campaign back up on its remaining approved jobs. |
 | **Campaign → Rescan skipped** (`rescan-skipped`) | Re-scores skipped jobs and promotes the wrongly dropped ones. |
 | **Campaign → Retry failed** (`auto-apply`) | Re-runs the applications that errored out. |

@@ -18,7 +18,10 @@ export const CampaignBasicsFields = withForm({
   render: function CampaignBasicsFields({ form, boards, resumes, recentQueries }) {
     const mode = useSelector(form.store, (s) => s.values.mode);
     const board = useSelector(form.store, (s) => s.values.board);
-    const isUpwork = board === UPWORK_DOMAIN;
+    const isApply = mode === "apply";
+    // Apply mode never sources from a board, so a stale board value (e.g. left over from
+    // switching modes) must not pin it to Upwork's search-only toggle.
+    const isUpwork = !isApply && board === UPWORK_DOMAIN;
     const isNetworking = mode === "networking";
 
     return (
@@ -35,6 +38,7 @@ export const CampaignBasicsFields = withForm({
                         { value: "search", label: "Search only" },
                         { value: "auto-apply", label: "Auto-apply" },
                         { value: "networking", label: "Networking" },
+                        { value: "apply", label: "Apply to links" },
                       ]
                 }
               />
@@ -45,92 +49,96 @@ export const CampaignBasicsFields = withForm({
           </Typography>
         </Stack>
 
-        <Stack spacing={0.75}>
-          <form.AppField name="query">
-            {(field) => (
-              <field.TextField
-                label={isNetworking ? "Target criteria" : "Query"}
-                placeholder={
-                  isNetworking
-                    ? "Hiring managers at NYC fintech startups"
-                    : "Senior React TypeScript remote"
-                }
-                autoFocus
-              />
-            )}
-          </form.AppField>
-          {recentQueries.length > 0 && (
-            <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.75 }}>
-              <Typography variant="captionMuted" sx={{ alignSelf: "center" }}>
-                Recent:
-              </Typography>
-              {recentQueries.map((q) => (
-                <Chip
-                  key={q}
-                  label={q}
-                  size="small"
-                  variant="outlined"
-                  onClick={() => form.setFieldValue("query", q)}
+        {!isApply && (
+          <Stack spacing={0.75}>
+            <form.AppField name="query">
+              {(field) => (
+                <field.TextField
+                  label={isNetworking ? "Target criteria" : "Query"}
+                  placeholder={
+                    isNetworking
+                      ? "Hiring managers at NYC fintech startups"
+                      : "Senior React TypeScript remote"
+                  }
+                  autoFocus
                 />
-              ))}
-            </Stack>
-          )}
-        </Stack>
+              )}
+            </form.AppField>
+            {recentQueries.length > 0 && (
+              <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.75 }}>
+                <Typography variant="captionMuted" sx={{ alignSelf: "center" }}>
+                  Recent:
+                </Typography>
+                {recentQueries.map((q) => (
+                  <Chip
+                    key={q}
+                    label={q}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => form.setFieldValue("query", q)}
+                  />
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        )}
 
         {/* One board control: required for search/auto-apply, optional for networking
-            (where it toggles board-grounded vs criteria-only discovery). */}
-        {boards.length > 0 ? (
-          <Stack spacing={0.75}>
-            <form.AppField name="board">
-              {(field) => (
-                <field.Select
-                  label="Board"
-                  optional={isNetworking}
-                  emptyLabel="No board - reach by criteria"
-                  items={boards.map((b) => ({ value: b.domain, label: b.name }))}
-                />
+            (where it toggles board-grounded vs criteria-only discovery), absent for apply. */}
+        {!isApply &&
+          (boards.length > 0 ? (
+            <Stack spacing={0.75}>
+              <form.AppField name="board">
+                {(field) => (
+                  <field.Select
+                    label="Board"
+                    optional={isNetworking}
+                    emptyLabel="No board - reach by criteria"
+                    items={boards.map((b) => ({ value: b.domain, label: b.name }))}
+                  />
+                )}
+              </form.AppField>
+              {isNetworking && (
+                <Typography variant="captionMuted">
+                  With a board, each contact is grounded in a matching opening; without one,
+                  networking uses your criteria alone.
+                </Typography>
               )}
-            </form.AppField>
-            {isNetworking && (
-              <Typography variant="captionMuted">
-                With a board, each contact is grounded in a matching opening; without one,
-                networking uses your criteria alone.
+            </Stack>
+          ) : (
+            !isNetworking && (
+              <Typography variant="body2Muted">
+                No boards configured. Add one on the Boards page first.
               </Typography>
-            )}
-          </Stack>
-        ) : (
-          !isNetworking && (
-            <Typography variant="body2Muted">
-              No boards configured. Add one on the Boards page first.
-            </Typography>
-          )
-        )}
+            )
+          ))}
 
-        {/* Resume is mandatory for every mode - it drives scoring and is tailored
-            per application (search/auto-apply) or shared as a link (networking). */}
-        {resumes.length > 0 ? (
-          <Stack spacing={0.75}>
-            <form.AppField name="resumeId">
-              {(field) => (
-                <field.Select
-                  label="Resume"
-                  items={resumes.map((r) => ({
-                    value: r.id,
-                    label: r.isPrimary ? `${r.label} (primary)` : r.label,
-                  }))}
-                />
-              )}
-            </form.AppField>
-            <Typography variant="captionMuted">
-              JobPilot tailors a copy of this resume to each application automatically - your
-              original stays unchanged.
+        {/* Resume is mandatory for search/auto-apply/networking - it drives scoring and is
+            tailored per application or shared as a link. Apply tailors per pasted job instead. */}
+        {!isApply &&
+          (resumes.length > 0 ? (
+            <Stack spacing={0.75}>
+              <form.AppField name="resumeId">
+                {(field) => (
+                  <field.Select
+                    label="Resume"
+                    items={resumes.map((r) => ({
+                      value: r.id,
+                      label: r.isPrimary ? `${r.label} (primary)` : r.label,
+                    }))}
+                  />
+                )}
+              </form.AppField>
+              <Typography variant="captionMuted">
+                JobPilot tailors a copy of this resume to each application automatically - your
+                original stays unchanged.
+              </Typography>
+            </Stack>
+          ) : (
+            <Typography variant="body2Muted">
+              No resumes yet. Upload one on the Resumes page first.
             </Typography>
-          </Stack>
-        ) : (
-          <Typography variant="body2Muted">
-            No resumes yet. Upload one on the Resumes page first.
-          </Typography>
-        )}
+          ))}
       </>
     );
   },

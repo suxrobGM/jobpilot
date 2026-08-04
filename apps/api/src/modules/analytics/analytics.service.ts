@@ -40,7 +40,7 @@ export class AnalyticsService {
       }),
       this.prisma.application.count({ where: { userId, status: "offer" } }),
       this.prisma.application.count({ where: { userId, status: "rejected" } }),
-      this.prisma.queueEntry.count({ where: { userId, status: "pending" } }),
+      this.prisma.job.count({ where: { status: "queued", campaign: { userId } } }),
       this.prisma.application.count({
         where: { userId, status: "applied", appliedAt: { gte: weekStart } },
       }),

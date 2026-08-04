@@ -23,8 +23,8 @@ records `.match.application.id` as `relatedAppId`) say so inline.
 
 Non-terminal transitions go through `PATCH /api/campaigns/$CID/jobs/<key>`
 (`pending` → `approved` → `applying`). A terminal outcome goes through ONE call -
-`POST /api/campaigns/$CID/jobs/<key>/result` - which atomically updates the Job, creates the
-Application + initial event on `applied`, and marks any queue entry. Payload shapes:
+`POST /api/campaigns/$CID/jobs/<key>/result` - which atomically updates the Job and creates the
+Application + initial event on `applied`. Payload shapes:
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)

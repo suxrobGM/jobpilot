@@ -22,6 +22,7 @@ import {
   emptyJobSummary,
   emptyNetworkingSummary,
   loadCampaignSummaries,
+  summarizeJobs,
 } from "./campaign.summary";
 import { ensureCampaignOwned, publishCampaignCompleted } from "./campaign.utils";
 
@@ -74,21 +75,43 @@ export class CampaignService {
   }
 
   async create(userId: string, body: CreateCampaignInput) {
-    const campaign = await this.prisma.campaign.create({
-      data: {
-        userId,
-        query: body.query,
-        source: toPrismaCampaignSource(body.source),
-        config: body.config ?? {},
-        createdBy: body.createdBy,
-        pilotSearchId: body.pilotSearchId ?? null,
-      },
-    });
+    const data: Prisma.CampaignUncheckedCreateInput = {
+      userId,
+      query: body.query,
+      source: toPrismaCampaignSource(body.source),
+      config: body.config ?? {},
+      createdBy: body.createdBy,
+      pilotSearchId: body.pilotSearchId ?? null,
+    };
+    if (body.urls) return this.createWithQueuedJobs(data, body.urls);
+
+    const campaign = await this.prisma.campaign.create({ data });
     // A just-created campaign provably has no jobs or messages; skip the aggregate round trip.
     return toCampaignRow(
       campaign,
       campaign.source === "networking" ? emptyNetworkingSummary() : emptyJobSummary(),
     );
+  }
+
+  /** Seeds pasted links as `queued` jobs with the campaign, so a half-written batch can't strand them. */
+  private async createWithQueuedJobs(data: Prisma.CampaignUncheckedCreateInput, urls: string[]) {
+    const unique = [...new Set(urls)];
+    const campaign = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.campaign.create({ data });
+      await tx.job.createMany({
+        data: unique.map((url) => ({
+          campaignId: created.campaignId,
+          key: crypto.randomUUID(),
+          // Nothing is known about a pasted link until a worker opens it; the host stands in.
+          title: new URL(url).hostname,
+          company: "",
+          url,
+          status: "queued" as const,
+        })),
+      });
+      return created;
+    });
+    return toCampaignRow(campaign, summarizeJobs(unique.map(() => ({ status: "queued" }))));
   }
 
   async get(userId: string, id: string) {

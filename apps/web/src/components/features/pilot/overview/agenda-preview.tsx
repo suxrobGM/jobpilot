@@ -30,7 +30,7 @@ const AGENDA_KIND_LABELS: Record<AgendaItem["kind"], string> = {
   "promo.post": "Publish promotion post",
   "interview.reply": "Reply about an interview",
   "interview.prep": "Prepare interview notes",
-  "queue.drain": "Drain apply queue",
+  "queue.drain": "Score pasted links",
   "board.health": "Board health check",
   "campaign.strategyReview": "Review campaign strategy",
   "job.rescanSkipped": "Rescan skipped jobs",

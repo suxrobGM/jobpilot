@@ -15,7 +15,6 @@ import type {
   PilotQuestionStatus,
   PromotionStatus,
 } from "@jobpilot/contracts/pilot";
-import type { QueueStatus } from "@jobpilot/contracts/queue";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
 
@@ -133,13 +132,6 @@ export const contactQueries = {
   list: (query: PaginationQuery) => ({
     queryKey: queryKeys.contacts.list(query),
     queryFn: () => api.contacts.get({ query }),
-  }),
-};
-
-export const queueQueries = {
-  list: (filters: { status?: QueueStatus } = {}) => ({
-    queryKey: queryKeys.queue.list(filters),
-    queryFn: () => api.queue.get({ query: filters }),
   }),
 };
 

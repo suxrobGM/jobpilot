@@ -8,7 +8,6 @@ function setup(options: {
   openApplyClaims?: Record<string, unknown>[];
 }) {
   const jobWrites: Record<string, unknown>[] = [];
-  const queueWrites: Record<string, unknown>[] = [];
   const claimWrites: Record<string, unknown>[] = [];
   const questionWrites: Record<string, unknown>[] = [];
   let transactions = 0;
@@ -34,16 +33,6 @@ function setup(options: {
         jobWrites.push(args);
         return { count: 1 };
       },
-      updateManyAndReturn: async (args: Record<string, unknown>) => {
-        jobWrites.push(args);
-        return [{ url: "https://example.test/job" }];
-      },
-    },
-    queueEntry: {
-      updateMany: async (args: Record<string, unknown>) => {
-        queueWrites.push(args);
-        return { count: 1 };
-      },
     },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => {
       transactions += 1;
@@ -54,7 +43,6 @@ function setup(options: {
   return {
     run,
     jobWrites,
-    queueWrites,
     claimWrites,
     questionWrites,
     get transactions() {
@@ -84,7 +72,7 @@ describe("agenda expiry", () => {
     });
   });
 
-  it("expires a question and skips its parked job and queue entry atomically", async () => {
+  it("expires a question and skips its parked job atomically", async () => {
     const state = setup({
       questions: [{ id: "q1", subjectType: "job", subjectId: "c1:j1" }],
     });
@@ -93,7 +81,6 @@ describe("agenda expiry", () => {
     expect(state.questionWrites[0]).toMatchObject({ data: { status: "expired" } });
     const skip = state.jobWrites.find((w) => (w.data as { status?: string }).status === "skipped");
     expect(skip).toMatchObject({ data: { status: "skipped" } });
-    expect(state.queueWrites[0]).toMatchObject({ data: { status: "skipped" } });
   });
 
   it("reverts stale applying jobs while sparing ones under an open apply claim", async () => {

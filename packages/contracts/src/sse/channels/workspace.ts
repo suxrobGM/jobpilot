@@ -6,8 +6,7 @@ export type WorkspaceEvent =
   | { type: "campaign.deleted"; campaignId: string }
   | { type: "campaignjob.created"; campaignId: string; key: string }
   | { type: "campaignjob.updated"; campaignId: string; key: string; status?: string }
-  | { type: "application.created"; campaignId: string | null }
-  | { type: "queue.updated" };
+  | { type: "application.created"; campaignId: string | null };
 
 /**
  * Profile-scoped live-refresh feed for the workspace UI (dashboard, auto-apply pill).

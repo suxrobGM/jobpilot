@@ -54,7 +54,6 @@ generation step - edit here directly.
   window).
 - Campaigns: `PATCH /api/campaigns/[id]/jobs/[jobKey]` for non-terminal transitions
   (pending → approved → applying). On terminal outcome (applied / failed / skipped),
-  `POST /api/campaigns/[id]/jobs/[jobKey]/result` - one call updates the Job, creates the
-  Application + initial event, and marks the queue entry. Summaries are derived from current
-  rows, never persisted.
+  `POST /api/campaigns/[id]/jobs/[jobKey]/result` - one call updates the Job and creates the
+  Application + initial event. Summaries are derived from current rows, never persisted.
 - Browser automation: `browser_snapshot` (with `ref` for large pages), not screenshots.

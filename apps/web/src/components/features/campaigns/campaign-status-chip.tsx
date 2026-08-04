@@ -35,6 +35,7 @@ export function CampaignStatusChip(props: CampaignStatusChipProps): ReactElement
 }
 
 const CAMPAIGN_JOB_STATUS_COLOR: Record<CampaignJobStatus, ChipProps["color"]> = {
+  queued: "default",
   pending: "default",
   approved: "info",
   applying: "primary",

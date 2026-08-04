@@ -16,8 +16,8 @@ type WorkspaceTab = (typeof TABS)[number];
 
 /**
  * Two-tab workspace. Owns the single SSE subscription for the page, invalidating
- * the campaigns, queue, and applications queries so every panel stays live from
- * one connection.
+ * the campaigns and applications queries so every panel stays live from one
+ * connection.
  */
 export function WorkspaceView(): ReactElement {
   const queryClient = useQueryClient();
@@ -30,7 +30,6 @@ export function WorkspaceView(): ReactElement {
   useSseChannel(workspaceChannel, null, {
     onMessage: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.queue.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
     },
   });

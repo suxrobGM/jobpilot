@@ -26,6 +26,8 @@ export const CAMPAIGN_ACTORS = ["user", "agent", "pilot"] as const;
 export const campaignActorSchema = z.enum(CAMPAIGN_ACTORS);
 
 export const CAMPAIGN_JOB_STATUSES = [
+  // Pre-discovery: a pasted URL not yet visited or scored.
+  "queued",
   "pending",
   "approved",
   "applying",
@@ -94,10 +96,16 @@ export const createCampaignSchema = z
     createdBy: campaignActorSchema.default("user"),
     /** Set by the pilot's discovery cycle so the search can find this campaign again by id. */
     pilotSearchId: z.uuid().optional(),
+    /** Pasted links seeded as `queued` jobs, before anything is known about the posting. */
+    urls: z.array(z.url()).min(1).max(50).optional(),
   })
   .refine((v) => campaignConfigSupportsSource(v.source, v.config ?? {}), {
     message: "config.resumeId is required for search, auto-apply, and networking campaigns.",
     path: ["config", "resumeId"],
+  })
+  .refine((v) => !v.urls || v.source === "apply", {
+    message: "urls is only valid for apply campaigns.",
+    path: ["urls"],
   });
 
 export const updateCampaignConfigSchema = z.object({
@@ -118,6 +126,7 @@ export const campaignJobOutcomeSchema = z.enum(CAMPAIGN_JOB_TERMINAL_OUTCOMES);
 
 /** Non-terminal statuses: a campaign with any such job is still active (not finalizable). */
 export const CAMPAIGN_JOB_ACTIVE_STATUSES = [
+  "queued",
   "pending",
   "approved",
   "applying",
@@ -142,6 +151,13 @@ export const addCampaignJobSchema = z.object({
 
 export const patchCampaignJobSchema = z.object({
   status: z.enum(CAMPAIGN_JOB_ACTIVE_STATUSES).optional(),
+  // The score pass fleshes out a queued row - seeded from a bare URL - with the real posting.
+  title: z.string().min(1).optional(),
+  company: z.string().min(1).optional(),
+  location: z.string().optional().nullable(),
+  salary: z.string().optional().nullable(),
+  type: z.string().optional().nullable(),
+  board: z.string().optional().nullable(),
   retryNotes: reasonText.optional().nullable(),
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
   matchReason: reasonText.optional().nullable(),

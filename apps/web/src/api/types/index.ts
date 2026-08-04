@@ -10,7 +10,6 @@ export * from "./job-board";
 export * from "./job-listing";
 export * from "./networking";
 export * from "./portfolio";
-export * from "./queue";
 export * from "./resume";
 export * from "./upwork";
 export * from "./user";

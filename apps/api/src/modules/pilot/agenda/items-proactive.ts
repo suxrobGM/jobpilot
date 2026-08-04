@@ -15,20 +15,24 @@ import type {
   AgendaStrategyReview,
 } from "./types";
 
-/** One batch item draining the user-curated URL queue; ranked just below job.apply. */
-export function buildQueueDrainItem(queue: AgendaQueueDrain): AgendaItem[] {
-  if (queue.pendingCount === 0) return [];
-  return [
-    {
-      id: "queue.drain",
-      kind: "queue.drain",
-      priority: PRIORITY.queueDrain,
-      title: `Work ${queue.pendingCount} queued URL(s)`,
-      subjectType: "queue",
-      subjectId: "queue",
-      payload: { entries: queue.entries, pendingCount: queue.pendingCount },
+/** One batch item per campaign holding pasted links; ranked just below job.apply. */
+export function buildQueueDrainItems(campaigns: AgendaQueueDrain[]): AgendaItem[] {
+  return campaigns.map((c) => ({
+    id: `queue.drain:${c.campaignId}`,
+    kind: "queue.drain",
+    priority: PRIORITY.queueDrain,
+    title: `Score ${c.queuedCount} pasted link(s)`,
+    subjectType: "campaign",
+    subjectId: c.campaignId,
+    payload: {
+      campaignId: c.campaignId,
+      query: c.query,
+      resumeId: c.resumeId,
+      minScore: c.minScore,
+      queuedCount: c.queuedCount,
+      entries: c.entries,
     },
-  ];
+  }));
 }
 
 /** At most one board-health warning per agenda, most-failed board first (pre-sorted by the gather). */

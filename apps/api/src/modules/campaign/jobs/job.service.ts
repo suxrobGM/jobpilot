@@ -21,6 +21,8 @@ import { writeJobRescan, writeJobRetry } from "./job-commands";
 import { isTerminalJob, writeJobResult } from "./job-result";
 
 const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
+  // A score pass promotes a pasted link into the normal pipeline; nothing ever moves back to queued.
+  queued: ["pending"],
   pending: ["approved"],
   approved: ["pending", "applying"],
   applying: ["approved", "needs_user"],
@@ -110,33 +112,27 @@ export class CampaignJobService {
   async addJob(userId: string, campaignId: string, body: AddCampaignJobInput) {
     await ensureCampaignOwned(this.prisma, userId, campaignId);
 
-    const job = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.job.create({
-        data: {
-          campaignId,
-          key: body.key,
-          title: body.title,
-          company: body.company,
-          location: body.location ?? null,
-          salary: body.salary ?? null,
-          type: body.type ?? null,
-          url: body.url,
-          board: body.board ?? null,
-          matchScore: body.matchScore ?? null,
-          matchReason: body.matchReason ?? null,
-          status: body.status ?? "pending",
-          description: body.description ?? null,
-          digest: body.digest ?? null,
-        },
-      });
-      await tx.queueEntry.updateMany({
-        where: { userId, url: created.url, status: "pending" },
-        data: { status: "consumed", consumedAt: new Date() },
-      });
-      return created;
+    const job = await this.prisma.job.create({
+      data: {
+        campaignId,
+        key: body.key,
+        title: body.title,
+        company: body.company,
+        location: body.location ?? null,
+        salary: body.salary ?? null,
+        type: body.type ?? null,
+        url: body.url,
+        board: body.board ?? null,
+        matchScore: body.matchScore ?? null,
+        matchReason: body.matchReason ?? null,
+        status: body.status ?? "pending",
+        description: body.description ?? null,
+        digest: body.digest ?? null,
+      },
     });
 
-    this.listings.publishInBackground(job);
+    // A queued row is a bare URL with a placeholder title - nothing worth indexing until it's visited.
+    if (job.status !== "queued") this.listings.publishInBackground(job);
     this.publishJob(userId, campaignId, job, "added");
     return job;
   }
@@ -174,6 +170,12 @@ export class CampaignJobService {
       return tx.job.update({
         where: { campaignId_key: { campaignId, key } },
         data: {
+          title: patch.title,
+          company: patch.company,
+          location: patch.location,
+          salary: patch.salary,
+          type: patch.type,
+          board: patch.board,
           retryNotes: patch.retryNotes,
           matchScore: patch.matchScore,
           matchReason: patch.matchReason,
@@ -265,9 +267,15 @@ export class CampaignJobService {
       groups.set(groupKey, group);
     }
 
+    // Apply campaigns promote too (the queue.drain pass scores pasted links into them), so the
+    // summary has to be typed by this campaign's own source rather than assuming auto-apply.
+    const { source } = await this.prisma.campaign.findFirstOrThrow({
+      where: { campaignId, userId },
+      select: { source: true },
+    });
+
     const result = await this.prisma.$transaction(async (tx) => {
       const jobs: Job[] = [];
-      const skippedUrls: string[] = [];
 
       for (const group of groups.values()) {
         const updated = await tx.job.updateManyAndReturn({
@@ -276,7 +284,7 @@ export class CampaignJobService {
             status: "pending",
             matchScore: group.score,
             key: { in: group.keys },
-            campaign: { userId, status: "in_progress", source: "auto_apply" },
+            campaign: { userId, status: "in_progress", source: { in: ["auto_apply", "apply"] } },
           },
           data: group.approved
             ? { status: "approved" }
@@ -286,18 +294,9 @@ export class CampaignJobService {
               },
         });
         jobs.push(...updated);
-        if (!group.approved) {
-          skippedUrls.push(...updated.map((job) => job.url));
-        }
       }
 
-      if (skippedUrls.length) {
-        await tx.queueEntry.updateMany({
-          where: { userId, url: { in: skippedUrls }, status: "pending" },
-          data: { status: "skipped", consumedAt: null },
-        });
-      }
-      return { jobs, summary: await deriveCampaignSummary(tx, campaignId, "auto_apply") };
+      return { jobs, summary: await deriveCampaignSummary(tx, campaignId, source) };
     });
 
     if (result.jobs.length === 0) return;

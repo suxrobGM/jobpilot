@@ -84,10 +84,10 @@ describe("AgendaService campaign.scorePending", () => {
     const { svc, rec } = serviceWithRec(scorePendingOver);
     await svc.refresh("p1");
 
-    // The finalize sweep filters `jobs` too; only score-pending's clause carries no top-level OR.
-    const gather = rec.campaignQueries.find((w) => "jobs" in w && !("OR" in w)) as {
-      jobs: { some: Record<string, unknown> };
-    };
+    // Finalize and queue-drain filter `jobs` too; only score-pending pins source auto_apply.
+    const gather = rec.campaignQueries.find(
+      (w) => "jobs" in w && w.source === "auto_apply" && !("OR" in w),
+    ) as { jobs: { some: Record<string, unknown> } };
     expect(gather.jobs.some).toMatchObject({
       status: "pending",
       OR: [{ matchScore: null }, { digest: null }],

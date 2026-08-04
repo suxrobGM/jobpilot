@@ -52,8 +52,8 @@ To add one, invoke the `add-api-route` skill. The rules it encodes:
 
 Paginate a list that **grows with usage** (applications, inbox mail, contacts, cover letters,
 proposals, campaigns + jobs) through `@jobpilot/contracts/pagination`. One capped by a small
-real-world limit stays a bare `z.array(...)` - resumes, credentials, job boards, the queue, open
-questions, sitemaps, aggregates, `/queue/pending`, `/auth/tokens`, `/push/subscriptions`.
+real-world limit stays a bare `z.array(...)` - resumes, credentials, job boards, open
+questions, sitemaps, aggregates, `/auth/tokens`, `/push/subscriptions`.
 
 - Query `paginationQuerySchema.extend({ …filters })` (`csvArray(item)` for a repeatable `?x=a,b` filter), response `paginatedSchema(item)`, 
   service `...pageSlice(query)` + `count(where)` -> `paginate(rows, query, total)`. Never a hand-written `skip`/`take`.

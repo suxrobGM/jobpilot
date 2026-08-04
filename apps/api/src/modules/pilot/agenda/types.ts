@@ -124,10 +124,14 @@ export interface AgendaPromoPost {
   body: string;
 }
 
-/** Oldest-first pending queue entries (≤5) plus the total pending count - the drain-queue predicate. */
+/** An in-progress apply campaign holding pasted links nothing has visited yet (≤5 sampled entries). */
 export interface AgendaQueueDrain {
-  entries: { id: string; url: string }[];
-  pendingCount: number;
+  campaignId: string;
+  query: string;
+  resumeId?: string;
+  minScore: number;
+  queuedCount: number;
+  entries: { key: string; url: string }[];
 }
 
 /** A board whose most recent apply outcomes are a failure streak - a board-health warning candidate. */
@@ -196,7 +200,7 @@ export interface AgendaInput {
   approvedPromotions: AgendaPromoPost[];
   interviewReplies: AgendaInterviewReply[];
   interviewPreps: AgendaInterviewPrep[];
-  queue: AgendaQueueDrain;
+  queueDrains: AgendaQueueDrain[];
   boardHealth: AgendaBoardHealth[];
   // Quiet-agenda candidates: only surface when no apply/discover/queue work is queued.
   strategyReviews: AgendaStrategyReview[];

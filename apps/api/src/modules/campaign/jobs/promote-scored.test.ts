@@ -4,13 +4,17 @@ import { CampaignJobService } from "./job.service";
 import { describe, expect, it } from "bun:test";
 
 interface UpdateCall {
-  where: { matchScore?: number; key?: { in: string[] }; status?: string };
+  where: {
+    matchScore?: number;
+    key?: { in: string[] };
+    status?: string;
+    campaign?: { source?: { in: string[] } };
+  };
   data: { status?: string; skipReason?: string };
 }
 
-function setup() {
+function setup(source: "auto_apply" | "apply" = "auto_apply") {
   const jobUpdates: UpdateCall[] = [];
-  const queueUpdates: Record<string, unknown>[] = [];
   const db = {
     job: {
       updateManyAndReturn: async (args: UpdateCall) => {
@@ -25,19 +29,13 @@ function setup() {
       },
       groupBy: async () => [],
     },
-    queueEntry: {
-      updateMany: async (args: Record<string, unknown>) => {
-        queueUpdates.push(args);
-        return { count: 1 };
-      },
-    },
+    campaign: { findFirstOrThrow: async () => ({ source }) },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
   const listings = { publishInBackground: () => undefined } as unknown as JobListingPublisher;
   return {
     service: new CampaignJobService(db as unknown as PrismaClient, listings),
     jobUpdates,
-    queueUpdates,
   };
 }
 
@@ -87,25 +85,19 @@ describe("CampaignJobService.promoteScoredJobs", () => {
     ]);
   });
 
-  it("retires every skipped job's queue entry in a single write", async () => {
-    const state = setup();
+  it("promotes rows of apply campaigns too, since pasted links are scored into them", async () => {
+    const state = setup("apply");
     await state.service.promoteScoredJobs("u1", "c1", [
       { key: "a", matchScore: 90, threshold: 50 },
-      { key: "d", matchScore: 30, threshold: 50 },
-      { key: "f", matchScore: 10, threshold: 50 },
     ]);
 
-    expect(state.queueUpdates).toHaveLength(1);
-    expect(state.queueUpdates[0]).toMatchObject({
-      where: { url: { in: ["https://example.test/d", "https://example.test/f"] } },
-      data: { status: "skipped" },
-    });
+    expect(state.jobUpdates[0]?.where.campaign?.source?.in).toEqual(["auto_apply", "apply"]);
+    expect(state.jobUpdates[0]?.data.status).toBe("approved");
   });
 
   it("writes nothing when there are no candidates", async () => {
     const state = setup();
     await state.service.promoteScoredJobs("u1", "c1", []);
     expect(state.jobUpdates).toHaveLength(0);
-    expect(state.queueUpdates).toHaveLength(0);
   });
 });

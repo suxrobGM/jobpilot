@@ -13,6 +13,7 @@ describe("campaign summaries", () => {
       remaining: 0,
       scored: 0,
       byStatus: {
+        queued: 0,
         pending: 0,
         approved: 0,
         applying: 0,

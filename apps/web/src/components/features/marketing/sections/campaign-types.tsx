@@ -31,8 +31,8 @@ const MODES: Mode[] = [
   {
     tag: "apply",
     title: "Apply",
-    body: "Queue specific URLs and apply one by one, tailored each time.",
-    action: "Workspace → Apply all",
+    body: "Paste job links and the agent applies one by one, tailored each time.",
+    action: "New campaign → Apply to links",
     tone: "success",
   },
   {

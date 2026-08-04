@@ -187,14 +187,7 @@ Journal the outcome: "Resumed campaign '<query>' - resume restored." / "Campaign
 
 ### `queue.drain`
 
-Payload `{entries: [{id, url}], pendingCount}` - user-queued URLs. Resolve the target campaign: the profile's most recent `in_progress` auto-apply campaign, else create one (query `"queued urls"`, primary resume, exactly as `search.discover` creates one):
-
-```bash
-CID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=in_progress" \
-  | jq -r '[.items[] | select(.source=="auto-apply")] | sort_by(.startedAt) | last | .campaignId // ""')
-```
-
-Delegate ONE `job-worker` batch score invocation over the entries (≤5): `{mode:"score", campaignId:$CID, jobs:[{jobKey:<entry id>, url}...], save:"create", claimId:$CLAIM_ID}` - it dedupes and saves each row itself. Scored jobs above threshold auto-promote server-side on the next agenda compile and enter the normal `job.apply` pipeline later - **do not apply here**. Queue entries auto-consume when their job reaches a terminal result - never mark them manually. Heartbeat after the worker returns. Journal: "Scored 4 queued jobs - 3 eligible."
+Payload `{campaignId, query, resumeId, minScore, queuedCount, entries: [{key,url}]}` - `queued` rows of an `apply` campaign the user seeded by pasting links, nothing known about them yet but the URL. The campaign already exists; never create or look one up. Delegate ONE `job-worker` batch score invocation: `{mode:"score", campaignId, jobs:<entries mapped to {jobKey:key,url}, ≤5>, resumeId, minMatchScore:<minScore>, save:"patch", claimId:$CLAIM_ID}` - the worker fills each row's real title/company/board and moves it `queued` → `pending`, or writes a `skipped` result. **Do not apply** this cycle - promotion of the newly-scored rows to `approved` happens server-side on the next agenda compile. Heartbeat after the worker returns. Journal: "Scored 4 pasted links - 3 eligible."
 
 ### `board.health`
 

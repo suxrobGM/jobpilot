@@ -42,7 +42,7 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   approvedPromotions: [],
   interviewReplies: [],
   interviewPreps: [],
-  queue: { entries: [], pendingCount: 0 },
+  queueDrains: [],
   boardHealth: [],
   strategyReviews: [],
   rescanSkipped: [],
@@ -131,6 +131,16 @@ export const pausedCampaign = (campaignId: string, over: Record<string, unknown>
   query: "react",
   board: null,
   pausedAt: new Date("2026-07-14T12:00:00.000Z"),
+  ...over,
+});
+
+/** An apply campaign holding pasted links; `entries` are the sampled `queued` rows. */
+export const queueDrain = (campaignId: string, over: Record<string, unknown> = {}) => ({
+  campaignId,
+  query: "Pasted links",
+  minScore: 60,
+  queuedCount: 1,
+  entries: [{ key: "q1", url: "https://x/1" }],
   ...over,
 });
 

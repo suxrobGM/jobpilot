@@ -31,7 +31,6 @@ function setup() {
   };
   let application: Record<string, unknown> | null = null;
   let applicationUpserts = 0;
-  const queueWrites: Record<string, unknown>[] = [];
   const variantLinks: { where: Record<string, unknown>; data: Record<string, unknown> }[] = [];
   const campaign = { source: "auto_apply" as const };
   const db = {
@@ -53,6 +52,10 @@ function setup() {
         return { count: 1 };
       },
       findUniqueOrThrow: async () => job,
+      update: async ({ data }: { data: Record<string, unknown> }) => {
+        job = { ...job, ...data } as typeof job;
+        return job;
+      },
       groupBy: async () => [
         { campaignId: job.campaignId, status: job.status, _count: { _all: 1 } },
       ],
@@ -74,12 +77,6 @@ function setup() {
         return { count: 1 };
       },
     },
-    queueEntry: {
-      updateMany: async ({ data }: { data: Record<string, unknown> }) => {
-        queueWrites.push(data);
-        return { count: 1 };
-      },
-    },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
   const listings = { publishInBackground: () => undefined } as unknown as JobListingPublisher;
@@ -91,13 +88,15 @@ function setup() {
     get applicationUpserts() {
       return applicationUpserts;
     },
-    queueWrites,
     variantLinks,
+    setStatus(status: string) {
+      job = { ...job, status };
+    },
   };
 }
 
 describe("CampaignJobService terminal results", () => {
-  it("atomically records an application, its first event, and the queue outcome", async () => {
+  it("atomically records an application and its first event", async () => {
     const state = setup();
     const result = await state.service.recordJobResult("u1", "c1", "j1", {
       outcome: "applied",
@@ -107,7 +106,6 @@ describe("CampaignJobService terminal results", () => {
     expect(result.application).toMatchObject({
       events: { create: { kind: "status_change", toStatus: "applied", source: "campaign" } },
     });
-    expect(state.queueWrites[0]).toMatchObject({ status: "consumed" });
     expect(result.summary).toMatchObject({ kind: "jobs", applied: 1 });
   });
 
@@ -203,5 +201,26 @@ describe("CampaignJobService terminal results", () => {
       matchScore: 88,
       skipReason: null,
     });
+  });
+});
+
+describe("CampaignJobService queued rows", () => {
+  it("promotes a scored pasted link from queued to pending", async () => {
+    const state = setup();
+    state.setStatus("queued");
+    const patched = await state.service.patchJob("u1", "c1", "j1", {
+      status: "pending",
+      title: "Staff Engineer",
+      company: "Acme",
+    });
+    expect(patched).toMatchObject({ status: "pending", title: "Staff Engineer", company: "Acme" });
+  });
+
+  it("refuses to skip the score pass by approving a queued row outright", async () => {
+    const state = setup();
+    state.setStatus("queued");
+    await expect(state.service.patchJob("u1", "c1", "j1", { status: "approved" })).rejects.toThrow(
+      "cannot transition from queued to approved",
+    );
   });
 });

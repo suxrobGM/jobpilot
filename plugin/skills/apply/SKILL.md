@@ -1,15 +1,16 @@
 ---
 name: apply
-description: Apply to a single job (URL or pasted page) with fit review, or drain the pending queue when no argument is given.
-argument-hint: "[job_url_or_pasted_job_page] (omit to drain the queue)"
+description: Apply to a single job (URL or pasted page) with fit review, or score and apply the job links pasted into an apply campaign when no argument is given.
+argument-hint: "[job_url_or_pasted_job_page | campaign <id>] (omit to pick up your pasted links)"
 ---
 
-# Apply - Single Job or Batch Queue
+# Apply - Single Job or Pasted Links
 
 Two modes, one shared apply loop:
 
 - **Single-job** (argument is a URL or pasted job page): fit review → user "yes" → apply one.
-- **Batch** (no argument): drain `/api/queue/pending` → score → ranked table approval → apply all.
+- **Batch** (no argument, or a campaign that still holds `queued` links): score the campaign's
+  `queued` rows → ranked table approval → apply all.
 
 User approves once up front. No per-job confirmation after that.
 
@@ -22,7 +23,7 @@ Read `autoApply` for config (defaults applied per field):
 
 | Setting                      | Default            | Notes                                                                                            |
 | ---------------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
-| `minMatchScore`              | 60                 | Batch-mode threshold (0-100). Ignored in single-job mode.                                        |
+| `minMatchScore`              | 60                 | Batch-mode threshold (0-100); the campaign's `config.minScore` wins when set. Ignored in single-job mode. |
 | `maxApplicationsPerCampaign` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
 | `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                       |
 
@@ -30,7 +31,9 @@ For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a dom
 
 ## Phase 0: Dispatch
 
-- Argument is `campaign <campaign-id>` → **re-apply mode**: set `CAMPAIGN_ID=<campaign-id>`, set `config.maxApplications = null` (unlimited - the user hand-selected these jobs), skip Phases 1-4, and run the Phase 5 loop over its current `approved` jobs. (The campaign viewer - or the `rescan-skipped` skill - promotes the chosen skipped/failed jobs to `approved` before injecting this.)
+- Argument is `campaign <campaign-id>` → set `CAMPAIGN_ID=<campaign-id>` and fetch it first (`GET /api/campaigns/$CAMPAIGN_ID`); the summary decides which of the two branches runs:
+  - `summary.byStatus.queued > 0` → the campaign still holds pasted links nobody has visited: go to **Phase 2**, skipping 2.1 (the campaign is already resolved).
+  - otherwise → **re-apply mode**: set `config.maxApplications = null` (unlimited - the user hand-selected these jobs), skip Phases 1-4, and run the Phase 5 loop over its current `approved` jobs. (The campaign viewer - or the `rescan-skipped` skill - promotes the chosen skipped/failed jobs to `approved` before injecting this.)
 - Any other argument present → **Phase 1** (single-job).
 - No argument → **Phase 2** (batch).
 
@@ -95,46 +98,76 @@ Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `$JOBPILOT_WEB/campaigns/<CAMPAIG
 
 ## Phase 2: Batch Mode
 
-### 2.1 Pull Queue
+The campaign already exists: pasting job links in the new-campaign dialog creates an
+`apply`-source campaign whose rows start `queued` - a URL, a hostname placeholder for a title, no
+company. This skill never creates it. Phase 3 turns those rows into real, scored `pending` jobs.
+
+### 2.1 Resolve the Campaign
+
+Skip this when the `campaign <id>` dispatch already set `CAMPAIGN_ID`. Otherwise take the newest
+`apply` campaign still holding queued rows (`.items` is newest-first):
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/queue/pending"
+CAMPAIGN_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
+  "$JOBPILOT_API/api/campaigns?status=in_progress&source=apply&page=1&limit=50" \
+  | jq -r '[.items[] | select((.summary.byStatus.queued // 0) > 0)] | first | .campaignId // ""')
 ```
 
-`data` is `[{ id, url, note, status }]`. If empty, tell user to open `$JOBPILOT_WEB/queue` to add URLs and stop. Otherwise: **"Found N URLs in the queue. Visiting each to gather details..."**
+Empty → **"Nothing queued. Start a campaign at $JOBPILOT_WEB/campaigns/new, pick Apply to links,
+and run this again."** and
+stop. Otherwise read `config` off that same campaign row: `minScore` overrides `minMatchScore`,
+`resumeId` overrides the primary resume, `maxApplications` caps Phase 5.
 
-### 2.2 Create Campaign
+### 2.2 Load the Queued Rows
 
 ```bash
-CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --argjson minScore <minMatchScore> \
-    '{query:"apply queue", source:"apply", config:{minScore:$minScore, maxApplications:10}}')")
-CAMPAIGN_ID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
+  "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs?status=queued&page=1&limit=100"
 ```
+
+Keep each row's `key` and `url` - those two are all a queued row carries that is worth trusting.
+Announce: **"Found N queued links. Visiting each to gather details..."**
 
 ## Phase 3: Visit and Score (Batch Only)
 
-For each queue URL:
-
 ### 3.1 Pre-dedupe (no tab)
 
-Run the applied-check (`../_shared/campaign-flow.md`) with the URL alone. If applied, mark the
-queue entry consumed and record the default already-applied skip; continue without spawning a
-worker.
+For each queued row, run the applied-check (`../_shared/campaign-flow.md`) with the URL alone. On
+`.applied`, post the terminal result straight from `queued` (a terminal result is legal from any
+non-terminal status, and the row already exists - nothing to create):
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg r "Already applied (<kind>)" '{outcome:"skipped", skipReason:$r}')"
+```
+
+Drop that row from the batch and continue without spawning a worker.
 
 ### 3.2 Score (delegate to `job-worker`)
 
-Delegate the visit + score to the `job-worker` subagent - it opens its own tab, reads the posting, fuzzy-dedupes by title+company, scores, applies eligibility (`../_shared/eligibility.md`), and **saves the Job row itself** (so the full posting/digest never enters this conversation). One worker at a time. Input JSON:
+Delegate the surviving rows to the `job-worker` subagent - it opens its own tab, reads each
+posting, fuzzy-dedupes by title+company, scores, applies eligibility
+(`../_shared/eligibility.md`), and **writes each row itself** (so the full posting/digest never
+enters this conversation). Batches of at most 5 rows (the worker's cap), one worker at a time.
+Input JSON:
 
 ```json
-{ "mode": "score", "campaignId": "<CAMPAIGN_ID>", "jobKey": "<entry-id>", "url": "<job-url>",
-  "board": "<domain>", "minMatchScore": <minMatchScore>, "resumeId": "<RESUME_ID>" }
+{ "mode": "score", "campaignId": "<CAMPAIGN_ID>", "save": "patch",
+  "jobs": [{ "jobKey": "<row key>", "url": "<row url>" }],
+  "minMatchScore": <minMatchScore>, "resumeId": "<RESUME_ID>" }
 ```
 
-It returns `{ outcome:"scored", jobKey, title, company, location, matchScore, confidence, eligible, skipReason, matchReason }`. Collect these summaries for the ranked table (Phase 4) - the worker has already written each Job as `pending` (eligible) or `skipped` (with `skipReason`).
+`save:"patch"` is what keeps this on the existing rows: the worker PATCHes the real title,
+company, location, board, score, and digest onto each eligible row and moves it `queued` →
+`pending`; an ineligible or already-applied row gets a `/result` `skipped` instead.
+
+It returns one `{ outcome:"scored", jobKey, title, company, location, matchScore, confidence, eligible, skipReason, matchReason }` per row. Collect these summaries for the ranked table (Phase 4).
 
 ## Phase 4: Batch Confirmation (Batch Only)
+
+Rank the rows the worker left `pending` - the ones it skipped are already terminal and out of the
+running.
 
 **Auto mode** (`confirmMode: "auto"` AND every qualified job ≥ threshold): PATCH all to `approved`, go to Phase 5.
 

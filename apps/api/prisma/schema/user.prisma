@@ -75,7 +75,6 @@ model User {
   campaigns          Campaign[]
   credentials        Credential[]
   jobBoards          UserJobBoard[]
-  queueEntries       QueueEntry[]
   emailAccount       EmailAccount?
   emailOAuthClient   EmailOAuthClient?
   upworkProposals    UpworkProposal[]

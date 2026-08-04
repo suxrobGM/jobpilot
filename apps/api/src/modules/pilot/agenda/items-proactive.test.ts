@@ -7,47 +7,61 @@ import {
   bootstrapCandidate,
   dueQuery,
   job,
+  queueDrain,
   strategyReview,
 } from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda queue.drain", () => {
-  it("emits one batch item carrying the entries and total pending count", () => {
+  it("emits one batch item per campaign carrying its entries and total queued count", () => {
     const agenda = buildAgenda(
       base({
-        queue: {
-          entries: [
-            { id: "q1", url: "https://x/1" },
-            { id: "q2", url: "https://x/2" },
-          ],
-          pendingCount: 7,
-        },
+        queueDrains: [
+          queueDrain("c9", {
+            resumeId: "r1",
+            queuedCount: 7,
+            entries: [
+              { key: "q1", url: "https://x/1" },
+              { key: "q2", url: "https://x/2" },
+            ],
+          }),
+        ],
       }),
     );
     const item = agenda.items.find((i) => i.kind === "queue.drain");
-    expect(item?.id).toBe("queue.drain");
-    expect(item?.subjectType).toBe("queue");
+    expect(item?.id).toBe("queue.drain:c9");
+    expect(item?.subjectType).toBe("campaign");
+    expect(item?.subjectId).toBe("c9");
     expect(item?.priority).toBe(720);
     expect(item?.payload).toEqual({
+      campaignId: "c9",
+      query: "Pasted links",
+      resumeId: "r1",
+      minScore: 60,
+      queuedCount: 7,
       entries: [
-        { id: "q1", url: "https://x/1" },
-        { id: "q2", url: "https://x/2" },
+        { key: "q1", url: "https://x/1" },
+        { key: "q2", url: "https://x/2" },
       ],
-      pendingCount: 7,
     });
   });
 
-  it("emits no queue.drain when nothing is pending", () => {
-    const agenda = buildAgenda(base({ queue: { entries: [], pendingCount: 0 } }));
+  it("emits no queue.drain when no campaign holds queued links", () => {
+    const agenda = buildAgenda(base({ queueDrains: [] }));
     expect(agenda.items.some((i) => i.kind === "queue.drain")).toBe(false);
+  });
+
+  it("emits one item per campaign", () => {
+    const agenda = buildAgenda(base({ queueDrains: [queueDrain("c1"), queueDrain("c2")] }));
+    expect(agenda.items.filter((i) => i.kind === "queue.drain").map((i) => i.subjectId)).toEqual([
+      "c1",
+      "c2",
+    ]);
   });
 
   it("ranks queue.drain just below the scored apply queue", () => {
     const agenda = buildAgenda(
-      base({
-        approvedJobs: [job("j1", 90)],
-        queue: { entries: [{ id: "q1", url: "https://x/1" }], pendingCount: 1 },
-      }),
+      base({ approvedJobs: [job("j1", 90)], queueDrains: [queueDrain("c9")] }),
     );
     const kinds = agenda.items.map((i) => i.kind);
     expect(kinds.indexOf("job.apply")).toBeLessThan(kinds.indexOf("queue.drain"));
@@ -109,12 +123,7 @@ describe("buildAgenda quiet-agenda gating", () => {
   });
 
   it("suppresses maintenance kinds when queue.drain work exists", () => {
-    const agenda = buildAgenda(
-      base({
-        ...quietWork,
-        queue: { entries: [{ id: "q1", url: "https://x/1" }], pendingCount: 1 },
-      }),
-    );
+    const agenda = buildAgenda(base({ ...quietWork, queueDrains: [queueDrain("c9")] }));
     expect(agenda.items.some((i) => i.kind === "campaign.strategyReview")).toBe(false);
   });
 

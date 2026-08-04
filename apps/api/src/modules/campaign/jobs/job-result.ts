@@ -105,11 +105,6 @@ export async function writeJobResult(
         data: { applicationId: application.id },
       });
     }
-    const queueStatus = data.outcome === "skipped" ? "skipped" : "consumed";
-    await tx.queueEntry.updateMany({
-      where: { userId, url: job.url, status: "pending" },
-      data: { status: queueStatus, consumedAt: queueStatus === "consumed" ? new Date() : null },
-    });
     return {
       campaignJob: job,
       application,

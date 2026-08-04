@@ -110,7 +110,7 @@ export class AgendaService {
       duePlatformList,
       interviewReplies,
       interviewPreps,
-      queue,
+      queueDrains,
       boardHealth,
       searchCount,
     ] = await Promise.all([
@@ -128,7 +128,7 @@ export class AgendaService {
       duePlatforms(prisma, userId, config, now),
       gatherInterviewReplies(prisma, userId),
       gatherInterviewPreps(prisma, userId),
-      gatherQueueDrain(prisma, userId),
+      gatherQueueDrain(prisma, userId, config.minScore, now),
       gatherBoardHealth(prisma, userId),
       prisma.pilotSearch.count({ where: { userId } }),
     ]);
@@ -155,7 +155,7 @@ export class AgendaService {
       approvedJobs.length === 0 &&
       dueQueries.length === 0 &&
       scorePending.length === 0 &&
-      queue.pendingCount === 0;
+      queueDrains.length === 0;
 
     const [quiet, bootstrap] = pipelineQuiet
       ? await Promise.all([
@@ -194,7 +194,7 @@ export class AgendaService {
       approvedPromotions,
       interviewReplies,
       interviewPreps,
-      queue,
+      queueDrains,
       boardHealth,
       strategyReviews: quiet.strategyReviews,
       rescanSkipped: quiet.rescanSkipped,

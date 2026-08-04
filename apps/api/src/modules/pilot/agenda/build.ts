@@ -26,7 +26,7 @@ import { buildFollowupItems, buildInboxItem, buildNetworkingSendItems } from "./
 import {
   buildBoardHealthItems,
   buildBootstrapItem,
-  buildQueueDrainItem,
+  buildQueueDrainItems,
   buildRescanSkippedItems,
   buildRetryFailedItems,
   buildStrategyReviewItems,
@@ -73,8 +73,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   items.push(...buildReviewPausedItems(input.pausedCampaigns));
   items.push(...buildInterviewReplyItems(input.interviewReplies));
   items.push(...buildInterviewPrepItems(input.interviewPreps));
-  // User-curated URLs are proactive apply work, ranked just under the scored apply queue.
-  items.push(...buildQueueDrainItem(input.queue));
+  // User-pasted links are proactive apply work, ranked just under the scored apply queue.
+  items.push(...buildQueueDrainItems(input.queueDrains));
   if (outreach)
     items.push(...buildWarmIntroItems(input.warmIntroCandidates, outreach, sendsLeftToday));
   // A send acts on an email draft, so the email channel gates it.

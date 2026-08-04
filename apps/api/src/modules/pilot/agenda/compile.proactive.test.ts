@@ -26,20 +26,41 @@ describe("AgendaService promotion cadence", () => {
 });
 
 describe("AgendaService queue.drain", () => {
-  it("emits a batch item from pending queue entries", async () => {
+  const RESUME_ID = "b0f1c2d3-4e5a-4b6c-8d7e-9f0a1b2c3d4e";
+  const queuedCampaign = {
+    campaignId: "c1",
+    query: "Pasted links",
+    config: { resumeId: RESUME_ID, minScore: 55 },
+    jobs: [{ key: "q1", url: "https://x/1" }],
+  };
+
+  it("emits one batch item per apply campaign holding queued links", async () => {
     const agenda = await service({
-      pendingQueue: [{ id: "q1", url: "https://x/1" }],
-      pendingQueueCount: 3,
+      queuedCampaigns: [queuedCampaign],
+      queuedCounts: [{ campaignId: "c1", _count: { _all: 3 } }],
     }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "queue.drain");
+    expect(item?.subjectId).toBe("c1");
     expect(item?.payload).toEqual({
-      entries: [{ id: "q1", url: "https://x/1" }],
-      pendingCount: 3,
+      campaignId: "c1",
+      query: "Pasted links",
+      resumeId: RESUME_ID,
+      minScore: 55,
+      queuedCount: 3,
+      entries: [{ key: "q1", url: "https://x/1" }],
     });
   });
 
-  it("emits no queue.drain when nothing is pending", async () => {
+  it("emits no queue.drain when no campaign holds queued links", async () => {
     const agenda = await service({}).refresh("p1");
+    expect(agenda.items.some((i) => i.kind === "queue.drain")).toBe(false);
+  });
+
+  it("damps a campaign whose queue.drain claim is still open", async () => {
+    const agenda = await service({
+      queuedCampaigns: [queuedCampaign],
+      queueDrainClaims: [{ subjectId: "c1", grantedAt: new Date(), releasedAt: null }],
+    }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "queue.drain")).toBe(false);
   });
 });

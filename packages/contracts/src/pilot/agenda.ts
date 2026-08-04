@@ -36,7 +36,6 @@ const AGENDA_SUBJECT_TYPES = [
   "promotion",
   "application",
   "email",
-  "queue",
   "board",
   "pilot",
 ] as const;
@@ -219,10 +218,14 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
   ),
   agendaItem(
     "queue.drain",
-    "queue",
+    "campaign",
     z.object({
-      entries: z.array(z.object({ id: z.string(), url: z.string() })),
-      pendingCount: z.number().int(),
+      campaignId: z.string(),
+      query: z.string(),
+      resumeId: optionalString,
+      minScore: z.number(),
+      queuedCount: z.number().int(),
+      entries: z.array(z.object({ key: z.string(), url: z.string() })),
     }),
   ),
   agendaItem(

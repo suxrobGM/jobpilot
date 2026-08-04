@@ -69,12 +69,6 @@ export const queryKeys = {
       [...queryKeys.contacts.all, "list", filters] as const,
   },
 
-  queue: {
-    all: ["queue"] as const,
-    list: (filters: Record<string, unknown> = {}) =>
-      [...queryKeys.queue.all, "list", filters] as const,
-  },
-
   email: {
     all: ["email"] as const,
     account: () => [...queryKeys.email.all, "account"] as const,
@@ -140,7 +134,6 @@ export const queryKeys = {
 export const invalidations = {
   resume: [queryKeys.resume.all, queryKeys.user.all],
   campaign: [queryKeys.campaigns.all, queryKeys.workspace.all],
-  queue: [queryKeys.queue.all, queryKeys.workspace.all],
   application: [queryKeys.applications.all, queryKeys.dashboard.all],
   // Approving a message can write an application status, so both trees go stale.
   emailReview: [queryKeys.email.all, queryKeys.applications.all],
