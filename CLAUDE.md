@@ -28,8 +28,10 @@ Auth: on terminal start the web fetches the user's reusable terminal token
 Root (`bun run …`):
 
 - `dev` - terminal + api + web together; `dev:api` / `dev:web` / `dev:terminal` run one.
-- `db:tunnel` - SSH tunnel to the remote PostgreSQL. No local DB container; `DATABASE_URL`
-  points at the tunnel's local port (5433).
+- `db:tunnel` - SSH tunnel to the remote PostgreSQL, bound to `localhost:5433`. The repo ships no
+  database container, so `DATABASE_URL` points at whichever PostgreSQL you supplied - a local one
+  you run yourself or the tunnel. Both conventionally use 5433, so check what is actually on that
+  port (`docker ps`, `lsof -i :5433`) before concluding which you are talking to.
 - `db:setup` - Prisma generate + apply migrations + seed.
 - `test` - the API suite plus the contracts suite (`bun test` in `apps/api` and
   `packages/contracts`).
