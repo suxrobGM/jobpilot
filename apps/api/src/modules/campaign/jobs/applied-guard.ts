@@ -1,25 +1,41 @@
-import { conflict } from "@/common/errors";
+import { ErrorCodes, HttpError } from "@/common/errors";
 import {
+  type AppliedDuplicate,
   type DuplicateReader,
   duplicateSkipReason,
   findAppliedDuplicate,
 } from "@/modules/application/duplicate";
 
-/** The job fields the duplicate rule reads. */
 interface GuardedJob {
+  campaignId: string;
+  key: string;
   url: string;
   title: string;
   company: string;
 }
 
+/** Carries the refused job so the caller can record it `skipped` after its transaction rolls back. */
+export class AlreadyAppliedError extends HttpError {
+  constructor(
+    readonly job: { campaignId: string; key: string },
+    readonly duplicate: AppliedDuplicate,
+  ) {
+    super(
+      ErrorCodes.CONFLICT,
+      `${duplicateSkipReason(duplicate)}: this profile applied to "${duplicate.application.title}" at ${duplicate.application.company} on ${duplicate.application.appliedAt.toISOString().slice(0, 10)}. The job has been recorded as skipped with this reason; do not apply again.`,
+      409,
+    );
+    this.name = "AlreadyAppliedError";
+  }
+}
+
 /**
- * Refuses to move a job into `applying` when this profile already applied to it.
+ * Refuses to move a job into `applying` when this profile already applied to it. The skills' own
+ * `/applied/check` call is advice a model can skip, and `@@unique([userId, url])` only dedupes the
+ * record once the second application has already landed with the employer.
  *
- * The apply skills are told to call `/applied/check` first, but that is advice a model can skip,
- * and a duplicate reaching the browser means a second real application lands in an employer's
- * inbox - the `@@unique([userId, url])` row guard only dedupes the record, after the fact. Both
- * routes into `applying` (the pilot claim and the campaign PATCH) run this, so the block does not
- * depend on which flow is driving.
+ * Refusing alone leaves the job `approved`, so callers pair this with
+ * `CampaignJobService.skippingDuplicates`.
  */
 export async function assertNotAlreadyApplied(
   db: DuplicateReader,
@@ -34,9 +50,5 @@ export async function assertNotAlreadyApplied(
   if (!duplicate) {
     return;
   }
-
-  // Carries the reason verbatim so the caller can write the skip without restating the rule.
-  throw conflict(
-    `${duplicateSkipReason(duplicate)}: this profile applied to "${duplicate.application.title}" at ${duplicate.application.company} on ${duplicate.application.appliedAt.toISOString().slice(0, 10)}. Record the job as skipped with this reason instead of applying again.`,
-  );
+  throw new AlreadyAppliedError({ campaignId: job.campaignId, key: job.key }, duplicate);
 }

@@ -1,10 +1,7 @@
 /**
- * Applied-job duplicate matching. Normalizes title + employer (strips seniority
- * tokens and corporate suffixes), runs a Jaro-Winkler similarity, treats scores
- * >= 90 as duplicates within a 30-day rolling window.
- *
- * Sibling of `fit.ts` (tech-keyword overlap for job fit scoring) inside
- * `lib/scoring/`. Different normalization rules and metric - kept separate.
+ * Applied-job duplicate matching: normalized title + employer over a Jaro-Winkler similarity.
+ * Separate from its sibling `fit.ts` because job-fit scoring needs different normalization and a
+ * different metric.
  */
 
 const SENIORITY_TOKENS = new Set([
@@ -49,6 +46,28 @@ const COMPANY_SUFFIXES = [
   "bv",
 ];
 
+/**
+ * Page text scrapes glue onto an employer name - a real row stored "AbbVieNew York Stock Exchange".
+ * Stripped as a trailing string, not a token, because the glue leaves no space behind it; every
+ * entry is >= 4 characters so the strip cannot eat the tail of a real name ("Pulse" loses "lse").
+ */
+const EXCHANGE_SUFFIXES = [
+  "new york stock exchange",
+  "london stock exchange",
+  "toronto stock exchange",
+  "tokyo stock exchange",
+  "hong kong stock exchange",
+  "nasdaq",
+  "nyse",
+  "euronext",
+  "hkex",
+];
+
+const EXCHANGE_SUFFIX_PATTERN = new RegExp(`(?:${EXCHANGE_SUFFIXES.join("|")})$`);
+
+/** Below this the remainder is no longer a name, so the suffix was the whole value - leave it. */
+const MIN_EMPLOYER_STEM = 3;
+
 function tokenize(value: string): string[] {
   return value
     .toLowerCase()
@@ -64,23 +83,23 @@ export function normalizeJobTitle(title: string): string {
 
 export function normalizeCompanyName(company: string): string {
   const tokens = tokenize(company).filter((t) => !COMPANY_SUFFIXES.includes(t));
-  return tokens.join(" ");
+  const joined = tokens.join(" ");
+  const stripped = EXCHANGE_SUFFIX_PATTERN.test(joined)
+    ? joined.replace(EXCHANGE_SUFFIX_PATTERN, "").trim()
+    : joined;
+  return stripped.length >= MIN_EMPLOYER_STEM ? stripped : joined;
 }
 
 export const APPLIED_DUPLICATE_THRESHOLD = 90;
 export const APPLIED_DUPLICATE_WINDOW_DAYS = 30;
 
 /**
- * A match must clear the employer bar on its own. The blended score alone lets an identical but
- * generic title ("Director of Engineering", worth 60 of the 100) carry a pair over the line on
- * weak employer similarity - real data had Clarity/Cardiff at 74 and Imagine Learning/Orbital
- * Engineering at 76 scoring 90, i.e. two different companies read as one job.
+ * Employer and title each clear their own bar before the blend is consulted. On the blend alone a
+ * generic title ("Director of Engineering", worth 60 of the 100) carries weak employer similarity
+ * over the line: real data scored Clarity/Cardiff 74 and Imagine Learning/Orbital Engineering 76.
  */
 export const APPLIED_DUPLICATE_COMPANY_THRESHOLD = 90;
 export const APPLIED_DUPLICATE_TITLE_THRESHOLD = 85;
-
-/** Long enough that a prefix is the employer, not a coincidence. */
-const MIN_EMPLOYER_PREFIX = 5;
 
 function jaro(a: string, b: string): number {
   if (a === b) {
@@ -138,11 +157,8 @@ function jaro(a: string, b: string): number {
   return (matches / a.length + matches / b.length + (matches - transpositions) / matches) / 3;
 }
 
-/**
- * Jaro-Winkler similarity, scaled 0..100. Boosts strings sharing a common
- * prefix (up to 4 chars) - typical for job titles like "Senior Frontend Engineer"
- * matching "Frontend Engineer" once seniority is normalized away.
- */
+/** Jaro-Winkler, scaled 0..100. The prefix boost (up to 4 chars) is what pulls "Senior Frontend
+ *  Engineer" onto "Frontend Engineer" once seniority is normalized away. */
 function calculateSimilarity(a: string, b: string): number {
   if (a === b) {
     return 100;
@@ -187,27 +203,18 @@ export interface FuzzyMatchResult {
 }
 
 /**
- * Whether two normalized employer names are the same company.
- *
- * The prefix arm covers scraped names that arrive with page text glued on - a real row stored
- * "AbbVieNew York Stock Exchange" for AbbVie, which similarity alone scores 84.
+ * The prefix arm covers a short name against its legal one - Dell against Dell Technologies, worth
+ * only 74 on similarity. Whole tokens only, so Meta stays off Metabase.
  */
 function isSameEmployer(a: string, b: string, similarity: number): boolean {
   if (similarity >= APPLIED_DUPLICATE_COMPANY_THRESHOLD) {
     return true;
   }
   const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
-  return shorter.length >= MIN_EMPLOYER_PREFIX && longer.startsWith(shorter);
+  return longer.startsWith(`${shorter} `);
 }
 
-/**
- * Pick the best fuzzy match within a candidate set using the normalized
- * title + company comparison. Caller is responsible for restricting
- * candidates to the 30-day window and tenant scope.
- *
- * Employer and title each clear their own bar before the blended score is consulted, so this
- * only ever matches a subset of what the blended score alone would have matched.
- */
+/** Best match in the candidate set. The caller owns the window and tenant scope. */
 export function findFuzzyDuplicate(
   input: FuzzyMatchInput,
   candidates: ReadonlyArray<FuzzyMatchCandidate>,

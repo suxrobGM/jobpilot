@@ -64,7 +64,9 @@ export async function writeJobResult(
         matchScore: data.matchScore,
       },
     });
+
     let raced = null;
+
     if (changed.count === 0) {
       raced = await tx.job.findUniqueOrThrow({ where: { campaignId_key: { campaignId, key } } });
       if (raced.status !== data.outcome) {
@@ -73,14 +75,17 @@ export async function writeJobResult(
     }
     const job =
       raced ?? (await tx.job.findUniqueOrThrow({ where: { campaignId_key: { campaignId, key } } }));
+
+    const canonicalUrl = canonicalizeJobUrl(job.url);
+
     const application =
       data.outcome === "applied"
         ? await tx.application.upsert({
-            where: { userId_url: { userId, url: canonicalizeJobUrl(job.url) } },
+            where: { userId_url: { userId, url: canonicalUrl } },
             update: {},
             create: {
               userId,
-              url: canonicalizeJobUrl(job.url),
+              url: canonicalUrl,
               title: job.title,
               company: job.company,
               location: job.location,
@@ -98,6 +103,7 @@ export async function writeJobResult(
             },
           })
         : null;
+
     // tailor-resume runs before this row exists, so the variant cannot carry an applicationId at
     // creation - link it here by the url it recorded.
     if (application) {
@@ -106,6 +112,7 @@ export async function writeJobResult(
         data: { applicationId: application.id },
       });
     }
+
     return {
       campaignJob: job,
       application,

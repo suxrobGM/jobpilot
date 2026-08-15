@@ -19,10 +19,10 @@ Exact URL match plus fuzzy title+company over a 30-day window; `.match.kind` is 
 and move on without opening a tab. Skills that deviate (e.g. `networking` keeps applied jobs and
 records `.match.application.id` as `relatedAppId`) say so inline.
 
-The server enforces the same rule independently: moving a job into `applying` - the `PATCH`
-below or the pilot's claim - 409s when it duplicates an application, with a message opening
-`Already applied (<kind>)`. That is the dedupe verdict, not a transient failure. Write the
-job's `skipped` result with that reason and move on; never retry the transition.
+The server enforces the same rule: moving a job into `applying` - the `PATCH` below or the
+pilot's claim - 409s on a duplicate with a message opening `Already applied (<kind>)`. That is the
+verdict, not a transient failure, and the server has already written the job's `skipped` result.
+Move to the next item; never retry the transition or re-write the result.
 
 ## Terminal result writes
 

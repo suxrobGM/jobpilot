@@ -65,7 +65,7 @@ CLAIM=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPI
 CLAIM_ID=$(echo "$CLAIM" | jq -r '.id')
 ```
 
-On `409`, re-fetch the agenda once; if still nothing claimable, treat this as an empty cycle (step 1's journal + sentinel). `CLAIM_ID` feeds step 6's release and the **heartbeat** that long branches send to keep the claim alive:
+On `409`, re-fetch the agenda once; if still nothing claimable, treat this as an empty cycle (step 1's journal + sentinel). A `409` opening `Already applied` is the duplicate guard - the job is already recorded `skipped`, so claim the next item instead of writing a result yourself. `CLAIM_ID` feeds step 6's release and the **heartbeat** that long branches send to keep the claim alive:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/heartbeat"

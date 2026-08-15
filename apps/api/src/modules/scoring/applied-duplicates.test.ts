@@ -1,6 +1,3 @@
-// Fixtures are the seven pairs the 30-day rule actually flagged across 105 real applications.
-// Four were genuine repeat applications; three were distinct employers sharing a generic title,
-// and those three are what the employer bar exists to keep out.
 import { APPLIED_DUPLICATE_THRESHOLD, findFuzzyDuplicate } from "./applied-duplicates";
 import { describe, expect, it } from "bun:test";
 
@@ -59,6 +56,24 @@ describe("findFuzzyDuplicate - repeat applications it must catch", () => {
     ).not.toBeNull();
   });
 
+  // Short names too, where there is not enough name left to carry a similarity score.
+  it.each([
+    ["Meta", "MetaNASDAQ"],
+    ["IBM", "IBMNew York Stock Exchange"],
+    ["Nike", "Nike Inc.NYSE"],
+    ["Etsy", "EtsyNASDAQ"],
+  ])("catches %s against its glued form %s", (company, scraped) => {
+    expect(match("Software Engineer", company, "Software Engineer", scraped)).not.toBeNull();
+  });
+
+  it.each([
+    ["Dell", "Dell Technologies"],
+    ["Uber", "Uber Technologies"],
+    ["Zoom", "Zoom Video Communications"],
+  ])("catches %s against its legal name %s", (company, legal) => {
+    expect(match("Backend Engineer", company, "Backend Engineer", legal)).not.toBeNull();
+  });
+
   it("still catches a seniority-only title difference at one employer", () => {
     expect(
       match("Senior Frontend Engineer", "Acme Inc", "Frontend Engineer", "Acme"),
@@ -97,5 +112,14 @@ describe("findFuzzyDuplicate - distinct employers it must not block", () => {
 
   it("does not match a different role at the same employer", () => {
     expect(match("Warehouse Associate", "Acme", "Frontend Engineer", "Acme")).toBeNull();
+  });
+
+  // The prefix arm reads whole tokens, so a name continuing the shorter one's word is out.
+  it("does not match Delphi against Delphix Systems", () => {
+    expect(match("Backend Engineer", "Delphi", "Backend Engineer", "Delphix Systems")).toBeNull();
+  });
+
+  it("does not strip an exchange suffix that is the whole employer name", () => {
+    expect(match("Analyst", "NASDAQ", "Analyst", "Euronext")).toBeNull();
   });
 });
