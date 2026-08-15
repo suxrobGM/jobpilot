@@ -7,10 +7,7 @@ import type {
 import { CAMPAIGN_JOB_STATUSES } from "@jobpilot/contracts/campaign";
 import { type CampaignSource, Prisma } from "@/generated/prisma/client";
 
-export type SummaryClient = Pick<
-  Prisma.TransactionClient,
-  "$queryRaw" | "job" | "networkingMessage"
->;
+type SummaryClient = Pick<Prisma.TransactionClient, "$queryRaw" | "job" | "networkingMessage">;
 type ContactCount = { campaignId: string; discovered: number };
 
 function requireJobSummary(

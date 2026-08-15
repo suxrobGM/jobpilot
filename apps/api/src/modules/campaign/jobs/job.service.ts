@@ -17,19 +17,13 @@ import {
   PrismaClient,
 } from "@/generated/prisma/client";
 import { JobListingPublisher } from "@/modules/job-listing";
+import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
-import {
-  type AlreadyAppliedError,
-  type GuardTransaction,
-  skipIfAlreadyApplied,
-} from "./applied-guard";
+import { AlreadyAppliedError, type GuardTransaction, skipIfAlreadyApplied } from "./applied-guard";
 import { writeJobPatch, writeJobRescan, writeJobRetry } from "./job-commands";
 import { type ScoredJobPromotion, writeScoredPromotions } from "./job-promotion";
 import { type JobListQuery, listCampaignJobReasons, listCampaignJobs } from "./job-queries";
 import { writeJobResult } from "./job-result";
-
-/** A claim that was refused because this profile had already applied; the guard wrote the skip. */
-export type ClaimAttempt = { job: Job } | { refusal: AlreadyAppliedError };
 
 /**
  * Coordinates campaign job reads, writes, claims and results. Every write algorithm lives in a
@@ -79,10 +73,7 @@ export class CampaignJobService {
 
   async patchJob(userId: string, campaignId: string, key: string, patch: PatchCampaignJobInput) {
     const result = await writeJobPatch(this.prisma, userId, campaignId, key, patch);
-    if ("refusal" in result) {
-      this.publishDuplicateSkip(userId, campaignId, result.refusal);
-      throw result.refusal;
-    }
+    if (result instanceof AlreadyAppliedError) return this.rejectDuplicate(userId, result);
 
     this.listings.publishInBackground(result.job);
     this.publishStatusChange(userId, campaignId, result);
@@ -116,7 +107,7 @@ export class CampaignJobService {
     userId: string,
     campaignId: string,
     key: string,
-  ): Promise<ClaimAttempt> {
+  ): Promise<Job | AlreadyAppliedError> {
     const where = {
       campaignId,
       key,
@@ -126,37 +117,48 @@ export class CampaignJobService {
 
     const target = await tx.job.findFirst({
       where,
-      select: { url: true, title: true, company: true, campaign: { select: { source: true } } },
+      select: { url: true, title: true, company: true },
     });
     if (!target) throw conflict("Job is no longer approved.");
 
     const refusal = await skipIfAlreadyApplied(tx, userId, { ...target, campaignId, key });
-    if (refusal) return { refusal };
+    if (refusal) return refusal;
 
     // Returning the row from the write keeps the claim at two round trips; an empty result is the
     // lost race.
     const [claimed] = await tx.job.updateManyAndReturn({ where, data: { status: "applying" } });
     if (!claimed) throw conflict("Job is no longer approved.");
-    return { job: claimed };
+    return claimed;
   }
 
   async claimJobForApply(userId: string, campaignId: string, key: string) {
     const attempt = await this.prisma.$transaction((tx) =>
       this.claimJobForApplyInTransaction(tx, userId, campaignId, key),
     );
-    if ("refusal" in attempt) {
-      this.publishDuplicateSkip(userId, campaignId, attempt.refusal);
-      throw attempt.refusal;
-    }
+    if (attempt instanceof AlreadyAppliedError) return this.rejectDuplicate(userId, attempt);
 
-    this.publishJob(userId, campaignId, attempt.job, "updated");
-    return attempt.job;
+    this.publishJob(userId, campaignId, attempt, "updated");
+    return attempt;
   }
 
-  /** Publishes the skip the duplicate guard already committed inside the caller's transaction. */
-  publishDuplicateSkip(userId: string, campaignId: string, refusal: AlreadyAppliedError): void {
-    if (!refusal.skipped) return;
-    this.publishStatusChange(userId, campaignId, { ...refusal.skipped, changed: true });
+  /**
+   * Publishes the skip the guard already committed inside the caller's transaction, then raises the
+   * refusal. The summary is derived here rather than in the guard so the campaign-wide aggregate
+   * stays out of that transaction's lock window.
+   */
+  async rejectDuplicate(userId: string, refusal: AlreadyAppliedError): Promise<never> {
+    const job = refusal.skipped;
+    if (!job) throw refusal;
+
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { campaignId: job.campaignId },
+      select: { source: true },
+    });
+    const summary = campaign
+      ? await deriveCampaignSummary(this.prisma, job.campaignId, campaign.source)
+      : null;
+    this.publishStatusChange(userId, job.campaignId, { job, changed: true, summary });
+    throw refusal;
   }
 
   publishClaimedJob(userId: string, campaignId: string, job: Job): void {

@@ -1,10 +1,10 @@
-import { type ReleasePilotClaimInput } from "@jobpilot/contracts/pilot";
+import { type AgendaItem, type ReleasePilotClaimInput } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { z } from "zod/v4";
 import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { type Job, type PilotClaim, type Prisma, PrismaClient } from "@/generated/prisma/client";
-import type { AlreadyAppliedError } from "@/modules/campaign/jobs/applied-guard";
+import { AlreadyAppliedError } from "@/modules/campaign/jobs/applied-guard";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { toPilotClaim } from "../pilot.mapper";
 import { verifyGrant } from "./grant";
@@ -13,12 +13,10 @@ import { parseAgendaSnapshot } from "./service";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
 
-type AgendaItem = ReturnType<typeof parseAgendaSnapshot>["items"][number];
-
 /** Either the claim, or the duplicate refusal the guard recorded a skip for. */
 type ClaimResult =
   | { claim: PilotClaim; item: AgendaItem; claimedJob: Job | null }
-  | { refusal: AlreadyAppliedError; campaignId: string };
+  | AlreadyAppliedError;
 
 /** Atomically claims versioned agenda items and manages claim heartbeats and release. */
 @singleton()
@@ -34,10 +32,8 @@ export class ClaimService {
     );
 
     // Committing is the point: the guard recorded the skip inside that same transaction.
-    if ("refusal" in result) {
-      this.campaignJobs.publishDuplicateSkip(userId, result.campaignId, result.refusal);
-      throw result.refusal;
-    }
+    if (result instanceof AlreadyAppliedError)
+      return this.campaignJobs.rejectDuplicate(userId, result);
 
     if (result.claimedJob && result.item.kind === "job.apply") {
       this.campaignJobs.publishClaimedJob(
@@ -107,10 +103,8 @@ export class ClaimService {
         item.payload.campaignId,
         item.payload.jobKey,
       );
-      if ("refusal" in attempt) {
-        return { refusal: attempt.refusal, campaignId: item.payload.campaignId };
-      }
-      claimedJob = attempt.job;
+      if (attempt instanceof AlreadyAppliedError) return attempt;
+      claimedJob = attempt;
     }
 
     const claim = await tx.pilotClaim.create({

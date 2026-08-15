@@ -88,6 +88,9 @@ function setup() {
         return application;
       },
     },
+    campaign: {
+      findUnique: async () => campaign,
+    },
     resumeVariant: {
       updateMany: async (args: {
         where: Record<string, unknown>;

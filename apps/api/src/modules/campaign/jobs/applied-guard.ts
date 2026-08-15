@@ -1,15 +1,14 @@
-import type { CampaignSummary } from "@jobpilot/contracts/campaign";
 import { ErrorCodes, HttpError } from "@/common/errors";
-import type { CampaignSource, Job, Prisma } from "@/generated/prisma/client";
+import type { Job, Prisma } from "@/generated/prisma/client";
 import {
   type AppliedDuplicate,
+  type DuplicateReader,
   duplicateSkipReason,
   findAppliedDuplicate,
 } from "@/modules/application/duplicate";
-import { deriveCampaignSummary, type SummaryClient } from "../campaign.summary";
 
-/** Wider than a read: the guard writes the skip and re-derives the summary it moved. */
-export type GuardTransaction = SummaryClient & Pick<Prisma.TransactionClient, "application">;
+/** Wider than a read: the guard writes the skip alongside the duplicate scan. */
+export type GuardTransaction = DuplicateReader & Pick<Prisma.TransactionClient, "job">;
 
 interface GuardedJob {
   campaignId: string;
@@ -17,13 +16,6 @@ interface GuardedJob {
   url: string;
   title: string;
   company: string;
-  campaign: { source: CampaignSource };
-}
-
-/** What the guard recorded, for the caller to publish once its transaction commits. */
-export interface RecordedSkip {
-  job: Job;
-  summary: CampaignSummary;
 }
 
 function refusalMessage(duplicate: AppliedDuplicate, recorded: boolean): string {
@@ -37,7 +29,7 @@ export class AlreadyAppliedError extends HttpError {
   constructor(
     readonly duplicate: AppliedDuplicate,
     /** Null only when a concurrent writer moved the job before the guard could skip it. */
-    readonly skipped: RecordedSkip | null,
+    readonly skipped: Job | null,
   ) {
     super(ErrorCodes.CONFLICT, refusalMessage(duplicate, skipped !== null), 409);
     this.name = "AlreadyAppliedError";
@@ -65,10 +57,5 @@ export async function skipIfAlreadyApplied(
     where: { campaignId: job.campaignId, key: job.key },
     data: { status: "skipped", skipReason: duplicateSkipReason(duplicate) },
   });
-  if (!skipped) {
-    return new AlreadyAppliedError(duplicate, null);
-  }
-
-  const summary = await deriveCampaignSummary(tx, job.campaignId, job.campaign.source);
-  return new AlreadyAppliedError(duplicate, { job: skipped, summary });
+  return new AlreadyAppliedError(duplicate, skipped ?? null);
 }

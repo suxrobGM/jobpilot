@@ -35,7 +35,6 @@ function transaction(rows: FakeApplication[]): { tx: GuardTransaction; writes: W
         writes.push(args);
         return [{ key: args.where.key, status: "skipped", ...args.data }];
       },
-      groupBy: async () => [{ campaignId: "c1", status: "skipped", _count: { _all: 1 } }],
     },
   };
   return { tx: tx as unknown as GuardTransaction, writes };
@@ -50,7 +49,7 @@ const EXISTING: FakeApplication = {
   status: "applied",
 };
 
-const JOB = { campaignId: "c1", key: "j1", campaign: { source: "auto_apply" as const } };
+const JOB = { campaignId: "c1", key: "j1" };
 
 describe("skipIfAlreadyApplied", () => {
   it("blocks the same posting by exact url", async () => {
@@ -126,10 +125,10 @@ describe("skipIfAlreadyApplied", () => {
       where: { campaignId: "c1", key: "j1" },
       data: { status: "skipped", skipReason: "Already applied (url)" },
     });
-    expect(refusal?.skipped).toMatchObject({ job: { status: "skipped" } });
+    expect(refusal?.skipped).toMatchObject({ status: "skipped" });
   });
 
-  it("names the clashing application and carries the summary the skip moved", async () => {
+  it("names the clashing application and carries the row the skip moved", async () => {
     const { tx } = transaction([EXISTING]);
     const day = APPLIED_AT.toISOString().slice(0, 10);
 
@@ -143,7 +142,7 @@ describe("skipIfAlreadyApplied", () => {
     expect(refusal).toBeInstanceOf(AlreadyAppliedError);
     expect(refusal?.message).toMatch(new RegExp(`"Frontend Engineer" at Acme on ${day}`));
     expect(refusal?.message).toMatch(/recorded as skipped/);
-    expect(refusal?.skipped?.summary).toMatchObject({ kind: "jobs", skipped: 1 });
+    expect(refusal?.skipped).toMatchObject({ key: "j1", skipReason: "Already applied (url)" });
   });
 
   it("lets an unrelated job through", async () => {

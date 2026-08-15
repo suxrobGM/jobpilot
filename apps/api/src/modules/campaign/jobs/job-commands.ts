@@ -7,7 +7,7 @@ import type {
 import { conflict, findOwned } from "@/common/errors";
 import type { CampaignJobStatus, Job, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { deriveCampaignSummary } from "../campaign.summary";
-import { type AlreadyAppliedError, skipIfAlreadyApplied } from "./applied-guard";
+import { AlreadyAppliedError, skipIfAlreadyApplied } from "./applied-guard";
 import { isTerminalJob } from "./job-result";
 
 const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
@@ -98,11 +98,9 @@ export async function writeJobRetry(
   });
 }
 
-type PatchWrite = { job: Job } | { refusal: AlreadyAppliedError };
-
 export type JobPatchResult =
   | { job: Job; changed: boolean; summary: CampaignSummary | null }
-  | { refusal: AlreadyAppliedError };
+  | AlreadyAppliedError;
 
 /**
  * Applies a field edit, moving the job's status too when the patch names a new one. Unlike the
@@ -125,12 +123,12 @@ export async function writeJobPatch(
     throw conflict(`Job cannot transition from ${existing.status} to ${moveTo}.`);
   }
 
-  const outcome = await prisma.$transaction(async (tx): Promise<PatchWrite> => {
+  const outcome = await prisma.$transaction(async (tx): Promise<Job | AlreadyAppliedError> => {
     if (moveTo) {
       if (moveTo === "applying") {
         const refusal = await skipIfAlreadyApplied(tx, userId, existing);
         // Returned rather than thrown so the guard's skip commits with this transaction.
-        if (refusal) return { refusal };
+        if (refusal) return refusal;
       }
       const changed = await tx.job.updateMany({
         where: { campaignId, key, status: existing.status },
@@ -143,7 +141,7 @@ export async function writeJobPatch(
       });
       if (changed.count === 0) throw conflict("Job status changed concurrently.");
     }
-    const job = await tx.job.update({
+    return tx.job.update({
       where: { campaignId_key: { campaignId, key } },
       data: {
         title: patch.title,
@@ -159,13 +157,12 @@ export async function writeJobPatch(
         digest: patch.digest,
       },
     });
-    return { job };
   });
 
-  if ("refusal" in outcome) return outcome;
+  if (outcome instanceof AlreadyAppliedError) return outcome;
 
   return {
-    job: outcome.job,
+    job: outcome,
     changed: true,
     summary: moveTo
       ? await deriveCampaignSummary(prisma, campaignId, existing.campaign.source)
