@@ -2,6 +2,7 @@ import type { CampaignJobResultInput, CampaignJobStatus } from "@jobpilot/contra
 import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { canonicalizeJobUrl } from "@/modules/application/job-url";
 import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
 import { toWireCampaignSource } from "../campaign.mapper";
 import { deriveCampaignSummary } from "../campaign.summary";
@@ -40,7 +41,7 @@ export async function writeJobResult(
     const application =
       data.outcome === "applied"
         ? await prisma.application.findUnique({
-            where: { userId_url: { userId, url: existing.url } },
+            where: { userId_url: { userId, url: canonicalizeJobUrl(existing.url) } },
           })
         : null;
     return {
@@ -75,11 +76,11 @@ export async function writeJobResult(
     const application =
       data.outcome === "applied"
         ? await tx.application.upsert({
-            where: { userId_url: { userId, url: job.url } },
+            where: { userId_url: { userId, url: canonicalizeJobUrl(job.url) } },
             update: {},
             create: {
               userId,
-              url: job.url,
+              url: canonicalizeJobUrl(job.url),
               title: job.title,
               company: job.company,
               location: job.location,

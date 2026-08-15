@@ -10,11 +10,7 @@ import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/p
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import {
-  APPLIED_DUPLICATE_THRESHOLD,
-  APPLIED_DUPLICATE_WINDOW_DAYS,
-  findFuzzyDuplicate,
-} from "@/modules/scoring/applied-duplicates";
+import { findAppliedDuplicate } from "./duplicate";
 import { statusChangeOps } from "./status-change";
 
 export interface AppliedListFilters {
@@ -180,79 +176,10 @@ export class ApplicationService {
   }
 
   async check(userId: string, query: AppliedCheckQuery) {
-    const targetUrl = query.url;
-    const title = query.title;
-    const company = query.company;
-
-    if (targetUrl) {
-      const exact = await this.prisma.application.findUnique({
-        where: { userId_url: { userId, url: targetUrl } },
-      });
-      if (exact) {
-        return {
-          applied: true as const,
-          match: {
-            kind: "url" as const,
-            application: {
-              id: exact.id,
-              url: exact.url,
-              title: exact.title,
-              company: exact.company,
-              appliedAt: exact.appliedAt,
-              status: exact.status,
-            },
-          },
-        };
-      }
+    const duplicate = await findAppliedDuplicate(this.prisma, userId, query);
+    if (!duplicate) {
+      return { applied: false as const, match: null };
     }
-
-    if (title && company) {
-      const cutoff = new Date(Date.now() - APPLIED_DUPLICATE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-      const candidates = await this.prisma.application.findMany({
-        where: { userId, appliedAt: { gte: cutoff } },
-        select: {
-          id: true,
-          url: true,
-          title: true,
-          company: true,
-          appliedAt: true,
-          status: true,
-        },
-        take: 1000,
-      });
-
-      const fuzzy = findFuzzyDuplicate(
-        { title, company },
-        candidates.map((c) => ({
-          id: c.id,
-          url: c.url,
-          title: c.title,
-          company: c.company,
-          appliedAt: c.appliedAt,
-        })),
-        APPLIED_DUPLICATE_THRESHOLD,
-      );
-
-      if (fuzzy) {
-        const matched = candidates.find((c) => c.id === fuzzy.candidate.id)!;
-        return {
-          applied: true as const,
-          match: {
-            kind: "fuzzy" as const,
-            score: fuzzy.score,
-            application: {
-              id: matched.id,
-              url: matched.url,
-              title: matched.title,
-              company: matched.company,
-              appliedAt: matched.appliedAt,
-              status: matched.status,
-            },
-          },
-        };
-      }
-    }
-
-    return { applied: false as const, match: null };
+    return { applied: true as const, match: duplicate };
   }
 }

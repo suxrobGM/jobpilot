@@ -70,6 +70,18 @@ export function normalizeCompanyName(company: string): string {
 export const APPLIED_DUPLICATE_THRESHOLD = 90;
 export const APPLIED_DUPLICATE_WINDOW_DAYS = 30;
 
+/**
+ * A match must clear the employer bar on its own. The blended score alone lets an identical but
+ * generic title ("Director of Engineering", worth 60 of the 100) carry a pair over the line on
+ * weak employer similarity - real data had Clarity/Cardiff at 74 and Imagine Learning/Orbital
+ * Engineering at 76 scoring 90, i.e. two different companies read as one job.
+ */
+export const APPLIED_DUPLICATE_COMPANY_THRESHOLD = 90;
+export const APPLIED_DUPLICATE_TITLE_THRESHOLD = 85;
+
+/** Long enough that a prefix is the employer, not a coincidence. */
+const MIN_EMPLOYER_PREFIX = 5;
+
 function jaro(a: string, b: string): number {
   if (a === b) {
     return 1;
@@ -175,9 +187,26 @@ export interface FuzzyMatchResult {
 }
 
 /**
+ * Whether two normalized employer names are the same company.
+ *
+ * The prefix arm covers scraped names that arrive with page text glued on - a real row stored
+ * "AbbVieNew York Stock Exchange" for AbbVie, which similarity alone scores 84.
+ */
+function isSameEmployer(a: string, b: string, similarity: number): boolean {
+  if (similarity >= APPLIED_DUPLICATE_COMPANY_THRESHOLD) {
+    return true;
+  }
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  return shorter.length >= MIN_EMPLOYER_PREFIX && longer.startsWith(shorter);
+}
+
+/**
  * Pick the best fuzzy match within a candidate set using the normalized
  * title + company comparison. Caller is responsible for restricting
  * candidates to the 30-day window and tenant scope.
+ *
+ * Employer and title each clear their own bar before the blended score is consulted, so this
+ * only ever matches a subset of what the blended score alone would have matched.
  */
 export function findFuzzyDuplicate(
   input: FuzzyMatchInput,
@@ -201,10 +230,17 @@ export function findFuzzyDuplicate(
       continue;
     }
 
-    const titleScore = calculateSimilarity(normTitle, cTitle);
     const companyScore = calculateSimilarity(normCompany, cCompany);
-    const score = Math.round(titleScore * 0.6 + companyScore * 0.4);
+    if (!isSameEmployer(normCompany, cCompany, companyScore)) {
+      continue;
+    }
 
+    const titleScore = calculateSimilarity(normTitle, cTitle);
+    if (titleScore < APPLIED_DUPLICATE_TITLE_THRESHOLD) {
+      continue;
+    }
+
+    const score = Math.round(titleScore * 0.6 + companyScore * 0.4);
     if (score >= threshold && (!best || score > best.score)) {
       best = { candidate, score };
     }

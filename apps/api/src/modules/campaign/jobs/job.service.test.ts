@@ -62,6 +62,7 @@ function setup() {
     },
     application: {
       findUnique: async () => application,
+      findMany: async () => (application ? [application] : []),
       upsert: async ({ create }: { create: Record<string, unknown> }) => {
         applicationUpserts += 1;
         application = { id: "app1", ...create };
@@ -91,6 +92,9 @@ function setup() {
     variantLinks,
     setStatus(status: string) {
       job = { ...job, status };
+    },
+    setApplication(row: Record<string, unknown>) {
+      application = row;
     },
   };
 }
@@ -222,5 +226,49 @@ describe("CampaignJobService queued rows", () => {
     await expect(state.service.patchJob("u1", "c1", "j1", { status: "approved" })).rejects.toThrow(
       "cannot transition from queued to approved",
     );
+  });
+});
+
+// Both routes into `applying` have to refuse a job this profile already applied to - the agent's
+// own `/applied/check` call is advice it can skip, and by the browser step it is already too late.
+describe("CampaignJobService duplicate apply guard", () => {
+  const EXISTING = {
+    id: "app-1",
+    url: "https://example.test/jobs/1",
+    title: "Engineer",
+    company: "Acme",
+    appliedAt: new Date(APPLIED_AT),
+    status: "applied",
+  };
+
+  it("blocks the campaign PATCH into applying", async () => {
+    const state = setup();
+    state.setStatus("approved");
+    state.setApplication(EXISTING);
+
+    await expect(state.service.patchJob("u1", "c1", "j1", { status: "applying" })).rejects.toThrow(
+      /Already applied/,
+    );
+    expect(state.job.status).toBe("approved");
+  });
+
+  it("blocks the pilot claim", async () => {
+    const state = setup();
+    state.setStatus("approved");
+    state.setApplication(EXISTING);
+
+    await expect(state.service.claimJobForApply("u1", "c1", "j1")).rejects.toThrow(
+      /Already applied/,
+    );
+    expect(state.job.status).toBe("approved");
+  });
+
+  it("still lets a job through when nothing matches", async () => {
+    const state = setup();
+    state.setStatus("approved");
+
+    const patched = await state.service.patchJob("u1", "c1", "j1", { status: "applying" });
+
+    expect(patched).toMatchObject({ status: "applying" });
   });
 });

@@ -23,6 +23,7 @@ import { JobListingPublisher } from "@/modules/job-listing";
 import { PROMOTABLE_SOURCES } from "../campaign.mapper";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
+import { assertNotAlreadyApplied } from "./applied-guard";
 import { writeJobRescan, writeJobRetry } from "./job-commands";
 import { isTerminalJob, writeJobResult } from "./job-result";
 
@@ -38,7 +39,7 @@ const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[
   skipped: [],
 };
 
-type JobTransaction = Pick<Prisma.TransactionClient, "job">;
+type JobTransaction = Pick<Prisma.TransactionClient, "job" | "application">;
 
 interface ScoredJobPromotion {
   key: string;
@@ -161,6 +162,9 @@ export class CampaignJobService {
 
     const job = await this.prisma.$transaction(async (tx) => {
       if (patch.status && patch.status !== existing.status) {
+        if (patch.status === "applying") {
+          await assertNotAlreadyApplied(tx, userId, existing);
+        }
         const changed = await tx.job.updateMany({
           where: { campaignId, key, status: existing.status },
           data: {
@@ -225,6 +229,13 @@ export class CampaignJobService {
     campaignId: string,
     key: string,
   ): Promise<Job> {
+    const target = await tx.job.findFirst({
+      where: { campaignId, key, status: "approved", campaign: { userId } },
+      select: { url: true, title: true, company: true },
+    });
+    if (!target) throw conflict("Job is no longer approved.");
+    await assertNotAlreadyApplied(tx, userId, target);
+
     const claim = await tx.job.updateMany({
       where: { campaignId, key, status: "approved", campaign: { userId } },
       data: { status: "applying" },
