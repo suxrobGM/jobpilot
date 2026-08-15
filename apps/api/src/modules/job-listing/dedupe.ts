@@ -6,7 +6,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { slugify } from "@/common/utils";
+import { parseCanonicalUrl, slugify } from "@/common/utils";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { normalizePhrase } from "@/modules/scoring/keyword-normalize";
 
@@ -48,28 +48,19 @@ export function normalizeListingLocation(location: string | null | undefined): s
   return normalizePhrase(cleaned.split(",")[0] ?? "");
 }
 
+function isTracking(name: string): boolean {
+  return TRACKING_PARAMS.some((pattern) => pattern.test(name));
+}
+
 /**
  * Strip everything that varies between two links to one posting: host case, `www.`, tracking
  * params, fragment, trailing slash. Surviving params are sorted - boards emit them in any order.
  */
 export function canonicalizeUrl(rawUrl: string): string {
-  let url: URL;
-  try {
-    url = new URL(rawUrl.trim());
-  } catch {
+  const url = parseCanonicalUrl(rawUrl, isTracking);
+  if (!url) {
     return rawUrl.trim();
   }
-
-  url.hash = "";
-  url.protocol = url.protocol.toLowerCase();
-  url.hostname = url.hostname.toLowerCase().replace(/^www\./, "");
-
-  for (const key of [...url.searchParams.keys()]) {
-    if (TRACKING_PARAMS.some((pattern) => pattern.test(key.toLowerCase()))) {
-      url.searchParams.delete(key);
-    }
-  }
-  url.searchParams.sort();
 
   const query = url.searchParams.toString();
   const path = url.pathname.replace(/\/+$/, "");

@@ -1,3 +1,5 @@
+import { parseCanonicalUrl } from "@/common/utils";
+
 /** Boards serving one posting under a second hostname; the value is the form we store. */
 const HOST_ALIASES: Record<string, string> = {
   "hiring.cafe": "hiringcafe.com",
@@ -15,36 +17,22 @@ const TRACKING_PARAMS = new Set([
 ]);
 
 function isTracking(name: string): boolean {
-  const key = name.toLowerCase();
-  return key.startsWith("utm_") || TRACKING_PARAMS.has(key);
+  return name.startsWith("utm_") || TRACKING_PARAMS.has(name);
 }
 
 /**
- * https, no `www.`, lower-case host, aliases folded, no fragment, no tracking params, params
- * sorted, no trailing slash. Anything unparseable or not http(s) is returned untouched.
+ * https, aliases folded, no trailing slash; unparseable or non-http(s) input is returned untouched.
+ * Strips less than the listing index's `canonicalizeUrl` on purpose: this form keys
+ * `@@unique([userId, url])`, so widening it retires the match against every row already stored.
  */
 export function canonicalizeJobUrl(url: string): string {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return url;
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+  const parsed = parseCanonicalUrl(url, isTracking);
+  if (!parsed) {
     return url;
   }
 
-  const bareHost = parsed.hostname.replace(/^www\./, "");
   parsed.protocol = "https:";
-  parsed.hostname = HOST_ALIASES[bareHost] ?? bareHost;
-  parsed.hash = "";
-
-  for (const name of [...parsed.searchParams.keys()]) {
-    if (isTracking(name)) {
-      parsed.searchParams.delete(name);
-    }
-  }
-  parsed.searchParams.sort();
+  parsed.hostname = HOST_ALIASES[parsed.hostname] ?? parsed.hostname;
 
   if (parsed.pathname.length > 1 && parsed.pathname.endsWith("/")) {
     parsed.pathname = parsed.pathname.slice(0, -1);
