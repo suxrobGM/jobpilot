@@ -1,9 +1,8 @@
 import type { CampaignJobResultInput, CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { Application, PrismaClient } from "@/generated/prisma/client";
 import { canonicalizeJobUrl } from "@/modules/application/job-url";
-import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
 import { toWireCampaignSource } from "../campaign.mapper";
 import { deriveCampaignSummary } from "../campaign.summary";
 
@@ -78,31 +77,35 @@ export async function writeJobResult(
 
     const canonicalUrl = canonicalizeJobUrl(job.url);
 
-    const application =
-      data.outcome === "applied"
-        ? await tx.application.upsert({
-            where: { userId_url: { userId, url: canonicalUrl } },
-            update: {},
-            create: {
-              userId,
-              url: canonicalUrl,
-              title: job.title,
-              company: job.company,
-              location: job.location,
-              board: job.board,
-              source: toWireCampaignSource(existing.campaign.source),
-              campaignId,
-              matchScore: job.matchScore,
-              matchReason: job.matchReason,
-              normalizedTitle: normalizeJobTitle(job.title),
-              normalizedCompany: normalizeCompanyName(job.company),
-              appliedAt: requireAppliedAt(data),
-              events: {
-                create: { kind: "status_change", toStatus: "applied", source: "campaign" },
-              },
-            },
-          })
-        : null;
+    let application: Application | null = null;
+    if (data.outcome === "applied") {
+      const appliedAt = requireAppliedAt(data);
+      const logApplied = {
+        create: { kind: "status_change", toStatus: "applied", source: "campaign" },
+      } as const;
+
+      application = await tx.application.upsert({
+        where: { userId_url: { userId, url: canonicalUrl } },
+        // A repost reuses this row, so the date has to move: the duplicate window measures from
+        // it, and a frozen date retires the guard for that url. A result already recorded
+        // (`count === 0`) must not, or the retry logs a second event.
+        update: changed.count === 0 ? {} : { appliedAt, events: logApplied },
+        create: {
+          userId,
+          url: canonicalUrl,
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          board: job.board,
+          source: toWireCampaignSource(existing.campaign.source),
+          campaignId,
+          matchScore: job.matchScore,
+          matchReason: job.matchReason,
+          appliedAt,
+          events: logApplied,
+        },
+      });
+    }
 
     // tailor-resume runs before this row exists, so the variant cannot carry an applicationId at
     // creation - link it here by the url it recorded.

@@ -44,8 +44,6 @@ export const applicationSchema = z.object({
   matchReason: z.string().nullable(),
   failReason: z.string().nullable(),
   campaignId: z.string().nullable(),
-  normalizedTitle: z.string(),
-  normalizedCompany: z.string(),
 });
 
 export const applicationListSchema = paginatedSchema(applicationSchema);

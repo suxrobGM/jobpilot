@@ -36,12 +36,9 @@ model Application {
   resumeVariants ResumeVariant[]
   contacts       Contact[]
 
-  normalizedTitle   String @map("normalized_title")
-  normalizedCompany String @map("normalized_company")
-
   @@unique([userId, url])
-  @@index([userId])
-  @@index([normalizedTitle, normalizedCompany])
+  // The duplicate scan filters on both columns; this also serves the bare userId lookups.
+  @@index([userId, appliedAt])
   @@index([appliedAt])
   @@index([campaignId])
   @@map("applications")

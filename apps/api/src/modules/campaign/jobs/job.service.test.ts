@@ -76,9 +76,15 @@ function setup() {
     application: {
       findUnique: async () => application,
       findMany: async () => (application ? [application] : []),
-      upsert: async ({ create }: { create: Record<string, unknown> }) => {
+      upsert: async ({
+        create,
+        update,
+      }: {
+        create: Record<string, unknown>;
+        update: Record<string, unknown>;
+      }) => {
         applicationUpserts += 1;
-        application = { id: "app1", ...create };
+        application = application ? { ...application, ...update } : { id: "app1", ...create };
         return application;
       },
     },
@@ -151,6 +157,27 @@ describe("CampaignJobService terminal results", () => {
       skipReason: "Already applied (url)",
     });
     expect(state.variantLinks).toHaveLength(0);
+  });
+
+  // `@@unique([userId, url])` reuses the first row; a frozen date drops that url out of the
+  // duplicate window for good.
+  it("advances the applied date when a repost lands on an existing application", async () => {
+    const state = setup();
+    state.setApplication({
+      id: "app1",
+      url: "https://example.test/jobs/1",
+      appliedAt: new Date(Date.now() - 200 * DAY_MS),
+    });
+
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+    });
+
+    expect(result.application).toMatchObject({
+      appliedAt: new Date(APPLIED_AT),
+      events: { create: { kind: "status_change", toStatus: "applied", source: "campaign" } },
+    });
   });
 
   it("returns the same result idempotently without a second application upsert", async () => {
