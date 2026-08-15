@@ -114,7 +114,11 @@ public sealed class PtyProcess : IPty
     {
         try
         {
-            CurrentConnection()?.Resize(cols, rows);
+            var active = CurrentConnection();
+            if (active is not null && !PtyWindowSize.TrySet(active, cols, rows))
+            {
+                active.Resize(cols, rows);
+            }
         }
         catch
         {

@@ -26,6 +26,8 @@ internal sealed class FakePtyConnection : IPtyConnection
 
     public int DisposeCalls { get; private set; }
 
+    public int ResizeCalls { get; private set; }
+
     public Stream ReaderStream => Reader;
 
     public Stream WriterStream => Writer;
@@ -56,6 +58,7 @@ internal sealed class FakePtyConnection : IPtyConnection
 
     public void Resize(int cols, int rows)
     {
+        ResizeCalls++;
         if (ResizeThrows)
         {
             throw new InvalidOperationException("Resizing terminal failed with error 5");
