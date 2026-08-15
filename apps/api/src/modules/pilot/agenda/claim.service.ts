@@ -3,7 +3,7 @@ import { singleton } from "tsyringe";
 import { z } from "zod/v4";
 import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
-import { PrismaClient } from "@/generated/prisma/client";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { toPilotClaim } from "../pilot.mapper";
 import { verifyGrant } from "./grant";
@@ -24,73 +24,7 @@ export class ClaimService {
     // Outside the transaction: a duplicate `job.apply` has to leave `approved` even though the
     // claim rolls back, or the next agenda offers it again and the pilot never gets past it.
     const result = await this.campaignJobs.skippingDuplicates(userId, () =>
-      this.prisma.$transaction(async (tx) => {
-        const now = new Date();
-        const locked = await tx.pilotState.updateMany({
-          where: {
-            userId,
-            running: true,
-            agendaVersion,
-            agendaExpiresAt: { gt: now },
-          },
-          data: { agendaVersion },
-        });
-
-        if (locked.count === 0) {
-          const current = await tx.pilotState.findUnique({
-            where: { userId },
-            select: { running: true },
-          });
-          if (!current?.running) throw conflict("Pilot is stopped.");
-          throw conflict("Agenda snapshot is stale; refresh it before claiming.");
-        }
-
-        const state = await tx.pilotState.findUniqueOrThrow({ where: { userId } });
-        if (!state.agendaSnapshot) {
-          throw conflict("Agenda snapshot is stale; refresh it before claiming.");
-        }
-        const item = parseAgendaSnapshot(state.agendaSnapshot).items.find(
-          (candidate) => candidate.id === itemId,
-        );
-        if (!item) throw conflict("Agenda item is no longer available.");
-
-        // Safe as a read-then-write: the pilotState update above locks this user's row for the
-        // rest of the transaction, so concurrent claim() calls for one user serialize here.
-        const open = await tx.pilotClaim.findFirst({
-          where: {
-            userId,
-            kind: item.kind,
-            subjectType: item.subjectType,
-            subjectId: item.subjectId,
-            releasedAt: null,
-          },
-          select: { id: true },
-        });
-        if (open) throw conflict("This item is already claimed.");
-
-        await verifyGrant(tx, userId, item.kind, item.subjectId);
-        let claimedJob = null;
-        if (item.kind === "job.apply") {
-          claimedJob = await this.campaignJobs.claimJobForApplyInTransaction(
-            tx,
-            userId,
-            item.payload.campaignId,
-            item.payload.jobKey,
-          );
-        }
-
-        const claim = await tx.pilotClaim.create({
-          data: {
-            userId,
-            kind: item.kind,
-            subjectType: item.subjectType,
-            subjectId: item.subjectId,
-            payload: toInputJson(item.payload),
-            expiresAt: new Date(now.getTime() + CLAIM_TTL_MS),
-          },
-        });
-        return { claim, item, claimedJob };
-      }),
+      this.prisma.$transaction((tx) => this.claimInTransaction(tx, userId, agendaVersion, itemId)),
     );
 
     if (result.claimedJob && result.item.kind === "job.apply") {
@@ -101,6 +35,79 @@ export class ClaimService {
       );
     }
     return toPilotClaim(result.claim);
+  }
+
+  private async claimInTransaction(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    agendaVersion: string,
+    itemId: string,
+  ) {
+    const now = new Date();
+    const locked = await tx.pilotState.updateMany({
+      where: {
+        userId,
+        running: true,
+        agendaVersion,
+        agendaExpiresAt: { gt: now },
+      },
+      data: { agendaVersion },
+    });
+
+    if (locked.count === 0) {
+      const current = await tx.pilotState.findUnique({
+        where: { userId },
+        select: { running: true },
+      });
+      if (!current?.running) throw conflict("Pilot is stopped.");
+      throw conflict("Agenda snapshot is stale; refresh it before claiming.");
+    }
+
+    const state = await tx.pilotState.findUniqueOrThrow({ where: { userId } });
+    if (!state.agendaSnapshot) {
+      throw conflict("Agenda snapshot is stale; refresh it before claiming.");
+    }
+    const item = parseAgendaSnapshot(state.agendaSnapshot).items.find(
+      (candidate) => candidate.id === itemId,
+    );
+    if (!item) throw conflict("Agenda item is no longer available.");
+
+    // Safe as a read-then-write: the pilotState update above locks this user's row for the
+    // rest of the transaction, so concurrent claim() calls for one user serialize here.
+    const open = await tx.pilotClaim.findFirst({
+      where: {
+        userId,
+        kind: item.kind,
+        subjectType: item.subjectType,
+        subjectId: item.subjectId,
+        releasedAt: null,
+      },
+      select: { id: true },
+    });
+    if (open) throw conflict("This item is already claimed.");
+
+    await verifyGrant(tx, userId, item.kind, item.subjectId);
+    let claimedJob = null;
+    if (item.kind === "job.apply") {
+      claimedJob = await this.campaignJobs.claimJobForApplyInTransaction(
+        tx,
+        userId,
+        item.payload.campaignId,
+        item.payload.jobKey,
+      );
+    }
+
+    const claim = await tx.pilotClaim.create({
+      data: {
+        userId,
+        kind: item.kind,
+        subjectType: item.subjectType,
+        subjectId: item.subjectId,
+        payload: toInputJson(item.payload),
+        expiresAt: new Date(now.getTime() + CLAIM_TTL_MS),
+      },
+    });
+    return { claim, item, claimedJob };
   }
 
   async heartbeat(userId: string, id: string) {

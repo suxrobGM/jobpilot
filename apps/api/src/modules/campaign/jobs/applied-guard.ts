@@ -42,11 +42,7 @@ export async function assertNotAlreadyApplied(
   userId: string,
   job: GuardedJob,
 ): Promise<void> {
-  const duplicate = await findAppliedDuplicate(db, userId, {
-    url: job.url,
-    title: job.title,
-    company: job.company,
-  });
+  const duplicate = await findAppliedDuplicate(db, userId, job);
   if (!duplicate) {
     return;
   }

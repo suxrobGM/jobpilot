@@ -1,10 +1,11 @@
+import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { JobListingPublisher } from "@/modules/job-listing";
 import { CampaignJobService } from "./job.service";
 import { describe, expect, it } from "bun:test";
 
 /** Relative to now, so the duplicate fixtures stay inside the window as the calendar moves. */
-const APPLIED_AT = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+const APPLIED_AT = new Date(Date.now() - 5 * DAY_MS).toISOString();
 
 function setup() {
   let job = {

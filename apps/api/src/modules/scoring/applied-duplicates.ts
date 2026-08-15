@@ -84,9 +84,7 @@ export function normalizeJobTitle(title: string): string {
 export function normalizeCompanyName(company: string): string {
   const tokens = tokenize(company).filter((t) => !COMPANY_SUFFIXES.includes(t));
   const joined = tokens.join(" ");
-  const stripped = EXCHANGE_SUFFIX_PATTERN.test(joined)
-    ? joined.replace(EXCHANGE_SUFFIX_PATTERN, "").trim()
-    : joined;
+  const stripped = joined.replace(EXCHANGE_SUFFIX_PATTERN, "").trim();
   return stripped.length >= MIN_EMPLOYER_STEM ? stripped : joined;
 }
 

@@ -1,4 +1,4 @@
-import type { ApplicationStatus } from "@jobpilot/contracts/application";
+import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma } from "@/generated/prisma/client";
 import {
   APPLIED_DUPLICATE_THRESHOLD,
@@ -17,7 +17,7 @@ const MATCH_SELECT = {
   company: true,
   appliedAt: true,
   status: true,
-} as const;
+} satisfies Prisma.ApplicationSelect;
 
 export type DuplicateReader = Pick<Prisma.TransactionClient, "application">;
 
@@ -27,14 +27,7 @@ export interface DuplicateLookup {
   company?: string;
 }
 
-export interface DuplicateApplication {
-  id: string;
-  url: string;
-  title: string;
-  company: string;
-  appliedAt: Date;
-  status: ApplicationStatus;
-}
+export type DuplicateApplication = Prisma.ApplicationGetPayload<{ select: typeof MATCH_SELECT }>;
 
 export type AppliedDuplicate =
   | { kind: "url"; application: DuplicateApplication }
@@ -50,7 +43,7 @@ export async function findAppliedDuplicate(
   userId: string,
   lookup: DuplicateLookup,
 ): Promise<AppliedDuplicate | null> {
-  const cutoff = new Date(Date.now() - APPLIED_DUPLICATE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const cutoff = new Date(Date.now() - APPLIED_DUPLICATE_WINDOW_DAYS * DAY_MS);
 
   if (lookup.url) {
     const url = canonicalizeJobUrl(lookup.url);
@@ -59,7 +52,7 @@ export async function findAppliedDuplicate(
       select: MATCH_SELECT,
     });
     if (exact && exact.appliedAt >= cutoff) {
-      return { kind: "url", application: toDuplicateApplication(exact) };
+      return { kind: "url", application: exact };
     }
   }
 
@@ -83,23 +76,10 @@ export async function findAppliedDuplicate(
   }
 
   const matched = candidates.find((c) => c.id === fuzzy.candidate.id);
-  return matched
-    ? { kind: "fuzzy", score: fuzzy.score, application: toDuplicateApplication(matched) }
-    : null;
+  return matched ? { kind: "fuzzy", score: fuzzy.score, application: matched } : null;
 }
 
 /** The skip reason the apply skills already write, so blocked and self-skipped rows read alike. */
 export function duplicateSkipReason(duplicate: AppliedDuplicate): string {
   return `Already applied (${duplicate.kind})`;
-}
-
-function toDuplicateApplication(row: {
-  id: string;
-  url: string;
-  title: string;
-  company: string;
-  appliedAt: Date;
-  status: string;
-}): DuplicateApplication {
-  return { ...row, status: row.status as ApplicationStatus };
 }

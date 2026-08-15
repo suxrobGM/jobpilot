@@ -10,7 +10,7 @@ import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/p
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { findAppliedDuplicate } from "./duplicate";
+import { type DuplicateLookup, findAppliedDuplicate } from "./duplicate";
 import { statusChangeOps } from "./status-change";
 
 export interface AppliedListFilters {
@@ -19,12 +19,6 @@ export interface AppliedListFilters {
   source?: string;
   search?: string;
   campaignId?: string;
-}
-
-export interface AppliedCheckQuery {
-  url?: string;
-  title?: string;
-  company?: string;
 }
 
 @singleton()
@@ -175,7 +169,7 @@ export class ApplicationService {
     return { id, status: toStatus };
   }
 
-  async check(userId: string, query: AppliedCheckQuery) {
+  async check(userId: string, query: DuplicateLookup) {
     const duplicate = await findAppliedDuplicate(this.prisma, userId, query);
     if (!duplicate) {
       return { applied: false as const, match: null };

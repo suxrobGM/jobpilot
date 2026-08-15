@@ -1,10 +1,8 @@
-// `/applied/check` is advice the agent can skip; this is the gate a second application has to get
-// past, so it is tested on its own.
+import { DAY_MS } from "@/common/date/buckets";
 import type { DuplicateReader } from "@/modules/application/duplicate";
 import { AlreadyAppliedError, assertNotAlreadyApplied } from "./applied-guard";
 import { describe, expect, it } from "bun:test";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 /** Relative to now, so the fixture stays inside the window as the calendar moves. */
 const APPLIED_AT = new Date(Date.now() - 5 * DAY_MS);
 

@@ -1,7 +1,4 @@
-/**
- * Hostnames that are known to be aliases of each other, so that a job posting on one can be recognized as the same posting on the other.
- * The canonical form is the value, which is what the duplicate guard uses to compare postings.
- */
+/** Boards serving one posting under a second hostname; the value is the form we store. */
 const HOST_ALIASES: Record<string, string> = {
   "hiring.cafe": "hiringcafe.com",
 };
