@@ -81,9 +81,9 @@ function setup(version = VERSION, openClaim: { id: string } | null = null) {
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
   const campaignJobs = {
-    claimJobForApplyInTransaction: async () => ({ key: "j1" }),
+    claimJobForApplyInTransaction: async () => ({ job: { key: "j1" } }),
     publishClaimedJob: () => undefined,
-    skippingDuplicates: async (_userId: string, work: () => Promise<unknown>) => work(),
+    publishDuplicateSkip: () => undefined,
   } as unknown as CampaignJobService;
   return {
     service: new ClaimService(db as unknown as PrismaClient, campaignJobs),

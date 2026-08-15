@@ -1,6 +1,7 @@
+// `/applied/check` is advice the agent can skip; this is the gate a second application has to get
+// past, so it is tested on its own.
 import { DAY_MS } from "@/common/date/buckets";
-import type { DuplicateReader } from "@/modules/application/duplicate";
-import { AlreadyAppliedError, assertNotAlreadyApplied } from "./applied-guard";
+import { AlreadyAppliedError, type GuardTransaction, skipIfAlreadyApplied } from "./applied-guard";
 import { describe, expect, it } from "bun:test";
 
 /** Relative to now, so the fixture stays inside the window as the calendar moves. */
@@ -15,26 +16,29 @@ interface FakeApplication {
   status: string;
 }
 
-function reader(rows: FakeApplication[]): { db: DuplicateReader; queries: number } {
-  const state = { queries: 0 };
-  const db = {
+interface Written {
+  where: Record<string, unknown>;
+  data: Record<string, unknown>;
+}
+
+function transaction(rows: FakeApplication[]): { tx: GuardTransaction; writes: Written[] } {
+  const writes: Written[] = [];
+  const tx = {
     application: {
-      findUnique: async ({ where }: { where: { userId_url: { url: string } } }) => {
-        state.queries += 1;
-        return rows.find((r) => r.url === where.userId_url.url) ?? null;
+      findUnique: async ({ where }: { where: { userId_url: { url: string } } }) =>
+        rows.find((r) => r.url === where.userId_url.url) ?? null,
+      findMany: async ({ where }: { where: { appliedAt: { gte: Date } } }) =>
+        rows.filter((r) => r.appliedAt >= where.appliedAt.gte),
+    },
+    job: {
+      updateManyAndReturn: async (args: Written) => {
+        writes.push(args);
+        return [{ key: args.where.key, status: "skipped", ...args.data }];
       },
-      findMany: async ({ where }: { where: { appliedAt: { gte: Date } } }) => {
-        state.queries += 1;
-        return rows.filter((r) => r.appliedAt >= where.appliedAt.gte);
-      },
+      groupBy: async () => [{ campaignId: "c1", status: "skipped", _count: { _all: 1 } }],
     },
   };
-  return {
-    db: db as unknown as DuplicateReader,
-    get queries() {
-      return state.queries;
-    },
-  };
+  return { tx: tx as unknown as GuardTransaction, writes };
 }
 
 const EXISTING: FakeApplication = {
@@ -46,106 +50,125 @@ const EXISTING: FakeApplication = {
   status: "applied",
 };
 
-const JOB = { campaignId: "c1", key: "j1" };
+const JOB = { campaignId: "c1", key: "j1", campaign: { source: "auto_apply" as const } };
 
-describe("assertNotAlreadyApplied", () => {
+describe("skipIfAlreadyApplied", () => {
   it("blocks the same posting by exact url", async () => {
-    const { db } = reader([EXISTING]);
+    const { tx } = transaction([EXISTING]);
 
-    await expect(
-      assertNotAlreadyApplied(db, "u1", {
-        ...JOB,
-        url: EXISTING.url,
-        title: "Frontend Engineer",
-        company: "Acme",
-      }),
-    ).rejects.toThrow(/Already applied \(url\)/);
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: EXISTING.url,
+      title: "Frontend Engineer",
+      company: "Acme",
+    });
+
+    expect(refusal?.message).toMatch(/Already applied \(url\)/);
   });
 
   // The case the url constraint cannot catch: one posting reposted under a second link.
   it("blocks the same job listed at a different url", async () => {
-    const { db } = reader([EXISTING]);
+    const { tx } = transaction([EXISTING]);
 
-    await expect(
-      assertNotAlreadyApplied(db, "u1", {
-        ...JOB,
-        url: "https://other-board.test/postings/999",
-        title: "Senior Frontend Engineer",
-        company: "Acme Inc",
-      }),
-    ).rejects.toThrow(/Already applied \(fuzzy\)/);
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: "https://other-board.test/postings/999",
+      title: "Senior Frontend Engineer",
+      company: "Acme Inc",
+    });
+
+    expect(refusal?.message).toMatch(/Already applied \(fuzzy\)/);
   });
 
   it("blocks a url that differs only by scheme, www and tracking params", async () => {
-    const { db } = reader([EXISTING]);
+    const { tx } = transaction([EXISTING]);
 
-    await expect(
-      assertNotAlreadyApplied(db, "u1", {
-        ...JOB,
-        url: "http://www.example.test/jobs/1?utm_source=newsletter",
-        title: "Frontend Engineer",
-        company: "Acme",
-      }),
-    ).rejects.toThrow(/Already applied \(url\)/);
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: "http://www.example.test/jobs/1?utm_source=newsletter",
+      title: "Frontend Engineer",
+      company: "Acme",
+    });
+
+    expect(refusal?.message).toMatch(/Already applied \(url\)/);
   });
 
   // Postings get reposted; without a cutoff the same url 409s forever, with no override.
   it("lets the same url through once it falls out of the window", async () => {
-    const { db } = reader([
+    const { tx, writes } = transaction([
       { ...EXISTING, appliedAt: new Date(Date.now() - 200 * DAY_MS), title: "x", company: "y" },
     ]);
 
-    await expect(
-      assertNotAlreadyApplied(db, "u1", {
-        ...JOB,
-        url: EXISTING.url,
-        title: "Frontend Engineer",
-        company: "Acme",
-      }),
-    ).resolves.toBeUndefined();
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: EXISTING.url,
+      title: "Frontend Engineer",
+      company: "Acme",
+    });
+
+    expect(refusal).toBeNull();
+    expect(writes).toHaveLength(0);
   });
 
-  it("names the clashing application and carries the job so the skip can be recorded", async () => {
-    const { db } = reader([EXISTING]);
-    const day = APPLIED_AT.toISOString().slice(0, 10);
+  // The skip commits with the caller's transaction, so the job cannot be left `approved`.
+  it("records the job skipped with the duplicate reason before refusing", async () => {
+    const { tx, writes } = transaction([EXISTING]);
 
-    const error = await assertNotAlreadyApplied(db, "u1", {
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
       ...JOB,
       url: EXISTING.url,
       title: "x",
       company: "y",
-    }).catch((e: unknown) => e);
+    });
 
-    expect(error).toBeInstanceOf(AlreadyAppliedError);
-    expect((error as AlreadyAppliedError).message).toMatch(
-      new RegExp(`"Frontend Engineer" at Acme on ${day}`),
-    );
-    expect((error as AlreadyAppliedError).job).toEqual(JOB);
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toMatchObject({
+      where: { campaignId: "c1", key: "j1" },
+      data: { status: "skipped", skipReason: "Already applied (url)" },
+    });
+    expect(refusal?.skipped).toMatchObject({ job: { status: "skipped" } });
+  });
+
+  it("names the clashing application and carries the summary the skip moved", async () => {
+    const { tx } = transaction([EXISTING]);
+    const day = APPLIED_AT.toISOString().slice(0, 10);
+
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: EXISTING.url,
+      title: "x",
+      company: "y",
+    });
+
+    expect(refusal).toBeInstanceOf(AlreadyAppliedError);
+    expect(refusal?.message).toMatch(new RegExp(`"Frontend Engineer" at Acme on ${day}`));
+    expect(refusal?.message).toMatch(/recorded as skipped/);
+    expect(refusal?.skipped?.summary).toMatchObject({ kind: "jobs", skipped: 1 });
   });
 
   it("lets an unrelated job through", async () => {
-    const { db } = reader([EXISTING]);
+    const { tx } = transaction([EXISTING]);
 
-    await expect(
-      assertNotAlreadyApplied(db, "u1", {
-        ...JOB,
-        url: "https://example.test/jobs/2",
-        title: "Data Scientist",
-        company: "Globex",
-      }),
-    ).resolves.toBeUndefined();
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: "https://example.test/jobs/2",
+      title: "Data Scientist",
+      company: "Globex",
+    });
+
+    expect(refusal).toBeNull();
   });
 
   it("lets a different role at the same employer through", async () => {
-    const { db } = reader([EXISTING]);
+    const { tx } = transaction([EXISTING]);
 
-    await expect(
-      assertNotAlreadyApplied(db, "u1", {
-        ...JOB,
-        url: "https://example.test/jobs/3",
-        title: "Warehouse Associate",
-        company: "Acme",
-      }),
-    ).resolves.toBeUndefined();
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: "https://example.test/jobs/3",
+      title: "Warehouse Associate",
+      company: "Acme",
+    });
+
+    expect(refusal).toBeNull();
   });
 });

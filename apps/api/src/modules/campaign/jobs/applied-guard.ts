@@ -1,10 +1,15 @@
+import type { CampaignSummary } from "@jobpilot/contracts/campaign";
 import { ErrorCodes, HttpError } from "@/common/errors";
+import type { CampaignSource, Job, Prisma } from "@/generated/prisma/client";
 import {
   type AppliedDuplicate,
-  type DuplicateReader,
   duplicateSkipReason,
   findAppliedDuplicate,
 } from "@/modules/application/duplicate";
+import { deriveCampaignSummary, type SummaryClient } from "../campaign.summary";
+
+/** Wider than a read: the guard writes the skip and re-derives the summary it moved. */
+export type GuardTransaction = SummaryClient & Pick<Prisma.TransactionClient, "application">;
 
 interface GuardedJob {
   campaignId: string;
@@ -12,39 +17,58 @@ interface GuardedJob {
   url: string;
   title: string;
   company: string;
+  campaign: { source: CampaignSource };
 }
 
-/** Carries the refused job so the caller can record it `skipped` after its transaction rolls back. */
+/** What the guard recorded, for the caller to publish once its transaction commits. */
+export interface RecordedSkip {
+  job: Job;
+  summary: CampaignSummary;
+}
+
+function refusalMessage(duplicate: AppliedDuplicate, recorded: boolean): string {
+  const { title, company, appliedAt } = duplicate.application;
+  const day = appliedAt.toISOString().slice(0, 10);
+  const tail = recorded ? " The job has been recorded as skipped with this reason;" : "";
+  return `${duplicateSkipReason(duplicate)}: this profile applied to "${title}" at ${company} on ${day}.${tail} do not apply again.`;
+}
+
 export class AlreadyAppliedError extends HttpError {
   constructor(
-    readonly job: { campaignId: string; key: string },
     readonly duplicate: AppliedDuplicate,
+    /** Null only when a concurrent writer moved the job before the guard could skip it. */
+    readonly skipped: RecordedSkip | null,
   ) {
-    super(
-      ErrorCodes.CONFLICT,
-      `${duplicateSkipReason(duplicate)}: this profile applied to "${duplicate.application.title}" at ${duplicate.application.company} on ${duplicate.application.appliedAt.toISOString().slice(0, 10)}. The job has been recorded as skipped with this reason; do not apply again.`,
-      409,
-    );
+    super(ErrorCodes.CONFLICT, refusalMessage(duplicate, skipped !== null), 409);
     this.name = "AlreadyAppliedError";
   }
 }
 
 /**
- * Refuses to move a job into `applying` when this profile already applied to it. The skills' own
- * `/applied/check` call is advice a model can skip, and `@@unique([userId, url])` only dedupes the
- * record once the second application has already landed with the employer.
+ * Refuses a move into `applying` when this profile already applied, recording the job `skipped` in
+ * the caller's transaction - left `approved` it is offered again by every following agenda.
  *
- * Refusing alone leaves the job `approved`, so callers pair this with
- * `CampaignJobService.skippingDuplicates`.
+ * The skills' own `/applied/check` is advice a model can skip, and `@@unique([userId, url])` only
+ * dedupes the record once the second application has already landed with the employer.
  */
-export async function assertNotAlreadyApplied(
-  db: DuplicateReader,
+export async function skipIfAlreadyApplied(
+  tx: GuardTransaction,
   userId: string,
   job: GuardedJob,
-): Promise<void> {
-  const duplicate = await findAppliedDuplicate(db, userId, job);
+): Promise<AlreadyAppliedError | null> {
+  const duplicate = await findAppliedDuplicate(tx, userId, job);
   if (!duplicate) {
-    return;
+    return null;
   }
-  throw new AlreadyAppliedError({ campaignId: job.campaignId, key: job.key }, duplicate);
+
+  const [skipped] = await tx.job.updateManyAndReturn({
+    where: { campaignId: job.campaignId, key: job.key },
+    data: { status: "skipped", skipReason: duplicateSkipReason(duplicate) },
+  });
+  if (!skipped) {
+    return new AlreadyAppliedError(duplicate, null);
+  }
+
+  const summary = await deriveCampaignSummary(tx, job.campaignId, job.campaign.source);
+  return new AlreadyAppliedError(duplicate, { job: skipped, summary });
 }

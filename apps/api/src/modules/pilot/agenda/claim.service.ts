@@ -3,7 +3,8 @@ import { singleton } from "tsyringe";
 import { z } from "zod/v4";
 import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
-import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type Job, type PilotClaim, type Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { AlreadyAppliedError } from "@/modules/campaign/jobs/applied-guard";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { toPilotClaim } from "../pilot.mapper";
 import { verifyGrant } from "./grant";
@@ -11,6 +12,13 @@ import { parseJobPayload } from "./job-mutations";
 import { parseAgendaSnapshot } from "./service";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
+
+type AgendaItem = ReturnType<typeof parseAgendaSnapshot>["items"][number];
+
+/** Either the claim, or the duplicate refusal the guard recorded a skip for. */
+type ClaimResult =
+  | { claim: PilotClaim; item: AgendaItem; claimedJob: Job | null }
+  | { refusal: AlreadyAppliedError; campaignId: string };
 
 /** Atomically claims versioned agenda items and manages claim heartbeats and release. */
 @singleton()
@@ -21,11 +29,15 @@ export class ClaimService {
   ) {}
 
   async claim(userId: string, agendaVersion: string, itemId: string) {
-    // Outside the transaction: a duplicate `job.apply` has to leave `approved` even though the
-    // claim rolls back, or the next agenda offers it again and the pilot never gets past it.
-    const result = await this.campaignJobs.skippingDuplicates(userId, () =>
-      this.prisma.$transaction((tx) => this.claimInTransaction(tx, userId, agendaVersion, itemId)),
+    const result = await this.prisma.$transaction((tx) =>
+      this.claimInTransaction(tx, userId, agendaVersion, itemId),
     );
+
+    // Committing is the point: the guard recorded the skip inside that same transaction.
+    if ("refusal" in result) {
+      this.campaignJobs.publishDuplicateSkip(userId, result.campaignId, result.refusal);
+      throw result.refusal;
+    }
 
     if (result.claimedJob && result.item.kind === "job.apply") {
       this.campaignJobs.publishClaimedJob(
@@ -42,7 +54,7 @@ export class ClaimService {
     userId: string,
     agendaVersion: string,
     itemId: string,
-  ) {
+  ): Promise<ClaimResult> {
     const now = new Date();
     const locked = await tx.pilotState.updateMany({
       where: {
@@ -89,12 +101,16 @@ export class ClaimService {
     await verifyGrant(tx, userId, item.kind, item.subjectId);
     let claimedJob = null;
     if (item.kind === "job.apply") {
-      claimedJob = await this.campaignJobs.claimJobForApplyInTransaction(
+      const attempt = await this.campaignJobs.claimJobForApplyInTransaction(
         tx,
         userId,
         item.payload.campaignId,
         item.payload.jobKey,
       );
+      if ("refusal" in attempt) {
+        return { refusal: attempt.refusal, campaignId: item.payload.campaignId };
+      }
+      claimedJob = attempt.job;
     }
 
     const claim = await tx.pilotClaim.create({

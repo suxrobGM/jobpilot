@@ -16,17 +16,20 @@ import {
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { duplicateSkipReason } from "@/modules/application/duplicate";
 import { JobListingPublisher } from "@/modules/job-listing";
 import { ensureCampaignOwned } from "../campaign.utils";
-import { AlreadyAppliedError, assertNotAlreadyApplied } from "./applied-guard";
+import {
+  type AlreadyAppliedError,
+  type GuardTransaction,
+  skipIfAlreadyApplied,
+} from "./applied-guard";
 import { writeJobPatch, writeJobRescan, writeJobRetry } from "./job-commands";
 import { type ScoredJobPromotion, writeScoredPromotions } from "./job-promotion";
 import { type JobListQuery, listCampaignJobReasons, listCampaignJobs } from "./job-queries";
 import { writeJobResult } from "./job-result";
 
-/** The pilot claims inside its own transaction, so the claim takes a client rather than opening one. */
-type JobTransaction = Pick<Prisma.TransactionClient, "job" | "application">;
+/** A claim that was refused because this profile had already applied; the guard wrote the skip. */
+export type ClaimAttempt = { job: Job } | { refusal: AlreadyAppliedError };
 
 /**
  * Coordinates campaign job reads, writes, claims and results. Every write algorithm lives in a
@@ -75,9 +78,11 @@ export class CampaignJobService {
   }
 
   async patchJob(userId: string, campaignId: string, key: string, patch: PatchCampaignJobInput) {
-    const result = await this.skippingDuplicates(userId, () =>
-      writeJobPatch(this.prisma, userId, campaignId, key, patch),
-    );
+    const result = await writeJobPatch(this.prisma, userId, campaignId, key, patch);
+    if ("refusal" in result) {
+      this.publishDuplicateSkip(userId, campaignId, result.refusal);
+      throw result.refusal;
+    }
 
     this.listings.publishInBackground(result.job);
     this.publishStatusChange(userId, campaignId, result);
@@ -101,13 +106,17 @@ export class CampaignJobService {
     return result.job;
   }
 
-  /** Moves an approved job into `applying`, refusing a posting this profile already applied to. */
+  /**
+   * Moves an approved job into `applying`. The pilot claims inside its own transaction, so this
+   * takes a client rather than opening one, and a duplicate comes back as a refusal rather than a
+   * throw - the guard's skip has to commit with that transaction, not roll back with it.
+   */
   async claimJobForApplyInTransaction(
-    tx: JobTransaction,
+    tx: GuardTransaction,
     userId: string,
     campaignId: string,
     key: string,
-  ): Promise<Job> {
+  ): Promise<ClaimAttempt> {
     const where = {
       campaignId,
       key,
@@ -117,45 +126,37 @@ export class CampaignJobService {
 
     const target = await tx.job.findFirst({
       where,
-      select: { url: true, title: true, company: true },
+      select: { url: true, title: true, company: true, campaign: { select: { source: true } } },
     });
     if (!target) throw conflict("Job is no longer approved.");
-    await assertNotAlreadyApplied(tx, userId, { ...target, campaignId, key });
+
+    const refusal = await skipIfAlreadyApplied(tx, userId, { ...target, campaignId, key });
+    if (refusal) return { refusal };
 
     // Returning the row from the write keeps the claim at two round trips; an empty result is the
     // lost race.
     const [claimed] = await tx.job.updateManyAndReturn({ where, data: { status: "applying" } });
     if (!claimed) throw conflict("Job is no longer approved.");
-    return claimed;
+    return { job: claimed };
   }
 
   async claimJobForApply(userId: string, campaignId: string, key: string) {
-    const job = await this.skippingDuplicates(userId, () =>
-      this.prisma.$transaction((tx) =>
-        this.claimJobForApplyInTransaction(tx, userId, campaignId, key),
-      ),
+    const attempt = await this.prisma.$transaction((tx) =>
+      this.claimJobForApplyInTransaction(tx, userId, campaignId, key),
     );
-    this.publishJob(userId, campaignId, job, "updated");
-    return job;
+    if ("refusal" in attempt) {
+      this.publishDuplicateSkip(userId, campaignId, attempt.refusal);
+      throw attempt.refusal;
+    }
+
+    this.publishJob(userId, campaignId, attempt.job, "updated");
+    return attempt.job;
   }
 
-  /**
-   * Records the job `skipped` when the duplicate guard refuses a transition into `applying`. The
-   * refusal rolls `work`'s transaction back, so the skip needs a write of its own: a job left
-   * `approved` is offered again by every following agenda, ahead of the jobs below it.
-   */
-  async skippingDuplicates<T>(userId: string, work: () => Promise<T>): Promise<T> {
-    try {
-      return await work();
-    } catch (error) {
-      if (error instanceof AlreadyAppliedError) {
-        await this.recordJobResult(userId, error.job.campaignId, error.job.key, {
-          outcome: "skipped",
-          skipReason: duplicateSkipReason(error.duplicate),
-        });
-      }
-      throw error;
-    }
+  /** Publishes the skip the duplicate guard already committed inside the caller's transaction. */
+  publishDuplicateSkip(userId: string, campaignId: string, refusal: AlreadyAppliedError): void {
+    if (!refusal.skipped) return;
+    this.publishStatusChange(userId, campaignId, { ...refusal.skipped, changed: true });
   }
 
   publishClaimedJob(userId: string, campaignId: string, job: Job): void {
