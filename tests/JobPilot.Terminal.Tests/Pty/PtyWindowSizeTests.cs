@@ -7,10 +7,9 @@ using Xunit;
 namespace JobPilot.Terminal.Tests;
 
 /// <summary>
-/// Regression tests for the garbled agent panel: Pty.Net's Resize left the child with a ~28000-column
-/// winsize on Apple silicon, so Claude Code's TUI wrapped and repainted against a size no one could see.
-/// These drive a real pty master rather than a child process - forking under the parallel suite hangs
-/// before exec, so the end-to-end check against a live session is a manual one.
+/// Regression tests for the garbled agent panel: Pty.Net's Resize left the child with a ~28000-column winsize
+/// on Apple silicon. These drive a real pty master rather than a child process, since forking under the
+/// parallel suite hangs before exec.
 /// </summary>
 public sealed class PtyWindowSizeTests
 {
@@ -20,10 +19,14 @@ public sealed class PtyWindowSizeTests
     /// <summary>_IOR('t', 104, struct winsize) on Darwin.</summary>
     private const ulong TIOCGWINSZ = 0x40087468;
 
-    /// <summary>The fake's streams aren't pty fds, so every platform takes the fallback here.</summary>
     [Fact]
-    public void FallsBackToPtyNet_WhenTheStreamIsNotAPtyFileDescriptor()
+    public void UsesPtyNetsResize_WhereItsAbiIsSound()
     {
+        if (PtyWindowSize.IsRequired)
+        {
+            return;
+        }
+
         var connection = new FakePtyConnection();
         using var pty = new PtyProcess(_ => connection);
         pty.Start("claude", [], ".", 80, 24);
@@ -33,11 +36,28 @@ public sealed class PtyWindowSizeTests
         Assert.Equal(1, connection.ResizeCalls);
     }
 
+    /// <summary>The fake's streams are not pty fds, so the manual path fails - and must not hand off.</summary>
+    [Fact]
+    public void NeverFallsBackToPtyNet_OnAppleSilicon()
+    {
+        if (!PtyWindowSize.IsRequired)
+        {
+            return;
+        }
+
+        var connection = new FakePtyConnection();
+        using var pty = new PtyProcess(_ => connection);
+        pty.Start("claude", [], ".", 80, 24);
+
+        pty.Resize(Cols, Rows);
+
+        Assert.Equal(0, connection.ResizeCalls);
+    }
+
     [Fact]
     public void SetsTheWinsizeTheKernelActuallyStores()
     {
-        // The manual TIOCSWINSZ path only replaces Pty.Net's resize on Apple silicon.
-        if (!OperatingSystem.IsMacOS() || RuntimeInformation.ProcessArchitecture != Architecture.Arm64)
+        if (!PtyWindowSize.IsRequired)
         {
             return;
         }
@@ -47,7 +67,7 @@ public sealed class PtyWindowSizeTests
         using var handle = new SafeFileHandle(master, ownsHandle: true);
         using var stream = new FileStream(handle, FileAccess.ReadWrite);
 
-        Assert.True(PtyWindowSize.TrySet(new PtyMaster(stream), Cols, Rows));
+        PtyWindowSize.Set(new PtyMaster(stream), Cols, Rows);
 
         var size = default(WinSize);
         Assert.Equal(0, Ioctl(master, TIOCGWINSZ, 0, 0, 0, 0, 0, 0, ref size));

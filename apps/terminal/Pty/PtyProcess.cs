@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Extensions.Logging.Abstractions;
 using Pty.Net;
 
 namespace JobPilot.Terminal.Pty;
@@ -14,7 +15,7 @@ public sealed class PtyProcess : IPty
 {
     static PtyProcess()
     {
-        // Pty.Net's assembly imports the missing bundled conpty.dll; the static ctor registers the resolver once.
+        // Pty.Net's assembly imports a bundled conpty.dll it does not ship.
         if (OperatingSystem.IsWindows())
         {
             NativeLibrary.SetDllImportResolver(typeof(PtyProvider).Assembly, ResolveConPty);
@@ -31,20 +32,22 @@ public sealed class PtyProcess : IPty
 
     private readonly Lock connectionLock = new();
     private readonly Func<PtyOptions, IPtyConnection> spawner;
+    private readonly ILogger<PtyProcess> logger;
 
     private IPtyConnection? connection;
     private int generation;
     private int exitRaisedGeneration;
 
-    public PtyProcess()
-        : this(SpawnWithPtyNet)
+    public PtyProcess(ILogger<PtyProcess> logger)
+        : this(SpawnWithPtyNet, logger)
     {
     }
 
     // Test seam: production spawning goes through Pty.Net's static provider.
-    internal PtyProcess(Func<PtyOptions, IPtyConnection> spawner)
+    internal PtyProcess(Func<PtyOptions, IPtyConnection> spawner, ILogger<PtyProcess>? logger = null)
     {
         this.spawner = spawner;
+        this.logger = logger ?? NullLogger<PtyProcess>.Instance;
     }
 
     /// <inheritdoc />
@@ -112,17 +115,28 @@ public sealed class PtyProcess : IPty
     /// <inheritdoc />
     public void Resize(int cols, int rows)
     {
+        var active = CurrentConnection();
+        if (active is null)
+        {
+            return;
+        }
+
         try
         {
-            var active = CurrentConnection();
-            if (active is not null && !PtyWindowSize.TrySet(active, cols, rows))
+            if (PtyWindowSize.IsRequired)
+            {
+                PtyWindowSize.Set(active, cols, rows);
+            }
+            else
             {
                 active.Resize(cols, rows);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Resizing a pty whose child just exited throws; a lost resize is harmless.
+            // Usually a pty whose child just exited. Logged because a failing TIOCSWINSZ garbles the
+            // panel and leaves no other trace.
+            logger.LogWarning(ex, "Resize to {Cols}x{Rows} failed.", cols, rows);
         }
     }
 
@@ -143,9 +157,9 @@ public sealed class PtyProcess : IPty
             return;
         }
 
-        // On Unix, Kill (which Dispose also runs) throws ESRCH for an already-exited child; that
-        // is a successful stop, and Dispose must still run to release the streams.
-        BestEffort(oldConnection.Kill); // still raises ProcessExited with its own generation
+        // On Unix, Kill and Dispose throw ESRCH for a child that already exited. That is still a
+        // successful stop, so both run regardless. Kill raises ProcessExited with its own generation.
+        BestEffort(oldConnection.Kill);
         BestEffort(oldConnection.Dispose);
     }
 
