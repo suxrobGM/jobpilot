@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.30] - 2026-08-15
+
+### Changed
+
+- Codex sessions no longer depend on the user-installed public plugin. The
+  terminal host now writes the bundled JobPilot skills into `.agents/skills`
+  before each Codex launch and passes the bundled Playwright MCP server as
+  Codex config overrides, so dashboard sessions always run the shipped skill
+  set.
+- The Codex marketplace plugin is now bootstrap-only (the `setup` skill),
+  matching the Claude marketplace.
+
+### Fixed
+
+- Injected Codex `$skill` commands now submit reliably. The host presses Enter
+  twice so the first press accepts the skill autocomplete item and the second
+  sends the prompt.
+
 ## [2.1.29] - 2026-08-15
 
 ### Added
