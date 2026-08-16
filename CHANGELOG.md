@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.1.28] - 2026-08-15
 
 ### Changed
 
@@ -13,6 +13,22 @@ All notable changes to this project will be documented in this file.
   the dashboard terminal.
 - Claude Code sessions start on Sonnet. You no longer have to set the model
   yourself, and `/model` still changes it for a running session.
+
+### Fixed
+
+- The API now refuses a second application to a job you already applied to,
+  even when the posting reappears under a different URL. Before, the duplicate
+  check was advisory and a skipped check could submit the same application
+  twice. The agent records the refusal as a skip instead of failing the job.
+- The agent panel no longer renders garbled on Apple silicon Macs. The terminal
+  host set the wrong pty window size there, so every repaint wrapped and
+  overprinted.
+- The campaign summary is computed outside the claim's lock window, and a
+  duplicate skip is committed in the same transaction that decided it.
+- Corrected stale claims in the READMEs and dev guide, including the note about
+  what runs on `localhost:5433`.
+- Internal cleanup: shared URL canonicalization between the job tables, one
+  applied-duplicate row shape, and an index for the duplicate scan.
 
 ## [2.1.27] - 2026-08-04
 
