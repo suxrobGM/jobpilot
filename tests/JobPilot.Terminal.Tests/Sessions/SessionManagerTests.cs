@@ -18,6 +18,7 @@ public sealed class SessionManagerTests : IDisposable
 
     public SessionManagerTests()
     {
+        temp.WriteValidPluginTree();
         var paths = new InstallPaths
         {
             WorkingDir = temp.Root,
@@ -47,6 +48,7 @@ public sealed class SessionManagerTests : IDisposable
         Assert.Equal(SessionState.Running, session.State);
         Assert.Equal(TerminalProviders.Codex, session.ActiveProvider);
         Assert.Equal("codex", pty.LastCommand);
+        Assert.True(File.Exists(Path.Combine(temp.Root, ".agents", "skills", "auto-apply", "SKILL.md")));
     }
 
     [Fact]
@@ -244,6 +246,32 @@ public sealed class SessionManagerTests : IDisposable
         Assert.Equal(InjectResult.Injected, result);
         Assert.Equal(2, pty.Writes.Count);
         Assert.Equal("/jobpilot:setup"u8.ToArray(), pty.Writes[0]);
+        Assert.Equal(Enter, pty.Writes[1]);
+    }
+
+    [Fact]
+    public async Task Inject_SubmitsACodexSkill_AfterAcceptingItsAutocompleteItem()
+    {
+        Start(TerminalProviders.Codex);
+
+        var result = await session.Inject("$pilot");
+
+        Assert.Equal(InjectResult.Injected, result);
+        Assert.Equal(3, pty.Writes.Count);
+        Assert.Equal("$pilot"u8.ToArray(), pty.Writes[0]);
+        Assert.Equal(Enter, pty.Writes[1]);
+        Assert.Equal(Enter, pty.Writes[2]);
+    }
+
+    [Fact]
+    public async Task Inject_SubmitsAnOrdinaryCodexPrompt_Once()
+    {
+        Start(TerminalProviders.Codex);
+
+        var result = await session.Inject("Checking in");
+
+        Assert.Equal(InjectResult.Injected, result);
+        Assert.Equal(2, pty.Writes.Count);
         Assert.Equal(Enter, pty.Writes[1]);
     }
 

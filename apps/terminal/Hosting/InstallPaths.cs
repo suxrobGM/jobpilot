@@ -6,7 +6,7 @@ public sealed record InstallPaths
     /// <summary>Default working directory for a launched session.</summary>
     public required string WorkingDir { get; init; }
 
-    /// <summary>Bundled plugin dir Claude loads and JobPilot workers use; Codex loads its user-installed public copy.</summary>
+    /// <summary>Bundled plugin dir Claude loads directly and the host mirrors into Codex's local skill directory.</summary>
     public required string PluginDir { get; init; }
 
     /// <summary>Skills tree used as the JOBPILOT_SKILLS_ROOT anchor; shared docs live under its _shared/.</summary>
@@ -36,7 +36,7 @@ public sealed record InstallPaths
         }
 
         throw new DirectoryNotFoundException(
-            "Could not find JobPilot provider assets: a plugin/ directory with skills/, skills/_shared/, .claude-plugin/, and .codex-plugin/.");
+            "Could not find JobPilot provider assets: a plugin/ directory with skills/, skills/_shared/, .mcp.json, .claude-plugin/, and .codex-plugin/.");
     }
 
     /// <summary>Whether a directory holds a complete plugin tree.</summary>
@@ -71,7 +71,8 @@ public sealed record InstallPaths
     {
         var skillsDir = SkillsDirOf(pluginDir);
         return File.Exists(Path.Combine(skillsDir, "_shared", "setup.md"))
-            && File.Exists(Path.Combine(skillsDir, "auto-apply", "SKILL.md"));
+            && File.Exists(Path.Combine(skillsDir, "auto-apply", "SKILL.md"))
+            && File.Exists(Path.Combine(pluginDir, ".mcp.json"));
     }
 
     private static bool IsClaudePluginDir(string path)

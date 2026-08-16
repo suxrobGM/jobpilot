@@ -151,16 +151,17 @@ under `autoMode.environment`. Codex has no `--settings` flag, and a project
 `settings/codex.json` into `-c` arguments. A missing file logs a warning and
 still launches.
 
-Codex has no `--plugin-dir` either; it reuses the marketplace plugin installed
-under the same OS user and `CODEX_HOME`. The publish output bundles `plugin/`
-for Claude and for the worker resources reached through
-`JOBPILOT_SKILLS_ROOT`, plus `.codex/agents/*.toml`, but never a repo-local
-Codex marketplace. Standalone installs come from the
+Codex has no `--plugin-dir` either. Before launch, the host mirrors the bundled
+skill tree into `<root>/.agents/skills`, Codex's repository-local discovery
+location (excluding the marketplace-owned `setup` bootstrap) and translates
+the bundled `.mcp.json` into `-c mcp_servers.*` overrides. The publish output
+also bundles `.codex/agents/*.toml` for worker parity. Both provider
+marketplaces contain only `setup`; the full runtime tree comes from the host.
+The bootstraps are published to the
 [claude-plugins](https://github.com/suxrobGM/claude-plugins) and
 [codex-plugins](https://github.com/suxrobGM/codex-plugins) marketplaces, synced
-from `plugin/` each release tag: Claude gets the setup bootstrap, Codex the
-full skill tree. Root `.claude/settings.json` is repo trust policy; the plugin
-owns behavior.
+from `plugin/` each release tag. Root `.claude/settings.json` is repo trust
+policy; the plugin owns behavior.
 
 ### Apply lifecycle
 

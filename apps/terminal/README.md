@@ -9,9 +9,11 @@ terminal traffic.
 ### Interactive terminal
 
 `/sessions/start` validates the request and passes `SessionStartOptions` to `SessionManager`. The manager resolves
-the bundled provider assets, builds the `JOBPILOT_*` environment, and starts `IPty`. `TerminalHub` broadcasts PTY
-output to WebSocket clients and keeps a bounded replay buffer for reconnects. Browser input and resize messages
-flow back through the hub to the same session.
+the bundled provider assets, builds the `JOBPILOT_*` environment, and starts `IPty`. Before a Codex launch it
+rebuilds `.agents/skills` from the bundled skills (excluding the marketplace-owned `setup` bootstrap) and maps
+the bundled `.mcp.json` into launch-time MCP overrides. `TerminalHub` broadcasts PTY output to WebSocket clients
+and keeps a bounded replay buffer for reconnects. Browser input and resize messages flow back through the hub to
+the same session.
 
 ### Pilot
 

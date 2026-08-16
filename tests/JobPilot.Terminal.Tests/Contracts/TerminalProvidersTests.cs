@@ -123,6 +123,22 @@ public class TerminalProvidersTests
     }
 
     [Fact]
+    public void GetLaunchSpec_Codex_LoadsTheBundledMcpServer()
+    {
+        using var temp = new TempDir();
+        temp.File(
+            ".mcp.json",
+            """{"mcpServers":{"playwright":{"command":"npx","args":["@playwright/mcp@latest"]}}}""");
+
+        var spec = TerminalProviders.GetLaunchSpec(TerminalProviders.Codex, temp.Root, NullLogger.Instance);
+
+        // The TOML shape is pinned by AgentSettingsTests; this only proves .mcp.json reaches the -c arguments.
+        var overrideIndex = Array.FindIndex(spec.Args, a => a.StartsWith("mcp_servers.", StringComparison.Ordinal));
+        Assert.True(overrideIndex > 0);
+        Assert.Equal("-c", spec.Args[overrideIndex - 1]);
+    }
+
+    [Fact]
     public void GetLaunchSpec_Throws_ForAnUnknownProvider()
     {
         Assert.Throws<ArgumentException>(

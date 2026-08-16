@@ -5,11 +5,10 @@ paths:
 
 # Plugin conventions (`plugin/`)
 
-One provider-neutral tree serves Claude (`--plugin-dir plugin`; marketplace ships the
-self-contained `skills/setup` bootstrap) and Codex (`jobpilot@sukhrob-codex-plugins`; its
-marketplace gets `.codex-plugin`, `.mcp.json`, and the full `skills/` tree). The tree
-also ships inside terminal archives - the host exposes it via `JOBPILOT_SKILLS_ROOT`. No
-generation step - edit here directly.
+One provider-neutral tree serves Claude (`--plugin-dir plugin`) and Codex (the host mirrors it into
+`.agents/skills` and translates `.mcp.json` into launch overrides). Both marketplaces ship only the
+self-contained `skills/setup` bootstrap; the full tree ships inside terminal archives and is exposed
+through `JOBPILOT_SKILLS_ROOT`. No generation step - edit here directly.
 
 - `.claude-plugin/plugin.json` & `.codex-plugin/plugin.json` - provider manifests (both name it
   `jobpilot`); `.mcp.json` - Playwright MCP wiring shared by both.
@@ -21,7 +20,7 @@ generation step - edit here directly.
 - `skills/_shared/*.md` - reference docs: `auth`, `browser-tips`, `campaign-flow`,
   `digest-schema`, `eligibility`, `form-filling`, `setup`, `untrusted-content`. The directory has
   no `SKILL.md`, so neither provider lists it as a skill - both discover skills by finding
-  `SKILL.md`, and Codex ships the files with the plugin without surfacing them.
+  `SKILL.md`, and the terminal mirrors these reference files beside Codex's runtime skills.
 - `agents/*.md` - worker subagents (`job-worker` score/apply, `networking-worker`
   discover/compose) that campaign skills delegate per-iteration so heavy browser/snapshot work
   stays out of the main context. The `.md` body is the single source of truth; Codex

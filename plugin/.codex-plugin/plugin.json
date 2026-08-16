@@ -1,18 +1,17 @@
 {
   "name": "jobpilot",
   "version": "2.1.29",
-  "description": "Codex skills and Playwright MCP wiring for JobPilot job applications.",
+  "description": "Setup bootstrap for the local JobPilot agent.",
   "author": {
     "name": "JobPilot"
   },
   "license": "MIT",
   "keywords": ["jobpilot", "jobs", "applications", "codex", "skills"],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "JobPilot",
-    "shortDescription": "Run JobPilot job-search and application workflows from Codex.",
-    "longDescription": "JobPilot provides Codex skills for searching job boards, preparing materials, scoring queued jobs, and applying through the local JobPilot web app.",
+    "shortDescription": "Install and start the local JobPilot agent.",
+    "longDescription": "Install, update, and start the local JobPilot terminal, which supplies the runtime skills and browser tools used from the dashboard.",
     "developerName": "JobPilot",
     "category": "Productivity",
     "capabilities": ["Interactive", "Read", "Write"],

@@ -108,8 +108,9 @@ After setup, launch the agent any time from the agent dock in the dashboard.
 <summary><b>Install the terminal companion manually</b></summary>
 
 Use one of these commands if you need to install or repair the terminal
-companion without running the setup skill. The JobPilot plugin is still
-required to launch Codex from the dashboard.
+companion without running the setup skill. Dashboard sessions load their
+runtime skills and browser configuration from the terminal release, so the
+marketplace plugin is needed only for the guided `setup` bootstrap.
 
 - **Windows (PowerShell):**
 

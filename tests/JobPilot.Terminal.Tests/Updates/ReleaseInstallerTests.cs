@@ -1,3 +1,4 @@
+using JobPilot.Terminal.Common;
 using JobPilot.Terminal.Updates;
 using Xunit;
 
@@ -10,7 +11,7 @@ public class ReleaseInstallerTests
     private static string Staging(TempDir temp) => Path.Combine(temp.Root, "staging");
 
     [Fact]
-    public void CopyOver_OverwritesExistingFilesAndAddsNewOnes()
+    public void Copy_OverwritesExistingFilesAndAddsNewOnes()
     {
         using var temp = new TempDir();
 
@@ -18,7 +19,7 @@ public class ReleaseInstallerTests
         temp.File(Path.Combine("staging", "jobpilot.exe"), "new binary");
         temp.File(Path.Combine("staging", "plugin", "skills", "new-skill.md"), "fresh");
 
-        ReleaseInstaller.CopyOver(Staging(temp), Install(temp));
+        FileTree.Copy(Staging(temp), Install(temp));
 
         Assert.Equal("new binary", File.ReadAllText(Path.Combine(Install(temp), "jobpilot.exe")));
         Assert.Equal("fresh", File.ReadAllText(Path.Combine(Install(temp), "plugin", "skills", "new-skill.md")));
@@ -33,7 +34,7 @@ public class ReleaseInstallerTests
         temp.File(Path.Combine("install", "plugin", "skills", "removed", "SKILL.md"), "stale");
         temp.File(Path.Combine("staging", "plugin", "skills", "kept", "SKILL.md"), "new");
 
-        ReleaseInstaller.CopyOver(Staging(temp), Install(temp));
+        FileTree.Copy(Staging(temp), Install(temp));
         ReleaseInstaller.PruneRemovedPluginFiles(Staging(temp), Install(temp));
 
         Assert.Equal("new", File.ReadAllText(Path.Combine(Install(temp), "plugin", "skills", "kept", "SKILL.md")));
@@ -51,7 +52,7 @@ public class ReleaseInstallerTests
         temp.File(Path.Combine("install", "plugin", "skills", "a.md"), "old");
         temp.File(Path.Combine("staging", "plugin", "skills", "a.md"), "new");
 
-        ReleaseInstaller.CopyOver(Staging(temp), Install(temp));
+        FileTree.Copy(Staging(temp), Install(temp));
         ReleaseInstaller.PruneRemovedPluginFiles(Staging(temp), Install(temp));
 
         Assert.Equal("user state", File.ReadAllText(Path.Combine(Install(temp), "user-notes.md")));

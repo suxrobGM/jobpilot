@@ -71,15 +71,15 @@ Then poll until it answers (up to ~30s):
 
 ## 5. Update to the latest release
 
-Only when the host was already running (step 2). Two parts update separately:
+Only when the host was already running (step 2):
 
-- **Terminal host** - self-updates on restart. If the latest `v*` release (`https://api.github.com/repos/suxrobGM/jobpilot/releases`) is newer than the running `hostVersion` (`/healthz`), restart it and confirm the new version. Restarting ends the active session, so skip it when already current.
+- **Terminal host and runtime skills** - they ship together and self-update on restart. If the latest `v*` release (`https://api.github.com/repos/suxrobGM/jobpilot/releases`) is newer than the running `hostVersion` (`/healthz`), restart it and confirm the new version. Restarting ends the active session, so skip it when already current.
 
   Restart, then re-run step 4's launch + poll:
   - **Windows (PowerShell):** `Get-Process jobpilot -ErrorAction SilentlyContinue | Stop-Process -Force`
   - **macOS / Linux:** `pkill -x jobpilot` (exact name; avoid `-f`, which matches a shell in a `jobpilot` dir)
 
-- **Plugin skills** in Claude Code / Codex - update via the provider, not this skill: run `/plugin marketplace update sukhrob-claude-plugins` then `/reload-plugins` in Claude Code. For Codex, run `codex plugin marketplace upgrade sukhrob-codex-plugins` followed by `codex plugin add jobpilot@sukhrob-codex-plugins` in a shell, then start a new session and re-run `setup`.
+- **Setup bootstrap** - only this skill lives in the provider marketplace. If its installer procedure is stale, update it with `/plugin marketplace update sukhrob-claude-plugins` then `/reload-plugins` in Claude Code, or `codex plugin marketplace upgrade sukhrob-codex-plugins` followed by `codex plugin add jobpilot@sukhrob-codex-plugins` in a shell for Codex, then start a new session and re-run `setup`.
 
 ## 6. Open the dashboard
 

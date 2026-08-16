@@ -14,6 +14,8 @@ namespace JobPilot.Terminal;
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(StartSessionRequest))]
 [JsonSerializable(typeof(CodexSettingsFile))]
+[JsonSerializable(typeof(PluginMcpFile))]
+[JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(InjectRequest))]
 [JsonSerializable(typeof(PilotStartRequest))]
 [JsonSerializable(typeof(TerminalClientMessage))]

@@ -37,6 +37,31 @@ public class AgentSettingsTests
     }
 
     [Fact]
+    public void CodexConfigOverrides_TranslatesBundledStdioMcpServers()
+    {
+        using var temp = new TempDir();
+        temp.File(
+            ".mcp.json",
+            """{"mcpServers":{"playwright":{"command":"npx","args":["@playwright/mcp@latest","--snapshot-mode","none"]}}}""");
+
+        Assert.Equal(
+            [
+                "mcp_servers.\"playwright\".command=\"npx\"",
+                "mcp_servers.\"playwright\".args=[\"@playwright/mcp@latest\",\"--snapshot-mode\",\"none\"]"
+            ],
+            AgentSettings.CodexConfigOverrides(temp.Root, NullLogger.Instance));
+    }
+
+    [Fact]
+    public void CodexConfigOverrides_SkipsAnMcpServerWithoutACommand()
+    {
+        using var temp = new TempDir();
+        temp.File(".mcp.json", """{"mcpServers":{"playwright":{"args":["pkg"]}}}""");
+
+        Assert.Empty(AgentSettings.CodexConfigOverrides(temp.Root, NullLogger.Instance));
+    }
+
+    [Fact]
     public void CodexConfigOverrides_IsEmpty_WhenTheFileIsMissing()
     {
         using var temp = new TempDir();

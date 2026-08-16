@@ -19,6 +19,9 @@ Both providers finish by running the `setup` skill, which installs the local
 terminal companion, starts the agent, and opens the dashboard. After that you
 can launch and control the agent from the dashboard's agent dock.
 
+Provider marketplaces carry only that bootstrap skill. The terminal release
+bundles the full tree and exposes it to dashboard sessions for both providers.
+
 ## Layout
 
 - `skills/<name>/SKILL.md`: one workflow per directory, referenced by name so

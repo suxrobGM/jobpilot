@@ -47,20 +47,36 @@ public static class TerminalProviders
     /// <exception cref="ArgumentException">The id is not a known provider.</exception>
     public static string GetDisplayName(string id) => Find(id).DisplayName;
 
+    private const string CodexSkillPrefix = "$";
+
     /// <summary>Formats a skill invocation for a provider (mirrors the web's formatSkillCommand).</summary>
     /// <exception cref="ArgumentException">The provider id is not a known provider.</exception>
     public static string FormatSkillCommand(string provider, string skill, string? args = null)
     {
-        var command = Normalize(provider) == Codex ? $"${skill}" : $"/jobpilot:{skill}";
+        var command = Normalize(provider) == Codex ? $"{CodexSkillPrefix}{skill}" : $"/jobpilot:{skill}";
         var suffix = args?.Trim();
         return string.IsNullOrEmpty(suffix) ? command : $"{command} {suffix}";
     }
+
+    /// <summary>How many Enter presses submit a command; Codex's first Enter only accepts the selected $skill autocomplete item.</summary>
+    public static int SubmitKeyPresses(string provider, string command) =>
+        provider == Codex && command.StartsWith(CodexSkillPrefix, StringComparison.Ordinal) ? 2 : 1;
 
     /// <summary>Fresh-chat command (reset conversation context, same session); both provider TUIs accept it.</summary>
     public const string ClearCommand = "/clear";
 
     /// <summary>Returns every supported provider.</summary>
     public static TerminalProviderInfo[] Supported() => SupportedProviders;
+
+    /// <summary>Readies the workspace for a provider; Codex discovers skills from .agents/skills, so its bundled copy is refreshed.</summary>
+    /// <exception cref="ArgumentException">The provider id is not a known provider.</exception>
+    public static void PrepareWorkspace(string provider, InstallPaths paths)
+    {
+        if (Find(provider).Id == Codex)
+        {
+            CodexAgentSkills.Refresh(paths.SkillsDir, paths.WorkingDir);
+        }
+    }
 
     /// <summary>Builds a launch command for a normalized provider id, reading that provider's shipped settings from the plugin dir.</summary>
     /// <exception cref="ArgumentException">The provider id is not a known provider.</exception>

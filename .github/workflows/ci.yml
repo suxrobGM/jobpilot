@@ -123,6 +123,7 @@ jobs:
           for f in jobpilot \
                    plugin/.claude-plugin/plugin.json \
                    plugin/.codex-plugin/plugin.json \
+                   plugin/.mcp.json \
                    plugin/skills/_shared/setup.md \
                    plugin/skills/auto-apply/SKILL.md \
                    .codex/agents/job-worker.toml \

@@ -20,16 +20,15 @@ mkdir -p \
   "$claude_stage/.claude-plugin" \
   "$claude_stage/skills/setup" \
   "$codex_stage/.codex-plugin" \
-  "$codex_stage/skills"
+  "$codex_stage/skills/setup"
 
 # Claude's marketplace is the setup bootstrap. Dashboard Claude loads the bundled full plugin.
 rsync -a --checksum "$repo_root/plugin/.claude-plugin/" "$claude_stage/.claude-plugin/"
 rsync -a --checksum "$repo_root/plugin/skills/setup/" "$claude_stage/skills/setup/"
 
-# Codex reuses the user-installed public plugin in dashboard sessions, so it needs every skill and MCP wiring.
+# Codex's marketplace is also bootstrap-only. The terminal host owns runtime skills and MCP wiring.
 rsync -a --checksum "$repo_root/plugin/.codex-plugin/" "$codex_stage/.codex-plugin/"
-cp "$repo_root/plugin/.mcp.json" "$codex_stage/.mcp.json"
-rsync -a --checksum "$repo_root/plugin/skills/" "$codex_stage/skills/"
+rsync -a --checksum "$repo_root/plugin/skills/setup/" "$codex_stage/skills/setup/"
 
 # --checksum is intentional: release manifests often retain size and checkout-time mtimes while content changes.
 rsync -a --checksum --delete "$claude_stage/" "$claude_root/plugins/jobpilot/"
@@ -42,12 +41,10 @@ test "$(jq -er '.version' "$claude_root/plugins/jobpilot/.claude-plugin/plugin.j
 test "$(jq -er '.version' "$codex_root/plugins/jobpilot/.codex-plugin/plugin.json")" = "$release_version"
 
 cmp "$repo_root/plugin/.codex-plugin/plugin.json" "$codex_root/plugins/jobpilot/.codex-plugin/plugin.json"
-cmp "$repo_root/plugin/.mcp.json" "$codex_root/plugins/jobpilot/.mcp.json"
-cmp "$repo_root/plugin/skills/_shared/setup.md" "$codex_root/plugins/jobpilot/skills/_shared/setup.md"
-
-for skill in setup search auto-apply apply; do
-  test -f "$codex_root/plugins/jobpilot/skills/$skill/SKILL.md"
-done
+cmp "$repo_root/plugin/skills/setup/SKILL.md" "$codex_root/plugins/jobpilot/skills/setup/SKILL.md"
+test ! -e "$codex_root/plugins/jobpilot/.mcp.json"
+test ! -e "$codex_root/plugins/jobpilot/skills/pilot"
+test ! -e "$codex_root/plugins/jobpilot/skills/_shared"
 
 jq -e '
   .name == "sukhrob-codex-plugins" and

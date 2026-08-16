@@ -16,7 +16,7 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
     public async Task SwapAsync(string url, string exePath, string installDir, CancellationToken ct)
     {
         var staging = installDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + ".new";
-        DeleteIfExists(staging);
+        FileTree.DeleteIfExists(staging);
         Directory.CreateDirectory(staging);
 
         try
@@ -34,7 +34,7 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
             File.Move(exePath, oldExe);
             try
             {
-                CopyOver(staging, installDir);
+                FileTree.Copy(staging, installDir);
                 PruneRemovedPluginFiles(staging, installDir);
             }
             catch
@@ -50,7 +50,7 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
         }
         finally
         {
-            DeleteIfExists(staging);
+            FileTree.DeleteIfExists(staging);
         }
     }
 
@@ -113,30 +113,11 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
         }
     }
 
-    public static void DeleteIfExists(string dir)
-    {
-        if (Directory.Exists(dir))
-        {
-            Directory.Delete(dir, recursive: true);
-        }
-    }
-
     /// <summary>Checks the minimum release payload.</summary>
     internal static bool IsValidHost(string dir, string exeName)
     {
         return File.Exists(Path.Combine(dir, exeName))
             && File.Exists(Path.Combine(dir, "plugin", ".claude-plugin", "plugin.json"));
-    }
-
-    /// <summary>Copies every staged file onto the install directory.</summary>
-    internal static void CopyOver(string stagingDir, string installDir)
-    {
-        foreach (var file in Directory.GetFiles(stagingDir, "*", SearchOption.AllDirectories))
-        {
-            var target = Path.Combine(installDir, Path.GetRelativePath(stagingDir, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(file, target, overwrite: true);
-        }
     }
 
     /// <summary>

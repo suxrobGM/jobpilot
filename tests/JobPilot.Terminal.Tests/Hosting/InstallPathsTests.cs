@@ -62,6 +62,7 @@ public class InstallPathsTests
     [Theory]
     [InlineData("skills/_shared/setup.md")]
     [InlineData("skills/auto-apply/SKILL.md")]
+    [InlineData(".mcp.json")]
     [InlineData(".claude-plugin/plugin.json")]
     [InlineData(".codex-plugin/plugin.json")]
     public void ResolveFrom_Throws_WhenAnyProbedFileIsMissing(string missing)
