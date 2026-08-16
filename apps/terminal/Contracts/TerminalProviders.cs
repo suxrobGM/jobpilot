@@ -64,11 +64,11 @@ public static class TerminalProviders
 
     /// <summary>Builds a launch command for a normalized provider id, reading that provider's shipped settings from the plugin dir.</summary>
     /// <exception cref="ArgumentException">The provider id is not a known provider.</exception>
-    public static TerminalLaunchSpec GetLaunchSpec(string provider, string pluginDir, string workingDir, ILogger logger)
+    public static TerminalLaunchSpec GetLaunchSpec(string provider, string pluginDir, ILogger logger)
     {
         var definition = Find(provider);
         var args = definition.Id == Codex
-            ? CodexArgs(pluginDir, workingDir, logger)
+            ? CodexArgs(pluginDir, logger)
             : ClaudeArgs(pluginDir, logger);
         return new TerminalLaunchSpec(
             new TerminalProviderInfo(definition.Id, definition.DisplayName), definition.Command, args);
@@ -91,9 +91,10 @@ public static class TerminalProviders
     }
 
     // Codex has no --settings flag, so shipped config arrives as repeated -c overrides.
-    private static string[] CodexArgs(string pluginDir, string workingDir, ILogger logger)
+    private static string[] CodexArgs(string pluginDir, ILogger logger)
     {
-        List<string> args = ["--no-alt-screen", "-C", workingDir, "--approve-for-me"];
+        // The PTY already sets Cwd; repeating it through -C makes Windows paths cross a second argument parser.
+        List<string> args = ["--no-alt-screen", "--approve-for-me"];
         foreach (var configOverride in AgentSettings.CodexConfigOverrides(pluginDir, logger))
         {
             args.Add("-c");

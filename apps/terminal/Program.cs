@@ -1,7 +1,6 @@
 using JobPilot.Terminal;
 using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Updates;
-using Microsoft.Extensions.Logging.Abstractions;
 
 // Pty.Net's macOS forkpty path requires CoreCLR's W^X remapping to be off; harmless under NativeAOT.
 if (OperatingSystem.IsMacOS())
@@ -9,10 +8,8 @@ if (OperatingSystem.IsMacOS())
     Environment.SetEnvironmentVariable("DOTNET_EnableWriteXorExecute", "0");
 }
 
-if (args.Any(a => a.Equals("--unregister", StringComparison.OrdinalIgnoreCase)))
+if (HostCli.TryRunCommand(args))
 {
-    ProtocolRegistrar.Unregister(NullLogger.Instance);
-    Console.WriteLine("JobPilot: removed the jobpilot:// URL scheme.");
     return;
 }
 
