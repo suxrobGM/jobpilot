@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.31] - 2026-08-15
+
+### Fixed
+
+- Codex sessions now load the bundled Playwright MCP server. The host passed
+  the server name in quotes, which Codex rejected at startup with an "Invalid
+  MCP server name" warning.
+- The cursor no longer flickers between the input box and the bottom of the
+  screen in Codex sessions on Windows. The web terminal now batches host
+  output for 30 ms so ConPTY's delayed cursor placement lands in the same
+  paint as the redraw it belongs to.
+
 ## [2.1.30] - 2026-08-15
 
 ### Changed
