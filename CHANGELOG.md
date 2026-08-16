@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- The agent no longer runs with every permission check switched off. Claude Code
+  sessions start in auto mode and Codex sessions use its automatic approval
+  review, so a second model checks each action instead of nothing checking it.
+  Routine work is unaffected, but an action it judges risky now waits for you in
+  the dashboard terminal.
+- Claude Code sessions start on Sonnet. You no longer have to set the model
+  yourself, and `/model` still changes it for a running session.
+
 ## [2.1.27] - 2026-08-04
 
 ### Changed

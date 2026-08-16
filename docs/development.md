@@ -136,21 +136,31 @@ Claude.
 - `.mcp.json`: Playwright MCP server.
 - `.claude-plugin/plugin.json` + `.codex-plugin/plugin.json`: provider
   manifests (Codex ignores Claude-only frontmatter like `allowed-tools`).
+- `settings/claude.json` + `settings/codex.json`: shipped agent config. Not
+  `settings.json` at the plugin root: that name is reserved and honors only the
+  `agent` and `subagentStatusLine` keys.
 
-The terminal launches `claude --plugin-dir plugin` or
-`codex --no-alt-screen -C <root>`. Codex has no `--plugin-dir`; dashboard
-sessions reuse the plugin the user explicitly installed from the public
-marketplace under the same OS user and `CODEX_HOME`. The terminal publish
-output still bundles `plugin/` for Claude and for the shared worker resources
-addressed through `JOBPILOT_SKILLS_ROOT`, plus `.codex/agents/*.toml` for
-Codex worker discovery. It does not expose a repo-local Codex marketplace.
-Standalone installs come from the
-[claude-plugins](https://github.com/suxrobGM/claude-plugins) /
-[codex-plugins](https://github.com/suxrobGM/codex-plugins) marketplaces,
-synced from `plugin/` on each release tag: Claude receives the setup bootstrap
-and Codex receives the full skill tree, its `_shared/` references, and MCP
-configuration. Root `.claude/settings.json` grants the permissions the skills
-need: the plugin owns behavior, the repo owns trust policy.
+The terminal launches
+`claude --permission-mode auto --settings plugin/settings/claude.json --plugin-dir plugin`
+or `codex --no-alt-screen -C <root> --approve-for-me -c <override>`. Both run
+under automatic approval review, so a blocked action prompts in the dashboard
+terminal. `settings/claude.json` pins Sonnet and describes the JobPilot API
+under `autoMode.environment`. Codex has no `--settings` flag, and a project
+`.codex/config.toml` loads only for trusted projects, so
+[AgentSettings](../apps/terminal/Hosting/AgentSettings.cs) expands
+`settings/codex.json` into `-c` arguments. A missing file logs a warning and
+still launches.
+
+Codex has no `--plugin-dir` either; it reuses the marketplace plugin installed
+under the same OS user and `CODEX_HOME`. The publish output bundles `plugin/`
+for Claude and for the worker resources reached through
+`JOBPILOT_SKILLS_ROOT`, plus `.codex/agents/*.toml`, but never a repo-local
+Codex marketplace. Standalone installs come from the
+[claude-plugins](https://github.com/suxrobGM/claude-plugins) and
+[codex-plugins](https://github.com/suxrobGM/codex-plugins) marketplaces, synced
+from `plugin/` each release tag: Claude gets the setup bootstrap, Codex the
+full skill tree. Root `.claude/settings.json` is repo trust policy; the plugin
+owns behavior.
 
 ### Apply lifecycle
 

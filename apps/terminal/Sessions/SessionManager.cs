@@ -79,7 +79,7 @@ public sealed class SessionManager : IDisposable
 
             var workingDir = sessionPaths.WorkingDir;
             scratch.CleanSessionStart(workingDir);
-            var spec = TerminalProviders.GetLaunchSpec(normalizedProvider, sessionPaths.PluginDir, workingDir);
+            var spec = TerminalProviders.GetLaunchSpec(normalizedProvider, sessionPaths.PluginDir, workingDir, logger);
 
             logger.LogInformation(
                 "Starting {Provider}: cwd={Cwd} command={Command} args={Args} skillsDir={SkillsDir} cols={Cols} rows={Rows}",

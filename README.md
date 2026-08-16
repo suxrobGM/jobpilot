@@ -70,9 +70,9 @@ morning.
 4. Launch your first search campaign. Review the matches, then apply to the
    ones you like or let an auto-apply campaign work through them.
 
-> Pick a mid-tier model: Claude Sonnet 5 or GPT 5.6 Terra (`/model` in Claude
-> Code). Top-tier models eat your weekly usage limits far faster without
-> applying to more jobs.
+> Claude Code sessions default to Sonnet. On Codex, pick a mid-tier model
+> yourself: GPT 5.6 Terra. Top-tier models eat your weekly usage limits far
+> faster without applying to more jobs.
 > [Why](https://jobpilot.suxrobgm.net/docs/faq).
 
 ### Install the plugin

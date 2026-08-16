@@ -10,7 +10,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Which AI model should I use?",
-    a: "A mid-tier one: Claude Sonnet 5 or GPT 5.6 Terra. Avoid top-tier models like Claude Opus 5. Applying to jobs is reading postings and filling forms, not hard reasoning, so the top tier eats your weekly usage limits far faster without applying to more jobs. Set it in your provider: /model in Claude Code.",
+    a: "A mid-tier one: Claude Sonnet 5 or GPT 5.6 Terra. Avoid top-tier models like Claude Opus 5. Applying to jobs is reading postings and filling forms, not hard reasoning, so the top tier eats your weekly usage limits far faster without applying to more jobs. JobPilot starts Claude Code on Sonnet for you; on Codex, set your own model.",
   },
   {
     q: "Where does the agent run?",

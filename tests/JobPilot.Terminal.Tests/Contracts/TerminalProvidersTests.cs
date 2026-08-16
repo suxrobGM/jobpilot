@@ -1,4 +1,5 @@
 using JobPilot.Terminal.Contracts;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace JobPilot.Terminal.Tests;
@@ -66,29 +67,67 @@ public class TerminalProvidersTests
     }
 
     [Fact]
-    public void GetLaunchSpec_Claude_SkipsPermissionsAndPointsAtThePluginDir()
+    public void GetLaunchSpec_Claude_StartsInAutoModeWithTheShippedSettings()
     {
-        var spec = TerminalProviders.GetLaunchSpec(TerminalProviders.Claude, "/plugin", "/cwd");
+        using var temp = new TempDir();
+        var claudeSettings = temp.File(Path.Combine("settings", "claude.json"), """{"model":"sonnet"}""");
+
+        var spec = TerminalProviders.GetLaunchSpec(TerminalProviders.Claude, temp.Root, "/cwd", NullLogger.Instance);
 
         Assert.Equal("claude", spec.Command);
-        Assert.Equal(["--dangerously-skip-permissions", "--plugin-dir", "/plugin"], spec.Args);
+        Assert.Equal(
+            ["--permission-mode", "auto", "--settings", claudeSettings, "--plugin-dir", temp.Root],
+            spec.Args);
         Assert.Equal("Claude Code", spec.Provider.DisplayName);
     }
 
     [Fact]
-    public void GetLaunchSpec_Codex_DisablesAltScreenAndPassesTheWorkingDir()
+    public void GetLaunchSpec_Claude_StaysLaunchable_WithoutASettingsFile()
     {
-        var spec = TerminalProviders.GetLaunchSpec(TerminalProviders.Codex, "/plugin", "/cwd");
+        using var temp = new TempDir();
+
+        var spec = TerminalProviders.GetLaunchSpec(TerminalProviders.Claude, temp.Root, "/cwd", NullLogger.Instance);
+
+        Assert.Equal(["--permission-mode", "auto", "--plugin-dir", temp.Root], spec.Args);
+    }
+
+    [Fact]
+    public void GetLaunchSpec_Codex_ReviewsApprovalsAndExpandsEveryConfigOverride()
+    {
+        using var temp = new TempDir();
+        temp.File(
+            Path.Combine("settings", "codex.json"),
+            """{"configOverrides":["sandbox_workspace_write.network_access=true","hide_agent_reasoning=true"]}""");
+
+        var spec = TerminalProviders.GetLaunchSpec(TerminalProviders.Codex, temp.Root, "/cwd", NullLogger.Instance);
 
         Assert.Equal("codex", spec.Command);
-        Assert.Equal(["--no-alt-screen", "-C", "/cwd"], spec.Args);
+        Assert.Equal(
+            [
+                "--no-alt-screen", "-C", "/cwd",
+                "--approve-for-me",
+                "-c", "sandbox_workspace_write.network_access=true",
+                "-c", "hide_agent_reasoning=true"
+            ],
+            spec.Args);
         Assert.Equal("Codex", spec.Provider.DisplayName);
+    }
+
+    [Fact]
+    public void GetLaunchSpec_Codex_StaysLaunchable_WithoutASettingsFile()
+    {
+        using var temp = new TempDir();
+
+        var spec = TerminalProviders.GetLaunchSpec(TerminalProviders.Codex, temp.Root, "/cwd", NullLogger.Instance);
+
+        Assert.Equal(["--no-alt-screen", "-C", "/cwd", "--approve-for-me"], spec.Args);
     }
 
     [Fact]
     public void GetLaunchSpec_Throws_ForAnUnknownProvider()
     {
-        Assert.Throws<ArgumentException>(() => TerminalProviders.GetLaunchSpec("gemini", "/plugin", "/cwd"));
+        Assert.Throws<ArgumentException>(
+            () => TerminalProviders.GetLaunchSpec("gemini", "/plugin", "/cwd", NullLogger.Instance));
     }
 
     [Theory]

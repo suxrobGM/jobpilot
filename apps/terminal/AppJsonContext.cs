@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using JobPilot.Terminal.Contracts;
+using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Updates;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ namespace JobPilot.Terminal;
 /// </summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(StartSessionRequest))]
+[JsonSerializable(typeof(CodexSettingsFile))]
 [JsonSerializable(typeof(InjectRequest))]
 [JsonSerializable(typeof(PilotStartRequest))]
 [JsonSerializable(typeof(TerminalClientMessage))]

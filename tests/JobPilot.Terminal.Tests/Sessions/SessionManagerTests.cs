@@ -59,6 +59,19 @@ public sealed class SessionManagerTests : IDisposable
     }
 
     [Fact]
+    public void Start_PassesTheShippedSettingsFromThePluginDir()
+    {
+        var claudeSettings = temp.File(Path.Combine("plugin", "settings", "claude.json"), """{"model":"sonnet"}""");
+        temp.File(Path.Combine("plugin", "settings", "codex.json"), """{"configOverrides":["a=1"]}""");
+
+        Start(TerminalProviders.Claude);
+        Assert.Contains(claudeSettings, pty.LastArgs!);
+
+        Start(TerminalProviders.Codex);
+        Assert.Contains("a=1", pty.LastArgs!);
+    }
+
+    [Fact]
     public void Start_InjectsTheAgentEnvironment()
     {
         session.Start(new SessionStartOptions(
