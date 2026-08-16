@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.29] - 2026-08-15
+
+### Added
+
+- The terminal host now supports `jobpilot --version` for checking the installed
+  version without starting the local server.
+
+### Fixed
+
+- Codex sessions now start correctly on Windows. The terminal host no longer
+  passes the working directory through both the PTY and Codex command line,
+  which caused Codex to exit with OS error 123 on startup.
+
 ## [2.1.28] - 2026-08-15
 
 ### Changed
