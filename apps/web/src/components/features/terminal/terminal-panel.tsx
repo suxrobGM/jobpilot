@@ -13,9 +13,6 @@ import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
 
-// ConPTY moves the cursor into place up to ~22 ms after a repaint; batching hides that jump.
-const OUTPUT_HOLD_MS = 30;
-
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 const SHIFT_ENTER_B64 = toBase64("\x1b[13;2u");
 const CTRL_C_B64 = toBase64("\x03");
@@ -76,36 +73,6 @@ function createKeyHandler(
   };
 }
 
-/** Queues output and writes each hold window's chunks to xterm in one turn. */
-function createOutputWriter(terminal: Terminal): {
-  write: (data: string | Uint8Array) => void;
-  cancel: () => void;
-} {
-  let held: (string | Uint8Array)[] = [];
-  let timer: ReturnType<typeof setTimeout> | null = null;
-
-  const flush = (): void => {
-    timer = null;
-    const chunks = held;
-    held = [];
-    for (const chunk of chunks) {
-      terminal.write(chunk);
-    }
-  };
-
-  return {
-    write(data) {
-      held.push(data);
-      timer ??= setTimeout(flush, OUTPUT_HOLD_MS);
-    },
-    cancel() {
-      if (timer) {
-        clearTimeout(timer);
-      }
-    },
-  };
-}
-
 /** Authenticates and starts the host session; on failure writes the reason and resolves false. */
 async function openSession(
   terminal: Terminal,
@@ -144,8 +111,10 @@ async function openSession(
     if (signal.aborted) {
       return false;
     }
+
     const message = (err as Error).message;
     terminal.writeln(notice(RED, `failed to start session: ${message}`));
+
     if (/Failed to start '(claude|codex)'/.test(message)) {
       terminal.writeln(
         notice(
@@ -206,7 +175,6 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
     terminal.open(container);
 
     const abort = new AbortController();
-    const output = createOutputWriter(terminal);
     let socket: WebSocketClient | null = null;
 
     const fitAndResize = (): void => {
@@ -226,13 +194,16 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
     terminal.onData((data) => sendInput(toBase64(data)));
 
     // socket.close() in the cleanup detaches these callbacks, so none can hit a disposed terminal.
+    const write = (data: string | Uint8Array): void => {
+      terminal.write(data);
+    };
     openSession(terminal, fit, provider, abort.signal).then((started) => {
       if (started) {
         socket = connectWebSocket(TERMINAL_WS_URL, {
           onOpen: fitAndResize,
-          onBinary: output.write,
-          onText: output.write,
-          onClose: () => output.write(`\r\n${notice(YELLOW, "disconnected")}\r\n`),
+          onBinary: write,
+          onText: write,
+          onClose: () => write(`\r\n${notice(YELLOW, "disconnected")}\r\n`),
         });
       }
     });
@@ -252,7 +223,6 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
         clearTimeout(resizeTimer);
       }
       observer.disconnect();
-      output.cancel();
       socket?.close(1000, "panel unmounted");
       terminalRef.current = null;
       terminal.dispose();
