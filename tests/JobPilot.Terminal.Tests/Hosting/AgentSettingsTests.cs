@@ -46,10 +46,19 @@ public class AgentSettingsTests
 
         Assert.Equal(
             [
-                "mcp_servers.\"playwright\".command=\"npx\"",
-                "mcp_servers.\"playwright\".args=[\"@playwright/mcp@latest\",\"--snapshot-mode\",\"none\"]"
+                "mcp_servers.playwright.command=\"npx\"",
+                "mcp_servers.playwright.args=[\"@playwright/mcp@latest\",\"--snapshot-mode\",\"none\"]"
             ],
             AgentSettings.CodexConfigOverrides(temp.Root, NullLogger.Instance));
+    }
+
+    [Fact]
+    public void CodexConfigOverrides_SkipsAnMcpServerWhoseNameCodexRejects()
+    {
+        using var temp = new TempDir();
+        temp.File(".mcp.json", """{"mcpServers":{"play wright":{"command":"npx"}}}""");
+
+        Assert.Empty(AgentSettings.CodexConfigOverrides(temp.Root, NullLogger.Instance));
     }
 
     [Fact]

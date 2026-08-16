@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Text.Json.Serialization.Metadata;
 
 namespace JobPilot.Terminal.Hosting;
@@ -17,7 +18,7 @@ public sealed record PluginMcpFile(Dictionary<string, PluginMcpServer>? McpServe
 public sealed record PluginMcpServer(string? Command, string[]? Args);
 
 /// <summary>Config shipped with the plugin (settings/*.json and the root .mcp.json); a missing or unreadable file warns and the launch goes on without it.</summary>
-public static class AgentSettings
+public static partial class AgentSettings
 {
     /// <summary>Path for `claude --settings`, or null when the file is absent.</summary>
     public static string? ClaudeSettingsFile(string pluginDir, ILogger logger)
@@ -59,17 +60,23 @@ public static class AgentSettings
         List<string> overrides = [];
         foreach (var (name, server) in parsed?.McpServers ?? [])
         {
+            // Codex reads the -c key path literally, so the name is unquoted and must already be a bare TOML key.
+            if (!CodexMcpServerName().IsMatch(name))
+            {
+                logger.LogWarning("Plugin MCP server {Server} has a name Codex rejects and will not be loaded.", name);
+                continue;
+            }
+
             if (string.IsNullOrWhiteSpace(server.Command))
             {
                 logger.LogWarning("Plugin MCP server {Server} has no command and will not be loaded by Codex.", name);
                 continue;
             }
 
-            var key = TomlString(name);
-            overrides.Add($"mcp_servers.{key}.command={TomlString(server.Command)}");
+            overrides.Add($"mcp_servers.{name}.command={TomlString(server.Command)}");
             if (server.Args is { } args)
             {
-                overrides.Add($"mcp_servers.{key}.args=[{string.Join(',', args.Select(TomlString))}]");
+                overrides.Add($"mcp_servers.{name}.args=[{string.Join(',', args.Select(TomlString))}]");
             }
         }
 
@@ -99,6 +106,9 @@ public static class AgentSettings
     // JSON string escapes are a subset of TOML basic-string escapes, so the serializer doubles as the TOML quoter.
     private static string TomlString(string value) =>
         JsonSerializer.Serialize(value, AppJsonContext.Default.String);
+
+    [GeneratedRegex("^[a-zA-Z0-9_-]+$")]
+    private static partial Regex CodexMcpServerName();
 
     private static string SettingsPath(string pluginDir, string fileName) =>
         Path.Combine(pluginDir, "settings", fileName);
