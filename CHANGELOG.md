@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.32] - 2026-08-17
+
+### Changed
+
+- The terminal panel streams provider output immediately again instead of holding chunks briefly.
+
+### Fixed
+
+- Codex Pilot retries JobPilot API requests outside the native Windows sandbox when Schannel
+  returns `SEC_E_NO_CREDENTIALS`, instead of incorrectly reporting that the backend is unavailable.
+
 ## [2.1.31] - 2026-08-15
 
 ### Fixed
