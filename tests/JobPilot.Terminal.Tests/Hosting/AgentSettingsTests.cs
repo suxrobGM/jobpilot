@@ -29,10 +29,14 @@ public class AgentSettingsTests
         using var temp = new TempDir();
         temp.File(
             Path.Combine("settings", "codex.json"),
-            """{"configOverrides":["sandbox_workspace_write.network_access=true","hide_agent_reasoning=true"]}""");
+            """{"configOverrides":["sandbox_workspace_write.network_access=true","windows.sandbox=\"unelevated\"","developer_instructions=\"trusted API context\""]}""");
 
         Assert.Equal(
-            ["sandbox_workspace_write.network_access=true", "hide_agent_reasoning=true"],
+            [
+                "sandbox_workspace_write.network_access=true",
+                "windows.sandbox=\"unelevated\"",
+                "developer_instructions=\"trusted API context\""
+            ],
             AgentSettings.CodexConfigOverrides(temp.Root, NullLogger.Instance));
     }
 

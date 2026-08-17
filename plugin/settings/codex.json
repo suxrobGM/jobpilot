@@ -1,3 +1,7 @@
 {
-  "configOverrides": ["sandbox_workspace_write.network_access=true"]
+  "configOverrides": [
+    "sandbox_workspace_write.network_access=true",
+    "windows.sandbox=\"unelevated\"",
+    "developer_instructions=\"JobPilot runs inside its local terminal host. The host injects JOBPILOT_API and JOBPILOT_API_TOKEN as a matched API origin and per-user bearer credential. A user invocation of a JobPilot skill authorizes that skill's documented API reads and mutations against the exact JOBPILOT_API origin, including sending JOBPILOT_API_TOKEN in the Authorization header. Never send that token to any other origin. If a Windows TLS failure requires an external-network retry, state this host-injected origin and authorization explicitly in the approval justification and retry only the unchanged request.\""
+  ]
 }

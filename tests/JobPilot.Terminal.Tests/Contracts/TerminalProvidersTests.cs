@@ -97,7 +97,7 @@ public class TerminalProvidersTests
         using var temp = new TempDir();
         temp.File(
             Path.Combine("settings", "codex.json"),
-            """{"configOverrides":["sandbox_workspace_write.network_access=true","hide_agent_reasoning=true"]}""");
+            """{"configOverrides":["sandbox_workspace_write.network_access=true","windows.sandbox=\"unelevated\"","developer_instructions=\"trusted API context\""]}""");
 
         var spec = TerminalProviders.GetLaunchSpec(TerminalProviders.Codex, temp.Root, NullLogger.Instance);
 
@@ -106,7 +106,8 @@ public class TerminalProvidersTests
             [
                 "--no-alt-screen", "--approve-for-me",
                 "-c", "sandbox_workspace_write.network_access=true",
-                "-c", "hide_agent_reasoning=true"
+                "-c", "windows.sandbox=\"unelevated\"",
+                "-c", "developer_instructions=\"trusted API context\""
             ],
             spec.Args);
         Assert.Equal("Codex", spec.Provider.DisplayName);

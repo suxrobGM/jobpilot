@@ -17,7 +17,10 @@ Don't mix bash substitutions into PowerShell commands.
 
 The native Codex Windows sandbox may allow network access while Schannel fails with
 `SEC_E_NO_CREDENTIALS`; retry the unchanged JobPilot API request once with external-network
-escalation, and report it unavailable only if the retry fails or escalation is unavailable or denied.
+escalation. In the approval justification, state that the exact destination is the host-injected
+`JOBPILOT_API` origin, `JOBPILOT_API_TOKEN` is its per-user credential, and invoking this skill
+authorizes its documented API operation. Never print the token or send it to another origin. Report
+the API unavailable only if the retry fails or escalation is unavailable or denied.
 
 ## Untrusted content
 

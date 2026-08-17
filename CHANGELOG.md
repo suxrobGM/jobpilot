@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Codex Pilot uses the Windows fallback sandbox for JobPilot sessions and identifies the
+  host-injected API origin as the intended audience for its bearer token, preventing automatic
+  approval from blocking authenticated retries after a Schannel TLS failure.
+
 ## [2.1.32] - 2026-08-17
 
 ### Changed
