@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.1.34 - 2026-08-18
+
+### Added
+
+- A cross-campaign Networking page with Contacts and Messages tabs, so warm intros drafted
+  against job campaigns can be read and approved. Job campaign details list their own drafts,
+  and the pilot's approval question links straight to one.
+- The application detail page shows the cover letter and resume that went out, the job posting
+  text, and the mail and contacts matched to that application.
+- The Inbox nav item carries a badge for mail awaiting a decision, visible from any page.
+
+### Changed
+
+- Interview invites and offers found by the mail scanner now wait in the review queue instead of
+  sitting in the Auto tab, where they left the application unmoved and the funnel reporting zero
+  interviews. Existing parked mail moves into the queue.
+- Accordion and badge styling moved into the theme, and the web and API now share one list of
+  actively-interviewing statuses.
+
+### Fixed
+
+- Codex sessions start with browser tools again. The MCP server command resolves to a real
+  executable path, including when the host is launched through the `jobpilot://` link and gets a
+  rebuilt PATH. The Playwright MCP server is pinned instead of tracking `@latest`.
+- Dashboard page loads no longer fetch a full email to render the Inbox badge count.
+- The application detail page finds its job posting through an index instead of scanning the
+  campaign's whole job set.
+
 ## v2.1.33 - 2026-08-17
 
 ### Fixed
