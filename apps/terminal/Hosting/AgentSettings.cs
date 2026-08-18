@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Text.Json.Serialization.Metadata;
+using JobPilot.Terminal.Common;
 
 namespace JobPilot.Terminal.Hosting;
 
@@ -20,6 +21,9 @@ public sealed record PluginMcpServer(string? Command, string[]? Args);
 /// <summary>Config shipped with the plugin (settings/*.json and the root .mcp.json); a missing or unreadable file warns and the launch goes on without it.</summary>
 public static partial class AgentSettings
 {
+    // npx fetches @playwright/mcp on first launch, which outruns Codex's default startup window.
+    private const int McpStartupTimeoutSeconds = 120;
+
     /// <summary>Path for `claude --settings`, or null when the file is absent.</summary>
     public static string? ClaudeSettingsFile(string pluginDir, ILogger logger)
     {
@@ -36,8 +40,8 @@ public static partial class AgentSettings
     }
 
     /// <summary>Values expanded into repeated `codex -c` arguments.</summary>
-    public static string[] CodexConfigOverrides(string pluginDir, ILogger logger) =>
-        [.. ReadCodexSettings(pluginDir, logger), .. ReadMcpOverrides(pluginDir, logger)];
+    public static string[] CodexConfigOverrides(string pluginDir, ILogger logger, Func<string, string?>? resolveExecutable = null) =>
+        [.. ReadCodexSettings(pluginDir, logger), .. ReadMcpOverrides(pluginDir, logger, resolveExecutable ?? ExecutablePath.Find)];
 
     private static string[] ReadCodexSettings(string pluginDir, ILogger logger)
     {
@@ -49,7 +53,7 @@ public static partial class AgentSettings
         return parsed?.ConfigOverrides ?? [];
     }
 
-    private static List<string> ReadMcpOverrides(string pluginDir, ILogger logger)
+    private static List<string> ReadMcpOverrides(string pluginDir, ILogger logger, Func<string, string?> resolveExecutable)
     {
         var parsed = ReadJson(
             Path.Combine(pluginDir, ".mcp.json"),
@@ -73,11 +77,29 @@ public static partial class AgentSettings
                 continue;
             }
 
-            overrides.Add($"mcp_servers.{name}.command={TomlString(server.Command)}");
-            if (server.Args is { } args)
+            if (resolveExecutable(server.Command) is not { } executable)
+            {
+                logger.LogError(
+                    "Plugin MCP server {Server} command {Command} is not on PATH; Codex sessions start without browser tools.",
+                    name,
+                    server.Command);
+                continue;
+            }
+
+            // Codex spawns the server directly, and CreateProcess cannot run a .cmd shim.
+            var needsShell = ExecutablePath.NeedsShell(executable);
+            var command = needsShell ? "cmd.exe" : executable;
+            string[] args = needsShell
+                ? ["/c", executable, .. server.Args ?? []]
+                : server.Args ?? [];
+
+            overrides.Add($"mcp_servers.{name}.command={TomlString(command)}");
+            if (args.Length > 0)
             {
                 overrides.Add($"mcp_servers.{name}.args=[{string.Join(',', args.Select(TomlString))}]");
             }
+
+            overrides.Add($"mcp_servers.{name}.startup_timeout_sec={McpStartupTimeoutSeconds}");
         }
 
         return overrides;
