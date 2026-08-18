@@ -108,8 +108,8 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
 Rules:
 
 - Default `reviewStatus = "pending"` - human must Approve.
-- `reviewStatus = "auto"` only when `confidence ≥ 0.95` AND `matchedAppId` is set.
-- **`auto` on a `rejected` message is applied by the server** - it moves the Application and writes the `ApplicationEvent`. Still write no status moves here; just classify honestly, because `auto` now has an effect. On every other classification `auto` stays a UI hint and the human approves in `/inbox`. `interviewing` and `offer` are never auto-applied - they need a reply.
+- `reviewStatus = "auto"` is for `rejected` only, and only when `confidence ≥ 0.95` AND `matchedAppId` is set. The server applies it: it moves the Application and writes the `ApplicationEvent`. Still write no status moves here; just classify honestly, because `auto` now has an effect.
+- `interviewing` and `offer` always go out `pending` - they need a reply, so a human approves them in `/inbox`. The server rewrites `auto` to `pending` on those two, so sending `auto` only costs you accuracy in your own summary.
 
 ## Phase 5: Summary
 

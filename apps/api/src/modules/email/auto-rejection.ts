@@ -1,5 +1,5 @@
-// The auto-apply gate for inbox rejections. Shared by the service and the backfill seeder so the
-// rule cannot drift between the live path and a replay.
+// The review gate for scanned inbox mail: what applies itself, and what owes the user a decision.
+// Shared by the service and the backfill seeder so the rule cannot drift between live and replay.
 import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import {
   CLASSIFICATION_TO_STATUS,
@@ -43,4 +43,17 @@ export function isAutoRejection(
   }
   const classified = input.classification && CLASSIFICATION_TO_STATUS[input.classification];
   return (input.appliedStatus ?? classified) === "rejected";
+}
+
+/** Outcomes a human must confirm: both need a reply, and a wrong one is expensive to unwind. */
+const HUMAN_REVIEW_STATUSES = [
+  "interviewing",
+  "offer",
+] as const satisfies readonly ApplicationStatus[];
+
+/** Whether a scan result belongs in the review queue rather than applying itself. */
+export function needsHumanReview(input: AutoRejectionInput): boolean {
+  const classified = input.classification && CLASSIFICATION_TO_STATUS[input.classification];
+  const resolved = input.appliedStatus ?? classified;
+  return (HUMAN_REVIEW_STATUSES as readonly (ApplicationStatus | undefined)[]).includes(resolved);
 }

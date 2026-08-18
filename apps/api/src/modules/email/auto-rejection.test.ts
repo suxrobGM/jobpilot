@@ -3,6 +3,7 @@ import {
   AUTO_REJECTION_MIN_CONFIDENCE,
   type AutoRejectionInput,
   isAutoRejection,
+  needsHumanReview,
 } from "./auto-rejection";
 import { describe, expect, it } from "bun:test";
 
@@ -58,5 +59,24 @@ describe("AUTO_REJECTION_FROM_STATUSES", () => {
 
   it("covers every live status a rejection can arrive against", () => {
     expect([...AUTO_REJECTION_FROM_STATUSES]).toEqual(["applied", "screening", "interviewing"]);
+  });
+});
+
+describe("needsHumanReview", () => {
+  it("queues an interview invite even when the scanner asked for auto", () => {
+    expect(needsHumanReview({ classification: "interviewing", reviewStatus: "auto" })).toBe(true);
+  });
+
+  it("queues an offer", () => {
+    expect(needsHumanReview({ classification: "offer", reviewStatus: "auto" })).toBe(true);
+  });
+
+  it("leaves rejections and noise to the auto gate", () => {
+    expect(needsHumanReview(rejection)).toBe(false);
+    expect(needsHumanReview({ classification: "irrelevant" })).toBe(false);
+  });
+
+  it("honours an explicit appliedStatus over the classification map", () => {
+    expect(needsHumanReview({ classification: "rejected", appliedStatus: "offer" })).toBe(true);
   });
 });
