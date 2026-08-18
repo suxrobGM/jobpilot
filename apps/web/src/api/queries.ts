@@ -137,6 +137,13 @@ export const emailQueries = {
     queryKey: queryKeys.email.oauthClient(),
     queryFn: () => api.email.oauth.client.get(),
   }),
+  messageCount: (filter: InboxFilter) => ({
+    queryKey: queryKeys.email.messageCount({ filter }),
+    queryFn: () =>
+      api.email.messages.count.get({
+        query: filter === "all" ? {} : { reviewStatus: filter },
+      }),
+  }),
   messages: (filter: InboxFilter, page: PaginationQuery) => ({
     queryKey: queryKeys.email.messages({ filter, ...page }),
     queryFn: () =>

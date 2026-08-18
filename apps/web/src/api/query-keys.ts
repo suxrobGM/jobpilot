@@ -69,6 +69,8 @@ export const queryKeys = {
     oauthClient: () => [...queryKeys.email.all, "oauthClient"] as const,
     messages: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.email.all, "messages", filters] as const,
+    messageCount: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.email.all, "messageCount", filters] as const,
     message: (id: string) => [...queryKeys.email.all, "message", id] as const,
   },
 

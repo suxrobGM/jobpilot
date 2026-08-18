@@ -28,7 +28,7 @@ interface MessageQuery {
 export class EmailService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listMessages(userId: string, query: PaginationQuery & MessageQuery) {
+  private messageWhere(userId: string, query: MessageQuery): Prisma.EmailMessageWhereInput {
     const { reviewStatus, classification, since, domainHint, verificationDomain } = query;
 
     const where: Prisma.EmailMessageWhereInput = { account: { userId } };
@@ -55,6 +55,19 @@ export class EmailService {
         { rawBody: { contains: domainHint } },
       ];
     }
+
+    return where;
+  }
+
+  /** Just the total, for callers that render a number and would otherwise page a row to get it. */
+  async countMessages(userId: string, query: MessageQuery) {
+    return {
+      count: await this.prisma.emailMessage.count({ where: this.messageWhere(userId, query) }),
+    };
+  }
+
+  async listMessages(userId: string, query: PaginationQuery & MessageQuery) {
+    const where = this.messageWhere(userId, query);
 
     const [rows, total] = await Promise.all([
       this.prisma.emailMessage.findMany({

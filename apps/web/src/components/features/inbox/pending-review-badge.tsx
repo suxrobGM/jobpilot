@@ -9,20 +9,18 @@ import { emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { useSseChannel } from "@/lib/sse/client";
 
-// The count is the pagination total, so one row is enough to carry it.
-const COUNT_ONLY = { page: 1, limit: 1 };
-
+/** Wraps a nav icon with the count of mail waiting on a decision. */
 export function PendingReviewBadge(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const queryClient = useQueryClient();
-  const query = useApiQuery(emailQueries.messages("pending", COUNT_ONLY));
+  const query = useApiQuery(emailQueries.messageCount("pending"));
 
   const refresh = (): void => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.email.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.email.messageCount() });
   };
 
   // Mounts outside /inbox, so InboxContent's own subscription would not keep it fresh.
   useSseChannel(inboxChannel, null, { onMessage: refresh });
 
-  return <Badge badgeContent={query.data?.pagination.total ?? 0}>{children}</Badge>;
+  return <Badge badgeContent={query.data?.count ?? 0}>{children}</Badge>;
 }

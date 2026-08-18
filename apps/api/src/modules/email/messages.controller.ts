@@ -9,7 +9,9 @@ import {
   emailMessageListSchema,
   emailMessageSchema,
   messageApprovedSchema,
+  messageCountSchema,
   messageDeniedSchema,
+  messageFilters,
   messagesQuery,
   syncResultSchema,
 } from "./email.schema";
@@ -32,6 +34,15 @@ export const emailMessagesController = new Elysia({
       summary: "List inbox messages",
       description:
         "Returns one page of the profile's email messages as `{ items, pagination }`, ordered newest first, filtered by the optional review status, classification, since date, domain hint, and verification domain query parameters.",
+    },
+  })
+  .get("/messages/count", ({ user, query }) => svc.countMessages(user.id, query), {
+    query: messageFilters,
+    response: messageCountSchema,
+    detail: {
+      summary: "Count inbox messages",
+      description:
+        "Returns `{ count }` for the same filters the list route accepts. For callers that render a number and would otherwise page a full message to read the pagination total.",
     },
   })
   .get("/messages/:id", ({ user, params }) => svc.getMessage(user.id, params.id), {

@@ -3,13 +3,18 @@ import { classificationSchema, reviewStatusSchema } from "@jobpilot/contracts/em
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
-export const messagesQuery = paginationQuerySchema.extend({
+/** What narrows a set of inbox messages, whether the caller wants the rows or just how many. */
+export const messageFilters = z.object({
   reviewStatus: z.string().optional(),
   classification: z.string().optional(),
   since: z.string().optional(),
   domainHint: z.string().optional(),
   verificationDomain: z.string().optional(),
 });
+
+export const messagesQuery = paginationQuerySchema.extend(messageFilters.shape);
+
+export const messageCountSchema = z.object({ count: z.number().int().min(0) });
 
 export const startQuery = z.object({ provider: z.string().optional() });
 
