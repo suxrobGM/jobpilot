@@ -11,6 +11,9 @@ public static class PtyEnvironment
 {
     private const string MachineEnvKey = @"SYSTEM\CurrentControlSet\Control\Session Manager\Environment";
 
+    /// <summary>Windows' own default, used when a stripped environment carries no PATHEXT.</summary>
+    internal const string DefaultPathExt = ".COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC";
+
     private const StringSplitOptions CleanSplit =
         StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries;
 
@@ -55,8 +58,7 @@ public static class PtyEnvironment
         };
         if (string.IsNullOrEmpty(systemRoot)) overrides["SystemRoot"] = root;
         if (string.IsNullOrEmpty(comSpec)) overrides["ComSpec"] = $@"{root}\System32\cmd.exe";
-        if (string.IsNullOrEmpty(pathExt))
-            overrides["PATHEXT"] = ".COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC";
+        if (string.IsNullOrEmpty(pathExt)) overrides["PATHEXT"] = DefaultPathExt;
         return overrides;
     }
 
