@@ -14,9 +14,6 @@ export const FUNNEL_GROUPS = [
 
 export type FunnelKey = (typeof FUNNEL_GROUPS)[number]["key"];
 
-/** Statuses that mean an application is actively interviewing (past applied, not yet offer/closed). */
-export const INTERVIEW_STATUSES = ["screening", "interviewing"] as const satisfies FunnelKey[];
-
 interface FunnelBarProps {
   counts: Record<FunnelKey, number>;
   selected: FunnelKey | null;

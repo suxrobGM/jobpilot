@@ -10,6 +10,12 @@ export const STATUSES = [
 ] as const;
 
 export const statusSchema = z.enum(STATUSES);
+
+/** Actively interviewing: past `applied`, not yet an outcome. `offer` is counted on its own. */
+export const INTERVIEW_STATUSES = [
+  "screening",
+  "interviewing",
+] as const satisfies readonly (typeof STATUSES)[number][];
 export const APPLICATION_SOURCES = ["apply", "auto-apply", "manual"] as const;
 export const sourceSchema = z.enum(APPLICATION_SOURCES);
 

@@ -1,11 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { INTERVIEW_STATUSES } from "@jobpilot/contracts/application";
 import { Grid } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { applicationQueries, campaignQueries } from "@/api/queries";
 import { StatCard } from "@/components/ui/display";
-import { INTERVIEW_STATUSES } from "../applications/funnel-bar";
 
 export function StatTiles(): ReactElement {
   const campaigns = useApiQuery(campaignQueries.list());
