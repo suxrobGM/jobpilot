@@ -3,7 +3,6 @@
 import { type ReactElement, useEffect, useState } from "react";
 import { MoreHoriz } from "@mui/icons-material";
 import {
-  Badge,
   BottomNavigation,
   BottomNavigationAction,
   Divider,
@@ -17,8 +16,8 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
-import { useOpenQuestions } from "@/components/features/pilot/attention/use-open-questions";
 import { useSession } from "@/hooks/use-auth";
+import { NavBadge } from "./nav-badge";
 import {
   feedbackLinks,
   footerNavGroups,
@@ -49,7 +48,6 @@ export function MobileNav(): ReactElement {
       setMoreOpen(false);
     }
   }, [pathname]);
-  const { count: questionCount } = useOpenQuestions();
 
   // Derived per render, not at module scope: the visible set depends on the signed-in role.
   const allItems = visibleNavGroups(user?.role).flatMap((group) => group.items);
@@ -62,15 +60,8 @@ export function MobileNav(): ReactElement {
   const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));
   const moreActive = moreItems.some((item) => isNavEntryActive(pathname, item));
   const value = activePrimary?.href ?? (moreActive ? MORE_VALUE : false);
-  // Pilot sits on the tab bar now; only badge More when a badged item actually lives in the drawer.
-  const moreHasQuestions = moreItems.some((item) => item.badge === "questions");
-
-  // One helper over the component's single useOpenQuestions subscription; content 0 hides the badge.
-  const badged = (icon: ReactElement, show = true): ReactElement => (
-    <Badge badgeContent={show ? questionCount : 0} color="error" max={99}>
-      {icon}
-    </Badge>
-  );
+  // Pilot sits on the tab bar now; More carries a badge only while a badged item lives in the drawer.
+  const moreBadge = moreItems.find((item) => item.badge)?.badge;
 
   const renderTab = (item: NavItem): ReactElement => (
     <BottomNavigationAction
@@ -79,7 +70,11 @@ export function MobileNav(): ReactElement {
       href={item.href as Route}
       value={item.href}
       label={item.label}
-      icon={badged(<item.icon fontSize="small" />, item.badge === "questions")}
+      icon={
+        <NavBadge badge={item.badge}>
+          <item.icon fontSize="small" />
+        </NavBadge>
+      }
     />
   );
 
@@ -115,7 +110,11 @@ export function MobileNav(): ReactElement {
         <BottomNavigationAction
           value={MORE_VALUE}
           label="More"
-          icon={badged(<MoreHoriz fontSize="small" />, moreHasQuestions)}
+          icon={
+            <NavBadge badge={moreBadge}>
+              <MoreHoriz fontSize="small" />
+            </NavBadge>
+          }
           onClick={() => setMoreOpen(true)}
         />
       </BottomNavigation>
@@ -132,7 +131,9 @@ export function MobileNav(): ReactElement {
               selected={isNavEntryActive(pathname, item)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
-                {badged(<item.icon fontSize="small" />, item.badge === "questions")}
+                <NavBadge badge={item.badge}>
+                  <item.icon fontSize="small" />
+                </NavBadge>
               </ListItemIcon>
               <ListItemText primary={item.label} />
             </ListItemButton>

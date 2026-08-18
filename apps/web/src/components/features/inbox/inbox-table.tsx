@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { Classification } from "@jobpilot/contracts/email";
-import { Button, Chip, Stack, Typography } from "@mui/material";
+import { Button, Chip, Link, Stack, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
@@ -87,11 +87,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       width: 200,
       sortable: false,
       renderCell: (p) => {
-        const matched = (
-          p.row as EmailMessageDto & {
-            matchedApp?: { title: string; company: string } | null;
-          }
-        ).matchedApp;
+        const matched = p.row.matchedApp;
         if (!matched) {
           return (
             <Typography
@@ -104,9 +100,15 @@ export function InboxTable(props: InboxTableProps): ReactElement {
         }
         return (
           <Stack spacing={0} sx={{ height: "100%", justifyContent: "center", overflow: "hidden" }}>
-            <Typography variant="body2" noWrap sx={{ lineHeight: 1.4 }}>
-              {matched.title}
-            </Typography>
+            <Link
+              href={`/applications/${matched.id}`}
+              // The row click opens the review dialog, so this cell has to keep its own.
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Typography variant="body2" noWrap sx={{ lineHeight: 1.4 }}>
+                {matched.title}
+              </Typography>
+            </Link>
             <Typography variant="captionMuted" noWrap sx={{ lineHeight: 1.4 }}>
               {matched.company}
             </Typography>

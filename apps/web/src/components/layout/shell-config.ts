@@ -23,8 +23,8 @@ export interface NavItem {
   icon: SvgIconComponent;
   /** Shown only to ADMIN/SUPER_ADMIN. Cosmetic - the API's requireRole is the real gate. */
   adminOnly?: boolean;
-  /** Live attention badge on the icon; "questions" shows the open-question count. */
-  badge?: "questions";
+  /** Live attention badge on the icon: open pilot questions, or inbox mail awaiting a decision. */
+  badge?: "questions" | "reviews";
   /** Gets its own tab on the mobile bottom nav; the rest fall into its "More" sheet. */
   primary?: boolean;
   /** Extra pathname prefixes that keep this item highlighted (e.g. detail routes living outside its href). */
@@ -42,7 +42,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Workspace", href: "/workspace", icon: Dashboard, primary: true },
       { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "questions", primary: true },
-      { label: "Inbox", href: "/inbox", icon: Inbox, primary: true },
+      { label: "Inbox", href: "/inbox", icon: Inbox, badge: "reviews", primary: true },
       { label: "Analytics", href: "/analytics", icon: Insights, primary: true },
     ],
   },

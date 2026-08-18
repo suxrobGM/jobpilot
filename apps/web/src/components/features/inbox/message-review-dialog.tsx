@@ -2,7 +2,16 @@
 
 import { type ReactNode, useState } from "react";
 import { CLASSIFICATION_TO_STATUS } from "@jobpilot/contracts/email";
-import { Autocomplete, Button, Chip, Paper, Stack, TextField, Typography } from "@mui/material";
+import {
+  Autocomplete,
+  Button,
+  Chip,
+  Link,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { applicationQueries, emailQueries } from "@/api/queries";
@@ -149,6 +158,12 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             renderInput={(params) => <TextField {...params} label="Matched application" />}
             isOptionEqualToValue={(a, b) => a.id === b.id}
           />
+
+          {matchedApp && (
+            <Link href={`/applications/${matchedApp.id}`}>
+              Open the application for the documents sent and the posting
+            </Link>
+          )}
 
           <Paper
             variant="panel"
