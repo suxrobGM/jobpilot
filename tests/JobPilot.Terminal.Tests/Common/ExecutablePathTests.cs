@@ -11,8 +11,7 @@ public class ExecutablePathTests
         using var temp = new TempDir();
         var tool = temp.File("mytool.cmd", "@echo off");
 
-        // PATHEXT supplies the extension's casing, which Windows treats as the same file.
-        Assert.Equal(tool, ExecutablePath.Find("mytool", temp.Root, ".COM;.EXE;.BAT;.CMD"), StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(tool, ExecutablePath.Find("mytool", temp.Root, ".com;.exe;.bat;.cmd", windows: true));
     }
 
     [Fact]
@@ -20,7 +19,7 @@ public class ExecutablePathTests
     {
         using var temp = new TempDir();
 
-        Assert.Null(ExecutablePath.Find("mytool", temp.Root, ".COM;.EXE;.BAT;.CMD"));
+        Assert.Null(ExecutablePath.Find("mytool", temp.Root, ".com;.exe;.bat;.cmd", windows: true));
     }
 
     [Fact]
@@ -31,16 +30,17 @@ public class ExecutablePathTests
         var exe = temp.File("mytool.exe", "MZ");
 
         // Only the .exe spawns without an interpreter, so it wins even when both are present.
-        Assert.Equal(exe, ExecutablePath.Find("mytool", temp.Root, ".COM;.EXE;.BAT;.CMD"), StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(exe, ExecutablePath.Find("mytool", temp.Root, ".com;.exe;.bat;.cmd", windows: true));
     }
 
     [Fact]
     public void Find_FallsBackToWindowsDefaultExtensions_WhenPathExtIsMissing()
     {
         using var temp = new TempDir();
-        var tool = temp.File("mytool.cmd", "@echo off");
+        // The built-in PATHEXT is uppercase, which a case-sensitive CI filesystem matches literally.
+        var tool = temp.File("mytool.CMD", "@echo off");
 
-        Assert.Equal(tool, ExecutablePath.Find("mytool", temp.Root, null), StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(tool, ExecutablePath.Find("mytool", temp.Root, null, windows: true));
     }
 
     [Fact]
@@ -48,12 +48,12 @@ public class ExecutablePathTests
     {
         using var temp = new TempDir();
         var second = Path.Combine(temp.Root, "second");
-        Directory.CreateDirectory(second);
         var tool = temp.File(Path.Combine("second", "mytool.exe"), "MZ");
 
-        var path = $"\"{Path.Combine(temp.Root, "missing")}\";;{second}";
+        var separator = Path.PathSeparator;
+        var path = $"\"{Path.Combine(temp.Root, "missing")}\"{separator}{separator}{second}";
 
-        Assert.Equal(tool, ExecutablePath.Find("mytool", path, ".COM;.EXE"), StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(tool, ExecutablePath.Find("mytool", path, ".com;.exe", windows: true));
     }
 
     [Fact]
@@ -62,8 +62,18 @@ public class ExecutablePathTests
         using var temp = new TempDir();
         var tool = temp.File("mytool.exe", "MZ");
 
-        Assert.Equal(tool, ExecutablePath.Find(tool, null, null));
-        Assert.Null(ExecutablePath.Find(Path.Combine(temp.Root, "absent.exe"), null, null));
+        Assert.Equal(tool, ExecutablePath.Find(tool, null, null, windows: true));
+        Assert.Null(ExecutablePath.Find(Path.Combine(temp.Root, "absent.exe"), null, null, windows: true));
+    }
+
+    [Fact]
+    public void Find_IgnoresWindowsExtensions_OnUnix()
+    {
+        using var temp = new TempDir();
+        temp.File("mytool.exe", "MZ");
+        var tool = temp.File("mytool", "#!/bin/sh");
+
+        Assert.Equal(tool, ExecutablePath.Find("mytool", temp.Root, ".com;.exe", windows: false));
     }
 
     [Theory]

@@ -14,7 +14,7 @@ public static class ExecutablePath
 
     /// <summary>Absolute path to <paramref name="command"/>, or null when PATH has no match.</summary>
     public static string? Find(string command) =>
-        Find(command, Variable("PATH"), Variable("PATHEXT"));
+        Find(command, Variable("PATH"), Variable("PATHEXT"), OperatingSystem.IsWindows());
 
     /// <summary>True when the resolved file needs a command interpreter rather than a direct spawn.</summary>
     public static bool NeedsShell(string path) =>
@@ -23,7 +23,7 @@ public static class ExecutablePath
         && (ext.Equals(".cmd", StringComparison.OrdinalIgnoreCase)
             || ext.Equals(".bat", StringComparison.OrdinalIgnoreCase));
 
-    internal static string? Find(string command, string? path, string? pathExt)
+    internal static string? Find(string command, string? path, string? pathExt, bool windows)
     {
         if (string.IsNullOrWhiteSpace(command))
         {
@@ -37,7 +37,7 @@ public static class ExecutablePath
 
         foreach (var directory in SearchDirectories(path))
         {
-            foreach (var candidate in Candidates(command, pathExt))
+            foreach (var candidate in Candidates(command, pathExt, windows))
             {
                 var full = Path.Combine(directory, candidate);
                 if (File.Exists(full))
@@ -67,9 +67,9 @@ public static class ExecutablePath
         }
     }
 
-    private static IEnumerable<string> Candidates(string command, string? pathExt)
+    private static IEnumerable<string> Candidates(string command, string? pathExt, bool windows)
     {
-        if (!OperatingSystem.IsWindows())
+        if (!windows)
         {
             yield return command;
             yield break;
