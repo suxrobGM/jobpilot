@@ -7,7 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import { NetworkingBoard } from "@/components/features/networking";
+import { NetworkingBoard, NetworkingMessagesTable } from "@/components/features/networking";
+import { SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
@@ -75,6 +76,20 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
       <CampaignSummaryTiles campaign={campaign} />
       <CampaignReasonBreakdown campaign={campaign} />
       <CampaignJobsPanel campaign={campaign} />
+      {/* The pilot drafts warm intros against job campaigns, which have no board of their own. */}
+      {campaign.summary.networkingCount > 0 && <CampaignOutreach campaignId={campaignId} />}
     </Stack>
+  );
+}
+
+/** Its own component so the drafts are fetched only by the campaigns that have any. */
+function CampaignOutreach(props: CampaignDetailProps): ReactElement {
+  const { campaignId } = props;
+  const messages = useApiQuery(campaignQueries.networking(campaignId));
+
+  return (
+    <SectionCard title="Outreach" description="Warm intros drafted for these roles.">
+      <NetworkingMessagesTable messages={messages.data?.items ?? []} loading={messages.isLoading} />
+    </SectionCard>
   );
 }

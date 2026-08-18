@@ -48,6 +48,7 @@ export function emptyJobSummary(): CampaignJobSummary {
       number
     >,
     scored: 0,
+    networkingCount: 0,
   };
 }
 
@@ -124,10 +125,11 @@ export async function loadCampaignSummaries(
         })
       : [],
 
-    networkingIds.length
+    // Job campaigns included: the pilot saves warm-intro drafts against them too.
+    campaigns.length
       ? client.networkingMessage.groupBy({
           by: ["campaignId", "status"],
-          where: { campaignId: { in: networkingIds } },
+          where: { campaignId: { in: campaigns.map((c) => c.campaignId) } },
           _count: { _all: true },
         })
       : [],
@@ -162,6 +164,11 @@ export async function loadCampaignSummaries(
     requireNetworkingSummary(summaries, row.campaignId).discovered = row.discovered;
   }
   for (const row of messageCounts) {
+    const summary = row.campaignId ? summaries.get(row.campaignId) : undefined;
+    if (summary?.kind === "jobs") {
+      summary.networkingCount += row._count._all;
+      continue;
+    }
     foldNetworking(
       requireNetworkingSummary(summaries, row.campaignId),
       row.status,

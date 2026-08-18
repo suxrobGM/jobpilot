@@ -128,13 +128,6 @@ export const campaignQueries = {
   }),
 };
 
-export const contactQueries = {
-  list: (query: PaginationQuery) => ({
-    queryKey: queryKeys.contacts.list(query),
-    queryFn: () => api.contacts.get({ query }),
-  }),
-};
-
 /** The inbox list filter: a review status, or "all" for no filter. */
 export type InboxFilter = ReviewStatus | "all";
 

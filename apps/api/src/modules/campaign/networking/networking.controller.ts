@@ -25,7 +25,7 @@ export const campaignNetworkingController = new Elysia({
   .use(authGuard)
   .get(
     "/:id/networking",
-    ({ user, params, query }) => svc.listNetworking(user.id, params.id, query),
+    ({ user, params, query }) => svc.listNetworking(user.id, { ...query, campaignId: params.id }),
     {
       params: campaignParams,
       query: paginationQuerySchema,

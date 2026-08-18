@@ -1,31 +1,16 @@
 import { campaignSummarySchema } from "@jobpilot/contracts/campaign";
 import {
-  contactLinkedinConnectionSchema,
   networkingChannelSchema,
   networkingMessageStatusSchema,
 } from "@jobpilot/contracts/networking";
-import { paginatedSchema } from "@jobpilot/contracts/pagination";
+import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
+import { contactSchema } from "@/modules/contact/contact.schema";
 
-/** The nested contact on a networking message (mirrors the mapper's `NetworkingContactRow`). */
-export const networkingContactSchema = z.object({
-  id: z.uuid(),
-  userId: z.uuid(),
-  name: z.string(),
-  title: z.string().nullable(),
-  company: z.string().nullable(),
-  linkedinUrl: z.string().nullable(),
-  email: z.string().nullable(),
-  emailSource: z.string().nullable(),
-  emailConfidence: z.number().nullable(),
-  linkedinConnection: contactLinkedinConnectionSchema,
-  discoverySource: z.string().nullable(),
-  matchConfidence: z.number().nullable(),
-  relatedAppId: z.string().nullable(),
-  relatedJobUrl: z.string().nullable(),
-  notes: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+/** Filters for the cross-campaign networking message list. */
+export const networkingMessageQuerySchema = paginationQuerySchema.extend({
+  status: networkingMessageStatusSchema.optional(),
+  campaignId: z.uuid().optional(),
 });
 
 /**
@@ -50,7 +35,7 @@ export const networkingMessageSchema = z.object({
   repliedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  contact: networkingContactSchema,
+  contact: contactSchema,
 });
 
 /** A list of networking messages (the `listNetworking` route). */

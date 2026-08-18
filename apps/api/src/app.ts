@@ -13,6 +13,7 @@ import {
   campaignController,
   campaignJobController,
   campaignNetworkingController,
+  networkingMessageController,
 } from "@/modules/campaign";
 import { captchaController } from "@/modules/captcha";
 import { contactController } from "@/modules/contact";
@@ -72,6 +73,7 @@ const app = new Elysia()
       .use(jobBoardController)
       .use(credentialController)
       .use(contactController)
+      .use(networkingMessageController)
       .use(analyticsController)
       .use(captchaController)
       .use(userController)

@@ -63,12 +63,6 @@ export const queryKeys = {
       [...queryKeys.campaigns.all, "networking", campaignId, filters] as const,
   },
 
-  contacts: {
-    all: ["contacts"] as const,
-    list: (filters: Record<string, unknown> = {}) =>
-      [...queryKeys.contacts.all, "list", filters] as const,
-  },
-
   email: {
     all: ["email"] as const,
     account: () => [...queryKeys.email.all, "account"] as const,

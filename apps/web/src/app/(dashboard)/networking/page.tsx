@@ -1,19 +1,5 @@
-import type { ReactElement } from "react";
-import type { Metadata } from "next";
-import { ContactsTable } from "@/components/features/networking";
-import { PageHeader, PageShell } from "@/components/ui/layout";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Networking" };
-
-export default function NetworkingPage(): ReactElement {
-  return (
-    <PageShell maxWidth="lg">
-      <PageHeader
-        eyebrow="Networking"
-        title="Contacts"
-        description="Hiring managers and recruiters discovered across your networking campaigns. Start a campaign in Networking mode to find more."
-      />
-      <ContactsTable />
-    </PageShell>
-  );
+export default function NetworkingPage(): never {
+  redirect("/networking/contacts");
 }

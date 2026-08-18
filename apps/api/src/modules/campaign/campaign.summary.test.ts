@@ -12,6 +12,7 @@ describe("campaign summaries", () => {
       skipped: 0,
       remaining: 0,
       scored: 0,
+      networkingCount: 0,
       byStatus: {
         queued: 0,
         pending: 0,

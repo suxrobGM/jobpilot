@@ -4,13 +4,7 @@ import {
   type CampaignSummary,
   type CampaignSource as WireCampaignSource,
 } from "@jobpilot/contracts/campaign";
-import type { ContactDiscoverySource as WireContactDiscoverySource } from "@jobpilot/contracts/networking";
-import type {
-  Campaign,
-  CampaignSource,
-  ContactDiscoverySource,
-  Prisma,
-} from "@/generated/prisma/client";
+import type { Campaign, CampaignSource } from "@/generated/prisma/client";
 import { parseCampaignConfig } from "./campaign.config";
 
 export type CampaignRow = Omit<Campaign, "config" | "source"> & {
@@ -37,32 +31,6 @@ export function toCampaignRow(campaign: Campaign, summary: CampaignSummary): Cam
     source: toWireCampaignSource(campaign.source),
     config: parseCampaignConfig(campaign.config),
     summary,
-  };
-}
-
-const DISCOVERY_SOURCE_TO_WIRE: Record<ContactDiscoverySource, WireContactDiscoverySource> = {
-  google: "google",
-  company_site: "company-site",
-  web: "web",
-  linkedin: "linkedin",
-  manual: "manual",
-};
-
-function toWireDiscoverySource(
-  source: ContactDiscoverySource | null,
-): WireContactDiscoverySource | null {
-  return source ? DISCOVERY_SOURCE_TO_WIRE[source] : null;
-}
-
-export function toNetworkingMessageRow(
-  message: Prisma.NetworkingMessageGetPayload<{ include: { contact: true } }>,
-) {
-  return {
-    ...message,
-    contact: {
-      ...message.contact,
-      discoverySource: toWireDiscoverySource(message.contact.discoverySource),
-    },
   };
 }
 

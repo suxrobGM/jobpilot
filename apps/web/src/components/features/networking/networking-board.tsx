@@ -4,20 +4,19 @@ import { type ReactElement, useState } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
-import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
+import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries, emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { CampaignSummaryDto, NetworkingConfigDto, NetworkingMessageDto } from "@/api/types";
+import type { CampaignSummaryDto, NetworkingConfigDto } from "@/api/types";
 import { AgentOnlyButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ExternalLink, StatCard } from "@/components/ui/display";
+import { StatCard } from "@/components/ui/display";
 import { useAgent } from "@/providers/agent-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
+import { networkingMessageColumns, openActionColumn } from "./networking-message-columns";
 import { NetworkingMessageDialog } from "./networking-message-dialog";
-import { NetworkingStatusChip } from "./networking-status-chip";
 
 function emptyMessage(status: CampaignStatus): string {
   if (status === "in_progress") {
@@ -49,15 +48,6 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
     queryKeys.campaigns.networking(campaignId),
     queryKeys.campaigns.detail(campaignId),
   ];
-
-  const skip = useApiMutation<unknown, string>(
-    (id) =>
-      api
-        .campaigns({ id: campaignId })
-        .networking({ messageId: id })
-        .result.post({ outcome: "skipped" }),
-    { invalidate, successMessage: "Skipped" },
-  );
 
   const approveSelected = useApiMutation<string[], string[]>(
     async (ids) => {
@@ -92,74 +82,6 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
     );
     setSelection(EMPTY_SELECTION);
   };
-
-  const columns: GridColDef<NetworkingMessageDto>[] = [
-    {
-      field: "status",
-      headerName: "Status",
-      width: 110,
-      sortable: false,
-      renderCell: (p) => <NetworkingStatusChip status={p.row.status} />,
-    },
-    {
-      field: "name",
-      headerName: "Contact",
-      flex: 1.2,
-      minWidth: 180,
-      valueGetter: (_v, row) => row.contact.name,
-      renderCell: (p) =>
-        p.row.contact.linkedinUrl ? (
-          <ExternalLink href={p.row.contact.linkedinUrl}>{p.row.contact.name}</ExternalLink>
-        ) : (
-          p.row.contact.name
-        ),
-    },
-    {
-      field: "company",
-      headerName: "Company",
-      flex: 1,
-      minWidth: 140,
-      valueGetter: (_v, row) => row.contact.company ?? "",
-      renderCell: (p) =>
-        p.row.contact.relatedJobUrl ? (
-          <ExternalLink href={p.row.contact.relatedJobUrl}>
-            {p.row.contact.company ?? "View role"}
-          </ExternalLink>
-        ) : (
-          (p.row.contact.company ?? "")
-        ),
-    },
-    {
-      field: "channel",
-      headerName: "Channel",
-      width: 130,
-      valueGetter: (_v, row) =>
-        row.channel === "linkedin"
-          ? `LinkedIn${row.linkedinKind ? ` · ${row.linkedinKind}` : ""}`
-          : "Email",
-    },
-    {
-      field: "subject",
-      headerName: "Subject / preview",
-      flex: 1.4,
-      minWidth: 200,
-      valueGetter: (_v, row) => row.subject ?? row.body.slice(0, 80),
-    },
-    {
-      field: "actions",
-      headerName: "",
-      width: 96,
-      sortable: false,
-      filterable: false,
-      align: "right",
-      headerAlign: "right",
-      renderCell: (p) => (
-        <Button size="small" variant="outlined" onClick={() => setOpenId(p.row.id)}>
-          Open
-        </Button>
-      ),
-    },
-  ];
 
   return (
     <Stack spacing={2}>
@@ -213,29 +135,21 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
 
       <DataTable
         rows={messages}
-        columns={columns}
+        columns={[...networkingMessageColumns, openActionColumn(setOpenId)]}
         loading={messagesQuery.isLoading}
         getRowId={(row) => row.id}
         checkboxSelection
         rowSelectionModel={selection}
         onRowSelectionModelChange={setSelection}
         autoHeight
-        slots={{
-          noRowsOverlay: () => <EmptyState variant="inline" title={emptyMessage(status)} />,
-        }}
+        emptyMessage={emptyMessage(status)}
       />
 
       {openMessage && (
         <NetworkingMessageDialog
           campaignId={campaignId}
           message={openMessage}
-          canSend={canSend}
-          invalidate={invalidate}
           onClose={() => setOpenId(null)}
-          onSkip={() => {
-            skip.mutate(openMessage.id);
-            setOpenId(null);
-          }}
         />
       )}
     </Stack>

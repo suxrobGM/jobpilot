@@ -6,6 +6,7 @@ import type {
 import {
   isTerminalNetworkingStatus,
   NETWORKING_MESSAGE_TERMINAL_STATUSES,
+  type NetworkingMessageStatus,
 } from "@jobpilot/contracts/networking";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { campaignChannel } from "@jobpilot/contracts/sse";
@@ -13,27 +14,39 @@ import { singleton } from "tsyringe";
 import { publishActivity, writeActivity } from "@/common/activity-log";
 import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { PrismaClient } from "@/generated/prisma/client";
-import { createContactPayload } from "@/modules/contact";
-import { toNetworkingMessageRow } from "../campaign.mapper";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { createContactPayload, toNetworkingMessageRow } from "@/modules/contact";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
+
+export interface NetworkingMessageFilters {
+  campaignId?: string;
+  status?: NetworkingMessageStatus;
+  /** A campaign board reads in drafting order; the cross-campaign list reads newest first. */
+  order?: "asc" | "desc";
+}
 
 /** Owns paginated campaign networking writes and idempotent terminal outcomes. */
 @singleton()
 export class CampaignNetworkingService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listNetworking(userId: string, campaignId: string, query: PaginationQuery) {
-    const where = { campaignId, userId };
+  /** One page of networking messages: a campaign's board when `campaignId` is set, otherwise every campaign's. */
+  async listNetworking(userId: string, query: PaginationQuery & NetworkingMessageFilters) {
+    const { campaignId, status, order = "asc" } = query;
+    const where: Prisma.NetworkingMessageWhereInput = {
+      userId,
+      ...(campaignId && { campaignId }),
+      ...(status && { status }),
+    };
     // The page is already ownership-scoped; the probe only separates 404 from an empty page, so
     // it rides along rather than costing a round trip of its own.
     const [, messages, total] = await Promise.all([
-      ensureCampaignOwned(this.prisma, userId, campaignId),
+      campaignId ? ensureCampaignOwned(this.prisma, userId, campaignId) : null,
       this.prisma.networkingMessage.findMany({
         where,
         include: { contact: true },
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: order },
         ...pageSlice(query),
       }),
       this.prisma.networkingMessage.count({ where }),

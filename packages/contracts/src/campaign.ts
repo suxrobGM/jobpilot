@@ -61,6 +61,8 @@ export const campaignJobSummarySchema = z.object({
   byStatus: z.record(campaignJobStatusSchema, z.number().int().min(0)),
   /** Jobs carrying a match score, however they were later resolved. */
   scored: z.number().int().min(0).default(0),
+  /** Warm-intro drafts the pilot saved against this job campaign. */
+  networkingCount: z.number().int().min(0).default(0),
 });
 
 export const campaignNetworkingSummarySchema = z.object({
