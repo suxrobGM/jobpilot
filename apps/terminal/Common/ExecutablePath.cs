@@ -8,6 +8,8 @@ namespace JobPilot.Terminal.Common;
 /// </summary>
 public static class ExecutablePath
 {
+    private static readonly string[] ShellExtensions = [".cmd", ".bat"];
+
     // Resolve against the PATH the agent process gets, not the host's: a protocol-activated host
     // (jobpilot://) inherits one without the machine entries, which is why PtyEnvironment exists.
     private static readonly Lazy<Dictionary<string, string>> ChildEnvironment = new(PtyEnvironment.BuildOverrides);
@@ -19,9 +21,7 @@ public static class ExecutablePath
     /// <summary>True when the resolved file needs a command interpreter rather than a direct spawn.</summary>
     public static bool NeedsShell(string path) =>
         OperatingSystem.IsWindows()
-        && Path.GetExtension(path) is { } ext
-        && (ext.Equals(".cmd", StringComparison.OrdinalIgnoreCase)
-            || ext.Equals(".bat", StringComparison.OrdinalIgnoreCase));
+        && ShellExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
 
     internal static string? Find(string command, string? path, string? pathExt, bool windows)
     {
@@ -35,9 +35,17 @@ public static class ExecutablePath
             return File.Exists(command) ? command : null;
         }
 
-        foreach (var directory in SearchDirectories(path))
+        var candidates = Candidates(command, pathExt, windows);
+
+        foreach (var entry in Split(path, Path.PathSeparator))
         {
-            foreach (var candidate in Candidates(command, pathExt, windows))
+            var directory = entry.Trim('"');
+            if (directory.Length == 0)
+            {
+                continue;
+            }
+
+            foreach (var candidate in candidates)
             {
                 var full = Path.Combine(directory, candidate);
                 if (File.Exists(full))
@@ -55,45 +63,20 @@ public static class ExecutablePath
             ? value
             : Environment.GetEnvironmentVariable(name);
 
-    private static IEnumerable<string> SearchDirectories(string? path)
-    {
-        foreach (var entry in (path ?? string.Empty).Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-        {
-            var trimmed = entry.Trim().Trim('"');
-            if (trimmed.Length > 0)
-            {
-                yield return trimmed;
-            }
-        }
-    }
+    private static string[] Split(string? value, char separator) =>
+        (value ?? string.Empty).Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-    private static IEnumerable<string> Candidates(string command, string? pathExt, bool windows)
+    private static string[] Candidates(string command, string? pathExt, bool windows)
     {
         if (!windows)
         {
-            yield return command;
-            yield break;
+            return [command];
         }
 
         // A real executable first, then the shims: only the former spawns without an interpreter.
-        foreach (var ext in Extensions(pathExt))
-        {
-            yield return command + ext;
-        }
+        var extensions = Split(pathExt ?? PtyEnvironment.DefaultPathExt, ';')
+            .Where(ext => ext.StartsWith('.') && !ext.Equals(".exe", StringComparison.OrdinalIgnoreCase));
 
-        yield return command;
-    }
-
-    private static IEnumerable<string> Extensions(string? pathExt)
-    {
-        yield return ".exe";
-        foreach (var ext in (pathExt ?? PtyEnvironment.DefaultPathExt).Split(';', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var trimmed = ext.Trim();
-            if (trimmed.StartsWith('.') && !trimmed.Equals(".exe", StringComparison.OrdinalIgnoreCase))
-            {
-                yield return trimmed;
-            }
-        }
+        return [command + ".exe", .. extensions.Select(ext => command + ext), command];
     }
 }
