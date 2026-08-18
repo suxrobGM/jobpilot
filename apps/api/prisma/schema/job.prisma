@@ -35,6 +35,8 @@ model Job {
 
   @@unique([campaignId, key])
   @@index([campaignId, status])
+  // The application detail resolves its posting by url within the campaign; no FK links the two.
+  @@index([campaignId, url])
   @@index([status, updatedAt])
   // The pilot activity probe takes MAX(updatedAt) across a user's campaigns every two minutes.
   @@index([campaignId, updatedAt])
