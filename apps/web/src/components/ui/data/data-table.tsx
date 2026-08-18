@@ -1,12 +1,13 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { type ReactElement, useMemo } from "react";
 import {
   DataGrid,
   type DataGridProps,
   type GridColDef,
   type GridValidRowModel,
 } from "@mui/x-data-grid";
+import { EmptyState } from "./empty-state";
 
 interface DataTableProps<TRow extends GridValidRowModel>
   extends Omit<
@@ -18,6 +19,8 @@ interface DataTableProps<TRow extends GridValidRowModel>
   getRowId?: (row: TRow) => string | number;
   onRowClick?: (row: TRow) => void;
   isRowSelectable?: (row: TRow) => boolean;
+  /** Replaces the grid's "No rows" overlay, so every empty table reads like the rest of the app. */
+  emptyMessage?: string;
 }
 
 /**
@@ -27,11 +30,22 @@ interface DataTableProps<TRow extends GridValidRowModel>
 export function DataTable<TRow extends GridValidRowModel>(
   props: DataTableProps<TRow>,
 ): ReactElement {
-  const { rows, columns, getRowId, onRowClick, isRowSelectable, ...rest } = props;
+  const { rows, columns, getRowId, onRowClick, isRowSelectable, emptyMessage, slots, ...rest } =
+    props;
+
+  // A fresh slot component each render would remount the overlay instead of updating it.
+  const mergedSlots = useMemo(
+    () =>
+      emptyMessage
+        ? { noRowsOverlay: () => <EmptyState variant="inline" title={emptyMessage} />, ...slots }
+        : slots,
+    [emptyMessage, slots],
+  );
 
   return (
     <DataGrid<TRow>
       {...rest}
+      slots={mergedSlots}
       rows={rows}
       columns={columns}
       getRowId={getRowId}

@@ -8,9 +8,5 @@ import { useOpenQuestions } from "./use-open-questions";
 export function QuestionBadge(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const { count } = useOpenQuestions();
-  return (
-    <Badge badgeContent={count} color="error" overlap="circular" max={99}>
-      {children}
-    </Badge>
-  );
+  return <Badge badgeContent={count}>{children}</Badge>;
 }

@@ -26,15 +26,10 @@ export function Faq(): ReactElement {
         {FAQ_ITEMS.map((item) => (
           <Accordion
             key={item.q}
-            disableGutters
-            elevation={0}
             sx={(theme) => ({
-              border: `1px solid ${theme.palette.line.border}`,
-              borderRadius: theme.radii.md,
               backgroundColor: theme.palette.surfaces.card,
               transition: theme.motion.fast,
               "&:hover": { borderColor: theme.palette.line.borderHi },
-              "&::before": { display: "none" },
             })}
           >
             <AccordionSummary expandIcon={<ExpandMore fontSize="sm" />}>

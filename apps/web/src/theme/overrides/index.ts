@@ -1,5 +1,7 @@
 import type { Components, Theme } from "@mui/material/styles";
+import { accordionOverrides, accordionSummaryOverrides } from "./accordion";
 import { autocompleteOverrides } from "./autocomplete";
+import { badgeOverrides } from "./badge";
 import { buttonOverrides } from "./button";
 import {
   cardActionsOverrides,
@@ -43,8 +45,11 @@ import { tabOverrides, tabsOverrides } from "./tabs";
 import { toggleButtonOverrides } from "./toggle-button";
 
 export const componentOverrides: Components<Theme> = {
+  MuiAccordion: accordionOverrides,
+  MuiAccordionSummary: accordionSummaryOverrides,
   MuiAutocomplete: autocompleteOverrides,
   MuiBackdrop: backdropOverrides,
+  MuiBadge: badgeOverrides,
   MuiButton: buttonOverrides,
   MuiButtonBase: buttonBaseOverrides,
   MuiCard: cardOverrides,

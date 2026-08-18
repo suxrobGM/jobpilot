@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { ExpandMore } from "@mui/icons-material";
 import {
   Accordion,
   AccordionDetails,
@@ -28,15 +27,8 @@ export function SectionBlock(props: SectionBlockProps): ReactElement {
 
   return (
     <Box data-section-id={section.id}>
-      <Accordion
-        disableGutters
-        elevation={0}
-        variant="panel"
-        expanded={open}
-        onChange={(_, next) => onToggle(next)}
-        sx={{ "&::before": { display: "none" } }}
-      >
-        <AccordionSummary expandIcon={<ExpandMore />}>
+      <Accordion expanded={open} onChange={(_, next) => onToggle(next)}>
+        <AccordionSummary>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
             <Icon fontSize="small" sx={{ color: "text.secondary" }} />
             <Typography variant="body1Strong">{section.label}</Typography>

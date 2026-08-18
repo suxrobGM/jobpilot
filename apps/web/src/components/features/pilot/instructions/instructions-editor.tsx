@@ -6,7 +6,6 @@ import {
   type PilotState,
   pilotInstructionsConfigSchema,
 } from "@jobpilot/contracts/pilot";
-import { ExpandMore } from "@mui/icons-material";
 import {
   Accordion,
   AccordionDetails,
@@ -155,17 +154,11 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
 
               <Box data-section-id="advanced">
                 <Accordion
-                  disableGutters
-                  elevation={0}
                   expanded={advancedOpen}
                   onChange={(_, open) => setAdvancedOpen(open)}
-                  sx={(theme) => ({
-                    border: `1px solid ${theme.palette.line.divider}`,
-                    borderRadius: theme.radii.md,
-                    "&::before": { display: "none" },
-                  })}
+                  sx={(theme) => ({ borderColor: theme.palette.line.divider })}
                 >
-                  <AccordionSummary expandIcon={<ExpandMore />}>
+                  <AccordionSummary>
                     <Stack spacing={0.25}>
                       <Typography variant="body1Strong">Advanced settings</Typography>
                       <Typography variant="captionMuted">
