@@ -107,13 +107,18 @@ export async function writeJobResult(
       });
     }
 
-    // tailor-resume runs before this row exists, so the variant cannot carry an applicationId at
-    // creation - link it here by the url it recorded.
+    // Both documents are written before this row exists, so link them by the url they recorded.
     if (application) {
-      await tx.resumeVariant.updateMany({
-        where: { jobUrl: job.url, applicationId: null, resume: { userId } },
-        data: { applicationId: application.id },
-      });
+      await Promise.all([
+        tx.resumeVariant.updateMany({
+          where: { jobUrl: job.url, applicationId: null, resume: { userId } },
+          data: { applicationId: application.id },
+        }),
+        tx.coverLetter.updateMany({
+          where: { jobUrl: job.url, applicationId: null, userId },
+          data: { applicationId: application.id },
+        }),
+      ]);
     }
 
     return {

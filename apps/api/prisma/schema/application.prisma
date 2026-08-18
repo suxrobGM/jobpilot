@@ -35,6 +35,7 @@ model Application {
   emailMessages  EmailMessage[]
   resumeVariants ResumeVariant[]
   contacts       Contact[]
+  coverLetters   CoverLetter[]
 
   @@unique([userId, url])
   // The duplicate scan filters on both columns; this also serves the bare userId lookups.

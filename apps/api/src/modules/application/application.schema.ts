@@ -6,6 +6,9 @@ import {
 } from "@jobpilot/contracts/application";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
+import { campaignJobSchema } from "@/modules/campaign/campaign.schema";
+import { contactSchema } from "@/modules/contact/contact.schema";
+import { emailMessageSchema } from "@/modules/email/email.schema";
 
 export const applicationListQuerySchema = paginationQuerySchema.extend(
   applicationFilterSchema.shape,
@@ -69,9 +72,48 @@ export const applicationEventSchema = z.object({
   createdAt: z.date(),
 });
 
-/** A single application with its chronological activity history. */
+const applicationResumeVariantSchema = z.object({
+  id: z.uuid(),
+  label: z.string(),
+  diffNotes: z.string().nullable(),
+  createdAt: z.date(),
+});
+
+const applicationCoverLetterSchema = z.object({
+  id: z.uuid(),
+  createdAt: z.date(),
+});
+
+// Picked from the owning modules' schemas: a column rename breaks the build instead of splitting the wire shape.
+const applicationEmailSchema = emailMessageSchema
+  .pick({ id: true, subject: true, fromName: true, receivedAt: true })
+  // Free String column; only the email module's own mapper narrows it to the enum.
+  .extend({ classification: z.string().nullable() });
+
+const applicationContactSchema = contactSchema.pick({
+  id: true,
+  name: true,
+  title: true,
+  company: true,
+  email: true,
+  linkedinUrl: true,
+});
+
+/** The campaign job this application came from, for its posting text. */
+const applicationJobSchema = campaignJobSchema.pick({
+  description: true,
+  salary: true,
+  type: true,
+});
+
+/** A single application with the documents sent, the posting, and everything that came back. */
 export const applicationDetailSchema = applicationSchema.extend({
   events: z.array(applicationEventSchema),
+  resumeVariants: z.array(applicationResumeVariantSchema),
+  coverLetters: z.array(applicationCoverLetterSchema),
+  emailMessages: z.array(applicationEmailSchema),
+  contacts: z.array(applicationContactSchema),
+  job: applicationJobSchema.nullable(),
 });
 
 /** The application summary embedded in a duplicate-check match. */

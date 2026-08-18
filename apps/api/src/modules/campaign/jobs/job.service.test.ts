@@ -34,6 +34,7 @@ function setup() {
   let application: Record<string, unknown> | null = null;
   let applicationUpserts = 0;
   const variantLinks: { where: Record<string, unknown>; data: Record<string, unknown> }[] = [];
+  const coverLetterLinks: { where: Record<string, unknown>; data: Record<string, unknown> }[] = [];
   const campaign = { source: "auto_apply" as const };
   const db = {
     job: {
@@ -91,12 +92,24 @@ function setup() {
     campaign: {
       findUnique: async () => campaign,
     },
+    networkingMessage: {
+      groupBy: async () => [],
+    },
     resumeVariant: {
       updateMany: async (args: {
         where: Record<string, unknown>;
         data: Record<string, unknown>;
       }) => {
         variantLinks.push(args);
+        return { count: 1 };
+      },
+    },
+    coverLetter: {
+      updateMany: async (args: {
+        where: Record<string, unknown>;
+        data: Record<string, unknown>;
+      }) => {
+        coverLetterLinks.push(args);
         return { count: 1 };
       },
     },
@@ -112,6 +125,7 @@ function setup() {
       return applicationUpserts;
     },
     variantLinks,
+    coverLetterLinks,
     setStatus(status: string) {
       job = { ...job, status };
     },
@@ -153,13 +167,28 @@ describe("CampaignJobService terminal results", () => {
     });
   });
 
-  it("does not link variants when the job was not applied to", async () => {
+  it("links the job's cover letter to the new application", async () => {
+    const state = setup();
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+    });
+    // The letter is written before the application row exists, so the url is the only link it has.
+    expect(state.coverLetterLinks).toHaveLength(1);
+    expect(state.coverLetterLinks[0]).toMatchObject({
+      where: { jobUrl: "https://example.test/jobs/1", applicationId: null, userId: "u1" },
+      data: { applicationId: "app1" },
+    });
+  });
+
+  it("does not link documents when the job was not applied to", async () => {
     const state = setup();
     await state.service.recordJobResult("u1", "c1", "j1", {
       outcome: "skipped",
       skipReason: "Already applied (url)",
     });
     expect(state.variantLinks).toHaveLength(0);
+    expect(state.coverLetterLinks).toHaveLength(0);
   });
 
   // `@@unique([userId, url])` reuses the first row; a frozen date drops that url out of the

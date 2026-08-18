@@ -16,6 +16,7 @@ import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
 import { ActivityTimeline } from "./activity-timeline";
 import { StatusTransitionDialog } from "./status-transition-dialog";
+import { SubmissionDetails } from "./submission-details";
 
 interface ApplicationDetailProps {
   applicationId: string;
@@ -122,6 +123,8 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
             {app.failReason && <LabelValue label="Fail reason">{app.failReason}</LabelValue>}
           </Stack>
         </SectionCard>
+
+        <SubmissionDetails application={app} />
 
         <SectionCard title="Activity">
           <ActivityTimeline events={app.events} />
