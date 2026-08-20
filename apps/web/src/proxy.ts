@@ -1,6 +1,6 @@
 import { createApiClient } from "@jobpilot/api-client";
 import { type NextRequest, NextResponse } from "next/server";
-import { API_BASE_URL } from "@/api/base-url";
+import { API_ORIGIN } from "@/api/base-url";
 import { isAdminRole } from "@/lib/roles";
 import { isOnboardingIncomplete } from "@/utils/onboarding";
 
@@ -11,7 +11,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   // Per-request Eden client that forwards the incoming auth cookie
   const cookie = request.headers.get("cookie") ?? "";
-  const { api } = createApiClient(API_BASE_URL, {
+  const { api } = createApiClient(API_ORIGIN, {
     headers: cookie ? { cookie } : {},
     fetch: { cache: "no-store" },
   });

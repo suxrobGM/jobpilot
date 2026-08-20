@@ -28,6 +28,7 @@ export interface RateLimitPolicy {
  * Mandatory, not a nicety: the API runs in a container, so `requestIP()` is the docker bridge gateway
  * for every proxied request - one bucket for the whole user base. nginx *replaces* `X-Real-IP`, so it
  * is trustworthy; never read `X-Forwarded-For`, which nginx appends to (leftmost entry is spoofable).
+ * The web's server renders reach us off the compose network, so they stamp it themselves.
  */
 function clientIp(ctx: RateLimitContext): string {
   const realIp = ctx.headers["x-real-ip"]?.trim();

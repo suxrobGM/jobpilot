@@ -1,7 +1,9 @@
-import type { ReactElement } from "react";
+import { cache, type ReactElement } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
+import { dataOrThrow } from "@/api/error";
+import { getPublicFetchOptions } from "@/api/server";
 import { JobDetail } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { breadcrumbLd, jobPostingLd } from "@/lib/structured-data";
@@ -10,11 +12,13 @@ interface JobPageProps {
   params: Promise<{ slug: string }>;
 }
 
-/** Called by both generateMetadata and the page; React dedupes it to one fetch. */
-async function getJob(slug: string) {
-  const { data } = await api.public.jobs({ slug }).get();
-  return data;
-}
+/** Called by both generateMetadata and the page; `cache` collapses that to one request. */
+const getJob = cache(async (slug: string) =>
+  dataOrThrow(
+    await api.public.jobs({ slug }).get(await getPublicFetchOptions()),
+    "Couldn't load this job listing",
+  ),
+);
 
 export async function generateMetadata(props: JobPageProps): Promise<Metadata> {
   const { slug } = await props.params;

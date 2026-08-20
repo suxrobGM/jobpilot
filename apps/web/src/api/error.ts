@@ -19,3 +19,14 @@ export function apiErrorMessage(error: unknown, fallback?: string): string {
     ? `Request failed (HTTP ${status})`
     : "Can't reach the server - check your connection";
 }
+
+/**
+ * Unwrap a public detail fetch whose caller maps a null row to `notFound()`. Eden reports every
+ * non-2xx as `error`, and a 429 or a blip rendered as "not found" invites Google to deindex a live page.
+ */
+export function dataOrThrow<T>(result: EdenResult<T>, fallback: string): T | null {
+  if (result.error && result.error.status !== 404) {
+    throw new Error(apiErrorMessage(result.error, fallback));
+  }
+  return result.data;
+}

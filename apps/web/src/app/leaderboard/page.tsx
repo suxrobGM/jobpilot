@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { api } from "@/api/client";
+import { getPublicFetchOptions } from "@/api/server";
 import { LeaderboardView } from "@/components/features/portfolio";
 
 export const metadata: Metadata = {
@@ -13,7 +14,10 @@ export const metadata: Metadata = {
 
 /** Server-fetch the default window for SEO; the client view refetches on toggle. */
 async function getLeaderboard() {
-  const { data } = await api.public.portfolio.leaderboard.get({ query: { window: "month" } });
+  const { data } = await api.public.portfolio.leaderboard.get({
+    query: { window: "month" },
+    ...(await getPublicFetchOptions()),
+  });
   return data;
 }
 

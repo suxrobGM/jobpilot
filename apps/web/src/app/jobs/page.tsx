@@ -2,7 +2,9 @@ import { type ReactElement, Suspense } from "react";
 import { JOB_LISTING_FILTER_KEYS, JOB_LISTING_MAX_PAGE } from "@jobpilot/contracts/job-listing";
 import { Grid, Skeleton, Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
+import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
+import { getPublicFetchOptions } from "@/api/server";
 import { JobCard, JobFilters, JobGridSkeleton, JobPager } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LinkButton } from "@/components/ui/buttons";
@@ -55,8 +57,11 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
   );
 }
 
-/** The tech vocabulary is server-cached, so seeding the filter costs a cheap API hop. */
+/** The skill vocabulary is identical for every visitor, so it belongs in the prerender, not a per-request hop. */
 async function JobFiltersPanel(): Promise<ReactElement> {
+  "use cache";
+  cacheLife("hours");
+
   const { data } = await api.public.jobs.facets.get();
   return <JobFilters skillOptions={data?.skills.map((facet) => facet.value) ?? []} />;
 }
@@ -74,6 +79,7 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
 
   const { data, error } = await api.public.jobs.get({
     query: { ...filters, page: pageParam(params.page, JOB_LISTING_MAX_PAGE), limit: 24 },
+    ...(await getPublicFetchOptions()),
   });
 
   if (error || !data) {

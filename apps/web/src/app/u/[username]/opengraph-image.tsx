@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { api } from "@/api/client";
+import { getPublicFetchOptions } from "@/api/server";
 import { markDataUri } from "@/components/brand/mark-svg";
 import { accent, feedback, surfaces, textColors } from "@/theme/palette";
 
@@ -15,12 +16,15 @@ interface OgProps {
 export default async function PortfolioOgImage(props: OgProps): Promise<ImageResponse> {
   const { username } = await props.params;
 
+  // Resolved outside the try: a bailout signal from `headers()` must not be swallowed as a down API.
+  const options = await getPublicFetchOptions();
+
   // A down API must yield the generic card, never a 500 that breaks the link unfurl.
   let name = "JobPilot portfolio";
   let headline: string | null = null;
   let applications: number | null = null;
   try {
-    const { data } = await api.public.portfolio({ username }).get();
+    const { data } = await api.public.portfolio({ username }).get(options);
     if (data) {
       name = data.displayName;
       headline = data.headline;

@@ -1,7 +1,9 @@
-import type { ReactElement } from "react";
+import { cache, type ReactElement } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
+import { dataOrThrow } from "@/api/error";
+import { getPublicFetchOptions } from "@/api/server";
 import { PortfolioView } from "@/components/features/portfolio";
 import { JsonLd } from "@/components/seo/json-ld";
 import { breadcrumbLd, personLd } from "@/lib/structured-data";
@@ -10,11 +12,13 @@ interface PortfolioPageProps {
   params: Promise<{ username: string }>;
 }
 
-/** Called by both generateMetadata and the page; React dedupes it to one fetch. */
-async function getPortfolio(username: string) {
-  const { data } = await api.public.portfolio({ username }).get();
-  return data;
-}
+/** Called by both generateMetadata and the page; `cache` collapses that to one request. */
+const getPortfolio = cache(async (username: string) =>
+  dataOrThrow(
+    await api.public.portfolio({ username }).get(await getPublicFetchOptions()),
+    "Couldn't load this portfolio",
+  ),
+);
 
 export async function generateMetadata(props: PortfolioPageProps): Promise<Metadata> {
   const { username } = await props.params;

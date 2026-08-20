@@ -25,6 +25,8 @@ services:
       - NODE_ENV=production
       - PORT=4100
       - HOSTNAME=0.0.0.0
+      # Server renders reach the API over the compose network; the browser keeps NEXT_PUBLIC_API_URL.
+      - INTERNAL_API_URL=http://api:4101
     ports:
       - "127.0.0.1:${WEB_PORT:-4100}:4100"
     depends_on:
