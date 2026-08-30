@@ -94,6 +94,13 @@ export const FINALIZE_IDLE_MS = 10 * 60 * 1000;
 /** An `applying` job with no open claim and no update for this long is stranded (crashed driver). */
 export const STALE_APPLYING_MS = 30 * 60 * 1000;
 
+/**
+ * How long an approved job stays worth applying to. Approved rows have no other age bound, so a
+ * pilot paused for a week wakes to a backlog of dead postings ranked above everything else
+ * (jobBase + matchScore). Pilot campaigns only - a user's own queue is theirs to clear.
+ */
+export const APPROVED_JOB_STALE_MS = 7 * DAY_MS;
+
 /** Each open apply claim becomes a NOT clause in the stale sweep; the pilot never holds many at once. */
 export const MAX_OPEN_APPLY_CLAIMS = 20;
 

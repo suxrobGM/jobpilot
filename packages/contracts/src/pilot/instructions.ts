@@ -44,10 +44,33 @@ export const pilotInstructionsConfigSchema = z.object({
   promotion: pilotPromotionConfigSchema.prefault({}),
 });
 
+/**
+ * What to do with work the pilot started under the old goals. Nothing here happens by default: the
+ * searches, campaigns and approved backlog all outlive an instructions edit, which is why rewritten
+ * goals otherwise look ignored. The web asks before sending any of it.
+ */
+export const pilotInstructionsChangeSchema = z.object({
+  // Deletes the searches so `strategy.bootstrap` can derive new ones - it is gated on there being none.
+  rederiveSearches: z.boolean().default(false),
+  completeCampaigns: z.boolean().default(false),
+  dropApprovedJobs: z.boolean().default(false),
+});
+
 export const updatePilotInstructionsSchema = z.object({
   // Goals are mandatory and the pilot's whole steering input: an empty save is rejected.
   goals: z.string().trim().min(1, "Write the pilot's goals before saving."),
   config: pilotInstructionsConfigSchema,
+  onChange: pilotInstructionsChangeSchema.prefault({}),
+});
+
+/** What an instructions edit would leave behind, so the user can decide before saving. */
+export const pilotInstructionsImpactSchema = z.object({
+  searches: z.array(z.object({ id: z.uuid(), query: z.string(), reason: z.string() })),
+  campaigns: z.array(
+    z.object({ campaignId: z.uuid(), query: z.string(), approvedJobs: z.number().int() }),
+  ),
+  approvedJobs: z.number().int(),
+  oldestApprovedAt: z.date().nullable(),
 });
 
 export const pilotStateSchema = z.object({
@@ -67,6 +90,8 @@ export const pilotStateSchema = z.object({
 });
 
 export type PilotInstructionsConfig = z.infer<typeof pilotInstructionsConfigSchema>;
+export type PilotInstructionsChange = z.infer<typeof pilotInstructionsChangeSchema>;
+export type PilotInstructionsImpact = z.infer<typeof pilotInstructionsImpactSchema>;
 export type UpdatePilotInstructionsInput = z.infer<typeof updatePilotInstructionsSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;
 

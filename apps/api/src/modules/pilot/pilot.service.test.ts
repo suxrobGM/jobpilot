@@ -1,6 +1,9 @@
 // Fake-Prisma unit test for PilotService: the question lifecycle (journal lives in journal.service.test.ts).
 // Injects a fake Prisma directly (no database); publish() is a no-op without subscribers.
-import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
+import {
+  pilotInstructionsChangeSchema,
+  pilotInstructionsConfigSchema,
+} from "@jobpilot/contracts/pilot";
 import type { PushPayload } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { makePush } from "./agenda/db.test-helpers";
@@ -154,7 +157,13 @@ function activityService(
 }
 
 function instructionsService(prevGoals: string) {
-  const rec = { searchResets: 0 };
+  const rec = {
+    searchResets: 0,
+    searchDeletes: 0,
+    bootstrapClaimDeletes: 0,
+    campaignsCompleted: 0,
+    jobsDropped: 0,
+  };
   const stateRow = (goals: string) => ({
     userId: "p1",
     running: false,
@@ -177,15 +186,43 @@ function instructionsService(prevGoals: string) {
         rec.searchResets++;
         return { count: 0 };
       },
+      deleteMany: async () => {
+        rec.searchDeletes++;
+        return { count: 2 };
+      },
+    },
+    pilotClaim: {
+      deleteMany: async () => {
+        rec.bootstrapClaimDeletes++;
+        return { count: 1 };
+      },
+    },
+    campaign: {
+      updateMany: async () => {
+        rec.campaignsCompleted++;
+        return { count: 1 };
+      },
+    },
+    job: {
+      updateMany: async () => {
+        rec.jobsDropped++;
+        return { count: 4 };
+      },
     },
     application: { count: async () => 0 },
     networkingMessage: { count: async () => 0 },
+    // The delete + claim-clear pair is one transaction; the fake runs the operations it is handed.
+    $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   };
   return { svc: new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] })), rec };
 }
 
 describe("PilotService.updateInstructions", () => {
-  const body = (goals: string) => ({ goals, config: pilotInstructionsConfigSchema.parse({}) });
+  const body = (goals: string, onChange = {}) => ({
+    goals,
+    config: pilotInstructionsConfigSchema.parse({}),
+    onChange: pilotInstructionsChangeSchema.parse(onChange),
+  });
 
   it("resets every search's scheduling when the goals change", async () => {
     const { svc, rec } = instructionsService("old goals");
@@ -197,6 +234,32 @@ describe("PilotService.updateInstructions", () => {
     const { svc, rec } = instructionsService("same goals");
     await svc.updateInstructions("p1", body("same goals"));
     expect(rec.searchResets).toBe(0);
+  });
+
+  it("retires nothing when the user asked for nothing", async () => {
+    const { svc, rec } = instructionsService("old goals");
+    await svc.updateInstructions("p1", body("new goals"));
+    expect(rec).toMatchObject({
+      searchDeletes: 0,
+      bootstrapClaimDeletes: 0,
+      campaignsCompleted: 0,
+      jobsDropped: 0,
+    });
+  });
+
+  it("clears the bootstrap damper with the searches, or the re-derive waits a day", async () => {
+    const { svc, rec } = instructionsService("old goals");
+    await svc.updateInstructions("p1", body("new goals", { rederiveSearches: true }));
+    expect(rec).toMatchObject({ searchDeletes: 1, bootstrapClaimDeletes: 1 });
+  });
+
+  it("completes campaigns and drops the approved backlog when asked", async () => {
+    const { svc, rec } = instructionsService("old goals");
+    await svc.updateInstructions(
+      "p1",
+      body("new goals", { completeCampaigns: true, dropApprovedJobs: true }),
+    );
+    expect(rec).toMatchObject({ campaignsCompleted: 1, jobsDropped: 1 });
   });
 });
 

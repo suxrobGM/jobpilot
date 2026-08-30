@@ -1,5 +1,10 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import { GATHER_CAP, MAX_OPEN_APPLY_CLAIMS, STALE_APPLYING_MS } from "./constants";
+import {
+  APPROVED_JOB_STALE_MS,
+  GATHER_CAP,
+  MAX_OPEN_APPLY_CLAIMS,
+  STALE_APPLYING_MS,
+} from "./constants";
 import { parseJobPayload } from "./job-mutations";
 
 function splitJobSubject(subjectId: string) {
@@ -62,6 +67,17 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
         NOT: openApplyRefs.map((ref) => ({ campaignId: ref.campaignId, key: ref.jobKey })),
       },
       data: { status: "approved" },
+    });
+
+    // Approved rows the pilot never reached. They outrank everything else on the agenda, so without
+    // this a week-long pause spends the next run's first hours on postings that have since closed.
+    await tx.job.updateMany({
+      where: {
+        status: "approved",
+        campaign: { userId, createdBy: "pilot" },
+        createdAt: { lt: new Date(now.getTime() - APPROVED_JOB_STALE_MS) },
+      },
+      data: { status: "skipped", skipReason: "Posting went stale before the pilot applied." },
     });
 
     const questions = await tx.pilotQuestion.findMany({

@@ -1,4 +1,8 @@
-import { pilotStateSchema, updatePilotInstructionsSchema } from "@jobpilot/contracts/pilot";
+import {
+  pilotInstructionsImpactSchema,
+  pilotStateSchema,
+  updatePilotInstructionsSchema,
+} from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
@@ -25,6 +29,14 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Get pilot state",
       description: "Returns the profile's Pilot state, creating it with defaults on first read.",
+    },
+  })
+  .get("/instructions/impact", ({ user }) => pilot.instructionsImpact(user.id), {
+    response: pilotInstructionsImpactSchema,
+    detail: {
+      summary: "Preview what an instructions edit leaves running",
+      description:
+        "Lists the searches, in-progress pilot campaigns and approved backlog that outlive an instructions edit, so the caller can decide what to retire alongside it.",
     },
   })
   .put("/instructions", ({ user, body }) => pilot.updateInstructions(user.id, body), {

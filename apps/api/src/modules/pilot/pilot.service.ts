@@ -1,6 +1,8 @@
 import {
   type AnswerPilotQuestionInput,
   type CreatePilotQuestionInput,
+  type PilotInstructionsChange,
+  type PilotInstructionsImpact,
   type PilotQuestionStatus,
   pilotCycleDetailSchema,
   type UpdatePilotInstructionsInput,
@@ -61,6 +63,73 @@ export class PilotService {
     return row?.instructionsGoals ?? "";
   }
 
+  /** What an instructions edit would leave running, so the user can decide before saving. */
+  async instructionsImpact(userId: string): Promise<PilotInstructionsImpact> {
+    const [searches, campaigns, approved] = await Promise.all([
+      this.prisma.pilotSearch.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, query: true, reason: true },
+      }),
+      this.prisma.campaign.findMany({
+        where: { userId, createdBy: "pilot", status: "in_progress" },
+        orderBy: { startedAt: "asc" },
+        select: {
+          campaignId: true,
+          query: true,
+          _count: { select: { jobs: { where: { status: "approved" } } } },
+        },
+      }),
+      this.prisma.job.aggregate({
+        where: { status: "approved", campaign: { userId, createdBy: "pilot" } },
+        _count: { _all: true },
+        _min: { createdAt: true },
+      }),
+    ]);
+
+    return {
+      searches,
+      campaigns: campaigns.map((c) => ({
+        campaignId: c.campaignId,
+        query: c.query,
+        approvedJobs: c._count.jobs,
+      })),
+      approvedJobs: approved._count._all,
+      oldestApprovedAt: approved._min.createdAt,
+    };
+  }
+
+  /**
+   * Retires whatever the user chose to leave behind. Deleting the searches is what lets
+   * `strategy.bootstrap` derive new ones from the new goals - it is gated on there being none - and
+   * its own claim damper has to go with them or the next cycle skips it for a day.
+   */
+  private async applyInstructionsChange(userId: string, change: PilotInstructionsChange) {
+    if (change.rederiveSearches) {
+      await this.prisma.$transaction([
+        this.prisma.pilotSearch.deleteMany({ where: { userId } }),
+        this.prisma.pilotClaim.deleteMany({ where: { userId, kind: "strategy.bootstrap" } }),
+      ]);
+    }
+    if (change.dropApprovedJobs) {
+      await this.prisma.job.updateMany({
+        where: { status: "approved", campaign: { userId, createdBy: "pilot" } },
+        data: { status: "skipped", skipReason: "Goals changed before this was applied to." },
+      });
+    }
+    if (change.completeCampaigns) {
+      await this.prisma.campaign.updateMany({
+        where: { userId, createdBy: "pilot", status: "in_progress" },
+        data: {
+          status: "completed",
+          statusActor: "user",
+          statusReason: "Goals changed.",
+          completedAt: new Date(),
+        },
+      });
+    }
+  }
+
   async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
     // The searches were chosen for the old goals - a change makes them all due and clears backoff.
     const goalsChanged = (await this.readGoals(userId)) !== body.goals;
@@ -82,6 +151,8 @@ export class PilotService {
         data: { emptyRuns: 0, nextRunAt: new Date() },
       });
     }
+    await this.applyInstructionsChange(userId, body.onChange);
+
     const state = await this.toStateDto(userId, row);
     publish(pilotChannel, { userId }, { type: "state.changed", state });
     return state;

@@ -2,9 +2,11 @@
 
 import { type ReactElement, useState } from "react";
 import {
+  type PilotInstructionsChange,
   type PilotInstructionsConfig,
   type PilotState,
   pilotInstructionsConfigSchema,
+  type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import {
   Accordion,
@@ -16,7 +18,8 @@ import {
 } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -26,6 +29,7 @@ import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/notification-provider";
 import { BoardsSection } from "./boards-section";
 import { type InstructionsFormValues, instructionsFormSchema } from "./form-schema";
+import { GoalsChangeDialog } from "./goals-change-dialog";
 import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
 import { NetworkingSection } from "./networking-section";
@@ -53,6 +57,31 @@ const NAV_ANCHORS: SectionAnchor[] = [
 /** A config indistinguishable from `{}` means the user never tuned anything - keep Advanced folded. */
 const DEFAULT_CONFIG_JSON = JSON.stringify(pilotInstructionsConfigSchema.parse({}));
 
+/** Saving with the goals unchanged, or with nothing in flight, retires nothing. */
+const KEEP_EVERYTHING: PilotInstructionsChange = {
+  rederiveSearches: false,
+  completeCampaigns: false,
+  dropApprovedJobs: false,
+};
+
+function toConfig(value: InstructionsFormValues): PilotInstructionsConfig {
+  return {
+    dailyApplyCap: value.dailyApplyCap,
+    minScore: value.minScore,
+    checkIntervalMinutes: value.checkIntervalMinutes,
+    boards: value.boards,
+    networking: value.networking,
+    promotion: {
+      platforms: value.promotionPlatforms.map((p) => ({
+        platform: p.platform.trim(),
+        target: p.target.trim() || undefined,
+        postEveryDays: p.postEveryDays,
+      })),
+      autonomy: "review",
+    },
+  };
+}
+
 function toFormValues(state: PilotState): InstructionsFormValues {
   const c = state.instructionsConfig;
   return {
@@ -78,34 +107,45 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
     () => JSON.stringify(state.instructionsConfig) !== DEFAULT_CONFIG_JSON,
   );
 
-  const save = useApiMutation<unknown, { goals: string; config: PilotInstructionsConfig }>(
+  const save = useApiMutation<unknown, UpdatePilotInstructionsInput>(
     (body) => api.pilot.instructions.put(body),
-    { invalidate: [queryKeys.pilot.state()], successMessage: "Instructions saved." },
+    {
+      invalidate: [queryKeys.pilot.state(), queryKeys.pilot.searches()],
+      successMessage: "Instructions saved.",
+    },
   );
+
+  // Fetched with the page, not on submit: the answer decides whether saving even needs to ask.
+  const impact = useApiQuery(pilotQueries.instructionsImpact(), {
+    errorMessage: "Failed to check what the pilot has in flight",
+  });
+  const inFlight = impact.data
+    ? impact.data.searches.length + impact.data.campaigns.length + impact.data.approvedJobs
+    : 0;
+
+  // Held between "the goals changed" and the user answering what to retire. Its presence opens the
+  // dialog, and it carries the values the save finishes with.
+  const [pending, setPending] = useState<InstructionsFormValues | null>(null);
+
+  const commit = async (value: InstructionsFormValues, onChange: PilotInstructionsChange) => {
+    await save.mutateAsync({ goals: value.goals, config: toConfig(value), onChange });
+    setPending(null);
+    // Re-baseline the defaults so the dirty save bar hides after a successful save.
+    form.reset(value);
+  };
 
   const form = useAppForm({
     defaultValues: toFormValues(state),
     validators: { onSubmit: instructionsFormSchema },
     onSubmitInvalid: () => toast.error("Fix the highlighted fields"),
     onSubmit: async ({ value }) => {
-      const config: PilotInstructionsConfig = {
-        dailyApplyCap: value.dailyApplyCap,
-        minScore: value.minScore,
-        checkIntervalMinutes: value.checkIntervalMinutes,
-        boards: value.boards,
-        networking: value.networking,
-        promotion: {
-          platforms: value.promotionPlatforms.map((p) => ({
-            platform: p.platform.trim(),
-            target: p.target.trim() || undefined,
-            postEveryDays: p.postEveryDays,
-          })),
-          autonomy: "review",
-        },
-      };
-      await save.mutateAsync({ goals: value.goals, config });
-      // Re-baseline the defaults so the dirty save bar hides after a successful save.
-      form.reset(value);
+      // Only rewritten goals strand work - every config field is read live off the instructions.
+      // Nothing in flight means nothing to ask about either.
+      if (value.goals === state.instructionsGoals || inFlight === 0) {
+        await commit(value, KEEP_EVERYTHING);
+        return;
+      }
+      setPending(value);
     },
   });
 
@@ -206,6 +246,17 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
           </form.AppForm>
         </Stack>
       )}
+
+      <GoalsChangeDialog
+        open={pending !== null}
+        impact={impact.data}
+        isLoading={impact.isLoading}
+        saving={save.isPending}
+        onConfirm={(change) => {
+          if (pending) void commit(pending, change);
+        }}
+        onCancel={() => setPending(null)}
+      />
     </Box>
   );
 }
