@@ -8,10 +8,14 @@ import { useApiMutation } from "@/api/hooks";
 import { invalidations } from "@/api/query-keys";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useConfirm } from "@/providers/confirm-provider";
+import { AwardsSection } from "./awards-section";
 import { BasicsSection } from "./basics-section";
+import { CertificationsSection } from "./certifications-section";
+import { CustomSectionsSection } from "./custom-sections-section";
 import { EducationSection } from "./education-section";
 import { ExperienceSection } from "./experience-section";
 import { ProjectsSection } from "./projects-section";
+import { PublicationsSection } from "./publications-section";
 import { SaveBar } from "./save-bar";
 import { SectionBlock } from "./section-block";
 import { RESUME_SECTIONS } from "./sections";
@@ -96,6 +100,19 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
     skills: <SkillsSection value={data.skills} onChange={(v) => patch({ skills: v })} />,
     education: (
       <EducationSection value={data.education} onChange={(v) => patch({ education: v })} />
+    ),
+    publications: (
+      <PublicationsSection value={data.publications} onChange={(v) => patch({ publications: v })} />
+    ),
+    awards: <AwardsSection value={data.awards} onChange={(v) => patch({ awards: v })} />,
+    certifications: (
+      <CertificationsSection
+        value={data.certifications}
+        onChange={(v) => patch({ certifications: v })}
+      />
+    ),
+    sections: (
+      <CustomSectionsSection value={data.sections} onChange={(v) => patch({ sections: v })} />
     ),
   };
 

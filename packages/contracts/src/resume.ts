@@ -54,6 +54,55 @@ export const resumeEducationSchema = z.object({
   details: z.array(z.string()).default([]),
 });
 
+export const resumePublicationSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(1, "Required"),
+  // Verbatim from the CV, so an existing citation's author order and et al. survive a round trip.
+  authors: z.string().optional(),
+  venue: z.string().optional(),
+  // Free text like every other date on a resume ("2024", "In press", "Under review").
+  year: z.string().optional(),
+  url: linkUrl,
+  doi: z.string().optional(),
+});
+
+export const resumeAwardSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(1, "Required"),
+  issuer: z.string().optional(),
+  year: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export const resumeCertificationSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Required"),
+  issuer: z.string().optional(),
+  issued: z.string().optional(),
+  expires: z.string().optional(),
+  credentialId: z.string().optional(),
+  url: linkUrl,
+});
+
+export const resumeCustomEntrySchema = z.object({
+  id: z.string().optional(),
+  heading: z.string().min(1, "Required"),
+  subheading: z.string().optional(),
+  meta: z.string().optional(),
+  bullets: z.array(z.string()).default([]),
+});
+
+/**
+ * The catch-all. Academic CVs carry sections nothing here anticipates - grants, talks, patents,
+ * teaching, service, memberships - and a plain `z.object` strips an unknown key silently, so
+ * without somewhere to put them the import loses that content with a 200 and no warning.
+ */
+export const resumeCustomSectionSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(1, "Required"),
+  entries: z.array(resumeCustomEntrySchema).default([]),
+});
+
 export const resumeDataSchema = z.object({
   basics: resumeBasicsSchema,
   summary: z.string().optional(),
@@ -61,6 +110,10 @@ export const resumeDataSchema = z.object({
   projects: z.array(resumeProjectSchema).default([]),
   skills: z.array(resumeSkillGroupSchema).default([]),
   education: z.array(resumeEducationSchema).default([]),
+  publications: z.array(resumePublicationSchema).default([]),
+  awards: z.array(resumeAwardSchema).default([]),
+  certifications: z.array(resumeCertificationSchema).default([]),
+  sections: z.array(resumeCustomSectionSchema).default([]),
 });
 
 export type ResumeData = z.infer<typeof resumeDataSchema>;
@@ -69,6 +122,11 @@ export type ResumeExperience = z.infer<typeof resumeExperienceSchema>;
 export type ResumeProject = z.infer<typeof resumeProjectSchema>;
 export type ResumeSkillGroup = z.infer<typeof resumeSkillGroupSchema>;
 export type ResumeEducation = z.infer<typeof resumeEducationSchema>;
+export type ResumePublication = z.infer<typeof resumePublicationSchema>;
+export type ResumeAward = z.infer<typeof resumeAwardSchema>;
+export type ResumeCertification = z.infer<typeof resumeCertificationSchema>;
+export type ResumeCustomSection = z.infer<typeof resumeCustomSectionSchema>;
+export type ResumeCustomEntry = z.infer<typeof resumeCustomEntrySchema>;
 
 export const resumeVariantCreateSchema = z.object({
   label: z.string().min(1, "Required"),
@@ -93,6 +151,10 @@ export const EMPTY_RESUME_DATA: ResumeData = {
   projects: [],
   skills: [],
   education: [],
+  publications: [],
+  awards: [],
+  certifications: [],
+  sections: [],
 };
 
 /**

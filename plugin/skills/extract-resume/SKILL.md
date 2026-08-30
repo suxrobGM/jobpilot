@@ -95,6 +95,37 @@ If `FORCE`, proceed and overwrite.
     end?:    string,
     details: string[],
   }>,
+  publications: Array<{
+    title:    string,
+    authors?: string,           // the citation's author list, verbatim, et al. included
+    venue?:   string,           // journal, conference, or publisher
+    year?:    string,           // free-form: "2024", "In press", "Under review"
+    url?:     string,
+    doi?:     string,
+  }>,
+  awards: Array<{
+    title:        string,
+    issuer?:      string,
+    year?:        string,
+    description?: string,
+  }>,
+  certifications: Array<{
+    name:          string,
+    issuer?:       string,
+    issued?:       string,
+    expires?:      string,
+    credentialId?: string,
+    url?:          string,
+  }>,
+  sections: Array<{            // anything above doesn't model - see the rule below
+    title:   string,           // the PDF's own heading, verbatim ("Grants", "Invited Talks")
+    entries: Array<{
+      heading:     string,     // the entry's first line - a grant name, a talk title
+      subheading?: string,     // funder, host, venue
+      meta?:       string,     // year, amount, or other right-aligned detail
+      bullets:     string[],
+    }>,
+  }>,
 }
 ```
 
@@ -110,6 +141,13 @@ Hard rules:
 - Strip leading bullet glyphs (•, ▪, –) from bullet text; keep the rest unchanged.
 - A project's tech-stack line goes in `keywords` only - never copy it into `description`.
 - For long PDFs, use `Read` with `pages` to ingest all pages - don't silently drop later-page entries.
+- **Never drop a section because there is no field for it.** Anything the shape above doesn't model
+  becomes a `sections[]` entry under the PDF's own heading: grants and funding, invited talks and
+  presentations, patents, teaching, academic service, professional memberships, volunteering,
+  languages. An academic CV is mostly these, and dropping them silently guts the resume.
+- Publications: one entry per citation, in the PDF's order. Split the citation into `authors`,
+  `title`, `venue` and `year` only where the split is unambiguous; when it is not, put the whole
+  citation in `title` rather than guessing where the venue ends.
 
 ## Step 5: Save
 

@@ -1,10 +1,12 @@
-import type { ResumeData } from "@jobpilot/contracts/resume";
+import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { HttpError } from "@/common/errors";
 import { buildTailoredVariant, type TailorVariantBody } from "./tailor-variant";
 import { describe, expect, it } from "bun:test";
 
 function base(): ResumeData {
   return {
+    // Spread first so a new resume section never breaks every fixture that predates it.
+    ...EMPTY_RESUME_DATA,
     basics: { name: "Sam Doe", headline: "Frontend Engineer" },
     summary: "Engineer.",
     experience: [
@@ -58,6 +60,29 @@ function violationsOf(fn: () => unknown): string[] {
 }
 
 describe("buildTailoredVariant", () => {
+  it("carries the research sections through untouched", () => {
+    const academic = {
+      ...base(),
+      publications: [{ title: "Segmentation under domain shift", venue: "CVPR", year: "2024" }],
+      awards: [{ title: "Best Paper", issuer: "CVPR", year: "2024" }],
+      certifications: [{ name: "AWS Solutions Architect", issuer: "Amazon" }],
+      sections: [
+        {
+          title: "Grants",
+          entries: [{ heading: "NSF CAREER", subheading: "NSF", meta: "2023", bullets: [] }],
+        },
+      ],
+    };
+
+    // Tailoring reorders and rewords; it must never be the reason a CV loses a section.
+    const result = buildTailoredVariant(academic, body({ emphasizedTech: ["pytorch"] }));
+
+    expect(result.content.publications).toEqual(academic.publications);
+    expect(result.content.awards).toEqual(academic.awards);
+    expect(result.content.certifications).toEqual(academic.certifications);
+    expect(result.content.sections).toEqual(academic.sections);
+  });
+
   it("rewords an entry at the bottom of the timeline", () => {
     const result = buildTailoredVariant(
       base(),

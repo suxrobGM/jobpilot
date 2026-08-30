@@ -1,9 +1,11 @@
-import type { ResumeData } from "@jobpilot/contracts/resume";
+import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { applyStructure, UMBRELLA_COMPANY_NAMES } from "./structure";
 import { describe, expect, it } from "bun:test";
 
 function base(over: Partial<ResumeData> = {}): ResumeData {
   return {
+    // Spread first so a new resume section never breaks every fixture that predates it.
+    ...EMPTY_RESUME_DATA,
     basics: { name: "Sam Doe" },
     summary: "Engineer.",
     experience: [

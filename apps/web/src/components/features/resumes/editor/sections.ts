@@ -3,8 +3,12 @@ import {
   AccountCircleOutlined,
   Build,
   DescriptionOutlined,
+  EmojiEventsOutlined,
+  MenuBookOutlined,
   SchoolOutlined,
   StarOutlined,
+  VerifiedOutlined,
+  ViewListOutlined,
   WorkOutlined,
 } from "@mui/icons-material";
 import type { SvgIconProps } from "@mui/material";
@@ -66,5 +70,33 @@ export const RESUME_SECTIONS: EditorSection[] = [
     description: "Degrees, schools, and details.",
     icon: SchoolOutlined,
     summary: (data) => count(data.education, "entry"),
+  },
+  {
+    id: "publications",
+    label: "Publications",
+    description: "Papers, preprints, and book chapters.",
+    icon: MenuBookOutlined,
+    summary: (data) => count(data.publications, "publication"),
+  },
+  {
+    id: "awards",
+    label: "Awards & honors",
+    description: "Prizes, fellowships, and recognitions.",
+    icon: EmojiEventsOutlined,
+    summary: (data) => count(data.awards, "award"),
+  },
+  {
+    id: "certifications",
+    label: "Certifications",
+    description: "Licenses and professional certifications.",
+    icon: VerifiedOutlined,
+    summary: (data) => count(data.certifications, "certification"),
+  },
+  {
+    id: "sections",
+    label: "Custom sections",
+    description: "Grants, talks, patents, teaching - anything the sections above don't cover.",
+    icon: ViewListOutlined,
+    summary: (data) => count(data.sections, "section"),
   },
 ];

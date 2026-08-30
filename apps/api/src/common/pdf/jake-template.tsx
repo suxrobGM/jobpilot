@@ -3,11 +3,15 @@
 
 import { Children, type ReactElement, type ReactNode } from "react";
 import type {
+  ResumeAward,
   ResumeBasics,
+  ResumeCertification,
+  ResumeCustomEntry,
   ResumeData,
   ResumeEducation,
   ResumeExperience,
   ResumeProject,
+  ResumePublication,
   ResumeSkillGroup,
 } from "@jobpilot/contracts/resume";
 import { Document, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
@@ -254,6 +258,88 @@ function EducationEntry(props: { entry: ResumeEducation }): ReactElement {
   );
 }
 
+function PublicationEntry(props: { entry: ResumePublication }): ReactElement {
+  const { entry } = props;
+  // A DOI is the citation's stable handle, so it wins over a URL that may rot.
+  const link = entry.doi ? `https://doi.org/${entry.doi.replace(/^doi:\s*/i, "")}` : entry.url;
+
+  return (
+    <View style={styles.entryBlock} wrap={false}>
+      <View style={styles.entryHeaderRow}>
+        <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.title}</Text>
+        {entry.year && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{entry.year}</Text>}
+      </View>
+      {entry.authors && (
+        <View style={styles.entrySubRow}>
+          <Text>{entry.authors}</Text>
+        </View>
+      )}
+      {entry.venue && <Text style={styles.projectDescription}>{entry.venue}</Text>}
+      {link && (
+        <Link src={link.startsWith("http") ? link : `https://${link}`} style={styles.link}>
+          {entry.doi ?? link.replace(/^https?:\/\//, "")}
+        </Link>
+      )}
+    </View>
+  );
+}
+
+function AwardEntry(props: { entry: ResumeAward }): ReactElement {
+  const { entry } = props;
+  return (
+    <View style={styles.entryBlock} wrap={false}>
+      <View style={styles.entryHeaderRow}>
+        <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.title}</Text>
+        {entry.year && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{entry.year}</Text>}
+      </View>
+      {entry.issuer && (
+        <View style={styles.entrySubRow}>
+          <Text>{entry.issuer}</Text>
+        </View>
+      )}
+      {entry.description && <Text style={styles.projectDescription}>{entry.description}</Text>}
+    </View>
+  );
+}
+
+function CertificationEntry(props: { entry: ResumeCertification }): ReactElement {
+  const { entry } = props;
+  const dates = dateRange(entry.issued ?? "", entry.expires);
+
+  return (
+    <View style={styles.entryBlock} wrap={false}>
+      <View style={styles.entryHeaderRow}>
+        <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.name}</Text>
+        {dates && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{dates}</Text>}
+      </View>
+      {entry.issuer && (
+        <View style={styles.entrySubRow}>
+          <Text>{entry.issuer}</Text>
+        </View>
+      )}
+      {entry.credentialId && <Text style={styles.projectDescription}>{entry.credentialId}</Text>}
+    </View>
+  );
+}
+
+function CustomEntry(props: { entry: ResumeCustomEntry }): ReactElement {
+  const { entry } = props;
+  return (
+    <View style={styles.entryBlock} wrap={false}>
+      <View style={styles.entryHeaderRow}>
+        <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.heading}</Text>
+        {entry.meta && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{entry.meta}</Text>}
+      </View>
+      {entry.subheading && (
+        <View style={styles.entrySubRow}>
+          <Text>{entry.subheading}</Text>
+        </View>
+      )}
+      <Bullets items={entry.bullets} />
+    </View>
+  );
+}
+
 /**
  * A resume section: an uppercase header followed by its content. The header is
  * grouped with the first child in a non-wrapping block so it never gets orphaned
@@ -307,6 +393,15 @@ export function JakeTemplate(props: JakeTemplateProps): ReactElement {
           </Section>
         )}
 
+        {/* Directly under Education: on an academic CV this is the section that carries the weight. */}
+        {data.publications.length > 0 && (
+          <Section title="Publications">
+            {data.publications.map((p, i) => (
+              <PublicationEntry key={i} entry={p} />
+            ))}
+          </Section>
+        )}
+
         {data.experience.length > 0 && (
           <Section title="Experience">
             {data.experience.map((e, i) => (
@@ -322,6 +417,31 @@ export function JakeTemplate(props: JakeTemplateProps): ReactElement {
             ))}
           </Section>
         )}
+
+        {data.awards.length > 0 && (
+          <Section title="Awards & Honors">
+            {data.awards.map((a, i) => (
+              <AwardEntry key={i} entry={a} />
+            ))}
+          </Section>
+        )}
+
+        {data.certifications.length > 0 && (
+          <Section title="Certifications">
+            {data.certifications.map((c, i) => (
+              <CertificationEntry key={i} entry={c} />
+            ))}
+          </Section>
+        )}
+
+        {/* Whatever the CV had that nothing above models - grants, talks, teaching, service. */}
+        {data.sections.map((section, i) => (
+          <Section key={i} title={section.title}>
+            {section.entries.map((e, j) => (
+              <CustomEntry key={j} entry={e} />
+            ))}
+          </Section>
+        ))}
       </Page>
     </Document>
   );

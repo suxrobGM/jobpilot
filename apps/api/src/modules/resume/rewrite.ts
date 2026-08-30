@@ -94,6 +94,21 @@ export function buildCorpus(base: ResumeData): string {
   for (const g of base.skills ?? []) {
     parts.push(...(g.items ?? []));
   }
+  // A research CV's evidence for a technique lives in its publication titles and its grants, not in
+  // a job bullet, so leaving these out flags terms the resume genuinely supports.
+  for (const p of base.publications ?? []) {
+    parts.push(p.title);
+    if (p.venue) parts.push(p.venue);
+  }
+  for (const c of base.certifications ?? []) {
+    parts.push(c.name);
+  }
+  for (const s of base.sections ?? []) {
+    for (const e of s.entries ?? []) {
+      parts.push(e.heading, ...(e.bullets ?? []));
+      if (e.subheading) parts.push(e.subheading);
+    }
+  }
   return toSearchText(parts.join(" "));
 }
 
