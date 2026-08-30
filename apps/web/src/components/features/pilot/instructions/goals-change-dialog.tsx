@@ -1,11 +1,14 @@
 "use client";
 
 import { type ReactElement, type ReactNode, useState } from "react";
-import type { PilotInstructionsChange, PilotInstructionsImpact } from "@jobpilot/contracts/pilot";
+import {
+  NO_INSTRUCTIONS_CHANGE,
+  type PilotInstructionsChange,
+  type PilotInstructionsImpact,
+} from "@jobpilot/contracts/pilot";
 import {
   Button,
   Checkbox,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -15,7 +18,8 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { formatRelativeTime } from "@/utils/format";
+import { LoadingSpinner } from "@/components/ui/feedback";
+import { formatRelativeTime, plural } from "@/utils/format";
 
 interface GoalsChangeDialogProps {
   open: boolean;
@@ -32,12 +36,6 @@ const ALL_CHECKED: PilotInstructionsChange = {
   dropApprovedJobs: true,
 };
 
-const NOTHING: PilotInstructionsChange = {
-  rederiveSearches: false,
-  completeCampaigns: false,
-  dropApprovedJobs: false,
-};
-
 interface Option {
   key: keyof PilotInstructionsChange;
   label: string;
@@ -49,21 +47,21 @@ function options(impact: PilotInstructionsImpact): Option[] {
   if (impact.searches.length > 0) {
     list.push({
       key: "rederiveSearches",
-      label: `Re-derive ${impact.searches.length} search(es) from the new goals`,
+      label: `Re-derive ${plural(impact.searches.length, "search", "searches")} from the new goals`,
       detail: impact.searches.map((s) => s.query).join(" · "),
     });
   }
   if (impact.campaigns.length > 0) {
     list.push({
       key: "completeCampaigns",
-      label: `Complete ${impact.campaigns.length} campaign(s) started under the old goals`,
+      label: `Complete ${plural(impact.campaigns.length, "campaign")} started under the old goals`,
       detail: impact.campaigns.map((c) => c.query).join(" · "),
     });
   }
   if (impact.approvedJobs > 0) {
     list.push({
       key: "dropApprovedJobs",
-      label: `Drop ${impact.approvedJobs} approved job(s) not yet applied to`,
+      label: `Drop ${plural(impact.approvedJobs, "approved job")} not yet applied to`,
       detail: impact.oldestApprovedAt
         ? `Oldest found ${formatRelativeTime(impact.oldestApprovedAt)} ago.`
         : null,
@@ -87,9 +85,7 @@ export function GoalsChangeDialog(props: GoalsChangeDialogProps): ReactElement {
       <DialogTitle>Your goals changed</DialogTitle>
       <DialogContent>
         {isLoading ? (
-          <Stack sx={{ alignItems: "center", paddingBlock: 3 }}>
-            <CircularProgress size={24} />
-          </Stack>
+          <LoadingSpinner py={3} />
         ) : (
           <Stack spacing={2}>
             <DialogContentText>
@@ -121,7 +117,7 @@ export function GoalsChangeDialog(props: GoalsChangeDialogProps): ReactElement {
         <Button onClick={onCancel} disabled={saving}>
           Cancel
         </Button>
-        <Button onClick={() => onConfirm(NOTHING)} disabled={saving || isLoading}>
+        <Button onClick={() => onConfirm(NO_INSTRUCTIONS_CHANGE)} disabled={saving || isLoading}>
           Save, keep everything
         </Button>
         <Button

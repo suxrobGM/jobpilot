@@ -57,8 +57,32 @@ export function backfillResumeIds(input: ResumeData): BackfillResult {
   const proj = assignIds(input.projects ?? [], "proj", (p) => [p.name, p.url]);
   const edu = assignIds(input.education ?? [], "edu", (e) => [e.school, e.degree, e.start]);
   const skill = assignIds(input.skills ?? [], "skill", (s) => [s.group]);
+  const pub = assignIds(input.publications ?? [], "pub", (p) => [p.title, p.year]);
+  const awd = assignIds(input.awards ?? [], "awd", (a) => [a.title, a.issuer, a.year]);
+  const cert = assignIds(input.certifications ?? [], "cert", (c) => [c.name, c.issuer]);
+  const sec = assignIds(input.sections ?? [], "sec", (s) => [s.title]);
 
-  if (!exp.mutated && !proj.mutated && !edu.mutated && !skill.mutated) {
+  // Custom sections nest one level, so their entries need the same treatment as a top-level list.
+  let entriesMutated = false;
+  const sections = sec.entries.map((section) => {
+    const entries = assignIds(section.entries ?? [], "ent", (e) => [e.heading, e.subheading]);
+    if (!entries.mutated) return section;
+    entriesMutated = true;
+    return { ...section, entries: entries.entries };
+  });
+
+  const mutated =
+    exp.mutated ||
+    proj.mutated ||
+    edu.mutated ||
+    skill.mutated ||
+    pub.mutated ||
+    awd.mutated ||
+    cert.mutated ||
+    sec.mutated ||
+    entriesMutated;
+
+  if (!mutated) {
     return { content: input, mutated: false };
   }
   return {
@@ -68,6 +92,10 @@ export function backfillResumeIds(input: ResumeData): BackfillResult {
       projects: proj.entries,
       education: edu.entries,
       skills: skill.entries,
+      publications: pub.entries,
+      awards: awd.entries,
+      certifications: cert.entries,
+      sections,
     },
     mutated: true,
   };

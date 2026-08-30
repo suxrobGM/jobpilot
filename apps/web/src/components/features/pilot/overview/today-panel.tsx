@@ -41,6 +41,9 @@ const SKIP_LABELS: Record<string, string> = {
   belowMinScore: "Below min score",
   capReached: "Daily cap reached",
   postingClosed: "Posting closed",
+  wentStale: "Went stale before applying",
+  goalsChanged: "Dropped when goals changed",
+  unanswered: "Question went unanswered",
   other: "Other",
 };
 

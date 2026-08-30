@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { AgendaItem, AgendaResponse } from "@jobpilot/contracts/pilot";
+import type { AgendaResponse } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
 import { Box, Chip, Divider, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
@@ -12,31 +12,9 @@ import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
+import { agendaKindLabel } from "../agenda-kinds";
 
 const PREVIEW_COUNT = 6;
-
-/** Required record: a new agenda kind fails typecheck until it gets a label. */
-const AGENDA_KIND_LABELS: Record<AgendaItem["kind"], string> = {
-  "question.answered": "Act on answered question",
-  "job.apply": "Apply to job",
-  "search.discover": "Run saved search",
-  "campaign.scorePending": "Score discovered jobs",
-  "campaign.reviewPaused": "Review paused campaign",
-  "inbox.review": "Review inbox email",
-  "networking.send": "Send networking message",
-  "networking.followup": "Follow up on networking message",
-  "networking.warmIntro": "Ask for a warm intro",
-  "promo.compose": "Draft promotion post",
-  "promo.post": "Publish promotion post",
-  "interview.reply": "Reply about an interview",
-  "interview.prep": "Prepare interview notes",
-  "queue.drain": "Score pasted links",
-  "board.health": "Board health check",
-  "campaign.strategyReview": "Review campaign strategy",
-  "job.rescanSkipped": "Rescan skipped jobs",
-  "job.retryFailed": "Retry failed jobs",
-  "strategy.bootstrap": "Set up goals and saved searches",
-};
 
 interface AgendaEmptyProps {
   reason: AgendaResponse["emptyReason"];
@@ -127,9 +105,7 @@ export function AgendaPreview(): ReactElement {
                       {index + 1}
                     </Typography>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="captionMuted">
-                        {AGENDA_KIND_LABELS[item.kind]}
-                      </Typography>
+                      <Typography variant="captionMuted">{agendaKindLabel(item.kind)}</Typography>
                       <Typography variant="body2" noWrap>
                         {item.title}
                       </Typography>

@@ -83,6 +83,12 @@ export async function writeJobResult(
     };
   }
 
+  // Read-only ownership checks on rows the transaction never writes, so they stay out of its lock window.
+  const submitted: SubmittedResume =
+    data.outcome === "applied"
+      ? await resolveSubmittedResume(prisma, userId, data)
+      : { resumeId: null, resumeVariantId: null };
+
   return prisma.$transaction(async (tx) => {
     const changed = await tx.job.updateMany({
       where: { campaignId, key, status: { notIn: [...CAMPAIGN_JOB_TERMINAL_OUTCOMES] } },
@@ -115,8 +121,6 @@ export async function writeJobResult(
       const logApplied = {
         create: { kind: "status_change", toStatus: "applied", source: "campaign" },
       } as const;
-      const submitted = await resolveSubmittedResume(tx, userId, data);
-
       application = await tx.application.upsert({
         where: { userId_url: { userId, url: canonicalUrl } },
         // A repost reuses this row, so the date has to move: the duplicate window measures from
@@ -148,10 +152,8 @@ export async function writeJobResult(
           data: { applicationId: application.id },
         });
       }
-    }
 
-    // The letter is written before this row exists, so link it by the url it recorded.
-    if (application) {
+      // The letter is written before this row exists, so link it by the url it recorded.
       await tx.coverLetter.updateMany({
         where: { jobUrl: job.url, applicationId: null, userId },
         data: { applicationId: application.id },

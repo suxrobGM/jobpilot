@@ -56,6 +56,11 @@ export const pilotInstructionsChangeSchema = z.object({
   dropApprovedJobs: z.boolean().default(false),
 });
 
+/** Retire nothing: what a save sends when the goals did not change. */
+export const NO_INSTRUCTIONS_CHANGE: PilotInstructionsChange = pilotInstructionsChangeSchema.parse(
+  {},
+);
+
 export const updatePilotInstructionsSchema = z.object({
   // Goals are mandatory and the pilot's whole steering input: an empty save is rejected.
   goals: z.string().trim().min(1, "Write the pilot's goals before saving."),

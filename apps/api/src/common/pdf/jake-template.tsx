@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   skillRow: { flexDirection: "row", marginTop: 2 },
   skillGroup: { fontFamily: "Helvetica-Bold", marginRight: 4 },
   skillItems: { flex: 1 },
-  projectDescription: { marginTop: 2, fontStyle: "italic" },
+  entryNote: { marginTop: 2, fontStyle: "italic" },
   projectKeywords: { marginTop: 1, fontSize: 9.5, color: "#333" },
   educationDetails: { marginTop: 2 },
 });
@@ -97,6 +97,40 @@ function dateRange(start: string | undefined, end: string | undefined): string {
   if (s && !e) return `${s} – Present`;
   if (!s && e) return e;
   return `${s} – ${e}`;
+}
+
+function absoluteHref(raw: string): string {
+  return raw.startsWith("http") ? raw : `https://${raw}`;
+}
+
+function displayUrl(raw: string): string {
+  return raw.replace(/^https?:\/\//, "");
+}
+
+/**
+ * The shared entry skeleton: a bold title, an optional right-aligned date or venue, an optional
+ * italic subline, then whatever the section adds under it.
+ */
+function TitledEntry(props: {
+  title: string;
+  right?: string;
+  sub?: string;
+  children?: ReactNode;
+}): ReactElement {
+  return (
+    <View style={styles.entryBlock} wrap={false}>
+      <View style={styles.entryHeaderRow}>
+        <Text style={[styles.entryTitle, { flex: 1 }]}>{props.title}</Text>
+        {props.right && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{props.right}</Text>}
+      </View>
+      {props.sub && (
+        <View style={styles.entrySubRow}>
+          <Text>{props.sub}</Text>
+        </View>
+      )}
+      {props.children}
+    </View>
+  );
 }
 
 function ContactBar(props: { basics: ResumeBasics }): ReactNode {
@@ -113,20 +147,27 @@ function ContactBar(props: { basics: ResumeBasics }): ReactNode {
     parts.push({ kind: "link", value: basics.email, href: `mailto:${basics.email}` });
   }
   if (basics.linkedin) {
-    const href = basics.linkedin.startsWith("http")
-      ? basics.linkedin
-      : `https://${basics.linkedin}`;
-    parts.push({ kind: "link", value: basics.linkedin.replace(/^https?:\/\//, ""), href });
+    parts.push({
+      kind: "link",
+      value: displayUrl(basics.linkedin),
+      href: absoluteHref(basics.linkedin),
+    });
   }
 
   if (basics.github) {
-    const href = basics.github.startsWith("http") ? basics.github : `https://${basics.github}`;
-    parts.push({ kind: "link", value: basics.github.replace(/^https?:\/\//, ""), href });
+    parts.push({
+      kind: "link",
+      value: displayUrl(basics.github),
+      href: absoluteHref(basics.github),
+    });
   }
 
   if (basics.website) {
-    const href = basics.website.startsWith("http") ? basics.website : `https://${basics.website}`;
-    parts.push({ kind: "link", value: basics.website.replace(/^https?:\/\//, ""), href });
+    parts.push({
+      kind: "link",
+      value: displayUrl(basics.website),
+      href: absoluteHref(basics.website),
+    });
   }
 
   if (parts.length === 0) {
@@ -207,16 +248,16 @@ function ProjectEntry(props: { entry: ResumeProject }): ReactElement {
         <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.name}</Text>
         {entry.url && (
           <Link
-            src={entry.url.startsWith("http") ? entry.url : `https://${entry.url}`}
+            src={absoluteHref(entry.url)}
             style={[styles.link, { flexShrink: 0, marginLeft: 8 }]}
           >
-            {entry.url.replace(/^https?:\/\//, "")}
+            {displayUrl(entry.url)}
           </Link>
         )}
         {dates && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{dates}</Text>}
       </View>
       {entry.keywords.length > 0 && <Text style={styles.projectKeywords}>{keywordsLine}</Text>}
-      {showDescription && <Text style={styles.projectDescription}>{entry.description}</Text>}
+      {showDescription && <Text style={styles.entryNote}>{entry.description}</Text>}
       <Bullets items={entry.bullets} />
     </View>
   );
@@ -264,79 +305,45 @@ function PublicationEntry(props: { entry: ResumePublication }): ReactElement {
   const link = entry.doi ? `https://doi.org/${entry.doi.replace(/^doi:\s*/i, "")}` : entry.url;
 
   return (
-    <View style={styles.entryBlock} wrap={false}>
-      <View style={styles.entryHeaderRow}>
-        <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.title}</Text>
-        {entry.year && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{entry.year}</Text>}
-      </View>
-      {entry.authors && (
-        <View style={styles.entrySubRow}>
-          <Text>{entry.authors}</Text>
-        </View>
-      )}
-      {entry.venue && <Text style={styles.projectDescription}>{entry.venue}</Text>}
+    <TitledEntry title={entry.title} right={entry.year} sub={entry.authors}>
+      {entry.venue && <Text style={styles.entryNote}>{entry.venue}</Text>}
       {link && (
-        <Link src={link.startsWith("http") ? link : `https://${link}`} style={styles.link}>
-          {entry.doi ?? link.replace(/^https?:\/\//, "")}
+        <Link src={absoluteHref(link)} style={styles.link}>
+          {entry.doi ?? displayUrl(link)}
         </Link>
       )}
-    </View>
+    </TitledEntry>
   );
 }
 
 function AwardEntry(props: { entry: ResumeAward }): ReactElement {
   const { entry } = props;
   return (
-    <View style={styles.entryBlock} wrap={false}>
-      <View style={styles.entryHeaderRow}>
-        <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.title}</Text>
-        {entry.year && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{entry.year}</Text>}
-      </View>
-      {entry.issuer && (
-        <View style={styles.entrySubRow}>
-          <Text>{entry.issuer}</Text>
-        </View>
-      )}
-      {entry.description && <Text style={styles.projectDescription}>{entry.description}</Text>}
-    </View>
+    <TitledEntry title={entry.title} right={entry.year} sub={entry.issuer}>
+      {entry.description && <Text style={styles.entryNote}>{entry.description}</Text>}
+    </TitledEntry>
   );
 }
 
 function CertificationEntry(props: { entry: ResumeCertification }): ReactElement {
   const { entry } = props;
-  const dates = dateRange(entry.issued ?? "", entry.expires);
-
   return (
-    <View style={styles.entryBlock} wrap={false}>
-      <View style={styles.entryHeaderRow}>
-        <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.name}</Text>
-        {dates && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{dates}</Text>}
-      </View>
-      {entry.issuer && (
-        <View style={styles.entrySubRow}>
-          <Text>{entry.issuer}</Text>
-        </View>
-      )}
-      {entry.credentialId && <Text style={styles.projectDescription}>{entry.credentialId}</Text>}
-    </View>
+    <TitledEntry
+      title={entry.name}
+      right={dateRange(entry.issued ?? "", entry.expires)}
+      sub={entry.issuer}
+    >
+      {entry.credentialId && <Text style={styles.entryNote}>{entry.credentialId}</Text>}
+    </TitledEntry>
   );
 }
 
 function CustomEntry(props: { entry: ResumeCustomEntry }): ReactElement {
   const { entry } = props;
   return (
-    <View style={styles.entryBlock} wrap={false}>
-      <View style={styles.entryHeaderRow}>
-        <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.heading}</Text>
-        {entry.meta && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{entry.meta}</Text>}
-      </View>
-      {entry.subheading && (
-        <View style={styles.entrySubRow}>
-          <Text>{entry.subheading}</Text>
-        </View>
-      )}
+    <TitledEntry title={entry.heading} right={entry.meta} sub={entry.subheading}>
       <Bullets items={entry.bullets} />
-    </View>
+    </TitledEntry>
   );
 }
 

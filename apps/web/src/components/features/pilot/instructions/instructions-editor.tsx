@@ -2,6 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import {
+  NO_INSTRUCTIONS_CHANGE,
   type PilotInstructionsChange,
   type PilotInstructionsConfig,
   type PilotState,
@@ -57,13 +58,6 @@ const NAV_ANCHORS: SectionAnchor[] = [
 /** A config indistinguishable from `{}` means the user never tuned anything - keep Advanced folded. */
 const DEFAULT_CONFIG_JSON = JSON.stringify(pilotInstructionsConfigSchema.parse({}));
 
-/** Saving with the goals unchanged, or with nothing in flight, retires nothing. */
-const KEEP_EVERYTHING: PilotInstructionsChange = {
-  rederiveSearches: false,
-  completeCampaigns: false,
-  dropApprovedJobs: false,
-};
-
 function toConfig(value: InstructionsFormValues): PilotInstructionsConfig {
   return {
     dailyApplyCap: value.dailyApplyCap,
@@ -115,13 +109,12 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
     },
   );
 
-  // Fetched with the page, not on submit: the answer decides whether saving even needs to ask.
+  // Fetched on submit, not on mount: a mount fetch still in flight reads as "nothing in flight"
+  // and saves changed goals without ever asking, which is the case the dialog exists for.
   const impact = useApiQuery(pilotQueries.instructionsImpact(), {
+    enabled: false,
     errorMessage: "Failed to check what the pilot has in flight",
   });
-  const inFlight = impact.data
-    ? impact.data.searches.length + impact.data.campaigns.length + impact.data.approvedJobs
-    : 0;
 
   // Held between "the goals changed" and the user answering what to retire. Its presence opens the
   // dialog, and it carries the values the save finishes with.
@@ -140,9 +133,16 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
     onSubmitInvalid: () => toast.error("Fix the highlighted fields"),
     onSubmit: async ({ value }) => {
       // Only rewritten goals strand work - every config field is read live off the instructions.
-      // Nothing in flight means nothing to ask about either.
-      if (value.goals === state.instructionsGoals || inFlight === 0) {
-        await commit(value, KEEP_EVERYTHING);
+      if (value.goals === state.instructionsGoals) {
+        await commit(value, NO_INSTRUCTIONS_CHANGE);
+        return;
+      }
+
+      // A failed check must not silently keep the old plan, so only a confirmed empty one skips.
+      const { data, isError } = await impact.refetch();
+      const inFlight = data ? data.searches.length + data.campaigns.length + data.approvedJobs : 0;
+      if (!isError && inFlight === 0) {
+        await commit(value, NO_INSTRUCTIONS_CHANGE);
         return;
       }
       setPending(value);

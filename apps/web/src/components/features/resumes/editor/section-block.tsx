@@ -27,7 +27,12 @@ export function SectionBlock(props: SectionBlockProps): ReactElement {
 
   return (
     <Box data-section-id={section.id}>
-      <Accordion expanded={open} onChange={(_, next) => onToggle(next)}>
+      {/* Unmounted while collapsed: otherwise every section re-renders on each keystroke in one. */}
+      <Accordion
+        expanded={open}
+        onChange={(_, next) => onToggle(next)}
+        slotProps={{ transition: { unmountOnExit: true } }}
+      >
         <AccordionSummary>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
             <Icon fontSize="small" sx={{ color: "text.secondary" }} />

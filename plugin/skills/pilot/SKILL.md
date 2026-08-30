@@ -74,29 +74,8 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 ## 4. Act
 
 Read `kinds/<item.kind>.md` and follow it - one file per agenda kind, holding that kind's payload,
-procedure and journal line. Read **only** the one you claimed; the others are not your cycle's work.
-
-| Kind | File |
-| --- | --- |
-| `interview.reply` | `kinds/interview.reply.md` |
-| `interview.prep` | `kinds/interview.prep.md` |
-| `job.apply` | `kinds/job.apply.md` |
-| `question.answered` | `kinds/question.answered.md` |
-| `search.discover` | `kinds/search.discover.md` |
-| `campaign.scorePending` | `kinds/campaign.scorePending.md` |
-| `campaign.reviewPaused` | `kinds/campaign.reviewPaused.md` |
-| `queue.drain` | `kinds/queue.drain.md` |
-| `board.health` | `kinds/board.health.md` |
-| `campaign.strategyReview` | `kinds/campaign.strategyReview.md` |
-| `strategy.bootstrap` | `kinds/strategy.bootstrap.md` |
-| `job.rescanSkipped` | `kinds/job.rescanSkipped.md` |
-| `job.retryFailed` | `kinds/job.retryFailed.md` |
-| `inbox.review` | `kinds/inbox.review.md` |
-| `networking.send` | `kinds/networking.send.md` |
-| `networking.followup` | `kinds/networking.followup.md` |
-| `networking.warmIntro` | `kinds/networking.warmIntro.md` |
-| `promo.compose` | `kinds/promo.compose.md` |
-| `promo.post` | `kinds/promo.post.md` |
+procedure and journal line. Read **only** the one you claimed, plus any peer file it points you
+at; the rest are not your cycle's work.
 
 ## 5. Record
 

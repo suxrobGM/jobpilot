@@ -1,6 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { classifySkipReason, costByKind, type SkipBucket } from "./pilot.stats";
+import {
+  classifySkipReason,
+  costByKind,
+  SERVER_SKIP_REASONS,
+  type SkipBucket,
+} from "./pilot.stats";
 import { describe, expect, it } from "bun:test";
 
 describe("classifySkipReason", () => {
@@ -32,6 +37,25 @@ describe("classifySkipReason", () => {
     expect(classifySkipReason("US citizenship required, no sponsorship offered")).toBe(
       "sponsorship",
     );
+  });
+});
+
+/**
+ * The server writes these itself, so a reworded literal at the call site must fail here rather than
+ * silently demote that skip to `other`.
+ */
+describe("the skips the server writes", () => {
+  const serverCases = Object.entries(SERVER_SKIP_REASONS) as [SkipBucket, string][];
+
+  for (const [bucket, reason] of serverCases) {
+    it(`buckets "${reason}" as ${bucket}`, () => {
+      expect(classifySkipReason(reason)).toBe(bucket);
+    });
+  }
+
+  // The prose heuristics read "expired" as a closed posting, which this reason is not.
+  it("does not read an expired question as a closed posting", () => {
+    expect(classifySkipReason(SERVER_SKIP_REASONS.unanswered)).not.toBe("postingClosed");
   });
 });
 

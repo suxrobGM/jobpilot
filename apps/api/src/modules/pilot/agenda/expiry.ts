@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
+import { SERVER_SKIP_REASONS } from "../pilot.stats";
 import {
   APPROVED_JOB_STALE_MS,
   GATHER_CAP,
@@ -77,7 +78,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
         campaign: { userId, createdBy: "pilot" },
         createdAt: { lt: new Date(now.getTime() - APPROVED_JOB_STALE_MS) },
       },
-      data: { status: "skipped", skipReason: "Posting went stale before the pilot applied." },
+      data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.wentStale },
     });
 
     const questions = await tx.pilotQuestion.findMany({
@@ -104,7 +105,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
         campaign: { userId },
         OR: jobRefs.map((ref) => ({ campaignId: ref.campaignId, key: ref.jobKey })),
       },
-      data: { status: "skipped", skipReason: "Question expired without an answer." },
+      data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.unanswered },
     });
   });
 }

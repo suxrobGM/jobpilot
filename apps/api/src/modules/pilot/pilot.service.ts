@@ -16,7 +16,13 @@ import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/pr
 import { AGENDA_SNAPSHOT_RESET } from "./agenda/snapshot";
 import { parseInstructionsConfig } from "./pilot.instructions";
 import { toPilotQuestion, toPilotState } from "./pilot.mapper";
-import { costByKind, countAppliedToday, countSentToday, countTodayOutcomes } from "./pilot.stats";
+import {
+  costByKind,
+  countAppliedToday,
+  countSentToday,
+  countTodayOutcomes,
+  SERVER_SKIP_REASONS,
+} from "./pilot.stats";
 
 /** Expiring unanswered 2FA questions keeps their parked jobs from staying wedged. */
 const TWO_FA_TTL_MS = 5 * 60 * 1000;
@@ -105,29 +111,35 @@ export class PilotService {
    * its own claim damper has to go with them or the next cycle skips it for a day.
    */
   private async applyInstructionsChange(userId: string, change: PilotInstructionsChange) {
+    const writes = [];
     if (change.rederiveSearches) {
-      await this.prisma.$transaction([
+      writes.push(
         this.prisma.pilotSearch.deleteMany({ where: { userId } }),
         this.prisma.pilotClaim.deleteMany({ where: { userId, kind: "strategy.bootstrap" } }),
-      ]);
+      );
     }
     if (change.dropApprovedJobs) {
-      await this.prisma.job.updateMany({
-        where: { status: "approved", campaign: { userId, createdBy: "pilot" } },
-        data: { status: "skipped", skipReason: "Goals changed before this was applied to." },
-      });
+      writes.push(
+        this.prisma.job.updateMany({
+          where: { status: "approved", campaign: { userId, createdBy: "pilot" } },
+          data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.goalsChanged },
+        }),
+      );
     }
     if (change.completeCampaigns) {
-      await this.prisma.campaign.updateMany({
-        where: { userId, createdBy: "pilot", status: "in_progress" },
-        data: {
-          status: "completed",
-          statusActor: "user",
-          statusReason: "Goals changed.",
-          completedAt: new Date(),
-        },
-      });
+      writes.push(
+        this.prisma.campaign.updateMany({
+          where: { userId, createdBy: "pilot", status: "in_progress" },
+          data: {
+            status: "completed",
+            statusActor: "user",
+            statusReason: "Goals changed.",
+            completedAt: new Date(),
+          },
+        }),
+      );
     }
+    if (writes.length > 0) await this.prisma.$transaction(writes);
   }
 
   async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
@@ -145,7 +157,8 @@ export class PilotService {
       create: { userId, ...instructions },
       update: instructions,
     });
-    if (goalsChanged) {
+    // Skipped when the searches are about to be deleted below - the rows would not survive it.
+    if (goalsChanged && !body.onChange.rederiveSearches) {
       await this.prisma.pilotSearch.updateMany({
         where: { userId },
         data: { emptyRuns: 0, nextRunAt: new Date() },

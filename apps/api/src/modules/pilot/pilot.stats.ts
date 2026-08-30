@@ -1,4 +1,4 @@
-import { startOfDay } from "@/common/date/buckets";
+import { DAY_MS, startOfDay } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import {
   detectEligibilityRestrictions,
@@ -36,9 +36,27 @@ export const SKIP_BUCKETS = [
   "belowMinScore",
   "capReached",
   "postingClosed",
+  "wentStale",
+  "goalsChanged",
+  "unanswered",
   "other",
 ] as const;
 export type SkipBucket = (typeof SKIP_BUCKETS)[number];
+
+/**
+ * Skips the server writes itself. Their bucket is declared here rather than guessed at by the
+ * classifier below, which only ever saw agent prose: left to it, "went stale" and "goals changed"
+ * both land in `other`, and an expired question reads as a closed posting.
+ */
+export const SERVER_SKIP_REASONS = {
+  wentStale: "Posting went stale before the pilot applied.",
+  goalsChanged: "Goals changed before this was applied to.",
+  unanswered: "Question expired without an answer.",
+} satisfies Partial<Record<SkipBucket, string>>;
+
+const SERVER_BUCKET_BY_REASON = new Map<string, SkipBucket>(
+  Object.entries(SERVER_SKIP_REASONS).map(([bucket, reason]) => [reason, bucket as SkipBucket]),
+);
 
 /**
  * Buckets a free-text `skipReason`; agent-written prose means grouping the raw column in SQL yields
@@ -46,6 +64,9 @@ export type SkipBucket = (typeof SKIP_BUCKETS)[number];
  * agent to write.
  */
 export function classifySkipReason(reason: string): SkipBucket {
+  const server = SERVER_BUCKET_BY_REASON.get(reason);
+  if (server) return server;
+
   const blocked = detectEligibilityRestrictions(reason)[0];
   if (blocked) return blocked.kind;
 
@@ -62,10 +83,7 @@ export function classifySkipReason(reason: string): SkipBucket {
 }
 
 /** Claims older than this tell you about a version of the agent you are no longer running. */
-const COST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** Enough claims to be representative; a week of cycles is hundreds, not thousands. */
-const COST_ROW_CAP = 2000;
+const COST_WINDOW_MS = 7 * DAY_MS;
 
 export interface PilotKindCost {
   kind: string;
@@ -102,32 +120,37 @@ export async function costByKind(
       releasedAt: { not: null },
       grantedAt: { gte: new Date(now.getTime() - COST_WINDOW_MS) },
     },
-    orderBy: { grantedAt: "desc" },
-    take: COST_ROW_CAP,
+    // No row cap: a busy pilot cycles every ACTIVE_SLEEP_SECONDS, so any cap short enough to
+    // matter would silently shorten the week the card says it is reporting.
     select: { kind: true, grantedAt: true, releasedAt: true, outcome: true },
   });
 
-  const byKind = new Map<string, { durations: number[]; failed: number; abandoned: number }>();
+  const byKind = new Map<
+    string,
+    { durations: number[]; totalMs: number; failed: number; abandoned: number }
+  >();
   for (const row of rows) {
     if (!row.releasedAt) continue;
     let bucket = byKind.get(row.kind);
     if (!bucket) {
-      bucket = { durations: [], failed: 0, abandoned: 0 };
+      bucket = { durations: [], totalMs: 0, failed: 0, abandoned: 0 };
       byKind.set(row.kind, bucket);
     }
-    bucket.durations.push(row.releasedAt.getTime() - row.grantedAt.getTime());
+    const ms = row.releasedAt.getTime() - row.grantedAt.getTime();
+    bucket.durations.push(ms);
+    bucket.totalMs += ms;
     if (row.outcome === "failed") bucket.failed++;
     if (row.outcome === "expired" || row.outcome === "abandoned") bucket.abandoned++;
   }
 
   return [...byKind]
     .map(([kind, bucket]) => {
-      const sorted = [...bucket.durations].sort((a, b) => a - b);
+      const sorted = bucket.durations.sort((a, b) => a - b);
       return {
         kind,
         runs: sorted.length,
         medianMs: median(sorted),
-        totalMs: sorted.reduce((sum, ms) => sum + ms, 0),
+        totalMs: bucket.totalMs,
         failed: bucket.failed,
         abandoned: bucket.abandoned,
       };

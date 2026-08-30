@@ -6,7 +6,8 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
-import { formatDuration } from "@/utils/format";
+import { formatDuration, plural } from "@/utils/format";
+import { agendaKindLabel } from "../agenda-kinds";
 
 /**
  * Where the week's cycles went, by agenda kind. Wall clock stands in for token spend: the two track
@@ -38,7 +39,7 @@ export function CycleCost(): ReactElement {
                 spacing={1}
                 sx={{ alignItems: "baseline", justifyContent: "space-between" }}
               >
-                <Typography variant="body2">{item.kind}</Typography>
+                <Typography variant="body2">{agendaKindLabel(item.kind)}</Typography>
                 <Typography variant="captionMuted">
                   {formatDuration(Math.round(item.totalMs / 1000))} total
                 </Typography>
@@ -49,7 +50,8 @@ export function CycleCost(): ReactElement {
                 sx={{ my: 0.5 }}
               />
               <Typography variant="captionMuted">
-                {item.runs} run(s) · {formatDuration(Math.round(item.medianMs / 1000))} typical
+                {plural(item.runs, "run")} · {formatDuration(Math.round(item.medianMs / 1000))}{" "}
+                typical
                 {item.failed > 0 && ` · ${item.failed} failed`}
                 {item.abandoned > 0 && ` · ${item.abandoned} abandoned`}
               </Typography>

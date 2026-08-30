@@ -9,6 +9,8 @@ import { z } from "zod/v4";
 import { campaignJobSchema } from "@/modules/campaign/campaign.schema";
 import { contactSchema } from "@/modules/contact/contact.schema";
 import { emailMessageSchema } from "@/modules/email/email.schema";
+import { resumeSummarySchema } from "@/modules/resume/resume.schema";
+import { variantSummarySchema } from "@/modules/resume/variants/variant.schema";
 
 export const applicationListQuerySchema = paginationQuerySchema.extend(
   applicationFilterSchema.shape,
@@ -72,21 +74,16 @@ export const applicationEventSchema = z.object({
   createdAt: z.date(),
 });
 
-const applicationResumeVariantSchema = z.object({
-  id: z.uuid(),
-  // The base this variant tailors. The web links to the base's page; a variant has none of its own.
-  resumeId: z.uuid(),
-  label: z.string(),
-  diffNotes: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
+// The variant carries `resumeId` because the web links to the base's page; a variant has none.
+const applicationResumeVariantSchema = variantSummarySchema
+  .pick({ id: true, resumeId: true, label: true, createdAt: true, updatedAt: true })
+  .extend({ diffNotes: z.string().nullable() });
 
 /** The base resume the application went out with, tailored or not. */
-const applicationResumeSchema = z.object({
-  id: z.uuid(),
-  label: z.string(),
-  updatedAt: z.date(),
+const applicationResumeSchema = resumeSummarySchema.pick({
+  id: true,
+  label: true,
+  updatedAt: true,
 });
 
 /** The tailored variant submitted, when one was. Null means the base PDF went out as-is. */
