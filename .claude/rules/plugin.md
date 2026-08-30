@@ -37,9 +37,10 @@ through `JOBPILOT_SKILLS_ROOT`. No generation step - edit here directly.
 - `skills/humanizer/` is vendored from [blader/humanizer](https://github.com/blader/humanizer) (MIT,
   its own `LICENSE`). To sync: `curl -fsSL https://raw.githubusercontent.com/blader/humanizer/main/SKILL.md`,
   diff against the pinned `metadata.version`, then re-apply the JobPilot additions - `allowed-tools`,
-  the job-application paragraph and voice subsections under `PERSONALITY AND SOUL`, the PTY note in
-  the em-dash pattern, patterns 34-36, and the worked example. Upstream renumbers freely, so cite
-  patterns by title, never by number. Writing skills invoke it in **embedded mode** (final text
+  the job-application paragraph and the two voice subsections under "Add personality only when it
+  fits", the PTY note in the em-dash pattern, patterns 36-38, and the worked example. Upstream
+  renumbers and retitles freely, so cite patterns by title, never by number, and re-read the
+  frontmatter's `localPatterns` before assuming a range. Writing skills invoke it in **embedded mode** (final text
   only) - the default emits draft + audit + final, which is noise inside an apply flow.
 - Provider-neutral: reference sibling skills by name ("invoke the `tailor-resume` skill"), never
   provider-specific command tokens; shared docs by relative path (`../_shared/<doc>.md`).

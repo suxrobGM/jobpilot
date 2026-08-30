@@ -38,6 +38,7 @@ perpetually. Implementation runs on branch `feat/pilot` per the approved 2026-07
 | todo | [Pre-flight question harvesting](t3-preflight-harvest.md) | batch dry-run; one up-front answer form |
 | todo | [Scout/apply pipeline](t3-scout-apply-pipeline.md) | parallel scoring lane ahead of sequential applies |
 | todo | [Token efficiency](t3-token-efficiency.md) | extractors, model routing, tailoring memoization |
+| todo | [Natural writing skill](t3-natural-writing.md) | letters read as AI; pattern lists can't fix generate-then-patch |
 | todo | [Shared job index](t4-shared-job-index.md) | collective crawl; network effect |
 | todo | [Ghost-job detection](t4-ghost-job-detection.md) | fleet outcomes spot ghost postings |
 | todo | [Browser session vault](t4-session-vault.md) | encrypted cookie jars via DEK infra |
