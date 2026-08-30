@@ -61,6 +61,80 @@ export function classifySkipReason(reason: string): SkipBucket {
   return "other";
 }
 
+/** Claims older than this tell you about a version of the agent you are no longer running. */
+const COST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Enough claims to be representative; a week of cycles is hundreds, not thousands. */
+const COST_ROW_CAP = 2000;
+
+export interface PilotKindCost {
+  kind: string;
+  runs: number;
+  /** Typical wall clock for one run of this kind. */
+  medianMs: number;
+  /** Where the week actually went - runs x duration, which is what ranks the kinds. */
+  totalMs: number;
+  failed: number;
+  /** Claims that expired or were abandoned: work paid for and thrown away. */
+  abandoned: number;
+}
+
+function median(values: number[]): number {
+  const mid = Math.floor(values.length / 2);
+  if (values.length % 2 === 1) return values[mid];
+  return Math.round((values[mid - 1] + values[mid]) / 2);
+}
+
+/**
+ * Where the pilot's time goes, by agenda kind. Reads `PilotClaim` rather than adding a telemetry
+ * write: a claim already brackets exactly the work of one cycle (`grantedAt` to `releasedAt`) and
+ * already carries the kind. Wall clock is a proxy for token spend, not a measure of it, but it is
+ * the honest one available without parsing provider-specific session files.
+ */
+export async function costByKind(
+  prisma: Pick<PrismaClient, "pilotClaim">,
+  userId: string,
+  now: Date,
+): Promise<PilotKindCost[]> {
+  const rows = await prisma.pilotClaim.findMany({
+    where: {
+      userId,
+      releasedAt: { not: null },
+      grantedAt: { gte: new Date(now.getTime() - COST_WINDOW_MS) },
+    },
+    orderBy: { grantedAt: "desc" },
+    take: COST_ROW_CAP,
+    select: { kind: true, grantedAt: true, releasedAt: true, outcome: true },
+  });
+
+  const byKind = new Map<string, { durations: number[]; failed: number; abandoned: number }>();
+  for (const row of rows) {
+    if (!row.releasedAt) continue;
+    let bucket = byKind.get(row.kind);
+    if (!bucket) {
+      bucket = { durations: [], failed: 0, abandoned: 0 };
+      byKind.set(row.kind, bucket);
+    }
+    bucket.durations.push(row.releasedAt.getTime() - row.grantedAt.getTime());
+    if (row.outcome === "failed") bucket.failed++;
+    if (row.outcome === "expired" || row.outcome === "abandoned") bucket.abandoned++;
+  }
+
+  return [...byKind]
+    .map(([kind, bucket]) => {
+      const sorted = [...bucket.durations].sort((a, b) => a - b);
+      return {
+        kind,
+        runs: sorted.length,
+        medianMs: median(sorted),
+        totalMs: sorted.reduce((sum, ms) => sum + ms, 0),
+        failed: bucket.failed,
+        abandoned: bucket.abandoned,
+      };
+    })
+    .sort((a, b) => b.totalMs - a.totalMs);
+}
+
 export interface PilotTodayOutcomes {
   skipped: number;
   failed: number;

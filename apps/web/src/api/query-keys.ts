@@ -105,6 +105,7 @@ export const queryKeys = {
     all: ["pilot"] as const,
     state: () => [...queryKeys.pilot.all, "state"] as const,
     todayOutcomes: () => [...queryKeys.pilot.all, "today-outcomes"] as const,
+    cost: () => [...queryKeys.pilot.all, "cost"] as const,
     // Read-only view of the pilot's self-managed discovery searches.
     searches: () => [...queryKeys.pilot.all, "searches"] as const,
     // What an instructions edit would leave running; read on demand, never prefetched.

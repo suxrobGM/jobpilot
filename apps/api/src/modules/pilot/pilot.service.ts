@@ -16,7 +16,7 @@ import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/pr
 import { AGENDA_SNAPSHOT_RESET } from "./agenda/snapshot";
 import { parseInstructionsConfig } from "./pilot.instructions";
 import { toPilotQuestion, toPilotState } from "./pilot.mapper";
-import { countAppliedToday, countSentToday, countTodayOutcomes } from "./pilot.stats";
+import { costByKind, countAppliedToday, countSentToday, countTodayOutcomes } from "./pilot.stats";
 
 /** Expiring unanswered 2FA questions keeps their parked jobs from staying wedged. */
 const TWO_FA_TTL_MS = 5 * 60 * 1000;
@@ -200,6 +200,11 @@ export class PilotService {
   /** Today's skipped/failed counts and bucketed skip reasons - the "why so few applies?" answer. */
   getTodayOutcomes(userId: string) {
     return countTodayOutcomes(this.prisma, userId, new Date());
+  }
+
+  /** Which agenda kinds ate the week - the ranking to tune the agent against. */
+  async getCost(userId: string) {
+    return { items: await costByKind(this.prisma, userId, new Date()) };
   }
 
   /** Newest persisted activity lets the terminal distinguish a slow live cycle from a stuck one. */

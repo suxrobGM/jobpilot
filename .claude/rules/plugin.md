@@ -17,6 +17,10 @@ through `JOBPILOT_SKILLS_ROOT`. No generation step - edit here directly.
   `review-resume` on a first extraction; `review-resume` saves one `Suggested rewrite` variant to
   accept or discard, never touching a base; `tailor-resume` owns per-job variants and their
   restructuring, guarded in `apps/api/src/modules/resume/structure.ts`.
+- `skills/pilot/kinds/<kind>.md` - one file per agenda kind. The host `/clear`s before every cycle
+  injection, so anything in `pilot/SKILL.md` is re-read on every cycle: keep it to the loop
+  (sense/claim/record/release/exit) and put per-kind procedure here, where only the claimed kind
+  pays for it. Reference shared docs from these as `../../_shared/<doc>.md`.
 - `skills/_shared/*.md` - reference docs: `auth`, `browser-tips`, `campaign-flow`,
   `digest-schema`, `eligibility`, `form-filling`, `setup`, `untrusted-content`. The directory has
   no `SKILL.md`, so neither provider lists it as a skill - both discover skills by finding

@@ -1,0 +1,3 @@
+# `campaign.scorePending`
+
+Payload `{campaignId, query, board, resumeId, minScore, pendingCount, entries: [{key,url,title}]}` - unscored `pending` rows left behind by `search.discover` (thin listings) or a mid-batch abandonment. Delegate ONE `job-worker` batch score invocation: `{mode:"score", campaignId, jobs:<entries mapped to {jobKey:key,url,title}, ≤5>, resumeId, minMatchScore:<minScore>, save:"patch", claimId:$CLAIM_ID}`. **Do not apply** this cycle - promotion of newly-scored rows to `approved` happens server-side on the next agenda compile. Heartbeat after the worker returns. Journal like the other kinds: "Scored 5 unscored jobs for 'senior typescript remote' - 3 now ≥ threshold, promote next cycle."

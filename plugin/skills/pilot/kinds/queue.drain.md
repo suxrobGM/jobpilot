@@ -1,0 +1,3 @@
+# `queue.drain`
+
+Payload `{campaignId, resumeId, minScore, queuedCount, entries: [{key,url}]}` - `queued` pasted links in an existing `apply` campaign; never create or look one up. Delegate ONE `job-worker` batch score: `{mode:"score", campaignId, jobs:<entries as {jobKey:key,url}, ≤5>, resumeId, minMatchScore:<minScore>, save:"patch", claimId:$CLAIM_ID}` - the worker fills each row's real title/company/board and moves it `queued` → `pending`, or writes a `skipped` result. **Do not apply** this cycle - promotion to `approved` is server-side on the next agenda compile. Heartbeat after the worker returns. Journal: "Scored 4 pasted links - 3 eligible."

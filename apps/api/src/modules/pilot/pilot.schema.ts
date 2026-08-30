@@ -14,6 +14,20 @@ export const pilotTodayOutcomesSchema = z.object({
   skipReasons: z.array(z.object({ reason: z.enum(SKIP_BUCKETS), count: z.number().int() })),
 });
 
+/** Where the last week of cycles went, by agenda kind, heaviest first. */
+export const pilotCostSchema = z.object({
+  items: z.array(
+    z.object({
+      kind: z.string(),
+      runs: z.number().int(),
+      medianMs: z.number().int(),
+      totalMs: z.number().int(),
+      failed: z.number().int(),
+      abandoned: z.number().int(),
+    }),
+  ),
+});
+
 /** Orchestrator liveness probe: newest server-side agent activity + the active-claim count. */
 export const pilotActivityResponseSchema = z.object({
   lastActivityAt: z.date().nullable(),

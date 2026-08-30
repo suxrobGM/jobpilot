@@ -185,6 +185,10 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.todayOutcomes(),
     queryFn: () => api.pilot.stats.today.get(),
   }),
+  cost: () => ({
+    queryKey: queryKeys.pilot.cost(),
+    queryFn: () => api.pilot.stats.cost.get(),
+  }),
   searches: () => ({
     queryKey: queryKeys.pilot.searches(),
     queryFn: () => api.pilot.searches.get(),

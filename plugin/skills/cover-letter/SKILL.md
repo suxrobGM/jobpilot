@@ -10,7 +10,7 @@ Write a short, tailored cover letter connecting the candidate's resume to a spec
 
 ## Setup
 
-Follow `../_shared/setup.md` to load profile and resume. Then `Read` the resume file at `primaryResumeSourceAbsolutePath` for full context (identity, education, experience, skills, projects, research, awards).
+Follow `../_shared/setup.md` to load profile and resume. That structured resume is what you write from - experience, projects, skills, education, publications, awards, certifications and any custom sections are all in it. Don't also `Read` the source PDF: it's the same content again at several times the size, and inside an apply flow that cost is paid per job.
 
 ## Step 1: Analyze the JD
 
@@ -26,7 +26,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/cove
 
 The list is metadata only, so `GET /api/cover-letters/<id>` each for the body. No history (first letter, or the call fails) → Step 3.
 
-Note three things: which experience each one **led** with, every metric phrasing, and each closing sentence. They become the constraints in Step 3.
+Take three things from each and drop the rest: which experience it **led** with, its metric phrasings, and its closing sentence. Those are what rules 14-16 compare against; keeping five whole letters in context buys nothing beyond them.
 
 ## Step 3: Select Relevant Experience
 
