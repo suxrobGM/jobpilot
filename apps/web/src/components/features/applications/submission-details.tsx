@@ -8,6 +8,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { resumePdfUrl, variantPdfUrl } from "@/api/resume-urls";
 import type { ApplicationDetailDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { ExternalLink, ItemList, ItemRow, RelativeTime } from "@/components/ui/display";
@@ -30,14 +31,53 @@ export function SubmissionDetails(props: SubmissionDetailsProps): ReactElement {
   );
 }
 
+/**
+ * The resume that went out, tailored or not. Tailoring reuses an existing variant far more often
+ * than it creates one, so `resumeVariants` is empty for most applications and the base is all there
+ * is to show.
+ */
+function submittedResumeRow(app: ApplicationDetailDto): ReactNode {
+  const used = app.resumeVariantUsed;
+  const base = app.resume;
+
+  if (used) {
+    return (
+      <ItemRow
+        key={used.id}
+        icon={<Description fontSize="sm" />}
+        primary={<Link href={`/resumes/${used.resumeId}`}>{used.label}</Link>}
+        secondary={used.diffNotes ?? "Tailored for this job."}
+        action={<ExternalLink href={variantPdfUrl(used.id, used.updatedAt)}>PDF</ExternalLink>}
+      />
+    );
+  }
+  if (base) {
+    return (
+      <ItemRow
+        key={base.id}
+        icon={<Description fontSize="sm" />}
+        primary={<Link href={`/resumes/${base.id}`}>{base.label}</Link>}
+        secondary="Sent as-is, not tailored for this job."
+        action={<ExternalLink href={resumePdfUrl(base.id, base.updatedAt)}>PDF</ExternalLink>}
+      />
+    );
+  }
+  return null;
+}
+
 function DocumentsCard(props: SubmissionDetailsProps): ReactElement {
   const { application: app } = props;
+  // Variants tailored for this job that were not the one submitted - a pre-submit draft, or a
+  // second attempt. The submitted row above already covers the one that went out.
+  const otherVariants = app.resumeVariants.filter((v) => v.id !== app.resumeVariantUsed?.id);
+
   const rows: ReactNode[] = [
-    ...app.resumeVariants.map((v) => (
+    submittedResumeRow(app),
+    ...otherVariants.map((v) => (
       <ItemRow
         key={v.id}
         icon={<Description fontSize="sm" />}
-        primary={<Link href={`/resumes/${v.id}`}>{v.label}</Link>}
+        primary={<Link href={`/resumes/${v.resumeId}`}>{v.label}</Link>}
         secondary={v.diffNotes ?? undefined}
         action={<RelativeTime value={v.createdAt} />}
       />
@@ -50,17 +90,14 @@ function DocumentsCard(props: SubmissionDetailsProps): ReactElement {
         action={<RelativeTime value={c.createdAt} />}
       />
     )),
-  ];
+  ].filter(Boolean);
 
   return (
     <SectionCard title="Documents" description="The resume and letter sent with this application.">
       {rows.length > 0 ? (
         <ItemList>{rows}</ItemList>
       ) : (
-        <EmptyState
-          variant="inline"
-          title="No tailored documents were saved for this application."
-        />
+        <EmptyState variant="inline" title="No documents were recorded for this application." />
       )}
     </SectionCard>
   );

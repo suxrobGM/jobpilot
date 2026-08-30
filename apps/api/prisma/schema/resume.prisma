@@ -12,8 +12,9 @@ model Resume {
   content String?
   version Int     @default(1)
 
-  variants   ResumeVariant[]
-  primaryFor User?           @relation("PrimaryResume")
+  variants     ResumeVariant[]
+  primaryFor   User?           @relation("PrimaryResume")
+  applications Application[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -31,6 +32,10 @@ model ResumeVariant {
   jobUrl        String?      @map("job_url")
   applicationId String?      @map("application_id")
   application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  // Applications submitted with this variant; distinct from `application` above, which is the one
+  // application this variant was created for.
+  usedByApplications Application[] @relation("ApplicationResumeUsed")
 
   content   String
   diffNotes String? @map("diff_notes")

@@ -104,6 +104,7 @@ On reuse:
 
 > Reusing variant {id}: {label} (score {n}/100).
 > $JOBPILOT_API/api/resumes/variants/{id}/pdf
+> `RESUME_USED base={baseId} variant={id}`
 
 Stop.
 
@@ -180,7 +181,15 @@ Response `{ id, pdfUrl, rewordedBullets, flags }`. Echo:
 
 > Created variant {id} from base {baseId} ({rewordedBullets} reworded).
 > $JOBPILOT_API{pdfUrl}
+> `RESUME_USED base={baseId} variant={id}`
 
 If `flags` is non-empty, append: `⚠ verify - not elsewhere in your resume: {flags}`.
 
 The variant's `rewrites` audit records every structural change, so `GET /api/resumes/variants/{id}` shows exactly what moved.
+
+## Return to the caller
+
+Every path - reuse and create alike - ends with the `RESUME_USED base={baseId} variant={id}` line
+above. Apply flows read it to report what was submitted on the job result, and an application whose
+result carries no resume shows nothing under Documents. Omit `variant=` only when no variant is
+involved at all and the base PDF itself goes to the form.

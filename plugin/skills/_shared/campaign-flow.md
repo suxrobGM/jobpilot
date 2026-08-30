@@ -33,13 +33,20 @@ Application + initial event on `applied`. Payload shapes:
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-# applied
-jq -n --arg t "$NOW" --argjson score <0-100> '{outcome:"applied", appliedAt:$t, matchScore:$score}'
+# applied - resumeId/resumeVariantId name the resume that was uploaded (see below)
+jq -n --arg t "$NOW" --argjson score <0-100> --arg rid "<resumeId>" --arg vid "<resumeVariantId>" \
+  '{outcome:"applied", appliedAt:$t, matchScore:$score}
+   + (if $rid == "" then {} else {resumeId:$rid} end)
+   + (if $vid == "" then {} else {resumeVariantId:$vid} end)'
 # failed (login failure, unexpected page, validation, crash)
 jq -n --arg r "<failReason>" --arg notes "<retryNotes>" '{outcome:"failed", failReason:$r, retryNotes:$notes}'
 # skipped (CAPTCHA, user cancelled, cap reached, ...)
 jq -n --arg r "<skipReason>" '{outcome:"skipped", skipReason:$r}'
 ```
+
+**Always send `resumeId` on `applied`**, and `resumeVariantId` too whenever a tailored variant was
+uploaded - including when `tailor-resume` reused an existing one. This is the only record of what the
+candidate actually submitted; without it the application's Documents card has nothing to show.
 
 ## job-worker apply-mode input
 

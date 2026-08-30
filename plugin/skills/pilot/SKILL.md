@@ -106,7 +106,7 @@ The `[interview-prep]` marker prefix is load-bearing - the server dedupes on it.
 
 Delegate ONE `job-worker` invocation in apply mode - the input JSON from `../_shared/campaign-flow.md` (campaignId, jobKey, url, board, digest, resumeId, plus profile fields per `../_shared/setup.md`) plus `claimId:$CLAIM_ID` (lets the worker heartbeat through a long apply), all read from the claim payload. Heartbeat once more when it returns. Handle the four outcomes per `../_shared/campaign-flow.md` (Terminal result writes):
 
-- `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` with the shared payload shapes.
+- `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` with the shared payload shapes. Pass the worker's `resumeId`/`resumeVariantId` straight through on `applied`.
 - `needs_user` → ask the user, then park the job:
 
 Pass the worker's `kind`, `question`, and `options` through verbatim (`options` defaults `[]`).

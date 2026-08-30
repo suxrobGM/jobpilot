@@ -97,8 +97,19 @@ export class ApplicationService {
           where,
           include: {
             events: { orderBy: { createdAt: "asc" } },
+            resume: { select: { id: true, label: true, updatedAt: true } },
+            resumeVariantUsed: {
+              select: { id: true, resumeId: true, label: true, diffNotes: true, updatedAt: true },
+            },
             resumeVariants: {
-              select: { id: true, label: true, diffNotes: true, createdAt: true },
+              select: {
+                id: true,
+                resumeId: true,
+                label: true,
+                diffNotes: true,
+                createdAt: true,
+                updatedAt: true,
+              },
               orderBy: { createdAt: "desc" },
             },
             coverLetters: {

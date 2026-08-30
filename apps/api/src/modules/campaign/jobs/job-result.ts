@@ -20,6 +20,38 @@ function requireAppliedAt(data: CampaignJobResultInput): Date {
   return new Date(data.appliedAt);
 }
 
+interface SubmittedResume {
+  resumeId: string | null;
+  resumeVariantId: string | null;
+}
+
+/**
+ * Resolves the resume the agent says it submitted, dropping anything the user doesn't own - the ids
+ * arrive from the agent, not from a route the auth guard has already scoped. A variant's own
+ * `resumeId` wins over a reported one so the two can never disagree.
+ */
+async function resolveSubmittedResume(
+  tx: Pick<PrismaClient, "resume" | "resumeVariant">,
+  userId: string,
+  data: CampaignJobResultInput,
+): Promise<SubmittedResume> {
+  if (data.resumeVariantId) {
+    const variant = await tx.resumeVariant.findFirst({
+      where: { id: data.resumeVariantId, resume: { userId } },
+      select: { id: true, resumeId: true },
+    });
+    if (variant) return { resumeId: variant.resumeId, resumeVariantId: variant.id };
+  }
+  if (data.resumeId) {
+    const resume = await tx.resume.findFirst({
+      where: { id: data.resumeId, userId },
+      select: { id: true },
+    });
+    if (resume) return { resumeId: resume.id, resumeVariantId: null };
+  }
+  return { resumeId: null, resumeVariantId: null };
+}
+
 /** Atomically records an idempotent terminal job result and its dependent writes. */
 export async function writeJobResult(
   prisma: PrismaClient,
@@ -83,13 +115,14 @@ export async function writeJobResult(
       const logApplied = {
         create: { kind: "status_change", toStatus: "applied", source: "campaign" },
       } as const;
+      const submitted = await resolveSubmittedResume(tx, userId, data);
 
       application = await tx.application.upsert({
         where: { userId_url: { userId, url: canonicalUrl } },
         // A repost reuses this row, so the date has to move: the duplicate window measures from
         // it, and a frozen date retires the guard for that url. A result already recorded
         // (`count === 0`) must not, or the retry logs a second event.
-        update: changed.count === 0 ? {} : { appliedAt, events: logApplied },
+        update: changed.count === 0 ? {} : { appliedAt, events: logApplied, ...submitted },
         create: {
           userId,
           url: canonicalUrl,
@@ -103,22 +136,26 @@ export async function writeJobResult(
           matchReason: job.matchReason,
           appliedAt,
           events: logApplied,
+          ...submitted,
         },
       });
+
+      // Marks the variant used, which is what the resume page's prune filter reads. A reused variant
+      // already points at the application it was created for; that first link is the one to keep.
+      if (submitted.resumeVariantId) {
+        await tx.resumeVariant.updateMany({
+          where: { id: submitted.resumeVariantId, applicationId: null },
+          data: { applicationId: application.id },
+        });
+      }
     }
 
-    // Both documents are written before this row exists, so link them by the url they recorded.
+    // The letter is written before this row exists, so link it by the url it recorded.
     if (application) {
-      await Promise.all([
-        tx.resumeVariant.updateMany({
-          where: { jobUrl: job.url, applicationId: null, resume: { userId } },
-          data: { applicationId: application.id },
-        }),
-        tx.coverLetter.updateMany({
-          where: { jobUrl: job.url, applicationId: null, userId },
-          data: { applicationId: application.id },
-        }),
-      ]);
+      await tx.coverLetter.updateMany({
+        where: { jobUrl: job.url, applicationId: null, userId },
+        data: { applicationId: application.id },
+      });
     }
 
     return {

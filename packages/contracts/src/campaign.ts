@@ -206,6 +206,10 @@ export const campaignJobResultSchema = z
     skipReason: z.string().min(1).transform(cleanReplacementChars).optional(),
     retryNotes: reasonText.optional().nullable(),
     matchScore: z.number().int().min(0).max(100).optional(),
+    // The resume actually submitted. `resumeVariantId` is absent when the base went out untailored;
+    // both are absent on an outcome that never reached a form.
+    resumeId: z.uuid().optional(),
+    resumeVariantId: z.uuid().optional(),
   })
   .refine(
     (v) =>

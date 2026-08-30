@@ -7,6 +7,10 @@ import { describe, expect, it } from "bun:test";
 /** Relative to now, so the duplicate fixtures stay inside the window as the calendar moves. */
 const APPLIED_AT = new Date(Date.now() - 5 * DAY_MS).toISOString();
 
+const OWNED_RESUME_ID = "11111111-1111-4111-8111-111111111111";
+const OWNED_VARIANT_ID = "22222222-2222-4222-8222-222222222222";
+const OTHER_USERS_VARIANT_ID = "33333333-3333-4333-8333-333333333333";
+
 function setup() {
   let job = {
     id: "j-id",
@@ -95,7 +99,15 @@ function setup() {
     networkingMessage: {
       groupBy: async () => [],
     },
+    resume: {
+      findFirst: async ({ where }: { where: { id: string; userId: string } }) =>
+        where.id === OWNED_RESUME_ID && where.userId === "u1" ? { id: OWNED_RESUME_ID } : null,
+    },
     resumeVariant: {
+      findFirst: async ({ where }: { where: { id: string; resume: { userId: string } } }) =>
+        where.id === OWNED_VARIANT_ID && where.resume.userId === "u1"
+          ? { id: OWNED_VARIANT_ID, resumeId: OWNED_RESUME_ID }
+          : null,
       updateMany: async (args: {
         where: Record<string, unknown>;
         data: Record<string, unknown>;
@@ -149,22 +161,59 @@ describe("CampaignJobService terminal results", () => {
     expect(result.summary).toMatchObject({ kind: "jobs", applied: 1 });
   });
 
-  it("links the job's tailored resume variants to the new application", async () => {
+  it("records the reported variant as the resume the application went out with", async () => {
     const state = setup();
-    await state.service.recordJobResult("u1", "c1", "j1", {
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+      resumeVariantId: OWNED_VARIANT_ID,
+    });
+    // The variant's own resumeId wins, so the pair can never disagree.
+    expect(result.application).toMatchObject({
+      resumeId: OWNED_RESUME_ID,
+      resumeVariantId: OWNED_VARIANT_ID,
+    });
+    // Marks it used for the resume page's prune filter, without stealing an existing link.
+    expect(state.variantLinks).toHaveLength(1);
+    expect(state.variantLinks[0]).toMatchObject({
+      where: { id: OWNED_VARIANT_ID, applicationId: null },
+      data: { applicationId: "app1" },
+    });
+  });
+
+  it("records a base resume submitted without tailoring", async () => {
+    const state = setup();
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+      resumeId: OWNED_RESUME_ID,
+    });
+    expect(result.application).toMatchObject({
+      resumeId: OWNED_RESUME_ID,
+      resumeVariantId: null,
+    });
+    expect(state.variantLinks).toHaveLength(0);
+  });
+
+  it("drops resume ids the user does not own", async () => {
+    const state = setup();
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+      resumeVariantId: OTHER_USERS_VARIANT_ID,
+    });
+    expect(result.application).toMatchObject({ resumeId: null, resumeVariantId: null });
+    expect(state.variantLinks).toHaveLength(0);
+  });
+
+  it("records no resume when the agent reported none", async () => {
+    const state = setup();
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
       outcome: "applied",
       appliedAt: APPLIED_AT,
     });
-    // The only thing tying a variant to an outcome. Scoped by owner+url, fills an unset link only.
-    expect(state.variantLinks).toHaveLength(1);
-    expect(state.variantLinks[0]).toMatchObject({
-      where: {
-        jobUrl: "https://example.test/jobs/1",
-        applicationId: null,
-        resume: { userId: "u1" },
-      },
-      data: { applicationId: "app1" },
-    });
+    expect(result.application).toMatchObject({ resumeId: null, resumeVariantId: null });
+    expect(state.variantLinks).toHaveLength(0);
   });
 
   it("links the job's cover letter to the new application", async () => {

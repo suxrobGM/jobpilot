@@ -31,6 +31,14 @@ model Application {
   campaignId String?   @map("campaign_id")
   campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
 
+  // The resume actually submitted: the base, plus the tailored variant when one was used. Reported by
+  // the agent on the job result - `resumeVariants` below is the reverse list of variants created for
+  // this application, which is empty whenever tailoring reused an existing variant.
+  resumeId          String?        @map("resume_id")
+  resume            Resume?        @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  resumeVariantId   String?        @map("resume_variant_id")
+  resumeVariantUsed ResumeVariant? @relation("ApplicationResumeUsed", fields: [resumeVariantId], references: [id], onDelete: SetNull)
+
   events         ApplicationEvent[]
   emailMessages  EmailMessage[]
   resumeVariants ResumeVariant[]
@@ -42,6 +50,9 @@ model Application {
   @@index([userId, appliedAt])
   @@index([appliedAt])
   @@index([campaignId])
+  // Both FKs are SetNull, so deleting a resume or variant scans this table without them.
+  @@index([resumeId])
+  @@index([resumeVariantId])
   @@map("applications")
 }
 

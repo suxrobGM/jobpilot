@@ -74,10 +74,23 @@ export const applicationEventSchema = z.object({
 
 const applicationResumeVariantSchema = z.object({
   id: z.uuid(),
+  // The base this variant tailors. The web links to the base's page; a variant has none of its own.
+  resumeId: z.uuid(),
   label: z.string(),
   diffNotes: z.string().nullable(),
   createdAt: z.date(),
+  updatedAt: z.date(),
 });
+
+/** The base resume the application went out with, tailored or not. */
+const applicationResumeSchema = z.object({
+  id: z.uuid(),
+  label: z.string(),
+  updatedAt: z.date(),
+});
+
+/** The tailored variant submitted, when one was. Null means the base PDF went out as-is. */
+const applicationResumeUsedSchema = applicationResumeVariantSchema.omit({ createdAt: true });
 
 const applicationCoverLetterSchema = z.object({
   id: z.uuid(),
@@ -109,6 +122,8 @@ const applicationJobSchema = campaignJobSchema.pick({
 /** A single application with the documents sent, the posting, and everything that came back. */
 export const applicationDetailSchema = applicationSchema.extend({
   events: z.array(applicationEventSchema),
+  resume: applicationResumeSchema.nullable(),
+  resumeVariantUsed: applicationResumeUsedSchema.nullable(),
   resumeVariants: z.array(applicationResumeVariantSchema),
   coverLetters: z.array(applicationCoverLetterSchema),
   emailMessages: z.array(applicationEmailSchema),

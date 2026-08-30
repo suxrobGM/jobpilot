@@ -102,20 +102,20 @@ Apply to one job. If `digest` is absent, fetch it from `GET /api/campaigns/$CAMP
 2. Auth wall (auth.md): register-when-missing, forgot-password via `get-code`. Unrecoverable login is `failed`, `failReason:"Login failed for <board>"`.
 3. CAPTCHA gate: snapshot the form first; on a CAPTCHA invoke `solve-captcha`. Unsolved is `skipped`, `skipReason:"CAPTCHA - apply manually via the apply skill"`.
 4. 2FA / payment: do not solve, do not close the tab; return `needs_user`, `category:"verification"|"payment"`.
-5. Tailor: invoke `tailor-resume` with the digest (fall back to `url`), `--base <resumeId>` when set. No usable base is `failed`, `failReason:"No tailorable resume base"`.
+5. Tailor: invoke `tailor-resume` with the digest (fall back to `url`), `--base <resumeId>` when set. No usable base is `failed`, `failReason:"No tailorable resume base"`. Keep its closing `RESUME_USED base=... variant=...` line - step 9 reports both ids.
 6. Fill (form-filling.md): upload the variant; a cover-letter field invokes `cover-letter` (pass `source`). Use `defaultStartDate`. Salary fields: resolve per form-filling.md (`salaryExpectation` override → `user.salaryPreferences` match); unresolvable and required returns `needs_user`, `category:"salary"`.
 7. Pre-submit review (only if `preSubmitReview`): fill, leave the tab open, return `needs_user`, `category:"review"`, `context` = a one-line field summary. (Re-delegated with it false, the form is already filled: confirm and submit.)
 8. Submit, `browser_wait_for`, narrow snapshot: success is `applied`; a populated error is `failed` with that message; a CAPTCHA at submit invokes `solve-captcha`, still unsolved is `skipped`.
 9. Close tabs, select tab 0, return one of:
 
 ```json
-{ "outcome": "applied", "appliedAt": "...", "matchScore": 0 }
+{ "outcome": "applied", "appliedAt": "...", "matchScore": 0, "resumeId": "...", "resumeVariantId": "..." }
 { "outcome": "failed",  "failReason": "...", "retryNotes": "..." }
 { "outcome": "skipped", "skipReason": "..." }
 { "outcome": "needs_user", "category": "verification|payment|salary|review", "context": "...", "kind": "question|choice|2fa|approval", "question": "...", "options": ["..."] }
 ```
 
-`appliedAt` = `date -u +%Y-%m-%dT%H:%M:%SZ`. You never POST `/result`; the orchestrator records terminal outcomes.
+`appliedAt` = `date -u +%Y-%m-%dT%H:%M:%SZ`. `resumeId`/`resumeVariantId` come from step 5's `RESUME_USED` line and are what the orchestrator records as the resume submitted; `resumeVariantId` is null only when the base PDF went to the form untailored. You never POST `/result`; the orchestrator records terminal outcomes.
 
 `needs_user.category` is the routing discriminator. `context` is required only for pre-submit review and carries the field summary. `question` is one sentence the user can answer from a phone. `kind` is `2fa` for verification codes, `approval` for pre-submit review, `choice` when you have concrete options, else `question`. `options` (optional) lists short answer strings (e.g. salary ranges, yes/no) - each must be directly usable as the answer, never "see above".
 
