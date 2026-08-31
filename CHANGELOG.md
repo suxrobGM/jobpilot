@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.1.35 - 2026-08-30
+
+### Added
+
+- Resumes now carry publications, awards and certifications, plus custom titled sections for
+  anything else. Resume import files what it finds there instead of dropping it, so an academic
+  CV keeps its publications, grants, talks and patents. Publication titles and certification
+  names also feed the keyword-drift check.
+- Applications record the resume and variant they were submitted with, so the Documents card
+  shows what actually went out. A migration recovers what the old link covered.
+- A cost panel on /pilot/activity shows where the week went: runs per agenda kind, median
+  duration, failures and abandoned claims.
+
+### Changed
+
+- Saving changed pilot goals now asks what to retire. You can re-derive the searches, complete
+  the campaigns started under the old goals, and drop the approved backlog. Nothing happens
+  unless you pick it.
+- Approved jobs in pilot campaigns expire after 7 days, so a paused pilot does not wake to a
+  queue of dead postings ranked above everything else.
+- A pilot cycle re-reads far less. The pilot skill is a short loop plus one file per agenda
+  kind, read only for the kind being run, and the cover letter step no longer re-reads the
+  source resume PDF or five prior letters in full.
+- The vendored humanizer moved from 2.9.1 to 2.11.2, with the JobPilot additions re-applied.
+
+### Fixed
+
+- Public pages behind the server renderer no longer share one rate-limit bucket. Every visitor
+  looked like the docker gateway, so one visitor's traffic throttled everyone.
+- A rate-limited public detail page renders as an error instead of "not found", which used to
+  invite search engines to deindex a live page.
+- The inbox nav badge is gone. It stuck at 99+ and opening the inbox never cleared it.
+- The terminal host resolves Windows executable extensions correctly when locating the agent.
+- The cycle-cost query dropped a 2000-row cap that silently shortened the week it reports, and
+  server-written skip reasons are bucketed directly instead of guessed from their wording.
+
 ## v2.1.34 - 2026-08-18
 
 ### Added
