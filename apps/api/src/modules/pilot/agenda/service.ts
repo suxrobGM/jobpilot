@@ -13,7 +13,7 @@ import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { PilotJournalService } from "../journal.service";
 import { loadInstructions } from "../pilot.instructions";
-import { countAppliedToday, countSentToday } from "../pilot.stats";
+import { countAppliedToday, countSentToday } from "../stats";
 import { buildAgenda } from "./build";
 import { gatherBoardHealth } from "./candidates-board";
 import { gatherBootstrap } from "./candidates-bootstrap";

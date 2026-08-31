@@ -1,6 +1,6 @@
 import { pilotCycleStatusSchema, pilotJournalEntrySchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
-import { SKIP_BUCKETS } from "./pilot.stats";
+import { SKIP_BUCKETS } from "./stats";
 
 /** Rows created by a batch journal append. */
 export const createPilotJournalResponseSchema = z.object({

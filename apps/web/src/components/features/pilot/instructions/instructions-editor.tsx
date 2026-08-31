@@ -4,9 +4,7 @@ import { type ReactElement, useState } from "react";
 import {
   NO_INSTRUCTIONS_CHANGE,
   type PilotInstructionsChange,
-  type PilotInstructionsConfig,
   type PilotState,
-  pilotInstructionsConfigSchema,
   type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import {
@@ -29,12 +27,19 @@ import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/sec
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/notification-provider";
 import { BoardsSection } from "./boards-section";
-import { type InstructionsFormValues, instructionsFormSchema } from "./form-schema";
+import {
+  hasTunedConfig,
+  type InstructionsFormValues,
+  instructionsFormSchema,
+  toConfig,
+  toFormValues,
+} from "./form-schema";
 import { GoalsChangeDialog } from "./goals-change-dialog";
 import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
+import { SaveBar } from "./save-bar";
 import { SearchesList } from "./searches-list";
 
 interface InstructionsEditorProps {
@@ -55,51 +60,11 @@ const NAV_ANCHORS: SectionAnchor[] = [
   { id: "advanced", label: "Advanced settings" },
 ];
 
-/** A config indistinguishable from `{}` means the user never tuned anything - keep Advanced folded. */
-const DEFAULT_CONFIG_JSON = JSON.stringify(pilotInstructionsConfigSchema.parse({}));
-
-function toConfig(value: InstructionsFormValues): PilotInstructionsConfig {
-  return {
-    dailyApplyCap: value.dailyApplyCap,
-    minScore: value.minScore,
-    checkIntervalMinutes: value.checkIntervalMinutes,
-    boards: value.boards,
-    networking: value.networking,
-    promotion: {
-      platforms: value.promotionPlatforms.map((p) => ({
-        platform: p.platform.trim(),
-        target: p.target.trim() || undefined,
-        postEveryDays: p.postEveryDays,
-      })),
-      autonomy: "review",
-    },
-  };
-}
-
-function toFormValues(state: PilotState): InstructionsFormValues {
-  const c = state.instructionsConfig;
-  return {
-    goals: state.instructionsGoals,
-    dailyApplyCap: c.dailyApplyCap,
-    minScore: c.minScore,
-    checkIntervalMinutes: c.checkIntervalMinutes,
-    networking: { ...c.networking },
-    boards: [...c.boards],
-    promotionPlatforms: c.promotion.platforms.map((p) => ({
-      platform: p.platform,
-      target: p.target ?? "",
-      postEveryDays: p.postEveryDays,
-    })),
-  };
-}
-
 export function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const { state } = props;
   const toast = useToast();
   // Expanded when any advanced value was ever customized, so tuning stays visible to its owner.
-  const [advancedOpen, setAdvancedOpen] = useState(
-    () => JSON.stringify(state.instructionsConfig) !== DEFAULT_CONFIG_JSON,
-  );
+  const [advancedOpen, setAdvancedOpen] = useState(() => hasTunedConfig(state));
 
   const save = useApiMutation<unknown, UpdatePilotInstructionsInput>(
     (body) => api.pilot.instructions.put(body),
@@ -222,29 +187,14 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         </Box>
       </SectionCard>
 
-      {/* Outside the SectionCard: MUI Card clips overflow, which would break position: sticky. */}
       {showSaveBar && (
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={(theme) => ({
-            position: "sticky",
-            bottom: 0,
-            justifyContent: "flex-end",
-            alignItems: "center",
-            paddingBlock: theme.spacing(1.5),
-            backgroundColor: theme.palette.surfaces.base,
-            borderTop: `1px solid ${theme.palette.line.divider}`,
-            zIndex: 1,
-          })}
-        >
-          <Typography variant="captionMuted">Unsaved changes</Typography>
+        <SaveBar>
           <form.AppForm>
             <form.SubmitButton disabled={save.isPending}>
               {save.isPending ? "Saving" : "Save instructions"}
             </form.SubmitButton>
           </form.AppForm>
-        </Stack>
+        </SaveBar>
       )}
 
       <GoalsChangeDialog

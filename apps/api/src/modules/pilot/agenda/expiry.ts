@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import { SERVER_SKIP_REASONS } from "../pilot.stats";
+import { SERVER_SKIP_REASONS } from "../stats";
 import {
   APPROVED_JOB_STALE_MS,
   GATHER_CAP,
