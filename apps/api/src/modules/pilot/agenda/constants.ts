@@ -101,6 +101,22 @@ export const STALE_APPLYING_MS = 30 * 60 * 1000;
  */
 export const APPROVED_JOB_STALE_MS = 7 * DAY_MS;
 
+/**
+ * Ceiling on how long any claim may be held, heartbeats included.
+ *
+ * A heartbeat slides `expiresAt` forward, so a driver that is stuck but still beating never
+ * expires. Two kinds showed it in real data: 26 apply claims averaged 43 minutes (one ran 18.6
+ * hours with no application to show for it), and 4 `question.answered` claims were held 24.5 hours
+ * - work that normally finishes in under 13 minutes, since the human has already answered by the
+ * time it is queued.
+ *
+ * No kind of work has ever legitimately run past this: the slowest success of any kind was an
+ * apply at 22.0 min (p99 18.7), then discovery at 15.9 and questions at 12.6. The margin is thin
+ * enough that a healthy apply can be cut off here, so the cost is real - that attempt is released
+ * rather than retried.
+ */
+export const MAX_CLAIM_LIFETIME_MS = 25 * 60 * 1000;
+
 /** Each open apply claim becomes a NOT clause in the stale sweep; the pilot never holds many at once. */
 export const MAX_OPEN_APPLY_CLAIMS = 20;
 
