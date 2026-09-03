@@ -13,6 +13,13 @@ import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
 
+/**
+ * Serializes session starts across every mount of this panel. `signal.aborted` is only consulted
+ * after the token fetch resolves, and against a local API that round trip routinely beats effect
+ * cleanup - so under StrictMode, or a quick remount, both mounts reach `startSession()`.
+ */
+let sessionStartInFlight: Promise<unknown> | null = null;
+
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 const SHIFT_ENTER_B64 = toBase64("\x1b[13;2u");
 const CTRL_C_B64 = toBase64("\x03");
@@ -98,14 +105,19 @@ async function openSession(
 
   try {
     fit.fit();
-    await startSession({
+    // `??=` so a second mount joins the first start rather than racing it; the winner clears the
+    // slot so a later, genuine restart is not blocked by a settled promise.
+    sessionStartInFlight ??= startSession({
       cols: terminal.cols,
       rows: terminal.rows,
       provider,
       apiToken: data.token,
       webUrl: window.location.origin,
       apiUrl: API_BASE_URL,
+    }).finally(() => {
+      sessionStartInFlight = null;
     });
+    await sessionStartInFlight;
     return !signal.aborted;
   } catch (err) {
     if (signal.aborted) {
