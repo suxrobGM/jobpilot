@@ -1,1 +1,1 @@
-export { db, prisma } from "./prisma.client";
+export { db } from "./prisma.client";

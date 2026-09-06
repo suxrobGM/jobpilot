@@ -71,7 +71,7 @@ export const CONTACT_DISCOVERY_SOURCES = [
 ] as const;
 export const contactDiscoverySourceSchema = z.enum(CONTACT_DISCOVERY_SOURCES);
 
-export const contactFieldsSchema = z.object({
+export const createContactSchema = z.object({
   name: z.string().min(1),
   title: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
@@ -86,8 +86,6 @@ export const contactFieldsSchema = z.object({
   relatedJobUrl: z.url().optional().nullable(),
   notes: reasonText.optional().nullable(),
 });
-
-export const createContactSchema = contactFieldsSchema;
 
 export const networkingMessageFieldsSchema = z.object({
   channel: networkingChannelSchema,

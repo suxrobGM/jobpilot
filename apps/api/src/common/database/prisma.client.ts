@@ -20,6 +20,3 @@ export const db = new PrismaClient({
   adapter,
   log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
 });
-
-/** Alias for parity with the reference template / general expectations. */
-export const prisma = db;

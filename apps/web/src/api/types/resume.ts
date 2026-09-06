@@ -12,4 +12,3 @@ export type ResumeVariantDto = Data<ReturnType<(typeof api.resumes)["variants"]>
 
 /** Per-bullet rewrite audit carried on a variant. */
 export type VariantRewriteAudit = NonNullable<ResumeVariantDto["rewrites"]>;
-export type EntryRewriteAudit = VariantRewriteAudit["experience"][number];
