@@ -10,6 +10,7 @@ interface ErrorFallbackProps {
   reset: () => void;
 }
 
+/** The default export of both `app/error.tsx` files; knip cannot see through their re-export. @knipignore */
 export function ErrorFallback(props: ErrorFallbackProps): ReactElement {
   const { error, reset } = props;
 

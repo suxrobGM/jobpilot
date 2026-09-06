@@ -1,10 +1,4 @@
-export type {
-  AdminBoardDto,
-  AdminPilotDto,
-  AdminPilotPageDto,
-  AdminUserDto,
-  AdminUserPageDto,
-} from "./admin";
+export type { AdminBoardDto, AdminPilotDto, AdminUserDto } from "./admin";
 export type {
   AnalyticsNetworkingStats,
   AnalyticsPerDayEntry,
@@ -27,13 +21,10 @@ export type {
   VerifyEmailResponse,
 } from "./auth";
 export {
-  type CampaignConfigDto,
   type CampaignDetailDto,
   type CampaignDto,
   type CampaignJobDto,
   type CampaignJobReasonDto,
-  type CampaignJobSummaryDto,
-  type CampaignNetworkingSummaryDto,
   type CampaignSummaryDto,
   type CreateCampaignRequest,
   jobSummary,

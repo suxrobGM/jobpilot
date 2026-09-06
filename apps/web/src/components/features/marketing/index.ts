@@ -3,7 +3,6 @@ export { MarketingNav } from "./marketing-nav";
 export { MarketingShell } from "./marketing-shell";
 export { Section } from "./section";
 export { SectionEyebrow } from "./section-eyebrow";
-export { SectionGlow } from "./section-glow";
 export { BoardStrip } from "./sections/board-strip";
 export { CampaignTypes } from "./sections/campaign-types";
 export { CtaBand } from "./sections/cta-band";

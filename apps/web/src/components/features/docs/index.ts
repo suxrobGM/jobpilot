@@ -1,8 +1,7 @@
 export { DocsBreadcrumbJsonLd } from "./docs-breadcrumb-json-ld";
 export { DocsIndexCards } from "./docs-index-cards";
 export { buildDocsMetadata } from "./docs-metadata";
-export { DocsMobileNav } from "./docs-mobile-nav";
-export { DOCS_LINKS, DOCS_NAV, type DocsNavEntry } from "./docs-nav";
+export { DOCS_NAV } from "./docs-nav";
 export { DocsSidebar } from "./docs-sidebar";
 export {
   DocsBlockquote,

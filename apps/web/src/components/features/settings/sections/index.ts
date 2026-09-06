@@ -1,10 +1,3 @@
-export { AddressSection } from "./address-section";
-export { AutoApplySection } from "./auto-apply-section";
-export { ConnectCard } from "./connect-card";
-export { CredentialsSection } from "./credentials-section";
-export { EeoSection } from "./eeo-section";
 export { EmailSection } from "./email-section";
-export { OAuthClientCard } from "./oauth-client-card";
 export { PersonalSection } from "./personal-section";
 export { PushSettings } from "./push-settings";
-export { WorkAuthSection } from "./work-auth-section";
