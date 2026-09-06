@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 
+/** Prisma reads this default export itself. @knipignore */
 export default defineConfig({
   schema: "./prisma/schema",
   migrations: {
