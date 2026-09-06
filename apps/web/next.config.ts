@@ -16,8 +16,6 @@ const config: NextConfig = {
   pageExtensions: ["ts", "tsx", "md", "mdx"],
   // Compile the workspace TS packages consumed by the app.
   transpilePackages: ["@jobpilot/contracts", "@jobpilot/api-client"],
-  // Next can only type-check via the TS6 JS API shim; `bun run typecheck` (TS7 native) is the gate.
-  typescript: { ignoreBuildErrors: true },
 };
 
 // Plugins must be string references under Turbopack (loader options are serialized).

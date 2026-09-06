@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start -p 4100",
     "typegen": "next typegen",
-    "typecheck": "bun ./node_modules/@typescript/native/bin/tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@emotion/cache": "^11.13.5",
@@ -46,8 +46,7 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@typescript/native": "npm:typescript@^7.0.2",
     "babel-plugin-react-compiler": "^1.0.0",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }

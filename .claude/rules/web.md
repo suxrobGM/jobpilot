@@ -5,8 +5,8 @@ paths:
 
 # Web conventions (`apps/web`)
 
-Commands (`bun --cwd=apps/web run …`): `typecheck` (the only type gate - `next build` never
-type-checks via `typescript.ignoreBuildErrors`), `typegen` (Next route/type generation).
+Commands (`bun --cwd=apps/web run …`): `typecheck` (`tsc --noEmit`), `typegen` (Next route/type
+generation). `next build` type-checks too, so both gate a change.
 
 ## Files & components
 
@@ -63,15 +63,19 @@ browser; filter a paginated one server-side, since it only ever sees the page it
   setter plus a separate `setPage(1)` would start from the same snapshot and undo itself.
 - `/jobs` is the one exception: `JobPager` renders real `<a href>` paging for crawlers.
 
-## The two TypeScript compilers (do not "clean this up")
+## TypeScript
 
-TypeScript 7 is the Go-native compiler and ships **no JS compiler API** (returns in 7.1). Next
-needs that API in `build/load-jsconfig.js` to read tsconfig `paths` - without it Next silently
-drops every `@/…` alias and `next build` dies with module-not-found. So `apps/web` declares both:
+One compiler: `typescript` 7, the Go-native one, same as every other workspace. `typecheck` is
+plain `tsc --noEmit`.
 
-- `typescript` (6.x) - the JS API for Next, and `tsserver` for the editor. Never imported by our
-  code.
-- `@typescript/native` (alias of `typescript@7`) - the real compiler.
+Next 16.3 reads tsconfig by spawning the `tsc` CLI (`experimental.useTypeScriptCli`, default
+`true`), so it no longer needs the JS compiler API that TS 7 does not ship. That is why the old
+`typescript` 6 + `@typescript/native` pair is gone. Two traps if you touch this:
 
-Both packages declare a `tsc` bin and bun links the 6.x one, so `typecheck` calls the v7 binary
-**by explicit path**.
+- Next resolves the compiler by directory name (`resolveFrom(dir, "typescript/package.json")`),
+  so TS 7 has to be installed **as** `typescript`. Aliasing it under another name leaves Next
+  with no `paths`, and `next build` dies with module-not-found on every `@/…` import.
+- Never set `useTypeScriptCli: false`. That path needs the JS API, so it cannot work with TS 7 at
+  all; Next throws `E1467`.
+
+`next build` now type-checks (about 4s), so it is a real gate alongside `bun run typecheck`.
