@@ -51,5 +51,3 @@ export const editorial = {
   flame: accent.primary,
   amber: feedback.warning,
 } as const;
-
-export type StageKey = keyof typeof stages;

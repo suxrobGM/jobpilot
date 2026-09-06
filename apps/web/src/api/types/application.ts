@@ -9,6 +9,3 @@ export type ApplicationDetailDto = Data<ReturnType<typeof api.applied>["get"]>;
 
 /** One activity event on an application. */
 export type ApplicationEventDto = ApplicationDetailDto["events"][number];
-
-/** Result of the dedupe check, from `GET /api/applied/check`. */
-export type DuplicateCheckResult = Data<typeof api.applied.check.get>;

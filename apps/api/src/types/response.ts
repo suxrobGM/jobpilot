@@ -1,7 +1,5 @@
 import { z } from "zod/v4";
 
-// ── Error envelope ────────────────────────────────────────────────────────────
-
 /**
  * Standard error envelope produced by the global error middleware
  * (`{ code, message, details? }`). `code` is a stable string the web client and
@@ -13,8 +11,6 @@ export const errorResponseSchema = z.object({
   message: z.string(),
   details: z.unknown().optional(),
 });
-
-export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 
 /**
  * The standard error statuses this API emits, each mapped to the shared error
@@ -33,8 +29,6 @@ export const httpErrorResponses = {
   500: errorResponseSchema,
 } as const;
 
-// ── Common success envelopes ──────────────────────────────────────────────────
-
 /** `{ id }` - returned by most create/update routes. */
 export const idResponseSchema = z.object({ id: z.uuid() });
 
@@ -43,9 +37,6 @@ export const deletedResponseSchema = z.object({ deleted: z.uuid() });
 
 /** `{ ok: true }` - generic acknowledgement (failures throw the error envelope). */
 export const okResponseSchema = z.object({ ok: z.literal(true) });
-
-/** `{ message }` - message-only acknowledgement. */
-export const messageResponseSchema = z.object({ message: z.string() });
 
 // Pagination lives in `@jobpilot/contracts/pagination` - the web and the agent's skills need the
 // same envelope, and neither can import from `apps/api`.

@@ -10,8 +10,3 @@ const EM_DASH = "-";
 export function cleanReplacementChars(value: string): string {
   return value.replace(REPLACEMENT_ARTIFACT, EM_DASH);
 }
-
-/** {@link cleanReplacementChars} that passes `null`/`undefined` through unchanged. */
-export function cleanReplacementCharsNullable<T extends string | null | undefined>(value: T): T {
-  return (typeof value === "string" ? cleanReplacementChars(value) : value) as T;
-}

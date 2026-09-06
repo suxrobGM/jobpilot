@@ -222,7 +222,6 @@ export const campaignJobResultSchema = z
     },
   );
 
-export type CampaignJobOutcome = z.infer<typeof campaignJobOutcomeSchema>;
 export type CampaignJobResultInput = z.infer<typeof campaignJobResultSchema>;
 
 export type CampaignStatus = z.infer<typeof campaignStatusSchema>;

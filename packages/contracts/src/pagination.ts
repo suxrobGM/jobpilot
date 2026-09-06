@@ -80,8 +80,6 @@ export const cursorQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_CURSOR_PAGE_SIZE),
 });
 
-export type CursorQuery = z.infer<typeof cursorQuerySchema>;
-
 /** Build an `{ items, nextCursor }` response schema for a given item schema. */
 export const cursorPageSchema = <T extends z.ZodType>(item: T) =>
   z.object({ items: z.array(item), nextCursor: z.string().nullable() });

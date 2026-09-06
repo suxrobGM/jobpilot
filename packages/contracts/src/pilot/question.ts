@@ -41,7 +41,6 @@ export const pilotQuestionSchema = z.object({
 
 export const pilotQuestionListSchema = z.array(pilotQuestionSchema);
 
-export type PilotQuestionKind = z.infer<typeof pilotQuestionKindSchema>;
 export type PilotQuestionStatus = z.infer<typeof pilotQuestionStatusSchema>;
 export type CreatePilotQuestionInput = z.infer<typeof createPilotQuestionSchema>;
 export type AnswerPilotQuestionInput = z.infer<typeof answerPilotQuestionSchema>;

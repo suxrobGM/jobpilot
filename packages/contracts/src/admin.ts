@@ -13,5 +13,4 @@ export const updateUserRoleSchema = z.object({ role: assignableRoleSchema });
 export const adminPilotQuerySchema = paginationQuerySchema;
 
 export type AdminUserQuery = z.infer<typeof adminUserQuerySchema>;
-export type UpdateUserRoleInput = z.infer<typeof updateUserRoleSchema>;
 export type AdminPilotQuery = z.infer<typeof adminPilotQuerySchema>;

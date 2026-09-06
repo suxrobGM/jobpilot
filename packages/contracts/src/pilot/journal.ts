@@ -65,5 +65,3 @@ export const pilotCycleDetailSchema = z
     sleepSeconds: z.number().int().optional(),
   })
   .loose();
-
-export type PilotCycleDetail = z.infer<typeof pilotCycleDetailSchema>;

@@ -153,9 +153,7 @@ export const sendEmailSchema = z.object({
     .optional(),
 });
 
-export type NetworkingConfig = z.infer<typeof networkingConfigSchema>;
 export type NetworkingChannel = z.infer<typeof networkingChannelSchema>;
-export type LinkedinTier = z.infer<typeof linkedinTierSchema>;
 export type NetworkingAutonomy = z.infer<typeof networkingAutonomySchema>;
 export type NetworkingMode = z.infer<typeof networkingModeSchema>;
 export type NetworkingMessageStatus = z.infer<typeof networkingMessageStatusSchema>;
@@ -163,6 +161,5 @@ export type ContactDiscoverySource = z.infer<typeof contactDiscoverySourceSchema
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type AddCampaignNetworkingInput = z.infer<typeof addCampaignNetworkingSchema>;
 export type PatchNetworkingMessageInput = z.infer<typeof patchNetworkingMessageSchema>;
-export type NetworkingMessageOutcome = z.infer<typeof networkingMessageOutcomeSchema>;
 export type NetworkingMessageResultInput = z.infer<typeof networkingMessageResultSchema>;
 export type SendEmailInput = z.infer<typeof sendEmailSchema>;

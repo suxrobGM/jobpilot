@@ -52,7 +52,6 @@ export const oauthClientUpsertSchema = z.object({
   clientSecret: z.string().optional(),
 });
 
-export type EmailProviderName = z.infer<typeof emailProviderSchema>;
 export type Classification = z.infer<typeof classificationSchema>;
 export type ReviewStatus = z.infer<typeof reviewStatusSchema>;
 export type ScanMessageInput = z.infer<typeof scanMessageSchema>;

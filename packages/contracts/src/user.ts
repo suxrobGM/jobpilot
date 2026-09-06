@@ -131,10 +131,7 @@ export const setPrimaryResumeSchema = z.object({
   resumeId: z.uuid().nullable(),
 });
 
-export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
-export type AutoApplySettingsInput = z.infer<typeof autoApplySettingsSchema>;
 export type UserWithAutoApplyInput = z.infer<typeof userWithAutoApplySchema>;
-export type SetPrimaryResumeInput = z.infer<typeof setPrimaryResumeSchema>;
 
 export const USER_DEFAULT_VALUES: UserWithAutoApplyInput = {
   firstName: "",
@@ -200,8 +197,6 @@ export const portfolioVisibilitySchema = z.object({
   showLinkedin: z.boolean(),
   showGithub: z.boolean(),
 });
-
-export type PortfolioVisibility = z.infer<typeof portfolioVisibilitySchema>;
 
 /** Partial update of the user's portfolio settings; every field optional. */
 export const portfolioSettingsPatchSchema = portfolioVisibilitySchema.partial().extend({
