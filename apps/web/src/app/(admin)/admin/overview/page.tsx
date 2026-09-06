@@ -1,5 +1,5 @@
-import type { ReactElement } from "react";
-import { Grid, Stack } from "@mui/material";
+import { type ReactElement, Suspense } from "react";
+import { Grid, Skeleton, Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
@@ -11,8 +11,42 @@ import { TopBoardsList } from "@/components/features/analytics/top-boards-list";
 
 export const metadata: Metadata = { title: "Overview" };
 
+const TILE_KEYS = ["a", "b", "c", "d", "e", "f", "g"] as const;
+
+export default function AdminOverviewPage(): ReactElement {
+  // Every tile and chart comes from one stats call, so the whole body streams.
+  return (
+    <Suspense fallback={<AdminOverviewSkeleton />}>
+      <AdminOverview />
+    </Suspense>
+  );
+}
+
+function AdminOverviewSkeleton(): ReactElement {
+  return (
+    <Stack spacing={2}>
+      <Grid container spacing={1.5}>
+        {TILE_KEYS.map((key) => (
+          <Grid key={key} size={{ xs: 6, sm: 4, md: 3 }}>
+            <Skeleton variant="rounded" height={92} />
+          </Grid>
+        ))}
+      </Grid>
+      <Skeleton variant="rounded" height={280} />
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Skeleton variant="rounded" height={320} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Skeleton variant="rounded" height={320} />
+        </Grid>
+      </Grid>
+    </Stack>
+  );
+}
+
 /** Read-only, so it renders entirely on the server; only the charts ship as client leaves. */
-export default async function AdminOverviewPage(): Promise<ReactElement> {
+async function AdminOverview(): Promise<ReactElement> {
   const { data } = await api.admin.stats.get(await getFetchOptions());
 
   if (!data) {

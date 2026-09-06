@@ -1,4 +1,5 @@
-import type { ReactElement } from "react";
+import { type ReactElement, Suspense } from "react";
+import { Skeleton } from "@mui/material";
 import type { Metadata } from "next";
 import { CampaignComposer } from "@/components/features/campaigns";
 import { PageHeader, PageShell } from "@/components/ui/layout";
@@ -9,8 +10,7 @@ interface NewCampaignPageProps {
   searchParams: Promise<{ board?: string }>;
 }
 
-export default async function NewCampaignPage(props: NewCampaignPageProps): Promise<ReactElement> {
-  const { board } = await props.searchParams;
+export default function NewCampaignPage(props: NewCampaignPageProps): ReactElement {
   return (
     <PageShell maxWidth="md">
       <PageHeader
@@ -18,7 +18,15 @@ export default async function NewCampaignPage(props: NewCampaignPageProps): Prom
         title="Start a new campaign"
         description="Search a job board, score matches, and optionally batch-apply."
       />
-      <CampaignComposer defaultBoard={board} />
+      {/* `?board=` preselects the board, so only the composer waits on the URL. */}
+      <Suspense fallback={<Skeleton variant="rounded" height={480} />}>
+        <Composer searchParams={props.searchParams} />
+      </Suspense>
     </PageShell>
   );
+}
+
+async function Composer(props: NewCampaignPageProps): Promise<ReactElement> {
+  const { board } = await props.searchParams;
+  return <CampaignComposer defaultBoard={board} />;
 }

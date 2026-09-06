@@ -1,4 +1,5 @@
-import type { ReactElement } from "react";
+import { type ReactElement, Suspense } from "react";
+import { Skeleton } from "@mui/material";
 import type { Metadata } from "next";
 import { ResumeDetail } from "@/components/features/resumes";
 import { PageHeader, PageShell } from "@/components/ui/layout";
@@ -9,9 +10,7 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function ResumeDetailPage(props: PageProps): Promise<ReactElement> {
-  const { id } = await props.params;
-
+export default function ResumeDetailPage(props: PageProps): ReactElement {
   return (
     <PageShell maxWidth="xl">
       <PageHeader
@@ -19,7 +18,14 @@ export default async function ResumeDetailPage(props: PageProps): Promise<ReactE
         title="Edit resume"
         description="Structured fields render to PDF on the right. Variants tailored from this base appear below."
       />
-      <ResumeDetail resumeId={id} />
+      <Suspense fallback={<Skeleton variant="rounded" height={560} />}>
+        <Resume params={props.params} />
+      </Suspense>
     </PageShell>
   );
+}
+
+async function Resume(props: PageProps): Promise<ReactElement> {
+  const { id } = await props.params;
+  return <ResumeDetail resumeId={id} />;
 }

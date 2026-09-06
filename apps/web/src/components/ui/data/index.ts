@@ -5,3 +5,4 @@ export * from "./empty-state";
 export * from "./pagination-controls";
 export * from "./pagination-footer";
 export * from "./query-section";
+export * from "./table-skeleton";

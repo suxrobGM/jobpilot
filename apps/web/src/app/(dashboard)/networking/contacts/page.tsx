@@ -1,10 +1,10 @@
-import type { ReactElement } from "react";
+import { type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
 import { ContactsTable } from "@/components/features/networking";
-import { PaginationControls } from "@/components/ui/data";
+import { PaginationControls, TableSkeleton } from "@/components/ui/data";
 import { type PaginationSearchParams, paginationQuery } from "@/utils/search-params";
 
 export const metadata: Metadata = { title: "Contacts" };
@@ -13,9 +13,15 @@ interface NetworkingContactsPageProps {
   searchParams: Promise<PaginationSearchParams>;
 }
 
-export default async function NetworkingContactsPage(
-  props: NetworkingContactsPageProps,
-): Promise<ReactElement> {
+export default function NetworkingContactsPage(props: NetworkingContactsPageProps): ReactElement {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <Contacts searchParams={props.searchParams} />
+    </Suspense>
+  );
+}
+
+async function Contacts(props: NetworkingContactsPageProps): Promise<ReactElement> {
   const search = await props.searchParams;
 
   const { data } = await api.contacts.get({

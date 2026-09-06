@@ -1,6 +1,6 @@
-import type { ReactElement } from "react";
+import { type ReactElement, Suspense } from "react";
 import { Launch, PictureAsPdf } from "@mui/icons-material";
-import { Button, Chip, Typography } from "@mui/material";
+import { Button, Chip, Skeleton, Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { API_BASE_URL } from "@/api/base-url";
@@ -16,7 +16,27 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function CoverLetterDetailPage(props: PageProps): Promise<ReactElement> {
+export default function CoverLetterDetailPage(props: PageProps): ReactElement {
+  // Header and body are both the letter's own content, so they stream together.
+  return (
+    <PageShell maxWidth="md">
+      <Suspense fallback={<CoverLetterSkeleton />}>
+        <CoverLetter params={props.params} />
+      </Suspense>
+    </PageShell>
+  );
+}
+
+function CoverLetterSkeleton(): ReactElement {
+  return (
+    <Stack spacing={3}>
+      <Skeleton variant="rounded" height={72} />
+      <Skeleton variant="rounded" height={480} />
+    </Stack>
+  );
+}
+
+async function CoverLetter(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
 
   const opts = await getFetchOptions();
@@ -27,7 +47,7 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
   }
 
   return (
-    <PageShell maxWidth="md">
+    <>
       <PageHeader
         eyebrow={letter.company ?? "Cover letter"}
         title={letter.jobTitle ?? "Untitled role"}
@@ -79,6 +99,6 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
           Saved {formatAbsoluteTime(letter.createdAt)}
         </Typography>
       </SectionCard>
-    </PageShell>
+    </>
   );
 }
