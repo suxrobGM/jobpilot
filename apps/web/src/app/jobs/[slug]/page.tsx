@@ -1,5 +1,4 @@
 import { cache, type ReactElement, Suspense } from "react";
-import { Skeleton, Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
@@ -7,6 +6,7 @@ import { dataOrThrow } from "@/api/error";
 import { getPublicFetchOptions } from "@/api/server";
 import { JobDetail } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
+import { DetailSkeleton } from "@/components/ui/data";
 import { breadcrumbLd, jobPostingLd } from "@/lib/structured-data";
 
 interface JobPageProps {
@@ -44,18 +44,9 @@ export async function generateMetadata(props: JobPageProps): Promise<Metadata> {
 export default function JobPage(props: JobPageProps): ReactElement {
   // The whole page is the listing, so the jobs layout is the shared App Shell.
   return (
-    <Suspense fallback={<JobDetailSkeleton />}>
+    <Suspense fallback={<DetailSkeleton heights={[160, 400]} />}>
       <Job params={props.params} />
     </Suspense>
-  );
-}
-
-function JobDetailSkeleton(): ReactElement {
-  return (
-    <Stack spacing={3}>
-      <Skeleton variant="rounded" height={160} />
-      <Skeleton variant="rounded" height={400} />
-    </Stack>
   );
 }
 

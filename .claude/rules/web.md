@@ -6,7 +6,8 @@ paths:
 # Web conventions (`apps/web`)
 
 Commands (`bun --cwd=apps/web run …`): `typecheck` (`tsc --noEmit`), `typegen` (Next route/type
-generation). `next build` type-checks too, so both gate a change.
+generation). `next build` runs the same `tsc --noEmit`, so CI gates types through the build and
+`typecheck` is the faster local check.
 
 ## Files & components
 
@@ -23,6 +24,20 @@ generation). `next build` type-checks too, so both gate a change.
   `backfillResumeIds` assigns it server-side); for a controlled list whose model has no id, use
   `useKeyedList` (`@/hooks/use-keyed-list`).
 - `@/` maps to `src/`. Zod from `zod/v4`. Forms are TanStack Form + Zod validators.
+
+## Streaming
+
+Data that depends on the URL (`params`, `searchParams`) or on a fetch keeps the page's shell
+static:
+
+- The default export stays **synchronous** and renders only chrome - shell, header, card frame.
+- Each dynamic dependency goes in one `async` child inside its own `<Suspense>`. Data that
+  arrives together shares one boundary. Never split a single fetch across two.
+- Fallbacks come from the shared set (`DetailSkeleton`, `TableSkeleton` in
+  `@/components/ui/data`, `AuthFormSkeleton` in `@/components/features/auth`). Add to that set
+  rather than writing a page-local skeleton.
+- A client leaf that only reads the URL doesn't need a server wrapper - let it call
+  `useSearchParams()` itself so the page prerenders whole.
 
 ## Routing / auth
 

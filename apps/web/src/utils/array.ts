@@ -41,3 +41,11 @@ export function replaceAt<T>(arr: T[], idx: number, value: T): T[] {
   next[idx] = value;
   return next;
 }
+
+/**
+ * Stable keys for a fixed-length placeholder list. Skeleton rows have no model
+ * to key by, and Biome's `noArrayIndexKey` rules out the index itself.
+ */
+export function slotKeys(count: number): string[] {
+  return Array.from({ length: count }, (_, index) => `slot-${index}`);
+}

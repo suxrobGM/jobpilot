@@ -1,16 +1,17 @@
 import { type ReactElement, Suspense } from "react";
-import { AuthCard, AuthFormSkeleton, ConfirmEmailChangeView } from "@/components/features/auth";
+import { Skeleton } from "@mui/material";
+import { AuthCard, ConfirmEmailChangeView } from "@/components/features/auth";
 
 interface ConfirmEmailChangePageProps {
   searchParams: Promise<{ token?: string }>;
 }
 
 export default function ConfirmEmailChangePage(props: ConfirmEmailChangePageProps): ReactElement {
-  const { searchParams } = props;
   return (
+    // A status view, not a form: one bar stands in for the pending message.
     <AuthCard title="Confirm your new email">
-      <Suspense fallback={<AuthFormSkeleton fields={0} />}>
-        <ConfirmEmailChangeSection searchParams={searchParams} />
+      <Suspense fallback={<Skeleton variant="rounded" height={96} />}>
+        <ConfirmEmailChangeSection searchParams={props.searchParams} />
       </Suspense>
     </AuthCard>
   );

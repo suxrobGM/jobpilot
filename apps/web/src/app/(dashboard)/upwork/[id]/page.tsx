@@ -1,8 +1,8 @@
 import { type ReactElement, Suspense } from "react";
-import { Skeleton, Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProposalDetail } from "@/components/features/upwork";
+import { DetailSkeleton } from "@/components/ui/data";
 
 export const metadata: Metadata = { title: "Proposal" };
 
@@ -15,15 +15,6 @@ export default function ProposalDetailPage(props: PageProps): ReactElement {
     <Suspense fallback={<DetailSkeleton />}>
       <Proposal params={props.params} />
     </Suspense>
-  );
-}
-
-function DetailSkeleton(): ReactElement {
-  return (
-    <Stack spacing={3}>
-      <Skeleton variant="rounded" height={72} />
-      <Skeleton variant="rounded" height={420} />
-    </Stack>
   );
 }
 

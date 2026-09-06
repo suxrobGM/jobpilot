@@ -1,11 +1,11 @@
 import { cache, type ReactElement, Suspense } from "react";
-import { Skeleton, Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
 import { dataOrThrow } from "@/api/error";
 import { getFetchOptions } from "@/api/server";
 import { CampaignDetail } from "@/components/features/campaigns";
+import { DetailSkeleton } from "@/components/ui/data";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 interface PageProps {
@@ -30,19 +30,10 @@ export default function CampaignDetailPage(props: PageProps): ReactElement {
   // The header title is the campaign's own query, so it streams with the detail.
   return (
     <PageShell maxWidth="lg">
-      <Suspense fallback={<CampaignSkeleton />}>
+      <Suspense fallback={<DetailSkeleton />}>
         <Campaign params={props.params} />
       </Suspense>
     </PageShell>
-  );
-}
-
-function CampaignSkeleton(): ReactElement {
-  return (
-    <Stack spacing={3}>
-      <Skeleton variant="rounded" height={72} />
-      <Skeleton variant="rounded" height={420} />
-    </Stack>
   );
 }
 

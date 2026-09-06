@@ -85,10 +85,6 @@ jobs:
         run: bun run typegen
         working-directory: apps/web
 
-      - name: Typecheck web
-        run: bun run typecheck
-        working-directory: apps/web
-
       - name: Cache Next.js build
         uses: actions/cache@v6
         with:

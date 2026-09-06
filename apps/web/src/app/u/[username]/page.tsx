@@ -1,5 +1,4 @@
 import { cache, type ReactElement, Suspense } from "react";
-import { Skeleton, Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
@@ -7,6 +6,7 @@ import { dataOrThrow } from "@/api/error";
 import { getPublicFetchOptions } from "@/api/server";
 import { PortfolioView } from "@/components/features/portfolio";
 import { JsonLd } from "@/components/seo/json-ld";
+import { DetailSkeleton } from "@/components/ui/data";
 import { breadcrumbLd, personLd } from "@/lib/structured-data";
 
 interface PortfolioPageProps {
@@ -47,19 +47,9 @@ export async function generateMetadata(props: PortfolioPageProps): Promise<Metad
 export default function PortfolioPage(props: PortfolioPageProps): ReactElement {
   // Everything on the page is the profile, so the marketing shell is the shared App Shell.
   return (
-    <Suspense fallback={<PortfolioSkeleton />}>
+    <Suspense fallback={<DetailSkeleton heights={[180, 120, 320]} />}>
       <Portfolio params={props.params} />
     </Suspense>
-  );
-}
-
-function PortfolioSkeleton(): ReactElement {
-  return (
-    <Stack spacing={3}>
-      <Skeleton variant="rounded" height={180} />
-      <Skeleton variant="rounded" height={120} />
-      <Skeleton variant="rounded" height={320} />
-    </Stack>
   );
 }
 

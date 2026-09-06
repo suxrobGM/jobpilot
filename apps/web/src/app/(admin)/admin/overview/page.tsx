@@ -8,10 +8,12 @@ import { ApplicationsTimelineChart } from "@/components/features/analytics/appli
 import { StatTile } from "@/components/features/analytics/stat-tile";
 import { StatusBreakdownChart } from "@/components/features/analytics/status-breakdown-chart";
 import { TopBoardsList } from "@/components/features/analytics/top-boards-list";
+import { slotKeys } from "@/utils/array";
 
 export const metadata: Metadata = { title: "Overview" };
 
-const TILE_KEYS = ["a", "b", "c", "d", "e", "f", "g"] as const;
+/** Mirrors the tile count in `AdminOverview` below. */
+const TILE_KEYS = slotKeys(7);
 
 export default function AdminOverviewPage(): ReactElement {
   // Every tile and chart comes from one stats call, so the whole body streams.

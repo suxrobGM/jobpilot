@@ -1,12 +1,13 @@
 import { type ReactElement, Suspense } from "react";
 import { Launch, PictureAsPdf } from "@mui/icons-material";
-import { Button, Chip, Skeleton, Stack, Typography } from "@mui/material";
+import { Button, Chip, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
 import { CoverLetterActions } from "@/components/features/cover-letters";
+import { DetailSkeleton } from "@/components/ui/data";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { formatAbsoluteTime } from "@/utils/format";
 
@@ -20,19 +21,10 @@ export default function CoverLetterDetailPage(props: PageProps): ReactElement {
   // Header and body are both the letter's own content, so they stream together.
   return (
     <PageShell maxWidth="md">
-      <Suspense fallback={<CoverLetterSkeleton />}>
+      <Suspense fallback={<DetailSkeleton heights={[72, 480]} />}>
         <CoverLetter params={props.params} />
       </Suspense>
     </PageShell>
-  );
-}
-
-function CoverLetterSkeleton(): ReactElement {
-  return (
-    <Stack spacing={3}>
-      <Skeleton variant="rounded" height={72} />
-      <Skeleton variant="rounded" height={480} />
-    </Stack>
   );
 }
 

@@ -1,11 +1,10 @@
-import type { PropsWithChildren, ReactElement, ReactNode } from "react";
+import type { PropsWithChildren, ReactElement } from "react";
 import { Box, Card, CardContent, Container, Stack, Typography } from "@mui/material";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 
 interface AuthCardProps extends PropsWithChildren {
   title: string;
-  /** A node lets a page stream a URL-dependent subtitle without blocking the card. */
-  subtitle?: ReactNode;
+  subtitle?: string;
 }
 
 /**
@@ -44,11 +43,7 @@ export function AuthCard(props: AuthCardProps): ReactElement {
                   <Typography variant="h3" component="h2">
                     {title}
                   </Typography>
-                  {subtitle && (
-                    <Typography variant="body2Muted" component="div">
-                      {subtitle}
-                    </Typography>
-                  )}
+                  {subtitle && <Typography variant="body2Muted">{subtitle}</Typography>}
                 </Stack>
                 {children}
               </Stack>
