@@ -8,7 +8,7 @@ import {
 } from "@jobpilot/contracts";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { logger } from "@/common/logger";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";

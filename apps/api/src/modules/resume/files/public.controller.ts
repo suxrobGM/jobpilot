@@ -1,6 +1,6 @@
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { ResumeFileService } from "./file.service";
 

@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { fitResultSchema, scoreFitSchema } from "./scoring.schema";
 import { ScoringService } from "./scoring.service";

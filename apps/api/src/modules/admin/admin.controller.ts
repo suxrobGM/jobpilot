@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/admin";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { requireRole, requireRoleOn } from "@/common/middleware";
 import {
   adminPilotPageSchema,

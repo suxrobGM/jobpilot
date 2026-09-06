@@ -1,6 +1,7 @@
 import { type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
-import { EmailConnectToast, InboxContent } from "@/components/features/inbox";
+import { EmailConnectToast } from "@/components/features/inbox/email-connect-toast";
+import { InboxContent } from "@/components/features/inbox/inbox-content";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Inbox" };

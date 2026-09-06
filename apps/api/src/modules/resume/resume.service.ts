@@ -9,7 +9,7 @@ import {
   deleteAllResumeArtifacts,
   ensureResumesDir,
   generateResumeFilename,
-} from "@/common/storage";
+} from "@/common/storage/storage";
 import { PrismaClient } from "@/generated/prisma/client";
 import { backfillResumeIds } from "./backfill-ids";
 import { findProfileMismatches } from "./consistency";

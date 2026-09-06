@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/networking";
 import { paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard, requireVerifiedEmail } from "@/common/middleware";
 import { campaignParams, networkingMessageParams } from "../campaign.schema";
 import {

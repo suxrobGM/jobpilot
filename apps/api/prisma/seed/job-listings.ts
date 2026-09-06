@@ -1,5 +1,5 @@
-import { db } from "@/common/database";
-import { container } from "@/common/di";
+import { db } from "@/common/database/prisma.client";
+import { container } from "@/common/di/container";
 import { JobListingPublisher } from "@/modules/job-listing";
 
 const BATCH = 500;

@@ -1,3 +1,3 @@
-export * from "./async";
-export * from "./slug";
-export * from "./url";
+export { sleep } from "./async";
+export { slugify } from "./slug";
+export { parseCanonicalUrl } from "./url";

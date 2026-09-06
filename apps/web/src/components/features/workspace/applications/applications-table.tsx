@@ -1,12 +1,13 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import type { ApplicationDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
-import { type ApplicationStatus, StatusChip } from "@/components/ui/display";
+import { StatusChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
 
 interface ApplicationsTableProps {

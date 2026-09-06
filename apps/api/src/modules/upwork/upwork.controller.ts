@@ -7,7 +7,7 @@ import {
   upworkClientQualitySchema,
 } from "@jobpilot/contracts/upwork";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { publish, sseStream } from "@/common/sse";
 import { idResponseSchema } from "@/types/response";

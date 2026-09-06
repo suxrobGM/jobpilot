@@ -1,3 +1,3 @@
-export * from "./campaign-detail";
-export * from "./campaign-row";
-export * from "./composer/campaign-composer";
+export { CampaignDetail } from "./campaign-detail";
+export { CampaignRow } from "./campaign-row";
+export { CampaignComposer } from "./composer/campaign-composer";

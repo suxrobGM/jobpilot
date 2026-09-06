@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { PageHeader, PageShell } from "@/components/ui/layout";
-import { type Tab, TabStrip } from "@/components/ui/navigation";
+import { type Tab, TabStrip } from "@/components/ui/navigation/tab-strip";
 
 const TABS: Tab[] = [
   { label: "Contacts", href: "/networking/contacts" },

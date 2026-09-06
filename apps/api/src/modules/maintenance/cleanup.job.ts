@@ -1,5 +1,5 @@
 import { cron, Patterns } from "@elysiajs/cron";
-import { db } from "@/common/database";
+import { db } from "@/common/database/prisma.client";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
 import { runRetentionCleanup } from "./cleanup";

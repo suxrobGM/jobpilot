@@ -1,11 +1,9 @@
 import { type ReactElement, Suspense } from "react";
 import { Skeleton } from "@mui/material";
 import type { Metadata } from "next";
-import {
-  ChangeEmailCard,
-  ChangePasswordCard,
-  ConnectedAccountsCard,
-} from "@/components/features/security";
+import { ChangeEmailCard } from "@/components/features/security/change-email-card";
+import { ChangePasswordCard } from "@/components/features/security/change-password-card";
+import { ConnectedAccountsCard } from "@/components/features/security/connected-accounts-card";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = {

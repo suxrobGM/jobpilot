@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import type { Metadata } from "next";
-import { OnboardingWizard } from "@/components/features/onboarding";
+import { OnboardingWizard } from "@/components/features/onboarding/onboarding-wizard";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Onboarding" };

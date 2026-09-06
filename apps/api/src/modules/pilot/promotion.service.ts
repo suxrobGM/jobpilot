@@ -9,7 +9,7 @@ import { PROMOTION_TERMINAL_STATUSES } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict, findOwned, unprocessable } from "@/common/errors";
-import { PushService } from "@/common/push";
+import { PushService } from "@/common/push/push.service";
 import { publish } from "@/common/sse";
 import { PrismaClient, type PromotionPost as PromotionPostModel } from "@/generated/prisma/client";
 import { PilotJournalService } from "./journal.service";

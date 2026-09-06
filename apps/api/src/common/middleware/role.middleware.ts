@@ -1,7 +1,7 @@
 import { hasRole, type Role } from "@jobpilot/contracts/role";
 import { Elysia } from "elysia";
 import type { AuthUser } from "@/common/auth";
-import { db } from "@/common/database";
+import { db } from "@/common/database/prisma.client";
 import { forbidden, unauthorized } from "@/common/errors";
 import { resolveAuthUser } from "./auth.middleware";
 

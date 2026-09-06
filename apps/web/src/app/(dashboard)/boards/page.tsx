@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import type { Metadata } from "next";
-import { AddBoardButton, BoardsContent } from "@/components/features/boards";
+import { AddBoardButton } from "@/components/features/boards/add-board-button";
+import { BoardsContent } from "@/components/features/boards/boards-content";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Boards" };

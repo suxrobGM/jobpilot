@@ -1,7 +1,7 @@
 import { credentialPatchSchema, credentialSchema } from "@jobpilot/contracts/credential";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { deletedResponseSchema } from "@/types/response";
 import {

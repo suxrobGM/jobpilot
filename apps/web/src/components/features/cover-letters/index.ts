@@ -1,2 +1,2 @@
-export * from "./cover-letter-actions";
-export * from "./cover-letters-table";
+export { CoverLetterActions } from "./cover-letter-actions";
+export { CoverLettersTable } from "./cover-letters-table";

@@ -1,7 +1,10 @@
 import type { ReactElement } from "react";
 import { alpha, Box, Grid, Stack, Typography } from "@mui/material";
 import { accent, feedback } from "@/theme";
-import { InboxPanel, ResumePanel, UpworkPanel, WorkspacePanel } from "../mock-panels";
+import { InboxPanel } from "../mock-panels/inbox-panel";
+import { ResumePanel } from "../mock-panels/resume-panel";
+import { UpworkPanel } from "../mock-panels/upwork-panel";
+import { WorkspacePanel } from "../mock-panels/workspace-panel";
 import { Section } from "../section";
 import { SectionEyebrow } from "../section-eyebrow";
 import { SectionGlow } from "../section-glow";

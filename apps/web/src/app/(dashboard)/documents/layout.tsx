@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
-import { DocumentsTabs } from "@/components/features/documents";
+import { DocumentsTabs } from "@/components/features/documents/documents-tabs";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 interface DocumentsLayoutProps {

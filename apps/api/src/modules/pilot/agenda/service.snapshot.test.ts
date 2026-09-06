@@ -1,5 +1,5 @@
 import type { AgendaResponse } from "@jobpilot/contracts/pilot";
-import type { PushService } from "@/common/push";
+import type { PushService } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";

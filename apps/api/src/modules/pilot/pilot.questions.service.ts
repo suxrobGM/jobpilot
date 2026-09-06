@@ -6,7 +6,7 @@ import type {
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
-import { PushService } from "@/common/push";
+import { PushService } from "@/common/push/push.service";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { toPilotQuestion } from "./pilot.mapper";

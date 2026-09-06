@@ -1,7 +1,7 @@
 import { jobListingQuerySchema } from "@jobpilot/contracts/job-listing";
 import { Elysia } from "elysia";
 import { z } from "zod/v4";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import {
   jobListingFacetsSchema,

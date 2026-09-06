@@ -9,6 +9,3 @@ export type ResumeVariantListItem = Data<ReturnType<typeof api.resumes>["variant
 
 /** A single tailored variant, from `GET /api/resumes/variants/:id`. */
 export type ResumeVariantDto = Data<ReturnType<(typeof api.resumes)["variants"]>["get"]>;
-
-/** Per-bullet rewrite audit carried on a variant. */
-export type VariantRewriteAudit = NonNullable<ResumeVariantDto["rewrites"]>;

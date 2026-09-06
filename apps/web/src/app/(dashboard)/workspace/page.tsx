@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Container } from "@mui/material";
 import type { Metadata } from "next";
-import { WorkspaceView } from "@/components/features/workspace";
+import { WorkspaceView } from "@/components/features/workspace/workspace-view";
 import { PageHeader } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Workspace" };

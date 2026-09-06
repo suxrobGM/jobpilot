@@ -3,7 +3,7 @@ import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { type AssignableRole, hasRole } from "@jobpilot/contracts/role";
 import { singleton } from "tsyringe";
 import type { AuthUser } from "@/common/auth";
-import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
+import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { badRequest, forbidden, notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 

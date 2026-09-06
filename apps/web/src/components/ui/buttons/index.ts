@@ -1,4 +1,4 @@
-export * from "./agent-only-button";
-export * from "./back-link";
-export * from "./link-button";
-export * from "./tooltip-icon-button";
+export { AgentOnlyButton } from "./agent-only-button";
+export { BackLink } from "./back-link";
+export { LinkButton } from "./link-button";
+export { TooltipIconButton } from "./tooltip-icon-button";

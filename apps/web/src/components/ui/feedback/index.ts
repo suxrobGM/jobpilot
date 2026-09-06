@@ -1,5 +1,5 @@
-export * from "./confirm-dialog";
-export * from "./dropdown-menu";
-export * from "./error-fallback";
-export * from "./loading-spinner";
-export * from "./pulse-dot";
+export { ConfirmDialog } from "./confirm-dialog";
+export { DropdownMenu, type DropdownMenuItem } from "./dropdown-menu";
+export { ErrorFallback } from "./error-fallback";
+export { LoadingSpinner } from "./loading-spinner";
+export { PulseDot, type PulseDotSize, type PulseDotTone, toneColor } from "./pulse-dot";

@@ -1,4 +1,4 @@
-import { db } from "@/common/database";
+import { db } from "@/common/database/prisma.client";
 import { DEFAULT_BOARDS } from "@/modules/job-board/default-boards";
 
 /** Upsert the global catalog by domain. `listed`/`isDefault` are admin-owned, so never updated. */

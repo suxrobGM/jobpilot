@@ -6,10 +6,10 @@ import {
   vapidKeySchema,
 } from "@jobpilot/contracts/push";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { notFound } from "@/common/errors";
 import { authGuard } from "@/common/middleware";
-import { PushService } from "@/common/push";
+import { PushService } from "@/common/push/push.service";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { deletedResponseSchema } from "@/types/response";
 

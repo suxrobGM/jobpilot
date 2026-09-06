@@ -1,6 +1,6 @@
 import { sendEmailSchema } from "@jobpilot/contracts/networking";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { accountDisconnectedSchema, accountStatusSchema, sentMessageSchema } from "../email.schema";
 import { EmailAccountService } from "./account.service";

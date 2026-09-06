@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { usePathname } from "next/navigation";
-import { JsonLd } from "@/components/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { breadcrumbLd } from "@/lib/structured-data";
 import { DOCS_NAV } from "./docs-nav";
 

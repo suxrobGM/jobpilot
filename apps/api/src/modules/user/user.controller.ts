@@ -6,7 +6,7 @@ import {
 } from "@jobpilot/contracts/user";
 import { Elysia } from "elysia";
 import { z } from "zod/v4";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { portfolioSchema } from "@/modules/portfolio/portfolio.schema";
 import { PortfolioService } from "@/modules/portfolio/portfolio.service";

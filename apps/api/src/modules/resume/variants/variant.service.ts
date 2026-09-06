@@ -7,7 +7,7 @@ import { resumeChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import type { z } from "zod/v4";
 import { findOwned, notFound, unprocessable } from "@/common/errors";
-import { renderResumePdf } from "@/common/pdf";
+import { renderResumePdf } from "@/common/pdf/render";
 import { publish } from "@/common/sse";
 import {
   deleteGeneratedVariantFiles,
@@ -15,7 +15,7 @@ import {
   ensureGeneratedDir,
   generatedVariantPath,
   slugifyForDownload,
-} from "@/common/storage";
+} from "@/common/storage/storage";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { backfillResumeIds } from "../backfill-ids";
 import { streamFile } from "../resume.stream";

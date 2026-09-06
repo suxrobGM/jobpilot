@@ -1,6 +1,6 @@
 import { paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { contactListSchema } from "./contact.schema";
 import { ContactService } from "./contact.service";

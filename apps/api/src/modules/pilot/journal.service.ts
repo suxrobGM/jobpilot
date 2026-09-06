@@ -2,7 +2,7 @@ import { cursorPage } from "@jobpilot/contracts/pagination";
 import type { CreatePilotJournalInput, PilotJournalKind } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { publishActivity, toActivityEntry, writeActivity } from "@/common/activity-log";
-import { PushService } from "@/common/push";
+import { PushService } from "@/common/push/push.service";
 import { PrismaClient } from "@/generated/prisma/client";
 
 /** Journal export reads the history in cursor batches so a huge history never loads all at once. */

@@ -4,7 +4,7 @@ import {
   ConfirmEmailChangeSchema,
 } from "@jobpilot/contracts";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { okResponseSchema } from "@/types/response";

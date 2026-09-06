@@ -1,2 +1,2 @@
 export { CredentialsSection } from "./sections/credentials-section";
-export * from "./settings-content";
+export { SettingsContent } from "./settings-content";

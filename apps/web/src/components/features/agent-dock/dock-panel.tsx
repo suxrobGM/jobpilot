@@ -10,7 +10,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { TerminalPanel } from "@/components/features/terminal";
+import { TerminalPanel } from "@/components/features/terminal/terminal-panel";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import { readAgentStorage } from "@/lib/agent-storage";

@@ -6,7 +6,7 @@ import {
 } from "@jobpilot/contracts/user";
 import { singleton } from "tsyringe";
 import { conflict, findOwned, notFound } from "@/common/errors";
-import { resumePath } from "@/common/storage";
+import { resumePath } from "@/common/storage/storage";
 import { PrismaClient } from "@/generated/prisma/client";
 import { PORTFOLIO_SETTINGS_SELECT, toPortfolioSettings } from "./user.mapper";
 

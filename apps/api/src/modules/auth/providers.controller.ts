@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { generateOpaqueToken, oauthStateCookies } from "@/common/auth";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard, resolveAuthUser } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { env } from "@/env";

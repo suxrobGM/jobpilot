@@ -2,7 +2,7 @@ import { approveSchema, scanMessageSchema } from "@jobpilot/contracts/email";
 import { idParam } from "@jobpilot/contracts/shared";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
 import {

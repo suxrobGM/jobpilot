@@ -1,6 +1,6 @@
 import { cron, Patterns } from "@elysiajs/cron";
 import { logger } from "@/common/logger";
-import { pruneGeneratedCache } from "@/common/storage";
+import { pruneGeneratedCache } from "@/common/storage/storage";
 
 const HOUR_MS = 60 * 60 * 1000;
 const MB = 1024 * 1024;

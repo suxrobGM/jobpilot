@@ -3,7 +3,7 @@ import path from "node:path";
 import type { ResumeData } from "@jobpilot/contracts/resume";
 import { singleton } from "tsyringe";
 import { badRequest, notFound } from "@/common/errors";
-import { renderResumePdf } from "@/common/pdf";
+import { renderResumePdf } from "@/common/pdf/render";
 import {
   deleteResumeFile,
   ensureCachedPdf,
@@ -13,7 +13,7 @@ import {
   generateResumeFilename,
   resumePath,
   slugifyForDownload,
-} from "@/common/storage";
+} from "@/common/storage/storage";
 import { PrismaClient, type Resume } from "@/generated/prisma/client";
 import { streamFile } from "../resume.stream";
 import { findResume, MAX_RESUME_BYTES } from "../resume.utils";

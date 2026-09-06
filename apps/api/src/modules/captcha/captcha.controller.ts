@@ -1,6 +1,6 @@
 import { captchaSolveSchema } from "@jobpilot/contracts/captcha";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { captchaSolveResultSchema } from "./captcha.schema";

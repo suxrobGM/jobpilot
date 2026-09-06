@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/resume";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { deletedResponseSchema, idResponseSchema } from "@/types/response";
 import { resumeUpdatedSchema, tailorResumeSchema } from "../resume.schema";

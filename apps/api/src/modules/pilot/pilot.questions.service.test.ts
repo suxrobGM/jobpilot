@@ -1,6 +1,6 @@
 // Fake-Prisma unit test for the question lifecycle. Injects a fake Prisma directly (no database);
 // publish() is a no-op without subscribers.
-import type { PushPayload } from "@/common/push";
+import type { PushPayload } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { makePush } from "./agenda/db.test-helpers";
 import { PilotQuestionService } from "./pilot.questions.service";

@@ -1,7 +1,7 @@
 import { resumeDataSchema } from "@jobpilot/contracts/resume";
 import { parseAvailability } from "@jobpilot/contracts/user";
 import { singleton } from "tsyringe";
-import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date";
+import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
 import type { LeaderboardResponse, LeaderboardWindow, PortfolioResponse } from "./portfolio.schema";

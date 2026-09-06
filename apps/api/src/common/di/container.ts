@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { container } from "tsyringe";
-import { db } from "@/common/database";
+import { db } from "@/common/database/prisma.client";
 import { ConsoleMailer, MAILER, ResendMailer } from "@/common/mail";
-import { VAPID_CONFIG, type VapidConfigHolder } from "@/common/push";
+import { VAPID_CONFIG, type VapidConfigHolder } from "@/common/push/push.service";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 

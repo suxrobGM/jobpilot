@@ -17,7 +17,7 @@ import {
   ProductTour,
   Teaser,
 } from "@/components/features/marketing";
-import { JsonLd } from "@/components/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { faqPageLd, organizationLd, softwareApplicationLd, websiteLd } from "@/lib/structured-data";
 
 export const metadata: Metadata = {

@@ -4,7 +4,7 @@ import {
 } from "@jobpilot/contracts/job-listing";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { requireRole } from "@/common/middleware";
 import { deletedResponseSchema } from "@/types/response";
 import { adminJobListingPageSchema, adminJobListingSchema } from "./job-listing.schema";

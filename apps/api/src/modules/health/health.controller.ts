@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { healthStatusSchema } from "./health.schema";
 import { HealthService } from "./health.service";
 

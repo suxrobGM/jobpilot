@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import type { Metadata } from "next";
-import { AnalyticsView } from "@/components/features/analytics";
+import { AnalyticsView } from "@/components/features/analytics/analytics-view";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Analytics" };

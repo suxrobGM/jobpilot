@@ -1,4 +1,4 @@
-import { db } from "@/common/database";
+import { db } from "@/common/database/prisma.client";
 import { seedJobBoards } from "./job-boards";
 import { seedJobListings } from "./job-listings";
 import { seedSuperAdmin } from "./super-admin";

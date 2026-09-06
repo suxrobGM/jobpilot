@@ -4,7 +4,7 @@ import { Fragment, type ReactElement, Suspense } from "react";
 import { alpha, Box, Divider, Stack } from "@mui/material";
 import NextLink from "next/link";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
-import { AccountMenu } from "@/components/features/profile";
+import { AccountMenu } from "@/components/features/profile/account-menu";
 import { useSession } from "@/hooks/use-auth";
 import { FeedbackMenu } from "./feedback-menu";
 import { NavGroup } from "./nav-group";

@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/campaign";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard, requireVerifiedEmail } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
 import {

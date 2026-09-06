@@ -1,5 +1,5 @@
 import { DAY_MS, minutesOfDay, startOfDay } from "@/common/date/buckets";
-import type { PushService } from "@/common/push";
+import type { PushService } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { PilotJournalService } from "../journal.service";
 

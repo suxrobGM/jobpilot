@@ -1,4 +1,4 @@
-import { db } from "@/common/database";
+import { db } from "@/common/database/prisma.client";
 import { emailNotVerified } from "@/common/errors";
 
 /**

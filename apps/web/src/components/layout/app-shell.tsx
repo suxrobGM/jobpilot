@@ -2,7 +2,7 @@
 
 import type { PropsWithChildren, ReactElement } from "react";
 import { Box } from "@mui/material";
-import { AgentDock } from "@/components/features/agent-dock";
+import { AgentDock } from "@/components/features/agent-dock/agent-dock";
 import { VerifyEmailBanner } from "@/components/features/auth";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { MobileNav } from "./mobile-nav";

@@ -1,4 +1,4 @@
-import { db } from "@/common/database";
+import { db } from "@/common/database/prisma.client";
 import { env } from "@/env";
 
 /** Reconciles both ways, so changing SUPER_ADMIN_EMAIL *moves* the role. Unset = leave roles alone. */

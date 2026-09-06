@@ -1,6 +1,6 @@
 import { INTERVIEW_STATUSES } from "@jobpilot/contracts/application";
 import { singleton } from "tsyringe";
-import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
+import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { PrismaClient } from "@/generated/prisma/client";
 import { toWireDiscoverySource } from "@/modules/contact";
 

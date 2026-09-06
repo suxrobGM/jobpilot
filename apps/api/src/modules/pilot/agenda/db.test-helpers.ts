@@ -1,7 +1,7 @@
 // Shared fake-Prisma scaffolding for the pilot suites. Type-only imports of the real services keep
 // this file (and therefore build.test, which stays pure) from loading `@/env` at module time.
 
-import type { PushPayload, PushService } from "@/common/push";
+import type { PushPayload, PushService } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";

@@ -2,8 +2,8 @@ import type { CoverLetterCreate, CoverLetterSource } from "@jobpilot/contracts/c
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
-import { renderCoverLetterPdf } from "@/common/pdf";
-import { slugifyForDownload } from "@/common/storage";
+import { renderCoverLetterPdf } from "@/common/pdf/render";
+import { slugifyForDownload } from "@/common/storage/storage";
 import { PrismaClient } from "@/generated/prisma/client";
 
 const LIST_SELECT = {

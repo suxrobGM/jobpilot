@@ -1,7 +1,7 @@
 import { oauthClientUpsertSchema } from "@jobpilot/contracts/email";
 import { Elysia } from "elysia";
 import { oauthStateCookies } from "@/common/auth";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { env } from "@/env";
 import { EmailAccountService } from "./account/account.service";
