@@ -1,4 +1,5 @@
-import { cache, type ReactElement } from "react";
+import { cache, type ReactElement, Suspense } from "react";
+import { Skeleton, Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
@@ -40,7 +41,25 @@ export async function generateMetadata(props: JobPageProps): Promise<Metadata> {
   };
 }
 
-export default async function JobPage(props: JobPageProps): Promise<ReactElement> {
+export default function JobPage(props: JobPageProps): ReactElement {
+  // The whole page is the listing, so the jobs layout is the shared App Shell.
+  return (
+    <Suspense fallback={<JobDetailSkeleton />}>
+      <Job params={props.params} />
+    </Suspense>
+  );
+}
+
+function JobDetailSkeleton(): ReactElement {
+  return (
+    <Stack spacing={3}>
+      <Skeleton variant="rounded" height={160} />
+      <Skeleton variant="rounded" height={400} />
+    </Stack>
+  );
+}
+
+async function Job(props: JobPageProps): Promise<ReactElement> {
   const { slug } = await props.params;
   const job = await getJob(slug);
   if (!job) {

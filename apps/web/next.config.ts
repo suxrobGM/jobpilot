@@ -10,6 +10,7 @@ const config: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.resolve(here, "../.."),
   cacheComponents: true,
+  partialPrefetching: true,
   reactCompiler: true,
   typedRoutes: true,
   allowedDevOrigins: ["127.0.0.1"],
