@@ -17,8 +17,6 @@ interface AdminListingsPageProps {
 
 /** Moderation for the public job index. */
 export default function AdminListingsPage(props: AdminListingsPageProps): ReactElement {
-  const { searchParams } = props;
-
   return (
     <SectionCard
       title="Job listings"
@@ -29,7 +27,7 @@ export default function AdminListingsPage(props: AdminListingsPageProps): ReactE
       </Stack>
 
       <Suspense fallback={<TableSkeleton />}>
-        <AdminListings searchParams={searchParams} />
+        <AdminListings searchParams={props.searchParams} />
       </Suspense>
     </SectionCard>
   );

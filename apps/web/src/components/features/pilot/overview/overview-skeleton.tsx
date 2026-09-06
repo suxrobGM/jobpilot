@@ -8,10 +8,10 @@ const CARD_SLOTS = ["attention", "agenda", "activity"];
 export function OverviewSkeleton(): ReactElement {
   return (
     <Stack spacing={3}>
-      <Skeleton variant="rectangular" height={72} />
-      <Skeleton variant="rectangular" height={180} />
+      <Skeleton variant="rounded" height={72} />
+      <Skeleton variant="rounded" height={180} />
       {CARD_SLOTS.map((slot) => (
-        <Skeleton key={slot} variant="rectangular" height={140} />
+        <Skeleton key={slot} variant="rounded" height={140} />
       ))}
     </Stack>
   );

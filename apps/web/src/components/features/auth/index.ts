@@ -7,6 +7,7 @@ export * from "./logout-button";
 export * from "./magic-link-view";
 export * from "./oauth";
 export * from "./oauth-buttons";
+export * from "./oauth-error-alert";
 export * from "./register-form";
 export * from "./reset-password-form";
 export * from "./verify-email-banner";

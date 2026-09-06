@@ -95,6 +95,14 @@ export const paperOverrides: Components<Theme>["MuiPaper"] = {
  * `spacing` as a real flex `gap`, not MUI's default `margin-left` on every child but the first.
  * Margins survive wrapping, so any `flexWrap` row indents its second line by one gap.
  */
+export const skeletonOverrides: Components<Theme>["MuiSkeleton"] = {
+  styleOverrides: {
+    // `shape.borderRadius` is pinned to 1 so sx radii read as px, which leaves MUI's
+    // "rounded" skeleton a 1px square. Placeholders stand in for cards, so match those.
+    rounded: ({ theme }) => ({ borderRadius: theme.radii.md }),
+  },
+};
+
 export const stackOverrides: Components<Theme>["MuiStack"] = {
   defaultProps: { useFlexGap: true },
 };

@@ -1,7 +1,6 @@
-import { type ReactElement, Suspense } from "react";
+import type { ReactElement } from "react";
 import type { Metadata } from "next";
-import { AuthCard, AuthFormSkeleton, LoginForm } from "@/components/features/auth";
-import { resolveOauthReason } from "@/components/features/auth/oauth";
+import { AuthCard, LoginForm } from "@/components/features/auth";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -9,25 +8,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/login" },
 };
 
-interface LoginPageProps {
-  searchParams: Promise<{ oauth?: string; reason?: string }>;
-}
-
-export default function LoginPage(props: LoginPageProps): ReactElement {
-  const { searchParams } = props;
+export default function LoginPage(): ReactElement {
+  // The form reads its own OAuth error off the URL, so the whole page prerenders.
   return (
     <AuthCard title="Sign in" subtitle="Welcome back. Sign in to continue.">
-      {/* The OAuth error rides on searchParams, so the card chrome ships without it. */}
-      <Suspense fallback={<AuthFormSkeleton />}>
-        <LoginFormSection searchParams={searchParams} />
-      </Suspense>
+      <LoginForm />
     </AuthCard>
   );
-}
-
-async function LoginFormSection(props: LoginPageProps): Promise<ReactElement> {
-  const { oauth, reason } = await props.searchParams;
-  const oauthError =
-    oauth === "error" ? (resolveOauthReason(reason) ?? "Sign-in failed.") : undefined;
-  return <LoginForm oauthError={oauthError} />;
 }

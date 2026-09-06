@@ -14,7 +14,7 @@ export function InstructionsTab(): ReactElement {
   });
 
   if (stateQuery.isLoading || !stateQuery.data) {
-    return <Skeleton variant="rectangular" height={480} />;
+    return <Skeleton variant="rounded" height={480} />;
   }
 
   return <InstructionsEditor state={stateQuery.data} />;

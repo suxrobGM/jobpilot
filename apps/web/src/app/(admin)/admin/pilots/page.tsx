@@ -16,15 +16,13 @@ interface AdminPilotsPageProps {
 
 /** `?page=` drives the server fetch; the query schema has no search field. */
 export default function AdminPilotsPage(props: AdminPilotsPageProps): ReactElement {
-  const { searchParams } = props;
-
   return (
     <SectionCard
       title="Pilot fleet"
       description="Every user's autonomous Pilot: enablement, cycle activity, and open questions."
     >
       <Suspense fallback={<TableSkeleton />}>
-        <AdminPilots searchParams={searchParams} />
+        <AdminPilots searchParams={props.searchParams} />
       </Suspense>
     </SectionCard>
   );

@@ -5,16 +5,12 @@ import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Inbox" };
 
-interface InboxPageProps {
-  searchParams: Promise<{ emailConnect?: string; reason?: string }>;
-}
-
-export default function InboxPage(props: InboxPageProps): ReactElement {
+export default function InboxPage(): ReactElement {
   return (
     <PageShell maxWidth="lg">
-      {/* Only the OAuth callback toast reads the URL; the inbox itself does not. */}
+      {/* Only the OAuth callback toast reads the URL, and it reads it client-side. */}
       <Suspense fallback={null}>
-        <ConnectToast searchParams={props.searchParams} />
+        <EmailConnectToast />
       </Suspense>
       <PageHeader
         eyebrow="Email"
@@ -24,9 +20,4 @@ export default function InboxPage(props: InboxPageProps): ReactElement {
       <InboxContent />
     </PageShell>
   );
-}
-
-async function ConnectToast(props: InboxPageProps): Promise<ReactElement> {
-  const { emailConnect, reason } = await props.searchParams;
-  return <EmailConnectToast status={emailConnect} reason={reason} />;
 }

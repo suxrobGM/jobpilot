@@ -24,8 +24,6 @@ interface JobsPageProps {
 }
 
 export default function JobsPage(props: JobsPageProps): ReactElement {
-  const { searchParams } = props;
-
   return (
     <Stack spacing={4}>
       <JsonLd
@@ -45,13 +43,13 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
       </Stack>
 
       {/* The tech options come from the API, so the filter bar streams in too. */}
-      <Suspense fallback={<Skeleton variant="rectangular" height={98} />}>
+      <Suspense fallback={<Skeleton variant="rounded" height={98} />}>
         <JobFiltersPanel />
       </Suspense>
 
       {/* searchParams is dynamic, so the results need their own boundary; the shell prerenders. */}
       <Suspense fallback={<JobGridSkeleton />}>
-        <JobsResults searchParams={searchParams} />
+        <JobsResults searchParams={props.searchParams} />
       </Suspense>
     </Stack>
   );

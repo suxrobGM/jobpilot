@@ -10,7 +10,7 @@ export function JobGridSkeleton(): ReactElement {
     <Grid container spacing={2}>
       {SLOTS.map((slot) => (
         <Grid key={slot} size={{ xs: 12, sm: 6, md: 4 }}>
-          <Skeleton variant="rectangular" height={180} />
+          <Skeleton variant="rounded" height={180} />
         </Grid>
       ))}
     </Grid>

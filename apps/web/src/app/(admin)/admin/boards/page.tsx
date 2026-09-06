@@ -17,8 +17,6 @@ interface AdminBoardsPageProps {
 
 /** `?q=` / `?page=` drive the server fetch; only the search box and pager are client. */
 export default function AdminBoardsPage(props: AdminBoardsPageProps): ReactElement {
-  const { searchParams } = props;
-
   return (
     <SectionCard
       title="Board catalog"
@@ -30,7 +28,7 @@ export default function AdminBoardsPage(props: AdminBoardsPageProps): ReactEleme
       </Stack>
 
       <Suspense fallback={<TableSkeleton />}>
-        <AdminBoards searchParams={searchParams} />
+        <AdminBoards searchParams={props.searchParams} />
       </Suspense>
     </SectionCard>
   );

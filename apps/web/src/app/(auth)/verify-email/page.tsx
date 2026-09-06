@@ -8,7 +8,7 @@ interface VerifyEmailPageProps {
 export default function VerifyEmailPage(props: VerifyEmailPageProps): ReactElement {
   return (
     <AuthCard title="Verify your email">
-      <Suspense fallback={<AuthFormSkeleton fields={1} />}>
+      <Suspense fallback={<AuthFormSkeleton />}>
         <VerifyEmailSection searchParams={props.searchParams} />
       </Suspense>
     </AuthCard>

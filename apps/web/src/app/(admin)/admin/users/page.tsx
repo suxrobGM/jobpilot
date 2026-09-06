@@ -17,8 +17,6 @@ interface AdminUsersPageProps {
 
 /** `?q=` / `?page=` drive the server fetch; only the search box, pager, and role menu are client. */
 export default function AdminUsersPage(props: AdminUsersPageProps): ReactElement {
-  const { searchParams } = props;
-
   return (
     <SectionCard>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 2 }}>
@@ -26,7 +24,7 @@ export default function AdminUsersPage(props: AdminUsersPageProps): ReactElement
       </Stack>
 
       <Suspense fallback={<TableSkeleton />}>
-        <AdminUsers searchParams={searchParams} />
+        <AdminUsers searchParams={props.searchParams} />
       </Suspense>
     </SectionCard>
   );

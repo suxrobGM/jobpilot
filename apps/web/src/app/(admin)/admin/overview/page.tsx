@@ -12,7 +12,8 @@ import { slotKeys } from "@/utils/array";
 
 export const metadata: Metadata = { title: "Overview" };
 
-/** Mirrors the tile count in `AdminOverview` below. */
+/** Skeleton and body share one geometry so the tiles can't reflow differently. */
+const TILE_GRID = { spacing: 1.5, size: { xs: 6, sm: 4, md: 3 } } as const;
 const TILE_KEYS = slotKeys(7);
 
 export default function AdminOverviewPage(): ReactElement {
@@ -27,9 +28,9 @@ export default function AdminOverviewPage(): ReactElement {
 function AdminOverviewSkeleton(): ReactElement {
   return (
     <Stack spacing={2}>
-      <Grid container spacing={1.5}>
+      <Grid container spacing={TILE_GRID.spacing}>
         {TILE_KEYS.map((key) => (
-          <Grid key={key} size={{ xs: 6, sm: 4, md: 3 }}>
+          <Grid key={key} size={TILE_GRID.size}>
             <Skeleton variant="rounded" height={92} />
           </Grid>
         ))}
@@ -73,9 +74,9 @@ async function AdminOverview(): Promise<ReactElement> {
 
   return (
     <Stack spacing={2}>
-      <Grid container spacing={1.5}>
+      <Grid container spacing={TILE_GRID.spacing}>
         {tiles.map((tile) => (
-          <Grid key={tile.label} size={{ xs: 6, sm: 4, md: 3 }}>
+          <Grid key={tile.label} size={TILE_GRID.size}>
             <StatTile label={tile.label} value={tile.value} hint={tile.hint} />
           </Grid>
         ))}

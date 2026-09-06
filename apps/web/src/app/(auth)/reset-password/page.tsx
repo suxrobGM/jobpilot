@@ -6,11 +6,10 @@ interface PageProps {
 }
 
 export default function ResetPasswordPage(props: PageProps): ReactElement {
-  const { searchParams } = props;
   return (
     <AuthCard title="Reset password" subtitle="Choose a new password for your account.">
-      <Suspense fallback={<AuthFormSkeleton fields={1} />}>
-        <ResetPasswordSection searchParams={searchParams} />
+      <Suspense fallback={<AuthFormSkeleton />}>
+        <ResetPasswordSection searchParams={props.searchParams} />
       </Suspense>
     </AuthCard>
   );

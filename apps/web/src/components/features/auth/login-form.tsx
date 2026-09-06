@@ -6,16 +6,11 @@ import { Alert, Link, Stack, Typography } from "@mui/material";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useAuthActions } from "@/hooks/use-auth";
 import { OAuthButtons } from "./oauth-buttons";
+import { OAuthErrorAlert } from "./oauth-error-alert";
 
 const DEFAULT_VALUES: LoginInput = { email: "", password: "" };
 
-interface LoginFormProps {
-  /** Failure copy from an OAuth callback redirect, shown above the form. */
-  oauthError?: string;
-}
-
-export function LoginForm(props: LoginFormProps): ReactElement {
-  const { oauthError } = props;
+export function LoginForm(): ReactElement {
   const { login } = useAuthActions();
 
   const form = useAppForm({
@@ -34,7 +29,7 @@ export function LoginForm(props: LoginFormProps): ReactElement {
       }}
     >
       <Stack spacing={2.5}>
-        {oauthError && !login.error && <Alert severity="error">{oauthError}</Alert>}
+        <OAuthErrorAlert suppressed={!!login.error} />
         {login.error && <Alert severity="error">{login.error.message}</Alert>}
 
         <form.AppField name="email">
