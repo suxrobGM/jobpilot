@@ -89,6 +89,14 @@ jobs:
         run: bun run typecheck
         working-directory: apps/web
 
+      - name: Cache Next.js build
+        uses: actions/cache@v6
+        with:
+          path: apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/next.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-
+
       - name: Build web
         run: bun run build
         working-directory: apps/web
