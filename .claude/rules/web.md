@@ -62,20 +62,3 @@ browser; filter a paginated one server-side, since it only ever sees the page it
   URL-backed filters through `setFilters({ … })`, which resets in the same URL update; a filter
   setter plus a separate `setPage(1)` would start from the same snapshot and undo itself.
 - `/jobs` is the one exception: `JobPager` renders real `<a href>` paging for crawlers.
-
-## TypeScript
-
-One compiler: `typescript` 7, the Go-native one, same as every other workspace. `typecheck` is
-plain `tsc --noEmit`.
-
-Next 16.3 reads tsconfig by spawning the `tsc` CLI (`experimental.useTypeScriptCli`, default
-`true`), so it no longer needs the JS compiler API that TS 7 does not ship. That is why the old
-`typescript` 6 + `@typescript/native` pair is gone. Two traps if you touch this:
-
-- Next resolves the compiler by directory name (`resolveFrom(dir, "typescript/package.json")`),
-  so TS 7 has to be installed **as** `typescript`. Aliasing it under another name leaves Next
-  with no `paths`, and `next build` dies with module-not-found on every `@/…` import.
-- Never set `useTypeScriptCli: false`. That path needs the JS API, so it cannot work with TS 7 at
-  all; Next throws `E1467`.
-
-`next build` now type-checks (about 4s), so it is a real gate alongside `bun run typecheck`.
