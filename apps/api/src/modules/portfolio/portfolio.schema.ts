@@ -2,12 +2,12 @@ import { availabilitySchema } from "@jobpilot/contracts/user";
 import { z } from "zod/v4";
 
 /** One day's activity count; `date` is UTC midnight of the bucketed day (render in UTC). */
-export const portfolioDayPointSchema = z.object({
+const portfolioDayPointSchema = z.object({
   date: z.date(),
   count: z.number().int(),
 });
 
-export const portfolioStatsSchema = z.object({
+const portfolioStatsSchema = z.object({
   applications: z.number().int(),
   interviews: z.number().int(),
   messagesSent: z.number().int(),
@@ -35,13 +35,13 @@ export const portfolioSchema = z.object({
   stats: portfolioStatsSchema,
 });
 
-export const leaderboardWindowSchema = z.enum(["week", "month", "all"]);
+const leaderboardWindowSchema = z.enum(["week", "month", "all"]);
 
 export const leaderboardQuerySchema = z.object({
   window: leaderboardWindowSchema.optional(),
 });
 
-export const leaderboardRowSchema = z.object({
+const leaderboardRowSchema = z.object({
   rank: z.number().int(),
   username: z.string(),
   displayName: z.string(),

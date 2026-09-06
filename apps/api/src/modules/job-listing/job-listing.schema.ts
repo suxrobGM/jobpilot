@@ -3,14 +3,14 @@ import { paginatedSchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
 /** Where one posting was seen. Board + link only - never who found it. */
-export const jobListingSourceSchema = z.object({
+const jobListingSourceSchema = z.object({
   board: z.string().nullable(),
   url: z.string(),
   lastSeenAt: z.date(),
 });
 
 /** The privacy contract: no userId, campaignId, matchScore or appliedAt may ever appear here. */
-export const jobListingSummarySchema = z.object({
+const jobListingSummarySchema = z.object({
   id: z.uuid(),
   slug: z.string(),
   title: z.string(),

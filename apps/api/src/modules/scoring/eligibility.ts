@@ -7,7 +7,7 @@
  * or clearance requirement rules out anyone who lacks it, so the skip reason must say which it is.
  */
 export const ELIGIBILITY_RESTRICTION_KINDS = ["sponsorship", "citizenship", "clearance"] as const;
-export type EligibilityRestrictionKind = (typeof ELIGIBILITY_RESTRICTION_KINDS)[number];
+type EligibilityRestrictionKind = (typeof ELIGIBILITY_RESTRICTION_KINDS)[number];
 
 export interface EligibilityRestriction {
   kind: EligibilityRestrictionKind;

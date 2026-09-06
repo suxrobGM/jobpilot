@@ -393,7 +393,7 @@ export function makeCampaignJobs(rec: Recorder, over: Over = {}): CampaignJobSer
 }
 
 /** Fake PilotJournalService recording journal appends (the digest write path). */
-export function makePilot(rec: Pick<Recorder, "journals">): PilotJournalService {
+function makePilot(rec: Pick<Recorder, "journals">): PilotJournalService {
   return {
     appendJournal: async (_p: string, body: { entries: Record<string, unknown>[] }) => {
       rec.journals.push(...body.entries);
@@ -403,7 +403,7 @@ export function makePilot(rec: Pick<Recorder, "journals">): PilotJournalService 
 }
 
 /** Fake EmailSyncService recording syncIfStale calls; the agenda never awaits a real Gmail pull. */
-export function makeEmailSync(rec: Pick<Recorder, "inboxSyncs">): EmailSyncService {
+function makeEmailSync(rec: Pick<Recorder, "inboxSyncs">): EmailSyncService {
   return {
     syncIfStale: async (userId: string, staleMs: number) => {
       rec.inboxSyncs.push({ userId, staleMs });

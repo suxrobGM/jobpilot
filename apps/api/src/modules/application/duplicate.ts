@@ -27,7 +27,7 @@ export interface DuplicateLookup {
   company?: string;
 }
 
-export type DuplicateApplication = Prisma.ApplicationGetPayload<{ select: typeof MATCH_SELECT }>;
+type DuplicateApplication = Prisma.ApplicationGetPayload<{ select: typeof MATCH_SELECT }>;
 
 export type AppliedDuplicate =
   | { kind: "url"; application: DuplicateApplication }

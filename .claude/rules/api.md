@@ -17,14 +17,15 @@ Commands (`bun --cwd=apps/api run …`): `dev` / `start` / `build` (compiles to 
   source of truth for Eden Treaty client typing.
 - `modules/<name>/` - one module per domain: `<name>.controller.ts` (thin Elysia routes:
   request Zod schemas + a `detail` block for Swagger) delegates to `<name>.service.ts`
-  (tsyringe `@singleton`, Prisma); `index.ts` barrel exports the controller.
+  (tsyringe `@singleton`, Prisma). No `index.ts` barrel - `app.ts` imports each controller file
+  directly.
 - `common/` - cross-cutting: `database`, `di`, `errors` (`HttpError`, `notFound`/`conflict`,
   `findOwned` ownership-or-404), `middleware` (`authGuard` - the single auth gate),
   `rate-limit` (token-bucket + `RATE_LIMITS` policy table + `acquireSlot`; attach one
-  `rateLimit(policy)` per route as a `beforeHandle`), `auth`, `sse`, `pdf`, `storage`, `plugins`.
+  `rateLimit(policy)` per route as a `beforeHandle`), `auth`, `sse`, `pdf`, `storage`, `plugins`. Only the directories with several outside importers
+  keep a barrel; the rest are imported by file path.
 - `types/response.ts` - the error envelope (`errorResponseSchema`/`httpErrorResponses`) and the
-  success envelopes (`idResponseSchema`, `deletedResponseSchema`, `okResponseSchema`,
-  `messageResponseSchema`). Import as `@/types/response` (the web mirrors this alias). Pagination
+  success envelopes (`idResponseSchema`, `deletedResponseSchema`, `okResponseSchema`). Import as `@/types/response` (the web mirrors this alias). Pagination
   is **not** here - it lives in `@jobpilot/contracts/pagination`, which the web and the agent's
   skills also read.
 

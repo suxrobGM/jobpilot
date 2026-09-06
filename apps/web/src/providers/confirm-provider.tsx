@@ -11,7 +11,7 @@ import {
 } from "react";
 import { ConfirmDialog } from "@/components/ui/feedback";
 
-export interface ConfirmOptions {
+interface ConfirmOptions {
   title: string;
   description: string;
   confirmLabel?: string;
@@ -23,7 +23,7 @@ export interface ConfirmOptions {
 
 export type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>;
 
-export const ConfirmContext = createContext<ConfirmFn | null>(null);
+const ConfirmContext = createContext<ConfirmFn | null>(null);
 
 /**
  * Provides a context for showing confirmation dialogs.

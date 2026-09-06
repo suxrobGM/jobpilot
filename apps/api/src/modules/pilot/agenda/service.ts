@@ -42,7 +42,7 @@ import {
 } from "./gather-networking";
 import { promoteScoredPendingJobs } from "./promote";
 
-export const AGENDA_SNAPSHOT_TTL_MS = 5 * 60 * 1000;
+const AGENDA_SNAPSHOT_TTL_MS = 5 * 60 * 1000;
 
 /** Validates a stored agenda snapshot and restores its date fields. */
 export function parseAgendaSnapshot(value: unknown): AgendaResponse {

@@ -67,6 +67,10 @@ jobs:
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
+      # After db:generate: knip reads apps/api's imports of the generated client.
+      - name: Dead code check
+        run: bun run knip
+
       - name: Typecheck API
         run: bun run typecheck
         working-directory: apps/api

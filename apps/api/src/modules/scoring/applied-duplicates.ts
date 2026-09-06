@@ -76,7 +76,7 @@ function tokenize(value: string): string[] {
     .filter(Boolean);
 }
 
-export function normalizeJobTitle(title: string): string {
+function normalizeJobTitle(title: string): string {
   const tokens = tokenize(title).filter((t) => !SENIORITY_TOKENS.has(t));
   return tokens.join(" ");
 }
@@ -96,8 +96,8 @@ export const APPLIED_DUPLICATE_WINDOW_DAYS = 30;
  * generic title ("Director of Engineering", worth 60 of the 100) carries weak employer similarity
  * over the line: real data scored Clarity/Cardiff 74 and Imagine Learning/Orbital Engineering 76.
  */
-export const APPLIED_DUPLICATE_COMPANY_THRESHOLD = 90;
-export const APPLIED_DUPLICATE_TITLE_THRESHOLD = 85;
+const APPLIED_DUPLICATE_COMPANY_THRESHOLD = 90;
+const APPLIED_DUPLICATE_TITLE_THRESHOLD = 85;
 
 function jaro(a: string, b: string): number {
   if (a === b) {

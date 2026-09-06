@@ -18,21 +18,21 @@ export const pruneVariantsQuerySchema = z.object({
 export const prunedResponseSchema = z.object({ deleted: z.number().int() });
 
 /** Per-bullet rewrite audit (mirrors `BulletRewriteAudit`). */
-export const bulletRewriteAuditSchema = z.object({
+const bulletRewriteAuditSchema = z.object({
   original: z.string(),
   tailored: z.string(),
   flags: z.array(z.string()),
 });
 
 /** Per-entry rewrite audit (mirrors `EntryRewriteAudit`). */
-export const entryRewriteAuditSchema = z.object({
+const entryRewriteAuditSchema = z.object({
   entryIndex: z.number().int(),
   company: z.string(),
   bullets: z.array(bulletRewriteAuditSchema),
 });
 
 /** Structural changes applied by a variant (mirrors `StructureAudit`). */
-export const structureAuditSchema = z.object({
+const structureAuditSchema = z.object({
   merged: z.array(
     z.object({
       company: z.string(),
@@ -56,7 +56,7 @@ export const structureAuditSchema = z.object({
 });
 
 /** Persisted `ResumeVariant.rewrites` shape (mirrors `VariantRewriteAudit`). */
-export const variantRewriteAuditSchema = z.object({
+const variantRewriteAuditSchema = z.object({
   experience: z.array(entryRewriteAuditSchema),
   structure: structureAuditSchema.optional(),
 });

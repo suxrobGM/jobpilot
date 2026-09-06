@@ -5,7 +5,7 @@ import { buildCliArgs } from "@/utils/cli-args";
 import { UPWORK_DOMAIN } from "../constants";
 
 /** Splits pasted text on whitespace/commas and dedupes - shared by validation and submit. */
-export function parseUrls(raw: string): string[] {
+function parseUrls(raw: string): string[] {
   return [...new Set(raw.split(/[\s,]+/).filter(Boolean))];
 }
 
@@ -19,7 +19,7 @@ function hostname(url: string): string | null {
 }
 
 /** First two distinct hostnames from a batch of pasted URLs, for a readable fallback campaign name. */
-export function deriveApplyQuery(urls: string[]): string {
+function deriveApplyQuery(urls: string[]): string {
   const hosts = [...new Set(urls.map(hostname).filter((h) => h !== null))];
   if (hosts.length === 0) {
     return "Pasted links";
@@ -131,7 +131,7 @@ export function isBoardSelected(board: string): boolean {
   return board.trim() !== "";
 }
 
-export function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest["config"] {
+function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest["config"] {
   if (values.mode === "networking") {
     // A selected board grounds networking in real openings; the optional cap
     // (reusing the maxApps field) maps to config.maxJobs - omit it to run until

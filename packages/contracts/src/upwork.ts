@@ -52,11 +52,11 @@ export type UpworkProposalPatch = z.infer<typeof patchUpworkProposalSchema>;
 // ── Client-quality scoring (smart filter) ───────────────────────────────────
 // Scraped from an Upwork posting + client panel. Every signal is nullable so a
 // partially-readable card degrades to a neutral score rather than crashing.
-export const PROPOSAL_BUCKETS = ["<5", "5-10", "10-15", "15-20", "20-50", "50+"] as const;
+const PROPOSAL_BUCKETS = ["<5", "5-10", "10-15", "15-20", "20-50", "50+"] as const;
 const proposalsBucketSchema = z.enum(PROPOSAL_BUCKETS);
 export type ProposalsBucket = z.infer<typeof proposalsBucketSchema>;
 
-export const upworkClientSchema = z.object({
+const upworkClientSchema = z.object({
   paymentVerified: z.boolean().nullish(),
   hireRate: z.number().min(0).max(100).nullish(), // %
   totalSpent: z.number().min(0).nullish(), // USD

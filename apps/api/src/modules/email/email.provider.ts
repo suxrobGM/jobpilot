@@ -51,7 +51,7 @@ export interface NormalizedMessage {
 }
 
 /** A file attached to an outbound message. `contentBase64` is standard base64. */
-export interface OutboundAttachment {
+interface OutboundAttachment {
   filename: string;
   mimeType: string;
   contentBase64: string;

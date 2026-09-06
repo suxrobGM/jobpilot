@@ -140,7 +140,7 @@ function acquireSource(
  * you have a channel descriptor; reach for this only when the URL is dynamic
  * or you want fully opaque message handling.
  */
-export function useEventSource<TEvent = unknown>(
+function useEventSource<TEvent = unknown>(
   url: string | null | undefined,
   options: UseEventSourceOptions<TEvent> = {},
 ): SseConnectionStatus {

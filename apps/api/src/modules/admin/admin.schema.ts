@@ -16,7 +16,7 @@ export const adminUserSchema = publicUserSchema.extend({
 export const adminUserPageSchema = paginatedSchema(adminUserSchema);
 
 /** One Pilot in the admin fleet view: its owner, run state, and cycle/question activity. */
-export const adminPilotSchema = z.object({
+const adminPilotSchema = z.object({
   userEmail: z.string(),
   userId: z.uuid(),
   running: z.boolean(),

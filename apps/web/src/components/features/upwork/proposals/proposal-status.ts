@@ -25,7 +25,7 @@ export const STATUS_OPTIONS = UPWORK_PROPOSAL_STATUSES.map((value) => ({
   label: STATUS_LABEL[value],
 }));
 
-export const OUTCOME_LABEL: Record<UpworkProposalOutcome, string> = {
+const OUTCOME_LABEL: Record<UpworkProposalOutcome, string> = {
   hired: "hired",
   declined: "declined",
   no_response: "no response",

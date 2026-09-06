@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { paginationQuerySchema } from "./pagination";
 
-export const JOB_LISTING_STATUSES = ["published", "hidden"] as const;
+const JOB_LISTING_STATUSES = ["published", "hidden"] as const;
 export const jobListingStatusSchema = z.enum(JOB_LISTING_STATUSES);
 
 /** Capped: a crawler will happily follow /jobs?page=50000 into an unbounded OFFSET scan. */

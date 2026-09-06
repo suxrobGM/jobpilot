@@ -6,7 +6,7 @@ import { z } from "zod/v4";
  * Login intentionally stays lax (`min(1)`) so existing accounts can still sign
  * in - the policy is only enforced when a password is set.
  */
-export const PasswordSchema = z
+const PasswordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters")
   .regex(/[a-z]/, "Password must include a lowercase letter")
@@ -46,7 +46,7 @@ export const OAuthProviderSchema = z.enum(["google", "github"]);
 
 /** Machine reasons the OAuth callback can redirect back with (`?oauth=error&reason=`).
  *  Other reasons are provider prose (e.g. GitHub's error_description) shown as-is. */
-export const OAUTH_ERROR_REASONS = [
+const OAUTH_ERROR_REASONS = [
   "provider_not_configured",
   "email_unverified",
   "access_denied",

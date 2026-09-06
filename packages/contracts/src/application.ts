@@ -16,15 +16,15 @@ export const INTERVIEW_STATUSES = [
   "screening",
   "interviewing",
 ] as const satisfies readonly (typeof STATUSES)[number][];
-export const APPLICATION_SOURCES = ["apply", "auto-apply", "manual"] as const;
-export const sourceSchema = z.enum(APPLICATION_SOURCES);
+const APPLICATION_SOURCES = ["apply", "auto-apply", "manual"] as const;
+const sourceSchema = z.enum(APPLICATION_SOURCES);
 
 /** Activity-timeline event kinds on an application. */
-export const APPLICATION_EVENT_KINDS = ["status_change", "note", "email"] as const;
+const APPLICATION_EVENT_KINDS = ["status_change", "note", "email"] as const;
 export const applicationEventKindSchema = z.enum(APPLICATION_EVENT_KINDS);
 
 /** What originated an activity event. */
-export const APPLICATION_EVENT_SOURCES = ["manual", "email", "campaign"] as const;
+const APPLICATION_EVENT_SOURCES = ["manual", "email", "campaign"] as const;
 export const applicationEventSourceSchema = z.enum(APPLICATION_EVENT_SOURCES);
 
 export const statusTransitionSchema = z.object({

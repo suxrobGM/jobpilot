@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 import { SERVICE_PROVIDERS } from "./credential";
 
 /** CAPTCHA families a configured solving service can handle. */
-export const CAPTCHA_TYPES = ["recaptcha", "hcaptcha", "turnstile"] as const;
+const CAPTCHA_TYPES = ["recaptcha", "hcaptcha", "turnstile"] as const;
 export type CaptchaType = (typeof CAPTCHA_TYPES)[number];
 
 export const captchaSolveSchema = z.object({

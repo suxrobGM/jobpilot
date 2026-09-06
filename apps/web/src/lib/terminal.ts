@@ -1,6 +1,6 @@
 import type { PilotCycleStatus } from "@jobpilot/contracts/pilot";
 
-export const TERMINAL_HTTP_URL = process.env.NEXT_PUBLIC_TERMINAL_URL ?? "http://localhost:4102";
+const TERMINAL_HTTP_URL = process.env.NEXT_PUBLIC_TERMINAL_URL ?? "http://localhost:4102";
 
 export const TERMINAL_WS_URL = `${TERMINAL_HTTP_URL.replace(/^http/, "ws")}/ws`;
 
@@ -19,7 +19,7 @@ export const CYCLE_STATUS_COLOR: Record<
   error: "error",
 };
 
-export interface TerminalProviderInfo {
+interface TerminalProviderInfo {
   id: TerminalProviderId;
   displayName: string;
 }

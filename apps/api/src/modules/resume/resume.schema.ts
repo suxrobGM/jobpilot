@@ -25,7 +25,7 @@ export const resumeSummarySchema = z.object({
 export const resumeListSchema = z.array(resumeSummarySchema);
 
 /** A resume contact field that disagrees with the profile the form-filler submits. */
-export const profileMismatchSchema = z.object({
+const profileMismatchSchema = z.object({
   field: z.enum(["location", "email", "phone", "linkedin", "github", "website"]),
   resume: z.string(),
   profile: z.string(),

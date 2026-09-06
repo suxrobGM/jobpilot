@@ -7,7 +7,7 @@ import {
 import { z } from "zod/v4";
 
 /** A reference row attached to the user. */
-export const userReferenceSchema = z.object({
+const userReferenceSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   relationship: z.string().nullable(),
@@ -17,7 +17,7 @@ export const userReferenceSchema = z.object({
 });
 
 /** A salary-preference row attached to the user. */
-export const userSalaryPreferenceSchema = z.object({
+const userSalaryPreferenceSchema = z.object({
   id: z.uuid(),
   appliesTo: z.string(),
   minAmount: z.number().nullable(),
@@ -28,7 +28,7 @@ export const userSalaryPreferenceSchema = z.object({
 });
 
 /** The user aggregate's scalar fields plus its parsed locations and references. */
-export const userViewSchema = z.object({
+const userViewSchema = z.object({
   id: z.uuid(),
   firstName: z.string(),
   lastName: z.string(),
@@ -62,7 +62,7 @@ export const userViewSchema = z.object({
 });
 
 /** Persisted auto-apply settings (mirrors the `AutoApplySettings` row). */
-export const autoApplySettingsViewSchema = z.object({
+const autoApplySettingsViewSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
   minMatchScore: z.number().int(),
@@ -71,7 +71,7 @@ export const autoApplySettingsViewSchema = z.object({
 });
 
 /** A row in the user's resume summary list. */
-export const userResumeSummarySchema = z.object({
+const userResumeSummarySchema = z.object({
   id: z.uuid(),
   label: z.string(),
   sourceFilename: z.string().nullable(),

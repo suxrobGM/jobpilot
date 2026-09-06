@@ -37,7 +37,7 @@ export function parseAddress(headerValue: string): { email: string; name: string
 }
 
 /** Decode a Gmail base64url-encoded body part into a UTF-8 string. */
-export function decodeBase64Url(data: string): string {
+function decodeBase64Url(data: string): string {
   const normalized = data.replace(/-/g, "+").replace(/_/g, "/");
   return Buffer.from(normalized, "base64").toString("utf-8");
 }

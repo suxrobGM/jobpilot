@@ -9,7 +9,7 @@ import { parseResumeDate, spanOf } from "./dates";
 import type { resumeStructureSchema } from "./resume.schema";
 
 /** The employer a promoted entry gets when the model names none. */
-export const DEFAULT_UMBRELLA_COMPANY = "Independent Software Development";
+const DEFAULT_UMBRELLA_COMPANY = "Independent Software Development";
 
 /** Neutral employer names a merged or promoted entry may use when no single company applies. */
 export const UMBRELLA_COMPANY_NAMES: readonly string[] = [

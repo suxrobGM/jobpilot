@@ -50,7 +50,7 @@ export function scopeCanRead(scope: string | null | undefined): boolean {
   return grants(scope, GMAIL_READ_SCOPE);
 }
 
-export class GmailProvider implements EmailProvider {
+class GmailProvider implements EmailProvider {
   private makeOAuthClient(config: OAuthClientConfig): OAuth2Client {
     return new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri);
   }
@@ -232,7 +232,7 @@ export class GmailProvider implements EmailProvider {
   }
 }
 
-export const gmailProvider = new GmailProvider();
+const gmailProvider = new GmailProvider();
 
 export function getProvider(name: string): EmailProvider {
   if (name === "gmail") {

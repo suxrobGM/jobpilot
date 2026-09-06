@@ -2,8 +2,8 @@ import { z } from "zod/v4";
 import { agendaClaimFieldsSchema } from "./agenda";
 
 /** Release outcomes an agent reports; claims also close as "expired" server-side. */
-export const PILOT_CLAIM_OUTCOMES = ["done", "failed", "abandoned"] as const;
-export const pilotClaimOutcomeSchema = z.enum(PILOT_CLAIM_OUTCOMES);
+const PILOT_CLAIM_OUTCOMES = ["done", "failed", "abandoned"] as const;
+const pilotClaimOutcomeSchema = z.enum(PILOT_CLAIM_OUTCOMES);
 
 export const createPilotClaimSchema = z.object({
   agendaVersion: z.uuid(),

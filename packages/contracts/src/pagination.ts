@@ -34,7 +34,7 @@ export const csvArray = <T extends z.ZodType>(item: T) =>
   z.preprocess((value) => (typeof value === "string" ? value.split(",") : value), z.array(item));
 
 /** Page metadata returned alongside a paginated collection. */
-export const paginationSchema = z.object({
+const paginationSchema = z.object({
   /** Current page number, starting from 1. */
   page: z.number().int(),
   /** Number of items per page. */

@@ -4,7 +4,7 @@ import { type ChangeEvent, type DragEvent, type ReactElement, useRef, useState }
 import { CloudUpload } from "@mui/icons-material";
 import { Box, Button, type ButtonProps, Stack, Typography } from "@mui/material";
 
-export type FileUploadVariant = "button" | "dropzone";
+type FileUploadVariant = "button" | "dropzone";
 
 interface FileUploadProps {
   variant?: FileUploadVariant;

@@ -1,10 +1,10 @@
 import { z } from "zod/v4";
 import { type ApplicationStatus, statusSchema } from "./application";
 
-export const EMAIL_PROVIDERS = ["gmail", "outlook", "imap"] as const;
-export const emailProviderSchema = z.enum(EMAIL_PROVIDERS);
+const EMAIL_PROVIDERS = ["gmail", "outlook", "imap"] as const;
+const emailProviderSchema = z.enum(EMAIL_PROVIDERS);
 
-export const CLASSIFICATIONS = [
+const CLASSIFICATIONS = [
   "interviewing",
   "rejected",
   "offer",
@@ -20,7 +20,7 @@ export const CLASSIFICATION_TO_STATUS: Partial<Record<Classification, Applicatio
   offer: "offer",
 };
 
-export const REVIEW_STATUSES = ["pending", "approved", "denied", "auto"] as const;
+const REVIEW_STATUSES = ["pending", "approved", "denied", "auto"] as const;
 export const reviewStatusSchema = z.enum(REVIEW_STATUSES);
 
 export const scanMessageSchema = z.object({

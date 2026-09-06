@@ -22,8 +22,8 @@ import type {
  */
 
 // Soft floor: below this the posting is skipped even without a hard-rule hit.
-export const UPWORK_QUALITY_SKIP_FLOOR = 30;
-export const UPWORK_QUALITY_GOOD_THRESHOLD = 65;
+const UPWORK_QUALITY_SKIP_FLOOR = 30;
+const UPWORK_QUALITY_GOOD_THRESHOLD = 65;
 
 // Hard-rule tuning.
 const LOW_HIRE_RATE_PCT = 10;

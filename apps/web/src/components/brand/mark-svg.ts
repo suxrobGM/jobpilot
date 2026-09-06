@@ -20,7 +20,7 @@ const DEFS = `
   <radialGradient id="em" cx="0.5" cy="0.85" r="0.6"><stop offset="0" stop-color="#FF6A3D" stop-opacity="0.32"/><stop offset="1" stop-color="#FF6A3D" stop-opacity="0"/></radialGradient>
   <radialGradient id="ey" cx="0.4" cy="0.35" r="0.75"><stop offset="0" stop-color="#CFE0FF"/><stop offset="1" stop-color="#6FA8FF"/></radialGradient>`;
 
-export function markSvg(px: number, opts: { bleed?: boolean } = {}): string {
+function markSvg(px: number, opts: { bleed?: boolean } = {}): string {
   const bleed = opts.bleed ?? false;
   const frame = bleed
     ? `<rect width="100" height="100" fill="url(#bg)"/><rect width="100" height="100" fill="url(#cr)"/><rect width="100" height="100" fill="url(#em)"/>`

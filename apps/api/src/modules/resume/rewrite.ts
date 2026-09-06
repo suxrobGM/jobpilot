@@ -13,14 +13,14 @@ export interface BulletRewriteInput {
   bullets: { original: string; tailored: string }[];
 }
 
-export interface BulletRewriteAudit {
+interface BulletRewriteAudit {
   original: string;
   tailored: string;
   /** Soft, non-blocking review notes (e.g. unverified tech terms). */
   flags: string[];
 }
 
-export interface EntryRewriteAudit {
+interface EntryRewriteAudit {
   entryIndex: number;
   company: string;
   bullets: BulletRewriteAudit[];
@@ -57,7 +57,7 @@ function normNum(raw: string): string {
  * so that swapping a unit (`40%` → `40 percent`) is not treated as a new number,
  * while a genuinely different magnitude still is.
  */
-export function extractNumbers(text: string): Set<string> {
+function extractNumbers(text: string): Set<string> {
   const out = new Set<string>();
   for (const m of text.matchAll(/\d[\d.,]*(?:%|\+)?[kmbx]?/gi)) {
     const full = normNum(m[0]);
@@ -75,7 +75,7 @@ export function extractNumbers(text: string): Set<string> {
 }
 
 /** All free-text from the resume, normalized for whole-token search - the drift check's corpus. */
-export function buildCorpus(base: ResumeData): string {
+function buildCorpus(base: ResumeData): string {
   const parts: string[] = [];
 
   if (base.summary) {
@@ -127,7 +127,7 @@ function isTechLike(token: string): boolean {
  * review, not rejected - single-capitalized names (e.g. "Kubernetes") can slip
  * past; the hard guarantee against fabrication is the numbers guard.
  */
-export function driftFlags(tailored: string, original: string, corpus: string): string[] {
+function driftFlags(tailored: string, original: string, corpus: string): string[] {
   const flags: string[] = [];
   const originalSearchText = toSearchText(original);
   const seen = new Set<string>();

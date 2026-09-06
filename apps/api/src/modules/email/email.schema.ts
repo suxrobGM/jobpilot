@@ -57,7 +57,7 @@ export const oauthClientStatusSchema = z.object({
 export const oauthClientDeletedSchema = z.object({ deleted: z.boolean() });
 
 /** Matched-application summary embedded on a message (`matchedApp` relation). */
-export const matchedAppSchema = z
+const matchedAppSchema = z
   .object({
     id: z.uuid(),
     title: z.string(),

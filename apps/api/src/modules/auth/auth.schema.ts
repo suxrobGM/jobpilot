@@ -79,7 +79,7 @@ export const meSchema = publicUserSchema.extend({
  * An active personal access token row (mirrors `ApiTokenService.list`'s select).
  * The service returns raw Prisma rows, so date fields are `Date` objects.
  */
-export const apiTokenSummarySchema = z.object({
+const apiTokenSummarySchema = z.object({
   id: z.uuid(),
   name: z.string(),
   lastUsedAt: z.date().nullable(),

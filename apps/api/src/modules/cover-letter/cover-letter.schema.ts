@@ -12,7 +12,7 @@ export const pdfRequestSchema = z.object({
 const coverLetterSource = z.enum(["apply", "auto-apply", "manual"]);
 
 /** A row in the cover-letter list (metadata only - no letter body). */
-export const coverLetterSummarySchema = z.object({
+const coverLetterSummarySchema = z.object({
   id: z.uuid(),
   jobTitle: z.string().nullable(),
   company: z.string().nullable(),

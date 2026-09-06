@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-export const coverLetterSourceSchema = z.enum(["apply", "auto-apply", "manual"]).default("manual");
+const coverLetterSourceSchema = z.enum(["apply", "auto-apply", "manual"]).default("manual");
 
 export const coverLetterCreateSchema = z.object({
   content: z.string().min(1, "Required"),

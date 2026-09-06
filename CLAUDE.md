@@ -38,6 +38,8 @@ Root (`bun run …`):
 - `build:api` / `build:web` / `build:terminal` - production builds.
 - `check` / `format` / `lint` - Biome repo-wide (`check` = format + lint + import sort, writes).
   Biome skips Markdown; `.editorconfig` covers whitespace there.
+- `knip` - dead files, exports, and dependencies across every workspace (one root
+  `knip.jsonc`; a per-workspace config cannot see cross-workspace use).
 - `ci` - `biome ci --error-on-warnings .`. Warnings must fail the build or the gate is a no-op.
   Never run `biome check --write --unsafe`: the `noNonNullAssertion` fix rewrites
   `cookie[KEY]!.set(…)` to `?.set(…)`, silently dropping auth cookie writes.
@@ -54,6 +56,11 @@ a comment explaining a murky one.
 - No fallback/compat shims - write a data migration instead of read-compat code.
 - No nested ternaries; everyday names over jargon.
 - Split a test file past a few hundred lines by domain, with a shared `*.test-helpers.ts`.
+- Export only what another file imports. A helper used solely inside its own module stays
+  unexported. A barrel is justified only when it carries a directory's public API for several
+  outside importers - never as a pass-through for a single file, and always named re-exports
+  rather than `export *`. `bun run knip` fails on a violation; the exception is a
+  `package.json` `exports` target, where the subpath is the unit of API and `export *` is right.
 
 ## Area rules
 

@@ -20,7 +20,7 @@ export const pushSubscriptionSchema = z.object({
 });
 
 /** Device row for the manage-devices list. */
-export const pushSubscriptionListItemSchema = z.object({
+const pushSubscriptionListItemSchema = z.object({
   id: z.uuid(),
   endpoint: z.string(),
   userAgent: z.string().nullable(),

@@ -1,7 +1,7 @@
 import type { ResumeData } from "@jobpilot/contracts/resume";
 
 /** Calculates the number of years since the earliest experience date in the resume content */
-export function yearsSinceEarliestExperience(content: ResumeData): number | null {
+function yearsSinceEarliestExperience(content: ResumeData): number | null {
   const dates = (content.experience ?? [])
     .map((e) => e.start)
     .filter((s): s is string => typeof s === "string" && s.length > 0)

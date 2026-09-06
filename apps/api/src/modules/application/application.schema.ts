@@ -31,7 +31,7 @@ export const appendNoteSchema = z.object({
 // Response schemas
 
 /** A full applied-job row (mirrors the `Application` Prisma model with dates stringified). */
-export const applicationSchema = z.object({
+const applicationSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
   url: z.string(),
@@ -129,7 +129,7 @@ export const applicationDetailSchema = applicationSchema.extend({
 });
 
 /** The application summary embedded in a duplicate-check match. */
-export const duplicateMatchApplicationSchema = z.object({
+const duplicateMatchApplicationSchema = z.object({
   id: z.uuid(),
   url: z.string(),
   title: z.string(),

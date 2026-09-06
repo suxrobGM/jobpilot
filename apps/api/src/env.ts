@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 
 /**
  * Backend environment contract. Bun auto-loads `src/backend/.env` for `bun --cwd`,
- * so no dotenv is needed. `validateEnv()` is called once at boot in `app.ts`.
+ * so no dotenv is needed. The schema is validated once when this module loads.
  */
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
@@ -66,7 +66,7 @@ const EnvSchema = z.object({
 
 export type Env = z.infer<typeof EnvSchema>;
 
-export function validateEnv(): Env {
+function validateEnv(): Env {
   const parsed = EnvSchema.safeParse(process.env);
   if (!parsed.success) {
     const messages = parsed.error.issues

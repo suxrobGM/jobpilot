@@ -15,14 +15,14 @@ const jobDigest = z
   })
   .transform((value) => value.trim() || undefined);
 
-export const CAMPAIGN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
+const CAMPAIGN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
 export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
 
-export const CAMPAIGN_SOURCES = ["search", "auto-apply", "apply", "networking"] as const;
+const CAMPAIGN_SOURCES = ["search", "auto-apply", "apply", "networking"] as const;
 export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 
 /** Who acted: the web user, the terminal agent on their behalf, or the autonomous pilot. */
-export const CAMPAIGN_ACTORS = ["user", "agent", "pilot"] as const;
+const CAMPAIGN_ACTORS = ["user", "agent", "pilot"] as const;
 export const campaignActorSchema = z.enum(CAMPAIGN_ACTORS);
 
 export const CAMPAIGN_JOB_STATUSES = [
@@ -49,7 +49,7 @@ export const campaignConfigSchema = z.object({
   networking: networkingConfigSchema.optional(),
 });
 
-export const campaignJobSummarySchema = z.object({
+const campaignJobSummarySchema = z.object({
   kind: z.literal("jobs"),
   totalFound: z.number().int().min(0).default(0),
   qualified: z.number().int().min(0).default(0),
@@ -65,7 +65,7 @@ export const campaignJobSummarySchema = z.object({
   networkingCount: z.number().int().min(0).default(0),
 });
 
-export const campaignNetworkingSummarySchema = z.object({
+const campaignNetworkingSummarySchema = z.object({
   kind: z.literal("networking"),
   discovered: z.number().int().min(0).default(0),
   drafted: z.number().int().min(0).default(0),
@@ -130,7 +130,7 @@ export const campaignStatusCommandSchema = z.object({
 });
 
 export const CAMPAIGN_JOB_TERMINAL_OUTCOMES = ["applied", "failed", "skipped"] as const;
-export const campaignJobOutcomeSchema = z.enum(CAMPAIGN_JOB_TERMINAL_OUTCOMES);
+const campaignJobOutcomeSchema = z.enum(CAMPAIGN_JOB_TERMINAL_OUTCOMES);
 
 /** Non-terminal statuses: a campaign with any such job is still active (not finalizable). */
 export const CAMPAIGN_JOB_ACTIVE_STATUSES = [

@@ -4,14 +4,14 @@ import { cleanReplacementChars } from "./utils/text";
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-export const NETWORKING_CHANNELS = ["email", "linkedin"] as const;
+const NETWORKING_CHANNELS = ["email", "linkedin"] as const;
 export const networkingChannelSchema = z.enum(NETWORKING_CHANNELS);
 
-export const LINKEDIN_TIERS = ["free", "premium"] as const;
-export const linkedinTierSchema = z.enum(LINKEDIN_TIERS);
+const LINKEDIN_TIERS = ["free", "premium"] as const;
+const linkedinTierSchema = z.enum(LINKEDIN_TIERS);
 
 export const NETWORKING_AUTONOMY = ["draft", "review", "auto"] as const;
-export const networkingAutonomySchema = z.enum(NETWORKING_AUTONOMY);
+const networkingAutonomySchema = z.enum(NETWORKING_AUTONOMY);
 
 /** A resolved outgoing message: the channel it goes out on and how much rein the sender has. */
 export const networkingModeSchema = z.object({
@@ -27,10 +27,10 @@ export const networkingConfigSchema = z.object({
   dailyCap: z.number().int().min(1).max(100).optional(),
 });
 
-export const LINKEDIN_KINDS = ["inmail", "connect_note", "dm"] as const;
-export const linkedinKindSchema = z.enum(LINKEDIN_KINDS);
+const LINKEDIN_KINDS = ["inmail", "connect_note", "dm"] as const;
+const linkedinKindSchema = z.enum(LINKEDIN_KINDS);
 
-export const NETWORKING_MESSAGE_STATUSES = [
+const NETWORKING_MESSAGE_STATUSES = [
   "draft",
   "approved",
   "sent",
@@ -56,22 +56,16 @@ export function isTerminalNetworkingStatus(status: string): boolean {
   return (NETWORKING_MESSAGE_TERMINAL_STATUSES as readonly string[]).includes(status);
 }
 
-export const CONTACT_LINKEDIN_CONNECTIONS = ["none", "pending", "connected"] as const;
+const CONTACT_LINKEDIN_CONNECTIONS = ["none", "pending", "connected"] as const;
 export const contactLinkedinConnectionSchema = z.enum(CONTACT_LINKEDIN_CONNECTIONS);
 
-export const CONTACT_EMAIL_SOURCES = ["guessed", "verified", "provided"] as const;
+const CONTACT_EMAIL_SOURCES = ["guessed", "verified", "provided"] as const;
 export const contactEmailSourceSchema = z.enum(CONTACT_EMAIL_SOURCES);
 
-export const CONTACT_DISCOVERY_SOURCES = [
-  "google",
-  "company-site",
-  "web",
-  "linkedin",
-  "manual",
-] as const;
+const CONTACT_DISCOVERY_SOURCES = ["google", "company-site", "web", "linkedin", "manual"] as const;
 export const contactDiscoverySourceSchema = z.enum(CONTACT_DISCOVERY_SOURCES);
 
-export const createContactSchema = z.object({
+const createContactSchema = z.object({
   name: z.string().min(1),
   title: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
@@ -87,7 +81,7 @@ export const createContactSchema = z.object({
   notes: reasonText.optional().nullable(),
 });
 
-export const networkingMessageFieldsSchema = z.object({
+const networkingMessageFieldsSchema = z.object({
   channel: networkingChannelSchema,
   linkedinKind: linkedinKindSchema.optional().nullable(),
   subject: reasonText.optional().nullable(),
@@ -119,8 +113,8 @@ export const patchNetworkingMessageSchema = z.object({
   contactLinkedinConnection: contactLinkedinConnectionSchema.optional(),
 });
 
-export const NETWORKING_MESSAGE_OUTCOMES = ["sent", "failed", "skipped"] as const;
-export const networkingMessageOutcomeSchema = z.enum(NETWORKING_MESSAGE_OUTCOMES);
+const NETWORKING_MESSAGE_OUTCOMES = ["sent", "failed", "skipped"] as const;
+const networkingMessageOutcomeSchema = z.enum(NETWORKING_MESSAGE_OUTCOMES);
 
 /** POST /api/campaigns/[id]/networking/[messageId]/result - terminal outcome. */
 export const networkingMessageResultSchema = z

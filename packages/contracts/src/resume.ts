@@ -4,7 +4,7 @@ import { normalizeLinkUrl } from "./utils/url";
 
 const linkUrl = z.string().transform(normalizeLinkUrl).optional();
 
-export const resumeBasicsSchema = z.object({
+const resumeBasicsSchema = z.object({
   name: z.string().min(1, "Required"),
   headline: z.string().optional(),
   email: z.union([z.email(), z.literal("")]).optional(),
@@ -15,7 +15,7 @@ export const resumeBasicsSchema = z.object({
   location: z.string().optional(),
 });
 
-export const resumeExperienceSchema = z.object({
+const resumeExperienceSchema = z.object({
   id: z.string().optional(),
   company: z.string().min(1, "Required"),
   title: z.string().min(1, "Required"),
@@ -25,7 +25,7 @@ export const resumeExperienceSchema = z.object({
   bullets: z.array(z.string()),
 });
 
-export const resumeProjectSchema = z.object({
+const resumeProjectSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Required"),
   url: linkUrl,
@@ -39,13 +39,13 @@ export const resumeProjectSchema = z.object({
   end: z.string().optional(),
 });
 
-export const resumeSkillGroupSchema = z.object({
+const resumeSkillGroupSchema = z.object({
   id: z.string().optional(),
   group: z.string().min(1, "Required"),
   items: z.array(z.string()),
 });
 
-export const resumeEducationSchema = z.object({
+const resumeEducationSchema = z.object({
   id: z.string().optional(),
   school: z.string().min(1, "Required"),
   degree: z.string().min(1, "Required"),
@@ -54,7 +54,7 @@ export const resumeEducationSchema = z.object({
   details: z.array(z.string()).default([]),
 });
 
-export const resumePublicationSchema = z.object({
+const resumePublicationSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "Required"),
   // Verbatim from the CV, so an existing citation's author order and et al. survive a round trip.
@@ -66,7 +66,7 @@ export const resumePublicationSchema = z.object({
   doi: z.string().optional(),
 });
 
-export const resumeAwardSchema = z.object({
+const resumeAwardSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "Required"),
   issuer: z.string().optional(),
@@ -74,7 +74,7 @@ export const resumeAwardSchema = z.object({
   description: z.string().optional(),
 });
 
-export const resumeCertificationSchema = z.object({
+const resumeCertificationSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Required"),
   issuer: z.string().optional(),
@@ -84,7 +84,7 @@ export const resumeCertificationSchema = z.object({
   url: linkUrl,
 });
 
-export const resumeCustomEntrySchema = z.object({
+const resumeCustomEntrySchema = z.object({
   id: z.string().optional(),
   heading: z.string().min(1, "Required"),
   subheading: z.string().optional(),
@@ -97,7 +97,7 @@ export const resumeCustomEntrySchema = z.object({
  * teaching, service, memberships - and a plain `z.object` strips an unknown key silently, so
  * without somewhere to put them the import loses that content with a 200 and no warning.
  */
-export const resumeCustomSectionSchema = z.object({
+const resumeCustomSectionSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "Required"),
   entries: z.array(resumeCustomEntrySchema).default([]),

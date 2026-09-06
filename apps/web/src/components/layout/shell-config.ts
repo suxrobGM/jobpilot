@@ -36,7 +36,7 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-export const navGroups: NavGroup[] = [
+const navGroups: NavGroup[] = [
   {
     label: "Core",
     items: [

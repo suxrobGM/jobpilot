@@ -275,12 +275,12 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
   ),
 ]);
 
-export const agendaItemSchema = z.intersection(
+const agendaItemSchema = z.intersection(
   z.object({ id: z.string(), priority: z.number(), title: z.string() }),
   agendaClaimFieldsSchema,
 );
 
-export const agendaContentSchema = z.object({
+const agendaContentSchema = z.object({
   generatedAt: z.date(),
   items: z.array(agendaItemSchema),
   counts: z.object({

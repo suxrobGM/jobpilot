@@ -65,7 +65,7 @@ async function unlinkMatching(dir: string, prefixes: string[], suffix: string): 
   );
 }
 
-export function deleteGeneratedResumeFiles(resumeId: string): Promise<void> {
+function deleteGeneratedResumeFiles(resumeId: string): Promise<void> {
   return unlinkMatching(GENERATED_DIR, [`master-${resumeId}-`], ".pdf");
 }
 

@@ -17,7 +17,7 @@ export const cfg = (over: ConfigOverrides = {}): PilotInstructionsConfig =>
     networking: { email: "review", linkedIn: "draft", ...over.networking },
   });
 
-export const NOW = new Date("2026-07-15T12:00:00.000Z");
+const NOW = new Date("2026-07-15T12:00:00.000Z");
 
 export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   now: NOW,

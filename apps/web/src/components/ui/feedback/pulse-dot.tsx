@@ -5,7 +5,7 @@ import { Box, type Theme } from "@mui/material";
 
 export type PulseDotTone = "violet" | "green" | "amber" | "red" | "blue" | "peach" | "muted";
 
-export type PulseDotSize = "xs" | "sm" | "md";
+type PulseDotSize = "xs" | "sm" | "md";
 
 interface PulseDotProps {
   tone?: PulseDotTone;

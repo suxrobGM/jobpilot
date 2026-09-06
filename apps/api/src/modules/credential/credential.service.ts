@@ -5,7 +5,7 @@ import { findOwned } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
 
 /** Where a resolved login came from - also the target to persist a refreshed password to. */
-export type CredentialSource = "board" | "domain" | "default";
+type CredentialSource = "board" | "domain" | "default";
 
 export interface ResolvedCredential {
   email: string;

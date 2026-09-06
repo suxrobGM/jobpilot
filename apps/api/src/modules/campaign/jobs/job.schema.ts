@@ -15,7 +15,7 @@ export const campaignJobReasonListSchema = z.array(campaignJobReasonSchema);
  * response. Dates remain `Date` objects because `recordJobResult` returns the
  * found/created row directly; `null` when the outcome was not `applied`.
  */
-export const campaignApplicationSchema = z
+const campaignApplicationSchema = z
   .object({
     id: z.uuid(),
     userId: z.uuid(),

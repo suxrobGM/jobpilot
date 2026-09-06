@@ -4,7 +4,7 @@ import { ELIGIBILITY_RESTRICTION_KINDS } from "./eligibility";
 /** Above this the digest is quoting a salary or a year, not counting experience. */
 export const MAX_YEARS_EXPERIENCE = 50;
 
-export const jobDigestSchema = z.object({
+const jobDigestSchema = z.object({
   title: z.string().optional().default(""),
   company: z.string().optional().default(""),
   skills: z.array(z.string()).optional().default([]),
@@ -16,7 +16,7 @@ export const jobDigestSchema = z.object({
 
 export type JobDigest = z.infer<typeof jobDigestSchema>;
 
-export const fitProfileSchema = z.object({
+const fitProfileSchema = z.object({
   skills: z.array(z.string()).default([]),
   yearsExperience: z.number().int().min(0).max(MAX_YEARS_EXPERIENCE).nullable().default(null),
   /** Defaults from the profile; only then does the posting's work-authorization language matter. */

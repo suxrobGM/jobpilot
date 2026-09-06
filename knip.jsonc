@@ -12,7 +12,7 @@
       "entry": ["src/**/*.test.ts", "prisma.config.ts", "scripts/*.ts"],
       "project": ["src/**/*.{ts,tsx}", "prisma/seed/**/*.ts", "scripts/*.ts"],
       "includeEntryExports": true,
-      "ignoreExportsUsedInFile": true,
+      "ignoreExportsUsedInFile": false,
       // prisma.config.ts reads DATABASE_URL at load, which crashes knip's plugin loader.
       "prisma": false,
       // pg is reached through @prisma/adapter-pg, pino-pretty by transport name only,
@@ -22,7 +22,7 @@
     "apps/web": {
       "project": ["src/**/*.{ts,tsx,mdx}"],
       "includeEntryExports": true,
-      "ignoreExportsUsedInFile": true,
+      "ignoreExportsUsedInFile": false,
       // server-only ships inside next.
       "ignoreDependencies": ["server-only"]
     },
@@ -30,12 +30,12 @@
       "entry": ["src/**/*.test.ts"],
       "project": ["src/**/*.ts"],
       "includeEntryExports": true,
-      "ignoreExportsUsedInFile": true
+      "ignoreExportsUsedInFile": false
     },
     "packages/api-client": {
       "project": ["src/**/*.ts"],
       "includeEntryExports": true,
-      "ignoreExportsUsedInFile": true,
+      "ignoreExportsUsedInFile": false,
       // tsconfig sets jsxImportSource for the apps/api sources it types through paths.
       "ignoreDependencies": ["react"]
     }
