@@ -18,9 +18,6 @@ const config: NextConfig = {
   transpilePackages: ["@jobpilot/contracts", "@jobpilot/api-client"],
   // Next can only type-check via the TS6 JS API shim; `bun run typecheck` (TS7 native) is the gate.
   typescript: { ignoreBuildErrors: true },
-  experimental: {
-    optimizePackageImports: ["@mui/material", "@mui/icons-material"],
-  },
 };
 
 // Plugins must be string references under Turbopack (loader options are serialized).
