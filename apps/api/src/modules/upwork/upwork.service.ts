@@ -33,6 +33,13 @@ interface UpworkProfileFields {
   appliedAt?: Date | null;
 }
 
+const ACCOUNT_SELECT = {
+  id: true,
+  connectsBalance: true,
+  lastSyncedAt: true,
+  updatedAt: true,
+} as const;
+
 @singleton()
 export class UpworkService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -85,7 +92,7 @@ export class UpworkService {
   async getAccount(userId: string) {
     return this.prisma.upworkAccount.findUnique({
       where: { userId },
-      select: { id: true, connectsBalance: true, lastSyncedAt: true, updatedAt: true },
+      select: ACCOUNT_SELECT,
     });
   }
 
@@ -96,7 +103,7 @@ export class UpworkService {
       where: { userId },
       create: { userId, ...fields },
       update: fields,
-      select: { id: true, connectsBalance: true, lastSyncedAt: true, updatedAt: true },
+      select: ACCOUNT_SELECT,
     });
   }
 
@@ -115,6 +122,7 @@ export class UpworkService {
     const [items, total] = await Promise.all([
       this.prisma.upworkInboxItem.findMany({
         where,
+        omit: { raw: true },
         orderBy: { receivedAt: "desc" },
         ...pageSlice(query),
       }),
@@ -155,8 +163,7 @@ export class UpworkService {
       }),
     );
 
-    const updated = upworkIds.filter((id) => known.has(id)).length;
-    return { created: upworkIds.length - updated, updated };
+    return { created: upworkIds.length - known.size, updated: known.size };
   }
 
   async updateInboxItem(userId: string, id: string, input: PatchUpworkInboxItemInput) {

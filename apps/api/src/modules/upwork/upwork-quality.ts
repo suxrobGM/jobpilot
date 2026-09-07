@@ -33,7 +33,9 @@ function tier(
   steps: ReadonlyArray<readonly [threshold: number, score: number]>,
   floor: number,
 ): number {
-  if (value == null) return NEUTRAL;
+  if (value == null) {
+    return NEUTRAL;
+  }
   return steps.find(([threshold]) => value >= threshold)?.[1] ?? floor;
 }
 
@@ -64,13 +66,17 @@ function spendReviewScore(
 }
 
 function saturationScore(proposals: number | null | undefined): number {
-  if (proposals == null) return NEUTRAL;
-  if (proposals < 5) return 1;
-  if (proposals < 10) return 0.8;
-  if (proposals < 15) return 0.6;
-  if (proposals < 20) return 0.4;
-  if (proposals < SATURATED_PROPOSALS) return 0.2;
-  return 0;
+  return tier(
+    proposals,
+    [
+      [SATURATED_PROPOSALS, 0],
+      [20, 0.2],
+      [15, 0.4],
+      [10, 0.6],
+      [5, 0.8],
+    ],
+    1,
+  );
 }
 
 function hireScore(hires: number | null | undefined): number {

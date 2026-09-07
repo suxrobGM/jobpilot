@@ -62,16 +62,7 @@ export function decodeUpworkProposal<
   };
 }
 
-export function toUpworkInboxItemDto(row: UpworkInboxItem) {
-  let raw: Record<string, unknown> = {};
-  try {
-    const parsed = JSON.parse(row.raw);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      raw = parsed as Record<string, unknown>;
-    }
-  } catch {
-    // An unreadable payload should not hide the row itself.
-  }
+export function toUpworkInboxItemDto(row: Omit<UpworkInboxItem, "raw">) {
   return {
     id: row.id,
     upworkId: row.upworkId,
@@ -82,7 +73,6 @@ export function toUpworkInboxItemDto(row: UpworkInboxItem) {
     body: row.body,
     status: row.status as UpworkInboxStatus,
     receivedAt: row.receivedAt,
-    raw,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

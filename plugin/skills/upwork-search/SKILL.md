@@ -9,7 +9,7 @@ argument-hint: "<job_keywords> --board upwork.com [--max-jobs N] [--campaign <ca
 Find Upwork jobs the user can win - qualify on fit **and** client quality, drop the junk, and save
 the keepers to the campaign for review. **Recommend only: never submit a proposal here.** The user
 drafts a proposal (the `upwork-proposal` skill, launched per job from the campaign page) and
-submits it from the JobPilot web app.
+sends it with the `upwork-submit` skill.
 
 ## Setup
 

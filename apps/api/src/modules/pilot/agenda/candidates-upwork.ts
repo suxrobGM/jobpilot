@@ -12,10 +12,9 @@ export async function gatherUpworkSync(
   userId: string,
   now: Date,
 ): Promise<AgendaUpworkSync | null> {
-  const [account, hasUpworkUse, unreadCount] = await Promise.all([
+  const [account, hasUpworkUse] = await Promise.all([
     prisma.upworkAccount.findUnique({ where: { userId }, select: { lastSyncedAt: true } }),
     prisma.upworkProfile.count({ where: { userId } }),
-    prisma.upworkInboxItem.count({ where: { userId, status: "unread" } }),
   ]);
 
   if (!account && hasUpworkUse === 0) {
@@ -27,5 +26,7 @@ export async function gatherUpworkSync(
     return null;
   }
 
+  // Only the emitted item needs the count, and the mirror is stale at most once every few hours.
+  const unreadCount = await prisma.upworkInboxItem.count({ where: { userId, status: "unread" } });
   return { lastSyncedAt, unreadCount };
 }

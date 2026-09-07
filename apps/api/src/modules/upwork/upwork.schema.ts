@@ -91,7 +91,6 @@ export const upworkInboxItemSchema = z.object({
   body: z.string().nullable(),
   status: z.enum(UPWORK_INBOX_STATUSES),
   receivedAt: z.date(),
-  raw: z.record(z.string(), z.unknown()),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

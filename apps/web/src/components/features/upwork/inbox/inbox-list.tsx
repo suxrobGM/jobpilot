@@ -12,6 +12,7 @@ import { upworkInboxQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkInboxItemDto } from "@/api/types";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
+import { ColorChip } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
@@ -109,10 +110,10 @@ export function InboxList(): ReactElement {
             <Card key={item.id} sx={{ padding: 1.5 }}>
               <Stack spacing={0.5}>
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-                  <Chip
-                    size="small"
+                  <ColorChip
+                    value={item.kind}
+                    colors={KIND_COLOR}
                     label={KIND_LABEL[item.kind]}
-                    color={KIND_COLOR[item.kind]}
                     variant={item.status === "unread" ? "filled" : "outlined"}
                   />
                   {item.clientName && (
