@@ -49,6 +49,7 @@ export type { ResumeDto, ResumeVariantDto, ResumeVariantListItem } from "./resum
 export type {
   CreateUpworkProposalRequest,
   UpdateUpworkProposalRequest,
+  UpworkInboxItemDto,
   UpworkProfileDto,
   UpworkProposalDto,
 } from "./upwork";

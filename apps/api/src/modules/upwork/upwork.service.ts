@@ -1,7 +1,12 @@
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import type {
+  PatchUpworkInboxItemInput,
+  SyncUpworkInboxInput,
+  UpdateUpworkAccountInput,
   UpdateUpworkProfileInput,
   UpworkClient,
+  UpworkInboxKind,
+  UpworkInboxStatus,
   UpworkProposalInput,
   UpworkProposalPatch,
   UpworkQualityResult,
@@ -9,7 +14,7 @@ import type {
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { decodeUpworkProposal, toUpworkProfileDto } from "./upwork.mapper";
+import { decodeUpworkProposal, toUpworkInboxItemDto, toUpworkProfileDto } from "./upwork.mapper";
 import { scoreUpworkClient } from "./upwork-quality";
 
 /** Plain column writes - shared by upsert's create and update (no Prisma field-op wrappers). */
@@ -18,10 +23,12 @@ interface UpworkProfileFields {
   currentOverview?: string | null;
   currentHourlyRate?: string | null;
   currentPortfolio?: string;
+  currentSkills?: string;
   suggestedTitle?: string | null;
   suggestedOverview?: string | null;
   suggestedHourlyRate?: string | null;
   suggestedPortfolio?: string;
+  suggestedSkills?: string;
   status?: string;
   appliedAt?: Date | null;
 }
@@ -30,7 +37,6 @@ interface UpworkProfileFields {
 export class UpworkService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  // ── Client-quality scoring (profile-independent, deterministic) ────────────
   /**
    * Deterministic Upwork client/job quality assessment used by the `upwork-search`
    * skill to smart-filter postings. Profile-independent, like a calculator.
@@ -39,7 +45,6 @@ export class UpworkService {
     return scoreUpworkClient(client);
   }
 
-  // ── Profile enhancement ────────────────────────────────────────────────────
   async getProfile(userId: string) {
     const row = await this.prisma.upworkProfile.findUnique({ where: { userId } });
     return row ? toUpworkProfileDto(row) : null;
@@ -59,6 +64,7 @@ export class UpworkService {
     if (input.currentPortfolio != null) {
       fields.currentPortfolio = JSON.stringify(input.currentPortfolio);
     }
+    if (input.currentSkills != null) fields.currentSkills = JSON.stringify(input.currentSkills);
     if (input.suggestedTitle != null) fields.suggestedTitle = input.suggestedTitle;
     if (input.suggestedOverview != null) fields.suggestedOverview = input.suggestedOverview;
     if (input.suggestedHourlyRate != null) {
@@ -66,6 +72,9 @@ export class UpworkService {
     }
     if (input.suggestedPortfolio != null) {
       fields.suggestedPortfolio = JSON.stringify(input.suggestedPortfolio);
+    }
+    if (input.suggestedSkills != null) {
+      fields.suggestedSkills = JSON.stringify(input.suggestedSkills);
     }
     if (input.status != null) {
       fields.status = input.status;
@@ -81,7 +90,97 @@ export class UpworkService {
     return toUpworkProfileDto(row);
   }
 
-  // ── Proposals ──────────────────────────────────────────────────────────────
+  async getAccount(userId: string) {
+    return this.prisma.upworkAccount.findUnique({
+      where: { userId },
+      select: { id: true, connectsBalance: true, lastSyncedAt: true, updatedAt: true },
+    });
+  }
+
+  /** The sync skill writes what it read from the MCP; every write counts as a sync. */
+  async upsertAccount(userId: string, input: UpdateUpworkAccountInput) {
+    const fields = { connectsBalance: input.connectsBalance ?? null, lastSyncedAt: new Date() };
+    return this.prisma.upworkAccount.upsert({
+      where: { userId },
+      create: { userId, ...fields },
+      update: fields,
+      select: { id: true, connectsBalance: true, lastSyncedAt: true, updatedAt: true },
+    });
+  }
+
+  async listInbox(
+    userId: string,
+    query: PaginationQuery & { kind?: UpworkInboxKind; status?: UpworkInboxStatus },
+  ) {
+    const where: Prisma.UpworkInboxItemWhereInput = { userId };
+    if (query.kind) {
+      where.kind = query.kind;
+    }
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.upworkInboxItem.findMany({
+        where,
+        orderBy: { receivedAt: "desc" },
+        ...pageSlice(query),
+      }),
+      this.prisma.upworkInboxItem.count({ where }),
+    ]);
+
+    return paginate(items.map(toUpworkInboxItemDto), query, total);
+  }
+
+  /**
+   * Mirror a dashboard read into the inbox, keyed on Upwork's own id so a repeated
+   * sync refreshes rather than duplicates. `status` is left alone on an update:
+   * the user's read/archived decision outlives the next sync.
+   */
+  async syncInbox(userId: string, input: SyncUpworkInboxInput) {
+    const upworkIds = input.items.map((item) => item.upworkId);
+    const existing = await this.prisma.upworkInboxItem.findMany({
+      where: { userId, upworkId: { in: upworkIds } },
+      select: { upworkId: true },
+    });
+    const known = new Set(existing.map((row) => row.upworkId));
+
+    await this.prisma.$transaction(
+      input.items.map((item) => {
+        const fields = {
+          kind: item.kind,
+          title: item.title,
+          clientName: item.clientName ?? null,
+          jobUrl: item.jobUrl ?? null,
+          body: item.body ?? null,
+          receivedAt: new Date(item.receivedAt),
+          raw: JSON.stringify(item.raw ?? {}),
+        };
+        return this.prisma.upworkInboxItem.upsert({
+          where: { userId_upworkId: { userId, upworkId: item.upworkId } },
+          create: { userId, upworkId: item.upworkId, ...fields },
+          update: fields,
+        });
+      }),
+    );
+
+    const updated = upworkIds.filter((id) => known.has(id)).length;
+    return { created: upworkIds.length - updated, updated };
+  }
+
+  async updateInboxItem(userId: string, id: string, input: PatchUpworkInboxItemInput) {
+    await findOwned(
+      (where) => this.prisma.upworkInboxItem.findFirst({ where }),
+      { id, userId },
+      "Inbox item",
+    );
+    const row = await this.prisma.upworkInboxItem.update({
+      where: { id },
+      data: { status: input.status },
+    });
+    return toUpworkInboxItemDto(row);
+  }
+
   async listProposals(
     userId: string,
     query: PaginationQuery & { status?: string; search?: string },

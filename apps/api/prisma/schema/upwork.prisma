@@ -32,10 +32,12 @@ model UpworkProposal {
   @@map("upwork_proposals")
 }
 
-// One Upwork profile-enhancement record per user. Holds the scraped current
-// state and the agent-generated suggestions; `status` gates the live write
+// One Upwork profile-enhancement record per user. Holds the profile as the MCP
+// reports it and the agent-generated suggestions; `status` gates the live write
 // (only `approved` may be applied to Upwork). Portfolio columns are JSON arrays
-// of { title, description, url?, skills?: string[] }.
+// of { title, description, url?, skills?: string[] }; skills columns are JSON
+// arrays of string. The MCP writes title, overview and skills back; portfolio
+// and hourly rate have no write tool and stay advisory.
 model UpworkProfile {
   id        String  @id @default(uuid())
   userId    String  @unique @map("user_id")
@@ -45,15 +47,61 @@ model UpworkProfile {
   currentOverview   String? @map("current_overview")
   currentHourlyRate String? @map("current_hourly_rate")
   currentPortfolio  String  @default("[]") @map("current_portfolio")
+  currentSkills     String  @default("[]") @map("current_skills")
 
   suggestedTitle      String? @map("suggested_title")
   suggestedOverview   String? @map("suggested_overview")
   suggestedHourlyRate String? @map("suggested_hourly_rate")
   suggestedPortfolio  String  @default("[]") @map("suggested_portfolio")
+  suggestedSkills     String  @default("[]") @map("suggested_skills")
 
   status    String    @default("empty") // empty | draft | approved | applied
   updatedAt DateTime  @updatedAt @map("updated_at")
   appliedAt DateTime? @map("applied_at")
 
   @@map("upwork_profiles")
+}
+
+// The Upwork account snapshot the sync skill refreshes from
+// `get_freelancer_dashboard`. The web reads it from here because the MCP lives
+// in the user's local agent and the browser cannot reach it.
+model UpworkAccount {
+  id        String  @id @default(uuid())
+  userId    String  @unique @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  connectsBalance Int? @map("connects_balance")
+
+  lastSyncedAt DateTime? @map("last_synced_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("upwork_accounts")
+}
+
+// One invitation, offer, or message thread mirrored from Upwork. `upworkId` is
+// Upwork's own id and makes the sync idempotent; `raw` keeps the untouched
+// payload so a later feature can read a field this model does not name yet.
+model UpworkInboxItem {
+  id        String  @id @default(uuid())
+  userId    String  @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  upworkId String  @map("upwork_id")
+  kind     String  // invitation | offer | message
+  title    String
+  clientName String? @map("client_name")
+  jobUrl     String? @map("job_url")
+  body       String?
+
+  status     String   @default("unread") // unread | read | archived | actioned
+  receivedAt DateTime @map("received_at")
+  raw        String   @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, upworkId])
+  @@index([userId, kind, receivedAt])
+  @@index([userId, status])
+  @@map("upwork_inbox_items")
 }

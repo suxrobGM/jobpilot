@@ -56,8 +56,9 @@ morning.
 
 - Applications move through one pipeline from submitted to offer, with
   analytics on top. Every resume variant is versioned and exported to PDF, so
-  you always know which resume went where. Upwork works the same way: search,
-  client-quality filters, and drafted proposals.
+  you always know which resume went where. Upwork runs on Upwork's own MCP
+  connector: search, client-quality filters, drafted proposals you submit with
+  one button, and an inbox of invitations, offers and messages.
 
 ## Get started
 
@@ -162,7 +163,9 @@ goes:
 | Resume → Extract from PDF (`extract-resume`) | Parses an uploaded PDF into your structured profile.                       |
 | Resume → Tailor (`tailor-resume`)            | Rewrites a resume variant against one job description.                     |
 | Upwork → Proposal (`upwork-proposal`)        | Drafts a proposal for one posting.                                         |
-| Upwork → Profile (`upwork-profile`)          | Improves your Upwork overview; writes back only after you approve.         |
+| Upwork → Submit (`upwork-submit`)            | Submits a draft, after showing the Connects cost and asking.               |
+| Upwork → Profile (`upwork-profile`)          | Improves your Upwork title, overview and skills; writes back on approval.  |
+| Upwork → Inbox sync (`upwork-sync`)          | Pulls invitations, offers, messages and your Connects balance.             |
 | Pilot → Start (`pilot`)                      | Hands the whole search to the agent on a loop.                             |
 
 Mid-job the agent reaches for more skills on its own: tailoring your resume

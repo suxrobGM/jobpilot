@@ -12,3 +12,6 @@ export type CreateUpworkProposalRequest = Body<typeof api.upwork.proposals.post>
 
 /** Update-proposal request body, from `PATCH /api/upwork/proposals/:id`. */
 export type UpdateUpworkProposalRequest = Body<ReturnType<typeof api.upwork.proposals>["patch"]>;
+
+/** One mirrored invitation, offer, or message thread, from `GET /api/upwork/inbox`. */
+export type UpworkInboxItemDto = Data<typeof api.upwork.inbox.get>["items"][number];

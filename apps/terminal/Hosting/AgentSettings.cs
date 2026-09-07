@@ -63,7 +63,6 @@ public static partial class AgentSettings
             "Codex starts without bundled browser tools");
 
         List<string> overrides = [];
-        var hasRemote = false;
         foreach (var (name, server) in parsed?.McpServers ?? [])
         {
             // Codex reads the -c key path literally, so the name is unquoted and must already be a bare TOML key.
@@ -76,7 +75,6 @@ public static partial class AgentSettings
             if (!string.IsNullOrWhiteSpace(server.Url))
             {
                 overrides.Add($"mcp_servers.{name}.url={TomlString(server.Url)}");
-                hasRemote = true;
                 continue;
             }
 
@@ -109,12 +107,6 @@ public static partial class AgentSettings
             }
 
             overrides.Add($"mcp_servers.{name}.startup_timeout_sec={McpStartupTimeoutSeconds}");
-        }
-
-        if (hasRemote)
-        {
-            // Codex builds before ~0.60 drop url-only servers unless the rmcp client is switched on.
-            overrides.Add("features.experimental_use_rmcp_client=true");
         }
 
         return overrides;

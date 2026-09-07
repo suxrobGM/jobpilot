@@ -97,15 +97,12 @@ public class AgentSettingsTests
             """{"mcpServers":{"upwork":{"type":"http","url":"https://mcp.upwork.com/mcp"}}}""");
 
         Assert.Equal(
-            [
-                "mcp_servers.upwork.url=\"https://mcp.upwork.com/mcp\"",
-                "features.experimental_use_rmcp_client=true"
-            ],
+            ["mcp_servers.upwork.url=\"https://mcp.upwork.com/mcp\""],
             AgentSettings.CodexConfigOverrides(temp.Root, NullLogger.Instance, _ => null));
     }
 
     [Fact]
-    public void CodexConfigOverrides_EnablesTheRmcpClientOnceForAMixedFile()
+    public void CodexConfigOverrides_TranslatesStdioAndRemoteServersFromOneFile()
     {
         using var temp = new TempDir();
         temp.File(
@@ -121,8 +118,8 @@ public class AgentSettingsTests
         var overrides = AgentSettings.CodexConfigOverrides(temp.Root, NullLogger.Instance, _ => "/usr/bin/npx");
 
         Assert.Contains("mcp_servers.upwork.url=\"https://mcp.upwork.com/mcp\"", overrides);
+        Assert.Contains("mcp_servers.other.url=\"https://example.com/mcp\"", overrides);
         Assert.Contains("mcp_servers.playwright.command=\"/usr/bin/npx\"", overrides);
-        Assert.Single(overrides, o => o == "features.experimental_use_rmcp_client=true");
     }
 
     [Fact]

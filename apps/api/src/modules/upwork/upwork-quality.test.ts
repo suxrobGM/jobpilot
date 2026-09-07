@@ -5,11 +5,11 @@ import { describe, expect, it } from "bun:test";
 /** A client that clears every hard rule, so a test can vary one signal at a time. */
 const strong: UpworkClient = {
   paymentVerified: true,
-  hireRate: 85,
+  clientHires: 40,
   totalSpent: 50_000,
   rating: 4.9,
   reviewsCount: 40,
-  proposalsBucket: "<5",
+  proposalsCount: 2,
   postedHoursAgo: 3,
 };
 
@@ -25,17 +25,15 @@ describe("scoreUpworkClient hard-skip rules", () => {
   });
 
   it("skips a saturated posting", () => {
-    expect(score({ proposalsBucket: "50+" }).skipReason).toBe("Saturated - 50+ proposals");
+    expect(score({ proposalsCount: 63 }).skipReason).toBe("Saturated - 63 proposals");
   });
 
-  it("skips a client who posts but rarely hires", () => {
-    expect(score({ hireRate: 4, reviewsCount: 30 }).skipReason).toBe(
-      "Low hire rate (4%) - posts but rarely hires",
-    );
+  it("keeps a posting one proposal short of saturated", () => {
+    expect(score({ proposalsCount: 49 }).skipReason).toBe(null);
   });
 
-  it("keeps a low hire rate when the client has too few reviews to judge", () => {
-    expect(score({ hireRate: 4, reviewsCount: 2 }).skipReason).toBe(null);
+  it("does not hard-skip a client who has never hired, since spend and reviews may still vouch", () => {
+    expect(score({ clientHires: 0 }).skipReason).toBe(null);
   });
 
   it("skips a client with observed zero spend, zero reviews and no verified payment", () => {
@@ -53,10 +51,10 @@ describe("scoreUpworkClient hard-skip rules", () => {
   it("skips on the soft floor when no hard rule fires", () => {
     const result = score({
       paymentVerified: null,
-      hireRate: 0,
+      clientHires: 0,
       totalSpent: 100,
       reviewsCount: 0,
-      proposalsBucket: "20-50",
+      proposalsCount: 30,
       postedHoursAgo: 600,
     });
     expect(result.qualityScore).toBeLessThan(30);
@@ -73,10 +71,11 @@ describe("scoreUpworkClient verdicts", () => {
 
   it("rates a middling client caution rather than skipping it", () => {
     const result = score({
-      hireRate: 40,
+      paymentVerified: null,
+      clientHires: 1,
       totalSpent: 500,
       reviewsCount: 3,
-      proposalsBucket: "15-20",
+      proposalsCount: 17,
       postedHoursAgo: 200,
     });
     expect(result.verdict).toBe("caution");
@@ -96,9 +95,9 @@ describe("scoreUpworkClient with missing signals", () => {
     const full = score().qualityScore;
     for (const key of [
       "paymentVerified",
-      "hireRate",
+      "clientHires",
       "totalSpent",
-      "proposalsBucket",
+      "proposalsCount",
       "postedHoursAgo",
     ] as const) {
       expect(score({ [key]: null }).qualityScore).toBeLessThan(full);
@@ -112,9 +111,9 @@ describe("scoreUpworkClient with missing signals", () => {
 
 describe("scoreUpworkClient flags", () => {
   it("reports only the signals it could read", () => {
-    expect(scoreUpworkClient({ paymentVerified: true, hireRate: 82.4 }).flags).toEqual([
+    expect(scoreUpworkClient({ paymentVerified: true, clientHires: 12 }).flags).toEqual([
       "Payment verified",
-      "Hire rate 82%",
+      "12 hires",
     ]);
   });
 

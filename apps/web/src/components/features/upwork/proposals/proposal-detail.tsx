@@ -2,14 +2,14 @@
 
 import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
-import { AutoAwesome, ContentCopy, Delete, Launch } from "@mui/icons-material";
+import { AutoAwesome, ContentCopy, Delete, Launch, Send } from "@mui/icons-material";
 import { Box, Button, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { upworkProposalQueries } from "@/api/queries";
+import { upworkAccountQueries, upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
 import { AgentOnlyButton } from "@/components/ui/buttons";
@@ -34,6 +34,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const queryClient = useQueryClient();
 
   const detail = useApiQuery(upworkProposalQueries.detail(id));
+  const account = useApiQuery(upworkAccountQueries.detail());
 
   useSseChannel(upworkChannel, null, {
     on: {
@@ -41,6 +42,9 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
         if (e.id === id) {
           queryClient.invalidateQueries({ queryKey: queryKeys.upworkProposals.detail(id) });
         }
+      },
+      "account.updated": () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.upworkAccount.all });
       },
     },
   });
@@ -108,11 +112,19 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
               </Button>
             )}
             <AgentOnlyButton
-              variant="contained"
+              variant="outlined"
               startIcon={<AutoAwesome fontSize="md" />}
               onClick={() => void agent.injectSkill("upwork-proposal", String(id))}
             >
               {proposal.proposalText ? "Regenerate" : "Generate"}
+            </AgentOnlyButton>
+            <AgentOnlyButton
+              variant="contained"
+              startIcon={<Send fontSize="md" />}
+              disabled={proposal.status !== "draft" || !proposal.proposalText}
+              onClick={() => void agent.injectSkill("upwork-submit", String(id))}
+            >
+              Submit on Upwork
             </AgentOnlyButton>
             <IconButton onClick={() => void handleDelete()} aria-label="Delete proposal">
               <Delete fontSize="md" />
@@ -120,6 +132,14 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
           </>
         }
       />
+
+      {proposal.status === "draft" && (
+        <Typography variant="captionMuted">
+          Submitting spends Connects. The agent shows the exact cost and asks before it sends.
+          {account.data?.connectsBalance != null &&
+            ` Balance: ${account.data.connectsBalance} Connects.`}
+        </Typography>
+      )}
 
       <ProposalStatusBar proposal={proposal} onChange={(patch) => update.mutate(patch)} />
 

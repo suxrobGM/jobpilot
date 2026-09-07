@@ -2,6 +2,8 @@ import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagi
 import {
   portfolioProjectSchema,
   screeningAnswerSchema,
+  UPWORK_INBOX_KINDS,
+  UPWORK_INBOX_STATUSES,
   UPWORK_PROFILE_STATUSES,
   UPWORK_PROPOSAL_OUTCOMES,
   UPWORK_PROPOSAL_SOURCES,
@@ -29,10 +31,12 @@ export const upworkProfileSchema = z.object({
   currentOverview: z.string().nullable(),
   currentHourlyRate: z.string().nullable(),
   currentPortfolio: z.array(portfolioProjectSchema),
+  currentSkills: z.array(z.string()),
   suggestedTitle: z.string().nullable(),
   suggestedOverview: z.string().nullable(),
   suggestedHourlyRate: z.string().nullable(),
   suggestedPortfolio: z.array(portfolioProjectSchema),
+  suggestedSkills: z.array(z.string()),
   status: z.enum(UPWORK_PROFILE_STATUSES),
   updatedAt: z.date(),
   appliedAt: z.date().nullable(),
@@ -62,3 +66,42 @@ export const upworkProposalSchema = z.object({
 });
 
 export const upworkProposalListSchema = paginatedSchema(upworkProposalSchema);
+
+/** Account snapshot the sync skill maintains; null until the first sync. */
+export const upworkAccountSchema = z.object({
+  id: z.uuid(),
+  connectsBalance: z.number().int().nullable(),
+  lastSyncedAt: z.date().nullable(),
+  updatedAt: z.date(),
+});
+
+export const upworkAccountResponseSchema = upworkAccountSchema.nullable();
+
+export const inboxQuery = paginationQuerySchema.extend({
+  kind: z.enum(UPWORK_INBOX_KINDS).optional(),
+  status: z.enum(UPWORK_INBOX_STATUSES).optional(),
+});
+
+/** One mirrored invitation, offer, or message thread (`toUpworkInboxItemDto`). */
+export const upworkInboxItemSchema = z.object({
+  id: z.uuid(),
+  upworkId: z.string(),
+  kind: z.enum(UPWORK_INBOX_KINDS),
+  title: z.string(),
+  clientName: z.string().nullable(),
+  jobUrl: z.string().nullable(),
+  body: z.string().nullable(),
+  status: z.enum(UPWORK_INBOX_STATUSES),
+  receivedAt: z.date(),
+  raw: z.record(z.string(), z.unknown()),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export const upworkInboxListSchema = paginatedSchema(upworkInboxItemSchema);
+
+/** How many rows a sync created versus refreshed. */
+export const upworkInboxSyncResultSchema = z.object({
+  created: z.number().int(),
+  updated: z.number().int(),
+});

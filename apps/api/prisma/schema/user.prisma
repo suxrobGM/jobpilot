@@ -79,6 +79,8 @@ model User {
   emailOAuthClient   EmailOAuthClient?
   upworkProposals    UpworkProposal[]
   upworkProfile      UpworkProfile?
+  upworkAccount      UpworkAccount?
+  upworkInboxItems   UpworkInboxItem[]
   references         Reference[]
   salaryPreferences  SalaryPreference[]
   contacts           Contact[]

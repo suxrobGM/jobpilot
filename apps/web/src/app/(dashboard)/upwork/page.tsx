@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Add, ManageAccounts, TravelExplore } from "@mui/icons-material";
+import { Add, Inbox, ManageAccounts, TravelExplore } from "@mui/icons-material";
 import { Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { ProposalsList } from "@/components/features/upwork";
@@ -18,6 +18,9 @@ export default function UpworkPage(): ReactElement {
         actions={
           // These lead to agent-driven flows, so hide them on mobile (read-only UI).
           <Stack direction="row" spacing={1} sx={{ display: { xs: "none", md: "flex" } }}>
+            <LinkButton variant="outlined" startIcon={<Inbox fontSize="md" />} href="/upwork/inbox">
+              Inbox
+            </LinkButton>
             <LinkButton
               variant="outlined"
               startIcon={<ManageAccounts fontSize="md" />}

@@ -94,6 +94,17 @@ export const queryKeys = {
     detail: () => [...queryKeys.upworkProfile.all, "detail"] as const,
   },
 
+  upworkAccount: {
+    all: ["upwork-account"] as const,
+    detail: () => [...queryKeys.upworkAccount.all, "detail"] as const,
+  },
+
+  upworkInbox: {
+    all: ["upwork-inbox"] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.upworkInbox.all, "list", filters] as const,
+  },
+
   coverLetters: {
     all: ["cover-letters"] as const,
     list: (filters: Record<string, unknown> = {}) =>

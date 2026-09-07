@@ -1,8 +1,4 @@
-import type {
-  ProposalsBucket,
-  UpworkClient,
-  UpworkQualityResult,
-} from "@jobpilot/contracts/upwork";
+import type { UpworkClient, UpworkQualityResult } from "@jobpilot/contracts/upwork";
 
 /**
  * Heuristic Upwork client/job quality score. Server-side, deterministic, no LLM
@@ -15,7 +11,7 @@ import type {
  *
  * Quality blend (each component 0..1, null = neutral 0.5):
  *   30% payment verified
- *   20% client hire rate
+ *   20% client hire count
  *   20% spend + reviews (proven track record)
  *   15% proposal saturation (inverse - fewer competitors is better)
  *   15% recency (fresh posts get seen)
@@ -25,9 +21,10 @@ import type {
 const UPWORK_QUALITY_SKIP_FLOOR = 30;
 const UPWORK_QUALITY_GOOD_THRESHOLD = 65;
 
-// Hard-rule tuning.
-const LOW_HIRE_RATE_PCT = 10;
-const MIN_REVIEWS_FOR_HIRE_RATE = 3;
+// Upwork exposes a hire count but no hire rate, so there is no hard rule for the
+// unresponsive client any more. A zero-hire client scores 0.3 on that component and
+// falls to the soft floor on its own; `client_hires_min` on the search filters the rest.
+const SATURATED_PROPOSALS = 50;
 
 const NEUTRAL = 0.5;
 
@@ -73,14 +70,27 @@ function spendReviewScore(
   return (spendTier + reviewTier) / 2;
 }
 
-const SATURATION_BY_BUCKET: Record<ProposalsBucket, number> = {
-  "<5": 1,
-  "5-10": 0.8,
-  "10-15": 0.6,
-  "15-20": 0.4,
-  "20-50": 0.2,
-  "50+": 0,
-};
+function saturationScore(proposals: number | null | undefined): number {
+  if (proposals == null) return NEUTRAL;
+  if (proposals < 5) return 1;
+  if (proposals < 10) return 0.8;
+  if (proposals < 15) return 0.6;
+  if (proposals < 20) return 0.4;
+  if (proposals < SATURATED_PROPOSALS) return 0.2;
+  return 0;
+}
+
+function hireScore(hires: number | null | undefined): number {
+  return tier(
+    hires,
+    [
+      [20, 1],
+      [5, 0.85],
+      [1, 0.7],
+    ],
+    0,
+  );
+}
 
 function recencyScore(hoursAgo: number | null | undefined): number {
   if (hoursAgo == null) return NEUTRAL;
@@ -96,14 +106,14 @@ function buildFlags(client: UpworkClient): string[] {
   if (client.paymentVerified != null) {
     flags.push(client.paymentVerified ? "Payment verified" : "Payment unverified");
   }
-  if (client.hireRate != null) flags.push(`Hire rate ${Math.round(client.hireRate)}%`);
+  if (client.clientHires != null) flags.push(`${client.clientHires} hires`);
   if (client.totalSpent != null)
     flags.push(`$${Math.round(client.totalSpent).toLocaleString()} spent`);
   if (client.reviewsCount != null) {
     const rating = client.rating != null ? ` (${client.rating.toFixed(1)}★)` : "";
     flags.push(`${client.reviewsCount} reviews${rating}`);
   }
-  if (client.proposalsBucket != null) flags.push(`${client.proposalsBucket} proposals`);
+  if (client.proposalsCount != null) flags.push(`${client.proposalsCount} proposals`);
   if (client.postedHoursAgo != null) flags.push(`Posted ${Math.round(client.postedHoursAgo)}h ago`);
   return flags;
 }
@@ -112,10 +122,9 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
   const qualityScore = Math.round(
     100 *
       (paymentScore(client.paymentVerified) * 0.3 +
-        (client.hireRate == null ? NEUTRAL : client.hireRate / 100) * 0.2 +
+        hireScore(client.clientHires) * 0.2 +
         spendReviewScore(client.totalSpent, client.reviewsCount) * 0.2 +
-        (client.proposalsBucket == null ? NEUTRAL : SATURATION_BY_BUCKET[client.proposalsBucket]) *
-          0.15 +
+        saturationScore(client.proposalsCount) * 0.15 +
         recencyScore(client.postedHoursAgo) * 0.15),
   );
 
@@ -125,14 +134,8 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
   let skipReason: string | null = null;
   if (client.paymentVerified === false) {
     skipReason = "Unverified payment";
-  } else if (client.proposalsBucket === "50+") {
-    skipReason = "Saturated - 50+ proposals";
-  } else if (
-    client.hireRate != null &&
-    client.hireRate < LOW_HIRE_RATE_PCT &&
-    (client.reviewsCount ?? 0) >= MIN_REVIEWS_FOR_HIRE_RATE
-  ) {
-    skipReason = `Low hire rate (${Math.round(client.hireRate)}%) - posts but rarely hires`;
+  } else if (client.proposalsCount != null && client.proposalsCount >= SATURATED_PROPOSALS) {
+    skipReason = `Saturated - ${client.proposalsCount} proposals`;
   } else if (
     // Observed zeros only - a card we simply couldn't read (null) stays neutral.
     client.totalSpent === 0 &&

@@ -97,7 +97,7 @@ flowchart LR
 ### Components
 
 - **[apps/web/](../apps/web/)**: Next.js UI covering the pipeline, campaigns
-  with live per-job progress, inbox, networking, resume studio, Upwork,
+  with live per-job progress, inbox, networking, resume studio, Upwork (proposals, profile, inbox),
   analytics, settings, and the agent dock (an xterm.js panel that installs,
   launches, and monitors the local agent). Browser and server both call the
   API directly via `API_BASE_URL`, with no proxy in between.

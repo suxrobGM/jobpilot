@@ -53,7 +53,9 @@ your approval.
 | Uploading a resume, or **Extract from PDF** (`extract-resume`) | Parses the PDF into the structured editor. |
 | **Resume → Tailor** (`tailor-resume`) | Rewrites a resume variant against one job description. |
 | **Upwork → Proposal** (`upwork-proposal`) | Drafts a short, targeted proposal for one posting. |
-| **Upwork → Profile** (`upwork-profile`) | Improves your Upwork overview; writes back only after you approve. |
+| **Upwork → Submit** (`upwork-submit`) | Submits a draft, after showing the Connects cost and asking. |
+| **Upwork → Profile** (`upwork-profile`) | Improves your Upwork title, overview and skills; writes back on approval. |
+| **Upwork → Inbox sync** (`upwork-sync`) | Pulls invitations, offers, messages and your Connects balance. |
 | **Pilot → Start** (`pilot`) | Runs [Pilot](/docs/pilot) cycles on a loop until you stop it. |
 
 Uploading a PDF during onboarding or from the resumes list starts extraction on
@@ -106,15 +108,23 @@ too much:
 
 ## Upwork
 
-Upwork has its own three skills, because you're picking clients as much as
-jobs and nothing is submitted for you:
+Upwork runs on Upwork's own MCP connector rather than a browser, so there is no
+password to store. Connect it once: run `/mcp` in the terminal, pick `upwork`,
+and sign in with your Upwork account.
 
-- `upwork-search` filters out clients with poor hire rates, low spend, or bad
-  ratings before ranking what's left against your profile. It saves
-  recommendations; it never submits.
+You're picking clients as much as jobs here, and nothing is sent without you:
+
+- `upwork-search` filters on payment verification, spend, hires and how many
+  proposals a job already has, then ranks what's left against your profile. It
+  saves recommendations; it never submits.
 - `upwork-proposal` drafts a short proposal for a specific job, written for
   your review before you send it.
-- `upwork-profile` reads your live profile, proposes an improved overview and
-  portfolio, and writes it back only after you approve.
+- `upwork-submit` sends that draft. It shows the Connects cost and your
+  balance, and waits for your yes.
+- `upwork-profile` proposes a better title, overview and skill set and writes
+  them back after you approve. Your portfolio and hourly rate are suggested
+  too, but Upwork has no write access for those, so you copy them across.
+- `upwork-sync` fills the Upwork inbox with your invitations, offers and unread
+  messages.
 
 Next up: [Email setup](/docs/email-setup), so replies land on your pipeline.
