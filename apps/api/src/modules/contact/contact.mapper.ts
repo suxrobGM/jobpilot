@@ -1,16 +1,4 @@
-import type {
-  CreateContactInput,
-  ContactDiscoverySource as WireContactDiscoverySource,
-} from "@jobpilot/contracts/networking";
-import type { Contact, ContactDiscoverySource, Prisma } from "@/generated/prisma/client";
-
-const DISCOVERY_SOURCE_TO_WIRE: Record<ContactDiscoverySource, WireContactDiscoverySource> = {
-  google: "google",
-  company_site: "company-site",
-  web: "web",
-  linkedin: "linkedin",
-  manual: "manual",
-};
+import type { CreateContactInput } from "@jobpilot/contracts/networking";
 
 /**
  * Map a validated contact payload to Prisma `Contact` create fields (sans
@@ -19,8 +7,6 @@ const DISCOVERY_SOURCE_TO_WIRE: Record<ContactDiscoverySource, WireContactDiscov
  * override individual fields after spreading (e.g. `discoverySource`).
  */
 export function createContactPayload(c: CreateContactInput) {
-  const discoverySource: ContactDiscoverySource | null =
-    c.discoverySource === "company-site" ? "company_site" : (c.discoverySource ?? null);
   return {
     name: c.name,
     title: c.title ?? null,
@@ -30,28 +16,10 @@ export function createContactPayload(c: CreateContactInput) {
     emailSource: c.emailSource ?? null,
     emailConfidence: c.emailConfidence ?? null,
     linkedinConnection: c.linkedinConnection ?? "none",
-    discoverySource,
+    discoverySource: c.discoverySource ?? null,
     matchConfidence: c.matchConfidence ?? null,
     relatedAppId: c.relatedAppId ?? null,
     relatedJobUrl: c.relatedJobUrl ?? null,
     notes: c.notes ?? null,
   };
-}
-
-/** Prisma's `company_site` is not the wire value. Every read path owes this translation. */
-export function toWireDiscoverySource(
-  source: ContactDiscoverySource | null,
-): WireContactDiscoverySource | null {
-  return source ? DISCOVERY_SOURCE_TO_WIRE[source] : null;
-}
-
-/** A `Contact` row with its enums in wire form, which every contact response schema requires. */
-export function toContactRow(contact: Contact) {
-  return { ...contact, discoverySource: toWireDiscoverySource(contact.discoverySource) };
-}
-
-export function toNetworkingMessageRow(
-  message: Prisma.NetworkingMessageGetPayload<{ include: { contact: true } }>,
-) {
-  return { ...message, contact: toContactRow(message.contact) };
 }

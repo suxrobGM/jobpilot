@@ -17,7 +17,7 @@ import {
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { toCampaignRow, toPrismaCampaignSource, toWireCampaignSource } from "./campaign.mapper";
+import { toCampaignRow } from "./campaign.mapper";
 import {
   deriveCampaignSummary,
   emptyJobSummary,
@@ -59,7 +59,7 @@ export class CampaignService {
     const where: Prisma.CampaignWhereInput = {
       userId,
       status: query.status?.length ? { in: query.status } : undefined,
-      source: query.source ? toPrismaCampaignSource(query.source) : undefined,
+      source: query.source,
       jobs: query.jobStatus ? { some: { status: query.jobStatus } } : undefined,
     };
     const [campaigns, total] = await Promise.all([
@@ -84,7 +84,7 @@ export class CampaignService {
     const data: Prisma.CampaignUncheckedCreateInput = {
       userId,
       query: body.query,
-      source: toPrismaCampaignSource(body.source),
+      source: body.source,
       config: body.config ?? {},
       createdBy: body.createdBy,
       pilotSearchId: body.pilotSearchId ?? null,
@@ -126,7 +126,7 @@ export class CampaignService {
 
   async updateConfig(userId: string, id: string, body: UpdateCampaignConfigInput) {
     const existing = await this.findCampaign(userId, id);
-    if (!campaignConfigSupportsSource(toWireCampaignSource(existing.source), body.config)) {
+    if (!campaignConfigSupportsSource(existing.source, body.config)) {
       throw unprocessable(
         "config.resumeId is required for search, auto-apply, and networking campaigns.",
       );
@@ -180,7 +180,7 @@ export class CampaignService {
           type: "campaign.updated",
           campaignId: id,
           status: body.status,
-          source: toWireCampaignSource(campaign.source),
+          source: campaign.source,
         },
       );
     }

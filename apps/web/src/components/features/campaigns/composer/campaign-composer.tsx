@@ -121,7 +121,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
               )}
             </form.AppField>
           )}
-          {mode === "auto-apply" && <AutoApplyFields form={form} />}
+          {mode === "auto_apply" && <AutoApplyFields form={form} />}
           {mode === "networking" && <NetworkingFields form={form} />}
           {mode === "apply" && <ApplyFields form={form} />}
 

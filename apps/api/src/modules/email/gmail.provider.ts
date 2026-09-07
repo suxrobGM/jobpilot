@@ -1,7 +1,7 @@
 import { google } from "googleapis";
-import type { EmailAccount } from "@/generated/prisma/client";
+import type { EmailAccount, EmailProvider } from "@/generated/prisma/client";
 import type {
-  EmailProvider,
+  MailboxProvider,
   NormalizedMessage,
   OAuthClientConfig,
   SendMessageInput,
@@ -50,7 +50,7 @@ export function scopeCanRead(scope: string | null | undefined): boolean {
   return grants(scope, GMAIL_READ_SCOPE);
 }
 
-class GmailProvider implements EmailProvider {
+class GmailProvider implements MailboxProvider {
   private makeOAuthClient(config: OAuthClientConfig): OAuth2Client {
     return new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri);
   }
@@ -234,7 +234,7 @@ class GmailProvider implements EmailProvider {
 
 const gmailProvider = new GmailProvider();
 
-export function getProvider(name: string): EmailProvider {
+export function getProvider(name: EmailProvider): MailboxProvider {
   if (name === "gmail") {
     return gmailProvider;
   }

@@ -25,7 +25,7 @@ interface CampaignHeaderCardProps {
 export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement {
   const { campaign } = props;
   const cfg = campaign.config;
-  const isAutoApply = campaign.source === "auto-apply";
+  const isAutoApply = campaign.source === "auto_apply";
   const pausedBy = campaign.statusActor
     ? `Paused by ${CAMPAIGN_ACTOR_LABEL[campaign.statusActor]}`
     : "Paused";

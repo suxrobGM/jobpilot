@@ -3,7 +3,6 @@ import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
 import type { Application, PrismaClient } from "@/generated/prisma/client";
 import { canonicalizeJobUrl } from "@/modules/application/job-url";
-import { toWireCampaignSource } from "../campaign.mapper";
 import { deriveCampaignSummary } from "../campaign.summary";
 
 /** Returns whether a job status is terminal. */
@@ -134,7 +133,7 @@ export async function writeJobResult(
           company: job.company,
           location: job.location,
           board: job.board,
-          source: toWireCampaignSource(existing.campaign.source),
+          source: existing.campaign.source,
           campaignId,
           matchScore: job.matchScore,
           matchReason: job.matchReason,

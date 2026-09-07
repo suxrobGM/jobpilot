@@ -15,7 +15,7 @@ import { publishActivity, writeActivity } from "@/common/activity-log";
 import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { createContactPayload, toNetworkingMessageRow } from "@/modules/contact";
+import { createContactPayload } from "@/modules/contact";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
 
@@ -51,7 +51,7 @@ export class CampaignNetworkingService {
       }),
       this.prisma.networkingMessage.count({ where }),
     ]);
-    return paginate(messages.map(toNetworkingMessageRow), query, total);
+    return paginate(messages, query, total);
   }
 
   async addNetworking(userId: string, campaignId: string, body: AddCampaignNetworkingInput) {
@@ -85,7 +85,7 @@ export class CampaignNetworkingService {
       });
     });
     publish(campaignChannel, { campaignId }, { type: "networking-update" });
-    return toNetworkingMessageRow(networkingMessage);
+    return networkingMessage;
   }
 
   async patchNetworking(
@@ -147,7 +147,7 @@ export class CampaignNetworkingService {
     });
     publish(campaignChannel, { campaignId }, { type: "networking-update" });
     publishActivity(userId, result.activity);
-    return toNetworkingMessageRow(result.message);
+    return result.message;
   }
 
   async recordNetworkingResult(
@@ -174,7 +174,7 @@ export class CampaignNetworkingService {
         throw conflict(`Networking message already finished with outcome ${existing.status}.`);
       }
       return {
-        message: toNetworkingMessageRow(existing),
+        message: existing,
         summary: await deriveCampaignSummary(this.prisma, campaignId, campaignSource),
       };
     }
@@ -215,6 +215,6 @@ export class CampaignNetworkingService {
       };
     });
     publish(campaignChannel, { campaignId }, { type: "networking-update" });
-    return { message: toNetworkingMessageRow(result.message), summary: result.summary };
+    return { message: result.message, summary: result.summary };
   }
 }

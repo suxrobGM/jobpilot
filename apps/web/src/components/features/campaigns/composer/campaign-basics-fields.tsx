@@ -38,7 +38,7 @@ export const CampaignBasicsFields = withForm({
                     ? [{ value: "search", label: "Recommend" }]
                     : [
                         { value: "search", label: "Search only" },
-                        { value: "auto-apply", label: "Auto-apply" },
+                        { value: "auto_apply", label: "Auto-apply" },
                         { value: "networking", label: "Networking" },
                         { value: "apply", label: "Apply to links" },
                       ]

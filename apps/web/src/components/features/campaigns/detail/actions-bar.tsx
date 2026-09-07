@@ -80,7 +80,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const failedCount = summary?.failed ?? 0;
   const skippedCount = summary?.skipped ?? 0;
   const isInProgress = campaign.status === "in_progress";
-  const isAutoApply = campaign.source === "auto-apply";
+  const isAutoApply = campaign.source === "auto_apply";
   const isStopped = campaign.status === "paused";
   const hasActionItems =
     isStopped ||

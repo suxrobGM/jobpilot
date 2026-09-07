@@ -2,7 +2,6 @@ import { INTERVIEW_STATUSES } from "@jobpilot/contracts/application";
 import { singleton } from "tsyringe";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { PrismaClient } from "@/generated/prisma/client";
-import { toWireDiscoverySource } from "@/modules/contact";
 
 /** Statuses that mean the employer replied, whichever way it went. */
 const RESPONDED_STATUSES = [...INTERVIEW_STATUSES, "offer", "rejected"] as const;
@@ -154,7 +153,7 @@ export class AnalyticsService {
     const topContactSources = contactSourceRows
       .filter((r) => r.discoverySource)
       .map((r) => ({
-        source: toWireDiscoverySource(r.discoverySource) as string,
+        source: r.discoverySource as string,
         count: r._count._all,
       }));
 

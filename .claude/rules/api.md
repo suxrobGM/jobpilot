@@ -65,6 +65,15 @@ questions, sitemaps, aggregates, `/auth/tokens`, `/push/subscriptions`.
 - Cursor paging (`cursorPageSchema`/`cursorPage`) is for append-only live feeds only, where
   offset drifts as rows are prepended. The pilot journal is the sole user.
 
+## Enums
+
+A closed set of values is a Prisma `enum`, never a `String` column. Every enum carries a
+snake_case `@@map`, and its values must be valid TypeScript identifiers - no hyphens, no leading
+digit, so no `@map` on a value. The web cannot import the generated client, so
+`@jobpilot/contracts` keeps a matching `as const` array (`UPWORK_INBOX_KINDS`, `ROLES`, ...) and
+`src/common/enum-parity.test.ts` fails when the two drift. Add both sides plus a parity row when
+you add an enum.
+
 ## Traps
 
 - A tsyringe-injected class must stay a **value** import (`import { PrismaClient }`, never

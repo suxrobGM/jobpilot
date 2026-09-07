@@ -2,27 +2,21 @@ import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import {
   type ApproveInput,
   CLASSIFICATION_TO_STATUS,
-  type Classification,
   type ScanMessageInput,
 } from "@jobpilot/contracts/email";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
+import type { z } from "zod/v4";
 import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { statusChangeOps } from "@/modules/application/status-change";
 import { AUTO_REJECTION_FROM_STATUSES, isAutoRejection, needsHumanReview } from "./auto-rejection";
-import { serializeMessage } from "./email.mapper";
+import type { messageFilters } from "./email.schema";
 import { emailStatusNote, verdictOps } from "./verdict";
 
-interface MessageQuery {
-  reviewStatus?: string;
-  classification?: string;
-  since?: string;
-  domainHint?: string;
-  verificationDomain?: string;
-}
+type MessageQuery = z.infer<typeof messageFilters>;
 
 @singleton()
 export class EmailService {
@@ -81,11 +75,7 @@ export class EmailService {
       this.prisma.emailMessage.count({ where }),
     ]);
 
-    return paginate(
-      rows.map((row) => serializeMessage(row)),
-      query,
-      total,
-    );
+    return paginate(rows, query, total);
   }
 
   async getMessage(userId: string, id: string) {
@@ -101,7 +91,7 @@ export class EmailService {
       "Message",
     );
 
-    return serializeMessage(row);
+    return row;
   }
 
   /**
@@ -177,14 +167,12 @@ export class EmailService {
         ])
       : [await update];
 
-    const message = serializeMessage(row);
-
     publish(inboxChannel, { userId }, { type: "message.scanned", id });
     if (autoRejection) {
       publish(inboxChannel, { userId }, { type: "message.reviewed", id, status: "approved" });
     }
 
-    return message;
+    return row;
   }
 
   async denyMessage(userId: string, id: string) {
@@ -217,8 +205,8 @@ export class EmailService {
 
     const inferred: ApplicationStatus | undefined =
       body.toStatus ??
-      (message.appliedStatus as ApplicationStatus | null) ??
-      CLASSIFICATION_TO_STATUS[message.classification as Classification];
+      message.appliedStatus ??
+      (message.classification ? CLASSIFICATION_TO_STATUS[message.classification] : undefined);
 
     if (!inferred) {
       throw new HttpError(ErrorCodes.UNPROCESSABLE, "No target status available", 422);

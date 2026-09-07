@@ -39,11 +39,7 @@ export function toPilotState(
 }
 
 export function toPilotQuestion(row: PilotQuestionModel): PilotQuestion {
-  return {
-    ...row,
-    kind: row.kind === "two_factor" ? "2fa" : row.kind,
-    options: z.array(z.string()).parse(row.options),
-  };
+  return { ...row, options: z.array(z.string()).parse(row.options) };
 }
 
 export function toPromotion(row: PromotionPostModel): Promotion {

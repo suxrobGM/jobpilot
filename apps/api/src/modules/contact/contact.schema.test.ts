@@ -1,4 +1,3 @@
-import { toContactRow } from "./contact.mapper";
 import { contactSchema } from "./contact.schema";
 import { describe, expect, it } from "bun:test";
 
@@ -22,13 +21,9 @@ const row = {
   updatedAt: new Date(),
 };
 
-describe("toContactRow", () => {
-  it("translates the Prisma enum name to the wire value", () => {
-    expect(toContactRow(row).discoverySource).toBe("company-site");
-  });
-
-  // Without the mapper one company_site row fails response validation for the whole page.
-  it("produces a row the response schema accepts", () => {
-    expect(contactSchema.safeParse(toContactRow(row)).success).toBe(true);
+describe("contactSchema", () => {
+  // A rejected row fails response validation for the whole page, not just itself.
+  it("accepts a Prisma row verbatim", () => {
+    expect(contactSchema.safeParse(row).success).toBe(true);
   });
 });

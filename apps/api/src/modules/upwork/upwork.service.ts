@@ -7,8 +7,10 @@ import type {
   UpworkClient,
   UpworkInboxKind,
   UpworkInboxStatus,
+  UpworkProfileStatus,
   UpworkProposalInput,
   UpworkProposalPatch,
+  UpworkProposalStatus,
   UpworkQualityResult,
 } from "@jobpilot/contracts/upwork";
 import { singleton } from "tsyringe";
@@ -29,7 +31,7 @@ interface UpworkProfileFields {
   suggestedHourlyRate?: string | null;
   suggestedPortfolio?: string;
   suggestedSkills?: string;
-  status?: string;
+  status?: UpworkProfileStatus;
   appliedAt?: Date | null;
 }
 
@@ -188,7 +190,7 @@ export class UpworkService {
 
   async listProposals(
     userId: string,
-    query: PaginationQuery & { status?: string; search?: string },
+    query: PaginationQuery & { status?: UpworkProposalStatus; search?: string },
   ) {
     const { status, search } = query;
 

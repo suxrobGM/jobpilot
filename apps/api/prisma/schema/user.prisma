@@ -1,3 +1,10 @@
+enum Availability {
+  open
+  not_looking
+
+  @@map("availability")
+}
+
 // SUPER_ADMIN is a singleton granted only from SUPER_ADMIN_EMAIL (seed / register); no API route assigns it.
 enum UserRole {
   SUPER_ADMIN
@@ -20,7 +27,7 @@ model User {
   wrappedDek    String?  @map("wrapped_dek")
 
   username     String  @unique @map("username")
-  availability String? @map("availability") // "open" | "not_looking"; null = unset
+  availability Availability? @map("availability")
   // Opt-in, not opt-out: each stays off the public portfolio until the owner turns it on.
   showResume   Boolean @default(false) @map("show_resume")
   showWebsite  Boolean @default(false) @map("show_website")

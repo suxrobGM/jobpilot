@@ -1,4 +1,4 @@
-import { oauthClientUpsertSchema } from "@jobpilot/contracts/email";
+import { emailProviderSchema, oauthClientUpsertSchema } from "@jobpilot/contracts/email";
 import { Elysia } from "elysia";
 import { oauthStateCookies } from "@/common/auth";
 import { container } from "@/common/di/container";
@@ -23,7 +23,6 @@ export const emailOAuthController = new Elysia({
   detail: { tags: ["Email"] },
 })
   .use(authGuard)
-  // --- OAuth client config (bring-your-own Google app) -----------------------
   .get("/oauth/client", ({ user }) => account.getOAuthClient(user.id), {
     response: oauthClientStatusSchema,
     detail: {
@@ -49,7 +48,6 @@ export const emailOAuthController = new Elysia({
         "Removes the profile's Google OAuth client. Returns 409 while a mailbox is still connected - disconnect it first.",
     },
   })
-  // --- Connect flow ----------------------------------------------------------
   .get(
     "/oauth/start",
     async ({ user, query, cookie, redirect }) => {
@@ -87,7 +85,8 @@ export const emailOAuthController = new Elysia({
         return fail("Missing code or state");
       }
 
-      const providerName = stateCookies.companion() ?? "gmail";
+      // The provider round-trips through a cookie, so it comes back as a raw string.
+      const providerName = emailProviderSchema.catch("gmail").parse(stateCookies.companion());
       if (stateCookies.state() !== query.state) {
         return fail("OAuth state mismatch");
       }

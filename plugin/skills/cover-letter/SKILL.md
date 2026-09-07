@@ -83,7 +83,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
         '{content:$c, jobUrl:($u|select(.!="")), jobTitle:($t|select(.!="")), company:($co|select(.!="")), source:$s}')"
 ```
 
-`jobUrl`/`jobTitle`/`company` come from the JD argument (`$DIGEST` fields when present). `source` is the invoking context - `apply`, `auto-apply`, or `manual` (default `manual` when the caller didn't specify).
+`jobUrl`/`jobTitle`/`company` come from the JD argument (`$DIGEST` fields when present). `source` is the invoking context - `apply`, `auto_apply`, or `manual` (default `manual` when the caller didn't specify).
 
 ## Rules
 

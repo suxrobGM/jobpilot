@@ -50,7 +50,7 @@ CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JO
   -H 'content-type: application/json' \
   -d "$(jq -n --arg q "<query>" --arg board "<domain>" --arg rid "$RESUME_ID" \
     --argjson minScore <n> \
-    '{query:$q, source:"auto-apply", config:{board:$board, resumeId:$rid, minScore:$minScore}}')")
+    '{query:$q, source:"auto_apply", config:{board:$board, resumeId:$rid, minScore:$minScore}}')")
 CAMPAIGN_ID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 ```
 

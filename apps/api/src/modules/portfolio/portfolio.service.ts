@@ -1,5 +1,4 @@
 import { resumeDataSchema } from "@jobpilot/contracts/resume";
-import { parseAvailability } from "@jobpilot/contracts/user";
 import { singleton } from "tsyringe";
 import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
@@ -124,7 +123,7 @@ export class PortfolioService {
       displayName,
       headline: content?.basics.headline?.trim() || null,
       location,
-      availability: parseAvailability(user.availability),
+      availability: user.availability,
       summary: content?.summary?.trim() || null,
       links: {
         website: user.showWebsite ? user.website || content?.basics.website || null : null,
@@ -219,7 +218,7 @@ export class PortfolioService {
         username: user.username,
         displayName: `${user.firstName} ${user.lastName}`.trim() || user.username,
         headline: user.primaryResumeId ? (headlineById.get(user.primaryResumeId) ?? null) : null,
-        availability: parseAvailability(user.availability),
+        availability: user.availability,
         applications: r.applications,
         messagesSent: r.messagesSent,
         activityCount: activity(r),

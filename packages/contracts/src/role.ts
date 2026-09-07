@@ -1,7 +1,8 @@
 import { z } from "zod/v4";
 
 /** Every role the system knows. SUPER_ADMIN is a seed-granted singleton. */
-export const roleSchema = z.enum(["SUPER_ADMIN", "ADMIN", "USER"]);
+export const ROLES = ["SUPER_ADMIN", "ADMIN", "USER"] as const;
+export const roleSchema = z.enum(ROLES);
 
 /** The subset an API caller may assign - what makes SUPER_ADMIN unreachable over HTTP. */
 export const assignableRoleSchema = z.enum(["ADMIN", "USER"]);

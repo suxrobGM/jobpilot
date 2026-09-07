@@ -15,14 +15,14 @@ const jobDigest = z
   })
   .transform((value) => value.trim() || undefined);
 
-const CAMPAIGN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
+export const CAMPAIGN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
 export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
 
-const CAMPAIGN_SOURCES = ["search", "auto-apply", "apply", "networking"] as const;
+export const CAMPAIGN_SOURCES = ["search", "auto_apply", "apply", "networking"] as const;
 export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 
 /** Who acted: the web user, the terminal agent on their behalf, or the autonomous pilot. */
-const CAMPAIGN_ACTORS = ["user", "agent", "pilot"] as const;
+export const CAMPAIGN_ACTORS = ["user", "agent", "pilot"] as const;
 export const campaignActorSchema = z.enum(CAMPAIGN_ACTORS);
 
 export const CAMPAIGN_JOB_STATUSES = [
@@ -80,7 +80,7 @@ export const campaignSummarySchema = z.discriminatedUnion("kind", [
 ]);
 
 /** Composer-driven sources require a user-selected base resume; `apply` tailors per job. */
-const RESUME_REQUIRED_SOURCES: readonly CampaignSource[] = ["search", "auto-apply", "networking"];
+const RESUME_REQUIRED_SOURCES: readonly CampaignSource[] = ["search", "auto_apply", "networking"];
 
 /** Returns whether a configuration satisfies its source's required fields. */
 export function campaignConfigSupportsSource(
@@ -108,7 +108,7 @@ export const createCampaignSchema = z
     urls: applyUrlsSchema.optional(),
   })
   .refine((v) => campaignConfigSupportsSource(v.source, v.config ?? {}), {
-    message: "config.resumeId is required for search, auto-apply, and networking campaigns.",
+    message: "config.resumeId is required for search, auto_apply, and networking campaigns.",
     path: ["config", "resumeId"],
   })
   .refine((v) => !v.urls || v.source === "apply", {

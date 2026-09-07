@@ -1,9 +1,10 @@
 import { z } from "zod/v4";
 import { agendaClaimFieldsSchema } from "./agenda";
 
-/** Release outcomes an agent reports; claims also close as "expired" server-side. */
-const PILOT_CLAIM_OUTCOMES = ["done", "failed", "abandoned"] as const;
-const pilotClaimOutcomeSchema = z.enum(PILOT_CLAIM_OUTCOMES);
+export const PILOT_CLAIM_OUTCOMES = ["done", "failed", "abandoned", "expired"] as const;
+
+/** The subset an agent may report on release; "expired" is only ever set server-side. */
+const releasableOutcomeSchema = z.enum(["done", "failed", "abandoned"]);
 
 export const createPilotClaimSchema = z.object({
   agendaVersion: z.uuid(),
@@ -11,7 +12,7 @@ export const createPilotClaimSchema = z.object({
 });
 
 export const releasePilotClaimSchema = z.object({
-  outcome: pilotClaimOutcomeSchema,
+  outcome: releasableOutcomeSchema,
   note: z.string().optional(),
 });
 
@@ -22,7 +23,7 @@ const pilotClaimBaseSchema = z.object({
   heartbeatAt: z.date().nullable(),
   expiresAt: z.date(),
   releasedAt: z.date().nullable(),
-  outcome: z.enum([...PILOT_CLAIM_OUTCOMES, "expired"]).nullable(),
+  outcome: z.enum(PILOT_CLAIM_OUTCOMES).nullable(),
 });
 
 export const pilotClaimSchema = z.intersection(pilotClaimBaseSchema, agendaClaimFieldsSchema);

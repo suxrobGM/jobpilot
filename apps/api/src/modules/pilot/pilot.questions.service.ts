@@ -16,7 +16,7 @@ const TWO_FA_TTL_MS = 5 * 60 * 1000;
 
 function questionExpiry(body: CreatePilotQuestionInput): Date | null {
   if (body.expiresAt) return new Date(body.expiresAt);
-  if (body.kind === "2fa") return new Date(Date.now() + TWO_FA_TTL_MS);
+  if (body.kind === "two_factor") return new Date(Date.now() + TWO_FA_TTL_MS);
   return null;
 }
 
@@ -32,7 +32,7 @@ export class PilotQuestionService {
     const row = await this.prisma.pilotQuestion.create({
       data: {
         userId,
-        kind: body.kind === "2fa" ? "two_factor" : body.kind,
+        kind: body.kind,
         subjectType: body.subjectType ?? null,
         subjectId: body.subjectId ?? null,
         prompt: body.prompt,

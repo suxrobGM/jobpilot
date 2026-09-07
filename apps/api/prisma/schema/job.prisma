@@ -7,6 +7,8 @@ enum CampaignJobStatus {
   failed
   skipped
   needs_user
+
+  @@map("campaign_job_status")
 }
 
 model Job {

@@ -112,12 +112,12 @@ Apply to one job. If `digest` is absent, fetch it from `GET /api/campaigns/$CAMP
 { "outcome": "applied", "appliedAt": "...", "matchScore": 0, "resumeId": "...", "resumeVariantId": "..." }
 { "outcome": "failed",  "failReason": "...", "retryNotes": "..." }
 { "outcome": "skipped", "skipReason": "..." }
-{ "outcome": "needs_user", "category": "verification|payment|salary|review", "context": "...", "kind": "question|choice|2fa|approval", "question": "...", "options": ["..."] }
+{ "outcome": "needs_user", "category": "verification|payment|salary|review", "context": "...", "kind": "question|choice|two_factor|approval", "question": "...", "options": ["..."] }
 ```
 
 `appliedAt` = `date -u +%Y-%m-%dT%H:%M:%SZ`. `resumeId`/`resumeVariantId` come from step 5's `RESUME_USED` line and are what the orchestrator records as the resume submitted; `resumeVariantId` is null only when the base PDF went to the form untailored. You never POST `/result`; the orchestrator records terminal outcomes.
 
-`needs_user.category` is the routing discriminator. `context` is required only for pre-submit review and carries the field summary. `question` is one sentence the user can answer from a phone. `kind` is `2fa` for verification codes, `approval` for pre-submit review, `choice` when you have concrete options, else `question`. `options` (optional) lists short answer strings (e.g. salary ranges, yes/no) - each must be directly usable as the answer, never "see above".
+`needs_user.category` is the routing discriminator. `context` is required only for pre-submit review and carries the field summary. `question` is one sentence the user can answer from a phone. `kind` is `two_factor` for verification codes, `approval` for pre-submit review, `choice` when you have concrete options, else `question`. `options` (optional) lists short answer strings (e.g. salary ranges, yes/no) - each must be directly usable as the answer, never "see above".
 
 ## Rules
 

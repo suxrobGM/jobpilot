@@ -1,3 +1,50 @@
+enum UpworkProposalStatus {
+  draft
+  submitted
+  closed
+
+  @@map("upwork_proposal_status")
+}
+
+enum UpworkProposalOutcome {
+  hired
+  declined
+  no_response
+
+  @@map("upwork_proposal_outcome")
+}
+
+enum UpworkProposalSource {
+  manual
+  search
+
+  @@map("upwork_proposal_source")
+}
+
+enum UpworkProfileStatus {
+  empty
+  draft
+  approved
+  applied
+
+  @@map("upwork_profile_status")
+}
+
+enum UpworkInboxKind {
+  invitation
+  offer
+  message
+
+  @@map("upwork_inbox_kind")
+}
+
+enum UpworkInboxStatus {
+  unread
+  archived
+
+  @@map("upwork_inbox_status")
+}
+
 model UpworkProposal {
   id        String  @id @default(uuid())
   userId    String  @map("user_id")
@@ -11,13 +58,13 @@ model UpworkProposal {
   proposalText     String @default("") @map("proposal_text")
   screeningAnswers String @default("[]") @map("screening_answers") // JSON: { question: string, answer: string }[]
 
-  status  String  @default("draft") // draft | submitted | closed
-  outcome String? // when closed: hired | declined | no_response
+  status  UpworkProposalStatus  @default(draft)
+  outcome UpworkProposalOutcome?
   notes   String?
 
   // Set when the draft came from an Upwork search recommendation rather than a
   // pasted JD, which is what `source` records. Loose columns, not foreign keys.
-  source     String  @default("manual") // manual | search
+  source     UpworkProposalSource @default(manual)
   campaignId String? @map("campaign_id")
   jobKey     String? @map("job_key")
 
@@ -31,10 +78,9 @@ model UpworkProposal {
   @@map("upwork_proposals")
 }
 
-// One Upwork profile-enhancement record per user; `status` gates the live write
-// (only `approved` may be applied). Portfolio columns are JSON arrays of
-// { title, description, url?, skills?: string[] }, skills columns JSON string[].
-// The MCP has no write tool for portfolio or hourly rate, so those stay advisory.
+// Only an `approved` row may be written back to Upwork. Portfolio columns hold JSON
+// { title, description, url?, skills?: string[] }[]; the MCP cannot write portfolio or
+// hourly rate, so those two stay advisory.
 model UpworkProfile {
   id        String  @id @default(uuid())
   userId    String  @unique @map("user_id")
@@ -52,7 +98,7 @@ model UpworkProfile {
   suggestedPortfolio  String  @default("[]") @map("suggested_portfolio")
   suggestedSkills     String  @default("[]") @map("suggested_skills")
 
-  status    String    @default("empty") // empty | draft | approved | applied
+  status    UpworkProfileStatus @default(empty)
   updatedAt DateTime  @updatedAt @map("updated_at")
   appliedAt DateTime? @map("applied_at")
 
@@ -82,13 +128,13 @@ model UpworkInboxItem {
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   upworkId String  @map("upwork_id")
-  kind     String  // invitation | offer | message
+  kind     UpworkInboxKind
   title    String
   clientName String? @map("client_name")
   jobUrl     String? @map("job_url")
   body       String?
 
-  status     String   @default("unread") // unread | archived
+  status     UpworkInboxStatus @default(unread)
   receivedAt DateTime @map("received_at")
   raw        String   @default("{}")
 

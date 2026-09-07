@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { type ApplicationStatus, STATUSES } from "@jobpilot/contracts/application";
+import { APPLICATION_STATUSES, type ApplicationStatus } from "@jobpilot/contracts/application";
 import { Button, MenuItem, TextField } from "@mui/material";
 import { STATUS_LABEL } from "@/components/ui/display";
 import { FormDialogShell } from "@/components/ui/form";
@@ -42,7 +42,7 @@ export function StatusTransitionDialog(props: StatusTransitionDialogProps): Reac
         value={toStatus}
         onChange={(e) => setToStatus(e.target.value as ApplicationStatus)}
       >
-        {STATUSES.map((s) => (
+        {APPLICATION_STATUSES.map((s) => (
           <MenuItem key={s} value={s}>
             {STATUS_LABEL[s]}
           </MenuItem>

@@ -4,7 +4,7 @@ import { cleanReplacementChars } from "./utils/text";
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-const NETWORKING_CHANNELS = ["email", "linkedin"] as const;
+export const NETWORKING_CHANNELS = ["email", "linkedin"] as const;
 export const networkingChannelSchema = z.enum(NETWORKING_CHANNELS);
 
 const LINKEDIN_TIERS = ["free", "premium"] as const;
@@ -27,10 +27,10 @@ export const networkingConfigSchema = z.object({
   dailyCap: z.number().int().min(1).max(100).optional(),
 });
 
-const LINKEDIN_KINDS = ["inmail", "connect_note", "dm"] as const;
+export const LINKEDIN_KINDS = ["inmail", "connect_note", "dm"] as const;
 const linkedinKindSchema = z.enum(LINKEDIN_KINDS);
 
-const NETWORKING_MESSAGE_STATUSES = [
+export const NETWORKING_MESSAGE_STATUSES = [
   "draft",
   "approved",
   "sent",
@@ -56,13 +56,19 @@ export function isTerminalNetworkingStatus(status: string): boolean {
   return (NETWORKING_MESSAGE_TERMINAL_STATUSES as readonly string[]).includes(status);
 }
 
-const CONTACT_LINKEDIN_CONNECTIONS = ["none", "pending", "connected"] as const;
+export const CONTACT_LINKEDIN_CONNECTIONS = ["none", "pending", "connected"] as const;
 export const contactLinkedinConnectionSchema = z.enum(CONTACT_LINKEDIN_CONNECTIONS);
 
-const CONTACT_EMAIL_SOURCES = ["guessed", "verified", "provided"] as const;
+export const CONTACT_EMAIL_SOURCES = ["guessed", "verified", "provided"] as const;
 export const contactEmailSourceSchema = z.enum(CONTACT_EMAIL_SOURCES);
 
-const CONTACT_DISCOVERY_SOURCES = ["google", "company-site", "web", "linkedin", "manual"] as const;
+export const CONTACT_DISCOVERY_SOURCES = [
+  "google",
+  "company_site",
+  "web",
+  "linkedin",
+  "manual",
+] as const;
 export const contactDiscoverySourceSchema = z.enum(CONTACT_DISCOVERY_SOURCES);
 
 const createContactSchema = z.object({
@@ -149,7 +155,6 @@ export type NetworkingChannel = z.infer<typeof networkingChannelSchema>;
 export type NetworkingAutonomy = z.infer<typeof networkingAutonomySchema>;
 export type NetworkingMode = z.infer<typeof networkingModeSchema>;
 export type NetworkingMessageStatus = z.infer<typeof networkingMessageStatusSchema>;
-export type ContactDiscoverySource = z.infer<typeof contactDiscoverySourceSchema>;
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type AddCampaignNetworkingInput = z.infer<typeof addCampaignNetworkingSchema>;
 export type PatchNetworkingMessageInput = z.infer<typeof patchNetworkingMessageSchema>;

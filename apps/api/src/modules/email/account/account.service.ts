@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { OAuthClientUpsertInput } from "@jobpilot/contracts/email";
+import type { EmailProvider, OAuthClientUpsertInput } from "@jobpilot/contracts/email";
 import type { SendEmailInput } from "@jobpilot/contracts/networking";
 import { singleton } from "tsyringe";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
@@ -83,7 +83,7 @@ export class EmailAccountService {
 
   async buildAuthorizeUrl(
     userId: string,
-    providerName: string,
+    providerName: EmailProvider,
   ): Promise<{ authorizeUrl: string; state: string }> {
     if (providerName !== "gmail") {
       throw badRequest(`Unsupported provider: ${providerName}`);
@@ -106,7 +106,7 @@ export class EmailAccountService {
   }
 
   async completeEmailOAuth(input: {
-    providerName: string;
+    providerName: EmailProvider;
     code: string;
     userId: string;
   }): Promise<{ email: string }> {

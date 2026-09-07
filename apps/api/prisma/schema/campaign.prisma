@@ -1,8 +1,10 @@
 enum CampaignSource {
   search
-  auto_apply @map("auto-apply")
+  auto_apply
   apply
   networking
+
+  @@map("campaign_source")
 }
 
 enum CampaignStatus {
@@ -10,6 +12,8 @@ enum CampaignStatus {
   paused
   completed
   failed
+
+  @@map("campaign_status")
 }
 
 // Who performed an action: the user in the web UI, the terminal agent on their behalf,
@@ -18,6 +22,8 @@ enum CampaignActor {
   user
   agent
   pilot
+
+  @@map("campaign_actor")
 }
 
 model Campaign {

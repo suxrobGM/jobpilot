@@ -16,7 +16,7 @@ import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "success"> = {
   manual: "default",
   apply: "info",
-  "auto-apply": "success",
+  auto_apply: "success",
 };
 
 export function CoverLettersTable(): ReactElement {

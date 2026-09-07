@@ -181,14 +181,10 @@ export const usernameSchema = z
     "Use letters, numbers, and hyphens (no leading/trailing hyphen)",
   );
 
-export const availabilitySchema = z.enum(["open", "not_looking"]);
+export const AVAILABILITY = ["open", "not_looking"] as const;
+export const availabilitySchema = z.enum(AVAILABILITY);
 
 export type Availability = z.infer<typeof availabilitySchema>;
-
-/** Coerce a raw nullable DB string to the availability enum, or null. The one place that guards it. */
-export function parseAvailability(value: string | null): Availability | null {
-  return value === null ? null : (availabilitySchema.safeParse(value).data ?? null);
-}
 
 /** What the owner has chosen to publish; every flag is opt-in. */
 export const portfolioVisibilitySchema = z.object({

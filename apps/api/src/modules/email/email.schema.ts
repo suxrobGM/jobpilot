@@ -1,12 +1,17 @@
 import { statusSchema } from "@jobpilot/contracts/application";
-import { classificationSchema, reviewStatusSchema } from "@jobpilot/contracts/email";
+import {
+  classificationSchema,
+  emailProviderSchema,
+  reviewStatusSchema,
+} from "@jobpilot/contracts/email";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
 /** What narrows a set of inbox messages, whether the caller wants the rows or just how many. */
 export const messageFilters = z.object({
-  reviewStatus: z.string().optional(),
-  classification: z.string().optional(),
+  reviewStatus: reviewStatusSchema.optional(),
+  // The literal "null" asks for messages the scan has not classified yet.
+  classification: z.union([classificationSchema, z.literal("null")]).optional(),
   since: z.string().optional(),
   domainHint: z.string().optional(),
   verificationDomain: z.string().optional(),
@@ -16,7 +21,7 @@ export const messagesQuery = paginationQuerySchema.extend(messageFilters.shape);
 
 export const messageCountSchema = z.object({ count: z.number().int().min(0) });
 
-export const startQuery = z.object({ provider: z.string().optional() });
+export const startQuery = z.object({ provider: emailProviderSchema.optional() });
 
 export const callbackQuery = z.object({
   code: z.string().optional(),
@@ -66,7 +71,7 @@ const matchedAppSchema = z
   })
   .nullable();
 
-/** A serialized inbox message (`serializeMessage` - Date fields are ISO strings). */
+/** An inbox message row. */
 export const emailMessageSchema = z.object({
   id: z.uuid(),
   accountId: z.uuid(),

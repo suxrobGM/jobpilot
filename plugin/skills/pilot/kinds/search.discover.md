@@ -6,7 +6,7 @@ Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarg
 CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg q "<query>" --arg rid "<resumeId>" --argjson minScore <n> --arg board "<board>" --arg sid "$SEARCH_ID" \
-    '{query:$q, source:"auto-apply", createdBy:"pilot", pilotSearchId:$sid, config:{resumeId:$rid, minScore:$minScore, board:$board}}')")
+    '{query:$q, source:"auto_apply", createdBy:"pilot", pilotSearchId:$sid, config:{resumeId:$rid, minScore:$minScore, board:$board}}')")
 CID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 ```
 

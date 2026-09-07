@@ -1,3 +1,33 @@
+// Superset of CampaignSource: a row created from a campaign job carries that
+// campaign's source, a single apply carries how the agent was invoked.
+enum ApplicationSource {
+  apply
+  auto_apply
+  manual
+  search
+  networking
+
+  @@map("application_source")
+}
+
+// Activity-timeline event kinds on an application.
+enum ApplicationEventKind {
+  status_change
+  note
+  email
+
+  @@map("application_event_kind")
+}
+
+// What originated an activity event.
+enum ApplicationEventSource {
+  manual
+  email
+  campaign
+
+  @@map("application_event_source")
+}
+
 enum ApplicationStatus {
   applied
   screening
@@ -18,7 +48,7 @@ model Application {
   company   String
   location  String?
   board     String?
-  source    String
+  source    ApplicationSource
   appliedAt DateTime @default(now()) @map("applied_at")
 
   status     ApplicationStatus @default(applied)
@@ -60,11 +90,11 @@ model ApplicationEvent {
   id            String             @id @default(uuid())
   applicationId String             @map("application_id")
   application   Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  kind          String // "status_change" | "note" | "email"
+  kind          ApplicationEventKind
   fromStatus    ApplicationStatus? @map("from_status")
   toStatus      ApplicationStatus? @map("to_status")
   note          String?
-  source        String? // "manual" | "email" | "campaign"
+  source        ApplicationEventSource?
   createdAt     DateTime           @default(now()) @map("created_at")
 
   @@index([applicationId, createdAt])

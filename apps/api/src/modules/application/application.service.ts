@@ -1,11 +1,9 @@
 import type {
-  ApplicationEventKind,
-  ApplicationEventSource,
   ApplicationSource,
   ApplicationStatus,
   StatusTransitionInput,
 } from "@jobpilot/contracts/application";
-import { SINGLE_APPLY_CAMPAIGN, STATUSES } from "@jobpilot/contracts/application";
+import { APPLICATION_STATUSES, SINGLE_APPLY_CAMPAIGN } from "@jobpilot/contracts/application";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
@@ -16,7 +14,7 @@ import { statusChangeOps } from "./status-change";
 export interface AppliedListFilters {
   status?: ApplicationStatus;
   board?: string;
-  source?: string;
+  source?: ApplicationSource;
   search?: string;
   campaignId?: string;
 }
@@ -37,11 +35,7 @@ export class ApplicationService {
       this.prisma.application.count({ where }),
     ]);
 
-    return paginate(
-      rows.map((r) => ({ ...r, source: r.source as ApplicationSource })),
-      query,
-      total,
-    );
+    return paginate(rows, query, total);
   }
 
   /**
@@ -57,13 +51,13 @@ export class ApplicationService {
     });
 
     // Every status seeded to 0, so a funnel tile for an empty bucket still renders a number.
-    const byStatus = Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<
+    const byStatus = Object.fromEntries(APPLICATION_STATUSES.map((s) => [s, 0])) as Record<
       ApplicationStatus,
       number
     >;
     let total = 0;
     for (const row of rows) {
-      byStatus[row.status as ApplicationStatus] = row._count._all;
+      byStatus[row.status] = row._count._all;
       total += row._count._all;
     }
     return { total, byStatus };
@@ -142,18 +136,7 @@ export class ApplicationService {
       "Application",
     );
 
-    return {
-      ...row,
-      source: row.source as ApplicationSource,
-      appliedAt: row.appliedAt,
-      rejectedAt: row.rejectedAt,
-      events: row.events.map((e) => ({
-        ...e,
-        kind: e.kind as ApplicationEventKind,
-        source: e.source as ApplicationEventSource | null,
-      })),
-      job: await this.findCampaignJob(row.campaignId, row.url),
-    };
+    return { ...row, job: await this.findCampaignJob(row.campaignId, row.url) };
   }
 
   /** No FK exists: the job is matched by url within the campaign, so a single-apply row has none. */
@@ -174,11 +157,7 @@ export class ApplicationService {
     const event = await this.prisma.applicationEvent.create({
       data: { applicationId: id, kind: input.kind, note: input.notes },
     });
-    return {
-      ...event,
-      kind: event.kind as ApplicationEventKind,
-      source: event.source as ApplicationEventSource | null,
-    };
+    return event;
   }
 
   async remove(userId: string, id: string) {

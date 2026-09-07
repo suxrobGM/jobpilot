@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { csvArray, cursorPageSchema, cursorQuerySchema } from "../pagination";
 
-const PILOT_JOURNAL_KINDS = [
+export const PILOT_JOURNAL_KINDS = [
   "cycle",
   "action",
   "observation",

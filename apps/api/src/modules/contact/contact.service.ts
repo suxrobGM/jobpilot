@@ -1,7 +1,6 @@
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { PrismaClient } from "@/generated/prisma/client";
-import { toContactRow } from "./contact.mapper";
 
 @singleton()
 export class ContactService {
@@ -14,6 +13,6 @@ export class ContactService {
       this.prisma.contact.findMany({ where, orderBy: { createdAt: "desc" }, ...pageSlice(query) }),
       this.prisma.contact.count({ where }),
     ]);
-    return paginate(rows.map(toContactRow), query, total);
+    return paginate(rows, query, total);
   }
 }

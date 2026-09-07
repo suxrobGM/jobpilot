@@ -117,7 +117,7 @@ describe("PilotQuestionService", () => {
   it("defaults a 2fa question to expire in ~5 minutes when none is given", async () => {
     const { svc, rec } = service();
     const before = Date.now();
-    await svc.createQuestion("p1", { kind: "2fa", prompt: "Enter the code", options: [] });
+    await svc.createQuestion("p1", { kind: "two_factor", prompt: "Enter the code", options: [] });
 
     const expiresAt = rec.questionCreate?.expiresAt as Date;
     expect(expiresAt).toBeInstanceOf(Date);

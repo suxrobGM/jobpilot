@@ -75,7 +75,7 @@ For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-
    `needs_user` per `../_shared/campaign-flow.md` (on `salary`, ask once then re-delegate).
 4. **Limit** - if `MAX_APPS` set and `summary.applied >= MAX_APPS`, POST `/result` `outcome:"skipped"`, `skipReason:"Max applications limit reached"` for each remaining `approved` job and end the loop.
 
-The `/result` endpoint preserves the campaign's original `source` (`"apply"` vs `"auto-apply"`) on the created Application row automatically - no separate source-passthrough needed.
+The `/result` endpoint preserves the campaign's original `source` (`"apply"` vs `"auto_apply"`) on the created Application row automatically - no separate source-passthrough needed.
 
 ### Between jobs: honor user Stop
 

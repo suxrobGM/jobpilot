@@ -1,14 +1,5 @@
-import type {
-  PortfolioProject,
-  ScreeningAnswer,
-  UpworkInboxKind,
-  UpworkInboxStatus,
-  UpworkProfileStatus,
-  UpworkProposalOutcome,
-  UpworkProposalSource,
-  UpworkProposalStatus,
-} from "@jobpilot/contracts/upwork";
-import type { UpworkInboxItem, UpworkProfile } from "@/generated/prisma/client";
+import type { PortfolioProject, ScreeningAnswer } from "@jobpilot/contracts/upwork";
+import type { UpworkInboxItem, UpworkProfile, UpworkProposal } from "@/generated/prisma/client";
 
 function parseArray<T>(json: string): T[] {
   try {
@@ -32,33 +23,17 @@ export function toUpworkProfileDto(row: UpworkProfile) {
     suggestedHourlyRate: row.suggestedHourlyRate,
     suggestedPortfolio: parseArray<PortfolioProject>(row.suggestedPortfolio),
     suggestedSkills: parseArray<string>(row.suggestedSkills),
-    status: row.status as UpworkProfileStatus,
+    status: row.status,
     updatedAt: row.updatedAt,
     appliedAt: row.appliedAt,
   };
 }
 
 /** Decode a proposal row's JSON-encoded screening answers for the API shape. */
-export function decodeUpworkProposal<
-  T extends {
-    screeningAnswers: string;
-    status: string;
-    outcome: string | null;
-    source: string;
-    createdAt: Date;
-    updatedAt: Date;
-    submittedAt: Date | null;
-  },
->(proposal: T) {
+export function decodeUpworkProposal(proposal: UpworkProposal) {
   return {
     ...proposal,
     screeningAnswers: JSON.parse(proposal.screeningAnswers) as ScreeningAnswer[],
-    status: proposal.status as UpworkProposalStatus,
-    outcome: proposal.outcome as UpworkProposalOutcome | null,
-    source: proposal.source as UpworkProposalSource,
-    createdAt: proposal.createdAt,
-    updatedAt: proposal.updatedAt,
-    submittedAt: proposal.submittedAt,
   };
 }
 
@@ -66,12 +41,12 @@ export function toUpworkInboxItemDto(row: Omit<UpworkInboxItem, "raw">) {
   return {
     id: row.id,
     upworkId: row.upworkId,
-    kind: row.kind as UpworkInboxKind,
+    kind: row.kind,
     title: row.title,
     clientName: row.clientName,
     jobUrl: row.jobUrl,
     body: row.body,
-    status: row.status as UpworkInboxStatus,
+    status: row.status,
     receivedAt: row.receivedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

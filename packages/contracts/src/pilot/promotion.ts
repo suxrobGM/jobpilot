@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 import { paginatedSchema, paginationQuerySchema } from "../pagination";
 import { webLinkSchema } from "./web-link";
 
-const PROMOTION_STATUSES = [
+export const PROMOTION_STATUSES = [
   "draft",
   "approved",
   "declined",

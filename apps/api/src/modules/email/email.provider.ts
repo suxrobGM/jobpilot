@@ -27,7 +27,7 @@ export interface TokenSet {
 
 /**
  * Provider-neutral shape that JobPilot stores in the `EmailMessage` table.
- * Each `EmailProvider.syncMessages()` implementation is responsible for
+ * Each `MailboxProvider.syncMessages()` implementation is responsible for
  * decoding its raw message format into this shape.
  */
 export interface NormalizedMessage {
@@ -99,7 +99,7 @@ export interface SyncResult {
  * `GmailProvider` exists; IMAP and Outlook providers can slot in here
  * without changes to routes or schema.
  */
-export interface EmailProvider {
+export interface MailboxProvider {
   /**
    * Build the consent-screen URL the user is redirected to. `state` is an
    * opaque CSRF token the caller stores in a cookie and verifies on

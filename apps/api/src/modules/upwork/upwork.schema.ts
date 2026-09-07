@@ -12,7 +12,7 @@ import {
 import { z } from "zod/v4";
 
 export const proposalsQuery = paginationQuerySchema.extend({
-  status: z.string().trim().min(1).optional(),
+  status: z.enum(UPWORK_PROPOSAL_STATUSES).optional(),
   search: z.string().trim().min(1).optional(),
 });
 

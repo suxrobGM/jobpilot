@@ -1,12 +1,16 @@
 enum NetworkingChannel {
   email
   linkedin
+
+  @@map("networking_channel")
 }
 
 enum LinkedinMessageKind {
   inmail
   connect_note
   dm
+
+  @@map("linkedin_message_kind")
 }
 
 enum NetworkingMessageStatus {
@@ -17,26 +21,34 @@ enum NetworkingMessageStatus {
   bounced
   failed
   skipped
+
+  @@map("networking_message_status")
 }
 
 enum ContactEmailSource {
   guessed
   verified
   provided
+
+  @@map("contact_email_source")
 }
 
 enum ContactLinkedinConnection {
   none
   pending
   connected
+
+  @@map("contact_linkedin_connection")
 }
 
 enum ContactDiscoverySource {
   google
-  company_site @map("company-site")
+  company_site
   web
   linkedin
   manual
+
+  @@map("contact_discovery_source")
 }
 
 model Contact {

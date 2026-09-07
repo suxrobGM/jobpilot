@@ -2,6 +2,7 @@ import {
   applicationEventKindSchema,
   applicationEventSourceSchema,
   applicationFilterSchema,
+  applicationSourceSchema,
   statusSchema,
 } from "@jobpilot/contracts/application";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
@@ -39,9 +40,7 @@ const applicationSchema = z.object({
   company: z.string(),
   location: z.string().nullable(),
   board: z.string().nullable(),
-  // Free-text column: stores ApplicationSource values *and* campaign sources
-  // ("search"/"networking") written when an Application is created from a campaign job.
-  source: z.string(),
+  source: applicationSourceSchema,
   appliedAt: z.date(),
   status: statusSchema,
   rejectedAt: z.date().nullable(),

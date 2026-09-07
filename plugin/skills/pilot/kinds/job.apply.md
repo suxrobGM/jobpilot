@@ -17,4 +17,4 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -H 'content-type: application/json' -d '{"status":"needs_user"}'
 ```
 
-For `2fa`: the server auto-expires the question in ~5 minutes and the parked job is skipped cleanly - do nothing special, keep moving.
+For `two_factor`: the server auto-expires the question in ~5 minutes and the parked job is skipped cleanly - do nothing special, keep moving.

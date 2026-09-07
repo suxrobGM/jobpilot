@@ -10,7 +10,6 @@ export type UpworkProposalOutcome = z.infer<typeof upworkProposalOutcomeSchema>;
 
 export const UPWORK_PROPOSAL_SOURCES = ["manual", "search"] as const;
 const upworkProposalSourceSchema = z.enum(UPWORK_PROPOSAL_SOURCES);
-export type UpworkProposalSource = z.infer<typeof upworkProposalSourceSchema>;
 
 export const screeningAnswerSchema = z.object({
   question: z.string(),

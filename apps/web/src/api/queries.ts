@@ -15,7 +15,11 @@ import type {
   PilotQuestionStatus,
   PromotionStatus,
 } from "@jobpilot/contracts/pilot";
-import type { UpworkInboxKind, UpworkInboxStatus } from "@jobpilot/contracts/upwork";
+import type {
+  UpworkInboxKind,
+  UpworkInboxStatus,
+  UpworkProposalStatus,
+} from "@jobpilot/contracts/upwork";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
 
@@ -152,7 +156,7 @@ export const emailQueries = {
 };
 
 export const upworkProposalQueries = {
-  list: (query: PaginationQuery & { status?: string }) => ({
+  list: (query: PaginationQuery & { status?: UpworkProposalStatus }) => ({
     queryKey: queryKeys.upworkProposals.list(query),
     queryFn: () => api.upwork.proposals.get({ query }),
   }),

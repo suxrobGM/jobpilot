@@ -1,9 +1,38 @@
+enum EmailProvider {
+  gmail
+  outlook
+  imap
+
+  @@map("email_provider")
+}
+
+// What the scan decided a message is about.
+enum EmailClassification {
+  interviewing
+  rejected
+  offer
+  irrelevant
+  verification
+
+  @@map("email_classification")
+}
+
+// Whether the user has acted on a scanned message.
+enum EmailReviewStatus {
+  pending
+  approved
+  denied
+  auto
+
+  @@map("email_review_status")
+}
+
 // One connected mailbox per user; holds the OAuth tokens and the incremental sync cursor.
 model EmailAccount {
   id             String    @id @default(uuid())
   userId         String    @unique @map("user_id")
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider       String
+  provider       EmailProvider
   email          String
   accessToken    String?   @map("access_token")
   refreshToken   String?   @map("refresh_token")
@@ -26,7 +55,7 @@ model EmailOAuthClient {
   id           String   @id @default(uuid())
   userId       String   @unique @map("user_id")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider     String   @default("gmail")
+  provider     EmailProvider @default(gmail)
   clientId     String   @map("client_id") // plaintext (semi-public)
   clientSecret String   @map("client_secret") // ciphertext (per-user DEK)
   createdAt    DateTime @default(now()) @map("created_at")
@@ -52,14 +81,14 @@ model EmailMessage {
   fetchedAt   DateTime     @default(now()) @map("fetched_at")
 
   scannedAt      DateTime?    @map("scanned_at")
-  classification String?
+  classification EmailClassification?
   confidence     Float?
   reasoning      String?
   matchedAppId   String?      @map("matched_app_id")
   matchedApp     Application? @relation(fields: [matchedAppId], references: [id], onDelete: SetNull)
   matchScore     Float?       @map("match_score")
-  reviewStatus   String       @default("pending") @map("review_status")
-  appliedStatus  String?      @map("applied_status")
+  reviewStatus   EmailReviewStatus  @default(pending) @map("review_status")
+  appliedStatus  ApplicationStatus? @map("applied_status")
 
   verificationCode   String? @map("verification_code")
   verificationLink   String? @map("verification_link")

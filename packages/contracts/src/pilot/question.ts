@@ -1,10 +1,10 @@
 import { z } from "zod/v4";
 import { webLinkSchema } from "./web-link";
 
-const PILOT_QUESTION_KINDS = ["question", "choice", "2fa", "approval"] as const;
+export const PILOT_QUESTION_KINDS = ["question", "choice", "two_factor", "approval"] as const;
 const pilotQuestionKindSchema = z.enum(PILOT_QUESTION_KINDS);
 
-const PILOT_QUESTION_STATUSES = ["open", "answered", "expired", "cancelled"] as const;
+export const PILOT_QUESTION_STATUSES = ["open", "answered", "expired", "cancelled"] as const;
 const pilotQuestionStatusSchema = z.enum(PILOT_QUESTION_STATUSES);
 
 export const createPilotQuestionSchema = z.object({

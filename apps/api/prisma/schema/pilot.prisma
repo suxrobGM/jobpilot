@@ -3,13 +3,17 @@ enum PilotClaimOutcome {
   failed
   abandoned
   expired
+
+  @@map("pilot_claim_outcome")
 }
 
 enum PilotQuestionKind {
   question
   choice
-  two_factor @map("2fa")
+  two_factor
   approval
+
+  @@map("pilot_question_kind")
 }
 
 enum PilotQuestionStatus {
@@ -17,6 +21,8 @@ enum PilotQuestionStatus {
   answered
   expired
   cancelled
+
+  @@map("pilot_question_status")
 }
 
 enum PilotJournalKind {
@@ -27,6 +33,8 @@ enum PilotJournalKind {
   system
   digest
   correction
+
+  @@map("pilot_journal_kind")
 }
 
 enum PromotionStatus {
@@ -37,6 +45,8 @@ enum PromotionStatus {
   failed
   skipped
   expired
+
+  @@map("promotion_status")
 }
 
 model PilotState {

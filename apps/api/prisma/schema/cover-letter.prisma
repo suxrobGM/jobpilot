@@ -1,3 +1,11 @@
+enum CoverLetterSource {
+  apply
+  auto_apply
+  manual
+
+  @@map("cover_letter_source")
+}
+
 model CoverLetter {
   id       String @id @default(uuid())
   userId   String @map("user_id")
@@ -9,7 +17,7 @@ model CoverLetter {
   jobUrl   String? @map("job_url")
   jobTitle String? @map("job_title")
   company  String?
-  source   String  @default("manual") // apply | auto-apply | manual
+  source   CoverLetterSource @default(manual)
   content  String // the full plain-text letter
 
   createdAt DateTime @default(now()) @map("created_at")
