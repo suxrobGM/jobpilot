@@ -44,6 +44,7 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   interviewPreps: [],
   queueDrains: [],
   boardHealth: [],
+  upworkSync: null,
   strategyReviews: [],
   rescanSkipped: [],
   retryFailed: [],

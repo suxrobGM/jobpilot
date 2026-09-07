@@ -133,6 +133,12 @@ export interface AgendaQueueDrain {
   entries: { key: string; url: string }[];
 }
 
+/** A stale Upwork mirror - the agent re-reads the dashboard so the web has current rows. */
+export interface AgendaUpworkSync {
+  lastSyncedAt: Date | null;
+  unreadCount: number;
+}
+
 /** A board whose most recent apply outcomes are a failure streak - a board-health warning candidate. */
 export interface AgendaBoardHealth {
   board: string;
@@ -201,6 +207,7 @@ export interface AgendaInput {
   interviewPreps: AgendaInterviewPrep[];
   queueDrains: AgendaQueueDrain[];
   boardHealth: AgendaBoardHealth[];
+  upworkSync: AgendaUpworkSync | null;
   // Quiet-agenda candidates: only surface when no apply/discover/queue work is queued.
   strategyReviews: AgendaStrategyReview[];
   rescanSkipped: AgendaRescanSkipped[];

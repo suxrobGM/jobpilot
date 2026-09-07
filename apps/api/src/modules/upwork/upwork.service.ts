@@ -37,10 +37,6 @@ interface UpworkProfileFields {
 export class UpworkService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  /**
-   * Deterministic Upwork client/job quality assessment used by the `upwork-search`
-   * skill to smart-filter postings. Profile-independent, like a calculator.
-   */
   scoreClientQuality(client: UpworkClient): UpworkQualityResult {
     return scoreUpworkClient(client);
   }
@@ -50,11 +46,7 @@ export class UpworkService {
     return row ? toUpworkProfileDto(row) : null;
   }
 
-  /**
-   * Create or update the profile-enhancement record. Only provided fields are
-   * written; portfolio arrays are JSON-encoded. Moving to `applied` stamps
-   * `appliedAt` (set by the skill after it writes the live Upwork profile).
-   */
+  /** Writes only the fields provided; moving to `applied` stamps `appliedAt`. */
   async upsertProfile(userId: string, input: UpdateUpworkProfileInput) {
     const fields: UpworkProfileFields = {};
 
@@ -97,7 +89,7 @@ export class UpworkService {
     });
   }
 
-  /** The sync skill writes what it read from the MCP; every write counts as a sync. */
+  /** Any write is a sync, so it stamps `lastSyncedAt`. */
   async upsertAccount(userId: string, input: UpdateUpworkAccountInput) {
     const fields = { connectsBalance: input.connectsBalance ?? null, lastSyncedAt: new Date() };
     return this.prisma.upworkAccount.upsert({
@@ -133,9 +125,8 @@ export class UpworkService {
   }
 
   /**
-   * Mirror a dashboard read into the inbox, keyed on Upwork's own id so a repeated
-   * sync refreshes rather than duplicates. `status` is left alone on an update:
-   * the user's read/archived decision outlives the next sync.
+   * Keyed on Upwork's own id, so a repeated sync refreshes rather than duplicates.
+   * `status` is never written on update: the user's read/archived choice outlives it.
    */
   async syncInbox(userId: string, input: SyncUpworkInboxInput) {
     const upworkIds = input.items.map((item) => item.upworkId);

@@ -62,7 +62,6 @@ export function decodeUpworkProposal<
   };
 }
 
-/** Decode an inbox row's JSON `raw` payload for the API shape. */
 export function toUpworkInboxItemDto(row: UpworkInboxItem) {
   let raw: Record<string, unknown> = {};
   try {
@@ -71,7 +70,7 @@ export function toUpworkInboxItemDto(row: UpworkInboxItem) {
       raw = parsed as Record<string, unknown>;
     }
   } catch {
-    // A row written before a schema change is still worth showing without its raw payload.
+    // An unreadable payload should not hide the row itself.
   }
   return {
     id: row.id,

@@ -13,6 +13,7 @@ import type {
   AgendaRetryFailed,
   AgendaStrategyBootstrap,
   AgendaStrategyReview,
+  AgendaUpworkSync,
 } from "./types";
 
 /** One batch item per campaign holding pasted links; ranked just below job.apply. */
@@ -32,6 +33,24 @@ export function buildQueueDrainItems(campaigns: AgendaQueueDrain[]): AgendaItem[
       entries: c.entries,
     },
   }));
+}
+
+/** One refresh of the Upwork mirror, so the web app sees current invitations and offers. */
+export function buildUpworkSyncItems(sync: AgendaUpworkSync | null): AgendaItem[] {
+  if (!sync) {
+    return [];
+  }
+  return [
+    {
+      id: "upwork.syncInbox",
+      kind: "upwork.syncInbox",
+      priority: PRIORITY.upworkSync,
+      title: sync.lastSyncedAt ? "Refresh the Upwork inbox" : "Pull the Upwork inbox",
+      subjectType: "upwork",
+      subjectId: "inbox",
+      payload: { lastSyncedAt: sync.lastSyncedAt, unreadCount: sync.unreadCount },
+    },
+  ];
 }
 
 /** At most one board-health warning per agenda, most-failed board first (pre-sorted by the gather). */

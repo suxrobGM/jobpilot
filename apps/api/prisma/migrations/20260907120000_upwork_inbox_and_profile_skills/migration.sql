@@ -1,10 +1,8 @@
--- Profile skills: the MCP can read and write the skill set, so JobPilot stores it
--- alongside the title and overview it already suggests.
+-- The MCP can write the skill set, so JobPilot suggests one alongside the overview.
 ALTER TABLE "upwork_profiles" ADD COLUMN "current_skills" TEXT NOT NULL DEFAULT '[]';
 ALTER TABLE "upwork_profiles" ADD COLUMN "suggested_skills" TEXT NOT NULL DEFAULT '[]';
 
--- The account snapshot the sync skill refreshes. The web cannot reach the MCP,
--- so the agent mirrors the Connects balance here.
+-- The web cannot reach the MCP, so the agent mirrors the Connects balance here.
 CREATE TABLE "upwork_accounts" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
@@ -20,7 +18,6 @@ CREATE UNIQUE INDEX "upwork_accounts_user_id_key" ON "upwork_accounts"("user_id"
 ALTER TABLE "upwork_accounts" ADD CONSTRAINT "upwork_accounts_user_id_fkey"
     FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- Invitations, offers and message threads mirrored from Upwork.
 CREATE TABLE "upwork_inbox_items" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,

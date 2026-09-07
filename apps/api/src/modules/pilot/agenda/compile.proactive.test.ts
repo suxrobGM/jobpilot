@@ -212,3 +212,38 @@ describe("AgendaService inbox sync", () => {
     expect(rec.inboxSyncs).toEqual([{ userId: "p1", staleMs: INBOX_SYNC_STALE_MS }]);
   });
 });
+
+describe("AgendaService upwork.syncInbox", () => {
+  const hour = 60 * 60 * 1000;
+
+  it("offers a first pull once the user has an Upwork profile but no account row", async () => {
+    const agenda = await service({ upworkProfiles: 1, upworkUnread: 0 }).refresh("p1");
+    const item = agenda.items.find((i) => i.kind === "upwork.syncInbox");
+    expect(item?.title).toBe("Pull the Upwork inbox");
+    expect(item?.payload).toMatchObject({ lastSyncedAt: null, unreadCount: 0 });
+  });
+
+  it("stays quiet for a user who has never touched Upwork", async () => {
+    const agenda = await service({}).refresh("p1");
+    expect(agenda.items.some((i) => i.kind === "upwork.syncInbox")).toBe(false);
+  });
+
+  it("stays quiet while the mirror is fresh", async () => {
+    const agenda = await service({
+      upworkProfiles: 1,
+      upworkAccount: { lastSyncedAt: new Date(Date.now() - hour) },
+    }).refresh("p1");
+    expect(agenda.items.some((i) => i.kind === "upwork.syncInbox")).toBe(false);
+  });
+
+  it("re-offers a refresh once the mirror goes stale", async () => {
+    const agenda = await service({
+      upworkProfiles: 1,
+      upworkUnread: 3,
+      upworkAccount: { lastSyncedAt: new Date(Date.now() - 7 * hour) },
+    }).refresh("p1");
+    const item = agenda.items.find((i) => i.kind === "upwork.syncInbox");
+    expect(item?.title).toBe("Refresh the Upwork inbox");
+    expect(item?.payload).toMatchObject({ unreadCount: 3 });
+  });
+});

@@ -1,15 +1,11 @@
 import type { UpworkClient, UpworkQualityResult } from "@jobpilot/contracts/upwork";
 
 /**
- * Heuristic Upwork client/job quality score. Server-side, deterministic, no LLM
- * (mirrors `scoreFit` in ./fit.ts). The `upwork-search` skill calls this to
- * smart-filter postings before recommending them: a `skip` verdict carries the
- * exact `skipReason` to record on the campaign Job.
+ * Heuristic Upwork client/job quality score - deterministic, no LLM (mirrors
+ * `scoreFit` in ./fit.ts). A `skip` verdict carries the exact `skipReason` the
+ * `upwork-search` skill records on the campaign Job.
  *
- * Every signal is nullable - a partially-readable card degrades toward a
- * neutral 0.5 rather than failing.
- *
- * Quality blend (each component 0..1, null = neutral 0.5):
+ * Blend (each component 0..1, an unread signal = neutral 0.5):
  *   30% payment verified
  *   20% client hire count
  *   20% spend + reviews (proven track record)
@@ -21,9 +17,6 @@ import type { UpworkClient, UpworkQualityResult } from "@jobpilot/contracts/upwo
 const UPWORK_QUALITY_SKIP_FLOOR = 30;
 const UPWORK_QUALITY_GOOD_THRESHOLD = 65;
 
-// Upwork exposes a hire count but no hire rate, so there is no hard rule for the
-// unresponsive client any more. A zero-hire client scores 0.3 on that component and
-// falls to the soft floor on its own; `client_hires_min` on the search filters the rest.
 const SATURATED_PROPOSALS = 50;
 
 const NEUTRAL = 0.5;
@@ -137,7 +130,7 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
   } else if (client.proposalsCount != null && client.proposalsCount >= SATURATED_PROPOSALS) {
     skipReason = `Saturated - ${client.proposalsCount} proposals`;
   } else if (
-    // Observed zeros only - a card we simply couldn't read (null) stays neutral.
+    // Observed zeros only - a signal we could not read (null) stays neutral.
     client.totalSpent === 0 &&
     client.reviewsCount === 0 &&
     client.paymentVerified !== true

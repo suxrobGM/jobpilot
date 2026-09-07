@@ -49,9 +49,9 @@ export type ScreeningAnswer = z.infer<typeof screeningAnswerSchema>;
 export type UpworkProposalInput = z.infer<typeof createUpworkProposalSchema>;
 export type UpworkProposalPatch = z.infer<typeof patchUpworkProposalSchema>;
 
-// Read off the Upwork MCP: the search row carries payment, spend, reviews and
-// proposal count; clientHires comes from client_record on the per-job get.
-// Every signal is nullable so a partial read degrades to a neutral score.
+// Read off the Upwork MCP: the search row carries every field except clientHires,
+// which needs the per-job get. Nullable throughout so a partial read degrades to a
+// neutral score rather than crashing.
 const upworkClientSchema = z.object({
   paymentVerified: z.boolean().nullish(),
   clientHires: z.number().int().min(0).nullish(), // lifetime hires, not a rate
@@ -104,9 +104,7 @@ export const updateUpworkProfileSchema = z.object({
 });
 export type UpdateUpworkProfileInput = z.infer<typeof updateUpworkProfileSchema>;
 
-// The MCP runs in the user's local agent, so the browser cannot reach it. The
-// sync skill mirrors what `get_freelancer_dashboard` returns into these rows and
-// the web reads them from the API like any other JobPilot data.
+// What the sync skill mirrors out of the MCP, because the web cannot reach it.
 
 export const updateUpworkAccountSchema = z.object({
   connectsBalance: z.number().int().min(0).optional().nullable(),
@@ -132,7 +130,6 @@ const upworkInboxItemInputSchema = z.object({
   raw: z.record(z.string(), z.unknown()).optional(),
 });
 
-// One sync pushes a whole dashboard read, so the batch is the unit, not the row.
 export const syncUpworkInboxSchema = z.object({
   items: z.array(upworkInboxItemInputSchema).max(200),
 });

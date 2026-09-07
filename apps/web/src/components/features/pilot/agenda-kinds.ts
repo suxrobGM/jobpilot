@@ -21,6 +21,7 @@ const AGENDA_KIND_LABELS: Record<AgendaItem["kind"], string> = {
   "job.rescanSkipped": "Rescan skipped jobs",
   "job.retryFailed": "Retry failed jobs",
   "strategy.bootstrap": "Set up goals and saved searches",
+  "upwork.syncInbox": "Refresh the Upwork inbox",
 };
 
 /**

@@ -22,6 +22,7 @@ import { gatherQuietCandidates } from "./candidates-maintenance";
 import { gatherPausedCampaigns } from "./candidates-paused";
 import { gatherAnsweredQuestions } from "./candidates-questions";
 import { gatherQueueDrain } from "./candidates-queue";
+import { gatherUpworkSync } from "./candidates-upwork";
 import { INBOX_SYNC_STALE_MS } from "./constants";
 import { writeDigestIfDue } from "./digest";
 import { runExpiry } from "./expiry";
@@ -112,6 +113,7 @@ export class AgendaService {
       interviewPreps,
       queueDrains,
       boardHealth,
+      upworkSync,
       searchCount,
     ] = await Promise.all([
       prisma.pilotQuestion.count({ where: { userId, status: "open" } }),
@@ -130,6 +132,7 @@ export class AgendaService {
       gatherInterviewPreps(prisma, userId),
       gatherQueueDrain(prisma, userId, config.minScore, now),
       gatherBoardHealth(prisma, userId),
+      gatherUpworkSync(prisma, userId, now),
       prisma.pilotSearch.count({ where: { userId } }),
     ]);
     const awaitingSetup = searchCount === 0 || goals.trim() === "";
@@ -196,6 +199,7 @@ export class AgendaService {
       interviewPreps,
       queueDrains,
       boardHealth,
+      upworkSync,
       strategyReviews: quiet.strategyReviews,
       rescanSkipped: quiet.rescanSkipped,
       retryFailed: quiet.retryFailed,

@@ -30,6 +30,7 @@ import {
   buildRescanSkippedItems,
   buildRetryFailedItems,
   buildStrategyReviewItems,
+  buildUpworkSyncItems,
 } from "./items-proactive";
 import { buildPromoComposeItems, buildPromoPostItems } from "./items-promo";
 import type { AgendaInput } from "./types";
@@ -69,6 +70,7 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   if (!capReached) items.push(...buildJobApplyItems(input.approvedJobs));
   // Board health outranks apply work: a failing board should be probed before more attempts pile on.
   items.push(...buildBoardHealthItems(input.boardHealth));
+  items.push(...buildUpworkSyncItems(input.upworkSync));
   // Ungated by cap/busy: a stranded paused campaign must surface regardless.
   items.push(...buildReviewPausedItems(input.pausedCampaigns));
   items.push(...buildInterviewReplyItems(input.interviewReplies));

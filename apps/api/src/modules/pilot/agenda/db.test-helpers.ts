@@ -113,6 +113,9 @@ export interface Over {
     outcome?: string | null;
   }[];
   boardHealthJobs?: Record<string, unknown>[];
+  upworkAccount?: { lastSyncedAt: Date | null } | null;
+  upworkProfiles?: number;
+  upworkUnread?: number;
   quietCampaigns?: Record<string, unknown>[];
   quietJobCounts?: Record<string, unknown>[];
   actionMarkers?: { subjectId: string | null; detail: unknown }[];
@@ -343,6 +346,9 @@ export function makeAgendaDb(over: Over = {}) {
     job: fakeJob(over),
     application: fakeApplication(over),
     campaign: fakeCampaign(over, rec),
+    upworkAccount: { findUnique: async () => over.upworkAccount ?? null },
+    upworkProfile: { count: async () => over.upworkProfiles ?? 0 },
+    upworkInboxItem: { count: async () => over.upworkUnread ?? 0 },
     networkingMessage: fakeNetworkingMessage(over),
     promotionPost: fakePromotionPost(over),
     emailMessage: {

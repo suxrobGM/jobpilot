@@ -14,6 +14,9 @@ export const PRIORITY = {
   queueDrain: 720,
   networkingSend: 700,
   inboxReview: 650,
+  // Just under mail triage: an Upwork invitation is time-sensitive, but reading it
+  // is cheap and never blocks the apply queue.
+  upworkSync: 640,
   promoPost: 600,
   warmIntro: 550,
   // Only fires on a quiet pipeline (no apply/discover/queue), so its exact rank is cosmetic.
@@ -35,6 +38,8 @@ export const MAX_RESCAN_SKIPPED = 1;
 export const MAX_RETRY_FAILED = 1;
 export const MAX_PROMO_COMPOSE = 1;
 export const INBOX_BATCH = 10;
+/** Don't re-offer an Upwork sync until the mirror is this stale. */
+export const UPWORK_SYNC_STALE_MS = 6 * HOUR_MS;
 
 /**
  * Gmail-pull throttle for refresh. Matches the default check interval: idle cycles always sync,

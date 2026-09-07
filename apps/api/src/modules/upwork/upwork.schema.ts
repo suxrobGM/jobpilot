@@ -67,7 +67,6 @@ export const upworkProposalSchema = z.object({
 
 export const upworkProposalListSchema = paginatedSchema(upworkProposalSchema);
 
-/** Account snapshot the sync skill maintains; null until the first sync. */
 export const upworkAccountSchema = z.object({
   id: z.uuid(),
   connectsBalance: z.number().int().nullable(),
@@ -82,7 +81,6 @@ export const inboxQuery = paginationQuerySchema.extend({
   status: z.enum(UPWORK_INBOX_STATUSES).optional(),
 });
 
-/** One mirrored invitation, offer, or message thread (`toUpworkInboxItemDto`). */
 export const upworkInboxItemSchema = z.object({
   id: z.uuid(),
   upworkId: z.string(),
@@ -100,7 +98,6 @@ export const upworkInboxItemSchema = z.object({
 
 export const upworkInboxListSchema = paginatedSchema(upworkInboxItemSchema);
 
-/** How many rows a sync created versus refreshed. */
 export const upworkInboxSyncResultSchema = z.object({
   created: z.number().int(),
   updated: z.number().int(),
