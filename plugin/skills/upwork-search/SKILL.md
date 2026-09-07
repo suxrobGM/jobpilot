@@ -67,35 +67,40 @@ Drop any row whose `applied` or `is_applied` is true - the user already applied 
 Run the applied-check (`../_shared/campaign-flow.md`) with the client name as the company.
 `.applied` → record the default already-applied skip, then skip the rest.
 
-### 3.2 Open the posting
+### 3.2 Client quality (smart filter)
 
-Call `find_jobs` action `get` with the row's numeric `id`. You need it for three things: the full
-description, `client_record` (the hire count the search row cannot show), and `connects_cost`,
-which the proposal step needs later. Keep only the fields the digest and the client block below
-use - do not carry the whole payload forward.
-
-### 3.3 Client quality (smart filter)
-
-Build the client block from the search row plus `client_record`, then score it server-side:
+Score the client from the **search row alone**, before opening the posting. Every hard rule reads a
+row field, so a client that fails one costs a single call instead of a full job description pulled
+into context.
 
 ```bash
-CLIENT='{ "paymentVerified": true, "clientHires": 18, "totalSpent": 12000, "rating": 4.9,
+CLIENT='{ "paymentVerified": true, "totalSpent": 12000, "rating": 4.9,
   "reviewsCount": 24, "proposalsCount": 7, "postedHoursAgo": 6, "jobType": "hourly" }'
 QUALITY=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/client-quality" \
   -H 'content-type: application/json' -d "$(jq -n --argjson c "$CLIENT" '{client:$c}')")
 CLIENT_VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 ```
 
-Field sources: `paymentVerified` from the row's `verification_status`, `totalSpent` from
-`total_spent`, `reviewsCount` from `total_reviews`, `proposalsCount` from `proposal_count`,
-`postedHoursAgo` computed from `created_date` or `published_date`, `clientHires` from
-`client_record`. Omit any you cannot read - every field is optional and a missing one degrades to
-neutral. `rating` is the score **freelancers gave this client**, so a low one is a warning about
-the client, not a sign they are unsuccessful.
+Field sources: `paymentVerified` from `verification_status`, `totalSpent` from `total_spent`,
+`reviewsCount` from `total_reviews`, `proposalsCount` from `proposal_count`, `postedHoursAgo`
+computed from `created_date` or `published_date`. Omit any you cannot read - every field is
+optional and a missing one degrades to neutral. `rating` is the score **freelancers gave this
+client**, so a low one is a warning about the client, not a sign they are unsuccessful.
 
 The scorer hard-skips unverified payment, 50+ proposals, and unproven-plus-unverified clients. If
 `CLIENT_VERDICT == "skip"`, create the Job as `pending`, record `.skipReason` through
-`/jobs/<key>/result`, and move on - don't score fit.
+`/jobs/<key>/result`, and move on - don't open the posting and don't score fit.
+
+### 3.3 Open the posting and rescore
+
+Survivors only. Call `find_jobs` action `get` with the row's numeric `id` for three things: the full
+description, `client_record` (the hire count the search row cannot show), and `connects_cost`, which
+the proposal step needs later. Keep only the fields the digest and the client block use - do not
+carry the whole payload forward.
+
+Add `clientHires` from `client_record` to `CLIENT` and score once more. The hire count is 20% of the
+score, so this second verdict is the one to trust and its `qualityScore` the one to save. A `skip`
+here is the soft floor rather than a hard rule; handle it exactly as above.
 
 ### 3.4 Fit
 

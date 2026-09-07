@@ -88,7 +88,7 @@ model UpworkInboxItem {
   jobUrl     String? @map("job_url")
   body       String?
 
-  status     String   @default("unread") // unread | read | archived | actioned
+  status     String   @default("unread") // unread | archived
   receivedAt DateTime @map("received_at")
   raw        String   @default("{}")
 

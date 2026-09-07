@@ -116,6 +116,7 @@ export interface Over {
   upworkAccount?: { lastSyncedAt: Date | null } | null;
   upworkProfiles?: number;
   upworkUnread?: number;
+  upworkSyncClaim?: { grantedAt: Date; releasedAt: Date | null; outcome?: string | null } | null;
   quietCampaigns?: Record<string, unknown>[];
   quietJobCounts?: Record<string, unknown>[];
   actionMarkers?: { subjectId: string | null; detail: unknown }[];
@@ -156,11 +157,12 @@ function fakePilotClaim(over: Over, rec: Recorder) {
       return over.expiredClaims ?? [];
     },
     count: async () => over.activeClaims ?? 0,
-    // Bootstrap-damper lookups filter on kind; everything else is the per-subject uniqueness guard.
-    findFirst: async (a: { where: { kind?: string } }) =>
-      a.where.kind === "strategy.bootstrap"
-        ? (over.bootstrapClaim ?? null)
-        : (over.activeClaim ?? null),
+    // Damper lookups filter on kind; everything else is the per-subject uniqueness guard.
+    findFirst: async (a: { where: { kind?: string } }) => {
+      if (a.where.kind === "strategy.bootstrap") return over.bootstrapClaim ?? null;
+      if (a.where.kind === "upwork.syncInbox") return over.upworkSyncClaim ?? null;
+      return over.activeClaim ?? null;
+    },
     update: async (a: { data: Record<string, unknown> }) => {
       rec.claimUpdates.push(a);
       // Full merged row so toPilotClaim can map heartbeat/release results.

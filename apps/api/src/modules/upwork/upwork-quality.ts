@@ -1,23 +1,17 @@
 import type { UpworkClient, UpworkQualityResult } from "@jobpilot/contracts/upwork";
 
 /**
- * Heuristic Upwork client/job quality score - deterministic, no LLM (mirrors
- * `scoreFit` in ./fit.ts). A `skip` verdict carries the exact `skipReason` the
+ * Heuristic Upwork client/job quality score - deterministic, no LLM (mirrors `scoreFit` in
+ * ./fit.ts). Each component returns 0..1 and a signal we could not read scores neutral, so a
+ * partial read never looks bad. A `skip` verdict carries the exact `skipReason` the
  * `upwork-search` skill records on the campaign Job.
- *
- * Blend (each component 0..1, an unread signal = neutral 0.5):
- *   30% payment verified
- *   20% client hire count
- *   20% spend + reviews (proven track record)
- *   15% proposal saturation (inverse - fewer competitors is better)
- *   15% recency (fresh posts get seen)
  */
 
 // Soft floor: below this the posting is skipped even without a hard-rule hit.
 const UPWORK_QUALITY_SKIP_FLOOR = 30;
 const UPWORK_QUALITY_GOOD_THRESHOLD = 65;
 
-const SATURATED_PROPOSALS = 50;
+const TOO_MANY_PROPOSALS = 50;
 
 const NEUTRAL = 0.5;
 
@@ -65,11 +59,11 @@ function spendReviewScore(
   return (spendTier + reviewTier) / 2;
 }
 
-function saturationScore(proposals: number | null | undefined): number {
+function competitionScore(proposals: number | null | undefined): number {
   return tier(
     proposals,
     [
-      [SATURATED_PROPOSALS, 0],
+      [TOO_MANY_PROPOSALS, 0],
       [20, 0.2],
       [15, 0.4],
       [10, 0.6],
@@ -123,7 +117,7 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
       (paymentScore(client.paymentVerified) * 0.3 +
         hireScore(client.clientHires) * 0.2 +
         spendReviewScore(client.totalSpent, client.reviewsCount) * 0.2 +
-        saturationScore(client.proposalsCount) * 0.15 +
+        competitionScore(client.proposalsCount) * 0.15 +
         recencyScore(client.postedHoursAgo) * 0.15),
   );
 
@@ -133,8 +127,8 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
   let skipReason: string | null = null;
   if (client.paymentVerified === false) {
     skipReason = "Unverified payment";
-  } else if (client.proposalsCount != null && client.proposalsCount >= SATURATED_PROPOSALS) {
-    skipReason = `Saturated - ${client.proposalsCount} proposals`;
+  } else if (client.proposalsCount != null && client.proposalsCount >= TOO_MANY_PROPOSALS) {
+    skipReason = `Too many proposals - ${client.proposalsCount} already`;
   } else if (
     // Observed zeros only - a signal we could not read (null) stays neutral.
     client.totalSpent === 0 &&
@@ -146,11 +140,9 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
     skipReason = `Low client-quality score (${qualityScore})`;
   }
 
-  const verdict = skipReason
-    ? "skip"
-    : qualityScore >= UPWORK_QUALITY_GOOD_THRESHOLD
-      ? "good"
-      : "caution";
-
-  return { qualityScore, verdict, flags, skipReason };
+  if (skipReason) {
+    return { qualityScore, verdict: "skip", flags, skipReason };
+  }
+  const verdict = qualityScore >= UPWORK_QUALITY_GOOD_THRESHOLD ? "good" : "caution";
+  return { qualityScore, verdict, flags, skipReason: null };
 }

@@ -246,4 +246,16 @@ describe("AgendaService upwork.syncInbox", () => {
     expect(item?.title).toBe("Refresh the Upwork inbox");
     expect(item?.payload).toMatchObject({ unreadCount: 3 });
   });
+
+  it("stays quiet after a recent claim, so an unconnected MCP is not re-offered every cycle", async () => {
+    const agenda = await service({
+      upworkProfiles: 1,
+      upworkSyncClaim: {
+        grantedAt: new Date(Date.now() - 2 * hour),
+        releasedAt: new Date(Date.now() - hour),
+        outcome: "done",
+      },
+    }).refresh("p1");
+    expect(agenda.items.some((i) => i.kind === "upwork.syncInbox")).toBe(false);
+  });
 });

@@ -25,7 +25,7 @@ describe("scoreUpworkClient hard-skip rules", () => {
   });
 
   it("skips a saturated posting", () => {
-    expect(score({ proposalsCount: 63 }).skipReason).toBe("Saturated - 63 proposals");
+    expect(score({ proposalsCount: 63 }).skipReason).toBe("Too many proposals - 63 already");
   });
 
   it("keeps a posting one proposal short of saturated", () => {

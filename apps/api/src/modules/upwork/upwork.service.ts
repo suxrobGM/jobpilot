@@ -96,9 +96,8 @@ export class UpworkService {
     });
   }
 
-  /** Any write is a sync, so it stamps `lastSyncedAt`. */
   async upsertAccount(userId: string, input: UpdateUpworkAccountInput) {
-    const fields = { connectsBalance: input.connectsBalance ?? null, lastSyncedAt: new Date() };
+    const fields = { connectsBalance: input.connectsBalance ?? null };
     return this.prisma.upworkAccount.upsert({
       where: { userId },
       create: { userId, ...fields },
@@ -134,7 +133,7 @@ export class UpworkService {
 
   /**
    * Keyed on Upwork's own id, so a repeated sync refreshes rather than duplicates.
-   * `status` is never written on update: the user's read/archived choice outlives it.
+   * `status` is never written on update: the user's archived choice outlives it.
    */
   async syncInbox(userId: string, input: SyncUpworkInboxInput) {
     const upworkIds = input.items.map((item) => item.upworkId);
@@ -162,6 +161,14 @@ export class UpworkService {
         });
       }),
     );
+
+    // The only writer of lastSyncedAt: it is how the pilot agenda knows the mirror is current.
+    const syncedAt = new Date();
+    await this.prisma.upworkAccount.upsert({
+      where: { userId },
+      create: { userId, lastSyncedAt: syncedAt },
+      update: { lastSyncedAt: syncedAt },
+    });
 
     return { created: upworkIds.length - known.size, updated: known.size };
   }

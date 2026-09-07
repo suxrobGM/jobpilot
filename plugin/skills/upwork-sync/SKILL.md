@@ -45,7 +45,8 @@ product, so never fold them into this number.
 ## Step 3: Push the inbox
 
 One call for the whole batch, up to 200 items. `upworkId` is Upwork's own id and keys the upsert,
-so re-running the skill refreshes rows instead of duplicating them.
+so re-running the skill refreshes rows instead of duplicating them. Post even when the dashboard
+held nothing new: this call is what marks the mirror fresh, and an empty batch still counts.
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/inbox/sync" \
@@ -65,8 +66,8 @@ Field mapping:
 - `raw` - the source object, so a later feature can read a field this schema does not name yet.
   Strip anything long: a full message thread belongs in `body` or nowhere.
 
-The API leaves an item's `status` alone on an update, so the user's read and archived decisions
-survive the next sync.
+The API leaves an item's `status` alone on an update, so anything the user archived stays archived
+after the next sync.
 
 ## Step 4: Report
 

@@ -122,7 +122,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
       detail: {
         summary: "Sync inbox items",
         description:
-          "Upserts a batch of invitations, offers and message threads read from the Upwork MCP, keyed on Upwork's own id, and publishes an inbox.synced event. A user's read or archived status survives the sync.",
+          "Upserts a batch of invitations, offers and message threads read from the Upwork MCP, keyed on Upwork's own id, and publishes an inbox.synced event. Anything the user archived stays archived. Stamps the account's lastSyncedAt.",
       },
     },
   )

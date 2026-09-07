@@ -15,9 +15,7 @@ export const KIND_COLOR: Record<UpworkInboxKind, "primary" | "success" | "defaul
 
 const STATUS_LABEL: Record<UpworkInboxStatus, string> = {
   unread: "Unread",
-  read: "Read",
   archived: "Archived",
-  actioned: "Actioned",
 };
 
 export const KIND_OPTIONS = UPWORK_INBOX_KINDS.map((kind) => ({

@@ -115,7 +115,7 @@ export const UPWORK_INBOX_KINDS = ["invitation", "offer", "message"] as const;
 const upworkInboxKindSchema = z.enum(UPWORK_INBOX_KINDS);
 export type UpworkInboxKind = z.infer<typeof upworkInboxKindSchema>;
 
-export const UPWORK_INBOX_STATUSES = ["unread", "read", "archived", "actioned"] as const;
+export const UPWORK_INBOX_STATUSES = ["unread", "archived"] as const;
 const upworkInboxStatusSchema = z.enum(UPWORK_INBOX_STATUSES);
 export type UpworkInboxStatus = z.infer<typeof upworkInboxStatusSchema>;
 
