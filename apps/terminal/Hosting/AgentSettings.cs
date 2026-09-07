@@ -10,13 +10,14 @@ namespace JobPilot.Terminal.Hosting;
 public sealed record CodexSettingsFile(string[]? ConfigOverrides);
 
 /// <summary>Provider-neutral MCP configuration shipped at the plugin root.</summary>
-/// <param name="McpServers">Named STDIO servers exposed by the plugin.</param>
+/// <param name="McpServers">Named servers exposed by the plugin, STDIO or remote HTTP.</param>
 public sealed record PluginMcpFile(Dictionary<string, PluginMcpServer>? McpServers);
 
-/// <summary>A bundled STDIO MCP server.</summary>
-/// <param name="Command">Executable that starts the server.</param>
+/// <summary>A bundled MCP server: STDIO when it carries a command, remote HTTP when it carries a URL.</summary>
+/// <param name="Command">Executable that starts a STDIO server.</param>
 /// <param name="Args">Arguments passed to the executable.</param>
-public sealed record PluginMcpServer(string? Command, string[]? Args);
+/// <param name="Url">Endpoint of a remote streamable-HTTP server.</param>
+public sealed record PluginMcpServer(string? Command, string[]? Args, string? Url);
 
 /// <summary>Config shipped with the plugin (settings/*.json and the root .mcp.json); a missing or unreadable file warns and the launch goes on without it.</summary>
 public static partial class AgentSettings
@@ -62,6 +63,7 @@ public static partial class AgentSettings
             "Codex starts without bundled browser tools");
 
         List<string> overrides = [];
+        var hasRemote = false;
         foreach (var (name, server) in parsed?.McpServers ?? [])
         {
             // Codex reads the -c key path literally, so the name is unquoted and must already be a bare TOML key.
@@ -71,9 +73,16 @@ public static partial class AgentSettings
                 continue;
             }
 
+            if (!string.IsNullOrWhiteSpace(server.Url))
+            {
+                overrides.Add($"mcp_servers.{name}.url={TomlString(server.Url)}");
+                hasRemote = true;
+                continue;
+            }
+
             if (string.IsNullOrWhiteSpace(server.Command))
             {
-                logger.LogWarning("Plugin MCP server {Server} has no command and will not be loaded by Codex.", name);
+                logger.LogWarning("Plugin MCP server {Server} has neither a command nor a url and will not be loaded by Codex.", name);
                 continue;
             }
 
@@ -100,6 +109,12 @@ public static partial class AgentSettings
             }
 
             overrides.Add($"mcp_servers.{name}.startup_timeout_sec={McpStartupTimeoutSeconds}");
+        }
+
+        if (hasRemote)
+        {
+            // Codex builds before ~0.60 drop url-only servers unless the rmcp client is switched on.
+            overrides.Add("features.experimental_use_rmcp_client=true");
         }
 
         return overrides;

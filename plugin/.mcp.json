@@ -9,6 +9,10 @@
         "--user-data-dir",
         ".playwright-mcp"
       ]
+    },
+    "upwork": {
+      "type": "http",
+      "url": "https://mcp.upwork.com/mcp"
     }
   }
 }
