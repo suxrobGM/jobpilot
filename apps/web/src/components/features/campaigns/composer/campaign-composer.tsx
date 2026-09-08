@@ -9,6 +9,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries, jobBoardQueries, userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto, CreateCampaignRequest } from "@/api/types";
+import { useLinkBoard } from "@/components/features/boards/use-link-board";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
@@ -16,6 +17,7 @@ import { ApplyFields } from "./apply-fields";
 import { AutoApplyFields } from "./auto-apply-fields";
 import { CampaignBasicsFields } from "./campaign-basics-fields";
 import {
+  type BoardOption,
   buildCreateCampaignRequest,
   buildSkillArg,
   COMPOSER_DEFAULT_VALUES,
@@ -39,12 +41,36 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const profileQuery = useApiQuery(userQueries.detail());
   const recentCampaignsQuery = useApiQuery(campaignQueries.list());
 
+  const linkedBoards = boardsQuery.data ?? [];
+
+  // Upwork is picker-only, so /upwork's "Find jobs" presets a board most profiles have not
+  // linked. Offer it from the catalog instead of falling back to the first linked board.
+  const needsCatalog =
+    Boolean(defaultBoard) &&
+    boardsQuery.isSuccess &&
+    !linkedBoards.some((b) => b.domain === defaultBoard);
+
+  const catalogQuery = useApiQuery(jobBoardQueries.catalog(), {
+    enabled: needsCatalog,
+    // Admin-curated seed data, so a per-mount refetch buys nothing.
+    staleTime: 10 * 60_000,
+  });
+
   const createCampaign = useApiMutation<CampaignDto, CreateCampaignRequest>(
     (body) => api.campaigns.post(body),
     { invalidate: [queryKeys.campaigns.all] },
   );
 
-  const boards = boardsQuery.data ?? [];
+  const linkBoard = useLinkBoard();
+
+  const presetCatalogBoard = needsCatalog
+    ? (catalogQuery.data ?? []).find((b) => b.domain === defaultBoard)
+    : undefined;
+
+  const boards: BoardOption[] = presetCatalogBoard
+    ? [...linkedBoards, presetCatalogBoard]
+    : linkedBoards;
+
   const resumes = profileQuery.data?.resumes ?? [];
   const recentQueries = Array.from(
     new Set((recentCampaignsQuery.data?.items ?? []).map((r) => r.query)),
@@ -52,8 +78,28 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const hasBoards = boards.length > 0;
   const hasResumes = resumes.length > 0;
 
-  const presetBoard =
-    defaultBoard && boards.some((b) => b.domain === defaultBoard) ? defaultBoard : undefined;
+  const presetBoard = boards.find((b) => b.domain === defaultBoard)?.domain;
+
+  /** Skills read the board off the profile's own list, so adopt a catalog board before running one. */
+  const adoptBoard = async (domain: string): Promise<boolean> => {
+    if (!presetCatalogBoard || presetCatalogBoard.domain !== domain) {
+      return true;
+    }
+    try {
+      await linkBoard.mutateAsync({
+        name: presetCatalogBoard.name,
+        domain: presetCatalogBoard.domain,
+        searchUrl: presetCatalogBoard.searchUrl,
+        email: null,
+        password: null,
+        sortOrder: presetCatalogBoard.sortOrder,
+      });
+      return true;
+    } catch {
+      // The mutation already toasted the failure; keep the form filled in so the user can retry.
+      return false;
+    }
+  };
 
   const form = useAppForm({
     defaultValues: {
@@ -66,6 +112,9 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     onSubmit: async ({ value }) => {
       const upwork = isUpworkSearch(value);
       const effective = upwork ? { ...value, mode: "search" as const } : value;
+      if (!(await adoptBoard(effective.board))) {
+        return;
+      }
       const campaign = await createCampaign.mutateAsync(buildCreateCampaignRequest(effective));
       const campaignId = campaign.campaignId;
       router.push(`/campaigns/${encodeURIComponent(campaignId)}`);
@@ -89,7 +138,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     }
   }, [isUpwork, mode, form]);
 
-  if (boardsQuery.isLoading || profileQuery.isLoading) {
+  if (boardsQuery.isLoading || catalogQuery.isLoading || profileQuery.isLoading) {
     return <LinearProgress />;
   }
 

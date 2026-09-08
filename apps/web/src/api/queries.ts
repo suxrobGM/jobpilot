@@ -81,6 +81,10 @@ export const resumeQueries = {
 
 export const jobBoardQueries = {
   list: () => ({ queryKey: queryKeys.jobBoards.list(), queryFn: () => api["job-boards"].get() }),
+  catalog: () => ({
+    queryKey: queryKeys.jobBoards.catalog(),
+    queryFn: () => api["job-boards"].catalog.get(),
+  }),
 };
 
 export const applicationQueries = {

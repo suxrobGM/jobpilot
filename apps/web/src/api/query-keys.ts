@@ -33,6 +33,7 @@ export const queryKeys = {
   jobBoards: {
     all: ["job-boards"] as const,
     list: () => [...queryKeys.jobBoards.all, "list"] as const,
+    catalog: () => [...queryKeys.jobBoards.all, "catalog"] as const,
     detail: (id: string) => [...queryKeys.jobBoards.all, "detail", id] as const,
   },
 

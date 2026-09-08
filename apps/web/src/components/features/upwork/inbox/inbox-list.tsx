@@ -3,7 +3,7 @@
 import { type ReactElement, useState } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkInboxKind, UpworkInboxStatus } from "@jobpilot/contracts/upwork";
-import { Clear, Launch } from "@mui/icons-material";
+import { Clear, CloudSync, Launch } from "@mui/icons-material";
 import { Box, Button, Card, Chip, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
@@ -11,12 +11,14 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { upworkInboxQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkInboxItemDto } from "@/api/types";
+import { AgentOnlyButton } from "@/components/ui/buttons";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
 import { ColorChip } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useSseChannel } from "@/lib/sse/client";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { formatRelativeTime, plural } from "@/utils/format";
 import { INBOX_STATUS_OPTIONS, KIND_COLOR, KIND_LABEL, KIND_OPTIONS } from "./inbox-kind";
 
@@ -24,6 +26,7 @@ const PAGE_SIZE = 10;
 
 export function InboxList(): ReactElement {
   const queryClient = useQueryClient();
+  const agent = useAgent();
   const [kindFilter, setKindFilter] = useState<UpworkInboxKind | null>(null);
   const [statusFilter, setStatusFilter] = useState<UpworkInboxStatus | null>(null);
   const { query, setPage, setPageSize } = usePaginationParams({ pageSize: PAGE_SIZE });
@@ -93,17 +96,19 @@ export function InboxList(): ReactElement {
         )}
         <Box sx={{ flex: 1 }} />
         <Typography variant="captionMuted">{plural(total, "item")}</Typography>
+        <AgentOnlyButton
+          size="small"
+          variant="outlined"
+          startIcon={<CloudSync fontSize="sm" />}
+          onClick={() => void agent.injectSkill("upwork-sync")}
+          tooltip="Run the upwork-sync skill to mirror invitations, offers and messages"
+        >
+          Sync
+        </AgentOnlyButton>
       </Stack>
 
       {pageRows.length === 0 ? (
-        <EmptyState
-          variant="inline"
-          title={
-            hasFilters
-              ? "No items match the current filter."
-              : "Nothing here yet. Run the upwork-sync skill in the terminal to pull your Upwork inbox."
-          }
-        />
+        <InboxEmptyState hasFilters={hasFilters} />
       ) : (
         <Stack spacing={1}>
           {pageRows.map((item) => (
@@ -165,5 +170,30 @@ export function InboxList(): ReactElement {
         />
       )}
     </SectionCard>
+  );
+}
+
+interface InboxEmptyStateProps {
+  hasFilters: boolean;
+}
+
+/** Owns the breakpoint read so a resize does not re-render the whole list. */
+function InboxEmptyState(props: InboxEmptyStateProps): ReactElement {
+  const { hasFilters } = props;
+  const agentAvailable = useAgentAvailable();
+
+  if (hasFilters) {
+    return <EmptyState variant="inline" title="No items match the current filter." />;
+  }
+  return (
+    <EmptyState
+      variant="inline"
+      title="Nothing here yet."
+      description={
+        agentAvailable
+          ? "Run Sync to pull your invitations, offers and messages from Upwork."
+          : "Open JobPilot on your desktop to sync your Upwork inbox."
+      }
+    />
   );
 }

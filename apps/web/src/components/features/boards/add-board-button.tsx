@@ -1,26 +1,18 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { JobBoardInput } from "@jobpilot/contracts/job-board";
 import { Add } from "@mui/icons-material";
 import { Button } from "@mui/material";
-import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
-import type { JobBoardDto } from "@/api/types";
 import { BoardFormDialog } from "./board-form-dialog";
+import { useLinkBoard } from "./use-link-board";
 
 export function AddBoardButton(): ReactElement {
   const [open, setOpen] = useState(false);
 
-  const create = useApiMutation<JobBoardDto, JobBoardInput>(
-    (vars) => api["job-boards"].post(vars),
-    {
-      successMessage: "Board added",
-      invalidate: [queryKeys.jobBoards.all],
-      onSuccess: () => setOpen(false),
-    },
-  );
+  const create = useLinkBoard({
+    successMessage: "Board added",
+    onSuccess: () => setOpen(false),
+  });
 
   return (
     <>

@@ -2,9 +2,10 @@
 
 import { Chip, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
-import type { JobBoardDto, UserAggregateResponse } from "@/api/types";
+import type { UserAggregateResponse } from "@/api/types";
 import { withForm } from "@/components/ui/form/tanstack";
 import {
+  type BoardOption,
   COMPOSER_DEFAULT_VALUES,
   isUpworkSearch,
   MODE_DESCRIPTIONS,
@@ -15,7 +16,7 @@ import {
 export const CampaignBasicsFields = withForm({
   defaultValues: COMPOSER_DEFAULT_VALUES,
   props: {
-    boards: [] as JobBoardDto[],
+    boards: [] as BoardOption[],
     resumes: [] as UserAggregateResponse["resumes"],
     recentQueries: [] as string[],
   },

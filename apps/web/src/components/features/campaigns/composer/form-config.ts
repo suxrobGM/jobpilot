@@ -1,6 +1,6 @@
 import { applyUrlsSchema, type CampaignSource, MAX_APPLY_URLS } from "@jobpilot/contracts/campaign";
 import { z } from "zod/v4";
-import type { CreateCampaignRequest } from "@/api/types";
+import type { CreateCampaignRequest, JobBoardDto } from "@/api/types";
 import { buildCliArgs } from "@/utils/cli-args";
 import { UPWORK_DOMAIN } from "../constants";
 
@@ -75,6 +75,9 @@ export const composerFormSchema = z
       ctx.addIssue({ code: "custom", message: "Pick at least one channel", path: ["channels"] });
     }
   });
+
+/** What the board picker needs: a linked board and a catalog board both satisfy it. */
+export type BoardOption = Pick<JobBoardDto, "domain" | "name">;
 
 export type CampaignMode = Extract<
   CampaignSource,
