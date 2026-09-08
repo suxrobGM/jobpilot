@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.1.36 - 2026-09-07
+
+### Added
+
+- Upwork now runs on the official Upwork MCP server in both runtimes, and the module has its own
+  inbox for incoming contract work.
+- The pilot refreshes the Upwork inbox as part of a normal cycle, so new Upwork work shows up
+  without a manual sync.
+- Admin and dashboard routes render inside a real App Shell, so the nav and layout stay put while
+  a page loads.
+
+### Changed
+
+- The web app moved to Next.js 16.3.4 and TypeScript 7, with Partial Prefetching enabled and the
+  public routes unblocked.
+- `/login` and `/inbox` are prerendered, so both open faster on a cold visit.
+- Campaign cards show the campaign name instead of its GUID.
+- Closed value sets moved onto Prisma enums, so invalid values are rejected by the database.
+
+### Fixed
+
+- The Upwork sync agenda item is now tied to the sync itself, so a finished sync closes its own
+  agenda item instead of leaving it open.
+
 ## v2.1.35 - 2026-08-30
 
 ### Added
