@@ -1,5 +1,5 @@
 import { db } from "@/common/database/prisma.client";
-import { DEFAULT_BOARDS } from "@/modules/job-board/default-boards";
+import { DEFAULT_BOARDS } from "./default-boards";
 
 /** Upsert the global catalog by domain. `listed`/`isDefault` are admin-owned, so never updated. */
 export async function seedJobBoards(): Promise<void> {

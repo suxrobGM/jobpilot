@@ -1,7 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 
 /**
- * What a fresh install's catalog holds. Consumed only by `prisma/seed/job-boards.ts` - after that
+ * What a fresh install's catalog holds. Consumed only by `job-boards.ts` beside it - after that
  * the table is the source of truth. Typed as the Prisma input so a new column breaks the build here.
  * Only boards with proven agent traction are `isDefault`; the rest are picker-only.
  */
