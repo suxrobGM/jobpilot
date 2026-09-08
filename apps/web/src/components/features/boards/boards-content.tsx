@@ -27,7 +27,7 @@ import { SearchField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useConfirm } from "@/providers/confirm-provider";
-import { BoardFormDialog } from "./board-form-dialog";
+import { BoardLoginDialog } from "./board-login-dialog";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -49,7 +49,7 @@ export function BoardsContent(): ReactElement {
   const update = useApiMutation<JobBoardDto, { id: string; patch: JobBoardPatch }>(
     ({ id, patch }) => api["job-boards"]({ id }).patch(patch),
     {
-      successMessage: "Board updated",
+      successMessage: "Login saved",
       invalidate: [queryKeys.jobBoards.all],
       onSuccess: () => setEditing(null),
     },
@@ -153,7 +153,7 @@ export function BoardsContent(): ReactElement {
                           {
                             kind: "item",
                             key: "edit",
-                            label: "Edit",
+                            label: "Edit login",
                             icon: <Edit fontSize="sm" />,
                             onClick: () => setEditing(b),
                           },
@@ -176,26 +176,16 @@ export function BoardsContent(): ReactElement {
         )}
       </SectionCard>
 
-      <BoardFormDialog
-        key={editing?.id ?? "new"}
-        open={editing !== null}
-        initial={
-          editing
-            ? {
-                name: editing.name,
-                domain: editing.domain,
-                searchUrl: editing.searchUrl ?? "",
-                email: editing.email ?? "",
-                password: editing.password ?? "",
-                sortOrder: editing.sortOrder,
-              }
-            : null
-        }
-        title="Edit job board"
-        onClose={() => setEditing(null)}
-        onSubmit={(values) => editing && update.mutate({ id: editing.id, patch: values })}
-        submitting={update.isPending}
-      />
+      {editing && (
+        <BoardLoginDialog
+          key={editing.id}
+          board={editing}
+          open
+          onClose={() => setEditing(null)}
+          onSubmit={(patch) => update.mutate({ id: editing.id, patch })}
+          submitting={update.isPending}
+        />
+      )}
     </>
   );
 }

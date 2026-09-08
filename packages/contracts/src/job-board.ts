@@ -1,21 +1,30 @@
 import { z } from "zod/v4";
 
+/** The catalog key. Lower-cased so `LinkedIn.com` and `linkedin.com` are one board. */
+const boardDomain = z.string().trim().toLowerCase().min(1);
+
+/**
+ * Links a catalog board to the profile by domain. An unknown domain is added to the catalog
+ * unlisted, named by `name` (or the domain itself). Only the login is stored per profile.
+ */
 export const jobBoardSchema = z.object({
-  name: z.string().min(1),
-  domain: z.string().min(1),
-  searchUrl: z.string().optional().nullable(),
-  email: z.string().optional().nullable(),
-  password: z.string().optional().nullable(),
-  sortOrder: z.number().int(),
+  domain: boardDomain,
+  name: z.string().trim().optional(),
+  searchUrl: z.string().trim().optional(),
+  email: z.string().trim().optional(),
+  password: z.string().optional(),
 });
 
-/** `domain` identifies the global board, so it is fixed once linked - relink instead of renaming. */
-export const jobBoardPatchSchema = jobBoardSchema.omit({ domain: true }).partial();
+/** Omit a field to keep it; send null or an empty string to clear it. */
+export const jobBoardPatchSchema = z.object({
+  email: z.string().trim().nullable().optional(),
+  password: z.string().nullable().optional(),
+});
 
 /** A global catalog row. Credentials live on the per-profile link, never here. */
 export const adminBoardSchema = z.object({
   name: z.string().min(1),
-  domain: z.string().min(1),
+  domain: boardDomain,
   searchUrl: z.string().optional().nullable(),
   listed: z.boolean(),
   isDefault: z.boolean(),

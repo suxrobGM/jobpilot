@@ -86,14 +86,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
       return true;
     }
     try {
-      await linkBoard.mutateAsync({
-        name: presetCatalogBoard.name,
-        domain: presetCatalogBoard.domain,
-        searchUrl: presetCatalogBoard.searchUrl,
-        email: null,
-        password: null,
-        sortOrder: presetCatalogBoard.sortOrder,
-      });
+      await linkBoard.mutateAsync({ domain });
       return true;
     } catch {
       // The mutation already toasted the failure; keep the form filled in so the user can retry.

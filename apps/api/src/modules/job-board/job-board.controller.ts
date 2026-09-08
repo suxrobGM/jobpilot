@@ -23,7 +23,7 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "List job boards",
       description:
-        "Returns all saved job boards owned by the active profile, ordered by their sort order.",
+        "Returns the active profile's boards: listed catalog boards in catalog order, then the profile's own additions. Passwords are never returned; `hasPassword` says whether one is stored.",
     },
   })
   .get("/catalog", ({ user }) => svc.catalog(user.id), {
@@ -38,9 +38,9 @@ export const jobBoardController = new Elysia({
     body: jobBoardSchema,
     response: jobBoardRecordSchema,
     detail: {
-      summary: "Create job board",
+      summary: "Add job board",
       description:
-        "Creates a new job board for the active profile from the request body and returns the created record.",
+        "Links the catalog board with the given domain to the active profile and stores the optional login. An unknown domain is added to the catalog unlisted, using `name` and `searchUrl`. Linking a board twice returns 409.",
     },
   })
   .patch("/:id", ({ user, params, body }) => svc.update(user.id, params.id, body), {
@@ -48,17 +48,17 @@ export const jobBoardController = new Elysia({
     body: jobBoardPatchSchema,
     response: jobBoardRecordSchema,
     detail: {
-      summary: "Update job board",
+      summary: "Update board login",
       description:
-        "Applies a partial update to the active profile's job board identified by id and returns the updated record.",
+        "Sets the profile's email and/or password for the board. Omit a field to keep it, send null to clear it. Name and search URL belong to the catalog and are admin-managed.",
     },
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: idParam,
     response: deletedResponseSchema,
     detail: {
-      summary: "Delete job board",
+      summary: "Remove job board",
       description:
-        "Deletes the active profile's job board identified by id and returns the id of the removed record.",
+        "Unlinks the board from the active profile and returns the id of the removed link. The catalog row survives.",
     },
   });

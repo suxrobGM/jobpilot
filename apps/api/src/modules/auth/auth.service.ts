@@ -81,7 +81,6 @@ export class AuthService {
           username: await this.uniqueUsername(),
           contactEmail: email,
           jobBoards: {
-            // Bare links: null overrides inherit the global name/searchUrl/sortOrder live.
             createMany: { data: defaults.map((board) => ({ jobBoardId: board.id })) },
           },
         },
