@@ -41,7 +41,7 @@ function printHelp(): void {
   console.log("Examples:");
   console.log("  bun run db:seed");
   console.log("  bun run db:seed --only super-admin");
-  console.log("  bun run db:seed --only job-boards,user-boards");
+  console.log("  bun run db:seed --only job-boards");
   console.log("  bun run db:seed --only job-listings\n");
 }
 

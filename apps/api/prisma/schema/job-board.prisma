@@ -25,7 +25,6 @@ model UserJobBoard {
   email      String?
   // Encrypted under the user's DEK, like every other stored secret.
   password   String?
-  // Null = inherit the global board's value.
   name       String?
   searchUrl  String?  @map("search_url")
   sortOrder  Int?     @map("sort_order")
