@@ -109,16 +109,9 @@ export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   applyLabel: "",
 };
 
-function hasMaxApps(
-  values: ComposerFormValues,
-): values is ComposerFormValues & { maxApps: number } {
-  return values.maxApps != null && Number.isFinite(values.maxApps);
-}
-
-function hasMaxJobs(
-  values: ComposerFormValues,
-): values is ComposerFormValues & { maxJobs: number } {
-  return values.maxJobs != null && Number.isFinite(values.maxJobs);
+/** The optional caps are "empty = unlimited", so only a real number counts as set. */
+function isCap(value: number | null | undefined): value is number {
+  return value != null && Number.isFinite(value);
 }
 
 /**
@@ -142,7 +135,7 @@ function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest[
     const searchesBoard = isBoardSelected(values.board);
     return {
       ...(searchesBoard ? { board: values.board } : {}),
-      ...(searchesBoard && hasMaxApps(values) ? { maxJobs: values.maxApps } : {}),
+      ...(searchesBoard && isCap(values.maxApps) ? { maxJobs: values.maxApps } : {}),
       networking: {
         channels: values.channels,
         ...(values.channels.includes("linkedin") ? { linkedinTier: values.linkedinTier } : {}),
@@ -153,12 +146,12 @@ function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest[
   }
   if (values.mode !== "auto_apply") {
     // Omit maxJobs when empty so the search runs unlimited.
-    return { board: values.board, ...(hasMaxJobs(values) ? { maxJobs: values.maxJobs } : {}) };
+    return { board: values.board, ...(isCap(values.maxJobs) ? { maxJobs: values.maxJobs } : {}) };
   }
   return {
     board: values.board,
     minScore: values.minScore,
-    ...(hasMaxApps(values) ? { maxApplications: values.maxApps } : {}),
+    ...(isCap(values.maxApps) ? { maxApplications: values.maxApps } : {}),
   };
 }
 
@@ -198,8 +191,9 @@ export function buildSkillArg(values: ComposerFormValues, campaignId: string): s
     flags: {
       board: values.board,
       "min-score": values.mode === "auto_apply" ? values.minScore : undefined,
-      "max-apps": values.mode === "auto_apply" && hasMaxApps(values) ? values.maxApps : undefined,
-      "max-jobs": values.mode === "search" && hasMaxJobs(values) ? values.maxJobs : undefined,
+      "max-apps":
+        values.mode === "auto_apply" && isCap(values.maxApps) ? values.maxApps : undefined,
+      "max-jobs": values.mode === "search" && isCap(values.maxJobs) ? values.maxJobs : undefined,
       // Search saves results onto this campaign; pass the id the UI just created so
       // the skill doesn't have to rediscover it.
       campaign: values.mode === "search" || values.mode === "auto_apply" ? campaignId : undefined,

@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { campaignChannel } from "@jobpilot/contracts/sse";
-import { LinearProgress, Stack } from "@mui/material";
+import { Button, LinearProgress, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
@@ -25,6 +25,11 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   const detail = useApiQuery(campaignQueries.detail(campaignId));
 
+  const invalidate = (key: readonly unknown[]): void => {
+    queryClient.invalidateQueries({ queryKey: key });
+  };
+  const invalidateDetail = (): void => invalidate(queryKeys.campaigns.detail(campaignId));
+
   useSseChannel(
     campaignChannel,
     { campaignId },
@@ -32,29 +37,35 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
       // Scoped per event type: a scoring pass emits one `job-update` per job, so a blanket
       // `campaigns.all` here would refetch every cached list, page and aggregate on each one.
       on: {
-        progress: () => {
-          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
-        },
+        progress: invalidateDetail,
+        status: invalidateDetail,
         "job-update": () => {
-          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.jobs(campaignId) });
-          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.reasons(campaignId) });
-          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
+          invalidate(queryKeys.campaigns.jobs(campaignId));
+          invalidate(queryKeys.campaigns.reasons(campaignId));
+          invalidateDetail();
         },
-        status: () => {
-          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
-        },
-        "networking-update": () => {
-          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.networking(campaignId) });
-        },
+        "networking-update": () => invalidate(queryKeys.campaigns.networking(campaignId)),
       },
     },
   );
 
-  if (detail.isLoading || !detail.data) {
+  const campaign = detail.data;
+
+  if (detail.isLoading) {
     return <LinearProgress />;
   }
 
-  const campaign = detail.data;
+  // Silently spinning forever is the failure mode this rules out.
+  if (!campaign) {
+    return (
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+        <Typography variant="body2Muted">Couldn't load this campaign.</Typography>
+        <Button variant="text" size="small" onClick={() => void detail.refetch()}>
+          Retry
+        </Button>
+      </Stack>
+    );
+  }
 
   if (campaign.summary.kind === "networking") {
     return (

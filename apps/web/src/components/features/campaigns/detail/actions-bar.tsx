@@ -21,13 +21,22 @@ import { type CampaignDetailDto, jobSummary } from "@/api/types";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
+import { COMPOSER_DEFAULT_VALUES } from "../composer/form-config";
 import { RescanDialog } from "./rescan-dialog";
-
-/** Matches the composer's default so a campaign created without one rescans from the same floor. */
-const DEFAULT_MIN_SCORE = 60;
 
 interface CampaignActionsBarProps {
   campaign: CampaignDetailDto;
+}
+
+function useStatusMutation(
+  campaignId: string,
+  status: CampaignStatus,
+  successMessage: string,
+): ReturnType<typeof useApiMutation<unknown, void>> {
+  return useApiMutation<unknown, void>(
+    () => api.campaigns({ id: campaignId }).status.post({ status, actor: "user" }),
+    { successMessage, invalidate: invalidations.campaign },
+  );
 }
 
 export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement {
@@ -39,29 +48,8 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const campaignResource = api.campaigns({ id: campaign.campaignId });
 
-  const stop = useApiMutation<unknown, void>(
-    () =>
-      campaignResource.status.post({
-        status: "paused" satisfies CampaignStatus,
-        actor: "user",
-      }),
-    {
-      successMessage: "Campaign paused",
-      invalidate: invalidations.campaign,
-    },
-  );
-
-  const complete = useApiMutation<unknown, void>(
-    () =>
-      campaignResource.status.post({
-        status: "completed" satisfies CampaignStatus,
-        actor: "user",
-      }),
-    {
-      successMessage: "Campaign marked as done",
-      invalidate: invalidations.campaign,
-    },
-  );
+  const stop = useStatusMutation(campaign.campaignId, "paused", "Campaign paused");
+  const complete = useStatusMutation(campaign.campaignId, "completed", "Campaign marked as done");
 
   const [rescanOpen, setRescanOpen] = useState(false);
 
@@ -204,7 +192,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
         open={rescanOpen}
         onClose={() => setRescanOpen(false)}
         skippedCount={skippedCount}
-        defaultMinScore={campaign.config.minScore ?? DEFAULT_MIN_SCORE}
+        defaultMinScore={campaign.config.minScore ?? COMPOSER_DEFAULT_VALUES.minScore}
         pending={rescan.isPending}
         onConfirm={(minScore) => void handleRescanConfirm(minScore)}
       />

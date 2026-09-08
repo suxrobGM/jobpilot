@@ -89,7 +89,7 @@ export const CampaignBasicsFields = withForm({
 
             {/* One board control: required for search/auto-apply, optional for networking, where it
                 toggles board-grounded vs criteria-only discovery. */}
-            {boards.length > 0 ? (
+            {boards.length > 0 && (
               <Stack spacing={0.75}>
                 <form.AppField name="board">
                   {(field) => (
@@ -108,12 +108,12 @@ export const CampaignBasicsFields = withForm({
                   </Typography>
                 )}
               </Stack>
-            ) : (
-              !isNetworking && (
-                <Typography variant="body2Muted">
-                  No boards configured. Add one on the Boards page first.
-                </Typography>
-              )
+            )}
+            {/* Networking can run on criteria alone, so a missing board only blocks the other modes. */}
+            {boards.length === 0 && !isNetworking && (
+              <Typography variant="body2Muted">
+                No boards configured. Add one on the Boards page first.
+              </Typography>
             )}
 
             {resumes.length > 0 ? (

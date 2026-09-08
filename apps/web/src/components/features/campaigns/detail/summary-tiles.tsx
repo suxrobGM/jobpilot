@@ -15,31 +15,26 @@ export function CampaignSummaryTiles(props: CampaignSummaryTilesProps): ReactNod
   if (s.kind !== "jobs") {
     return null;
   }
-  const showRemaining = typeof campaign.config.maxApplications === "number";
-  const tileSize = { xs: 6, sm: 4, md: 2 };
+  const tiles = [
+    { label: "Found", value: s.totalFound },
+    { label: "Qualified", value: s.qualified },
+    { label: "Applied", value: s.applied },
+    { label: "Failed", value: s.failed },
+    { label: "Skipped", value: s.skipped },
+  ];
+
+  // Remaining only means something against a cap.
+  if (typeof campaign.config.maxApplications === "number") {
+    tiles.push({ label: "Remaining", value: s.remaining });
+  }
 
   return (
     <Grid container spacing={2}>
-      <Grid size={tileSize}>
-        <StatCard label="Found" value={s.totalFound} />
-      </Grid>
-      <Grid size={tileSize}>
-        <StatCard label="Qualified" value={s.qualified} />
-      </Grid>
-      <Grid size={tileSize}>
-        <StatCard label="Applied" value={s.applied} />
-      </Grid>
-      <Grid size={tileSize}>
-        <StatCard label="Failed" value={s.failed} />
-      </Grid>
-      <Grid size={tileSize}>
-        <StatCard label="Skipped" value={s.skipped} />
-      </Grid>
-      {showRemaining && (
-        <Grid size={tileSize}>
-          <StatCard label="Remaining" value={s.remaining} />
+      {tiles.map((tile) => (
+        <Grid key={tile.label} size={{ xs: 6, sm: 4, md: 2 }}>
+          <StatCard label={tile.label} value={tile.value} />
         </Grid>
-      )}
+      ))}
     </Grid>
   );
 }

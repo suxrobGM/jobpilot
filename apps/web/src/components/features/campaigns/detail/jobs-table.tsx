@@ -75,6 +75,17 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       headerAlign: "right",
       valueGetter: (_v, row) => row.matchScore ?? "",
     },
+    ...(showReason
+      ? [
+          {
+            field: "matchReason",
+            headerName: "Why",
+            flex: 1.5,
+            minWidth: 220,
+            valueGetter: (_v, row) => row.matchReason ?? "",
+          } satisfies GridColDef<CampaignJobDto>,
+        ]
+      : []),
     {
       field: "failReason",
       headerName: "Fail reason",
@@ -83,16 +94,6 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       valueGetter: (_v, row) => row.failReason ?? row.skipReason ?? "",
     },
   ];
-
-  if (showReason) {
-    columns.splice(columns.length - 1, 0, {
-      field: "matchReason",
-      headerName: "Why",
-      flex: 1.5,
-      minWidth: 220,
-      valueGetter: (_v, row) => row.matchReason ?? "",
-    });
-  }
 
   if (onApplyJob || onDraftProposal) {
     columns.push({

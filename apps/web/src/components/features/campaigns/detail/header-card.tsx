@@ -17,6 +17,12 @@ const CAMPAIGN_ACTOR_LABEL: Record<CampaignActor, string> = {
   pilot: "the pilot",
 };
 
+function pausedLine(campaign: CampaignDetailDto): string {
+  const by = campaign.statusActor ? ` by ${CAMPAIGN_ACTOR_LABEL[campaign.statusActor]}` : "";
+  const reason = campaign.statusReason ? ` - ${campaign.statusReason}` : "";
+  return `Paused${by}${reason} · resume to continue.`;
+}
+
 interface CampaignHeaderCardProps {
   campaign: CampaignDetailDto;
 }
@@ -26,10 +32,6 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
   const { campaign } = props;
   const cfg = campaign.config;
   const isAutoApply = campaign.source === "auto_apply";
-  const pausedBy = campaign.statusActor
-    ? `Paused by ${CAMPAIGN_ACTOR_LABEL[campaign.statusActor]}`
-    : "Paused";
-  const pausedReason = campaign.statusReason ? ` - ${campaign.statusReason}` : "";
 
   return (
     <Card>
@@ -69,9 +71,7 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
             <CampaignIdentityBanner />
 
             {campaign.status === "paused" && (
-              <Typography variant="captionMuted">
-                {`${pausedBy}${pausedReason} · resume to continue.`}
-              </Typography>
+              <Typography variant="captionMuted">{pausedLine(campaign)}</Typography>
             )}
           </Stack>
 
