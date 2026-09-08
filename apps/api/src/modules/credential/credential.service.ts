@@ -104,15 +104,16 @@ export class CredentialService {
   /** A row with both login fields present and the password decrypted - or null. */
   private async toLogin(
     userId: string,
-    row: { email: string | null; password: string | null } | null | undefined,
-    ctx: string,
+    row: { email: string | null; password: string | null },
   ): Promise<{ email: string; password: string } | null> {
-    const email = row?.email?.trim();
-    const stored = row?.password?.trim();
+    const email = row.email?.trim();
+    const stored = row.password?.trim();
     if (!email || !stored) {
       return null;
     }
-    const password = (await this.crypto.decryptFor(userId, ctx, stored)).trim();
+    const password = (
+      await this.crypto.decryptFor(userId, SECRET_CONTEXTS.credentialPassword, stored)
+    ).trim();
     return password ? { email, password } : null;
   }
 
@@ -128,8 +129,11 @@ export class CredentialService {
 
     for (const scope of [domain, "default"]) {
       const cred = creds.find((c) => c.scope === scope);
-      const login = await this.toLogin(userId, cred, SECRET_CONTEXTS.credentialPassword);
-      if (cred && login) {
+      if (!cred) {
+        continue;
+      }
+      const login = await this.toLogin(userId, cred);
+      if (login) {
         return { id: cred.id, ...login, scope };
       }
     }

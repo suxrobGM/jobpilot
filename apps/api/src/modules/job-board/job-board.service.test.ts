@@ -1,6 +1,3 @@
-// Link-by-domain and the wire projection through JobBoardService with a fake Prisma. The
-// ownership 404 comes from findOwned, covered elsewhere.
-
 import type { PrismaClient } from "@/generated/prisma/client";
 import { JobBoardService } from "./job-board.service";
 import { describe, expect, it } from "bun:test";

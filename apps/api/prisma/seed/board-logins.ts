@@ -27,21 +27,25 @@ export async function moveBoardLogins(): Promise<void> {
     WHERE l."email" IS NOT NULL OR l."password" IS NOT NULL
   `;
 
-  let moved = 0;
-  for (const row of rows) {
-    const password = row.password
-      ? await crypto.encryptFor(
-          row.user_id,
-          SECRET_CONTEXTS.credentialPassword,
-          await crypto.decryptFor(row.user_id, BOARD_PASSWORD_CONTEXT, row.password),
-        )
-      : null;
-    await db.credential.upsert({
-      where: { userId_scope: { userId: row.user_id, scope: row.domain } },
-      create: { userId: row.user_id, scope: row.domain, email: row.email, password },
-      update: { email: row.email, password },
-    });
-    moved += 1;
-  }
-  console.log(`✅ Board logins: ${moved} moved into credentials.`);
+  const moves = await Promise.all(
+    rows.map(async (row) => {
+      const plain = await crypto.decryptField(row.user_id, BOARD_PASSWORD_CONTEXT, row.password);
+      const password = await crypto.encryptField(
+        row.user_id,
+        SECRET_CONTEXTS.credentialPassword,
+        plain,
+      );
+      return { userId: row.user_id, scope: row.domain, email: row.email, password };
+    }),
+  );
+  await db.$transaction(
+    moves.map((move) =>
+      db.credential.upsert({
+        where: { userId_scope: { userId: move.userId, scope: move.scope } },
+        create: move,
+        update: { email: move.email, password: move.password },
+      }),
+    ),
+  );
+  console.log(`✅ Board logins: ${rows.length} moved into credentials.`);
 }

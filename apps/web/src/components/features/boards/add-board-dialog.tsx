@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { JobBoardInput } from "@jobpilot/contracts/job-board";
+import { type JobBoardInput, jobBoardSchema } from "@jobpilot/contracts/job-board";
 import { Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { z } from "zod/v4";
@@ -13,12 +13,11 @@ import { useAppForm } from "@/components/ui/form/tanstack";
 /** Empty `catalogDomain` means "another site", which needs a typed domain. */
 const OTHER_SITE = "";
 
-const addBoardFormSchema = z
-  .object({
+// Picking a catalog board supplies the domain, so the typed one is required only for "another site".
+const addBoardFormSchema = jobBoardSchema
+  .extend({
     catalogDomain: z.string(),
-    domain: z.string().trim(),
-    name: z.string().trim(),
-    searchUrl: z.string().trim(),
+    domain: z.string().trim().toLowerCase(),
   })
   .refine((values) => values.catalogDomain !== OTHER_SITE || values.domain.length > 0, {
     message: "Enter the site's domain",

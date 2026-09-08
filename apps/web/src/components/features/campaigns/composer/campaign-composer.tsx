@@ -45,13 +45,8 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
 
   // Upwork is picker-only, so /upwork's "Find jobs" presets a board most profiles have not
   // linked. Offer it from the catalog instead of falling back to the first linked board.
-  const needsCatalog =
-    Boolean(defaultBoard) &&
-    boardsQuery.isSuccess &&
-    !linkedBoards.some((b) => b.domain === defaultBoard);
-
   const catalogQuery = useApiQuery(jobBoardQueries.catalog(), {
-    enabled: needsCatalog,
+    enabled: Boolean(defaultBoard),
     // Admin-curated seed data, so a per-mount refetch buys nothing.
     staleTime: 10 * 60_000,
   });
@@ -63,9 +58,8 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
 
   const linkBoard = useLinkBoard();
 
-  const presetCatalogBoard = needsCatalog
-    ? (catalogQuery.data ?? []).find((b) => b.domain === defaultBoard)
-    : undefined;
+  // The catalog lists only boards this profile has not linked, so a hit here is always unlinked.
+  const presetCatalogBoard = (catalogQuery.data ?? []).find((b) => b.domain === defaultBoard);
 
   const boards: BoardOption[] = presetCatalogBoard
     ? [...linkedBoards, presetCatalogBoard]
@@ -82,7 +76,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
 
   /** Skills read the board off the profile's own list, so adopt a catalog board before running one. */
   const adoptBoard = async (domain: string): Promise<boolean> => {
-    if (!presetCatalogBoard || presetCatalogBoard.domain !== domain) {
+    if (presetCatalogBoard?.domain !== domain) {
       return true;
     }
     try {
