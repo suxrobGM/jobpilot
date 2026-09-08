@@ -6,7 +6,7 @@ import { logger } from "@/common/logger";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { loadFreshAccount } from "../account/account.utils";
-import { getProvider } from "../gmail.provider";
+import { getProvider, rethrowGmailError } from "../gmail.provider";
 
 /** The fields the reply-linker needs from a freshly-synced inbound message. */
 interface InboundForLinking {
@@ -71,7 +71,7 @@ export class EmailSyncService {
 
     publish(inboxChannel, { userId }, { type: "sync.started" });
 
-    const result = await provider.syncMessages(config, active);
+    const result = await provider.syncMessages(config, active).catch(rethrowGmailError);
 
     let inserted = 0;
     const insertedForLinking: InboundForLinking[] = [];

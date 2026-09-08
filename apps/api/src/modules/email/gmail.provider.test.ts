@@ -4,6 +4,7 @@ import {
   GMAIL_READ_SCOPE,
   GMAIL_SCOPES,
   GMAIL_SEND_SCOPE,
+  rethrowGmailError,
   scopeCanRead,
   scopeCanSend,
 } from "./gmail.provider";
@@ -42,5 +43,21 @@ describe("scopeCanSend", () => {
 
   it("rejects a read-only grant", () => {
     expect(scopeCanSend(`${GMAIL_READ_SCOPE} openid email`)).toBe(false);
+  });
+});
+
+describe("rethrowGmailError", () => {
+  const disabled = {
+    status: 403,
+    response: { data: { error: { errors: [{ reason: "accessNotConfigured" }] } } },
+  };
+
+  it("turns a disabled Gmail API into an actionable 422", () => {
+    expect(() => rethrowGmailError(disabled)).toThrow(/Gmail API is not enabled/);
+  });
+
+  it("passes any other failure through untouched", () => {
+    const other = new Error("network down");
+    expect(() => rethrowGmailError(other)).toThrow(other);
   });
 });

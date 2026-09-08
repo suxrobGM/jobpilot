@@ -24,7 +24,9 @@ function toJsonChild(value: unknown): Prisma.InputJsonValue | null {
   throw new TypeError(`Value of type ${typeof value} cannot be stored as JSON.`);
 }
 
-const DATE_KEYS = new Set([
+/** Every key typed `z.date()` under an agenda or claim payload. `json.test.ts` fails when the
+ *  schemas grow one this list is missing. */
+export const DATE_KEYS = new Set([
   "generatedAt",
   "expiresAt",
   "nextWakeAt",
@@ -32,6 +34,7 @@ const DATE_KEYS = new Set([
   "sentAt",
   "receivedAt",
   "pausedAt",
+  "lastSyncedAt",
 ]);
 
 /** Restores ISO date fields after reading typed JSON snapshots. */

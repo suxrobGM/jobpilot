@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import { unprocessable } from "@/common/errors";
 import type { EmailAccount, EmailProvider } from "@/generated/prisma/client";
 import type {
   MailboxProvider,
@@ -35,6 +36,24 @@ export const GMAIL_READ_SCOPE = "https://www.googleapis.com/auth/gmail.readonly"
 
 /** Scopes requested at consent; surfaced in the email settings UI. */
 export const GMAIL_SCOPES = [GMAIL_READ_SCOPE, GMAIL_SEND_SCOPE, "openid", "email"];
+
+/**
+ * Every user brings their own Google Cloud project, so "Gmail API not enabled" is that user's
+ * setup mistake. Hand it back as an actionable 422 instead of a 500 carrying a Gaxios dump.
+ */
+export function rethrowGmailError(error: unknown): never {
+  const failure = error as {
+    status?: number;
+    response?: { data?: { error?: { errors?: { reason?: string }[] } } };
+  };
+  const reasons = failure?.response?.data?.error?.errors?.map((e) => e.reason) ?? [];
+  if (failure?.status === 403 && reasons.includes("accessNotConfigured")) {
+    throw unprocessable(
+      "Gmail API is not enabled in your Google Cloud project. Enable it in the API library, wait a minute, then sync again.",
+    );
+  }
+  throw error;
+}
 
 function grants(scope: string | null | undefined, required: string): boolean {
   return !!scope && scope.split(/\s+/).includes(required);
