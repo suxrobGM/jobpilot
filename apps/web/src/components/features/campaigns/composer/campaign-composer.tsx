@@ -47,7 +47,6 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   // linked. Offer it from the catalog instead of falling back to the first linked board.
   const catalogQuery = useApiQuery(jobBoardQueries.catalog(), {
     enabled: Boolean(defaultBoard),
-    // Admin-curated seed data, so a per-mount refetch buys nothing.
     staleTime: 10 * 60_000,
   });
 
@@ -69,6 +68,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const recentQueries = Array.from(
     new Set((recentCampaignsQuery.data?.items ?? []).map((r) => r.query)),
   ).slice(0, 5);
+
   const hasBoards = boards.length > 0;
   const hasResumes = resumes.length > 0;
 
@@ -83,7 +83,6 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
       await linkBoard.mutateAsync({ domain });
       return true;
     } catch {
-      // The mutation already toasted the failure; keep the form filled in so the user can retry.
       return false;
     }
   };
@@ -99,12 +98,15 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     onSubmit: async ({ value }) => {
       const upwork = isUpworkSearch(value);
       const effective = upwork ? { ...value, mode: "search" as const } : value;
+
       if (!(await adoptBoard(effective.board))) {
         return;
       }
+
       const campaign = await createCampaign.mutateAsync(buildCreateCampaignRequest(effective));
       const campaignId = campaign.campaignId;
       router.push(`/campaigns/${encodeURIComponent(campaignId)}`);
+
       void agent.injectSkill(
         upwork ? "upwork-search" : effective.mode,
         buildSkillArg(effective, campaignId),
@@ -171,7 +173,6 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
                   disabled={
                     !canSubmit ||
                     isSubmitting ||
-                    // Apply needs neither prerequisite: it takes pasted links and tailors per job.
                     (!isApply && (!hasResumes || (!hasBoards && !isNetworking)))
                   }
                 >
