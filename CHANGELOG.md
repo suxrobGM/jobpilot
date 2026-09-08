@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.1.37 - 2026-09-08
+
+### Changed
+
+- Board logins now live only under Settings, Credentials, scoped to the board's domain. Adding a
+  board no longer asks for an email and password, and the per-board edit dialog is gone. Existing
+  board logins move into credentials automatically.
+- A job board is linked by its domain, so the Add board dialog offers the catalog first and only
+  asks for a domain, name, and search URL when you pick "Another site".
+- Starting a campaign with a preset board that you have not linked (such as Upwork from "Find
+  jobs") now offers that board from the catalog and links it on submit, instead of falling back to
+  the first board on your list.
+
 ## v2.1.36 - 2026-09-07
 
 ### Added
