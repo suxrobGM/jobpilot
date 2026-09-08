@@ -119,3 +119,65 @@ describe("ClaimService snapshots", () => {
     expect(creates).toHaveLength(0);
   });
 });
+
+const USER_ID = "5f0d4d0e-4f27-4a0a-9f4e-2b1c6f1f7f01";
+const CLAIM_ID = "4c965efd-b586-49ea-825b-1af715760116";
+
+/** Minimal harness for the heartbeat path, which the snapshot fake above does not reach. */
+function heartbeatDb(grantedAt: Date) {
+  const writes: Record<string, unknown>[] = [];
+  const db = {
+    pilotClaim: {
+      findFirst: async () => ({ grantedAt }),
+      updateMany: async ({ data }: { data: Record<string, unknown> }) => {
+        writes.push(data);
+        return { count: 1 };
+      },
+      findUniqueOrThrow: async () => ({
+        id: CLAIM_ID,
+        userId: USER_ID,
+        kind: "job.apply",
+        subjectType: "job",
+        subjectId: "j1",
+        payload: snapshot.items[0].payload,
+        grantedAt,
+        heartbeatAt: new Date(),
+        expiresAt: new Date(),
+        releasedAt: null,
+        outcome: null,
+      }),
+    },
+  };
+  const campaignJobs = {} as unknown as CampaignJobService;
+  return {
+    service: new ClaimService(db as unknown as PrismaClient, campaignJobs),
+    get expiry() {
+      return writes[0]?.expiresAt as Date;
+    },
+  };
+}
+
+describe("ClaimService heartbeat lifetime ceiling", () => {
+  it("extends a young claim by the usual TTL", async () => {
+    const state = heartbeatDb(new Date(Date.now() - 60_000));
+    await state.service.heartbeat(USER_ID, CLAIM_ID);
+    const minutesOut = (state.expiry.getTime() - Date.now()) / 60_000;
+    expect(minutesOut).toBeGreaterThan(14);
+    expect(minutesOut).toBeLessThanOrEqual(15);
+  });
+
+  it("holds a long-running claim to the ceiling instead of sliding it forward again", async () => {
+    // Granted 20 minutes ago: the ceiling leaves 5, where the TTL alone would hand back 15.
+    const state = heartbeatDb(new Date(Date.now() - 20 * 60_000));
+    await state.service.heartbeat(USER_ID, CLAIM_ID);
+    const minutesOut = (state.expiry.getTime() - Date.now()) / 60_000;
+    expect(minutesOut).toBeGreaterThan(4);
+    expect(minutesOut).toBeLessThanOrEqual(5);
+  });
+
+  it("stops extending a claim already past the ceiling, so the sweep can reclaim it", async () => {
+    const state = heartbeatDb(new Date(Date.now() - 90 * 60_000));
+    await state.service.heartbeat(USER_ID, CLAIM_ID);
+    expect(state.expiry.getTime()).toBeLessThan(Date.now());
+  });
+});
