@@ -1,20 +1,14 @@
-// Per-item builder behavior (the M3 kinds) through buildAgenda: send/inbox/promo/followup/warmIntro
-// caps. Pure: no Prisma, no env.
 import { buildAgenda } from "./build";
-import { base, cfg, followup, job, prep, reply, send } from "./build.test-helpers";
+import { base, cfg, contact, followup, hotJob, job, prep, reply, send } from "./builders";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda M3 kinds", () => {
   it("orders new kinds by the priority ladder", () => {
-    const hotJob = {
-      ...job("j1", 90),
-      company: "Acme",
-      warmContacts: [{ id: "w1", name: "W", title: null, email: "w@acme.test" }],
-    };
+    const hot = hotJob("j1", 90, [contact("w1")]);
     const agenda = buildAgenda(
       base({
-        approvedJobs: [hotJob],
-        warmIntroCandidates: [hotJob],
+        approvedJobs: [hot],
+        warmIntroCandidates: [hot],
         approvedNetworking: [send("m1")],
         inbox: { messageIds: ["e1"], count: 1 },
         approvedPromotions: [
@@ -104,46 +98,39 @@ describe("buildAgenda M3 kinds", () => {
   });
 
   it("emits a warmIntro and attaches warmContacts to the apply payload", () => {
-    const warm = [{ id: "w1", name: "Insider", title: "Eng", email: "in@acme.test" }];
-    const hotJob = { ...job("j1", 80), company: "Acme", warmContacts: warm };
-    const hot = buildAgenda(base({ approvedJobs: [hotJob], warmIntroCandidates: [hotJob] }));
+    const warm = [contact("w1", { title: "Eng" })];
+    const job1 = hotJob("j1", 80, warm);
+    const hot = buildAgenda(base({ approvedJobs: [job1], warmIntroCandidates: [job1] }));
     expect(hot.items.some((i) => i.kind === "networking.warmIntro")).toBe(true);
     const apply = hot.items.find((i) => i.kind === "job.apply");
     expect(apply?.payload.warmContacts).toEqual(warm);
   });
 
   it("emits no warmIntro when the pool is empty", () => {
-    const coldJob = { ...job("j2", 79), company: "Acme" };
-    const agenda = buildAgenda(base({ approvedJobs: [coldJob], warmIntroCandidates: [] }));
+    const agenda = buildAgenda(base({ approvedJobs: [hotJob("j2", 79)], warmIntroCandidates: [] }));
     expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
   });
 
   it("emits at most one warmIntro per agenda", () => {
-    const warm = [{ id: "w1", name: "Insider", title: null, email: "in@acme.test" }];
-    const pool = [
-      { ...job("j1", 90), company: "Acme", warmContacts: warm },
-      { ...job("j2", 88), company: "Beta", warmContacts: warm },
-    ];
+    const warm = [contact("w1")];
+    const pool = [hotJob("j1", 90, warm), hotJob("j2", 88, warm)];
     const agenda = buildAgenda(base({ approvedJobs: pool, warmIntroCandidates: pool }));
     expect(agenda.items.filter((i) => i.kind === "networking.warmIntro")).toHaveLength(1);
   });
 
   it("emits a warmIntro for a recently-applied job that left the approved pool", () => {
-    const agenda = buildAgenda(
-      base({ approvedJobs: [], warmIntroCandidates: [{ ...job("j1", 90), company: "Acme" }] }),
-    );
+    const agenda = buildAgenda(base({ approvedJobs: [], warmIntroCandidates: [hotJob("j1", 90)] }));
     expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(true);
     expect(agenda.items.some((i) => i.kind === "job.apply")).toBe(false);
   });
 
   it("suppresses every networking kind when both channels are off", () => {
-    const warm = [{ id: "w1", name: "Insider", title: null, email: "in@acme.test" }];
-    const hotJob = { ...job("j1", 90), company: "Acme", warmContacts: warm };
+    const hot = hotJob("j1", 90, [contact("w1")]);
     const agenda = buildAgenda(
       base({
         config: cfg({ networking: { email: "off", linkedIn: "off" } }),
-        approvedJobs: [hotJob],
-        warmIntroCandidates: [hotJob],
+        approvedJobs: [hot],
+        warmIntroCandidates: [hot],
         approvedNetworking: [send("m1")],
         followups: [followup("f1")],
         inbox: { messageIds: ["e1"], count: 1 },
@@ -158,9 +145,7 @@ describe("buildAgenda M3 kinds", () => {
   });
 
   it("emits a warmIntro for a high-score job with no known contacts", () => {
-    const agenda = buildAgenda(
-      base({ warmIntroCandidates: [{ ...job("j1", 90), company: "Acme" }] }),
-    );
+    const agenda = buildAgenda(base({ warmIntroCandidates: [hotJob("j1", 90)] }));
     const warmIntro = agenda.items.find((i) => i.kind === "networking.warmIntro");
     expect(warmIntro?.payload.contacts).toEqual([]);
   });
@@ -170,7 +155,7 @@ describe("buildAgenda M3 kinds", () => {
       base({
         config: cfg({ networking: { dailyCap: 1 } }),
         networkingSentToday: 1,
-        warmIntroCandidates: [{ ...job("j1", 90), company: "Acme" }],
+        warmIntroCandidates: [hotJob("j1", 90)],
       }),
     );
     expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
@@ -180,7 +165,7 @@ describe("buildAgenda M3 kinds", () => {
     const agenda = buildAgenda(
       base({
         config: cfg({ networking: { email: "off", linkedIn: "draft" } }),
-        warmIntroCandidates: [{ ...job("j1", 90), company: "Acme" }],
+        warmIntroCandidates: [hotJob("j1", 90)],
         approvedNetworking: [send("m1")],
         followups: [followup("f1")],
       }),
@@ -195,7 +180,7 @@ describe("buildAgenda M3 kinds", () => {
     const agenda = buildAgenda(
       base({
         config: cfg({ networking: { email: "auto", linkedIn: "review" } }),
-        warmIntroCandidates: [{ ...job("j1", 90), company: "Acme" }],
+        warmIntroCandidates: [hotJob("j1", 90)],
       }),
     );
     const warmIntro = agenda.items.find((i) => i.kind === "networking.warmIntro");
@@ -206,7 +191,7 @@ describe("buildAgenda M3 kinds", () => {
     const agenda = buildAgenda(
       base({
         config: cfg({ networking: { email: "off", linkedIn: "review" } }),
-        warmIntroCandidates: [{ ...job("j1", 90), company: "Acme" }],
+        warmIntroCandidates: [hotJob("j1", 90)],
       }),
     );
     const warmIntro = agenda.items.find((i) => i.kind === "networking.warmIntro");

@@ -1,7 +1,4 @@
-// Campaign-level gathers through AgendaService.refresh (fake Prisma, no DB): score-pending
-// backlogs and the paused-campaign review.
-
-import { service, serviceWithRec } from "./compile.test-helpers";
+import { service, serviceWithRec } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 describe("AgendaService campaign.scorePending", () => {

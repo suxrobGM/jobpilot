@@ -1,11 +1,9 @@
-// Pure builders for the agenda unit tests: contracts + local types only, so importing this never
-// loads `@/env` and the builder suites stay database-free.
 import {
   type PilotInstructionsConfig,
   pilotInstructionsConfigSchema,
 } from "@jobpilot/contracts/pilot";
 import type { z } from "zod/v4";
-import type { AgendaInput } from "./types";
+import type { AgendaInput, WarmContact } from "./types";
 
 type ConfigOverrides = z.input<typeof pilotInstructionsConfigSchema>;
 
@@ -60,6 +58,21 @@ export const job = (key: string, matchScore: number | null) => ({
   board: null,
   digest: null,
   matchScore,
+});
+
+export const contact = (id: string, over: Partial<WarmContact> = {}): WarmContact => ({
+  id,
+  name: "Insider",
+  title: null,
+  email: `${id}@acme.test`,
+  ...over,
+});
+
+/** A job that also qualifies for the warm-intro pool: named company, optional known contacts. */
+export const hotJob = (key: string, matchScore: number, warmContacts?: WarmContact[]) => ({
+  ...job(key, matchScore),
+  company: "Acme",
+  ...(warmContacts ? { warmContacts } : {}),
 });
 
 export const send = (messageId: string, over: Record<string, unknown> = {}) => ({

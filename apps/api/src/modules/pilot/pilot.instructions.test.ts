@@ -1,4 +1,3 @@
-// Fake-Prisma unit test for the instructions edit and the run-state guards.
 import {
   pilotInstructionsChangeSchema,
   pilotInstructionsConfigSchema,

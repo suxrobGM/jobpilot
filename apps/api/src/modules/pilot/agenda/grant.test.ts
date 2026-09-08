@@ -1,5 +1,3 @@
-// Grant gates in isolation: leasability depends on mutable row state the agent can't assert.
-
 import type { PrismaClient } from "@/generated/prisma/client";
 import { verifyGrant } from "./grant";
 import { describe, expect, it } from "bun:test";

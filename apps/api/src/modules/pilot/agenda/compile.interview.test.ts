@@ -1,6 +1,4 @@
-// Interview reply/prep gathers through AgendaService.refresh (fake Prisma, no DB).
-
-import { service } from "./compile.test-helpers";
+import { service } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 describe("AgendaService interview replies", () => {

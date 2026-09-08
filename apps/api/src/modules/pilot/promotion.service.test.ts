@@ -1,7 +1,3 @@
-// Fake-Prisma unit test for PromotionService: correction capture (a decline or draft edit is
-// journaled with before/after detail) and the result approval gate (terminal outcomes only land
-// on approved posts). Injects fakes directly (no database); publish() is a no-op without subscribers.
-
 import type { PushPayload, PushService } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { PilotJournalService } from "./journal.service";

@@ -1,9 +1,5 @@
-// Proactive/maintenance gathers through AgendaService.refresh (fake Prisma, no DB): promotion
-// cadence, queue drain, board health, quiet-agenda candidates, and strategy bootstrap.
-
-import { service, serviceWithRec } from "./compile.test-helpers";
 import { INBOX_SYNC_STALE_MS } from "./constants";
-import { approvedJob, pilotSearchRow } from "./db.test-helpers";
+import { approvedJob, pilotSearchRow, service, serviceWithRec } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 describe("AgendaService promotion cadence", () => {

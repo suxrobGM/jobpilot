@@ -5,7 +5,7 @@ import {
   OWNED_RESUME_ID,
   OWNED_VARIANT_ID,
   setup,
-} from "./job.service.test-helpers";
+} from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 describe("CampaignJobService terminal results", () => {

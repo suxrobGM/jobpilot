@@ -1,10 +1,6 @@
-// Exercises promoteScoredPendingJobs in isolation via a fake Prisma + CampaignJobService, so no
-// database is touched. Importing the campaign service transitively loads `@/env`, satisfied by the
-// local .env / ci.yml dummy env.
-
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { Over } from "./db.test-helpers";
-import { makeAgendaDb, makeCampaignJobs } from "./db.test-helpers";
+import type { Over } from "./fakes";
+import { makeAgendaDb, makeCampaignJobs } from "./fakes";
 import { promoteScoredPendingJobs } from "./promote";
 import { describe, expect, it } from "bun:test";
 
@@ -18,7 +14,7 @@ const scored = (over: Record<string, unknown> = {}) => ({
 
 const run = (over: Over, fallbackMinScore = 60) => {
   const { db, rec } = makeAgendaDb(over);
-  const deps = { prisma: db as unknown as PrismaClient, campaignJobs: makeCampaignJobs(rec, over) };
+  const deps = { prisma: db as unknown as PrismaClient, campaignJobs: makeCampaignJobs(rec) };
   return { go: () => promoteScoredPendingJobs(deps, "p1", fallbackMinScore), rec };
 };
 

@@ -1,9 +1,5 @@
-// Apply-pipeline gathers through AgendaService.refresh (fake Prisma, no DB): the warm-check
-// contact join and search due-selection.
-
 import { HOUR_MS } from "@/common/date/buckets";
-import { service } from "./compile.test-helpers";
-import { approvedJob, pilotSearchRow } from "./db.test-helpers";
+import { approvedJob, pilotSearchRow, service } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 const dueRow = (over: Record<string, unknown> = {}) =>

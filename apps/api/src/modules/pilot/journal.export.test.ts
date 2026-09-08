@@ -1,7 +1,5 @@
-// Fake-Prisma unit test for the journal NDJSON export: streams every entry, createdAt ascending,
-// pulling in cursor batches. The fake returns small chunks so multi-batch cursor walking is exercised.
+import { makePush } from "@/common/push/push.fake";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { makePush } from "./agenda/db.test-helpers";
 import { PilotJournalService } from "./journal.service";
 import { describe, expect, it } from "bun:test";
 
@@ -21,7 +19,6 @@ function row(id: string, minute: number): Record<string, unknown> {
   };
 }
 
-/** Fake Prisma paging `pilotJournalEntry` in CHUNK-sized batches keyed by the id cursor. */
 function makeDb(rows: Record<string, unknown>[]) {
   return {
     pilotJournalEntry: {
@@ -35,7 +32,7 @@ function makeDb(rows: Record<string, unknown>[]) {
 
 function service(rows: Record<string, unknown>[]) {
   const db = makeDb(rows) as unknown as PrismaClient;
-  return new PilotJournalService(db, makePush({ pushes: [] }));
+  return new PilotJournalService(db, makePush([]));
 }
 
 describe("PilotService journal export", () => {

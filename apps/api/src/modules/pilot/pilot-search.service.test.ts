@@ -1,4 +1,3 @@
-// Fake-Prisma unit test for PilotSearchService and its pure scheduleNextRun policy (no database).
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { PilotSearchService, scheduleNextRun } from "./pilot-search.service";

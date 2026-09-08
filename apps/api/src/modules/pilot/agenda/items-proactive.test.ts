@@ -1,5 +1,3 @@
-// Pure builder behavior for the M4 proactive kinds through buildAgenda: queue.drain emission + rank,
-// board.health cap + rank, and quiet-agenda gating of strategyReview/rescan/retry. No Prisma, no env.
 import { buildAgenda } from "./build";
 import {
   base,
@@ -9,7 +7,7 @@ import {
   job,
   queueDrain,
   strategyReview,
-} from "./build.test-helpers";
+} from "./builders";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda queue.drain", () => {

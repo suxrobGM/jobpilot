@@ -1,4 +1,4 @@
-import { APPLIED_AT, setup } from "./job.service.test-helpers";
+import { APPLIED_AT, setup } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 describe("CampaignJobService queued rows", () => {

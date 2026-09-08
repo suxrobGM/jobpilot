@@ -1,7 +1,5 @@
-﻿// The morning-digest writer in isolation via writeDigestIfDue with fake Prisma/Pilot/Push deps - no
-// database. Loading the digest module transitively loads `@/env`, satisfied by the dummy env.
-import { makeAgendaDeps, type Over } from "./db.test-helpers";
 import { writeDigestIfDue } from "./digest";
+import { makeAgendaDeps, type Over } from "./fakes";
 import { describe, expect, it, spyOn } from "bun:test";
 
 const MORNING = new Date("2026-07-15T08:00:00.000Z"); // past 07:00 UTC

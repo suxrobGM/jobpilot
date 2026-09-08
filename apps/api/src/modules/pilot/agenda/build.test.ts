@@ -1,5 +1,3 @@
-// Pure agenda orchestrator: no Prisma, no env. Priority ordering, cap suppression, budget,
-// empty-reason, and sleep rules against hand-built inputs.
 import { buildAgenda } from "./build";
 import {
   base,
@@ -9,7 +7,7 @@ import {
   job,
   pausedCampaign,
   queueDrain,
-} from "./build.test-helpers";
+} from "./builders";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda priority", () => {

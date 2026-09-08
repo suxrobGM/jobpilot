@@ -1,8 +1,6 @@
-// Fake-Prisma unit test for the question lifecycle. Injects a fake Prisma directly (no database);
-// publish() is a no-op without subscribers.
+import { makePush } from "@/common/push/push.fake";
 import type { PushPayload } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { makePush } from "./agenda/db.test-helpers";
 import { PilotQuestionService } from "./pilot.questions.service";
 import { describe, expect, it } from "bun:test";
 
@@ -52,7 +50,7 @@ function makeDb(questionOver: Record<string, unknown> = {}) {
 const service = (questionOver: Record<string, unknown> = {}) => {
   const { db, rec, question } = makeDb(questionOver);
   return {
-    svc: new PilotQuestionService(db as unknown as PrismaClient, makePush(rec)),
+    svc: new PilotQuestionService(db as unknown as PrismaClient, makePush(rec.pushes)),
     rec,
     question,
   };

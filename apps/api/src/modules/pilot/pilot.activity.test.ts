@@ -1,4 +1,3 @@
-// Fake-Prisma unit test for the liveness read the terminal orchestrator polls.
 import type { PrismaClient } from "@/generated/prisma/client";
 import { PilotService } from "./pilot.service";
 import { describe, expect, it } from "bun:test";

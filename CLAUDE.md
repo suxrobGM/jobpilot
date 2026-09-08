@@ -55,7 +55,8 @@ a comment explaining a murky one.
 - No IIFEs (`void (async () => {})()`) - use a named function or a promise chain.
 - No fallback/compat shims - write a data migration instead of read-compat code.
 - No nested ternaries; everyday names over jargon.
-- Split a test file past a few hundred lines by domain, with a shared `*.test-helpers.ts`.
+- Split a test file past a few hundred lines by domain, with shared fixtures in a plainly named
+  sibling (`fakes.ts`, `builders.ts`) - no `.test-helpers` suffix.
 - Export only what another file imports. A helper used solely inside its own module stays
   unexported. A barrel is justified only when it carries a directory's public API for several
   outside importers - never as a pass-through for a single file, and always named re-exports
