@@ -1,70 +1,63 @@
 # JobPilot
 
-Multi-user AI job-application app. The Next.js web UI and the Elysia + PostgreSQL API (owner of
-all state) are cloud-hosted and shared across users; each user runs the agent locally - Claude
-Code or Codex in a .NET PTY host, plus Playwright - so jobs run on that user's own subscription.
-Dev ports: web `:4100`, API `:4101`, PTY host `:4102`.
+Multi-user AI job-application app. The web UI and API are cloud-hosted and shared. The API owns
+all state. Each user runs the agent locally: Claude Code or Codex in a .NET PTY host, plus
+Playwright. Dev ports: web `:4100`, API `:4101`, PTY host `:4102`.
 
-Auth: on terminal start the web fetches the user's reusable terminal token
-(`POST /api/auth/tokens/terminal`) and hands it to the PTY host, which injects it as
-`JOBPILOT_API_TOKEN`; skills send it as `Authorization: Bearer` to the API.
+Auth: the web fetches the user's terminal token via `POST /api/auth/tokens/terminal` and hands
+it to the PTY host, which sets `JOBPILOT_API_TOKEN`. Skills send it as `Authorization: Bearer`.
 
 ## Layout
 
-- `apps/web/` - Bun + Next.js 16 + MUI 9 UI; talks to the API over HTTP only (no direct DB).
-  Browser and server hit Elysia directly via `NEXT_PUBLIC_API_URL` - `src/proxy.ts` is Next 16
-  auth middleware (route gating), not a data proxy.
-- `apps/api/` - Bun + Elysia + Prisma 7; owns all persistence. Exports `type App` for Eden
-  Treaty typing; Swagger UI at `:4101/swagger` in dev.
-- `apps/terminal/` - .NET 10 PTY host (`JobPilot.Terminal`); runs on each user's machine.
-- `tests/JobPilot.Terminal.Tests/` - .NET test suite for the host (solution: `JobPilot.slnx`).
-- `packages/` - `@jobpilot/contracts` (shared Zod schemas), `@jobpilot/api-client` (Eden client).
-- `plugin/` - the JobPilot plugin: one provider-neutral skill tree for Claude and Codex.
-  **Edit skills here directly** - no generation step.
-- `docs/` - user-facing docs; `deploy/` - production stack.
+| Path | What it is |
+| --- | --- |
+| `apps/web/` | Next.js 16 + MUI 9 on Bun. Talks to the API over HTTP only. `src/proxy.ts` is auth middleware, not a data proxy. |
+| `apps/api/` | Elysia + Prisma 7 on Bun. Owns all persistence. Exports `type App` for Eden. Swagger at `:4101/swagger`. |
+| `apps/terminal/` | .NET 10 PTY host. Tests in `tests/JobPilot.Terminal.Tests/`, solution `JobPilot.slnx`. |
+| `packages/contracts/` | `@jobpilot/contracts`: shared Zod schemas. |
+| `packages/api-client/` | `@jobpilot/api-client`: Eden client. |
+| `plugin/` | One skill tree for Claude and Codex. Edit skills here directly. |
+| `docs/`, `deploy/` | User docs. Production stack. |
 
-## Commands
+## Commands (`bun run <name>`)
 
-Root (`bun run …`):
+| Command | What it does |
+| --- | --- |
+| `dev` | Start all three apps. `dev:api` / `dev:web` / `dev:terminal` for one. |
+| `db:tunnel` | SSH tunnel to remote PostgreSQL on `localhost:5433`. |
+| `db:setup` | Prisma generate + migrate + seed. |
+| `test` | API tests + contracts tests. |
+| `build:api` / `build:web` / `build:terminal` | Production builds. |
+| `check` | Biome format + lint + import sort. Writes. |
+| `ci` | `biome ci --error-on-warnings`. |
+| `knip` | Dead files, exports, and dependencies. |
 
-- `dev` - terminal + api + web together; `dev:api` / `dev:web` / `dev:terminal` run one.
-- `db:tunnel` - SSH tunnel to the remote PostgreSQL, bound to `localhost:5433`. The repo ships no
-  database container, so `DATABASE_URL` points at whichever PostgreSQL you supplied - a local one
-  you run yourself or the tunnel. Both conventionally use 5433, so check what is actually on that
-  port (`docker ps`, `lsof -i :5433`) before concluding which you are talking to.
-- `db:setup` - Prisma generate + apply migrations + seed.
-- `test` - the API suite plus the contracts suite (`bun test` in `apps/api` and
-  `packages/contracts`).
-- `build:api` / `build:web` / `build:terminal` - production builds.
-- `check` / `format` / `lint` - Biome repo-wide (`check` = format + lint + import sort, writes).
-  Biome skips Markdown; `.editorconfig` covers whitespace there.
-- `knip` - dead files, exports, and dependencies across every workspace (one root
-  `knip.jsonc`; a per-workspace config cannot see cross-workspace use).
-- `ci` - `biome ci --error-on-warnings .`. Warnings must fail the build or the gate is a no-op.
-  Never run `biome check --write --unsafe`: the `noNonNullAssertion` fix rewrites
-  `cookie[KEY]!.set(…)` to `?.set(…)`, silently dropping auth cookie writes.
+A local PostgreSQL and the tunnel both use port 5433. Check `docker ps` or `lsof -i :5433`
+before assuming which one `DATABASE_URL` hits.
 
-App-level scripts (typecheck, db:\*, …) are listed in the matching rules file below.
+Never run `biome check --write --unsafe`. It rewrites `cookie[KEY]!.set(…)` to `?.set(…)` and
+drops auth cookie writes.
+
+Invoke the `verify` skill before committing.
 
 ## Code style
 
-Comment only the non-obvious **why** - a constraint, trap, or rejected alternative. One line by
-default, four max; never restate the code or narrate to the reviewer. Prefer a better name over
-a comment explaining a murky one.
+- Comment only a non-obvious why (constraint, trap, rejected alternative). One line, four max.
+- No IIFEs. No fallback or compat shims; write a data migration.
+- No nested ternaries. Everyday names over jargon.
+- Export only what another file imports. `bun run knip` fails otherwise.
+- A barrel is allowed only for a directory's public API with several outside importers, using
+  named re-exports. `export *` only for a `package.json` `exports` target.
+- Split a test file past a few hundred lines by domain. Shared fixtures go in `fakes.ts` or
+  `builders.ts`.
 
-- No IIFEs (`void (async () => {})()`) - use a named function or a promise chain.
-- No fallback/compat shims - write a data migration instead of read-compat code.
-- No nested ternaries; everyday names over jargon.
-- Split a test file past a few hundred lines by domain, with shared fixtures in a plainly named
-  sibling (`fakes.ts`, `builders.ts`) - no `.test-helpers` suffix.
-- Export only what another file imports. A helper used solely inside its own module stays
-  unexported. A barrel is justified only when it carries a directory's public API for several
-  outside importers - never as a pass-through for a single file, and always named re-exports
-  rather than `export *`. `bun run knip` fails on a violation; the exception is a
-  `package.json` `exports` target, where the subpath is the unit of API and `export *` is right.
+## Commits
 
-## Area rules
+A commit message is one short sentence and nothing else.
 
-Per-area conventions live in `.claude/rules/` and load automatically when you touch matching
-files: `api.md` (apps/api, packages), `web.md` (apps/web), `plugin.md` (plugin),
-`terminal.md` (apps/terminal, tests).
+- Imperative, under 70 characters, `type(scope):` prefix.
+- No body, no bullets, no trailers (`Co-Authored-By` included).
+
+```text
+fix(pilot): revive lastSyncedAt so claims stop returning 500
+```

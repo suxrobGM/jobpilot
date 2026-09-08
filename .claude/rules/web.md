@@ -5,75 +5,63 @@ paths:
 
 # Web conventions (`apps/web`)
 
-Commands (`bun --cwd=apps/web run …`): `typecheck` (`tsc --noEmit`), `typegen` (Next route/type
-generation). `next build` runs the same `tsc --noEmit`, so CI gates types through the build and
-`typecheck` is the faster local check.
+Commands (`bun --cwd=apps/web run <name>`): `typecheck` (`tsc --noEmit`, the fast local gate),
+`typegen`. `next build` runs the same type check.
 
-## Files & components
+## Files and components
 
-- Kebab-case filenames (`auth-card.tsx`); named exports (default only for `page.tsx`/`layout.tsx`).
-- RSC by default: never `"use client"` in pages or layouts - extract interactivity into
+- Kebab-case filenames. Named exports, except `page.tsx` and `layout.tsx`.
+- Pages and layouts are server components. Never `"use client"` in one. Interactive parts go in
   `src/components/features/`.
-- Props: `interface <Name>Props` (not `type`); destructure in the body, not in parameters.
-- Conditional render: `cond && <X />`, not `cond ? <X /> : null`. A component that can render
-  nothing returns `ReactNode` and early-returns `null` (never `ReactElement` + `return <></>`);
-  one that always renders keeps `ReactElement`.
-- React 19: `use()` for async data in client components. Never `useCallback`/`useMemo`/`memo` -
-  the compiler handles it. Pass `ref` as a regular prop; no `forwardRef`.
-- Never key lists by array index. Key by the model's `id` (resume rows all carry one -
-  `backfillResumeIds` assigns it server-side); for a controlled list whose model has no id, use
-  `useKeyedList` (`@/hooks/use-keyed-list`).
-- `@/` maps to `src/`. Zod from `zod/v4`. Forms are TanStack Form + Zod validators.
+- Props: `interface <Name>Props`, destructured in the body.
+- Conditional render: `cond && <X />`, not `cond ? <X /> : null`.
+- A component that can render nothing returns `ReactNode` and `return null`. One that always
+  renders returns `ReactElement`.
+- React 19: `use()` for async data in client components. No `useCallback` / `useMemo` / `memo`.
+  `ref` is a normal prop, no `forwardRef`.
+- Key lists by model `id`, never by index. For a controlled list without ids, use `useKeyedList`
+  from `@/hooks/use-keyed-list`.
+- `@/` maps to `src/`. Zod from `zod/v4`. Forms are TanStack Form + Zod.
 
-## Streaming
+## Streaming pages
 
-Data that depends on the URL (`params`, `searchParams`) or on a fetch keeps the page's shell
-static:
+When a page depends on `params`, `searchParams`, or a fetch:
 
-- The default export stays **synchronous** and renders only chrome - shell, header, card frame.
-- Each dynamic dependency goes in one `async` child inside its own `<Suspense>`. Data that
-  arrives together shares one boundary. Never split a single fetch across two.
-- Fallbacks come from the shared set (`DetailSkeleton`, `TableSkeleton` in
-  `@/components/ui/data`, `AuthFormSkeleton` in `@/components/features/auth`). Add to that set
-  rather than writing a page-local skeleton.
-- A client leaf that only reads the URL doesn't need a server wrapper - let it call
-  `useSearchParams()` itself so the page prerenders whole.
+1. Keep the default export synchronous. It renders only the frame.
+2. Put each dynamic dependency in its own `async` child inside `<Suspense>`. Data that arrives
+   together shares one boundary.
+3. Use a shared skeleton: `DetailSkeleton` / `TableSkeleton` from `@/components/ui/data`, or
+   `AuthFormSkeleton` from `@/components/features/auth`. Add to that set, no page-local ones.
 
-## Routing / auth
+A client leaf that only reads the URL calls `useSearchParams()` itself. No server wrapper.
 
-`src/proxy.ts` (Next 16 middleware) gates routes by auth and role. **A new public route must be
-added to its `config.matcher` exclusions (and `app/public-routes.ts`) or it 307-redirects to
-`/login`** - the build still succeeds, so the bug only shows at runtime. Dot-paths
-(`robots.txt`) are already excluded by `.*\..*`.
+## Routing and auth
 
-Cross-origin auth works because web and API are same-site: the httpOnly cookie rides
-`credentials: "include"` + CORS (`CORS_ORIGINS`). SSE/`EventSource` also connects straight to
-the API (base URL from `src/api/base-url.ts`).
+`src/proxy.ts` gates routes by auth and role. A new public route goes in two places: the
+`config.matcher` exclusions and `app/public-routes.ts`. Miss one and it 307-redirects to
+`/login` at runtime. The auth cookie rides `credentials: "include"` + CORS (`CORS_ORIGINS`). SSE
+connects straight to the API via `src/api/base-url.ts`.
 
 ## MUI
 
-- Barrel imports only (`import { Button } from "@mui/material"`), never deep imports.
-- Theme values only: semantic colors (`"primary.main"`, `"background.paper"`,
-  `"text.secondary"`, `"divider"` - they carry dark mode), numeric spacing (`p: 2` = 16px),
-  typography variants (`variant="h4"`) - never hex values, pixel strings, or manual
-  `fontSize`/`fontWeight`.
-- `sx` for one-off styling; extract a component when repeated. No inline `style={{ }}`, no
-  `styled-components`/`styled()`, no raw `<div>`/`<span>` for layout - use `Box`, `Stack`,
+- Barrel imports only: `import { Button } from "@mui/material"`.
+- Theme values only: semantic colors (`"primary.main"`, `"text.secondary"`), numeric spacing
+  (`p: 2`), typography variants. No hex, pixel strings, or manual `fontSize` / `fontWeight`.
+- `sx` for one-offs. Extract a component when it repeats.
+- No `style={{ }}`, no `styled()`, no raw `<div>` / `<span>` for layout. Use `Box`, `Stack`,
   `Typography`.
-- `Stack` rejects layout props like `flexWrap`/`alignItems` - put them in `sx`.
+- `Stack` rejects `flexWrap` / `alignItems` props. Put them in `sx`.
 
 ## Pagination
 
-Never hand-roll a pager. Filter a short bare-array list (boards, resumes, credentials) in the
-browser; filter a paginated one server-side, since it only ever sees the page it was handed.
+Never hand-roll a pager. Filter short bare-array lists in the browser. Filter paginated lists
+server-side.
 
-- `usePaginationParams()` owns the page state (URL-backed). Spread its `query` into the
-  `*Queries.list(...)` factory; read rows from `data.items`. `prefix` namespaces a second pager
-  on one route; `navigate: true` for an RSC page, whose fetch needs a real navigation.
-- Controls: `<PaginationFooter pagination={data.pagination} …>`, or
-  `{...gridPagination(pagination, data?.pagination)}` on a `<DataTable>`, or
-  `<PaginationControls>` from an RSC page. Page sizes come from `PAGE_SIZE_OPTIONS`.
-- A filter change resets the page - the old offset means nothing under a new filter. Write
-  URL-backed filters through `setFilters({ … })`, which resets in the same URL update; a filter
-  setter plus a separate `setPage(1)` would start from the same snapshot and undo itself.
-- `/jobs` is the one exception: `JobPager` renders real `<a href>` paging for crawlers.
+- `usePaginationParams()` owns URL-backed page state. Spread its `query` into
+  `*Queries.list(...)`. Rows are in `data.items`. `prefix` for a second pager on one route.
+  `navigate: true` on an RSC page.
+- Controls: `<PaginationFooter pagination={data.pagination}>`, or `gridPagination(...)` on a
+  `<DataTable>`, or `<PaginationControls>` from an RSC page. Sizes from `PAGE_SIZE_OPTIONS`.
+- A filter change resets the page. Use `setFilters({ … })`, which resets in the same URL update.
+  A separate `setPage(1)` reads the old snapshot and undoes itself.
+- `/jobs` is the exception: `JobPager` renders real `<a href>` links for crawlers.

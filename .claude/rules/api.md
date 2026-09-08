@@ -6,80 +6,64 @@ paths:
 
 # API conventions (`apps/api`, `packages/*`)
 
-Commands (`bun --cwd=apps/api run …`): `dev` / `start` / `build` (compiles to `dist/server.exe`),
-`typecheck`, `test`, `db:generate`, `db:migrate` (create-only), `db:migrate:apply`, `db:seed`,
-`db:reset`, `db:studio`. Schema is split by domain under `apps/api/prisma/schema/*.prisma`.
-`apps/api` and `packages/*` use plain `typescript@7`.
+Commands (`bun --cwd=apps/api run <name>`): `dev`, `build`, `typecheck`, `test`, `db:generate`,
+`db:migrate` (create only), `db:migrate:apply`, `db:seed`, `db:reset`, `db:studio`. Prisma
+schema is split by domain under `prisma/schema/*.prisma`.
 
-## Structure (`apps/api/src/`)
+## Structure (`src/`)
 
-- `app.ts` mounts every module controller under `/api` and exports `type App` - the single
-  source of truth for Eden Treaty client typing.
-- `modules/<name>/` - one module per domain: `<name>.controller.ts` (thin Elysia routes:
-  request Zod schemas + a `detail` block for Swagger) delegates to `<name>.service.ts`
-  (tsyringe `@singleton`, Prisma). No `index.ts` barrel - `app.ts` imports each controller file
-  directly.
-- `common/` - cross-cutting: `database`, `di`, `errors` (`HttpError`, `notFound`/`conflict`,
-  `findOwned` ownership-or-404), `middleware` (`authGuard` - the single auth gate),
-  `rate-limit` (token-bucket + `RATE_LIMITS` policy table + `acquireSlot`; attach one
-  `rateLimit(policy)` per route as a `beforeHandle`), `auth`, `sse`, `pdf`, `storage`, `plugins`. Only the directories with several outside importers
-  keep a barrel; the rest are imported by file path.
-- `types/response.ts` - the error envelope (`errorResponseSchema`/`httpErrorResponses`) and the
-  success envelopes (`idResponseSchema`, `deletedResponseSchema`, `okResponseSchema`). Import as `@/types/response` (the web mirrors this alias). Pagination
-  is **not** here - it lives in `@jobpilot/contracts/pagination`, which the web and the agent's
-  skills also read.
+| Path | What it is |
+| --- | --- |
+| `app.ts` | Mounts every controller under `/api`. Exports `type App`, the source of Eden typing. |
+| `modules/<name>/` | `<name>.controller.ts` (thin Elysia routes, Zod request schemas, Swagger `detail`) delegates to `<name>.service.ts` (tsyringe `@singleton`, Prisma). No barrels. |
+| `common/errors` | `HttpError`, `notFound()`, `conflict()`, `findOwned()` (ownership or 404). |
+| `common/middleware` | `authGuard`, the single auth gate. |
+| `common/rate-limit` | One `rateLimit(policy)` per route as `beforeHandle`. Policies in `RATE_LIMITS`. |
+| `types/response.ts` | Error envelope plus `idResponseSchema`, `deletedResponseSchema`, `okResponseSchema`. Import as `@/types/response`. |
+
+Pagination schemas live in `@jobpilot/contracts/pagination`, shared with web and skills.
 
 ## Routes
 
-To add one, invoke the `add-api-route` skill. The rules it encodes:
+Add a route with the `add-api-route` skill. The rules:
 
-- Request validation is Zod from `@jobpilot/contracts`; uuid path ids via `idParam`. Handlers
-  return plain data (Elysia JSON-serializes) or a raw `Response` for SSE / files / redirects.
-- Every JSON route declares an explicit Zod `response` success schema (module `<name>.schema.ts`
-  or a shared envelope). Model the service's return exactly: Eden infers the web client's types
-  from it, and Elysia silently strips fields not in the schema - under-specifying breaks the web
-  app and the agent's curl skills. Streaming / SSE / file / redirect routes omit `response`.
-- Dates are `z.date()`: the service returns the raw Prisma `Date`; Elysia serializes to ISO on
-  the wire - never `.toISOString()` in a response path. Never type a date as `z.string()`, not
-  even a `YYYY-MM-DD` day key: Eden revives date-shaped strings into `Date`, so the web silently
-  gets a `Date` where TS promised a `string`. Day buckets are UTC-midnight `z.date()`
-  (`common/date/buckets.ts`); the web renders them with `timeZone: "UTC"`. Only free-text date
-  columns (`"Summer 2024"`) stay `z.string()`.
-- Error responses are declared once, globally: `app.ts` applies
-  `.guard({ as: "scoped", response: httpErrorResponses })` to the `/api` group - never repeat
-  error responses per route.
+- Validate requests with Zod from `@jobpilot/contracts`. Use `idParam` for uuid path ids.
+- Every JSON route declares a Zod `response` schema that matches the service return exactly.
+  Elysia strips fields not in the schema, and Eden types the web from it. SSE, file, and
+  redirect routes return a raw `Response` with no `response` schema.
+- Dates are `z.date()`, never `z.string()`. Return the Prisma `Date` and let Elysia serialize.
+  Eden revives date-shaped strings into `Date`, so a string date lies to the web. Day buckets are
+  UTC-midnight dates from `common/date/buckets.ts`. Only free text like `"Summer 2024"` stays a
+  string.
+- Error responses are declared once in `app.ts` with
+  `.guard({ as: "scoped", response: httpErrorResponses })`. Never per route.
 
 ## Pagination
 
-Paginate a list that **grows with usage** (applications, inbox mail, contacts, cover letters,
-proposals, campaigns + jobs) through `@jobpilot/contracts/pagination`. One capped by a small
-real-world limit stays a bare `z.array(...)` - resumes, credentials, job boards, open
-questions, sitemaps, aggregates, `/auth/tokens`, `/push/subscriptions`.
+Paginate lists that grow with use (applications, inbox, contacts, cover letters, proposals,
+campaigns, campaign jobs). Small bounded lists (resumes, credentials, boards, tokens) stay
+`z.array()`.
 
-- Query `paginationQuerySchema.extend({ …filters })` (`csvArray(item)` for a repeatable `?x=a,b` filter), response `paginatedSchema(item)`, 
-  service `...pageSlice(query)` + `count(where)` -> `paginate(rows, query, total)`. Never a hand-written `skip`/`take`.
-- Filter and sort in **SQL**. A browser-side filter or a post-fetch `.sort()` only ever covers
-  the page it was handed.
-- Page-scoped totals are a bug: counts shown beside a filter come from a `groupBy`
-  (`/applied/summary`, `campaignSummary.byStatus`, `/jobs/reasons`).
-- Cursor paging (`cursorPageSchema`/`cursorPage`) is for append-only live feeds only, where
-  offset drifts as rows are prepended. The pilot journal is the sole user.
+1. Query: `paginationQuerySchema.extend({ …filters })`. `csvArray(item)` for `?x=a,b`.
+2. Response: `paginatedSchema(item)`.
+3. Service: `...pageSlice(query)` + `count(where)`, then `paginate(rows, query, total)`.
+
+Never hand-write `skip` / `take`. Filter and sort in SQL. Counts beside a filter come from a
+`groupBy`, not the page. Cursor paging (`cursorPageSchema`, `cursorPage`) is only for
+append-only feeds. The pilot journal is the sole user.
 
 ## Enums
 
-A closed set of values is a Prisma `enum`, never a `String` column. Every enum carries a
-snake_case `@@map`, and its values must be valid TypeScript identifiers - no hyphens, no leading
-digit, so no `@map` on a value. The web cannot import the generated client, so
-`@jobpilot/contracts` keeps a matching `as const` array (`UPWORK_INBOX_KINDS`, `ROLES`, ...) and
-`src/common/enum-parity.test.ts` fails when the two drift. Add both sides plus a parity row when
-you add an enum.
+A closed set is a Prisma `enum`, never a `String` column.
+
+1. Add a snake_case `@@map`.
+2. Values must be valid TypeScript identifiers (no hyphens, no leading digit, no `@map`).
+3. Mirror it as an `as const` array in `@jobpilot/contracts`.
+4. Add a row to `src/common/enum-parity.test.ts`.
 
 ## Traps
 
-- A tsyringe-injected class must stay a **value** import (`import { PrismaClient }`, never
-  `import type`): `emitDecoratorMetadata` builds `design:paramtypes` from those bindings, so
-  erasing them fails at runtime with `TypeInfo not known for "Object"`. Biome's
-  `style/useImportType` is off for `apps/api` for exactly this reason.
-- Tests (`bun test`, colocated `*.test.ts`) run in CI with no database and no env - keep it
-  that way: import the module under test **directly**, never through a barrel that might pull
-  in Prisma or `@/env` (which validates at module load).
+- tsyringe-injected classes must be value imports, never `import type`. Erasing them breaks
+  decorator metadata at runtime. Biome's `useImportType` is off here for this reason.
+- Tests (`bun test`, colocated `*.test.ts`) run with no database and no env. Import the module
+  under test directly, never through a barrel that pulls in Prisma or `@/env`.

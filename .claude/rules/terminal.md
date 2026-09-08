@@ -4,18 +4,16 @@ paths:
   - "tests/**"
 ---
 
-# Terminal host (`apps/terminal`, `tests/`)
+# Terminal host conventions (`apps/terminal`, `tests/`)
 
-.NET 10 minimal API (`JobPilot.Terminal`) hosting one provider PTY on the user's machine.
-Endpoints: `/ws`, `/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`.
-`/sessions/start` takes the per-user `apiToken` (the web fetches the reusable terminal token via
-`POST /api/auth/tokens/terminal`) and injects it into the PTY as `JOBPILOT_API_TOKEN`; the host
-env var is only a local-dev fallback.
+`JobPilot.Terminal` is a .NET 10 minimal API that hosts one provider PTY on the user's machine.
+Endpoints: `/ws`, `/sessions/start`, `/sessions/inject`, `/pilot/start`, `/pilot/stop`,
+`/update`, `/shutdown`, `/healthz`. `/sessions/start` takes the user's `apiToken` and sets it
+in the PTY as `JOBPILOT_API_TOKEN`. The host env var is a local-dev fallback only.
 
-- A C# change only takes effect after `bun run build:terminal` + a host restart - invoke the
-  `restart-terminal` skill.
-- Always run the test suite for any terminal change: `dotnet test tests/JobPilot.Terminal.Tests`.
-  It asserts exact default values (e.g. the origin allowlist), so config/constant changes break it.
-- `build:terminal` (AOT) fails at the native-link step unless `vswhere.exe` is on PATH - prepend
+- A C# change needs a rebuild and restart. Invoke the `restart-terminal` skill.
+- Run `dotnet test tests/JobPilot.Terminal.Tests` after every change. It asserts exact defaults,
+  so config changes break it until updated.
+- `build:terminal` (AOT) needs `vswhere.exe` on PATH. Prepend
   `${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer` first.
-- Internals doc: `apps/terminal/README.md` (runtime flows, shared-state locks, invariants).
+- Internals: `apps/terminal/README.md`.
