@@ -4,15 +4,12 @@ import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { findOwned } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
 
-/** Where a resolved login came from - also the target to persist a refreshed password to. */
-type CredentialSource = "board" | "domain" | "default";
-
 export interface ResolvedCredential {
+  /** The credential row - the target for `PATCH /credentials/<id>` after a password reset. */
+  id: string;
   email: string;
   password: string;
-  /** "board" → PATCH /job-boards/<id>; "domain"/"default" → PATCH /credentials/<id>. */
-  source: CredentialSource;
-  /** The board domain (board/domain matches) or "default". */
+  /** The board domain that matched, or "default". */
   scope: string;
 }
 
@@ -120,44 +117,21 @@ export class CredentialService {
   }
 
   /**
-   * Resolve the effective login for a board domain, applying the documented precedence:
-   * per-board override → credential scoped to the domain → credential scoped to "default".
-   * Returns `null` when no stage yields a complete email + password pair.
+   * Resolve the effective login for a board domain: the credential scoped to the domain, else the
+   * one scoped to "default". Returns `null` when neither holds a complete email + password pair.
    */
   async resolveCredential(userId: string, domain: string): Promise<ResolvedCredential | null> {
-    const board = await this.toLogin(
-      userId,
-      await this.prisma.userJobBoard.findFirst({
-        where: { userId, jobBoard: { domain } },
-        select: { email: true, password: true },
-      }),
-      SECRET_CONTEXTS.boardPassword,
-    );
-    if (board) {
-      return { ...board, source: "board", scope: domain };
-    }
-
     const creds = await this.prisma.credential.findMany({
       where: { userId, scope: { in: [domain, "default"] } },
-      select: { scope: true, email: true, password: true },
+      select: { id: true, scope: true, email: true, password: true },
     });
 
-    const domainCred = await this.toLogin(
-      userId,
-      creds.find((c) => c.scope === domain),
-      SECRET_CONTEXTS.credentialPassword,
-    );
-    if (domainCred) {
-      return { ...domainCred, source: "domain", scope: domain };
-    }
-
-    const defaultCred = await this.toLogin(
-      userId,
-      creds.find((c) => c.scope === "default"),
-      SECRET_CONTEXTS.credentialPassword,
-    );
-    if (defaultCred) {
-      return { ...defaultCred, source: "default", scope: "default" };
+    for (const scope of [domain, "default"]) {
+      const cred = creds.find((c) => c.scope === scope);
+      const login = await this.toLogin(userId, cred, SECRET_CONTEXTS.credentialPassword);
+      if (cred && login) {
+        return { id: cred.id, ...login, scope };
+      }
     }
 
     return null;

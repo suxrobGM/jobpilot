@@ -1,4 +1,6 @@
--- A link now holds only the login. Name, search URL, and ordering come from the catalog row.
+-- A link is now a bare adoption of a catalog board. Name, search URL, and ordering come from the
+-- catalog row; logins live in "credentials" keyed by domain (moved beforehand by the
+-- board-logins seeder, which must run before this migration).
 
 -- A user-added (unlisted) board edited through its single link keeps that edit on the catalog row.
 UPDATE "job_boards" b
@@ -15,4 +17,6 @@ WHERE l."job_board_id" = b."id"
 ALTER TABLE "user_job_boards"
   DROP COLUMN "name",
   DROP COLUMN "search_url",
-  DROP COLUMN "sort_order";
+  DROP COLUMN "sort_order",
+  DROP COLUMN "email",
+  DROP COLUMN "password";

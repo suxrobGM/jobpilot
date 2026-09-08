@@ -17,9 +17,9 @@ export const credentialListSchema = z.array(credentialRecordSchema);
 /** Effective login resolved for a board domain (mirrors `ResolvedCredential`), or null. */
 export const resolvedCredentialSchema = z
   .object({
+    id: z.uuid(),
     email: z.string(),
     password: z.string(),
-    source: z.enum(["board", "domain", "default"]),
     scope: z.string(),
   })
   .nullable();

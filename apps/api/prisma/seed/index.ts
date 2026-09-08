@@ -1,4 +1,5 @@
 import { db } from "@/common/database/prisma.client";
+import { moveBoardLogins } from "./board-logins";
 import { seedJobBoards } from "./job-boards";
 import { seedJobListings } from "./job-listings";
 import { seedSuperAdmin } from "./super-admin";
@@ -25,6 +26,11 @@ const seeders = {
   "job-listings": {
     fn: seedJobListings,
     description: "Backfill the public job index from existing jobs",
+    optIn: true,
+  },
+  "board-logins": {
+    fn: moveBoardLogins,
+    description: "Move per-board logins into credentials (before migration 20260908000000)",
     optIn: true,
   },
 } as const satisfies Record<string, Seeder>;

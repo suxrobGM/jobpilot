@@ -116,10 +116,10 @@ Name files so parallel work can't collide - prefix with the campaign or job key 
 
 ## 4. Credentials
 
-Resolve the login for a board domain in **one call** - the API applies the precedence (per-board override → `scope === <board-domain>` → `scope === "default"`) server-side, so you never merge endpoints by hand:
+Resolve the login for a board domain in **one call** - the API applies the precedence (`scope === <board-domain>` → `scope === "default"`) server-side, so you never pick a row by hand:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/credentials/resolve?domain=<board-domain>"
 ```
 
-Returns `{ email, password, source }` (`source`: `board` | `domain` | `default`) or `null` (none configured - report to the user, don't guess). The raw rows still live at `GET /api/credentials` (login creds + captcha-service keys) when you need to list or edit them.
+Returns `{ id, email, password, scope }` (`scope`: the board domain or `default`) or `null` (none configured - report to the user, don't guess). The raw rows still live at `GET /api/credentials` (login creds + captcha-service keys) when you need to list or edit them.

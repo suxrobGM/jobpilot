@@ -1,4 +1,4 @@
-import { jobBoardPatchSchema, jobBoardSchema } from "@jobpilot/contracts/job-board";
+import { jobBoardSchema } from "@jobpilot/contracts/job-board";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
@@ -23,7 +23,7 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "List job boards",
       description:
-        "Returns the active profile's boards: listed catalog boards in catalog order, then the profile's own additions. Passwords are never returned; `hasPassword` says whether one is stored.",
+        "Returns the active profile's boards: listed catalog boards in catalog order, then the profile's own additions. Logins are credentials scoped to the board's domain - see `GET /credentials/resolve`.",
     },
   })
   .get("/catalog", ({ user }) => svc.catalog(user.id), {
@@ -40,17 +40,7 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "Add job board",
       description:
-        "Links the catalog board with the given domain to the active profile and stores the optional login. An unknown domain is added to the catalog unlisted, using `name` and `searchUrl`. Linking a board twice returns 409.",
-    },
-  })
-  .patch("/:id", ({ user, params, body }) => svc.update(user.id, params.id, body), {
-    params: idParam,
-    body: jobBoardPatchSchema,
-    response: jobBoardRecordSchema,
-    detail: {
-      summary: "Update board login",
-      description:
-        "Sets the profile's email and/or password for the board. Omit a field to keep it, send null to clear it. Name and search URL belong to the catalog and are admin-managed.",
+        "Links the catalog board with the given domain to the active profile. An unknown domain is added to the catalog unlisted, using `name` and `searchUrl`. Linking a board twice returns 409.",
     },
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
@@ -59,6 +49,6 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "Remove job board",
       description:
-        "Unlinks the board from the active profile and returns the id of the removed link. The catalog row survives.",
+        "Unlinks the board from the active profile and returns the id of the removed link. The catalog row and any credential for the domain survive.",
     },
   });
