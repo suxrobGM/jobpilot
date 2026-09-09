@@ -41,7 +41,7 @@ model ResumeVariant {
   diffNotes String? @map("diff_notes")
 
   // JSON audit of model-authored bullet rewrites applied to this variant:
-  // { experience: [{ entryIndex, company, bullets: [{ original, tailored, flags[] }] }] }.
+  // { experience: [{ entryIndex, company, bullets: [{ original, tailored }] }] }.
   // Null when the variant used selection/reordering only (no rewording).
   rewrites String?
 

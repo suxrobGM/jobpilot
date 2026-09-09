@@ -219,4 +219,9 @@ The resume skills form a chain, one rule each:
 The guards in `apps/api/src/modules/resume/structure.ts` are the design: the
 model picks *which* entries combine, the server derives every date and
 whitelists umbrella employer names, so no request can add an employer or widen a
-range. The numbers guard in `rewrite.ts` covers every reworded bullet.
+range. The prose guards split by concern: `rewrite/facts.ts` knows what the resume
+states (numbers, tech names), `rewrite/phrasing.ts` knows what reads as machine-written,
+`rewrite/rewrite.ts` checks reworded bullets against their originals, and `rewrite/prose.ts`
+checks the summary and headline against the base. All of these are 422s, not
+flags, because a flag the agent echoes and moves past is a fabrication the user
+never sees.

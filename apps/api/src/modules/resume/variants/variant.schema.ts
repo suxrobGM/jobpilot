@@ -21,7 +21,6 @@ export const prunedResponseSchema = z.object({ deleted: z.number().int() });
 const bulletRewriteAuditSchema = z.object({
   original: z.string(),
   tailored: z.string(),
-  flags: z.array(z.string()),
 });
 
 /** Per-entry rewrite audit (mirrors `EntryRewriteAudit`). */

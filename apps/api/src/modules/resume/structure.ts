@@ -1,8 +1,3 @@
-// Structural rewriting: reorder, drop, merge entries, promote projects.
-// Bullet ranking is `tailor.ts`, rewording is `rewrite.ts`; this moves whole sections.
-//
-// What keeps it honest: the model picks *which* entries combine, the server derives every date and
-// whitelists employer text. No field accepts an employer or date range the base doesn't support.
 import type { ResumeData, ResumeExperience, ResumeProject } from "@jobpilot/contracts/resume";
 import type { z } from "zod/v4";
 import { parseResumeDate, spanOf } from "./dates";
@@ -30,7 +25,7 @@ export interface StructureAudit {
   promoted: { company: string; projects: string[]; start: string; end: string }[];
   reordered: boolean;
   retitled: { company: string; from: string; to: string }[];
-  /** Soft, non-blocking review notes - mirrors the bullet-rewrite flags. */
+  /** Soft, non-blocking review notes. */
   flags: string[];
 }
 

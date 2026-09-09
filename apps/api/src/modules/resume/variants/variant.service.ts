@@ -20,9 +20,12 @@ import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { backfillResumeIds } from "../backfill-ids";
 import { streamFile } from "../resume.stream";
 import { findResume } from "../resume.utils";
-import type { VariantRewriteAudit } from "../rewrite";
 import { notProtectedVariant } from "./prunable";
-import { buildTailoredVariant, type TailorVariantBody } from "./tailor-variant";
+import {
+  buildTailoredVariant,
+  type TailorVariantBody,
+  type VariantRewriteAudit,
+} from "./tailor-variant";
 import type { pruneVariantsQuerySchema } from "./variant.schema";
 
 type ResumeVariantCreateInput = z.infer<typeof resumeVariantCreateSchema>;

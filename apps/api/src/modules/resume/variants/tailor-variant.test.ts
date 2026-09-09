@@ -163,22 +163,39 @@ describe("buildTailoredVariant", () => {
     expect(violations.length).toBeGreaterThan(0);
   });
 
-  it("retargets the headline and flags tech the resume never mentions", () => {
-    const result = buildTailoredVariant(
-      base(),
-      body({
-        headline: "Backend Engineer",
-        bulletRewrites: [
-          {
-            entryIndex: 0,
-            bullets: [{ original: "Shipped A.", tailored: "Shipped A in GraphQL." }],
-          },
-        ],
-      }),
-    );
+  it("retargets the headline", () => {
+    const result = buildTailoredVariant(base(), body({ headline: "Backend Engineer" }));
 
     expect(result.content.basics.headline).toBe("Backend Engineer");
-    expect(result.flags.some((flag) => flag.includes("GraphQL"))).toBe(true);
+  });
+
+  it("refuses a rewrite that names tech the resume never mentions", () => {
+    const violations = violationsOf(() =>
+      buildTailoredVariant(
+        base(),
+        body({
+          bulletRewrites: [
+            {
+              entryIndex: 0,
+              bullets: [{ original: "Shipped A.", tailored: "Shipped A in GraphQL." }],
+            },
+          ],
+        }),
+      ),
+    );
+
+    expect(violations[0]).toContain("GraphQL");
+  });
+
+  it("refuses a summary that reads as stock phrasing", () => {
+    const violations = violationsOf(() =>
+      buildTailoredVariant(
+        base(),
+        body({ summary: "Passionate engineer comfortable with React." }),
+      ),
+    );
+
+    expect(violations[0]).toContain("stock phrasing");
   });
 
   it("stores no audit when nothing was reworded or restructured", () => {

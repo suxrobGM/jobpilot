@@ -110,70 +110,82 @@ Stop.
 
 ## Step 5: Create a New Variant
 
-The server does all structural rewriting (skill ordering, bullet ranking) deterministically. You write only:
+A variant is the base resume with the JD-relevant parts moved to the front. It is not a new resume. The reader should not be able to tell it was tailored, only that it fits. The server reorders skills and ranks bullets from your hints, so most of the work is choosing terms, not writing prose.
 
-- **`summary`** - ≤3 sentences targeting this role, written the way the candidate would write it. Plain, specific; mirror 2-3 JD keywords naturally where the resume genuinely supports them. No clichés, no "passionate"/"results-driven" filler, no three-item trait lists, no "X rather than Y" framing. **No fabrication** of experience, scope, or numbers.
-- **`emphasizedTech`** - 4-8 lowercase tech terms from `JD.keywords` to surface first in skill groups.
-- **`jobKeywords`** - optional, ~10 terms; defaults to `emphasizedTech`. Ranks experience/project bullets.
-- **`headline`** - optional, retargets `basics.headline`.
-- **`label`** - `"{Company} - {Title}"` (short).
-- **`jobUrl`** - when the argument was a URL or the digest carried one. Always send it: it's how the server ties the variant to its Application once the apply reports a result.
-- **`diffNotes`** - 1-3 sentences on what was emphasized and why.
+Send only what changes something:
 
-### Optional - reword bullets
+- **`label`** - `"{Company} - {Title}"`.
+- **`jobUrl`** - whenever the argument was a URL or the digest carried one. It is how the server ties the variant to its application.
+- **`emphasizedTech`** - 4-8 lowercase terms from `JD.keywords`. They move to the front of their skill groups.
+- **`jobKeywords`** - optional, about 10 terms. They rank bullets inside each entry. Defaults to `emphasizedTech`.
+- **`diffNotes`** - one or two sentences on what was emphasized and why.
 
-Any role is rewordable. Omit when reordering alone suffices; reach down the timeline only when the recent roles don't carry the JD's story.
+### Summary
 
-- **`bulletRewrites`** - `[{ entryIndex, bullets: [{ original, tailored }] }]`. Copy `original` verbatim from `experience[entryIndex].bullets`; rephrase `tailored` to lead with the JD-relevant outcome. Add **no** number, date, employer, tech, or scope not already in that bullet - it must hold up in an interview.
+Leave `summary` out when the base already fits. It usually does.
 
-### Optional - restructure
+When one sentence of the base speaks to the wrong audience, swap that sentence and keep the rest word for word. The new sentence states one fact from the resume that this JD cares about, in the candidate's voice. Keep the base's proof: its publications, its years, its domains, its numbers. Never restate the JD, and never open with a title followed by a list of tools.
 
-Use `structure` when reordering and rewording can't fix the gap: the base's role family doesn't match the JD, or no variant scored above 40 in Step 4. A close-fitting base gains nothing and every move is one more thing to defend in an interview.
+### Headline
+
+Optional. A job title, nothing more. Retarget it only when the base headline names a different discipline than the JD.
+
+### Bullet rewrites
+
+Reordering is the default and usually suffices. Reword a bullet only when its JD-relevant fact sits mid-sentence, and reword at most two or three across the whole resume.
+
+`bulletRewrites` is `[{ entryIndex, bullets: [{ original, tailored }] }]`. Copy `original` verbatim from `experience[entryIndex].bullets`. `tailored` is the same sentence with the relevant fact first. Every noun, number, and tech name stays. Nothing is added: no audience, no consequence, no clause on why the work mattered. A concrete noun never becomes a vaguer one; "clinical notes" turning into "unstructured records" is a loss, not tailoring.
+
+### Restructure
+
+Use `structure` only when reordering and rewording cannot close the gap: the base's role family differs from the JD, or no variant scored above 40 in Step 4. Every move is one more thing to defend in an interview.
 
 - **`entryOrder`** - permutation of the surviving indices.
 - **`dropEntries`** - at most half, never all.
-- **`mergeEntries`** - `[{ into, from[], company?, title? }]`. Concatenates bullets. Use on short or overlapping roles - overlapping dates read as an error. `company` must be a merged employer or an umbrella name (`Independent / Contract`, `Freelance`, `Self-employed`, `Independent Software Development`).
-- **`promoteProjects`** - `{ projects[], company?, title? }`. Lifts projects onto the timeline, turning a gap between jobs into visible work. Umbrella `company` only.
-- **`projectOrder`** - listed projects move to the front, rest keep their order.
+- **`mergeEntries`** - `[{ into, from[], company?, title? }]`. Use on short or overlapping roles. `company` is one of the merged employers or an umbrella name (`Independent / Contract`, `Freelance`, `Self-employed`, `Independent Software Development`). There is no date field: the server derives the range from the merged roles.
+- **`promoteProjects`** - `{ projects[], company?, title? }`. Lifts projects onto the timeline. Each project needs a `start` on the base first (`PUT /api/resumes/{id}`). Umbrella `company` only.
+- **`projectOrder`** - listed projects move to the front, the rest keep their order.
 
-**Indices refer to the base resume**, never an intermediate state. Server order: merge, drop, promote, reorder. `bulletRewrites` indices refer to the **result**, since rewrites are validated after the restructure.
+Indices refer to the base resume, never an intermediate state. The server applies merge, drop, promote, reorder in that order. `bulletRewrites` indices refer to the result.
 
-### What the server refuses (422)
+### When the server says no
 
-Tailoring changes presentation, not facts:
+The server checks that every field you wrote states only what the resume states, keeps the facts it started with, and reads like the candidate rather than a job ad. A failure is a 422 whose `details` name the field and the reason. Read it, then send less: drop the summary or the rewrite instead of rephrasing it a third time. Never work around a rejection.
 
-- A number in `tailored` that isn't in its `original`.
-- An `original` that isn't a bullet of that entry, or an `entryIndex` that doesn't exist.
-- A merged date range - **there is no field for one.** The server derives start/end from the merged roles, so a range collapses but never widens.
-- An employer that is neither a merged company nor an umbrella name.
-- Promoting a project with no `start`. Add dates to the base first (`PUT /api/resumes/{id}`).
-- Dropping every entry, or more than half.
-
-On 422, read `details`, fix, resend - never drop the guardrail. Non-blocking **`flags`** name tech absent from the resume and a `title` sharing no word with the original (`retitled: "X" -> "Y"`). Echo them - they're what you'll be asked about in an interview.
-
-```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg summary "<2-3 sentence tailored summary>" \
-                --arg label "<Company> - <Title>" \
-                --arg jobUrl "<job-url-or-empty>" \
-                --argjson tech '["typescript","react","next.js","aws"]' \
-                --argjson rewrites '[{"entryIndex":0,"bullets":[{"original":"<verbatim base bullet>","tailored":"<rephrased to JD, no new facts>"}]}]' \
-    '{label:$label, jobUrl:($jobUrl|select(length>0)), emphasizedTech:$tech, jobKeywords:$tech, summary:$summary, bulletRewrites:$rewrites, diffNotes:"Surfaced React/Next.js ahead of other tech; reworded 1 recent bullet to the JD."}')"
-```
-
-With a restructure, add `headline` and `structure`:
+The response also carries non-blocking `flags`, currently only a retitle that shares no word with the original. Echo them; they are what the candidate will be asked about.
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg label "<Company> - <Title>" \
-                --arg summary "<retargeted summary>" \
-                --arg headline "<retargeted headline>" \
+                --arg jobUrl "<job-url-or-empty>" \
+                --argjson tech '["typescript","react","next.js","aws"]' \
+    '{label:$label, jobUrl:($jobUrl|select(length>0)), emphasizedTech:$tech, jobKeywords:$tech, diffNotes:"Surfaced React/Next.js ahead of other tech."}')"
+```
+
+With a swapped summary sentence and one reword:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg label "<Company> - <Title>" \
+                --arg jobUrl "<job-url-or-empty>" \
+                --arg summary "<base summary with one sentence swapped>" \
+                --argjson tech '["typescript","react","next.js","aws"]' \
+                --argjson rewrites '[{"entryIndex":0,"bullets":[{"original":"<verbatim base bullet>","tailored":"<same facts, relevant one first>"}]}]' \
+    '{label:$label, jobUrl:($jobUrl|select(length>0)), emphasizedTech:$tech, jobKeywords:$tech, summary:$summary, bulletRewrites:$rewrites, diffNotes:"Swapped the summary's last sentence for the HIPAA work; led the EmTech entry with the NLP bullet."}')"
+```
+
+With a restructure:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg label "<Company> - <Title>" \
+                --arg headline "<job title>" \
                 --argjson tech '["pytorch","computer vision","python"]' \
                 --argjson structure '{"mergeEntries":[{"into":2,"from":[3],"company":"Independent / Contract"}],"promoteProjects":{"projects":[4]},"entryOrder":[0,1,2]}' \
-    '{label:$label, summary:$summary, headline:$headline,
-      emphasizedTech:$tech, jobKeywords:$tech, structure:$structure,
+    '{label:$label, headline:$headline, emphasizedTech:$tech, jobKeywords:$tech, structure:$structure,
       diffNotes:"Merged two overlapping 2020-21 roles; promoted the CV research project; led with ML."}')"
 ```
 
@@ -183,9 +195,9 @@ Response `{ id, pdfUrl, rewordedBullets, flags }`. Echo:
 > $JOBPILOT_API{pdfUrl}
 > `RESUME_USED base={baseId} variant={id}`
 
-If `flags` is non-empty, append: `⚠ verify - not elsewhere in your resume: {flags}`.
+If `flags` is non-empty, append: `⚠ verify - {flags}`.
 
-The variant's `rewrites` audit records every structural change, so `GET /api/resumes/variants/{id}` shows exactly what moved.
+`GET /api/resumes/variants/{id}` returns the `rewrites` audit, which records every reword and structural move.
 
 ## Return to the caller
 
