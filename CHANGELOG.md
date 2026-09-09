@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.1.38 - 2026-09-09
+
+### Changed
+
+- A rejected resume tailor now reports every rule violation at once, so you fix them in one pass
+  instead of one retry per problem.
+
+### Fixed
+
+- Pilot claims no longer return a 500 when a board has never been synced.
+
 ## v2.1.37 - 2026-09-08
 
 ### Changed
