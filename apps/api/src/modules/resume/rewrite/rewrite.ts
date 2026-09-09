@@ -25,7 +25,6 @@ export interface EntryRewriteAudit {
 }
 
 interface RewriteValidation {
-  ok: boolean;
   /** Hard-guard failures. Non-empty ⇒ reject the whole request. */
   violations: string[];
   /** Per-entry audit of accepted rewrites. */
@@ -126,5 +125,5 @@ export function validateRewrites(
     }
   }
 
-  return { ok: violations.length === 0, violations, audit, map };
+  return { violations, audit, map };
 }

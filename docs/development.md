@@ -222,6 +222,9 @@ whitelists umbrella employer names, so no request can add an employer or widen a
 range. The prose guards split by concern: `rewrite/facts.ts` knows what the resume
 states (numbers, tech names), `rewrite/phrasing.ts` knows what reads as machine-written,
 `rewrite/rewrite.ts` checks reworded bullets against their originals, and `rewrite/prose.ts`
-checks the summary and headline against the base. All of these are 422s, not
-flags, because a flag the agent echoes and moves past is a fabrication the user
-never sees.
+checks the summary and headline against the base. Anything a check can prove is a
+422, not a flag, because a flag the agent echoes and moves past is a fabrication
+the user never sees. The one soft flag left is a retitle sharing no word with the
+original, where the overlap test guesses: "SWE II" to "Software Engineer" is an
+honest expansion that shares no word, so rejecting it outright would cost more
+than flagging it.

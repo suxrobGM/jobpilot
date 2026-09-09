@@ -20,7 +20,7 @@ describe("validateRewrites", () => {
       "Clinical NLP pipeline extracting symptoms, medications, and care events from free-text notes; 0.90 F1.",
     );
 
-    expect(result.ok).toBe(true);
+    expect(result.violations).toEqual([]);
     expect(result.audit[0].bullets[0]).toEqual({
       original: NLP_BULLET,
       tailored:
@@ -35,7 +35,6 @@ describe("validateRewrites", () => {
       "Built a real-time feature and automated retraining pipeline for forecasting models, running nightly.",
     );
 
-    expect(result.ok).toBe(false);
     expect(result.violations[0]).toContain("drops tech");
     expect(result.violations[0]).toContain("SignalR");
   });
@@ -88,6 +87,6 @@ describe("validateRewrites", () => {
       "HIPAA NLP pipeline extracting symptoms, medications, and care events from clinical notes; 0.90 F1.",
     );
 
-    expect(result.ok).toBe(true);
+    expect(result.violations).toEqual([]);
   });
 });

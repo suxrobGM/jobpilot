@@ -41,16 +41,15 @@ export function buildTailoredVariant(base: ResumeData, body: TailorVariantBody):
   const corpus = buildCorpus(restructured);
   const summary = body.summary?.trim();
   const headline = body.headline?.trim();
-  const prose = [
+  const rewrites = validateRewrites(restructured, body.bulletRewrites ?? [], corpus);
+  // One throw for every field, so a request with a bad summary and a bad bullet takes one round trip.
+  const violations = [
     ...(summary ? validateSummary(restructured.summary ?? "", summary, corpus) : []),
     ...(headline ? validateHeadline(headline, corpus) : []),
+    ...rewrites.violations,
   ];
-  if (prose.length > 0) {
-    throw unprocessable("Prose validation failed", prose);
-  }
-  const rewrites = validateRewrites(restructured, body.bulletRewrites ?? [], corpus);
-  if (!rewrites.ok) {
-    throw unprocessable("Rewrite validation failed", rewrites.violations);
+  if (violations.length > 0) {
+    throw unprocessable("Tailor validation failed", violations);
   }
 
   const content = tailorBase(restructured, {

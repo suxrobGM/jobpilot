@@ -150,7 +150,7 @@ Indices refer to the base resume, never an intermediate state. The server applie
 
 ### When the server says no
 
-The server checks that every field you wrote states only what the resume states, keeps the facts it started with, and reads like the candidate rather than a job ad. A failure is a 422 whose `details` name the field and the reason. Read it, then send less: drop the summary or the rewrite instead of rephrasing it a third time. Never work around a rejection.
+The server checks that every field you wrote states only what the resume states, keeps the facts it started with, and reads like the candidate rather than a job ad. A failure is a 422 whose `details` name the field and the reason. Apart from `structure`, which is checked first on its own, `details` lists every problem in one response, so fix them together. Read it, then send less: drop the summary or the rewrite instead of rephrasing it a third time. Never work around a rejection.
 
 The response also carries non-blocking `flags`, currently only a retitle that shares no word with the original. Echo them; they are what the candidate will be asked about.
 
