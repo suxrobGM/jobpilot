@@ -64,10 +64,10 @@ export const RATE_LIMITS = {
 
   /** Sized for a crawler walking the paginated public job index, not just a human browsing it -
    *  too tight here and we deindex ourselves. A scraper brake, not an anti-abuse wall. */
-  publicJobs: { key: byIp, limit: 300, windowMs: HOUR, burst: 60 },
+  publicJobs: { key: byIp, limit: 1800, windowMs: HOUR, burst: 120 },
 
   /** Public portfolio + leaderboard pages, crawlable. Same shape as publicJobs: a scraper brake. */
-  publicPortfolio: { key: byIp, limit: 300, windowMs: HOUR, burst: 60 },
+  publicPortfolio: { key: byIp, limit: 1800, windowMs: HOUR, burst: 120 },
 
   /** Burns the *user's own* solver credits (captcha.service.ts decrypts their key), so this is a
    *  runaway-agent guardrail, not an anti-abuse wall. burst 5 covers a page with several challenges.

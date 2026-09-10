@@ -23,10 +23,11 @@ export function apiErrorMessage(error: unknown, fallback?: string): string {
 /**
  * Unwrap a public detail fetch whose caller maps a null row to `notFound()`. Eden reports every
  * non-2xx as `error`, and a 429 or a blip rendered as "not found" invites Google to deindex a live page.
+ * `context` prefixes the message because every caller otherwise logs the same unattributable digest.
  */
-export function dataOrThrow<T>(result: EdenResult<T>, fallback: string): T | null {
+export function dataOrThrow<T>(result: EdenResult<T>, context: string): T | null {
   if (result.error && result.error.status !== 404) {
-    throw new Error(apiErrorMessage(result.error, fallback));
+    throw new Error(`${context}: ${apiErrorMessage(result.error)}`);
   }
   return result.data;
 }
