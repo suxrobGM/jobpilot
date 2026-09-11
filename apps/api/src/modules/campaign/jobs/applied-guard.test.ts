@@ -92,8 +92,11 @@ describe("skipIfAlreadyApplied", () => {
     expect(refusal?.message).toMatch(/Already applied \(url\)/);
   });
 
-  // Postings get reposted; without a cutoff the same url 409s forever, with no override.
-  it("lets the same url through once it falls out of the window", async () => {
+  // This used to assert the opposite - that an aged url falls out of the window and may be applied
+  // to again, so a repost is not blocked forever. In practice the window reopening is what sent six
+  // real applications out twice, and a repost at the identical url is rarer than that. Whoever
+  // wants reposts re-appliable should add an explicit override, not a timer.
+  it("keeps blocking the same url however old the application is", async () => {
     const { tx, writes } = transaction([
       { ...EXISTING, appliedAt: new Date(Date.now() - 200 * DAY_MS), title: "x", company: "y" },
     ]);
@@ -105,8 +108,8 @@ describe("skipIfAlreadyApplied", () => {
       company: "Acme",
     });
 
-    expect(refusal).toBeNull();
-    expect(writes).toHaveLength(0);
+    expect(refusal).toBeInstanceOf(AlreadyAppliedError);
+    expect(writes[0]?.data).toMatchObject({ status: "skipped" });
   });
 
   // The skip commits with the caller's transaction, so the job cannot be left `approved`.
@@ -168,6 +171,49 @@ describe("skipIfAlreadyApplied", () => {
       company: "Acme",
     });
 
+    expect(refusal).toBeNull();
+  });
+});
+
+// Regression: six postings went out twice at gaps of exactly 30 and 33 days, because the exact-url
+// arm was gated on the same window as the fuzzy arm. A month-old application is still an
+// application - the employer has it, and re-applying cannot be taken back.
+describe("skipIfAlreadyApplied outside the dedupe window", () => {
+  const AGED: FakeApplication = {
+    ...EXISTING,
+    appliedAt: new Date(Date.now() - 33 * DAY_MS),
+  };
+
+  it("still blocks the same url a month later", async () => {
+    const { tx } = transaction([AGED]);
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: AGED.url,
+      title: AGED.title,
+      company: AGED.company,
+    });
+    expect(refusal).toBeInstanceOf(AlreadyAppliedError);
+  });
+
+  it("records the aged duplicate as skipped rather than leaving it to be re-offered", async () => {
+    const { tx, writes } = transaction([AGED]);
+    await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: AGED.url,
+      title: AGED.title,
+      company: AGED.company,
+    });
+    expect(writes[0]?.data).toMatchObject({ status: "skipped" });
+  });
+
+  it("lets a different posting through, so the unwindowed arm is url-exact and nothing wider", async () => {
+    const { tx } = transaction([AGED]);
+    const refusal = await skipIfAlreadyApplied(tx, "u1", {
+      ...JOB,
+      url: "https://example.test/jobs/2",
+      title: "Backend Engineer",
+      company: "Globex",
+    });
     expect(refusal).toBeNull();
   });
 });
