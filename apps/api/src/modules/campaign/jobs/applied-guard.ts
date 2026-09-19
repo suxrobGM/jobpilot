@@ -1,4 +1,4 @@
-import { ErrorCodes, HttpError } from "@/common/errors";
+import { conflict, ErrorCodes, HttpError } from "@/common/errors";
 import type { Job, Prisma } from "@/generated/prisma/client";
 import {
   type AppliedDuplicate,
@@ -6,6 +6,7 @@ import {
   duplicateSkipReason,
   findAppliedDuplicate,
 } from "@/modules/application/duplicate";
+import { findApplyingDuplicate } from "./applying-duplicate";
 
 /** Wider than a read: the guard writes the skip alongside the duplicate scan. */
 export type GuardTransaction = DuplicateReader & Pick<Prisma.TransactionClient, "job">;
@@ -37,17 +38,22 @@ export class AlreadyAppliedError extends HttpError {
 }
 
 /**
- * Refuses a move into `applying` when this profile already applied, recording the job `skipped` in
- * the caller's transaction - left `approved` it is offered again by every following agenda.
- *
- * The skills' own `/applied/check` is advice a model can skip, and `@@unique([userId, url])` only
- * dedupes the record once the second application has already landed with the employer.
+ * Refuses a move into `applying` for a posting this profile already applied to, and skips the job
+ * so the next agenda does not offer it again. A sibling that is still `applying` only refuses: that
+ * apply may fail, so this job stays `approved`.
  */
 export async function skipIfAlreadyApplied(
   tx: GuardTransaction,
   userId: string,
   job: GuardedJob,
 ): Promise<AlreadyAppliedError | null> {
+  const sibling = await findApplyingDuplicate(tx, userId, job);
+  if (sibling) {
+    throw conflict(
+      `Already applying: another worker holds "${sibling.title}" at ${sibling.company} (${sibling.campaignId}/${sibling.key}). Record this job as skipped with reason "Already applied (in-flight)" instead of applying alongside it.`,
+    );
+  }
+
   const duplicate = await findAppliedDuplicate(tx, userId, job);
   if (!duplicate) {
     return null;

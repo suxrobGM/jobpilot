@@ -44,6 +44,8 @@ export function setup() {
   const db = {
     job: {
       findFirst: async () => ({ ...job, campaign }),
+      // The applying-duplicate scan; no sibling job is mid-apply in these tests.
+      findMany: async () => [],
       updateMany: async ({
         where,
         data,
