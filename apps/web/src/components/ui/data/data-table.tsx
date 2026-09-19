@@ -1,6 +1,7 @@
 "use client";
 
-import { type ReactElement, useMemo } from "react";
+import type { ReactElement } from "react";
+import { Button, Stack, Typography } from "@mui/material";
 import {
   DataGrid,
   type DataGridProps,
@@ -19,8 +20,34 @@ interface DataTableProps<TRow extends GridValidRowModel>
   getRowId?: (row: TRow) => string | number;
   onRowClick?: (row: TRow) => void;
   isRowSelectable?: (row: TRow) => boolean;
+  /** Set when the query failed, so its empty `rows` do not read as "no data". */
+  errorTitle?: string;
+  onRetry?: () => void;
   /** Replaces the grid's "No rows" overlay, so every empty table reads like the rest of the app. */
   emptyMessage?: string;
+}
+
+interface LoadErrorOverlayProps {
+  title: string;
+  onRetry?: () => void;
+}
+
+function LoadErrorOverlay(props: LoadErrorOverlayProps): ReactElement {
+  const { title, onRetry } = props;
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{ alignItems: "center", justifyContent: "center", height: "100%" }}
+    >
+      <Typography variant="body2Muted">{title}</Typography>
+      {onRetry && (
+        <Button variant="text" size="small" onClick={onRetry}>
+          Retry
+        </Button>
+      )}
+    </Stack>
+  );
 }
 
 /**
@@ -30,17 +57,25 @@ interface DataTableProps<TRow extends GridValidRowModel>
 export function DataTable<TRow extends GridValidRowModel>(
   props: DataTableProps<TRow>,
 ): ReactElement {
-  const { rows, columns, getRowId, onRowClick, isRowSelectable, emptyMessage, slots, ...rest } =
-    props;
+  const {
+    rows,
+    columns,
+    getRowId,
+    onRowClick,
+    isRowSelectable,
+    errorTitle,
+    onRetry,
+    emptyMessage,
+    slots,
+    ...rest
+  } = props;
 
-  // A fresh slot component each render would remount the overlay instead of updating it.
-  const mergedSlots = useMemo(
-    () =>
-      emptyMessage
-        ? { noRowsOverlay: () => <EmptyState variant="inline" title={emptyMessage} />, ...slots }
-        : slots,
-    [emptyMessage, slots],
-  );
+  const mergedSlots = { ...slots };
+  if (errorTitle) {
+    mergedSlots.noRowsOverlay = () => <LoadErrorOverlay title={errorTitle} onRetry={onRetry} />;
+  } else if (emptyMessage) {
+    mergedSlots.noRowsOverlay ??= () => <EmptyState variant="inline" title={emptyMessage} />;
+  }
 
   return (
     <DataGrid<TRow>

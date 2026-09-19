@@ -82,6 +82,8 @@ export function CoverLettersTable(): ReactElement {
       rows={rows}
       columns={columns}
       loading={lettersQuery.isLoading}
+      errorTitle={lettersQuery.isError ? "Couldn't load your cover letters." : undefined}
+      onRetry={() => void lettersQuery.refetch()}
       getRowId={(row) => row.id}
       onRowClick={(row) => router.push(`/cover-letters/${row.id}` as Route)}
       {...gridPagination(pagination, lettersQuery.data?.pagination)}
