@@ -1,5 +1,3 @@
-// `/applied/check` is advice the agent can skip; this is the gate a second application has to get
-// past, so it is tested on its own.
 import { DAY_MS } from "@/common/date/buckets";
 import { AlreadyAppliedError, type GuardTransaction, skipIfAlreadyApplied } from "./applied-guard";
 import { describe, expect, it } from "bun:test";
@@ -94,8 +92,8 @@ describe("skipIfAlreadyApplied", () => {
     expect(refusal?.message).toMatch(/Already applied \(url\)/);
   });
 
-  // Postings get reposted; without a cutoff the same url 409s forever, with no override.
-  it("lets the same url through once it falls out of the window", async () => {
+  // A second application cannot be recalled, so the url arm has no window.
+  it("keeps blocking the same url however old the application is", async () => {
     const { tx, writes } = transaction([
       { ...EXISTING, appliedAt: new Date(Date.now() - 200 * DAY_MS), title: "x", company: "y" },
     ]);
@@ -107,8 +105,8 @@ describe("skipIfAlreadyApplied", () => {
       company: "Acme",
     });
 
-    expect(refusal).toBeNull();
-    expect(writes).toHaveLength(0);
+    expect(refusal).toBeInstanceOf(AlreadyAppliedError);
+    expect(writes[0]?.data).toMatchObject({ status: "skipped" });
   });
 
   // The skip commits with the caller's transaction, so the job cannot be left `approved`.
