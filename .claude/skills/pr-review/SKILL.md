@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a JobPilot pull request on its own branch, resolve merge conflicts with main, remove over-engineering, redundancy, redundant tests, and noisy comments from the PR's changes, push the cleanup to the PR branch as maintainer, and leave a short summary comment so the PR is ready for human review. Use for "review PR 37", "clean up the PR backlog", "review new PRs", or `/pr-review [number...] [--dry-run]`.
+description: Review a JobPilot pull request on its own branch, resolve merge conflicts with main, remove over-engineering, redundancy, redundant tests, and noisy comments from the PR's changes, and commit the cleanup locally. Then stop so the user can review and add their own changes. Only after the user approves, push to the PR branch as maintainer and post a short summary comment. Use for "review PR 37", "clean up the PR backlog", "review new PRs", or `/pr-review [number...]`.
 metadata:
   version: "1.0"
 ---
@@ -12,10 +12,10 @@ feature needs, keep its behavior, and tell the author what changed.
 
 The argument is one or more PR numbers. With none, take every open PR whose head commit is not
 the one in its newest `<!-- pr-review <sha> -->` comment. Review one at a time, smallest first.
+Start the next PR only after the user approves or drops the current one.
 
-With `--dry-run`, review, edit, verify, and commit locally, but push nothing, post nothing, and leave the PR title alone.
-Show the user `git show --stat HEAD`, the diff, and the draft comment. Stay on the PR branch and
-skip step 6, so the user can run `git push` and post the comment themselves.
+The skill has two parts. Steps 1 to 6 work locally and end with a stop. Steps 7 and 8 run only
+after the user approves. Until then nothing reaches GitHub: no push, no comment, no title edit.
 
 Never merge, approve, or close.
 
@@ -142,30 +142,29 @@ search, the removal is a question for the author.
   changes the API or database shape, questions the design, or looks like a bug. Exception: fix an obvious one-line
   bug and put it first in the summary.
 
-If the PR needs a different design, make no edits. Post the reason and stop.
+If the PR needs a different design, make no edits. Draft the reason as the comment and go to
+step 6.
 
-## 4. Apply, verify, push
+## 4. Apply, verify, commit locally
 
 1. Keep the author's structure and names where they are fine.
 2. Invoke the `verify` skill. Note a failure that `main` also has and continue.
    A failure the PR causes goes to the author, unless the cleanup fixes it.
 3. Commit with the `commit` skill. Use one commit, or up to three by theme for a large PR.
-4. `git push`, unless this is a dry run. Never force-push. Never amend the author's commits.
 
 ```text
 refactor(pilot): inline lifetime cap and trim claim comments
 ```
 
-If `maintainerCanModify` is false, do not push. Put the fixes in the summary comment as
+Never amend the author's commits. Do not push.
+
+If `maintainerCanModify` is false, a push cannot work. Put the fixes in the draft comment as
 ` ```suggestion ` blocks.
 
-The squash merge uses the PR title. If it breaks the `commit` skill's format, fix it with
-`gh pr edit <n> --title`.
+## 5. Draft the comment
 
-## 5. Comment
-
-Post one summary with `gh pr comment <n> --body-file <scratchpad file>`. Add an inline comment
-(`gh api repos/{owner}/{repo}/pulls/<n>/comments`) only when a question needs a specific line.
+Write one summary to a scratchpad file. Draft an inline comment only when a question needs a
+specific line.
 
 Write like a teammate in a hurry:
 
@@ -190,11 +189,40 @@ Ready for maintainer review once that is answered.
 If you merged `main`, say so first and name each file where you resolved a conflict, with one
 clause on how.
 
-The marker holds the PR's head commit after your push, or the current head if you pushed
-nothing. Omit "Needs your call" when it is empty. When nothing needed fixing, post the marker plus
+The marker holds the local `HEAD`, which becomes the PR's head commit after the push. Omit
+"Needs your call" when it is empty. When nothing needed fixing, the comment is the marker plus
 "Reviewed, nothing to trim. Ready for maintainer review."
 
-## 6. Finish
+## 6. Stop for the user's review
+
+Show the user:
+
+- `git diff --stat <original PR head>..HEAD` and the diff itself.
+- The draft comment.
+- The new PR title, if the current one breaks the `commit` skill's format. The squash merge
+  uses the PR title.
+
+Stay on the PR branch and end the turn. The user may edit files, add commits, or ask for
+changes. Apply each requested change as a new commit and show the result again.
+
+Continue to step 7 only when the user says the review is complete, for example "push" or
+"approved". A reply that only comments on the diff is not approval.
+
+## 7. Push and post
+
+1. Run `git status --porcelain` and `git log <your last commit>..HEAD` to find the user's
+   changes. Commit uncommitted changes with the `commit` skill.
+2. If anything changed since the last `verify` run, invoke `verify` again. On a failure, stop
+   and tell the user.
+3. Update the draft comment: add the user's changes and set the marker to the current `HEAD`.
+4. `git push`. Never force-push. Skip the push if `maintainerCanModify` is false.
+5. Fix the title with `gh pr edit <n> --title`, if step 6 proposed one.
+6. Post the summary with `gh pr comment <n> --body-file <scratchpad file>`. Post an inline
+   comment with `gh api repos/{owner}/{repo}/pulls/<n>/comments`.
+
+If the user drops the cleanup, push and post nothing, and go to step 8.
+
+## 8. Finish
 
 ```bash
 git checkout main
