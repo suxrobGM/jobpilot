@@ -18,6 +18,7 @@ import { buildAgenda } from "./build";
 import { gatherBoardHealth } from "./candidates-board";
 import { gatherBootstrap } from "./candidates-bootstrap";
 import { gatherInbox } from "./candidates-inbox";
+import { gatherJobAlerts } from "./candidates-job-alerts";
 import { gatherQuietCandidates } from "./candidates-maintenance";
 import { gatherPausedCampaigns } from "./candidates-paused";
 import { gatherAnsweredQuestions } from "./candidates-questions";
@@ -77,7 +78,7 @@ export class AgendaService {
   async refresh(userId: string): Promise<AgendaResponse> {
     const state = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { running: true, cycleCount: true },
+      select: { running: true, cycleCount: true, jobAlertsRequestedAt: true },
     });
     if (!state?.running) throw conflict("Pilot is stopped.");
 
@@ -104,6 +105,7 @@ export class AgendaService {
       appliedToday,
       pausedCampaigns,
       inbox,
+      jobAlertsGather,
       approvedNetworking,
       networkingSentToday,
       followups,
@@ -123,6 +125,7 @@ export class AgendaService {
       countAppliedToday(prisma, userId, now),
       gatherPausedCampaigns(prisma, userId, now),
       gatherInbox(prisma, userId),
+      gatherJobAlerts(prisma, userId, config, state.jobAlertsRequestedAt, now),
       emailNetworking ? gatherApprovedNetworking(prisma, userId) : [],
       outreach ? countSentToday(prisma, userId, now) : 0,
       emailNetworking ? gatherFollowups(prisma, userId, config, now) : [],
@@ -190,6 +193,8 @@ export class AgendaService {
       scorePending,
       pausedCampaigns,
       inbox,
+      jobAlerts: jobAlertsGather.alerts,
+      nextJobAlertsAt: jobAlertsGather.nextRunAt,
       approvedNetworking,
       networkingSentToday,
       followups,

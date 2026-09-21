@@ -94,6 +94,12 @@ model EmailMessage {
   verificationLink   String? @map("verification_link")
   verificationDomain String? @map("verification_domain")
 
+  // `[{url, text}]` for every link, captured at sync: rawBody drops hrefs, and a job-alert tracker
+  // URL means nothing without its anchor text.
+  links       Json      @default("[]")
+  // Set once the pilot has pulled this alert email's job links into a campaign.
+  harvestedAt DateTime? @map("harvested_at")
+
   @@index([reviewStatus, receivedAt])
   @@index([matchedAppId])
   @@index([fromDomain, receivedAt])

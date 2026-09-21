@@ -88,6 +88,13 @@ export interface AgendaInbox {
   count: number;
 }
 
+/** Unharvested job-alert emails, offered once per scheduled slot. */
+export interface AgendaJobAlerts {
+  messageIds: string[];
+  count: number;
+  senderDomains: string[];
+}
+
 export interface AgendaNetworkingSend {
   campaignId: string;
   messageId: string;
@@ -198,6 +205,10 @@ export interface AgendaInput {
   // Paused campaigns needing a resume-or-ask decision; emitted ungated so they can't be starved.
   pausedCampaigns: AgendaPausedCampaign[];
   inbox: AgendaInbox;
+  // Null when the harvest is off, not due this slot, or has no unharvested mail.
+  jobAlerts: AgendaJobAlerts | null;
+  // Next scheduled harvest slot; the idle sleep clamps to it so the harvest runs on time.
+  nextJobAlertsAt: Date | null;
   approvedNetworking: AgendaNetworkingSend[];
   networkingSentToday: number;
   followups: AgendaFollowup[];

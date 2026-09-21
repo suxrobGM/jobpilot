@@ -1,6 +1,7 @@
 import { statusSchema } from "@jobpilot/contracts/application";
 import {
   classificationSchema,
+  emailLinksSchema,
   emailProviderSchema,
   reviewStatusSchema,
 } from "@jobpilot/contracts/email";
@@ -97,6 +98,8 @@ export const emailMessageSchema = z.object({
   verificationCode: z.string().nullable(),
   verificationLink: z.string().nullable(),
   verificationDomain: z.string().nullable(),
+  links: emailLinksSchema,
+  harvestedAt: z.date().nullable(),
   matchedApp: matchedAppSchema,
 });
 
@@ -127,3 +130,6 @@ export const syncResultSchema = z.object({
   fetched: z.number().int(),
   new: z.number().int(),
 });
+
+/** How many alert emails a harvest mark actually changed (`svc.markJobAlertsHarvested`). */
+export const jobAlertsHarvestedSchema = z.object({ harvested: z.number().int().min(0) });

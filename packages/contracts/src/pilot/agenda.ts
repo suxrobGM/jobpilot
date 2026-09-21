@@ -12,6 +12,7 @@ const AGENDA_ITEM_KINDS = [
   "campaign.scorePending",
   "campaign.reviewPaused",
   "inbox.review",
+  "inbox.jobAlerts",
   "networking.send",
   "networking.followup",
   "networking.warmIntro",
@@ -134,6 +135,17 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
     "inbox.review",
     "inbox",
     z.object({ messageIds: z.array(z.string()), count: z.number().int() }),
+  ),
+  agendaItem(
+    "inbox.jobAlerts",
+    "inbox",
+    z.object({
+      // Oldest first, capped per run; `count` is every unharvested alert email in the window.
+      messageIds: z.array(z.string()),
+      count: z.number().int(),
+      minScore: z.number(),
+      senderDomains: z.array(z.string()),
+    }),
   ),
   agendaItem(
     "networking.send",

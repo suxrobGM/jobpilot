@@ -1,4 +1,5 @@
 import { approveSchema, scanMessageSchema } from "@jobpilot/contracts/email";
+import { markJobAlertsHarvestedSchema } from "@jobpilot/contracts/pilot";
 import { idParam } from "@jobpilot/contracts/shared";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
@@ -8,6 +9,7 @@ import { sseStream } from "@/common/sse";
 import {
   emailMessageListSchema,
   emailMessageSchema,
+  jobAlertsHarvestedSchema,
   messageApprovedSchema,
   messageCountSchema,
   messageDeniedSchema,
@@ -75,6 +77,19 @@ export const emailMessagesController = new Elysia({
         summary: "Approve message and advance application",
         description:
           "Approves a classified message, transitions its matched application to the inferred target stage with a stage event, marks the message approved, and returns the message id, application id, and new stage.",
+      },
+    },
+  )
+  .post(
+    "/job-alerts/harvested",
+    ({ user, body }) => svc.markJobAlertsHarvested(user.id, body.messageIds),
+    {
+      body: markJobAlertsHarvestedSchema,
+      response: jobAlertsHarvestedSchema,
+      detail: {
+        summary: "Mark job-alert emails harvested",
+        description:
+          "Stamps `harvestedAt` on the given job-alert emails once the pilot has pulled their job links into a campaign, so the next scheduled harvest skips them. Returns `{ harvested }`, the number of rows newly stamped.",
       },
     },
   )

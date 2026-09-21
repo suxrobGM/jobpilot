@@ -2,6 +2,7 @@ import { inboxChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { CryptoService } from "@/common/crypto";
 import { ErrorCodes, HttpError, notFound } from "@/common/errors";
+import { toInputJson } from "@/common/json";
 import { logger } from "@/common/logger";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -88,6 +89,7 @@ export class EmailSyncService {
             fromDomain: m.fromDomain,
             snippet: m.snippet,
             rawBody: m.rawBody,
+            links: toInputJson(m.links),
             receivedAt: m.receivedAt,
           },
         });

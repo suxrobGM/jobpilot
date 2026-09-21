@@ -1,7 +1,7 @@
 import type { NetworkingAutonomy } from "@jobpilot/contracts/networking";
 import type { AgendaItem } from "@jobpilot/contracts/pilot";
 import { MAX_FOLLOWUPS, PRIORITY } from "./constants";
-import type { AgendaFollowup, AgendaInbox, AgendaNetworkingSend } from "./types";
+import type { AgendaFollowup, AgendaInbox, AgendaJobAlerts, AgendaNetworkingSend } from "./types";
 
 /** Approved email sends, capped by how many the caller has left under today's networking cap. */
 export function buildNetworkingSendItems(
@@ -39,6 +39,27 @@ export function buildInboxItem(inbox: AgendaInbox): AgendaItem[] {
       subjectType: "inbox",
       subjectId: "inbox",
       payload: { messageIds: inbox.messageIds, count: inbox.count },
+    },
+  ];
+}
+
+/** One harvest item per due slot; the threshold is the pilot-wide minimum score. */
+export function buildJobAlertsItem(alerts: AgendaJobAlerts | null, minScore: number): AgendaItem[] {
+  if (!alerts || alerts.count === 0) return [];
+  return [
+    {
+      id: "inbox.jobAlerts",
+      kind: "inbox.jobAlerts",
+      priority: PRIORITY.jobAlerts,
+      title: `Harvest job links from ${alerts.count} alert email(s)`,
+      subjectType: "inbox",
+      subjectId: "jobAlerts",
+      payload: {
+        messageIds: alerts.messageIds,
+        count: alerts.count,
+        minScore,
+        senderDomains: alerts.senderDomains,
+      },
     },
   ];
 }

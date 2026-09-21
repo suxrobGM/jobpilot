@@ -23,6 +23,8 @@ export const PRIORITY = {
   strategyBootstrap: 520,
   // Scoring an existing campaign's pending rows outranks fresh discovery: finish what's found first.
   scorePending: 510,
+  // Scheduled, so it waits its turn behind applies; above discovery since alert links are pre-filtered.
+  jobAlerts: 505,
   discover: 500,
   followup: 400,
   strategyReview: 350,
@@ -40,6 +42,15 @@ export const MAX_PROMO_COMPOSE = 1;
 export const INBOX_BATCH = 10;
 /** Don't re-offer an Upwork sync until the mirror is this stale. */
 export const UPWORK_SYNC_STALE_MS = 6 * HOUR_MS;
+
+/** Alert emails one harvest reads; twice a day this covers any realistic alert volume. */
+export const JOB_ALERTS_BATCH = 40;
+/** Older alerts point at postings that have mostly filled; a first enable should not dig up a month. */
+export const JOB_ALERTS_LOOKBACK_MS = 3 * DAY_MS;
+/** A harvest that failed or crashed retries this soon instead of waiting for the next slot. */
+export const JOB_ALERTS_RETRY_MS = HOUR_MS;
+/** A "Run now" the pilot never got to (stopped, or busy for an hour) lapses rather than firing later. */
+export const JOB_ALERTS_REQUEST_TTL_MS = HOUR_MS;
 
 /**
  * Gmail-pull throttle for refresh. Matches the default check interval: idle cycles always sync,

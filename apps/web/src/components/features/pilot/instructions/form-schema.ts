@@ -44,13 +44,21 @@ export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
   promotionPlatforms: [],
 };
 
-export function toConfig(value: InstructionsFormValues): PilotInstructionsConfig {
+/**
+ * `jobAlerts` is passed through from the latest state, not the form: the schedule card edits it on
+ * its own route, and a form copy loaded before that edit would silently undo it on save.
+ */
+export function toConfig(
+  value: InstructionsFormValues,
+  jobAlerts: PilotInstructionsConfig["jobAlerts"],
+): PilotInstructionsConfig {
   return {
     dailyApplyCap: value.dailyApplyCap,
     minScore: value.minScore,
     checkIntervalMinutes: value.checkIntervalMinutes,
     boards: value.boards,
     networking: value.networking,
+    jobAlerts,
     promotion: {
       platforms: value.promotionPlatforms.map((p) => ({
         platform: p.platform.trim(),

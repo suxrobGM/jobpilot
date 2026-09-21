@@ -31,6 +31,7 @@ import { cleanupJob } from "@/modules/maintenance/cleanup.job";
 import { pilotController } from "@/modules/pilot/pilot.controller";
 import { pilotAgendaController } from "@/modules/pilot/pilot-agenda.controller";
 import { pilotClaimsController } from "@/modules/pilot/pilot-claims.controller";
+import { pilotJobAlertsController } from "@/modules/pilot/pilot-job-alerts.controller";
 import { pilotJournalController } from "@/modules/pilot/pilot-journal.controller";
 import { pilotQuestionsController } from "@/modules/pilot/pilot-questions.controller";
 import { pilotSearchController } from "@/modules/pilot/pilot-search.controller";
@@ -90,6 +91,7 @@ const app = new Elysia()
       .use(pilotSearchController)
       .use(pilotAgendaController)
       .use(pilotClaimsController)
+      .use(pilotJobAlertsController)
       .use(pilotJournalController)
       .use(pilotQuestionsController)
       .use(promotionController)
