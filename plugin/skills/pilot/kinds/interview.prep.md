@@ -3,7 +3,7 @@
 Payload `{applicationId, company, jobTitle, jobUrl, resumeId}`. Generate a prep sheet by following the `interview` skill's procedure (JD from `jobUrl` if reachable, else the application's stored data; resume per `../../_shared/setup.md`). Save it:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/applied/$APP_ID/events" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/applied/$APP_ID/events" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg n "[interview-prep]
 $SHEET" '{kind:"note", notes:$n}')"

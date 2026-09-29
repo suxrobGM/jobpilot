@@ -3,7 +3,7 @@
 Payload `{campaignId, query, config, counts, topSkipReasons}`. Quiet-agenda deep think, **no browser**. Reason over the yield: is the query too broad/narrow, `minScore` mistuned, skip reasons clustered? Decide ONE concrete adjustment (rewrite query and/or shift `minScore` by at most ±10 within [50,95]). Build `$UPDATED_CONFIG` from a fresh `GET /api/campaigns/$CID` and pass its `updatedAt` as the guard; a `409` = the user edited mid-review - re-fetch and re-decide once:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CID" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CID" \
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson config "$UPDATED_CONFIG" --arg ts "$CAMPAIGN_UPDATED_AT" \
     '{config:$config, expectedUpdatedAt:$ts}')"

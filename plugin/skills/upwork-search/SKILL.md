@@ -25,7 +25,7 @@ sends it with the `upwork-submit` skill.
      `source:"search"`, `status:"in_progress"` campaign on the query, else create one (a
      `source:"search"` create requires `config.resumeId` - default to the profile's
      `primaryResumeId`).
-4. Resolve the board: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq '.[] | select(.domain=="upwork.com")'`.
+4. Resolve the board: `curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq '.[] | select(.domain=="upwork.com")'`.
    No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign` was given,
    first command it to `failed` with `POST /api/campaigns/<id>/status {"status":"failed"}`.
 
@@ -76,7 +76,7 @@ into context.
 ```bash
 CLIENT='{ "paymentVerified": true, "totalSpent": 12000, "rating": 4.9,
   "reviewsCount": 24, "proposalsCount": 7, "postedHoursAgo": 6, "jobType": "hourly" }'
-QUALITY=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/client-quality" \
+QUALITY=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/client-quality" \
   -H 'content-type: application/json' -d "$(jq -n --argjson c "$CLIENT" '{client:$c}')")
 CLIENT_VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 ```
@@ -109,7 +109,7 @@ populate `skills`. Score inline - the MCP returns the full description, so there
 card here and no need to delegate to `job-worker`:
 
 ```bash
-FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
+FIT=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' -d "$(jq -n --argjson d "$DIGEST" --argjson min <minScore> '{digest:$d, minScore:$min}')")
 SCORE=$(echo "$FIT" | jq -r '.score')
 ```
@@ -128,7 +128,7 @@ so "Draft proposal" can seed the proposal later.
 DIGEST_FULL=$(jq -n --argjson fit "$DIGEST" --argjson client "$CLIENT" --argjson q "$QUALITY" \
   --argjson connects <connects_cost> \
   '$fit + {clientStats:$client, qualityScore:($q.qualityScore), connectsCost:$connects}')
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<company-title-rank slug>" --arg title "<title>" --arg company "<clientName>" \
     --arg url "<job-url>" --arg matchReason "Fit $SCORE · $(echo "$QUALITY" | jq -r '.flags|join(", ")')" \
@@ -141,7 +141,7 @@ Use the row's `url`, which the MCP returns ready to link.
 ## Phase 4: Close & Hand Off
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/status" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/status" \
   -H 'content-type: application/json' -d '{"status":"completed"}'
 ```
 

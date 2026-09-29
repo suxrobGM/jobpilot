@@ -39,14 +39,15 @@ Both providers support subagents natively - Claude Code auto-discovers them from
 The API requires authentication. The terminal host injects `JOBPILOT_API_TOKEN` (a personal access token) when it launches the agent; send it as a bearer header on every call:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."
 ```
 
 **If `JOBPILOT_API_TOKEN` is empty, this session is not running inside the JobPilot terminal host.** Don't call authed endpoints (they return `401`); stop and tell the user:
 
 > JobPilot runs through the agent terminal in your dashboard. Open $JOBPILOT_WEB and launch the agent there - it signs in automatically. Or run the `setup` skill to install the agent terminal.
 
-Responses are the **bare payload** (no `{ ok, data }` wrapper) - read fields at the top level. Errors are `{ code, message }` with an HTTP status.
+Responses are the **bare payload** (no `{ ok, data }` wrapper) - read fields at the top level. Errors are `{ code, message, details? }` with an HTTP status.
+`--fail-with-body` (never `-f`, which discards it) exits non-zero on an error status but still prints that body, so read `message` - and `details` for a `422`'s field problems - before deciding how to recover.
 
 ## Profile
 
@@ -61,7 +62,7 @@ Short lists are bare arrays - `resumes`, `credentials`, `job-boards`, `pilot/que
 ## 1. Health Check
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/health"
+curl -sS --fail-with-body "$JOBPILOT_API/api/health"
 ```
 
 On failure after the Codex Windows sandbox retry above, stop and tell the user:
@@ -73,7 +74,7 @@ Do not fall back to local JSON files - they have been removed.
 ## 2. Load Profile
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/user"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/user"
 ```
 
 - If `user` is `null`: "Open $JOBPILOT_WEB/onboarding to set up your profile, then re-run this skill."
@@ -97,7 +98,7 @@ Renderable PDFs (direct use outside the apply flow):
 - Variant: `GET /api/resumes/variants/{id}/pdf`.
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/3/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/resume-3.pdf"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/3/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/resume-3.pdf"
 ```
 
 ## Scratch files
@@ -119,7 +120,7 @@ Name files so parallel work can't collide - prefix with the campaign or job key 
 Resolve the login for a board domain in **one call** - the API applies the precedence (`scope === <board-domain>` → `scope === "default"`) server-side, so you never pick a row by hand:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/credentials/resolve?domain=<board-domain>"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/credentials/resolve?domain=<board-domain>"
 ```
 
 Returns `{ id, email, password, scope }` (`scope`: the board domain or `default`) or `null` (none configured - report to the user, don't guess). The raw rows still live at `GET /api/credentials` (login creds + captcha-service keys) when you need to list or edit them.

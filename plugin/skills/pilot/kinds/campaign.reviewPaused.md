@@ -5,14 +5,14 @@ Payload `{campaignId, query, board, pausedAt}` - a stuck paused auto-apply campa
 - Missing resume and the file is restorable per `../../_shared/setup.md` → resume:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CID/status" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CID/status" \
   -H 'content-type: application/json' -d '{"status":"in_progress","actor":"pilot"}'
 ```
 
 - Anything else → ask; never silently override a user pause. `subjectType:"campaign"` + `subjectId` are load-bearing (suppress re-review while open, route the answer):
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/questions" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/questions" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg sid "$CID" --arg q "Campaign '$QUERY' is paused ($REASON). Resume it?" \
     --arg dl "$JOBPILOT_WEB/campaigns/$CID" \

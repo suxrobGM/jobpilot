@@ -72,7 +72,7 @@ whether to proceed anyway. Stop on no.
 ### 1.3 Create Campaign-of-1
 
 ```bash
-CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
+CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg query "<title> at <company>" \
     '{query:$query, source:"apply", config:{maxApplications:1}}')")
@@ -83,7 +83,7 @@ CAMPAIGN_ID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 
 ```bash
 JOB_KEY=$(date -u +%s)-single
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "$JOB_KEY" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
@@ -108,7 +108,7 @@ Skip this when the `campaign <id>` dispatch already set `CAMPAIGN_ID`. Otherwise
 `apply` campaign still holding queued rows (`.items` is newest-first):
 
 ```bash
-CAMPAIGN_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
+CAMPAIGN_ID=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
   "$JOBPILOT_API/api/campaigns?status=in_progress&source=apply&jobStatus=queued&page=1&limit=1" \
   | jq -r '.items[0].campaignId // ""')
 ```
@@ -121,7 +121,7 @@ links, and run this again."** and stop. Otherwise read `config` off that same ca
 ### 2.2 Load the Queued Rows
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
   "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs?status=queued&page=1&limit=100"
 ```
 
@@ -136,7 +136,7 @@ For each queued row, run the applied-check (`../_shared/campaign-flow.md`) with 
 `.applied`, post the terminal result straight from `queued` (legal from any non-terminal status):
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg r "Already applied (<kind>)" '{outcome:"skipped", skipReason:$r}')"
 ```
@@ -191,7 +191,7 @@ Use PATCH only for approval; record every skip through `/result`:
 - `stop` → POST `/api/campaigns/$CAMPAIGN_ID/status` with `{status:"paused", actor:"user", reason:"Stopped from the terminal"}` and stop
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"approved"}'
 ```
 
@@ -202,7 +202,7 @@ For each `approved` job, score-descending:
 ### 5.1 Mark Applying
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"applying"}'
 ```
 
@@ -233,7 +233,7 @@ If `config.maxApplications` is set and `applied >= config.maxApplications`, stop
 ## Phase 6: Summary
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
   -H 'content-type: application/json' \
   -d '{"status":"completed"}'
 ```

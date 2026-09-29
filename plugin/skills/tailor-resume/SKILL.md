@@ -54,7 +54,7 @@ Let `BASE_ID` be the chosen id.
 ## Step 3: Extract Structure if Missing
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID"
 ```
 
 If `content` is `null`, delegate to extract-resume so the logic stays in one place:
@@ -72,7 +72,7 @@ Skip this step when `hasData: true`.
 ## Step 4: Decide Reuse vs Create
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
 ```
 
 **Shortlist first.** Rank the list response by title similarity and fetch `GET /api/resumes/variants/<id>` for the **top 5** only - a base with 60 variants would otherwise cost 60 fetches per job.
@@ -155,7 +155,7 @@ The server checks that every field you wrote states only what the resume states,
 The response also carries non-blocking `flags`, currently only a retitle that shares no word with the original. Echo them; they are what the candidate will be asked about.
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg label "<Company> - <Title>" \
                 --arg jobUrl "<job-url-or-empty>" \
@@ -166,7 +166,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 With a swapped summary sentence and one reword:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg label "<Company> - <Title>" \
                 --arg jobUrl "<job-url-or-empty>" \
@@ -179,7 +179,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 With a restructure:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg label "<Company> - <Title>" \
                 --arg headline "<job title>" \

@@ -24,7 +24,7 @@ Parse the argument:
 Let `RESUME_ID` be the resolved id, `FORCE` be `true`/`false`.
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$RESUME_ID"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$RESUME_ID"
 ```
 
 If 404, stop and report the id doesn't exist.
@@ -154,7 +154,7 @@ Hard rules:
 The PUT body must be `{ "content": <resume-object> }` - the API rejects a bare resume payload with 400 "label or content required". Write the file with that wrapper, then send it:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/resumes/$RESUME_ID" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/resumes/$RESUME_ID" \
   -H "Content-Type: application/json" \
   --data-binary @resume.json
 ```

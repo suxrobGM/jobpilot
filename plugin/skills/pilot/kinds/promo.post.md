@@ -7,7 +7,7 @@ Payload `{promotionId, platform, target, title, body}` - a post the user approve
 3. Submit `title`/`body` per the platform's form, then capture the permalink of the new post.
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/promotions/$PROMO_ID/result" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/promotions/$PROMO_ID/result" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg u "$POSTED_URL" '{outcome:"posted", postedUrl:$u}')"
 ```

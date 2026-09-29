@@ -15,7 +15,7 @@ Follow `../_shared/setup.md`.
 ## Phase 1: Confirm Mailbox Connected
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"
 ```
 
 If `.connected === false`, stop:
@@ -27,14 +27,14 @@ If `.connected === false`, stop:
 **One message** - an id was passed (a re-scan from the inbox table). Fetch just it and classify it again even if it's already classified or reviewed:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/messages/<id>"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/messages/<id>"
 ```
 
 **All pending** - no argument. Sync, then pull the unscanned queue:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/sync"
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/messages?reviewStatus=pending&classification=null"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/sync"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/messages?reviewStatus=pending&classification=null"
 ```
 
 Both list routes answer `{items, pagination}`; read `.items`. If it is empty: **"Inbox is already reviewed. Nothing new to classify."** and exit.
@@ -69,7 +69,7 @@ For `interviewing | rejected | offer`:
 1. Pull candidates:
 
    ```bash
-   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" --data-urlencode "search=<company-or-from-domain>" \
+   curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" --data-urlencode "search=<company-or-from-domain>" \
      -G "$JOBPILOT_API/api/applied?limit=100"
    ```
 
@@ -91,7 +91,7 @@ For matched non-verification messages, set `appliedStatus`:
 ## Phase 4: Write Back
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/email/messages/<id>" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/email/messages/<id>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg classification "<c>" --argjson confidence <0..1> --arg reasoning "<one line>" \
     --argjson matchedAppId <id-or-null> --argjson matchScore <0..1-or-null> \

@@ -9,7 +9,7 @@ Payload `{platform, target?}`. Compose a self-promotion post from profile + prim
 Run `humanizer` in embedded mode on the body, then save the draft:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/promotions" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/promotions" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg p "$PLATFORM" --arg t "$TARGET" --arg ti "$TITLE" --arg b "$BODY" \
     '{platform:$p, target:(if $t=="" then null else $t end), title:(if $ti=="" then null else $ti end), body:$b}')"

@@ -35,7 +35,7 @@ Do not page for history. This mirrors what is new, not the whole account.
 ## Step 2: Push the Connects balance
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/account" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/account" \
   -H 'content-type: application/json' -d '{"connectsBalance": 74}'
 ```
 
@@ -49,7 +49,7 @@ so re-running the skill refreshes rows instead of duplicating them. Post even wh
 held nothing new: this call is what marks the mirror fresh, and an empty batch still counts.
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/inbox/sync" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/inbox/sync" \
   -H 'content-type: application/json' -d "$(jq -n '{items: [
     {upworkId:"<upwork id>", kind:"invitation", title:"<job title>", clientName:"<client>",
      jobUrl:"<url>", body:"<message or brief>", receivedAt:"2026-09-07T12:00:00Z",

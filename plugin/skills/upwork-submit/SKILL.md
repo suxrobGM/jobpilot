@@ -18,7 +18,7 @@ conversation.
 ## Step 1: Load the draft
 
 ```bash
-PROPOSAL=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/proposals/$ARG")
+PROPOSAL=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/proposals/$ARG")
 ```
 
 Require `.status == "draft"`. Anything else → stop and say what the status is; a `submitted`
@@ -80,14 +80,14 @@ On success:
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/upwork/proposals/$ARG" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/upwork/proposals/$ARG" \
   -H 'content-type: application/json' -d "$(jq -n --arg t "$NOW" '{status:"submitted", submittedAt:$t}')"
 ```
 
 Then refresh the Connects balance so the web app shows what is left:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/account" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/account" \
   -H 'content-type: application/json' -d '{"connectsBalance": <new balance>}'
 ```
 

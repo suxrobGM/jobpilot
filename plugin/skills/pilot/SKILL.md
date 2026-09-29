@@ -19,20 +19,20 @@ CYCLE_ID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null |
 Load the pilot state - step 2 breaks priority ties with its goals text. No run-state check here: the host gates the loop.
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/pilot"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/pilot"
 ```
 
 ## 1. Sense
 
 ```bash
-AGENDA=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/agenda/refresh")
+AGENDA=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/agenda/refresh")
 AGENDA_VERSION=$(echo "$AGENDA" | jq -r '.version')
 ```
 
 A `409` means the pilot was stopped mid-cycle - a rare race the host normally gates. Journal and exit empty.
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg cid "$CYCLE_ID" \
     '{cycleId:$cid, entries:[{kind:"cycle", summary:"Pilot is stopped.", detail:{status:"empty", sleepSeconds:3600}}]}')"
@@ -43,7 +43,7 @@ Print `[[JOBPILOT_CYCLE cycle=$CYCLE_ID status=empty sleep=3600]]` as the final 
 If `.items` is empty:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg cid "$CYCLE_ID" --arg s "All caught up - nothing needs doing; checking back at <nextWakeAt>." \
     --argjson detail "$(echo "$AGENDA" | jq '{status:"empty", sleepSeconds:.sleepSeconds}')" \
@@ -59,7 +59,7 @@ Take the top item - the server already ranked the agenda. If several share prior
 ## 3. Claim
 
 ```bash
-CLAIM=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims" \
+CLAIM=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg id "<itemId>" --arg version "$AGENDA_VERSION" '{itemId:$id,agendaVersion:$version}')")
 CLAIM_ID=$(echo "$CLAIM" | jq -r '.id')
@@ -68,7 +68,7 @@ CLAIM_ID=$(echo "$CLAIM" | jq -r '.id')
 On `409`, re-fetch the agenda once; if still nothing claimable, treat this as an empty cycle (step 1's journal + sentinel). A `409` opening `Already applied` is the duplicate guard - the job is already recorded `skipped`, so claim the next item instead of writing a result yourself. `CLAIM_ID` feeds step 6's release and the **heartbeat** that long branches send to keep the claim alive:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/heartbeat"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/heartbeat"
 ```
 
 ## 4. Act
@@ -80,7 +80,7 @@ at; the rest are not your cycle's work.
 ## 5. Record
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg cid "$CYCLE_ID" --arg st "<subjectType>" --arg sid "<subjectId>" --arg a "<narrative>" --arg c "<cycle summary>" \
     --argjson cdetail "$(echo "$AGENDA" | jq '{status:"ok", sleepSeconds:.sleepSeconds}')" \
@@ -102,7 +102,7 @@ If the worker returned `observations`, append each to the **same** journal POST 
 ## 6. Release
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/release" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/release" \
   -H 'content-type: application/json' -d '{"outcome":"done"}'
 ```
 
@@ -121,7 +121,7 @@ Print exactly one sentinel as the **final line of output**, then stop:
 Error hardening: any API call that fails with a non-2xx other than the documented `409`s, a transport failure, or an orchestrator check-in you can't recover from, ends the cycle. Journal ONE batch - a `kind:"system"` entry naming what failed plus a `kind:"cycle"` entry carrying the error `detail`, never omitted:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg cid "$CYCLE_ID" --arg s "<what failed>" --arg c "Cycle failed: <why>" \
     '{cycleId:$cid, entries:[{kind:"system", summary:$s}, {kind:"cycle", summary:$c, detail:{status:"error", sleepSeconds:300}}]}')"

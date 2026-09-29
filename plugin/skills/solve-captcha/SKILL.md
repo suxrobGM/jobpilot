@@ -48,7 +48,7 @@ hCaptcha: `iframe[src*="hcaptcha"]` → `type:"hcaptcha"`. Turnstile: `.cf-turns
 Solve it server-side (the endpoint resolves the configured key + polls the provider; the skill never sees the key):
 
 ```bash
-RESP=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/captcha/solve" -H 'content-type: application/json' \
+RESP=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/captcha/solve" -H 'content-type: application/json' \
   -d "$(jq -n --arg s "$SITEKEY" --arg u "$PAGEURL" '{type:"recaptcha", sitekey:$s, pageurl:$u}')") || true
 TOKEN=$(echo "$RESP" | jq -r '.token // empty')
 ```

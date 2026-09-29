@@ -21,7 +21,7 @@ From the argument, identify: company + what they do, role title and level, key r
 Do not skip. Letters that are individually fine and collectively identical are what reads as AI - not word choice.
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/cover-letters?page=1&pageSize=5" | jq -r '.items[].id'
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/cover-letters?page=1&pageSize=5" | jq -r '.items[].id'
 ```
 
 The list is metadata only, so `GET /api/cover-letters/<id>` each for the body. No history (first letter, or the call fails) → Step 3.
@@ -78,7 +78,7 @@ Then re-check against Step 2's letters: no shared sentence, different lead, diff
 Persist the final letter so it's reviewable in the web app. Best-effort - if the call fails, continue:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/cover-letters" -H 'content-type: application/json' \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/cover-letters" -H 'content-type: application/json' \
   -d "$(jq -n --arg c "<final letter text>" --arg u "<job url>" --arg t "<role title>" --arg co "<company>" --arg s "<source>" \
         '{content:$c, jobUrl:($u|select(.!="")), jobTitle:($t|select(.!="")), company:($co|select(.!="")), source:$s}')"
 ```

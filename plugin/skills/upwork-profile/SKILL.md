@@ -42,7 +42,7 @@ upwork.com. Say so plainly rather than implying they were applied.
 3. **Save the draft** for review:
 
    ```bash
-   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/profile" -H 'content-type: application/json' \
+   curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/profile" -H 'content-type: application/json' \
      -d "$(jq -n --arg ct "<current title>" --arg co "<current overview>" --arg st "<suggested title>" \
        --arg so "<suggested overview>" --argjson cp '<current portfolio json>' --argjson sp '<suggested portfolio json>' \
        --argjson cs '<current skills json>' --argjson ss '<suggested skills json>' \
@@ -54,7 +54,7 @@ upwork.com. Say so plainly rather than implying they were applied.
 
 ## Mode: apply
 
-1. `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/profile"` →
+1. `curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/profile"` →
    require `.status == "approved"`. If not, tell the user to review and approve on
    `/upwork/profile` first, then stop.
 2. Use the `suggested*` fields as the source of truth (the user may have edited them in the UI).
@@ -71,7 +71,7 @@ upwork.com. Say so plainly rather than implying they were applied.
 4. On success, mark it applied:
 
    ```bash
-   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/profile" -H 'content-type: application/json' \
+   curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/profile" -H 'content-type: application/json' \
      -d '{"status":"applied"}'
    ```
 

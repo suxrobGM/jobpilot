@@ -31,7 +31,7 @@ owns per-job variants, guarded in `apps/api/src/modules/resume/structure.ts`.
 - Call the API with curl. Never hard-code `localhost`. No direct DB access.
 
   ```sh
-  curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."
+  curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."
   ```
 
   The host injects `JOBPILOT_API`, `JOBPILOT_API_TOKEN`, and `JOBPILOT_WEB` (for user-facing

@@ -20,7 +20,7 @@ If `JOBPILOT_API_TOKEN` is set, this session is already running inside the agent
 ## 2. Probe the host
 
 ```bash
-curl -fsS http://localhost:4102/healthz
+curl -sS --fail-with-body http://localhost:4102/healthz
 ```
 
 - Reachable → already running; go to step 5 to check for updates.
@@ -64,7 +64,7 @@ Start it yourself - don't ask the user to. Launch it detached so it outlives thi
 Then poll until it answers (up to ~30s):
 
 - **Windows (PowerShell):** `1..30 | %{ try { irm http://localhost:4102/healthz; break } catch { sleep 1 } }`
-- **macOS / Linux:** `for i in $(seq 1 30); do curl -fsS http://localhost:4102/healthz && break; sleep 1; done`
+- **macOS / Linux:** `for i in $(seq 1 30); do curl -sS --fail-with-body http://localhost:4102/healthz && break; sleep 1; done`
 
 - Healthy → continue to step 6 (a fresh start self-updates on launch).
 - Still refused after the timeout → check the log (`~/.jobpilot/host.log` on macOS/Linux, console output on Windows). If it says port 4102 is already in use, a stale `jobpilot` instance is running - stop it (`Get-Process jobpilot | Stop-Process -Force` / `pkill -x jobpilot`) and retry step 4. Otherwise report the failure and ask the user to start `jobpilot` manually.

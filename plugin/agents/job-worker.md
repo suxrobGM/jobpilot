@@ -31,7 +31,7 @@ The browser is shared: the orchestrator owns tab 0, so open your own tab and on 
 When `claimId` is set, extend the pilot claim's heartbeat at major phase boundaries so a long run doesn't look stuck to the orchestrator: login done, tailoring done, form filled (apply mode); each row scored (score-mode batch). One curl each, no body:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/heartbeat"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/heartbeat"
 ```
 
 Omit entirely when `claimId` is absent (non-pilot callers).
@@ -75,7 +75,7 @@ One tab for the whole batch - open it once, reuse per row, close it at the end. 
 6. Save (merge any `extraDigest` into `digest` first). `save:"create"` (default, keeps the digest/JD out of the orchestrator):
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "$JOB_KEY" --arg title "$TITLE" --arg company "$COMPANY" \
     --arg location "$LOCATION" --arg url "$URL" --arg board "$BOARD" \

@@ -32,21 +32,21 @@ To recover wrongly-`skipped` jobs, use the dedicated `rescan-skipped` skill (it 
 ## Phase 0: Existing Campaign Check + Create
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=in_progress"
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=paused"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=in_progress"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns?status=paused"
 ```
 
 Each response is paginated; inspect its `.items` array.
 
 If any matches, ask **"Found an incomplete campaign from `<startedAt>` (status: `<status>`). Resume or start fresh?"** Resume → inject the `resume-campaign` skill with that `campaignId`.
 
-Otherwise the web UI already created the campaign row when the user submitted `/campaigns/new` - confirm it exists and use that `campaignId`. Capture its selected base resume: `RESUME_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" | jq -r '.config.resumeId // ""')` (empty → fall back to the primary downstream). If invoked manually (rare), create one:
+Otherwise the web UI already created the campaign row when the user submitted `/campaigns/new` - confirm it exists and use that `campaignId`. Capture its selected base resume: `RESUME_ID=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" | jq -r '.config.resumeId // ""')` (empty → fall back to the primary downstream). If invoked manually (rare), create one:
 
 ```bash
 # resumeId is REQUIRED for auto-apply - default to the profile's primary.
-RESUME_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/user" | jq -r '.user.primaryResumeId // ""')
+RESUME_ID=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/user" | jq -r '.user.primaryResumeId // ""')
 # maxApplications is OPTIONAL - omit the field entirely for unlimited mode.
-CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
+CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg q "<query>" --arg board "<domain>" --arg rid "$RESUME_ID" \
     --argjson minScore <n> \
@@ -67,7 +67,7 @@ Extract title/role, keywords, location, preferences. If vague, ask before search
 Resolve the board:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.[] | select(.domain == $d)'
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.[] | select(.domain == $d)'
 ```
 
 If no row matches, command the campaign to `failed` with `POST /api/campaigns/$CAMPAIGN_ID/status {"status":"failed"}` and stop.
@@ -92,7 +92,7 @@ move on - **don't open a tab.**
 If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the digest (`../_shared/digest-schema.md`), then score server-side:
 
 ```bash
-FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
+FIT=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson digest "$DIGEST" --arg rid "$RESUME_ID" --argjson minScore "$MIN_SCORE" \
     '{digest:$digest, minScore:$minScore} + (if $rid=="" then {} else {resumeId:$rid} end)')")
@@ -107,7 +107,7 @@ Branch on the result (eligibility per `../_shared/eligibility.md` - a thin/gener
 - **Needs the full posting** → delegate the row to `job-worker` `mode:"score"` (`{campaignId:$CAMPAIGN_ID, jobKey:<key>, url, resumeId:$RESUME_ID, minMatchScore:$MIN_SCORE}`) instead of opening the posting in this conversation. The worker creates every row non-terminal and sends ineligible outcomes to `/result`; eligible rows remain `pending`. PATCH an eligible row to `applying`, then go straight to apply (2.3):
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"applying"}'
 ```
 
@@ -118,7 +118,7 @@ With a usable score from the listing/tab-1 snapshot alone:
 
 ```bash
 DIGEST=<stringified digest>
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<stable-id>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<url>" --arg board "<board>" \
@@ -159,7 +159,7 @@ The loop ends **only** on one of these. Before picking the next result, refetch 
 ## Phase 3: Summary
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
   -H 'content-type: application/json' \
   -d '{"status":"completed"}'
 ```

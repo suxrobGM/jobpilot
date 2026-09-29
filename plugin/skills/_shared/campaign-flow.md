@@ -10,7 +10,7 @@ credentials per `./setup.md` first; each skill states only its deltas from what'
 URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
 COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
 Exact URL match plus fuzzy title+company over a 30-day window; `.match.kind` is `url` or

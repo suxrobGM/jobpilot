@@ -22,7 +22,7 @@ aborts with the standard message if the backend is unreachable.
 Argument is `<campaign-id>`. If missing, list candidates and ask:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns" \
   | jq -r '.items[] | select(.status=="paused")
            | "\(.campaignId)\t\(.status)\t\(.source)\t\(.query)"'
 ```
@@ -31,8 +31,8 @@ Fetch the campaign + jobs:
 
 ```bash
 CAMPAIGN_ID="<campaign-id>"
-CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID")
-JOBS=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs?page=1&limit=100")
+CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID")
+JOBS=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs?page=1&limit=100")
 ```
 
 Verify status is `paused`. If `completed` or `failed`, stop:
@@ -51,7 +51,7 @@ RESUMABLE=$(echo "$JOBS" | jq '[.items[] | select(.status=="approved" or .status
 Command status back to `in_progress`:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
   -H 'content-type: application/json' \
   -d '{"status":"in_progress","actor":"agent"}'
 ```
@@ -82,7 +82,7 @@ The `/result` endpoint preserves the campaign's original `source` (`"apply"` vs 
 Re-fetch the campaign between jobs and exit cleanly if the user stopped it:
 
 ```bash
-STATUS=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" | jq -r '.status')
+STATUS=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" | jq -r '.status')
 if [ "$STATUS" = "paused" ]; then
   # POST /result outcome:"skipped" skipReason:"Campaign paused by user" for each remaining approved job, then stop
   exit 0
@@ -92,7 +92,7 @@ fi
 ## Phase 3: Summary
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
   -H 'content-type: application/json' \
   -d '{"status":"completed"}'
 ```

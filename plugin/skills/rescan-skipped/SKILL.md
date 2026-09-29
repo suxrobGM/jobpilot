@@ -10,7 +10,7 @@ Re-score a campaign's `skipped` jobs and set eligible ones to `approved`. **Neve
 
 ## Setup
 
-Follow `../_shared/setup.md`. Fetch the campaign: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `autoApply.minMatchScore`, else 60).
+Follow `../_shared/setup.md`. Fetch the campaign: `curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `autoApply.minMatchScore`, else 60).
 
 ## Step 1: Select Targets
 
@@ -32,7 +32,7 @@ Count the full target list up front and process every one. **Below-threshold, ze
    - Eligible and `score >= threshold` → promote (no apply):
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>/rescan" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>/rescan" \
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson score <0-100> --arg reason "<one line>" --arg digest "$DIGEST" --arg desc "<posting text or empty>" \
     '{decision:"approved", matchScore:$score, matchReason:$reason, digest:$digest, description:$desc}')"
