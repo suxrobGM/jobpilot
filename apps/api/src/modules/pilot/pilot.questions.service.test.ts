@@ -1,17 +1,29 @@
 import { makePush } from "@/common/push/push.fake";
 import type { PushPayload } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { PilotQuestionService } from "./pilot.questions.service";
+import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import type { PilotJournalService } from "./journal.service";
+import { PilotQuestionService, USER_SKIP_REASON } from "./pilot.questions.service";
 import { describe, expect, it } from "bun:test";
 
 interface Recorder {
   questionCreate?: Record<string, unknown>;
   questionUpdate?: { data: Record<string, unknown> };
   pushes: { userId: string; payload: PushPayload }[];
+  jobResults: { campaignId: string; key: string; body: Record<string, unknown> }[];
+  jobPatches: { campaignId: string; key: string; patch: Record<string, unknown> }[];
+  failedSkips: { campaignId: string; key: string; skipReason: string }[];
+  journal: { entries: { summary: string }[] }[];
 }
 
-function makeDb(questionOver: Record<string, unknown> = {}) {
-  const rec: Recorder = { pushes: [] };
+function makeDb(questionOver: Record<string, unknown> = {}, jobStatus = "needs_user") {
+  const rec: Recorder = {
+    pushes: [],
+    jobResults: [],
+    jobPatches: [],
+    failedSkips: [],
+    journal: [],
+  };
   // A single mutable question row so the status guard in updateMany is observable.
   const question: Record<string, unknown> = {
     id: "e1",
@@ -42,19 +54,60 @@ function makeDb(questionOver: Record<string, unknown> = {}) {
         Object.assign(question, a.data);
         return { count: 1 };
       },
+      updateManyAndReturn: async (a: { data: Record<string, unknown> }) => {
+        if (question.status !== "open") return [];
+        rec.questionUpdate = { data: a.data };
+        Object.assign(question, a.data);
+        return [{ ...question }];
+      },
+    },
+    job: { findFirst: async () => ({ status: jobStatus, title: "CTO", company: "Acme" }) },
+  };
+  const campaignJobs = {
+    recordJobResult: async (
+      _u: string,
+      campaignId: string,
+      key: string,
+      body: Record<string, unknown>,
+    ) => {
+      rec.jobResults.push({ campaignId, key, body });
+      return { campaignJob: { title: "CTO", company: "Acme" } };
+    },
+    skipFailedJob: async (_u: string, campaignId: string, key: string, skipReason: string) => {
+      rec.failedSkips.push({ campaignId, key, skipReason });
+    },
+    patchJob: async (
+      _u: string,
+      campaignId: string,
+      key: string,
+      patch: Record<string, unknown>,
+    ) => {
+      rec.jobPatches.push({ campaignId, key, patch });
     },
   };
-  return { db, rec, question };
+  const journal = {
+    appendJournal: async (_u: string, body: { entries: { summary: string }[] }) => {
+      rec.journal.push(body);
+    },
+  };
+  return { db, rec, question, campaignJobs, journal };
 }
 
-const service = (questionOver: Record<string, unknown> = {}) => {
-  const { db, rec, question } = makeDb(questionOver);
+const service = (questionOver: Record<string, unknown> = {}, jobStatus?: string) => {
+  const { db, rec, question, campaignJobs, journal } = makeDb(questionOver, jobStatus);
   return {
-    svc: new PilotQuestionService(db as unknown as PrismaClient, makePush(rec.pushes)),
+    svc: new PilotQuestionService(
+      db as unknown as PrismaClient,
+      makePush(rec.pushes),
+      campaignJobs as unknown as CampaignJobService,
+      journal as unknown as PilotJournalService,
+    ),
     rec,
     question,
   };
 };
+
+const JOB_QUESTION = { subjectType: "job", subjectId: "c1:acme-cto-1" };
 
 describe("PilotQuestionService", () => {
   it("creates a question with parsed options and open status", async () => {
@@ -133,5 +186,78 @@ describe("PilotQuestionService", () => {
     });
 
     expect(rec.questionCreate?.expiresAt).toBeNull();
+  });
+
+  it("skips the application: records it skipped, journals it, cancels the question", async () => {
+    const { svc, rec, question } = service(JOB_QUESTION);
+    const q = await svc.skipApplication("p1", "e1");
+
+    expect(rec.jobResults).toEqual([
+      {
+        campaignId: "c1",
+        key: "acme-cto-1",
+        body: { outcome: "skipped", skipReason: USER_SKIP_REASON },
+      },
+    ]);
+    expect(rec.journal[0]?.entries[0]?.summary).toContain("CTO at Acme");
+    expect(q.status).toBe("cancelled");
+    expect(question.status).toBe("cancelled");
+  });
+
+  it("refuses to skip an application the pilot is applying to right now", async () => {
+    const { svc, rec, question } = service(JOB_QUESTION, "applying");
+
+    await expect(svc.skipApplication("p1", "e1")).rejects.toMatchObject({ status: 409 });
+    expect(rec.jobResults).toHaveLength(0);
+    expect(question.status).toBe("open");
+  });
+
+  it("skips a failed job's application so the retry sweep leaves it alone", async () => {
+    const { svc, rec } = service(JOB_QUESTION, "failed");
+    const q = await svc.skipApplication("p1", "e1");
+
+    expect(rec.failedSkips).toEqual([
+      { campaignId: "c1", key: "acme-cto-1", skipReason: USER_SKIP_REASON },
+    ]);
+    expect(rec.jobResults).toHaveLength(0);
+    expect(rec.journal).toHaveLength(1);
+    expect(q.status).toBe("cancelled");
+  });
+
+  it("only closes the questions when the job already applied", async () => {
+    const { svc, rec } = service(JOB_QUESTION, "applied");
+    const q = await svc.skipApplication("p1", "e1");
+
+    expect(rec.jobResults).toHaveLength(0);
+    expect(rec.failedSkips).toHaveLength(0);
+    expect(rec.journal).toHaveLength(0);
+    expect(q.status).toBe("cancelled");
+  });
+
+  it("refuses to skip the application of a question with no job", async () => {
+    const { svc } = service({ subjectType: "board", subjectId: "theladders.com" });
+    await expect(svc.skipApplication("p1", "e1")).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("skips the question, requeueing its parked job", async () => {
+    const { svc, rec } = service(JOB_QUESTION);
+    const q = await svc.skipQuestion("p1", "e1");
+
+    expect(rec.jobPatches).toEqual([
+      { campaignId: "c1", key: "acme-cto-1", patch: { status: "approved" } },
+    ]);
+    expect(q.status).toBe("cancelled");
+  });
+
+  it("skips the question without touching a job that is no longer parked", async () => {
+    const { svc, rec } = service(JOB_QUESTION, "skipped");
+    await svc.skipQuestion("p1", "e1");
+    expect(rec.jobPatches).toHaveLength(0);
+  });
+
+  it("refuses to skip a question that is no longer open", async () => {
+    const { svc, rec } = service({ ...JOB_QUESTION, status: "answered" });
+    await expect(svc.skipQuestion("p1", "e1")).rejects.toMatchObject({ status: 409 });
+    expect(rec.jobPatches).toHaveLength(0);
   });
 });

@@ -20,7 +20,7 @@ import { JobListingPublisher } from "@/modules/job-listing";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
 import { AlreadyAppliedError, type GuardTransaction, skipIfAlreadyApplied } from "./applied-guard";
-import { writeJobPatch, writeJobRescan, writeJobRetry } from "./job-commands";
+import { writeFailedJobSkip, writeJobPatch, writeJobRescan, writeJobRetry } from "./job-commands";
 import { type ScoredJobPromotion, writeScoredPromotions } from "./job-promotion";
 import { type JobListQuery, listCampaignJobReasons, listCampaignJobs } from "./job-queries";
 import { writeJobResult } from "./job-result";
@@ -82,6 +82,12 @@ export class CampaignJobService {
 
   async retryJob(userId: string, campaignId: string, key: string, body: RetryCampaignJobInput) {
     const result = await writeJobRetry(this.prisma, userId, campaignId, key, body);
+    this.publishStatusChange(userId, campaignId, result);
+    return result.job;
+  }
+
+  async skipFailedJob(userId: string, campaignId: string, key: string, skipReason: string) {
+    const result = await writeFailedJobSkip(this.prisma, userId, campaignId, key, skipReason);
     this.publishStatusChange(userId, campaignId, result);
     return result.job;
   }

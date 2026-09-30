@@ -28,7 +28,7 @@ export function useOpenQuestions(): OpenQuestions {
   // Duplicates PilotLive's handlers on /pilot, but the nav badge mounts outside the
   // pilot layout and would otherwise go stale. TanStack dedupes the refetch.
   useSseChannel(pilotChannel, null, {
-    on: { "question.created": refresh, "question.answered": refresh },
+    on: { "question.created": refresh, "question.answered": refresh, "question.closed": refresh },
   });
 
   const questions = query.data ?? [];

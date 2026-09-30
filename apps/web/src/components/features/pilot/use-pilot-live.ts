@@ -26,6 +26,7 @@ export function usePilotLive(): void {
       "state.changed": () => invalidate(queryKeys.pilot.state()),
       "question.created": refreshQuestions,
       "question.answered": refreshQuestions,
+      "question.closed": refreshQuestions,
       "promotion.created": refreshPromotions,
       "promotion.updated": refreshPromotions,
     },

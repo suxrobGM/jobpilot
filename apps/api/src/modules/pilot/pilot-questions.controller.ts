@@ -50,4 +50,28 @@ export const pilotQuestionsController = new Elysia({
         description: "Records the answer, marks the question answered, and notifies subscribers.",
       },
     },
-  );
+  )
+  .post(
+    "/questions/:id/skip-application",
+    ({ user, params }) => questions.skipApplication(user.id, params.id),
+    {
+      params: idParam,
+      beforeHandle: limitMutation,
+      response: pilotQuestionSchema,
+      detail: {
+        summary: "Skip the question's application",
+        description:
+          "Records the question's job as skipped by the user, journals it, and cancels every open question on that job.",
+      },
+    },
+  )
+  .post("/questions/:id/skip", ({ user, params }) => questions.skipQuestion(user.id, params.id), {
+    params: idParam,
+    beforeHandle: limitMutation,
+    response: pilotQuestionSchema,
+    detail: {
+      summary: "Skip a question",
+      description:
+        "Cancels the question (and its siblings on the same subject) and requeues a parked job so the pilot retries without an answer.",
+    },
+  });

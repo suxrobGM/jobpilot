@@ -170,6 +170,24 @@ export async function writeJobPatch(
   };
 }
 
+/** Settles a failed job as skipped by the user, so the failed-jobs retry sweep stops picking it up.
+ * The fail reason stays: it is why the user gave up on the job. */
+export async function writeFailedJobSkip(
+  prisma: PrismaClient,
+  userId: string,
+  campaignId: string,
+  key: string,
+  skipReason: string,
+) {
+  return applyJobTransition(prisma, userId, campaignId, key, {
+    from: "failed",
+    to: "skipped",
+    idempotentAt: "skipped",
+    data: { status: "skipped", skipReason },
+    rejection: (status) => `Only failed jobs can be skipped this way; job is ${status}.`,
+  });
+}
+
 /** Records a fresh skipped-job rescan and its explicit decision. */
 export async function writeJobRescan(
   prisma: PrismaClient,
