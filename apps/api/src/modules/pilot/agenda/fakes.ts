@@ -100,6 +100,7 @@ function fakePilotState(over: Over) {
       instructionsConfig: config,
       instructionsGoals: over.instructionsGoals ?? "",
       running: true,
+      jobAlertsRequestedAt: null,
     }),
     update: async () => ({}),
   };

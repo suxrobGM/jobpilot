@@ -2,6 +2,8 @@ import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import {
   type ApproveInput,
   CLASSIFICATION_TO_STATUS,
+  type EmailLink,
+  emailLinksSchema,
   type ScanMessageInput,
 } from "@jobpilot/contracts/email";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
@@ -17,6 +19,13 @@ import type { messageFilters } from "./email.schema";
 import { emailStatusNote, verdictOps } from "./verdict";
 
 type MessageQuery = z.infer<typeof messageFilters>;
+
+/** `links` is a JSON column; parsing it here is what lets the response schema promise its shape. */
+function withLinks<T extends { links: unknown }>(
+  row: T,
+): Omit<T, "links"> & { links: EmailLink[] } {
+  return { ...row, links: emailLinksSchema.parse(row.links) };
+}
 
 @singleton()
 export class EmailService {
@@ -75,7 +84,7 @@ export class EmailService {
       this.prisma.emailMessage.count({ where }),
     ]);
 
-    return paginate(rows, query, total);
+    return paginate(rows.map(withLinks), query, total);
   }
 
   async getMessage(userId: string, id: string) {
@@ -91,7 +100,7 @@ export class EmailService {
       "Message",
     );
 
-    return row;
+    return withLinks(row);
   }
 
   /**
@@ -172,7 +181,16 @@ export class EmailService {
       publish(inboxChannel, { userId }, { type: "message.reviewed", id, status: "approved" });
     }
 
-    return row;
+    return withLinks(row);
+  }
+
+  /** Only unharvested rows count, so a retried mark reports 0 instead of re-stamping. */
+  async markJobAlertsHarvested(userId: string, messageIds: string[]) {
+    const { count } = await this.prisma.emailMessage.updateMany({
+      where: { id: { in: messageIds }, account: { userId }, harvestedAt: null },
+      data: { harvestedAt: new Date() },
+    });
+    return { harvested: count };
   }
 
   async denyMessage(userId: string, id: string) {

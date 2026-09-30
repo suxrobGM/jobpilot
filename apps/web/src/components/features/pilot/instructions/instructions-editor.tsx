@@ -86,7 +86,11 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
   const [pending, setPending] = useState<InstructionsFormValues | null>(null);
 
   const commit = async (value: InstructionsFormValues, onChange: PilotInstructionsChange) => {
-    await save.mutateAsync({ goals: value.goals, config: toConfig(value), onChange });
+    await save.mutateAsync({
+      goals: value.goals,
+      config: toConfig(value, state.instructionsConfig.jobAlerts),
+      onChange,
+    });
     setPending(null);
     // Re-baseline the defaults so the dirty save bar hides after a successful save.
     form.reset(value);

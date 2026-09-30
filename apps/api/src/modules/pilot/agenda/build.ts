@@ -22,7 +22,12 @@ import {
   buildScorePendingItems,
   buildWarmIntroItems,
 } from "./items-jobs";
-import { buildFollowupItems, buildInboxItem, buildNetworkingSendItems } from "./items-networking";
+import {
+  buildFollowupItems,
+  buildInboxItem,
+  buildJobAlertsItem,
+  buildNetworkingSendItems,
+} from "./items-networking";
 import {
   buildBoardHealthItems,
   buildBootstrapItem,
@@ -85,6 +90,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
     : [];
   items.push(...sendItems);
   items.push(...buildInboxItem(input.inbox));
+  // Ungated by the apply cap: harvesting only queues rows, and tomorrow's budget can spend them.
+  items.push(...buildJobAlertsItem(input.jobAlerts, config.minScore));
   items.push(...buildPromoPostItems(input.approvedPromotions));
 
   // Scoring an existing campaign's pending rows and fresh discovery both only matter when there is
@@ -112,6 +119,7 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
     (i) =>
       i.kind === "job.apply" ||
       i.kind === "search.discover" ||
+      i.kind === "inbox.jobAlerts" ||
       i.kind === "campaign.scorePending" ||
       i.kind === "queue.drain",
   );
@@ -128,13 +136,17 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
 
   const emptyReason = agendaEmptyReason(capped.length, capReached, input.awaitingSetup);
 
-  // Idle sleep wakes at the sooner of the poll cadence and the next search due, clamped both ways.
-  const secondsUntilSearch = input.nextSearchRunAt
-    ? Math.max(0, Math.round((input.nextSearchRunAt.getTime() - now.getTime()) / 1000))
-    : Number.POSITIVE_INFINITY;
+  // Idle sleep wakes at the sooner of the poll cadence, the next search due, and the next alert
+  // harvest, clamped both ways.
+  const secondsUntil = (at: Date | null) =>
+    at ? Math.max(0, Math.round((at.getTime() - now.getTime()) / 1000)) : Number.POSITIVE_INFINITY;
 
   const idleSleep = clamp(
-    Math.min(config.checkIntervalMinutes * 60, secondsUntilSearch),
+    Math.min(
+      config.checkIntervalMinutes * 60,
+      secondsUntil(input.nextSearchRunAt),
+      secondsUntil(input.nextJobAlertsAt),
+    ),
     MIN_IDLE_SLEEP_SECONDS,
     MAX_IDLE_SLEEP_SECONDS,
   );

@@ -62,6 +62,9 @@ model PilotState {
   agendaSnapshot        Json?     @map("agenda_snapshot")
   lastCycleAt           DateTime? @map("last_cycle_at")
   cycleCount            Int       @default(0) @map("cycle_count")
+  // "Run now" on the job-alert harvest: offered on the next agenda even off-schedule, until a claim
+  // after it or JOB_ALERTS_REQUEST_TTL_MS passes.
+  jobAlertsRequestedAt  DateTime? @map("job_alerts_requested_at")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 

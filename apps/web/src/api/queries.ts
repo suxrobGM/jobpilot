@@ -220,6 +220,10 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.instructionsImpact(),
     queryFn: () => api.pilot.instructions.impact.get(),
   }),
+  jobAlerts: () => ({
+    queryKey: queryKeys.pilot.jobAlerts(),
+    queryFn: () => api.pilot["job-alerts"].get(),
+  }),
   agenda: () => ({
     queryKey: queryKeys.pilot.agenda(),
     queryFn: async () => {

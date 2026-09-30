@@ -6,6 +6,7 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { NeedsAttention } from "../attention/needs-attention";
+import { JobAlertsPanel } from "../job-alerts/job-alerts-panel";
 import { usePilotControls } from "../use-pilot-controls";
 import { AgendaPreview } from "./agenda-preview";
 import { OrchestrationPanel } from "./orchestration-panel";
@@ -39,15 +40,18 @@ export function OverviewTab(): ReactElement {
           <StatusHero />
         </Box>
         <Box sx={{ order: { xs: 3, md: 0 } }}>
+          <JobAlertsPanel />
+        </Box>
+        <Box sx={{ order: { xs: 4, md: 0 } }}>
           <OrchestrationPanel />
         </Box>
         <Box sx={{ order: { xs: 1, md: 0 } }}>
           <NeedsAttention />
         </Box>
-        <Box sx={{ order: { xs: 4, md: 0 } }}>
+        <Box sx={{ order: { xs: 5, md: 0 } }}>
           <AgendaPreview />
         </Box>
-        <Box sx={{ order: { xs: 5, md: 0 } }}>
+        <Box sx={{ order: { xs: 6, md: 0 } }}>
           <RecentActivity />
         </Box>
       </Stack>

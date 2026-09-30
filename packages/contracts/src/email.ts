@@ -21,6 +21,12 @@ export const CLASSIFICATION_TO_STATUS: Partial<Record<Classification, Applicatio
   offer: "offer",
 };
 
+/** A link captured at sync with the text a reader sees for it (`EmailMessage.links`). */
+const emailLinkSchema = z.object({ url: z.string(), text: z.string() });
+export const emailLinksSchema = z.array(emailLinkSchema);
+
+export type EmailLink = z.infer<typeof emailLinkSchema>;
+
 export const REVIEW_STATUSES = ["pending", "approved", "denied", "auto"] as const;
 export const reviewStatusSchema = z.enum(REVIEW_STATUSES);
 
