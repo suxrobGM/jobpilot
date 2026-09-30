@@ -1,8 +1,10 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import { Box, Skeleton, Typography } from "@mui/material";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { Box, Collapse, IconButton, Skeleton, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
+import { usePersistedBoolean } from "@/hooks/use-persisted-boolean";
 import { OrchestrationFlow } from "./orchestration-flow";
 import { type PilotStage, usePilotStage } from "./use-pilot-stage";
 
@@ -17,6 +19,10 @@ const MODE_HINTS: Record<PilotStage["mode"], string | null> = {
 /** Live simulation of the pilot loop: orchestrator wakes the agent, which delegates to a worker acting on the board. */
 export function OrchestrationPanel(): ReactElement {
   const stage = usePilotStage();
+  const [collapsed, setCollapsed] = usePersistedBoolean(
+    "jobpilot:pilot-orchestration-collapsed",
+    false,
+  );
 
   // ReactFlow measures the DOM on mount; hold the canvas until the client has mounted so it
   // never renders during SSR/prerender.
@@ -26,18 +32,37 @@ export function OrchestrationPanel(): ReactElement {
   const hint = MODE_HINTS[stage.mode];
 
   return (
-    <SectionCard title="Orchestration" description="How the pilot works a cycle, live.">
-      {mounted ? <OrchestrationFlow stage={stage} /> : <Skeleton variant="rounded" height={240} />}
-      <Box sx={{ mt: 1 }}>
-        {hint ? (
-          <Typography variant="body2Muted">{hint}</Typography>
+    <SectionCard
+      title="Orchestration"
+      description="How the pilot works a cycle, live."
+      actions={
+        <IconButton
+          aria-label={collapsed ? "Expand orchestration" : "Collapse orchestration"}
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          {collapsed ? <ExpandMore /> : <ExpandLess />}
+        </IconButton>
+      }
+    >
+      {/* Unmounted while collapsed so the ReactFlow canvas does no layout work off-screen. */}
+      <Collapse in={!collapsed} unmountOnExit>
+        {mounted ? (
+          <OrchestrationFlow stage={stage} />
         ) : (
-          <Typography variant="captionMuted">
-            Each cycle the orchestrator wakes the agent, which senses the agenda and delegates a
-            worker to act on the job board.
-          </Typography>
+          <Skeleton variant="rounded" height={240} />
         )}
-      </Box>
+        <Box sx={{ mt: 1 }}>
+          {hint ? (
+            <Typography variant="body2Muted">{hint}</Typography>
+          ) : (
+            <Typography variant="captionMuted">
+              Each cycle the orchestrator wakes the agent, which senses the agenda and delegates a
+              worker to act on the job board.
+            </Typography>
+          )}
+        </Box>
+      </Collapse>
     </SectionCard>
   );
 }
