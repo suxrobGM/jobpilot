@@ -138,7 +138,12 @@ export interface MailboxProvider {
    * - prefer a delta query using `account.historyId` when present,
    * - fall back to a recent-mail list on first sync or when the cursor is
    *   too old,
-   * - return a fresh `historyId` so the caller can persist it.
+   * - return a fresh `historyId` so the caller can persist it,
+   * - skip fetching ids `knownIds` reports as already stored.
    */
-  syncMessages(config: OAuthClientConfig, account: EmailAccount): Promise<SyncResult>;
+  syncMessages(
+    config: OAuthClientConfig,
+    account: EmailAccount,
+    knownIds: (ids: string[]) => Promise<Set<string>>,
+  ): Promise<SyncResult>;
 }
