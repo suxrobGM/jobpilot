@@ -60,7 +60,13 @@ public sealed record InstallPaths
     /// <summary>JOBPILOT_TEMP: skill scratch files, swept by ScratchCleaner.</summary>
     public string ScratchDir => Path.Combine(WorkingDir, ".temp");
 
-    public string PlaywrightDir => Path.Combine(WorkingDir, ".playwright-mcp");
+    /// <summary>One browser profile per Playwright MCP server in plugin/.mcp.json.</summary>
+    public IReadOnlyList<string> PlaywrightDirs =>
+        [
+            Path.Combine(WorkingDir, ".playwright-mcp"),
+            Path.Combine(WorkingDir, ".playwright-mcp-2"),
+            Path.Combine(WorkingDir, ".playwright-mcp-3"),
+        ];
 
     public static InstallPaths Resolve() =>
         ResolveFrom(CandidateRoots(AppContext.BaseDirectory, Environment.CurrentDirectory));

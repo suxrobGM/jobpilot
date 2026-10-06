@@ -12,6 +12,8 @@ const PRIORITY: Record<TaskType, number> = {
   // Above any apply, or a list full of applies would starve a stranded campaign out of the top 10.
   "campaign.reviewPaused": 910,
   "job.apply": 800,
+  // Same rung as a single apply; it adds its best entry's matchScore the same way.
+  "job.applyBatch": 800,
   "interview.prep": 750,
   "queue.score": 720,
   "networking.send": 700,
@@ -51,18 +53,32 @@ export const questionTask = (payload: TaskPayload<"question.answered">) =>
     payload,
   );
 
+const applyPayload = (job: TaskJob): TaskPayload<"job.apply"> => ({
+  campaignId: job.campaignId,
+  jobKey: job.key,
+  url: job.url,
+  board: job.board,
+  brief: job.brief,
+  resumeId: job.resumeId,
+  matchScore: job.matchScore,
+  warmContacts: job.warmContacts,
+});
+
 export const applyTask = (job: TaskJob): PilotTask => ({
-  ...task("job.apply", "job", jobSubjectId(job), job.title, {
-    campaignId: job.campaignId,
-    jobKey: job.key,
-    url: job.url,
-    board: job.board,
-    brief: job.brief,
-    resumeId: job.resumeId,
-    matchScore: job.matchScore,
-    warmContacts: job.warmContacts,
-  }),
+  ...task("job.apply", "job", jobSubjectId(job), job.title, applyPayload(job)),
   priority: PRIORITY["job.apply"] + (job.matchScore ?? 0),
+});
+
+/** Best match first, so the batch's subject and priority follow its strongest entry. */
+export const applyBatchTask = (jobs: TaskJob[]): PilotTask => ({
+  ...task(
+    "job.applyBatch",
+    "pilot",
+    `apply-batch:${jobSubjectId(jobs[0])}`,
+    `Apply to ${jobs.length} jobs in parallel: ${jobs.map((job) => job.title).join(", ")}`,
+    { jobs: jobs.map(applyPayload) },
+  ),
+  priority: PRIORITY["job.applyBatch"] + (jobs[0].matchScore ?? 0),
 });
 
 /** An empty contact list still earns the task: finding a first contact is the point. */

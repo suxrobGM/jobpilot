@@ -111,21 +111,29 @@ export async function guardApply<T>(
     return await move();
   } catch (error) {
     if (!(error instanceof AlreadyAppliedError)) throw error;
-
-    const { campaignId, key } = error.job;
-    const [skipped] = await prisma.job.updateManyAndReturn({
-      where: { campaignId, key, status: { in: ["approved", "needs_user"] } },
-      data: { status: "skipped", skipReason: duplicateSkipReason(error.duplicate) },
-    });
-    if (skipped) {
-      const campaign = await prisma.campaign.findUniqueOrThrow({
-        where: { campaignId },
-        select: { source: true },
-      });
-      await publishStatusChange(prisma, userId, skipped, campaign.source);
-    }
-    throw new AlreadyAppliedError(error.duplicate, error.job, skipped !== undefined);
+    const recorded = await skipAppliedDuplicate(prisma, userId, error);
+    throw new AlreadyAppliedError(error.duplicate, error.job, recorded);
   }
+}
+
+/** Records a refused duplicate as skipped, after its transaction rolled back; true if it was. */
+export async function skipAppliedDuplicate(
+  prisma: PrismaClient,
+  userId: string,
+  error: AlreadyAppliedError,
+): Promise<boolean> {
+  const { campaignId, key } = error.job;
+  const [skipped] = await prisma.job.updateManyAndReturn({
+    where: { campaignId, key, status: { in: ["approved", "needs_user"] } },
+    data: { status: "skipped", skipReason: duplicateSkipReason(error.duplicate) },
+  });
+  if (!skipped) return false;
+  const campaign = await prisma.campaign.findUniqueOrThrow({
+    where: { campaignId },
+    select: { source: true },
+  });
+  await publishStatusChange(prisma, userId, skipped, campaign.source);
+  return true;
 }
 
 /** Moves an approved job into `applying` inside the caller's transaction; wrap it in `guardApply`. */

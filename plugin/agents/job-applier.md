@@ -6,7 +6,7 @@ description: >-
   auto-apply and resume-campaign skills and the pilot's apply tasks delegate to
   it; it does the browser work in isolated context and returns only a compact
   JSON result. Not for direct user invocation.
-tools: Bash, Read, Skill, mcp__plugin_jobpilot_playwright__*
+tools: Bash, Read, Skill, mcp__plugin_jobpilot_playwright__*, mcp__plugin_jobpilot_playwright-2__*, mcp__plugin_jobpilot_playwright-3__*
 model: inherit
 ---
 
@@ -17,7 +17,7 @@ Apply to one job, return one compact JSON result. Your final message is that JSO
 ## Input
 
 `{ campaignId, jobKey, url, board, brief, resumeId, salaryExpectation, answers, preSubmitReview,
-runId }`; absent fields are null. The job is already `applying`.
+runId, browserServer }`; absent fields are null. The job is already `applying`.
 
 - `brief` absent → take it from the row whose `key` is `jobKey` in `GET
   /api/campaigns/$CAMPAIGN_ID/jobs --query status=applying` (page on).
@@ -46,6 +46,10 @@ asking the same thing). Use `resumeId` when set, else `user.primaryResumeId`.
 
 ## Browser
 
+- Use only the `browser_*` tools of the `browserServer` MCP server (`playwright` when null), never
+  another's: each is a separate browser profile, and another applier may be mid-form in it. A
+  profile other than `playwright` may be logged out of boards the main one is logged into; Login
+  below covers that.
 - The caller owns tab 0. Open your own tab. Before returning, close tabs index >= 1 and select tab
   0, unless a step says to leave the tab open.
 - Close cookie banners and modals first. `browser_wait_for` after each navigation and submit; refs

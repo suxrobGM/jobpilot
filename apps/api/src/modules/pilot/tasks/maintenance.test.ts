@@ -14,8 +14,8 @@ function expiryDb(options: {
   let transactions = 0;
   const db = {
     pilotRun: {
-      // The expired scan has no task type filter; the stranded-apply sweep reads open job.apply runs.
-      findMany: async (a: { where: { taskType?: string } }) =>
+      // The expired scan has no task type filter; the stranded-apply sweep reads open apply runs.
+      findMany: async (a: { where: { taskType?: unknown } }) =>
         a.where.taskType ? (options.openApplyRuns ?? []) : (options.expiredRuns ?? []),
       updateMany: async (a: Write) => {
         writes.runs.push(a);
@@ -74,11 +74,54 @@ describe("runExpiry", () => {
   });
 
   it("reverts stranded applies, sparing ones an open run still covers", async () => {
-    const db = expiryDb({ openApplyRuns: [{ payload: { campaignId: "c1", jobKey: "held" } }] });
+    const db = expiryDb({
+      openApplyRuns: [{ taskType: "job.apply", payload: { campaignId: "c1", jobKey: "held" } }],
+    });
     await db.run();
     expect(db.jobWrite("applying")).toMatchObject({
       where: { NOT: [{ campaignId: "c1", key: "held" }], updatedAt: { lt: expect.any(Date) } },
       data: { status: "approved" },
+    });
+  });
+
+  it("reverts every job of an expired batch run", async () => {
+    const batch = {
+      jobs: [
+        { campaignId: "c1", jobKey: "j1" },
+        { campaignId: "c2", jobKey: "j2" },
+      ],
+    };
+    const db = expiryDb({
+      expiredRuns: [{ id: "b1", taskType: "job.applyBatch", payload: batch }],
+    });
+    await db.run();
+    expect(db.writes.jobs[0]).toMatchObject({
+      where: {
+        OR: [
+          { campaignId: "c1", key: "j1" },
+          { campaignId: "c2", key: "j2" },
+        ],
+      },
+      data: { status: "approved" },
+    });
+  });
+
+  it("spares every job an open batch run still covers", async () => {
+    const batch = {
+      jobs: [
+        { campaignId: "c1", jobKey: "a" },
+        { campaignId: "c1", jobKey: "b" },
+      ],
+    };
+    const db = expiryDb({ openApplyRuns: [{ taskType: "job.applyBatch", payload: batch }] });
+    await db.run();
+    expect(db.jobWrite("applying")).toMatchObject({
+      where: {
+        NOT: [
+          { campaignId: "c1", key: "a" },
+          { campaignId: "c1", key: "b" },
+        ],
+      },
     });
   });
 

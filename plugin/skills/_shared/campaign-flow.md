@@ -76,5 +76,6 @@ returning - re-select tab 0, then map the outcome to a terminal write (above). `
 5. **Eligibility** follows `./eligibility.md`.
 6. **Pace** 3-5s between submissions on the same domain.
 7. **Be honest about match scores** - label stretches as stretches.
-8. **One worker at a time** - the browser is shared; never delegate the next job until the
-   current worker returns.
+8. **One worker per browser** - a browser profile is shared by everything on its MCP server; never
+   delegate the next job until the current worker returns, unless the pilot's `job.applyBatch`
+   task gave each worker its own `browserServer`.
