@@ -36,7 +36,7 @@ export function tokenUsage(counts: TokenCounts): TokenUsage {
   };
 }
 
-type RunHistory = Pick<PilotRun, "startedAt" | "finishedAt" | "outcome">;
+export type RunHistory = Pick<PilotRun, "startedAt" | "finishedAt" | "outcome">;
 
 type JobRef = Pick<Job, "campaignId" | "key">;
 
@@ -77,8 +77,16 @@ export function ranRecently(
 ): boolean {
   if (!last) return false;
   if (!last.finishedAt) return true;
+  return now < cooldownEndsAt({ ...last, finishedAt: last.finishedAt }, cooldownMs);
+}
+
+/** When a finished run stops holding its subject back. */
+export function cooldownEndsAt(
+  last: Pick<RunHistory, "outcome"> & { finishedAt: Date },
+  cooldownMs: number,
+): Date {
   const cooldown = isCrash(last.outcome) ? Math.min(cooldownMs, CRASH_RETRY_MS) : cooldownMs;
-  return now.getTime() - last.finishedAt.getTime() < cooldown;
+  return new Date(last.finishedAt.getTime() + cooldown);
 }
 
 export async function withoutRecentRuns<T>(
