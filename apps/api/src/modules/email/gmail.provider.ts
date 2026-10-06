@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import { unprocessable } from "@/common/errors";
+import { logger } from "@/common/logger";
 import type { EmailAccount, EmailProvider } from "@/generated/prisma/client";
 import type {
   MailboxProvider,
@@ -67,6 +68,62 @@ export function scopeCanSend(scope: string | null | undefined): boolean {
 /** Whether a stored, space-separated `scope` string grants mailbox reads. */
 export function scopeCanRead(scope: string | null | undefined): boolean {
   return grants(scope, GMAIL_READ_SCOPE);
+}
+
+export interface HistoryPage {
+  messageIds: string[];
+  historyId: string | null;
+  nextPageToken: string | null;
+}
+
+/**
+ * Every message added since the cursor, across all pages. Each page reports the mailbox's *current*
+ * `historyId`, so saving it after reading only the first page (100 records) skips the rest for good -
+ * which is what a sync after a few days offline used to do.
+ */
+export async function readAddedMessageIds(
+  fetchPage: (pageToken?: string) => Promise<HistoryPage>,
+): Promise<{ messageIds: string[]; historyId: string | null }> {
+  const messageIds = new Set<string>();
+  let historyId: string | null = null;
+  let pageToken: string | undefined;
+  do {
+    const page = await fetchPage(pageToken);
+    for (const id of page.messageIds) messageIds.add(id);
+    historyId = page.historyId ?? historyId;
+    pageToken = page.nextPageToken ?? undefined;
+  } while (pageToken);
+  return { messageIds: [...messageIds], historyId };
+}
+
+/** A per-user rate or quota refusal: every later fetch in this run would be refused too. */
+export function isQuotaError(err: unknown): boolean {
+  const { status, code, message } = (err ?? {}) as {
+    status?: number;
+    code?: number | string;
+    message?: string;
+  };
+  if (status === 429 || code === 429 || code === "429") return true;
+  return /quota exceeded|rate ?limit/i.test(message ?? "");
+}
+
+/** Gmail answers 404 for a message deleted between the history read and the fetch. */
+function isGoneError(err: unknown): boolean {
+  const { status, code } = (err ?? {}) as { status?: number; code?: number | string };
+  return status === 404 || code === 404 || code === "404";
+}
+
+/**
+ * The cursor to save after a sync. A fetch that failed for any reason but deletion holds the old
+ * cursor: advancing past it drops that message for good, and the next sync's refetch of the rest
+ * costs only duplicate inserts, which the sync skips.
+ */
+export function nextHistoryCursor(
+  previous: string | null,
+  fetched: string | null,
+  failedFetches: number,
+): string | null {
+  return failedFetches > 0 ? previous : fetched;
 }
 
 class GmailProvider implements MailboxProvider {
@@ -170,7 +227,11 @@ class GmailProvider implements MailboxProvider {
     };
   }
 
-  async syncMessages(config: OAuthClientConfig, account: EmailAccount): Promise<SyncResult> {
+  async syncMessages(
+    config: OAuthClientConfig,
+    account: EmailAccount,
+    knownIds: (ids: string[]) => Promise<Set<string>>,
+  ): Promise<SyncResult> {
     const auth = this.clientForAccount(config, account);
     const gmail = google.gmail({ version: "v1", auth });
 
@@ -179,19 +240,25 @@ class GmailProvider implements MailboxProvider {
 
     if (account.historyId) {
       try {
-        const res = await gmail.users.history.list({
-          userId: "me",
-          startHistoryId: account.historyId,
-          historyTypes: ["messageAdded"],
+        const startHistoryId = account.historyId;
+        const added = await readAddedMessageIds(async (pageToken) => {
+          const res = await gmail.users.history.list({
+            userId: "me",
+            startHistoryId,
+            historyTypes: ["messageAdded"],
+            pageToken,
+          });
+          return {
+            messageIds: (res.data.history ?? []).flatMap((h) =>
+              (h.messagesAdded ?? []).flatMap((ma) => (ma.message?.id ? [ma.message.id] : [])),
+            ),
+            historyId: res.data.historyId ?? null,
+            nextPageToken: res.data.nextPageToken ?? null,
+          };
         });
 
-        newHistoryId = res.data.historyId ?? account.historyId;
-
-        for (const h of res.data.history ?? []) {
-          for (const ma of h.messagesAdded ?? []) {
-            if (ma.message?.id) messageIds.push(ma.message.id);
-          }
-        }
+        newHistoryId = added.historyId ?? account.historyId;
+        messageIds.push(...added.messageIds);
       } catch {
         // history cursor too old - fall back to list
       }
@@ -214,8 +281,14 @@ class GmailProvider implements MailboxProvider {
       newHistoryId = profile.data.historyId ?? null;
     }
 
+    // A held cursor replays the same range; refetching stored mail would spend the quota the
+    // retry needs and never get past the message that stopped the last run.
+    const known = await knownIds(messageIds);
+    const toFetch = messageIds.filter((id) => !known.has(id));
+
     const newMessages: NormalizedMessage[] = [];
-    for (const id of messageIds) {
+    let failedFetches = 0;
+    for (const [index, id] of toFetch.entries()) {
       try {
         const msg = await gmail.users.messages.get({ userId: "me", id, format: "full" });
         const headers = (msg.data.payload?.headers ?? []) as EmailHeader[];
@@ -238,15 +311,29 @@ class GmailProvider implements MailboxProvider {
           rawBody: plain,
           receivedAt: internal,
         });
-      } catch {
-        // skip individual failures
+      } catch (err) {
+        if (isQuotaError(err)) {
+          failedFetches += toFetch.length - index;
+          logger.warn(
+            { remaining: toFetch.length - index },
+            "Gmail quota exhausted; holding the sync cursor until the next sync",
+          );
+          break;
+        }
+        if (!isGoneError(err)) {
+          failedFetches += 1;
+          logger.warn(
+            { err, messageId: id },
+            "Gmail message fetch failed; holding the sync cursor",
+          );
+        }
       }
     }
 
     return {
       fetched: messageIds.length,
       newMessages,
-      historyId: newHistoryId,
+      historyId: nextHistoryCursor(account.historyId, newHistoryId, failedFetches),
     };
   }
 }
