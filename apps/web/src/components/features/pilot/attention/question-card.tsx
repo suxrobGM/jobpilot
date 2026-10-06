@@ -7,6 +7,9 @@ import { Button, Card, CardContent, Link, Stack, TextField, Typography } from "@
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
+import { RelativeTime } from "@/components/ui/display";
+import { ConfirmDialog } from "@/components/ui/feedback";
+import { formatDate } from "@/utils/format";
 
 interface QuestionCardProps {
   question: PilotQuestion;
@@ -15,29 +18,49 @@ interface QuestionCardProps {
 export function QuestionCard(props: QuestionCardProps): ReactElement {
   const { question } = props;
   const [freeText, setFreeText] = useState("");
+  const [confirmSkipApplication, setConfirmSkipApplication] = useState(false);
 
   const answer = useApiMutation<unknown, string>(
     (value) => api.pilot.questions({ id: question.id }).answer.post({ answer: value }),
     { invalidate: [queryKeys.pilot.questionsAll()], successMessage: "Answer sent." },
   );
+  const skipQuestion = useApiMutation<unknown, void>(
+    () => api.pilot.questions({ id: question.id }).skip.post(),
+    {
+      invalidate: [queryKeys.pilot.questionsAll()],
+      successMessage: "Question skipped - the pilot will retry without an answer.",
+    },
+  );
+  const skipApplication = useApiMutation<unknown, void>(
+    () => api.pilot.questions({ id: question.id })["skip-application"].post(),
+    { invalidate: [queryKeys.pilot.questionsAll()], successMessage: "Application skipped." },
+  );
 
   const hasOptions = question.options.length > 0;
-  const isLoading = answer.isPending;
+  const isJobQuestion = question.subjectType === "job";
+  const isLoading = answer.isPending || skipQuestion.isPending || skipApplication.isPending;
 
   return (
     <Card variant="outlined">
       <CardContent>
         <Stack spacing={1.5}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={{ xs: 0.5, sm: 1 }}
+            sx={{ alignItems: "flex-start" }}
+          >
             <Typography variant="body1Strong" sx={{ flex: 1, minWidth: 0 }}>
               {question.prompt}
             </Typography>
-            <Typography
-              variant="captionMuted"
-              sx={{ flexShrink: 0, textTransform: "capitalize", whiteSpace: "nowrap" }}
-            >
-              {question.kind}
-            </Typography>
+            <Stack direction="row" spacing={0.75} sx={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+              <Typography variant="captionMuted" sx={{ textTransform: "capitalize" }}>
+                {question.kind}
+              </Typography>
+              <Typography variant="captionMuted">·</Typography>
+              <Typography variant="captionMuted">{formatDate(question.createdAt)}</Typography>
+              <Typography variant="captionMuted">·</Typography>
+              <RelativeTime value={question.createdAt} />
+            </Stack>
           </Stack>
 
           {question.deepLink && (
@@ -100,8 +123,43 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
               </Button>
             </Stack>
           )}
+
+          <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
+            <Button
+              variant="text"
+              size="small"
+              color="inherit"
+              disabled={isLoading}
+              onClick={() => skipQuestion.mutate()}
+            >
+              Skip question
+            </Button>
+            {isJobQuestion && (
+              <Button
+                variant="text"
+                size="small"
+                color="warning"
+                disabled={isLoading}
+                onClick={() => setConfirmSkipApplication(true)}
+              >
+                Skip application
+              </Button>
+            )}
+          </Stack>
         </Stack>
       </CardContent>
+      <ConfirmDialog
+        open={confirmSkipApplication}
+        title="Skip this application?"
+        description="The job is recorded as skipped by you and the pilot won't apply to it. Any other open questions about it are closed too."
+        confirmLabel="Skip application"
+        destructive
+        onConfirm={() => {
+          setConfirmSkipApplication(false);
+          skipApplication.mutate();
+        }}
+        onCancel={() => setConfirmSkipApplication(false)}
+      />
     </Card>
   );
 }

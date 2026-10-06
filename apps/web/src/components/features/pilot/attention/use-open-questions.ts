@@ -26,7 +26,7 @@ export function useOpenQuestions(): OpenQuestions {
 
   // Repeats PilotLive's handlers because the nav badge lives outside the pilot layout.
   useSseChannel(pilotChannel, null, {
-    on: { "question.created": refresh, "question.answered": refresh },
+    on: { "question.created": refresh, "question.answered": refresh, "question.closed": refresh },
   });
 
   return {
