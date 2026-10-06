@@ -50,6 +50,12 @@ describe("canonicalizeJobUrl", () => {
     );
   });
 
+  it("folds click.mg.flexjobs.com onto flexjobs.com, path untouched", () => {
+    expect(canonicalizeJobUrl("https://click.mg.flexjobs.com/job/senior-engineer-abc")).toBe(
+      "https://flexjobs.com/job/senior-engineer-abc",
+    );
+  });
+
   it("leaves an already-canonical url byte-identical", () => {
     const url = "https://hiringcafe.com/job/abc";
     expect(canonicalizeJobUrl(url)).toBe(url);
