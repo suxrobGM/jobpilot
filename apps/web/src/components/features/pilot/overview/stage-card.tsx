@@ -85,7 +85,7 @@ export function AgentList(props: AgentListProps): ReactElement {
     <Box sx={{ opacity: dimmed ? DIM_OPACITY : 1 }}>
       <Stack direction="row" sx={{ justifyContent: "space-between", mb: 1 }}>
         <Typography variant="overlineMuted">Agents</Typography>
-        <Typography variant="overlineMuted">New tokens this week</Typography>
+        <Typography variant="overlineMuted">New tokens, last 7 days</Typography>
       </Stack>
       <Box
         sx={{
