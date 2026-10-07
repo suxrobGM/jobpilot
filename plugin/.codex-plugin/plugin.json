@@ -1,6 +1,6 @@
 {
   "name": "jobpilot",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Setup bootstrap for the local JobPilot agent.",
   "author": {
     "name": "JobPilot"

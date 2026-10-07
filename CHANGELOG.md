@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.2.1 - 2026-10-06
+
+### Added
+
+- The job index is a list with board names, sorting, and a posted-within filter, and each job
+  page shows similar jobs ranked by skills, title, remote, and region.
+- Job pages publish Google job posting data, and missing jobs and portfolios return real 404s.
+- The landing page is redesigned: the hero runs into the demo video with live numbers under it.
+- A new teaser video, edited in Remotion with a synthesized soundtrack.
+
+### Changed
+
+- When every pilot search is waiting on its schedule, setup adds or retires searches instead of
+  leaving the pilot idle for hours.
+- Pilot token usage shows new and cached tokens separately, labeled as the last 7 days.
+- Saved answers moved to profile settings.
+- Public pages and docs are rewritten in plain language.
+- Similar jobs and listing lookups are cached and indexed for faster pages.
+- Production deploys the API before building the web app.
+
+### Fixed
+
+- Warning and secondary text colors are applied again.
+- Pilot overview cards stretch to equal height.
+- Install commands no longer cause a hydration mismatch when ordered by OS.
+
 ## v2.2.0 - 2026-10-04
 
 ### Added
