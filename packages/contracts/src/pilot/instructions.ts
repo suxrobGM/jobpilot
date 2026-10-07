@@ -43,7 +43,7 @@ export const pilotInstructionsConfigSchema = z.object({
 
 /** What to retire from the old goals. Nothing by default, so the web asks before sending any. */
 export const pilotInstructionsChangeSchema = z.object({
-  // `search.setup` only runs once no searches exist, so deleting them is what re-derives.
+  // `search.setup` starts from scratch only once no searches exist, so deleting them re-derives.
   rederiveSearches: z.boolean().default(false),
   completeCampaigns: z.boolean().default(false),
   dropApprovedJobs: z.boolean().default(false),
@@ -92,7 +92,6 @@ export type PilotInstructionsImpact = z.infer<typeof pilotInstructionsImpactSche
 export type UpdatePilotInstructionsInput = z.infer<typeof updatePilotInstructionsSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;
 
-/** How one channel runs, or null when it is off. */
 export function channelAutonomy(
   config: PilotInstructionsConfig,
   channel: NetworkingChannel,
@@ -104,7 +103,6 @@ export function channelAutonomy(
 // A warm intro prefers email when both channels are on.
 const CHANNEL_PREFERENCE = ["email", "linkedin"] as const satisfies readonly NetworkingChannel[];
 
-/** How a new outreach message goes out, or null when every channel is off. */
 export function networkingMode(config: PilotInstructionsConfig): NetworkingMode | null {
   for (const channel of CHANNEL_PREFERENCE) {
     const autonomy = channelAutonomy(config, channel);

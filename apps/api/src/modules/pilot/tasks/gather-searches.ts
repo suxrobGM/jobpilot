@@ -1,13 +1,12 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
-import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
+import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "./run-history";
 
-/** With room left under the apply cap, a search idle this long re-runs before it is due. */
+/** With apply room left, an idle search reruns early, and setup refills, at most this often. */
 const HUNGRY_RERUN_MS = 6 * HOUR_MS;
-/** Guards an in-flight or crashed run only; the cadence itself lives in `nextRunAt`. */
+/** Holds back a search whose last run is open, crashed, or unreported. */
 const SEARCH_RUN_COOLDOWN_MS = 2 * HOUR_MS;
-const SETUP_RETRY_MS = DAY_MS;
 
 export type DueSearch = Pick<
   TaskPayload<"search.discover">,
@@ -49,11 +48,15 @@ export async function gatherDueSearches(
       select: { campaignId: true, pilotSearchId: true },
     }),
   ]);
+
   // Oldest first, so the newest campaign of a search wins the map entry.
   const campaignBySearch = new Map(campaigns.map((c) => [c.pilotSearchId, c.campaignId]));
-  const startable = searches.filter(
-    (search) => !ranRecently(latest.get(search.id), now, SEARCH_RUN_COOLDOWN_MS),
-  );
+  const startable = searches.filter((search) => {
+    const last = latest.get(search.id);
+    // A run report or a query rewrite moves `nextRunAt` past the run, and the cadence takes over.
+    const rescheduled = last?.finishedAt != null && search.nextRunAt > last.startedAt;
+    return rescheduled || !ranRecently(last, now, SEARCH_RUN_COOLDOWN_MS);
+  });
 
   let due = startable.filter((search) => search.nextRunAt <= now);
   if (due.length === 0 && hungry) {
@@ -82,5 +85,5 @@ export async function gatherSetup(
   now: Date,
 ): Promise<TaskPayload<"search.setup"> | null> {
   const last = await latestRun(prisma, userId, "search.setup");
-  return ranRecently(last, now, SETUP_RETRY_MS) ? null : payload;
+  return ranRecently(last, now, HUNGRY_RERUN_MS) ? null : payload;
 }

@@ -186,7 +186,7 @@ export class TaskListService {
 
     const quiet = isPipelineQuiet({ ...base, ...searches, scorePending });
     // Blank goals need no task: emptyReason "awaitingSetup" already says so.
-    const canSetUp = quiet && searchCount === 0 && goals !== "";
+    const canSetUp = quiet && goals !== "" && (searchCount === 0 || hungry);
     const [reviews, setup] = await Promise.all([
       quiet ? gatherCampaignReviews(prisma, userId, now) : NO_REVIEWS,
       canSetUp ? gatherSetup(prisma, userId, { goals, minScore: config.minScore }, now) : null,

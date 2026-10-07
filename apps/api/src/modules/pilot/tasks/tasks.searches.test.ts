@@ -8,6 +8,8 @@ const dueRow = (over: Record<string, unknown> = {}) =>
 const futureRow = (over: Record<string, unknown> = {}) =>
   pilotSearchRow({ nextRunAt: new Date(Date.now() + HOUR_MS), ...over });
 
+const spentCap = { instructionsConfig: { dailyApplyCap: 5 }, appliedToday: 5 };
+
 const discoverOf = (taskList: Parameters<typeof findTask>[0]) =>
   findTask(taskList, "search.discover");
 
@@ -33,8 +35,7 @@ describe("TaskListService search.discover", () => {
     expect(discoverOf(hungry)?.subjectId).toBe("s-hungry");
 
     const spent = await service({
-      instructionsConfig: { dailyApplyCap: 5 },
-      appliedToday: 5,
+      ...spentCap,
       pilotSearches: [futureRow({ lastRunAt: null })],
     }).refresh("p1");
     expect(discoverOf(spent)).toBeUndefined();
@@ -46,6 +47,26 @@ describe("TaskListService search.discover", () => {
       searchRuns: [{ subjectId: "s-react", startedAt: new Date(), finishedAt: null }],
     }).refresh("p1");
     expect(discoverOf(taskList)).toBeUndefined();
+  });
+
+  it("reruns a search rescheduled after its last run, and holds one nothing rescheduled", async () => {
+    const run = {
+      subjectId: "s-react",
+      startedAt: new Date(Date.now() - 10 * 60_000),
+      finishedAt: new Date(Date.now() - 5 * 60_000),
+      outcome: "done",
+    };
+    const rewritten = await service({
+      pilotSearches: [dueRow({ id: "s-react", nextRunAt: new Date(Date.now() - 60_000) })],
+      searchRuns: [run],
+    }).refresh("p1");
+    expect(discoverOf(rewritten)?.subjectId).toBe("s-react");
+
+    const unreported = await service({
+      pilotSearches: [dueRow({ id: "s-react" })],
+      searchRuns: [run],
+    }).refresh("p1");
+    expect(discoverOf(unreported)).toBeUndefined();
   });
 
   it("reuses the newest campaign the search spawned, whatever its query is now", async () => {
@@ -75,13 +96,21 @@ describe("TaskListService search.setup", () => {
     expect(setupOf(taskList)?.payload).toEqual({ goals, minScore: 70 });
   });
 
-  it("stays out when goals are blank, a search exists, a try is recent, or work is queued", async () => {
+  it("refills while the apply cap has room and every search is waiting", async () => {
+    const taskList = await service({
+      instructionsGoals: goals,
+      pilotSearches: [futureRow({ lastRunAt: new Date() })],
+    }).refresh("p1");
+    expect(setupOf(taskList)).toBeDefined();
+  });
+
+  it("stays out when goals are blank, the cap is spent, a try is recent, or work is queued", async () => {
     const blank = await service({ instructionsGoals: "   " }).refresh("p1");
     expect(setupOf(blank)).toBeUndefined();
     expect(blank.emptyReason).toBe("awaitingSetup");
 
     const cases = [
-      { pilotSearches: [futureRow({ lastRunAt: new Date() })] },
+      { ...spentCap, pilotSearches: [futureRow({ lastRunAt: new Date() })] },
       { setupRun: { finishedAt: null } },
       { approvedJobs: [approvedJob()] },
     ];
