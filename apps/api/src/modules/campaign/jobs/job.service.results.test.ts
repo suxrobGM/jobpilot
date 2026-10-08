@@ -189,3 +189,17 @@ describe("CampaignJobService terminal results", () => {
     });
   });
 });
+
+describe("CampaignJobService submit stamp on results", () => {
+  it("clears the submit stamp once an outcome is recorded", async () => {
+    const state = setup();
+    state.setSubmitAttempted(new Date());
+
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "failed",
+      failReason: "blocked",
+    });
+
+    expect(state.job.submitAttemptedAt).toBeNull();
+  });
+});

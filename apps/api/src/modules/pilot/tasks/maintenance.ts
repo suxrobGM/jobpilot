@@ -1,11 +1,12 @@
 import { CAMPAIGN_JOB_ACTIVE_STATUSES, campaignConfigSchema } from "@jobpilot/contracts/campaign";
 import { DAY_MS } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { PilotQuestion, PrismaClient } from "@/generated/prisma/client";
 import { PROMOTABLE_SOURCES, publishCampaignStatus } from "@/modules/campaign/campaign.utils";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
 import type { PilotJournalService } from "../journal.service";
 import { SERVER_SKIP_REASONS } from "../skip-reasons";
-import { GATHER_CAP, parseJobRef, parseJobSubject, revertApplyingJobs } from "./run-history";
+import { GATHER_CAP, parseJobRef, parseJobSubject } from "./run-history";
 
 /** An `applying` job with no open run and no update for this long lost its driver. */
 const STALE_APPLYING_MS = 30 * 60 * 1000;
@@ -15,9 +16,18 @@ const APPROVED_JOB_STALE_MS = 7 * DAY_MS;
 const FINALIZE_IDLE_MS = 10 * 60 * 1000;
 const MAX_OPEN_APPLY_RUNS = 20;
 
-/** Expires runs and questions, and returns what they held to a workable state. */
-export async function runExpiry(prisma: PrismaClient, userId: string, now: Date): Promise<void> {
-  await prisma.$transaction(async (tx) => {
+/**
+ * Expires runs and questions, and returns what they held to a workable state. An interrupted apply
+ * is parked for the user rather than retried, since it may already have been submitted; returns
+ * the recovery questions for the caller to publish once this transaction commits.
+ */
+export async function runExpiry(
+  prisma: PrismaClient,
+  userId: string,
+  now: Date,
+): Promise<PilotQuestion[]> {
+  return prisma.$transaction(async (tx) => {
+    const recoveryQuestions: PilotQuestion[] = [];
     const expiredRuns = await tx.pilotRun.findMany({
       where: { userId, finishedAt: null, expiresAt: { lt: now } },
       take: GATHER_CAP,
@@ -31,7 +41,14 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       const jobs = expiredRuns
         .filter((run) => run.taskType === "job.apply")
         .map((run) => parseJobRef(run.payload));
-      await revertApplyingJobs(tx, userId, jobs);
+      if (jobs.length > 0) {
+        const parked = await recoverApplyingJobs(tx, userId, {
+          status: "applying",
+          campaign: { userId },
+          OR: jobs,
+        });
+        recoveryQuestions.push(...parked);
+      }
     }
 
     // A crashed terminal apply takes no run, so its job would stay `applying` and block finalize.
@@ -40,15 +57,13 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       take: MAX_OPEN_APPLY_RUNS,
       select: { payload: true },
     });
-    await tx.job.updateMany({
-      where: {
-        status: "applying",
-        campaign: { userId },
-        updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },
-        NOT: openApplyRuns.map((run) => parseJobRef(run.payload)),
-      },
-      data: { status: "approved" },
+    const stale = await recoverApplyingJobs(tx, userId, {
+      status: "applying",
+      campaign: { userId },
+      updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },
+      NOT: openApplyRuns.map((run) => parseJobRef(run.payload)),
     });
+    recoveryQuestions.push(...stale);
 
     // Pilot campaigns only: a user's own queue is theirs to clear.
     await tx.job.updateMany({
@@ -65,7 +80,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       take: GATHER_CAP,
       select: { id: true, subjectType: true, subjectId: true },
     });
-    if (expiredQuestions.length === 0) return;
+    if (expiredQuestions.length === 0) return recoveryQuestions;
 
     await tx.pilotQuestion.updateMany({
       where: { id: { in: expiredQuestions.map((question) => question.id) }, status: "open" },
@@ -76,7 +91,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
         ? [parseJobSubject(question.subjectId)]
         : [],
     );
-    if (parkedJobs.length === 0) return;
+    if (parkedJobs.length === 0) return recoveryQuestions;
 
     await tx.job.updateMany({
       where: {
@@ -86,6 +101,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       },
       data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.unanswered },
     });
+    return recoveryQuestions;
   });
 }
 

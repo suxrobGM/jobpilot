@@ -75,9 +75,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   // Re-apply / rescan drive the agent, so they're desktop-only.
   const canReapply = campaign.status !== "in_progress" && agentAvailable;
   const selected = canReapply
-    ? resolveSelectedRows(selection, [...seenJobs.current.values()], visible).filter((j) =>
-        isReapplicable(j.status),
-      )
+    ? resolveSelectedRows(selection, [...seenJobs.current.values()], visible).filter(isReapplicable)
     : [];
   const selectedSkipped = selected.filter((j) => j.status === "skipped");
   const selectedForReapply = selected.filter((job) => job.status !== "skipped");

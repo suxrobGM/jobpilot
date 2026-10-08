@@ -30,6 +30,7 @@ export const campaignJobSchema = z.object({
   matchReason: z.string().nullable(),
   status: campaignJobStatusSchema,
   appliedAt: z.date().nullable(),
+  submitAttemptedAt: z.date().nullable(),
   failReason: z.string().nullable(),
   retryNotes: z.string().nullable(),
   skipReason: z.string().nullable(),

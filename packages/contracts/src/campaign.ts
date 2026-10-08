@@ -129,6 +129,33 @@ export const campaignStatusCommandSchema = z.object({
   reason: z.string().min(1).max(300).transform(cleanReplacementChars).optional(),
 });
 
+/**
+ * Why crash recovery parked a job. A crash between "form submitted" and "result recorded" leaves a
+ * job nothing can classify, so the user is asked. Shared because the API guards on them, the web
+ * hides re-apply for them, and the agent routes the answers.
+ */
+export const MAYBE_SUBMITTED_REASON =
+  "Recovered mid-apply after the form may already have been submitted. Check the employer's site or your email before retrying - re-applying would send a second application.";
+export const INTERRUPTED_REASON =
+  "The apply was interrupted and there is no record of how far it got, so it may or may not have been submitted. Check before retrying.";
+
+/** The two exits, which the agent routes on verbatim. */
+export const RECOVERY_ANSWERS = [
+  "It was submitted - mark applied",
+  "It was not submitted - try again",
+] as const;
+
+/** A job held until the user says whether the interrupted application went through. */
+export function isAwaitingRecoveryAnswer(job: {
+  status: string;
+  skipReason: string | null;
+}): boolean {
+  return (
+    job.status === "needs_user" &&
+    (job.skipReason === MAYBE_SUBMITTED_REASON || job.skipReason === INTERRUPTED_REASON)
+  );
+}
+
 export const CAMPAIGN_JOB_TERMINAL_OUTCOMES = ["applied", "failed", "skipped"] as const;
 const campaignJobOutcomeSchema = z.enum(CAMPAIGN_JOB_TERMINAL_OUTCOMES);
 
@@ -171,6 +198,11 @@ export const patchCampaignJobSchema = z.object({
   matchReason: reasonText.optional().nullable(),
   description: z.string().optional().nullable(),
   brief: jobBrief.optional().nullable(),
+  /**
+   * The user's answer that a crash-recovered apply never reached the employer - the only release
+   * back to `approved`. Not a general force flag: refused on a job not waiting on that answer.
+   */
+  confirmNotSubmitted: z.boolean().optional(),
 });
 
 export const rescanCampaignJobSchema = z

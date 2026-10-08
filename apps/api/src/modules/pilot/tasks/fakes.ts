@@ -3,6 +3,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
 import type { PilotJournalService } from "../journal.service";
+import type { PilotQuestionService } from "../question.service";
 import { TaskListService } from "./task-list.service";
 
 type Row = Record<string, unknown>;
@@ -113,6 +114,8 @@ function fakeJob(over: Over) {
     // Routed by the one filter each read sets: applied = warm-intro pool, matchScore = promote
     // sweep, status `in` = board health, and the rest is the approved gather.
     findMany: async (a: { where: { status?: unknown } }) => {
+      // Crash recovery finds nothing interrupted.
+      if (a.where.status === "applying" || a.where.status === "needs_user") return [];
       if (a.where.status === "applied") return over.recentAppliedJobs ?? [];
       if ("matchScore" in a.where) return over.scoredPendingJobs ?? [];
       if (typeof a.where.status === "object") return over.boardDiagnoseJobs ?? [];
@@ -245,12 +248,16 @@ export function makeTaskListDeps(over: Over = {}) {
       rec.inboxSyncs.push({ userId, staleMs });
     },
   } as unknown as EmailSyncService;
-  return { prisma, campaignJobs, journal, push: makePush(rec.pushes), emailSync, rec };
+  const questions = { announce: () => [] } as unknown as PilotQuestionService;
+  return { prisma, campaignJobs, journal, push: makePush(rec.pushes), emailSync, questions, rec };
 }
 
 export const serviceWithRec = (over: Over = {}) => {
-  const { prisma, campaignJobs, journal, push, emailSync, rec } = makeTaskListDeps(over);
-  return { svc: new TaskListService(prisma, campaignJobs, journal, push, emailSync), rec };
+  const { prisma, campaignJobs, journal, push, emailSync, questions, rec } = makeTaskListDeps(over);
+  return {
+    svc: new TaskListService(prisma, campaignJobs, journal, push, emailSync, questions),
+    rec,
+  };
 };
 
 export const service = (over: Over = {}) => serviceWithRec(over).svc;

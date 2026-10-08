@@ -86,6 +86,19 @@ export const campaignJobController = new Elysia({
     },
   )
   .post(
+    "/:id/jobs/:key/submit-attempt",
+    ({ user, params }) => svc.markSubmitAttempt(user.id, params.id, params.key),
+    {
+      params: campaignJobParams,
+      response: campaignJobSchema,
+      detail: {
+        summary: "Mark a job as about to be submitted",
+        description:
+          "Records that the agent is about to submit the application form. Call it immediately before the submit click: crash recovery uses it to tell the user the apply was interrupted mid-submit. 409 while the job is held waiting on a submitted-or-not answer.",
+      },
+    },
+  )
+  .post(
     "/:id/jobs/:key/retry",
     ({ user, params, body }) => svc.retryJob(user.id, params.id, params.key, body),
     {

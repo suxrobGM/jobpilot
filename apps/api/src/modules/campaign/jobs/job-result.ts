@@ -84,6 +84,9 @@ export async function writeJobResult(
         skipReason: data.outcome === "skipped" ? data.skipReason : null,
         retryNotes: data.retryNotes,
         matchScore: data.matchScore,
+        // The agent lived to report, so this attempt is accounted for; a stale stamp would make a
+        // later, unrelated crash read as "maybe submitted" and 409 the normal bail-out.
+        submitAttemptedAt: null,
       },
     });
     const job = await tx.job.findUniqueOrThrow({ where: { campaignId_key: { campaignId, key } } });

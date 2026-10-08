@@ -51,15 +51,26 @@ export class PilotQuestionService {
         answerKey: body.answerKey ?? null,
       },
     });
-    const question = toPilotQuestion(row);
-    publish(pilotChannel, { userId }, { type: "question.created", question });
-    void this.push.sendToUser(userId, {
-      title: "JobPilot needs you",
-      body: row.prompt,
-      url: row.deepLink ?? "/pilot",
-      tag: `question-${row.id}`,
-    });
+    const [question] = this.announce(userId, [row]);
     return question;
+  }
+
+  /**
+   * Publishes and pushes new questions. Writers outside `createQuestion` call it after their
+   * transaction commits: the web's open-question list refreshes on `question.created` alone.
+   */
+  announce(userId: string, rows: PilotQuestionModel[]): PilotQuestion[] {
+    return rows.map((row) => {
+      const question = toPilotQuestion(row);
+      publish(pilotChannel, { userId }, { type: "question.created", question });
+      void this.push.sendToUser(userId, {
+        title: "JobPilot needs you",
+        body: row.prompt,
+        url: row.deepLink ?? "/pilot",
+        tag: `question-${row.id}`,
+      });
+      return question;
+    });
   }
 
   /** Unpaginated: the attention panel shows every open question, and there are few. */

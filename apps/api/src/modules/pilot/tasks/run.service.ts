@@ -11,6 +11,7 @@ import { conflict, findOwned, notFound } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import {
+  type PilotQuestion,
   type PilotRun as PilotRunModel,
   type PilotRunOutcome,
   type Prisma,
@@ -18,9 +19,11 @@ import {
 } from "@/generated/prisma/client";
 import { guardApply, startApplying } from "@/modules/campaign/jobs/apply-guard";
 import { publishJob } from "@/modules/campaign/jobs/job-events";
+import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
 import { PilotJournalService } from "../journal.service";
+import { PilotQuestionService } from "../question.service";
 import { NEEDS_WORKER_VISIT } from "./gather-campaigns";
-import { parseJobRef, revertApplyingJobs } from "./run-history";
+import { parseJobRef } from "./run-history";
 import { parseTaskListSnapshot } from "./snapshot";
 
 const RUN_TTL_MS = 15 * 60 * 1000;
@@ -81,6 +84,7 @@ export class RunService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly journal: PilotJournalService,
+    private readonly questions: PilotQuestionService,
   ) {}
 
   async start(userId: string, taskListVersion: string, taskId: string) {
@@ -205,10 +209,15 @@ export class RunService {
   }
 
   private async close(userId: string, existing: PilotRunModel, outcome: PilotRunOutcome) {
+    let parked: PilotQuestion[] = [];
     const finished = await this.prisma.$transaction(async (tx) => {
-      // Otherwise the job stays `applying` until the stale sweep.
+      // Parked for the user, not re-approved: the agent may have submitted before it was cut off.
       if (outcome === "cancelled" && existing.taskType === "job.apply") {
-        await revertApplyingJobs(tx, userId, [parseJobRef(existing.payload)]);
+        parked = await recoverApplyingJobs(tx, userId, {
+          status: "applying",
+          campaign: { userId },
+          OR: [parseJobRef(existing.payload)],
+        });
       }
       const [row] = await tx.pilotRun.updateManyAndReturn({
         where: { id: existing.id, userId, finishedAt: null },
@@ -217,6 +226,8 @@ export class RunService {
       if (!row) throw conflict("Run was finished concurrently.");
       return row;
     });
+    // After the commit, so the user cannot answer before the job is actually parked.
+    this.questions.announce(userId, parked);
     return toPilotRun(finished);
   }
 

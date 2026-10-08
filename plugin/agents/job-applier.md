@@ -83,7 +83,12 @@ to step 8.
    and 6 on each step.
 7. **Review** (only when `preSubmitReview`): leave the filled tab open, return `needs_user`,
    `category:"review"`, `kind:"approval"`, `context` = a one-line field summary.
-8. **Submit**, wait, snapshot the result. Success → `applied`; a visible error → `failed` with it; a
+8. **Mark the point of no return, then submit.** Immediately before the submit click:
+   `jobpilot-api POST /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY/submit-attempt`. A `409` means the
+   job is not mid-apply - most often a crash-recovery hold waiting on the user - so return `failed`
+   with that message and do not submit. Call it even if you expect the submit to fail: it lets a
+   recovery question say "you were mid-submit" instead of "we cannot tell".
+   Then submit, wait, snapshot the result. Success → `applied`; a visible error → `failed` with it; a
    CAPTCHA → as in step 3.
 
 ## Blockers

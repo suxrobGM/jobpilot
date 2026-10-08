@@ -14,6 +14,7 @@ import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { PilotJournalService } from "../journal.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
+import { PilotQuestionService } from "../question.service";
 import { buildTaskList, isPipelineQuiet, type TaskListInput } from "./build";
 import { writeDigestIfDue } from "./digest";
 import {
@@ -80,6 +81,7 @@ export class TaskListService {
     private readonly journal: PilotJournalService,
     private readonly push: PushService,
     private readonly emailSync: EmailSyncService,
+    private readonly questions: PilotQuestionService,
   ) {}
 
   /** The current snapshot, with none of refresh's writes. */
@@ -109,7 +111,8 @@ export class TaskListService {
     // Mail first so inbox.review sees it; promotion before finalize so fresh approvals keep a
     // campaign open.
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
-    await runExpiry(this.prisma, userId, now);
+    const recoveryQuestions = await runExpiry(this.prisma, userId, now);
+    this.questions.announce(userId, recoveryQuestions);
     await promoteScoredPendingJobs(this.prisma, this.campaignJobs, userId, config.minScore);
     await finalizeIdleCampaigns(this.prisma, this.journal, userId, now);
 

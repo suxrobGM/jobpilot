@@ -4,6 +4,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
 import type { PilotJournalService } from "../journal.service";
+import type { PilotQuestionService } from "../question.service";
 import { TaskListService } from "./task-list.service";
 import { describe, expect, it } from "bun:test";
 
@@ -44,6 +45,7 @@ function service(row: Record<string, unknown> | null) {
       {} as PilotJournalService,
       {} as PushService,
       {} as EmailSyncService,
+      {} as PilotQuestionService,
     ),
     reads: () => reads,
   };

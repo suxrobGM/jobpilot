@@ -1,13 +1,7 @@
 import type { TokenUsage } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { HOUR_MS } from "@/common/date/buckets";
-import type {
-  Job,
-  PilotRun,
-  PilotRunOutcome,
-  Prisma,
-  PrismaClient,
-} from "@/generated/prisma/client";
+import type { Job, PilotRun, PilotRunOutcome, PrismaClient } from "@/generated/prisma/client";
 
 /** Row cap for the unbounded gather and expiry scans. */
 export const GATHER_CAP = 200;
@@ -115,16 +109,4 @@ const jobRefSchema = z.object({ campaignId: z.string().min(1), jobKey: z.string(
 export function parseJobRef(payload: unknown): JobRef {
   const { campaignId, jobKey } = jobRefSchema.parse(payload);
   return { campaignId, key: jobKey };
-}
-
-export async function revertApplyingJobs(
-  tx: Prisma.TransactionClient,
-  userId: string,
-  jobs: JobRef[],
-): Promise<void> {
-  if (jobs.length === 0) return;
-  await tx.job.updateMany({
-    where: { status: "applying", campaign: { userId }, OR: jobs },
-    data: { status: "approved" },
-  });
 }

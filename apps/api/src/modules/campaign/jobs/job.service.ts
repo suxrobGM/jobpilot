@@ -1,9 +1,12 @@
-import type {
-  AddCampaignJobInput,
-  CampaignJobResultInput,
-  PatchCampaignJobInput,
-  RescanCampaignJobInput,
-  RetryCampaignJobInput,
+import {
+  type AddCampaignJobInput,
+  type CampaignJobResultInput,
+  INTERRUPTED_REASON,
+  isAwaitingRecoveryAnswer,
+  MAYBE_SUBMITTED_REASON,
+  type PatchCampaignJobInput,
+  type RescanCampaignJobInput,
+  type RetryCampaignJobInput,
 } from "@jobpilot/contracts/campaign";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
@@ -86,7 +89,21 @@ export class CampaignJobService {
       throw conflict(`Job cannot transition from ${existing.status} to ${moveTo}.`);
     }
 
-    const { status: _, ...fields } = patch;
+    // Every route back into an apply is refused while held, not just `-> approved`: the resume flows
+    // re-send `applying -> applying`, a no-op that leaves `moveTo` null, so this reads
+    // `patch.status`. Only `confirmNotSubmitted` - the user's "it was not submitted" - releases it.
+    const reentering = patch.status === "approved" || patch.status === "applying";
+    const held = isAwaitingRecoveryAnswer(existing);
+    const confirmedSafe = patch.confirmNotSubmitted === true && patch.status === "approved";
+    if (reentering && !confirmedSafe) {
+      if (held) throw conflict(existing.skipReason ?? INTERRUPTED_REASON);
+      if (existing.submitAttemptedAt !== null) throw conflict(MAYBE_SUBMITTED_REASON);
+    }
+    if (patch.confirmNotSubmitted === true && !held) {
+      throw conflict("This job is not waiting on a submitted-or-not answer.");
+    }
+
+    const { status: _, confirmNotSubmitted: __, ...fields } = patch;
     const job = await guardApply(this.prisma, userId, () =>
       this.prisma.$transaction(async (tx) => {
         if (moveTo === "applying") {
@@ -99,6 +116,8 @@ export class CampaignJobService {
             data: {
               status: moveTo,
               ...(clearsOutcome && { appliedAt: null, failReason: null, skipReason: null }),
+              // Left in place, the stamp would 409 the very apply the user just authorised.
+              ...(confirmedSafe && { submitAttemptedAt: null }),
             },
           });
           if (changed.count === 0) throw conflict("Job status changed concurrently.");
@@ -114,6 +133,30 @@ export class CampaignJobService {
       publishJob(userId, job, "updated");
     }
     return job;
+  }
+
+  /**
+   * Stamps the point of no return, just before the agent submits the form. The duplicate guard
+   * cannot see a submit until its result is recorded, so recovery reads this to tell the user the
+   * interrupted apply was mid-submit.
+   */
+  async markSubmitAttempt(userId: string, campaignId: string, key: string) {
+    const existing = await this.findJob(userId, campaignId, key);
+    // Recovery also parks slow applies that are still running; one of those must not submit while
+    // the user is being asked whether it already did.
+    if (isAwaitingRecoveryAnswer(existing)) {
+      throw conflict(existing.skipReason ?? INTERRUPTED_REASON);
+    }
+    // `needs_user` counts: a 2FA or salary answer resumes the apply in place, without a new run.
+    if (existing.status !== "applying" && existing.status !== "needs_user") {
+      throw conflict(
+        `Job is ${existing.status}, not mid-apply; mark a submit attempt only while applying.`,
+      );
+    }
+    return this.prisma.job.update({
+      where: { campaignId_key: { campaignId, key } },
+      data: { submitAttemptedAt: new Date() },
+    });
   }
 
   /** The only way out of `failed`. */

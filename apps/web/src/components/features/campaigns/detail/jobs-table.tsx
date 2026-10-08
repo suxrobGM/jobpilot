@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
+import { type CampaignJobStatus, isAwaitingRecoveryAnswer } from "@jobpilot/contracts/campaign";
 import { Button, Link } from "@mui/material";
 import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import type { CampaignJobDto } from "@/api/types";
@@ -14,9 +14,16 @@ function isApplicable(status: CampaignJobStatus): boolean {
   return status === "pending" || status === "approved";
 }
 
-/** Statuses eligible for selection + bulk re-apply on a stopped campaign. */
-export function isReapplicable(status: CampaignJobStatus): boolean {
-  return status !== "applied" && status !== "applying";
+/**
+ * Rows eligible for selection + bulk re-apply on a stopped campaign. A job held on "did your
+ * application go through?" is excluded: the server refuses it, and answering is the way out.
+ */
+export function isReapplicable(job: {
+  status: CampaignJobStatus;
+  skipReason: string | null;
+}): boolean {
+  if (job.status === "applied" || job.status === "applying") return false;
+  return !isAwaitingRecoveryAnswer(job);
 }
 
 interface CampaignJobsTableProps extends GridPaginationProps {
@@ -133,7 +140,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       checkboxSelection={checkboxSelection}
       rowSelectionModel={rowSelectionModel}
       onRowSelectionModelChange={onRowSelectionModelChange}
-      isRowSelectable={(row) => isReapplicable(row.status)}
+      isRowSelectable={(row) => isReapplicable(row)}
       keepNonExistentRowsSelected
       {...pagination}
     />

@@ -29,6 +29,8 @@ export function setup() {
     matchReason: "fit",
     status: "applying",
     appliedAt: null,
+    // Absent it reads as undefined, which the re-entry guard cannot tell from a real submit stamp.
+    submitAttemptedAt: null as Date | null,
     failReason: null,
     retryNotes: null,
     skipReason: null,
@@ -154,6 +156,12 @@ export function setup() {
     },
     setApplication(row: Record<string, unknown>) {
       application = row;
+    },
+    setSubmitAttempted(at: Date | null) {
+      job = { ...job, submitAttemptedAt: at };
+    },
+    setSkipReason(reason: string | null) {
+      job = { ...job, skipReason: reason } as typeof job;
     },
   };
 }

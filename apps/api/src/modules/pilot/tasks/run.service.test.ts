@@ -3,6 +3,7 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { subscribe } from "@/common/sse/server";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { PilotJournalService } from "../journal.service";
+import type { PilotQuestionService } from "../question.service";
 import { RunService } from "./run.service";
 import { describe, expect, it } from "bun:test";
 
@@ -65,8 +66,11 @@ function fakeJournal() {
   return { journal, appended };
 }
 
-function makeRunService(db: unknown, journal = fakeJournal().journal) {
-  return new RunService(db as PrismaClient, journal);
+function makeRunService(db: unknown, journal = fakeJournal().journal, announced: unknown[] = []) {
+  const questions = {
+    announce: (_userId: string, rows: unknown[]) => announced.push(...rows),
+  } as unknown as PilotQuestionService;
+  return new RunService(db as PrismaClient, journal, questions);
 }
 
 interface RunSetup {
@@ -124,19 +128,25 @@ const runRow = (over: Record<string, unknown> = {}) => {
   };
 };
 
-/** A fake for the close path: one owned row, updated in place. */
+/** A fake for the close path: one owned row, updated in place, and one applying job. */
 function closeDb(row: ReturnType<typeof runRow>) {
   const jobReverts: unknown[] = [];
+  const job = { campaignId: "c1", key: "j1", title: "Engineer", company: "Acme" };
   const db = {
     pilotRun: {
       findFirst: async () => row,
       updateManyAndReturn: async (a: { data: Record<string, unknown> }) => [{ ...row, ...a.data }],
     },
     job: {
+      findMany: async () => [{ ...job, submitAttemptedAt: null }],
       updateMany: async (a: unknown) => {
         jobReverts.push(a);
         return { count: 1 };
       },
+    },
+    pilotQuestion: {
+      findMany: async () => [],
+      create: async (a: { data: Record<string, unknown> }) => ({ id: "q1", ...a.data }),
     },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
@@ -218,21 +228,30 @@ describe("RunService.heartbeat", () => {
 });
 
 describe("RunService.cancel", () => {
-  it("closes an open apply run, returns its job to approved, and publishes", async () => {
+  it("closes an open apply run, parks its job for the user, and publishes", async () => {
     const userId = crypto.randomUUID();
+    const announced: unknown[] = [];
     const { db, jobReverts } = closeDb(runRow({ userId }));
-    const [run, event] = await withEvent(userId, () => makeRunService(db).cancel(userId, RUN_ID));
+    const service = makeRunService(db, fakeJournal().journal, announced);
+    const [run, event] = await withEvent(userId, () => service.cancel(userId, RUN_ID));
 
     expect(run.outcome).toBe("cancelled");
+    // Never back to approved: the agent may have submitted before the host gave up on it.
     expect(jobReverts).toEqual([
       expect.objectContaining({
-        where: expect.objectContaining({
-          status: "applying",
-          OR: [{ campaignId: "c1", key: "j1" }],
-        }),
-        data: { status: "approved" },
+        where: {
+          AND: [
+            expect.objectContaining({
+              status: "applying",
+              OR: [{ campaignId: expect.any(String), key: "j1" }],
+            }),
+            expect.anything(),
+          ],
+        },
+        data: expect.objectContaining({ status: "needs_user" }),
       }),
     ]);
+    expect(announced).toHaveLength(1);
     expect(event).toEqual({ type: "run.finished", runId: RUN_ID, outcome: "cancelled" });
   });
 

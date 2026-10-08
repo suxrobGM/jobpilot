@@ -27,6 +27,9 @@ model Job {
   matchReason String?           @map("match_reason")
   status      CampaignJobStatus @default(pending)
   appliedAt   DateTime?         @map("applied_at")
+  /// Stamped just before the agent submits the form. Recovery parks every interrupted apply for
+  /// the user either way; the stamp only sharpens the question to "you were mid-submit".
+  submitAttemptedAt DateTime?   @map("submit_attempted_at")
   failReason  String?           @map("fail_reason")
   retryNotes  String?           @map("retry_notes")
   skipReason  String?           @map("skip_reason")
