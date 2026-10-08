@@ -69,6 +69,18 @@ export function scopeCanRead(scope: string | null | undefined): boolean {
   return grants(scope, GMAIL_READ_SCOPE);
 }
 
+/** Gmail's SENT label is authoritative; the connected address covers label-less sent copies. */
+export function isGmailOutboundMessage(
+  labelIds: readonly string[] | null | undefined,
+  fromAddress: string,
+  accountEmail: string,
+): boolean {
+  return (
+    labelIds?.includes("SENT") === true ||
+    fromAddress.trim().toLowerCase() === accountEmail.trim().toLowerCase()
+  );
+}
+
 class GmailProvider implements MailboxProvider {
   private makeOAuthClient(config: OAuthClientConfig): OAuth2Client {
     return new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri);
@@ -233,6 +245,7 @@ class GmailProvider implements MailboxProvider {
           subject: headerValue(headers, "Subject"),
           fromAddress: email,
           fromName: name,
+          isOutbound: isGmailOutboundMessage(msg.data.labelIds, email, account.email),
           fromDomain: domainOf(email),
           snippet: msg.data.snippet ?? "",
           rawBody: plain,
