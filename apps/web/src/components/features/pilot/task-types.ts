@@ -29,6 +29,7 @@ const TASK_TYPES: Record<TaskType, TaskTypeInfo> = {
   "campaign.scorePending": { label: "Score discovered jobs", agent: "job-scorer" },
   "campaign.reviewPaused": { label: "Review paused campaign", agent: "session" },
   "inbox.review": { label: "Review inbox email", agent: "session" },
+  "inbox.jobAlerts": { label: "Harvest job alert emails", agent: "session" },
   "networking.send": { label: "Send networking message", agent: "session" },
   "networking.followup": { label: "Follow up on networking message", agent: "session" },
   "networking.warmIntro": { label: "Ask for a warm intro", agent: "networking-worker" },

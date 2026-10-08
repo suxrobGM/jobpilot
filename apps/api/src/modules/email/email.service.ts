@@ -13,10 +13,15 @@ import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { statusChangeOps } from "@/modules/application/status-change";
 import { AUTO_REJECTION_FROM_STATUSES, isAutoRejection, needsHumanReview } from "./auto-rejection";
-import type { messageFilters } from "./email.schema";
+import { emailLinksSchema, type messageFilters } from "./email.schema";
 import { emailStatusNote, verdictOps } from "./verdict";
 
 type MessageQuery = z.infer<typeof messageFilters>;
+
+/** A malformed `links` column reads as no links rather than failing the whole inbox response. */
+function withLinks<T extends { links: Prisma.JsonValue }>(row: T) {
+  return { ...row, links: emailLinksSchema.catch([]).parse(row.links) };
+}
 
 @singleton()
 export class EmailService {
@@ -75,7 +80,7 @@ export class EmailService {
       this.prisma.emailMessage.count({ where }),
     ]);
 
-    return paginate(rows, query, total);
+    return paginate(rows.map(withLinks), query, total);
   }
 
   async getMessage(userId: string, id: string) {
@@ -91,7 +96,7 @@ export class EmailService {
       "Message",
     );
 
-    return row;
+    return withLinks(row);
   }
 
   /**
@@ -172,7 +177,16 @@ export class EmailService {
       publish(inboxChannel, { userId }, { type: "message.reviewed", id, status: "approved" });
     }
 
-    return row;
+    return withLinks(row);
+  }
+
+  /** Only unharvested rows count, so a retried mark reports 0 instead of re-stamping. */
+  async markJobAlertsHarvested(userId: string, messageIds: string[]) {
+    const { count } = await this.prisma.emailMessage.updateMany({
+      where: { id: { in: messageIds }, account: { userId }, harvestedAt: null },
+      data: { harvestedAt: new Date() },
+    });
+    return { harvested: count };
   }
 
   async denyMessage(userId: string, id: string) {

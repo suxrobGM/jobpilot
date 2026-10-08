@@ -22,6 +22,8 @@ const PRIORITY: Record<TaskType, number> = {
   "search.setup": 520,
   // Finish scoring what was found before discovering more.
   "campaign.scorePending": 510,
+  // Scheduled, so it waits behind applies; above discovery since alert links are pre-filtered.
+  "inbox.jobAlerts": 505,
   "search.discover": 500,
   "networking.followup": 400,
   "campaign.tune": 350,
@@ -127,6 +129,15 @@ export const followupTask = (payload: TaskPayload<"networking.followup">) =>
 
 export const inboxTask = (payload: TaskPayload<"inbox.review">) =>
   task("inbox.review", "inbox", "inbox", `Review ${payload.count} inbox message(s)`, payload);
+
+export const jobAlertsTask = (payload: TaskPayload<"inbox.jobAlerts">) =>
+  task(
+    "inbox.jobAlerts",
+    "inbox",
+    "jobAlerts",
+    `Harvest job links from ${payload.count} alert email(s)`,
+    payload,
+  );
 
 export const interviewReplyTask = (payload: TaskPayload<"interview.reply">) =>
   task(

@@ -1,13 +1,34 @@
 import { campaignConfigSchema } from "@jobpilot/contracts/campaign";
-import type { TaskPayload } from "@jobpilot/contracts/pilot";
-import { HOUR_MS } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
+import {
+  JOB_ALERT_EXCLUDED_MAILBOXES,
+  jobAlertSenderDomains,
+  latestDailyRun,
+  nextDailyRun,
+  type PilotInstructionsConfig,
+  type TaskPayload,
+} from "@jobpilot/contracts/pilot";
+import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
+import type { PilotRun, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { CRASH_OUTCOMES, GATHER_CAP, latestRun, ranRecently } from "./run-history";
 
 const INBOX_BATCH = 10;
 const UPWORK_SYNC_STALE_MS = 6 * HOUR_MS;
 /** Marks an ApplicationEvent note as a generated interview prep sheet. */
 const INTERVIEW_PREP_MARKER = "[interview-prep]";
+/** Alert emails one harvest reads; twice a day this covers any realistic alert volume. */
+const JOB_ALERTS_BATCH = 40;
+/** A week: older alerts point at filled postings, but three days lost mail from app downtime. */
+const JOB_ALERTS_LOOKBACK_MS = 7 * DAY_MS;
+/** A harvest that failed or crashed retries this soon instead of waiting for the next slot. */
+const JOB_ALERTS_RETRY_MS = HOUR_MS;
+/** A "Run now" the pilot never got to (stopped, or busy for an hour) lapses rather than firing later. */
+const JOB_ALERTS_REQUEST_TTL_MS = HOUR_MS;
+
+type JobAlertsSettings = PilotInstructionsConfig["jobAlerts"];
+
+export type HarvestRun = Pick<PilotRun, "startedAt" | "finishedAt" | "expiresAt" | "outcome">;
+
+type JobAlertsPayload = Omit<TaskPayload<"inbox.jobAlerts">, "minScore">;
 
 /** Answered questions no open or finished run has consumed yet. */
 export async function gatherAnsweredQuestions(
@@ -169,4 +190,110 @@ export async function gatherUpworkSync(
 
   const unreadCount = await prisma.upworkInboxItem.count({ where: { userId, status: "unread" } });
   return { lastSyncedAt, unreadCount };
+}
+
+/** A Run now request the pilot has not yet started a harvest for, and that has not lapsed. */
+export function isLiveRunNowRequest(
+  requestedAt: Date | null,
+  lastRun: HarvestRun | null,
+  now: Date,
+): requestedAt is Date {
+  return (
+    requestedAt !== null &&
+    now.getTime() - requestedAt.getTime() < JOB_ALERTS_REQUEST_TTL_MS &&
+    (!lastRun || lastRun.startedAt < requestedAt)
+  );
+}
+
+/**
+ * A live Run now request fires regardless of the schedule; otherwise one successful run per
+ * scheduled slot, and a failed or crashed run retries after JOB_ALERTS_RETRY_MS rather than waiting
+ * half a day for the next slot.
+ */
+export function jobAlertsDue(
+  settings: JobAlertsSettings,
+  lastRun: HarvestRun | null,
+  requestedAt: Date | null,
+  now: Date,
+): boolean {
+  if (lastRun && lastRun.finishedAt === null && lastRun.expiresAt > now) return false;
+  if (isLiveRunNowRequest(requestedAt, lastRun, now)) return true;
+
+  if (!settings.enabled) return false;
+  const slot = latestDailyRun(settings.runHours, settings.timeZone, now);
+  if (!slot) return false;
+  if (!lastRun) return true;
+  if (lastRun.outcome === "done") return lastRun.startedAt < slot;
+  return now.getTime() - lastRun.startedAt.getTime() >= JOB_ALERTS_RETRY_MS;
+}
+
+/** Unharvested alert mail a run would read now; shared by the task list and the schedule card. */
+export function pendingJobAlertsWhere(
+  userId: string,
+  settings: JobAlertsSettings,
+  now: Date,
+): Prisma.EmailMessageWhereInput {
+  return {
+    account: { userId },
+    harvestedAt: null,
+    receivedAt: { gte: new Date(now.getTime() - JOB_ALERTS_LOOKBACK_MS) },
+    // Subdomains too: alerts come from hosts like `e.theladders.com`.
+    OR: jobAlertSenderDomains(settings).flatMap((domain) => [
+      { fromDomain: domain },
+      { fromDomain: { endsWith: `.${domain}` } },
+    ]),
+    NOT: JOB_ALERT_EXCLUDED_MAILBOXES.map((mailbox) => ({
+      fromAddress: { startsWith: `${mailbox}@` },
+    })),
+    // Spelled out: `NOT {classification: "verification"}` is NULL in SQL for unclassified mail,
+    // which silently drops every message inbox.review has not reached yet.
+    AND: [{ OR: [{ classification: null }, { classification: { not: "verification" } }] }],
+  };
+}
+
+export function findLastHarvestRun(
+  prisma: PrismaClient,
+  userId: string,
+): Promise<HarvestRun | null> {
+  return prisma.pilotRun.findFirst({
+    where: { userId, taskType: "inbox.jobAlerts" },
+    orderBy: { startedAt: "desc" },
+    select: { startedAt: true, finishedAt: true, expiresAt: true, outcome: true },
+  });
+}
+
+/** Due harvest work, or null, plus the next scheduled slot the idle sleep wakes for. */
+export async function gatherJobAlerts(
+  prisma: PrismaClient,
+  userId: string,
+  settings: JobAlertsSettings,
+  requestedAt: Date | null,
+  now: Date,
+): Promise<{ jobAlerts: JobAlertsPayload | null; nextJobAlertsAt: Date | null }> {
+  const nextJobAlertsAt = settings.enabled
+    ? nextDailyRun(settings.runHours, settings.timeZone, now)
+    : null;
+  const idle = { jobAlerts: null, nextJobAlertsAt };
+  if (!settings.enabled && requestedAt === null) return idle;
+
+  const lastRun = await findLastHarvestRun(prisma, userId);
+  if (!jobAlertsDue(settings, lastRun, requestedAt, now)) return idle;
+
+  const where = pendingJobAlertsWhere(userId, settings, now);
+  const [rows, count] = await Promise.all([
+    prisma.emailMessage.findMany({
+      where,
+      orderBy: { receivedAt: "asc" },
+      take: JOB_ALERTS_BATCH,
+      select: { id: true },
+    }),
+    prisma.emailMessage.count({ where }),
+  ]);
+  if (count === 0) return idle;
+  const jobAlerts = {
+    messageIds: rows.map((row) => row.id),
+    count,
+    senderDomains: jobAlertSenderDomains(settings),
+  };
+  return { jobAlerts, nextJobAlertsAt };
 }

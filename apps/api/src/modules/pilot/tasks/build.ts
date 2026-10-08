@@ -18,6 +18,7 @@ import {
   inboxTask,
   interviewPrepTask,
   interviewReplyTask,
+  jobAlertsTask,
   networkingSendTask,
   promotionDraftTask,
   promotionPostTask,
@@ -66,8 +67,9 @@ export interface TaskListInput {
   networkingSentToday: number;
   // No searches yet, or no goals to derive them from.
   awaitingSetup: boolean;
-  // The idle sleep never runs past this.
+  // The idle sleep never runs past this or the next harvest slot.
   nextSearchRunAt: Date | null;
+  nextJobAlertsAt: Date | null;
   answeredQuestions: TaskPayload<"question.answered">[];
   approvedJobs: TaskJob[];
   warmIntroCandidates: TaskJob[];
@@ -77,6 +79,8 @@ export interface TaskListInput {
   pausedCampaigns: TaskPayload<"campaign.reviewPaused">[];
   boardDiagnose: TaskPayload<"board.diagnose">[];
   inbox: TaskPayload<"inbox.review">;
+  // Null when the harvest is off, not due this slot, or has no unharvested mail.
+  jobAlerts: Omit<TaskPayload<"inbox.jobAlerts">, "minScore"> | null;
   interviewReplies: TaskPayload<"interview.reply">[];
   interviewPreps: TaskPayload<"interview.prep">[];
   upworkSync: TaskPayload<"upwork.syncInbox"> | null;
@@ -92,13 +96,14 @@ export interface TaskListInput {
 
 type PipelineWork = Pick<
   TaskListInput,
-  "approvedJobs" | "dueQueries" | "scorePending" | "queueScores"
+  "approvedJobs" | "dueQueries" | "scorePending" | "queueScores" | "jobAlerts"
 >;
 
-/** Setup and campaign reviews wait until no apply, discovery or scoring work is queued. */
+/** Setup and campaign reviews wait until no apply, discovery, harvest or scoring work is queued. */
 export function isPipelineQuiet(work: PipelineWork): boolean {
-  const { approvedJobs, dueQueries, scorePending, queueScores } = work;
-  return approvedJobs.length + dueQueries.length + scorePending.length + queueScores.length === 0;
+  const { approvedJobs, dueQueries, scorePending, queueScores, jobAlerts } = work;
+  const queued = approvedJobs.length + dueQueries.length + scorePending.length + queueScores.length;
+  return queued === 0 && jobAlerts === null;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -123,6 +128,8 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
   ];
   if (!capReached) tasks.push(...input.approvedJobs.map(applyTask));
   if (input.inbox.count > 0) tasks.push(inboxTask(input.inbox));
+  // Ungated by the apply cap: harvesting only queues rows, and tomorrow's budget can spend them.
+  if (input.jobAlerts) tasks.push(jobAlertsTask({ ...input.jobAlerts, minScore: config.minScore }));
   if (input.upworkSync) tasks.push(upworkSyncTask(input.upworkSync));
 
   if (outreach && sendsLeft > 0) {
@@ -180,11 +187,14 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     .slice(0, MAX_TASKS)
     .map((task) => ({ ...task, title: task.title.slice(0, MAX_TITLE_LENGTH) }));
 
-  const secondsUntilSearch = input.nextSearchRunAt
-    ? Math.max(0, Math.round((input.nextSearchRunAt.getTime() - now.getTime()) / 1000))
-    : Number.POSITIVE_INFINITY;
+  const secondsUntil = (at: Date | null) =>
+    at ? Math.max(0, Math.round((at.getTime() - now.getTime()) / 1000)) : Number.POSITIVE_INFINITY;
   const idleSleep = clamp(
-    Math.min(config.checkIntervalMinutes * 60, secondsUntilSearch),
+    Math.min(
+      config.checkIntervalMinutes * 60,
+      secondsUntil(input.nextSearchRunAt),
+      secondsUntil(input.nextJobAlertsAt),
+    ),
     MIN_IDLE_SLEEP_SECONDS,
     MAX_IDLE_SLEEP_SECONDS,
   );

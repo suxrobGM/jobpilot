@@ -71,6 +71,9 @@ const matchedAppSchema = z
   })
   .nullable();
 
+/** The `links` JSON column: each job-alert link with the text a reader sees for it. */
+export const emailLinksSchema = z.array(z.object({ url: z.string(), text: z.string() }));
+
 /** An inbox message row. */
 export const emailMessageSchema = z.object({
   id: z.uuid(),
@@ -97,6 +100,8 @@ export const emailMessageSchema = z.object({
   verificationCode: z.string().nullable(),
   verificationLink: z.string().nullable(),
   verificationDomain: z.string().nullable(),
+  links: emailLinksSchema,
+  harvestedAt: z.date().nullable(),
   matchedApp: matchedAppSchema,
 });
 
@@ -127,3 +132,6 @@ export const syncResultSchema = z.object({
   fetched: z.number().int(),
   new: z.number().int(),
 });
+
+/** How many alert emails a harvest mark actually changed (`svc.markJobAlertsHarvested`). */
+export const jobAlertsHarvestedSchema = z.object({ harvested: z.number().int().min(0) });

@@ -118,3 +118,33 @@ describe("TaskListService mail and Upwork sync", () => {
     }
   });
 });
+
+describe("TaskListService job-alert harvest", () => {
+  const emails = [{ id: "m1" }, { id: "m2" }];
+
+  it("offers a harvest for a live Run now request, even with the schedule off", async () => {
+    const taskList = await service({
+      jobAlertsRequestedAt: new Date(Date.now() - 60_000),
+      jobAlertEmails: emails,
+    }).refresh("p1");
+    expect(findTask(taskList, "inbox.jobAlerts")?.payload).toMatchObject({
+      messageIds: ["m1", "m2"],
+      count: 2,
+    });
+  });
+
+  it("offers nothing once a harvest has started since the request", async () => {
+    const now = Date.now();
+    const taskList = await service({
+      jobAlertsRequestedAt: new Date(now - 60_000),
+      jobAlertsRun: {
+        startedAt: new Date(now - 30_000),
+        finishedAt: new Date(now - 10_000),
+        expiresAt: new Date(now + 60_000),
+        outcome: "done",
+      },
+      jobAlertEmails: emails,
+    }).refresh("p1");
+    expect(hasTaskType(taskList, "inbox.jobAlerts")).toBe(false);
+  });
+});

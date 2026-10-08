@@ -5,6 +5,7 @@ import {
   type NetworkingChannel,
   type NetworkingMode,
 } from "../networking";
+import { pilotJobAlertsSchema } from "./job-alerts";
 
 /** The campaign modes plus "off". LinkedIn drops "auto": nothing auto-sends there. */
 export const PILOT_EMAIL_AUTONOMY = ["off", ...NETWORKING_AUTONOMY] as const;
@@ -39,6 +40,7 @@ export const pilotInstructionsConfigSchema = z.object({
   // `prefault`, not `default`: a missing key is parsed as `{}` so every nested field defaults too.
   networking: pilotNetworkingSchema.prefault({}),
   promotion: pilotPromotionConfigSchema.prefault({}),
+  jobAlerts: pilotJobAlertsSchema.prefault({}),
 });
 
 /** What to retire from the old goals. Nothing by default, so the web asks before sending any. */

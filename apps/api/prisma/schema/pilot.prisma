@@ -63,6 +63,9 @@ model PilotState {
   // When the host plans its next task list check; idle checks write here, not to the journal.
   nextWakeAt            DateTime? @map("next_wake_at")
   cycleCount            Int       @default(0) @map("cycle_count")
+  // "Run now" on the job-alert harvest: offered on the next task list even off-schedule, until a run
+  // after it or JOB_ALERTS_REQUEST_TTL_MS passes.
+  jobAlertsRequestedAt  DateTime? @map("job_alerts_requested_at")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 

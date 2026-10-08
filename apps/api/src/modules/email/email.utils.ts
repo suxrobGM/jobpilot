@@ -159,6 +159,82 @@ export function extractPlainText(payload: unknown): string {
   return "";
 }
 
+/** One alert digest carries a few dozen postings; the cap bounds a pathological newsletter. */
+const MAX_LINKS = 300;
+const MAX_LINK_LENGTH = 2048;
+const MAX_LINK_TEXT = 200;
+
+/** A link and the text a reader sees for it - the only way to tell a posting from "Unsubscribe". */
+export interface EmailLink {
+  url: string;
+  text: string;
+}
+
+function visibleText(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_LINK_TEXT);
+}
+
+/**
+ * Every distinct http(s) link in a Gmail payload, in document order: anchors from HTML parts (with
+ * their text, or an image's alt) and bare URLs from plain-text parts (with the rest of their line).
+ * Kept apart from the body because job-alert links are opaque click-trackers whose meaning lives
+ * only in the anchor text, which {@link extractPlainText} discards.
+ */
+export function extractLinks(payload: unknown): EmailLink[] {
+  const found: EmailLink[] = [];
+  const stack: unknown[] = [payload];
+  while (stack.length > 0) {
+    const node = stack.shift() as
+      | { mimeType?: string; body?: { data?: string }; parts?: unknown[] }
+      | undefined;
+    if (!node) {
+      continue;
+    }
+    if (node.body?.data && node.mimeType === "text/html") {
+      const html = decodeBase64Url(node.body.data);
+      for (const match of html.matchAll(
+        /<a\b[^>]*?href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+      )) {
+        const alt = match[2].match(/alt\s*=\s*["']([^"']*)["']/i)?.[1] ?? "";
+        const text = visibleText(match[2]) || alt.trim().slice(0, MAX_LINK_TEXT);
+        found.push({ url: match[1].replace(/&amp;/g, "&").trim(), text });
+      }
+    }
+    if (node.body?.data && node.mimeType === "text/plain") {
+      for (const line of decodeBase64Url(node.body.data).split(/\r?\n/)) {
+        for (const match of line.matchAll(/https?:\/\/[^\s<>"'\])]+/gi)) {
+          const text = line.replace(match[0], " ").replace(/\s+/g, " ").trim();
+          found.push({ url: match[0], text: text.slice(0, MAX_LINK_TEXT) });
+        }
+      }
+    }
+    if (node.parts) {
+      stack.push(...node.parts);
+    }
+  }
+
+  // First sighting keeps its place; a later sighting only fills in text the first one lacked.
+  const byUrl = new Map<string, EmailLink>();
+  for (const link of found) {
+    if (!/^https?:\/\//i.test(link.url) || link.url.length > MAX_LINK_LENGTH) {
+      continue;
+    }
+    const seen = byUrl.get(link.url);
+    if (!seen) {
+      byUrl.set(link.url, link);
+    } else if (!seen.text && link.text) {
+      seen.text = link.text;
+    }
+  }
+  return [...byUrl.values()].slice(0, MAX_LINKS);
+}
+
 /**
  * Remove quoted reply chains ("On <date> ... wrote:" and `>`-prefixed lines)
  * so only the new content of a message remains. Used to keep email bodies

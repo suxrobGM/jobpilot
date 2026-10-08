@@ -30,6 +30,7 @@ import { cleanupJob } from "@/modules/maintenance/cleanup.job";
 import { pdfCacheJob } from "@/modules/maintenance/pdf-cache.job";
 import { networkingController } from "@/modules/networking/networking.controller";
 import { profileAnswersController } from "@/modules/pilot/answer.controller";
+import { pilotJobAlertsController } from "@/modules/pilot/job-alerts.controller";
 import { pilotJournalController } from "@/modules/pilot/journal.controller";
 import { pilotController } from "@/modules/pilot/pilot.controller";
 import { promotionController } from "@/modules/pilot/promotion.controller";
@@ -87,6 +88,7 @@ const app = new Elysia()
       .use(pilotController)
       .use(pilotSearchController)
       .use(pilotTasksController)
+      .use(pilotJobAlertsController)
       .use(pilotJournalController)
       .use(pilotQuestionsController)
       .use(profileAnswersController)

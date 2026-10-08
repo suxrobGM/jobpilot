@@ -1,4 +1,5 @@
 import type { EmailAccount } from "@/generated/prisma/client";
+import type { EmailLink } from "./email.utils";
 
 /** The OAuth client (app) a provider authenticates as - resolved per-user from the user's own EmailOAuthClient. */
 export interface OAuthClientConfig {
@@ -46,6 +47,8 @@ export interface NormalizedMessage {
   snippet: string;
   /** Plain-text message body with quoted replies stripped. */
   rawBody: string;
+  /** Distinct http(s) links from every body part, each with the text a reader sees for it. */
+  links: EmailLink[];
   /** When the message arrived in the user's mailbox. */
   receivedAt: Date;
 }
