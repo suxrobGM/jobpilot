@@ -134,6 +134,8 @@ model PilotQuestion {
   options     Json                @default("[]")
   deepLink    String?             @map("deep_link")
   answer      String?
+  // `answer` holds the user's instructions; the pilot writes the real answer from them.
+  writeForMe  Boolean             @default(false) @map("write_for_me")
   answerKey   String?             @map("answer_key")
   answeredAt  DateTime?           @map("answered_at")
   expiresAt   DateTime?           @map("expires_at")

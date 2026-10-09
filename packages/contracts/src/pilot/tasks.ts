@@ -50,6 +50,8 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       subjectId: nullableString,
       prompt: z.string(),
       answer: nullableString,
+      // The answer is instructions for the pilot to write the real answer from.
+      writeForMe: z.boolean(),
     }),
   ),
   taskVariant(

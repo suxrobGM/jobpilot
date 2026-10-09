@@ -25,6 +25,7 @@ export async function gatherAnsweredQuestions(
       subjectType: true,
       subjectId: true,
       answer: true,
+      writeForMe: true,
     },
   });
   if (answered.length === 0) return [];

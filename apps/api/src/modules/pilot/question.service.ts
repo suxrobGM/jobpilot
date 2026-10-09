@@ -76,7 +76,12 @@ export class PilotQuestionService {
     // Expiry publishes no event, so a stale card or push link can still answer an expired question.
     const [row] = await this.prisma.pilotQuestion.updateManyAndReturn({
       where: { id, userId, status: "open" },
-      data: { status: "answered", answer: body.answer, answeredAt: new Date() },
+      data: {
+        status: "answered",
+        answer: body.answer,
+        writeForMe: body.writeForMe,
+        answeredAt: new Date(),
+      },
     });
     if (!row) {
       await findOwned(
@@ -86,7 +91,8 @@ export class PilotQuestionService {
       );
       throw conflict("Question is no longer open.");
     }
-    if (row.answerKey && SAVED_ANSWER_KINDS.includes(row.kind)) {
+    // Instructions aren't the fact, and the answer the pilot writes from them is the model's words.
+    if (row.answerKey && !row.writeForMe && SAVED_ANSWER_KINDS.includes(row.kind)) {
       await this.answers.save(userId, row.answerKey, body.answer);
     }
 

@@ -11,6 +11,7 @@ describe("TaskListService answered questions", () => {
     subjectType: "email",
     subjectId: "em1",
     answer: "yes",
+    writeForMe: false,
   };
 
   it("hands the worker the question, its subject and the answer", async () => {
@@ -23,6 +24,7 @@ describe("TaskListService answered questions", () => {
       subjectId: "em1",
       prompt: "Send this reply?",
       answer: "yes",
+      writeForMe: false,
     });
   });
 

@@ -20,7 +20,11 @@ export const createPilotQuestionSchema = z.object({
   answerKey: answerKeySchema.optional(),
 });
 
-export const answerPilotQuestionSchema = z.object({ answer: z.string().min(1) });
+export const answerPilotQuestionSchema = z.object({
+  answer: z.string().min(1),
+  // `answer` is then the user's instructions, and the pilot writes the real answer from them.
+  writeForMe: z.boolean().default(false),
+});
 
 export const pilotQuestionsQuerySchema = z.object({
   status: pilotQuestionStatusSchema.optional(),
@@ -37,6 +41,7 @@ export const pilotQuestionSchema = z.object({
   options: z.array(z.string()),
   deepLink: z.string().nullable(),
   answer: z.string().nullable(),
+  writeForMe: z.boolean(),
   answerKey: answerKeySchema.nullable(),
   answeredAt: z.date().nullable(),
   expiresAt: z.date().nullable(),

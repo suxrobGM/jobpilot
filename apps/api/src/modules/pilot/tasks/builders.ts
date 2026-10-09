@@ -85,6 +85,7 @@ export const question = (id: string): TaskPayload<"question.answered"> => ({
   subjectId: null,
   prompt: "Which start date?",
   answer: "Two weeks",
+  writeForMe: false,
 });
 
 export const send = (messageId: string): TaskPayload<"networking.send"> => ({
