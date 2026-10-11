@@ -149,23 +149,31 @@ export class EmailSyncService {
   private async reconcileSelfSentReplies(userId: string, accountId: string, accountEmail: string) {
     const replied = await this.prisma.networkingMessage.findMany({
       where: { userId, channel: "email", status: "replied", threadId: { not: null } },
-      select: { id: true, threadId: true, contact: { select: { email: true } } },
+      select: { id: true, threadId: true, sentAt: true, contact: { select: { email: true } } },
     });
     const threadIds = replied.flatMap((message) => (message.threadId ? [message.threadId] : []));
     if (threadIds.length === 0) return 0;
 
     const externalMessages = await this.prisma.emailMessage.findMany({
       where: { accountId, threadId: { in: threadIds }, fromAddress: { not: accountEmail } },
-      select: { threadId: true, fromAddress: true },
+      select: { threadId: true, fromAddress: true, receivedAt: true },
     });
-    const externalReplyKeys = new Set(
-      externalMessages.map((message) => `${message.threadId}:${message.fromAddress.toLowerCase()}`),
-    );
+    const externalReplyTimes = new Map<string, number>();
+    for (const message of externalMessages) {
+      const key = `${message.threadId}:${message.fromAddress.trim().toLowerCase()}`;
+      externalReplyTimes.set(
+        key,
+        Math.max(externalReplyTimes.get(key) ?? 0, message.receivedAt.getTime()),
+      );
+    }
     const staleIds = replied
       .filter(
         (message) =>
           !message.contact.email ||
-          !externalReplyKeys.has(`${message.threadId}:${message.contact.email.toLowerCase()}`),
+          !message.sentAt ||
+          (externalReplyTimes.get(
+            `${message.threadId}:${message.contact.email.trim().toLowerCase()}`,
+          ) ?? 0) <= message.sentAt.getTime(),
       )
       .map((message) => message.id);
     if (staleIds.length === 0) return 0;
@@ -201,7 +209,13 @@ export class EmailSyncService {
 
       if (m.threadId) {
         const byThread = await this.prisma.networkingMessage.updateMany({
-          where: { userId, status: "sent", threadId: m.threadId, contactId },
+          where: {
+            userId,
+            status: "sent",
+            threadId: m.threadId,
+            contactId,
+            sentAt: { lt: m.receivedAt },
+          },
           data: { status: "replied", repliedAt: m.receivedAt },
         });
         linked += byThread.count;
@@ -209,7 +223,7 @@ export class EmailSyncService {
       }
 
       const byEmail = await this.prisma.networkingMessage.updateMany({
-        where: { userId, status: "sent", contactId },
+        where: { userId, status: "sent", contactId, sentAt: { lt: m.receivedAt } },
         data: { status: "replied", repliedAt: m.receivedAt },
       });
       linked += byEmail.count;

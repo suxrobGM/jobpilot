@@ -91,6 +91,41 @@ describe("networking reply correlation", () => {
     ).toBe(true);
   });
 
+  it("does not link an unrelated external newsletter", async () => {
+    const db = {
+      contact: { findMany: async () => [] },
+      networkingMessage: {
+        updateMany: () => {
+          throw new Error("unrelated mail was linked");
+        },
+      },
+    } as unknown as PrismaClient;
+    const svc = new EmailSyncService(db, {} as CryptoService) as unknown as {
+      linkNetworkingReplies: (
+        userId: string,
+        accountEmail: string,
+        messages: Array<{
+          providerId: string;
+          threadId: string | null;
+          fromAddress: string;
+          receivedAt: Date;
+          isOutbound: boolean;
+        }>,
+      ) => Promise<number>;
+    };
+    expect(
+      await svc.linkNetworkingReplies("u1", mailbox, [
+        {
+          providerId: "newsletter-1",
+          threadId: "sent-thread-1",
+          fromAddress: "news@example.net",
+          receivedAt: new Date(sentAt.getTime() + 60_000),
+          isOutbound: false,
+        },
+      ]),
+    ).toBe(0);
+  });
+
   it("marks a matching external sender in the same thread as replied", async () => {
     const writes: Record<string, unknown>[] = [];
     const db = {
@@ -134,6 +169,7 @@ describe("networking reply correlation", () => {
           status: "sent",
           threadId: "sent-thread-1",
           contactId: { in: ["employer-contact"] },
+          sentAt: { lt: sentAt },
         },
         data: { status: "replied", repliedAt: sentAt },
       },
@@ -148,16 +184,19 @@ describe("networking reply correlation", () => {
           {
             id: "first-sent-message",
             threadId: "sent-thread-1",
+            sentAt,
             contact: { email: "employer@example.com" },
           },
           {
             id: "second-sent-message",
             threadId: "sent-thread-2",
+            sentAt,
             contact: { email: "other-employer@example.com" },
           },
           {
             id: "verified",
             threadId: "synthetic-thread",
+            sentAt,
             contact: { email: "recruiter@example.com" },
           },
         ],
@@ -168,7 +207,11 @@ describe("networking reply correlation", () => {
       },
       emailMessage: {
         findMany: async () => [
-          { threadId: "synthetic-thread", fromAddress: "recruiter@example.com" },
+          {
+            threadId: "synthetic-thread",
+            fromAddress: "recruiter@example.com",
+            receivedAt: new Date(sentAt.getTime() + 60_000),
+          },
         ],
       },
     } as unknown as PrismaClient;
@@ -187,5 +230,46 @@ describe("networking reply correlation", () => {
         data: { status: "sent", repliedAt: null },
       },
     ]);
+  });
+
+  it("does not accept a matching contact message from before the enquiry", async () => {
+    const writes: Record<string, unknown>[] = [];
+    const db = {
+      networkingMessage: {
+        findMany: async () => [
+          {
+            id: "sent-message",
+            threadId: "thread-1",
+            sentAt,
+            contact: { email: "employer@example.com" },
+          },
+        ],
+        updateMany: async (input: Record<string, unknown>) => {
+          writes.push(input);
+          return { count: 1 };
+        },
+      },
+      emailMessage: {
+        findMany: async () => [
+          {
+            threadId: "thread-1",
+            fromAddress: "employer@example.com",
+            receivedAt: new Date(sentAt.getTime() - 60_000),
+          },
+        ],
+      },
+    } as unknown as PrismaClient;
+    const svc = new EmailSyncService(db, {} as CryptoService) as unknown as {
+      reconcileSelfSentReplies: (
+        userId: string,
+        accountId: string,
+        accountEmail: string,
+      ) => Promise<number>;
+    };
+    expect(await svc.reconcileSelfSentReplies("u1", "a1", mailbox)).toBe(1);
+    expect(writes[0]).toEqual({
+      where: { id: { in: ["sent-message"] }, status: "replied" },
+      data: { status: "sent", repliedAt: null },
+    });
   });
 });
