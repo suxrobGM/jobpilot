@@ -207,26 +207,19 @@ export class EmailSyncService {
       if (contacts.length === 0) continue;
       const contactId = { in: contacts.map((contact) => contact.id) };
 
-      if (m.threadId) {
-        const byThread = await this.prisma.networkingMessage.updateMany({
-          where: {
-            userId,
-            status: "sent",
-            threadId: m.threadId,
-            contactId,
-            sentAt: { lt: m.receivedAt },
-          },
-          data: { status: "replied", repliedAt: m.receivedAt },
-        });
-        linked += byThread.count;
-        if (byThread.count > 0) continue;
-      }
+      if (!m.threadId) continue;
 
-      const byEmail = await this.prisma.networkingMessage.updateMany({
-        where: { userId, status: "sent", contactId, sentAt: { lt: m.receivedAt } },
+      const byThread = await this.prisma.networkingMessage.updateMany({
+        where: {
+          userId,
+          status: "sent",
+          threadId: m.threadId,
+          contactId,
+          sentAt: { lt: m.receivedAt },
+        },
         data: { status: "replied", repliedAt: m.receivedAt },
       });
-      linked += byEmail.count;
+      linked += byThread.count;
     }
 
     return linked;

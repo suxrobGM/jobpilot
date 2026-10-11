@@ -126,6 +126,88 @@ describe("networking reply correlation", () => {
     ).toBe(0);
   });
 
+  it("does not link a tracked contact reply from a different thread", async () => {
+    const writes: Record<string, unknown>[] = [];
+    const db = {
+      contact: { findMany: async () => [{ id: "employer-contact" }] },
+      networkingMessage: {
+        updateMany: async ({ data, where }: { data: Record<string, unknown>; where: unknown }) => {
+          writes.push({ data, where });
+          return { count: 0 };
+        },
+      },
+    } as unknown as PrismaClient;
+    const svc = new EmailSyncService(db, {} as CryptoService) as unknown as {
+      linkNetworkingReplies: (
+        userId: string,
+        accountEmail: string,
+        messages: Array<{
+          providerId: string;
+          threadId: string | null;
+          fromAddress: string;
+          receivedAt: Date;
+          isOutbound: boolean;
+        }>,
+      ) => Promise<number>;
+    };
+
+    expect(
+      await svc.linkNetworkingReplies("u1", mailbox, [
+        {
+          providerId: "inbound-message-other-thread",
+          threadId: "different-thread",
+          fromAddress: "employer@example.com",
+          receivedAt: new Date(sentAt.getTime() + 60_000),
+          isOutbound: false,
+        },
+      ]),
+    ).toBe(0);
+    expect(writes).toHaveLength(1);
+    expect(writes[0].where).toMatchObject({ threadId: "different-thread" });
+  });
+
+  it("counts duplicate inbound replies only once", async () => {
+    let awaitingReply = true;
+    const writes: Record<string, unknown>[] = [];
+    const db = {
+      contact: { findMany: async () => [{ id: "employer-contact" }] },
+      networkingMessage: {
+        updateMany: async ({ data, where }: { data: Record<string, unknown>; where: unknown }) => {
+          writes.push({ data, where });
+          if (!awaitingReply) return { count: 0 };
+          awaitingReply = false;
+          return { count: 1 };
+        },
+      },
+    } as unknown as PrismaClient;
+    const svc = new EmailSyncService(db, {} as CryptoService) as unknown as {
+      linkNetworkingReplies: (
+        userId: string,
+        accountEmail: string,
+        messages: Array<{
+          providerId: string;
+          threadId: string | null;
+          fromAddress: string;
+          receivedAt: Date;
+          isOutbound: boolean;
+        }>,
+      ) => Promise<number>;
+    };
+    const duplicateMessages = ["inbound-message-1", "inbound-message-1-copy"].map((providerId) => ({
+      providerId,
+      threadId: "sent-thread-1",
+      fromAddress: "employer@example.com",
+      receivedAt: new Date(sentAt.getTime() + 60_000),
+      isOutbound: false,
+    }));
+
+    expect(await svc.linkNetworkingReplies("u1", mailbox, duplicateMessages)).toBe(1);
+    expect(writes).toHaveLength(2);
+    expect(writes.every(({ where }) => (where as { status?: string }).status === "sent")).toBe(
+      true,
+    );
+  });
+
   it("marks a matching external sender in the same thread as replied", async () => {
     const writes: Record<string, unknown>[] = [];
     const db = {
