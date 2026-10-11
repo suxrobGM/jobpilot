@@ -64,8 +64,6 @@ export class PortfolioService {
         showWebsite: true,
         showLinkedin: true,
         showGithub: true,
-        city: true,
-        state: true,
         primaryResumeId: true,
       },
     });
@@ -113,10 +111,10 @@ export class PortfolioService {
     const content = this.parseResume(resume?.content ?? null);
     const username = user.username ?? "";
     const displayName = `${user.firstName} ${user.lastName}`.trim() || username;
-    const location =
-      [user.city?.trim(), user.state?.trim()].filter(Boolean).join(", ") ||
-      content?.basics.location ||
-      null;
+    // A private application address (or the resume's location) is not consent to
+    // publish a residence. Keep the public field empty until an explicit,
+    // independent location visibility setting exists.
+    const location = null;
 
     const cutoff = startOfDay(new Date()).getTime() - 29 * DAY_MS;
     const applicationsLast30 = appliedDates.filter((a) => a.appliedAt.getTime() >= cutoff).length;
