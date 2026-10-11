@@ -8,11 +8,21 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { loadFreshAccount } from "../account/account.utils";
 import { getProvider, rethrowGmailError } from "../gmail.provider";
 
-/** The fields the reply-linker needs from a freshly-synced inbound message. */
-interface InboundForLinking {
+/** The fields needed to decide whether a freshly synced message is an actual employer reply. */
+interface SyncedForLinking {
+  providerId: string;
   threadId: string | null;
   fromAddress: string;
   receivedAt: Date;
+  isOutbound: boolean;
+}
+
+/** A reply must be inbound from a party other than the connected mailbox. */
+export function isExternalInboundMessage(message: SyncedForLinking, accountEmail: string): boolean {
+  return (
+    !message.isOutbound &&
+    message.fromAddress.trim().toLowerCase() !== accountEmail.trim().toLowerCase()
+  );
 }
 
 @singleton()
@@ -74,7 +84,7 @@ export class EmailSyncService {
     const result = await provider.syncMessages(config, active).catch(rethrowGmailError);
 
     let inserted = 0;
-    const insertedForLinking: InboundForLinking[] = [];
+    const insertedForLinking: SyncedForLinking[] = [];
     for (const m of result.newMessages) {
       try {
         await this.prisma.emailMessage.create({
@@ -93,9 +103,11 @@ export class EmailSyncService {
         });
         inserted += 1;
         insertedForLinking.push({
+          providerId: m.providerId,
           threadId: m.threadId,
           fromAddress: m.fromAddress,
           receivedAt: m.receivedAt,
+          isOutbound: m.isOutbound,
         });
       } catch (e) {
         if ((e as { code?: string }).code === "P2002") {
@@ -105,8 +117,9 @@ export class EmailSyncService {
       }
     }
 
-    // Flip any sent networking messages to "replied" when their reply just arrived.
-    await this.linkNetworkingReplies(userId, insertedForLinking);
+    // First undo earlier false positives, then only link verified inbound employer replies.
+    await this.reconcileSelfSentReplies(userId, active.id, active.email);
+    await this.linkNetworkingReplies(userId, active.email, insertedForLinking);
 
     await this.prisma.emailAccount.update({
       where: { id: active.id },
@@ -130,40 +143,83 @@ export class EmailSyncService {
   }
 
   /**
-   * Flip `sent` networking messages to `replied` when a matching inbound email
-   * arrives. Matches first by Gmail `threadId` (the thread the networking message was sent
-   * on), then falls back to the sender address equalling a contact's email.
+   * Restore records that a previous sync marked replied from a sent copy. A real reply must be
+   * an external message from the tracked contact in the same thread.
+   */
+  private async reconcileSelfSentReplies(userId: string, accountId: string, accountEmail: string) {
+    const replied = await this.prisma.networkingMessage.findMany({
+      where: { userId, channel: "email", status: "replied", threadId: { not: null } },
+      select: { id: true, threadId: true, sentAt: true, contact: { select: { email: true } } },
+    });
+    const threadIds = replied.flatMap((message) => (message.threadId ? [message.threadId] : []));
+    if (threadIds.length === 0) return 0;
+
+    const externalMessages = await this.prisma.emailMessage.findMany({
+      where: { accountId, threadId: { in: threadIds }, fromAddress: { not: accountEmail } },
+      select: { threadId: true, fromAddress: true, receivedAt: true },
+    });
+    const externalReplyTimes = new Map<string, number>();
+    for (const message of externalMessages) {
+      const key = `${message.threadId}:${message.fromAddress.trim().toLowerCase()}`;
+      externalReplyTimes.set(
+        key,
+        Math.max(externalReplyTimes.get(key) ?? 0, message.receivedAt.getTime()),
+      );
+    }
+    const staleIds = replied
+      .filter(
+        (message) =>
+          !message.contact.email ||
+          !message.sentAt ||
+          (externalReplyTimes.get(
+            `${message.threadId}:${message.contact.email.trim().toLowerCase()}`,
+          ) ?? 0) <= message.sentAt.getTime(),
+      )
+      .map((message) => message.id);
+    if (staleIds.length === 0) return 0;
+
+    const restored = await this.prisma.networkingMessage.updateMany({
+      where: { id: { in: staleIds }, status: "replied" },
+      data: { status: "sent", repliedAt: null },
+    });
+    return restored.count;
+  }
+
+  /**
+   * Flip `sent` networking messages to `replied` only for an external message from the tracked
+   * contact. Thread membership alone is insufficient because Gmail also syncs sent copies.
    * Returns the number of networking messages newly marked replied.
    */
   private async linkNetworkingReplies(
     userId: string,
-    messages: InboundForLinking[],
+    accountEmail: string,
+    messages: SyncedForLinking[],
   ): Promise<number> {
     let linked = 0;
 
     for (const m of messages) {
-      if (m.threadId) {
-        const byThread = await this.prisma.networkingMessage.updateMany({
-          where: { userId, status: "sent", threadId: m.threadId },
-          data: { status: "replied", repliedAt: m.receivedAt },
-        });
-        linked += byThread.count;
-        if (byThread.count > 0) continue;
-      }
+      if (!isExternalInboundMessage(m, accountEmail) || !m.fromAddress) continue;
 
-      if (m.fromAddress) {
-        const contacts = await this.prisma.contact.findMany({
-          where: { userId, email: m.fromAddress },
-          select: { id: true },
-        });
-        if (contacts.length > 0) {
-          const byEmail = await this.prisma.networkingMessage.updateMany({
-            where: { userId, status: "sent", contactId: { in: contacts.map((c) => c.id) } },
-            data: { status: "replied", repliedAt: m.receivedAt },
-          });
-          linked += byEmail.count;
-        }
-      }
+      const contacts = await this.prisma.contact.findMany({
+        where: { userId, email: m.fromAddress },
+        select: { id: true },
+      });
+      if (contacts.length === 0) continue;
+      const contactId = { in: contacts.map((contact) => contact.id) };
+
+      if (!m.threadId) continue;
+
+      const byThread = await this.prisma.networkingMessage.updateMany({
+        where: {
+          userId,
+          status: "sent",
+          threadId: m.threadId,
+          contactId,
+          sentAt: { lt: m.receivedAt },
+        },
+        data: { status: "replied", repliedAt: m.receivedAt },
+      });
+      linked += byThread.count;
     }
 
     return linked;

@@ -40,6 +40,8 @@ export interface NormalizedMessage {
   fromAddress: string;
   /** Sender display name (e.g. "Jane @ Acme"), or `null` if absent. */
   fromName: string | null;
+  /** True when the provider identifies this as a copy of a message sent by the connected mailbox. */
+  isOutbound: boolean;
   /** Lowercased domain portion of `fromAddress` - used for matching. */
   fromDomain: string;
   /** Short single-line preview supplied by the provider. */
