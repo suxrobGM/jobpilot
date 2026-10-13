@@ -19,10 +19,10 @@ const RETRY_MIN_FAILED = 3;
 const TOP_SKIP_REASONS = 3;
 const REVIEW_REPEAT_MS = 7 * DAY_MS;
 
-/** Pending rows a worker must open: never scored, or scored off a results row without a brief. */
+/** Pending rows a worker must open: never scored, or scored off a results row it never read. */
 export const NEEDS_WORKER_VISIT = {
   status: "pending",
-  OR: [{ matchScore: null }, { brief: null }],
+  OR: [{ matchScore: null }, { brief: null }, { description: null }],
 } satisfies Prisma.JobWhereInput;
 
 const QUEUED = { status: "queued" } satisfies Prisma.JobWhereInput;

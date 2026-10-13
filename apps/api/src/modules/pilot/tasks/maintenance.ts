@@ -100,6 +100,8 @@ export async function promoteScoredPendingJobs(
     where: {
       status: "pending",
       matchScore: { not: null },
+      // Unread rows can't settle; leaving them out keeps them from crowding the cap.
+      description: { not: null },
       campaign: { userId, status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
     },
     take: GATHER_CAP,

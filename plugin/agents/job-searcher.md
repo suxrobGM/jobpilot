@@ -93,7 +93,8 @@ Count it in `jobsSeen`. Its key is a shell-safe slug of `company-title`.
 
 Never skip for a low score (a row isn't a read posting), a thin row, location, contract work,
 over-qualification, or a JD silent on sponsorship (append `sponsorship unstated in JD` to
-`matchReason`). The server promotes `pending` rows. `newJobs` counts the `pending` rows you created.
+`matchReason`). The server promotes `pending` rows only after a scorer has read the posting, so a
+search-row score never decides a row. `newJobs` counts the `pending` rows you created.
 
 ## Output
 

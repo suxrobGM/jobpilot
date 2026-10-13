@@ -8,6 +8,7 @@ interface UpdateCall {
     matchScore?: number;
     key?: { in: string[] };
     status?: string;
+    description?: { not: null };
     campaign?: { source?: { in: string[] } };
   };
   data: { status?: string; skipReason?: string };
@@ -67,6 +68,18 @@ describe("CampaignJobService.promoteScoredJobs", () => {
       "Below minimum match score (10 < 50)",
       "Below minimum match score (30 < 50)",
     ]);
+  });
+
+  it("settles only rows whose posting was read, never a search-row guess", async () => {
+    const state = setup();
+    await state.service.promoteScoredJobs("u1", "c1", "auto_apply", [
+      { key: "a", matchScore: 90, threshold: 50 },
+      { key: "d", matchScore: 30, threshold: 50 },
+    ]);
+
+    for (const update of state.jobUpdates) {
+      expect(update.where.description).toEqual({ not: null });
+    }
   });
 
   it("promotes rows of apply campaigns too, since pasted links are scored into them", async () => {

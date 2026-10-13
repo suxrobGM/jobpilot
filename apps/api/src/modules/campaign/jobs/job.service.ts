@@ -178,6 +178,8 @@ export class CampaignJobService {
             campaignId,
             status: "pending",
             matchScore,
+            // A search-row score is a guess from the title; only a read posting may settle a row.
+            description: { not: null },
             key: { in: group.map((c) => c.key) },
             campaign: { userId, status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
           },
