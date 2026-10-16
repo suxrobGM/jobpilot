@@ -30,9 +30,18 @@ const pilotPromotionConfigSchema = z.object({
   autonomy: z.literal("review").default("review"),
 });
 
+/** One per Playwright MCP server in `plugin/.mcp.json`: `playwright`, `playwright-2`, `playwright-3`. */
+export const MAX_CONCURRENT_APPLIES = 3;
+
 /** Stored as JSON in `PilotState.instructionsConfig`; `{}` parses to a full config. */
 export const pilotInstructionsConfigSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
+  /**
+   * Applies run side by side in one batch run, each in its own browser profile. Bounded by the
+   * browsers `plugin/.mcp.json` declares. Parallel submissions from one identity look less human
+   * than a serial trickle, so raise it a step at a time.
+   */
+  maxConcurrentApplies: z.number().int().min(1).max(MAX_CONCURRENT_APPLIES).default(1),
   minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
   checkIntervalMinutes: z.number().int().min(5).default(30),

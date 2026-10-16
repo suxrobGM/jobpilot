@@ -48,6 +48,8 @@ const snapshot: TaskList = {
     dailyApplyCap: 10,
     appliedToday: 0,
     capReached: false,
+    maxConcurrentApplies: 1,
+    applyingNow: 0,
     dailyNetworkingCap: 5,
     networkingSentToday: 0,
     resetsAt: now,

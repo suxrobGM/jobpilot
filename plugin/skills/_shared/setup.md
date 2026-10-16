@@ -53,7 +53,8 @@ from the same files - so delegation is the norm on either. When a skill says "de
 `<name>` subagent":
 
 - Delegate the job (or batch - e.g. `job-scorer` score mode's `jobs` array) with the given input
-  JSON, run **one worker at a time** (the browser is shared), and act on its compact JSON result.
+  JSON and act on its compact JSON result. Run **one worker per browser**: only the pilot's
+  `job.applyBatch` task runs appliers side by side, each on its own `browserServer`.
 - **No subagent support, or a delegation fails** (including a worker whose browser reports `Browser
   is already in use`): run the named agent's procedure inline in the current context - read
   `$JOBPILOT_SKILLS_ROOT/../agents/<name>.md` (e.g. `job-applier.md`) and follow it for this job.

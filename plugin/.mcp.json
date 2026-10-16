@@ -10,6 +10,26 @@
         ".playwright-mcp"
       ]
     },
+    "playwright-2": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--snapshot-mode",
+        "none",
+        "--user-data-dir",
+        ".playwright-mcp-2"
+      ]
+    },
+    "playwright-3": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--snapshot-mode",
+        "none",
+        "--user-data-dir",
+        ".playwright-mcp-3"
+      ]
+    },
     "upwork": {
       "type": "http",
       "url": "https://mcp.upwork.com/mcp"

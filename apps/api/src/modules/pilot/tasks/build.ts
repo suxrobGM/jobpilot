@@ -11,6 +11,7 @@ import type { TaskJob } from "./gather-jobs";
 import type { Followup } from "./gather-outreach";
 import type { DueSearch } from "./gather-searches";
 import {
+  applyBatchTask,
   applyTask,
   boardDiagnoseTask,
   discoverTask,
@@ -63,6 +64,8 @@ export interface TaskListInput {
   openQuestions: number;
   activeRuns: number;
   appliedToday: number;
+  // Jobs already `applying`; they hold apply budget until their results land.
+  applyingNow: number;
   networkingSentToday: number;
   // No searches yet, or no goals to derive them from.
   awaitingSetup: boolean;
@@ -121,7 +124,7 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     ...input.approvedPromotions.map(promotionPostTask),
     ...input.duePlatforms.slice(0, PER_TASK_LIST.promotionDraft).map(promotionDraftTask),
   ];
-  if (!capReached) tasks.push(...input.approvedJobs.map(applyTask));
+  if (!capReached) tasks.push(...applyTasks(input));
   if (input.inbox.count > 0) tasks.push(inboxTask(input.inbox));
   if (input.upworkSync) tasks.push(upworkSyncTask(input.upworkSync));
 
@@ -203,6 +206,8 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
       dailyApplyCap: config.dailyApplyCap,
       appliedToday: input.appliedToday,
       capReached,
+      maxConcurrentApplies: config.maxConcurrentApplies,
+      applyingNow: input.applyingNow,
       dailyNetworkingCap: config.networking.dailyCap,
       networkingSentToday: input.networkingSentToday,
       resetsAt: nextDayReset(now),
@@ -211,6 +216,28 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     sleepSeconds,
     nextWakeAt: new Date(now.getTime() + sleepSeconds * 1000),
   };
+}
+
+/**
+ * One batch when more than one apply may run at once and the budget has room for two; otherwise one
+ * task per job. A batch takes each campaign's best job, so parallel browsers never work the same
+ * campaign. The run start rechecks the same budget.
+ */
+function applyTasks(input: TaskListInput): PilotTask[] {
+  const { config, approvedJobs, applyingNow } = input;
+  const room = Math.min(
+    config.maxConcurrentApplies - applyingNow,
+    config.dailyApplyCap - input.appliedToday - applyingNow,
+  );
+  const campaigns = new Set<string>();
+  // Best match first, so the first job seen per campaign is that campaign's best.
+  const bestPerCampaign = approvedJobs.filter(
+    (job) => !campaigns.has(job.campaignId) && campaigns.add(job.campaignId),
+  );
+  if (room >= 2 && bestPerCampaign.length >= 2) {
+    return [applyBatchTask(bestPerCampaign.slice(0, room))];
+  }
+  return approvedJobs.map(applyTask);
 }
 
 /** Named so clients needn't re-derive the gating rules. */

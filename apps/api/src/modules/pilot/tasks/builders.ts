@@ -29,6 +29,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   openQuestions: 0,
   activeRuns: 0,
   appliedToday: 0,
+  applyingNow: 0,
   networkingSentToday: 0,
   awaitingSetup: true,
   nextSearchRunAt: null,

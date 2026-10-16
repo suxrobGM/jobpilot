@@ -110,11 +110,23 @@ export function parseJobSubject(subjectId: string): JobRef {
 }
 
 const jobRefSchema = z.object({ campaignId: z.string().min(1), jobKey: z.string().min(1) });
+const batchRefSchema = z.object({ jobs: z.array(jobRefSchema) });
 
-/** The job a `job.apply` run payload points at. */
-export function parseJobRef(payload: unknown): JobRef {
-  const { campaignId, jobKey } = jobRefSchema.parse(payload);
-  return { campaignId, key: jobKey };
+/** Run task types that hold jobs in `applying` for as long as the run is open. */
+export const APPLY_TASK_TYPES = ["job.apply", "job.applyBatch"];
+
+/** The jobs an apply run holds: one for `job.apply`, every batch entry for `job.applyBatch`. */
+export function applyJobRefs(run: { taskType: string; payload: unknown }): JobRef[] {
+  if (run.taskType === "job.applyBatch") {
+    return batchRefSchema
+      .parse(run.payload)
+      .jobs.map(({ campaignId, jobKey }) => ({ campaignId, key: jobKey }));
+  }
+  if (run.taskType === "job.apply") {
+    const { campaignId, jobKey } = jobRefSchema.parse(run.payload);
+    return [{ campaignId, key: jobKey }];
+  }
+  return [];
 }
 
 export async function revertApplyingJobs(

@@ -105,6 +105,18 @@ public sealed class ScratchCleanerTests : IDisposable
     }
 
     [Fact]
+    public void CleanPlaywright_SweepsEveryParallelBrowserProfile()
+    {
+        var second = AgedFile(Path.Combine(".playwright-mcp-2", "console-old.log"));
+        var third = AgedFile(Path.Combine(".playwright-mcp-3", "screenshot.png"));
+
+        cleaner.CleanPlaywright(paths, ScratchCleaner.Retention);
+
+        Assert.False(File.Exists(second));
+        Assert.False(File.Exists(third));
+    }
+
+    [Fact]
     public void CleanPlaywright_NeverRecursesIntoProfileSubdirectories()
     {
         var profileLog = AgedFile(Path.Combine(".playwright-mcp", "Default", "chrome_debug.log"));

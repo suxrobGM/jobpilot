@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal.Sessions;
 
-/// <summary>Cleans .temp and .playwright-mcp scratch at session start and every few hours.</summary>
+/// <summary>Cleans .temp and every .playwright-mcp* profile's scratch at session start and every few hours.</summary>
 public sealed class ScratchCleaner(HostInstall install, ILogger<ScratchCleaner> logger) : BackgroundService
 {
     public static readonly TimeSpan Retention = TimeSpan.FromHours(24);
@@ -56,12 +56,14 @@ public sealed class ScratchCleaner(HostInstall install, ILogger<ScratchCleaner> 
     }
 
     // Top level only: browser profiles live in subdirectories. A null maxAge ignores age.
-    internal void CleanPlaywright(InstallPaths paths, TimeSpan? maxAge) =>
-        DeleteFiles(
-            paths.PlaywrightDir,
-            SearchOption.TopDirectoryOnly,
-            PlaywrightScratchExtensions,
-            maxAge is { } age ? DateTime.UtcNow - age : null);
+    internal void CleanPlaywright(InstallPaths paths, TimeSpan? maxAge)
+    {
+        DateTime? cutoff = maxAge is { } age ? DateTime.UtcNow - age : null;
+        foreach (var dir in paths.PlaywrightDirs)
+        {
+            DeleteFiles(dir, SearchOption.TopDirectoryOnly, PlaywrightScratchExtensions, cutoff);
+        }
+    }
 
     private void DeleteFiles(string dir, SearchOption depth, string[]? extensions, DateTime? cutoff)
     {

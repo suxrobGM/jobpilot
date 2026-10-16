@@ -27,6 +27,17 @@ const warmContactSchema = z.object({
   email: nullableString,
 });
 
+const jobApplyPayloadSchema = z.object({
+  campaignId: z.string(),
+  jobKey: z.string(),
+  url: z.string(),
+  board: nullableString,
+  brief: nullableString,
+  resumeId: optionalString,
+  matchScore: z.number().nullable(),
+  warmContacts: z.array(warmContactSchema).optional(),
+});
+
 const taskVariant = <K extends string, P extends z.ZodType>(
   taskType: K,
   subjectType: (typeof TASK_SUBJECT_TYPES)[number],
@@ -52,20 +63,9 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       answer: nullableString,
     }),
   ),
-  taskVariant(
-    "job.apply",
-    "job",
-    z.object({
-      campaignId: z.string(),
-      jobKey: z.string(),
-      url: z.string(),
-      board: nullableString,
-      brief: nullableString,
-      resumeId: optionalString,
-      matchScore: z.number().nullable(),
-      warmContacts: z.array(warmContactSchema).optional(),
-    }),
-  ),
+  taskVariant("job.apply", "job", jobApplyPayloadSchema),
+  // One approved job per campaign, applied side by side in its own browser; only above one concurrent apply.
+  taskVariant("job.applyBatch", "pilot", z.object({ jobs: z.array(jobApplyPayloadSchema).min(1) })),
   taskVariant(
     "search.discover",
     "campaign",
@@ -279,6 +279,9 @@ const taskListContentSchema = z.object({
     dailyApplyCap: z.number().int(),
     appliedToday: z.number().int(),
     capReached: z.boolean(),
+    /** How many applies may run side by side; 1 is the serial loop. */
+    maxConcurrentApplies: z.number().int(),
+    applyingNow: z.number().int(),
     dailyNetworkingCap: z.number().int(),
     networkingSentToday: z.number().int(),
     resetsAt: z.date(),

@@ -25,6 +25,7 @@ interface TaskTypeInfo {
 const TASK_TYPES: Record<TaskType, TaskTypeInfo> = {
   "question.answered": { label: "Act on answered question", agent: "job-applier" },
   "job.apply": { label: "Apply to job", agent: "job-applier" },
+  "job.applyBatch": { label: "Apply to jobs in parallel", agent: "job-applier" },
   "search.discover": { label: "Run saved search", agent: "job-searcher" },
   "campaign.scorePending": { label: "Score discovered jobs", agent: "job-scorer" },
   "campaign.reviewPaused": { label: "Review paused campaign", agent: "session" },

@@ -1,4 +1,5 @@
 import {
+  MAX_CONCURRENT_APPLIES,
   PILOT_EMAIL_AUTONOMY,
   PILOT_LINKEDIN_AUTONOMY,
   type PilotInstructionsConfig,
@@ -10,6 +11,7 @@ import { z } from "zod/v4";
 export const instructionsFormSchema = z.object({
   goals: z.string().trim().min(1, "Required"),
   dailyApplyCap: z.number().int().min(0),
+  maxConcurrentApplies: z.number().int().min(1).max(MAX_CONCURRENT_APPLIES),
   minScore: z.number().min(0).max(100),
   checkIntervalMinutes: z.number().int().min(5),
   // Mirrors the config block so the section addresses its fields by their real path. Spelled out
@@ -36,6 +38,7 @@ export type InstructionsFormValues = z.infer<typeof instructionsFormSchema>;
 export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
   goals: "",
   dailyApplyCap: 10,
+  maxConcurrentApplies: 1,
   minScore: 60,
   checkIntervalMinutes: 30,
   networking: pilotNetworkingSchema.parse({}),
@@ -46,6 +49,7 @@ export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
 export function toConfig(value: InstructionsFormValues): PilotInstructionsConfig {
   return {
     dailyApplyCap: value.dailyApplyCap,
+    maxConcurrentApplies: value.maxConcurrentApplies,
     minScore: value.minScore,
     checkIntervalMinutes: value.checkIntervalMinutes,
     boards: value.boards,
@@ -66,6 +70,7 @@ export function toFormValues(state: PilotState): InstructionsFormValues {
   return {
     goals: state.instructionsGoals,
     dailyApplyCap: c.dailyApplyCap,
+    maxConcurrentApplies: c.maxConcurrentApplies,
     minScore: c.minScore,
     checkIntervalMinutes: c.checkIntervalMinutes,
     networking: { ...c.networking },

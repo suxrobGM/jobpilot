@@ -152,6 +152,7 @@ export class TaskListService {
       }),
       searchCount: prisma.pilotSearch.count({ where: { userId } }),
       appliedToday: countAppliedToday(prisma, userId, now),
+      applyingNow: prisma.job.count({ where: { status: "applying", campaign: { userId } } }),
       networkingSentToday: outreachOn ? countSentToday(prisma, userId, now) : 0,
       answeredQuestions: gatherAnsweredQuestions(prisma, userId),
       approvedJobs: gatherApprovedJobs(prisma, userId),

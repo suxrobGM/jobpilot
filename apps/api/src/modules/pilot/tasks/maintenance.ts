@@ -5,7 +5,13 @@ import { PROMOTABLE_SOURCES, publishCampaignStatus } from "@/modules/campaign/ca
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { PilotJournalService } from "../journal.service";
 import { SERVER_SKIP_REASONS } from "../skip-reasons";
-import { GATHER_CAP, parseJobRef, parseJobSubject, revertApplyingJobs } from "./run-history";
+import {
+  APPLY_TASK_TYPES,
+  applyJobRefs,
+  GATHER_CAP,
+  parseJobSubject,
+  revertApplyingJobs,
+} from "./run-history";
 
 /** An `applying` job with no open run and no update for this long lost its driver. */
 const STALE_APPLYING_MS = 30 * 60 * 1000;
@@ -28,24 +34,26 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
         where: { id: { in: expiredRuns.map((run) => run.id) }, finishedAt: null },
         data: { finishedAt: now, outcome: "expired" },
       });
-      const jobs = expiredRuns
-        .filter((run) => run.taskType === "job.apply")
-        .map((run) => parseJobRef(run.payload));
-      await revertApplyingJobs(tx, userId, jobs);
+      await revertApplyingJobs(tx, userId, expiredRuns.flatMap(applyJobRefs));
     }
 
     // A crashed terminal apply takes no run, so its job would stay `applying` and block finalize.
     const openApplyRuns = await tx.pilotRun.findMany({
-      where: { userId, taskType: "job.apply", finishedAt: null, expiresAt: { gte: now } },
+      where: {
+        userId,
+        taskType: { in: APPLY_TASK_TYPES },
+        finishedAt: null,
+        expiresAt: { gte: now },
+      },
       take: MAX_OPEN_APPLY_RUNS,
-      select: { payload: true },
+      select: { taskType: true, payload: true },
     });
     await tx.job.updateMany({
       where: {
         status: "applying",
         campaign: { userId },
         updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },
-        NOT: openApplyRuns.map((run) => parseJobRef(run.payload)),
+        NOT: openApplyRuns.flatMap(applyJobRefs),
       },
       data: { status: "approved" },
     });
