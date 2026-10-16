@@ -3,6 +3,7 @@ import { parseCanonicalUrl } from "@/common/utils";
 /** Boards serving one posting under a second hostname; the value is the form we store. */
 const HOST_ALIASES: Record<string, string> = {
   "hiring.cafe": "hiringcafe.com",
+  "click.mg.flexjobs.com": "flexjobs.com",
 };
 
 /** Params that say where the click came from, never which posting it points at. */
