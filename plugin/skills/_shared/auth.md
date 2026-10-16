@@ -19,7 +19,7 @@ Typically **once per board per session** - handle once, then subsequent applicat
 ### Email Verification Codes
 
 1. Confirm the page asks for a code (a narrowed snapshot shows a field labelled "code" or "verification").
-2. Run the `get-code` skill for `<board-domain>`. Parse the JSON: `code` present → fill+submit; `link` present → navigate; `{}` → fall back to user prompt.
+2. Run the `get-code` skill for the **login page's** domain (an ATS login like `recruiting.ultipro.com` is `ultipro.com`, not the employer). Parse the JSON: `code` present → fill+submit; `link` present → navigate; `{}` → fall back to user prompt.
 3. Fallback: ask the user to paste the code from their inbox.
 4. Confirm login via a narrowed header snapshot.
 
@@ -49,7 +49,7 @@ After submitting the form, branch on the portal's response:
 
 - **Accepted** → proceed.
 - **"Account doesn't exist" / "no user found"** → **register without asking**: click Sign up, snapshot the form, fill from profile + credential password, submit. Handle email verification if it follows. A missing account is never a reason to stop in loop skills.
-- **"Wrong password" / invalid** - stored password is stale. Click Forgot password, fill email, submit. Then run the `get-code` skill for `<board-domain>`: `link` → navigate; `code` → enter where prompted; `{}` → ask the user. Set a new password, then persist:
+- **"Wrong password" / invalid** - stored password is stale. Click Forgot password, fill email, submit. Then run the `get-code` skill for the login page's domain - it waits ~2 minutes for the reset mail and follows its tracking redirect safely, so don't ask the user while it polls: `link` → navigate; `code` → enter where prompted; `{}` → ask the user. Set a new password, then persist:
   - Persist it to the credential the resolver returned: `PATCH /api/credentials/<id> { "password": "<new>" }`.
   - Retry login.
 - **Unresponsive / unknown** → one-shot retry; if still stuck, proceed without auth (public listings may still work).
