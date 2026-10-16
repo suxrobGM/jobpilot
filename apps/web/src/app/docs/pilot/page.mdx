@@ -118,6 +118,13 @@ answer waits until you reply. To get a push notification when a question
 comes in, even with the dashboard closed, turn on notifications under
 **Settings → Notifications**. You do this once per device.
 
+You don't have to answer. **Skip question** closes the card and sends a parked job
+back to the queue, so the Pilot retries it without your answer - useful once
+you've fixed the cause yourself, such as saving a missing login. **Skip
+application** records the job as skipped by you, logs it in the activity feed,
+and closes every other open question about that job; the Pilot won't apply to
+it again.
+
 Most questions wait as long as you need. Login codes are different. They
 expire after about five minutes, and if you miss one the Pilot skips that job
 and moves on. Codes sent by email never reach you as questions, because the

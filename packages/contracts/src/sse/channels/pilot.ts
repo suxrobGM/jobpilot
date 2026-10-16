@@ -4,6 +4,7 @@ export type PilotEvent =
   | { type: "journal.appended"; entry: unknown }
   | { type: "question.created"; question: unknown }
   | { type: "question.answered"; question: unknown }
+  | { type: "question.closed"; question: unknown }
   | { type: "state.changed"; state: unknown }
   | { type: "promotion.created"; promotion: unknown }
   | { type: "promotion.updated"; promotion: unknown }

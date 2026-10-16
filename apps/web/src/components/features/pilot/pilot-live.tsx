@@ -32,6 +32,7 @@ export function PilotLive(): ReactNode {
       },
       "question.created": refreshQuestions,
       "question.answered": refreshQuestions,
+      "question.closed": refreshQuestions,
       "promotion.created": refreshPromotions,
       "promotion.updated": refreshPromotions,
     },

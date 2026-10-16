@@ -134,6 +134,21 @@ export class CampaignJobService {
     return job;
   }
 
+  /**
+   * Settles a failed job as skipped by the user, so the failed-jobs retry sweep stops picking it
+   * up. The fail reason stays: it is why the user gave up on the job.
+   */
+  async skipFailedJob(userId: string, campaignId: string, key: string, skipReason: string) {
+    const { job } = await this.applyTransition(userId, campaignId, key, {
+      from: "failed",
+      to: "skipped",
+      idempotentAt: "skipped",
+      data: { status: "skipped", skipReason },
+      rejection: (status) => `Only failed jobs can be skipped this way; job is ${status}.`,
+    });
+    return job;
+  }
+
   async rescanJob(userId: string, campaignId: string, key: string, body: RescanCampaignJobInput) {
     const { job, changed } = await this.applyTransition(userId, campaignId, key, {
       from: "skipped",
