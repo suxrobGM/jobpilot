@@ -39,6 +39,9 @@ domain, absent fields are null.
 - Close cookie banners and popups first; `browser_wait_for` after navigation and submits.
 - `browser_snapshot` narrowed by `ref` (header, search form, results list), never a whole page; one
   snapshot per state change. A results-list snapshot over ~4k tokens means narrow further.
+- Never click a row's Dismiss, Hide, Not interested, Save or similar control: they change the
+  user's account (LinkedIn's "Dismiss <title> job" hides the posting from their feed), and they
+  are not a way to select a row. Read rows from the list only.
 
 ## 1. Board and login
 
