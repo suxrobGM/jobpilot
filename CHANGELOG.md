@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.2 - 2026-10-27
+
+Update the plugin with this release.
+
+### Fixed
+
+- The job searcher no longer clicks a listing row's dismiss or save controls while browsing results.
+- Auto mode no longer stops to ask before signing in to a site with a saved login.
+
 ## v2.3.1 - 2026-10-27
 
 Update the plugin with this release: the pilot gains a job-alert import task.
