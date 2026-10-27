@@ -2,10 +2,12 @@
 
 import type { ReactElement } from "react";
 import type { PilotState, TaskList } from "@jobpilot/contracts/pilot";
-import { Box, Typography } from "@mui/material";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { Box, Collapse, IconButton, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
+import { usePersistedBoolean } from "@/hooks/use-persisted-boolean";
 import type { PilotHealth } from "@/lib/terminal";
 import { formatRelativeTime, humanizeIsoInText } from "@/utils/format";
 import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../pilot-status";
@@ -57,6 +59,10 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
   const { state, pilot, mode, nextWakeAt } = props;
   const journal = useApiQuery(pilotQueries.journal());
   const taskList = useTaskList(state.running);
+  const [collapsed, setCollapsed] = usePersistedBoolean(
+    "jobpilot:pilot-orchestration-collapsed",
+    false,
+  );
 
   const { dimmed } = PILOT_MODE_LOOK[mode];
   const working = mode === "working";
@@ -77,41 +83,55 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
     : "Idle";
 
   return (
-    <SectionCard title="Orchestration" description="How the pilot works a cycle, live.">
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          alignItems: "stretch",
-        }}
-      >
-        <StageCard
-          stage={HOST}
-          caption={hostCaption(mode, pilot, nextWakeAt)}
-          active={working && !run}
-          dimmed={dimmed}
-        />
-        <StageArrow lit={working} />
-        <StageCard stage={SERVER} caption={serverCaption(taskList.data)} dimmed={dimmed} />
-        <StageArrow lit={running} />
-        <StageCard stage={SESSION} caption={sessionCaption} active={running} dimmed={dimmed} />
-        <StageArrow lit={running} />
-        <StageCard
-          stage={JOURNAL}
-          caption={journalCaption}
-          active={posted !== null}
-          dimmed={dimmed}
-        />
-      </Box>
-      <Box sx={{ mt: 2 }}>
-        <AgentList branch={branch} dimmed={dimmed} />
-      </Box>
-      <Box sx={{ mt: 1.5 }}>
-        <Typography variant="captionMuted">
-          Each cycle the host checks for work, the server picks one task, and the pilot session
-          hands it to one agent or does it directly.
-        </Typography>
-      </Box>
+    <SectionCard
+      title="Orchestration"
+      description="How the pilot works a cycle, live."
+      actions={
+        <IconButton
+          aria-label={collapsed ? "Expand orchestration" : "Collapse orchestration"}
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          {collapsed ? <ExpandMore /> : <ExpandLess />}
+        </IconButton>
+      }
+    >
+      <Collapse in={!collapsed}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: "stretch",
+          }}
+        >
+          <StageCard
+            stage={HOST}
+            caption={hostCaption(mode, pilot, nextWakeAt)}
+            active={working && !run}
+            dimmed={dimmed}
+          />
+          <StageArrow lit={working} />
+          <StageCard stage={SERVER} caption={serverCaption(taskList.data)} dimmed={dimmed} />
+          <StageArrow lit={running} />
+          <StageCard stage={SESSION} caption={sessionCaption} active={running} dimmed={dimmed} />
+          <StageArrow lit={running} />
+          <StageCard
+            stage={JOURNAL}
+            caption={journalCaption}
+            active={posted !== null}
+            dimmed={dimmed}
+          />
+        </Box>
+        <Box sx={{ mt: 2 }}>
+          <AgentList branch={branch} dimmed={dimmed} />
+        </Box>
+        <Box sx={{ mt: 1.5 }}>
+          <Typography variant="captionMuted">
+            Each cycle the host checks for work, the server picks one task, and the pilot session
+            hands it to one agent or does it directly.
+          </Typography>
+        </Box>
+      </Collapse>
     </SectionCard>
   );
 }
