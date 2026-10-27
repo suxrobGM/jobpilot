@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.1 - 2026-10-27
+
+Update the plugin with this release: the pilot gains a job-alert import task.
+
+### Added
+
+- The pilot imports job alert emails from boards into a ranked campaign on a schedule, instead of
+  the inbox review filing them as irrelevant. Imported postings are checked on the server.
+
+### Changed
+
+- The web app runs on Next.js 16.4.
+
+### Fixed
+
+- Job titles with commas (e.g. "Engineer, Platform") no longer fail the already-applied check.
+- Boards saved with a pasted URL are folded into their clean catalog entry, and new board domains
+  are reduced to the host.
+- Alert email links whose bodies have expired are cleared.
+
 ## v2.3.0 - 2026-10-27
 
 Update the plugin with this release: skills now send and read the new API shapes below.
