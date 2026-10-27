@@ -5,7 +5,7 @@ import {
   campaignJobStatusSchema,
   campaignSummarySchema,
 } from "@jobpilot/contracts/campaign";
-import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
+import { paginatedSchema, paginationQuerySchema, queryText } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
 export const campaignJobParams = z.object({ id: z.uuid(), key: z.string() });
@@ -13,7 +13,7 @@ export const campaignJobParams = z.object({ id: z.uuid(), key: z.string() });
 /** Applied server-side so a page reflects the whole campaign, not one page of it. */
 export const campaignJobsQuery = paginationQuerySchema.extend({
   status: campaignJobStatusSchema.optional(),
-  search: z.string().trim().min(1).optional(),
+  search: queryText.optional(),
 });
 
 export const campaignJobListSchema = paginatedSchema(campaignJobSchema);

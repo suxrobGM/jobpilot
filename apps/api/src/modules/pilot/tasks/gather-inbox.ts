@@ -1,11 +1,25 @@
 import { campaignConfigSchema } from "@jobpilot/contracts/campaign";
-import type { TaskPayload } from "@jobpilot/contracts/pilot";
-import { HOUR_MS } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
+import {
+  JOB_ALERT_EXCLUDED_MAILBOXES,
+  jobAlertSenderDomains,
+  latestDailyRun,
+  type PilotInstructionsConfig,
+  type TaskPayload,
+} from "@jobpilot/contracts/pilot";
+import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP, latestRun, ranRecently, withoutConsumingRuns } from "./run-history";
 
 const INBOX_BATCH = 10;
 const UPWORK_SYNC_STALE_MS = 6 * HOUR_MS;
+const JOB_ALERTS_BATCH = 40;
+/** Older alerts point at filled postings; shorter lost mail from a few days of app downtime. */
+const JOB_ALERTS_LOOKBACK_MS = 7 * DAY_MS;
+/** A Run now the pilot never got to lapses rather than firing hours later. */
+const RUN_NOW_EXPIRES_AFTER_MS = HOUR_MS;
+
+type JobAlertsSettings = PilotInstructionsConfig["jobAlerts"];
+type LatestRun = Awaited<ReturnType<typeof latestRun>>;
 
 /** Answered questions no open or finished run has consumed yet. */
 export async function gatherAnsweredQuestions(
@@ -163,4 +177,81 @@ export async function gatherUpworkSync(
 
   const unreadCount = await prisma.upworkInboxItem.count({ where: { userId, status: "unread" } });
   return { lastSyncedAt, unreadCount };
+}
+
+export function hasPendingRunNow(requestedAt: Date | null, lastRun: LatestRun, now: Date): boolean {
+  if (requestedAt === null) return false;
+  if (now.getTime() - requestedAt.getTime() >= RUN_NOW_EXPIRES_AFTER_MS) return false;
+  return !lastRun || lastRun.startedAt < requestedAt;
+}
+
+/** Run now fires regardless of schedule; otherwise one successful run per scheduled time, failures retry hourly. */
+export function jobAlertsDue(
+  settings: JobAlertsSettings,
+  lastRun: LatestRun,
+  requestedAt: Date | null,
+  now: Date,
+): boolean {
+  if (lastRun && !lastRun.finishedAt) return false;
+  if (hasPendingRunNow(requestedAt, lastRun, now)) return true;
+  if (!settings.enabled) return false;
+  const lastScheduledRun = latestDailyRun(settings.runHours, settings.timeZone, now);
+  if (!lastScheduledRun) return false;
+  if (!lastRun) return true;
+  if (lastRun.outcome === "done") return lastRun.startedAt < lastScheduledRun;
+  return !ranRecently(lastRun, now, HOUR_MS);
+}
+
+export function pendingJobAlertsWhere(
+  userId: string,
+  settings: JobAlertsSettings,
+  now: Date,
+): Prisma.EmailMessageWhereInput {
+  return {
+    account: { userId },
+    importedAt: null,
+    receivedAt: { gte: new Date(now.getTime() - JOB_ALERTS_LOOKBACK_MS) },
+    // Subdomains too: alerts come from hosts like `e.theladders.com`.
+    OR: jobAlertSenderDomains(settings).flatMap((domain) => [
+      { fromDomain: domain },
+      { fromDomain: { endsWith: `.${domain}` } },
+    ]),
+    NOT: JOB_ALERT_EXCLUDED_MAILBOXES.map((mailbox) => ({
+      fromAddress: { startsWith: `${mailbox}@` },
+    })),
+    // `NOT { classification: "verification" }` is NULL in SQL for unclassified mail and drops it.
+    AND: [{ OR: [{ classification: null }, { classification: { not: "verification" } }] }],
+  };
+}
+
+export async function gatherJobAlerts(
+  prisma: PrismaClient,
+  userId: string,
+  config: PilotInstructionsConfig,
+  requestedAt: Date | null,
+  now: Date,
+): Promise<TaskPayload<"inbox.jobAlerts"> | null> {
+  const settings = config.jobAlerts;
+  if (!settings.enabled && requestedAt === null) return null;
+
+  const lastRun = await latestRun(prisma, userId, "inbox.jobAlerts");
+  if (!jobAlertsDue(settings, lastRun, requestedAt, now)) return null;
+
+  const where = pendingJobAlertsWhere(userId, settings, now);
+  const [rows, count] = await Promise.all([
+    prisma.emailMessage.findMany({
+      where,
+      orderBy: { receivedAt: "asc" },
+      take: JOB_ALERTS_BATCH,
+      select: { id: true },
+    }),
+    prisma.emailMessage.count({ where }),
+  ]);
+  if (count === 0) return null;
+  return {
+    messageIds: rows.map((row) => row.id),
+    count,
+    minScore: config.minScore,
+    senderDomains: jobAlertSenderDomains(settings),
+  };
 }

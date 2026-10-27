@@ -33,6 +33,12 @@ export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 export const csvArray = <T extends z.ZodType>(item: T) =>
   z.preprocess((value) => (typeof value === "string" ? value.split(",") : value), z.array(item));
 
+/** Free text in a query string. Elysia splits a comma-bearing value into an array, so rejoin it. */
+export const queryText = z.preprocess(
+  (value) => (Array.isArray(value) ? value.join(",") : value),
+  z.string().trim().min(1),
+);
+
 /** Page metadata returned alongside a paginated collection. */
 const paginationSchema = z.object({
   /** Current page number, starting from 1. */

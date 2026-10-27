@@ -7,7 +7,7 @@ import {
 } from "@jobpilot/contracts/application";
 import { campaignJobSchema } from "@jobpilot/contracts/campaign";
 import { boardRefSchema } from "@jobpilot/contracts/job-board";
-import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
+import { paginatedSchema, paginationQuerySchema, queryText } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 import { contactSchema } from "@/modules/contact/contact.schema";
 import { emailMessageSchema } from "@/modules/email/email.schema";
@@ -19,9 +19,9 @@ export const applicationListQuerySchema = paginationQuerySchema.extend(
 );
 
 export const applicationQuerySchema = z.object({
-  url: z.string().trim().min(1).optional(),
-  title: z.string().trim().min(1).optional(),
-  company: z.string().trim().min(1).optional(),
+  url: queryText.optional(),
+  title: queryText.optional(),
+  company: queryText.optional(),
 });
 
 /** Append a free-text note, or a generated interview prep sheet, to an application's timeline. */

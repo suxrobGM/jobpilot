@@ -38,3 +38,10 @@ export const pilotActivityResponseSchema = z.object({
     })
     .nullable(),
 });
+
+/** A POST so a digest's worth of URLs fits; nothing is written. */
+export const jobAlertsSeenBodySchema = z.object({
+  urls: z.array(z.string().trim().min(1)).min(1).max(500),
+});
+
+export const jobAlertsSeenSchema = z.object({ seen: z.array(z.string()) });

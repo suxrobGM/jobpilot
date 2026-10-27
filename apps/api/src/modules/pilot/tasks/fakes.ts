@@ -33,6 +33,8 @@ export interface Over {
   latestRuns?: Partial<Record<TaskType, LatestRun | null>>;
   instructionsConfig?: unknown;
   instructionsGoals?: string;
+  jobAlertsRequestedAt?: Date | null;
+  jobAlertEmails?: { id: string }[];
   appliedToday?: number;
   pilotSearches?: Row[];
   answered?: Row[];
@@ -151,6 +153,7 @@ function makeTaskListDb(over: Over = {}) {
         cycleCount: 0,
         instructionsConfig: config,
         instructionsGoals: over.instructionsGoals ?? "",
+        jobAlertsRequestedAt: over.jobAlertsRequestedAt ?? null,
       }),
       update: async () => ({}),
     },
@@ -187,7 +190,13 @@ function makeTaskListDb(over: Over = {}) {
         })),
       count: async () => over.promotionsPosted ?? 0,
     },
-    emailMessage: { findMany: async () => [], count: async () => 0 },
+    // Only the job-alert gather filters on `importedAt`; the inbox gather sees no mail.
+    emailMessage: {
+      findMany: async (a: { where: Row }) =>
+        "importedAt" in a.where ? (over.jobAlertEmails ?? []) : [],
+      count: async (a: { where: Row }) =>
+        "importedAt" in a.where ? (over.jobAlertEmails ?? []).length : 0,
+    },
     contact: { findMany: async () => over.contacts ?? [] },
     pilotJournalEntry: {
       // Defaults to 1 so the digest stays quiet elsewhere; counting this run's own digest writes

@@ -1,6 +1,7 @@
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import { isPrismaError, notFound, PRISMA_ERRORS } from "@/common/errors";
+import { toInputJson } from "@/common/json";
 import { logger } from "@/common/logger";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -77,6 +78,7 @@ export class EmailSyncService {
             fromDomain: m.fromDomain,
             snippet: m.snippet,
             rawBody: m.rawBody,
+            links: toInputJson(m.links),
             receivedAt: m.receivedAt,
           },
         });

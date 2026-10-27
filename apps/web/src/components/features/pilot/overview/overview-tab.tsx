@@ -6,6 +6,7 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { NeedsAttention } from "../attention/needs-attention";
+import { JobAlertsPanel } from "../job-alerts/job-alerts-panel";
 import { pilotMode } from "../pilot-status";
 import { usePilotControls } from "../use-pilot-controls";
 import { OrchestrationPanel } from "./orchestration-panel";
@@ -51,6 +52,7 @@ export function OverviewTab(): ReactElement {
         mode={mode}
         nextWakeAt={nextWakeAt}
       />
+      <JobAlertsPanel />
       <NeedsAttention />
       <OrchestrationPanel state={state} pilot={pilot} mode={mode} nextWakeAt={nextWakeAt} />
       <Grid container spacing={3}>

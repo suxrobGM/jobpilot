@@ -17,12 +17,16 @@ export function PilotLive(): ReactNode {
   const refreshQuestions = (): void => invalidate(queryKeys.pilot.questionsAll());
   const refreshPromotions = (): void => invalidate(queryKeys.pilot.promotionsAll());
   const refreshState = (): void => invalidate(queryKeys.pilot.state());
+  const refreshRuns = (): void => {
+    refreshState();
+    invalidate(queryKeys.pilot.jobAlerts());
+  };
 
   const status = useSseChannel(pilotChannel, null, {
     on: {
-      "state.changed": refreshState,
-      "run.started": refreshState,
-      "run.finished": refreshState,
+      "state.changed": refreshRuns,
+      "run.started": refreshRuns,
+      "run.finished": refreshRuns,
       "journal.appended": (event) => {
         const entry = appendJournalEntry(queryClient, event.entry);
         // A cycle entry moves the state's last cycle and next wake.

@@ -1,3 +1,5 @@
+import type { EmailLink } from "./email.schema";
+
 /** A single email header name/value pair as returned by Gmail's API. */
 export interface EmailHeader {
   name?: string | null;
@@ -114,6 +116,12 @@ export function buildMimeMessage(input: {
   return `${headers.join("\r\n")}\r\n\r\n${parts.join("\r\n")}`;
 }
 
+interface GmailPart {
+  mimeType?: string;
+  body?: { data?: string };
+  parts?: unknown[];
+}
+
 /**
  * Walk a Gmail message payload tree and return the best text representation.
  *
@@ -125,9 +133,7 @@ export function extractPlainText(payload: unknown): string {
   const stack: unknown[] = [payload];
   let html: string | null = null;
   while (stack.length > 0) {
-    const node = stack.pop() as
-      | { mimeType?: string; body?: { data?: string }; parts?: unknown[] }
-      | undefined;
+    const node = stack.pop() as GmailPart | undefined;
 
     if (!node) {
       continue;
@@ -143,20 +149,81 @@ export function extractPlainText(payload: unknown): string {
     }
   }
 
-  if (html) {
-    return html
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/\s+/g, " ")
-      .trim();
+  return html ? htmlToText(html) : "";
+}
+
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** One alert digest carries a few dozen postings; the cap bounds a pathological newsletter. */
+const MAX_LINKS = 300;
+const MAX_LINK_LENGTH = 2048;
+const MAX_LINK_TEXT = 200;
+
+/**
+ * Every distinct http(s) link in a Gmail payload, in document order: anchors from HTML parts (with
+ * their text, or an image's alt) and bare URLs from plain-text parts (with the rest of their line).
+ * Kept apart from the body because job-alert links are opaque click-trackers whose meaning lives
+ * only in the anchor text, which {@link extractPlainText} discards.
+ */
+export function extractLinks(payload: unknown): EmailLink[] {
+  const found: EmailLink[] = [];
+  const stack: unknown[] = [payload];
+  while (stack.length > 0) {
+    const node = stack.shift() as GmailPart | undefined;
+    if (!node) {
+      continue;
+    }
+    if (node.body?.data && node.mimeType === "text/html") {
+      const html = decodeBase64Url(node.body.data);
+      for (const match of html.matchAll(
+        /<a\b[^>]*?href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+      )) {
+        const alt = match[2].match(/alt\s*=\s*["']([^"']*)["']/i)?.[1] ?? "";
+        const text = htmlToText(match[2]) || alt.trim();
+        found.push({
+          url: match[1].replace(/&amp;/g, "&").trim(),
+          text: text.slice(0, MAX_LINK_TEXT),
+        });
+      }
+    }
+    if (node.body?.data && node.mimeType === "text/plain") {
+      for (const line of decodeBase64Url(node.body.data).split(/\r?\n/)) {
+        for (const match of line.matchAll(/https?:\/\/[^\s<>"'\])]+/gi)) {
+          const text = line.replace(match[0], " ").replace(/\s+/g, " ").trim();
+          found.push({ url: match[0], text: text.slice(0, MAX_LINK_TEXT) });
+        }
+      }
+    }
+    if (node.parts) {
+      stack.push(...node.parts);
+    }
   }
 
-  return "";
+  // First sighting keeps its place; a later sighting only fills in text the first one lacked.
+  const byUrl = new Map<string, EmailLink>();
+  for (const link of found) {
+    if (!/^https?:\/\//i.test(link.url) || link.url.length > MAX_LINK_LENGTH) {
+      continue;
+    }
+    const seen = byUrl.get(link.url);
+    if (!seen) {
+      byUrl.set(link.url, link);
+    } else if (!seen.text && link.text) {
+      seen.text = link.text;
+    }
+  }
+  return [...byUrl.values()].slice(0, MAX_LINKS);
 }
 
 /**

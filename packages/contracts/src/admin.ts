@@ -1,9 +1,9 @@
 import { z } from "zod/v4";
-import { paginationQuerySchema } from "./pagination";
+import { paginationQuerySchema, queryText } from "./pagination";
 import { assignableRoleSchema, roleSchema } from "./role";
 
 export const adminUserQuerySchema = paginationQuerySchema.extend({
-  search: z.string().trim().min(1).optional(),
+  search: queryText.optional(),
   role: roleSchema.optional(),
 });
 

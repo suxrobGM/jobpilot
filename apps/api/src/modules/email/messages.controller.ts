@@ -8,6 +8,8 @@ import { sseStream } from "@/common/sse";
 import {
   emailMessageListSchema,
   emailMessageSchema,
+  jobAlertsImportedSchema,
+  markJobAlertsImportedSchema,
   messageApprovedSchema,
   messageCountSchema,
   messageDeniedSchema,
@@ -75,6 +77,19 @@ export const emailMessagesController = new Elysia({
         summary: "Approve message and advance application",
         description:
           "Approves a classified message, transitions its matched application to the inferred target stage with a stage event, marks the message approved, and returns the message id, application id, and new stage.",
+      },
+    },
+  )
+  .post(
+    "/job-alerts/imported",
+    ({ user, body }) => svc.markJobAlertsImported(user.id, body.messageIds),
+    {
+      body: markJobAlertsImportedSchema,
+      response: jobAlertsImportedSchema,
+      detail: {
+        summary: "Mark job-alert emails imported",
+        description:
+          "Stamps `importedAt` on the given job-alert emails once the pilot has pulled their job links into a campaign, so the next scheduled import skips them. Returns `{ imported }`, the number of rows newly stamped.",
       },
     },
   )

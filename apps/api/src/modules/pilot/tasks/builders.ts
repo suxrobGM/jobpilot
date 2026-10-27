@@ -41,6 +41,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   pausedCampaigns: [],
   boardDiagnoses: [],
   inbox: { messageIds: [], count: 0 },
+  jobAlerts: null,
   interviewReplies: [],
   interviewPreps: [],
   upworkSync: null,

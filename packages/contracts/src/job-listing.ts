@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { paginationQuerySchema } from "./pagination";
+import { paginationQuerySchema, queryText } from "./pagination";
 
 export const JOB_LISTING_STATUSES = ["published", "hidden"] as const;
 export const jobListingStatusSchema = z.enum(JOB_LISTING_STATUSES);
@@ -32,8 +32,8 @@ export const jobListingQuerySchema = paginationQuerySchema.extend({
   // Only `page` is re-declared: the crawler cap above is specific to this route.
   page: z.coerce.number().int().min(1).max(JOB_LISTING_MAX_PAGE).default(1),
   /** Free text over title + company. */
-  q: z.string().trim().min(1).optional(),
-  location: z.string().trim().min(1).optional(),
+  q: queryText.optional(),
+  location: queryText.optional(),
   remote: z.stringbool().optional(),
   board: z.string().trim().min(1).optional(),
   /**

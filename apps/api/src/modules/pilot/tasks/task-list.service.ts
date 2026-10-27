@@ -27,6 +27,7 @@ import {
   gatherInbox,
   gatherInterviewPreps,
   gatherInterviewReplies,
+  gatherJobAlerts,
   gatherUpworkSync,
 } from "./gather-inbox";
 import {
@@ -50,6 +51,12 @@ const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
 export const INBOX_SYNC_STALE_MS = 30 * 60 * 1000;
 
 type Gathered = Omit<TaskListInput, "now" | "config" | "cycleCount">;
+
+interface GatherContext {
+  config: PilotInstructionsConfig;
+  goals: string;
+  jobAlertsRequestedAt: Date | null;
+}
 
 const NO_DUE_SEARCHES: Pick<Gathered, "dueQueries" | "nextSearchRunAt"> = {
   dueQueries: [],
@@ -99,6 +106,7 @@ export class TaskListService {
         cycleCount: true,
         instructionsConfig: true,
         instructionsGoals: true,
+        jobAlertsRequestedAt: true,
       },
     });
     if (!state?.running) throw conflict("Pilot is stopped.", ErrorCodes.PILOT_CONFLICT);
@@ -113,7 +121,15 @@ export class TaskListService {
     await promoteScoredPendingJobs(this.prisma, this.campaignJobs, userId, config.minScore);
     await finalizeIdleCampaigns(this.prisma, this.journal, userId, now);
 
-    const gathered = await this.gather(userId, config, state.instructionsGoals.trim(), now);
+    const gathered = await this.gather(
+      userId,
+      {
+        config,
+        goals: state.instructionsGoals.trim(),
+        jobAlertsRequestedAt: state.jobAlertsRequestedAt,
+      },
+      now,
+    );
     const deps = { prisma: this.prisma, journal: this.journal, push: this.push };
     void writeDigestIfDue(deps, userId, now, gathered.openQuestions);
 
@@ -133,12 +149,8 @@ export class TaskListService {
     return taskList;
   }
 
-  private async gather(
-    userId: string,
-    config: PilotInstructionsConfig,
-    goals: string,
-    now: Date,
-  ): Promise<Gathered> {
+  private async gather(userId: string, context: GatherContext, now: Date): Promise<Gathered> {
+    const { config, goals } = context;
     const { prisma } = this;
     const { searchCount, ...base } = await allNamed({
       openQuestions: prisma.pilotQuestion.count({ where: { userId, status: "open" } }),
@@ -154,6 +166,7 @@ export class TaskListService {
       pausedCampaigns: gatherPausedCampaigns(prisma, userId, now),
       boardDiagnoses: gatherBoardDiagnoses(prisma, userId, now),
       inbox: gatherInbox(prisma, userId),
+      jobAlerts: gatherJobAlerts(prisma, userId, config, context.jobAlertsRequestedAt, now),
       interviewReplies: gatherInterviewReplies(prisma, userId),
       interviewPreps: gatherInterviewPreps(prisma, userId),
       upworkSync: gatherUpworkSync(prisma, userId, now),

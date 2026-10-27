@@ -6,6 +6,7 @@ import {
   domainOf,
   type EmailHeader,
   encodeBase64Url,
+  extractLinks,
   extractPlainText,
   headerValue,
   parseAddress,
@@ -234,6 +235,7 @@ export class GmailClient {
           fromDomain: domainOf(email),
           snippet: msg.data.snippet ?? "",
           rawBody: stripQuotedReplies(extractPlainText(msg.data.payload)),
+          links: extractLinks(msg.data.payload),
           receivedAt,
         });
       } catch {

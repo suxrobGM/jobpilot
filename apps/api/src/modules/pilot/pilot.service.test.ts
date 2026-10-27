@@ -26,7 +26,7 @@ interface OpenRun {
   startedAt: Date;
 }
 
-function stateService(savedGoals: string, openRun: OpenRun | null = null) {
+function stateService(savedGoals: string, openRun: OpenRun | null = null, savedConfig = {}) {
   const rec = {
     searchResets: 0,
     searchDeletes: 0,
@@ -35,15 +35,18 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null) {
     jobsDropped: 0,
   };
   const runQueries: unknown[] = [];
+  const upserts: { update: Record<string, unknown> }[] = [];
   const count = (key: keyof typeof rec) => async () => {
     rec[key]++;
     return { count: 1 };
   };
   const db = {
     pilotState: {
-      findUnique: async () => ({ instructionsGoals: savedGoals }),
-      upsert: async (a: { update: Record<string, unknown> }) =>
-        stateRow({ instructionsGoals: savedGoals, ...a.update }),
+      findUnique: async () => ({ instructionsGoals: savedGoals, instructionsConfig: savedConfig }),
+      upsert: async (a: { update: Record<string, unknown> }) => {
+        upserts.push(a);
+        return stateRow({ instructionsGoals: savedGoals, ...a.update });
+      },
     },
     pilotSearch: { updateMany: count("searchResets"), deleteMany: count("searchDeletes") },
     pilotRun: {
@@ -62,13 +65,13 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null) {
     networkingMessage: { count: async () => 0 },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   };
-  return { svc: new PilotService(db as unknown as PrismaClient), rec, runQueries };
+  return { svc: new PilotService(db as unknown as PrismaClient), rec, runQueries, upserts };
 }
 
 describe("PilotService.updateInstructions", () => {
   const body = (goals: string, onChange = {}) => ({
     goals,
-    config: pilotInstructionsConfigSchema.parse({}),
+    config: pilotInstructionsConfigSchema.omit({ jobAlerts: true }).parse({}),
     onChange: pilotInstructionsChangeSchema.parse(onChange),
   });
 
@@ -103,6 +106,13 @@ describe("PilotService.updateInstructions", () => {
       body("new goals", { completeCampaigns: true, dropApprovedJobs: true }),
     );
     expect(rec).toMatchObject({ campaignsCompleted: 1, jobsDropped: 1 });
+  });
+
+  it("keeps the stored job-alert schedule, which only its own route edits", async () => {
+    const jobAlerts = { enabled: true, runHours: [9], timeZone: "America/Detroit" };
+    const { svc, upserts } = stateService("goals", null, { minScore: 80, jobAlerts });
+    await svc.updateInstructions("p1", body("goals"));
+    expect(upserts[0].update.instructionsConfig).toMatchObject({ minScore: 60, jobAlerts });
   });
 });
 

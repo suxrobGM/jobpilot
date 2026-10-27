@@ -120,10 +120,15 @@ export class PilotService {
   }
 
   async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
-    const goalsChanged = (await this.readGoals(userId)) !== body.goals;
+    const saved = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { instructionsGoals: true, instructionsConfig: true },
+    });
+    const goalsChanged = (saved?.instructionsGoals ?? "") !== body.goals;
+    const { jobAlerts } = pilotInstructionsConfigSchema.parse(saved?.instructionsConfig ?? {});
     const instructions = {
       instructionsGoals: body.goals,
-      instructionsConfig: toInputJson(body.config),
+      instructionsConfig: toInputJson({ ...body.config, jobAlerts }),
       instructionsUpdatedAt: new Date(),
       ...TASK_LIST_SNAPSHOT_RESET,
     };

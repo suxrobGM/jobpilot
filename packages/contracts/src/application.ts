@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { queryText } from "./pagination";
 
 export const APPLICATION_STATUSES = [
   "applied",
@@ -52,7 +53,7 @@ export const applicationFilterSchema = z.object({
   status: statusSchema.optional(),
   board: z.string().trim().min(1).optional(),
   source: applicationSourceSchema.optional(),
-  search: z.string().trim().min(1).optional(),
+  search: queryText.optional(),
   /** A campaign id, or {@link SINGLE_APPLY_CAMPAIGN} for rows with no campaign. */
   campaignId: z.string().trim().min(1).optional(),
 });

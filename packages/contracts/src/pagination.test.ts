@@ -1,4 +1,4 @@
-import { cursorPage, pageSlice, paginate, paginationQuerySchema } from "./pagination";
+import { cursorPage, pageSlice, paginate, paginationQuerySchema, queryText } from "./pagination";
 import { describe, expect, it } from "bun:test";
 
 describe("pageSlice", () => {
@@ -45,5 +45,11 @@ describe("paginationQuerySchema", () => {
   it("rejects a limit past the cap, so no caller can ask for the whole table", () => {
     expect(paginationQuerySchema.safeParse({ limit: 101 }).success).toBe(false);
     expect(paginationQuerySchema.safeParse({ page: 0 }).success).toBe(false);
+  });
+});
+
+describe("queryText", () => {
+  it("rejoins a value Elysia split on its commas", () => {
+    expect(queryText.parse(["Engineer", " Platform"])).toBe("Engineer, Platform");
   });
 });

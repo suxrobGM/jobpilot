@@ -1,9 +1,9 @@
 import {
   PILOT_EMAIL_AUTONOMY,
   PILOT_LINKEDIN_AUTONOMY,
-  type PilotInstructionsConfig,
   type PilotState,
   pilotNetworkingSchema,
+  type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 
@@ -43,7 +43,7 @@ export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
   promotionPlatforms: [],
 };
 
-export function toConfig(value: InstructionsFormValues): PilotInstructionsConfig {
+export function toConfig(value: InstructionsFormValues): UpdatePilotInstructionsInput["config"] {
   return {
     dailyApplyCap: value.dailyApplyCap,
     minScore: value.minScore,

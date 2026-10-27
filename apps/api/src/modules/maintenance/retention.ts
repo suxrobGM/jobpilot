@@ -85,6 +85,7 @@ export function promotionPostWhere(c: RetentionCutoffs): Prisma.PromotionPostWhe
 export function emailBodyWhere(c: RetentionCutoffs): Prisma.EmailMessageWhereInput {
   // Blank, never delete: rawBody powers the inbox dialog (falls back to snippet) and re-sync dedupe.
   // Scanned only: the inbox review queue has no age bound, so an old unscanned message still needs its body.
+  // Links go too: the job-alert import reads only a week back.
   return { receivedAt: { lt: c.emailBody }, rawBody: { not: "" }, scannedAt: { not: null } };
 }
 

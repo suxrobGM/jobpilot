@@ -59,6 +59,12 @@ const matchedAppSchema = z
   })
   .nullable();
 
+/** The `links` JSON column: each job-alert link with the text a reader sees for it. */
+export const emailLinksSchema = z.array(z.object({ url: z.string(), text: z.string() }));
+
+/** A link and the text a reader sees for it - the only way to tell a posting from "Unsubscribe". */
+export type EmailLink = z.infer<typeof emailLinksSchema>[number];
+
 /** An inbox message row. */
 export const emailMessageSchema = z.object({
   id: z.uuid(),
@@ -85,6 +91,8 @@ export const emailMessageSchema = z.object({
   verificationCode: z.string().nullable(),
   verificationLink: z.string().nullable(),
   verificationDomain: z.string().nullable(),
+  links: emailLinksSchema,
+  importedAt: z.date().nullable(),
   matchedApp: matchedAppSchema,
 });
 
@@ -115,3 +123,11 @@ export const syncResultSchema = z.object({
   fetched: z.number().int(),
   new: z.number().int(),
 });
+
+/** Marks imported alert emails so the next run skips them. */
+export const markJobAlertsImportedSchema = z.object({
+  messageIds: z.array(z.uuid()).min(1).max(200),
+});
+
+/** How many alert emails an import mark actually changed (`svc.markJobAlertsImported`). */
+export const jobAlertsImportedSchema = z.object({ imported: z.number().int().min(0) });

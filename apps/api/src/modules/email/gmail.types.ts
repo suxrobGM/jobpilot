@@ -1,3 +1,5 @@
+import type { EmailLink } from "./email.schema";
+
 /** The user's own Google OAuth client (app); the redirect URI is the shared, env-configured one. */
 export interface OAuthClientConfig {
   clientId: string;
@@ -50,6 +52,7 @@ export interface NormalizedMessage {
   snippet: string;
   /** Plain-text body with quoted replies stripped. */
   rawBody: string;
+  links: EmailLink[];
   receivedAt: Date;
 }
 
