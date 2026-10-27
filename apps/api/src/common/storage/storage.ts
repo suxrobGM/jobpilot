@@ -7,17 +7,20 @@ import { env } from "@/env";
 const STORAGE_ROOT = path.resolve(env.STORAGE_ROOT);
 const RESUMES_DIR = path.join(STORAGE_ROOT, "resumes");
 const GENERATED_DIR = path.join(STORAGE_ROOT, "resumes-generated");
+// Bump when PDF rendering changes so previously cached PDFs are regenerated
+// after a deployment even if a resume has not been edited.
+const PDF_RENDER_VERSION = "unicode-v1";
 
 export function resumePath(filename: string): string {
   return path.join(RESUMES_DIR, filename);
 }
 
 export function generatedResumePath(id: string, updatedAtMs: number): string {
-  return path.join(GENERATED_DIR, `master-${id}-${updatedAtMs}.pdf`);
+  return path.join(GENERATED_DIR, `master-${id}-${updatedAtMs}-${PDF_RENDER_VERSION}.pdf`);
 }
 
 export function generatedVariantPath(variantId: string, createdAtMs: number): string {
-  return path.join(GENERATED_DIR, `variant-${variantId}-${createdAtMs}.pdf`);
+  return path.join(GENERATED_DIR, `variant-${variantId}-${createdAtMs}-${PDF_RENDER_VERSION}.pdf`);
 }
 
 /** Unlinks a file, treating an already-missing file as success. Returns whether it removed anything. */
