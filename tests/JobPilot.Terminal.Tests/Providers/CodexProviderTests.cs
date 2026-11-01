@@ -147,4 +147,21 @@ public sealed class CodexProviderTests : IDisposable
             CodexProvider.AgentToml(markdown));
         Assert.Null(CodexProvider.AgentToml("# No frontmatter"));
     }
+
+    [Fact]
+    public void CheckedInCodexAgents_MatchThePluginAgents()
+    {
+        var repo = new DirectoryInfo(AppContext.BaseDirectory);
+        while (!File.Exists(Path.Combine(repo.FullName, "JobPilot.slnx")))
+        {
+            repo = repo.Parent!;
+        }
+
+        var sources = Directory.GetFiles(Path.Combine(repo.FullName, "plugin", "agents"), "*.md").Order().ToArray();
+        var checkedIn = Directory.GetFiles(Path.Combine(repo.FullName, ".codex", "agents"), "*.toml").Order().ToArray();
+
+        // Codex run straight from the repo reads these; a Codex session through the host rewrites them.
+        Assert.Equal(sources.Select(Path.GetFileNameWithoutExtension), checkedIn.Select(Path.GetFileNameWithoutExtension));
+        Assert.Equal(sources.Select(md => CodexProvider.AgentToml(File.ReadAllText(md))), checkedIn.Select(File.ReadAllText));
+    }
 }

@@ -191,7 +191,9 @@ Codex has no `--plugin-dir` either. Before each launch the host:
   repository skills (leaving out the marketplace-owned `setup` skill),
 - turns the bundled `.mcp.json` into `-c mcp_servers.*` overrides,
 - writes `<root>/.codex/agents/*.toml` from `plugin/agents/*.md`, with each
-  body inlined as `developer_instructions`, so Codex gets the same workers.
+  body inlined as `developer_instructions`, so Codex gets the same workers. The repo's copies are
+  checked in so Codex run straight from the repo has them too, and a terminal
+  test fails when they drift from `plugin/agents`.
 
 Both provider marketplaces contain only `setup`. The full skill tree comes
 from the host. The marketplace copies are published to
