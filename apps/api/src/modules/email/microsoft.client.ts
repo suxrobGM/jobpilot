@@ -98,18 +98,38 @@ function deltaPath(session: MailboxSession): string {
   return `${mailboxPath(session.mailboxId)}/mailFolders/inbox/messages/delta`;
 }
 
-function checkedDelta(url: string, session: MailboxSession): string {
-  const target = new URL(url);
-  if (
-    target.origin !== "https://graph.microsoft.com" ||
-    target.username ||
-    target.password ||
-    target.hash ||
-    target.pathname !== `/v1.0${deltaPath(session)}`
-  ) {
+function deltaTarget(url: string, session: MailboxSession): { url: string; folder: string } {
+  try {
+    const target = new URL(url);
+    if (
+      target.origin !== "https://graph.microsoft.com" ||
+      target.username ||
+      target.password ||
+      target.hash
+    )
+      throw new Error("Invalid origin");
+    // Graph canonicalizes Inbox aliases into OData folder IDs on continuation links.
+    const pathname = target.pathname.replace(
+      /\('((?:[^']|'')*)'\)/g,
+      (_, id: string) => `/${encodeURIComponent(decodeURIComponent(id).replace(/''/g, "'"))}`,
+    );
+    const match = pathname.match(
+      /^\/v1\.0\/(me|users\/[^/]+)\/mailfolders\/([^/]+)\/messages\/delta$/i,
+    );
+    const expected = session.mailboxId ? `users/${session.mailboxId}` : "me";
+    if (!match || decodeURIComponent(match[1]).toLowerCase() !== expected.toLowerCase())
+      throw new Error("Invalid mailbox");
+    return { url: target.href, folder: decodeURIComponent(match[2]) };
+  } catch {
     throw unprocessable("Invalid Microsoft mailbox sync cursor. Reconnect this mailbox.");
   }
-  return target.href;
+}
+
+function checkedDelta(url: string, session: MailboxSession, inboxId: string): string {
+  const target = deltaTarget(url, session);
+  if (target.folder.toLowerCase() !== "inbox" && target.folder !== inboxId)
+    throw unprocessable("Invalid Microsoft mailbox sync cursor. Reconnect this mailbox.");
+  return target.url;
 }
 
 @injectable()
@@ -259,22 +279,34 @@ export class MicrosoftClient {
   async sync(session: MailboxSession): Promise<SyncResult> {
     if (!session.accessToken) throw unauthorized("Reconnect the Microsoft mailbox.");
     let initial = this.initialUrl(session);
-    if (session.deltaLink) initial = checkedDelta(session.deltaLink, session);
+    if (session.deltaLink) initial = deltaTarget(session.deltaLink, session).url;
+    const inbox = z
+      .object({ id: z.string().min(1) })
+      .parse(
+        await this.graph(
+          `${mailboxPath(session.mailboxId)}/mailFolders/inbox?$select=id`,
+          session.accessToken,
+        ),
+      );
     try {
-      return await this.pages(initial, session);
+      return await this.pages(initial, session, inbox.id);
     } catch (error) {
       if (!(error instanceof ExpiredCursor) || !session.deltaLink) throw error;
-      return this.pages(this.initialUrl(session), session);
+      return this.pages(this.initialUrl(session), session, inbox.id);
     }
   }
 
-  private async pages(initial: string, session: MailboxSession): Promise<SyncResult> {
+  private async pages(
+    initial: string,
+    session: MailboxSession,
+    inboxId: string,
+  ): Promise<SyncResult> {
     const messages = new Map<string, NormalizedMessage>();
     const visited = new Set<string>();
     let next: string | undefined = initial;
     const since = Date.now() - 14 * 86400000;
     for (let count = 0; next && count < 100; count++) {
-      next = checkedDelta(next, session);
+      next = checkedDelta(next, session, inboxId);
       if (visited.has(next)) throw badGateway("Microsoft returned a repeated mailbox page.");
       visited.add(next);
       const page = pageSchema.parse(await this.graph(next, session.accessToken!));
@@ -306,7 +338,7 @@ export class MicrosoftClient {
           fetched: messages.size,
           newMessages: [...messages.values()],
           historyId: null,
-          deltaLink: checkedDelta(page["@odata.deltaLink"], session),
+          deltaLink: checkedDelta(page["@odata.deltaLink"], session, inboxId),
         };
       next = page["@odata.nextLink"];
     }

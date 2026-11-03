@@ -35,6 +35,11 @@ const delta =
   "https://graph.microsoft.com/v1.0/users/applications%40example.com/mailFolders/inbox/messages/delta?$deltatoken=opaque";
 function client(responses: Response[], calls: { url: string; init?: RequestInit }[] = []) {
   return new MicrosoftClient((async (url, init) => {
+    if (
+      String(url).includes("/mailFolders/inbox?$select=id") &&
+      !calls.some((call) => call.url.startsWith("https://login.microsoftonline.com/"))
+    )
+      return Response.json({ id: "verified-inbox-id" });
     calls.push({ url: String(url), init });
     const response = responses.shift();
     if (!response) throw new Error("Unexpected request");
@@ -233,5 +238,33 @@ describe("Microsoft mail", () => {
     ]).sync(session);
     expect(result.newMessages[0].fromAddress).toBe('"quoted user"@example.org');
     expect(result.deltaLink).toBe(delta);
+  });
+  it("accepts Microsoft's shared-inbox OData continuation links", async () => {
+    const canonical =
+      "https://graph.microsoft.com/v1.0/users/applications@example.com/mailFolders('verified-inbox-id')/messages/delta?$skiptoken=opaque";
+    const final = canonical.replace("$skiptoken=opaque", "$deltatoken=finished");
+    const result = await client([
+      Response.json({ value: [message], "@odata.nextLink": canonical }),
+      Response.json({ value: [], "@odata.deltaLink": final }),
+    ]).sync(session);
+    expect(result.newMessages).toHaveLength(1);
+    expect(result.deltaLink).toBe(final);
+  });
+  it("resumes the saved canonical shared-inbox cursor", async () => {
+    const canonical =
+      "https://graph.microsoft.com/v1.0/users('applications%40example.com')/mailfolders('verified-inbox-id')/messages/delta?$deltatoken=opaque";
+    const result = await client([Response.json({ value: [], "@odata.deltaLink": canonical })]).sync(
+      { ...session, deltaLink: canonical },
+    );
+    expect(result.deltaLink).toBe(canonical);
+  });
+  it("refuses a continuation link for another folder in the same mailbox", async () => {
+    const wrong =
+      "https://graph.microsoft.com/v1.0/users/applications@example.com/mailFolders('other-folder-id')/messages/delta?$skiptoken=opaque";
+    const calls: { url: string }[] = [];
+    await expect(
+      client([Response.json({ value: [], "@odata.nextLink": wrong })], calls).sync(session),
+    ).rejects.toThrow(/cursor/);
+    expect(calls).toHaveLength(1);
   });
 });
