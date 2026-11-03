@@ -354,14 +354,16 @@ export class MicrosoftClient {
     )
       throw unprocessable("This Microsoft mailbox is read-only. Reconnect with sending enabled.");
     // MIME preserves RFC reply headers and attachments using the existing email builder.
+    const from = session.mailboxId ? `From: ${z.email().parse(session.mailboxId)}\r\n` : "";
     const mime = Buffer.from(
-      buildMimeMessage({
-        to: input.to,
-        subject: input.subject,
-        body: input.body,
-        inReplyTo: input.inReplyTo,
-        attachments: input.attachments,
-      }),
+      from +
+        buildMimeMessage({
+          to: input.to,
+          subject: input.subject,
+          body: input.body,
+          inReplyTo: input.inReplyTo,
+          attachments: input.attachments,
+        }),
     ).toString("base64");
     await this.graph(`${mailboxPath(session.mailboxId)}/sendMail`, session.accessToken, {
       method: "POST",

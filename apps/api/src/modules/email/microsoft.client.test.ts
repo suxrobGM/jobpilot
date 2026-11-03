@@ -273,4 +273,33 @@ describe("Microsoft mail", () => {
     expect(new URL(calls[0].url).searchParams.has("$top")).toBe(false);
     expect(new Headers(calls[0].init?.headers).get("Prefer")).toContain("odata.maxpagesize=50");
   });
+  it("sets the shared mailbox as the MIME sender", async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    await client([new Response(null, { status: 202 })], calls).send(
+      {
+        ...session,
+        config: { ...config, allowSend: true },
+        scope: "Mail.Read.Shared Mail.Send.Shared",
+      },
+      { to: "recruiter@example.org", subject: "Test", body: "Hello" },
+    );
+    const mime = Buffer.from(calls[0].init?.body as string, "base64").toString("utf8");
+    expect(mime).toContain("From: applications@example.com\r\n");
+    expect(mime).toContain("To: recruiter@example.org\r\n");
+  });
+  it("rejects header injection in a stored shared sender address", async () => {
+    const calls: { url: string }[] = [];
+    await expect(
+      client([], calls).send(
+        {
+          ...session,
+          mailboxId: "applications@example.com\r\nBcc: other@example.org",
+          config: { ...config, allowSend: true },
+          scope: "Mail.Send.Shared",
+        },
+        { to: "recruiter@example.org", subject: "Test", body: "Hello" },
+      ),
+    ).rejects.toThrow();
+    expect(calls).toHaveLength(0);
+  });
 });
