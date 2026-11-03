@@ -73,13 +73,15 @@ export const emailOAuthController = new Elysia({
 
       oauthStateCookies(cookie, STATE_COOKIES, OAUTH_COOKIE_PATH).set(
         state,
-        JSON.stringify({
-          userId: user.id,
-          tokenId: user.tokenId,
-          provider: query.provider,
-          verifier,
-          configHash,
-        }),
+        Buffer.from(
+          JSON.stringify({
+            userId: user.id,
+            tokenId: user.tokenId,
+            provider: query.provider,
+            verifier,
+            configHash,
+          }),
+        ).toString("base64url"),
       );
       return redirect(authorizeUrl);
     },
@@ -110,7 +112,9 @@ export const emailOAuthController = new Elysia({
 
       let binding: z.infer<typeof bindingSchema>;
       try {
-        binding = bindingSchema.parse(JSON.parse(stateCookies.companion() ?? "null"));
+        binding = bindingSchema.parse(
+          JSON.parse(Buffer.from(stateCookies.companion() ?? "", "base64url").toString("utf8")),
+        );
       } catch {
         return fail("invalid_callback");
       }
