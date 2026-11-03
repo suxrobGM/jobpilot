@@ -267,4 +267,10 @@ describe("Microsoft mail", () => {
     ).rejects.toThrow(/cursor/);
     expect(calls).toHaveLength(1);
   });
+  it("uses a page-size preference without capping the initial delta result set", async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    await client([Response.json({ value: [], "@odata.deltaLink": delta })], calls).sync(session);
+    expect(new URL(calls[0].url).searchParams.has("$top")).toBe(false);
+    expect(new Headers(calls[0].init?.headers).get("Prefer")).toContain("odata.maxpagesize=50");
+  });
 });

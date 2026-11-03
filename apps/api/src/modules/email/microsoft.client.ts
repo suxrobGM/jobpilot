@@ -224,7 +224,6 @@ export class MicrosoftClient {
   private initialUrl(session: MailboxSession): string {
     const query = new URLSearchParams({
       $select: "id,conversationId,subject,from,body,bodyPreview,receivedDateTime",
-      $top: "50",
       $filter: `receivedDateTime ge ${new Date(Date.now() - 14 * 86400000).toISOString()}`,
     });
     return `${GRAPH}${deltaPath(session)}?${query}`;
@@ -239,7 +238,7 @@ export class MicrosoftClient {
         signal: AbortSignal.timeout(20000),
         headers: {
           Authorization: `Bearer ${token}`,
-          Prefer: 'IdType="ImmutableId"',
+          Prefer: 'IdType="ImmutableId", odata.maxpagesize=50',
           ...init.headers,
         },
       });
