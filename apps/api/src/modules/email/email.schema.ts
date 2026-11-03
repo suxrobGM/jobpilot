@@ -1,5 +1,9 @@
 import { statusSchema } from "@jobpilot/contracts/application";
-import { classificationSchema, reviewStatusSchema } from "@jobpilot/contracts/email";
+import {
+  classificationSchema,
+  emailProviderSchema,
+  reviewStatusSchema,
+} from "@jobpilot/contracts/email";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
@@ -32,6 +36,8 @@ export const accountStatusSchema = z.union([
   z.object({
     connected: z.literal(true),
     email: z.string(),
+    provider: emailProviderSchema,
+    signedInEmail: z.string().nullable(),
     lastSyncAt: z.date().nullable(),
     canSend: z.boolean(),
     // True once a token refresh was rejected (invalid_grant): the mailbox must be reconnected.
@@ -43,6 +49,10 @@ export const accountStatusSchema = z.union([
 /** OAuth client config status (`account.getOAuthClient`) - never includes the secret. */
 export const oauthClientStatusSchema = z.object({
   configured: z.boolean(),
+  provider: emailProviderSchema,
+  tenantId: z.string().nullable(),
+  mailbox: z.string().nullable(),
+  allowSend: z.boolean(),
   clientId: z.string().nullable(),
   redirectUri: z.string(),
   scopes: z.array(z.string()),

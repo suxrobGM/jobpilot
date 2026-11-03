@@ -7,11 +7,15 @@ import { useToast } from "@/providers/notification-provider";
 
 /** Copy for every contract slug (Record over the union so a new slug fails the build). */
 const REASON_COPY: Record<EmailConnectErrorReason, string> = {
-  access_denied: "Gmail connection was cancelled.",
-  invalid_callback: "The Google sign-in expired. Try connecting again.",
-  scope_not_granted: "Google didn't grant read access. Reconnect and allow every permission.",
-  provider_error: "Google rejected the connection. Check your OAuth client, then try again.",
-  unexpected: "Couldn't connect Gmail.",
+  mailbox_access_denied:
+    "Microsoft denied access to the selected mailbox. Check the signed-in user’s delegated mailbox permissions; your personal inbox was not connected instead.",
+  access_denied: "Mailbox connection was cancelled.",
+  invalid_callback: "The mailbox sign-in expired. Try connecting again.",
+  scope_not_granted:
+    "The mail provider did not grant read access. Reconnect and allow the required read permission.",
+  provider_error:
+    "The mail provider rejected the connection. Check your OAuth client, then try again.",
+  unexpected: "Couldn't connect the mailbox.",
 };
 
 function reasonCopy(reason: string | null): string {
@@ -30,7 +34,7 @@ export function EmailConnectToast(): ReactNode {
     if (!status || fired.current) return;
     fired.current = true;
     if (status === "ok") {
-      toast.success("Gmail connected");
+      toast.success("Mailbox connected");
     } else {
       toast.error(reasonCopy(reason));
     }

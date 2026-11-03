@@ -83,7 +83,7 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
       done: emailOk,
       action: (
         <LinkButton size="small" variant="outlined" href="/settings/email">
-          {needsReauth ? "Reconnect" : "Connect Gmail"}
+          {needsReauth ? "Reconnect" : "Connect email"}
         </LinkButton>
       ),
     },

@@ -1,14 +1,17 @@
 import type { EmailLink } from "./email.schema";
 
-/** The user's own Google OAuth client (app); the redirect URI is the shared, env-configured one. */
+/** The user's own provider OAuth client (app); the redirect URI is the shared, env-configured one. */
 export interface OAuthClientConfig {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
+  tenantId?: string | null;
+  mailbox?: string | null;
+  allowSend?: boolean;
 }
 
 /**
- * Tokens Google returns after consent or refresh. `refreshToken` arrives only on the first
+ * Tokens returned after consent or refresh. `refreshToken` arrives only on the first
  * consent (`prompt=consent`); later refreshes may omit it, so persist the first one.
  */
 export interface TokenSet {
@@ -23,10 +26,12 @@ export interface TokenSet {
 export interface ExchangedCode {
   tokens: TokenSet;
   email: string;
+  signedInEmail?: string;
+  mailboxId?: string | null;
 }
 
 /**
- * A connected mailbox ready to call Gmail with: tokens already decrypted and refreshed. A distinct
+ * A connected mailbox ready to call its provider with: tokens already decrypted and refreshed. A distinct
  * type from the `EmailAccount` row, whose token columns hold ciphertext.
  */
 export interface MailboxSession {
@@ -36,11 +41,14 @@ export interface MailboxSession {
   tokenExpiresAt: Date | null;
   /** Gmail's delta-sync cursor; `null` before the first sync. */
   historyId: string | null;
+  mailboxId?: string | null;
+  deltaLink?: string | null;
+  scope?: string | null;
 }
 
 /** An inbound message in the shape the `EmailMessage` table stores. */
 export interface NormalizedMessage {
-  /** Gmail's immutable message id. */
+  /** The provider's stable message id. */
   providerId: string;
   threadId: string | null;
   subject: string;
@@ -87,4 +95,5 @@ export interface SyncResult {
   newMessages: NormalizedMessage[];
   /** Cursor for the next delta sync; `null` forces a full re-list. */
   historyId: string | null;
+  deltaLink?: string | null;
 }

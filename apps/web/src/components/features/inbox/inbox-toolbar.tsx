@@ -38,7 +38,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
 
   return (
     <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", alignItems: "center" }}>
-      <Tooltip title="Fetch new mail from Gmail">
+      <Tooltip title="Fetch new mail">
         <Button
           size="small"
           variant="outlined"

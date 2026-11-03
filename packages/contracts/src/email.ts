@@ -45,21 +45,31 @@ const EMAIL_CONNECT_ERROR_REASONS = [
   "invalid_callback",
   /** Google's consent screen let the user drop the read scope. */
   "scope_not_granted",
+  "mailbox_access_denied",
   /** Google rejected the code or returned unusable tokens. */
   "provider_error",
   "unexpected",
 ] as const;
 export type EmailConnectErrorReason = (typeof EMAIL_CONNECT_ERROR_REASONS)[number];
 
-/**
- * Upsert the user's own Google OAuth client. `clientSecret` is optional so an
- * edit can leave it blank to keep the stored one; the service requires it on
- * first create.
- */
-export const oauthClientUpsertSchema = z.object({
-  clientId: z.string().trim().min(1, "Client ID is required"),
-  clientSecret: z.string().optional(),
-});
+export const EMAIL_PROVIDERS = ["gmail", "microsoft"] as const;
+export const emailProviderSchema = z.enum(EMAIL_PROVIDERS);
+export type EmailProvider = z.infer<typeof emailProviderSchema>;
+export const emailProviderQuery = z.object({ provider: emailProviderSchema.default("gmail") });
+
+export const oauthClientUpsertSchema = z
+  .object({
+    provider: emailProviderSchema.default("gmail"),
+    clientId: z.string().trim().min(1, "Client ID is required"),
+    clientSecret: z.string().optional(),
+    tenantId: z.union([z.uuid(), z.literal("")]).nullish(),
+    mailbox: z.union([z.email(), z.literal("")]).nullish(),
+    allowSend: z.boolean().default(false),
+  })
+  .refine((value) => value.provider !== "microsoft" || !!value.tenantId, {
+    message: "Microsoft tenant ID is required",
+    path: ["tenantId"],
+  });
 
 export type Classification = z.infer<typeof classificationSchema>;
 export type ReviewStatus = z.infer<typeof reviewStatusSchema>;

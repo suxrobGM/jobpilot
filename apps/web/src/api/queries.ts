@@ -4,7 +4,7 @@ import type {
   CampaignSource,
   CampaignStatus,
 } from "@jobpilot/contracts/campaign";
-import type { ReviewStatus } from "@jobpilot/contracts/email";
+import type { EmailProvider, ReviewStatus } from "@jobpilot/contracts/email";
 import {
   DEFAULT_CURSOR_PAGE_SIZE,
   MAX_PAGE_SIZE,
@@ -143,9 +143,9 @@ export type InboxFilter = ReviewStatus | "all";
 
 export const emailQueries = {
   account: () => ({ queryKey: queryKeys.email.account(), queryFn: () => api.email.account.get() }),
-  oauthClient: () => ({
-    queryKey: queryKeys.email.oauthClient(),
-    queryFn: () => api.email.oauth.client.get(),
+  oauthClient: (provider: EmailProvider = "gmail") => ({
+    queryKey: queryKeys.email.oauthClient(provider),
+    queryFn: () => api.email.oauth.client.get({ query: { provider } }),
   }),
   messages: (filter: InboxFilter, page: PaginationQuery) => ({
     queryKey: queryKeys.email.messages({ filter, ...page }),

@@ -6,7 +6,7 @@ import { logger } from "@/common/logger";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { MailboxSessionService } from "../account/mailbox-session.service";
-import { GmailClient } from "../gmail.client";
+import { EmailProviders } from "../email-provider";
 
 /** The fields the reply-linker needs from a freshly-synced inbound message. */
 interface InboundForLinking {
@@ -20,7 +20,7 @@ export class EmailSyncService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly sessions = inject(MailboxSessionService),
-    private readonly gmail = inject(GmailClient),
+    private readonly providers = inject(EmailProviders),
   ) {}
 
   /**
@@ -61,7 +61,7 @@ export class EmailSyncService {
 
     publish(inboxChannel, { userId }, { type: "sync.started" });
 
-    const result = await this.gmail.sync(session);
+    const result = await this.providers.sync(active.provider, session);
 
     let inserted = 0;
     const insertedForLinking: InboundForLinking[] = [];
@@ -103,6 +103,7 @@ export class EmailSyncService {
       where: { id: active.id },
       data: {
         historyId: result.historyId ?? active.historyId,
+        deltaLink: result.deltaLink ?? active.deltaLink,
         lastSyncAt: new Date(),
       },
     });

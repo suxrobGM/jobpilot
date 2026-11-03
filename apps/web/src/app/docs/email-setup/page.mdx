@@ -1,7 +1,7 @@
 import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("email-setup", {
-  description: "Connect Gmail to JobPilot with your own Google OAuth client.",
+  description: "Connect Gmail or Microsoft 365, including shared mailboxes, with your own OAuth app.",
 });
 
 # Email setup
@@ -67,7 +67,24 @@ Gmail account is linked to your profile and nobody else's.
   that use Gmail need Google's review. Switch back under
   **Audience → Publishing status → Back to testing**.
 
-Gmail is the only email provider for now. Outlook and IMAP are planned.
+## Microsoft 365 and shared mailboxes
+
+Select **Microsoft 365** in **Settings → Email**. This integration supports work/school accounts in the public Microsoft cloud, including a shared mailbox your Microsoft user can already access. Personal Outlook.com accounts, on-premises Exchange and IMAP are not supported by this provider.
+
+1. In [Microsoft Entra](https://entra.microsoft.com/), create an app registration in your organization's tenant. Record its **Directory (tenant) ID** and **Application (client) ID**.
+2. Add a **Web** platform redirect URI, copied exactly from JobPilot's Microsoft email configuration. For self-hosting, set `MICROSOFT_OAUTH_REDIRECT_URI` to the externally reachable API callback `/api/email/oauth/callback` and register that exact URL; the local default is `http://localhost:4101/api/email/oauth/callback`.
+3. Add delegated Microsoft Graph permissions: `User.Read` and `Mail.Read` for your own mailbox, or `Mail.Read.Shared` for a shared mailbox. OAuth also requests `openid`, `email` and `offline_access`. Your organization's consent policy may require an administrator.
+4. Create a client secret and enter its **value** (not its ID) in JobPilot, together with the tenant and client IDs. Secrets stay encrypted on JobPilot's server and are never returned to the browser. Do not put them in a URL or paste them into an agent conversation.
+5. For your own work mailbox, leave the shared-mailbox address blank. For a shared mailbox, enter its address. Sign in as your own Microsoft user who has delegated access; do not sign in as the shared mailbox. JobPilot verifies access to the selected Inbox and will not substitute your personal Inbox if permission is denied.
+6. Save, then **Connect Microsoft 365** and complete Microsoft's consent screen. Settings shows the mailbox being synced and the identity used to sign in.
+
+Microsoft connections are **read-only by default**. Sync reads the Inbox, imports recent messages (14 days), follows incremental changes and feeds the same reply-matching, job-alert and review workflow as Gmail. It does not mark messages read, move them or delete them. Local import retention and review rules still apply.
+
+To enable sending, opt into **Request permission to send mail** and reconnect. This requests `Mail.Send` for your own mailbox or `Mail.Send.Shared` for a shared mailbox. Shared-mailbox sending also requires Exchange **Send As** or **Send on Behalf** permission. Sending permission does not turn on Pilot networking; its controls remain separate. Microsoft accepts sends asynchronously and does not return a message ID from sendMail; incoming replies can still be matched through the existing sender/application matching.
+
+One mailbox can be connected per JobPilot profile. Gmail and Microsoft app configurations are retained separately, but changing provider or mailbox requires disconnecting first. Disconnecting removes the local mailbox and its imported messages under the existing disconnect behavior; it does not delete mail from Microsoft. Reconnect after a token is revoked or expires beyond refresh; access denial requires fixing the delegate's permissions. Microsoft throttling is respected with bounded retries; interrupted sync never advances the saved cursor.
+
+For access troubleshooting, see [Microsoft's shared-mailbox guidance](https://learn.microsoft.com/en-us/graph/outlook-share-messages-folders) and [sending from another mailbox](https://learn.microsoft.com/en-us/graph/outlook-send-mail-from-other-user).
 
 Next: [Credentials](/docs/credentials), so the agent can sign in to job
 boards.

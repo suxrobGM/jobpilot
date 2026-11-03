@@ -1,6 +1,16 @@
 import { injectable } from "@needle-di/core";
 import { google } from "googleapis";
 import { badGateway, unprocessable } from "@/common/errors";
+import type {
+  ExchangedCode,
+  MailboxSession,
+  NormalizedMessage,
+  OAuthClientConfig,
+  SendMessageInput,
+  SentMessage,
+  SyncResult,
+  TokenSet,
+} from "./email.types";
 import {
   buildMimeMessage,
   domainOf,
@@ -12,16 +22,6 @@ import {
   parseAddress,
   stripQuotedReplies,
 } from "./email.utils";
-import type {
-  ExchangedCode,
-  MailboxSession,
-  NormalizedMessage,
-  OAuthClientConfig,
-  SendMessageInput,
-  SentMessage,
-  SyncResult,
-  TokenSet,
-} from "./gmail.types";
 
 /**
  * Derived from `google.auth.OAuth2` so the type always matches the bundled
