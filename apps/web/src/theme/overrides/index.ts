@@ -33,6 +33,7 @@ import {
   skeletonOverrides,
   stackOverrides,
   svgIconOverrides,
+  tooltipOverrides,
   typographyOverrides,
 } from "./misc";
 import { tableCellOverrides, tableHeadOverrides, tableOverrides, tableRowOverrides } from "./table";
@@ -78,5 +79,6 @@ export const componentOverrides: Components<Theme> = {
   MuiTextField: textFieldOverrides,
   MuiToggleButton: toggleButtonOverrides,
   MuiToggleButtonGroup: toggleButtonGroupOverrides,
+  MuiTooltip: tooltipOverrides,
   MuiTypography: typographyOverrides,
 };

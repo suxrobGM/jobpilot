@@ -12,7 +12,6 @@ import {
   ListItemText,
   MenuList,
 } from "@mui/material";
-import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
@@ -67,7 +66,7 @@ export function MobileNav(): ReactElement {
     <BottomNavigationAction
       key={item.href}
       component={Link}
-      href={item.href as Route}
+      href={item.href}
       value={item.href}
       label={item.label}
       icon={
@@ -128,7 +127,7 @@ export function MobileNav(): ReactElement {
             <ListItemButton
               key={item.href}
               component={Link}
-              href={item.href as Route}
+              href={item.href}
               selected={isNavEntryActive(pathname, item)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>

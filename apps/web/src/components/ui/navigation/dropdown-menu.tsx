@@ -1,9 +1,17 @@
 "use client";
 
 import { type MouseEvent, type ReactElement, type ReactNode, useState } from "react";
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
+import {
+  Divider,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  type PopoverOrigin,
+} from "@mui/material";
 import type { Route } from "next";
-import Link from "next/link";
+import type { ExternalUrl } from "@/lib/constants";
+import { AppLink } from "@/theme/app-link";
 
 /**
  * A single entry in a {@link DropdownMenu}. Pass `show: false` to hide it conditionally
@@ -21,8 +29,8 @@ export type DropdownMenuItem =
       trailing?: ReactNode;
       /** Fires after the menu closes. Omit when using `href` for plain navigation. */
       onClick?: () => void;
-      /** Renders the item as a `next/link`. Use the `as Route` cast for typed routes. */
-      href?: Route;
+      /** Renders the item as a link; an off-site URL opens in a new tab. */
+      href?: Route | ExternalUrl;
       disabled?: boolean;
       /** Tints the label red - for destructive actions like "Remove". */
       danger?: boolean;
@@ -45,6 +53,9 @@ interface DropdownMenuProps {
    * inside a clickable parent (e.g. a card with its own `onClick`).
    */
   stopPropagation?: boolean;
+  /** Where the menu opens relative to its trigger; defaults to below it. */
+  anchorOrigin?: PopoverOrigin;
+  transformOrigin?: PopoverOrigin;
 }
 
 /**
@@ -62,7 +73,14 @@ interface DropdownMenuProps {
  * />
  */
 export function DropdownMenu(props: DropdownMenuProps): ReactElement {
-  const { trigger, items, minWidth = 200, stopPropagation = false } = props;
+  const {
+    trigger,
+    items,
+    minWidth = 200,
+    stopPropagation = false,
+    anchorOrigin,
+    transformOrigin,
+  } = props;
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = anchor !== null;
 
@@ -84,6 +102,8 @@ export function DropdownMenu(props: DropdownMenuProps): ReactElement {
         anchorEl={anchor}
         open={open}
         onClose={handleClose}
+        anchorOrigin={anchorOrigin}
+        transformOrigin={transformOrigin}
         onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
         slotProps={{ paper: { sx: { minWidth } } }}
       >
@@ -95,7 +115,9 @@ export function DropdownMenu(props: DropdownMenuProps): ReactElement {
             return [<Divider key={item.key} />];
           }
 
-          const linkProps = item.href ? ({ component: Link, href: item.href } as const) : undefined;
+          const linkProps = item.href
+            ? ({ component: AppLink, href: item.href } as const)
+            : undefined;
 
           return [
             <MenuItem

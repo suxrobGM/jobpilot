@@ -13,7 +13,6 @@ import {
   Stack,
   ToggleButton,
   ToggleButtonGroup,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { API_BASE_URL } from "@/api/base-url";
@@ -21,9 +20,10 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/data";
-import { DropdownMenu } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
+import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
 import { dedupeById } from "@/utils/array";
@@ -117,16 +117,13 @@ export function JournalFeed(): ReactElement {
       actions={
         <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
           <LiveStatusChip status={status} />
-          <Tooltip title="Export the journal">
-            <IconButton
-              component="a"
-              href={JOURNAL_EXPORT_URL}
-              download="pilot-journal.ndjson"
-              aria-label="Export the journal"
-            >
-              <Download fontSize="sm" />
-            </IconButton>
-          </Tooltip>
+          <TooltipIconButton
+            title="Export the journal"
+            href={JOURNAL_EXPORT_URL}
+            download="pilot-journal.ndjson"
+          >
+            <Download fontSize="sm" />
+          </TooltipIconButton>
           <DropdownMenu
             trigger={({ onOpen }) => (
               <IconButton aria-label="More journal actions" onClick={onOpen}>

@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { type Tab, TabStrip } from "@/components/ui/navigation/tab-strip";
+import { type Tab, TabStrip } from "@/components/ui/navigation";
 
 const TABS: Tab[] = [
   { label: "Resumes", href: "/documents/resumes" },

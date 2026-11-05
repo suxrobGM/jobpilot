@@ -1,18 +1,60 @@
 import type { ReactElement } from "react";
 import { newTokens } from "@jobpilot/contracts/pilot";
-import {
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
+import { Chip, Typography } from "@mui/material";
 import type { AdminPilotDto } from "@/api/types";
-import { EmptyState } from "@/components/ui/data";
+import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
 import { formatRelativeTime, formatTokens } from "@/utils/format";
+
+const COLUMNS: SimpleColumn<AdminPilotDto>[] = [
+  { key: "email", header: "Email", render: (pilot) => pilot.userEmail },
+  {
+    key: "status",
+    header: "Status",
+    render: (pilot) => (
+      <Chip
+        color={pilot.running ? "success" : "default"}
+        label={pilot.running ? "Running" : "Stopped"}
+      />
+    ),
+  },
+  {
+    key: "lastCycle",
+    header: "Last cycle",
+    render: (pilot) =>
+      pilot.lastCycleAt ? (
+        `${formatRelativeTime(pilot.lastCycleAt)} ago`
+      ) : (
+        <Typography variant="captionMuted">-</Typography>
+      ),
+  },
+  { key: "cycles", header: "Cycles", align: "right", render: (pilot) => pilot.cycleCount },
+  {
+    key: "questions",
+    header: "Open questions",
+    align: "right",
+    render: (pilot) => (
+      <Chip
+        variant={pilot.openQuestions > 0 ? "filled" : "outlined"}
+        color={pilot.openQuestions > 0 ? "error" : "default"}
+        label={pilot.openQuestions}
+      />
+    ),
+  },
+  {
+    key: "newTokens",
+    header: "New tokens (7d)",
+    align: "right",
+    render: (pilot) => formatTokens(newTokens(pilot.weekTokens)),
+  },
+  {
+    key: "cached",
+    header: "Cached (7d)",
+    align: "right",
+    render: (pilot) => (
+      <Typography variant="body2Muted">{formatTokens(pilot.weekTokens.cacheRead)}</Typography>
+    ),
+  },
+];
 
 interface AdminPilotsTableProps {
   pilots: AdminPilotDto[];
@@ -20,60 +62,12 @@ interface AdminPilotsTableProps {
 
 export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
   const { pilots } = props;
-
-  if (pilots.length === 0) {
-    return <EmptyState variant="inline" title="No Pilots match the current filters." />;
-  }
-
   return (
-    <TableContainer>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Email</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Last cycle</TableCell>
-            <TableCell align="right">Cycles</TableCell>
-            <TableCell align="right">Open questions</TableCell>
-            <TableCell align="right">New tokens (7d)</TableCell>
-            <TableCell align="right">Cached (7d)</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {pilots.map((pilot) => (
-            <TableRow key={pilot.userId} hover>
-              <TableCell sx={{ fontWeight: 600 }}>{pilot.userEmail}</TableCell>
-              <TableCell>
-                <Chip
-                  color={pilot.running ? "success" : "default"}
-                  label={pilot.running ? "Running" : "Stopped"}
-                />
-              </TableCell>
-              <TableCell>
-                {pilot.lastCycleAt ? (
-                  `${formatRelativeTime(pilot.lastCycleAt)} ago`
-                ) : (
-                  <Typography variant="captionMuted">-</Typography>
-                )}
-              </TableCell>
-              <TableCell align="right">{pilot.cycleCount}</TableCell>
-              <TableCell align="right">
-                <Chip
-                  variant={pilot.openQuestions > 0 ? "filled" : "outlined"}
-                  color={pilot.openQuestions > 0 ? "error" : "default"}
-                  label={pilot.openQuestions}
-                />
-              </TableCell>
-              <TableCell align="right">{formatTokens(newTokens(pilot.weekTokens))}</TableCell>
-              <TableCell align="right">
-                <Typography variant="body2Muted">
-                  {formatTokens(pilot.weekTokens.cacheRead)}
-                </Typography>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <SimpleTable
+      columns={COLUMNS}
+      rows={pilots}
+      rowKey={(pilot) => pilot.userId}
+      emptyTitle="No Pilots match the current filters."
+    />
   );
 }

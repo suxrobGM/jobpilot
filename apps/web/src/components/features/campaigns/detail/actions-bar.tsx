@@ -17,7 +17,7 @@ import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { invalidations } from "@/api/query-keys";
 import { type CampaignDetailDto, jobSummary } from "@/api/types";
-import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
+import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/navigation";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { COMPOSER_DEFAULT_VALUES } from "../composer/form-config";

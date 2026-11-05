@@ -101,6 +101,11 @@ export const skeletonOverrides: Components<Theme>["MuiSkeleton"] = {
   },
 };
 
+/** Tooltips only label their trigger, so they should never catch the pointer on the way past. */
+export const tooltipOverrides: Components<Theme>["MuiTooltip"] = {
+  defaultProps: { disableInteractive: true },
+};
+
 /** Real `gap`, not MUI's child margins: margins indent the second line of a wrapped row. */
 export const stackOverrides: Components<Theme>["MuiStack"] = {
   defaultProps: { useFlexGap: true },

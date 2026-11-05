@@ -3,7 +3,7 @@ import { NotificationsNone } from "@mui/icons-material";
 import { PilotLive } from "@/components/features/pilot";
 import { LinkButton } from "@/components/ui/buttons";
 import { PageHeader, PageShell } from "@/components/ui/layout";
-import { type Tab, TabStrip } from "@/components/ui/navigation/tab-strip";
+import { type Tab, TabStrip } from "@/components/ui/navigation";
 
 const TABS: Tab[] = [
   { label: "Overview", href: "/pilot" },

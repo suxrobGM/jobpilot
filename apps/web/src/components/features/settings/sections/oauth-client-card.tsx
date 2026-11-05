@@ -3,16 +3,17 @@
 import type { ReactElement } from "react";
 import { type OAuthClientUpsertInput, oauthClientUpsertSchema } from "@jobpilot/contracts/email";
 import { CheckCircle } from "@mui/icons-material";
-import { Alert, Box, Button, Chip, Link, Stack, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Chip, Link, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { OAuthClientStatus } from "@/api/types";
+import { TooltipButton } from "@/components/ui/buttons";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 
 /** "https://www.googleapis.com/auth/gmail.send" → "gmail.send". */
@@ -183,18 +184,15 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
                 </form.SubmitButton>
               </form.AppForm>
               {config.configured && (
-                <Tooltip title={connected ? "Disconnect the mailbox first" : ""}>
-                  <span>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      disabled={connected || remove.isPending}
-                      onClick={() => void handleRemove()}
-                    >
-                      Remove client
-                    </Button>
-                  </span>
-                </Tooltip>
+                <TooltipButton
+                  title={connected ? "Disconnect the mailbox first" : ""}
+                  variant="outlined"
+                  color="error"
+                  disabled={connected || remove.isPending}
+                  onClick={() => void handleRemove()}
+                >
+                  Remove client
+                </TooltipButton>
               )}
             </Stack>
           </Stack>

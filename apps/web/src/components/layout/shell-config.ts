@@ -14,12 +14,13 @@ import {
   SmartToy,
   type SvgIconComponent,
 } from "@mui/icons-material";
-import { BUG_REPORT_URL, FEATURE_REQUEST_URL } from "@/lib/constants";
+import type { Route } from "next";
+import { BUG_REPORT_URL, type ExternalUrl, FEATURE_REQUEST_URL } from "@/lib/constants";
 import { isAdminRole } from "@/lib/roles";
 
 export interface NavItem {
   label: string;
-  href: string;
+  href: Route;
   icon: SvgIconComponent;
   /** Shown only to admin and super_admin. Cosmetic - the API's requireRole is the real gate. */
   adminOnly?: boolean;
@@ -89,8 +90,14 @@ export function visibleNavGroups(role: string | undefined, groups = navGroups): 
     .filter((group) => group.items.length > 0);
 }
 
-/** External GitHub issue links - rendered as plain anchors, never through navGroups/next-link. */
-export const feedbackLinks: NavItem[] = [
+interface ExternalNavLink {
+  label: string;
+  href: ExternalUrl;
+  icon: SvgIconComponent;
+}
+
+/** GitHub issue links: off-site, so they stay out of the nav groups and their active matching. */
+export const feedbackLinks: ExternalNavLink[] = [
   { label: "Report a Bug", href: BUG_REPORT_URL, icon: BugReport },
   { label: "Feature Request", href: FEATURE_REQUEST_URL, icon: Lightbulb },
 ];

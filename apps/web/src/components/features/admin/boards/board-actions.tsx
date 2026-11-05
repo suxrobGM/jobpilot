@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { AdminBoardDto } from "@/api/types";
-import { DropdownMenu } from "@/components/ui/feedback";
+import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";
 import { AdminBoardFormDialog } from "./board-form-dialog";
 

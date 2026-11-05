@@ -2,24 +2,14 @@
 
 import { type ReactElement, useState } from "react";
 import { Clear, Delete } from "@mui/icons-material";
-import {
-  Button,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data";
+import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
 import { ExternalLink } from "@/components/ui/display";
 import { SearchField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
@@ -61,6 +51,34 @@ export function BoardsContent(): ReactElement {
 
   const isAnyFilterActive = needle.length > 0;
 
+  const columns: SimpleColumn<JobBoardDto>[] = [
+    { key: "name", header: "Name", render: (board) => board.name },
+    { key: "domain", header: "Domain", render: (board) => board.domain },
+    {
+      key: "searchUrl",
+      header: "Search URL",
+      render: (board) =>
+        board.searchUrl ? (
+          <ExternalLink href={board.searchUrl} truncateTo={280}>
+            {board.searchUrl}
+          </ExternalLink>
+        ) : (
+          <Typography variant="captionMuted">-</Typography>
+        ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      align: "right",
+      nowrap: true,
+      render: (board) => (
+        <TooltipIconButton title="Remove board" onClick={() => void handleDelete(board)}>
+          <Delete fontSize="sm" />
+        </TooltipIconButton>
+      ),
+    },
+  ];
+
   const handleResetFilters = (): void => setSearchDraft("");
 
   return (
@@ -87,51 +105,16 @@ export function BoardsContent(): ReactElement {
         )}
       </Stack>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          variant="inline"
-          title={
-            isAnyFilterActive
-              ? "No boards match the current filters."
-              : "No boards yet. Add one to let campaigns search it."
-          }
-        />
-      ) : (
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Domain</TableCell>
-                <TableCell>Search URL</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((b) => (
-                <TableRow key={b.id} hover>
-                  <TableCell sx={{ fontWeight: 600 }}>{b.name}</TableCell>
-                  <TableCell>{b.domain}</TableCell>
-                  <TableCell>
-                    {b.searchUrl ? (
-                      <ExternalLink href={b.searchUrl} truncateTo={280}>
-                        {b.searchUrl}
-                      </ExternalLink>
-                    ) : (
-                      <Typography variant="captionMuted">-</Typography>
-                    )}
-                  </TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                    <TooltipIconButton title="Remove board" onClick={() => void handleDelete(b)}>
-                      <Delete fontSize="sm" />
-                    </TooltipIconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      <SimpleTable
+        columns={columns}
+        rows={rows}
+        rowKey={(board) => board.id}
+        emptyTitle={
+          isAnyFilterActive
+            ? "No boards match the current filters."
+            : "No boards yet. Add one to let campaigns search it."
+        }
+      />
     </SectionCard>
   );
 }

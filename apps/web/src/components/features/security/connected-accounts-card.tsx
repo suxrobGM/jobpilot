@@ -2,12 +2,13 @@
 
 import type { ReactElement } from "react";
 import type { OAuthProviderInput } from "@jobpilot/contracts/auth";
-import { Alert, Box, Button, Stack, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { OAUTH_PROVIDERS, oauthStartUrl, resolveOauthReason } from "@/components/features/auth";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { TooltipButton } from "@/components/ui/buttons";
+import { SectionCard } from "@/components/ui/layout";
 import { useSession } from "@/hooks/use-auth";
 import { useConfirm } from "@/providers/confirm-provider";
 
@@ -79,22 +80,17 @@ export function ConnectedAccountsCard(props: ConnectedAccountsCardProps): ReactE
                 </Typography>
               </Box>
               {isLinked ? (
-                <Tooltip
+                <TooltipButton
                   title={
                     lastMethod ? "This is your only sign-in method - set a password first" : ""
                   }
+                  variant="outlined"
+                  color="error"
+                  disabled={lastMethod || unlink.isPending}
+                  onClick={() => void handleUnlink(id, label)}
                 >
-                  <span>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      disabled={lastMethod || unlink.isPending}
-                      onClick={() => void handleUnlink(id, label)}
-                    >
-                      Unlink
-                    </Button>
-                  </span>
-                </Tooltip>
+                  Unlink
+                </TooltipButton>
               ) : (
                 <Button variant="outlined" onClick={() => link(id)}>
                   Link

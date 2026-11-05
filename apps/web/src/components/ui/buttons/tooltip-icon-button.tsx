@@ -1,24 +1,19 @@
 import type { ReactElement } from "react";
-import { Box, IconButton, type IconButtonProps, Tooltip } from "@mui/material";
+import { IconButton, type IconButtonProps } from "@mui/material";
+import { ButtonTooltip, type ButtonTooltipPlacement } from "./button-tooltip";
 
-interface TooltipIconButtonProps extends IconButtonProps {
+interface TooltipIconButtonProps extends IconButtonProps, ButtonTooltipPlacement {
   title: string;
+  /** Renders the button as a link, through the theme's link component. */
+  href?: string;
+  download?: string;
 }
 
 export function TooltipIconButton(props: TooltipIconButtonProps): ReactElement {
-  const { title, disabled, "aria-label": ariaLabel, ...rest } = props;
-  const button = <IconButton disabled={disabled} aria-label={ariaLabel ?? title} {...rest} />;
-
-  // A disabled button emits no pointer events, so the tooltip needs an enabled span to hover over.
-  if (disabled) {
-    return (
-      <Tooltip title={title}>
-        <Box component="span" sx={{ display: "inline-flex" }}>
-          {button}
-        </Box>
-      </Tooltip>
-    );
-  }
-
-  return <Tooltip title={title}>{button}</Tooltip>;
+  const { title, disabled, placement, arrow, "aria-label": ariaLabel, ...rest } = props;
+  return (
+    <ButtonTooltip title={title} disabled={disabled} placement={placement} arrow={arrow}>
+      <IconButton disabled={disabled} aria-label={ariaLabel ?? title} {...rest} />
+    </ButtonTooltip>
+  );
 }
