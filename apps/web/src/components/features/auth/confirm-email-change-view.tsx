@@ -2,17 +2,14 @@
 
 import type { ReactElement } from "react";
 import type { ConfirmEmailChangeInput } from "@jobpilot/contracts/auth";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { MagicLinkView } from "./magic-link-view";
 
-interface ConfirmEmailChangeViewProps {
-  token?: string;
-}
-
 /** Lands from the email-change magic link; confirming revokes all sessions. */
-export function ConfirmEmailChangeView(props: ConfirmEmailChangeViewProps): ReactElement {
-  const { token } = props;
+export function ConfirmEmailChangeView(): ReactElement {
+  const token = useSearchParams().get("token") ?? undefined;
   const confirmChange = useApiMutation(
     (body: ConfirmEmailChangeInput) => api.auth.email.change.confirm.post(body),
     { showErrorToast: false },

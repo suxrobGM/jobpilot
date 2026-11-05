@@ -3,15 +3,11 @@
 import type { ReactElement } from "react";
 import type { VerifyEmailInput } from "@jobpilot/contracts/auth";
 import { Alert, Button, Stack, Typography } from "@mui/material";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { useAuthActions, useSession } from "@/hooks/use-auth";
 import { MagicLinkView } from "./magic-link-view";
-
-interface VerifyEmailViewProps {
-  /** Present when the user arrived from a verification magic link. */
-  token?: string;
-}
 
 /**
  * Two modes share the `/verify-email` route:
@@ -19,12 +15,16 @@ interface VerifyEmailViewProps {
  * - Without one, act as the gate for a signed-in but unverified user: tell them
  *   to check their inbox, and let them resend or sign out.
  */
-export function VerifyEmailView(props: VerifyEmailViewProps): ReactElement {
-  const { token } = props;
+export function VerifyEmailView(): ReactElement {
+  const token = useSearchParams().get("token");
   return token ? <VerifyTokenView token={token} /> : <VerifyGateView />;
 }
 
-function VerifyTokenView(props: { token: string }): ReactElement {
+interface VerifyTokenViewProps {
+  token: string;
+}
+
+function VerifyTokenView(props: VerifyTokenViewProps): ReactElement {
   const { token } = props;
   const verifyEmail = useApiMutation(
     (body: VerifyEmailInput) => api.auth.email.verification.confirm.post(body),
