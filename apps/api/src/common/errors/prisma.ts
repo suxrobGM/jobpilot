@@ -5,7 +5,7 @@ export const PRISMA_ERRORS = {
   /** A foreign key blocked the write, e.g. deleting a row a Restrict relation still points at. */
   FOREIGN_KEY_VIOLATION: "P2003",
   /** A value did not fit its column, e.g. a malformed uuid. */
-  INVALID_VALUE: "P2023",
+  INVALID_VALUE: "P2007",
   /** Update/delete targeted a row that does not exist. */
   NOT_FOUND: "P2025",
 } as const;
