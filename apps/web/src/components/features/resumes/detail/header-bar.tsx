@@ -10,7 +10,7 @@ import { invalidations } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
 import type { ResumeDto } from "@/api/types";
 import { useConfirm } from "@/providers/confirm-provider";
-import { TailorForJobButton } from "../tailor/tailor-for-job-button";
+import { useSetPrimaryResume } from "../use-set-primary-resume";
 
 interface ResumeHeaderBarProps {
   resume: ResumeDto;
@@ -20,20 +20,18 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   const { resume } = props;
   const router = useRouter();
   const confirm = useConfirm();
-  const [editingLabel, setEditingLabel] = useState(resume.label);
+  // Null while not editing, so a rename that arrives live shows instead of a stale copy.
+  const [draftLabel, setDraftLabel] = useState<string | null>(null);
 
   const renameLabel = useApiMutation(
-    (vars: { label: string }) => api.resumes({ id: resume.id }).put(vars),
+    (label: string) => api.resumes({ id: resume.id }).put({ label }),
     {
       successMessage: "Renamed",
       invalidate: invalidations.resume,
     },
   );
 
-  const setPrimary = useApiMutation(() => api.user["primary-resume"].put({ resumeId: resume.id }), {
-    successMessage: "Set as primary",
-    invalidate: invalidations.resume,
-  });
+  const setPrimary = useSetPrimaryResume();
 
   const remove = useApiMutation(() => api.resumes({ id: resume.id }).delete(), {
     successMessage: "Resume deleted",
@@ -48,7 +46,9 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
       confirmLabel: "Delete",
       destructive: true,
     });
-    if (confirmed) remove.mutate();
+    if (confirmed) {
+      remove.mutate();
+    }
   };
 
   return (
@@ -57,15 +57,14 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <TextField
             size="small"
-            value={editingLabel}
-            onChange={(e) => setEditingLabel(e.target.value)}
+            value={draftLabel ?? resume.label}
+            onChange={(e) => setDraftLabel(e.target.value)}
             onBlur={() => {
-              const next = editingLabel.trim();
+              const next = draftLabel?.trim();
               if (next && next !== resume.label) {
-                renameLabel.mutate({ label: next });
-              } else if (!next) {
-                setEditingLabel(resume.label);
+                renameLabel.mutate(next);
               }
+              setDraftLabel(null);
             }}
             sx={{ flex: 1, maxWidth: 320 }}
           />
@@ -81,13 +80,12 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
             <Button
               size="small"
               startIcon={<StarBorder />}
-              onClick={() => setPrimary.mutate()}
-              disabled={setPrimary.isPending}
+              onClick={() => setPrimary.mutate(resume.id)}
+              loading={setPrimary.isPending}
             >
               Set primary
             </Button>
           )}
-          <TailorForJobButton />
           <IconButton href={resumePdfUrl(resume.id, resume.updatedAt)} aria-label="Open PDF">
             <PictureAsPdf fontSize="md" />
           </IconButton>

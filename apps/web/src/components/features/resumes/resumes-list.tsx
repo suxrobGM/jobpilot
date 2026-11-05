@@ -33,6 +33,7 @@ import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { plural } from "@/utils/format";
 import { NewResumeDialog } from "./new-resume-dialog";
+import { useSetPrimaryResume } from "./use-set-primary-resume";
 
 /** Invisible per-resume SSE subscriber: refetches the list when content or variants change. */
 function ResumeEventsSubscriber({ resumeId }: { resumeId: string }): ReactNode {
@@ -72,13 +73,7 @@ export function ResumesList(): ReactElement {
     },
   });
 
-  const setPrimary = useApiMutation(
-    (id: string) => api.user["primary-resume"].put({ resumeId: id }),
-    {
-      successMessage: "Primary resume updated",
-      invalidate: invalidations.resume,
-    },
-  );
+  const setPrimary = useSetPrimaryResume();
 
   if (list.isLoading) {
     return <LinearProgress />;
