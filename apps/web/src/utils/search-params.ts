@@ -6,7 +6,7 @@ import {
 
 type Param = string | string[] | undefined;
 
-/** First value of a repeated query param (`?tech=a&tech=b`). */
+/** First value of a repeated query param (`?skills=a&skills=b`). */
 export function one(value: Param): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }

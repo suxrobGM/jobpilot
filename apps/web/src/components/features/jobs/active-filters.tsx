@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { POSTED_OPTIONS } from "./job-filter-options";
 import { jobsHref } from "./jobs-href";
 
-/** No `tech`: the multi-select already shows it as chips. */
+/** No `skills`: the multi-select already shows it as chips. */
 const CHIPPED = ["q", "location", "board", "remote", "posted"] as const;
 
 type ChippedKey = (typeof CHIPPED)[number];

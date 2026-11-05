@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, type SubmitEvent, useRef } from "react";
-import { parseTechParam, serializeTechParam } from "@jobpilot/contracts/job-listing";
+import { parseSkillsParam, serializeSkillsParam } from "@jobpilot/contracts/job-listing";
 import { Button, Card, CardContent, Stack, TextField, ToggleButton } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MultiSelect } from "@/components/ui/form";
@@ -24,8 +24,7 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
   const form = useRef<HTMLFormElement>(null);
 
   const remote = params.get("remote") === "true";
-  // The public param stays `?tech=` so links shared before the skills rename keep working.
-  const skills = parseTechParam(params.get("tech"));
+  const skills = parseSkillsParam(params.get("skills"));
 
   // Reads the live form, not just `params`, so unsubmitted text survives a Remote toggle.
   const apply = (patch: Record<string, string | null> = {}): void => {
@@ -74,7 +73,7 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
             <MultiSelect
               value={skills}
               onChange={(values) =>
-                apply({ tech: values.length > 0 ? serializeTechParam(values) : null })
+                apply({ skills: values.length > 0 ? serializeSkillsParam(values) : null })
               }
               options={skillOptions}
               freeSolo={false}

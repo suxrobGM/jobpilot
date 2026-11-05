@@ -7,13 +7,13 @@ export const jobListingStatusSchema = z.enum(JOB_LISTING_STATUSES);
 /** Capped: a crawler will happily follow /jobs?page=50000 into an unbounded OFFSET scan. */
 export const JOB_LISTING_MAX_PAGE = 500;
 
-/** The `?tech=` wire format lives here, so the web, the API and the URL cannot disagree on it. */
-export function parseTechParam(value: string | string[] | null | undefined): string[] {
+/** The `?skills=` wire format lives here, so the web, the API and the URL cannot disagree on it. */
+export function parseSkillsParam(value: string | string[] | null | undefined): string[] {
   const entries = Array.isArray(value) ? value : (value ?? "").split(",");
   return entries.map((entry) => entry.trim()).filter(Boolean);
 }
 
-export function serializeTechParam(values: string[]): string {
+export function serializeSkillsParam(values: string[]): string {
   return values.join(",");
 }
 
@@ -37,12 +37,12 @@ export const jobListingQuerySchema = paginationQuerySchema.extend({
   remote: z.stringbool().optional(),
   board: z.string().trim().min(1).optional(),
   /**
-   * A listing matches ANY entry. Both shapes, because Elysia splits `?tech=React,TypeScript`
+   * A listing matches ANY entry. Both shapes, because Elysia splits `?skills=React,TypeScript`
    * into an array but passes a lone value through as a string.
    */
-  tech: z
+  skills: z
     .union([z.string(), z.array(z.string())])
-    .transform(parseTechParam)
+    .transform(parseSkillsParam)
     .optional(),
   sort: jobListingSortSchema.optional(),
   posted: jobListingPostedSchema.optional(),

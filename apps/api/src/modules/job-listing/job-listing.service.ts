@@ -131,7 +131,7 @@ export class JobListingService {
     query: AdminJobListingQuery,
     findRows: (args: PageArgs) => Promise<R[]>,
   ) {
-    const variants = query.tech?.length ? (await this.skillVocabulary()).variants : new Map();
+    const variants = query.skills?.length ? (await this.skillVocabulary()).variants : new Map();
     const where = listingWhere(query, variants, new Date());
     const [rows, total] = await Promise.all([
       findRows({ where, orderBy: listingOrder(query.sort), ...pageSlice(query) }),
