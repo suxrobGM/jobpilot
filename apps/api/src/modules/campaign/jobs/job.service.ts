@@ -45,7 +45,7 @@ interface JobTransition {
   to: CampaignJobStatus;
   /** Status meaning the command already ran; null when a repeat must still write. */
   idempotentAt: CampaignJobStatus | null;
-  data: Prisma.JobUpdateManyMutationInput;
+  data: Prisma.CampaignJobUpdateManyMutationInput;
   rejection: (status: CampaignJobStatus) => string;
 }
 
@@ -75,13 +75,14 @@ export class CampaignJobService {
     const boardId = await this.boards.resolveId(board ?? null);
     let job: JobRow;
     try {
-      job = await this.prisma.job.create({
+      job = await this.prisma.campaignJob.create({
         data: {
           ...fields,
           brief: toNullableInputJson(fields.brief),
           boardId,
           url: normalizeJobUrl(body.url),
           campaignId,
+          userId,
           status: body.status ?? "pending",
         },
         include: JOB_INCLUDE,
@@ -120,7 +121,7 @@ export class CampaignJobService {
         }
         if (moveTo) {
           const clearsOutcome = moveTo === "approved";
-          const changed = await tx.job.updateMany({
+          const changed = await tx.campaignJob.updateMany({
             where: { campaignId, key, status: existing.status },
             data: {
               status: moveTo,
@@ -129,7 +130,7 @@ export class CampaignJobService {
           });
           if (changed.count === 0) throw conflict("Job status changed concurrently.");
         }
-        return tx.job.update({
+        return tx.campaignJob.update({
           where: { campaignId_key: { campaignId, key } },
           data: { ...fields, brief: toNullableInputJson(fields.brief), ...boardField },
           include: JOB_INCLUDE,
@@ -203,13 +204,14 @@ export class CampaignJobService {
       for (const group of groups.values()) {
         const { matchScore, threshold } = group[0];
         const approved = matchScore >= threshold;
-        const updated = await tx.job.updateManyAndReturn({
+        const updated = await tx.campaignJob.updateManyAndReturn({
           where: {
             campaignId,
             status: "pending",
             matchScore,
             key: { in: group.map((c) => c.key) },
-            campaign: { userId, status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
+            userId,
+            campaign: { status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
           },
           data: approved
             ? { status: "approved" }
@@ -254,11 +256,11 @@ export class CampaignJobService {
   private findJob(userId: string, campaignId: string, key: string) {
     return findOwned(
       (where) =>
-        this.prisma.job.findFirst({
+        this.prisma.campaignJob.findFirst({
           where,
           include: { ...JOB_INCLUDE, campaign: { select: { source: true } } },
         }),
-      { campaignId, key, campaign: { userId } },
+      { campaignId, key, userId },
       "Campaign job",
     );
   }
@@ -278,11 +280,11 @@ export class CampaignJobService {
       throw conflict(transition.rejection(existing.status));
     }
 
-    const changed = await this.prisma.job.updateMany({
-      where: { campaignId, key, status: transition.from, campaign: { userId } },
+    const changed = await this.prisma.campaignJob.updateMany({
+      where: { campaignId, key, status: transition.from, userId },
       data: transition.data,
     });
-    const job = await this.prisma.job.findUniqueOrThrow({
+    const job = await this.prisma.campaignJob.findUniqueOrThrow({
       where: { campaignId_key: { campaignId, key } },
       include: JOB_INCLUDE,
     });

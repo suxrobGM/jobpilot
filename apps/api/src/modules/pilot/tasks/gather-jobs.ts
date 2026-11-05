@@ -39,7 +39,7 @@ export interface TaskJob {
 
 /** Approved jobs of in-progress campaigns, best match first. */
 export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): Promise<TaskJob[]> {
-  const rows = await prisma.job.findMany({
+  const rows = await prisma.campaignJob.findMany({
     where: applyableJobWhere(userId),
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
@@ -73,12 +73,12 @@ export async function gatherWarmIntroCandidates(
   now: Date,
   approvedJobs: TaskJob[],
 ): Promise<TaskJob[]> {
-  const applied = await prisma.job.findMany({
+  const applied = await prisma.campaignJob.findMany({
     where: {
       status: "applied",
       appliedAt: { gte: new Date(now.getTime() - WARM_INTRO_APPLIED_WINDOW_MS) },
       matchScore: { gte: WARM_INTRO_MIN_SCORE },
-      campaign: { userId },
+      userId,
     },
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
@@ -139,8 +139,8 @@ export async function gatherBoardDiagnoses(
   userId: string,
   now: Date,
 ): Promise<TaskPayload<"board.diagnose">[]> {
-  const rows = await prisma.job.findMany({
-    where: { status: { in: ["applied", "failed"] }, boardId: { not: null }, campaign: { userId } },
+  const rows = await prisma.campaignJob.findMany({
+    where: { status: { in: ["applied", "failed"] }, boardId: { not: null }, userId },
     orderBy: { createdAt: "desc" },
     take: BOARD_HEALTH_SCAN,
     select: {

@@ -65,7 +65,7 @@ model UpworkProposal {
   source UpworkProposalSource @default(manual)
   // The campaign job a `search` draft was seeded from.
   jobId  String?              @map("job_id")
-  job    Job?                 @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  job    CampaignJob?         @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")

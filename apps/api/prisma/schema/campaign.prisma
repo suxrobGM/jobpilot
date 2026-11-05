@@ -45,7 +45,7 @@ model Campaign {
   // Discovery matches on this, not the query text: the pilot may rewrite the query.
   pilotSearchId String?        @map("pilot_search_id")
 
-  jobs               Job[]
+  jobs               CampaignJob[]
   applications       Application[]
   networkingMessages NetworkingMessage[]
   pilotSearch        PilotSearch?        @relation(fields: [pilotSearchId], references: [id], onDelete: SetNull)

@@ -102,8 +102,8 @@ export class PilotService {
           _count: { select: { jobs: { where: { status: "approved" } } } },
         },
       }),
-      this.prisma.job.aggregate({
-        where: { status: "approved", campaign: { userId, ...PILOT_CAMPAIGN } },
+      this.prisma.campaignJob.aggregate({
+        where: { status: "approved", userId, campaign: { ...PILOT_CAMPAIGN } },
         _count: { _all: true },
         _min: { createdAt: true },
       }),
@@ -160,8 +160,8 @@ export class PilotService {
     }
     if (change.dropApprovedJobs) {
       writes.push(
-        this.prisma.job.updateMany({
-          where: { status: "approved", campaign: { userId, ...PILOT_CAMPAIGN } },
+        this.prisma.campaignJob.updateMany({
+          where: { status: "approved", userId, campaign: { ...PILOT_CAMPAIGN } },
           data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.goalsChanged },
         }),
       );
@@ -263,7 +263,7 @@ export class PilotService {
       }),
       prisma.pilotJournalEntry.aggregate({ where: { userId }, _max: { createdAt: true } }),
       prisma.campaign.aggregate({ where: { userId }, _max: { updatedAt: true } }),
-      prisma.job.aggregate({ where: { campaign: { userId } }, _max: { updatedAt: true } }),
+      prisma.campaignJob.aggregate({ where: { userId }, _max: { updatedAt: true } }),
       prisma.pilotState.findUnique({
         where: { userId },
         select: { running: true, lastCycleAt: true, nextWakeAt: true },

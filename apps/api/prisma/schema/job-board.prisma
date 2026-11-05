@@ -14,7 +14,7 @@ model JobBoard {
 
   userBoards     UserJobBoard[]
   credentials    Credential[]
-  jobs           Job[]
+  jobs           CampaignJob[]
   applications   Application[]
   listingSources JobListingSource[]
   pilotSearches  PilotSearch[]

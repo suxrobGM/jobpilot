@@ -14,7 +14,7 @@ const MAX_CONCURRENT = 4;
 /** Past this the producer is hopelessly ahead; drop rather than grow the queue without bound. */
 const MAX_QUEUED = 500;
 
-/** Publishes a campaign `Job` to the public job index, deduped across every user's campaigns. */
+/** Publishes a `CampaignJob` to the public job index, deduped across every user's campaigns. */
 @injectable()
 export class JobListingPublisher {
   private active = 0;

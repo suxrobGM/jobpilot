@@ -11,7 +11,7 @@ const MAX_BULLET_LENGTH = 300;
 
 /**
  * Looser than scoring's `jobBriefSchema`, which strips the posting-shaped keys
- * (location/salary/remote) this index wants. `Job.brief` is stored as sent, so they are usually present.
+ * (location/salary/remote) this index wants. `CampaignJob.brief` is stored as sent, so they are usually present.
  */
 const briefSchema = z.object({
   skills: z.array(z.string()).optional(),
@@ -25,7 +25,7 @@ const briefSchema = z.object({
   yearsExperience: z.number().optional(),
 });
 
-/** The subset of a `Job` a listing may read. Anything user-identifying is absent by design. */
+/** The subset of a `CampaignJob` a listing may read. Anything user-identifying is absent by design. */
 export interface ListingSourceJob {
   title: string;
   company: string;

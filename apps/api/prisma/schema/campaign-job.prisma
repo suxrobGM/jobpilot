@@ -11,8 +11,11 @@ enum CampaignJobStatus {
   @@map("campaign_job_status")
 }
 
-model Job {
+model CampaignJob {
   id          String            @id @default(uuid())
+  // Copied from the campaign so per-user reads skip the join.
+  userId      String            @map("user_id")
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   campaignId  String            @map("campaign_id")
   campaign    Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   key         String
@@ -42,8 +45,9 @@ model Job {
   @@unique([campaignId, key])
   @@index([campaignId, status])
   @@index([status, updatedAt])
-  // Pilot activity probe, as on Campaign.
-  @@index([campaignId, updatedAt])
+  // The pilot activity probe and per-user daily counts.
+  @@index([userId, updatedAt])
+  @@index([userId, status, updatedAt])
   @@index([boardId])
-  @@map("jobs")
+  @@map("campaign_jobs")
 }

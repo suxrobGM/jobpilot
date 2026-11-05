@@ -91,7 +91,7 @@ function fakePilotQuestion(over: Over) {
   };
 }
 
-function fakeJob(over: Over) {
+function fakeCampaignJob(over: Over) {
   return {
     // Routed by the one filter each read sets: applied = warm-intro pool, matchScore = promote
     // sweep, status `in` = board health, and the rest is the approved gather.
@@ -163,7 +163,7 @@ function makeTaskListDb(over: Over = {}) {
     },
     pilotRun: fakePilotRun(over),
     pilotQuestion: fakePilotQuestion(over),
-    job: fakeJob(over),
+    campaignJob: fakeCampaignJob(over),
     application: {
       count: async (a: { where: Row }) =>
         over.digestApps != null && a.where.appliedAt ? over.digestApps : (over.appliedToday ?? 0),

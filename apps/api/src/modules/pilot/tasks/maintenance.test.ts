@@ -29,7 +29,7 @@ function expiryDb(options: {
         return { count: 1 };
       },
     },
-    job: {
+    campaignJob: {
       updateMany: async (a: Write) => {
         writes.jobs.push(a);
         return { count: 1 };
@@ -87,7 +87,8 @@ describe("runExpiry", () => {
     await db.run();
     expect(db.jobWrite("approved")).toMatchObject({
       where: {
-        campaign: { userId: "u1", createdBy: "pilot" },
+        userId: "u1",
+        campaign: { createdBy: "pilot" },
         createdAt: { lt: expect.any(Date) },
       },
       data: { status: "skipped", skipReason: "Posting went stale before the pilot applied." },
@@ -105,7 +106,7 @@ describe("promoteScoredPendingJobs", () => {
 
   const promote = async (rows: Record<string, unknown>[]) => {
     const calls: unknown[][] = [];
-    const prisma = { job: { findMany: async () => rows } } as unknown as PrismaClient;
+    const prisma = { campaignJob: { findMany: async () => rows } } as unknown as PrismaClient;
     const campaignJobs = {
       promoteScoredJobs: async (...args: unknown[]) => {
         calls.push(args);
@@ -137,7 +138,7 @@ describe("expireAbandonedRuns", () => {
           return [];
         },
       },
-      job: { updateMany: async () => ({ count: 0 }) },
+      campaignJob: { updateMany: async () => ({ count: 0 }) },
     };
     const db = {
       pilotRun: { findMany: async () => [{ userId: "u1" }, { userId: "u2" }] },

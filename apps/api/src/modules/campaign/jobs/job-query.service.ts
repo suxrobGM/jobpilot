@@ -12,9 +12,9 @@ export class CampaignJobQueryService {
   constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   async listJobs(userId: string, campaignId: string, query: z.infer<typeof campaignJobsQuery>) {
-    const where: Prisma.JobWhereInput = {
+    const where: Prisma.CampaignJobWhereInput = {
       campaignId,
-      campaign: { userId },
+      userId,
       status: query.status,
       ...(query.search && {
         OR: [
@@ -26,13 +26,13 @@ export class CampaignJobQueryService {
     // The page is already ownership-scoped; the probe only tells a 404 from an empty page.
     const [, jobs, total] = await Promise.all([
       ensureCampaignOwned(this.prisma, userId, campaignId),
-      this.prisma.job.findMany({
+      this.prisma.campaignJob.findMany({
         where,
         include: JOB_INCLUDE,
         orderBy: { createdAt: "asc" },
         ...pageSlice(query),
       }),
-      this.prisma.job.count({ where }),
+      this.prisma.campaignJob.count({ where }),
     ]);
     return paginate(jobs.map(toCampaignJob), query, total);
   }
@@ -42,12 +42,12 @@ export class CampaignJobQueryService {
     await ensureCampaignOwned(this.prisma, userId, campaignId);
 
     const [skipped, failed] = await Promise.all([
-      this.prisma.job.groupBy({
+      this.prisma.campaignJob.groupBy({
         by: ["skipReason"],
         where: { campaignId, status: "skipped", skipReason: { not: null } },
         _count: { _all: true },
       }),
-      this.prisma.job.groupBy({
+      this.prisma.campaignJob.groupBy({
         by: ["failReason"],
         where: { campaignId, status: "failed", failReason: { not: null } },
         _count: { _all: true },

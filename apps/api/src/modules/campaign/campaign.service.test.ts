@@ -49,7 +49,7 @@ function makeService(current = row) {
       update: async ({ data }: { data: Record<string, unknown> }) => ({ ...current, ...data }),
       findUniqueOrThrow: async () => ({ ...current, ...updates.at(-1) }),
     },
-    job: {
+    campaignJob: {
       groupBy: async () => [],
       createMany: async ({ data }: { data: Record<string, unknown>[] }) => {
         jobBatches.push(data);
@@ -151,6 +151,7 @@ describe("CampaignService create with pasted urls", () => {
     await service.create("u1", create(["https://boards.acme.test/jobs/1"]));
     expect(jobBatches[0]).toEqual([
       {
+        userId: "u1",
         campaignId: "c1",
         key: expect.any(String),
         title: "boards.acme.test",

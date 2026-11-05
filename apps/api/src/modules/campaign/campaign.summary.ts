@@ -7,7 +7,10 @@ import type {
 import { CAMPAIGN_JOB_STATUSES } from "@jobpilot/contracts/campaign";
 import { type Campaign, type CampaignSource, Prisma } from "@/generated/prisma/client";
 
-type SummaryClient = Pick<Prisma.TransactionClient, "$queryRaw" | "job" | "networkingMessage">;
+type SummaryClient = Pick<
+  Prisma.TransactionClient,
+  "$queryRaw" | "campaignJob" | "networkingMessage"
+>;
 type CampaignRef = Pick<Campaign, "id" | "source">;
 
 interface StatusCount {
@@ -77,7 +80,7 @@ export async function summarizeCampaigns<T extends CampaignRef>(
 
   const [jobCounts, messageCounts, contacts] = await Promise.all([
     jobIds.length
-      ? client.job.groupBy({
+      ? client.campaignJob.groupBy({
           by: ["campaignId", "status"],
           where: { campaignId: { in: jobIds } },
           // `matchScore` counts non-nulls, so `scored` rides along with the status fold.

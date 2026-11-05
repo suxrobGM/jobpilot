@@ -78,6 +78,7 @@ model User {
   autoApply            AutoApplySettings?
   applications         Application[]
   campaigns            Campaign[]
+  campaignJobs         CampaignJob[]
   credentials          Credential[]
   jobBoards            UserJobBoard[]
   emailAccount         EmailAccount?

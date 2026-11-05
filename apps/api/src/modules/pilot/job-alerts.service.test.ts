@@ -5,13 +5,13 @@ import type { PilotService } from "./pilot.service";
 import { describe, expect, it } from "bun:test";
 
 interface JobQuery {
-  where: { url: { in: string[] }; campaign: { userId: string } };
+  where: { url: { in: string[] }; userId: string };
 }
 
 function seenService(storedUrls: string[]) {
   const queries: JobQuery[] = [];
   const db = {
-    job: {
+    campaignJob: {
       findMany: async (args: JobQuery) => {
         queries.push(args);
         return storedUrls.filter((url) => args.where.url.in.includes(url)).map((url) => ({ url }));
@@ -33,7 +33,7 @@ describe("JobAlertsService.seenUrls", () => {
     expect(await svc.seenUrls("u1", sent)).toEqual({ seen: [sent[0]] });
     expect(queries[0].where).toMatchObject({
       url: { in: ["https://acme.com/jobs/1", "https://acme.com/jobs/2"] },
-      campaign: { userId: "u1" },
+      userId: "u1",
     });
   });
 });

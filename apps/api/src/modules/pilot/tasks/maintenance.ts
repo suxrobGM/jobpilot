@@ -44,10 +44,10 @@ async function expireRuns(tx: Prisma.TransactionClient, userId: string, now: Dat
     take: MAX_OPEN_APPLY_RUNS,
     select: { payload: true },
   });
-  await tx.job.updateMany({
+  await tx.campaignJob.updateMany({
     where: {
       status: "applying",
-      campaign: { userId },
+      userId,
       updatedAt: { lt: staleApplyingBefore(now) },
       NOT: openApplyRuns.map((run) => parseJobRef(run.payload)),
     },
@@ -94,10 +94,11 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
     await expireRuns(tx, userId, now);
 
     // Pilot campaigns only: a user's own queue is theirs to clear.
-    await tx.job.updateMany({
+    await tx.campaignJob.updateMany({
       where: {
         status: "approved",
-        campaign: { userId, createdBy: "pilot" },
+        userId,
+        campaign: { createdBy: "pilot" },
         createdAt: { lt: new Date(now.getTime() - APPROVED_JOB_STALE_MS) },
       },
       data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.wentStale },
@@ -121,10 +122,10 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
     );
     if (parkedJobs.length === 0) return;
 
-    await tx.job.updateMany({
+    await tx.campaignJob.updateMany({
       where: {
         status: "needs_user",
-        campaign: { userId },
+        userId,
         OR: parkedJobs,
       },
       data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.unanswered },
@@ -139,11 +140,12 @@ export async function promoteScoredPendingJobs(
   userId: string,
   fallbackMinScore: number,
 ): Promise<void> {
-  const rows = await prisma.job.findMany({
+  const rows = await prisma.campaignJob.findMany({
     where: {
       status: "pending",
       matchScore: { not: null },
-      campaign: { userId, status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
+      userId,
+      campaign: { status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
     },
     take: GATHER_CAP,
     select: {

@@ -101,7 +101,7 @@ function runDb({ currentVersion = VERSION, openRun = null, campaignStillPaused =
     },
     campaign: { count: async () => (campaignStillPaused ? 1 : 0) },
     // What `startApplying` reads and writes; no duplicate matches.
-    job: {
+    campaignJob: {
       findFirst: async () => ({
         url: "https://example.test/job",
         title: "Engineer",
@@ -135,7 +135,7 @@ function closeDb(row: ReturnType<typeof runRow>) {
       findFirst: async () => row,
       updateManyAndReturn: async (a: { data: Record<string, unknown> }) => [{ ...row, ...a.data }],
     },
-    job: {
+    campaignJob: {
       updateMany: async (a: unknown) => {
         jobReverts.push(a);
         return { count: 1 };

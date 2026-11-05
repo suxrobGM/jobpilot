@@ -130,11 +130,11 @@ export class JobAlertsService {
   /** The given URLs already in one of the user's campaigns from the last week, compared normalized. */
   async seenUrls(userId: string, urls: string[]) {
     const normalized = urls.map(normalizeJobUrl);
-    const rows = await this.prisma.job.findMany({
+    const rows = await this.prisma.campaignJob.findMany({
       where: {
         url: { in: [...new Set(normalized)] },
         createdAt: { gte: new Date(Date.now() - SEEN_WINDOW_MS) },
-        campaign: { userId },
+        userId,
       },
       distinct: ["url"],
       select: { url: true },

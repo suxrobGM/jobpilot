@@ -10,7 +10,7 @@ function client(
   contacts: { campaignId: string; discovered: number }[],
 ) {
   return {
-    job: { groupBy: async () => jobs },
+    campaignJob: { groupBy: async () => jobs },
     networkingMessage: { groupBy: async () => messages },
     $queryRaw: async () => contacts,
   } as unknown as Prisma.TransactionClient;

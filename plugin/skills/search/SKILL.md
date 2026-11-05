@@ -51,7 +51,7 @@ salary). If vague, ask before searching.
    - **A brief description is needed for the ranked table and the preview lacks one** → delegate
      that row to the `job-scorer` subagent with `mode:"score"` and `minMatchScore:0` (so nothing is
      auto-skipped - search keeps every result for review). It opens the posting, scores, and saves
-     the Job row in isolated context. Such rows are already saved - exclude them from the Phase 5
+     the campaign job in isolated context. Such rows are already saved - exclude them from the Phase 5
      bulk save.
 
 ## Phase 3: Exclude Previously Applied
@@ -77,7 +77,7 @@ user to review.
 
 ## Phase 5: Save Results to the Campaign
 
-Save every result as a `Job` on `<campaign-id>` so it appears on the campaigns detail page. **Don't
+Save every result as a campaign job on `<campaign-id>` so it appears on the campaigns detail page. **Don't
 offer apply/search-again commands** - the user applies from there. Use a stable, shell-safe `key`
 per result (slug of `company-title` + rank, no spaces).
 

@@ -92,8 +92,9 @@ export class CampaignService {
     const unique = [...new Set(urls.map(normalizeJobUrl))];
     const campaign = await this.prisma.$transaction(async (tx) => {
       const created = await tx.campaign.create({ data, include: CAMPAIGN_INCLUDE });
-      await tx.job.createMany({
+      await tx.campaignJob.createMany({
         data: unique.map((url) => ({
+          userId: created.userId,
           campaignId: created.id,
           key: crypto.randomUUID(),
           // Nothing is known about a pasted link until a worker opens it; the host stands in.

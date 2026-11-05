@@ -8,7 +8,7 @@ import { Prisma } from "@/generated/prisma/client";
 export const NEEDS_WORKER_VISIT = {
   status: "pending",
   OR: [{ matchScore: null }, { brief: { equals: Prisma.DbNull } }],
-} satisfies Prisma.JobWhereInput;
+} satisfies Prisma.CampaignJobWhereInput;
 
 export function scorePendingWhere(userId: string): Prisma.CampaignWhereInput {
   return {

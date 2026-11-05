@@ -49,7 +49,7 @@ export function setup() {
   const coverLetterLinks: { where: Record<string, unknown>; data: Record<string, unknown> }[] = [];
   const campaign = { source: "auto_apply" as const };
   const db = {
-    job: {
+    campaignJob: {
       findFirst: async () => ({ ...job, campaign }),
       // The applying-duplicate scan; no sibling job is mid-apply in these tests.
       findMany: async () => [],

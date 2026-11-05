@@ -2,7 +2,7 @@
 name: job-scorer
 description: >-
   Internal JobPilot worker that reads job postings and scores them. Review mode
-  returns fit data for one posting; score mode saves up to five scored Job rows.
+  returns fit data for one posting; score mode saves up to five scored campaign jobs.
   The apply, auto-apply and search skills and the pilot's score tasks delegate to
   it; it does the browser work in isolated context and returns only a compact
   JSON result. Not for direct user invocation.
