@@ -8,7 +8,7 @@ import {
   providerDisplayName,
   TERMINAL_PROTOCOL_URL,
   type TerminalProviderId,
-} from "@/lib/terminal";
+} from "@/lib/terminal/client";
 import { RecheckButton } from "./recheck-button";
 
 interface AgentOfflineCardProps {

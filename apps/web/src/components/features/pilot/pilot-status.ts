@@ -1,7 +1,7 @@
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import type { PulseDotTone } from "@/components/ui/feedback";
 import type { TerminalHealth } from "@/hooks/use-terminal-health";
-import type { PilotHealth } from "@/lib/terminal";
+import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 
 export const PILOT_HOST_OFFLINE_MESSAGE =

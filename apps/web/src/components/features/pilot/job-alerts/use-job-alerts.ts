@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 import { plural } from "@/utils/format";
 
 // Run events arrive over SSE (pilot-live.tsx); the poll only catches newly synced mail.

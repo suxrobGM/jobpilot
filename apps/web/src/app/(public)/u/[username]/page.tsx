@@ -7,7 +7,7 @@ import { getPublicFetchOptions } from "@/api/server";
 import { PortfolioView } from "@/components/features/portfolio";
 import { JsonLd } from "@/components/seo/json-ld";
 import { DetailSkeleton } from "@/components/ui/feedback";
-import { breadcrumbLd, personLd } from "@/lib/structured-data";
+import { breadcrumbLd, personLd } from "@/lib/seo/structured-data";
 
 interface PortfolioPageProps {
   params: Promise<{ username: string }>;

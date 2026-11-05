@@ -14,7 +14,11 @@ import {
   DOCK_MAX_EXPANDED,
   DOCK_MIN_EXPANDED,
 } from "@/components/layout/shell-config";
-import { patchAgentStorage, readAgentStorage, subscribeAgentStorage } from "@/lib/agent-storage";
+import {
+  patchAgentStorage,
+  readAgentStorage,
+  subscribeAgentStorage,
+} from "@/lib/terminal/agent-storage";
 import { useAgentDock } from "@/providers/agent-provider";
 import { clamp } from "@/utils/math";
 import { DockPanel } from "./dock-panel";

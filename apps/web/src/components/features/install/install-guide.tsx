@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { CopyField } from "@/components/ui/display";
-import { formatSkillCommand, type TerminalProviderId } from "@/lib/terminal";
+import { formatSkillCommand, type TerminalProviderId } from "@/lib/terminal/client";
 import { HostInstallCommands } from "./host-install-commands";
 import { PLUGIN_COMMANDS } from "./provider-commands";
 import { ProviderTabs } from "./provider-tabs";

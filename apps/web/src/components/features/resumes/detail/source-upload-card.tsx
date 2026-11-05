@@ -10,7 +10,7 @@ import type { ResumeDto } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 import { ExtractResumeButton } from "../extract-resume-button";
 
 interface SourceUploadCardProps {

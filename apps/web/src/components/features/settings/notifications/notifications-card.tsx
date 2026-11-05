@@ -20,7 +20,7 @@ import { TooltipIconButton } from "@/components/ui/buttons";
 import { ItemList, ItemRow } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 import { urlBase64ToUint8Array } from "@/utils/base64";
 import { formatRelativeTime } from "@/utils/format";
 

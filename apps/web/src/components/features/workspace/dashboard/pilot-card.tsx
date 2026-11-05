@@ -14,7 +14,7 @@ import { LinkButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
 import { type TerminalHealth, useTerminalHealth } from "@/hooks/use-terminal-health";
-import type { PilotHealth } from "@/lib/terminal";
+import type { PilotHealth } from "@/lib/terminal/client";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { plural } from "@/utils/format";
 import { useOpenQuestions } from "../../pilot/attention/use-open-questions";

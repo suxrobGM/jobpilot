@@ -1,4 +1,4 @@
-import { GITHUB_URL, SITE_URL } from "./constants";
+import { GITHUB_URL, SITE_URL } from "@/lib/constants";
 
 // schema.org JSON-LD builders. Stable @id anchors let the graph nodes reference each other.
 const ORG_ID = `${SITE_URL}/#organization`;

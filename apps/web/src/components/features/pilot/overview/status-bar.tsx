@@ -8,7 +8,7 @@ import { StatusChip } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
 import { useClockTick } from "@/hooks/use-clock-tick";
 import type { TerminalHealth } from "@/hooks/use-terminal-health";
-import { type PilotHealth, providerDisplayName } from "@/lib/terminal";
+import { type PilotHealth, providerDisplayName } from "@/lib/terminal/client";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime, plural } from "@/utils/format";
 import {

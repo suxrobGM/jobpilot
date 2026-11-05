@@ -1,6 +1,6 @@
 "use client";
 
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 
 /** Copies text to the clipboard and confirms it with a toast. */
 export function useCopy(): (text: string, message?: string) => Promise<void> {

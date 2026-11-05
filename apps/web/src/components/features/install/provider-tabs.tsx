@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Tab, Tabs } from "@mui/material";
-import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal";
+import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal/client";
 
 const PROVIDERS: TerminalProviderId[] = ["claude", "codex"];
 

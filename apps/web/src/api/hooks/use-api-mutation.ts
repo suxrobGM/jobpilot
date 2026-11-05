@@ -7,7 +7,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { type EdenResult, toApiError } from "@/api/error";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 
 type MutationFn<TData, TVariables> = (vars: TVariables) => Promise<EdenResult<TData>>;
 

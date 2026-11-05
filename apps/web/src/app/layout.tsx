@@ -5,9 +5,9 @@ import { Archivo, JetBrains_Mono } from "next/font/google";
 import { SITE_URL } from "@/lib/constants";
 import { AgentProvider } from "@/providers/agent-provider";
 import { ConfirmProvider } from "@/providers/confirm-provider";
-import { ToastProvider } from "@/providers/notification-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { ToastProvider } from "@/providers/toast-provider";
 import { surfaces } from "@/theme/palette";
 
 // Body + display (the display role widens to the expanded width axis via fontStretch).

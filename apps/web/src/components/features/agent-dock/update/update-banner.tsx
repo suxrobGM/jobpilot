@@ -11,7 +11,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { providerDisplayName, type TerminalProviderId, triggerUpdate } from "@/lib/terminal";
+import { providerDisplayName, type TerminalProviderId, triggerUpdate } from "@/lib/terminal/client";
 import { UpdateManualSteps } from "./manual-steps";
 import { isNewer, useLatestRelease } from "./use-latest-release";
 

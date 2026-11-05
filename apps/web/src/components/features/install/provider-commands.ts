@@ -1,4 +1,4 @@
-import type { TerminalProviderId } from "@/lib/terminal";
+import type { TerminalProviderId } from "@/lib/terminal/client";
 
 export const CODEX_PLUGIN_ADD_COMMAND = "codex plugin add jobpilot@sukhrob-codex-plugins";
 

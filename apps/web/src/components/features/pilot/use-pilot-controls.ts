@@ -5,9 +5,14 @@ import { useState } from "react";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
-import { pilotStart, pilotStop, TerminalApiError, type TerminalProviderId } from "@/lib/terminal";
+import {
+  pilotStart,
+  pilotStop,
+  TerminalApiError,
+  type TerminalProviderId,
+} from "@/lib/terminal/client";
 import { useAgentDock } from "@/providers/agent-provider";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 
 export interface PilotControls {
   provider: TerminalProviderId;

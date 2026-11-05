@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { Stack, Typography } from "@mui/material";
 import { CODEX_PLUGIN_ADD_COMMAND } from "@/components/features/install/provider-commands";
 import { CopyField } from "@/components/ui/display";
-import { formatSkillCommand, type TerminalProviderId } from "@/lib/terminal";
+import { formatSkillCommand, type TerminalProviderId } from "@/lib/terminal/client";
 
 const MARKETPLACE_UPDATE_COMMAND = "/plugin marketplace update sukhrob-claude-plugins";
 

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 
 interface ResetPasswordFormProps {
   token: string;

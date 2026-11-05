@@ -7,8 +7,8 @@ import { FitAddon } from "@xterm/addon-fit";
 import { type ITheme, Terminal } from "@xterm/xterm";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
-import { startSession, TERMINAL_WS_URL, type TerminalProviderId } from "@/lib/terminal";
-import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
+import { startSession, TERMINAL_WS_URL, type TerminalProviderId } from "@/lib/terminal/client";
+import { connectWebSocket, type WebSocketClient } from "@/lib/terminal/websocket";
 import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;

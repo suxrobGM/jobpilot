@@ -6,7 +6,7 @@ import { Box, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
-import type { PilotHealth } from "@/lib/terminal";
+import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, humanizeIsoInText } from "@/utils/format";
 import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../pilot-status";
 import { taskTypeAgent, taskTypeLabel } from "../task-types";

@@ -18,7 +18,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 import { useUrlSearch } from "@/hooks/use-url-search";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 import { plural } from "@/utils/format";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { enumParam } from "@/utils/search-params";

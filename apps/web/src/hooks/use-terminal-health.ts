@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import { patchAgentStorage, readAgentStorage } from "@/lib/agent-storage";
 import { ExternalStore } from "@/lib/external-store";
-import { getStatus, type SessionStatus } from "@/lib/terminal";
+import { patchAgentStorage, readAgentStorage } from "@/lib/terminal/agent-storage";
+import { getStatus, type SessionStatus } from "@/lib/terminal/client";
 
 export type TerminalHealth = "checking" | "reachable" | "degraded" | "offline" | "uninstalled";
 

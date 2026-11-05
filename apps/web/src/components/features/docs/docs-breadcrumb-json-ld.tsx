@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { usePathname } from "next/navigation";
 import { JsonLd } from "@/components/seo/json-ld";
-import { breadcrumbLd } from "@/lib/structured-data";
+import { breadcrumbLd } from "@/lib/seo/structured-data";
 import { DOCS_NAV } from "./docs-nav";
 
 /** Emits a BreadcrumbList for the active docs page (Home › Docs › <guide>), keyed off the path. */

@@ -1,4 +1,4 @@
-import { SITE_URL } from "./constants";
+import { SITE_URL } from "@/lib/constants";
 import {
   employmentTypes,
   type JobLocation,

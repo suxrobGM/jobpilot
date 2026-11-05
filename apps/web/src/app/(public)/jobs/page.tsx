@@ -14,7 +14,7 @@ import {
 import { JsonLd } from "@/components/seo/json-ld";
 import { LinkButton } from "@/components/ui/buttons";
 import { DetailSkeleton, EmptyState, TableSkeleton } from "@/components/ui/feedback";
-import { breadcrumbLd } from "@/lib/structured-data";
+import { breadcrumbLd } from "@/lib/seo/structured-data";
 import { formatCount } from "@/utils/format";
 import { one, pageParam } from "@/utils/search-params";
 import { getSkillFacets, landingParams, landingTitle } from "./landing-views";

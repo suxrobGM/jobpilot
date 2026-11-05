@@ -26,8 +26,8 @@ import { PersonalSection, toProfileFormValues } from "@/components/features/sett
 import { QueryError } from "@/components/ui/feedback";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { patchAgentStorage } from "@/lib/agent-storage";
-import { useToast } from "@/providers/notification-provider";
+import { patchAgentStorage } from "@/lib/terminal/agent-storage";
+import { useToast } from "@/providers/toast-provider";
 import { AgentSetupStep } from "./agent-setup-step";
 import { ResumeUploadStep } from "./resume-upload-step";
 import { describeIssues, firstStepWithIssue } from "./validation-issues";

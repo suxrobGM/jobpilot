@@ -8,8 +8,8 @@ import { getPublicFetchOptions } from "@/api/server";
 import { JobDetail, JobList } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { DetailSkeleton, TableSkeleton } from "@/components/ui/feedback";
-import { jobPostingLd } from "@/lib/job-posting-ld";
-import { breadcrumbLd } from "@/lib/structured-data";
+import { jobPostingLd } from "@/lib/seo/job-posting-ld";
+import { breadcrumbLd } from "@/lib/seo/structured-data";
 
 interface JobPageProps {
   params: Promise<{ slug: string }>;

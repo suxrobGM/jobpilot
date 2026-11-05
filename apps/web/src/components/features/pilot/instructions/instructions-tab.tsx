@@ -23,7 +23,7 @@ import {
   StickyFooter,
 } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 import { BoardsSection } from "./boards-section";
 import {
   type InstructionsFormValues,

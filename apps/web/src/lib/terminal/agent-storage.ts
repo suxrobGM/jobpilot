@@ -1,6 +1,6 @@
 "use client";
 
-import type { TerminalProviderId } from "@/lib/terminal";
+import type { TerminalProviderId } from "@/lib/terminal/client";
 import { readLocalStorage, writeLocalStorage } from "@/utils/local-storage";
 
 const STORAGE_KEY = "jobpilot:agent";

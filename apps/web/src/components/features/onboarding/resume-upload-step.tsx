@@ -12,7 +12,7 @@ import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
 type StepState = "idle" | "extracting" | "done";

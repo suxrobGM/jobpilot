@@ -14,7 +14,7 @@ import {
   getStoredProvider,
   patchAgentStorage,
   subscribeAgentStorage,
-} from "@/lib/agent-storage";
+} from "@/lib/terminal/agent-storage";
 import {
   formatSkillCommand,
   injectCommand,
@@ -22,8 +22,8 @@ import {
   shutdownHost,
   TerminalApiError,
   type TerminalProviderId,
-} from "@/lib/terminal";
-import { useToast } from "@/providers/notification-provider";
+} from "@/lib/terminal/client";
+import { useToast } from "@/providers/toast-provider";
 
 export interface AgentContextValue {
   inject: (command: string) => Promise<void>;

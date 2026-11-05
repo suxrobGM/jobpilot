@@ -14,7 +14,12 @@ import {
   Trust,
 } from "@/components/features/marketing";
 import { JsonLd } from "@/components/seo/json-ld";
-import { faqPageLd, organizationLd, softwareApplicationLd, websiteLd } from "@/lib/structured-data";
+import {
+  faqPageLd,
+  organizationLd,
+  softwareApplicationLd,
+  websiteLd,
+} from "@/lib/seo/structured-data";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },

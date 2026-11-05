@@ -13,8 +13,8 @@ import {
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import type { TerminalHealth } from "@/hooks/use-terminal-health";
-import { readAgentStorage } from "@/lib/agent-storage";
-import { providerDisplayName } from "@/lib/terminal";
+import { readAgentStorage } from "@/lib/terminal/agent-storage";
+import { providerDisplayName } from "@/lib/terminal/client";
 import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOfflineCard } from "./agent-offline-card";

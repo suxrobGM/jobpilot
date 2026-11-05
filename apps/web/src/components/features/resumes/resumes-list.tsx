@@ -29,7 +29,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 import { plural } from "@/utils/format";
 import { NewResumeDialog } from "./new-resume-dialog";
 import { useSetPrimaryResume } from "./use-set-primary-resume";
