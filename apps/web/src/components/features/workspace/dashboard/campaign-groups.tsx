@@ -2,10 +2,12 @@
 
 import type { ReactElement, ReactNode } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
+import type { Pagination as PageMeta } from "@jobpilot/contracts/pagination";
 import { Add } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
+import type { CampaignDto } from "@/api/types";
 import { CampaignRow } from "@/components/features/campaigns";
 import { PaginationFooter } from "@/components/ui/data";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
@@ -98,7 +100,7 @@ export function CampaignGroups(): ReactElement {
 }
 
 interface CampaignGroupSectionProps {
-  group: ReturnType<typeof useCampaignGroup>;
+  group: CampaignGroupState;
 }
 
 function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
@@ -130,7 +132,18 @@ function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
 }
 
 /** One paginated status group, with its own `?pausedPage=` / `?completedPage=` params. */
-function useCampaignGroup(group: (typeof GROUPS)[number]) {
+interface CampaignGroupState {
+  label: string;
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => void;
+  items: CampaignDto[];
+  pagination: PageMeta | undefined;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
+}
+
+function useCampaignGroup(group: (typeof GROUPS)[number]): CampaignGroupState {
   const { query, setPage, setPageSize } = usePaginationParams({
     pageSize: PAGE_SIZE,
     prefix: group.key,
@@ -141,7 +154,7 @@ function useCampaignGroup(group: (typeof GROUPS)[number]) {
     label: group.label,
     isLoading: result.isLoading,
     isError: result.isError,
-    refetch: result.refetch,
+    refetch: () => void result.refetch(),
     items: result.data?.items ?? [],
     pagination: result.data?.pagination,
     setPage,

@@ -1,7 +1,8 @@
+import type { Data } from "@jobpilot/api-client";
 import type { JobAlertsStatus } from "@jobpilot/contracts/pilot";
-import { useQuery } from "@tanstack/react-query";
+import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { type ApiMutationResult, useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { useToast } from "@/providers/toast-provider";
 import { plural } from "@/utils/format";
@@ -20,7 +21,15 @@ export function runDisabledReason(status: JobAlertsStatus): string | null {
   return null;
 }
 
-export function useJobAlerts() {
+type RunResult = Data<(typeof api.pilot)["job-alerts"]["runs"]["post"]>;
+
+interface JobAlertsState {
+  query: UseQueryResult<JobAlertsStatus>;
+  status: JobAlertsStatus | undefined;
+  run: ApiMutationResult<RunResult>;
+}
+
+export function useJobAlerts(): JobAlertsState {
   const toast = useToast();
   const query = useQuery({ ...pilotQueries.jobAlerts(), refetchInterval: POLL_MS });
   const run = useApiMutation(() => api.pilot["job-alerts"].runs.post(), {
