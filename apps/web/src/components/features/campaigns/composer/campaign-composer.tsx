@@ -13,6 +13,7 @@ import { useLinkBoard } from "@/components/features/boards/use-link-board";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
+import { campaignHref } from "@/utils/routes";
 import { ApplyFields } from "./apply-fields";
 import { AutoApplyFields } from "./auto-apply-fields";
 import { CampaignBasicsFields } from "./campaign-basics-fields";
@@ -117,7 +118,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
 
       const campaign = await createCampaign.mutateAsync(buildCreateCampaignRequest(effective));
       const campaignId = campaign.id;
-      router.push(`/campaigns/${encodeURIComponent(campaignId)}`);
+      router.push(campaignHref(campaignId));
 
       void agent.injectSkill(
         upwork ? "upwork-search" : effective.mode,

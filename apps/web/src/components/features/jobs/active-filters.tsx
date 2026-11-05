@@ -52,7 +52,7 @@ export function ActiveFilters(): ReactNode {
           onDelete={() => drop(filter.key)}
         />
       ))}
-      <Button variant="text" size="small" onClick={() => router.push("/jobs")}>
+      <Button variant="text" size="small" href="/jobs">
         Clear all
       </Button>
     </Stack>

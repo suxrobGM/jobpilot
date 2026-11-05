@@ -4,11 +4,8 @@ import type { ReactElement, ReactNode } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { Add } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
-import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
-import type { CampaignDto } from "@/api/types";
 import { CampaignRow } from "@/components/features/campaigns";
 import { EmptyState, PaginationFooter, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
@@ -27,7 +24,6 @@ const GROUPS = [
 const PAGE_SIZE = 10;
 
 export function CampaignGroups(): ReactElement {
-  const router = useRouter();
   const { expand } = useAgentDock();
   const agentAvailable = useAgentAvailable();
 
@@ -37,10 +33,6 @@ export function CampaignGroups(): ReactElement {
   const loading = summary.isLoading || groups.some((g) => g.isLoading);
   const isError = summary.isError || groups.some((g) => g.isError);
   const isEmpty = summary.data?.total === 0;
-
-  const open = (c: CampaignDto): void => {
-    router.push(`/campaigns/${encodeURIComponent(c.id)}` as Route);
-  };
 
   return (
     <SectionCard
@@ -52,7 +44,7 @@ export function CampaignGroups(): ReactElement {
             size="small"
             variant="contained"
             startIcon={<Add fontSize="md" />}
-            onClick={() => router.push("/campaigns/new")}
+            href="/campaigns/new"
           >
             New campaign
           </Button>
@@ -96,7 +88,7 @@ export function CampaignGroups(): ReactElement {
             </Typography>
           )}
           {groups.map((group) => (
-            <CampaignGroupSection key={group.label} group={group} onOpen={open} />
+            <CampaignGroupSection key={group.label} group={group} />
           ))}
         </Stack>
       </QuerySection>
@@ -106,11 +98,10 @@ export function CampaignGroups(): ReactElement {
 
 interface CampaignGroupSectionProps {
   group: ReturnType<typeof useCampaignGroup>;
-  onOpen: (campaign: CampaignDto) => void;
 }
 
 function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
-  const { group, onOpen } = props;
+  const { group } = props;
   const { pagination } = group;
 
   if (!pagination?.total) {
@@ -123,7 +114,7 @@ function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
         {group.label} · {pagination.total}
       </Typography>
       {group.items.map((c) => (
-        <CampaignRow key={c.id} campaign={c} onSelect={onOpen} onOpenDetail={onOpen} />
+        <CampaignRow key={c.id} campaign={c} />
       ))}
       {/* The group heading already carries the total, so a one-page footer is noise. */}
       {pagination.totalPages > 1 && (

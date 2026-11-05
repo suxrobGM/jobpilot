@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import { Box, Paper, Stack, Typography } from "@mui/material";
+import { Box, ButtonBase, Paper, Stack, Typography } from "@mui/material";
 
 export interface SectionAnchor {
   id: string;
@@ -90,16 +90,11 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
         {anchors.map((anchor) => {
           const active = anchor.id === activeId;
           return (
-            <Box
+            <ButtonBase
               key={anchor.id}
-              component="button"
-              type="button"
               onClick={() => handleClick(anchor.id)}
               sx={(theme) => ({
-                appearance: "none",
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
+                justifyContent: "flex-start",
                 textAlign: "left",
                 paddingInline: theme.spacing(1.25),
                 paddingBlock: theme.spacing(0.75),
@@ -113,12 +108,7 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
               })}
             >
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: active ? 500 : 400, fontSize: "0.8125rem" }}
-                >
-                  {anchor.label}
-                </Typography>
+                <Typography variant={active ? "body1Strong" : "body1"}>{anchor.label}</Typography>
                 {anchor.empty && (
                   <Paper
                     variant="panel"
@@ -126,7 +116,7 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
                   />
                 )}
               </Stack>
-            </Box>
+            </ButtonBase>
           );
         })}
       </Stack>

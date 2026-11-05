@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { TravelExplore } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
@@ -13,6 +12,7 @@ import { isRunPending } from "@/components/features/pilot/job-alerts/use-job-ale
 import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/data";
 import { formatRelativeTime } from "@/utils/format";
+import { campaignHref } from "@/utils/routes";
 
 function lastRunText(status: ResearchStatusDto): string {
   const { lastRun } = status;
@@ -54,10 +54,7 @@ export function ResearchSection(): ReactElement {
               Research now
             </Button>
             {status.campaignId && (
-              <LinkButton
-                size="small"
-                href={`/campaigns/${encodeURIComponent(status.campaignId)}` as Route}
-              >
+              <LinkButton size="small" href={campaignHref(status.campaignId)}>
                 Research campaign
               </LinkButton>
             )}

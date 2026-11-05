@@ -3,7 +3,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { Stop } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries, OPTIONS_PAGE } from "@/api/queries";
@@ -13,6 +12,7 @@ import { LinkButton } from "@/components/ui/buttons";
 import { PulseDot } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { radii } from "@/theme";
+import { campaignHref } from "@/utils/routes";
 
 /** Folds a campaign's summary into a single progress reading, type-aware. */
 function progress(campaign: CampaignDto): { value: number; label: string } {
@@ -75,11 +75,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
           sx={{ mt: 0.75, borderRadius: radii.xs }}
         />
       </Box>
-      <LinkButton
-        size="small"
-        variant="text"
-        href={`/campaigns/${encodeURIComponent(campaign.id)}` as Route}
-      >
+      <LinkButton size="small" variant="text" href={campaignHref(campaign.id)}>
         Open
       </LinkButton>
       <Button

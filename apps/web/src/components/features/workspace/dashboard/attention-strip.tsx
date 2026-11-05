@@ -2,11 +2,11 @@
 
 import type { ReactNode } from "react";
 import { Alert } from "@mui/material";
-import type { Route } from "next";
 import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { plural } from "@/utils/format";
+import { campaignHref } from "@/utils/routes";
 
 /** Surfaces campaigns that need user action. Renders nothing when all clear. */
 export function AttentionStrip(): ReactNode {
@@ -23,11 +23,7 @@ export function AttentionStrip(): ReactNode {
       variant="outlined"
       action={
         drafts.campaignId && (
-          <LinkButton
-            size="small"
-            color="inherit"
-            href={`/campaigns/${encodeURIComponent(drafts.campaignId)}` as Route}
-          >
+          <LinkButton size="small" color="inherit" href={campaignHref(drafts.campaignId)}>
             Review
           </LinkButton>
         )

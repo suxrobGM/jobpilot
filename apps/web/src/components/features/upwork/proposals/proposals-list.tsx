@@ -7,7 +7,6 @@ import { ChevronRight, Clear } from "@mui/icons-material";
 import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
@@ -23,7 +22,6 @@ import { ProposalStatusChip } from "./proposal-status-chip";
 const PAGE_SIZE = 10;
 
 export function ProposalsList(): ReactElement {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<UpworkProposalStatus | null>(null);
   const { query, setPage, setPageSize } = usePaginationParams({ pageSize: PAGE_SIZE });
@@ -46,10 +44,6 @@ export function ProposalsList(): ReactElement {
   const pageRows = proposals.data?.items ?? [];
   const total = proposals.data?.pagination.total ?? 0;
   const hasFilters = statusFilter !== null;
-
-  const handleNavigate = (id: string): void => {
-    router.push(`/upwork/${id}` as Route);
-  };
 
   return (
     <SectionCard>
@@ -97,7 +91,7 @@ export function ProposalsList(): ReactElement {
         <Stack spacing={1}>
           {pageRows.map((p) => (
             <Card key={p.id} variant="interactive">
-              <CardActionArea onClick={() => handleNavigate(p.id)} sx={{ padding: 1.5 }}>
+              <CardActionArea href={`/upwork/${p.id}` as Route} sx={{ padding: 1.5 }}>
                 <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
                   <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
                     <Stack

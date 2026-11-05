@@ -1,13 +1,21 @@
 "use client";
 
-import { type ReactElement, type ReactNode, useState } from "react";
+import type { ReactElement, ReactNode } from "react";
 import {
   type PilotJournalEntry,
   type PilotJournalKind,
   pilotCycleDetailSchema,
 } from "@jobpilot/contracts/pilot";
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { Box, Chip, Collapse, Divider, Paper, Stack, Typography } from "@mui/material";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Chip,
+  Divider,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { ColorChip, RelativeTime } from "@/components/ui/display";
 import { CYCLE_STATUS_COLOR } from "@/lib/terminal";
 import { formatDuration, formatSpanBetween } from "@/utils/format";
@@ -79,7 +87,6 @@ interface CycleCardProps extends CycleEntriesProps {
 
 function CycleCard(props: CycleCardProps): ReactElement {
   const { entries, defaultOpen } = props;
-  const [open, setOpen] = useState(defaultOpen);
 
   const chronological = [...entries].reverse();
   const started = chronological[0]?.createdAt;
@@ -90,24 +97,8 @@ function CycleCard(props: CycleCardProps): ReactElement {
   const run = entries.find((entry) => entry.run)?.run ?? null;
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <Stack
-        component="button"
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        direction="row"
-        spacing={1.5}
-        sx={{
-          alignItems: "center",
-          width: "100%",
-          textAlign: "left",
-          background: "none",
-          border: 0,
-          p: 0,
-          cursor: "pointer",
-          color: "inherit",
-        }}
-      >
+    <Accordion defaultExpanded={defaultOpen} slotProps={{ transition: { unmountOnExit: true } }}>
+      <AccordionSummary>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
             <Typography variant="body1Strong">Cycle</Typography>
@@ -123,16 +114,15 @@ function CycleCard(props: CycleCardProps): ReactElement {
           </Stack>
           <KindSummary entries={entries} />
         </Box>
-        {open ? <ExpandLess fontSize="sm" /> : <ExpandMore fontSize="sm" />}
-      </Stack>
-      <Collapse in={open}>
-        <Stack spacing={1.5} divider={<Divider />} sx={{ mt: 2 }}>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Stack spacing={1.5} divider={<Divider />}>
           {chronological.map((entry) => (
             <JournalRow key={entry.id} entry={entry} />
           ))}
         </Stack>
-      </Collapse>
-    </Paper>
+      </AccordionDetails>
+    </Accordion>
   );
 }
 

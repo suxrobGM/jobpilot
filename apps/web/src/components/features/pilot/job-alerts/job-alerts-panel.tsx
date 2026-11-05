@@ -8,7 +8,6 @@ import type {
 } from "@jobpilot/contracts/pilot";
 import { Schedule } from "@mui/icons-material";
 import { Alert, Button, Chip, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -16,6 +15,7 @@ import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil, plural } from "@/utils/format";
+import { campaignHref } from "@/utils/routes";
 import { RunJobAlertsButton } from "./run-job-alerts-button";
 import { ScheduleDialog } from "./schedule-dialog";
 import { hourLabel, runDisabledReason, useJobAlerts } from "./use-job-alerts";
@@ -53,10 +53,7 @@ function LastRun(props: LastRunProps): ReactElement {
           : `Importing now - started ${formatRelativeTime(lastRun.startedAt)} ago`}
       </Typography>
       {lastRun.campaign && (
-        <LinkButton
-          size="small"
-          href={`/campaigns/${encodeURIComponent(lastRun.campaign.id)}` as Route}
-        >
+        <LinkButton size="small" href={campaignHref(lastRun.campaign.id)}>
           {lastRun.campaign.query}
         </LinkButton>
       )}

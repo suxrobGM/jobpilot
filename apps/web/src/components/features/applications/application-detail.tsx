@@ -4,7 +4,6 @@ import { type ReactElement, useState } from "react";
 import type { StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
 import { Button, IconButton, LinearProgress, Link, Stack } from "@mui/material";
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
@@ -15,6 +14,7 @@ import { LabelValue, StatusChip } from "@/components/ui/display";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
+import { campaignHref } from "@/utils/routes";
 import { ActivityTimeline } from "./activity-timeline";
 import { StatusTransitionDialog } from "./status-transition-dialog";
 import { SubmissionDetails } from "./submission-details";
@@ -113,9 +113,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               <LabelValue label="Applied at">{formatAbsoluteTime(app.appliedAt)}</LabelValue>
               {app.campaignId && (
                 <LabelValue label="Campaign">
-                  <Link href={`/campaigns/${encodeURIComponent(app.campaignId)}` as Route}>
-                    Open campaign
-                  </Link>
+                  <Link href={campaignHref(app.campaignId)}>Open campaign</Link>
                 </LabelValue>
               )}
             </Stack>
