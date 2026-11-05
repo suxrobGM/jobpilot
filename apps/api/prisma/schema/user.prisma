@@ -39,7 +39,7 @@ model User {
   credentials          Credential[]
   jobBoards            UserJobBoard[]
   emailAccount         EmailAccount?
-  emailOAuthClient     EmailOAuthClient?
+  emailOAuthClients    EmailOAuthClient[]
   upworkProposals      UpworkProposal[]
   upworkProfile        UpworkProfile?
   upworkAccount        UpworkAccount?

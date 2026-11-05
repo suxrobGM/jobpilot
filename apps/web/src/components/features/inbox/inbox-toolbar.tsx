@@ -39,7 +39,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   return (
     <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", alignItems: "center" }}>
       <TooltipButton
-        title="Fetch new mail from Gmail"
+        title="Fetch new mail"
         size="small"
         variant="outlined"
         startIcon={<CloudSync />}

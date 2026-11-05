@@ -11,8 +11,8 @@ export function MailboxReauthAlert(props: MailboxReauthAlertProps): ReactElement
   const { action } = props;
   return (
     <Alert severity="error" action={action}>
-      Google rejected this mailbox&apos;s access grant, so mail sync, verification codes, and
-      sending are paused. Reconnect to sign in again.
+      The mail provider rejected this mailbox&apos;s access grant, so mail sync, verification codes,
+      and sending are paused. Reconnect to sign in again.
     </Alert>
   );
 }

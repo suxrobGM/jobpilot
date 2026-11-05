@@ -1,7 +1,6 @@
 export { CredentialsSection } from "./credentials/credentials-section";
-export { ConnectCard } from "./email/connect-card";
+export { EmailSection } from "./email/email-section";
 export { MailboxReauthAlert } from "./email/mailbox-reauth-alert";
-export { OAuthClientCard } from "./email/oauth-client-card";
 export { NotificationsCard } from "./notifications/notifications-card";
 export { PersonalSection } from "./profile/personal-section";
 export { toProfileFormValues } from "./profile/profile-form-values";

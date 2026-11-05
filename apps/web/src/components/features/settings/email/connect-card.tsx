@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { EmailProvider } from "@jobpilot/contracts/email";
 import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/api/base-url";
@@ -13,12 +14,16 @@ import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
 import { MailboxReauthAlert } from "./mailbox-reauth-alert";
 
-/** Step 2: connect the mailbox, once step 1 has saved an OAuth client. */
-export function ConnectCard(): ReactElement {
+/**
+ * Step 2 - connect / reconnect / disconnect the mailbox (gated on a saved
+ * client). Reads the mailbox status and client config (shared keys dedupe
+ * with the OAuth client card).
+ */
+export function ConnectCard({ provider }: { provider: EmailProvider }): ReactElement {
   const confirm = useConfirm();
 
   const statusQuery = useQuery(emailQueries.account());
-  const configQuery = useQuery(emailQueries.oauthClient());
+  const configQuery = useQuery(emailQueries.oauthClient(provider));
 
   const disconnect = useApiMutation(() => api.email.account.delete(), {
     successMessage: "Email disconnected",
@@ -26,7 +31,7 @@ export function ConnectCard(): ReactElement {
   });
 
   const connect = (): void => {
-    window.location.href = `${API_BASE_URL}/api/email/oauth/authorize`;
+    window.location.href = `${API_BASE_URL}/api/email/oauth/authorize?provider=${provider}`;
   };
 
   const handleDisconnect = async (): Promise<void> => {
@@ -66,28 +71,37 @@ export function ConnectCard(): ReactElement {
         <Stack spacing={1.5}>
           <Box>
             <Typography variant="body2Strong">{status.email}</Typography>
-            <Typography variant="captionMuted">Gmail · last synced {last}</Typography>
+            <Typography variant="captionMuted">
+              {status.provider === "microsoft" ? "Microsoft 365" : "Gmail"} · last synced {last}
+            </Typography>
           </Box>
+          {status.signedInEmail && (
+            <Typography variant="captionMuted">Signed in as {status.signedInEmail}</Typography>
+          )}
+          {status.provider !== provider && (
+            <Alert severity="info">
+              Disconnect this mailbox before connecting the selected provider.
+            </Alert>
+          )}
           {status.needsReauth && <MailboxReauthAlert />}
           {!configured && (
             <Alert severity="warning">
-              Add your Google OAuth client above before reconnecting.
+              Add this provider’s OAuth client above before reconnecting.
             </Alert>
           )}
           {configured && !status.canSend && (
             <Alert severity="info">
-              This mailbox is read-only, so networking can&apos;t send email yet. Add the{" "}
-              <code>gmail.send</code> scope to your OAuth client, then use{" "}
-              <strong>Reconnect to enable sending</strong> below.
+              This mailbox is read-only. Enable sending in its OAuth configuration and reconnect
+              only if you want JobPilot to send mail.
             </Alert>
           )}
           <Stack direction="row" spacing={1.5}>
             <Button
               variant={status.canSend ? "outlined" : "contained"}
-              disabled={!configured}
+              disabled={!configured || status.provider !== provider}
               onClick={connect}
             >
-              {status.canSend ? "Reconnect" : "Reconnect to enable sending"}
+              Reconnect
             </Button>
             <Button variant="outlined" color="error" onClick={() => void handleDisconnect()}>
               Disconnect
@@ -101,14 +115,16 @@ export function ConnectCard(): ReactElement {
   return (
     <SectionCard
       title="Email integration"
-      description="Connect Gmail so JobPilot can track recruiter replies, auto-fill verification codes, and send networking emails."
+      description="Connect a mailbox so JobPilot can track recruiter replies and read application emails. Sending requires its own permission."
     >
       <Stack spacing={1.5} sx={{ maxWidth: 360 }}>
         {!configured && (
-          <Alert severity="info">Save your Google OAuth client above first, then connect.</Alert>
+          <Alert severity="info">
+            Save this provider’s OAuth client above first, then connect.
+          </Alert>
         )}
         <Button variant="contained" disabled={!configured} onClick={connect}>
-          Connect Gmail
+          Connect {provider === "microsoft" ? "Microsoft 365" : "Gmail"}
         </Button>
       </Stack>
     </SectionCard>

@@ -1,10 +1,11 @@
+import type { EmailProvider } from "@jobpilot/contracts/email";
 import { inject, injectable } from "@needle-di/core";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
-import { badRequest, unauthorized } from "@/common/errors";
+import { badRequest, HttpError, unauthorized } from "@/common/errors";
 import { env } from "@/env";
 import { type EmailAccount, PrismaClient } from "@/generated/prisma/client";
-import { GmailClient } from "../gmail.client";
-import type { MailboxSession, OAuthClientConfig, TokenSet } from "../gmail.types";
+import type { MailboxSession, OAuthClientConfig, TokenSet } from "../email.types";
+import { EmailProviders, tokenContext } from "../email-provider";
 
 /** A connected mailbox: the stored row (ids, scope, sync state) and a session ready for Gmail. */
 interface OpenMailbox {
@@ -17,15 +18,20 @@ export class MailboxSessionService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly crypto = inject(CryptoService),
-    private readonly gmail = inject(GmailClient),
+    private readonly providers = inject(EmailProviders),
   ) {}
 
   /** The user's own Google OAuth client - there is no shared one. */
-  async resolveOAuthClient(userId: string): Promise<OAuthClientConfig> {
-    const row = await this.prisma.emailOAuthClient.findUnique({ where: { userId } });
+  async resolveOAuthClient(
+    userId: string,
+    provider: EmailProvider = "gmail",
+  ): Promise<OAuthClientConfig> {
+    const row = await this.prisma.emailOAuthClient.findUnique({
+      where: { userId_provider: { userId, provider } },
+    });
     if (!row) {
       throw badRequest(
-        "No Google OAuth client configured. Add your Client ID and Secret in email settings.",
+        "No OAuth client configured for this provider. Add its Client ID and Secret in email settings.",
       );
     }
 
@@ -34,7 +40,15 @@ export class MailboxSessionService {
       SECRET_CONTEXTS.emailOAuthClient,
       row.clientSecret,
     );
-    return { clientId: row.clientId, clientSecret, redirectUri: env.GOOGLE_OAUTH_REDIRECT_URI };
+    return {
+      clientId: row.clientId,
+      clientSecret,
+      redirectUri:
+        provider === "microsoft" ? env.MICROSOFT_OAUTH_REDIRECT_URI : env.GOOGLE_OAUTH_REDIRECT_URI,
+      tenantId: row.tenantId,
+      mailbox: row.mailbox,
+      allowSend: row.allowSend,
+    };
   }
 
   /**
@@ -48,9 +62,9 @@ export class MailboxSessionService {
     }
 
     const decrypt = (value: string | null) =>
-      this.crypto.decryptField(userId, SECRET_CONTEXTS.gmailTokens, value);
+      this.crypto.decryptField(userId, tokenContext(account.provider), value);
     const [config, accessToken, refreshToken] = await Promise.all([
-      this.resolveOAuthClient(userId),
+      this.resolveOAuthClient(userId, account.provider),
       decrypt(account.accessToken),
       decrypt(account.refreshToken),
     ]);
@@ -60,6 +74,9 @@ export class MailboxSessionService {
       refreshToken,
       tokenExpiresAt: account.tokenExpiresAt,
       historyId: account.historyId,
+      mailboxId: account.mailboxId,
+      deltaLink: account.deltaLink,
+      scope: account.scope,
     };
 
     const expired = session.tokenExpiresAt !== null && session.tokenExpiresAt <= new Date();
@@ -80,19 +97,26 @@ export class MailboxSessionService {
   ): Promise<OpenMailbox> {
     let refreshed: TokenSet;
     try {
-      refreshed = await this.gmail.refresh(session.config, refreshToken);
-    } catch {
+      refreshed = await this.providers.refresh(account.provider, session.config, refreshToken);
+    } catch (error) {
+      if (
+        account.provider === "microsoft" &&
+        (!(error instanceof HttpError) || error.status !== 401)
+      )
+        throw error;
       await this.prisma.emailAccount.update({
         where: { id: account.id },
         data: { refreshFailedAt: account.refreshFailedAt ?? new Date() },
       });
-      throw unauthorized("Google rejected the mailbox token. Reconnect it from email settings.");
+      throw unauthorized(
+        "The mail provider rejected the mailbox token. Reconnect it from email settings.",
+      );
     }
 
     const nextRefreshToken = refreshed.refreshToken ?? refreshToken;
     const tokenExpiresAt = refreshed.expiresAt ?? null;
     const encrypt = (value: string) =>
-      this.crypto.encryptFor(account.userId, SECRET_CONTEXTS.gmailTokens, value);
+      this.crypto.encryptFor(account.userId, tokenContext(account.provider), value);
     const updated = await this.prisma.emailAccount.update({
       where: { id: account.id },
       data: {
@@ -110,6 +134,7 @@ export class MailboxSessionService {
         accessToken: refreshed.accessToken,
         refreshToken: nextRefreshToken,
         tokenExpiresAt,
+        scope: refreshed.scope ?? account.scope,
       },
     };
   }

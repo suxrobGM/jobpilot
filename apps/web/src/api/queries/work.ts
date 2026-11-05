@@ -4,7 +4,7 @@ import type {
   CampaignSource,
   CampaignStatus,
 } from "@jobpilot/contracts/campaign";
-import type { ReviewStatus } from "@jobpilot/contracts/email";
+import type { EmailProvider, ReviewStatus } from "@jobpilot/contracts/email";
 import type { PaginationQuery } from "@jobpilot/contracts/pagination";
 import { queryOptions } from "@tanstack/react-query";
 import { api } from "@/api/client";
@@ -94,10 +94,10 @@ export const emailQueries = {
       queryKey: [...EMAIL, "account"],
       queryFn: () => unwrap(api.email.account.get()),
     }),
-  oauthClient: () =>
+  oauthClient: (provider: EmailProvider = "gmail") =>
     queryOptions({
-      queryKey: [...EMAIL, "oauthClient"],
-      queryFn: () => unwrap(api.email.oauth.client.get()),
+      queryKey: [...EMAIL, "oauthClient", provider],
+      queryFn: () => unwrap(api.email.oauth.client.get({ query: { provider } })),
     }),
   messages: (filter: ReviewStatus | null, page: PaginationQuery) =>
     queryOptions({

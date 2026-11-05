@@ -51,10 +51,10 @@ export function InboxContent(): ReactElement {
     return (
       <EmptyState
         title="No mailbox connected"
-        description="JobPilot reads new mail to track recruiter replies and auto-fill verification codes. Connect Gmail to get started."
+        description="JobPilot reads new mail to track recruiter replies and auto-fill verification codes. Connect email to get started."
         action={
           <LinkButton href="/settings/email" variant="contained">
-            Connect Gmail
+            Connect email
           </LinkButton>
         }
       />

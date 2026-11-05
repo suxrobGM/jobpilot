@@ -15,7 +15,7 @@ import {
 } from "@jobpilot/contracts/campaign";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
 import { CAPTCHA_PROVIDERS, CREDENTIAL_KINDS } from "@jobpilot/contracts/credential";
-import { CLASSIFICATIONS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
+import { CLASSIFICATIONS, EMAIL_PROVIDERS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
 import { JOB_LISTING_STATUSES } from "@jobpilot/contracts/job-listing";
 import {
   CONTACT_DISCOVERY_SOURCES,
@@ -70,6 +70,7 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   CoverLetterSource: COVER_LETTER_SOURCES,
   CredentialKind: CREDENTIAL_KINDS,
   EmailClassification: CLASSIFICATIONS,
+  EmailProvider: EMAIL_PROVIDERS,
   EmailReviewStatus: REVIEW_STATUSES,
   JobListingStatus: JOB_LISTING_STATUSES,
   LinkedinMessageKind: LINKEDIN_KINDS,
