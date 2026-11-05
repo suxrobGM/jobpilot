@@ -56,3 +56,7 @@ BEGIN
     RAISE EXCEPTION 'jobs.brief holds a non-object JSON value';
   END IF;
 END $$;
+
+-- Cached task lists embed briefs as strings and ids in the old shape; drop them so the next fetch
+-- rebuilds one, as TASK_LIST_SNAPSHOT_RESET does. A run started off a dropped list is refused as stale.
+UPDATE "pilot_states" SET "task_list_version" = NULL, "task_list_expires_at" = NULL, "task_list_snapshot" = NULL;
