@@ -58,12 +58,13 @@ export class OAuthService {
         provider_providerAccountId: { provider, providerAccountId: profile.providerAccountId },
       },
     });
-    const emailOwner = account
+    const owner = account
       ? null
       : await this.prisma.user.findUnique({
           where: { email: profile.email },
-          select: { id: true, emailVerified: true },
+          select: { id: true, emailVerifiedAt: true },
         });
+    const emailOwner = owner && { id: owner.id, emailVerified: owner.emailVerifiedAt !== null };
     const decision = resolveOAuthLogin(profile, account?.userId ?? null, emailOwner);
 
     switch (decision.action) {
@@ -88,7 +89,7 @@ export class OAuthService {
           this.tokens.revokeAll(decision.userId),
           this.prisma.user.update({
             where: { id: decision.userId },
-            data: { emailVerified: true, passwordHash: null },
+            data: { emailVerifiedAt: new Date(), passwordHash: null },
           }),
         ]);
         return this.authService.issueSession(user);

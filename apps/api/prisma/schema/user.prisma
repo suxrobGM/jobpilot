@@ -5,25 +5,25 @@ enum Availability {
   @@map("availability")
 }
 
-// SUPER_ADMIN is a singleton granted only from SUPER_ADMIN_EMAIL (seed / register); no API route assigns it.
+// super_admin is a singleton granted only from SUPER_ADMIN_EMAIL (seed / register); no API route assigns it.
 enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  USER
+  super_admin
+  admin
+  user
 
   @@map("user_role")
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
+  id              String    @id @default(uuid())
+  email           String    @unique
   // Null for OAuth-only accounts; the security page lets them set one later.
-  passwordHash  String?  @map("password_hash")
-  role          UserRole @default(USER)
-  emailVerified Boolean  @default(false) @map("email_verified")
+  passwordHash    String?   @map("password_hash")
+  role            UserRole  @default(user)
+  emailVerifiedAt DateTime? @map("email_verified_at")
   // Per-user data key, wrapped under SECRET_MASTER_KEY. Decrypts this account's secrets, so
   // deleting the account crypto-shreds them.
-  wrappedDek    String?  @map("wrapped_dek")
+  wrappedDek      String?   @map("wrapped_dek")
 
   username     String        @unique
   availability Availability?
@@ -87,7 +87,7 @@ model User {
   upworkProfile        UpworkProfile?
   upworkAccount        UpworkAccount?
   upworkInboxItems     UpworkInboxItem[]
-  references           Reference[]
+  references           ProfessionalReference[]
   salaryPreferences    SalaryPreference[]
   contacts             Contact[]
   networkingMessages   NetworkingMessage[]

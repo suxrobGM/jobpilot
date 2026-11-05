@@ -73,7 +73,7 @@ export class VerificationService {
   async sendVerificationEmail(userId: string, email: string): Promise<void> {
     const raw = await this.issueToken(
       userId,
-      VerificationTokenType.EMAIL_VERIFICATION,
+      VerificationTokenType.email_verification,
       EMAIL_VERIFICATION_TTL_MS,
     );
     const link = `${env.APP_URL}/verify-email?token=${raw}`;
@@ -86,9 +86,12 @@ export class VerificationService {
 
   /** Confirm an email address from a verification magic link. */
   async verifyEmail(rawToken: string): Promise<{ ok: true }> {
-    const record = await this.findValidToken(rawToken, VerificationTokenType.EMAIL_VERIFICATION);
+    const record = await this.findValidToken(rawToken, VerificationTokenType.email_verification);
     await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: record.userId }, data: { emailVerified: true } }),
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { emailVerifiedAt: new Date() },
+      }),
       this.prisma.verificationToken.update({
         where: { id: record.id },
         data: { consumedAt: new Date() },
@@ -103,7 +106,7 @@ export class VerificationService {
     if (!user) {
       throw notFound("User not found");
     }
-    if (!user.emailVerified) {
+    if (user.emailVerifiedAt === null) {
       await this.sendVerificationEmail(user.id, user.email);
     }
     return { ok: true };
@@ -115,7 +118,7 @@ export class VerificationService {
     if (user) {
       const raw = await this.issueToken(
         user.id,
-        VerificationTokenType.PASSWORD_RESET,
+        VerificationTokenType.password_reset,
         PASSWORD_RESET_TTL_MS,
       );
       const link = `${env.APP_URL}/reset-password?token=${raw}`;
@@ -130,7 +133,7 @@ export class VerificationService {
 
   /** Set a new password from a reset magic link and revoke existing sessions. */
   async resetPassword(rawToken: string, newPassword: string): Promise<{ ok: true }> {
-    const record = await this.findValidToken(rawToken, VerificationTokenType.PASSWORD_RESET);
+    const record = await this.findValidToken(rawToken, VerificationTokenType.password_reset);
     const passwordHash = await hashPassword(newPassword);
     await this.prisma.$transaction([
       this.prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
@@ -148,7 +151,7 @@ export class VerificationService {
   async sendEmailChangeEmail(userId: string, newEmail: string): Promise<void> {
     const raw = await this.issueToken(
       userId,
-      VerificationTokenType.EMAIL_CHANGE,
+      VerificationTokenType.email_change,
       EMAIL_CHANGE_TTL_MS,
       newEmail,
     );
@@ -162,7 +165,7 @@ export class VerificationService {
 
   /** The link from the new mailbox switches the login email and forces re-login. */
   async confirmEmailChange(rawToken: string): Promise<{ ok: true }> {
-    const record = await this.findValidToken(rawToken, VerificationTokenType.EMAIL_CHANGE);
+    const record = await this.findValidToken(rawToken, VerificationTokenType.email_change);
     if (!record.newEmail) {
       throw badRequest("Invalid or expired token");
     }
@@ -180,7 +183,7 @@ export class VerificationService {
       // Clicking the link proves control of the new mailbox, so it arrives verified.
       this.prisma.user.update({
         where: { id: record.userId },
-        data: { email: record.newEmail, emailVerified: true },
+        data: { email: record.newEmail, emailVerifiedAt: new Date() },
       }),
       this.prisma.verificationToken.update({
         where: { id: record.id },

@@ -4,7 +4,7 @@ import type {
   CaptchaSolveResult,
   CaptchaType,
 } from "@jobpilot/contracts/captcha";
-import type { ServiceProvider } from "@jobpilot/contracts/credential";
+import type { CaptchaProvider } from "@jobpilot/contracts/credential";
 import { inject, injectable } from "@needle-di/core";
 import { badGateway, notFound } from "@/common/errors";
 import { acquireSlot, RATE_LIMITS } from "@/common/rate-limit";
@@ -39,7 +39,7 @@ interface CapSolverResponse {
 export class CaptchaService {
   constructor(private readonly credentials = inject(CredentialService)) {}
 
-  private solveWith(provider: ServiceProvider, apiKey: string, job: ProviderJob): Promise<string> {
+  private solveWith(provider: CaptchaProvider, apiKey: string, job: ProviderJob): Promise<string> {
     return provider === "two_captcha"
       ? this.solveWithTwoCaptcha(apiKey, job)
       : this.solveWithCapSolver(apiKey, job);

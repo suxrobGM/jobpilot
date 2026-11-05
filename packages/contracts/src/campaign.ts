@@ -21,8 +21,8 @@ export const CAMPAIGN_SOURCES = ["search", "auto_apply", "apply", "networking"] 
 export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 
 /** Who acted: the web user, the terminal agent on their behalf, or the autonomous pilot. */
-export const CAMPAIGN_ACTORS = ["user", "agent", "pilot"] as const;
-export const campaignActorSchema = z.enum(CAMPAIGN_ACTORS);
+export const ACTORS = ["user", "agent", "pilot"] as const;
+export const actorSchema = z.enum(ACTORS);
 
 export const CAMPAIGN_JOB_STATUSES = [
   // Pre-discovery: a pasted URL not yet visited or scored.
@@ -126,7 +126,7 @@ export const createCampaignSchema = z
     /** The board's domain; resolved to a catalog row, which is created unlisted when unknown. */
     board: z.string().trim().min(1).optional(),
     config: campaignConfigSchema.optional(),
-    createdBy: campaignActorSchema.default("user"),
+    createdBy: actorSchema.default("user"),
     /** Set by the pilot's discovery run so the search can find this campaign again by id. */
     pilotSearchId: z.uuid().optional(),
     /** Pasted links seeded as `queued` jobs, before anything is known about the posting. */
@@ -149,7 +149,7 @@ export const updateCampaignConfigSchema = z.object({
 
 export const campaignStatusCommandSchema = z.object({
   status: campaignStatusSchema,
-  actor: campaignActorSchema.default("user"),
+  actor: actorSchema.default("user"),
   /** Why the status changed (e.g. "verification required") - shown on the campaign header. */
   reason: z.string().min(1).max(300).transform(cleanReplacementChars).optional(),
 });
@@ -265,4 +265,4 @@ export type RescanCampaignJobInput = z.infer<typeof rescanCampaignJobSchema>;
 export type RetryCampaignJobInput = z.infer<typeof retryCampaignJobSchema>;
 export type CampaignSource = z.infer<typeof campaignSourceSchema>;
 export type CampaignJob = z.infer<typeof campaignJobSchema>;
-export type CampaignActor = z.infer<typeof campaignActorSchema>;
+export type Actor = z.infer<typeof actorSchema>;

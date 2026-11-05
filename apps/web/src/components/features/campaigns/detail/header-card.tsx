@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { CampaignActor } from "@jobpilot/contracts/campaign";
+import type { Actor } from "@jobpilot/contracts/campaign";
 import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { CampaignDetailDto } from "@/api/types";
 import { formatRelativeTime } from "@/utils/format";
@@ -11,7 +11,7 @@ import { CampaignActionsBar } from "./actions-bar";
 import { CampaignIdentityBanner } from "./identity-banner";
 
 /** Actor names as shown in status attributions ("Paused by you / the agent / the pilot"). */
-const CAMPAIGN_ACTOR_LABEL: Record<CampaignActor, string> = {
+const CAMPAIGN_ACTOR_LABEL: Record<Actor, string> = {
   user: "you",
   agent: "the agent",
   pilot: "the pilot",

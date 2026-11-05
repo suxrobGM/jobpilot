@@ -21,7 +21,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon: SvgIconComponent;
-  /** Shown only to ADMIN/SUPER_ADMIN. Cosmetic - the API's requireRole is the real gate. */
+  /** Shown only to admin and super_admin. Cosmetic - the API's requireRole is the real gate. */
   adminOnly?: boolean;
   /** Live attention badge on the icon: open pilot questions. */
   badge?: "questions";

@@ -17,12 +17,12 @@ enum CampaignStatus {
 }
 
 // Self-reported: every actor calls with the user's own token.
-enum CampaignActor {
+enum Actor {
   user
   agent
   pilot
 
-  @@map("campaign_actor")
+  @@map("actor")
 }
 
 model Campaign {
@@ -32,8 +32,8 @@ model Campaign {
   query         String
   source        CampaignSource
   status        CampaignStatus @default(in_progress)
-  createdBy     CampaignActor  @default(user) @map("created_by")
-  statusActor   CampaignActor? @map("status_actor")
+  createdBy     Actor          @default(user) @map("created_by")
+  statusActor   Actor?         @map("status_actor")
   statusReason  String?        @map("status_reason")
   startedAt     DateTime       @default(now()) @map("started_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")

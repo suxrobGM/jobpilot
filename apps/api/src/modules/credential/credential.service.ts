@@ -1,9 +1,9 @@
 import {
+  CAPTCHA_PROVIDERS,
+  type CaptchaProvider,
   type CredentialInput,
   type CredentialKind,
   type CredentialPatch,
-  SERVICE_PROVIDERS,
-  type ServiceProvider,
 } from "@jobpilot/contracts/credential";
 import { inject, injectable } from "@needle-di/core";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
@@ -23,7 +23,7 @@ export interface ResolvedCredential extends Login {
 }
 
 interface ServiceKey {
-  provider: ServiceProvider;
+  provider: CaptchaProvider;
   apiKey: string;
 }
 
@@ -156,13 +156,13 @@ export class CredentialService {
   /** The decrypted key for `provider`, or for the first provider with a key in preference order. */
   async resolveServiceKey(
     userId: string,
-    provider: ServiceProvider | null,
+    provider: CaptchaProvider | null,
   ): Promise<ServiceKey | null> {
     const rows = await this.prisma.credential.findMany({
       where: { userId, kind: "service", apiKey: { not: null } },
       select: { provider: true, apiKey: true },
     });
-    const order: readonly ServiceProvider[] = provider ? [provider] : SERVICE_PROVIDERS;
+    const order: readonly CaptchaProvider[] = provider ? [provider] : CAPTCHA_PROVIDERS;
     for (const p of order) {
       const row = rows.find((r) => r.provider === p);
       if (row?.apiKey) {

@@ -4,8 +4,8 @@ export const CREDENTIAL_KINDS = ["board", "default", "service"] as const;
 export type CredentialKind = (typeof CREDENTIAL_KINDS)[number];
 
 /** Captcha-solving services whose API key can be stored as a service credential. */
-export const SERVICE_PROVIDERS = ["two_captcha", "capsolver"] as const;
-export type ServiceProvider = (typeof SERVICE_PROVIDERS)[number];
+export const CAPTCHA_PROVIDERS = ["two_captcha", "capsolver"] as const;
+export type CaptchaProvider = (typeof CAPTCHA_PROVIDERS)[number];
 
 const login = { email: z.string().trim().min(1), password: z.string().min(1) };
 
@@ -18,7 +18,7 @@ export const credentialSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("default"), ...login }),
   z.object({
     kind: z.literal("service"),
-    provider: z.enum(SERVICE_PROVIDERS),
+    provider: z.enum(CAPTCHA_PROVIDERS),
     apiKey: z.string().trim().min(1),
   }),
 ]);

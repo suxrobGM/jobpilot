@@ -30,7 +30,7 @@ export function AdminRoleMenu(props: AdminRoleMenuProps): ReactElement {
   );
 
   const handleSetRole = async (role: AssignableRole): Promise<void> => {
-    const granting = role === "ADMIN";
+    const granting = role === "admin";
     const confirmed = await confirm({
       title: granting ? "Make admin?" : "Revoke admin?",
       description: granting
@@ -52,21 +52,21 @@ export function AdminRoleMenu(props: AdminRoleMenuProps): ReactElement {
         </IconButton>
       )}
       items={[
-        user.role === "ADMIN"
+        user.role === "admin"
           ? {
               kind: "item",
               key: "revoke",
               label: "Revoke admin",
               icon: <PersonRemove fontSize="sm" />,
               danger: true,
-              onClick: () => void handleSetRole("USER"),
+              onClick: () => void handleSetRole("user"),
             }
           : {
               kind: "item",
               key: "promote",
               label: "Make admin",
               icon: <Shield fontSize="sm" />,
-              onClick: () => void handleSetRole("ADMIN"),
+              onClick: () => void handleSetRole("admin"),
             },
       ]}
     />

@@ -2,12 +2,12 @@
 
 import type { ReactElement } from "react";
 import {
+  CAPTCHA_PROVIDERS,
+  type CaptchaProvider,
   CREDENTIAL_KINDS,
   type CredentialInput,
   type CredentialKind,
   credentialSchema,
-  SERVICE_PROVIDERS,
-  type ServiceProvider,
 } from "@jobpilot/contracts/credential";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
@@ -24,12 +24,12 @@ interface CredentialFormDialogProps {
   submitting?: boolean;
 }
 
-export const PROVIDER_LABELS: Record<ServiceProvider, string> = {
+export const PROVIDER_LABELS: Record<CaptchaProvider, string> = {
   two_captcha: "2Captcha",
   capsolver: "CapSolver",
 };
 
-const PROVIDER_ITEMS = SERVICE_PROVIDERS.map((p) => ({ value: p, label: PROVIDER_LABELS[p] }));
+const PROVIDER_ITEMS = CAPTCHA_PROVIDERS.map((p) => ({ value: p, label: PROVIDER_LABELS[p] }));
 
 const KIND_LABELS: Record<CredentialKind, string> = {
   board: "Board login",
@@ -43,7 +43,7 @@ interface CredentialFormValues {
   board: string;
   email: string;
   password: string;
-  provider: ServiceProvider;
+  provider: CaptchaProvider;
   apiKey: string;
 }
 
@@ -52,7 +52,7 @@ const DEFAULTS: CredentialFormValues = {
   board: "",
   email: "",
   password: "",
-  provider: SERVICE_PROVIDERS[0],
+  provider: CAPTCHA_PROVIDERS[0],
   apiKey: "",
 };
 
@@ -75,7 +75,7 @@ const formSchema = z
     board: z.string(),
     email: z.string(),
     password: z.string(),
-    provider: z.enum(SERVICE_PROVIDERS),
+    provider: z.enum(CAPTCHA_PROVIDERS),
     apiKey: z.string(),
   })
   .superRefine((values, ctx) => {

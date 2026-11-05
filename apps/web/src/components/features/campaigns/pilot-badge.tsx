@@ -1,11 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { CampaignActor } from "@jobpilot/contracts/campaign";
+import type { Actor } from "@jobpilot/contracts/campaign";
 import { Chip, Tooltip } from "@mui/material";
 
 interface PilotBadgeProps {
-  createdBy: CampaignActor;
+  createdBy: Actor;
 }
 
 /** Marks a campaign the pilot created; renders nothing for user- or agent-created ones. */

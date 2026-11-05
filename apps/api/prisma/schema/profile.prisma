@@ -1,4 +1,4 @@
-model Reference {
+model ProfessionalReference {
   id           String  @id @default(uuid())
   userId       String  @map("user_id")
   user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -10,7 +10,7 @@ model Reference {
   position     Int     @default(0)
 
   @@index([userId])
-  @@map("references")
+  @@map("professional_references")
 }
 
 model SalaryPreference {

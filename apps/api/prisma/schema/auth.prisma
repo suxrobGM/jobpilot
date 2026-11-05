@@ -1,7 +1,7 @@
 enum VerificationTokenType {
-  EMAIL_VERIFICATION
-  PASSWORD_RESET
-  EMAIL_CHANGE
+  email_verification
+  password_reset
+  email_change
 
   @@map("verification_token_type")
 }
@@ -12,7 +12,7 @@ model VerificationToken {
   userId     String                @map("user_id")
   type       VerificationTokenType
   tokenHash  String                @unique @map("token_hash")
-  // EMAIL_CHANGE only: the address to switch to.
+  // `email_change` only: the address to switch to.
   newEmail   String?               @map("new_email")
   expiresAt  DateTime              @map("expires_at")
   consumedAt DateTime?             @map("consumed_at")

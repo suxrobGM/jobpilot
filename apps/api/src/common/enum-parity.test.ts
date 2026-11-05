@@ -6,13 +6,13 @@ import {
 } from "@jobpilot/contracts/application";
 import { AUTH_TOKEN_KINDS, OAUTH_PROVIDERS } from "@jobpilot/contracts/auth";
 import {
-  CAMPAIGN_ACTORS,
+  ACTORS,
   CAMPAIGN_JOB_STATUSES,
   CAMPAIGN_SOURCES,
   CAMPAIGN_STATUSES,
 } from "@jobpilot/contracts/campaign";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
-import { CREDENTIAL_KINDS, SERVICE_PROVIDERS } from "@jobpilot/contracts/credential";
+import { CAPTCHA_PROVIDERS, CREDENTIAL_KINDS } from "@jobpilot/contracts/credential";
 import { CLASSIFICATIONS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
 import { JOB_LISTING_STATUSES } from "@jobpilot/contracts/job-listing";
 import {
@@ -56,7 +56,7 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   ApplicationStatus: APPLICATION_STATUSES,
   AuthTokenKind: AUTH_TOKEN_KINDS,
   Availability: AVAILABILITY,
-  CampaignActor: CAMPAIGN_ACTORS,
+  Actor: ACTORS,
   CampaignJobStatus: CAMPAIGN_JOB_STATUSES,
   CampaignSource: CAMPAIGN_SOURCES,
   CampaignStatus: CAMPAIGN_STATUSES,
@@ -80,7 +80,7 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   PromotionStatus: PROMOTION_STATUSES,
   SalaryCurrency: SALARY_CURRENCIES,
   SalaryPeriod: SALARY_PERIODS,
-  ServiceProvider: SERVICE_PROVIDERS,
+  CaptchaProvider: CAPTCHA_PROVIDERS,
   UpworkInboxKind: UPWORK_INBOX_KINDS,
   UpworkInboxStatus: UPWORK_INBOX_STATUSES,
   UpworkProfileStatus: UPWORK_PROFILE_STATUSES,

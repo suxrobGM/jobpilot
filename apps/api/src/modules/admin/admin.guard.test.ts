@@ -15,7 +15,7 @@ import { describe, expect, it } from "bun:test";
 const USER_TOKEN = "user-session-token";
 const user: AuthUser = {
   id: crypto.randomUUID(),
-  role: "USER",
+  role: "user",
   email: "user@example.com",
   tokenId: crypto.randomUUID(),
 };
@@ -57,7 +57,7 @@ describe("every /api/admin/* route is admin-guarded", () => {
     expect(adminRoutes.length).toBeGreaterThan(0);
   });
 
-  it("403s a signed-in USER on every route", async () => {
+  it("403s a signed-in user on every route", async () => {
     for (const route of adminRoutes) {
       const response = await app.handle(request(route.method, route.path, USER_TOKEN));
       const label = `${route.method} ${route.path}`;

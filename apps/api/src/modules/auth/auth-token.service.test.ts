@@ -7,7 +7,7 @@ import { AuthTokenService } from "./auth-token.service";
 import { describe, expect, it } from "bun:test";
 
 const NOW = Date.now();
-const USER = { id: "u1", role: "USER", email: "u1@example.com" };
+const USER = { id: "u1", role: "user", email: "u1@example.com" };
 
 interface Row {
   id: string;

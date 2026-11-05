@@ -17,7 +17,7 @@ export const adminJobListingController = new Elysia({
   prefix: "/admin/listings",
   detail: { tags: ["Admin"] },
 })
-  .use(requireRole("ADMIN"))
+  .use(requireRole("admin"))
   .get("/", ({ query }) => svc.listForAdmin(query), {
     query: adminJobListingQuerySchema,
     response: adminJobListingPageSchema,

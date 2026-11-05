@@ -14,7 +14,7 @@ const USER_SELECT = {
   id: true,
   email: true,
   role: true,
-  emailVerified: true,
+  emailVerifiedAt: true,
   createdAt: true,
   firstName: true,
   lastName: true,
@@ -48,8 +48,8 @@ export class AdminService {
       signupRows,
     ] = await Promise.all([
       this.prisma.user.count(),
-      this.prisma.user.count({ where: { emailVerified: true } }),
-      this.prisma.user.count({ where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } } }),
+      this.prisma.user.count({ where: { emailVerifiedAt: { not: null } } }),
+      this.prisma.user.count({ where: { role: { in: ["admin", "super_admin"] } } }),
       this.prisma.user.count({
         where: {
           OR: [
@@ -211,7 +211,7 @@ export class AdminService {
         id: row.id,
         email: row.email,
         role: row.role,
-        emailVerified: row.emailVerified,
+        emailVerified: row.emailVerifiedAt !== null,
         createdAt: row.createdAt,
         name: name || null,
         applicationCount: application?._count._all ?? 0,
@@ -226,11 +226,11 @@ export class AdminService {
   /** Mirrors `setRole`'s guardrails, so the UI never offers an action the API would reject. */
   private canChangeRole(actor: AuthUser, target: AdminUserRow): boolean {
     return (
-      hasRole(actor.role, "SUPER_ADMIN") && target.id !== actor.id && target.role !== "SUPER_ADMIN"
+      hasRole(actor.role, "super_admin") && target.id !== actor.id && target.role !== "super_admin"
     );
   }
 
-  /** With the body schema rejecting SUPER_ADMIN (422), these checks make it immutable over HTTP. */
+  /** With the body schema rejecting super_admin (422), these checks make it immutable over HTTP. */
   async setRole(actor: AuthUser, targetId: string, role: AssignableRole) {
     if (actor.id === targetId) {
       throw badRequest("You cannot change your own role");
@@ -242,7 +242,7 @@ export class AdminService {
     if (!target) {
       throw notFound("User not found");
     }
-    if (target.role === "SUPER_ADMIN") {
+    if (target.role === "super_admin") {
       throw forbidden("A super admin's role cannot be changed");
     }
 

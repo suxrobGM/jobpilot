@@ -18,7 +18,7 @@ export const adminBoardController = new Elysia({
   prefix: "/admin/boards",
   detail: { tags: ["Admin"] },
 })
-  .use(requireRole("ADMIN"))
+  .use(requireRole("admin"))
   .get("/", ({ query }) => svc.list(query), {
     query: adminBoardListQuery,
     response: adminBoardListSchema,

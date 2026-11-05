@@ -44,7 +44,7 @@ export class AuthService {
       throw conflict("Email already registered");
     }
 
-    const role: UserRole = env.SUPER_ADMIN_EMAIL?.toLowerCase() === email ? "SUPER_ADMIN" : "USER";
+    const role: UserRole = env.SUPER_ADMIN_EMAIL?.toLowerCase() === email ? "super_admin" : "user";
 
     // An unseeded catalog yields zero links rather than a failed signup.
     const defaults = await this.prisma.jobBoard.findMany({
@@ -58,7 +58,7 @@ export class AuthService {
           email,
           passwordHash: input.passwordHash,
           role,
-          emailVerified: input.emailVerified,
+          emailVerifiedAt: input.emailVerified ? new Date() : null,
           username: await this.uniqueUsername(),
           contactEmail: email,
           jobBoards: {

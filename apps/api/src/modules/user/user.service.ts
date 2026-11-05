@@ -47,9 +47,9 @@ export class UserService {
   async requireVerifiedEmail(userId: string): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { emailVerified: true },
+      select: { emailVerifiedAt: true },
     });
-    if (!user?.emailVerified) {
+    if (!user?.emailVerifiedAt) {
       throw emailNotVerified();
     }
   }
@@ -85,7 +85,7 @@ export class UserService {
           where: { userId, content: { not: Prisma.DbNull } },
           select: { id: true },
         }),
-        this.prisma.reference.findMany({
+        this.prisma.professionalReference.findMany({
           where: { userId },
           orderBy: { position: "asc" },
           select: {
@@ -157,8 +157,8 @@ export class UserService {
 
     // Replace the reference and salary-preference sets wholesale - the settings form submits the full lists.
     await this.prisma.$transaction([
-      this.prisma.reference.deleteMany({ where: { userId } }),
-      this.prisma.reference.createMany({
+      this.prisma.professionalReference.deleteMany({ where: { userId } }),
+      this.prisma.professionalReference.createMany({
         data: references.map((r, i) => ({
           userId,
           name: r.name,

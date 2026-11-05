@@ -8,9 +8,9 @@ interface AdminRoleChipProps {
 
 // Typed by Role, so a new role is a compile error here rather than a silently grey chip.
 const COLOR: Record<Role, "warning" | "primary" | "default"> = {
-  SUPER_ADMIN: "warning",
-  ADMIN: "primary",
-  USER: "default",
+  super_admin: "warning",
+  admin: "primary",
+  user: "default",
 };
 
 export function AdminRoleChip(props: AdminRoleChipProps): ReactElement {
