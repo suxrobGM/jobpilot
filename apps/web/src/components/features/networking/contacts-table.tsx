@@ -8,6 +8,9 @@ import { ExternalLink, StatusChip } from "@/components/ui/display";
 
 interface ContactsTableProps {
   contacts: ReadonlyArray<ContactDto>;
+  loading: boolean;
+  errorTitle?: string;
+  onRetry: () => void;
 }
 
 const columns: GridColDef<ContactDto>[] = [
@@ -47,15 +50,18 @@ const columns: GridColDef<ContactDto>[] = [
 ];
 
 export function ContactsTable(props: ContactsTableProps): ReactElement {
-  const { contacts } = props;
+  const { contacts, loading, errorTitle, onRetry } = props;
 
   return (
     <DataTable
       rows={contacts}
       columns={columns}
       getRowId={(row) => row.id}
+      loading={loading}
       autoHeight
       hideFooter
+      errorTitle={errorTitle}
+      onRetry={onRetry}
       emptyMessage="No contacts yet - run a networking campaign to discover some."
     />
   );

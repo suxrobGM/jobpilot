@@ -3,6 +3,7 @@ import { Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
+import { dataOrThrow } from "@/api/error";
 import { getFetchOptions } from "@/api/server";
 import { AdminSearchField, AdminUsersTable } from "@/components/features/admin";
 import { PaginationControls } from "@/components/ui/data";
@@ -34,10 +35,13 @@ export default function AdminUsersPage(props: AdminUsersPageProps): ReactElement
 async function AdminUsers(props: AdminUsersPageProps): Promise<ReactElement> {
   const search = await props.searchParams;
 
-  const { data } = await api.admin.users.get({
-    query: { ...paginationQuery(search), search: search.q || undefined },
-    ...(await getFetchOptions()),
-  });
+  const data = dataOrThrow(
+    await api.admin.users.get({
+      query: { ...paginationQuery(search), search: search.q || undefined },
+      ...(await getFetchOptions()),
+    }),
+    "Couldn't load users",
+  );
 
   if (!data) {
     notFound();

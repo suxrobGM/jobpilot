@@ -4,10 +4,9 @@ import { type ReactElement, useState } from "react";
 import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { campaignQueries, emailQueries } from "@/api/queries";
+import { campaignQueries, emailQueries, networkingQueries } from "@/api/queries";
 import type { NetworkingMessageDto } from "@/api/types";
 import { FormDialogShell } from "@/components/ui/form";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
@@ -23,7 +22,6 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   const { campaignId, message, onClose } = props;
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
-  const router = useRouter();
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
@@ -32,10 +30,8 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
     .campaigns({ id: campaignId })
     .networking.messages({ messageId: message.id });
 
-  // Drafts render from the query cache on a campaign and from the server on the cross-campaign
-  // list, so a write refreshes both rather than making each caller declare which one it is.
-  const invalidate = [campaignQueries.all];
-  const onWritten = (): void => router.refresh();
+  // A draft shows on its campaign and on the cross-campaign list, so a write refreshes both.
+  const invalidate = [campaignQueries.all, networkingQueries.all];
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";
   const terminal = isTerminalNetworkingStatus(message.status);
@@ -43,7 +39,6 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   const save = useApiMutation(() => messageApi.patch({ subject: subject || null, body }), {
     invalidate,
     successMessage: "Saved",
-    onSuccess: onWritten,
   });
 
   const approve = useApiMutation(
@@ -52,7 +47,6 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
       invalidate,
       successMessage: "Approved",
       onSuccess: () => {
-        onWritten();
         onClose();
       },
     },
@@ -79,7 +73,6 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
       invalidate,
       successMessage: "Sent",
       onSuccess: () => {
-        onWritten();
         onClose();
       },
     },
@@ -89,7 +82,6 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
     invalidate,
     successMessage: "Skipped",
     onSuccess: () => {
-      onWritten();
       onClose();
     },
   });

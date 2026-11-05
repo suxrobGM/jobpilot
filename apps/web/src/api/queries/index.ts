@@ -24,6 +24,7 @@ export {
   coverLetterQueries,
   emailQueries,
   type InboxFilter,
+  networkingQueries,
 } from "./work";
 
 /** Named invalidation sets for useApiMutation's `invalidate:` option. */

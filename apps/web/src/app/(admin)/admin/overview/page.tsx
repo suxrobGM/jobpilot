@@ -3,6 +3,7 @@ import { Grid, Skeleton, Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
+import { dataOrThrow } from "@/api/error";
 import { getFetchOptions } from "@/api/server";
 import { StatusBreakdownChart } from "@/components/features/analytics/status-breakdown-chart";
 import { RankedBarList } from "@/components/ui/data";
@@ -50,7 +51,10 @@ function AdminOverviewSkeleton(): ReactElement {
 
 /** Read-only, so it renders entirely on the server; only the charts ship as client leaves. */
 async function AdminOverview(): Promise<ReactElement> {
-  const { data } = await api.admin.stats.get(await getFetchOptions());
+  const data = dataOrThrow(
+    await api.admin.stats.get(await getFetchOptions()),
+    "Couldn't load overview",
+  );
 
   if (!data) {
     notFound();

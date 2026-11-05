@@ -16,6 +16,7 @@ const CAMPAIGNS = ["campaigns"] as const;
 const EMAIL = ["email"] as const;
 const COVER_LETTERS = ["cover-letters"] as const;
 const ANALYTICS = ["analytics"] as const;
+const NETWORKING = ["networking"] as const;
 
 type CampaignListQuery = PaginationQuery & { status?: CampaignStatus[]; source?: CampaignSource };
 type CampaignJobsQuery = PaginationQuery & { status?: CampaignJobStatus; search?: string };
@@ -129,6 +130,21 @@ export const coverLetterQueries = {
     queryOptions({
       queryKey: [...COVER_LETTERS, "detail", id],
       queryFn: () => unwrap(api["cover-letters"]({ id }).get()),
+    }),
+};
+
+/** Cross-campaign outreach; a campaign's own drafts read through `campaignQueries.networking`. */
+export const networkingQueries = {
+  all: NETWORKING,
+  messages: (query: PaginationQuery) =>
+    queryOptions({
+      queryKey: [...NETWORKING, "messages", query],
+      queryFn: () => unwrap(api.networking.messages.get({ query })),
+    }),
+  contacts: (query: PaginationQuery) =>
+    queryOptions({
+      queryKey: [...NETWORKING, "contacts", query],
+      queryFn: () => unwrap(api.contacts.get({ query })),
     }),
 };
 

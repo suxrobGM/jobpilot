@@ -2,11 +2,13 @@
 
 import type { ReactElement } from "react";
 import { campaignChannel } from "@jobpilot/contracts/sse";
-import { Button, LinearProgress, Stack, Typography } from "@mui/material";
+import { Stack } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { isNotFound } from "@/api/error";
 import { campaignQueries } from "@/api/queries";
 import { NetworkingBoard, NetworkingMessagesTable } from "@/components/features/networking";
-import { SectionCard } from "@/components/ui/layout";
+import { DetailSkeleton, EmptyState, QueryError } from "@/components/ui/feedback";
+import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
@@ -49,25 +51,35 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   const campaign = detail.data;
 
-  if (detail.isLoading) {
-    return <LinearProgress />;
+  if (detail.isPending) {
+    return <DetailSkeleton />;
   }
 
-  // Silently spinning forever is the failure mode this rules out.
   if (!campaign) {
-    return (
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-        <Typography variant="body2Muted">Couldn't load this campaign.</Typography>
-        <Button variant="text" size="small" onClick={() => void detail.refetch()}>
-          Retry
-        </Button>
-      </Stack>
+    return isNotFound(detail.error) ? (
+      <EmptyState
+        title="Campaign not found"
+        description="It may have been deleted, or the link is incorrect."
+      />
+    ) : (
+      <QueryError title="Couldn't load this campaign." onRetry={() => void detail.refetch()} />
     );
   }
+
+  // The title is the campaign's own query, so it lives here and follows live updates.
+  const header = (
+    <PageHeader
+      eyebrow="Campaign"
+      title={campaign.query}
+      backHref="/workspace"
+      backLabel="Workspace"
+    />
+  );
 
   if (campaign.summary.kind === "networking") {
     return (
       <Stack spacing={3}>
+        {header}
         <CampaignHeaderCard campaign={campaign} />
         <NetworkingBoard
           campaignId={campaignId}
@@ -81,6 +93,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   return (
     <Stack spacing={3}>
+      {header}
       <CampaignHeaderCard campaign={campaign} />
       <CampaignSummaryTiles campaign={campaign} />
       <CampaignReasonBreakdown campaign={campaign} />
