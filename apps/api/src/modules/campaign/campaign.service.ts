@@ -18,8 +18,6 @@ import { type CampaignStatus, type Prisma, PrismaClient } from "@/generated/pris
 import { BOARD_REF_SELECT, JobBoardService } from "@/modules/job-board/job-board.service";
 import type { campaignsQuery } from "./campaign.schema";
 import {
-  ACCOUNT_SUMMARY_MESSAGE_STATUSES,
-  accountSummary,
   deriveCampaignSummary,
   emptySummary,
   jobSummary,
@@ -30,6 +28,7 @@ import {
   ensureCampaignOwned,
   OPEN_CAMPAIGN_STATUSES,
   publishCampaignStatus,
+  queuedJobRows,
 } from "./campaign.utils";
 
 const STATUS_TRANSITIONS: Record<CampaignStatus, readonly CampaignStatus[]> = {
@@ -83,30 +82,6 @@ export class CampaignService {
     ]);
     const rows = await summarizeCampaigns(this.prisma, campaigns);
     return paginate(rows.map(toRow), query, total);
-  }
-
-  async accountSummary(userId: string) {
-    const [statuses, messages] = await Promise.all([
-      this.prisma.campaign.groupBy({ by: ["status"], where: { userId }, _count: { _all: true } }),
-      // Networking campaigns only, as on the dashboard: job campaigns' intros are counted per job.
-      this.prisma.networkingMessage.groupBy({
-        by: ["campaignId", "status"],
-        where: {
-          userId,
-          campaign: { source: "networking" },
-          status: { in: ACCOUNT_SUMMARY_MESSAGE_STATUSES },
-        },
-        _count: { _all: true },
-      }),
-    ]);
-    return accountSummary(
-      statuses.map((row) => ({ status: row.status, count: row._count._all })),
-      messages.flatMap((row) =>
-        row.campaignId
-          ? [{ campaignId: row.campaignId, status: row.status, count: row._count._all }]
-          : [],
-      ),
-    );
   }
 
   async create(userId: string, body: CreateCampaignInput) {
@@ -166,18 +141,7 @@ export class CampaignService {
     const unique = [...new Set(urls.map(normalizeJobUrl))];
     const campaign = await this.prisma.$transaction(async (tx) => {
       const created = await tx.campaign.create({ data, include: CAMPAIGN_INCLUDE });
-      await tx.campaignJob.createMany({
-        data: unique.map((url) => ({
-          userId: created.userId,
-          campaignId: created.id,
-          key: crypto.randomUUID(),
-          // Nothing is known about a pasted link until a worker opens it; the host stands in.
-          title: new URL(url).hostname,
-          company: "",
-          url,
-          status: "queued" as const,
-        })),
-      });
+      await tx.campaignJob.createMany({ data: queuedJobRows(created.userId, created.id, unique) });
       return created;
     });
     return toRow({

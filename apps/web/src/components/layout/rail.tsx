@@ -33,7 +33,7 @@ export function Rail(): ReactElement {
     >
       <Box
         component={NextLink}
-        href="/workspace"
+        href="/pilot"
         aria-label={`${APP_TITLE} home`}
         sx={(theme) => ({
           display: "grid",

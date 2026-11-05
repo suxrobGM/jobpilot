@@ -4,7 +4,7 @@ import { Box, Link, Stack, Typography } from "@mui/material";
 
 const STEALTH_CODE_URL = "https://github.com/suxrobGM/stealth-code";
 
-/** Footer strip on the workspace page linking to the companion live-interview tool. */
+/** Links the companion live-interview tool, under the pilot home's right column. */
 export function StealthCodeBanner(): ReactElement {
   return (
     <Box sx={{ borderTop: 1, borderColor: "divider", paddingBlock: 1.5 }}>

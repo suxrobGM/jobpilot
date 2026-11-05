@@ -4,9 +4,6 @@ import type { TerminalHealth } from "@/hooks/use-terminal-health";
 import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 
-export const PILOT_HOST_OFFLINE_MESSAGE =
-  "Pilot is running but the terminal host is offline - start the JobPilot agent so cycles can run.";
-
 /** `unknown` is a running pilot with no host to ask: mobile, or the first probe still in flight. */
 export type PilotMode =
   | "off"

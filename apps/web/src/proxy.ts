@@ -52,7 +52,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return redirect(request, "/onboarding");
   }
   if (pathname.startsWith("/admin") && !isAdminRole(data.role)) {
-    return redirect(request, "/workspace");
+    return redirect(request, "/pilot");
   }
   return NextResponse.next();
 }

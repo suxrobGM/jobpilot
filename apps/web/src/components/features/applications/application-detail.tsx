@@ -14,7 +14,7 @@ import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
-import { campaignHref } from "@/utils/routes";
+import { pipelineHref } from "@/utils/routes";
 import { ActivityTimeline } from "./activity-timeline";
 import { StatusTransitionDialog } from "./status-transition-dialog";
 import { SubmissionDetails } from "./submission-details";
@@ -35,7 +35,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   const remove = useApiMutation(() => api.applications({ id }).delete(), {
     successMessage: "Application deleted",
     invalidate: [applicationQueries.all],
-    onSuccess: () => router.replace("/workspace/applications"),
+    onSuccess: () => router.replace("/pipeline?view=applied"),
   });
 
   const handleDelete = async (): Promise<void> => {
@@ -105,7 +105,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               <LabelValue label="Applied at">{formatAbsoluteTime(app.appliedAt)}</LabelValue>
               {app.campaignId && (
                 <LabelValue label="Campaign">
-                  <Link href={campaignHref(app.campaignId)}>Open campaign</Link>
+                  <Link href={pipelineHref(app.campaignId)}>Open in Pipeline</Link>
                 </LabelValue>
               )}
             </Stack>

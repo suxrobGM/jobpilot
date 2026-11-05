@@ -11,12 +11,7 @@ import { authGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
 import { UserService } from "@/modules/user/user.service";
 import { deletedResponseSchema } from "@/types/response";
-import {
-  campaignAccountSummarySchema,
-  campaignListSchema,
-  campaignSchema,
-  campaignsQuery,
-} from "./campaign.schema";
+import { campaignListSchema, campaignSchema, campaignsQuery } from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
 
 const svc = container.get(CampaignService);
@@ -34,14 +29,6 @@ export const campaignController = new Elysia({
       summary: "List campaigns",
       description:
         "Returns one validated page of owned campaigns with summaries derived from current job or networking rows.",
-    },
-  })
-  .get("/summary", ({ user }) => svc.accountSummary(user.id), {
-    response: campaignAccountSummarySchema,
-    detail: {
-      summary: "Summarize all campaigns",
-      description:
-        "Whole-account totals for the dashboard: campaign count, active campaigns, networking replies, and drafts awaiting review.",
     },
   })
   .post(

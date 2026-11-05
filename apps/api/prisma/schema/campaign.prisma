@@ -20,6 +20,10 @@ enum CampaignStatus {
 enum CampaignFeed {
   job_alerts
   research
+  // Job links the user adds from the Pipeline.
+  links
+  // Outreach that belongs to no job: Networking → Find contacts.
+  networking
 
   @@map("campaign_feed")
 }

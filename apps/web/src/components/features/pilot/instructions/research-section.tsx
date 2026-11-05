@@ -11,7 +11,7 @@ import { useApiMutation } from "@/api/use-api-mutation";
 import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/feedback";
 import { formatRelativeTime } from "@/utils/format";
-import { campaignHref } from "@/utils/routes";
+import { pipelineHref } from "@/utils/routes";
 import { isRunPending } from "../run-status";
 
 function lastRunText(status: ResearchStatusDto): string {
@@ -58,7 +58,7 @@ export function ResearchSection(): ReactElement {
               Research now
             </Button>
             {status.campaignId && (
-              <LinkButton size="small" href={campaignHref(status.campaignId)}>
+              <LinkButton size="small" href={pipelineHref(status.campaignId)}>
                 Research campaign
               </LinkButton>
             )}

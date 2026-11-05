@@ -6,6 +6,7 @@ import type {
 } from "@jobpilot/contracts/campaign";
 import type { ReviewStatus } from "@jobpilot/contracts/email";
 import type { PaginationQuery } from "@jobpilot/contracts/pagination";
+import type { PipelineFilters, PipelineJobsQuery } from "@jobpilot/contracts/pipeline";
 import { queryOptions } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { unwrap } from "@/api/error";
@@ -17,6 +18,7 @@ const EMAIL = ["email"] as const;
 const COVER_LETTERS = ["cover-letters"] as const;
 const ANALYTICS = ["analytics"] as const;
 const NETWORKING = ["networking"] as const;
+const PIPELINE = ["pipeline"] as const;
 
 type CampaignListQuery = PaginationQuery & { status?: CampaignStatus[]; source?: CampaignSource };
 type CampaignJobsQuery = PaginationQuery & { status?: CampaignJobStatus; search?: string };
@@ -47,18 +49,26 @@ export const applicationQueries = {
     }),
 };
 
+export const pipelineQueries = {
+  all: PIPELINE,
+  jobs: (query: PipelineJobsQuery) =>
+    queryOptions({
+      queryKey: [...PIPELINE, "jobs", query],
+      queryFn: () => unwrap(api.pipeline.jobs.get({ query })),
+    }),
+  counts: (filters: PipelineFilters) =>
+    queryOptions({
+      queryKey: [...PIPELINE, "counts", filters],
+      queryFn: () => unwrap(api.pipeline.counts.get({ query: filters })),
+    }),
+};
+
 export const campaignQueries = {
   all: CAMPAIGNS,
   list: (query: CampaignListQuery = FULL_PAGE) =>
     queryOptions({
       queryKey: [...CAMPAIGNS, "list", query],
       queryFn: () => unwrap(api.campaigns.get({ query })),
-    }),
-  /** Whole-account totals - a page of campaigns can't back a dashboard count. */
-  summary: () =>
-    queryOptions({
-      queryKey: [...CAMPAIGNS, "summary"],
-      queryFn: () => unwrap(api.campaigns.summary.get()),
     }),
   detail: (id: string) =>
     queryOptions({

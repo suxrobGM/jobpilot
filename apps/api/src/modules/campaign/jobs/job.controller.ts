@@ -1,5 +1,6 @@
 import {
   addCampaignJobSchema,
+  addedCampaignJobSchema,
   campaignJobResultSchema,
   campaignJobSchema,
   patchCampaignJobSchema,
@@ -50,11 +51,11 @@ export const campaignJobController = new Elysia({
   .post("/:id/jobs", ({ user, params, body }) => svc.addJob(user.id, params.id, body), {
     params: idParam,
     body: addCampaignJobSchema,
-    response: campaignJobSchema,
+    response: addedCampaignJobSchema,
     detail: {
       summary: "Add campaign job",
       description:
-        "Adds a discovered job to the campaign, consumes its matching pending queue entry, emits SSE updates, and returns the created job.",
+        "Adds a discovered job to the campaign and emits SSE updates. When the user already has the same normalized URL from the last 30 days, returns that job with duplicate: true and adds nothing.",
     },
   })
   .patch(

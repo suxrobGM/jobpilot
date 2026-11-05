@@ -5,6 +5,7 @@ import type {
   Campaign,
   CampaignSource,
   CampaignStatus,
+  Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
 
@@ -40,4 +41,22 @@ export function publishCampaignStatus(
   } else {
     publish(workspaceChannel, { userId }, { type: "campaign.updated", campaignId, status, source });
   }
+}
+
+/** Pasted links as `queued` rows; nothing is known about a link until a worker opens it. */
+export function queuedJobRows(
+  userId: string,
+  campaignId: string,
+  urls: string[],
+): Prisma.CampaignJobCreateManyInput[] {
+  return urls.map((url) => ({
+    userId,
+    campaignId,
+    key: crypto.randomUUID(),
+    // The host stands in for the title until the score pass reads the posting.
+    title: new URL(url).hostname,
+    company: "",
+    url,
+    status: "queued",
+  }));
 }

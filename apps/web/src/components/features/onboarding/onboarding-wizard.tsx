@@ -89,7 +89,7 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
   const finish = (): void => {
     // Land on the workspace with the dock open so the agent is the obvious next step.
     patchAgentStorage({ dockExpanded: true });
-    router.push("/workspace");
+    router.push("/pilot");
   };
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {

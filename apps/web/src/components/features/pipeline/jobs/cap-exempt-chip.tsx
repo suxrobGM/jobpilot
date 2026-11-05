@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { Chip, Tooltip } from "@mui/material";
-import type { CampaignJobDto } from "@/api/types";
+import type { PipelineJobDto } from "@/api/types";
 
-const BASIS_LABELS: Record<NonNullable<CampaignJobDto["capExemptBasis"]>, string> = {
+const BASIS_LABELS: Record<NonNullable<PipelineJobDto["capExemptBasis"]>, string> = {
   university: "University employer",
   university_affiliate: "University-affiliated employer",
   nonprofit_research: "Nonprofit research employer",
@@ -10,7 +10,7 @@ const BASIS_LABELS: Record<NonNullable<CampaignJobDto["capExemptBasis"]>, string
 };
 
 interface CapExemptChipProps {
-  job: CampaignJobDto;
+  job: PipelineJobDto;
 }
 
 /** H-1B cap-exempt employer, linking to the page that shows it. */

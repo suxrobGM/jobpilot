@@ -26,14 +26,14 @@ export function useSession(): UseSessionResult {
   return { user: meQuery.data ?? null };
 }
 
-/** Login and register land on `/workspace`; the proxy routes an empty profile on to onboarding. */
+/** Login and register land on `/pilot`; the proxy routes an empty profile on to onboarding. */
 export function useAuthActions(): UseAuthActionsResult {
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const onSession = () => {
     queryClient.invalidateQueries({ queryKey: authQueries.me().queryKey });
-    router.push("/workspace");
+    router.push("/pilot");
   };
 
   // The forms render these errors inline - no toast on top.

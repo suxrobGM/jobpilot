@@ -1,8 +1,9 @@
 import type { Route } from "next";
 
 // Typed routes can't see a template literal, so each dynamic page casts once, here.
-export function campaignHref(campaignId: string): Route {
-  return `/campaigns/${encodeURIComponent(campaignId)}` as Route;
+/** A search or feed's jobs: the Pipeline filtered to its campaign. */
+export function pipelineHref(campaignId: string): Route {
+  return `/pipeline?campaign=${encodeURIComponent(campaignId)}` as Route;
 }
 
 export function applicationHref(applicationId: string): Route {

@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { humanizeIsoInText } from "@/utils/format";
-import { campaignHref } from "@/utils/routes";
+import { pipelineHref } from "@/utils/routes";
 import { taskTypeLabel } from "../../task-types";
 
 type WorkItem = Extract<PilotThreadItem, { type: "work" }>;
@@ -53,7 +53,7 @@ function subjectHref(run: PilotThreadRun) {
     return null;
   }
   const [campaignId] = run.subjectId.split(":");
-  return campaignId ? campaignHref(campaignId) : null;
+  return campaignId ? pipelineHref(campaignId) : null;
 }
 
 interface RunLineProps {

@@ -2,7 +2,6 @@ import {
   AdminPanelSettings,
   BugReport,
   BusinessCenter,
-  Dashboard,
   Description,
   Forum,
   Handshake,
@@ -13,6 +12,7 @@ import {
   Settings,
   SmartToy,
   type SvgIconComponent,
+  ViewKanban,
 } from "@mui/icons-material";
 import type { Route } from "next";
 import { BUG_REPORT_URL, type ExternalUrl, FEATURE_REQUEST_URL } from "@/lib/constants";
@@ -41,8 +41,8 @@ const navGroups: NavGroup[] = [
   {
     label: "Core",
     items: [
-      { label: "Workspace", href: "/workspace", icon: Dashboard, primary: true },
       { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "questions", primary: true },
+      { label: "Pipeline", href: "/pipeline", icon: ViewKanban, primary: true },
       { label: "Inbox", href: "/inbox", icon: Inbox, primary: true },
       { label: "Analytics", href: "/analytics", icon: Insights, primary: true },
     ],

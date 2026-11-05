@@ -8,6 +8,7 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
+import { campaignSchema } from "@/modules/campaign/campaign.schema";
 import { UserService } from "@/modules/user/user.service";
 import {
   networkingMessageListSchema,
@@ -17,12 +18,22 @@ import {
   networkingMessageSchema,
 } from "./networking.schema";
 import { NetworkingService } from "./networking.service";
+import { StandingNetworkingService } from "./standing-campaign.service";
 
 const svc = container.get(NetworkingService);
+const standing = container.get(StandingNetworkingService);
 const users = container.get(UserService);
 
 export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] } })
   .use(authGuard)
+  .post("/networking/campaign", ({ user }) => standing.getOrCreate(user.id), {
+    response: campaignSchema,
+    detail: {
+      summary: "Get the standing networking campaign",
+      description:
+        "Returns the user's one open networking campaign for outreach that belongs to no job, creating it on first use with the primary resume.",
+    },
+  })
   .get(
     "/networking/messages",
     ({ user, query }) => svc.listNetworking(user.id, { ...query, order: "desc" }),

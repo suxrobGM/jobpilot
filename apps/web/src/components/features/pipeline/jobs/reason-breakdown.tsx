@@ -5,7 +5,7 @@ import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
-import { type CampaignDetailDto, type CampaignJobReasonDto, jobSummary } from "@/api/types";
+import type { CampaignJobReasonDto } from "@/api/types";
 import { SectionCard } from "@/components/ui/layout";
 
 interface ReasonCount {
@@ -68,20 +68,19 @@ function ReasonList(props: ReasonListProps): ReactElement {
   );
 }
 
-interface CampaignReasonBreakdownProps {
-  campaign: CampaignDetailDto;
+interface ReasonBreakdownProps {
+  campaignId: string;
 }
 
-/** Groups skip/fail reasons by frequency so the user can see why jobs dropped out. */
-export function CampaignReasonBreakdown(props: CampaignReasonBreakdownProps): ReactNode {
-  const { campaign } = props;
+/** Groups one search's skip and fail reasons by frequency, so the user sees why jobs dropped out. */
+export function ReasonBreakdown(props: ReasonBreakdownProps): ReactNode {
+  const { campaignId } = props;
   const [open, setOpen] = useState(true);
 
-  const reasons = useQuery(campaignQueries.reasons(campaign.id));
-  const rows = reasons.data ?? [];
+  const rows = useQuery(campaignQueries.reasons(campaignId)).data ?? [];
   const skipped = groupReasons(rows, "skipped");
   const failed = groupReasons(rows, "failed");
-  const summary = jobSummary(campaign);
+  const total = (reasons: ReasonCount[]) => reasons.reduce((sum, r) => sum + r.count, 0);
 
   if (skipped.length === 0 && failed.length === 0) {
     return null;
@@ -104,13 +103,10 @@ export function CampaignReasonBreakdown(props: CampaignReasonBreakdownProps): Re
       <Collapse in={open}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <ReasonList
-              title={`Skipped (${summary?.skipped ?? skipped.length})`}
-              reasons={skipped}
-            />
+            <ReasonList title={`Skipped (${total(skipped)})`} reasons={skipped} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <ReasonList title={`Failed (${summary?.failed ?? failed.length})`} reasons={failed} />
+            <ReasonList title={`Failed (${total(failed)})`} reasons={failed} />
           </Grid>
         </Grid>
       </Collapse>

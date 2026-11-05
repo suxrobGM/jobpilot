@@ -9,6 +9,7 @@ import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { NeedsYou } from "./side/needs-you";
 import { RulesSummary } from "./side/rules-summary";
 import { SearchesSummary } from "./side/searches-summary";
+import { StealthCodeBanner } from "./side/stealth-code-banner";
 import { StatusLine } from "./status-line";
 import { GetStartedCard } from "./thread/get-started-card";
 import { Thread } from "./thread/thread";
@@ -20,10 +21,13 @@ interface SideColumnProps {
 function SideColumn(props: SideColumnProps): ReactElement {
   const { state } = props;
   return (
-    <Stack spacing={3} divider={<Divider />}>
-      <NeedsYou />
-      <SearchesSummary />
-      <RulesSummary state={state} />
+    <Stack spacing={3}>
+      <Stack spacing={3} divider={<Divider />}>
+        <NeedsYou />
+        <SearchesSummary />
+        <RulesSummary state={state} />
+      </Stack>
+      <StealthCodeBanner />
     </Stack>
   );
 }

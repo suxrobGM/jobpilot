@@ -30,13 +30,7 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
     .campaigns({ id: campaignId })
     .networking.messages({ messageId: message.id });
 
-  // A draft shows on its campaign (whose detail and summary count drafts) and the cross-campaign list.
-  const invalidate = [
-    campaignQueries.networkingKey(campaignId),
-    campaignQueries.detail(campaignId).queryKey,
-    campaignQueries.summary().queryKey,
-    networkingQueries.all,
-  ];
+  const invalidate = [networkingQueries.all, campaignQueries.all];
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";
   const terminal = isTerminalNetworkingStatus(message.status);

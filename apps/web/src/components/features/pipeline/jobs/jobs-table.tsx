@@ -1,81 +1,43 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
-import { Button, Link, Stack } from "@mui/material";
-import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
-import type { CampaignJobDto } from "@/api/types";
+import type { PipelineJobView } from "@jobpilot/contracts/pipeline";
+import { Stack, Typography } from "@mui/material";
+import type { GridColDef } from "@mui/x-data-grid";
+import type { PipelineJobDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { StatusChip } from "@/components/ui/display";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 import type { GridPaginationProps } from "@/hooks/use-pagination";
 import { CapExemptChip } from "./cap-exempt-chip";
 
-/** Statuses that can still be applied to from the campaigns detail page. */
-function isApplicable(status: CampaignJobStatus): boolean {
-  return status === "pending" || status === "approved";
+/** Views whose rows carry a reason worth a column. */
+const REASON_VIEWS: PipelineJobView[] = ["skipped", "failed", "needsYou"];
+
+interface PipelineJobsTableProps extends GridPaginationProps {
+  view: PipelineJobView;
+  rows: ReadonlyArray<PipelineJobDto>;
+  loading: boolean;
+  onOpen: (job: PipelineJobDto) => void;
 }
 
-/** Statuses eligible for selection + bulk re-apply on a stopped campaign. */
-export function isReapplicable(status: CampaignJobStatus): boolean {
-  return status !== "applied" && status !== "applying";
-}
-
-interface CampaignJobsTableProps extends GridPaginationProps {
-  rows: ReadonlyArray<CampaignJobDto>;
-  loading?: boolean;
-  /** When provided, applicable rows get an "Apply" action that calls this. */
-  onApplyJob?: (job: CampaignJobDto) => void;
-  /** When provided, applicable rows get a "Draft proposal" action (Upwork). */
-  onDraftProposal?: (job: CampaignJobDto) => void;
-  /** Show the match-reason column (recommendation rationale, e.g. Upwork). */
-  showReason?: boolean;
-  /** Enables checkbox selection (reapplicable rows only). */
-  checkboxSelection?: boolean;
-  rowSelectionModel?: GridRowSelectionModel;
-  onRowSelectionModelChange?: (model: GridRowSelectionModel) => void;
-}
-
-export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
-  const {
-    rows,
-    loading,
-    onApplyJob,
-    onDraftProposal,
-    showReason,
-    checkboxSelection,
-    rowSelectionModel,
-    onRowSelectionModelChange,
-    ...pagination
-  } = props;
-  const columns: GridColDef<CampaignJobDto>[] = [
-    {
-      field: "status",
-      headerName: "Status",
-      width: 130,
-      renderCell: (p) => <StatusChip domain="campaignJob" value={p.row.status} />,
-      sortable: false,
-    },
+export function PipelineJobsTable(props: PipelineJobsTableProps): ReactElement {
+  const { view, rows, loading, onOpen, ...pagination } = props;
+  const columns: GridColDef<PipelineJobDto>[] = [
     {
       field: "title",
-      headerName: "Title",
-      flex: 1.4,
-      minWidth: 200,
+      headerName: "Job",
+      flex: 1.6,
+      minWidth: 220,
       renderCell: (p) => (
         <Stack direction="row" spacing={1} sx={{ alignItems: "center", height: "100%" }}>
-          <Link href={p.row.url} color="inherit" noWrap>
+          <Typography variant="body2" noWrap>
             {p.row.title}
-          </Link>
+          </Typography>
           <CapExemptChip job={p.row} />
         </Stack>
       ),
     },
-    { field: "company", headerName: "Company", flex: 1, minWidth: 160 },
-    {
-      field: "board",
-      headerName: "Board",
-      width: 130,
-      valueGetter: (_value, row) => row.board?.name ?? "",
-    },
+    { field: "company", headerName: "Company", flex: 1, minWidth: 150 },
     {
       field: "matchScore",
       headerName: "Score",
@@ -84,54 +46,43 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       headerAlign: "right",
       valueGetter: (_v, row) => row.matchScore ?? "",
     },
-    ...(showReason
+    {
+      field: "campaign",
+      headerName: "From",
+      flex: 1,
+      minWidth: 150,
+      sortable: false,
+      renderCell: (p) => <Typography variant="captionMuted">{p.row.campaign.query}</Typography>,
+    },
+    ...(REASON_VIEWS.includes(view)
       ? [
           {
-            field: "matchReason",
-            headerName: "Why",
-            flex: 1.5,
-            minWidth: 220,
-            valueGetter: (_v, row) => row.matchReason ?? "",
-          } satisfies GridColDef<CampaignJobDto>,
+            field: "reason",
+            headerName: "Reason",
+            flex: 1.4,
+            minWidth: 200,
+            sortable: false,
+            valueGetter: (_v, row) => row.failReason ?? row.skipReason ?? "",
+          } satisfies GridColDef<PipelineJobDto>,
         ]
       : []),
     {
-      field: "failReason",
-      headerName: "Reason",
-      flex: 1,
-      minWidth: 160,
-      valueGetter: (_v, row) => row.failReason ?? row.skipReason ?? "",
-    },
-  ];
-
-  if (onApplyJob || onDraftProposal) {
-    columns.push({
-      field: "actions",
-      headerName: "",
-      width: onDraftProposal ? 150 : 96,
+      field: "status",
+      headerName: "Status",
+      width: 120,
       sortable: false,
-      filterable: false,
+      renderCell: (p) => <StatusChip domain="campaignJob" value={p.row.status} />,
+    },
+    {
+      field: "updatedAt",
+      headerName: "Updated",
+      width: 110,
       align: "right",
       headerAlign: "right",
-      renderCell: (p) => {
-        if (!isApplicable(p.row.status)) {
-          return null;
-        }
-        if (onApplyJob) {
-          return (
-            <Button size="small" variant="outlined" onClick={() => onApplyJob(p.row)}>
-              Apply
-            </Button>
-          );
-        }
-        return (
-          <Button size="small" variant="outlined" onClick={() => onDraftProposal?.(p.row)}>
-            Draft proposal
-          </Button>
-        );
-      },
-    });
-  }
+      sortable: false,
+      renderCell: (p) => <RelativeTime value={p.row.updatedAt} />,
+    },
+  ];
 
   return (
     <DataTable
@@ -139,11 +90,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       columns={columns}
       loading={loading}
       getRowId={(row) => row.id}
-      checkboxSelection={checkboxSelection}
-      rowSelectionModel={rowSelectionModel}
-      onRowSelectionModelChange={onRowSelectionModelChange}
-      isRowSelectable={(row) => isReapplicable(row.status)}
-      keepNonExistentRowsSelected
+      onRowClick={onOpen}
       {...pagination}
     />
   );

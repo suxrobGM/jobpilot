@@ -36,15 +36,3 @@ export const campaignSchema = z.object({
 });
 
 export const campaignListSchema = paginatedSchema(campaignSchema);
-
-export const campaignAccountSummarySchema = z.object({
-  total: z.number().int(),
-  active: z.number().int(),
-  replies: z.number().int(),
-  drafts: z.object({
-    messages: z.number().int(),
-    campaigns: z.number().int(),
-    /** Set only when exactly one campaign holds drafts, so the dashboard can link straight to it. */
-    campaignId: z.uuid().nullable(),
-  }),
-});

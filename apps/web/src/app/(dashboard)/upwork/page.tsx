@@ -31,9 +31,9 @@ export default function UpworkPage(): ReactElement {
             <LinkButton
               variant="outlined"
               startIcon={<TravelExplore fontSize="md" />}
-              href="/campaigns/new?board=upwork.com"
+              href="/pipeline?board=upwork.com"
             >
-              Find jobs
+              Upwork jobs
             </LinkButton>
             <LinkButton variant="contained" startIcon={<Add fontSize="md" />} href="/upwork/new">
               New proposal

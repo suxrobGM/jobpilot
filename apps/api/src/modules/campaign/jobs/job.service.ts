@@ -26,6 +26,7 @@ import { assertNotDuplicateApply, guardApply } from "./apply-guard";
 import { publishJob, publishProgress, publishStatusChange } from "./job-events";
 import { isTerminalJob, writeJobResult } from "./job-result";
 import { JOB_INCLUDE, type JobRow, toCampaignJob } from "./job-row";
+import { recentPostingsWhere } from "./recent-postings";
 
 const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
   // A score pass promotes a pasted link into the normal pipeline; nothing ever moves back to queued.
@@ -68,8 +69,17 @@ export class CampaignJobService {
     private readonly boards = inject(JobBoardService),
   ) {}
 
+  /** A posting the user already has from the window comes back as that row, flagged `duplicate`. */
   async addJob(userId: string, campaignId: string, body: AddCampaignJobInput) {
     await ensureCampaignOwned(this.prisma, userId, campaignId);
+
+    const url = normalizeJobUrl(body.url);
+    const existing = await this.prisma.campaignJob.findFirst({
+      where: recentPostingsWhere(userId, [url]),
+      orderBy: { createdAt: "desc" },
+      include: JOB_INCLUDE,
+    });
+    if (existing) return { ...toCampaignJob(existing), duplicate: true };
 
     const { board, ...fields } = body;
     const boardId = await this.boards.resolveId(board ?? null);
@@ -80,7 +90,7 @@ export class CampaignJobService {
           ...fields,
           brief: toNullableInputJson(fields.brief),
           boardId,
-          url: normalizeJobUrl(body.url),
+          url,
           campaignId,
           userId,
           status: body.status ?? "pending",
@@ -96,7 +106,7 @@ export class CampaignJobService {
 
     this.listings.publishInBackground(job);
     publishJob(userId, job, "added");
-    return toCampaignJob(job);
+    return { ...toCampaignJob(job), duplicate: false };
   }
 
   /** A field edit, moving the status too when the patch names a new one. Never idempotent. */

@@ -21,7 +21,7 @@ export const CAMPAIGN_SOURCES = ["search", "auto_apply", "apply", "networking"] 
 export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 
 /** A pilot feed that keeps one standing campaign; a search's is keyed by `pilotSearchId`. */
-export const CAMPAIGN_FEEDS = ["job_alerts", "research"] as const;
+export const CAMPAIGN_FEEDS = ["job_alerts", "research", "links", "networking"] as const;
 const campaignFeedSchema = z.enum(CAMPAIGN_FEEDS);
 
 /** Why an employer is H-1B cap-exempt. */
@@ -78,6 +78,9 @@ export const campaignJobSchema = z.object({
   updatedAt: z.date(),
 });
 
+/** The add-job response: `duplicate` means the user already had this posting, returned as is. */
+export const addedCampaignJobSchema = campaignJobSchema.extend({ duplicate: z.boolean() });
+
 export const campaignConfigSchema = z.object({
   resumeId: z.uuid().optional(),
   minScore: z.number().int().min(0).max(100).optional(),
@@ -132,7 +135,7 @@ export function campaignConfigSupportsSource(
 export const MAX_APPLY_URLS = 50;
 
 /** The pasted links of an apply campaign - the composer validates against this same schema. */
-export const applyUrlsSchema = z.array(z.url()).min(1).max(MAX_APPLY_URLS);
+const applyUrlsSchema = z.array(z.url()).min(1).max(MAX_APPLY_URLS);
 
 export const createCampaignSchema = z
   .object({
@@ -292,4 +295,3 @@ export type RescanCampaignJobInput = z.infer<typeof rescanCampaignJobSchema>;
 export type RetryCampaignJobInput = z.infer<typeof retryCampaignJobSchema>;
 export type CampaignSource = z.infer<typeof campaignSourceSchema>;
 export type CampaignJob = z.infer<typeof campaignJobSchema>;
-export type Actor = z.infer<typeof actorSchema>;

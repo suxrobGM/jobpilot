@@ -11,21 +11,13 @@ export type {
   AuthUserDto,
   LogoutResponse,
 } from "./auth";
-export {
-  type CampaignDetailDto,
-  type CampaignDto,
-  type CampaignJobDto,
-  type CampaignJobReasonDto,
-  type CampaignSummaryDto,
-  type CreateCampaignRequest,
-  jobSummary,
-} from "./campaign";
+export type { CampaignJobReasonDto, PipelineJobDto } from "./campaign";
 export type { CoverLetterListItem } from "./cover-letter";
 export type { CredentialDto } from "./credential";
 export type { EmailMessageDto, OAuthClientStatus } from "./email";
 export type { JobBoardDto } from "./job-board";
 export type { AdminJobListingDto, JobListingDto, JobListingSummaryDto } from "./job-listing";
-export type { ContactDto, NetworkingConfigDto, NetworkingMessageDto } from "./networking";
+export type { ContactDto, NetworkingMessageDto } from "./networking";
 export type { ResearchStatusDto, SavedAnswerDto } from "./pilot";
 export type {
   LeaderboardDto,
