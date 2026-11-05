@@ -17,7 +17,8 @@ export function StickyFooter(props: StickyFooterProps): ReactElement {
         bottom: 0,
         paddingBlock: theme.spacing(1.5),
         backgroundColor: theme.palette.surfaces.base,
-        borderTop: `1px solid ${theme.palette.line.divider}`,
+        borderTop: 1,
+        borderColor: "divider",
         zIndex: 1,
       })}
     >

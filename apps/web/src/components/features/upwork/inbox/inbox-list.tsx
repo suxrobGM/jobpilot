@@ -4,7 +4,7 @@ import { type ReactElement, useState } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkInboxKind, UpworkInboxStatus } from "@jobpilot/contracts/upwork";
 import { Clear, CloudSync, Launch } from "@mui/icons-material";
-import { Box, Button, Card, Chip, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
@@ -12,13 +12,13 @@ import { upworkInboxQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
-import { ColorChip } from "@/components/ui/display";
+import { ColorChip, RelativeTime } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
-import { formatRelativeTime, plural } from "@/utils/format";
+import { plural } from "@/utils/format";
 import { INBOX_STATUS_OPTIONS, KIND_COLOR, KIND_LABEL, KIND_OPTIONS } from "./inbox-kind";
 
 const PAGE_SIZE = 10;
@@ -112,42 +112,42 @@ export function InboxList(): ReactElement {
       ) : (
         <Stack spacing={1}>
           {pageRows.map((item) => (
-            <Card key={item.id} sx={{ padding: 1.5 }}>
-              <Stack spacing={0.5}>
-                <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-                  <ColorChip
-                    value={item.kind}
-                    colors={KIND_COLOR}
-                    label={KIND_LABEL[item.kind]}
-                    variant={item.status === "unread" ? "filled" : "outlined"}
-                  />
-                  {item.clientName && <Chip label={item.clientName} variant="outlined" />}
-                  <Box sx={{ flex: 1 }} />
-                  {item.jobUrl && (
-                    <Button size="small" startIcon={<Launch fontSize="sm" />} href={item.jobUrl}>
-                      Open
-                    </Button>
-                  )}
-                  {item.status !== "archived" && (
-                    <Button
-                      size="small"
-                      variant="text"
-                      onClick={() => setStatus.mutate({ id: item.id, status: "archived" })}
-                    >
-                      Archive
-                    </Button>
-                  )}
+            <Card key={item.id}>
+              <CardContent>
+                <Stack spacing={0.5}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ alignItems: "center", flexWrap: "wrap" }}
+                  >
+                    <ColorChip
+                      value={item.kind}
+                      colors={KIND_COLOR}
+                      label={KIND_LABEL[item.kind]}
+                      variant={item.status === "unread" ? "filled" : "outlined"}
+                    />
+                    {item.clientName && <Chip label={item.clientName} variant="outlined" />}
+                    <Box sx={{ flex: 1 }} />
+                    {item.jobUrl && (
+                      <Button size="small" startIcon={<Launch fontSize="sm" />} href={item.jobUrl}>
+                        Open
+                      </Button>
+                    )}
+                    {item.status !== "archived" && (
+                      <Button
+                        size="small"
+                        variant="text"
+                        onClick={() => setStatus.mutate({ id: item.id, status: "archived" })}
+                      >
+                        Archive
+                      </Button>
+                    )}
+                  </Stack>
+                  <Typography variant="body2Strong">{item.title}</Typography>
+                  {item.body && <Typography variant="body2Muted">{item.body}</Typography>}
+                  <RelativeTime prefix="Received" value={item.receivedAt} />
                 </Stack>
-                <Typography variant="body2Strong">{item.title}</Typography>
-                {item.body && (
-                  <Typography variant="body2" color="textSecondary">
-                    {item.body}
-                  </Typography>
-                )}
-                <Typography variant="captionMuted">
-                  Received {formatRelativeTime(item.receivedAt)}
-                </Typography>
-              </Stack>
+              </CardContent>
             </Card>
           ))}
         </Stack>

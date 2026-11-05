@@ -11,11 +11,12 @@ import { useApiQuery } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
+import { RelativeTime } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useSseChannel } from "@/lib/sse/client";
-import { formatRelativeTime, plural } from "@/utils/format";
+import { plural } from "@/utils/format";
 import { STATUS_OPTIONS } from "./proposal-status";
 import { ProposalStatusChip } from "./proposal-status-chip";
 
@@ -105,10 +106,12 @@ export function ProposalsList(): ReactElement {
                     <Typography variant="body2Strong" noWrap>
                       {p.jobTitle}
                     </Typography>
-                    <Typography variant="captionMuted">
-                      Updated {formatRelativeTime(p.updatedAt)}
-                      {p.proposalText ? "" : " · not generated yet"}
-                    </Typography>
+                    <Stack direction="row" spacing={0.5}>
+                      <RelativeTime prefix="Updated" value={p.updatedAt} />
+                      {!p.proposalText && (
+                        <Typography variant="captionMuted">· not generated yet</Typography>
+                      )}
+                    </Stack>
                   </Stack>
                   <ChevronRight fontSize="md" />
                 </Stack>

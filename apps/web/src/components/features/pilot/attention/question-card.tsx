@@ -25,7 +25,7 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
   const isLoading = answer.isPending;
 
   return (
-    <Card variant="outlined">
+    <Card>
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>

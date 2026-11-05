@@ -1,23 +1,10 @@
 "use client";
 
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { useEffect, useState } from "react";
+import { useClockTick } from "@/hooks/use-clock-tick";
 
-const TICK_MS = 30_000;
-
-/** The host's next check; re-renders the caller while it is pending so a countdown keeps moving. */
+/** The host's next check; re-renders the caller on the shared tick so a countdown keeps moving. */
 export function useNextWake(state: PilotState | null): Date | null {
-  const nextWakeAt = state?.nextWakeAt ?? null;
-  const wakeMs = nextWakeAt ? nextWakeAt.getTime() : null;
-
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (wakeMs === null || wakeMs <= Date.now()) {
-      return;
-    }
-    const id = setInterval(() => setTick((t) => t + 1), TICK_MS);
-    return () => clearInterval(id);
-  }, [wakeMs]);
-
-  return nextWakeAt;
+  useClockTick();
+  return state?.nextWakeAt ?? null;
 }

@@ -17,8 +17,8 @@ import {
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { QuerySection } from "@/components/ui/data";
+import { RelativeTime } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
-import { formatRelativeTime } from "@/utils/format";
 import { PromotionDraftCard, PromotionSummary } from "./promotion-card";
 import { QuestionCard } from "./question-card";
 import { useOpenQuestions } from "./use-open-questions";
@@ -39,9 +39,7 @@ function DraftRow(props: DraftRowProps): ReactElement {
         <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
           {promotion.title ?? promotion.body}
         </Typography>
-        <Typography variant="captionMuted" sx={{ whiteSpace: "nowrap" }}>
-          {formatRelativeTime(promotion.createdAt)} ago
-        </Typography>
+        <RelativeTime value={promotion.createdAt} sx={{ whiteSpace: "nowrap" }} />
         <IconButton size="small" aria-label="Review draft" onClick={onToggle}>
           {expanded ? <ExpandLess fontSize="sm" /> : <ExpandMore fontSize="sm" />}
         </IconButton>

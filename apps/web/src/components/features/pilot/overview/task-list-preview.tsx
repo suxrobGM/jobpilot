@@ -10,8 +10,9 @@ import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { LinkButton, TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/data";
+import { RelativeTime } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
-import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
+import { formatTimeUntil } from "@/utils/format";
 import { taskTypeLabel } from "../task-types";
 
 const PREVIEW_COUNT = 6;
@@ -147,9 +148,7 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
                   +{taskList.tasks.length - PREVIEW_COUNT} more
                 </Typography>
               )}
-              <Typography variant="captionMuted">
-                Built {formatRelativeTime(taskList.builtAt)} ago
-              </Typography>
+              <RelativeTime prefix="Built" value={taskList.builtAt} />
             </Stack>
           )}
         </QuerySection>

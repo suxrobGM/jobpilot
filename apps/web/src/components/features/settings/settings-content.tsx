@@ -9,6 +9,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { useAppForm } from "@/components/ui/form/tanstack";
+import { StickyFooter } from "@/components/ui/layout";
 import { toProfileFormValues } from "./profile-form-values";
 import { AddressSection } from "./sections/address-section";
 import { AutoApplySection } from "./sections/auto-apply-section";
@@ -72,27 +73,18 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
         <EeoSection form={form} />
         <AutoApplySection form={form} />
 
-        <Stack
-          direction="row"
-          sx={(theme) => ({
-            position: "sticky",
-            bottom: 0,
-            justifyContent: "flex-end",
-            paddingBlock: theme.spacing(1.5),
-            backgroundColor: theme.palette.surfaces.base,
-            borderTop: `1px solid ${theme.palette.line.divider}`,
-            zIndex: 1,
-          })}
-        >
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={<Save fontSize="md" />}
-            loading={save.isPending}
-          >
-            Save settings
-          </Button>
-        </Stack>
+        <StickyFooter>
+          <Stack direction="row" sx={{ justifyContent: "flex-end" }}>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<Save fontSize="md" />}
+              loading={save.isPending}
+            >
+              Save settings
+            </Button>
+          </Stack>
+        </StickyFooter>
       </Stack>
     </Box>
   );

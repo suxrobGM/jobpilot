@@ -10,9 +10,9 @@ import { queryKeys } from "@/api/query-keys";
 import type { SavedAnswerDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/data";
+import { RelativeTime } from "@/components/ui/display";
 import { FormDialogShell, FormSection } from "@/components/ui/form";
 import { useConfirm } from "@/providers/confirm-provider";
-import { formatRelativeTime } from "@/utils/format";
 
 /** `start_date` → "Start date". */
 function answerLabel(key: string): string {
@@ -116,9 +116,11 @@ function AnswerRow(props: AnswerRowProps): ReactElement {
         <Typography variant="body2" sx={{ whiteSpace: "pre-line", overflowWrap: "anywhere" }}>
           {answer.value}
         </Typography>
-        <Typography variant="captionMuted" sx={{ display: "block", mt: 0.5 }}>
-          Updated {formatRelativeTime(answer.updatedAt)} ago
-        </Typography>
+        <RelativeTime
+          prefix="Updated"
+          value={answer.updatedAt}
+          sx={{ display: "block", mt: 0.5 }}
+        />
       </Box>
       <TooltipIconButton title="Edit" aria-label={`Edit ${label}`} size="small" onClick={onEdit}>
         <Edit fontSize="sm" />

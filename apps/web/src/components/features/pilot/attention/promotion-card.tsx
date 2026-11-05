@@ -17,8 +17,7 @@ import {
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import { ColorChip } from "@/components/ui/display";
-import { formatRelativeTime } from "@/utils/format";
+import { ColorChip, RelativeTime } from "@/components/ui/display";
 
 const STATUS_COLOR: Record<PromotionStatus, ChipProps["color"]> = {
   draft: "warning",
@@ -52,15 +51,13 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
   const canSave = body.trim().length > 0 && (hasTitle ? title.trim().length > 0 : true);
 
   return (
-    <Card variant="outlined">
+    <Card>
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
             <Chip label={promotion.platform} color="primary" />
             {promotion.target && <Chip variant="outlined" label={promotion.target} />}
-            <Typography variant="captionMuted" sx={{ ml: "auto", whiteSpace: "nowrap" }}>
-              {formatRelativeTime(promotion.createdAt)} ago
-            </Typography>
+            <RelativeTime value={promotion.createdAt} sx={{ ml: "auto", whiteSpace: "nowrap" }} />
           </Stack>
 
           {hasTitle && (

@@ -3,11 +3,12 @@
 import { type ReactElement, useState } from "react";
 import type { UpdateUpworkProfileInput } from "@jobpilot/contracts/upwork";
 import { CloudUpload, TaskAlt } from "@mui/icons-material";
-import { Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";
+import { Button, Divider, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkProfileDto } from "@/api/types";
+import { LabelValue } from "@/components/ui/display";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { PortfolioList } from "./portfolio-list";
 
@@ -48,9 +49,13 @@ export function ProfileReview(props: ProfileReviewProps): ReactElement {
       <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
         <Stack spacing={1.5} sx={{ flex: 1 }}>
           <Typography variant="overlineMuted">Current</Typography>
-          <ReadonlyField label="Title" value={profile.currentTitle} />
-          <ReadonlyField label="Hourly rate" value={profile.currentHourlyRate} />
-          <ReadonlyField label="Overview" value={profile.currentOverview} multiline />
+          <LabelValue label="Title">{profile.currentTitle || "-"}</LabelValue>
+          <LabelValue label="Hourly rate">{profile.currentHourlyRate || "-"}</LabelValue>
+          <LabelValue label="Overview">
+            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+              {profile.currentOverview || "-"}
+            </Typography>
+          </LabelValue>
         </Stack>
         <Stack spacing={1.5} sx={{ flex: 1 }}>
           <Typography variant="overlineMuted">Suggested</Typography>
@@ -123,29 +128,5 @@ export function ProfileReview(props: ProfileReviewProps): ReactElement {
         </Stack>
       )}
     </Stack>
-  );
-}
-
-interface ReadonlyFieldProps {
-  label: string;
-  value: string | null;
-  multiline?: boolean;
-}
-
-function ReadonlyField(props: ReadonlyFieldProps): ReactElement {
-  const { label, value, multiline } = props;
-  return (
-    <Box>
-      <Typography variant="captionMuted">{label}</Typography>
-      <Typography
-        variant="body2"
-        sx={{
-          whiteSpace: multiline ? "pre-wrap" : "normal",
-          color: value ? "text.primary" : "text.disabled",
-        }}
-      >
-        {value || "-"}
-      </Typography>
-    </Box>
   );
 }

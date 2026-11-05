@@ -2,7 +2,7 @@
 
 import { type ReactElement, type SubmitEvent, useRef } from "react";
 import { parseTechParam, serializeTechParam } from "@jobpilot/contracts/job-listing";
-import { Box, Button, Card, Stack, TextField, ToggleButton } from "@mui/material";
+import { Button, Card, CardContent, Stack, TextField, ToggleButton } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MultiSelect } from "@/components/ui/form";
 import { ActiveFilters } from "./active-filters";
@@ -55,8 +55,8 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
   };
 
   return (
-    <Card sx={{ p: 2 }}>
-      <Box component="form" ref={form} onSubmit={onSubmit}>
+    <Card>
+      <CardContent component="form" ref={form} onSubmit={onSubmit}>
         <Stack spacing={1.5}>
           <Stack
             direction={{ xs: "column", md: "row" }}
@@ -101,7 +101,7 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
           </Stack>
           <ActiveFilters />
         </Stack>
-      </Box>
+      </CardContent>
     </Card>
   );
 }

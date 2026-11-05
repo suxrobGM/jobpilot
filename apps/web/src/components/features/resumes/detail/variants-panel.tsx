@@ -2,27 +2,17 @@
 
 import { type ReactElement, useState } from "react";
 import { isProtectedVariantLabel, UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
-import { CleaningServices, Delete, OpenInNew, Search } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  IconButton,
-  InputAdornment,
-  Skeleton,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { CleaningServices, Delete, OpenInNew } from "@mui/icons-material";
+import { Box, Button, Card, CardContent, Chip, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { variantPdfUrl } from "@/api/resume-urls";
 import type { ResumeVariantListItem } from "@/api/types";
+import { QuerySection } from "@/components/ui/data";
 import { RelativeTime } from "@/components/ui/display";
+import { SearchField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { plural } from "@/utils/format";
@@ -113,29 +103,25 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
         </Stack>
       }
     >
-      {query.isLoading ? (
-        <Skeleton variant="rounded" height={64} />
-      ) : variants.length === 0 ? (
-        <Typography variant="body2Muted">
-          No variants yet. Click &ldquo;Tailor for job&rdquo;, paste a job description or URL, and
-          the AI will either reuse a close match (if you had previous variants) or create a new one.
-        </Typography>
-      ) : (
+      <QuerySection
+        isLoading={query.isLoading}
+        isError={query.isError}
+        onRetry={() => void query.refetch()}
+        errorTitle="Couldn't load the variants."
+        isEmpty={variants.length === 0}
+        empty={
+          <Typography variant="body2Muted">
+            No variants yet. Click &ldquo;Tailor for job&rdquo;, paste a job description or URL, and
+            the AI will either reuse a close match (if you had previous variants) or create a new
+            one.
+          </Typography>
+        }
+      >
         <Stack spacing={1.5}>
-          <TextField
-            size="small"
+          <SearchField
             placeholder="Search by label or job URL"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="sm" />
-                  </InputAdornment>
-                ),
-              },
-            }}
+            onChange={setSearch}
           />
           {filtered.length === 0 ? (
             <Typography variant="body2Muted">No variants match &ldquo;{search}&rdquo;.</Typography>
@@ -186,7 +172,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
             </Stack>
           )}
         </Stack>
-      )}
+      </QuerySection>
     </SectionCard>
   );
 }
