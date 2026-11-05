@@ -8,10 +8,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
+import { isNotFound } from "@/api/error";
 import { useApiMutation } from "@/api/hooks";
 import { upworkAccountQueries, upworkProposalQueries } from "@/api/queries";
 import type { UpdateUpworkProposalRequest } from "@/api/types";
 import { AgentOnlyButton } from "@/components/ui/buttons";
+import { QueryError } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useCopy } from "@/hooks/use-copy";
 import { useSseChannel } from "@/lib/sse/client";
@@ -67,7 +69,11 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   if (!proposal) {
     return (
       <PageShell maxWidth="md">
-        <Typography variant="body1Muted">Proposal not found.</Typography>
+        {isNotFound(detail.error) ? (
+          <Typography variant="body1Muted">Proposal not found.</Typography>
+        ) : (
+          <QueryError title="Couldn't load this proposal." onRetry={() => void detail.refetch()} />
+        )}
       </PageShell>
     );
   }

@@ -7,10 +7,11 @@ import { Button, IconButton, LinearProgress, Link, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
+import { isNotFound } from "@/api/error";
 import { useApiMutation } from "@/api/hooks";
 import { applicationQueries, invalidations } from "@/api/queries";
 import { LabelValue, StatusChip, statusLabel } from "@/components/ui/display";
-import { EmptyState } from "@/components/ui/feedback";
+import { EmptyState, QueryError } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
@@ -69,10 +70,17 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   if (!app) {
     return (
       <PageShell maxWidth="lg">
-        <EmptyState
-          title="Application not found"
-          description="It may have been deleted, or the link is incorrect."
-        />
+        {isNotFound(detail.error) ? (
+          <EmptyState
+            title="Application not found"
+            description="It may have been deleted, or the link is incorrect."
+          />
+        ) : (
+          <QueryError
+            title="Couldn't load this application."
+            onRetry={() => void detail.refetch()}
+          />
+        )}
       </PageShell>
     );
   }

@@ -21,6 +21,16 @@ export class ApiError extends Error {
 
 const errorMessageSchema = errorResponseSchema.pick({ message: true });
 
+export function isNotFound(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
+}
+
+/** A 4xx won't change on retry, so only network blips and 5xx are worth a second try. */
+export function shouldRetry(failureCount: number, error: unknown): boolean {
+  const status = error instanceof ApiError ? error.status : null;
+  return failureCount < 1 && (status === null || status >= 500);
+}
+
 function edenError(error: unknown): NonNullable<EdenResult<unknown>["error"]> {
   return (error ?? {}) as NonNullable<EdenResult<unknown>["error"]>;
 }
