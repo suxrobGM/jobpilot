@@ -7,7 +7,7 @@ export type EdenResult<T> = {
 };
 
 /** Carries the server's stable `code`, so callers branch on it rather than the message text. */
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number | null,

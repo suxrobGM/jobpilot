@@ -92,7 +92,7 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
     router.push("/workspace");
   };
 
-  const submitForm = async (e: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isLastProfileStep) {
       setStep((s) => s + 1);
@@ -126,7 +126,7 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
       </Stepper>
       <SectionCard>
         {isProfileStep ? (
-          <form onSubmit={submitForm}>
+          <form onSubmit={handleSubmit}>
             <Stack spacing={3}>
               {step === 0 && <ResumeUploadStep form={form} onContinue={() => setStep(1)} />}
               {step === 1 && <PersonalSection form={form} />}
