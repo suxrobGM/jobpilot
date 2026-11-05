@@ -31,10 +31,10 @@ const WINDOW_SUFFIX: Record<LeaderboardWindow, string> = {
 
 export function LeaderboardView(props: LeaderboardViewProps): ReactElement {
   const { initial } = props;
-  const [window, setWindow] = useState<LeaderboardWindow>(initial?.window ?? DEFAULT_WINDOW);
+  const [range, setRange] = useState<LeaderboardWindow>(initial?.window ?? DEFAULT_WINDOW);
 
-  const query = useApiQuery(leaderboardQueries.list(window), {
-    initialData: window === initial?.window ? initial : undefined,
+  const query = useApiQuery(leaderboardQueries.list(range), {
+    initialData: range === initial?.window ? initial : undefined,
     // Matches the API's own leaderboard cache, so a remount does not re-fetch the same board.
     staleTime: 5 * 60_000,
     // Holds the old window's rows on screen while the next loads, instead of blanking.
@@ -54,9 +54,9 @@ export function LeaderboardView(props: LeaderboardViewProps): ReactElement {
         <ToggleButtonGroup
           exclusive
           size="small"
-          value={window}
+          value={range}
           onChange={(_, next: LeaderboardWindow | null) => {
-            if (next) setWindow(next);
+            if (next) setRange(next);
           }}
           sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
         >
@@ -70,8 +70,8 @@ export function LeaderboardView(props: LeaderboardViewProps): ReactElement {
         {totalActive > 0 && (
           <Typography variant="body2Muted">
             {totalActive > rows.length
-              ? `Top ${rows.length} of ${totalActive} people active ${WINDOW_SUFFIX[window]}`
-              : `${totalActive} ${totalActive === 1 ? "person" : "people"} active ${WINDOW_SUFFIX[window]}`}
+              ? `Top ${rows.length} of ${totalActive} people active ${WINDOW_SUFFIX[range]}`
+              : `${totalActive} ${totalActive === 1 ? "person" : "people"} active ${WINDOW_SUFFIX[range]}`}
           </Typography>
         )}
       </Stack>

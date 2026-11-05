@@ -15,7 +15,10 @@ import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
-type StepState = "idle" | "uploading" | "extracting" | "done";
+type StepState = "idle" | "extracting" | "done";
+
+// Long enough for a normal extraction; past it, offer a retry.
+const SLOW_EXTRACTION_MS = 90_000;
 
 export const ResumeUploadStep = withForm({
   defaultValues: USER_DEFAULT_VALUES,
@@ -26,10 +29,12 @@ export const ResumeUploadStep = withForm({
     const agentAvailable = useAgentAvailable();
     const [state, setState] = useState<StepState>("idle");
     const [resumeId, setResumeId] = useState<string | null>(null);
+    const [slow, setSlow] = useState(false);
 
     const startExtraction = async (id: string): Promise<void> => {
       setState("extracting");
-      await agent.injectSkill("extract-resume", String(id));
+      setSlow(false);
+      await agent.injectSkill("extract-resume", id);
     };
 
     const upload = useApiMutation((file: File) => api.resumes.upload.post({ file }), {
@@ -64,6 +69,14 @@ export const ResumeUploadStep = withForm({
       onContinue();
     }, [content, state, form, onContinue]);
 
+    useEffect(() => {
+      if (state !== "extracting" || slow) {
+        return;
+      }
+      const timer = setTimeout(() => setSlow(true), SLOW_EXTRACTION_MS);
+      return () => clearTimeout(timer);
+    }, [state, slow]);
+
     const retryInject = async (): Promise<void> => {
       if (resumeId === null) {
         return;
@@ -88,21 +101,18 @@ export const ResumeUploadStep = withForm({
           maxBytes={MAX_RESUME_BYTES}
           loading={upload.isPending}
           description="Click or drop a PDF here (5 MB max)"
-          onFile={(f) => {
-            setState("uploading");
-            upload.mutate(f);
-          }}
+          onFile={(f) => upload.mutate(f)}
           onError={(msg) => toast.error(msg)}
           disabled={isExtracting}
         />
 
-        {isExtracting && (
+        {isExtracting && !slow && (
           <Alert icon={<CircularProgress size={18} />} severity="info" variant="outlined">
-            Reading your resume in the terminal fields will autofill when it finishes.
+            Reading your resume in the terminal. The fields fill in when it finishes.
           </Alert>
         )}
 
-        {isExtracting && (
+        {isExtracting && slow && (
           <Alert
             severity="warning"
             icon={<HourglassEmpty fontSize="md" />}
@@ -112,7 +122,8 @@ export const ResumeUploadStep = withForm({
               </Button>
             }
           >
-            Still extracting. Check the terminal in the dock for progress, then continue or skip.
+            Still extracting. Check the terminal in the dock for progress, retry, or continue and
+            fill the rest in by hand.
           </Alert>
         )}
 
@@ -130,7 +141,7 @@ export const ResumeUploadStep = withForm({
 
         <Stack direction="row" spacing={1.5} sx={{ justifyContent: "flex-end" }}>
           <Button variant="text" onClick={onContinue} disabled={isExtracting}>
-            Skip &mdash; fill manually
+            Skip - fill manually
           </Button>
           {(isExtracting || state === "done") && (
             <Button variant="contained" onClick={onContinue}>

@@ -115,6 +115,11 @@ export const campaignQueries = {
     queryKey: queryKeys.campaigns.list(query),
     queryFn: () => api.campaigns.get({ query }),
   }),
+  /** Whole-account totals - a page of campaigns can't back a dashboard count. */
+  summary: () => ({
+    queryKey: queryKeys.campaigns.summary(),
+    queryFn: () => api.campaigns.summary.get(),
+  }),
   detail: (id: string) => ({
     queryKey: queryKeys.campaigns.detail(id),
     queryFn: () => api.campaigns({ id }).get(),

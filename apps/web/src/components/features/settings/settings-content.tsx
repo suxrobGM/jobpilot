@@ -1,19 +1,15 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import {
-  USER_DEFAULT_VALUES,
-  type UserWithAutoApplyInput,
-  userWithAutoApplySchema,
-} from "@jobpilot/contracts/user";
+import { type UserWithAutoApplyInput, userWithAutoApplySchema } from "@jobpilot/contracts/user";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { UserAggregateResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
+import { toProfileFormValues } from "./profile-form-values";
 import { AddressSection } from "./sections/address-section";
 import { AutoApplySection } from "./sections/auto-apply-section";
 import { EeoSection } from "./sections/eeo-section";
@@ -32,56 +28,7 @@ export function SettingsContent(): ReactElement {
     return <LinearProgress />;
   }
 
-  return <SettingsForm initialData={toFormValues(query.data)} />;
-}
-
-function toFormValues(data: UserAggregateResponse): UserWithAutoApplyInput {
-  const p = data.user;
-  const a = data.autoApply ?? USER_DEFAULT_VALUES.autoApply!;
-  return {
-    firstName: p.firstName,
-    lastName: p.lastName,
-    contactEmail: p.contactEmail,
-    phone: p.phone ?? "",
-    website: p.website ?? "",
-    linkedin: p.linkedin ?? "",
-    github: p.github ?? "",
-    street: p.street ?? "",
-    aptUnit: p.aptUnit ?? "",
-    city: p.city ?? "",
-    state: p.state ?? "",
-    zipCode: p.zipCode ?? "",
-    country: p.country ?? "",
-    usAuthorized: p.usAuthorized,
-    requiresSponsorship: p.requiresSponsorship,
-    preferCapExempt: p.preferCapExempt,
-    visaStatus: p.visaStatus ?? "",
-    optExtension: p.optExtension ?? "",
-    willingToRelocate: p.willingToRelocate,
-    preferredLocations: p.preferredLocations,
-    references: p.references.map((r) => ({
-      name: r.name,
-      relationship: r.relationship ?? "",
-      company: r.company ?? "",
-      email: r.email ?? "",
-      phone: r.phone ?? "",
-    })),
-    salaryPreferences: p.salaryPreferences.map((s) => ({
-      appliesTo: s.appliesTo,
-      minAmount: s.minAmount ?? undefined,
-      maxAmount: s.maxAmount ?? undefined,
-      currency: s.currency,
-      period: s.period,
-    })),
-    eeoGender: p.eeoGender ?? "",
-    eeoRace: p.eeoRace ?? "",
-    eeoEthnicity: p.eeoEthnicity ?? "",
-    eeoHispanicOrLatino: p.eeoHispanicOrLatino ?? "",
-    eeoVeteranStatus: p.eeoVeteranStatus ?? "",
-    eeoDisabilityStatus: p.eeoDisabilityStatus ?? "",
-    primaryResumeId: p.primaryResumeId,
-    autoApply: a,
-  };
+  return <SettingsForm initialData={toProfileFormValues(query.data)} />;
 }
 
 interface SettingsFormProps {

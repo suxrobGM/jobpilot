@@ -9,6 +9,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { invalidations, queryKeys } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";
+import { QueryError } from "@/components/ui/data";
 import { useConfirm } from "@/providers/confirm-provider";
 import { plural } from "@/utils/format";
 import { diffRewrite } from "./rewrite-diff";
@@ -54,8 +55,16 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
     return null;
   }
 
-  if (detail.isLoading || !detail.data) {
+  if (detail.isLoading) {
     return <Skeleton variant="rounded" height={120} />;
+  }
+  if (!detail.data) {
+    return (
+      <QueryError
+        title="Couldn't load the suggested rewrite."
+        onRetry={() => void detail.refetch()}
+      />
+    );
   }
 
   const changeCount = diffRewrite(resume.content ?? EMPTY_RESUME_DATA, detail.data.content).length;

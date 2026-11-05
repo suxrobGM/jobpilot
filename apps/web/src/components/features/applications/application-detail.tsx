@@ -3,7 +3,8 @@
 import { type ReactElement, useState } from "react";
 import type { StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
-import { Button, IconButton, LinearProgress, Stack } from "@mui/material";
+import { Button, IconButton, LinearProgress, Link, Stack } from "@mui/material";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
@@ -43,7 +44,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   const remove = useApiMutation(() => api.applications({ id }).delete(), {
     successMessage: "Application deleted",
     invalidate: invalidations.application,
-    onSuccess: () => router.replace("/"),
+    onSuccess: () => router.replace("/workspace/applications"),
   });
 
   const handleDelete = async (): Promise<void> => {
@@ -117,7 +118,13 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
                 {app.matchScore !== null ? `${app.matchScore}/100` : ""}
               </LabelValue>
               <LabelValue label="Applied at">{formatAbsoluteTime(app.appliedAt)}</LabelValue>
-              {app.campaignId && <LabelValue label="Campaign">{app.campaignId}</LabelValue>}
+              {app.campaignId && (
+                <LabelValue label="Campaign">
+                  <Link href={`/campaigns/${encodeURIComponent(app.campaignId)}` as Route}>
+                    Open campaign
+                  </Link>
+                </LabelValue>
+              )}
             </Stack>
             {app.matchReason && <LabelValue label="Match reason">{app.matchReason}</LabelValue>}
           </Stack>

@@ -11,7 +11,7 @@ import { formatNewTokenParts, formatTokenSplit, formatTokens, plural } from "@/u
 import { taskTypeLabel } from "../task-types";
 
 export function CycleCost(): ReactElement {
-  const query = useApiQuery(pilotQueries.cost(), { errorMessage: "Failed to load cycle costs" });
+  const query = useApiQuery(pilotQueries.cost());
   const items = query.data?.items ?? [];
   const heaviest = items.length > 0 ? newTokens(items[0].tokens) : 0;
 

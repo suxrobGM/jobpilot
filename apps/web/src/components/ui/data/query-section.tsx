@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Button, LinearProgress, Stack, Typography } from "@mui/material";
+import { LinearProgress } from "@mui/material";
+import { QueryError } from "./query-error";
 
 interface QuerySectionProps {
   isLoading: boolean;
@@ -15,10 +16,7 @@ interface QuerySectionProps {
   children: ReactNode;
 }
 
-/**
- * Loading / error / empty / content body for a section fed by a query. Callers keep
- * their own SectionCard so the title and actions stay theirs.
- */
+/** Callers keep their own SectionCard so the title and actions stay theirs. */
 export function QuerySection(props: QuerySectionProps): ReactNode {
   const { isLoading, isError, onRetry, errorTitle, isEmpty, empty, children } = props;
 
@@ -27,16 +25,7 @@ export function QuerySection(props: QuerySectionProps): ReactNode {
   }
 
   if (isError) {
-    return (
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-        <Typography variant="body2Muted">{errorTitle ?? "Couldn't load this section."}</Typography>
-        {onRetry && (
-          <Button variant="text" size="small" onClick={onRetry}>
-            Retry
-          </Button>
-        )}
-      </Stack>
-    );
+    return <QueryError title={errorTitle} onRetry={onRetry} />;
   }
 
   return isEmpty ? empty : children;

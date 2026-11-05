@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { jobSummary, summarizeCampaigns } from "./campaign.summary";
+import { accountSummary, jobSummary, summarizeCampaigns } from "./campaign.summary";
 import { describe, expect, it } from "bun:test";
 
 type Row = { campaignId: string; status: string; _count: { _all: number; matchScore?: number } };
@@ -73,5 +73,37 @@ describe("jobSummary", () => {
     expect(summary.failed).toBe(c.failed);
     expect(summary.skipped).toBe(c.skipped);
     expect(summary.remaining).toBe(c.approved + c.applying + c.needs_user);
+  });
+});
+
+describe("accountSummary", () => {
+  it("totals statuses and links the draft campaign only when there is exactly one", () => {
+    const one = accountSummary(
+      [
+        { status: "in_progress", count: 2 },
+        { status: "paused", count: 1 },
+        { status: "completed", count: 4 },
+      ],
+      [
+        { campaignId: "c1", status: "draft", count: 2 },
+        { campaignId: "c1", status: "approved", count: 1 },
+        { campaignId: "c2", status: "replied", count: 3 },
+      ],
+    );
+    expect(one).toEqual({
+      total: 7,
+      active: 3,
+      replies: 3,
+      drafts: { messages: 3, campaigns: 1, campaignId: "c1" },
+    });
+
+    const two = accountSummary(
+      [],
+      [
+        { campaignId: "c1", status: "draft", count: 1 },
+        { campaignId: "c2", status: "draft", count: 1 },
+      ],
+    );
+    expect(two.drafts).toEqual({ messages: 2, campaigns: 2, campaignId: null });
   });
 });

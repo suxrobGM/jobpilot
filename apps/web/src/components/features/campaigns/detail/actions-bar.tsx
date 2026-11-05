@@ -12,7 +12,6 @@ import {
   Replay,
 } from "@mui/icons-material";
 import { Button, IconButton, Stack } from "@mui/material";
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
@@ -61,7 +60,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const remove = useApiMutation(() => campaignResource.delete(), {
     successMessage: "Campaign deleted",
     invalidate: invalidations.campaign,
-    onSuccess: () => router.replace("/" as Route),
+    onSuccess: () => router.replace("/workspace"),
   });
 
   const summary = jobSummary(campaign);

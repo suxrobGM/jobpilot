@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import { QueryError } from "@/components/ui/data";
 import { type SectionAnchor, SectionLayout } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import { ExtractionCard } from "./detail/extraction-card";
@@ -41,9 +42,7 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
   const queryClient = useQueryClient();
   const [skippedExtraction, setSkippedExtraction] = useState(false);
 
-  const detail = useApiQuery(resumeQueries.detail(resumeId), {
-    errorMessage: "Failed to load resume",
-  });
+  const detail = useApiQuery(resumeQueries.detail(resumeId));
 
   useSseChannel(
     resumeChannel,
@@ -63,8 +62,13 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
     },
   );
 
-  if (detail.isLoading || !detail.data) return <LinearProgress />;
+  if (detail.isLoading) {
+    return <LinearProgress />;
+  }
   const resume = detail.data;
+  if (!resume) {
+    return <QueryError title="Couldn't load this resume." onRetry={() => void detail.refetch()} />;
+  }
   const initialData: ResumeData = resume.content ?? EMPTY_RESUME_DATA;
   // A source PDF with no structure yet means `extract-resume` is either running or worth retrying.
   const extracting = !resume.content && resume.sourceFilename !== null && !skippedExtraction;

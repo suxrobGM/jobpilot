@@ -78,9 +78,7 @@ function SearchRow(props: SearchRowProps): ReactElement {
 }
 
 export function SearchesList(): ReactElement {
-  const query = useApiQuery(pilotQueries.searches(), {
-    errorMessage: "Failed to load pilot searches",
-  });
+  const query = useApiQuery(pilotQueries.searches());
 
   const searches = query.data ?? [];
 

@@ -17,8 +17,9 @@ export function ResetPasswordForm(props: ResetPasswordFormProps): ReactElement {
   const { token } = props;
   const router = useRouter();
   const toast = useToast();
-  const resetPassword = useApiMutation((body: ResetPasswordInput) =>
-    api.auth.password.reset.confirm.post(body),
+  const resetPassword = useApiMutation(
+    (body: ResetPasswordInput) => api.auth.password.reset.confirm.post(body),
+    { showErrorToast: false },
   );
 
   const form = useAppForm({

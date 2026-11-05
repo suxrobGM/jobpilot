@@ -10,8 +10,9 @@ import { useAppForm } from "@/components/ui/form/tanstack";
 const DEFAULT_VALUES: ForgotPasswordInput = { email: "" };
 
 export function ForgotPasswordForm(): ReactElement {
-  const forgotPassword = useApiMutation((body: ForgotPasswordInput) =>
-    api.auth.password.reset.post(body),
+  const forgotPassword = useApiMutation(
+    (body: ForgotPasswordInput) => api.auth.password.reset.post(body),
+    { showErrorToast: false },
   );
 
   const form = useAppForm({

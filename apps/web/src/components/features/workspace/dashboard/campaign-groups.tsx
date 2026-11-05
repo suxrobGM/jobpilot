@@ -32,9 +32,11 @@ export function CampaignGroups(): ReactElement {
   const agentAvailable = useAgentAvailable();
 
   const groups = [useCampaignGroup(GROUPS[0]), useCampaignGroup(GROUPS[1])];
-  const loading = groups.some((g) => g.isLoading);
-  const isError = groups.some((g) => g.isError);
-  const isEmpty = groups.every((g) => !g.pagination?.total);
+  // Running campaigns render in Now running, so emptiness is judged on the whole account.
+  const summary = useApiQuery(campaignQueries.summary());
+  const loading = summary.isLoading || groups.some((g) => g.isLoading);
+  const isError = summary.isError || groups.some((g) => g.isError);
+  const isEmpty = summary.data?.total === 0;
 
   const open = (c: CampaignDto): void => {
     router.push(`/campaigns/${encodeURIComponent(c.id)}` as Route);
@@ -61,6 +63,7 @@ export function CampaignGroups(): ReactElement {
         isLoading={loading}
         isError={isError}
         onRetry={() => {
+          void summary.refetch();
           for (const group of groups) {
             void group.refetch();
           }
@@ -87,6 +90,11 @@ export function CampaignGroups(): ReactElement {
         }
       >
         <Stack spacing={2}>
+          {groups.every((g) => !g.pagination?.total) && (
+            <Typography variant="body2Muted">
+              Paused and finished campaigns show up here.
+            </Typography>
+          )}
           {groups.map((group) => (
             <CampaignGroupSection key={group.label} group={group} onOpen={open} />
           ))}

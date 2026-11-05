@@ -18,6 +18,8 @@ import { type CampaignStatus, type Prisma, PrismaClient } from "@/generated/pris
 import { BOARD_REF_SELECT, JobBoardService } from "@/modules/job-board/job-board.service";
 import type { campaignsQuery } from "./campaign.schema";
 import {
+  ACCOUNT_SUMMARY_MESSAGE_STATUSES,
+  accountSummary,
   deriveCampaignSummary,
   emptySummary,
   jobSummary,
@@ -81,6 +83,30 @@ export class CampaignService {
     ]);
     const rows = await summarizeCampaigns(this.prisma, campaigns);
     return paginate(rows.map(toRow), query, total);
+  }
+
+  async accountSummary(userId: string) {
+    const [statuses, messages] = await Promise.all([
+      this.prisma.campaign.groupBy({ by: ["status"], where: { userId }, _count: { _all: true } }),
+      // Networking campaigns only, as on the dashboard: job campaigns' intros are counted per job.
+      this.prisma.networkingMessage.groupBy({
+        by: ["campaignId", "status"],
+        where: {
+          userId,
+          campaign: { source: "networking" },
+          status: { in: ACCOUNT_SUMMARY_MESSAGE_STATUSES },
+        },
+        _count: { _all: true },
+      }),
+    ]);
+    return accountSummary(
+      statuses.map((row) => ({ status: row.status, count: row._count._all })),
+      messages.flatMap((row) =>
+        row.campaignId
+          ? [{ campaignId: row.campaignId, status: row.status, count: row._count._all }]
+          : [],
+      ),
+    );
   }
 
   async create(userId: string, body: CreateCampaignInput) {

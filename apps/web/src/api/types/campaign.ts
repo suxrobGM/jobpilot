@@ -16,20 +16,12 @@ export type CampaignJobReasonDto = Data<
 >[number];
 
 export type CampaignJobSummaryDto = Extract<CampaignSummaryDto, { kind: "jobs" }>;
-export type CampaignNetworkingSummaryDto = Extract<CampaignSummaryDto, { kind: "networking" }>;
 
 /** Narrows a campaign's summary to the job shape, or null for a networking campaign. */
 export function jobSummary(campaign: {
   summary: CampaignSummaryDto;
 }): CampaignJobSummaryDto | null {
   return campaign.summary.kind === "jobs" ? campaign.summary : null;
-}
-
-/** Narrows a campaign's summary to the networking shape, or null for a job campaign. */
-export function networkingSummary(campaign: {
-  summary: CampaignSummaryDto;
-}): CampaignNetworkingSummaryDto | null {
-  return campaign.summary.kind === "networking" ? campaign.summary : null;
 }
 
 /** Create-campaign request body, from `POST /api/campaigns`. */

@@ -13,8 +13,9 @@ interface ConfirmEmailChangeViewProps {
 /** Lands from the email-change magic link; confirming revokes all sessions. */
 export function ConfirmEmailChangeView(props: ConfirmEmailChangeViewProps): ReactElement {
   const { token } = props;
-  const confirmChange = useApiMutation((body: ConfirmEmailChangeInput) =>
-    api.auth.email.change.confirm.post(body),
+  const confirmChange = useApiMutation(
+    (body: ConfirmEmailChangeInput) => api.auth.email.change.confirm.post(body),
+    { showErrorToast: false },
   );
 
   return (

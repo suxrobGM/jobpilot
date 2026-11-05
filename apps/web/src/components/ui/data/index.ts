@@ -5,5 +5,6 @@ export { DetailSkeleton } from "./detail-skeleton";
 export { EmptyState } from "./empty-state";
 export { PaginationControls } from "./pagination-controls";
 export { PaginationFooter } from "./pagination-footer";
+export { QueryError } from "./query-error";
 export { QuerySection } from "./query-section";
 export { TableSkeleton } from "./table-skeleton";

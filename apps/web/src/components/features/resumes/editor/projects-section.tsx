@@ -6,6 +6,7 @@ import { Stack, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
+import { TagInput } from "./tag-input";
 
 interface ProjectsSectionProps {
   value: ResumeProject[];
@@ -76,19 +77,11 @@ export function ProjectsSection(props: ProjectsSectionProps): ReactElement {
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Keywords (comma-separated)"
-                value={entry.keywords.join(", ")}
-                onChange={(e) =>
-                  onUpdate({
-                    ...entry,
-                    keywords: e.target.value
-                      .split(",")
-                      .map((k) => k.trim())
-                      .filter(Boolean),
-                  })
-                }
+              <TagInput
+                label="Keywords"
+                placeholder="Type a keyword, press Enter"
+                value={entry.keywords}
+                onChange={(keywords) => onUpdate({ ...entry, keywords })}
               />
             </Grid>
           </Grid>

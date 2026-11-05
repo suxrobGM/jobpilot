@@ -24,9 +24,7 @@ function lastRunText(status: ResearchStatusDto): string {
 }
 
 export function ResearchSection(): ReactElement {
-  const query = useApiQuery(pilotQueries.research(), {
-    errorMessage: "Failed to load research status",
-  });
+  const query = useApiQuery(pilotQueries.research());
   const run = useApiMutation(() => api.pilot.research.runs.post(), {
     invalidate: [queryKeys.pilot.research(), queryKeys.pilot.taskList()],
     successMessage: "Research queued - the pilot picks it up on its next cycle.",

@@ -8,19 +8,13 @@ import { applicationQueries, campaignQueries } from "@/api/queries";
 import { StatCard } from "@/components/ui/display";
 
 export function StatTiles(): ReactElement {
-  const campaigns = useApiQuery(campaignQueries.list());
-  // Counts come from the server aggregate, not a loaded page - these are whole-account totals.
+  const campaigns = useApiQuery(campaignQueries.summary());
   const applications = useApiQuery(applicationQueries.summary());
 
-  const rows = campaigns.data?.items ?? [];
   const byStatus = applications.data?.byStatus;
-
-  const active = rows.filter((c) => c.status === "in_progress" || c.status === "paused").length;
+  const active = campaigns.data?.active ?? 0;
+  const replies = campaigns.data?.replies ?? 0;
   const interviewing = INTERVIEW_STATUSES.reduce((n, s) => n + (byStatus?.[s] ?? 0), 0);
-  const replies = rows.reduce(
-    (n, c) => n + (c.summary.kind === "networking" ? c.summary.replied : 0),
-    0,
-  );
 
   return (
     <Grid container spacing={1.5}>

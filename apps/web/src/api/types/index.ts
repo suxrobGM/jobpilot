@@ -20,7 +20,6 @@ export {
   type CampaignSummaryDto,
   type CreateCampaignRequest,
   jobSummary,
-  networkingSummary,
 } from "./campaign";
 export type { CoverLetterListItem } from "./cover-letter";
 export type { CredentialDto } from "./credential";
