@@ -33,6 +33,8 @@ export const composerFormSchema = z
   .object({
     mode: z.enum(["search", "auto_apply", "networking", "apply"]),
     query: z.string().trim(),
+    // Search and auto-apply can research the open web instead of a board.
+    searchIn: z.enum(["board", "anywhere"]),
     board: z.string(),
     // Base resume to score/tailor against; apply tailors per pasted job, so none up front.
     resumeId: z.string(),
@@ -66,9 +68,9 @@ export const composerFormSchema = z
     if (!v.resumeId) {
       ctx.addIssue({ code: "custom", message: "Select a resume", path: ["resumeId"] });
     }
-    // Board is required for search/auto-apply; for networking it is optional (the
+    // Board is required for a board search; for networking it is optional (the
     // control between board-grounded and criteria-only discovery).
-    if (v.mode !== "networking" && !v.board) {
+    if (v.mode !== "networking" && !isResearch(v) && !v.board) {
       ctx.addIssue({ code: "custom", message: "Pick a board", path: ["board"] });
     }
     if (v.mode === "networking" && v.channels.length === 0) {
@@ -96,6 +98,7 @@ export const UPWORK_MODE_DESCRIPTION =
 export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   mode: "auto_apply",
   query: "",
+  searchIn: "board",
   board: "",
   resumeId: "",
   minScore: 60,
@@ -118,21 +121,31 @@ function isCap(value: number | null | undefined): value is number {
  * Whether the composer is set up to run Upwork's dedicated search skill. Apply never sources from
  * a board, so a board value left over from another mode must not hijack it into an Upwork search.
  */
-export function isUpworkSearch(values: Pick<ComposerFormValues, "mode" | "board">): boolean {
-  return values.mode !== "apply" && values.board === UPWORK_DOMAIN;
+export function isUpworkSearch(
+  values: Pick<ComposerFormValues, "mode" | "board" | "searchIn">,
+): boolean {
+  return values.mode !== "apply" && !isResearch(values) && values.board === UPWORK_DOMAIN;
 }
-
-/** The Board select's "Anywhere on the web" choice: research instead of a board. No board is sent. */
-export const ANYWHERE_BOARD = "anywhere";
 
 /** Modes that can research the open web instead of searching a board. */
 export function canResearch(mode: ComposerFormValues["mode"]): boolean {
   return mode === "search" || mode === "auto_apply";
 }
 
-/** Whether a real board is picked: not none, and not "Anywhere on the web". */
+/** Whether this run researches the open web: a board left over in the form is ignored. */
+export function isResearch(values: Pick<ComposerFormValues, "mode" | "searchIn">): boolean {
+  return canResearch(values.mode) && values.searchIn === "anywhere";
+}
+
+/** Whether a networking campaign has a board picked (board-grounded vs criteria-only). */
 export function isBoardSelected(board: string): boolean {
-  return board.trim() !== "" && board !== ANYWHERE_BOARD;
+  return board.trim() !== "";
+}
+
+/** A past query, and whether it researched the open web, so a click restores both. */
+export interface RecentQuery {
+  query: string;
+  anywhere: boolean;
 }
 
 function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest["config"] {
@@ -178,7 +191,7 @@ export function buildCreateCampaignRequest(values: ComposerFormValues): CreateCa
     query: values.query.trim(),
     source: values.mode,
     // Networking without a board discovers from criteria alone.
-    ...(isBoardSelected(values.board) ? { board: values.board } : {}),
+    ...(isBoardSelected(values.board) && !isResearch(values) ? { board: values.board } : {}),
     // resumeId is campaign-wide (mandatory for search/auto-apply/networking), not mode-specific.
     config: { resumeId: values.resumeId, ...buildCampaignConfig(values) },
     createdBy: "user",
@@ -194,7 +207,7 @@ export function buildSkillArg(values: ComposerFormValues, campaignId: string): s
     // The skill reads channels/tier/autonomy from the campaign's config.networking.
     return buildCliArgs({ positional: [values.query.trim()], flags: { campaign: campaignId } });
   }
-  const anywhere = values.board === ANYWHERE_BOARD;
+  const anywhere = isResearch(values);
   return buildCliArgs({
     positional: [values.query.trim()],
     flags: {
@@ -218,18 +231,10 @@ export const SUBMIT_LABELS: Record<CampaignMode, string> = {
   apply: "Apply to links",
 };
 
-export const ANYWHERE_MODE_DESCRIPTIONS: Record<"search" | "auto_apply", string> = {
-  search:
-    "Search the open web beyond your boards - university and lab portals included - and score matches. Nothing is sent; review the ranked list yourself.",
-  auto_apply:
-    "Search the open web beyond your boards, score matches, then auto-submit applications to those above your score threshold.",
-};
-
 export const MODE_DESCRIPTIONS: Record<CampaignMode, string> = {
-  search:
-    "Search a board and score matches in the selected board - nothing is sent. Review the ranked list yourself.",
+  search: "Find jobs and score each match - nothing is sent. Review the ranked list yourself.",
   auto_apply:
-    "Search, score, then auto-submit applications to matches above your score threshold in the selected board.",
+    "Find jobs, score each match, then auto-submit applications to those above your score threshold.",
   networking:
     "Find hiring managers or recruiters and message them directly. Pick a board to ground networking in real openings, or none to reach by criteria.",
   apply:

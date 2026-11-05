@@ -17,17 +17,20 @@ import { ApplyFields } from "./apply-fields";
 import { AutoApplyFields } from "./auto-apply-fields";
 import { CampaignBasicsFields } from "./campaign-basics-fields";
 import {
-  ANYWHERE_BOARD,
   type BoardOption,
   buildCreateCampaignRequest,
   buildSkillArg,
   COMPOSER_DEFAULT_VALUES,
-  canResearch,
+  type ComposerFormValues,
   composerFormSchema,
+  isResearch,
   isUpworkSearch,
+  type RecentQuery,
   SUBMIT_LABELS,
 } from "./form-config";
 import { NetworkingFields } from "./networking-fields";
+
+const MAX_RECENT_QUERIES = 4;
 
 interface CampaignComposerProps {
   /** Preselect a board (e.g. from /campaigns/new?board=upwork.com). */
@@ -66,9 +69,15 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     : linkedBoards;
 
   const resumes = profileQuery.data?.resumes ?? [];
-  const recentQueries = Array.from(
-    new Set((recentCampaignsQuery.data?.items ?? []).map((r) => r.query)),
-  ).slice(0, 5);
+  // The user's own searches only: pilot feeds and pasted-link batches aren't queries to reuse.
+  const recentByQuery = new Map<string, RecentQuery>();
+  for (const campaign of recentCampaignsQuery.data?.items ?? []) {
+    if (campaign.createdBy !== "user" || campaign.source === "apply") continue;
+    if (recentByQuery.has(campaign.query)) continue;
+    const researched = campaign.board === null && campaign.source !== "networking";
+    recentByQuery.set(campaign.query, { query: campaign.query, anywhere: researched });
+  }
+  const recentQueries = [...recentByQuery.values()].slice(0, MAX_RECENT_QUERIES);
 
   const hasResumes = resumes.length > 0;
 
@@ -87,11 +96,14 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     }
   };
 
+  // With no boards linked, research is the only way to search or auto-apply.
+  const defaultSearchIn: ComposerFormValues["searchIn"] = boards.length > 0 ? "board" : "anywhere";
+
   const form = useAppForm({
     defaultValues: {
       ...COMPOSER_DEFAULT_VALUES,
-      // With no boards linked, research is the only way to search or auto-apply.
-      board: presetBoard ?? boards[0]?.domain ?? ANYWHERE_BOARD,
+      searchIn: defaultSearchIn,
+      board: presetBoard ?? boards[0]?.domain ?? "",
       resumeId: resumes.find((r) => r.isPrimary)?.id ?? resumes[0]?.id ?? "",
       minScore: profileQuery.data?.autoApply?.minMatchScore ?? COMPOSER_DEFAULT_VALUES.minScore,
     },
@@ -100,7 +112,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
       const upwork = isUpworkSearch(value);
       const effective = upwork ? { ...value, mode: "search" as const } : value;
 
-      if (!(await adoptBoard(effective.board))) {
+      if (!isResearch(effective) && !(await adoptBoard(effective.board))) {
         return;
       }
 
@@ -117,15 +129,10 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
 
   const mode = useSelector(form.store, (s) => s.values.mode);
   const board = useSelector(form.store, (s) => s.values.board);
+  const searchIn = useSelector(form.store, (s) => s.values.searchIn);
   const isApply = mode === "apply";
-  const isUpwork = isUpworkSearch({ mode, board });
-
-  // Networking and apply have no "Anywhere" option, so the select would hold a value it can't show.
-  useEffect(() => {
-    if (board === ANYWHERE_BOARD && !canResearch(mode)) {
-      form.setFieldValue("board", "");
-    }
-  }, [board, mode, form]);
+  const isUpwork = isUpworkSearch({ mode, board, searchIn });
+  const researching = isResearch({ mode, searchIn });
 
   // Upwork has no auto-apply/networking path - pin the mode to search.
   useEffect(() => {
@@ -158,9 +165,13 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
             <form.AppField name="maxJobs">
               {(field) => (
                 <field.TextField
-                  label="Jobs to search"
+                  label={researching ? "New jobs to find" : "Jobs to search"}
                   type="number"
-                  helperText="How many results to rank. Leave empty for unlimited."
+                  helperText={
+                    researching
+                      ? "How many new jobs to save. Leave empty for 20."
+                      : "How many results to rank. Leave empty for unlimited."
+                  }
                   slotProps={{ htmlInput: { min: 1, step: 1 } }}
                 />
               )}

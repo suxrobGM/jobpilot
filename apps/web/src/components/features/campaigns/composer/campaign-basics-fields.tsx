@@ -1,33 +1,22 @@
 "use client";
 
-import { Chip, Stack, Typography } from "@mui/material";
+import { Chip, Stack, Tooltip, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import type { UserAggregateResponse } from "@/api/types";
 import { withForm } from "@/components/ui/form/tanstack";
 import {
-  ANYWHERE_BOARD,
-  ANYWHERE_MODE_DESCRIPTIONS,
   type BoardOption,
   COMPOSER_DEFAULT_VALUES,
-  type ComposerFormValues,
   canResearch,
+  isResearch,
   isUpworkSearch,
   MODE_DESCRIPTIONS,
+  type RecentQuery,
   UPWORK_MODE_DESCRIPTION,
 } from "./form-config";
 
-function modeDescription(mode: ComposerFormValues["mode"], board: string): string {
-  if (isUpworkSearch({ mode, board })) return UPWORK_MODE_DESCRIPTION;
-  const researching = mode === "search" || mode === "auto_apply";
-  if (board === ANYWHERE_BOARD && researching) return ANYWHERE_MODE_DESCRIPTIONS[mode];
-  return MODE_DESCRIPTIONS[mode];
-}
-
-function queryPlaceholder(mode: ComposerFormValues["mode"], board: string): string {
-  if (mode === "networking") return "Hiring managers at NYC fintech startups";
-  if (board === ANYWHERE_BOARD) return "ML research assistant roles at US universities";
-  return "Senior React TypeScript remote";
-}
+const ANYWHERE_HINT =
+  "Searches university and lab portals, company career pages and niche job sites beyond your boards. It never logs in or signs up.";
 
 /** Campaign basics: the mode toggle, plus query (+ recent), board, and resume for every mode but apply. */
 export const CampaignBasicsFields = withForm({
@@ -35,19 +24,25 @@ export const CampaignBasicsFields = withForm({
   props: {
     boards: [] as BoardOption[],
     resumes: [] as UserAggregateResponse["resumes"],
-    recentQueries: [] as string[],
+    recentQueries: [] as RecentQuery[],
   },
   render: function CampaignBasicsFields({ form, boards, resumes, recentQueries }) {
     const mode = useSelector(form.store, (s) => s.values.mode);
     const board = useSelector(form.store, (s) => s.values.board);
+    const searchIn = useSelector(form.store, (s) => s.values.searchIn);
     const isApply = mode === "apply";
-    const isUpwork = isUpworkSearch({ mode, board });
+    const isUpwork = isUpworkSearch({ mode, board, searchIn });
     const isNetworking = mode === "networking";
-    const researchable = canResearch(mode);
-    const boardItems = [
-      ...(researchable ? [{ value: ANYWHERE_BOARD, label: "Anywhere on the web" }] : []),
-      ...boards.map((b) => ({ value: b.domain, label: b.name })),
-    ];
+    const researching = isResearch({ mode, searchIn });
+
+    let placeholder = "Senior React TypeScript remote";
+    if (isNetworking) placeholder = "Hiring managers at NYC fintech startups";
+    if (researching) placeholder = "ML research assistant roles at US universities";
+
+    const pickRecent = (recent: RecentQuery) => {
+      form.setFieldValue("query", recent.query);
+      if (canResearch(mode)) form.setFieldValue("searchIn", recent.anywhere ? "anywhere" : "board");
+    };
 
     return (
       <>
@@ -69,8 +64,27 @@ export const CampaignBasicsFields = withForm({
               />
             )}
           </form.AppField>
-          <Typography variant="captionMuted">{modeDescription(mode, board)}</Typography>
+          <Typography variant="captionMuted">
+            {isUpwork ? UPWORK_MODE_DESCRIPTION : MODE_DESCRIPTIONS[mode]}
+          </Typography>
         </Stack>
+
+        {canResearch(mode) && (
+          <Stack spacing={0.75}>
+            <form.AppField name="searchIn">
+              {(field) => (
+                <field.Toggle
+                  label="Search in"
+                  options={[
+                    { value: "board", label: "A job board" },
+                    { value: "anywhere", label: "Anywhere on the web" },
+                  ]}
+                />
+              )}
+            </form.AppField>
+            {researching && <Typography variant="captionMuted">{ANYWHERE_HINT}</Typography>}
+          </Stack>
+        )}
 
         {/* Apply has none of these - it takes pasted links and tailors a resume per job. */}
         {!isApply && (
@@ -80,7 +94,7 @@ export const CampaignBasicsFields = withForm({
                 {(field) => (
                   <field.TextField
                     label={isNetworking ? "Target criteria" : "Query"}
-                    placeholder={queryPlaceholder(mode, board)}
+                    placeholder={placeholder}
                     autoFocus
                   />
                 )}
@@ -90,22 +104,24 @@ export const CampaignBasicsFields = withForm({
                   <Typography variant="captionMuted" sx={{ alignSelf: "center" }}>
                     Recent:
                   </Typography>
-                  {recentQueries.map((q) => (
-                    <Chip
-                      key={q}
-                      label={q}
-                      size="small"
-                      variant="outlined"
-                      onClick={() => form.setFieldValue("query", q)}
-                    />
+                  {recentQueries.map((recent) => (
+                    <Tooltip key={recent.query} title={recent.query}>
+                      <Chip
+                        label={recent.query}
+                        size="small"
+                        variant="outlined"
+                        sx={{ maxWidth: 280 }}
+                        onClick={() => pickRecent(recent)}
+                      />
+                    </Tooltip>
                   ))}
                 </Stack>
               )}
             </Stack>
 
-            {/* One board control: required for search/auto-apply, optional for networking, where it
-                toggles board-grounded vs criteria-only discovery. */}
-            {boardItems.length > 0 && (
+            {/* Required for a board search, optional for networking, where it toggles
+                board-grounded vs criteria-only discovery. */}
+            {!researching && boards.length > 0 && (
               <Stack spacing={0.75}>
                 <form.AppField name="board">
                   {(field) => (
@@ -113,7 +129,7 @@ export const CampaignBasicsFields = withForm({
                       label="Board"
                       optional={isNetworking}
                       emptyLabel="No board - reach by criteria"
-                      items={boardItems}
+                      items={boards.map((b) => ({ value: b.domain, label: b.name }))}
                     />
                   )}
                 </form.AppField>
@@ -124,6 +140,11 @@ export const CampaignBasicsFields = withForm({
                   </Typography>
                 )}
               </Stack>
+            )}
+            {!researching && !isNetworking && boards.length === 0 && (
+              <Typography variant="body2Muted">
+                No boards linked yet. Add one on the Boards page, or search anywhere on the web.
+              </Typography>
             )}
 
             {resumes.length > 0 ? (
