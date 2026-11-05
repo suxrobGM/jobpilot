@@ -2,15 +2,9 @@
 
 import type { ReactElement, ReactNode } from "react";
 import { Add, ArrowDownward, ArrowUpward, Delete } from "@mui/icons-material";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
+import { TooltipIconButton } from "@/components/ui/buttons";
+import { RowCard } from "@/components/ui/form/row-card";
 import { moveAt, removeAt, replaceAt } from "@/utils/array";
 
 interface EntryListProps<T extends { id?: string }> {
@@ -36,29 +30,35 @@ export function EntryList<T extends { id?: string }>(props: EntryListProps<T>): 
         <Typography variant="body2Muted">{emptyLabel}</Typography>
       )}
       {value.map((entry, i) => (
-        <Card key={entry.id}>
-          <CardHeader
-            title={<Typography variant="overlineMuted">{renderTitle(entry, i)}</Typography>}
-            action={
-              <Stack direction="row" spacing={0.5}>
-                <IconButton size="small" onClick={() => move(i, -1)} disabled={i === 0}>
-                  <ArrowUpward fontSize="sm" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() => move(i, 1)}
-                  disabled={i === value.length - 1}
-                >
-                  <ArrowDownward fontSize="sm" />
-                </IconButton>
-                <IconButton size="small" onClick={() => remove(i)} aria-label="Remove entry">
-                  <Delete fontSize="sm" />
-                </IconButton>
-              </Stack>
-            }
-          />
-          <CardContent>{renderEntry(entry, (next) => update(i, next))}</CardContent>
-        </Card>
+        <RowCard
+          key={entry.id}
+          title={renderTitle(entry, i)}
+          actions={
+            <Stack direction="row" spacing={0.5}>
+              <TooltipIconButton
+                title="Move up"
+                size="small"
+                onClick={() => move(i, -1)}
+                disabled={i === 0}
+              >
+                <ArrowUpward fontSize="sm" />
+              </TooltipIconButton>
+              <TooltipIconButton
+                title="Move down"
+                size="small"
+                onClick={() => move(i, 1)}
+                disabled={i === value.length - 1}
+              >
+                <ArrowDownward fontSize="sm" />
+              </TooltipIconButton>
+              <TooltipIconButton title="Remove" size="small" onClick={() => remove(i)}>
+                <Delete fontSize="sm" />
+              </TooltipIconButton>
+            </Stack>
+          }
+        >
+          {renderEntry(entry, (next) => update(i, next))}
+        </RowCard>
       ))}
       <Button
         startIcon={<Add />}

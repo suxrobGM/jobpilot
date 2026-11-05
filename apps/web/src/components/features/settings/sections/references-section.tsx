@@ -1,19 +1,9 @@
 "use client";
 
 import { type ReferenceInput, USER_DEFAULT_VALUES } from "@jobpilot/contracts/user";
-import { Add, Delete } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
-import { FormSection } from "@/components/ui/form";
+import { FieldRowList, FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { useKeyedList } from "@/hooks/use-keyed-list";
 
@@ -37,69 +27,47 @@ export const ReferencesSection = withForm({
         description="Up to 3 professional references, used to fill reference fields on application forms."
       >
         <form.AppField name="references" mode="array">
-          {(field) => {
-            const refs = field.state.value ?? [];
-            return (
-              <Stack spacing={2}>
-                {refs.map((_, i) => (
-                  <Card key={keys[i]}>
-                    <CardHeader
-                      title={<Typography variant="overlineMuted">Reference {i + 1}</Typography>}
-                      action={
-                        <IconButton
-                          aria-label={`Remove reference ${i + 1}`}
-                          size="small"
-                          onClick={() => {
-                            onRemove(i);
-                            field.removeValue(i);
-                          }}
-                        >
-                          <Delete fontSize="sm" />
-                        </IconButton>
-                      }
-                    />
-                    <CardContent>
-                      <Stack spacing={2}>
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                          <form.AppField name={`references[${i}].name`}>
-                            {(sub) => <sub.TextField label="Name" />}
-                          </form.AppField>
-                          <form.AppField name={`references[${i}].relationship`}>
-                            {(sub) => <sub.TextField label="Relationship" />}
-                          </form.AppField>
-                        </Stack>
-                        <form.AppField name={`references[${i}].company`}>
-                          {(sub) => <sub.TextField label="Company" />}
-                        </form.AppField>
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                          <form.AppField name={`references[${i}].email`}>
-                            {(sub) => <sub.TextField label="Email" type="email" />}
-                          </form.AppField>
-                          <form.AppField name={`references[${i}].phone`}>
-                            {(sub) => <sub.Phone label="Phone" />}
-                          </form.AppField>
-                        </Stack>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
-                {refs.length < 3 && (
-                  <Box>
-                    <Button
-                      variant="outlined"
-                      startIcon={<Add fontSize="sm" />}
-                      onClick={() => {
-                        onAdd();
-                        field.pushValue(EMPTY_REFERENCE);
-                      }}
-                    >
-                      Add reference
-                    </Button>
-                  </Box>
-                )}
-              </Stack>
-            );
-          }}
+          {(field) => (
+            <FieldRowList
+              count={field.state.value?.length ?? 0}
+              keys={keys}
+              addLabel="Add reference"
+              rowLabel={(i) => `Reference ${i + 1}`}
+              max={3}
+              onAdd={() => {
+                onAdd();
+                field.pushValue(EMPTY_REFERENCE);
+              }}
+              onRemove={(i) => {
+                onRemove(i);
+                field.removeValue(i);
+              }}
+            >
+              {(i) => (
+                <>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <form.AppField name={`references[${i}].name`}>
+                      {(sub) => <sub.TextField label="Name" />}
+                    </form.AppField>
+                    <form.AppField name={`references[${i}].relationship`}>
+                      {(sub) => <sub.TextField label="Relationship" />}
+                    </form.AppField>
+                  </Stack>
+                  <form.AppField name={`references[${i}].company`}>
+                    {(sub) => <sub.TextField label="Company" />}
+                  </form.AppField>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <form.AppField name={`references[${i}].email`}>
+                      {(sub) => <sub.TextField label="Email" type="email" />}
+                    </form.AppField>
+                    <form.AppField name={`references[${i}].phone`}>
+                      {(sub) => <sub.Phone label="Phone" />}
+                    </form.AppField>
+                  </Stack>
+                </>
+              )}
+            </FieldRowList>
+          )}
         </form.AppField>
       </FormSection>
     );
