@@ -17,9 +17,6 @@ import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 /** A run-now click syncs first so the count is current, but never re-pulls a mailbox just synced. */
 const RUN_NOW_SYNC_STALE_MS = 2 * 60 * 1000;
 
-/** Alert emails repeat a posting for days; a week back covers the repeats. */
-const SEEN_WINDOW_MS = 7 * DAY_MS;
-
 @injectable()
 export class JobAlertsService {
   constructor(
@@ -129,13 +126,13 @@ export class JobAlertsService {
     return { queued: true, pendingEmails };
   }
 
-  /** The given URLs already in one of the user's campaigns from the last week, compared normalized. */
-  async seenUrls(userId: string, urls: string[]) {
+  /** The given URLs already in one of the user's campaigns from the window, compared normalized. */
+  async seenUrls(userId: string, urls: string[], withinDays: number) {
     const normalized = urls.map(normalizeJobUrl);
     const rows = await this.prisma.campaignJob.findMany({
       where: {
         url: { in: [...new Set(normalized)] },
-        createdAt: { gte: new Date(Date.now() - SEEN_WINDOW_MS) },
+        createdAt: { gte: new Date(Date.now() - withinDays * DAY_MS) },
         userId,
       },
       distinct: ["url"],

@@ -24,6 +24,15 @@ export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 export const CAMPAIGN_FEEDS = ["job_alerts", "research"] as const;
 const campaignFeedSchema = z.enum(CAMPAIGN_FEEDS);
 
+/** Why an employer is H-1B cap-exempt. */
+export const CAP_EXEMPT_BASES = [
+  "university",
+  "university_affiliate",
+  "nonprofit_research",
+  "government_research",
+] as const;
+const capExemptBasisSchema = z.enum(CAP_EXEMPT_BASES);
+
 /** Who acted: the web user, the terminal agent on their behalf, or the autonomous pilot. */
 export const ACTORS = ["user", "agent", "pilot"] as const;
 export const actorSchema = z.enum(ACTORS);
@@ -63,6 +72,8 @@ export const campaignJobSchema = z.object({
   skipReason: z.string().nullable(),
   description: z.string().nullable(),
   brief: jobBriefSchema.nullable(),
+  capExemptBasis: capExemptBasisSchema.nullable(),
+  capExemptEvidenceUrl: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -194,6 +205,8 @@ export const addCampaignJobSchema = z.object({
   status: z.enum(CAMPAIGN_JOB_ACTIVE_STATUSES).optional(),
   description: z.string().optional().nullable(),
   brief: jobBrief.optional().nullable(),
+  capExemptBasis: capExemptBasisSchema.optional().nullable(),
+  capExemptEvidenceUrl: z.url().optional().nullable(),
 });
 
 export const patchCampaignJobSchema = z.object({

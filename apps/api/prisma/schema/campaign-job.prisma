@@ -11,33 +11,45 @@ enum CampaignJobStatus {
   @@map("campaign_job_status")
 }
 
+// Why an employer is H-1B cap-exempt; set by the agent only with evidence.
+enum CapExemptBasis {
+  university
+  university_affiliate
+  nonprofit_research
+  government_research
+
+  @@map("cap_exempt_basis")
+}
+
 model CampaignJob {
-  id             String            @id @default(uuid(7)) @db.Uuid
+  id                   String            @id @default(uuid(7)) @db.Uuid
   // Copied from the campaign so per-user reads skip the join.
-  userId         String            @map("user_id") @db.Uuid
-  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  campaignId     String            @map("campaign_id") @db.Uuid
-  campaign       Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  key            String
-  title          String
-  company        String
-  location       String?
-  salary         String?
-  employmentType String?           @map("employment_type")
-  url            String
-  boardId        String?           @map("board_id") @db.Uuid
-  board          JobBoard?         @relation(fields: [boardId], references: [id], onDelete: SetNull)
-  matchScore     Int?              @map("match_score")
-  matchReason    String?           @map("match_reason")
-  status         CampaignJobStatus @default(pending)
-  appliedAt      DateTime?         @map("applied_at") @db.Timestamptz(3)
-  failReason     String?           @map("fail_reason")
-  retryNotes     String?           @map("retry_notes")
-  skipReason     String?           @map("skip_reason")
-  description    String?
-  brief          Json?
-  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userId               String            @map("user_id") @db.Uuid
+  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaignId           String            @map("campaign_id") @db.Uuid
+  campaign             Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  key                  String
+  title                String
+  company              String
+  location             String?
+  salary               String?
+  employmentType       String?           @map("employment_type")
+  url                  String
+  boardId              String?           @map("board_id") @db.Uuid
+  board                JobBoard?         @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  matchScore           Int?              @map("match_score")
+  matchReason          String?           @map("match_reason")
+  status               CampaignJobStatus @default(pending)
+  appliedAt            DateTime?         @map("applied_at") @db.Timestamptz(3)
+  failReason           String?           @map("fail_reason")
+  retryNotes           String?           @map("retry_notes")
+  skipReason           String?           @map("skip_reason")
+  description          String?
+  brief                Json?
+  capExemptBasis       CapExemptBasis?   @map("cap_exempt_basis")
+  capExemptEvidenceUrl String?           @map("cap_exempt_evidence_url")
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   applications    Application[]
   upworkProposals UpworkProposal[]

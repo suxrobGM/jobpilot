@@ -30,7 +30,7 @@ describe("JobAlertsService.seenUrls", () => {
   it("returns the URLs as sent whose normalized form is already stored", async () => {
     const { svc, queries } = seenService(["https://acme.com/jobs/1"]);
     const sent = ["https://www.acme.com/jobs/1/?utm_source=alert", "https://acme.com/jobs/2"];
-    expect(await svc.seenUrls("u1", sent)).toEqual({ seen: [sent[0]] });
+    expect(await svc.seenUrls("u1", sent, 7)).toEqual({ seen: [sent[0]] });
     expect(queries[0].where).toMatchObject({
       url: { in: ["https://acme.com/jobs/1", "https://acme.com/jobs/2"] },
       userId: "u1",

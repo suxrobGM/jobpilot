@@ -11,6 +11,7 @@ import {
   CAMPAIGN_JOB_STATUSES,
   CAMPAIGN_SOURCES,
   CAMPAIGN_STATUSES,
+  CAP_EXEMPT_BASES,
 } from "@jobpilot/contracts/campaign";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
 import { CAPTCHA_PROVIDERS, CREDENTIAL_KINDS } from "@jobpilot/contracts/credential";
@@ -62,6 +63,7 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   CampaignJobStatus: CAMPAIGN_JOB_STATUSES,
   CampaignSource: CAMPAIGN_SOURCES,
   CampaignStatus: CAMPAIGN_STATUSES,
+  CapExemptBasis: CAP_EXEMPT_BASES,
   ContactDiscoverySource: CONTACT_DISCOVERY_SOURCES,
   ContactEmailSource: CONTACT_EMAIL_SOURCES,
   ContactLinkedinConnection: CONTACT_LINKEDIN_CONNECTIONS,

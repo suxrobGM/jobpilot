@@ -96,6 +96,7 @@ const userUpdateSchema = z.object({
 
   usAuthorized: z.boolean(),
   requiresSponsorship: z.boolean(),
+  preferCapExempt: z.boolean(),
   visaStatus: z.string().optional().nullable(),
   optExtension: z.string().optional().nullable(),
   willingToRelocate: z.boolean(),
@@ -149,6 +150,7 @@ export const USER_DEFAULT_VALUES: UserWithAutoApplyInput = {
   country: "United States",
   usAuthorized: true,
   requiresSponsorship: false,
+  preferCapExempt: false,
   visaStatus: "",
   optExtension: "",
   willingToRelocate: false,

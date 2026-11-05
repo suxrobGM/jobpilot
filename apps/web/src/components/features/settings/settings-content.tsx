@@ -54,6 +54,7 @@ function toFormValues(data: UserAggregateResponse): UserWithAutoApplyInput {
     country: p.country ?? "",
     usAuthorized: p.usAuthorized,
     requiresSponsorship: p.requiresSponsorship,
+    preferCapExempt: p.preferCapExempt,
     visaStatus: p.visaStatus ?? "",
     optExtension: p.optExtension ?? "",
     willingToRelocate: p.willingToRelocate,

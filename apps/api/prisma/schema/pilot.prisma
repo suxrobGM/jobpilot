@@ -82,6 +82,8 @@ model PilotState {
   cycleCount            Int       @default(0) @map("cycle_count")
   // "Run now" for the job-alert import: offered off-schedule until a later run or an hour passes.
   jobAlertsRequestedAt  DateTime? @map("job_alerts_requested_at") @db.Timestamptz(3)
+  // "Research now": offered ungated until a later research run or an hour passes.
+  researchRequestedAt   DateTime? @map("research_requested_at") @db.Timestamptz(3)
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 

@@ -35,6 +35,7 @@ model Profile {
 
   usAuthorized        Boolean  @default(false) @map("us_authorized")
   requiresSponsorship Boolean  @default(false) @map("requires_sponsorship")
+  preferCapExempt     Boolean  @default(false) @map("prefer_cap_exempt")
   visaStatus          String?  @map("visa_status")
   optExtension        String?  @map("opt_extension")
   willingToRelocate   Boolean  @default(false) @map("willing_to_relocate")

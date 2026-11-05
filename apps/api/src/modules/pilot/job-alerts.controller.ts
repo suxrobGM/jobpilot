@@ -45,12 +45,16 @@ export const pilotJobAlertsController = new Elysia({
         "Syncs the mailbox if it is stale, then queues an off-schedule import for the next pilot cycle and wakes the pilot. Nothing is queued when no unimported alert emails are waiting (`queued: false`); the request lapses after an hour if the pilot never gets to it.",
     },
   })
-  .post("/job-alerts/seen", ({ user, body }) => jobAlerts.seenUrls(user.id, body.urls), {
-    body: jobAlertsSeenBodySchema,
-    response: jobAlertsSeenSchema,
-    detail: {
-      summary: "Find job-alert postings already imported",
-      description:
-        "Returns the given URLs, as sent, whose normalized form is already a job in one of the user's campaigns from the last 7 days. The import skips those instead of paging every recent campaign. Read-only.",
+  .post(
+    "/job-alerts/seen",
+    ({ user, body }) => jobAlerts.seenUrls(user.id, body.urls, body.withinDays),
+    {
+      body: jobAlertsSeenBodySchema,
+      response: jobAlertsSeenSchema,
+      detail: {
+        summary: "Find job-alert postings already imported",
+        description:
+          "Returns the given URLs, as sent, whose normalized form is already a job in one of the user's campaigns from the last `withinDays` days (default 7). The import skips those instead of paging every recent campaign. Read-only.",
+      },
     },
-  });
+  );
