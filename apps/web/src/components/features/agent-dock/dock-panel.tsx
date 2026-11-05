@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
-import type { TerminalHealth } from "@/hooks/use-terminal-health";
+import { BROWSER_BLOCKED_MESSAGE, type TerminalHealth } from "@/hooks/use-terminal-health";
 import { readAgentStorage } from "@/lib/terminal/agent-storage";
 import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal/client";
 import { useAgentDock } from "@/providers/agent-provider";
@@ -32,6 +32,7 @@ const STATUS_LABELS: Record<TerminalHealth, string> = {
   degraded: "needs reinstall",
   offline: "offline",
   uninstalled: "not installed",
+  blocked: "blocked by browser",
 };
 
 export function DockPanel(): ReactElement {
@@ -95,6 +96,12 @@ export function DockPanel(): ReactElement {
           />
         ))}
       {health === "uninstalled" && <AgentInstallCard />}
+      {health === "blocked" && (
+        <AgentInstallCard
+          title="Allow local network access"
+          description={`${BROWSER_BLOCKED_MESSAGE} Not installed yet? Run setup below first.`}
+        />
+      )}
       {health === "degraded" && (
         <AgentInstallCard
           title="Reinstall the JobPilot agent"

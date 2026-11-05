@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { Alert, Stack, Typography } from "@mui/material";
 import { PluginInstallCommands } from "@/components/features/install";
 import { LoadingSpinner } from "@/components/ui/feedback";
-import { useTerminalHealth } from "@/hooks/use-terminal-health";
+import { BROWSER_BLOCKED_MESSAGE, useTerminalHealth } from "@/hooks/use-terminal-health";
 
 /** Onboarding's "Connect agent" step: detects a running host, or shows compact install commands. */
 export function AgentSetupStep(): ReactElement {
@@ -35,6 +35,7 @@ export function AgentSetupStep(): ReactElement {
         The agent runs on your machine and does the actual searching and applying. Add the JobPilot
         plugin to Claude Code or Codex, then run setup - it installs and starts everything.
       </Typography>
+      {health === "blocked" && <Alert severity="warning">{BROWSER_BLOCKED_MESSAGE}</Alert>}
       {health === "degraded" && status?.detail && (
         <Alert severity="warning">
           A JobPilot host is running but broken: {status.detail} Re-run setup to reinstall.

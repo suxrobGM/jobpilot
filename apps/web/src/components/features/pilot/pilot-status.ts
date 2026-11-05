@@ -40,7 +40,7 @@ export function hasGoals(state: Pick<PilotState, "instructionsGoals">): boolean 
 }
 
 function isHostOffline(health: TerminalHealth | null): boolean {
-  return health === "offline" || health === "uninstalled";
+  return health === "offline" || health === "uninstalled" || health === "blocked";
 }
 
 export function pilotMode(

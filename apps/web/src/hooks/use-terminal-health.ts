@@ -5,7 +5,18 @@ import { ExternalStore } from "@/lib/external-store";
 import { patchAgentStorage, readAgentStorage } from "@/lib/terminal/agent-storage";
 import { getTerminalHostStatus, type SessionStatus } from "@/lib/terminal/client";
 
-export type TerminalHealth = "checking" | "reachable" | "degraded" | "offline" | "uninstalled";
+export type TerminalHealth =
+  | "checking"
+  | "reachable"
+  | "degraded"
+  | "offline"
+  | "uninstalled"
+  | "blocked";
+
+export const BROWSER_BLOCKED_MESSAGE =
+  "Your browser is blocking this site from reaching the agent on your machine. Click the site icon left of the address bar, set Local network access to Allow, then recheck.";
+
+const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -79,11 +90,33 @@ async function probe(): Promise<void> {
     const previous = store.get();
     // A single dropped probe must not unmount a healthy terminal.
     if (previous.health !== "reachable" || consecutiveFailures >= OFFLINE_CONFIRM_PROBES) {
-      const health = readAgentStorage()?.everReachable ? "offline" : "uninstalled";
-      setSnapshot({ health, status: previous.status });
+      setSnapshot({ health: await unreachableHealth(), status: previous.status });
     }
   }
   scheduleNextProbe();
+}
+
+/** Chrome's Local Network Access gate: a public page needs this permission to reach localhost at all. */
+async function isLoopbackBlocked(): Promise<boolean> {
+  if (LOOPBACK_HOSTNAMES.has(window.location.hostname)) {
+    return false;
+  }
+  try {
+    // Not yet in TypeScript's PermissionName union; browsers without it throw.
+    const name = "loopback-network" as PermissionName;
+    const permission = await navigator.permissions.query({ name });
+    return permission.state !== "granted";
+  } catch {
+    return false;
+  }
+}
+
+// A blocked request fails before it is sent, exactly like a stopped host.
+async function unreachableHealth(): Promise<TerminalHealth> {
+  if (await isLoopbackBlocked()) {
+    return "blocked";
+  }
+  return readAgentStorage()?.everReachable ? "offline" : "uninstalled";
 }
 
 /** Probes now, outside React, so a button can recheck without subscribing. */
@@ -91,7 +124,7 @@ export function recheckTerminalHealth(): void {
   void probe();
 }
 
-/** Unreachable reads "offline" once a host has ever answered from this browser, else "uninstalled". */
+/** Unreachable reads "blocked", then "offline" if a host ever answered here, else "uninstalled". */
 export function useTerminalHealth(expectingReturn = false): TerminalHealthState {
   const snapshot = useSyncExternalStore(store.subscribe, store.get, () => INITIAL);
 
