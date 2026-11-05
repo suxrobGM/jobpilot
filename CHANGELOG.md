@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.3 - 2026-11-04
+
+Update the plugin with this release: skills use the API's renamed fields and will not work against the new API with an older plugin.
+
+### Changed
+
+- The database schema was cleaned up: plain names for columns and relations, native UUIDs and timezone-aware timestamps, applicant fields moved into a profile, and stricter links between pilot runs, jobs and resumes.
+- Codex agent files are now written as readable TOML.
+
+### Fixed
+
+- Malformed IDs sent to the API return a 400 instead of a server error.
+- Cached pilot task lists are refreshed when job briefs change format.
+
 ## v2.3.2 - 2026-10-27
 
 Update the plugin with this release.

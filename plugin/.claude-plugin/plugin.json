@@ -1,7 +1,7 @@
 {
   "name": "jobpilot",
   "description": "Claude Code skills and Playwright MCP wiring for JobPilot job applications.",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "author": {
     "name": "JobPilot"
   }
