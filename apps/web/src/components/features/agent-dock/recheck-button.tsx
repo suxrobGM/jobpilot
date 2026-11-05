@@ -5,7 +5,11 @@ import { Refresh } from "@mui/icons-material";
 import { Button } from "@mui/material";
 
 /** "Recheck" action shared by the dock's install/offline cards - re-probes the local host. */
-export function RecheckButton(props: { onClick: () => void }): ReactElement {
+interface RecheckButtonProps {
+  onClick: () => void;
+}
+
+export function RecheckButton(props: RecheckButtonProps): ReactElement {
   return (
     <Button
       variant="outlined"

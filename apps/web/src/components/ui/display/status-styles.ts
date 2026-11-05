@@ -186,10 +186,13 @@ export function statusColor<D extends StatusDomain>(
   return styleOf(domain, value).color;
 }
 
+interface StatusOption<T extends string> {
+  value: T;
+  label: string;
+}
+
 /** Select options for a domain, in the order the values are declared. */
-export function statusOptions<D extends StatusDomain>(
-  domain: D,
-): { value: StatusValue<D>; label: string }[] {
+export function statusOptions<D extends StatusDomain>(domain: D): StatusOption<StatusValue<D>>[] {
   return Object.entries(STATUS_STYLES[domain] as Record<string, StatusStyle>).map(
     ([value, style]) => ({ value: value as StatusValue<D>, label: style.label }),
   );

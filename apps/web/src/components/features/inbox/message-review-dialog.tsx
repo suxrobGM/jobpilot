@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import { CLASSIFICATION_TO_STATUS } from "@jobpilot/contracts/email";
 import {
   Autocomplete,
@@ -31,13 +31,24 @@ const STATUS_CLASSIFICATIONS = new Set(Object.keys(CLASSIFICATION_TO_STATUS));
 
 export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode {
   const { messageId, open, onClose } = props;
+  if (!open || messageId === null) {
+    return null;
+  }
+  // Keyed, so the editable match starts fresh for each message.
+  return <ReviewDialog key={messageId} messageId={messageId} onClose={onClose} />;
+}
+
+interface ReviewDialogProps {
+  messageId: string;
+  onClose: () => void;
+}
+
+function ReviewDialog(props: ReviewDialogProps): ReactElement {
+  const { messageId, onClose } = props;
   const [application, setMatchedApp] = useState<ApplicationDto | null>(null);
   const [search, setSearch] = useState("");
 
-  const message = useQuery({
-    ...emailQueries.message(messageId ?? ""),
-    enabled: messageId !== null,
-  });
+  const message = useQuery(emailQueries.message(messageId));
 
   // Seed the editable match/search from the fetched message whenever it changes
   const [prevData, setPrevData] = useState(message.data);
@@ -53,30 +64,27 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
     }
   }
 
-  const appOptions = useQuery({ ...applicationQueries.search(search), enabled: open });
+  const appOptions = useQuery(applicationQueries.search(search));
 
   const patchMatch = useApiMutation(
-    (vars: { applicationId: string | null }) => api.email.messages({ id: messageId! }).patch(vars),
+    (applicationId: string | null) =>
+      api.email.messages({ id: messageId }).patch({ applicationId }),
     {
       invalidate: [emailQueries.all],
     },
   );
 
-  const approve = useApiMutation(() => api.email.messages({ id: messageId! }).approve.post({}), {
+  const approve = useApiMutation(() => api.email.messages({ id: messageId }).approve.post({}), {
     successMessage: "Approved",
     invalidate: invalidations.emailReview,
     onSuccess: () => onClose(),
   });
 
-  const deny = useApiMutation(() => api.email.messages({ id: messageId! }).deny.post({}), {
+  const deny = useApiMutation(() => api.email.messages({ id: messageId }).deny.post({}), {
     successMessage: "Denied",
     invalidate: [emailQueries.all],
     onSuccess: () => onClose(),
   });
-
-  if (!open || messageId == null) {
-    return null;
-  }
 
   const m = message.data;
   const isClassified = Boolean(m?.classification);
@@ -90,12 +98,14 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
 
   return (
     <FormDialogShell
-      open={open}
+      open
       title={m?.subject ?? "Loading"}
       maxWidth="md"
       onClose={onClose}
       onSubmit={() => {
-        if (canApproveNow) approve.mutate();
+        if (canApproveNow) {
+          approve.mutate();
+        }
       }}
       submit={
         <>
@@ -146,7 +156,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             value={application}
             onChange={(_, v) => {
               setMatchedApp(v);
-              patchMatch.mutate({ applicationId: v ? v.id : null });
+              patchMatch.mutate(v ? v.id : null);
             }}
             onInputChange={(_, v) => setSearch(v)}
             renderInput={(params) => <TextField {...params} label="Matched application" />}

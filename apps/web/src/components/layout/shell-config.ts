@@ -104,10 +104,6 @@ export const feedbackLinks: ExternalNavLink[] = [
 
 export const APP_TITLE = "JobPilot";
 export const RAIL_WIDTH = 56;
-export const DOCK_COLLAPSED = 56;
-export const DOCK_EXPANDED = 380;
-export const DOCK_MIN_EXPANDED = 320;
-export const DOCK_MAX_EXPANDED = 640;
 export const MOBILE_NAV_HEIGHT = 56;
 
 function isHrefActive(pathname: string, href: string): boolean {

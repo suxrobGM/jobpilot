@@ -9,12 +9,6 @@ import {
 } from "react";
 import { Box } from "@mui/material";
 import {
-  DOCK_COLLAPSED,
-  DOCK_EXPANDED,
-  DOCK_MAX_EXPANDED,
-  DOCK_MIN_EXPANDED,
-} from "@/components/layout/shell-config";
-import {
   patchAgentStorage,
   readAgentStorage,
   subscribeAgentStorage,
@@ -23,6 +17,11 @@ import { useAgentDock } from "@/providers/agent-provider";
 import { clamp } from "@/utils/math";
 import { DockPanel } from "./dock-panel";
 import { DockStrip } from "./dock-strip";
+
+const DOCK_COLLAPSED = 56;
+const DOCK_EXPANDED = 380;
+const DOCK_MIN_EXPANDED = 320;
+const DOCK_MAX_EXPANDED = 640;
 
 function getStoredDockWidth(): number {
   const w = readAgentStorage()?.dockWidth;

@@ -57,7 +57,9 @@ export function LeaderboardView(props: LeaderboardViewProps): ReactElement {
           size="small"
           value={range}
           onChange={(_, next: LeaderboardWindow | null) => {
-            if (next) setRange(next);
+            if (next) {
+              setRange(next);
+            }
           }}
           sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
         >

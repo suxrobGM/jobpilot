@@ -69,6 +69,8 @@ export function ToastProvider(props: PropsWithChildren): ReactElement {
 
 export function useToast(): ToastApi {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used inside ToastProvider");
+  if (!ctx) {
+    throw new Error("useToast must be used inside ToastProvider");
+  }
   return ctx;
 }

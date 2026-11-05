@@ -34,7 +34,12 @@ function groupReasons(
     .sort((a, b) => b.count - a.count);
 }
 
-function ReasonList(props: { title: string; reasons: ReasonCount[] }): ReactElement {
+interface ReasonListProps {
+  title: string;
+  reasons: ReasonCount[];
+}
+
+function ReasonList(props: ReasonListProps): ReactElement {
   const { title, reasons } = props;
   return (
     <Stack spacing={1}>

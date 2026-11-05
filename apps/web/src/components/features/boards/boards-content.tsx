@@ -13,15 +13,10 @@ import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-tabl
 import { ExternalLink } from "@/components/ui/display";
 import { SearchField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useConfirm } from "@/providers/confirm-provider";
 
-const SEARCH_DEBOUNCE_MS = 200;
-
 export function BoardsContent(): ReactElement {
-  const [searchDraft, setSearchDraft] = useState("");
-
-  const search = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
+  const [search, setSearch] = useState("");
   const confirm = useConfirm();
 
   const boards = useQuery(jobBoardQueries.list());
@@ -79,7 +74,7 @@ export function BoardsContent(): ReactElement {
     },
   ];
 
-  const handleResetFilters = (): void => setSearchDraft("");
+  const handleResetFilters = (): void => setSearch("");
 
   return (
     <SectionCard>
@@ -88,11 +83,7 @@ export function BoardsContent(): ReactElement {
         spacing={1.5}
         sx={{ alignItems: { xs: "stretch", md: "center" }, mb: 2 }}
       >
-        <SearchField
-          value={searchDraft}
-          placeholder="Search name or domain"
-          onChange={setSearchDraft}
-        />
+        <SearchField value={search} placeholder="Search name or domain" onChange={setSearch} />
         {isAnyFilterActive && (
           <Button
             size="small"

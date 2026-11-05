@@ -12,10 +12,15 @@ import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
 
+interface RankedEntry {
+  label: string;
+  count: number;
+}
+
 function toEntries<T extends { count: number }>(
   items: T[],
   label: (item: T) => string,
-): { label: string; count: number }[] {
+): RankedEntry[] {
   return items.map((item) => ({ label: label(item), count: item.count }));
 }
 

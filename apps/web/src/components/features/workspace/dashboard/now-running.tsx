@@ -14,7 +14,12 @@ import { radii } from "@/theme";
 import { campaignHref } from "@/utils/routes";
 
 /** Folds a campaign's summary into a single progress reading, type-aware. */
-function progress(campaign: CampaignDto): { value: number; label: string } {
+interface CampaignProgress {
+  value: number;
+  label: string;
+}
+
+function progress(campaign: CampaignDto): CampaignProgress {
   const s = campaign.summary;
   if (s.kind === "networking") {
     const total = Math.max(s.discovered, 1);

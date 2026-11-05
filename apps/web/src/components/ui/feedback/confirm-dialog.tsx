@@ -46,7 +46,9 @@ export function ConfirmDialog(props: ConfirmDialogProps): ReactElement {
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (!open) setTyped("");
+    if (!open) {
+      setTyped("");
+    }
   }
 
   const requiresTyping = Boolean(confirmationText);

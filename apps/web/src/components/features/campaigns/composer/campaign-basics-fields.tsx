@@ -58,8 +58,12 @@ export const CampaignBasicsFields = withForm({
     const source = isNetworking ? NETWORKING_SOURCE : SEARCH_SOURCE;
 
     let placeholder = "Senior React TypeScript remote";
-    if (isNetworking) placeholder = "Hiring managers at NYC fintech startups";
-    if (researching) placeholder = "ML research assistant roles at US universities";
+    if (isNetworking) {
+      placeholder = "Hiring managers at NYC fintech startups";
+    }
+    if (researching) {
+      placeholder = "ML research assistant roles at US universities";
+    }
 
     const pickRecent = (recent: RecentQuery) => {
       form.setFieldValue("query", recent.query);

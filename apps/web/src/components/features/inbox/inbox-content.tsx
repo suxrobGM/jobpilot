@@ -89,7 +89,7 @@ export function InboxContent(): ReactElement {
         onScanMessage={
           agentAvailable
             ? (row) => {
-                void injectSkill("scan-inbox", String(row.id));
+                void injectSkill("scan-inbox", row.id);
               }
             : undefined
         }

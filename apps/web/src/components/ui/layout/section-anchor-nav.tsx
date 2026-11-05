@@ -49,7 +49,9 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
 
     for (const anchor of anchors) {
       const el = document.querySelector(`[data-section-id="${anchor.id}"]`);
-      if (el) observer.observe(el);
+      if (el) {
+        observer.observe(el);
+      }
     }
 
     return () => observer.disconnect();

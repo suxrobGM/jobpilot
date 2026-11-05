@@ -111,7 +111,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
             <AgentOnlyButton
               variant="outlined"
               startIcon={<AutoAwesome fontSize="md" />}
-              onClick={() => void agent.injectSkill("upwork-proposal", String(id))}
+              onClick={() => void agent.injectSkill("upwork-proposal", id)}
             >
               {proposal.proposalText ? "Regenerate" : "Generate"}
             </AgentOnlyButton>
@@ -119,7 +119,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
               variant="contained"
               startIcon={<Send fontSize="md" />}
               disabled={proposal.status !== "draft" || !proposal.proposalText}
-              onClick={() => void agent.injectSkill("upwork-submit", String(id))}
+              onClick={() => void agent.injectSkill("upwork-submit", id)}
             >
               Submit on Upwork
             </AgentOnlyButton>

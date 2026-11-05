@@ -64,7 +64,12 @@ function splitName(name: string): [string, string] {
   return [trimmed.slice(0, idx).trim(), trimmed.slice(idx + 1).trim()];
 }
 
-function parseLocation(location?: string): { city: string; state: string } {
+interface ParsedLocation {
+  city: string;
+  state: string;
+}
+
+function parseLocation(location?: string): ParsedLocation {
   if (!location) {
     return { city: "", state: "" };
   }

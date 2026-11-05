@@ -207,7 +207,9 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
         isLoading={impact.isLoading}
         saving={save.isPending}
         onConfirm={(change) => {
-          if (pending) void commit(pending, change);
+          if (pending) {
+            void commit(pending, change);
+          }
         }}
         onCancel={() => setPending(null)}
       />

@@ -1,6 +1,5 @@
 import { type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { ProposalDetail } from "@/components/features/upwork";
 import { DetailSkeleton } from "@/components/ui/feedback";
 
@@ -20,10 +19,6 @@ export default function ProposalDetailPage(props: PageProps): ReactElement {
 
 async function Proposal(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
-
-  if (!id) {
-    notFound();
-  }
 
   return <ProposalDetail id={id} />;
 }
