@@ -33,7 +33,7 @@ export const composerFormSchema = z
   .object({
     mode: z.enum(["search", "auto_apply", "networking", "apply"]),
     query: z.string().trim(),
-    // Search and auto-apply can research the open web instead of a board.
+    // Off a board: search and auto-apply research the open web, networking reaches by criteria.
     searchIn: z.enum(["board", "anywhere"]),
     board: z.string(),
     // Base resume to score/tailor against; apply tailors per pasted job, so none up front.
@@ -68,9 +68,7 @@ export const composerFormSchema = z
     if (!v.resumeId) {
       ctx.addIssue({ code: "custom", message: "Select a resume", path: ["resumeId"] });
     }
-    // Board is required for a board search; for networking it is optional (the
-    // control between board-grounded and criteria-only discovery).
-    if (v.mode !== "networking" && !isResearch(v) && !v.board) {
+    if (v.searchIn === "board" && !v.board) {
       ctx.addIssue({ code: "custom", message: "Pick a board", path: ["board"] });
     }
     if (v.mode === "networking" && v.channels.length === 0) {
@@ -96,7 +94,7 @@ export const UPWORK_MODE_DESCRIPTION =
  * (first board, profile min-score) before mounting.
  */
 export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
-  mode: "auto_apply",
+  mode: "search",
   query: "",
   searchIn: "board",
   board: "",
@@ -124,11 +122,11 @@ function isCap(value: number | null | undefined): value is number {
 export function isUpworkSearch(
   values: Pick<ComposerFormValues, "mode" | "board" | "searchIn">,
 ): boolean {
-  return values.mode !== "apply" && !isResearch(values) && values.board === UPWORK_DOMAIN;
+  return usesBoard(values) && values.board === UPWORK_DOMAIN;
 }
 
 /** Modes that can research the open web instead of searching a board. */
-export function canResearch(mode: ComposerFormValues["mode"]): boolean {
+function canResearch(mode: ComposerFormValues["mode"]): boolean {
   return mode === "search" || mode === "auto_apply";
 }
 
@@ -137,9 +135,11 @@ export function isResearch(values: Pick<ComposerFormValues, "mode" | "searchIn">
   return canResearch(values.mode) && values.searchIn === "anywhere";
 }
 
-/** Whether a networking campaign has a board picked (board-grounded vs criteria-only). */
-export function isBoardSelected(board: string): boolean {
-  return board.trim() !== "";
+/** Whether the campaign runs on the picked board, not the open web or criteria alone. */
+export function usesBoard(
+  values: Pick<ComposerFormValues, "mode" | "board" | "searchIn">,
+): boolean {
+  return values.mode !== "apply" && values.searchIn === "board" && values.board.trim() !== "";
 }
 
 /** A past query, and whether it researched the open web, so a click restores both. */
@@ -153,7 +153,7 @@ function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest[
     // A selected board grounds networking in real openings; the optional cap
     // (reusing the maxApps field) maps to config.maxJobs - omit it to run until
     // the user stops. No board → criteria-only discovery.
-    const searchesBoard = isBoardSelected(values.board);
+    const searchesBoard = usesBoard(values);
     return {
       ...(searchesBoard && isCap(values.maxApps) ? { maxJobs: values.maxApps } : {}),
       networking: {
@@ -191,7 +191,7 @@ export function buildCreateCampaignRequest(values: ComposerFormValues): CreateCa
     query: values.query.trim(),
     source: values.mode,
     // Networking without a board discovers from criteria alone.
-    ...(isBoardSelected(values.board) && !isResearch(values) ? { board: values.board } : {}),
+    ...(usesBoard(values) ? { board: values.board } : {}),
     // resumeId is campaign-wide (mandatory for search/auto-apply/networking), not mode-specific.
     config: { resumeId: values.resumeId, ...buildCampaignConfig(values) },
     createdBy: "user",
@@ -235,8 +235,7 @@ export const MODE_DESCRIPTIONS: Record<CampaignMode, string> = {
   search: "Find jobs and score each match - nothing is sent. Review the ranked list yourself.",
   auto_apply:
     "Find jobs, score each match, then auto-submit applications to those above your score threshold.",
-  networking:
-    "Find hiring managers or recruiters and message them directly. Pick a board to ground networking in real openings, or none to reach by criteria.",
+  networking: "Find hiring managers or recruiters and message them directly.",
   apply:
     "Already found the jobs yourself? Paste the links and the agent reviews fit, tailors your resume, and applies to each.",
 };

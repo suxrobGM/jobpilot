@@ -71,16 +71,15 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const resumes = profileQuery.data?.resumes ?? [];
   // The user's own searches only: pilot feeds and pasted-link batches aren't queries to reuse.
   const recentByQuery = new Map<string, RecentQuery>();
+
   for (const campaign of recentCampaignsQuery.data?.items ?? []) {
     if (campaign.createdBy !== "user" || campaign.source === "apply") continue;
     if (recentByQuery.has(campaign.query)) continue;
-    const researched = campaign.board === null && campaign.source !== "networking";
-    recentByQuery.set(campaign.query, { query: campaign.query, anywhere: researched });
+    recentByQuery.set(campaign.query, { query: campaign.query, anywhere: campaign.board === null });
   }
+
   const recentQueries = [...recentByQuery.values()].slice(0, MAX_RECENT_QUERIES);
-
   const hasResumes = resumes.length > 0;
-
   const presetBoard = boards.find((b) => b.domain === defaultBoard)?.domain;
 
   /** Skills read the board off the profile's own list, so adopt a catalog board before running one. */

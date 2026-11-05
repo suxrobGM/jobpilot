@@ -7,7 +7,6 @@ import { withForm } from "@/components/ui/form/tanstack";
 import {
   type BoardOption,
   COMPOSER_DEFAULT_VALUES,
-  canResearch,
   isResearch,
   isUpworkSearch,
   MODE_DESCRIPTIONS,
@@ -15,8 +14,30 @@ import {
   UPWORK_MODE_DESCRIPTION,
 } from "./form-config";
 
-const ANYWHERE_HINT =
-  "Searches university and lab portals, company career pages and niche job sites beyond your boards. It never logs in or signs up.";
+interface SourceCopy {
+  label: string;
+  board: string;
+  anywhere: string;
+  anywhereHint: string;
+  noBoards: string;
+}
+
+const SEARCH_SOURCE: SourceCopy = {
+  label: "Search in",
+  board: "A job board",
+  anywhere: "Anywhere on the web",
+  anywhereHint:
+    "Searches university and lab portals, company career pages and niche job sites beyond your boards. It never logs in or signs up.",
+  noBoards: "No boards linked yet. Add one on the Boards page, or search anywhere on the web.",
+};
+
+const NETWORKING_SOURCE: SourceCopy = {
+  label: "Find contacts through",
+  board: "Openings on a board",
+  anywhere: "Your criteria alone",
+  anywhereHint: "Reaches people who match your criteria, without tying each one to an opening.",
+  noBoards: "No boards linked yet. Add one on the Boards page, or reach contacts by criteria.",
+};
 
 /** Campaign basics: the mode toggle, plus query (+ recent), board, and resume for every mode but apply. */
 export const CampaignBasicsFields = withForm({
@@ -34,6 +55,8 @@ export const CampaignBasicsFields = withForm({
     const isUpwork = isUpworkSearch({ mode, board, searchIn });
     const isNetworking = mode === "networking";
     const researching = isResearch({ mode, searchIn });
+    const onBoard = searchIn === "board";
+    const source = isNetworking ? NETWORKING_SOURCE : SEARCH_SOURCE;
 
     let placeholder = "Senior React TypeScript remote";
     if (isNetworking) placeholder = "Hiring managers at NYC fintech startups";
@@ -41,7 +64,7 @@ export const CampaignBasicsFields = withForm({
 
     const pickRecent = (recent: RecentQuery) => {
       form.setFieldValue("query", recent.query);
-      if (canResearch(mode)) form.setFieldValue("searchIn", recent.anywhere ? "anywhere" : "board");
+      form.setFieldValue("searchIn", recent.anywhere ? "anywhere" : "board");
     };
 
     return (
@@ -69,20 +92,20 @@ export const CampaignBasicsFields = withForm({
           </Typography>
         </Stack>
 
-        {canResearch(mode) && (
+        {!isApply && (
           <Stack spacing={0.75}>
             <form.AppField name="searchIn">
               {(field) => (
                 <field.Toggle
-                  label="Search in"
+                  label={source.label}
                   options={[
-                    { value: "board", label: "A job board" },
-                    { value: "anywhere", label: "Anywhere on the web" },
+                    { value: "board", label: source.board },
+                    { value: "anywhere", label: source.anywhere },
                   ]}
                 />
               )}
             </form.AppField>
-            {researching && <Typography variant="captionMuted">{ANYWHERE_HINT}</Typography>}
+            {!onBoard && <Typography variant="captionMuted">{source.anywhereHint}</Typography>}
           </Stack>
         )}
 
@@ -119,32 +142,18 @@ export const CampaignBasicsFields = withForm({
               )}
             </Stack>
 
-            {/* Required for a board search, optional for networking, where it toggles
-                board-grounded vs criteria-only discovery. */}
-            {!researching && boards.length > 0 && (
-              <Stack spacing={0.75}>
-                <form.AppField name="board">
-                  {(field) => (
-                    <field.Select
-                      label="Board"
-                      optional={isNetworking}
-                      emptyLabel="No board - reach by criteria"
-                      items={boards.map((b) => ({ value: b.domain, label: b.name }))}
-                    />
-                  )}
-                </form.AppField>
-                {isNetworking && (
-                  <Typography variant="captionMuted">
-                    With a board, each contact is grounded in a matching opening; without one,
-                    networking uses your criteria alone.
-                  </Typography>
+            {onBoard && boards.length > 0 && (
+              <form.AppField name="board">
+                {(field) => (
+                  <field.Select
+                    label="Board"
+                    items={boards.map((b) => ({ value: b.domain, label: b.name }))}
+                  />
                 )}
-              </Stack>
+              </form.AppField>
             )}
-            {!researching && !isNetworking && boards.length === 0 && (
-              <Typography variant="body2Muted">
-                No boards linked yet. Add one on the Boards page, or search anywhere on the web.
-              </Typography>
+            {onBoard && boards.length === 0 && (
+              <Typography variant="body2Muted">{source.noBoards}</Typography>
             )}
 
             {resumes.length > 0 ? (
