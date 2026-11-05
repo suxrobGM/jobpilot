@@ -20,6 +20,7 @@ export interface Stage {
 /** Required record, so a new agent fails typecheck instead of silently missing from the list. */
 const AGENT_ROLES: Record<PilotAgent, string> = {
   "job-searcher": "Finds jobs",
+  "job-researcher": "Finds jobs beyond your boards",
   "job-scorer": "Scores jobs",
   "job-applier": "Applies to jobs",
   "networking-worker": "Reaches out",

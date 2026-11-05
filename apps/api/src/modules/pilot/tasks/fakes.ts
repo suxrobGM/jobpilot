@@ -34,6 +34,7 @@ export interface Over {
   instructionsConfig?: unknown;
   instructionsGoals?: string;
   jobAlertsRequestedAt?: Date | null;
+  researchRequestedAt?: Date | null;
   jobAlertEmails?: { id: string }[];
   appliedToday?: number;
   pilotSearches?: Row[];
@@ -42,6 +43,8 @@ export interface Over {
   recentAppliedJobs?: Row[];
   contacts?: Row[];
   pausedFeeds?: string[];
+  primaryResumeId?: string | null;
+  profile?: { requiresSponsorship: boolean; preferCapExempt: boolean } | null;
   dueSearchCampaigns?: { id: string; pilotSearchId: string; status: string }[];
   scorePendingCampaigns?: Row[];
   scoredPendingJobs?: Row[];
@@ -156,6 +159,7 @@ function makeTaskListDb(over: Over = {}) {
         instructionsConfig: config,
         instructionsGoals: over.instructionsGoals ?? "",
         jobAlertsRequestedAt: over.jobAlertsRequestedAt ?? null,
+        researchRequestedAt: over.researchRequestedAt ?? null,
       }),
       update: async () => ({}),
     },
@@ -164,6 +168,9 @@ function makeTaskListDb(over: Over = {}) {
       count: async () => (over.pilotSearches ?? []).length,
     },
     pilotRun: fakePilotRun(over),
+    profile: { findUnique: async () => over.profile ?? null },
+    user: { findUnique: async () => ({ primaryResumeId: over.primaryResumeId ?? null }) },
+    resume: { findMany: async () => [] },
     pilotQuestion: fakePilotQuestion(over),
     campaignJob: fakeCampaignJob(over),
     application: {

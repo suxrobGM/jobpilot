@@ -272,6 +272,21 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       minScore: z.number(),
     }),
   ),
+  taskVariant(
+    "research.explore",
+    "pilot",
+    z.object({
+      goals: z.string(),
+      resumeId: z.uuid(),
+      minScore: z.number(),
+      preferCapExempt: z.boolean(),
+      requiresSponsorship: z.boolean(),
+      // Already searched by `search.discover`; research looks beyond them.
+      boards: z.array(z.string()),
+      newJobsTarget: z.number().int(),
+      trigger: z.enum(["requested", "initial", "dry", "periodic"]),
+    }),
+  ),
 ]);
 
 type TaskFields = z.infer<typeof taskFieldsSchema>;

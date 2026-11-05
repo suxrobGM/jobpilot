@@ -42,6 +42,7 @@ import {
   gatherDuePlatforms,
   gatherFollowups,
 } from "./gather-outreach";
+import { gatherResearch } from "./gather-research";
 import { gatherDueSearches, gatherSetup } from "./gather-searches";
 import { finalizeIdleCampaigns, promoteScoredPendingJobs, runExpiry } from "./maintenance";
 import { parseTaskListSnapshot } from "./snapshot";
@@ -56,6 +57,7 @@ interface GatherContext {
   config: PilotInstructionsConfig;
   goals: string;
   jobAlertsRequestedAt: Date | null;
+  researchRequestedAt: Date | null;
 }
 
 const NO_DUE_SEARCHES: Pick<Gathered, "dueQueries" | "nextSearchRunAt"> = {
@@ -115,6 +117,7 @@ export class TaskListService {
         instructionsConfig: true,
         instructionsGoals: true,
         jobAlertsRequestedAt: true,
+        researchRequestedAt: true,
       },
     });
     if (!state?.running) throw conflict("Pilot is stopped.", ErrorCodes.PILOT_CONFLICT);
@@ -136,6 +139,7 @@ export class TaskListService {
         config,
         goals,
         jobAlertsRequestedAt: state.jobAlertsRequestedAt,
+        researchRequestedAt: state.researchRequestedAt,
       },
       now,
     );
@@ -161,12 +165,16 @@ export class TaskListService {
   private async gather(userId: string, context: GatherContext, now: Date): Promise<Gathered> {
     const { config, goals } = context;
     const { prisma } = this;
-    const { searchCount, ...base } = await allNamed({
+    const { searchCount, profile, ...base } = await allNamed({
       openQuestions: prisma.pilotQuestion.count({ where: { userId, status: "open" } }),
       activeRuns: prisma.pilotRun.count({
         where: { userId, finishedAt: null, expiresAt: { gt: now } },
       }),
       searchCount: prisma.pilotSearch.count({ where: { userId } }),
+      profile: prisma.profile.findUnique({
+        where: { userId },
+        select: { requiresSponsorship: true, preferCapExempt: true },
+      }),
       appliedToday: countAppliedToday(prisma, userId, now),
       networkingSentToday: countSentToday(prisma, userId, now),
       answeredQuestions: gatherAnsweredQuestions(prisma, userId),
@@ -207,9 +215,19 @@ export class TaskListService {
     const quiet = isPipelineQuiet({ ...base, ...searches, scorePending });
     // Blank goals need no task: emptyReason "awaitingSetup" already says so.
     const canSetUp = quiet && goals !== "" && (searchCount === 0 || canApplyMore);
-    const [reviews, setup] = await Promise.all([
+    const preferCapExempt = profile?.preferCapExempt ?? false;
+    const researchContext = {
+      goals,
+      minScore: config.minScore,
+      boards: config.boards,
+      requestedAt: context.researchRequestedAt,
+      preferCapExempt,
+      requiresSponsorship: profile?.requiresSponsorship ?? false,
+    };
+    const [reviews, setup, research] = await Promise.all([
       quiet ? gatherCampaignReviews(prisma, userId, now) : NO_REVIEWS,
       canSetUp ? gatherSetup(prisma, userId, { goals, minScore: config.minScore }, now) : null,
+      goals !== "" ? gatherResearch(prisma, userId, researchContext, now) : null,
     ]);
 
     return {
@@ -221,6 +239,8 @@ export class TaskListService {
       warmIntroCandidates,
       scorePending,
       setup,
+      research,
+      preferCapExempt,
       awaitingSetup: searchCount === 0 || goals === "",
     };
   }

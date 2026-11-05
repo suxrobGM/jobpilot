@@ -1,5 +1,9 @@
 import { campaignJobStatusSchema } from "@jobpilot/contracts/campaign";
-import { pilotJournalEntrySchema, tokenUsageSchema } from "@jobpilot/contracts/pilot";
+import {
+  PILOT_RUN_OUTCOMES,
+  pilotJournalEntrySchema,
+  tokenUsageSchema,
+} from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { SKIP_BUCKETS } from "./skip-reasons";
 
@@ -38,6 +42,18 @@ export const pilotActivityResponseSchema = z.object({
       sleepSeconds: z.number().int().nullable(),
     })
     .nullable(),
+});
+
+export const researchStatusSchema = z.object({
+  lastRun: z
+    .object({
+      startedAt: z.date(),
+      outcome: z.enum(PILOT_RUN_OUTCOMES).nullable(),
+      summary: z.string().nullable(),
+    })
+    .nullable(),
+  campaignId: z.uuid().nullable(),
+  requestedAt: z.date().nullable(),
 });
 
 /** A POST so a digest's worth of URLs fits; nothing is written. */

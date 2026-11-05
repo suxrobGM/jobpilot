@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/campaign";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { CapExemptBasis, PrismaClient } from "@/generated/prisma/client";
 import { applyableJobWhere } from "@/modules/campaign/jobs/apply-guard";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "./run-history";
@@ -33,6 +33,7 @@ export interface TaskJob {
   brief: JobBriefData | null;
   matchScore: number | null;
   company: string | null;
+  capExemptBasis: CapExemptBasis | null;
   resumeId?: string;
   warmContacts?: WarmContact[];
 }
@@ -52,6 +53,7 @@ export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): 
       brief: true,
       matchScore: true,
       company: true,
+      capExemptBasis: true,
       campaign: { select: { config: true } },
     },
   });
@@ -93,7 +95,7 @@ export async function gatherWarmIntroCandidates(
   });
   const candidates: TaskJob[] = [
     ...approvedJobs.filter((job) => (job.matchScore ?? 0) >= WARM_INTRO_MIN_SCORE),
-    ...applied.map((job) => ({ ...job, board: null, brief: null })),
+    ...applied.map((job) => ({ ...job, board: null, brief: null, capExemptBasis: null })),
   ];
   const startable = await withoutRecentRuns(
     prisma,
