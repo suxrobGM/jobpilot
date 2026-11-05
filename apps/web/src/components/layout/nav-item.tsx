@@ -2,7 +2,6 @@
 
 import type { ReactElement } from "react";
 import { Box, Tooltip } from "@mui/material";
-import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavBadge } from "./nav-badge";
@@ -20,10 +19,10 @@ export function NavItem(props: NavItemProps): ReactElement {
   const icon = <Icon fontSize="md" />;
 
   return (
-    <Tooltip title={item.label} placement="right" arrow disableInteractive>
+    <Tooltip title={item.label} placement="right" arrow>
       <Box
         component={Link}
-        href={item.href as Route}
+        href={item.href}
         aria-label={item.label}
         aria-current={active ? "page" : undefined}
         sx={(theme) => ({

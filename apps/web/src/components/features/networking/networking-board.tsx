@@ -5,11 +5,11 @@ import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries, emailQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { CampaignSummaryDto, NetworkingConfigDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { DataTable } from "@/components/ui/data/data-table";
 import { StatCard } from "@/components/ui/display";
@@ -41,20 +41,23 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
   const [openId, setOpenId] = useState<string | null>(null);
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
-  const messagesQuery = useApiQuery(campaignQueries.networking(campaignId));
-  const accountQuery = useApiQuery(emailQueries.account());
+  const messagesQuery = useQuery(campaignQueries.networking(campaignId));
+  const accountQuery = useQuery(emailQueries.account());
 
   const invalidate = [
-    queryKeys.campaigns.networking(campaignId),
-    queryKeys.campaigns.detail(campaignId),
+    campaignQueries.networkingKey(campaignId),
+    campaignQueries.detail(campaignId).queryKey,
   ];
 
   const approveSelected = useApiMutation(
     async (ids: string[]) => {
       for (const id of ids) {
-        const res = await api.campaigns({ id: campaignId }).networking({ messageId: id }).patch({
-          status: "approved",
-        });
+        const res = await api
+          .campaigns({ id: campaignId })
+          .networking.messages({ messageId: id })
+          .patch({
+            status: "approved",
+          });
         if (res.error) {
           return { data: null, error: res.error };
         }
@@ -86,28 +89,24 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
   return (
     <Stack spacing={2}>
       <Grid container spacing={2}>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Discovered" value={summary.discovered} />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Drafted" value={summary.drafted} />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Sent" value={summary.sent} />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Replied" value={summary.replied} />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Bounced" value={summary.bounced} />
-        </Grid>
+        {[
+          { label: "Discovered", value: summary.discovered },
+          { label: "Drafted", value: summary.drafted },
+          { label: "Sent", value: summary.sent },
+          { label: "Replied", value: summary.replied },
+          { label: "Bounced", value: summary.bounced },
+        ].map((tile) => (
+          <Grid key={tile.label} size={{ xs: 6, sm: 4, md: 2.4 }}>
+            <StatCard label={tile.label} value={tile.value} />
+          </Grid>
+        ))}
       </Grid>
 
       <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>
         {config?.channels.map((c) => (
-          <Chip key={c} size="small" label={c} variant="outlined" />
+          <Chip key={c} label={c} variant="outlined" />
         ))}
-        {config?.autonomy && <Chip size="small" label={`autonomy: ${config.autonomy}`} />}
+        {config?.autonomy && <Chip label={`autonomy: ${config.autonomy}`} />}
       </Stack>
 
       {config?.channels.includes("email") && !canSend && (

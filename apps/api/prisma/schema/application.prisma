@@ -1,5 +1,4 @@
-// Superset of CampaignSource: campaign rows inherit the campaign's source; a single apply
-// records how the agent was invoked.
+// CampaignSource plus `manual`.
 enum ApplicationSource {
   apply
   auto_apply
@@ -14,7 +13,7 @@ enum ApplicationEventKind {
   status_change
   note
   email
-  // A generated interview prep sheet; its presence stops the pilot offering another.
+  // Its presence stops the pilot offering another prep sheet.
   interview_prep
 
   @@map("application_event_kind")
@@ -40,67 +39,64 @@ enum ApplicationStatus {
 }
 
 model Application {
-  id        String            @id @default(uuid())
-  userId    String            @map("user_id")
+  id        String            @id @default(uuid(7)) @db.Uuid
+  userId    String            @map("user_id") @db.Uuid
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   url       String
   title     String
   company   String
   location  String?
-  boardId   String?           @map("board_id")
+  boardId   String?           @map("board_id") @db.Uuid
   board     JobBoard?         @relation(fields: [boardId], references: [id], onDelete: SetNull)
   source    ApplicationSource
-  appliedAt DateTime          @default(now()) @map("applied_at")
+  appliedAt DateTime          @default(now()) @map("applied_at") @db.Timestamptz(3)
 
-  status     ApplicationStatus @default(applied)
-  rejectedAt DateTime?         @map("rejected_at")
+  status ApplicationStatus @default(applied)
 
   matchScore  Int?    @map("match_score")
   matchReason String? @map("match_reason")
-  failReason  String? @map("fail_reason")
 
-  campaignId String?   @map("campaign_id")
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  // The job it was applied from, set at creation; it always belongs to `campaignId`.
-  jobId      String?   @map("job_id")
-  job        Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  campaignId String?      @map("campaign_id") @db.Uuid
+  campaign   Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  // Always a job of `campaignId`.
+  jobId      String?      @map("job_id") @db.Uuid
+  job        CampaignJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
-  // The resume actually submitted. Not the inverse of `resumeVariants` (variants created for this
-  // application), which stays empty when tailoring reused an existing variant.
-  resumeId          String?        @map("resume_id")
-  resume            Resume?        @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  resumeVariantId   String?        @map("resume_variant_id")
-  resumeVariantUsed ResumeVariant? @relation("ApplicationResumeUsed", fields: [resumeVariantId], references: [id], onDelete: SetNull)
+  // The resume and variant actually submitted; `tailoredVariants` were written for this application.
+  resumeId        String?        @map("resume_id") @db.Uuid
+  resume          Resume?        @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  resumeVariantId String?        @map("resume_variant_id") @db.Uuid
+  resumeVariant   ResumeVariant? @relation("SubmittedVariant", fields: [resumeVariantId], references: [id], onDelete: SetNull)
 
-  events         ApplicationEvent[]
-  emailMessages  EmailMessage[]
-  resumeVariants ResumeVariant[]
-  contacts       Contact[]
-  coverLetters   CoverLetter[]
+  events           ApplicationEvent[]
+  emailMessages    EmailMessage[]
+  tailoredVariants ResumeVariant[]    @relation("TailoredVariant")
+  contacts         Contact[]
+  coverLetters     CoverLetter[]
 
   @@unique([userId, url])
   @@index([boardId])
-  // The duplicate scan filters on both columns; this also serves the bare userId lookups.
+  // The duplicate scan; also serves userId lookups.
   @@index([userId, appliedAt])
   @@index([appliedAt])
   @@index([campaignId])
   @@index([jobId])
-  // Both FKs are SetNull, so deleting a resume or variant scans this table without them.
+  // Back the SetNull FKs.
   @@index([resumeId])
   @@index([resumeVariantId])
   @@map("applications")
 }
 
 model ApplicationEvent {
-  id            String                  @id @default(uuid())
-  applicationId String                  @map("application_id")
+  id            String                  @id @default(uuid(7)) @db.Uuid
+  applicationId String                  @map("application_id") @db.Uuid
   application   Application             @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   kind          ApplicationEventKind
   fromStatus    ApplicationStatus?      @map("from_status")
   toStatus      ApplicationStatus?      @map("to_status")
   note          String?
   source        ApplicationEventSource?
-  createdAt     DateTime                @default(now()) @map("created_at")
+  createdAt     DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([applicationId, createdAt])
   @@index([createdAt])

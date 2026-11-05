@@ -25,11 +25,7 @@ export interface PaginationParams {
   setPage: (page: number) => void;
   /** Also returns to page 1 - the old offset means nothing at a new page size. */
   setPageSize: (pageSize: number) => void;
-  /**
-   * Write URL-backed filter params and return to page 1, in one update. Use this rather than a
-   * filter setter followed by `setPage(1)`: the old offset means nothing under a new filter, and
-   * two writes would each start from the same URL snapshot, so the second undoes the first.
-   */
+  /** Not a filter write plus `setPage(1)`: both start from one URL snapshot, so one undoes the other. */
   setFilters: (updates: Record<string, string | null>) => void;
   /** Drops straight into a query factory: `campaignQueries.list(query)`. */
   query: PaginationQuery;
@@ -40,10 +36,7 @@ function paramValue(value: number, fallback: number): string | null {
   return value === fallback ? null : String(value);
 }
 
-/**
- * URL-backed page state for a server-paginated list. The URL is the source of truth, so a
- * refresh or a shared link restores the exact page. Pair with {@link PaginationFooter}.
- */
+/** In the URL, so a refresh or a shared link restores the exact page. */
 export function usePaginationParams(options: UsePaginationParamsOptions = {}): PaginationParams {
   const { pageSize: defaultPageSize = DEFAULT_PAGE_SIZE, prefix, navigate } = options;
   const pageKey = prefix ? `${prefix}Page` : "page";
@@ -78,16 +71,9 @@ interface GridPaginationModel {
   pageSize: number;
 }
 
-/**
- * Bridges {@link usePaginationParams} onto a `<DataTable>`: the grid keeps its own footer (range,
- * total, rows-per-page) but pages server-side off the same URL params as every other list.
- */
 export type GridPaginationProps = ReturnType<typeof gridPagination>;
 
-/**
- * Build the props for a `<DataTable>`'s pagination, from {@link usePaginationParams} plus the
- * `pagination` block of the response - which is absent until the first page loads.
- */
+/** The grid keeps its own footer but pages server-side off the same URL params. */
 export function gridPagination(params: PaginationParams, meta: PageMeta | undefined) {
   return {
     paginationMode: "server" as const,

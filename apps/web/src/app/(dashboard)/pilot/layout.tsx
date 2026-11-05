@@ -1,9 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
 import { NotificationsNone } from "@mui/icons-material";
-import { PilotLive } from "@/components/features/pilot";
 import { LinkButton } from "@/components/ui/buttons";
 import { PageHeader, PageShell } from "@/components/ui/layout";
-import { type Tab, TabStrip } from "@/components/ui/navigation/tab-strip";
+import { type Tab, TabStrip } from "@/components/ui/navigation";
 
 const TABS: Tab[] = [
   { label: "Overview", href: "/pilot" },
@@ -35,8 +34,6 @@ export default function PilotLayout(props: PilotLayoutProps): ReactElement {
         }
       />
       <TabStrip tabs={TABS} ariaLabel="Pilot sections" />
-      {/* In the layout so the subscription survives tab navigation. */}
-      <PilotLive />
       {children}
     </PageShell>
   );

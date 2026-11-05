@@ -1,13 +1,10 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Alert, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import {
   PILOT_HOST_OFFLINE_MESSAGE,
   PILOT_MODE_LOOK,
@@ -16,11 +13,10 @@ import {
 import { LinkButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
-import { useSseChannel } from "@/lib/sse/client";
-import type { PilotHealth } from "@/lib/terminal";
+import { type TerminalHealth, useTerminalHealth } from "@/hooks/use-terminal-health";
+import type { PilotHealth } from "@/lib/terminal/client";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { plural } from "@/utils/format";
-import { type TerminalHealth, useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { useOpenQuestions } from "../../pilot/attention/use-open-questions";
 
 /** Compact read-only pilot presence for the workspace overview; controls live on /pilot. */
@@ -42,19 +38,13 @@ interface PilotCardBodyProps {
 
 function PilotCardBody(props: PilotCardBodyProps): ReactNode {
   const { health, pilot } = props;
-  const queryClient = useQueryClient();
-  const stateQuery = useApiQuery(pilotQueries.state());
+  const stateQuery = useQuery(pilotQueries.state());
   const openQuestions = useOpenQuestions().questions.length;
 
-  // Rides the shared pilotChannel source (refcounted per URL), so this adds no connection.
-  useSseChannel(pilotChannel, null, {
-    on: {
-      "state.changed": () => queryClient.invalidateQueries({ queryKey: queryKeys.pilot.state() }),
-    },
-  });
-
   const state = stateQuery.data;
-  if (!state) return null;
+  if (!state) {
+    return null;
+  }
 
   const mode = pilotMode(state, health, pilot);
   const look = PILOT_MODE_LOOK[mode];
@@ -78,7 +68,6 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
                 href="/pilot"
                 clickable
                 color="warning"
-                size="small"
                 label={`${plural(openQuestions, "question")} for you`}
               />
             )}

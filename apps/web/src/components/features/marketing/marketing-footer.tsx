@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { Box, Container, Grid, Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
+import { GITHUB_URL } from "@/lib/constants";
 import { BrandMark } from "./brand-mark";
 import { marketingLinkSx } from "./marketing-link-sx";
 
@@ -41,13 +42,7 @@ interface ExternalFooterLinkProps {
 function ExternalFooterLink(props: ExternalFooterLinkProps): ReactElement {
   const { href, label } = props;
   return (
-    <Link
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      underline="none"
-      sx={marketingLinkSx}
-    >
+    <Link href={href} underline="none" sx={marketingLinkSx}>
       {label}
     </Link>
   );
@@ -80,7 +75,7 @@ export function MarketingFooter(): ReactElement {
           </Grid>
           <Grid size={{ xs: 6, md: 3 }}>
             <FooterColumn title="Resources">
-              <ExternalFooterLink href="https://github.com/suxrobGM/jobpilot" label="GitHub" />
+              <ExternalFooterLink href={GITHUB_URL} label="GitHub" />
               <ExternalFooterLink
                 href="https://github.com/suxrobGM/jobpilot/blob/main/CHANGELOG.md"
                 label="Changelog"

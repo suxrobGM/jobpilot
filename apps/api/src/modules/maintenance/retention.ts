@@ -2,7 +2,7 @@
 
 import { UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
 import { DAY_MS } from "@/common/date/buckets";
-import type { Prisma } from "@/generated/prisma/client";
+import type { PilotSubjectType, Prisma } from "@/generated/prisma/client";
 import { notProtectedVariant } from "@/modules/resume/variants/variant.schema";
 
 export const RETENTION_DAYS = {
@@ -52,7 +52,7 @@ export function runDiscoverWhere(c: RetentionCutoffs): Prisma.PilotRunWhereInput
 }
 
 /** Subjects that stay live indefinitely and whose only re-offer suppressor is the answered question itself. */
-const QUESTION_TOMBSTONE_SUBJECTS = ["email", "campaign"];
+const QUESTION_TOMBSTONE_SUBJECTS: PilotSubjectType[] = ["email", "campaign"];
 
 export function questionTerminalWhere(c: RetentionCutoffs): Prisma.PilotQuestionWhereInput {
   // "open" is deliberately absent - never sweep a question still awaiting an answer.
@@ -83,10 +83,10 @@ export function promotionPostWhere(c: RetentionCutoffs): Prisma.PromotionPostWhe
 }
 
 export function emailBodyWhere(c: RetentionCutoffs): Prisma.EmailMessageWhereInput {
-  // Blank, never delete: rawBody powers the inbox dialog (falls back to snippet) and re-sync dedupe.
+  // Blank, never delete: body powers the inbox dialog (falls back to snippet) and re-sync dedupe.
   // Scanned only: the inbox review queue has no age bound, so an old unscanned message still needs its body.
   // Links go too: the job-alert import reads only a week back.
-  return { receivedAt: { lt: c.emailBody }, rawBody: { not: "" }, scannedAt: { not: null } };
+  return { receivedAt: { lt: c.emailBody }, body: { not: "" }, scannedAt: { not: null } };
 }
 
 export function resumeVariantWhere(c: RetentionCutoffs): Prisma.ResumeVariantWhereInput {

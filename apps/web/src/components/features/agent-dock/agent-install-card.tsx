@@ -6,7 +6,6 @@ import { PluginInstallCommands } from "@/components/features/install";
 import { RecheckButton } from "./recheck-button";
 
 interface AgentInstallCardProps {
-  onRecheck: () => void;
   /** Override for the degraded-host case (running but broken install). */
   title?: string;
   description?: string;
@@ -16,7 +15,7 @@ interface AgentInstallCardProps {
 
 /** Shown in the dock when the local terminal host is unreachable: plugin-first install + recheck. */
 export function AgentInstallCard(props: AgentInstallCardProps): ReactElement {
-  const { onRecheck, title, description, detail } = props;
+  const { title, description, detail } = props;
 
   return (
     <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2, overflowY: "auto" }}>
@@ -35,7 +34,7 @@ export function AgentInstallCard(props: AgentInstallCardProps): ReactElement {
 
       <PluginInstallCommands />
 
-      <RecheckButton onClick={onRecheck} />
+      <RecheckButton />
     </Stack>
   );
 }

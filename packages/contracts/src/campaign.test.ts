@@ -3,7 +3,7 @@
 import { addCampaignJobSchema, patchCampaignJobSchema } from "./campaign";
 import { describe, expect, it } from "bun:test";
 
-const job = (brief?: string) => ({
+const job = (brief?: unknown) => ({
   key: "acme-engineer-1",
   title: "Engineer",
   company: "Acme",
@@ -11,29 +11,27 @@ const job = (brief?: string) => ({
   ...(brief !== undefined && { brief }),
 });
 
-const brief = JSON.stringify({ skills: ["Go"] });
+const brief = { skills: ["Go"] };
 
 describe("job brief contract", () => {
   it("accepts a JSON object", () => {
-    expect(addCampaignJobSchema.parse(job(brief)).brief).toBe(brief);
+    expect(addCampaignJobSchema.parse(job(brief)).brief).toEqual(brief);
   });
 
-  // A skill templating `"brief":"$BRIEF"` renders an unset brief as "".
   it("drops an empty brief instead of storing it", () => {
-    expect(addCampaignJobSchema.parse(job("")).brief).toBeUndefined();
-    expect(addCampaignJobSchema.parse(job("   ")).brief).toBeUndefined();
+    expect(addCampaignJobSchema.parse(job({})).brief).toBeUndefined();
   });
 
   it("rejects a brief that is not a JSON object", () => {
-    expect(addCampaignJobSchema.safeParse(job("{truncated")).success).toBe(false);
-    expect(addCampaignJobSchema.safeParse(job('["Go"]')).success).toBe(false);
-    expect(addCampaignJobSchema.safeParse(job('"Go"')).success).toBe(false);
+    expect(addCampaignJobSchema.safeParse(job(JSON.stringify(brief))).success).toBe(false);
+    expect(addCampaignJobSchema.safeParse(job(["Go"])).success).toBe(false);
+    expect(addCampaignJobSchema.safeParse(job("Go")).success).toBe(false);
   });
 
   // Undefined leaves the stored brief alone; an explicit null is the caller clearing it.
   it("distinguishes an omitted brief from an explicit null on patch", () => {
     expect(patchCampaignJobSchema.parse({}).brief).toBeUndefined();
     expect(patchCampaignJobSchema.parse({ brief: null }).brief).toBeNull();
-    expect(patchCampaignJobSchema.parse({ brief: "" }).brief).toBeUndefined();
+    expect(patchCampaignJobSchema.parse({ brief: {} }).brief).toBeUndefined();
   });
 });

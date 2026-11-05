@@ -7,12 +7,13 @@ import {
   type PilotState,
   type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
-import { Box, Skeleton, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import {
@@ -22,7 +23,7 @@ import {
   StickyFooter,
 } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 import { BoardsSection } from "./boards-section";
 import {
   type InstructionsFormValues,
@@ -35,11 +36,13 @@ import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
+import { ResearchSection } from "./research-section";
 import { SearchesList } from "./searches-list";
 
 const NAV_ANCHORS: SectionAnchor[] = [
   { id: "goals", label: "Goals" },
   { id: "searches", label: "Searches" },
+  { id: "research", label: "Research" },
   { id: "limits", label: "Limits" },
   { id: "networking", label: "Networking" },
   { id: "boards", label: "Boards" },
@@ -47,12 +50,15 @@ const NAV_ANCHORS: SectionAnchor[] = [
 ];
 
 export function InstructionsTab(): ReactElement {
-  const stateQuery = useApiQuery(pilotQueries.state(), {
-    errorMessage: "Failed to load pilot state",
-  });
+  const stateQuery = useQuery(pilotQueries.state());
 
-  if (stateQuery.isLoading || !stateQuery.data) {
-    return <Skeleton variant="rounded" height={480} />;
+  if (stateQuery.isLoading) {
+    return <DetailSkeleton heights={[480]} />;
+  }
+  if (!stateQuery.data) {
+    return (
+      <QueryError title="Couldn't load the pilot." onRetry={() => void stateQuery.refetch()} />
+    );
   }
   // The form takes its defaults once, so it mounts only after the state has loaded.
   return (
@@ -73,17 +79,13 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const save = useApiMutation(
     (body: UpdatePilotInstructionsInput) => api.pilot.instructions.put(body),
     {
-      invalidate: [queryKeys.pilot.state(), queryKeys.pilot.searches()],
+      invalidate: [pilotQueries.state().queryKey, pilotQueries.searches().queryKey],
       successMessage: "Instructions saved.",
     },
   );
 
-  // Fetched on submit, not on mount: a mount fetch still in flight reads as "nothing in flight"
-  // and saves changed goals without ever asking, which is the case the dialog exists for.
-  const impact = useApiQuery(pilotQueries.instructionsImpact(), {
-    enabled: false,
-    errorMessage: "Failed to check what the pilot has in flight",
-  });
+  // Fetched on submit: a mount fetch still loading reads as "nothing in flight" and skips the ask.
+  const impact = useQuery({ ...pilotQueries.instructionsImpact(), enabled: false });
 
   // Set while the goals-changed dialog is open; carries the values the save finishes with.
   const [pending, setPending] = useState<InstructionsFormValues | null>(null);
@@ -151,6 +153,14 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
                 <SearchesList />
               </FormSection>
             </Box>
+            <Box data-section-id="research">
+              <FormSection
+                title="Research"
+                description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
+              >
+                <ResearchSection />
+              </FormSection>
+            </Box>
           </Stack>
         </SectionCard>
 
@@ -184,9 +194,7 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
           >
             <Typography variant="captionMuted">Unsaved changes</Typography>
             <form.AppForm>
-              <form.SubmitButton disabled={save.isPending}>
-                {save.isPending ? "Saving" : "Save instructions"}
-              </form.SubmitButton>
+              <form.SubmitButton>Save instructions</form.SubmitButton>
             </form.AppForm>
           </Stack>
         </StickyFooter>
@@ -198,7 +206,9 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
         isLoading={impact.isLoading}
         saving={save.isPending}
         onConfirm={(change) => {
-          if (pending) void commit(pending, change);
+          if (pending) {
+            void commit(pending, change);
+          }
         }}
         onCancel={() => setPending(null)}
       />

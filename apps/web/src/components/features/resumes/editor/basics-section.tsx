@@ -5,6 +5,7 @@ import type { ResumeBasics } from "@jobpilot/contracts/resume";
 import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { PhoneField } from "@/components/ui/form";
+import { EntryTextField } from "./entry-text-field";
 
 interface BasicsSectionProps {
   value: ResumeBasics;
@@ -28,15 +29,14 @@ export function BasicsSection(props: BasicsSectionProps): ReactElement {
   const { value, onChange } = props;
   return (
     <Grid container spacing={2}>
-      <Grid size={{ xs: 12 }}>
-        <TextField
-          fullWidth
-          label="Headline"
-          placeholder="Senior Software Developer"
-          value={value.headline ?? ""}
-          onChange={(e) => onChange({ ...value, headline: e.target.value })}
-        />
-      </Grid>
+      <EntryTextField
+        entry={value}
+        field="headline"
+        label="Headline"
+        placeholder="Senior Software Developer"
+        width={12}
+        onUpdate={onChange}
+      />
       {TEXT_FIELDS.map((f) => (
         <Grid key={f.key} size={{ xs: 12, sm: 6 }}>
           <TextField

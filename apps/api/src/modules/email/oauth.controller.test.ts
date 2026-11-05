@@ -23,7 +23,7 @@ const app = new Elysia().group("/api", (api) => api.use(emailOAuthController));
 const headers = { authorization: "Bearer synthetic-session" };
 async function start(provider = "microsoft"): Promise<string> {
   const response = await app.handle(
-    new Request(`http://localhost/api/email/oauth/start?provider=${provider}`, { headers }),
+    new Request(`http://localhost/api/email/oauth/authorize?provider=${provider}`, { headers }),
   );
   expect(response.status).toBe(302);
   return response.headers

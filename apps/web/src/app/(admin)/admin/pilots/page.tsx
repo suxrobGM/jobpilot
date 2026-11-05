@@ -2,9 +2,11 @@ import { type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
+import { dataOrNullIf404 } from "@/api/error";
 import { getFetchOptions } from "@/api/server";
 import { AdminPilotsTable } from "@/components/features/admin";
-import { PaginationControls, TableSkeleton } from "@/components/ui/data";
+import { PaginationControls } from "@/components/ui/data";
+import { TableSkeleton } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { type PaginationSearchParams, paginationQuery } from "@/utils/search-params";
 
@@ -29,10 +31,13 @@ export default function AdminPilotsPage(props: AdminPilotsPageProps): ReactEleme
 }
 
 async function AdminPilots(props: AdminPilotsPageProps): Promise<ReactElement> {
-  const { data } = await api.admin.pilots.get({
-    query: paginationQuery(await props.searchParams),
-    ...(await getFetchOptions()),
-  });
+  const data = dataOrNullIf404(
+    await api.admin.pilots.get({
+      query: paginationQuery(await props.searchParams),
+      ...(await getFetchOptions()),
+    }),
+    "Couldn't load pilots",
+  );
 
   if (!data) {
     notFound();

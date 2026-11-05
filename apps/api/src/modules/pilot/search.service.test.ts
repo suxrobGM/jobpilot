@@ -26,10 +26,10 @@ describe("scheduleNextRun", () => {
 
   for (const [name, emptyRuns, newJobs, reachedEnd, gapHours, nextEmptyRuns] of cases) {
     it(name, () => {
-      const next = scheduleNextRun(emptyRuns, { jobsSeen: 20, newJobs, reachedEnd }, NOW);
+      const next = scheduleNextRun(emptyRuns, { jobsScanned: 20, newJobs, reachedEnd }, NOW);
       expect((next.nextRunAt.getTime() - NOW.getTime()) / HOUR_MS).toBe(gapHours);
       expect(next.emptyRuns).toBe(nextEmptyRuns);
-      expect(next).toMatchObject({ lastRunAt: NOW, lastJobsSeen: 20, lastNewJobs: newJobs });
+      expect(next).toMatchObject({ lastRunAt: NOW, lastJobsScanned: 20, lastNewJobs: newJobs });
     });
   }
 });
@@ -97,7 +97,7 @@ describe("PilotSearchService", () => {
       query: "golang",
       emptyRuns: 0,
       nextRunAt: expect.any(Date),
-      lastJobsSeen: null,
+      lastJobsScanned: null,
       lastNewJobs: null,
     });
 
@@ -115,8 +115,8 @@ describe("PilotSearchService", () => {
 
   it("applies a run report to the schedule and clears the cached task list", async () => {
     const { svc, rec } = makeService({ existing });
-    await svc.reportRun("p1", "s1", { jobsSeen: 30, newJobs: 5, reachedEnd: false });
-    expect(rec.updates[0]).toMatchObject({ emptyRuns: 0, lastJobsSeen: 30, lastNewJobs: 5 });
+    await svc.reportRun("p1", "s1", { jobsScanned: 30, newJobs: 5, reachedEnd: false });
+    expect(rec.updates[0]).toMatchObject({ emptyRuns: 0, lastJobsScanned: 30, lastNewJobs: 5 });
     expect(rec.taskListResets).toBe(1);
   });
 });

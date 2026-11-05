@@ -4,11 +4,13 @@ import type { ReactElement } from "react";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { ContactDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ExternalLink } from "@/components/ui/display";
-import { NetworkingConnectionChip } from "./networking-status-chip";
+import { ExternalLink, StatusChip } from "@/components/ui/display";
 
 interface ContactsTableProps {
   contacts: ReadonlyArray<ContactDto>;
+  loading: boolean;
+  errorTitle?: string;
+  onRetry: () => void;
 }
 
 const columns: GridColDef<ContactDto>[] = [
@@ -37,7 +39,7 @@ const columns: GridColDef<ContactDto>[] = [
     field: "linkedinConnection",
     headerName: "LinkedIn",
     width: 130,
-    renderCell: (p) => <NetworkingConnectionChip connection={p.row.linkedinConnection} />,
+    renderCell: (p) => <StatusChip domain="connection" value={p.row.linkedinConnection} />,
   },
   {
     field: "discoverySource",
@@ -48,15 +50,18 @@ const columns: GridColDef<ContactDto>[] = [
 ];
 
 export function ContactsTable(props: ContactsTableProps): ReactElement {
-  const { contacts } = props;
+  const { contacts, loading, errorTitle, onRetry } = props;
 
   return (
     <DataTable
       rows={contacts}
       columns={columns}
       getRowId={(row) => row.id}
+      loading={loading}
       autoHeight
       hideFooter
+      errorTitle={errorTitle}
+      onRetry={onRetry}
       emptyMessage="No contacts yet - run a networking campaign to discover some."
     />
   );

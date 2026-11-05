@@ -187,16 +187,8 @@ export interface FuzzyMatchInput {
   company: string;
 }
 
-export interface FuzzyMatchCandidate {
-  id: string;
-  url: string;
-  title: string;
-  company: string;
-  appliedAt: Date | string;
-}
-
-export interface FuzzyMatchResult {
-  candidate: FuzzyMatchCandidate;
+interface FuzzyMatchResult<T> {
+  candidate: T;
   score: number;
 }
 
@@ -212,12 +204,39 @@ function isSameEmployer(a: string, b: string, similarity: number): boolean {
   return longer.startsWith(`${shorter} `);
 }
 
-/** Best match in the candidate set. The caller owns the window and tenant scope. */
-export function findFuzzyDuplicate(
-  input: FuzzyMatchInput,
-  candidates: ReadonlyArray<FuzzyMatchCandidate>,
+/** Best match for each input, normalizing the candidates once. The caller owns the window and tenant scope. */
+export function findFuzzyDuplicates<T extends FuzzyMatchInput>(
+  inputs: ReadonlyArray<FuzzyMatchInput>,
+  candidates: ReadonlyArray<T>,
   threshold: number = APPLIED_DUPLICATE_THRESHOLD,
-): FuzzyMatchResult | null {
+): (FuzzyMatchResult<T> | null)[] {
+  const normalized = candidates.flatMap((candidate) => {
+    const title = normalizeJobTitle(candidate.title);
+    const company = normalizeCompanyName(candidate.company);
+    return title && company ? [{ candidate, title, company }] : [];
+  });
+  return inputs.map((input) => bestMatch(input, normalized, threshold));
+}
+
+export function findFuzzyDuplicate<T extends FuzzyMatchInput>(
+  input: FuzzyMatchInput,
+  candidates: ReadonlyArray<T>,
+  threshold: number = APPLIED_DUPLICATE_THRESHOLD,
+): FuzzyMatchResult<T> | null {
+  return findFuzzyDuplicates([input], candidates, threshold)[0];
+}
+
+interface NormalizedCandidate<T> {
+  candidate: T;
+  title: string;
+  company: string;
+}
+
+function bestMatch<T>(
+  input: FuzzyMatchInput,
+  candidates: ReadonlyArray<NormalizedCandidate<T>>,
+  threshold: number,
+): FuzzyMatchResult<T> | null {
   const normTitle = normalizeJobTitle(input.title);
   const normCompany = normalizeCompanyName(input.company);
 
@@ -225,22 +244,15 @@ export function findFuzzyDuplicate(
     return null;
   }
 
-  let best: FuzzyMatchResult | null = null;
+  let best: FuzzyMatchResult<T> | null = null;
 
-  for (const candidate of candidates) {
-    const cTitle = normalizeJobTitle(candidate.title);
-    const cCompany = normalizeCompanyName(candidate.company);
-
-    if (!cTitle || !cCompany) {
+  for (const { candidate, title, company } of candidates) {
+    const companyScore = calculateSimilarity(normCompany, company);
+    if (!isSameEmployer(normCompany, company, companyScore)) {
       continue;
     }
 
-    const companyScore = calculateSimilarity(normCompany, cCompany);
-    if (!isSameEmployer(normCompany, cCompany, companyScore)) {
-      continue;
-    }
-
-    const titleScore = calculateSimilarity(normTitle, cTitle);
+    const titleScore = calculateSimilarity(normTitle, title);
     if (titleScore < APPLIED_DUPLICATE_TITLE_THRESHOLD) {
       continue;
     }

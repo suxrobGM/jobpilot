@@ -2,15 +2,16 @@
 
 import type { ReactElement } from "react";
 import { Delete, PictureAsPdf } from "@mui/icons-material";
-import { Box, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
+import { invalidations } from "@/api/queries";
 import type { ResumeDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 import { ExtractResumeButton } from "../extract-resume-button";
 
 interface SourceUploadCardProps {
@@ -64,13 +65,13 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
               onFile={(f) => upload.mutate(f)}
               onError={(msg) => toast.error(msg)}
             />
-            <IconButton
+            <TooltipIconButton
+              title="Remove source PDF"
               onClick={() => remove.mutate()}
               disabled={remove.isPending}
-              aria-label="Remove source PDF"
             >
               <Delete fontSize="md" />
-            </IconButton>
+            </TooltipIconButton>
           </>
         ) : (
           <FileUpload

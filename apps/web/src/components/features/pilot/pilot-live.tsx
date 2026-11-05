@@ -1,57 +1,45 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/api/query-keys";
-import { useSseChannel } from "@/lib/sse/client";
-import { appendJournalEntry } from "./journal/use-journal-live";
+import { pilotQueries } from "@/api/queries";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
+import { prependJournalEntry, refetchJournal } from "./journal/journal-cache";
 
-/** The pilot layout's one SSE subscription; journal entries go straight into the cache, not a refetch. */
+const STATE_KEY = pilotQueries.state().queryKey;
+// Never `pilot.all`: it would rebuild the task list.
+const RUN_KEYS = [STATE_KEY, pilotQueries.jobAlerts().queryKey, pilotQueries.research().queryKey];
+const RECONNECT_KEYS = [STATE_KEY, pilotQueries.questionsAll, pilotQueries.promotionsAll];
+
+/** The app's one pilot subscription, in the shell so the nav badge and every pilot view share it. */
 export function PilotLive(): ReactNode {
   const queryClient = useQueryClient();
 
-  const invalidate = (queryKey: readonly unknown[]): void => {
-    queryClient.invalidateQueries({ queryKey });
-  };
-  const refreshQuestions = (): void => invalidate(queryKeys.pilot.questionsAll());
-  const refreshPromotions = (): void => invalidate(queryKeys.pilot.promotionsAll());
-  const refreshState = (): void => invalidate(queryKeys.pilot.state());
-  const refreshRuns = (): void => {
-    refreshState();
-    invalidate(queryKeys.pilot.jobAlerts());
-  };
-
-  const status = useSseChannel(pilotChannel, null, {
+  useLiveInvalidation(pilotChannel, null, {
     on: {
-      "state.changed": refreshRuns,
-      "run.started": refreshRuns,
-      "run.finished": refreshRuns,
+      "state.changed": RUN_KEYS,
+      "run.started": RUN_KEYS,
+      "run.finished": RUN_KEYS,
+      // Written straight into the cache rather than refetched.
       "journal.appended": (event) => {
-        const entry = appendJournalEntry(queryClient, event.entry);
-        // A cycle entry moves the state's last cycle and next wake.
+        const entry = prependJournalEntry(queryClient, event.entry);
         if (entry.kind === "cycle") {
-          refreshState();
+          void queryClient.invalidateQueries({ queryKey: STATE_KEY });
         }
       },
-      "question.created": refreshQuestions,
-      "question.answered": refreshQuestions,
-      "promotion.created": refreshPromotions,
-      "promotion.updated": refreshPromotions,
+      "question.created": [pilotQueries.questionsAll],
+      "question.answered": [pilotQueries.questionsAll],
+      "promotion.created": [pilotQueries.promotionsAll],
+      "promotion.updated": [pilotQueries.promotionsAll],
+    },
+    onReconnect: () => {
+      refetchJournal(queryClient);
+      for (const queryKey of RECONNECT_KEYS) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     },
   });
-
-  // Catch up on events missed while reconnecting. Never `pilot.all`: that would rebuild the task list.
-  const previousStatus = useRef(status);
-  useEffect(() => {
-    if (previousStatus.current === "reconnecting" && status === "open") {
-      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.state() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.journalAll() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.questionsAll() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.promotionsAll() });
-    }
-    previousStatus.current = status;
-  }, [status, queryClient]);
 
   return null;
 }

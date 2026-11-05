@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { MAX_YEARS_EXPERIENCE } from "@/modules/scoring/scoring.schema";
-import { dedupeKey, listingSlug, normalizeListingLocation } from "./listing-identity";
+import { listingSlug, matchKey, normalizeListingLocation } from "./listing-identity";
 
 const MAX_EXCERPT = 600;
 
@@ -11,7 +11,7 @@ const MAX_BULLET_LENGTH = 300;
 
 /**
  * Looser than scoring's `jobBriefSchema`, which strips the posting-shaped keys
- * (location/salary/remote) this index wants. `Job.brief` is raw JSON, so they are usually present.
+ * (location/salary/remote) this index wants. `CampaignJob.brief` is stored as sent, so they are usually present.
  */
 const briefSchema = z.object({
   skills: z.array(z.string()).optional(),
@@ -25,7 +25,7 @@ const briefSchema = z.object({
   yearsExperience: z.number().optional(),
 });
 
-/** The subset of a `Job` a listing may read. Anything user-identifying is absent by design. */
+/** The subset of a `CampaignJob` a listing may read. Anything user-identifying is absent by design. */
 export interface ListingSourceJob {
   title: string;
   company: string;
@@ -33,14 +33,14 @@ export interface ListingSourceJob {
   status?: string;
   location?: string | null;
   salary?: string | null;
-  type?: string | null;
+  employmentType?: string | null;
   boardId?: string | null;
   description?: string | null;
-  brief?: string | null;
+  brief?: unknown;
 }
 
 export interface ListingDraft {
-  dedupeKey: string;
+  matchKey: string;
   slug: string;
   title: string;
   company: string;
@@ -57,17 +57,10 @@ export interface ListingDraft {
   url: string;
 }
 
-function parseBrief(raw: string | null | undefined): z.infer<typeof briefSchema> {
-  if (!raw) {
-    return {};
-  }
-  try {
-    const parsed = briefSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : {};
-  } catch {
-    // A malformed brief is a thin job, not an error - the next PATCH usually fixes it.
-    return {};
-  }
+function parseBrief(stored: unknown): z.infer<typeof briefSchema> {
+  // A malformed brief is a thin job, not an error - the next PATCH usually fixes it.
+  const parsed = briefSchema.safeParse(stored);
+  return parsed.success ? parsed.data : {};
 }
 
 function clean(value: string | null | undefined): string | null {
@@ -124,17 +117,17 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
   }
 
   const location = clean(job.location) ?? clean(brief.location);
-  const key = dedupeKey({ title, company, location });
+  const key = matchKey({ title, company, location });
 
   return {
-    dedupeKey: key,
+    matchKey: key,
     slug: listingSlug({ title, company, location }, key),
     title,
     company,
     location,
     remote: brief.remote === true || normalizeListingLocation(location) === "remote",
     salary: clean(job.salary) ?? clean(brief.salary),
-    employmentType: clean(job.type) ?? clean(brief.employmentType),
+    employmentType: clean(job.employmentType) ?? clean(brief.employmentType),
     skills,
     descriptionExcerpt: excerpt(clean(brief.descriptionExcerpt) ?? clean(job.description)),
     requirements: bullets(brief.requirements),

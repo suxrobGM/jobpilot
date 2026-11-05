@@ -19,7 +19,7 @@ export const profileAnswersController = new Elysia({
   detail: { tags: ["Pilot"] },
 })
   .use(authGuard)
-  .get("/answers", ({ user }) => answers.list(user.id), {
+  .get("/saved-answers", ({ user }) => answers.list(user.id), {
     response: profileAnswerListSchema,
     detail: {
       summary: "List saved answers",
@@ -27,17 +27,21 @@ export const profileAnswersController = new Elysia({
         "Returns the user's saved answers to reusable questions (relocation, sponsorship, start date), sorted by key.",
     },
   })
-  .put("/answers/:key", ({ user, params, body }) => answers.save(user.id, params.key, body.value), {
-    params: profileAnswerKeyParamSchema,
-    body: saveProfileAnswerSchema,
-    beforeHandle: limitMutation,
-    response: profileAnswerSchema,
-    detail: {
-      summary: "Save an answer",
-      description: "Creates or replaces the saved answer for a snake_case key.",
+  .put(
+    "/saved-answers/:key",
+    ({ user, params, body }) => answers.save(user.id, params.key, body.value),
+    {
+      params: profileAnswerKeyParamSchema,
+      body: saveProfileAnswerSchema,
+      beforeHandle: limitMutation,
+      response: profileAnswerSchema,
+      detail: {
+        summary: "Save an answer",
+        description: "Creates or replaces the saved answer for a snake_case key.",
+      },
     },
-  })
-  .delete("/answers/:key", ({ user, params }) => answers.remove(user.id, params.key), {
+  )
+  .delete("/saved-answers/:key", ({ user, params }) => answers.remove(user.id, params.key), {
     params: profileAnswerKeyParamSchema,
     beforeHandle: limitMutation,
     response: okResponseSchema,

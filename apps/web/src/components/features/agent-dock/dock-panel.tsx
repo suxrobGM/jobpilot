@@ -10,19 +10,21 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { TerminalPanel } from "@/components/features/terminal/terminal-panel";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
-import { readAgentStorage } from "@/lib/agent-storage";
-import { providerDisplayName } from "@/lib/terminal";
+import { BROWSER_BLOCKED_MESSAGE, type TerminalHealth } from "@/hooks/use-terminal-health";
+import { readAgentStorage } from "@/lib/terminal/agent-storage";
+import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal/client";
 import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOfflineCard } from "./agent-offline-card";
 import { AgentOrb } from "./agent-orb";
+import { TerminalPanel } from "./terminal-panel";
 import { PendingRestartCard } from "./update/pending-restart-card";
 import { AgentUpdateBanner } from "./update/update-banner";
 import { useDockHealth } from "./use-dock-health";
-import type { TerminalHealth } from "./use-terminal-health";
+
+const PROVIDERS: TerminalProviderId[] = ["claude", "codex"];
 
 const STATUS_LABELS: Record<TerminalHealth, string> = {
   checking: "connecting",
@@ -30,11 +32,12 @@ const STATUS_LABELS: Record<TerminalHealth, string> = {
   degraded: "needs reinstall",
   offline: "offline",
   uninstalled: "not installed",
+  blocked: "blocked by browser",
 };
 
 export function DockPanel(): ReactElement {
   const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
-  const { health, status, recheck, pending, beginPending, unreachable } = useDockHealth();
+  const { health, status, pending, beginPending, unreachable } = useDockHealth();
   const providerLabel = providerDisplayName(provider);
 
   const statusLabel = pending && unreachable ? `${pending}…` : STATUS_LABELS[health];
@@ -51,14 +54,15 @@ export function DockPanel(): ReactElement {
           alignItems: "center",
           paddingInline: theme.spacing(1.75),
           paddingBlock: theme.spacing(1.25),
-          borderBottom: `1px solid ${theme.palette.line.divider}`,
+          borderBottom: 1,
+          borderColor: "divider",
         })}
       >
         <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
           <AgentOrb size="xxl" />
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="h6">Agent</Typography>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", marginTop: "2px" }}>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.25 }}>
               <PulseDot
                 tone="muted"
                 pulsing={health === "checking" || (pending !== null && unreachable)}
@@ -86,17 +90,20 @@ export function DockPanel(): ReactElement {
           <PendingRestartCard action={pending} />
         ) : (
           <AgentOfflineCard
-            onRecheck={recheck}
             onStart={() => beginPending("starting")}
-            provider={provider}
             // Live status while warm-offline; the persisted copy covers a cold reload (status is null then).
             canRelaunch={status?.canRelaunch ?? readAgentStorage()?.canRelaunch ?? false}
           />
         ))}
-      {health === "uninstalled" && <AgentInstallCard onRecheck={recheck} />}
+      {health === "uninstalled" && <AgentInstallCard />}
+      {health === "blocked" && (
+        <AgentInstallCard
+          title="Allow local network access"
+          description={`${BROWSER_BLOCKED_MESSAGE} Not installed yet? Run setup below first.`}
+        />
+      )}
       {health === "degraded" && (
         <AgentInstallCard
-          onRecheck={recheck}
           title="Reinstall the JobPilot agent"
           description="The agent host is running but its plugin files are missing or corrupt. Re-run setup to refresh it, then recheck."
           detail={status?.detail}
@@ -107,9 +114,7 @@ export function DockPanel(): ReactElement {
           {status && (
             <AgentUpdateBanner
               currentVersion={status.hostVersion}
-              provider={provider}
               canUpdate={status.canUpdate}
-              onUpdated={recheck}
               onUpdating={() => beginPending("updating")}
             />
           )}
@@ -120,7 +125,8 @@ export function DockPanel(): ReactElement {
               alignItems: "center",
               paddingInline: theme.spacing(1.5),
               paddingBlock: theme.spacing(0.75),
-              borderBottom: `1px solid ${theme.palette.line.divider}`,
+              borderBottom: 1,
+              borderColor: "divider",
             })}
           >
             <Typography variant="captionMuted" sx={{ flex: 1 }}>
@@ -130,10 +136,13 @@ export function DockPanel(): ReactElement {
               size="small"
               value={provider}
               onChange={handleProviderChange}
-              sx={{ minWidth: 120, fontSize: "0.75rem" }}
+              sx={{ minWidth: 120, typography: "body2" }}
             >
-              <MenuItem value="claude">Claude Code</MenuItem>
-              <MenuItem value="codex">Codex</MenuItem>
+              {PROVIDERS.map((id) => (
+                <MenuItem key={id} value={id}>
+                  {providerDisplayName(id)}
+                </MenuItem>
+              ))}
             </Select>
             <TooltipIconButton
               title={`Restart ${providerLabel}`}

@@ -2,23 +2,20 @@
 
 import type { ReactElement, ReactNode } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
+import type { Pagination as PageMeta } from "@jobpilot/contracts/pagination";
 import { Add } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
-import { useRouter } from "next/navigation";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { CampaignRow } from "@/components/features/campaigns";
-import { EmptyState, PaginationFooter, QuerySection } from "@/components/ui/data";
+import { PaginationFooter } from "@/components/ui/data";
+import { EmptyState, QuerySection, type QueryState } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
 
-/**
- * Each group is its own server-filtered page, so neither can hide behind the other's rows.
- * Running campaigns live in Now running, so they are left out here.
- */
+/** Each group is its own server-filtered page, so neither can hide behind the other's rows. */
 const GROUPS = [
   { key: "paused", label: "Paused", statuses: ["paused"] },
   { key: "completed", label: "Completed", statuses: ["completed", "failed"] },
@@ -27,18 +24,23 @@ const GROUPS = [
 const PAGE_SIZE = 10;
 
 export function CampaignGroups(): ReactElement {
-  const router = useRouter();
   const { expand } = useAgentDock();
   const agentAvailable = useAgentAvailable();
 
   const groups = [useCampaignGroup(GROUPS[0]), useCampaignGroup(GROUPS[1])];
-  const loading = groups.some((g) => g.isLoading);
-  const isError = groups.some((g) => g.isError);
-  const isEmpty = groups.every((g) => !g.pagination?.total);
-
-  const open = (c: CampaignDto): void => {
-    router.push(`/campaigns/${encodeURIComponent(c.id)}` as Route);
+  // Running campaigns render in Now running, so emptiness is judged on the whole account.
+  const summary = useQuery(campaignQueries.summary());
+  const query: QueryState = {
+    isLoading: summary.isLoading || groups.some((group) => group.isLoading),
+    isError: summary.isError || groups.some((group) => group.isError),
+    refetch: () => {
+      void summary.refetch();
+      for (const group of groups) {
+        group.refetch();
+      }
+    },
   };
+  const isEmpty = summary.data?.total === 0;
 
   return (
     <SectionCard
@@ -50,7 +52,7 @@ export function CampaignGroups(): ReactElement {
             size="small"
             variant="contained"
             startIcon={<Add fontSize="md" />}
-            onClick={() => router.push("/campaigns/new")}
+            href="/campaigns/new"
           >
             New campaign
           </Button>
@@ -58,13 +60,7 @@ export function CampaignGroups(): ReactElement {
       }
     >
       <QuerySection
-        isLoading={loading}
-        isError={isError}
-        onRetry={() => {
-          for (const group of groups) {
-            void group.refetch();
-          }
-        }}
+        query={query}
         errorTitle="Couldn't load your campaigns."
         isEmpty={isEmpty}
         empty={
@@ -87,8 +83,13 @@ export function CampaignGroups(): ReactElement {
         }
       >
         <Stack spacing={2}>
+          {groups.every((group) => !group.pagination?.total) && (
+            <Typography variant="body2Muted">
+              Paused and finished campaigns show up here.
+            </Typography>
+          )}
           {groups.map((group) => (
-            <CampaignGroupSection key={group.label} group={group} onOpen={open} />
+            <CampaignGroupSection key={group.label} group={group} />
           ))}
         </Stack>
       </QuerySection>
@@ -97,12 +98,11 @@ export function CampaignGroups(): ReactElement {
 }
 
 interface CampaignGroupSectionProps {
-  group: ReturnType<typeof useCampaignGroup>;
-  onOpen: (campaign: CampaignDto) => void;
+  group: CampaignGroupState;
 }
 
 function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
-  const { group, onOpen } = props;
+  const { group } = props;
   const { pagination } = group;
 
   if (!pagination?.total) {
@@ -114,8 +114,8 @@ function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
       <Typography variant="overlineMuted">
         {group.label} · {pagination.total}
       </Typography>
-      {group.items.map((c) => (
-        <CampaignRow key={c.id} campaign={c} onSelect={onOpen} onOpenDetail={onOpen} />
+      {group.items.map((campaign) => (
+        <CampaignRow key={campaign.id} campaign={campaign} />
       ))}
       {/* The group heading already carries the total, so a one-page footer is noise. */}
       {pagination.totalPages > 1 && (
@@ -130,18 +130,29 @@ function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
 }
 
 /** One paginated status group, with its own `?pausedPage=` / `?completedPage=` params. */
-function useCampaignGroup(group: (typeof GROUPS)[number]) {
+interface CampaignGroupState {
+  label: string;
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => void;
+  items: CampaignDto[];
+  pagination: PageMeta | undefined;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
+}
+
+function useCampaignGroup(group: (typeof GROUPS)[number]): CampaignGroupState {
   const { query, setPage, setPageSize } = usePaginationParams({
     pageSize: PAGE_SIZE,
     prefix: group.key,
   });
-  const result = useApiQuery(campaignQueries.list({ ...query, status: [...group.statuses] }));
+  const result = useQuery(campaignQueries.list({ ...query, status: [...group.statuses] }));
 
   return {
     label: group.label,
     isLoading: result.isLoading,
     isError: result.isError,
-    refetch: result.refetch,
+    refetch: () => void result.refetch(),
     items: result.data?.items ?? [],
     pagination: result.data?.pagination,
     setPage,

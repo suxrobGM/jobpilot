@@ -69,7 +69,7 @@ worker at a time** (shared browser). Save and gate its result here.
 Walk tab-1 results top to bottom; per result:
 
 1. Dedupe in-board, then run the applied-check (`../_shared/campaign-flow.md`). On `.applied`,
-   keep `.match.application.id` as `relatedAppId` - **don't skip** (networking complements
+   keep `.match.application.id` as `applicationId` - **don't skip** (networking complements
    applying).
 
 2. Save the job (stable, shell-safe `key`):
@@ -104,7 +104,7 @@ jobpilot-api POST /api/campaigns/<campaign-id>/jobs --data @"$JOBPILOT_TEMP/job.
 
 Derive target companies/roles from the criteria; per target, delegate to `networking-worker` with
 `target:{ "criteria": "<...>" }` (optionally add a matching opening's `jobUrl` for grounding +
-applied-check for `relatedAppId`). Save + gate as above.
+applied-check for `applicationId`). Save + gate as above.
 
 ### Save the returned draft
 
@@ -117,7 +117,7 @@ Persist the worker's `contact` + each `message` (body already composed and human
     "name": "<contact.name>", "title": "<contact.title>", "company": "<contact.company>",
     "linkedinUrl": "<contact.linkedinUrl>", "email": "<contact.email or null>",
     "emailSource": "<contact.emailSource or guessed>", "discoverySource": "<contact.discoverySource>",
-    "relatedJobUrl": "<job-url or null>"
+    "jobUrl": "<job-url or null>"
   },
   "message": {
     "channel": "<message.channel>", "subject": "<message.subject or null>", "body": "<message.body>",
@@ -127,10 +127,10 @@ Persist the worker's `contact` + each `message` (body already composed and human
 ```
 
 ```bash
-jobpilot-api POST /api/campaigns/<campaign-id>/networking --data @"$JOBPILOT_TEMP/draft.json"
+jobpilot-api POST /api/campaigns/<campaign-id>/networking/messages --data @"$JOBPILOT_TEMP/draft.json"
 ```
 
-Add `relatedAppId:<id>` when applied-check matched. Keep the returned `id` (messageId) and
+Add `applicationId:<id>` when applied-check matched. Keep the returned `id` (messageId) and
 `contactId`. Post one message per channel the worker returned, reusing the same `contactId`.
 
 **Rewrite mode** reuses the worker for compose only: delegate with the existing contact's
@@ -156,8 +156,8 @@ For each message to send:
   threading), send it, then record the send with the response's `providerId` and `threadId` and the
   current UTC time:
   ```bash
-  jobpilot-api POST /api/email/send --data @"$JOBPILOT_TEMP/email.json"
-  jobpilot-api POST /api/campaigns/<campaign-id>/networking/<messageId>/result \
+  jobpilot-api POST /api/email/outbound --data @"$JOBPILOT_TEMP/email.json"
+  jobpilot-api POST /api/campaigns/<campaign-id>/networking/messages/<messageId>/result \
     --data '{"outcome":"sent","sentAt":"<ISO-8601 UTC>","providerId":"<providerId>","threadId":"<threadId>"}'
   ```
 - **LinkedIn Premium** - navigate to the profile, open Message (InMail), type, send. POST

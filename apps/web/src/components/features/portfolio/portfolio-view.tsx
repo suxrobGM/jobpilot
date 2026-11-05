@@ -33,7 +33,7 @@ export function PortfolioView(props: PortfolioViewProps): ReactElement {
           <Box sx={{ textAlign: "center" }}>
             <Typography variant="body2Muted">
               Built with{" "}
-              <MuiLink href="/" sx={{ fontWeight: 600 }}>
+              <MuiLink href="/" variant="body2Strong">
                 JobPilot
               </MuiLink>{" "}
               · see the <MuiLink href="/leaderboard">trending leaderboard</MuiLink>

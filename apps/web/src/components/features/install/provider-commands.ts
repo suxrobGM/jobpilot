@@ -1,19 +1,12 @@
-export type InstallProvider = "claude" | "codex";
+import type { TerminalProviderId } from "@/lib/terminal/client";
+
+export const CODEX_PLUGIN_ADD_COMMAND = "codex plugin add jobpilot@sukhrob-codex-plugins";
 
 /** Marketplace-add + plugin-install commands per provider (see docs/getting-started). */
-export const PLUGIN_COMMANDS: Record<InstallProvider, readonly string[]> = {
+export const PLUGIN_COMMANDS: Record<TerminalProviderId, readonly string[]> = {
   claude: [
     "/plugin marketplace add https://github.com/suxrobGM/claude-plugins",
     "/plugin install jobpilot@sukhrob-claude-plugins",
   ],
-  codex: [
-    "codex plugin marketplace add suxrobGM/codex-plugins",
-    "codex plugin add jobpilot@sukhrob-codex-plugins",
-  ],
-};
-
-/** The setup skill invocation per provider. */
-export const SETUP_COMMANDS: Record<InstallProvider, string> = {
-  claude: "/jobpilot:setup",
-  codex: "$setup",
+  codex: ["codex plugin marketplace add suxrobGM/codex-plugins", CODEX_PLUGIN_ADD_COMMAND],
 };

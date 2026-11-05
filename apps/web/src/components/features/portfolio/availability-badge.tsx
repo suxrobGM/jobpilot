@@ -8,6 +8,8 @@ interface AvailabilityBadgeProps {
 
 /** "Open to work" pill; renders nothing unless the user is actively open. */
 export function AvailabilityBadge(props: AvailabilityBadgeProps): ReactNode {
-  if (props.availability !== "open") return null;
-  return <Chip label="Open to work" size="small" color="success" variant="outlined" />;
+  if (props.availability !== "open") {
+    return null;
+  }
+  return <Chip label="Open to work" color="success" variant="outlined" />;
 }

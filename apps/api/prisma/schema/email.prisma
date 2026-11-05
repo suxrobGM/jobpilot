@@ -29,20 +29,20 @@ model EmailAccount {
   signedInEmail   String? @map("signed_in_email")
   mailboxId       String? @map("mailbox_id")
   deltaLink       String? @map("delta_link")
-  id              String    @id @default(uuid())
-  userId          String    @unique @map("user_id")
+  id              String    @id @default(uuid(7)) @db.Uuid
+  userId          String    @unique @map("user_id") @db.Uuid
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   email           String
   accessToken     String?   @map("access_token")
   refreshToken    String?   @map("refresh_token")
-  tokenExpiresAt  DateTime? @map("token_expires_at")
+  tokenExpiresAt  DateTime? @map("token_expires_at") @db.Timestamptz(3)
   scope           String?
   historyId       String?   @map("history_id")
-  lastSyncAt      DateTime? @map("last_sync_at")
+  lastSyncAt      DateTime? @map("last_sync_at") @db.Timestamptz(3)
   // Set on invalid_grant: the mailbox needs reconnecting. Cleared on the next good refresh.
-  refreshFailedAt DateTime? @map("refresh_failed_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  refreshFailedAt DateTime? @map("refresh_failed_at") @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   messages EmailMessage[]
 
@@ -55,21 +55,21 @@ model EmailOAuthClient {
   tenantId     String? @map("tenant_id")
   mailbox      String?
   allowSend    Boolean @default(false) @map("allow_send")
-  id           String   @id @default(uuid())
-  userId       String   @map("user_id")
+  id           String   @id @default(uuid(7)) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clientId     String   @map("client_id") // plaintext (semi-public)
-  clientSecret String   @map("client_secret") // ciphertext (per-user DEK)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  clientId     String   @map("client_id")
+  clientSecret String   @map("client_secret") // encrypted
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([userId, provider])
   @@map("email_oauth_clients")
 }
 
 model EmailMessage {
-  id          String       @id @default(uuid())
-  accountId   String       @map("account_id")
+  id          String       @id @default(uuid(7)) @db.Uuid
+  accountId   String       @map("account_id") @db.Uuid
   account     EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   providerId  String       @map("provider_id")
   threadId    String?      @map("thread_id")
@@ -78,36 +78,36 @@ model EmailMessage {
   fromName    String?      @map("from_name")
   fromDomain  String       @map("from_domain")
   snippet     String
-  rawBody     String       @map("raw_body")
-  receivedAt  DateTime     @map("received_at")
-  fetchedAt   DateTime     @default(now()) @map("fetched_at")
+  body        String
+  receivedAt  DateTime     @map("received_at") @db.Timestamptz(3)
+  fetchedAt   DateTime     @default(now()) @map("fetched_at") @db.Timestamptz(3)
 
-  scannedAt      DateTime?            @map("scanned_at")
-  classification EmailClassification?
-  confidence     Float?
-  reasoning      String?
-  matchedAppId   String?              @map("matched_app_id")
-  matchedApp     Application?         @relation(fields: [matchedAppId], references: [id], onDelete: SetNull)
-  matchScore     Float?               @map("match_score")
-  reviewStatus   EmailReviewStatus    @default(pending) @map("review_status")
-  appliedStatus  ApplicationStatus?   @map("applied_status")
+  scannedAt       DateTime?            @map("scanned_at") @db.Timestamptz(3)
+  classification  EmailClassification?
+  confidence      Float?
+  reasoning       String?
+  applicationId   String?              @map("application_id") @db.Uuid
+  application     Application?         @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  matchConfidence Float?               @map("match_confidence")
+  reviewStatus    EmailReviewStatus    @default(pending) @map("review_status")
+  resultingStatus ApplicationStatus?   @map("resulting_status")
 
   verificationCode   String? @map("verification_code")
   verificationLink   String? @map("verification_link")
   verificationDomain String? @map("verification_domain")
 
-  // `[{url, text}]` for every link, captured at sync: rawBody drops hrefs, and a job-alert tracker
-  // URL means nothing without its anchor text.
-  links       Json      @default("[]")
-  // Set once the pilot has pulled this alert email's job links into a campaign.
-  importedAt DateTime? @map("imported_at")
+  // `[{url, text}]`, captured at sync: the body drops hrefs, and a tracker URL needs its anchor text.
+  links      Json      @default("[]")
+  // Set once the pilot imports this job-alert email's links.
+  importedAt DateTime? @map("imported_at") @db.Timestamptz(3)
 
   // Provider message ids are unique per mailbox, not globally.
   @@unique([accountId, providerId])
-  @@index([reviewStatus, receivedAt])
-  @@index([matchedAppId])
-  @@index([fromDomain, receivedAt])
-  @@index([verificationDomain, receivedAt])
-  @@index([receivedAt]) // Retention sweep; no other index leads with receivedAt.
+  // Every read is scoped through `account: { userId }`, so each filter index leads with the account.
+  @@index([accountId, reviewStatus, receivedAt])
+  @@index([accountId, fromDomain, receivedAt])
+  @@index([accountId, verificationDomain, receivedAt])
+  @@index([applicationId])
+  @@index([receivedAt]) // Retention sweep.
   @@map("email_messages")
 }

@@ -59,7 +59,7 @@ stays out of this conversation: `{ "mode":"review", "url":"<job-url>",
 the review below; keep its `brief` as `BRIEF` for 1.4.
 
 **Pasted input** → parse the fields yourself (the content is already in hand), build the brief
-(`../_shared/job-brief.md`), and `POST /api/score-fit {brief, minScore:<minMatchScore>}` for the
+(`../_shared/job-brief.md`), and `POST /api/fit-scores {brief, minScore:<minMatchScore>}` for the
 score. Its `fit.verdict` drives the recommendation below: `trust` → report the score as-is;
 `deliberate` → reason from `strongMatches`/`partialMatches`/`gaps` first. Keep the brief in
 `BRIEF=...` for 1.4.

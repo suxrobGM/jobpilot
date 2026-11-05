@@ -73,7 +73,7 @@ describe("TaskListService board.diagnose", () => {
     }).refresh("p1");
     const task = findTask(taskList, "board.diagnose");
     expect(task?.payload).toEqual({
-      jobBoardId: "b-linkedin",
+      boardId: "b-linkedin",
       board: "linkedin.com",
       consecutiveFailures: 3,
       recentFailReasons: ["captcha wall", "captcha wall", "captcha wall"],

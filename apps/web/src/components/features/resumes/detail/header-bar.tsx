@@ -2,15 +2,16 @@
 
 import { type ReactElement, useState } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
-import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } from "@mui/material";
+import { Button, Card, CardContent, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
+import { invalidations } from "@/api/queries";
 import { resumePdfUrl } from "@/api/resume-urls";
 import type { ResumeDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { useConfirm } from "@/providers/confirm-provider";
-import { TailorForJobButton } from "../tailor/tailor-for-job-button";
+import { useSetPrimaryResume } from "../use-set-primary-resume";
 
 interface ResumeHeaderBarProps {
   resume: ResumeDto;
@@ -20,20 +21,18 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   const { resume } = props;
   const router = useRouter();
   const confirm = useConfirm();
-  const [editingLabel, setEditingLabel] = useState(resume.label);
+  // Null while not editing, so a rename that arrives live shows instead of a stale copy.
+  const [draftLabel, setDraftLabel] = useState<string | null>(null);
 
   const renameLabel = useApiMutation(
-    (vars: { label: string }) => api.resumes({ id: resume.id }).put(vars),
+    (label: string) => api.resumes({ id: resume.id }).put({ label }),
     {
       successMessage: "Renamed",
       invalidate: invalidations.resume,
     },
   );
 
-  const setPrimary = useApiMutation(() => api.user["primary-resume"].put({ resumeId: resume.id }), {
-    successMessage: "Set as primary",
-    invalidate: invalidations.resume,
-  });
+  const setPrimary = useSetPrimaryResume();
 
   const remove = useApiMutation(() => api.resumes({ id: resume.id }).delete(), {
     successMessage: "Resume deleted",
@@ -48,7 +47,9 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
       confirmLabel: "Delete",
       destructive: true,
     });
-    if (confirmed) remove.mutate();
+    if (confirmed) {
+      remove.mutate();
+    }
   };
 
   return (
@@ -57,15 +58,14 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <TextField
             size="small"
-            value={editingLabel}
-            onChange={(e) => setEditingLabel(e.target.value)}
+            value={draftLabel ?? resume.label}
+            onChange={(e) => setDraftLabel(e.target.value)}
             onBlur={() => {
-              const next = editingLabel.trim();
+              const next = draftLabel?.trim();
               if (next && next !== resume.label) {
-                renameLabel.mutate({ label: next });
-              } else if (!next) {
-                setEditingLabel(resume.label);
+                renameLabel.mutate(next);
               }
+              setDraftLabel(null);
             }}
             sx={{ flex: 1, maxWidth: 320 }}
           />
@@ -81,25 +81,18 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
             <Button
               size="small"
               startIcon={<StarBorder />}
-              onClick={() => setPrimary.mutate()}
-              disabled={setPrimary.isPending}
+              onClick={() => setPrimary.mutate(resume.id)}
+              loading={setPrimary.isPending}
             >
               Set primary
             </Button>
           )}
-          <TailorForJobButton />
-          <IconButton
-            component="a"
-            href={resumePdfUrl(resume.id, resume.updatedAt)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Open PDF"
-          >
+          <TooltipIconButton title="Open PDF" href={resumePdfUrl(resume.id, resume.updatedAt)}>
             <PictureAsPdf fontSize="md" />
-          </IconButton>
-          <IconButton onClick={handleDelete} aria-label="Delete resume">
+          </TooltipIconButton>
+          <TooltipIconButton title="Delete resume" onClick={handleDelete}>
             <Delete fontSize="md" />
-          </IconButton>
+          </TooltipIconButton>
         </Stack>
       </CardContent>
     </Card>

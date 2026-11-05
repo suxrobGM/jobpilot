@@ -16,7 +16,6 @@ interface PhoneProps {
   fullWidth?: boolean;
 }
 
-/** TanStack Form-bound phone field - wires the canonical value/change/blur to the base PhoneField. */
 export function Phone(props: PhoneProps): ReactElement {
   const { helperText, ...rest } = props;
   const field = useFieldContext<string | null | undefined>();
@@ -28,8 +27,8 @@ export function Phone(props: PhoneProps): ReactElement {
       value={field.state.value ?? ""}
       onChange={(next) => field.handleChange(next)}
       onBlur={field.handleBlur}
-      error={field.state.meta.errors.length > 0}
-      helperText={errMsg ?? helperText}
+      errorText={errMsg}
+      helperText={helperText}
       {...rest}
     />
   );

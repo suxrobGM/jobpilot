@@ -25,10 +25,8 @@ export const createUpworkProposalSchema = z.object({
   screeningAnswers: z.array(screeningAnswerSchema).optional(),
   status: upworkProposalStatusSchema.optional(),
   notes: z.string().optional().nullable(),
-  // Set when drafted from an Upwork search recommendation (links to the Job).
   source: upworkProposalSourceSchema.optional(),
-  campaignId: z.string().optional().nullable(),
-  jobKey: z.string().optional().nullable(),
+  jobId: z.uuid().optional().nullable(),
 });
 
 export const patchUpworkProposalSchema = z.object({
@@ -125,7 +123,7 @@ const upworkInboxItemInputSchema = z.object({
   jobUrl: z.string().optional().nullable(),
   body: z.string().optional().nullable(),
   receivedAt: z.iso.datetime(),
-  raw: z.record(z.string(), z.unknown()).optional(),
+  payload: z.record(z.string(), z.json()).optional(),
 });
 
 export const syncUpworkInboxSchema = z.object({

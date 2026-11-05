@@ -1,4 +1,5 @@
-import type { OAuthProvider, User } from "@/generated/prisma/client";
+import type { OAuthProvider, Prisma, User } from "@/generated/prisma/client";
+import { type PROFILE_SELECT, withProfile } from "@/modules/user/user.mapper";
 
 /** The public-safe view of a user returned to clients. */
 export function publicUser(user: User) {
@@ -6,50 +7,28 @@ export function publicUser(user: User) {
     id: user.id,
     email: user.email,
     role: user.role,
-    emailVerified: user.emailVerified,
+    emailVerified: user.emailVerifiedAt !== null,
     createdAt: user.createdAt,
   };
 }
 
+interface MeRow extends User {
+  oauthAccounts: { provider: OAuthProvider }[];
+  profile: Prisma.ProfileGetPayload<{ select: typeof PROFILE_SELECT }> | null;
+}
+
 /**
- * The signed-in user's own merged view (`GET /me`): account fields plus the
- * applicant profile columns. `contactEmail` is the applicant address; `email`
- * stays the login address. Secrets (passwordHash, wrappedDek) are never included.
+ * The signed-in user's own merged view (`GET /me`): account fields plus the applicant profile.
+ * `contactEmail` is the applicant address; `email` stays the login address. Secrets
+ * (passwordHash, encryptedDataKey) are never included.
  */
-export function meUser(user: User & { oauthAccounts: { provider: OAuthProvider }[] }) {
+export function meUser(row: MeRow) {
+  const { oauthAccounts, passwordHash, encryptedDataKey: _, ...user } = withProfile(row);
   return {
-    ...publicUser(user),
+    ...user,
+    ...publicUser(row),
     // Existence only - the hash itself never leaves the service layer.
-    hasPassword: user.passwordHash !== null,
-    providers: user.oauthAccounts.map((a) => a.provider),
-    username: user.username,
-    availability: user.availability,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    contactEmail: user.contactEmail,
-    phone: user.phone,
-    website: user.website,
-    linkedin: user.linkedin,
-    github: user.github,
-    street: user.street,
-    aptUnit: user.aptUnit,
-    city: user.city,
-    state: user.state,
-    zipCode: user.zipCode,
-    country: user.country,
-    usAuthorized: user.usAuthorized,
-    requiresSponsorship: user.requiresSponsorship,
-    visaStatus: user.visaStatus,
-    optExtension: user.optExtension,
-    willingToRelocate: user.willingToRelocate,
-    preferredLocations: user.preferredLocations,
-    eeoGender: user.eeoGender,
-    eeoRace: user.eeoRace,
-    eeoEthnicity: user.eeoEthnicity,
-    eeoHispanicOrLatino: user.eeoHispanicOrLatino,
-    eeoVeteranStatus: user.eeoVeteranStatus,
-    eeoDisabilityStatus: user.eeoDisabilityStatus,
-    primaryResumeId: user.primaryResumeId,
-    updatedAt: user.updatedAt,
+    hasPassword: passwordHash !== null,
+    providers: oauthAccounts.map((a) => a.provider),
   };
 }

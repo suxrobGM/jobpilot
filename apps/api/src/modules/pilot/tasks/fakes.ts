@@ -34,6 +34,7 @@ export interface Over {
   instructionsConfig?: unknown;
   instructionsGoals?: string;
   jobAlertsRequestedAt?: Date | null;
+  researchRequestedAt?: Date | null;
   jobAlertEmails?: { id: string }[];
   appliedToday?: number;
   pilotSearches?: Row[];
@@ -41,7 +42,10 @@ export interface Over {
   approvedJobs?: Row[];
   recentAppliedJobs?: Row[];
   contacts?: Row[];
-  dueSearchCampaigns?: { id: string; pilotSearchId: string }[];
+  pausedFeeds?: string[];
+  primaryResumeId?: string | null;
+  profile?: { requiresSponsorship: boolean; preferCapExempt: boolean } | null;
+  dueSearchCampaigns?: { id: string; pilotSearchId: string; status: string }[];
   scorePendingCampaigns?: Row[];
   scoredPendingJobs?: Row[];
   pausedCampaigns?: Row[];
@@ -91,7 +95,7 @@ function fakePilotQuestion(over: Over) {
   };
 }
 
-function fakeJob(over: Over) {
+function fakeCampaignJob(over: Over) {
   return {
     // Routed by the one filter each read sets: applied = warm-intro pool, matchScore = promote
     // sweep, status `in` = board health, and the rest is the approved gather.
@@ -116,16 +120,17 @@ function fakeJob(over: Over) {
 
 function fakeCampaign(over: Over, rec: Recorder) {
   return {
-    // Each gather is told apart by a field only it sets. Finalize also filters `jobs`, so its `OR`
-    // check has to come before score-pending's.
+    // Routed by a field only that read sets; finalize also sets `pilotSearchId`, so it goes first.
     findMany: async (a: { where: { status?: string; source?: string } }) => {
       if (a.where.status === "paused") return over.pausedCampaigns ?? [];
-      if ("pilotSearchId" in a.where) return over.dueSearchCampaigns ?? [];
       if ("OR" in a.where) return over.finalizeCampaigns ?? [];
+      if ("pilotSearchId" in a.where) return over.dueSearchCampaigns ?? [];
       if (a.where.source === "apply") return over.queuedCampaigns ?? [];
       if ("jobs" in a.where) return over.scorePendingCampaigns ?? [];
       return over.quietCampaigns ?? [];
     },
+    count: async (a: { where: { feed?: string } }) =>
+      (over.pausedFeeds ?? []).filter((feed) => feed === a.where.feed).length,
     updateManyAndReturn: async (a: { where: Row; data: Row }) => {
       rec.campaignUpdates.push(a);
       return over.finalizeCampaigns ?? [];
@@ -154,6 +159,7 @@ function makeTaskListDb(over: Over = {}) {
         instructionsConfig: config,
         instructionsGoals: over.instructionsGoals ?? "",
         jobAlertsRequestedAt: over.jobAlertsRequestedAt ?? null,
+        researchRequestedAt: over.researchRequestedAt ?? null,
       }),
       update: async () => ({}),
     },
@@ -162,8 +168,11 @@ function makeTaskListDb(over: Over = {}) {
       count: async () => (over.pilotSearches ?? []).length,
     },
     pilotRun: fakePilotRun(over),
+    profile: { findUnique: async () => over.profile ?? null },
+    user: { findUnique: async () => ({ primaryResumeId: over.primaryResumeId ?? null }) },
+    resume: { findMany: async () => [] },
     pilotQuestion: fakePilotQuestion(over),
-    job: fakeJob(over),
+    campaignJob: fakeCampaignJob(over),
     application: {
       count: async (a: { where: Row }) =>
         over.digestApps != null && a.where.appliedAt ? over.digestApps : (over.appliedToday ?? 0),

@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 // One definition of "still workable" per task type, shared by its gather and the run-start
 // re-check: two copies drift, and a looser re-check starts a run on a row the gather would drop.
@@ -7,8 +7,8 @@ import type { Prisma } from "@/generated/prisma/client";
 /** Pending rows a worker must open: never scored, or scored off a results row without a brief. */
 export const NEEDS_WORKER_VISIT = {
   status: "pending",
-  OR: [{ matchScore: null }, { brief: null }],
-} satisfies Prisma.JobWhereInput;
+  OR: [{ matchScore: null }, { brief: { equals: Prisma.DbNull } }],
+} satisfies Prisma.CampaignJobWhereInput;
 
 export function scorePendingWhere(userId: string): Prisma.CampaignWhereInput {
   return {
@@ -19,8 +19,19 @@ export function scorePendingWhere(userId: string): Prisma.CampaignWhereInput {
   };
 }
 
+/** A standing campaign the user paused is their way of pausing its feed, so it isn't asked about. */
 export function reviewPausedWhere(userId: string): Prisma.CampaignWhereInput {
-  return { userId, status: "paused", source: "auto_apply" };
+  return {
+    userId,
+    status: "paused",
+    source: "auto_apply",
+    // Not `NOT { statusChangedBy: "user" }`: that is NULL in SQL for rows with no actor.
+    OR: [
+      { feed: null, pilotSearchId: null },
+      { statusChangedBy: null },
+      { statusChangedBy: { in: ["agent", "pilot"] } },
+    ],
+  };
 }
 
 /** Email drafts only: LinkedIn drafts are never sent by the pilot. */

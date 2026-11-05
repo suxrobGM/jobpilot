@@ -6,6 +6,7 @@ import { normalizeEmail } from "@/common/utils/email";
 import { randomUsername } from "@/common/utils/username";
 import { env } from "@/env";
 import { PrismaClient, type User, type UserRole } from "@/generated/prisma/client";
+import { PROFILE_SELECT } from "@/modules/user/user.mapper";
 import { meUser, publicUser } from "./auth.mapper";
 import { AuthTokenService } from "./auth-token.service";
 
@@ -44,7 +45,7 @@ export class AuthService {
       throw conflict("Email already registered");
     }
 
-    const role: UserRole = env.SUPER_ADMIN_EMAIL?.toLowerCase() === email ? "SUPER_ADMIN" : "USER";
+    const role: UserRole = env.SUPER_ADMIN_EMAIL?.toLowerCase() === email ? "super_admin" : "user";
 
     // An unseeded catalog yields zero links rather than a failed signup.
     const defaults = await this.prisma.jobBoard.findMany({
@@ -58,11 +59,11 @@ export class AuthService {
           email,
           passwordHash: input.passwordHash,
           role,
-          emailVerified: input.emailVerified,
+          emailVerifiedAt: input.emailVerified ? new Date() : null,
           username: await this.uniqueUsername(),
-          contactEmail: email,
+          profile: { create: { contactEmail: email } },
           jobBoards: {
-            createMany: { data: defaults.map((board) => ({ jobBoardId: board.id })) },
+            createMany: { data: defaults.map((board) => ({ boardId: board.id })) },
           },
         },
       });
@@ -108,7 +109,10 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { oauthAccounts: { select: { provider: true } } },
+      include: {
+        oauthAccounts: { select: { provider: true } },
+        profile: { select: PROFILE_SELECT },
+      },
       // One joined statement - the proxy hits /me on every gated navigation.
       relationLoadStrategy: "join",
     });

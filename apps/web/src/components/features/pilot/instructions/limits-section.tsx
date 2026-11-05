@@ -42,7 +42,7 @@ export const LimitsSection = withForm({
                   label="Check interval (min)"
                   type="number"
                   helperText="How often the pilot wakes to work."
-                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                  slotProps={{ htmlInput: { min: 5, step: 1 } }}
                 />
               )}
             </form.AppField>

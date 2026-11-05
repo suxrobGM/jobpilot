@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { ContentCopy } from "@mui/icons-material";
 import { Box, IconButton, Stack, Tooltip } from "@mui/material";
-import { useToast } from "@/providers/notification-provider";
+import { useCopy } from "@/hooks/use-copy";
 
 interface CopyFieldProps {
   value: string;
@@ -14,12 +14,7 @@ interface CopyFieldProps {
 /** Monospace value box with a copy-to-clipboard button (redirect URIs, install commands, …). */
 export function CopyField(props: CopyFieldProps): ReactElement {
   const { value, copyMessage = "Copied", ariaLabel = "Copy" } = props;
-  const toast = useToast();
-
-  const copy = async (): Promise<void> => {
-    await navigator.clipboard.writeText(value);
-    toast.success(copyMessage);
-  };
+  const copy = useCopy();
 
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -31,8 +26,7 @@ export function CopyField(props: CopyFieldProps): ReactElement {
           py: 1,
           borderRadius: theme.radii.xs,
           bgcolor: "action.hover",
-          fontFamily: "monospace",
-          fontSize: 13,
+          ...theme.typography.monoBody,
           overflowX: "auto",
           whiteSpace: "nowrap",
         })}
@@ -40,8 +34,8 @@ export function CopyField(props: CopyFieldProps): ReactElement {
         {value}
       </Box>
       <Tooltip title="Copy">
-        <IconButton onClick={() => void copy()} aria-label={ariaLabel}>
-          <ContentCopy fontSize="small" />
+        <IconButton onClick={() => void copy(value, copyMessage)} aria-label={ariaLabel}>
+          <ContentCopy fontSize="sm" />
         </IconButton>
       </Tooltip>
     </Stack>

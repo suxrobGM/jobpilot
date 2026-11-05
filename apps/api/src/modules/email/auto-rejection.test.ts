@@ -10,7 +10,7 @@ import { describe, expect, it } from "bun:test";
 const rejection = {
   classification: "rejected",
   reviewStatus: "auto",
-  matchedAppId: "1cf2c0b6-2f0b-4a5e-9c1e-6a51f2f9b7aa",
+  applicationId: "1cf2c0b6-2f0b-4a5e-9c1e-6a51f2f9b7aa",
   confidence: 0.97,
 } satisfies AutoRejectionInput;
 
@@ -19,10 +19,10 @@ describe("isAutoRejection", () => {
     expect(isAutoRejection(rejection)).toBe(true);
   });
 
-  it("honours an explicit appliedStatus over the classification map", () => {
+  it("honours an explicit resultingStatus over the classification map", () => {
     expect(isAutoRejection({ ...rejection, classification: "irrelevant" })).toBe(false);
     expect(
-      isAutoRejection({ ...rejection, classification: "irrelevant", appliedStatus: "rejected" }),
+      isAutoRejection({ ...rejection, classification: "irrelevant", resultingStatus: "rejected" }),
     ).toBe(true);
   });
 
@@ -39,8 +39,8 @@ describe("isAutoRejection", () => {
   });
 
   it("requires a matched application", () => {
-    expect(isAutoRejection({ ...rejection, matchedAppId: null })).toBe(false);
-    expect(isAutoRejection({ ...rejection, matchedAppId: undefined })).toBe(false);
+    expect(isAutoRejection({ ...rejection, applicationId: null })).toBe(false);
+    expect(isAutoRejection({ ...rejection, applicationId: undefined })).toBe(false);
   });
 
   it("rejects confidence below the threshold but allows it absent", () => {
@@ -76,7 +76,7 @@ describe("needsHumanReview", () => {
     expect(needsHumanReview({ classification: "irrelevant" })).toBe(false);
   });
 
-  it("honours an explicit appliedStatus over the classification map", () => {
-    expect(needsHumanReview({ classification: "rejected", appliedStatus: "offer" })).toBe(true);
+  it("honours an explicit resultingStatus over the classification map", () => {
+    expect(needsHumanReview({ classification: "rejected", resultingStatus: "offer" })).toBe(true);
   });
 });

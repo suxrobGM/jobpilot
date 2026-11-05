@@ -39,8 +39,12 @@ export function groupVariants(variants: ResumeVariantListItem[]): VariantGroup[]
       attached: rows.filter((row) => row.applicationId !== null).length,
     }))
     .sort((a, b) => {
-      if (a.company === UNGROUPED) return 1;
-      if (b.company === UNGROUPED) return -1;
+      if (a.company === UNGROUPED) {
+        return 1;
+      }
+      if (b.company === UNGROUPED) {
+        return -1;
+      }
       return b.variants.length - a.variants.length || a.company.localeCompare(b.company);
     });
 }

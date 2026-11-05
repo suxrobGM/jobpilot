@@ -14,11 +14,11 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import { QuerySection } from "@/components/ui/data";
+import { RelativeTime } from "@/components/ui/display";
+import { QuerySection, type QueryState } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
-import { formatRelativeTime } from "@/utils/format";
 import { PromotionDraftCard, PromotionSummary } from "./promotion-card";
 import { QuestionCard } from "./question-card";
 import { useOpenQuestions } from "./use-open-questions";
@@ -34,14 +34,12 @@ function DraftRow(props: DraftRowProps): ReactElement {
   return (
     <Box>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-        <Chip size="small" color="primary" label={promotion.platform} />
-        {promotion.target && <Chip size="small" variant="outlined" label={promotion.target} />}
+        <Chip color="primary" label={promotion.platform} />
+        {promotion.target && <Chip variant="outlined" label={promotion.target} />}
         <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
           {promotion.title ?? promotion.body}
         </Typography>
-        <Typography variant="captionMuted" sx={{ whiteSpace: "nowrap" }}>
-          {formatRelativeTime(promotion.createdAt)} ago
-        </Typography>
+        <RelativeTime value={promotion.createdAt} sx={{ whiteSpace: "nowrap" }} />
         <IconButton size="small" aria-label="Review draft" onClick={onToggle}>
           {expanded ? <ExpandLess fontSize="sm" /> : <ExpandMore fontSize="sm" />}
         </IconButton>
@@ -60,8 +58,8 @@ export function NeedsAttention(): ReactElement {
   const { questions } = questionsQuery;
 
   // Drafts are server-filtered so an aging one can't fall off the page; history may.
-  const draftsQuery = useApiQuery(pilotQueries.promotions("draft"));
-  const historyQuery = useApiQuery(pilotQueries.promotions());
+  const draftsQuery = useQuery(pilotQueries.promotions("draft"));
+  const historyQuery = useQuery(pilotQueries.promotions());
   // `undefined` = no user choice yet, so a lone draft starts expanded.
   const [userExpanded, setUserExpanded] = useState<string | null | undefined>(undefined);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -73,13 +71,14 @@ export function NeedsAttention(): ReactElement {
   const expandedId = userExpanded === undefined ? loneDraftId : userExpanded;
 
   const count = questions.length + drafts.length;
-  const loading = questionsQuery.isLoading || draftsQuery.isLoading;
-  const isError = questionsQuery.isError || draftsQuery.isError;
-
-  const retry = (): void => {
-    questionsQuery.refetch();
-    void draftsQuery.refetch();
-    void historyQuery.refetch();
+  const query: QueryState = {
+    isLoading: questionsQuery.isLoading || draftsQuery.isLoading,
+    isError: questionsQuery.isError || draftsQuery.isError,
+    refetch: () => {
+      questionsQuery.refetch();
+      void draftsQuery.refetch();
+      void historyQuery.refetch();
+    },
   };
 
   const postHistory = history.length > 0 && (
@@ -103,7 +102,7 @@ export function NeedsAttention(): ReactElement {
   );
 
   // All clear shrinks to one line, so the overview's live sections stay above the fold.
-  if (!loading && !isError && count === 0) {
+  if (!query.isLoading && !query.isError && count === 0) {
     return (
       <Stack spacing={1}>
         <Alert severity="success" variant="outlined">
@@ -117,13 +116,11 @@ export function NeedsAttention(): ReactElement {
   return (
     <SectionCard
       title="Needs attention"
-      actions={count > 0 && <Chip size="small" color="warning" label={count} />}
+      actions={count > 0 && <Chip color="warning" label={count} />}
     >
       <Stack spacing={2}>
         <QuerySection
-          isLoading={loading}
-          isError={isError}
-          onRetry={retry}
+          query={query}
           errorTitle="Couldn't load what needs your attention."
           isEmpty={false}
           empty={null}
@@ -142,7 +139,7 @@ export function NeedsAttention(): ReactElement {
             ))}
           </Stack>
         </QuerySection>
-        {!loading && !isError && postHistory}
+        {!query.isLoading && !query.isError && postHistory}
       </Stack>
     </SectionCard>
   );

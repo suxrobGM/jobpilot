@@ -10,10 +10,7 @@ interface OAuthErrorAlertProps {
   suppressed?: boolean;
 }
 
-/**
- * Reads `?oauth=error&reason=` itself, inside its own boundary, so the form around
- * it prerenders instead of waiting on a server render of the whole page.
- */
+/** Reads the URL itself, in its own boundary, so the form around it prerenders. */
 export function OAuthErrorAlert(props: OAuthErrorAlertProps): ReactNode {
   const { suppressed } = props;
   return (

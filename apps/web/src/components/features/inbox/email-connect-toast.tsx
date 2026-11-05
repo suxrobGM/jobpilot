@@ -3,7 +3,7 @@
 import { type ReactNode, useEffect, useRef } from "react";
 import type { EmailConnectErrorReason } from "@jobpilot/contracts/email";
 import { useSearchParams } from "next/navigation";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
 
 /** Copy for every contract slug (Record over the union so a new slug fails the build). */
 const REASON_COPY: Record<EmailConnectErrorReason, string> = {
@@ -31,7 +31,9 @@ export function EmailConnectToast(): ReactNode {
   const fired = useRef(false);
 
   useEffect(() => {
-    if (!status || fired.current) return;
+    if (!status || fired.current) {
+      return;
+    }
     fired.current = true;
     if (status === "ok") {
       toast.success("Mailbox connected");

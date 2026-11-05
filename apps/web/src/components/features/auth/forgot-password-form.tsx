@@ -4,14 +4,15 @@ import type { ReactElement } from "react";
 import { type ForgotPasswordInput, ForgotPasswordSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 const DEFAULT_VALUES: ForgotPasswordInput = { email: "" };
 
 export function ForgotPasswordForm(): ReactElement {
-  const forgotPassword = useApiMutation((body: ForgotPasswordInput) =>
-    api.auth.password.forgot.post(body),
+  const forgotPassword = useApiMutation(
+    (body: ForgotPasswordInput) => api.auth.password.reset.post(body),
+    { showErrorToast: false },
   );
 
   const form = useAppForm({
@@ -59,8 +60,8 @@ export function ForgotPasswordForm(): ReactElement {
         </form.AppField>
 
         <form.AppForm>
-          <form.SubmitButton disabled={forgotPassword.isPending} fullWidth size="large">
-            {forgotPassword.isPending ? "Sending…" : "Send reset link"}
+          <form.SubmitButton fullWidth size="large">
+            Send reset link
           </form.SubmitButton>
         </form.AppForm>
 

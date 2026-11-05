@@ -1,11 +1,12 @@
 import { z } from "zod/v4";
+import { jobBriefSchema } from "../campaign";
 import { networkingModeSchema } from "../networking";
 import { storedDate } from "../utils/json";
 
 // An "off" channel is never emitted, so a worker only ever sees a resolved channel and mode.
 const outgoingMode = networkingModeSchema.shape;
 
-export const TASK_SUBJECT_TYPES = [
+export const PILOT_SUBJECT_TYPES = [
   "job",
   "campaign",
   "question",
@@ -18,11 +19,12 @@ export const TASK_SUBJECT_TYPES = [
   "pilot",
   "upwork",
 ] as const;
+export const pilotSubjectTypeSchema = z.enum(PILOT_SUBJECT_TYPES);
 
 const nullableString = z.string().nullable();
 const optionalString = z.string().optional();
 const warmContactSchema = z.object({
-  id: z.string(),
+  id: z.uuid(),
   name: z.string(),
   title: nullableString,
   email: nullableString,
@@ -30,7 +32,7 @@ const warmContactSchema = z.object({
 
 const taskVariant = <K extends string, P extends z.ZodType>(
   taskType: K,
-  subjectType: (typeof TASK_SUBJECT_TYPES)[number],
+  subjectType: (typeof PILOT_SUBJECT_TYPES)[number],
   payload: P,
 ) =>
   z.object({
@@ -45,9 +47,9 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "question.answered",
     "question",
     z.object({
-      questionId: z.string(),
+      questionId: z.uuid(),
       questionKind: z.string(),
-      subjectType: nullableString,
+      subjectType: pilotSubjectTypeSchema.nullable(),
       subjectId: nullableString,
       prompt: z.string(),
       answer: nullableString,
@@ -57,13 +59,13 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "job.apply",
     "job",
     z.object({
-      campaignId: z.string(),
+      campaignId: z.uuid(),
       jobKey: z.string(),
       jobTitle: z.string(),
       url: z.string(),
       board: nullableString,
-      brief: nullableString,
-      resumeId: optionalString,
+      brief: jobBriefSchema.nullable(),
+      resumeId: z.uuid().optional(),
       matchScore: z.number().nullable(),
       warmContacts: z.array(warmContactSchema).optional(),
     }),
@@ -72,12 +74,12 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "search.discover",
     "campaign",
     z.object({
-      searchId: z.string(),
+      searchId: z.uuid(),
       query: z.string(),
       board: optionalString,
-      resumeId: optionalString,
+      resumeId: z.uuid().optional(),
       minScore: z.number(),
-      campaignId: optionalString,
+      campaignId: z.uuid().optional(),
       newJobsTarget: z.number().int(),
       maxPages: z.number().int(),
     }),
@@ -86,10 +88,10 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "campaign.scorePending",
     "campaign",
     z.object({
-      campaignId: z.string(),
+      campaignId: z.uuid(),
       query: z.string(),
       board: nullableString,
-      resumeId: optionalString,
+      resumeId: z.uuid().optional(),
       minScore: z.number(),
       pendingCount: z.number().int(),
       entries: z.array(z.object({ key: z.string(), url: z.string(), title: z.string() })),
@@ -99,7 +101,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "campaign.reviewPaused",
     "campaign",
     z.object({
-      campaignId: z.string(),
+      campaignId: z.uuid(),
       query: z.string(),
       board: nullableString,
       // The campaign's last update, which approximates when it was paused.
@@ -126,9 +128,9 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "networking.send",
     "networking",
     z.object({
-      campaignId: z.string(),
-      messageId: z.string(),
-      contactId: z.string(),
+      campaignId: z.uuid(),
+      messageId: z.uuid(),
+      contactId: z.uuid(),
       contactName: z.string(),
       contactEmail: z.string(),
       subject: nullableString,
@@ -139,9 +141,9 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "networking.followup",
     "networking",
     z.object({
-      campaignId: z.string(),
-      messageId: z.string(),
-      contactId: z.string(),
+      campaignId: z.uuid(),
+      messageId: z.uuid(),
+      contactId: z.uuid(),
       contactName: z.string(),
       contactEmail: z.string(),
       subject: nullableString,
@@ -154,7 +156,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "networking.warmIntro",
     "networking",
     z.object({
-      campaignId: z.string(),
+      campaignId: z.uuid(),
       jobKey: z.string(),
       company: nullableString,
       jobTitle: z.string(),
@@ -173,7 +175,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "promotion.post",
     "promotion",
     z.object({
-      promotionId: z.string(),
+      promotionId: z.uuid(),
       platform: z.string(),
       target: nullableString,
       title: nullableString,
@@ -184,8 +186,8 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "interview.reply",
     "email",
     z.object({
-      applicationId: z.string(),
-      emailMessageId: z.string(),
+      applicationId: z.uuid(),
+      emailMessageId: z.uuid(),
       threadId: nullableString,
       from: z.string(),
       subject: z.string(),
@@ -198,19 +200,19 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "interview.prep",
     "application",
     z.object({
-      applicationId: z.string(),
+      applicationId: z.uuid(),
       company: z.string(),
       jobTitle: z.string(),
       jobUrl: nullableString,
-      resumeId: nullableString,
+      resumeId: z.uuid().nullable(),
     }),
   ),
   taskVariant(
     "queue.score",
     "campaign",
     z.object({
-      campaignId: z.string(),
-      resumeId: optionalString,
+      campaignId: z.uuid(),
+      resumeId: z.uuid().optional(),
       minScore: z.number(),
       queuedCount: z.number().int(),
       entries: z.array(z.object({ key: z.string(), url: z.string() })),
@@ -228,19 +230,19 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "board.diagnose",
     "board",
     z.object({
-      jobBoardId: z.string(),
+      boardId: z.uuid(),
       /** The board's domain. */
       board: z.string(),
       consecutiveFailures: z.number().int(),
       recentFailReasons: z.array(z.string()),
-      testJob: z.object({ campaignId: z.string(), jobKey: z.string(), url: z.string() }).nullable(),
+      testJob: z.object({ campaignId: z.uuid(), jobKey: z.string(), url: z.string() }).nullable(),
     }),
   ),
   taskVariant(
     "campaign.tune",
     "campaign",
     z.object({
-      campaignId: z.string(),
+      campaignId: z.uuid(),
       query: z.string(),
       config: z.object({ minScore: z.number().nullable(), board: nullableString }),
       counts: z.object({
@@ -255,12 +257,12 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
   taskVariant(
     "job.rescanSkipped",
     "campaign",
-    z.object({ campaignId: z.string(), skippedCount: z.number().int() }),
+    z.object({ campaignId: z.uuid(), skippedCount: z.number().int() }),
   ),
   taskVariant(
     "job.retryFailed",
     "campaign",
-    z.object({ campaignId: z.string(), failedCount: z.number().int() }),
+    z.object({ campaignId: z.uuid(), failedCount: z.number().int() }),
   ),
   taskVariant(
     "search.setup",
@@ -268,6 +270,21 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     z.object({
       goals: z.string(),
       minScore: z.number(),
+    }),
+  ),
+  taskVariant(
+    "research.explore",
+    "pilot",
+    z.object({
+      goals: z.string(),
+      resumeId: z.uuid(),
+      minScore: z.number(),
+      preferCapExempt: z.boolean(),
+      requiresSponsorship: z.boolean(),
+      // Already searched by `search.discover`; research looks beyond them.
+      boards: z.array(z.string()),
+      newJobsTarget: z.number().int(),
+      trigger: z.enum(["requested", "initial", "dry", "periodic"]),
     }),
   ),
 ]);

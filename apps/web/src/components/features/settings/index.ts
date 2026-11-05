@@ -1,2 +1,11 @@
-export { CredentialsSection } from "./sections/credentials-section";
-export { SettingsContent } from "./settings-content";
+export { CredentialsSection } from "./credentials/credentials-section";
+export { EmailSection } from "./email/email-section";
+export { MailboxReauthAlert } from "./email/mailbox-reauth-alert";
+export { NotificationsCard } from "./notifications/notifications-card";
+export { PersonalSection } from "./profile/personal-section";
+export { toProfileFormValues } from "./profile/profile-form-values";
+export { ProfileSettingsForm } from "./profile/profile-settings-form";
+export { ChangeEmailCard } from "./security/change-email-card";
+export { ChangePasswordCard } from "./security/change-password-card";
+export { ConnectedAccountsCard } from "./security/connected-accounts-card";
+export { SettingsTabs } from "./settings-tabs";

@@ -4,7 +4,8 @@ import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import type { PortfolioDayPoint } from "@/api/types";
-import { formatDayBucket } from "@/utils/format";
+import { radii } from "@/theme";
+import { formatDayBucket, plural } from "@/utils/format";
 
 interface ActivityHeatmapProps {
   perDay: PortfolioDayPoint[];
@@ -23,10 +24,18 @@ const WEEKDAYS = ["", "Mon", "", "Wed", "", "Fri", ""];
 
 /** 0 = empty, 1-4 = increasing activity. Fixed thresholds read consistently across users. */
 function level(count: number): number {
-  if (count <= 0) return 0;
-  if (count < 3) return 1;
-  if (count < 6) return 2;
-  if (count < 10) return 3;
+  if (count <= 0) {
+    return 0;
+  }
+  if (count < 3) {
+    return 1;
+  }
+  if (count < 6) {
+    return 2;
+  }
+  if (count < 10) {
+    return 3;
+  }
   return 4;
 }
 
@@ -44,7 +53,6 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
   const leadPad = perDay.length > 0 ? perDay[0].date.getUTCDay() : 0;
   const columns = Math.ceil((leadPad + perDay.length) / 7);
 
-  // Month label placed at the column where its month first appears (top axis).
   const ticks: { col: number; label: string }[] = [];
   let lastMonth = -1;
   for (let col = 0; col < columns; col++) {
@@ -59,7 +67,6 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
     <Stack spacing={1}>
       <Box sx={{ overflowX: "auto", pb: 0.5 }}>
         <Box sx={{ width: "max-content" }}>
-          {/* Top axis: month labels, absolutely placed at their starting column. */}
           <Box sx={{ display: "flex" }}>
             <Box sx={{ width: WEEKDAY_W, flexShrink: 0 }} />
             <Box sx={{ position: "relative", height: 16, width: columns * STRIDE }}>
@@ -67,7 +74,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
                 <Typography
                   key={tick.col}
                   variant="captionMuted"
-                  sx={{ position: "absolute", left: tick.col * STRIDE, fontSize: "0.7rem" }}
+                  sx={{ position: "absolute", left: tick.col * STRIDE, typography: "caption" }}
                 >
                   {tick.label}
                 </Typography>
@@ -76,7 +83,6 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
           </Box>
 
           <Box sx={{ display: "flex" }}>
-            {/* Left axis: weekday labels, aligned row-for-row with the grid. */}
             <Box
               sx={{
                 width: WEEKDAY_W,
@@ -92,7 +98,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
                   // biome-ignore lint/suspicious/noArrayIndexKey: fixed 7-row weekday axis
                   key={`wd-${row}`}
                   variant="captionMuted"
-                  sx={{ fontSize: "0.7rem", lineHeight: `${CELL}px`, textAlign: "right" }}
+                  sx={{ typography: "caption", lineHeight: `${CELL}px`, textAlign: "right" }}
                 >
                   {label}
                 </Typography>
@@ -112,13 +118,13 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
                 // Native `title`, not a MUI Tooltip: ~365 cells, a Popper per cell is far too heavy.
                 <Box
                   key={day.date.getTime()}
-                  title={`${day.count} ${day.count === 1 ? "activity" : "activities"} · ${formatDayBucket(day.date)}`}
+                  title={`${plural(day.count, "activity", "activities")} · ${formatDayBucket(day.date)}`}
                   sx={{
                     // Offset only the first square to its weekday row; the rest auto-flow down columns.
                     gridRow: i === 0 ? leadPad + 1 : undefined,
                     width: CELL,
                     height: CELL,
-                    borderRadius: "2px",
+                    borderRadius: radii.xs,
                     backgroundColor: shade(level(day.count)),
                   }}
                 />
@@ -136,7 +142,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
         {LEGEND_LEVELS.map((lvl) => (
           <Box
             key={`legend-${lvl}`}
-            sx={{ width: CELL, height: CELL, borderRadius: "2px", backgroundColor: shade(lvl) }}
+            sx={{ width: CELL, height: CELL, borderRadius: radii.xs, backgroundColor: shade(lvl) }}
           />
         ))}
         <Typography variant="captionMuted">More</Typography>

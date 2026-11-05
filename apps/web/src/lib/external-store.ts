@@ -1,8 +1,4 @@
-/**
- * One shared value behind `useSyncExternalStore`, so components watching the same live data don't
- * each keep a copy. `onActive` runs on the first subscriber and its teardown on the last, so a
- * store backed by a timer or a socket costs nothing while nothing is watching.
- */
+/** `onActive` runs on the first subscriber and tears down on the last: idle stores cost nothing. */
 export class ExternalStore<T> {
   private readonly listeners = new Set<() => void>();
   private teardown: (() => void) | null = null;

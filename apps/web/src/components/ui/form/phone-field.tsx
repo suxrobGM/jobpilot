@@ -65,7 +65,8 @@ export interface PhoneFieldProps {
   label?: string;
   placeholder?: string;
   helperText?: ReactNode;
-  error?: boolean;
+  /** Shown instead of `helperText`, in the error state. */
+  errorText?: string;
   fullWidth?: boolean;
   disabled?: boolean;
   required?: boolean;
@@ -81,7 +82,7 @@ export function PhoneField(props: PhoneFieldProps): ReactElement {
     label = "Phone",
     placeholder,
     helperText,
-    error,
+    errorText,
     fullWidth = true,
     disabled,
     required,
@@ -123,8 +124,8 @@ export function PhoneField(props: PhoneFieldProps): ReactElement {
       value={display}
       onChange={(e) => handleNumberChange(e.target.value)}
       onBlur={onBlur}
-      error={error}
-      helperText={helperText}
+      error={Boolean(errorText)}
+      helperText={errorText ?? helperText}
       disabled={disabled}
       required={required}
       type="tel"

@@ -2,8 +2,8 @@
 
 Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`.
 
-1. **Campaign.** Use `campaignId` when set; never open a second campaign for one search. Otherwise
-   create one and read `.id` as `CID` (`pilotSearchId` is how later runs find it):
+1. **Campaign.** Use `campaignId` when set. Otherwise this returns the search's open campaign, or
+   creates it; read `.id` as `CID`:
 
    ```bash
    jobpilot-api POST /api/campaigns \
@@ -17,8 +17,8 @@ Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarg
 3. **Report** its counts (a `404` means the search was deleted meanwhile: say so in the summary):
 
    ```bash
-   jobpilot-api POST /api/pilot/searches/$SEARCH_ID/run-result \
-     --data '{"jobsSeen":<jobsSeen>,"newJobs":<newJobs>,"reachedEnd":<reachedEnd>}'
+   jobpilot-api POST /api/pilot/searches/$SEARCH_ID/runs \
+     --data '{"jobsScanned":<jobsScanned>,"newJobs":<newJobs>,"reachedEnd":<reachedEnd>}'
    ```
 
 An `error` with no new jobs is `outcome:"failed"`; otherwise `done`, naming any `error` in the

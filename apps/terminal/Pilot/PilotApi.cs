@@ -23,7 +23,7 @@ internal sealed record IdleCycleRequest(int SleepSeconds);
 
 internal sealed record JournalRequest(
     JournalEntry[] Entries,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CycleId = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? RunId = null);
 
 internal sealed record JournalEntry(
     string Kind,
@@ -57,7 +57,7 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
 
     /// <summary>Recorded on the pilot state, not the journal; the activity probe reads it back.</summary>
     public Task RecordIdleCycleAsync(PilotSettings settings, int sleepSeconds, CancellationToken ct) =>
-        PostAsync(settings, "/api/pilot/cycles/idle", JsonContent.Create(new IdleCycleRequest(sleepSeconds), AppJsonContext.Default.IdleCycleRequest), ct);
+        PostAsync(settings, "/api/pilot/idle-checks", JsonContent.Create(new IdleCycleRequest(sleepSeconds), AppJsonContext.Default.IdleCycleRequest), ct);
 
     public Task<PilotRun?> StartRunAsync(PilotSettings settings, string taskId, string taskListVersion, CancellationToken ct)
     {

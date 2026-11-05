@@ -1,7 +1,7 @@
 // Direct import of the pure crypto primitives - `secret.ts` only uses `node:crypto`, so no `@/env`
 // (which holds the master key) and no Prisma are pulled in. The keys here are test-local.
 import { randomBytes } from "node:crypto";
-import { decrypt, encrypt, generateDek, unwrapDek, wrapDek } from "./secret";
+import { decrypt, decryptDataKey, encrypt, encryptDataKey, generateDataKey } from "./secret";
 import { describe, expect, it } from "bun:test";
 
 const key = () => randomBytes(32);
@@ -37,26 +37,26 @@ describe("encrypt/decrypt envelope", () => {
   });
 });
 
-describe("DEK generation and wrapping", () => {
+describe("data key generation and encryption", () => {
   it("generates a 32-byte key", () => {
-    expect(generateDek()).toHaveLength(32);
+    expect(generateDataKey()).toHaveLength(32);
   });
 
   it("generates a random key each call", () => {
-    expect(generateDek().equals(generateDek())).toBe(false);
+    expect(generateDataKey().equals(generateDataKey())).toBe(false);
   });
 
-  it("wraps and unwraps a DEK under the master key", () => {
+  it("encrypts and decrypts a data key under the master key", () => {
     const master = key();
-    const dek = generateDek();
-    const unwrapped = unwrapDek(master, wrapDek(master, dek));
-    expect(unwrapped.equals(dek)).toBe(true);
+    const dataKey = generateDataKey();
+    const decrypted = decryptDataKey(master, encryptDataKey(master, dataKey));
+    expect(decrypted.equals(dataKey)).toBe(true);
   });
 
-  it("cannot unwrap under a rotated/lost master key (crypto-shredding)", () => {
-    const dek = generateDek();
-    const wrapped = wrapDek(key(), dek);
-    // Losing the wrapping key makes the DEK - and every secret it protects - unrecoverable.
-    expect(() => unwrapDek(key(), wrapped)).toThrow();
+  it("cannot decrypt under a rotated/lost master key (crypto-shredding)", () => {
+    const dataKey = generateDataKey();
+    const stored = encryptDataKey(key(), dataKey);
+    // Losing the master key makes the data key - and every secret it protects - unrecoverable.
+    expect(() => decryptDataKey(key(), stored)).toThrow();
   });
 });

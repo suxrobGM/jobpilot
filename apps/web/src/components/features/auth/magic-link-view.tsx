@@ -3,8 +3,7 @@
 import { type ReactElement, useEffect, useRef } from "react";
 import { Alert, Box, Button, CircularProgress, Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
-import type { ApiMutationResult } from "@/api/hooks";
+import type { ApiMutationResult } from "@/api/use-api-mutation";
 
 interface MagicLinkViewProps {
   token?: string;
@@ -20,12 +19,10 @@ interface MagicLinkViewProps {
 /** Shared consumer for magic-link pages (verify email, confirm email change). */
 export function MagicLinkView(props: MagicLinkViewProps): ReactElement {
   const { token, mutation, pendingText, successText, successLabel, successHref, errorHint } = props;
-  const router = useRouter();
   const fired = useRef(false);
 
   useEffect(() => {
-    // Fire once - the token is single-use, so a strict-mode double-invoke would
-    // make the second call fail against an already-consumed token.
+    // Fire once: the token is single-use, so strict mode's second invoke would fail.
     if (fired.current || !token) {
       return;
     }
@@ -51,7 +48,7 @@ export function MagicLinkView(props: MagicLinkViewProps): ReactElement {
     return (
       <Stack spacing={2.5}>
         <Alert severity="success">{successText}</Alert>
-        <Button onClick={() => router.push(successHref)} variant="contained" size="large" fullWidth>
+        <Button href={successHref} variant="contained" size="large" fullWidth>
           {successLabel}
         </Button>
       </Stack>

@@ -1,9 +1,8 @@
 import { createFormHook } from "@tanstack/react-form";
-import { Checkbox } from "./checkbox-field";
+import { ApiError } from "@/api/error";
 import { Currency } from "./currency-field";
-import { FileUpload } from "./file-upload-field";
 import { fieldContext, formContext } from "./form-context";
-import { Multiselect } from "./multiselect-field";
+import { MultiSelect } from "./multi-select-field";
 import { Phone } from "./phone-field";
 import { Select } from "./select-field";
 import { SubmitButton } from "./submit-button";
@@ -11,27 +10,27 @@ import { Switch } from "./switch-field";
 import { TextField } from "./text-field";
 import { Toggle } from "./toggle-field";
 
-/**
- * App-wide TanStack Form hook with bound, themed field/form components.
- *
- * Inside `form.AppField`, render a bound field via the `field` arg
- * (`<field.TextField />`, `<field.Phone />`, …). Each wraps a presentational
- * base in `form/`. Wrap form-level controls in `form.AppForm` and use
- * `form.SubmitButton`. Split large forms into typed pieces with `withForm`.
- */
-export const { useAppForm, withForm } = createFormHook({
+/** Inside `form.AppField`, render a bound field from the `field` arg, e.g. `<field.TextField />`. */
+const formHook = createFormHook({
   fieldContext,
   formContext,
-  fieldComponents: {
-    TextField,
-    Select,
-    Multiselect,
-    Phone,
-    Currency,
-    Checkbox,
-    Switch,
-    Toggle,
-    FileUpload,
-  },
+  fieldComponents: { TextField, Select, MultiSelect, Phone, Currency, Switch, Toggle },
   formComponents: { SubmitButton },
 });
+
+export const { withForm } = formHook;
+
+// The mutation's onError already showed an ApiError; TanStack would rethrow it unhandled.
+function rethrowUnlessApiError(error: unknown): void {
+  if (!(error instanceof ApiError)) {
+    throw error;
+  }
+}
+
+export const useAppForm: typeof formHook.useAppForm = (options) =>
+  formHook.useAppForm({
+    ...options,
+    onSubmit: async (props) => {
+      await Promise.resolve(options.onSubmit?.(props)).catch(rethrowUnlessApiError);
+    },
+  });

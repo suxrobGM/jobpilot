@@ -3,10 +3,10 @@
 import type { ReactNode } from "react";
 import { Button, Chip, Stack } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
-import { POSTED_OPTIONS } from "./job-sort-controls";
-import { jobsHref } from "./jobs-href";
+import { POSTED_OPTIONS } from "./job-filter-options";
+import { jobsHrefWith } from "./jobs-href";
 
-/** No `tech`: the multi-select already shows it as chips. */
+/** No `skills`: the multi-select already shows it as chips. */
 const CHIPPED = ["q", "location", "board", "remote", "posted"] as const;
 
 type ChippedKey = (typeof CHIPPED)[number];
@@ -37,9 +37,7 @@ export function ActiveFilters(): ReactNode {
   }
 
   const drop = (key: string): void => {
-    const next = new URLSearchParams(params);
-    next.delete(key);
-    router.push(jobsHref(next));
+    router.push(jobsHrefWith(params, { [key]: null }));
   };
 
   return (
@@ -48,12 +46,11 @@ export function ActiveFilters(): ReactNode {
         <Chip
           key={filter.key}
           label={filter.label}
-          size="small"
           variant="outlined"
           onDelete={() => drop(filter.key)}
         />
       ))}
-      <Button variant="text" size="small" onClick={() => router.push("/jobs")}>
+      <Button variant="text" size="small" href="/jobs">
         Clear all
       </Button>
     </Stack>

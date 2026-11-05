@@ -2,14 +2,14 @@
 
 import type { ReactNode } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
-import { Box, Button, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { Button, Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { emailQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
+import { ChecklistRow } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
+import { useTerminalHealth } from "@/hooks/use-terminal-health";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
-import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { hasGoals } from "../pilot-status";
 
 interface ChecklistStep {
@@ -22,16 +22,16 @@ interface ChecklistStep {
 
 interface PilotSetupChecklistProps {
   state: PilotState;
-  health: TerminalHealth;
 }
 
 /** The pilot's prerequisites; Start lives on the status bar. Renders nothing once all are met. */
 export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode {
-  const { state, health } = props;
+  const { state } = props;
+  const { health } = useTerminalHealth();
   const dock = useAgentDock();
   const agentAvailable = useAgentAvailable();
 
-  const mailbox = useApiQuery(emailQueries.account()).data;
+  const mailbox = useQuery(emailQueries.account()).data;
 
   const hostReady = health === "reachable";
   const goalsDone = hasGoals(state);
@@ -96,18 +96,13 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
     >
       <Stack spacing={2}>
         {steps.map((step) => (
-          <Stack key={step.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-            {step.done ? (
-              <CheckCircle fontSize="small" sx={{ color: "success.main" }} />
-            ) : (
-              <RadioButtonUnchecked fontSize="small" sx={{ color: "text.disabled" }} />
-            )}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body1Strong">{step.label}</Typography>
-              <Typography variant="captionMuted">{step.description}</Typography>
-            </Box>
-            {!step.done && step.action}
-          </Stack>
+          <ChecklistRow
+            key={step.id}
+            done={step.done}
+            label={step.label}
+            description={step.description}
+            action={step.action}
+          />
         ))}
       </Stack>
     </SectionCard>

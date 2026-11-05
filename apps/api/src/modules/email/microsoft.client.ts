@@ -327,7 +327,7 @@ export class MicrosoftClient {
           fromName: message.from.emailAddress.name ?? null,
           fromDomain: domainOf(address),
           snippet: message.bodyPreview,
-          rawBody: stripQuotedReplies(extractPlainText(payload)),
+          body: stripQuotedReplies(extractPlainText(payload)),
           links: extractLinks(payload),
           receivedAt: new Date(message.receivedDateTime),
         });

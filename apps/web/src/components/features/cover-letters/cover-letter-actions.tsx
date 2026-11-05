@@ -2,12 +2,11 @@
 
 import type { ReactElement } from "react";
 import { Delete } from "@mui/icons-material";
-import { IconButton } from "@mui/material";
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { coverLetterQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { useConfirm } from "@/providers/confirm-provider";
 
 interface CoverLetterActionsProps {
@@ -21,8 +20,8 @@ export function CoverLetterActions(props: CoverLetterActionsProps): ReactElement
 
   const remove = useApiMutation(() => api["cover-letters"]({ id }).delete(), {
     successMessage: "Cover letter deleted",
-    invalidate: [queryKeys.coverLetters.all],
-    onSuccess: () => router.replace("/documents/cover-letters" as Route),
+    invalidate: [coverLetterQueries.all],
+    onSuccess: () => router.replace("/documents/cover-letters"),
   });
 
   const handleDelete = async () => {
@@ -38,8 +37,8 @@ export function CoverLetterActions(props: CoverLetterActionsProps): ReactElement
   };
 
   return (
-    <IconButton onClick={() => void handleDelete()} aria-label="Delete cover letter">
+    <TooltipIconButton title="Delete cover letter" onClick={() => void handleDelete()}>
       <Delete fontSize="md" />
-    </IconButton>
+    </TooltipIconButton>
   );
 }

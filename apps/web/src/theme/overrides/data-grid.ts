@@ -1,6 +1,7 @@
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@jobpilot/contracts/pagination";
 import type { Components, Theme } from "@mui/material/styles";
 import type {} from "@mui/x-data-grid/themeAugmentation";
+import { columnHeaderTextStyles } from "./table";
 
 export const dataGridOverrides: Components<Theme>["MuiDataGrid"] = {
   defaultProps: {
@@ -17,11 +18,9 @@ export const dataGridOverrides: Components<Theme>["MuiDataGrid"] = {
       backgroundColor: theme.palette.surfaces.card,
       "& .MuiDataGrid-columnHeaders": {
         backgroundColor: theme.palette.surfaces.elevated,
-        fontSize: "0.7rem",
-        letterSpacing: "0.06em",
-        textTransform: "uppercase",
+        ...columnHeaderTextStyles(theme),
       },
-      "& .MuiDataGrid-cell": { fontSize: "0.875rem" },
+      "& .MuiDataGrid-cell": { fontSize: theme.typography.body1.fontSize },
       "& .MuiDataGrid-row": { cursor: "pointer" },
     }),
   },

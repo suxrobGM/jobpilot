@@ -7,7 +7,7 @@ import { ScoringService } from "./scoring.service";
 const scoringService = container.get(ScoringService);
 
 export const scoringController = new Elysia({
-  prefix: "/score-fit",
+  prefix: "/fit-scores",
   detail: { tags: ["Scoring"] },
 })
   .use(authGuard)

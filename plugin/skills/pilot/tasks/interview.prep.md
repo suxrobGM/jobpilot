@@ -6,7 +6,7 @@ resume per `../../_shared/setup.md`). Save `{"kind":"interview_prep","notes":"<s
 `$JOBPILOT_TEMP/prep.json`; once one is saved, the server offers no second prep.
 
 ```bash
-jobpilot-api POST /api/applied/$APP_ID/events --data @"$JOBPILOT_TEMP/prep.json"
+jobpilot-api POST /api/applications/$APP_ID/events --data @"$JOBPILOT_TEMP/prep.json"
 ```
 
 Summary: "Prep sheet ready for <company> <jobTitle> interview."

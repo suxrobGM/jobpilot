@@ -20,7 +20,9 @@ const compactLocale = {
 
 /** `3 jobs` / `1 job`. Pass `pluralWord` for anything an `s` does not cover. */
 export function plural(count: number, word: string, pluralWord?: string): string {
-  if (count === 1) return `${count} ${word}`;
+  if (count === 1) {
+    return `${count} ${word}`;
+  }
   return `${count} ${pluralWord ?? `${word}s`}`;
 }
 
@@ -32,10 +34,7 @@ export function formatRelativeTime(value: string | Date): string {
     : formatDistanceToNowStrict(date, { locale: compactLocale });
 }
 
-/**
- * Compact countdown, e.g. `3h`. A passed target returns `0s`: strict distance is unsigned and
- * would read as time remaining.
- */
+/** A passed target returns `0s`: strict distance is unsigned and would read as time left. */
 export function formatTimeUntil(value: string | Date): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {

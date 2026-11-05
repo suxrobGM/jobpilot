@@ -40,14 +40,14 @@ Then run the `humanizer` skill in **embedded mode** on the summary, headline, bu
 The user sees a diff and clicks accept, so the diff is the guard - not a server check:
 
 1. **Wording, ordering, emphasis, grouping. Never facts.** No employer, date, title, degree, school, or number absent from the extracted content or the source PDF. Not a rounded metric, not an inferred date, not a "Senior" added to a title.
-2. **`diffNotes` lists every change**, one per line, specific enough to check: `Summary: rewritten to lead with the HIPAA platform`. A change not in the notes is one the user can't decline - if you can't list it, don't make it.
+2. **`changeNotes` lists every change**, one per line, specific enough to check: `Summary: rewritten to lead with the HIPAA platform`. A change not in the notes is one the user can't decline - if you can't list it, don't make it.
 3. **Keep every entry.** Dropping or merging roles is `tailor-resume`, which has server-side guards.
 4. **Don't touch `basics` contact fields.** At onboarding the resume fills the profile, so it's the source of truth.
 5. If the resume is already good, save nothing and say so. A suggestion the user rejects teaches them to ignore the next one.
 
 ## Save
 
-`label` must be exactly `Suggested rewrite` - the dashboard finds it by that label and the retention sweep skips it. Write `{"label":"Suggested rewrite","content":<improved content>,"diffNotes":"<diff notes>"}` to `$JOBPILOT_TEMP/suggested-rewrite.json`, then:
+`label` must be exactly `Suggested rewrite` - the dashboard finds it by that label and the retention sweep skips it. Write `{"label":"Suggested rewrite","content":<improved content>,"changeNotes":"<diff notes>"}` to `$JOBPILOT_TEMP/suggested-rewrite.json`, then:
 
 ```bash
 jobpilot-api POST /api/resumes/$RESUME_ID/variants --data @"$JOBPILOT_TEMP/suggested-rewrite.json"

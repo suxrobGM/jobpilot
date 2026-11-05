@@ -4,7 +4,6 @@ import type { ReactElement } from "react";
 import { Card, CardActionArea, CardContent, Grid, Stack, Typography } from "@mui/material";
 import { DOCS_NAV } from "./docs-nav";
 
-/** Card grid on the docs index - one card per guide. */
 export function DocsIndexCards(): ReactElement {
   return (
     <Grid container spacing={2}>

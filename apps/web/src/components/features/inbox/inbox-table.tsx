@@ -1,35 +1,27 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { Classification } from "@jobpilot/contracts/email";
 import { Button, Chip, Link, Stack, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ColorChip, RelativeTime } from "@/components/ui/display";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 import type { GridPaginationProps } from "@/hooks/use-pagination";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 
 interface InboxTableProps extends GridPaginationProps {
   rows: ReadonlyArray<EmailMessageDto>;
   loading?: boolean;
+  /** Set when the read failed, so empty rows don't read as an empty inbox. */
+  errorTitle?: string;
+  onRetry?: () => void;
   onRowClick: (row: EmailMessageDto) => void;
-  /** When provided, each row gets a Scan/Rescan action that calls this. */
-  onScanMessage?: (row: EmailMessageDto) => void;
 }
 
-const CLASS_COLORS: Record<
-  Classification,
-  "default" | "primary" | "success" | "error" | "warning"
-> = {
-  interviewing: "primary",
-  offer: "success",
-  rejected: "error",
-  verification: "warning",
-  irrelevant: "default",
-};
-
 export function InboxTable(props: InboxTableProps): ReactElement {
-  const { rows, loading, onRowClick, onScanMessage, ...pagination } = props;
+  const { rows, loading, errorTitle, onRetry, onRowClick, ...pagination } = props;
+  const { injectSkill } = useAgent();
+  const agentAvailable = useAgentAvailable();
 
   const columns: GridColDef<EmailMessageDto>[] = [
     {
@@ -65,10 +57,8 @@ export function InboxTable(props: InboxTableProps): ReactElement {
         }
         return (
           <Stack direction="row" spacing={0.5} sx={{ height: "100%", alignItems: "center" }}>
-            <ColorChip value={c} colors={CLASS_COLORS} variant="filled" />
-            {p.row.reviewStatus === "auto" && (
-              <Chip size="small" label="auto" variant="outlined" color="info" />
-            )}
+            <StatusChip domain="classification" value={c} variant="filled" />
+            {p.row.reviewStatus === "auto" && <Chip label="auto" variant="outlined" color="info" />}
           </Stack>
         );
       },
@@ -82,12 +72,12 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       valueFormatter: (v) => (v == null ? "" : `${Math.round((v as number) * 100)}%`),
     },
     {
-      field: "matchedAppId",
+      field: "applicationId",
       headerName: "Matched app",
       width: 200,
       sortable: false,
       renderCell: (p) => {
-        const matched = p.row.matchedApp;
+        const matched = p.row.application;
         if (!matched) {
           return (
             <Typography
@@ -122,8 +112,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       width: 140,
       renderCell: (p) => <RelativeTime value={p.row.receivedAt} />,
     },
-    // Scan action is agent-driven; omit the whole column when no handler is passed.
-    ...(onScanMessage
+    ...(agentAvailable
       ? [
           {
             field: "scan",
@@ -138,9 +127,9 @@ export function InboxTable(props: InboxTableProps): ReactElement {
                 size="small"
                 variant="outlined"
                 onClick={(e) => {
-                  // Don't open the review dialog (row click) when scanning.
+                  // The row click would open the review dialog.
                   e.stopPropagation();
-                  onScanMessage(p.row);
+                  void injectSkill("scan-inbox", p.row.id);
                 }}
               >
                 {p.row.classification ? "Rescan" : "Scan"}
@@ -156,6 +145,9 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       rows={rows}
       columns={columns}
       loading={loading}
+      errorTitle={errorTitle}
+      onRetry={onRetry}
+      emptyMessage="No messages here yet."
       rowHeight={60}
       onRowClick={onRowClick}
       {...pagination}

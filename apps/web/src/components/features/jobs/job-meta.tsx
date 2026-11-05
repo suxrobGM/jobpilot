@@ -14,7 +14,7 @@ export function RemoteBadge(props: RemoteBadgeProps): ReactNode {
   if (!job.remote || location.toLowerCase().includes("remote")) {
     return null;
   }
-  return <Chip label="Remote" size="small" color="success" variant="outlined" />;
+  return <Chip label="Remote" color="success" variant="outlined" />;
 }
 
 function boardsLabel(boards: readonly string[]): string {

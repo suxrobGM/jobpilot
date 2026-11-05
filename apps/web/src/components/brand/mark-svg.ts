@@ -1,6 +1,4 @@
-// Raw SVG string of the JobPilot mark, for raster targets (next/og apple-icon + opengraph-image)
-// that need a data-URI <img>. Mirrors jobpilot-mark.tsx / public/icon.svg. `bleed` fills the whole
-// square (for iOS's own mask); otherwise a rounded carbon tile with the blue halo.
+// For next/og raster targets, which need a data-URI <img>. Mirrors jobpilot-mark.tsx.
 
 const FACE = `
   <line x1="50" y1="16" x2="50" y2="9.5" stroke="#FF6A3D" stroke-width="3.2" stroke-linecap="round"/>
@@ -31,8 +29,7 @@ function markSvg(px: number, opts: { bleed?: boolean } = {}): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 100 100"><defs>${DEFS}</defs>${frame}${face}</svg>`;
 }
 
-/** Base64 `data:` URI for <img src>. next/og's resvg loads base64 SVGs reliably; the `;utf8,`
- *  form fails with "svgload_buffer: SVG rendering failed". ASCII-only markup, so btoa is safe. */
+/** Base64: resvg fails the `;utf8,` form ("svgload_buffer"). ASCII-only markup, so btoa is safe. */
 export function markDataUri(px: number, opts: { bleed?: boolean } = {}): string {
   return `data:image/svg+xml;base64,${btoa(markSvg(px, opts))}`;
 }

@@ -1,23 +1,19 @@
 "use client";
 
 import type { ReactElement } from "react";
-import {
-  boardDomainSchema,
-  type JobBoardInput,
-  jobBoardSchema,
-} from "@jobpilot/contracts/job-board";
+import { boardDomainSchema, jobBoardSchema } from "@jobpilot/contracts/job-board";
 import { Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod/v4";
-import { useApiQuery } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
+import { useLinkBoard } from "./use-link-board";
 
 /** Empty `catalogDomain` means "another site", which needs a typed domain. */
 const OTHER_SITE = "";
 
-// Picking a catalog board supplies the domain, so the typed one is required only for "another site".
 const addBoardFormSchema = jobBoardSchema
   .extend({
     catalogDomain: z.string(),
@@ -39,34 +35,28 @@ const EMPTY: z.infer<typeof addBoardFormSchema> = {
 interface AddBoardDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: JobBoardInput) => void;
-  submitting?: boolean;
 }
 
 /** Pick a catalog board, or describe another site. Logins are added under Settings, Credentials. */
 export function AddBoardDialog(props: AddBoardDialogProps): ReactElement {
-  const { open, onClose, onSubmit, submitting } = props;
-  const catalog = useApiQuery(jobBoardQueries.catalog(), { enabled: open });
+  const { open, onClose } = props;
+  const create = useLinkBoard({ successMessage: "Board added" });
+  const catalog = useQuery({ ...jobBoardQueries.catalog(), enabled: open });
 
   const form = useAppForm({
     defaultValues: EMPTY,
     validators: { onSubmit: addBoardFormSchema },
     onSubmit: async ({ value }) => {
       const { catalogDomain, ...rest } = value;
-      onSubmit({ ...rest, domain: catalogDomain || rest.domain });
+      await create.mutateAsync({ ...rest, domain: catalogDomain || rest.domain });
+      onClose();
     },
   });
   const catalogDomain = useSelector(form.store, (s) => s.values.catalogDomain);
   const isOtherSite = catalogDomain === OTHER_SITE;
 
   return (
-    <FormDialog
-      open={open}
-      title="Add job board"
-      onClose={onClose}
-      form={form}
-      submitting={submitting}
-    >
+    <FormDialog open={open} title="Add job board" onClose={onClose} form={form}>
       <form.AppField name="catalogDomain">
         {(field) => (
           <field.Select

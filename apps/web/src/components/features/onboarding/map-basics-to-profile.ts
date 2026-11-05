@@ -12,8 +12,7 @@ type ProfileTextFieldName =
   | "city"
   | "state";
 
-// Minimal slice of a TanStack form this helper needs - accepts the typed
-// `useAppForm` instance without dragging in its full generic signature.
+// A structural slice, so the typed `useAppForm` instance fits without its full generics.
 interface ProfileFieldWriter {
   getFieldValue: (name: ProfileTextFieldName) => unknown;
   setFieldValue: (name: ProfileTextFieldName, value: string) => void;
@@ -64,7 +63,12 @@ function splitName(name: string): [string, string] {
   return [trimmed.slice(0, idx).trim(), trimmed.slice(idx + 1).trim()];
 }
 
-function parseLocation(location?: string): { city: string; state: string } {
+interface ParsedLocation {
+  city: string;
+  state: string;
+}
+
+function parseLocation(location?: string): ParsedLocation {
   if (!location) {
     return { city: "", state: "" };
   }

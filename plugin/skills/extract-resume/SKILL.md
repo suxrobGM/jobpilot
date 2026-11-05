@@ -18,7 +18,7 @@ Parse the argument:
 
 - Integer → use that resume id.
 - Empty → use `user.primaryResumeId`. If no primary, stop:
-  > No primary resume set. Pass an explicit id, or set a primary at <$JOBPILOT_WEB/resumes>.
+  > No primary resume set. Pass an explicit id, or set a primary at <$JOBPILOT_WEB/documents/resumes>.
 - `--force` (anywhere) → overwrite existing structured data. Otherwise refuse to overwrite (Step 3).
 
 Let `RESUME_ID` be the resolved id, `FORCE` be `true`/`false`.

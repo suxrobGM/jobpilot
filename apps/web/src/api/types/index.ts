@@ -10,7 +10,6 @@ export type {
   AuthSessionResponse,
   AuthUserDto,
   LogoutResponse,
-  MeResponse,
 } from "./auth";
 export {
   type CampaignDetailDto,
@@ -20,7 +19,6 @@ export {
   type CampaignSummaryDto,
   type CreateCampaignRequest,
   jobSummary,
-  networkingSummary,
 } from "./campaign";
 export type { CoverLetterListItem } from "./cover-letter";
 export type { CredentialDto } from "./credential";
@@ -28,7 +26,7 @@ export type { EmailMessageDto, OAuthClientStatus } from "./email";
 export type { JobBoardDto } from "./job-board";
 export type { AdminJobListingDto, JobListingDto, JobListingSummaryDto } from "./job-listing";
 export type { ContactDto, NetworkingConfigDto, NetworkingMessageDto } from "./networking";
-export type { SavedAnswerDto } from "./pilot";
+export type { ResearchStatusDto, SavedAnswerDto, SkipReason } from "./pilot";
 export type {
   LeaderboardDto,
   LeaderboardRow,

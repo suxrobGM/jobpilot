@@ -8,7 +8,7 @@ import {
   type GridColDef,
   type GridValidRowModel,
 } from "@mui/x-data-grid";
-import { EmptyState } from "./empty-state";
+import { EmptyState } from "@/components/ui/feedback";
 
 interface DataTableProps<TRow extends GridValidRowModel>
   extends Omit<
@@ -50,10 +50,7 @@ function LoadErrorOverlay(props: LoadErrorOverlayProps): ReactElement {
   );
 }
 
-/**
- * DataGrid wrapper that unwraps the grid's params objects, so callers author
- * row callbacks against their DTO (`(row) => …`) instead of `(p) => p.row`.
- */
+/** Unwraps the grid's params, so row callbacks take the DTO (`(row) => …`), not `(p) => p.row`. */
 export function DataTable<TRow extends GridValidRowModel>(
   props: DataTableProps<TRow>,
 ): ReactElement {

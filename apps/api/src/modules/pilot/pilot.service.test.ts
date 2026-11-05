@@ -60,7 +60,7 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null, savedC
       findMany: async () => [{ campaignId: "c1", source: "auto_apply" }],
       updateMany: count("campaignsCompleted"),
     },
-    job: { updateMany: count("jobsDropped") },
+    campaignJob: { updateMany: count("jobsDropped") },
     application: { count: async () => 0 },
     networkingMessage: { count: async () => 0 },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
@@ -162,7 +162,7 @@ describe("PilotService.getActivity", () => {
       pilotRun: { findMany: async () => [] },
       pilotJournalEntry: { aggregate: async () => noMax },
       campaign: { aggregate: async () => noMax },
-      job: { aggregate: async () => noMax },
+      campaignJob: { aggregate: async () => noMax },
       pilotState: { findUnique: async () => state },
     };
     return new PilotService(db as unknown as PrismaClient);

@@ -1,8 +1,14 @@
 "use client";
 
-import type { ReactElement } from "react";
-import type { TextFieldProps as MuiTextFieldProps } from "@mui/material";
-import { TextField as BaseTextField } from "../text-field";
+import { type ReactElement, useState } from "react";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import {
+  IconButton,
+  InputAdornment,
+  TextField as MuiTextField,
+  type TextFieldProps as MuiTextFieldProps,
+  Tooltip,
+} from "@mui/material";
 import { firstErrorMessage } from "./error-message";
 import { useFieldContext } from "./form-context";
 
@@ -13,15 +19,35 @@ interface TextFieldProps
   transform?: (value: string) => string;
 }
 
-/** TanStack Form-bound text field - wires value/change/blur and validation errors to the base TextField. */
+/** `type="number"` stores a number (null when cleared); `type="password"` gets a show/hide toggle. */
 export function TextField(props: TextFieldProps): ReactElement {
-  const { transform, type, ...rest } = props;
+  const { transform, type, helperText, slotProps, ...rest } = props;
   const field = useFieldContext<FieldValue>();
+  const [showPassword, setShowPassword] = useState(false);
   const isNumber = type === "number";
+  const isPassword = type === "password";
+  const errorText = firstErrorMessage(field.state.meta.errors);
+
+  const passwordAdornment = isPassword && (
+    <InputAdornment position="end">
+      <Tooltip title={showPassword ? "Hide password" : "Show password"}>
+        <IconButton
+          onClick={() => setShowPassword((v) => !v)}
+          onMouseDown={(e) => e.preventDefault()}
+          edge="end"
+          size="small"
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? <VisibilityOff fontSize="sm" /> : <Visibility fontSize="sm" />}
+        </IconButton>
+      </Tooltip>
+    </InputAdornment>
+  );
 
   return (
-    <BaseTextField
-      type={type}
+    <MuiTextField
+      fullWidth
+      type={isPassword && showPassword ? "text" : type}
       value={field.state.value ?? ""}
       onChange={(e) => {
         const next = e.target.value;
@@ -32,7 +58,15 @@ export function TextField(props: TextFieldProps): ReactElement {
         field.handleChange(transform ? transform(next) : next);
       }}
       onBlur={field.handleBlur}
-      errorText={firstErrorMessage(field.state.meta.errors)}
+      error={Boolean(errorText)}
+      helperText={errorText ?? helperText}
+      slotProps={{
+        ...slotProps,
+        input: {
+          ...(slotProps?.input as object),
+          ...(isPassword ? { endAdornment: passwordAdornment } : {}),
+        },
+      }}
       {...rest}
     />
   );

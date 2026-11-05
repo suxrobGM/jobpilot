@@ -2,7 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import { ExpandMore } from "@mui/icons-material";
-import { Box, Collapse, Link, Paper, Stack, Typography } from "@mui/material";
+import { ButtonBase, Collapse, Link, Paper, Stack, Typography } from "@mui/material";
 import { usePathname } from "next/navigation";
 import { DOCS_LINKS } from "./docs-nav";
 
@@ -35,20 +35,12 @@ export function DocsMobileNav(): ReactElement {
         overflow: "hidden",
       }}
     >
-      <Box
-        component="button"
-        type="button"
+      <ButtonBase
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         aria-controls={controlledPanelId}
         sx={(t) => ({
-          appearance: "none",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
           width: "100%",
-          display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
           gap: 1.5,
           paddingBlock: 1.25,
@@ -71,7 +63,7 @@ export function DocsMobileNav(): ReactElement {
             transform: open ? "rotate(180deg)" : "rotate(0deg)",
           })}
         />
-      </Box>
+      </ButtonBase>
       <Collapse in={open} timeout="auto" unmountOnExit>
         <Stack
           id={PANEL_ID}

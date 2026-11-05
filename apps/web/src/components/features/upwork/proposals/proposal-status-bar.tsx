@@ -2,38 +2,43 @@
 
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
+import { api } from "@/api/client";
+import { upworkProposalQueries } from "@/api/queries";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { StatusChip, statusOptions } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { formatAbsoluteTime } from "@/utils/format";
-import { OUTCOME_OPTIONS, STATUS_OPTIONS } from "./proposal-status";
-import { ProposalStatusChip } from "./proposal-status-chip";
 
 interface ProposalStatusBarProps {
   proposal: UpworkProposalDto;
-  onChange: (patch: UpdateUpworkProposalRequest) => void;
 }
 
-/** Status chip + status/outcome selectors + last-updated stamp for a proposal. */
 export function ProposalStatusBar(props: ProposalStatusBarProps): ReactElement {
-  const { proposal, onChange } = props;
+  const { proposal } = props;
+  const update = useApiMutation(
+    (body: UpdateUpworkProposalRequest) => api.upwork.proposals({ id: proposal.id }).patch(body),
+    { invalidate: [upworkProposalQueries.all] },
+  );
+
   return (
     <SectionCard>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: "center" }}>
-        <ProposalStatusChip status={proposal.status} size="medium" />
+        <StatusChip domain="upworkProposal" value={proposal.status} size="medium" />
         <SelectField
           label="Status"
           value={proposal.status}
-          options={STATUS_OPTIONS}
+          options={statusOptions("upworkProposal")}
           emptyLabel="-"
-          onChange={(v) => v && onChange({ status: v })}
+          onChange={(v) => v && update.mutate({ status: v })}
         />
         {proposal.status === "closed" && (
           <SelectField
             label="Outcome"
             value={proposal.outcome}
-            options={OUTCOME_OPTIONS}
-            onChange={(v) => onChange({ outcome: v })}
+            options={statusOptions("upworkOutcome")}
+            onChange={(v) => update.mutate({ outcome: v })}
           />
         )}
         <Box sx={{ flex: 1 }} />

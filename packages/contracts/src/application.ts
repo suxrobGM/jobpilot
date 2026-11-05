@@ -55,7 +55,7 @@ export const applicationFilterSchema = z.object({
   source: applicationSourceSchema.optional(),
   search: queryText.optional(),
   /** A campaign id, or {@link SINGLE_APPLY_CAMPAIGN} for rows with no campaign. */
-  campaignId: z.string().trim().min(1).optional(),
+  campaignId: z.union([z.uuid(), z.literal(SINGLE_APPLY_CAMPAIGN)]).optional(),
 });
 
 export type ApplicationFilters = z.infer<typeof applicationFilterSchema>;

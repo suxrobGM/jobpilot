@@ -3,7 +3,7 @@
 import { type ReactElement, type ReactNode, useState } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
 import { type CampaignDetailDto, type CampaignJobReasonDto, jobSummary } from "@/api/types";
 import { SectionCard } from "@/components/ui/layout";
@@ -13,8 +13,7 @@ interface ReasonCount {
   count: number;
 }
 
-/** Re-collapses the server's per-reason groups: it counts raw strings, but score-threshold
- * variants ("(35 < 50)", "(40 < 50)") read as one cause, so strip the numeric tail and sum. */
+/** The server groups raw strings, but "(35 < 50)" and "(40 < 50)" are one cause, so strip the tail. */
 function groupReasons(
   rows: ReadonlyArray<CampaignJobReasonDto>,
   kind: CampaignJobReasonDto["kind"],
@@ -34,7 +33,12 @@ function groupReasons(
     .sort((a, b) => b.count - a.count);
 }
 
-function ReasonList(props: { title: string; reasons: ReasonCount[] }): ReactElement {
+interface ReasonListProps {
+  title: string;
+  reasons: ReasonCount[];
+}
+
+function ReasonList(props: ReasonListProps): ReactElement {
   const { title, reasons } = props;
   return (
     <Stack spacing={1}>
@@ -54,7 +58,7 @@ function ReasonList(props: { title: string; reasons: ReasonCount[] }): ReactElem
                 <Typography variant="body2" sx={{ minWidth: 0, wordBreak: "break-word" }}>
                   {r.reason}
                 </Typography>
-                <Chip size="small" label={r.count} variant="outlined" />
+                <Chip label={r.count} variant="outlined" />
               </Stack>
             ))}
           </Stack>
@@ -73,7 +77,7 @@ export function CampaignReasonBreakdown(props: CampaignReasonBreakdownProps): Re
   const { campaign } = props;
   const [open, setOpen] = useState(true);
 
-  const reasons = useApiQuery(campaignQueries.reasons(campaign.id));
+  const reasons = useQuery(campaignQueries.reasons(campaign.id));
   const rows = reasons.data ?? [];
   const skipped = groupReasons(rows, "skipped");
   const failed = groupReasons(rows, "failed");

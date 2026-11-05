@@ -6,9 +6,9 @@ import { MoreVert, PersonRemove, Shield } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import type { AdminUserDto } from "@/api/types";
-import { DropdownMenu } from "@/components/ui/feedback";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";
 
 interface AdminRoleMenuProps {
@@ -30,7 +30,7 @@ export function AdminRoleMenu(props: AdminRoleMenuProps): ReactElement {
   );
 
   const handleSetRole = async (role: AssignableRole): Promise<void> => {
-    const granting = role === "ADMIN";
+    const granting = role === "admin";
     const confirmed = await confirm({
       title: granting ? "Make admin?" : "Revoke admin?",
       description: granting
@@ -52,21 +52,21 @@ export function AdminRoleMenu(props: AdminRoleMenuProps): ReactElement {
         </IconButton>
       )}
       items={[
-        user.role === "ADMIN"
+        user.role === "admin"
           ? {
               kind: "item",
               key: "revoke",
               label: "Revoke admin",
               icon: <PersonRemove fontSize="sm" />,
               danger: true,
-              onClick: () => void handleSetRole("USER"),
+              onClick: () => void handleSetRole("user"),
             }
           : {
               kind: "item",
               key: "promote",
               label: "Make admin",
               icon: <Shield fontSize="sm" />,
-              onClick: () => void handleSetRole("ADMIN"),
+              onClick: () => void handleSetRole("admin"),
             },
       ]}
     />

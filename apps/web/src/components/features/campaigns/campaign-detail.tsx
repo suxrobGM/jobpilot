@@ -2,14 +2,14 @@
 
 import type { ReactElement } from "react";
 import { campaignChannel } from "@jobpilot/contracts/sse";
-import { Button, LinearProgress, Stack, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import { useApiQuery } from "@/api/hooks";
+import { Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import type { CampaignDetailDto } from "@/api/types";
 import { NetworkingBoard, NetworkingMessagesTable } from "@/components/features/networking";
-import { SectionCard } from "@/components/ui/layout";
-import { useSseChannel } from "@/lib/sse/client";
+import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
+import { PageHeader, SectionCard } from "@/components/ui/layout";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
 import { CampaignReasonBreakdown } from "./detail/reason-breakdown";
@@ -17,59 +17,67 @@ import { CampaignSummaryTiles } from "./detail/summary-tiles";
 
 interface CampaignDetailProps {
   campaignId: string;
+  initialCampaign: CampaignDetailDto | null;
 }
 
 export function CampaignDetail(props: CampaignDetailProps): ReactElement {
-  const { campaignId } = props;
-  const queryClient = useQueryClient();
+  const { campaignId, initialCampaign } = props;
+  const detail = useQuery({
+    ...campaignQueries.detail(campaignId),
+    initialData: initialCampaign ?? undefined,
+  });
 
-  const detail = useApiQuery(campaignQueries.detail(campaignId));
-
-  const invalidate = (key: readonly unknown[]): void => {
-    queryClient.invalidateQueries({ queryKey: key });
-  };
-  const invalidateDetail = (): void => invalidate(queryKeys.campaigns.detail(campaignId));
-
-  useSseChannel(
+  const detailKey = campaignQueries.detail(campaignId).queryKey;
+  const jobKeys = [
+    campaignQueries.jobsKey(campaignId),
+    campaignQueries.reasons(campaignId).queryKey,
+    detailKey,
+  ];
+  // Per event type: a scoring pass emits a `job-update` per job, and `campaigns.all` refetches all.
+  useLiveInvalidation(
     campaignChannel,
     { campaignId },
     {
-      // Scoped per event type: a scoring pass emits one `job-update` per job, so a blanket
-      // `campaigns.all` here would refetch every cached list, page and aggregate on each one.
       on: {
-        progress: invalidateDetail,
-        status: invalidateDetail,
-        "job-update": () => {
-          invalidate(queryKeys.campaigns.jobs(campaignId));
-          invalidate(queryKeys.campaigns.reasons(campaignId));
-          invalidateDetail();
-        },
-        "networking-update": () => invalidate(queryKeys.campaigns.networking(campaignId)),
+        progress: [detailKey],
+        status: [detailKey],
+        "job-update": jobKeys,
+        "networking-update": [campaignQueries.networkingKey(campaignId)],
       },
+      onReconnect: [...jobKeys, campaignQueries.networkingKey(campaignId)],
     },
   );
 
   const campaign = detail.data;
 
-  if (detail.isLoading) {
-    return <LinearProgress />;
+  if (detail.isPending) {
+    return <DetailSkeleton />;
   }
 
-  // Silently spinning forever is the failure mode this rules out.
   if (!campaign) {
     return (
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-        <Typography variant="body2Muted">Couldn't load this campaign.</Typography>
-        <Button variant="text" size="small" onClick={() => void detail.refetch()}>
-          Retry
-        </Button>
-      </Stack>
+      <DetailLoadFailure
+        noun="campaign"
+        error={detail.error}
+        onRetry={() => void detail.refetch()}
+      />
     );
   }
+
+  // The title is the campaign's own query, so it lives here and follows live updates.
+  const header = (
+    <PageHeader
+      eyebrow="Campaign"
+      title={campaign.query}
+      backHref="/workspace"
+      backLabel="Workspace"
+    />
+  );
 
   if (campaign.summary.kind === "networking") {
     return (
       <Stack spacing={3}>
+        {header}
         <CampaignHeaderCard campaign={campaign} />
         <NetworkingBoard
           campaignId={campaignId}
@@ -83,6 +91,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   return (
     <Stack spacing={3}>
+      {header}
       <CampaignHeaderCard campaign={campaign} />
       <CampaignSummaryTiles campaign={campaign} />
       <CampaignReasonBreakdown campaign={campaign} />
@@ -93,10 +102,14 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   );
 }
 
+interface CampaignOutreachProps {
+  campaignId: string;
+}
+
 /** Its own component so the drafts are fetched only by the campaigns that have any. */
-function CampaignOutreach(props: CampaignDetailProps): ReactElement {
+function CampaignOutreach(props: CampaignOutreachProps): ReactElement {
   const { campaignId } = props;
-  const messages = useApiQuery(campaignQueries.networking(campaignId));
+  const messages = useQuery(campaignQueries.networking(campaignId));
 
   return (
     <SectionCard title="Outreach" description="Warm intros drafted for these roles.">

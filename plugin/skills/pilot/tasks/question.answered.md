@@ -6,7 +6,7 @@ Payload `{questionId, questionKind, subjectType, subjectId, prompt, answer}`. Ro
 - **`job`** (`subjectId` = `<campaignId>:<jobKey>`) → apply as `./job.apply.md` does, adding
   `answers:<answer>` to the `job-applier` input so it never asks again.
 - **`email`** (an `interview.reply` approval) → `"Send"`: send the draft from `prompt` with `POST
-  /api/email/send {to,subject,body,threadId}`, replying to the `from` and `threadId` of `GET
+  /api/email/outbound {to,subject,body,threadId}`, replying to the `from` and `threadId` of `GET
   /api/email/messages/<subjectId>`. Free text: treat it as availability or corrections, revise the
   draft, then send. `"Skip"`: send nothing.
 - **`networking`** (`subjectId` = a draft message id) → find the draft by `id` in `GET

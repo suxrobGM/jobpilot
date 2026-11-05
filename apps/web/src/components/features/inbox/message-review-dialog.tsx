@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import { CLASSIFICATION_TO_STATUS } from "@jobpilot/contracts/email";
 import {
   Autocomplete,
@@ -12,12 +12,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { applicationQueries, emailQueries } from "@/api/queries";
-import { invalidations, queryKeys } from "@/api/query-keys";
+import { applicationQueries, emailQueries, invalidations } from "@/api/queries";
 import type { ApplicationDto } from "@/api/types";
-import { RelativeTime } from "@/components/ui/display";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { FormDialogShell } from "@/components/ui/form";
 
 interface MessageReviewDialogProps {
@@ -26,76 +26,85 @@ interface MessageReviewDialogProps {
   onClose: () => void;
 }
 
-// Only classifications with a mapped status can be approved ("verification" /
-// "irrelevant" have none); derived from the shared classification→status map.
+// Only classifications that map to a status can be approved ("verification" and "irrelevant" don't).
 const STATUS_CLASSIFICATIONS = new Set(Object.keys(CLASSIFICATION_TO_STATUS));
 
 export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode {
   const { messageId, open, onClose } = props;
-  const [matchedApp, setMatchedApp] = useState<ApplicationDto | null>(null);
+  if (!open || messageId === null) {
+    return null;
+  }
+  // Keyed, so the editable match starts fresh for each message.
+  return <ReviewDialog key={messageId} messageId={messageId} onClose={onClose} />;
+}
+
+interface ReviewDialogProps {
+  messageId: string;
+  onClose: () => void;
+}
+
+function ReviewDialog(props: ReviewDialogProps): ReactElement {
+  const { messageId, onClose } = props;
+  const [application, setMatchedApp] = useState<ApplicationDto | null>(null);
   const [search, setSearch] = useState("");
 
-  const message = useApiQuery(emailQueries.message(messageId ?? ""), {
-    enabled: messageId !== null,
-  });
+  const message = useQuery(emailQueries.message(messageId));
 
-  // Seed the editable match/search from the fetched message whenever it changes
   const [prevData, setPrevData] = useState(message.data);
 
   if (message.data !== prevData) {
     setPrevData(message.data);
-    if (message.data?.matchedApp) {
-      setMatchedApp(message.data.matchedApp as ApplicationDto);
-      setSearch(message.data.matchedApp.company ?? "");
+    if (message.data?.application) {
+      setMatchedApp(message.data.application as ApplicationDto);
+      setSearch(message.data.application.company ?? "");
     } else {
       setMatchedApp(null);
       setSearch("");
     }
   }
 
-  const appOptions = useApiQuery(applicationQueries.search(search), { enabled: open });
+  const appOptions = useQuery(applicationQueries.search(search));
 
   const patchMatch = useApiMutation(
-    (vars: { matchedAppId: string | null }) => api.email.messages({ id: messageId! }).patch(vars),
+    (applicationId: string | null) =>
+      api.email.messages({ id: messageId }).patch({ applicationId }),
     {
-      invalidate: [queryKeys.email.all],
+      invalidate: [emailQueries.all],
     },
   );
 
-  const approve = useApiMutation(() => api.email.messages({ id: messageId! }).approve.post({}), {
+  const approve = useApiMutation(() => api.email.messages({ id: messageId }).approve.post({}), {
     successMessage: "Approved",
     invalidate: invalidations.emailReview,
     onSuccess: () => onClose(),
   });
 
-  const deny = useApiMutation(() => api.email.messages({ id: messageId! }).deny.post({}), {
+  const deny = useApiMutation(() => api.email.messages({ id: messageId }).deny.post({}), {
     successMessage: "Denied",
-    invalidate: [queryKeys.email.all],
+    invalidate: [emailQueries.all],
     onSuccess: () => onClose(),
   });
-
-  if (!open || messageId == null) {
-    return null;
-  }
 
   const m = message.data;
   const isClassified = Boolean(m?.classification);
   const isReviewed = m?.reviewStatus === "approved" || m?.reviewStatus === "denied";
 
   const canApprove = Boolean(
-    m && (STATUS_CLASSIFICATIONS.has(m.classification ?? "") || m.appliedStatus),
+    m && (STATUS_CLASSIFICATIONS.has(m.classification ?? "") || m.resultingStatus),
   );
   const canDeny = isClassified && !isReviewed;
   const canApproveNow = canDeny && canApprove;
 
   return (
     <FormDialogShell
-      open={open}
+      open
       title={m?.subject ?? "Loading"}
       maxWidth="md"
       onClose={onClose}
       onSubmit={() => {
-        if (canApproveNow) approve.mutate();
+        if (canApproveNow) {
+          approve.mutate();
+        }
       }}
       submit={
         <>
@@ -108,7 +117,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             <Button
               type="submit"
               variant="contained"
-              disabled={approve.isPending || !m?.matchedAppId}
+              disabled={approve.isPending || !m?.applicationId}
             >
               Approve
             </Button>
@@ -124,10 +133,10 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             <Typography variant="captionMuted">{m.fromDomain}</Typography>
             <Typography variant="captionMuted">·</Typography>
             <RelativeTime value={m.receivedAt} />
-            {m.classification && <Chip size="small" label={m.classification} />}
-            {m.reviewStatus === "auto" && (
-              <Chip size="small" label="auto" color="info" variant="outlined" />
+            {m.classification && (
+              <StatusChip domain="classification" value={m.classification} variant="filled" />
             )}
+            {m.reviewStatus === "auto" && <Chip label="auto" color="info" variant="outlined" />}
           </Stack>
 
           {m.reasoning && <Typography variant="captionMuted">Reasoning: {m.reasoning}</Typography>}
@@ -143,18 +152,18 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             size="small"
             options={appOptions.data?.items ?? []}
             getOptionLabel={(o) => `${o.title} ${o.company}`}
-            value={matchedApp}
+            value={application}
             onChange={(_, v) => {
               setMatchedApp(v);
-              patchMatch.mutate({ matchedAppId: v ? v.id : null });
+              patchMatch.mutate(v ? v.id : null);
             }}
             onInputChange={(_, v) => setSearch(v)}
             renderInput={(params) => <TextField {...params} label="Matched application" />}
             isOptionEqualToValue={(a, b) => a.id === b.id}
           />
 
-          {matchedApp && (
-            <Link href={`/applications/${matchedApp.id}`}>
+          {application && (
+            <Link href={`/applications/${application.id}`}>
               Open the application for the documents sent and the posting
             </Link>
           )}
@@ -166,12 +175,11 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
               maxHeight: 320,
               overflowY: "auto",
               whiteSpace: "pre-wrap",
-              fontFamily: "monospace",
-              fontSize: "0.85rem",
+              ...t.typography.monoBody,
               backgroundColor: t.palette.surfaces.elevated,
             })}
           >
-            {m.rawBody || m.snippet}
+            {m.body || m.snippet}
           </Paper>
         </>
       ) : (

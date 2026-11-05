@@ -1,22 +1,19 @@
 "use client";
 
 import { type ReactElement, type SubmitEvent, useRef } from "react";
-import { parseTechParam, serializeTechParam } from "@jobpilot/contracts/job-listing";
-import { Box, Button, Card, Stack, TextField, ToggleButton } from "@mui/material";
+import { parseSkillsParam, serializeSkillsParam } from "@jobpilot/contracts/job-listing";
+import { Button, Card, CardContent, Stack, TextField, ToggleButton } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MultiSelect } from "@/components/ui/form";
 import { ActiveFilters } from "./active-filters";
-import { jobsHref } from "./jobs-href";
+import { jobsHrefWith } from "./jobs-href";
 
 interface JobFiltersProps {
   /** The skills the index actually contains, most common first. */
   skillOptions: string[];
 }
 
-/**
- * Filters navigate to a real `/jobs?q=…` URL rather than holding client state, so results stay
- * shareable and crawlable.
- */
+/** Filters navigate to a real `/jobs?q=…` URL, not client state, so results stay crawlable. */
 export function JobFilters(props: JobFiltersProps): ReactElement {
   const { skillOptions } = props;
   const router = useRouter();
@@ -24,29 +21,15 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
   const form = useRef<HTMLFormElement>(null);
 
   const remote = params.get("remote") === "true";
-  // The public param stays `?tech=` so links shared before the skills rename keep working.
-  const skills = parseTechParam(params.get("tech"));
+  const skills = parseSkillsParam(params.get("skills"));
 
-  /**
-   * Seeds the query from the live form, then applies the patch (`null` drops a key). Reading the
-   * form - not just `params` - is what keeps text the user typed but has not submitted when they
-   * toggle Remote or pick a skill.
-   */
+  // Reads the live form, not just `params`, so unsubmitted text survives a Remote toggle.
   const apply = (patch: Record<string, string | null> = {}): void => {
-    const next = new URLSearchParams(params);
     const data = form.current ? new FormData(form.current) : null;
-
     for (const key of ["q", "location"] as const) {
       patch[key] ??= String(data?.get(key) ?? "").trim() || null;
     }
-    for (const [key, value] of Object.entries(patch)) {
-      if (value) {
-        next.set(key, value);
-      } else {
-        next.delete(key);
-      }
-    }
-    router.push(jobsHref(next));
+    router.push(jobsHrefWith(params, patch));
   };
 
   const onSubmit = (event: SubmitEvent<HTMLFormElement>): void => {
@@ -55,8 +38,8 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
   };
 
   return (
-    <Card sx={{ p: 2 }}>
-      <Box component="form" ref={form} onSubmit={onSubmit}>
+    <Card>
+      <CardContent component="form" ref={form} onSubmit={onSubmit}>
         <Stack spacing={1.5}>
           <Stack
             direction={{ xs: "column", md: "row" }}
@@ -78,7 +61,7 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
             <MultiSelect
               value={skills}
               onChange={(values) =>
-                apply({ tech: values.length > 0 ? serializeTechParam(values) : null })
+                apply({ skills: values.length > 0 ? serializeSkillsParam(values) : null })
               }
               options={skillOptions}
               freeSolo={false}
@@ -101,7 +84,7 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
           </Stack>
           <ActiveFilters />
         </Stack>
-      </Box>
+      </CardContent>
     </Card>
   );
 }

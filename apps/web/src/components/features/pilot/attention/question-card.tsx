@@ -5,8 +5,9 @@ import type { PilotQuestion } from "@jobpilot/contracts/pilot";
 import { OpenInNew } from "@mui/icons-material";
 import { Button, Card, CardContent, Link, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { statusLabel } from "@/components/ui/display";
 
 interface QuestionCardProps {
   question: PilotQuestion;
@@ -18,33 +19,28 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
 
   const answer = useApiMutation(
     (value: string) => api.pilot.questions({ id: question.id }).answer.post({ answer: value }),
-    { invalidate: [queryKeys.pilot.questionsAll()], successMessage: "Answer sent." },
+    { invalidate: [pilotQueries.questionsAll], successMessage: "Answer sent." },
   );
 
   const hasOptions = question.options.length > 0;
   const isLoading = answer.isPending;
 
   return (
-    <Card variant="outlined">
+    <Card>
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
             <Typography variant="body1Strong" sx={{ flex: 1, minWidth: 0 }}>
               {question.prompt}
             </Typography>
-            <Typography
-              variant="captionMuted"
-              sx={{ flexShrink: 0, textTransform: "capitalize", whiteSpace: "nowrap" }}
-            >
-              {question.kind}
+            <Typography variant="captionMuted" sx={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+              {statusLabel("questionKind", question.kind)}
             </Typography>
           </Stack>
 
-          {question.deepLink && (
+          {question.link && (
             <Link
-              href={question.deepLink}
-              target="_blank"
-              rel="noopener"
+              href={question.link}
               sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
             >
               <OpenInNew fontSize="sm" />

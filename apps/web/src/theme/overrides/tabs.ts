@@ -18,7 +18,7 @@ export const tabOverrides: Components<Theme>["MuiTab"] = {
     root: ({ theme }) => ({
       textTransform: "none",
       minHeight: 38,
-      fontSize: "0.875rem",
+      fontSize: theme.typography.body1.fontSize,
       fontWeight: 500,
       "&.Mui-selected": { color: theme.palette.accent.primary },
     }),

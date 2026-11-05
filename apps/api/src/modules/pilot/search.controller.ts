@@ -58,7 +58,7 @@ export const pilotSearchController = new Elysia({ prefix: "/pilot", detail: { ta
     },
   })
   .post(
-    "/searches/:id/run-result",
+    "/searches/:id/runs",
     ({ user, params, body }) => searches.reportRun(user.id, params.id, body),
     {
       params: idParam,
@@ -68,7 +68,7 @@ export const pilotSearchController = new Elysia({ prefix: "/pilot", detail: { ta
       detail: {
         summary: "Report a discovery run's result",
         description:
-          "Records a run's jobs-seen/new-jobs/reached-end and applies the next-run schedule; returns the updated row.",
+          "Records a run's jobs-scanned/new-jobs/reached-end and applies the next-run schedule; returns the updated row.",
       },
     },
   );

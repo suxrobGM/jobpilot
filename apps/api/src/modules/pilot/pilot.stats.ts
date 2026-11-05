@@ -25,19 +25,19 @@ export function countSentToday(
 
 /** Skip reasons are bucketed, most frequent first. */
 export async function countTodayOutcomes(
-  prisma: Pick<PrismaClient, "job">,
+  prisma: Pick<PrismaClient, "campaignJob">,
   userId: string,
   now: Date,
 ) {
-  const where = { campaign: { userId }, updatedAt: { gte: startOfDay(now) } };
+  const where = { userId, updatedAt: { gte: startOfDay(now) } };
   const [byStatus, skipped] = await Promise.all([
-    prisma.job.groupBy({
+    prisma.campaignJob.groupBy({
       by: ["status"],
       where: { ...where, status: { in: ["skipped", "failed"] } },
       _count: { _all: true },
     }),
     // Tens of rows a day, and the bucketing can't run in SQL.
-    prisma.job.findMany({
+    prisma.campaignJob.findMany({
       where: { ...where, status: "skipped", skipReason: { not: null } },
       select: { skipReason: true },
     }),

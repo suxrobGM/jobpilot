@@ -1,20 +1,12 @@
 type FlagValue = string | number | boolean | null | undefined;
 
 interface BuildCliArgsOptions {
-  /** Positional args, in order. `null`/`undefined`/`""` entries are dropped. */
+  /** Empty entries are dropped. */
   positional?: ReadonlyArray<string | number | null | undefined>;
-  /** Flag map. `--key value` for strings/numbers, `--key` for `true`. Falsy values (`false`/`null`/`undefined`/`""`) are skipped. */
+  /** `true` is a bare `--key`; falsy values are skipped. */
   flags?: Record<string, FlagValue>;
 }
 
-/**
- * Build a CLI-style argument string from positional parts and an optional
- * flag map. Used to construct skill invocation arguments.
- *
- * Example:
- *   buildCliArgs({ positional: ["senior react"], flags: { board: "linkedin.com", "max-apps": 5 } })
- *   // => "senior react --board linkedin.com --max-apps 5"
- */
 export function buildCliArgs(options: BuildCliArgsOptions): string {
   const parts: string[] = [];
 

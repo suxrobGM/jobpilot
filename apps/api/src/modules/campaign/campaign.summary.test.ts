@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { jobSummary, summarizeCampaigns } from "./campaign.summary";
+import { accountSummary, jobSummary, summarizeCampaigns } from "./campaign.summary";
 import { describe, expect, it } from "bun:test";
 
 type Row = { campaignId: string; status: string; _count: { _all: number; matchScore?: number } };
@@ -10,7 +10,7 @@ function client(
   contacts: { campaignId: string; discovered: number }[],
 ) {
   return {
-    job: { groupBy: async () => jobs },
+    campaignJob: { groupBy: async () => jobs },
     networkingMessage: { groupBy: async () => messages },
     $queryRaw: async () => contacts,
   } as unknown as Prisma.TransactionClient;
@@ -57,8 +57,7 @@ describe("summarizeCampaigns", () => {
 });
 
 describe("jobSummary", () => {
-  // The roll-ups ship on the wire for the installed agent skills, but they are a projection of
-  // byStatus; this pins that they cannot drift apart for any mix of statuses.
+  // Installed skills read the roll-ups, so they must never drift from byStatus.
   it("keeps every roll-up consistent with byStatus", () => {
     const summary = jobSummary(
       ["pending", "approved", "applying", "applied", "failed", "skipped", "needs_user"].map(
@@ -73,5 +72,37 @@ describe("jobSummary", () => {
     expect(summary.failed).toBe(c.failed);
     expect(summary.skipped).toBe(c.skipped);
     expect(summary.remaining).toBe(c.approved + c.applying + c.needs_user);
+  });
+});
+
+describe("accountSummary", () => {
+  it("totals statuses and links the draft campaign only when there is exactly one", () => {
+    const one = accountSummary(
+      [
+        { status: "in_progress", count: 2 },
+        { status: "paused", count: 1 },
+        { status: "completed", count: 4 },
+      ],
+      [
+        { campaignId: "c1", status: "draft", count: 2 },
+        { campaignId: "c1", status: "approved", count: 1 },
+        { campaignId: "c2", status: "replied", count: 3 },
+      ],
+    );
+    expect(one).toEqual({
+      total: 7,
+      active: 3,
+      replies: 3,
+      drafts: { messages: 3, campaigns: 1, campaignId: "c1" },
+    });
+
+    const two = accountSummary(
+      [],
+      [
+        { campaignId: "c1", status: "draft", count: 1 },
+        { campaignId: "c2", status: "draft", count: 1 },
+      ],
+    );
+    expect(two.drafts).toEqual({ messages: 2, campaigns: 2, campaignId: null });
   });
 });

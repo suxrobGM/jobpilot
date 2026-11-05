@@ -35,7 +35,7 @@ export type AppliedDuplicate =
 
 /**
  * Exact URL at any age, else fuzzy title+company inside the window, where old near-matches would
- * be false positives. Shared by `/applied/check` and the apply guard so advice and enforcement
+ * be false positives. Shared by `/applications/duplicates` and the apply guard so advice and enforcement
  * cannot drift apart.
  */
 export async function findAppliedDuplicate(
@@ -71,12 +71,7 @@ export async function findAppliedDuplicate(
     candidates,
     APPLIED_DUPLICATE_THRESHOLD,
   );
-  if (!fuzzy) {
-    return null;
-  }
-
-  const matched = candidates.find((c) => c.id === fuzzy.candidate.id);
-  return matched ? { kind: "fuzzy", score: fuzzy.score, application: matched } : null;
+  return fuzzy ? { kind: "fuzzy", score: fuzzy.score, application: fuzzy.candidate } : null;
 }
 
 /** The skip reason the apply skills already write, so blocked and self-skipped rows read alike. */

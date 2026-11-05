@@ -44,10 +44,8 @@ const applicationSchema = z.object({
   source: applicationSourceSchema,
   appliedAt: z.date(),
   status: statusSchema,
-  rejectedAt: z.date().nullable(),
   matchScore: z.number().int().nullable(),
   matchReason: z.string().nullable(),
-  failReason: z.string().nullable(),
   campaignId: z.string().nullable(),
 });
 
@@ -75,9 +73,9 @@ export const applicationEventSchema = z.object({
 });
 
 // The variant carries `resumeId` because the web links to the base's page; a variant has none.
-const applicationResumeVariantSchema = variantSummarySchema
+const applicationTailoredVariantSchema = variantSummarySchema
   .pick({ id: true, resumeId: true, label: true, createdAt: true, updatedAt: true })
-  .extend({ diffNotes: z.string().nullable() });
+  .extend({ changeNotes: z.string().nullable() });
 
 /** The base resume the application went out with, tailored or not. */
 const applicationResumeSchema = resumeSummarySchema.pick({
@@ -87,7 +85,9 @@ const applicationResumeSchema = resumeSummarySchema.pick({
 });
 
 /** The tailored variant submitted, when one was. Null means the base PDF went out as-is. */
-const applicationResumeUsedSchema = applicationResumeVariantSchema.omit({ createdAt: true });
+const applicationSubmittedVariantSchema = applicationTailoredVariantSchema.omit({
+  createdAt: true,
+});
 
 const applicationCoverLetterSchema = z.object({
   id: z.uuid(),
@@ -116,15 +116,15 @@ const applicationContactSchema = contactSchema.pick({
 const applicationJobSchema = campaignJobSchema.pick({
   description: true,
   salary: true,
-  type: true,
+  employmentType: true,
 });
 
 /** A single application with the documents sent, the posting, and everything that came back. */
 export const applicationDetailSchema = applicationSchema.extend({
   events: z.array(applicationEventSchema),
   resume: applicationResumeSchema.nullable(),
-  resumeVariantUsed: applicationResumeUsedSchema.nullable(),
-  resumeVariants: z.array(applicationResumeVariantSchema),
+  resumeVariant: applicationSubmittedVariantSchema.nullable(),
+  tailoredVariants: z.array(applicationTailoredVariantSchema),
   coverLetters: z.array(applicationCoverLetterSchema),
   emailMessages: z.array(applicationEmailSchema),
   contacts: z.array(applicationContactSchema),

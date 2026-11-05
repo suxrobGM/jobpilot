@@ -45,6 +45,7 @@ const userViewSchema = z.object({
   country: z.string().nullable(),
   usAuthorized: z.boolean(),
   requiresSponsorship: z.boolean(),
+  preferCapExempt: z.boolean(),
   visaStatus: z.string().nullable(),
   optExtension: z.string().nullable(),
   willingToRelocate: z.boolean(),

@@ -233,7 +233,7 @@ export class RunService {
       if (!row) throw conflict("Run was finished concurrently.", ErrorCodes.PILOT_CONFLICT);
       const rows =
         entries.length > 0
-          ? await writeJournalEntries(tx, userId, { cycleId: existing.id, entries })
+          ? await writeJournalEntries(tx, userId, { runId: existing.id, entries })
           : [];
       return { finished: row, journaled: rows };
     });
@@ -241,7 +241,7 @@ export class RunService {
     return toPilotRun(finished);
   }
 
-  /** The run id is the journal cycleId, so the host's cycle entry for this run groups with it. */
+  /** The host's cycle entry for this run carries its id as `runId`, so the two group together. */
   async postResult(userId: string, id: string, body: PilotRunResultInput) {
     const existing = await this.findRow(userId, id);
     if (existing.finishedAt) return toPilotRun(existing);

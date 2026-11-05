@@ -1,15 +1,15 @@
 import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 import { componentOverrides } from "./overrides";
-import { accent, feedback, line, stages, surfaces, textColors } from "./palette";
-import { controlHeights, gradients, iconSizes, motion, radii, shadows, tints } from "./tokens";
+import { accent, feedback, line, stages, surfaces, textColors, textOnAccent } from "./palette";
+import { controlHeights, iconSizes, motion, radii, shadows, tints } from "./tokens";
 import { typography } from "./typography";
 
 const baseTheme = createTheme({
   cssVariables: true,
   palette: {
     mode: "dark",
-    primary: { main: accent.primary, contrastText: "#1A0A05" },
-    secondary: { main: accent.secondary, contrastText: "#0A1220" },
+    primary: { main: accent.primary, contrastText: textOnAccent.primary },
+    secondary: { main: accent.secondary, contrastText: textOnAccent.secondary },
     warning: { main: feedback.warning },
     error: { main: feedback.error },
     success: { main: feedback.success },
@@ -31,7 +31,6 @@ const baseTheme = createTheme({
   // styleOverrides. Component overrides pin the real radii (card md, dialog lg) explicitly.
   shape: { borderRadius: 1 },
   typography,
-  gradients,
   motion,
   radii,
   shadows_custom: shadows,

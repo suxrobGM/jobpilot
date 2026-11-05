@@ -1,6 +1,5 @@
 export { MarketingFooter } from "./marketing-footer";
 export { MarketingNav } from "./marketing-nav";
-export { MarketingShell } from "./marketing-shell";
 export { CtaBand } from "./sections/cta-band";
 export { Faq } from "./sections/faq";
 export { FAQ_ITEMS } from "./sections/faq-items";

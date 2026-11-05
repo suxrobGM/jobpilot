@@ -5,14 +5,15 @@ import type { TaskList } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
 import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { type ApiQueryResult, useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { LinkButton, TooltipIconButton } from "@/components/ui/buttons";
-import { EmptyState, QuerySection } from "@/components/ui/data";
+import { RelativeTime } from "@/components/ui/display";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
-import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
+import { formatTimeUntil } from "@/utils/format";
 import { taskTypeLabel } from "../task-types";
+import { useTaskList } from "./use-task-list";
 
 const PREVIEW_COUNT = 6;
 
@@ -50,16 +51,6 @@ function TaskListEmpty(props: TaskListEmptyProps): ReactElement {
   return <EmptyState variant="inline" title="No tasks right now." />;
 }
 
-/** Pinned to one fetch plus manual refresh: building a task list is costly. A stopped pilot has none. */
-export function useTaskList(running: boolean): ApiQueryResult<TaskList | null> {
-  return useApiQuery(pilotQueries.taskList(), {
-    enabled: running,
-    staleTime: Number.POSITIVE_INFINITY,
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
-}
-
 interface TaskListPreviewProps {
   running: boolean;
 }
@@ -68,7 +59,7 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
   const { running } = props;
   const query = useTaskList(running);
   const refresh = useApiMutation(() => api.pilot.tasks.refresh.post(), {
-    invalidate: [queryKeys.pilot.taskList()],
+    invalidate: [pilotQueries.taskList().queryKey],
   });
 
   const taskList = query.data;
@@ -100,9 +91,7 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
       )}
       {running && (
         <QuerySection
-          isLoading={query.isLoading}
-          isError={query.isError}
-          onRetry={() => void query.refetch()}
+          query={query}
           errorTitle="Couldn't load the task list."
           isEmpty={!taskList}
           empty={
@@ -137,7 +126,7 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
                           {task.title}
                         </Typography>
                       </Box>
-                      <Chip size="small" variant="outlined" label={task.subjectType} />
+                      <Chip variant="outlined" label={task.subjectType} />
                     </Stack>
                   ))}
                 </Stack>
@@ -147,9 +136,7 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
                   +{taskList.tasks.length - PREVIEW_COUNT} more
                 </Typography>
               )}
-              <Typography variant="captionMuted">
-                Built {formatRelativeTime(taskList.builtAt)} ago
-              </Typography>
+              <RelativeTime prefix="Built" value={taskList.builtAt} />
             </Stack>
           )}
         </QuerySection>

@@ -8,7 +8,7 @@ and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
   `resumeId`/`resumeVariantId` through.
 - `needs_user` with `category:"payment"` → `failed`, `failReason:"Payment required"`.
 - Any other `needs_user` → ask, then park the job. Copy the worker's `kind`, `question`, `options`
-  and `answerKey` verbatim (`options` defaults to `[]`; omit a null `answerKey`) into
+  and `savedAnswerKey` verbatim (`options` defaults to `[]`; omit a null `savedAnswerKey`) into
   `$JOBPILOT_TEMP/question.json`:
 
 ```json
@@ -18,8 +18,8 @@ and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
   "subjectId": "<campaignId>:<jobKey>",
   "prompt": "<worker question>",
   "options": ["<worker options>"],
-  "answerKey": "<worker answerKey>",
-  "deepLink": "<JOBPILOT_WEB>/campaigns/<campaignId>"
+  "savedAnswerKey": "<worker savedAnswerKey>",
+  "link": "<JOBPILOT_WEB>/campaigns/<campaignId>"
 }
 ```
 

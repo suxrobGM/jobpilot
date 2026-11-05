@@ -3,9 +3,11 @@ import { Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
+import { dataOrNullIf404 } from "@/api/error";
 import { getFetchOptions } from "@/api/server";
 import { AddBoardButton, AdminBoardsTable, AdminSearchField } from "@/components/features/admin";
-import { PaginationControls, TableSkeleton } from "@/components/ui/data";
+import { PaginationControls } from "@/components/ui/data";
+import { TableSkeleton } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { type PaginationSearchParams, paginationQuery } from "@/utils/search-params";
 
@@ -37,13 +39,16 @@ export default function AdminBoardsPage(props: AdminBoardsPageProps): ReactEleme
 async function AdminBoards(props: AdminBoardsPageProps): Promise<ReactElement> {
   const search = await props.searchParams;
 
-  const { data } = await api.admin.boards.get({
-    query: {
-      ...paginationQuery(search),
-      ...(search.q?.trim() && { q: search.q.trim() }),
-    },
-    ...(await getFetchOptions()),
-  });
+  const data = dataOrNullIf404(
+    await api.admin["job-boards"].get({
+      query: {
+        ...paginationQuery(search),
+        ...(search.q?.trim() && { q: search.q.trim() }),
+      },
+      ...(await getFetchOptions()),
+    }),
+    "Couldn't load boards",
+  );
 
   if (!data) {
     notFound();

@@ -1,19 +1,20 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
-import { Button, IconButton, LinearProgress, Stack } from "@mui/material";
+import { Button, Link, Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { applicationQueries } from "@/api/queries";
-import { invalidations } from "@/api/query-keys";
-import { EmptyState } from "@/components/ui/data/empty-state";
-import { LabelValue, StatusChip } from "@/components/ui/display";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipIconButton } from "@/components/ui/buttons";
+import { LabelValue, StatusChip, statusLabel } from "@/components/ui/display";
+import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
+import { campaignHref } from "@/utils/routes";
 import { ActivityTimeline } from "./activity-timeline";
 import { StatusTransitionDialog } from "./status-transition-dialog";
 import { SubmissionDetails } from "./submission-details";
@@ -29,21 +30,12 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const confirm = useConfirm();
 
-  const detail = useApiQuery(applicationQueries.detail(id));
+  const detail = useQuery(applicationQueries.detail(id));
 
-  const updateStatus = useApiMutation(
-    (vars: StatusTransitionInput) => api.applied({ id }).status.post(vars),
-    {
-      successMessage: "Status updated",
-      invalidate: invalidations.application,
-      onSuccess: () => setStatusDialogOpen(false),
-    },
-  );
-
-  const remove = useApiMutation(() => api.applied({ id }).delete(), {
+  const remove = useApiMutation(() => api.applications({ id }).delete(), {
     successMessage: "Application deleted",
-    invalidate: invalidations.application,
-    onSuccess: () => router.replace("/"),
+    invalidate: [applicationQueries.all],
+    onSuccess: () => router.replace("/workspace/applications"),
   });
 
   const handleDelete = async (): Promise<void> => {
@@ -59,8 +51,8 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     }
   };
 
-  if (detail.isLoading) {
-    return <LinearProgress />;
+  if (detail.isPending) {
+    return <DetailSkeleton />;
   }
 
   const app = detail.data;
@@ -68,9 +60,10 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   if (!app) {
     return (
       <PageShell maxWidth="lg">
-        <EmptyState
-          title="Application not found"
-          description="It may have been deleted, or the link is incorrect."
+        <DetailLoadFailure
+          noun="application"
+          error={detail.error}
+          onRetry={() => void detail.refetch()}
         />
       </PageShell>
     );
@@ -84,22 +77,15 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
           title={app.title}
           actions={
             <>
-              <Button
-                variant="outlined"
-                startIcon={<Launch fontSize="md" />}
-                component="a"
-                href={app.url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Button variant="outlined" startIcon={<Launch fontSize="md" />} href={app.url}>
                 Open posting
               </Button>
               <Button variant="contained" onClick={() => setStatusDialogOpen(true)}>
                 Update status
               </Button>
-              <IconButton onClick={() => void handleDelete()} aria-label="Delete application">
+              <TooltipIconButton title="Delete application" onClick={() => void handleDelete()}>
                 <Delete fontSize="md" />
-              </IconButton>
+              </TooltipIconButton>
             </>
           }
         />
@@ -107,20 +93,23 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
         <SectionCard>
           <Stack spacing={2}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-              <StatusChip status={app.status} />
+              <StatusChip domain="application" value={app.status} />
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ flexWrap: "wrap" }}>
               <LabelValue label="Board">{app.board?.name ?? ""}</LabelValue>
-              <LabelValue label="Source">{app.source}</LabelValue>
+              <LabelValue label="Source">{statusLabel("source", app.source)}</LabelValue>
               <LabelValue label="Location">{app.location ?? ""}</LabelValue>
               <LabelValue label="Match score">
                 {app.matchScore !== null ? `${app.matchScore}/100` : ""}
               </LabelValue>
               <LabelValue label="Applied at">{formatAbsoluteTime(app.appliedAt)}</LabelValue>
-              {app.campaignId && <LabelValue label="Campaign">{app.campaignId}</LabelValue>}
+              {app.campaignId && (
+                <LabelValue label="Campaign">
+                  <Link href={campaignHref(app.campaignId)}>Open campaign</Link>
+                </LabelValue>
+              )}
             </Stack>
             {app.matchReason && <LabelValue label="Match reason">{app.matchReason}</LabelValue>}
-            {app.failReason && <LabelValue label="Fail reason">{app.failReason}</LabelValue>}
           </Stack>
         </SectionCard>
 
@@ -132,11 +121,12 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
       </PageShell>
 
       <StatusTransitionDialog
+        // Remounts after each change, so the form starts from the new status.
+        key={app.status}
+        applicationId={app.id}
         open={statusDialogOpen}
         currentStatus={app.status}
         onClose={() => setStatusDialogOpen(false)}
-        onSubmit={(values) => updateStatus.mutate(values)}
-        submitting={updateStatus.isPending}
       />
     </>
   );

@@ -48,12 +48,8 @@ export function Trust(): ReactElement {
         title="Your computer, your accounts, your limits."
         lead={
           <>
-            JobPilot is free and{" "}
-            {/* component="a": next/link is the theme's MuiLink default, wrong for an off-site URL. */}
-            <Link component="a" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
-              open source
-            </Link>
-            . The AI runs on your machine; the website only stores your profile and applications.
+            JobPilot is free and <Link href={GITHUB_URL}>open source</Link>. The AI runs on your
+            machine; the website only stores your profile and applications.
           </>
         }
       />

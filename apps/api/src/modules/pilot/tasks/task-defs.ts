@@ -30,7 +30,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   "board.diagnose": {
     priority: 920,
     subjectType: "board",
-    subjectId: (p) => p.jobBoardId,
+    subjectId: (p) => p.boardId,
     title: (p) => `Board failing: ${p.board} (${p.consecutiveFailures})`,
     perList: 1,
   },
@@ -117,6 +117,12 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
     subjectType: "campaign",
     subjectId: (p) => p.searchId,
     title: (p) => `Discover: ${p.query}`,
+  },
+  "research.explore": {
+    priority: 450,
+    subjectType: "pilot",
+    subjectId: () => "research",
+    title: () => "Research jobs beyond your boards",
   },
   "networking.followup": {
     priority: 400,

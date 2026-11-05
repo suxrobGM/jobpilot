@@ -2,21 +2,18 @@
 
 import type { ReactElement } from "react";
 import { Divider, Stack } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
-import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState, QuerySection } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
+import { useJournalLiveStatus, useLatestJournalPage } from "../journal/journal-cache";
 import { collapseCoveredCycles, withLatestRuns } from "../journal/journal-entries";
 import { JournalRow } from "../journal/journal-row";
 import { LiveStatusChip } from "../journal/live-status-chip";
-import { useJournalLiveStatus } from "../journal/use-journal-live";
 
 const RECENT_LIMIT = 8;
 
 export function RecentActivity(): ReactElement {
-  // Same query key as the Activity tab, so both share one cached first page.
-  const firstPage = useApiQuery(pilotQueries.journal());
+  const firstPage = useLatestJournalPage();
   const status = useJournalLiveStatus();
 
   const items = firstPage.data?.items ?? [];
@@ -35,9 +32,7 @@ export function RecentActivity(): ReactElement {
       }
     >
       <QuerySection
-        isLoading={firstPage.isLoading}
-        isError={firstPage.isError}
-        onRetry={() => void firstPage.refetch()}
+        query={firstPage}
         errorTitle="Couldn't load the journal."
         isEmpty={entries.length === 0}
         empty={<EmptyState variant="inline" title="No journal entries yet." />}

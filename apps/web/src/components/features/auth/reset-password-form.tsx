@@ -3,22 +3,20 @@
 import type { ReactElement } from "react";
 import { type ResetPasswordInput, ResetPasswordSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { useToast } from "@/providers/notification-provider";
+import { useToast } from "@/providers/toast-provider";
+import { PASSWORD_HINT } from "./password-hint";
 
-interface ResetPasswordFormProps {
-  token: string;
-}
-
-export function ResetPasswordForm(props: ResetPasswordFormProps): ReactElement {
-  const { token } = props;
+export function ResetPasswordForm(): ReactElement {
+  const token = useSearchParams().get("token") ?? "";
   const router = useRouter();
   const toast = useToast();
-  const resetPassword = useApiMutation((body: ResetPasswordInput) =>
-    api.auth.password.reset.post(body),
+  const resetPassword = useApiMutation(
+    (body: ResetPasswordInput) => api.auth.password.reset.confirm.post(body),
+    { showErrorToast: false },
   );
 
   const form = useAppForm({
@@ -63,14 +61,14 @@ export function ResetPasswordForm(props: ResetPasswordFormProps): ReactElement {
               type="password"
               autoComplete="new-password"
               autoFocus
-              helperText="8+ characters with an uppercase letter, a lowercase letter, a number, and a special character."
+              helperText={PASSWORD_HINT}
             />
           )}
         </form.AppField>
 
         <form.AppForm>
-          <form.SubmitButton disabled={resetPassword.isPending} fullWidth size="large">
-            {resetPassword.isPending ? "Updating…" : "Update password"}
+          <form.SubmitButton fullWidth size="large">
+            Update password
           </form.SubmitButton>
         </form.AppForm>
 

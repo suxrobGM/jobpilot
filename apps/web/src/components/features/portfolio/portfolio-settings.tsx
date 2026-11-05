@@ -4,15 +4,15 @@ import type { ReactElement } from "react";
 import { type PortfolioSettingsPatch, usernameSchema } from "@jobpilot/contracts/user";
 import { OpenInNew } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { PortfolioSettingsDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { SectionCard } from "@/components/ui/layout";
 import { toPortfolioFormValues } from "./portfolio-form-values";
 import { PortfolioView } from "./portfolio-view";
 import { PortfolioVisibilityFields } from "./portfolio-visibility-fields";
@@ -23,7 +23,7 @@ const AVAILABILITY_ITEMS = [
 ] as const;
 
 export function PortfolioSettings(): ReactElement {
-  const settingsQuery = useApiQuery(userQueries.portfolio());
+  const settingsQuery = useQuery(userQueries.portfolio());
 
   if (!settingsQuery.data) {
     return (
@@ -45,7 +45,7 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
 
   const save = useApiMutation((body: PortfolioSettingsPatch) => api.user.portfolio.patch(body), {
     successMessage: "Portfolio settings saved",
-    invalidate: [queryKeys.user.portfolio(), queryKeys.user.portfolioPreview()],
+    invalidate: [userQueries.portfolio().queryKey, userQueries.portfolioPreview().queryKey],
   });
 
   const form = useAppForm({
@@ -80,7 +80,9 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
               onChangeAsyncDebounceMs: 350,
               // The caller's own username always reads as free, so skip the round trip.
               onChangeAsync: async ({ value }) => {
-                if (value === settings.username) return undefined;
+                if (value === settings.username) {
+                  return undefined;
+                }
                 const { data } = await api.user.portfolio.available.get({
                   query: { username: value },
                 });
@@ -113,18 +115,9 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
 
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1 }}>
             <form.AppForm>
-              <form.SubmitButton disabled={save.isPending}>
-                {save.isPending ? "Saving" : "Save settings"}
-              </form.SubmitButton>
+              <form.SubmitButton>Save settings</form.SubmitButton>
             </form.AppForm>
-            <Button
-              component="a"
-              href={publicUrl}
-              target="_blank"
-              rel="noopener"
-              variant="outlined"
-              endIcon={<OpenInNew />}
-            >
+            <Button href={publicUrl} variant="outlined" endIcon={<OpenInNew />}>
               View public page
             </Button>
           </Stack>
@@ -144,7 +137,7 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
 }
 
 function PortfolioPreview(): ReactElement {
-  const previewQuery = useApiQuery(userQueries.portfolioPreview());
+  const previewQuery = useQuery(userQueries.portfolioPreview());
 
   if (previewQuery.isPending) {
     return <LoadingSpinner />;

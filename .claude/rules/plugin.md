@@ -16,7 +16,7 @@ archives as `JOBPILOT_SKILLS_ROOT`. No generation step. Edit here directly.
 | `skills/<name>/SKILL.md` | One skill per directory. |
 | `skills/_shared/*.md` | Reference docs. No `SKILL.md`, so not listed as a skill. Link as `../_shared/<doc>.md`. |
 | `skills/pilot/tasks/<taskType>.md` | One file per task type. `pilot/SKILL.md` is re-read every cycle, so it holds only the loop. |
-| `agents/*.md` | `job-scorer`, `job-applier`, `job-searcher` and `networking-worker` subagents, `model: inherit`. Source of truth: the host writes Codex's `.codex/agents/*.toml` from them, body inlined, at every Codex session start. The repo copies are checked in; a terminal test fails when they drift. |
+| `agents/*.md` | `job-scorer`, `job-applier`, `job-searcher`, `job-researcher` and `networking-worker` subagents, `model: inherit`. Source of truth: the host writes Codex's `.codex/agents/*.toml` from them, body inlined, at every Codex session start. The repo copies are checked in; a terminal test fails when they drift. |
 
 Resume skills: `extract-resume` parses the PDF and chains `review-resume` on a first extraction.
 `review-resume` saves one `Suggested rewrite` variant and never edits a base. `tailor-resume`
@@ -40,7 +40,7 @@ owns per-job variants, guarded in `apps/api/src/modules/resume/tailoring/structu
   links).
 - Load profile, resume, and credentials per `skills/_shared/setup.md`. Resolve a board login with
   `GET /api/credentials/resolve` (the board's login, else the default). Log in before searching.
-- Dedupe with `GET /api/applied/check` before applying.
+- Dedupe with `GET /api/applications/duplicates` before applying.
 - Campaigns: `PATCH /api/campaigns/[id]/jobs/[jobKey]` for non-terminal transitions.
   `POST .../jobs/[jobKey]/result` for applied / failed / skipped. It updates the job and creates
   the application in one call.

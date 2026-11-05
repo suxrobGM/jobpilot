@@ -2,7 +2,7 @@
 
 Payload `{messageIds[], count, minScore, senderDomains[]}`: unimported job-alert emails (LinkedIn,
 Ladders, We Work Remotely, ...) offered at the user's scheduled times or right after **Run now**.
-Turn **exactly** those `messageIds` into ONE new campaign of ranked jobs. Don't apply: the server
+Turn **exactly** those `messageIds` into ranked jobs in the standing "Job alerts" campaign. Don't apply: the server
 promotes rows scoring at or above `minScore` on the next task list, and `job.apply` works them
 highest score first.
 
@@ -17,7 +17,7 @@ the procedure. A message that is not a job alert (a connection request, a newsle
 1. **Collect.** `GET /api/email/messages/<id>` for each message. Its `links` is `[{url, text}]`:
    every link with the text a reader sees for it. Alert links are usually opaque click-trackers, so
    **the text is how you tell a posting from everything else**. Empty `links` → pull `https?://`
-   URLs out of `rawBody` with the words beside each.
+   URLs out of `body` with the words beside each.
 
    Keep a link only when its text names **one job posting** (a job title, optionally with company
    or location). Drop navigation and chrome - the board's name, "My Dashboard", "Find Jobs", "See
@@ -60,20 +60,31 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    Dedupe across all messages, keeping the richest listing text for each posting.
 
 3. **Skip what is already in the pipeline.** Alert emails repeat postings for days. Send every
-   canonical URL (at most 500) in one call; `.seen` lists those already in one of your campaigns
-   from the last 7 days, exactly as sent. Drop them, then run the applied-check
-   (`../../_shared/campaign-flow.md`) on the rest.
+   canonical URL (at most 500) in one call; `.existing` lists those already in one of your campaigns
+   from the last 7 days, exactly as sent. Drop them.
 
    ```bash
-   jobpilot-api POST /api/pilot/job-alerts/seen --data '{"urls":["<url>","<url>"]}'
+   jobpilot-api POST /api/pilot/jobs/existing --data '{"urls":["<url>","<url>"]}'
    ```
+
+   The same job also arrives from LinkedIn and Indeed under different URLs. Send the rest in one
+   call (at most 100) as `{title, company, location}`; each match names the request `index` and a
+   stored row. Drop a posting only when the match is the same job: same title, company and
+   location, or the same requisition id. One employer often posts the same title for different
+   teams, so a bare title match is not enough.
+
+   ```bash
+   jobpilot-api POST /api/pilot/jobs/similar --data '{"postings":[{"title":"<t>","company":"<c>","location":"<l>"}]}'
+   ```
+
+   Then run the applied-check (`../../_shared/campaign-flow.md`) on what is left.
 
 4. **Rank** each remaining posting **in place** from its listing text - no navigation, no worker.
    Build a brief per `../../_shared/job-brief.md` from what the email states. Alert emails rarely
-   list skills, and `POST /api/score-fit` floors a skill-less brief at 10 with `confidence: 0` - a
+   list skills, and `POST /api/fit-scores` floors a skill-less brief at 10 with `confidence: 0` - a
    non-answer, not a low fit. So:
 
-   - **Skills or requirements stated** → `POST /api/score-fit` `{brief, resumeId, minScore}`
+   - **Skills or requirements stated** → `POST /api/fit-scores` `{brief, resumeId, minScore}`
      (`brief` a JSON object). `verdict:"trust"` → use `score`; `"deliberate"` → reason from the
      matches and gaps.
    - **Title only, and it rules the role out** against the pilot goals and the resume (wrong
@@ -86,12 +97,12 @@ the procedure. A message that is not a job alert (a connection request, a newsle
 
    Order unscored rows first, then scored rows highest first.
 
-5. **Campaign.** Only when a posting survived step 3. Create one named for the run's local hour and
-   read `.id` as `CID`:
+5. **Campaign.** Only when a posting survived step 3. This returns the open "Job alerts" campaign,
+   or creates it; read `.id` as `CID`:
 
    ```bash
    jobpilot-api POST /api/campaigns \
-     --data '{"query":"Job alerts · <Sep 16 08:00>","source":"auto_apply","createdBy":"pilot","config":{"resumeId":"<RESUME_ID>","minScore":<minScore>}}'
+     --data '{"query":"Job alerts","source":"auto_apply","createdBy":"pilot","feed":"job_alerts","config":{"resumeId":"<RESUME_ID>","minScore":<minScore>}}'
    ```
 
    Per posting in ranked order, write `{key, title, company, location, url, board, matchScore,
@@ -109,14 +120,14 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    payload `messageIds`, not only those that yielded postings:
 
    ```bash
-   jobpilot-api POST /api/email/job-alerts/imported --data '{"messageIds":["<id>","<id>"]}'
+   jobpilot-api POST /api/email/job-alerts/imports --data '{"messageIds":["<id>","<id>"]}'
    ```
 
    A run that fails before this call skips it: the server re-offers the emails, and step 3 keeps the
    retry from duplicating rows.
 
-Result: `subjectType:"campaign"`, `subjectId:$CID` when a campaign was made; otherwise keep the
+Result: `subjectType:"campaign"`, `subjectId:$CID` when rows were written; otherwise keep the
 run's subject.
 
-Summary: "Imported 6 alert emails - 31 postings, 22 new; 9 scored ≥ 70, 4 left for scoring.
-Campaign 'Job alerts · Sep 16 08:00'." / "Imported 3 alert emails - no new postings."
+Summary: "Imported 6 alert emails - 31 postings, 22 new (3 duplicates across boards); 9 scored
+≥ 70, 4 left for scoring." / "Imported 3 alert emails - no new postings."

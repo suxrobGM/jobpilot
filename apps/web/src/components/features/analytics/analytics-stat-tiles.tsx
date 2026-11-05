@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Grid } from "@mui/material";
 import type { AnalyticsStatsDto } from "@/api/types";
-import { StatTile } from "./stat-tile";
+import { StatCard } from "@/components/ui/display";
 
 interface AnalyticsStatTilesProps {
   stats: AnalyticsStatsDto;
@@ -16,21 +16,21 @@ export function AnalyticsStatTiles(props: AnalyticsStatTilesProps): ReactElement
   return (
     <Grid container spacing={1.5}>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile
+        <StatCard
           label="Total"
           value={totals.applications}
           hint={`${totals.queueDepth} in queue`}
         />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile
+        <StatCard
           label="Submitted"
           value={totals.submitted}
           hint={`${thisWeek.submitted} this week`}
         />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile
+        <StatCard
           label="Interviewing"
           value={totals.interviewing}
           hint={`${thisWeek.interviewing} this week`}
@@ -38,18 +38,18 @@ export function AnalyticsStatTiles(props: AnalyticsStatTilesProps): ReactElement
         />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile label="Offers" value={totals.offers} accent="success" />
+        <StatCard label="Offers" value={totals.offers} accent="success" />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile
+        <StatCard
           label="Rejected"
           value={totals.rejected}
           hint={`${thisWeek.rejected} this week`}
-          accent="danger"
+          accent="error"
         />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile label="Response rate" value={`${responseRatePct}%`} />
+        <StatCard label="Response rate" value={`${responseRatePct}%`} />
       </Grid>
     </Grid>
   );

@@ -62,7 +62,7 @@ export const authProvidersController = new Elysia({
     async ({ params, query, headers, cookie, redirect }) => {
       const stateCookies = oauthStateCookies(cookie, STATE_COOKIES, OAUTH_COOKIE_PATH);
       const intent = stateCookies.companion() === "link" ? "link" : "login";
-      const errorPage = intent === "link" ? "/account/security" : "/login";
+      const errorPage = intent === "link" ? "/settings/security" : "/login";
       const fail = (reason: OAuthErrorReason) => {
         stateCookies.clear();
         return redirect(`${env.APP_URL}${errorPage}?oauth=error&reason=${reason}`);
@@ -84,7 +84,9 @@ export const authProvidersController = new Elysia({
           return fail(flowFailureReason<OAuthErrorReason>(e, "OAuth link"));
         }
         stateCookies.clear();
-        return redirect(`${env.APP_URL}/account/security?oauth=linked&provider=${params.provider}`);
+        return redirect(
+          `${env.APP_URL}/settings/security?oauth=linked&provider=${params.provider}`,
+        );
       }
 
       try {

@@ -3,9 +3,9 @@
 import type { ReactElement } from "react";
 import type { PilotSearch } from "@jobpilot/contracts/pilot";
 import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import { EmptyState, QuerySection } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 
 /** The empty-run streak that puts a search on the API backoff ladder's top (48h) rung. */
@@ -18,7 +18,7 @@ interface SearchStatus {
 
 function searchStatus(search: PilotSearch): SearchStatus | null {
   if (search.emptyRuns >= BACKOFF_THRESHOLD) {
-    return { label: "coming up dry — backing off", color: "warning" };
+    return { label: "coming up dry - backing off", color: "warning" };
   }
   if (new Date(search.nextRunAt).getTime() <= Date.now()) {
     return { label: "due now", color: "info" };
@@ -30,8 +30,8 @@ function yieldStats(search: PilotSearch): string {
   const parts: string[] = [];
   if (search.lastRunAt) {
     parts.push(`Last run ${formatRelativeTime(search.lastRunAt)} ago`);
-    if (search.lastNewJobs !== null && search.lastJobsSeen !== null) {
-      parts.push(`${search.lastNewJobs} new / ${search.lastJobsSeen} seen`);
+    if (search.lastNewJobs !== null && search.lastJobsScanned !== null) {
+      parts.push(`${search.lastNewJobs} new / ${search.lastJobsScanned} seen`);
     }
   } else {
     parts.push("Not run yet");
@@ -62,8 +62,8 @@ function SearchRow(props: SearchRowProps): ReactElement {
         <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
           {search.query}
         </Typography>
-        {search.board && <Chip size="small" variant="outlined" label={search.board.name} />}
-        {status && <Chip size="small" color={status.color} label={status.label} />}
+        {search.board && <Chip variant="outlined" label={search.board.name} />}
+        {status && <Chip color={status.color} label={status.label} />}
       </Stack>
       {search.reason && (
         <Typography variant="captionMuted" sx={{ display: "block", mt: 0.25 }}>
@@ -78,21 +78,17 @@ function SearchRow(props: SearchRowProps): ReactElement {
 }
 
 export function SearchesList(): ReactElement {
-  const query = useApiQuery(pilotQueries.searches(), {
-    errorMessage: "Failed to load pilot searches",
-  });
+  const query = useQuery(pilotQueries.searches());
 
   const searches = query.data ?? [];
 
   return (
     <QuerySection
-      isLoading={query.isLoading}
-      isError={query.isError}
-      onRetry={() => void query.refetch()}
+      query={query}
       errorTitle="Couldn't load the pilot's searches."
       isEmpty={searches.length === 0}
       empty={
-        <EmptyState variant="inline" title="None yet — the pilot creates these from your goals." />
+        <EmptyState variant="inline" title="None yet - the pilot creates these from your goals." />
       }
     >
       <Stack spacing={1.5} divider={<Divider />}>

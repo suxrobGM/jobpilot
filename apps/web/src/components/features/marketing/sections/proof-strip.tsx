@@ -23,10 +23,7 @@ interface Stat {
   label: string;
 }
 
-/**
- * A failed fetch drops only the numbers it would fill; a decorative strip must never 500 the page.
- * Cached so it renders inside the prerender.
- */
+/** A failed fetch drops only its numbers: a decorative strip must never 500 the page. */
 export async function ProofStrip(): Promise<ReactElement> {
   "use cache";
   cacheLife("hours");

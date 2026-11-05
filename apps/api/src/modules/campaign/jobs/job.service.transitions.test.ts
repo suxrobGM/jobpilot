@@ -22,7 +22,7 @@ describe("CampaignJobService queued rows", () => {
   });
 });
 
-// Both routes into `applying` have to refuse a duplicate: the agent's own `/applied/check` call is
+// Both routes into `applying` have to refuse a duplicate: the agent's own `/applications/duplicates` call is
 // advice it can skip, and by the browser step it is already too late.
 describe("CampaignJobService duplicate apply guard", () => {
   const EXISTING = {

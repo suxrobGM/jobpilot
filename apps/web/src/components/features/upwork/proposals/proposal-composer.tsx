@@ -2,23 +2,16 @@
 
 import type { ReactElement } from "react";
 import { Button, Stack } from "@mui/material";
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { upworkProposalQueries } from "@/api/queries";
 import type { CreateUpworkProposalRequest } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
-
-interface FormValues {
-  jobTitle: string;
-  clientName: string;
-  jobUrl: string;
-  jobDescription: string;
-}
+import { proposalHref } from "@/utils/routes";
 
 const formSchema = z.object({
   jobTitle: z.string().trim().min(2, "Enter a job title"),
@@ -27,13 +20,15 @@ const formSchema = z.object({
   jobDescription: z.string().trim().min(20, "Paste the job description"),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export function ProposalComposer(): ReactElement {
   const router = useRouter();
   const agent = useAgent();
 
   const createProposal = useApiMutation(
     (body: CreateUpworkProposalRequest) => api.upwork.proposals.post(body),
-    { invalidate: [queryKeys.upworkProposals.all] },
+    { invalidate: [upworkProposalQueries.all] },
   );
 
   const form = useAppForm({
@@ -54,7 +49,7 @@ export function ProposalComposer(): ReactElement {
       });
 
       await agent.injectSkill("upwork-proposal", String(created.id));
-      router.push(`/upwork/${created.id}` as Route);
+      router.push(proposalHref(created.id));
     },
   });
 

@@ -3,12 +3,13 @@
 import { type ReactNode, useState } from "react";
 import { EMPTY_RESUME_DATA, SUGGESTED_REWRITE_LABEL } from "@jobpilot/contracts/resume";
 import { AutoFixHigh } from "@mui/icons-material";
-import { Alert, AlertTitle, Button, Skeleton, Stack, Typography } from "@mui/material";
+import { Alert, AlertTitle, Button, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { resumeQueries } from "@/api/queries";
-import { invalidations, queryKeys } from "@/api/query-keys";
+import { invalidations, resumeQueries } from "@/api/queries";
 import type { ResumeDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
 import { plural } from "@/utils/format";
 import { diffRewrite } from "./rewrite-diff";
@@ -18,27 +19,25 @@ interface SuggestedRewriteCardProps {
   resume: ResumeDto;
 }
 
-/**
- * Surfaces the `Suggested rewrite` variant `review-resume` leaves after an upload. Accept writes it
- * onto the base via the ordinary update route; the uploaded PDF stays the way back.
- */
+/** Accept overwrites the base with `review-resume`'s suggestion; the uploaded PDF stays the way back. */
 export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNode {
   const { resume } = props;
   const resumeId = resume.id;
   const confirm = useConfirm();
   const [reviewing, setReviewing] = useState(false);
 
-  const variants = useApiQuery(resumeQueries.variants(resumeId));
+  const variants = useQuery(resumeQueries.variants(resumeId));
   const suggestion = variants.data?.find((v) => v.label === SUGGESTED_REWRITE_LABEL);
 
   // Only the list is cached up front; the body arrives with the detail fetch.
-  const detail = useApiQuery(resumeQueries.variantDetail(suggestion?.id ?? ""), {
+  const detail = useQuery({
+    ...resumeQueries.variantDetail(suggestion?.id ?? ""),
     enabled: suggestion !== undefined,
   });
 
   const discard = useApiMutation((id: string) => api.resumes.variants({ id }).delete(), {
     successMessage: "Suggestion discarded",
-    invalidate: [queryKeys.resume.variants(resumeId)],
+    invalidate: [resumeQueries.variants(resumeId).queryKey],
   });
 
   // One call: the API writes the content onto the base and drops the suggestion in one transaction.
@@ -46,7 +45,7 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
     (variantId: string) => api.resumes.variants({ id: variantId }).apply.post(),
     {
       successMessage: "Resume updated",
-      invalidate: [queryKeys.resume.variants(resumeId), ...invalidations.resume],
+      invalidate: [resumeQueries.variants(resumeId).queryKey, ...invalidations.resume],
     },
   );
 
@@ -54,8 +53,16 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
     return null;
   }
 
-  if (detail.isLoading || !detail.data) {
-    return <Skeleton variant="rounded" height={120} />;
+  if (detail.isLoading) {
+    return <DetailSkeleton heights={[120]} />;
+  }
+  if (!detail.data) {
+    return (
+      <QueryError
+        title="Couldn't load the suggested rewrite."
+        onRetry={() => void detail.refetch()}
+      />
+    );
   }
 
   const changeCount = diffRewrite(resume.content ?? EMPTY_RESUME_DATA, detail.data.content).length;

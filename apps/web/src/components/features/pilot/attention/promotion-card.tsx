@@ -1,34 +1,13 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { PatchPromotionInput, Promotion, PromotionStatus } from "@jobpilot/contracts/pilot";
+import type { PatchPromotionInput, Promotion } from "@jobpilot/contracts/pilot";
 import { OpenInNew } from "@mui/icons-material";
-import {
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  type ChipProps,
-  Link,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Button, Card, CardContent, Chip, Link, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
-import { ColorChip } from "@/components/ui/display";
-import { formatRelativeTime } from "@/utils/format";
-
-const STATUS_COLOR: Record<PromotionStatus, ChipProps["color"]> = {
-  draft: "warning",
-  approved: "info",
-  declined: "default",
-  posted: "success",
-  failed: "error",
-  skipped: "default",
-  expired: "default",
-};
+import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 
 interface PromotionCardProps {
   promotion: Promotion;
@@ -43,7 +22,7 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
 
   const patch = useApiMutation(
     (input: PatchPromotionInput) => api.pilot.promotions({ id: promotion.id }).patch(input),
-    { invalidate: [queryKeys.pilot.promotionsAll()] },
+    { invalidate: [pilotQueries.promotionsAll] },
   );
   const isLoading = patch.isPending;
 
@@ -52,15 +31,13 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
   const canSave = body.trim().length > 0 && (hasTitle ? title.trim().length > 0 : true);
 
   return (
-    <Card variant="outlined">
+    <Card>
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-            <Chip size="small" label={promotion.platform} color="primary" />
-            {promotion.target && <Chip size="small" variant="outlined" label={promotion.target} />}
-            <Typography variant="captionMuted" sx={{ ml: "auto", whiteSpace: "nowrap" }}>
-              {formatRelativeTime(promotion.createdAt)} ago
-            </Typography>
+            <Chip label={promotion.platform} color="primary" />
+            {promotion.target && <Chip variant="outlined" label={promotion.target} />}
+            <RelativeTime value={promotion.createdAt} sx={{ ml: "auto", whiteSpace: "nowrap" }} />
           </Stack>
 
           {hasTitle && (
@@ -131,21 +108,14 @@ export function PromotionSummary(props: PromotionCardProps): ReactElement {
   const { promotion } = props;
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-      <Chip size="small" variant="outlined" label={promotion.platform} sx={{ minWidth: 90 }} />
-      <ColorChip
-        value={promotion.status}
-        colors={STATUS_COLOR}
-        variant="filled"
-        sx={{ textTransform: "capitalize" }}
-      />
+      <Chip variant="outlined" label={promotion.platform} sx={{ minWidth: 90 }} />
+      <StatusChip domain="promotion" value={promotion.status} variant="filled" />
       <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
         {promotion.title ?? promotion.body}
       </Typography>
       {promotion.postedUrl && (
         <Link
           href={promotion.postedUrl}
-          target="_blank"
-          rel="noopener noreferrer"
           sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, whiteSpace: "nowrap" }}
         >
           <OpenInNew fontSize="sm" />

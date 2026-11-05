@@ -1,36 +1,26 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { ApplicationStatus } from "@jobpilot/contracts/application";
-import type { ChipProps } from "@mui/material";
-import { ColorChip } from "./color-chip";
+import { Chip, type ChipProps } from "@mui/material";
+import { type StatusDomain, type StatusValue, statusColor, statusLabel } from "./status-styles";
 
-export const STATUS_LABEL: Record<ApplicationStatus, string> = {
-  applied: "Applied",
-  screening: "Screening",
-  interviewing: "Interviewing",
-  offer: "Offer",
-  rejected: "Rejected",
-  withdrawn: "Withdrawn",
-};
-
-const STATUS_COLOR: Record<ApplicationStatus, ChipProps["color"]> = {
-  applied: "default",
-  screening: "info",
-  interviewing: "primary",
-  offer: "success",
-  rejected: "error",
-  withdrawn: "default",
-};
-
-interface StatusChipProps {
-  status: ApplicationStatus;
+interface StatusChipProps<D extends StatusDomain> {
+  domain: D;
+  value: StatusValue<D>;
+  variant?: ChipProps["variant"];
   size?: ChipProps["size"];
+  sx?: ChipProps["sx"];
 }
 
-export function StatusChip(props: StatusChipProps): ReactElement {
-  const { status, size } = props;
+export function StatusChip<D extends StatusDomain>(props: StatusChipProps<D>): ReactElement {
+  const { domain, value, variant = "outlined", size, sx } = props;
   return (
-    <ColorChip value={status} colors={STATUS_COLOR} label={STATUS_LABEL[status]} size={size} />
+    <Chip
+      size={size}
+      variant={variant}
+      label={statusLabel(domain, value)}
+      color={statusColor(domain, value)}
+      sx={sx}
+    />
   );
 }

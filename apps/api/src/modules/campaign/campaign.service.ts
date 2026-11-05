@@ -10,7 +10,7 @@ import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
-import { conflict, findOwned, unprocessable } from "@/common/errors";
+import { conflict, findOwned, isPrismaError, PRISMA_ERRORS, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { normalizeJobUrl } from "@/common/utils/url";
@@ -18,13 +18,19 @@ import { type CampaignStatus, type Prisma, PrismaClient } from "@/generated/pris
 import { BOARD_REF_SELECT, JobBoardService } from "@/modules/job-board/job-board.service";
 import type { campaignsQuery } from "./campaign.schema";
 import {
+  ACCOUNT_SUMMARY_MESSAGE_STATUSES,
+  accountSummary,
   deriveCampaignSummary,
   emptySummary,
   jobSummary,
   summarizeCampaigns,
   type WithSummary,
 } from "./campaign.summary";
-import { ensureCampaignOwned, publishCampaignStatus } from "./campaign.utils";
+import {
+  ensureCampaignOwned,
+  OPEN_CAMPAIGN_STATUSES,
+  publishCampaignStatus,
+} from "./campaign.utils";
 
 const STATUS_TRANSITIONS: Record<CampaignStatus, readonly CampaignStatus[]> = {
   in_progress: ["paused", "completed", "failed"],
@@ -36,6 +42,17 @@ const STATUS_TRANSITIONS: Record<CampaignStatus, readonly CampaignStatus[]> = {
 const CAMPAIGN_INCLUDE = { board: { select: BOARD_REF_SELECT } } satisfies Prisma.CampaignInclude;
 
 type CampaignRow = Prisma.CampaignGetPayload<{ include: typeof CAMPAIGN_INCLUDE }>;
+
+/** Where a pilot feed's or search's open campaign is, or null for a plain campaign. */
+function standingWhere(
+  userId: string,
+  body: CreateCampaignInput,
+): Prisma.CampaignWhereInput | null {
+  const open = { userId, status: { in: OPEN_CAMPAIGN_STATUSES } };
+  if (body.feed) return { ...open, feed: body.feed };
+  if (body.pilotSearchId) return { ...open, pilotSearchId: body.pilotSearchId };
+  return null;
+}
 
 function toRow(campaign: WithSummary<CampaignRow>) {
   return { ...campaign, config: campaignConfigSchema.parse(campaign.config) };
@@ -68,7 +85,40 @@ export class CampaignService {
     return paginate(rows.map(toRow), query, total);
   }
 
+  async accountSummary(userId: string) {
+    const [statuses, messages] = await Promise.all([
+      this.prisma.campaign.groupBy({ by: ["status"], where: { userId }, _count: { _all: true } }),
+      // Networking campaigns only, as on the dashboard: job campaigns' intros are counted per job.
+      this.prisma.networkingMessage.groupBy({
+        by: ["campaignId", "status"],
+        where: {
+          userId,
+          campaign: { source: "networking" },
+          status: { in: ACCOUNT_SUMMARY_MESSAGE_STATUSES },
+        },
+        _count: { _all: true },
+      }),
+    ]);
+    return accountSummary(
+      statuses.map((row) => ({ status: row.status, count: row._count._all })),
+      messages.flatMap((row) =>
+        row.campaignId
+          ? [{ campaignId: row.campaignId, status: row.status, count: row._count._all }]
+          : [],
+      ),
+    );
+  }
+
   async create(userId: string, body: CreateCampaignInput) {
+    const standing = standingWhere(userId, body);
+    if (standing) {
+      const open = await this.prisma.campaign.findFirst({
+        where: standing,
+        include: CAMPAIGN_INCLUDE,
+      });
+      if (open) return this.reuseStanding(open, body);
+    }
+
     const data: Prisma.CampaignUncheckedCreateInput = {
       userId,
       query: body.query,
@@ -77,14 +127,38 @@ export class CampaignService {
       config: toInputJson(body.config ?? {}),
       createdBy: body.createdBy,
       pilotSearchId: body.pilotSearchId ?? null,
+      feed: body.feed ?? null,
     };
     if (body.urls) {
       return this.createWithQueuedJobs(data, body.urls);
     }
 
-    const campaign = await this.prisma.campaign.create({ data, include: CAMPAIGN_INCLUDE });
-    // A just-created campaign provably has no jobs or messages; skip the aggregate round trip.
-    return toRow({ ...campaign, summary: emptySummary(campaign.source) });
+    try {
+      const campaign = await this.prisma.campaign.create({ data, include: CAMPAIGN_INCLUDE });
+      // A just-created campaign provably has no jobs or messages; skip the aggregate round trip.
+      return toRow({ ...campaign, summary: emptySummary(campaign.source) });
+    } catch (error) {
+      // A concurrent create won the partial unique index.
+      if (!standing || !isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) throw error;
+      const winner = await this.prisma.campaign.findFirstOrThrow({
+        where: standing,
+        include: CAMPAIGN_INCLUDE,
+      });
+      return this.reuseStanding(winner, body);
+    }
+  }
+
+  /** Only the resume follows the caller: `campaign.tune` owns `minScore`. */
+  private async reuseStanding(open: CampaignRow, body: CreateCampaignInput) {
+    const config = campaignConfigSchema.parse(open.config);
+    const resumeId = body.config?.resumeId;
+    if (!resumeId || resumeId === config.resumeId) return this.withSummary(open);
+    const updated = await this.prisma.campaign.update({
+      where: { id: open.id },
+      data: { config: toInputJson({ ...config, resumeId }) },
+      include: CAMPAIGN_INCLUDE,
+    });
+    return this.withSummary(updated);
   }
 
   /** Seeds pasted links as `queued` jobs with the campaign, so a half-written batch can't strand them. */
@@ -92,8 +166,9 @@ export class CampaignService {
     const unique = [...new Set(urls.map(normalizeJobUrl))];
     const campaign = await this.prisma.$transaction(async (tx) => {
       const created = await tx.campaign.create({ data, include: CAMPAIGN_INCLUDE });
-      await tx.job.createMany({
+      await tx.campaignJob.createMany({
         data: unique.map((url) => ({
+          userId: created.userId,
           campaignId: created.id,
           key: crypto.randomUUID(),
           // Nothing is known about a pasted link until a worker opens it; the host stands in.
@@ -122,8 +197,7 @@ export class CampaignService {
         "config.resumeId is required for search, auto-apply, and networking campaigns.",
       );
     }
-    // Guarded in the write: comparing against `existing` leaves a window for the pilot's campaign
-    // tune and a user edit to clobber each other.
+    // Guarded in the write: checking `existing` first lets the pilot's tune and a user edit race.
     const updated = await this.prisma.campaign.updateMany({
       where: {
         id,
@@ -156,7 +230,7 @@ export class CampaignService {
       where: { id, userId, status: existing.status },
       data: {
         status: body.status,
-        statusActor: body.actor,
+        statusChangedBy: body.actor,
         statusReason: body.reason ?? null,
         completedAt: finished ? new Date() : null,
       },
@@ -184,7 +258,7 @@ export class CampaignService {
           id: { in: messages.map((message) => message.contactId) },
           userId,
           messages: { none: {} },
-          relatedAppId: null,
+          applicationId: null,
         },
       });
       await tx.campaign.delete({ where: { id } });

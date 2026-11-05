@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
-import { serializeTechParam } from "@jobpilot/contracts/job-listing";
+import { serializeSkillsParam } from "@jobpilot/contracts/job-listing";
 import { Box, Link, Typography } from "@mui/material";
 import { motion } from "@/theme";
 import { jobsHref } from "./jobs-href";
 
-// The raw token, not an `sx` theme callback: this renders in a server component, and a function
-// cannot cross the RSC boundary into MUI's client Link.
+// The raw token, not an `sx` callback: a function can't cross the RSC boundary into MUI's Link.
 const linkedChipSx = {
   // MuiLink's theme default paints links in the accent; a tag only takes it on hover.
   color: "text.secondary",
@@ -17,7 +16,7 @@ interface SkillChipsProps {
   skills: readonly string[];
   /** Omit to show every skill. */
   max?: number;
-  /** Links each chip to `/jobs?tech=…`. Never inside a JobCard or JobRow: anchors can't nest. */
+  /** Links each chip to `/jobs?skills=…`. Never inside a JobCard or JobRow: anchors can't nest. */
   linked?: boolean;
 }
 
@@ -38,7 +37,7 @@ export function SkillChips(props: SkillChipsProps): ReactNode {
             key={item}
             variant="skillChip"
             underline="none"
-            href={jobsHref(new URLSearchParams({ tech: serializeTechParam([item]) }))}
+            href={jobsHref(new URLSearchParams({ skills: serializeSkillsParam([item]) }))}
             sx={linkedChipSx}
           >
             {item}

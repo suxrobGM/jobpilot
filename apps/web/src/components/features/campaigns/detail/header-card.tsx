@@ -1,24 +1,25 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { CampaignActor } from "@jobpilot/contracts/campaign";
+import type { Actor } from "@jobpilot/contracts/campaign";
 import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { CampaignDetailDto } from "@/api/types";
-import { formatRelativeTime } from "@/utils/format";
-import { CampaignStatusChip } from "../campaign-status-chip";
+import { RelativeTime, StatusChip, statusLabel } from "@/components/ui/display";
 import { PilotBadge } from "../pilot-badge";
 import { CampaignActionsBar } from "./actions-bar";
 import { CampaignIdentityBanner } from "./identity-banner";
 
 /** Actor names as shown in status attributions ("Paused by you / the agent / the pilot"). */
-const CAMPAIGN_ACTOR_LABEL: Record<CampaignActor, string> = {
+const CAMPAIGN_ACTOR_LABEL: Record<Actor, string> = {
   user: "you",
   agent: "the agent",
   pilot: "the pilot",
 };
 
 function pausedLine(campaign: CampaignDetailDto): string {
-  const by = campaign.statusActor ? ` by ${CAMPAIGN_ACTOR_LABEL[campaign.statusActor]}` : "";
+  const by = campaign.statusChangedBy
+    ? ` by ${CAMPAIGN_ACTOR_LABEL[campaign.statusChangedBy]}`
+    : "";
   const reason = campaign.statusReason ? ` - ${campaign.statusReason}` : "";
   return `Paused${by}${reason} · resume to continue.`;
 }
@@ -47,26 +48,24 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
               spacing={1}
               sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
             >
-              <CampaignStatusChip status={campaign.status} />
-              <Typography variant="body2Muted">
-                {campaign.source} · Started {formatRelativeTime(campaign.startedAt)} ago
-              </Typography>
+              <StatusChip domain="campaign" value={campaign.status} />
+              <RelativeTime
+                value={campaign.startedAt}
+                prefix={`${statusLabel("source", campaign.source)} · Started`}
+                variant="body2Muted"
+              />
               <PilotBadge createdBy={campaign.createdBy} />
               {campaign.board && (
-                <Chip size="small" label={`Board: ${campaign.board.name}`} variant="outlined" />
+                <Chip label={`Board: ${campaign.board.name}`} variant="outlined" />
               )}
               {!isAutoApply && typeof cfg.maxJobs === "number" && (
-                <Chip size="small" label={`Jobs: ${cfg.maxJobs}`} variant="outlined" />
+                <Chip label={`Jobs: ${cfg.maxJobs}`} variant="outlined" />
               )}
               {isAutoApply && typeof cfg.minScore === "number" && (
-                <Chip size="small" label={`Min score: ${cfg.minScore}`} variant="outlined" />
+                <Chip label={`Min score: ${cfg.minScore}`} variant="outlined" />
               )}
               {isAutoApply && (
-                <Chip
-                  size="small"
-                  label={`Max apps: ${cfg.maxApplications ?? "∞"}`}
-                  variant="outlined"
-                />
+                <Chip label={`Max apps: ${cfg.maxApplications ?? "∞"}`} variant="outlined" />
               )}
             </Stack>
 

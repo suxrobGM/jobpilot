@@ -8,14 +8,14 @@ export const createPilotSearchSchema = z.object({
   query: z.string().min(1),
   /** The board's domain, resolved to a catalog row. */
   board: z.string().trim().min(1).optional(),
-  resumeId: z.string().optional(),
+  resumeId: z.uuid().optional(),
   reason: reasonSchema,
 });
 
 export const updatePilotSearchSchema = createPilotSearchSchema.partial();
 
 export const reportPilotSearchRunSchema = z.object({
-  jobsSeen: z.number().int().min(0),
+  jobsScanned: z.number().int().min(0),
   newJobs: z.number().int().min(0),
   reachedEnd: z.boolean(),
 });
@@ -25,10 +25,10 @@ export const pilotSearchSchema = z.object({
   userId: z.uuid(),
   query: z.string(),
   board: boardRefSchema.nullable(),
-  resumeId: z.string().nullable(),
+  resumeId: z.uuid().nullable(),
   reason: z.string(),
   lastRunAt: z.date().nullable(),
-  lastJobsSeen: z.number().int().nullable(),
+  lastJobsScanned: z.number().int().nullable(),
   lastNewJobs: z.number().int().nullable(),
   emptyRuns: z.number().int(),
   nextRunAt: z.date(),

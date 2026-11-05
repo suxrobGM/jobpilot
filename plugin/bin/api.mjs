@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 const USAGE = `usage: jobpilot-api <METHOD> <path> [--query key=value]... [--data <json>|@<file>|-] [--out <file>]
 
   jobpilot-api GET /api/user
-  jobpilot-api GET /api/applied --query search=Acme --query limit=100
+  jobpilot-api GET /api/applications --query search=Acme --query limit=100
   jobpilot-api POST /api/campaigns --data @body.json
   jobpilot-api GET /api/resumes/3/pdf --out resume-3.pdf`;
 

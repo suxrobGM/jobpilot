@@ -1,7 +1,7 @@
 # Job Brief Schema
 
 The canonical job brief. Build it from the posting body (a narrowed `browser_snapshot`, per
-`./browser-tips.md`) or a pasted JD, then pass it to `POST /api/score-fit` and to the
+`./browser-tips.md`) or a pasted JD, then pass it to `POST /api/fit-scores` and to the
 `tailor-resume` skill.
 
 ```json

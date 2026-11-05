@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { SERVICE_PROVIDERS } from "./credential";
+import { CAPTCHA_PROVIDERS } from "./credential";
 
 /** CAPTCHA families a configured solving service can handle. */
 const CAPTCHA_TYPES = ["recaptcha", "hcaptcha", "turnstile"] as const;
@@ -12,12 +12,12 @@ export const captchaSolveSchema = z.object({
   /** The page hosting the widget. */
   pageurl: z.url(),
   /** Force a specific provider; otherwise the first configured key is used (2Captcha preferred). */
-  provider: z.enum(SERVICE_PROVIDERS).optional(),
+  provider: z.enum(CAPTCHA_PROVIDERS).optional(),
 });
 
 export type CaptchaSolveInput = z.infer<typeof captchaSolveSchema>;
 
 export interface CaptchaSolveResult {
   token: string;
-  provider: (typeof SERVICE_PROVIDERS)[number];
+  provider: (typeof CAPTCHA_PROVIDERS)[number];
 }

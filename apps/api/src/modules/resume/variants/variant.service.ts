@@ -2,13 +2,11 @@ import type {
   resumeVariantCreateSchema,
   resumeVariantPatchSchema,
 } from "@jobpilot/contracts/resume";
-import { resumeChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { renderResumePdf } from "@/common/pdf/render";
-import { publish } from "@/common/sse";
 import {
   deleteGeneratedVariantFiles,
   generatedVariantPath,
@@ -17,6 +15,7 @@ import {
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { readContent, toStoredContent } from "../content";
+import { publishResumeEvent } from "../resume.events";
 import { ResumeService } from "../resume.service";
 import { buildTailoredVariant } from "../tailoring/build-variant";
 import {
@@ -67,23 +66,24 @@ export class ResumeVariantService {
   }
 
   private async create(
+    userId: string,
     resumeId: string,
     data: Omit<Prisma.ResumeVariantUncheckedCreateInput, "resumeId">,
   ): Promise<string> {
     const jobUrl = data.jobUrl ? normalizeJobUrl(data.jobUrl) : data.jobUrl;
     const variant = await this.prisma.resumeVariant.create({ data: { ...data, jobUrl, resumeId } });
-    publish(
-      resumeChannel,
-      { resumeId },
-      { type: "variant.created", resumeId, variantId: variant.id },
-    );
+    publishResumeEvent(userId, { type: "variant.created", resumeId, variantId: variant.id });
     return variant.id;
   }
 
   /** Every delete path ends here: the cache would otherwise keep files no request can reach. */
-  private async afterVariantsDeleted(resumeId: string, ...ids: string[]): Promise<void> {
+  private async afterVariantsDeleted(
+    userId: string,
+    resumeId: string,
+    ...ids: string[]
+  ): Promise<void> {
     await deleteGeneratedVariantFiles(...ids);
-    publish(resumeChannel, { resumeId }, { type: "variant.deleted", resumeId, variantIds: ids });
+    publishResumeEvent(userId, { type: "variant.deleted", resumeId, variantIds: ids });
   }
 
   async listVariants(userId: string, resumeId: string) {
@@ -108,14 +108,14 @@ export class ResumeVariantService {
     await this.resumes.findOwned(userId, resumeId);
     await this.assertApplicationOwned(userId, body.applicationId);
 
-    const id = await this.create(resumeId, { ...body, content: toStoredContent(body.content) });
+    const id = await this.create(userId, resumeId, {
+      ...body,
+      content: toStoredContent(body.content),
+    });
     return { id };
   }
 
-  /**
-   * The model writes prose and hint arrays, never structured ResumeData - `buildTailoredVariant`
-   * applies them and rejects invented facts.
-   */
+  /** The model sends prose and hints, never ResumeData; `buildTailoredVariant` rejects inventions. */
   async createTailoredVariant(userId: string, resumeId: string, body: TailorVariantBody) {
     const base = await this.resumes.findOwned(userId, resumeId);
     if (base.content === null) {
@@ -124,11 +124,11 @@ export class ResumeVariantService {
     await this.assertApplicationOwned(userId, body.applicationId);
 
     const tailored = buildTailoredVariant(readContent(base.content), body);
-    const id = await this.create(resumeId, {
+    const id = await this.create(userId, resumeId, {
       label: body.label,
       jobUrl: body.jobUrl,
       applicationId: body.applicationId,
-      diffNotes: body.diffNotes,
+      changeNotes: body.changeNotes,
       content: toStoredContent(tailored.content),
       rewrites: tailored.audit ? toInputJson(tailored.audit) : undefined,
     });
@@ -152,7 +152,7 @@ export class ResumeVariantService {
       jobUrl: variant.jobUrl,
       applicationId: variant.applicationId,
       content: readContent(variant.content),
-      diffNotes: variant.diffNotes,
+      changeNotes: variant.changeNotes,
       rewrites:
         variant.rewrites === null ? null : variantRewriteAuditSchema.parse(variant.rewrites),
       createdAt: variant.createdAt,
@@ -174,14 +174,11 @@ export class ResumeVariantService {
   async removeVariant(userId: string, id: string) {
     const variant = await this.findVariant(userId, id);
     await this.prisma.resumeVariant.delete({ where: { id } });
-    await this.afterVariantsDeleted(variant.resumeId, id);
+    await this.afterVariantsDeleted(userId, variant.resumeId, id);
     return { deleted: id };
   }
 
-  /**
-   * What the dashboard's Apply does to a suggested rewrite. One transaction: as two browser calls,
-   * a dropped connection left the base rewritten with the suggestion still on offer.
-   */
+  /** One transaction: as two calls, a drop left the base rewritten and the suggestion on offer. */
   async applyVariant(userId: string, id: string) {
     const variant = await this.findVariant(userId, id);
     const { resumeId } = variant;
@@ -194,12 +191,8 @@ export class ResumeVariantService {
       this.prisma.resumeVariant.delete({ where: { id } }),
     ]);
 
-    publish(
-      resumeChannel,
-      { resumeId },
-      { type: "content.updated", resumeId, version: updated.version },
-    );
-    await this.afterVariantsDeleted(resumeId, id);
+    publishResumeEvent(userId, { type: "content.updated", resumeId, version: updated.version });
+    await this.afterVariantsDeleted(userId, resumeId, id);
 
     return { id: resumeId, version: updated.version };
   }
@@ -226,7 +219,7 @@ export class ResumeVariantService {
 
     const ids = candidates.map((variant) => variant.id);
     const result = await this.prisma.resumeVariant.deleteMany({ where: { id: { in: ids } } });
-    await this.afterVariantsDeleted(resumeId, ...ids);
+    await this.afterVariantsDeleted(userId, resumeId, ...ids);
 
     return { deletedCount: result.count };
   }

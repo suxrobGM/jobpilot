@@ -9,17 +9,19 @@ import { describe, expect, it } from "bun:test";
 const USER_ID = "5f0d4d0e-4f27-4a0a-9f4e-2b1c6f1f7f01";
 const RUN_ID = "4c965efd-b586-49ea-825b-1af715760116";
 const VERSION = "31b0c512-b767-4dd7-9ee8-913e46d544c6";
+const CAMPAIGN_ID = "0b6f3c2a-8d1e-4f5a-9c7b-3e2d1a0f9b8c";
+const PAUSED_CAMPAIGN_ID = "7a1e9d4c-2b3f-4e6a-8d5c-9f0e1b2a3c4d";
 const now = new Date();
 
 const applyTask: PilotTask = {
-  id: "job.apply:c1:j1",
+  id: `job.apply:${CAMPAIGN_ID}:j1`,
   taskType: "job.apply",
   priority: 100,
   title: "Engineer",
   subjectType: "job",
-  subjectId: "c1:j1",
+  subjectId: `${CAMPAIGN_ID}:j1`,
   payload: {
-    campaignId: "c1",
+    campaignId: CAMPAIGN_ID,
     jobKey: "j1",
     jobTitle: "Engineer",
     url: "https://example.test/job",
@@ -30,13 +32,13 @@ const applyTask: PilotTask = {
 };
 
 const pausedTask: PilotTask = {
-  id: "campaign.reviewPaused:c9",
+  id: `campaign.reviewPaused:${PAUSED_CAMPAIGN_ID}`,
   taskType: "campaign.reviewPaused",
   priority: 910,
   title: "Review paused campaign: react",
   subjectType: "campaign",
-  subjectId: "c9",
-  payload: { campaignId: "c9", query: "react", board: null, pausedAt: now },
+  subjectId: PAUSED_CAMPAIGN_ID,
+  payload: { campaignId: PAUSED_CAMPAIGN_ID, query: "react", board: null, pausedAt: now },
 };
 
 const snapshot: TaskList = {
@@ -101,14 +103,16 @@ function runDb({ currentVersion = VERSION, openRun = null, campaignStillPaused =
     },
     campaign: { count: async () => (campaignStillPaused ? 1 : 0) },
     // What `startApplying` reads and writes; no duplicate matches.
-    job: {
+    campaignJob: {
       findFirst: async () => ({
         url: "https://example.test/job",
         title: "Engineer",
         company: "Acme",
       }),
       findMany: async () => [],
-      updateManyAndReturn: async () => [{ campaignId: "c1", key: "j1", status: "applying" }],
+      updateManyAndReturn: async () => [
+        { campaignId: CAMPAIGN_ID, key: "j1", status: "applying", brief: null },
+      ],
     },
     application: { findUnique: async () => null, findMany: async () => [] },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
@@ -133,7 +137,7 @@ function closeDb(row: ReturnType<typeof runRow>) {
       findFirst: async () => row,
       updateManyAndReturn: async (a: { data: Record<string, unknown> }) => [{ ...row, ...a.data }],
     },
-    job: {
+    campaignJob: {
       updateMany: async (a: unknown) => {
         jobReverts.push(a);
         return { count: 1 };
@@ -159,8 +163,8 @@ describe("RunService.start", () => {
   it("starts a task off the supplied snapshot and stores its payload", async () => {
     const { service, creates } = runDb({});
     const run = await service.start(USER_ID, VERSION, applyTask.id);
-    expect(creates[0]).toMatchObject({ taskType: "job.apply", subjectId: "c1:j1" });
-    expect(run.payload).toMatchObject({ campaignId: "c1", jobKey: "j1" });
+    expect(creates[0]).toMatchObject({ taskType: "job.apply", subjectId: `${CAMPAIGN_ID}:j1` });
+    expect(run.payload).toMatchObject({ campaignId: CAMPAIGN_ID, jobKey: "j1" });
   });
 
   it("publishes run.started", async () => {
@@ -230,7 +234,7 @@ describe("RunService.cancel", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           status: "applying",
-          OR: [{ campaignId: "c1", key: "j1" }],
+          OR: [{ campaignId: CAMPAIGN_ID, key: "j1" }],
         }),
         data: { status: "approved" },
       }),
@@ -266,11 +270,11 @@ describe("RunService.postResult", () => {
     expect(jobReverts).toHaveLength(0);
     expect(appended).toEqual([
       expect.objectContaining({
-        cycleId: RUN_ID,
+        runId: RUN_ID,
         kind: "action",
         summary: result.summary,
         subjectType: "job",
-        subjectId: "c1:j1",
+        subjectId: `${CAMPAIGN_ID}:j1`,
       }),
     ]);
     expect(event).toEqual({ type: "run.finished", runId: RUN_ID, outcome: "done" });

@@ -6,8 +6,7 @@ export type EdenResult<T> = {
   error: { status?: unknown; value?: unknown } | null;
 };
 
-/** A failed API call: the server's message plus its stable `code` and HTTP status, so callers
- *  branch on `code` rather than the message text. */
+/** Carries the server's stable `code`, so callers branch on it rather than the message text. */
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -21,11 +20,21 @@ export class ApiError extends Error {
 
 const errorMessageSchema = errorResponseSchema.pick({ message: true });
 
+export function isNotFound(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
+}
+
+/** A 4xx won't change on retry, so only network blips and 5xx are worth a second try. */
+export function shouldRetry(failureCount: number, error: unknown): boolean {
+  const status = error instanceof ApiError ? error.status : null;
+  return failureCount < 1 && (status === null || status >= 500);
+}
+
 function edenError(error: unknown): NonNullable<EdenResult<unknown>["error"]> {
   return (error ?? {}) as NonNullable<EdenResult<unknown>["error"]>;
 }
 
-export function toApiError(error: unknown): ApiError {
+function toApiError(error: unknown): ApiError {
   const { status, value } = edenError(error);
   const body = errorResponseSchema.safeParse(value);
   return new ApiError(
@@ -35,8 +44,7 @@ export function toApiError(error: unknown): ApiError {
   );
 }
 
-/** Pull a human-readable message out of an Eden Treaty error (`error.value.message`). */
-export function apiErrorMessage(error: unknown, fallback?: string): string {
+function apiErrorMessage(error: unknown, fallback?: string): string {
   const { status, value } = edenError(error);
   const body = errorMessageSchema.safeParse(value);
   if (body.success && body.data.message.length > 0) {
@@ -50,12 +58,19 @@ export function apiErrorMessage(error: unknown, fallback?: string): string {
     : "Can't reach the server - check your connection";
 }
 
+export async function unwrap<T>(request: Promise<EdenResult<T>>): Promise<T> {
+  const { data, error } = await request;
+  if (error) {
+    throw toApiError(error);
+  }
+  return data as T;
+}
+
 /**
- * Unwrap a public detail fetch whose caller maps a null row to `notFound()`. Eden reports every
- * non-2xx as `error`, and a 429 or a blip rendered as "not found" invites Google to deindex a live page.
- * `context` prefixes the message because every caller otherwise logs the same unattributable digest.
+ * Only a 404 maps to null: a 429 or a blip rendered as "not found" invites Google to deindex a live
+ * page. `context` prefixes the message, or every caller logs the same unattributable digest.
  */
-export function dataOrThrow<T>(result: EdenResult<T>, context: string): T | null {
+export function dataOrNullIf404<T>(result: EdenResult<T>, context: string): T | null {
   if (result.error && result.error.status !== 404) {
     throw new Error(`${context}: ${apiErrorMessage(result.error)}`);
   }

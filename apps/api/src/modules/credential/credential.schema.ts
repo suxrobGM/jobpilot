@@ -1,4 +1,4 @@
-import { CREDENTIAL_KINDS, SERVICE_PROVIDERS } from "@jobpilot/contracts/credential";
+import { CAPTCHA_PROVIDERS, CREDENTIAL_KINDS } from "@jobpilot/contracts/credential";
 import { boardRefSchema } from "@jobpilot/contracts/job-board";
 import { z } from "zod/v4";
 
@@ -9,7 +9,7 @@ export const credentialRecordSchema = z.object({
   id: z.uuid(),
   kind: z.enum(CREDENTIAL_KINDS),
   board: boardRefSchema.nullable(),
-  provider: z.enum(SERVICE_PROVIDERS).nullable(),
+  provider: z.enum(CAPTCHA_PROVIDERS).nullable(),
   email: z.string().nullable(),
   hasPassword: z.boolean(),
   hasApiKey: z.boolean(),

@@ -3,6 +3,7 @@ import type { TaskType } from "@jobpilot/contracts/pilot";
 /** `session` is the pilot session doing text-only work itself. */
 export type PilotAgent =
   | "job-searcher"
+  | "job-researcher"
   | "job-scorer"
   | "job-applier"
   | "networking-worker"
@@ -10,6 +11,7 @@ export type PilotAgent =
 
 export const AGENT_LABELS: Record<PilotAgent, string> = {
   "job-searcher": "Searcher",
+  "job-researcher": "Researcher",
   "job-scorer": "Scorer",
   "job-applier": "Applier",
   "networking-worker": "Networker",
@@ -43,6 +45,7 @@ const TASK_TYPES: Record<TaskType, TaskTypeInfo> = {
   "job.rescanSkipped": { label: "Rescan skipped jobs", agent: "session" },
   "job.retryFailed": { label: "Retry failed jobs", agent: "session" },
   "search.setup": { label: "Set up goals and saved searches", agent: "session" },
+  "research.explore": { label: "Research jobs", agent: "job-researcher" },
   "upwork.syncInbox": { label: "Refresh the Upwork inbox", agent: "session" },
 };
 

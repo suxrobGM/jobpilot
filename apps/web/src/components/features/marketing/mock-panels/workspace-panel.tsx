@@ -64,7 +64,7 @@ export function WorkspacePanel(): ReactElement {
                   {app.role}
                 </Typography>
               </Box>
-              <Chip size="small" variant="outlined" color={app.color} label={app.status} />
+              <Chip variant="outlined" color={app.color} label={app.status} />
             </Paper>
           ))}
         </Stack>

@@ -19,7 +19,7 @@ const RETRY_MIN_FAILED = 3;
 const TOP_SKIP_REASONS = 3;
 const REVIEW_REPEAT_MS = 7 * DAY_MS;
 
-const QUEUED = { status: "queued" } satisfies Prisma.JobWhereInput;
+const QUEUED = { status: "queued" } satisfies Prisma.CampaignJobWhereInput;
 
 /** Auto-apply campaigns holding rows that still need a score or a brief. */
 export async function gatherScorePending(
@@ -205,7 +205,7 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
   ]);
 
   if (tunes.length > 0) {
-    const reasons = await prisma.job.groupBy({
+    const reasons = await prisma.campaignJob.groupBy({
       by: ["campaignId", "skipReason"],
       where: {
         campaignId: { in: tunes.map((tune) => tune.campaignId) },

@@ -1,8 +1,9 @@
 import type { ReactElement, ReactNode } from "react";
 import { Download, GitHub, LanguageOutlined, LinkedIn } from "@mui/icons-material";
-import { Button, Chip, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Button, Chip, Stack, Typography } from "@mui/material";
 import { API_BASE_URL } from "@/api/base-url";
 import type { PortfolioDto } from "@/api/types";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { AvailabilityBadge } from "./availability-badge";
 import { PortfolioAvatar } from "./portfolio-avatar";
 
@@ -54,9 +55,9 @@ export function PortfolioCard(props: PortfolioCardProps): ReactElement {
       {skills.length > 0 && (
         <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75 }}>
           {skills.map((skill) => (
-            <Chip key={skill} label={skill} size="small" variant="outlined" />
+            <Chip key={skill} label={skill} variant="outlined" />
           ))}
-          {overflow > 0 && <Chip label={`+${overflow} more`} size="small" />}
+          {overflow > 0 && <Chip label={`+${overflow} more`} />}
         </Stack>
       )}
     </Stack>
@@ -79,10 +80,7 @@ function PortfolioLinks(props: PortfolioCardProps): ReactNode {
     <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>
       {primaryResumeId && (
         <Button
-          component="a"
           href={`${API_BASE_URL}/api/public/resumes/${primaryResumeId}/pdf`}
-          target="_blank"
-          rel="noopener"
           variant="contained"
           startIcon={<Download />}
         >
@@ -90,17 +88,9 @@ function PortfolioLinks(props: PortfolioCardProps): ReactNode {
         </Button>
       )}
       {icons.map((link) => (
-        <Tooltip key={link.key} title={link.title}>
-          <IconButton
-            component="a"
-            href={link.href ?? ""}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={link.title}
-          >
-            {link.icon}
-          </IconButton>
-        </Tooltip>
+        <TooltipIconButton key={link.key} title={link.title} href={link.href ?? ""}>
+          {link.icon}
+        </TooltipIconButton>
       ))}
     </Stack>
   );

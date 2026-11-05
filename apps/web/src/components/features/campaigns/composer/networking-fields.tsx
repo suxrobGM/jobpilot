@@ -3,7 +3,7 @@
 import { Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { COMPOSER_DEFAULT_VALUES, isBoardSelected } from "./form-config";
+import { COMPOSER_DEFAULT_VALUES, usesBoard } from "./form-config";
 
 /** Networking campaign fields: channels, LinkedIn tier, job cap, autonomy, resume handling. */
 export const NetworkingFields = withForm({
@@ -11,6 +11,7 @@ export const NetworkingFields = withForm({
   render: function NetworkingFields({ form }) {
     const channels = useSelector(form.store, (s) => s.values.channels);
     const board = useSelector(form.store, (s) => s.values.board);
+    const searchIn = useSelector(form.store, (s) => s.values.searchIn);
     const autonomy = useSelector(form.store, (s) => s.values.autonomy);
 
     return (
@@ -42,9 +43,8 @@ export const NetworkingFields = withForm({
           </form.AppField>
         )}
 
-        {/* Cap only applies when sourcing from a board. Reuses the optional `maxApps`
-            field (empty = unlimited) → mapped to config.maxJobs in buildCampaignConfig. */}
-        {isBoardSelected(board) && (
+        {/* Reuses `maxApps` (empty = unlimited); buildCampaignConfig maps it to maxJobs. */}
+        {usesBoard({ mode: "networking", board, searchIn }) && (
           <form.AppField name="maxApps">
             {(field) => (
               <field.TextField

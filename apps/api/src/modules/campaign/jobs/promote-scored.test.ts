@@ -17,7 +17,7 @@ interface UpdateCall {
 function setup() {
   const jobUpdates: UpdateCall[] = [];
   const db = {
-    job: {
+    campaignJob: {
       updateManyAndReturn: async (args: UpdateCall) => {
         jobUpdates.push(args);
         // Echo one row per requested key, as Postgres would for rows matching the guard.
@@ -26,6 +26,7 @@ function setup() {
           key,
           url: `https://example.test/${key}`,
           status: args.data.status,
+          brief: null,
         }));
       },
       groupBy: async () => [],

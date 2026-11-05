@@ -1,12 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
-import { Stack, Typography } from "@mui/material";
+import { Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
-import { useApiQuery } from "@/api/hooks";
 import { credentialQueries, emailQueries, userQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
+import { ChecklistRow } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { useSession } from "@/hooks/use-auth";
 
@@ -18,15 +18,12 @@ interface ChecklistItem {
   action: string;
 }
 
-/**
- * Post-onboarding nudges for everything the 3-step wizard skipped. Rendered on
- * the pipeline until every item is done, then disappears.
- */
+/** Nudges for everything the onboarding wizard skipped, until every item is done. */
 export function ProfileChecklistCard(): ReactNode {
   const { user } = useSession();
-  const profileQuery = useApiQuery(userQueries.detail());
-  const emailQuery = useApiQuery(emailQueries.account());
-  const credentialsQuery = useApiQuery(credentialQueries.list());
+  const profileQuery = useQuery(userQueries.detail());
+  const emailQuery = useQuery(emailQueries.account());
+  const credentialsQuery = useQuery(credentialQueries.list());
 
   // Don't flash an incomplete checklist while the queries load.
   if (!user || !profileQuery.data || !emailQuery.data || !credentialsQuery.data) {
@@ -41,14 +38,14 @@ export function ProfileChecklistCard(): ReactNode {
       key: "verify-email",
       label: "Verify your email so you can apply and send messages.",
       done: user.emailVerified,
-      href: "/verify-email" as Route,
+      href: "/verify-email",
       action: "Resend link",
     },
     {
       key: "address",
       label: "Add your address and work authorization. Application forms ask for both.",
       done: Boolean(profile?.street && profile.city),
-      href: "/settings/profile" as Route,
+      href: "/settings/profile",
       action: "Fill in",
     },
     {
@@ -57,14 +54,14 @@ export function ProfileChecklistCard(): ReactNode {
         ? "Reconnect your mailbox - Google rejected its access grant, so mail sync has stopped."
         : "Connect your mailbox so the agent can read verification codes and recruiter replies.",
       done: mailbox.connected && !needsReauth,
-      href: "/settings/email" as Route,
+      href: "/settings/email",
       action: needsReauth ? "Reconnect" : "Connect",
     },
     {
       key: "credentials",
       label: "Save your job-board logins so the agent can sign in before it applies.",
       done: credentialsQuery.data.length > 0,
-      href: "/settings/credentials" as Route,
+      href: "/settings/credentials",
       action: "Add",
     },
   ];
@@ -78,29 +75,16 @@ export function ProfileChecklistCard(): ReactNode {
     <SectionCard title={`Finish setting up · ${items.length - remaining.length}/${items.length}`}>
       <Stack spacing={1}>
         {items.map((item) => (
-          <Stack
+          <ChecklistRow
             key={item.key}
-            direction="row"
-            spacing={1.25}
-            sx={{ alignItems: "center", minHeight: 36 }}
-          >
-            {item.done ? (
-              <CheckCircle fontSize="small" sx={{ color: "success.main" }} />
-            ) : (
-              <RadioButtonUnchecked fontSize="small" sx={{ color: "text.disabled" }} />
-            )}
-            <Typography
-              variant="body2"
-              sx={{ flex: 1, color: item.done ? "text.disabled" : "text.primary" }}
-            >
-              {item.label}
-            </Typography>
-            {!item.done && (
+            done={item.done}
+            label={item.label}
+            action={
               <LinkButton href={item.href} size="small" variant="outlined">
                 {item.action}
               </LinkButton>
-            )}
-          </Stack>
+            }
+          />
         ))}
       </Stack>
     </SectionCard>

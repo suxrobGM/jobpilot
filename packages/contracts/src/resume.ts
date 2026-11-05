@@ -133,7 +133,7 @@ export const resumeVariantCreateSchema = z.object({
   jobUrl: z.string().optional().nullable(),
   applicationId: z.uuid().optional().nullable(),
   content: resumeDataSchema,
-  diffNotes: z.string().optional().nullable(),
+  changeNotes: z.string().optional().nullable(),
 });
 
 export const resumeVariantPatchSchema = z.object({
@@ -141,7 +141,7 @@ export const resumeVariantPatchSchema = z.object({
   jobUrl: z.string().optional().nullable(),
   applicationId: z.uuid().optional().nullable(),
   content: resumeDataSchema.optional(),
-  diffNotes: z.string().optional().nullable(),
+  changeNotes: z.string().optional().nullable(),
 });
 
 export const EMPTY_RESUME_DATA: ResumeData = {

@@ -10,11 +10,11 @@ import {
 } from "react";
 import { useMediaQuery } from "@mui/material";
 import {
-  getStoredExpanded,
-  getStoredProvider,
   patchAgentStorage,
+  readStoredExpanded,
+  readStoredProvider,
   subscribeAgentStorage,
-} from "@/lib/agent-storage";
+} from "@/lib/terminal/agent-storage";
 import {
   formatSkillCommand,
   injectCommand,
@@ -22,8 +22,8 @@ import {
   shutdownHost,
   TerminalApiError,
   type TerminalProviderId,
-} from "@/lib/terminal";
-import { useToast } from "@/providers/notification-provider";
+} from "@/lib/terminal/client";
+import { useToast } from "@/providers/toast-provider";
 
 export interface AgentContextValue {
   inject: (command: string) => Promise<void>;
@@ -34,7 +34,7 @@ export interface AgentDockContextValue {
   provider: TerminalProviderId;
   switchProvider: (next: TerminalProviderId) => Promise<void>;
   restart: () => Promise<void>;
-  /** Resolves true when the host is shutting down, false when it stayed up (failure or legacy fallback). */
+  /** Resolves true when the host is shutting down, false when it stayed up. */
   stop: () => Promise<boolean>;
   terminalRevision: number;
   expanded: boolean;
@@ -74,15 +74,14 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
   // sync, SSR-safe and without a hydration effect.
   const provider = useSyncExternalStore(
     subscribeAgentStorage,
-    getStoredProvider,
+    readStoredProvider,
     (): TerminalProviderId => "claude",
   );
 
-  const expanded = useSyncExternalStore(subscribeAgentStorage, getStoredExpanded, () => false);
+  const expanded = useSyncExternalStore(subscribeAgentStorage, readStoredExpanded, () => false);
   const [terminalRevision, setTerminalRevision] = useState(0);
 
-  // Resolves true only when the host is actually going down, so the dock knows whether to keep its
-  // "Stopping…" card up: on every other path the host stays reachable and nothing would ever clear it.
+  // True only when the host goes down; otherwise nothing would ever clear the "Stopping…" card.
   const stop = async (): Promise<boolean> => {
     try {
       await shutdownHost();
@@ -97,9 +96,7 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     }
   };
 
-  // Kill the host session and bump the revision so the TerminalPanel key changes,
-  // remounting it with a fresh xterm + a newly started session. A failed kill still
-  // remounts - the fresh panel reports the host problem in place.
+  // A failed kill still remounts: the fresh panel reports the host problem in place.
   const restart = async (): Promise<void> => {
     try {
       await killSession();
@@ -171,10 +168,7 @@ export function useAgentDock(): AgentDockContextValue {
   return ctx;
 }
 
-/**
- * True only on desktop, where the local agent terminal runs. Below md there is
- * no dock to inject into, so agent-driving controls hide themselves against this.
- */
+/** Below md there is no dock to inject into, so agent-driving controls hide against this. */
 export function useAgentAvailable(): boolean {
   return useMediaQuery((theme) => theme.breakpoints.up("md"));
 }

@@ -4,7 +4,7 @@ import type { AuthUser } from "@/common/auth";
 import { forbidden, unauthorized } from "@/common/errors";
 import { resolveAuthUser } from "./auth.middleware";
 
-/** Controller-wide RBAC: `someRoutes.use(requireRole("ADMIN"))`. SUPER_ADMIN satisfies everything. */
+/** Controller-wide RBAC: `someRoutes.use(requireRole("admin"))`. super_admin satisfies everything. */
 export const requireRole = (...roles: Role[]) =>
   new Elysia({ name: `role-${roles.join("-")}` }).derive(
     { as: "scoped" },
@@ -22,7 +22,7 @@ export const requireRole = (...roles: Role[]) =>
   );
 
 /**
- * Tighten one route inside a `requireRole` controller: `beforeHandle: requireRoleOn("SUPER_ADMIN")`.
+ * Tighten one route inside a `requireRole` controller: `beforeHandle: requireRoleOn("super_admin")`.
  * A hook, not a nested plugin - a nested scoped derive would leak the check onto sibling routes.
  */
 export const requireRoleOn =

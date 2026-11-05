@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { type TerminalHealthState, useTerminalHealth } from "./use-terminal-health";
+import { type TerminalHealthState, useTerminalHealth } from "@/hooks/use-terminal-health";
 
 export type PendingAction = "updating" | "starting" | "stopping";
 
@@ -17,11 +17,7 @@ export interface DockHealthState extends TerminalHealthState {
   unreachable: boolean;
 }
 
-/**
- * Terminal health plus the dock's expected-restart state: while an update or relaunch is pending the
- * poll runs fast, and the dock can show a transitional card instead of the offline one. Pending clears
- * once the host has gone down and answered again, or at the deadline.
- */
+/** Pending clears once the host has gone down and answered again, or at the deadline. */
 export function useDockHealth(): DockHealthState {
   const [pending, setPending] = useState<PendingAction | null>(null);
   const healthState = useTerminalHealth(pending !== null);

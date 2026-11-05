@@ -6,13 +6,7 @@ interface JobPilotMarkProps {
   size?: number;
 }
 
-/**
- * The JobPilot brand glyph: a copilot's face - visor eyes under a cool halo - wearing a flame "J"
- * on a warm-carbon tile. Single source for the rail badge and marketing wordmark; the static
- * `public/icon.svg`, `apple-icon.tsx`, and `opengraph-image.tsx` mirror this same artwork.
- * Gradient ids are shared across instances on purpose: every instance defines them identically, so
- * a duplicate id on the page is harmless and needs no per-render `useId` (keeps it server-safe).
- */
+/** Mirrored by `public/icon.svg` and `mark-svg.ts`. Repeated gradient ids match, so no `useId`. */
 export function JobPilotMark(props: JobPilotMarkProps): ReactElement {
   const { size = 36 } = props;
   return (

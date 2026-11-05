@@ -92,7 +92,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       },
     },
   )
-  .post("/email/verify", ({ body }) => verificationService.verifyEmail(body.token), {
+  .post("/email/verification/confirm", ({ body }) => verificationService.verifyEmail(body.token), {
     body: VerifyEmailSchema,
     beforeHandle: limitEmailVerify,
     response: okResponseSchema,
@@ -102,7 +102,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
         "Confirms an email address from a verification magic link by its token, marking the account verified. The token is single-use and expires.",
     },
   })
-  .post("/password/forgot", ({ body }) => verificationService.requestPasswordReset(body.email), {
+  .post("/password/reset", ({ body }) => verificationService.requestPasswordReset(body.email), {
     body: ForgotPasswordSchema,
     beforeHandle: [limitForgotIp, limitForgotEmail],
     response: okResponseSchema,
@@ -113,7 +113,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
   })
   .post(
-    "/password/reset",
+    "/password/reset/confirm",
     ({ body }) => verificationService.resetPassword(body.token, body.password),
     {
       body: ResetPasswordSchema,
@@ -127,11 +127,11 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
   )
   .use(authGuard)
-  .post("/email/resend", ({ user }) => verificationService.resendVerification(user.id), {
+  .post("/email/verification", ({ user }) => verificationService.resendVerification(user.id), {
     beforeHandle: limitEmailResend,
     response: okResponseSchema,
     detail: {
-      summary: "Resend the verification email",
+      summary: "Send the verification email",
       description:
         "Re-sends the verification magic link to the authenticated user's email if it is not already verified.",
     },

@@ -3,15 +3,17 @@
 import type { ReactElement } from "react";
 import type { PilotState, TaskList } from "@jobpilot/contracts/pilot";
 import { Box, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
-import { pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
-import type { PilotHealth } from "@/lib/terminal";
+import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, humanizeIsoInText } from "@/utils/format";
+import { useLatestJournalPage } from "../journal/journal-cache";
 import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../pilot-status";
 import { taskTypeAgent, taskTypeLabel } from "../task-types";
-import { AgentList, type Stage, StageArrow, StageCard } from "./stage-card";
-import { useTaskList } from "./task-list-preview";
+import { usePilotStatus } from "../use-pilot-status";
+import { AgentList } from "./agent-list";
+import { type Stage, StageArrow, StageCard } from "./stage-card";
+import { useNextWake } from "./use-next-wake";
+import { useTaskList } from "./use-task-list";
 
 const HOST: Stage = { title: "Host", role: "Checks for work", tone: "blue" };
 const SERVER: Stage = { title: "Server", role: "Picks a task", tone: "peach" };
@@ -48,26 +50,25 @@ function serverCaption(taskList: TaskList | null | undefined): string {
 
 interface OrchestrationPanelProps {
   state: PilotState;
-  pilot: PilotHealth | null;
-  mode: PilotMode;
-  nextWakeAt: Date | null;
 }
 
 export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement {
-  const { state, pilot, mode, nextWakeAt } = props;
-  const journal = useApiQuery(pilotQueries.journal());
+  const { state } = props;
+  const { pilot, mode } = usePilotStatus(state);
+  const nextWakeAt = useNextWake(state);
+  const journal = useLatestJournalPage();
   const taskList = useTaskList(state.running);
 
   const { dimmed } = PILOT_MODE_LOOK[mode];
   const working = mode === "working";
   const run = dimmed ? null : state.currentRun;
   const running = run !== null;
-  const branch = run ? taskTypeAgent(run.taskType) : null;
+  const activeAgent = run ? taskTypeAgent(run.taskType) : null;
 
-  // A run's id is the cycleId of the action it posts.
+  // The action a run posts carries its id as `runId`.
   const journalItems = journal.data?.items ?? [];
   const posted = run
-    ? (journalItems.find((entry) => entry.kind === "action" && entry.cycleId === run.id) ?? null)
+    ? (journalItems.find((entry) => entry.kind === "action" && entry.runId === run.id) ?? null)
     : null;
   const journalCaption = posted
     ? truncate(humanizeIsoInText(posted.summary))
@@ -104,7 +105,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
         />
       </Box>
       <Box sx={{ mt: 2 }}>
-        <AgentList branch={branch} dimmed={dimmed} />
+        <AgentList activeAgent={activeAgent} dimmed={dimmed} />
       </Box>
       <Box sx={{ mt: 1.5 }}>
         <Typography variant="captionMuted">

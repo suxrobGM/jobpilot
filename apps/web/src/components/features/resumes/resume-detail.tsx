@@ -3,13 +3,12 @@
 import { type ReactElement, useState } from "react";
 import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { resumeChannel } from "@jobpilot/contracts/sse";
-import { Box, LinearProgress, Stack } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import { useApiQuery } from "@/api/hooks";
+import { Box, Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { resumeQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { type SectionAnchor, SectionLayout } from "@/components/ui/layout";
-import { useSseChannel } from "@/lib/sse/client";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { ExtractionCard } from "./detail/extraction-card";
 import { ResumeHeaderBar } from "./detail/header-bar";
 import { ResumePdfPreview } from "./detail/pdf-preview";
@@ -38,33 +37,32 @@ function anchorsFor(data: ResumeData): SectionAnchor[] {
 
 export function ResumeDetail(props: ResumeDetailProps): ReactElement {
   const { resumeId } = props;
-  const queryClient = useQueryClient();
   const [skippedExtraction, setSkippedExtraction] = useState(false);
 
-  const detail = useApiQuery(resumeQueries.detail(resumeId), {
-    errorMessage: "Failed to load resume",
-  });
+  const detail = useQuery(resumeQueries.detail(resumeId));
 
-  useSseChannel(
+  const variantsKey = resumeQueries.variants(resumeId).queryKey;
+  useLiveInvalidation(
     resumeChannel,
     { resumeId },
     {
       on: {
-        "content.updated": () => {
-          void queryClient.invalidateQueries({ queryKey: queryKeys.resume.detail(resumeId) });
-        },
-        "variant.created": () => {
-          void queryClient.invalidateQueries({ queryKey: queryKeys.resume.variants(resumeId) });
-        },
-        "variant.deleted": () => {
-          void queryClient.invalidateQueries({ queryKey: queryKeys.resume.variants(resumeId) });
-        },
+        "content.updated": [resumeQueries.detail(resumeId).queryKey],
+        "variant.created": [variantsKey],
+        "variant.deleted": [variantsKey],
       },
     },
   );
 
-  if (detail.isLoading || !detail.data) return <LinearProgress />;
+  if (detail.isPending) {
+    return <DetailSkeleton />;
+  }
   const resume = detail.data;
+  if (!resume) {
+    return (
+      <DetailLoadFailure noun="resume" error={detail.error} onRetry={() => void detail.refetch()} />
+    );
+  }
   const initialData: ResumeData = resume.content ?? EMPTY_RESUME_DATA;
   // A source PDF with no structure yet means `extract-resume` is either running or worth retrying.
   const extracting = !resume.content && resume.sourceFilename !== null && !skippedExtraction;

@@ -1,75 +1,32 @@
-enum Availability {
-  open
-  not_looking
-
-  @@map("availability")
-}
-
-// SUPER_ADMIN is a singleton granted only from SUPER_ADMIN_EMAIL (seed / register); no API route assigns it.
+// super_admin is a singleton granted only from SUPER_ADMIN_EMAIL (seed / register); no API route assigns it.
 enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  USER
+  super_admin
+  admin
+  user
 
   @@map("user_role")
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
+  id               String    @id @default(uuid(7)) @db.Uuid
+  email            String    @unique
   // Null for OAuth-only accounts; the security page lets them set one later.
-  passwordHash  String?  @map("password_hash")
-  role          UserRole @default(USER)
-  emailVerified Boolean  @default(false) @map("email_verified")
-  // Per-user data key, wrapped under SECRET_MASTER_KEY. Decrypts this account's secrets, so
-  // deleting the account crypto-shreds them.
-  wrappedDek    String?  @map("wrapped_dek")
+  passwordHash     String?   @map("password_hash")
+  role             UserRole  @default(user)
+  emailVerifiedAt  DateTime? @map("email_verified_at") @db.Timestamptz(3)
+  // Encrypted under SECRET_MASTER_KEY; decrypts this account's secrets, so deleting the account
+  // crypto-shreds them.
+  encryptedDataKey String?   @map("encrypted_data_key")
 
-  username     String        @unique @map("username")
-  availability Availability? @map("availability")
-  // Opt-in, not opt-out: each stays off the public portfolio until the owner turns it on.
-  showResume   Boolean       @default(false) @map("show_resume")
-  showWebsite  Boolean       @default(false) @map("show_website")
-  showLinkedin Boolean       @default(false) @map("show_linkedin")
-  showGithub   Boolean       @default(false) @map("show_github")
+  username String @unique
 
-  // Applicant profile, filled at onboarding.
-  firstName    String  @default("") @map("first_name")
-  lastName     String  @default("") @map("last_name")
-  // Distinct from `email` (login); the contact address shown on applications.
-  contactEmail String  @default("") @map("contact_email")
-  phone        String?
-  website      String?
-  linkedin     String?
-  github       String?
-
-  street  String?
-  aptUnit String? @map("apt_unit")
-  city    String?
-  state   String?
-  zipCode String? @map("zip_code")
-  country String?
-
-  usAuthorized        Boolean @default(false) @map("us_authorized")
-  requiresSponsorship Boolean @default(false) @map("requires_sponsorship")
-  visaStatus          String? @map("visa_status")
-  optExtension        String? @map("opt_extension")
-  willingToRelocate   Boolean @default(false) @map("willing_to_relocate")
-  preferredLocations  String[] @default([]) @map("preferred_locations")
-
-  eeoGender           String? @map("eeo_gender")
-  eeoRace             String? @map("eeo_race")
-  eeoEthnicity        String? @map("eeo_ethnicity")
-  eeoHispanicOrLatino String? @map("eeo_hispanic_or_latino")
-  eeoVeteranStatus    String? @map("eeo_veteran_status")
-  eeoDisabilityStatus String? @map("eeo_disability_status")
-
-  primaryResumeId String? @unique @map("primary_resume_id")
+  primaryResumeId String? @unique @map("primary_resume_id") @db.Uuid
   primaryResume   Resume? @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  profile            Profile?
   authTokens         AuthToken[]
   verificationTokens VerificationToken[]
   oauthAccounts      OAuthAccount[]
@@ -78,6 +35,7 @@ model User {
   autoApply            AutoApplySettings?
   applications         Application[]
   campaigns            Campaign[]
+  campaignJobs         CampaignJob[]
   credentials          Credential[]
   jobBoards            UserJobBoard[]
   emailAccount         EmailAccount?
@@ -86,7 +44,7 @@ model User {
   upworkProfile        UpworkProfile?
   upworkAccount        UpworkAccount?
   upworkInboxItems     UpworkInboxItem[]
-  references           Reference[]
+  references           ProfessionalReference[]
   salaryPreferences    SalaryPreference[]
   contacts             Contact[]
   networkingMessages   NetworkingMessage[]

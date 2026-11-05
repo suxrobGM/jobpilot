@@ -3,16 +3,12 @@
 import type { ReactNode } from "react";
 import { PersonOutlined, WarningAmberOutlined } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { userQueries } from "@/api/queries";
 
-/**
- * Compact inline identity line for the campaign header - the active profile's name +
- * email, so a wrong-identity issue (e.g. the agent filling the wrong email) is
- * obvious at a glance.
- */
+/** The profile's name and email, so the agent using the wrong identity is obvious at a glance. */
 export function CampaignIdentityBanner(): ReactNode {
-  const query = useApiQuery(userQueries.detail());
+  const query = useQuery(userQueries.detail());
   const profile = query.data?.user;
 
   // Staying silent on failure reads as "identity confirmed", which is the one thing
@@ -40,7 +36,7 @@ export function CampaignIdentityBanner(): ReactNode {
     >
       <PersonOutlined fontSize="sm" color="action" />
       <Typography variant="body2Strong">Applying as {name || "your profile"}</Typography>
-      <Chip size="small" label={profile.contactEmail} variant="outlined" />
+      <Chip label={profile.contactEmail} variant="outlined" />
     </Stack>
   );
 }

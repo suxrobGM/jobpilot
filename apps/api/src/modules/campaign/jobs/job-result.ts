@@ -51,11 +51,11 @@ export async function writeJobResult(
 ) {
   const existing = await findOwned(
     (where) =>
-      prisma.job.findFirst({
+      prisma.campaignJob.findFirst({
         where,
         include: { ...JOB_INCLUDE, campaign: { select: { source: true } } },
       }),
-    { campaignId, key, campaign: { userId } },
+    { campaignId, key, userId },
     "Campaign job",
   );
   const { source } = existing.campaign;
@@ -79,7 +79,7 @@ export async function writeJobResult(
   const submitted = appliedAt ? await resolveSubmittedResume(prisma, userId, data) : NO_RESUME;
 
   return prisma.$transaction(async (tx) => {
-    const changed = await tx.job.updateMany({
+    const changed = await tx.campaignJob.updateMany({
       where: { campaignId, key, status: { notIn: [...CAMPAIGN_JOB_TERMINAL_OUTCOMES] } },
       data: {
         status: data.outcome,
@@ -90,7 +90,7 @@ export async function writeJobResult(
         matchScore: data.matchScore,
       },
     });
-    const job = await tx.job.findUniqueOrThrow({
+    const job = await tx.campaignJob.findUniqueOrThrow({
       where: { campaignId_key: { campaignId, key } },
       include: JOB_INCLUDE,
     });

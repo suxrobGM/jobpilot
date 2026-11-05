@@ -7,11 +7,6 @@ interface AuthCardProps extends PropsWithChildren {
   subtitle?: string;
 }
 
-/**
- * Centered, full-height frame for the unauthenticated login/register screens.
- * Renders the JobPilot wordmark above a single card so both pages share one
- * look without pulling in the app rail/shell.
- */
 export function AuthCard(props: AuthCardProps): ReactElement {
   const { title, subtitle, children } = props;
   return (

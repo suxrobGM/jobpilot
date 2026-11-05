@@ -37,7 +37,7 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
     },
   )
   .get(
-    "/campaigns/:id/networking",
+    "/campaigns/:id/networking/messages",
     ({ user, params, query }) => svc.listNetworking(user.id, { ...query, campaignId: params.id }),
     {
       params: idParam,
@@ -51,7 +51,7 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
     },
   )
   .post(
-    "/campaigns/:id/networking",
+    "/campaigns/:id/networking/messages",
     async ({ user, params, body }) => {
       await users.requireVerifiedEmail(user.id);
       return svc.addNetworking(user.id, params.id, body);
@@ -68,7 +68,7 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
     },
   )
   .patch(
-    "/campaigns/:id/networking/:messageId",
+    "/campaigns/:id/networking/messages/:messageId",
     ({ user, params, body }) => svc.patchNetworking(user.id, params.id, params.messageId, body),
     {
       params: networkingMessageParams,
@@ -82,7 +82,7 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
     },
   )
   .post(
-    "/campaigns/:id/networking/:messageId/result",
+    "/campaigns/:id/networking/messages/:messageId/result",
     ({ user, params, body }) =>
       svc.recordNetworkingResult(user.id, params.id, params.messageId, body),
     {

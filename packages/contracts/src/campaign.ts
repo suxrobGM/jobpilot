@@ -1,20 +1,18 @@
 import { z } from "zod/v4";
 import { boardRefSchema } from "./job-board";
 import { networkingConfigSchema } from "./networking";
-import { isJsonObject } from "./utils/json";
 import { cleanReplacementChars } from "./utils/text";
 
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-/** The agent's job brief, as JSON text. An unset shell variable renders the brief as `""`, which read back
- *  as "has a brief" while the public index skipped the row - so empty drops to `undefined`. */
-const jobBrief = z
-  .string()
-  .refine((value) => value.trim() === "" || isJsonObject(value), {
-    message: "brief must be a JSON object.",
-  })
-  .transform((value) => value.trim() || undefined);
+/** The agent's job brief. `{}` drops to `undefined`: it would read as "has a brief" while the public
+ *  index skips the row. */
+export const jobBriefSchema = z.record(z.string(), z.json());
+export type JobBriefData = z.infer<typeof jobBriefSchema>;
+const jobBrief = jobBriefSchema.transform((value) =>
+  Object.keys(value).length === 0 ? undefined : value,
+);
 
 export const CAMPAIGN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
 export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
@@ -22,9 +20,22 @@ export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
 export const CAMPAIGN_SOURCES = ["search", "auto_apply", "apply", "networking"] as const;
 export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 
+/** A pilot feed that keeps one standing campaign; a search's is keyed by `pilotSearchId`. */
+export const CAMPAIGN_FEEDS = ["job_alerts", "research"] as const;
+const campaignFeedSchema = z.enum(CAMPAIGN_FEEDS);
+
+/** Why an employer is H-1B cap-exempt. */
+export const CAP_EXEMPT_BASES = [
+  "university",
+  "university_affiliate",
+  "nonprofit_research",
+  "government_research",
+] as const;
+const capExemptBasisSchema = z.enum(CAP_EXEMPT_BASES);
+
 /** Who acted: the web user, the terminal agent on their behalf, or the autonomous pilot. */
-export const CAMPAIGN_ACTORS = ["user", "agent", "pilot"] as const;
-export const campaignActorSchema = z.enum(CAMPAIGN_ACTORS);
+export const ACTORS = ["user", "agent", "pilot"] as const;
+export const actorSchema = z.enum(ACTORS);
 
 export const CAMPAIGN_JOB_STATUSES = [
   // Pre-discovery: a pasted URL not yet visited or scored.
@@ -49,7 +60,7 @@ export const campaignJobSchema = z.object({
   company: z.string(),
   location: z.string().nullable(),
   salary: z.string().nullable(),
-  type: z.string().nullable(),
+  employmentType: z.string().nullable(),
   url: z.string(),
   board: boardRefSchema.nullable(),
   matchScore: z.number().int().nullable(),
@@ -60,7 +71,9 @@ export const campaignJobSchema = z.object({
   retryNotes: z.string().nullable(),
   skipReason: z.string().nullable(),
   description: z.string().nullable(),
-  brief: z.string().nullable(),
+  brief: jobBriefSchema.nullable(),
+  capExemptBasis: capExemptBasisSchema.nullable(),
+  capExemptEvidenceUrl: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -128,9 +141,11 @@ export const createCampaignSchema = z
     /** The board's domain; resolved to a catalog row, which is created unlisted when unknown. */
     board: z.string().trim().min(1).optional(),
     config: campaignConfigSchema.optional(),
-    createdBy: campaignActorSchema.default("user"),
+    createdBy: actorSchema.default("user"),
     /** Set by the pilot's discovery run so the search can find this campaign again by id. */
     pilotSearchId: z.uuid().optional(),
+    /** Get-or-create: with `feed` or `pilotSearchId`, an open campaign for it is returned. */
+    feed: campaignFeedSchema.optional(),
     /** Pasted links seeded as `queued` jobs, before anything is known about the posting. */
     urls: applyUrlsSchema.optional(),
   })
@@ -141,6 +156,14 @@ export const createCampaignSchema = z
   .refine((v) => !v.urls || v.source === "apply", {
     message: "urls is only valid for apply campaigns.",
     path: ["urls"],
+  })
+  .refine((v) => !v.feed || (v.createdBy === "pilot" && v.source === "auto_apply"), {
+    message: "feed is only valid for pilot-created auto_apply campaigns.",
+    path: ["feed"],
+  })
+  .refine((v) => !v.feed || !v.pilotSearchId, {
+    message: "feed and pilotSearchId are mutually exclusive.",
+    path: ["feed"],
   });
 
 export const updateCampaignConfigSchema = z.object({
@@ -151,7 +174,7 @@ export const updateCampaignConfigSchema = z.object({
 
 export const campaignStatusCommandSchema = z.object({
   status: campaignStatusSchema,
-  actor: campaignActorSchema.default("user"),
+  actor: actorSchema.default("user"),
   /** Why the status changed (e.g. "verification required") - shown on the campaign header. */
   reason: z.string().min(1).max(300).transform(cleanReplacementChars).optional(),
 });
@@ -174,7 +197,7 @@ export const addCampaignJobSchema = z.object({
   company: z.string().min(1),
   location: z.string().optional().nullable(),
   salary: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
+  employmentType: z.string().optional().nullable(),
   url: z.url(),
   board: z.string().optional().nullable(),
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
@@ -182,6 +205,8 @@ export const addCampaignJobSchema = z.object({
   status: z.enum(CAMPAIGN_JOB_ACTIVE_STATUSES).optional(),
   description: z.string().optional().nullable(),
   brief: jobBrief.optional().nullable(),
+  capExemptBasis: capExemptBasisSchema.optional().nullable(),
+  capExemptEvidenceUrl: z.url().optional().nullable(),
 });
 
 export const patchCampaignJobSchema = z.object({
@@ -191,7 +216,7 @@ export const patchCampaignJobSchema = z.object({
   company: z.string().min(1).optional(),
   location: z.string().optional().nullable(),
   salary: z.string().optional().nullable(),
-  type: z.string().optional().nullable(),
+  employmentType: z.string().optional().nullable(),
   board: z.string().optional().nullable(),
   retryNotes: reasonText.optional().nullable(),
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
@@ -267,4 +292,4 @@ export type RescanCampaignJobInput = z.infer<typeof rescanCampaignJobSchema>;
 export type RetryCampaignJobInput = z.infer<typeof retryCampaignJobSchema>;
 export type CampaignSource = z.infer<typeof campaignSourceSchema>;
 export type CampaignJob = z.infer<typeof campaignJobSchema>;
-export type CampaignActor = z.infer<typeof campaignActorSchema>;
+export type Actor = z.infer<typeof actorSchema>;

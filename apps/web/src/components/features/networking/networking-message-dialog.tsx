@@ -3,12 +3,11 @@
 import { type ReactElement, useState } from "react";
 import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Button, Stack, TextField, Typography } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { emailQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { campaignQueries, emailQueries, networkingQueries } from "@/api/queries";
 import type { NetworkingMessageDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { FormDialogShell } from "@/components/ui/form";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 
@@ -23,17 +22,21 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   const { campaignId, message, onClose } = props;
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
-  const router = useRouter();
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
-  const canSend = useApiQuery(emailQueries.account()).data?.canSend ?? false;
-  const messageApi = api.campaigns({ id: campaignId }).networking({ messageId: message.id });
+  const canSend = useQuery(emailQueries.account()).data?.canSend ?? false;
+  const messageApi = api
+    .campaigns({ id: campaignId })
+    .networking.messages({ messageId: message.id });
 
-  // Drafts render from the query cache on a campaign and from the server on the cross-campaign
-  // list, so a write refreshes both rather than making each caller declare which one it is.
-  const invalidate = [queryKeys.campaigns.all];
-  const onWritten = (): void => router.refresh();
+  // A draft shows on its campaign (whose detail and summary count drafts) and the cross-campaign list.
+  const invalidate = [
+    campaignQueries.networkingKey(campaignId),
+    campaignQueries.detail(campaignId).queryKey,
+    campaignQueries.summary().queryKey,
+    networkingQueries.all,
+  ];
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";
   const terminal = isTerminalNetworkingStatus(message.status);
@@ -41,7 +44,6 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   const save = useApiMutation(() => messageApi.patch({ subject: subject || null, body }), {
     invalidate,
     successMessage: "Saved",
-    onSuccess: onWritten,
   });
 
   const approve = useApiMutation(
@@ -50,7 +52,6 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
       invalidate,
       successMessage: "Approved",
       onSuccess: () => {
-        onWritten();
         onClose();
       },
     },
@@ -58,7 +59,7 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
 
   const send = useApiMutation(
     async () => {
-      const sent = await api.email.send.post({
+      const sent = await api.email.outbound.post({
         to: message.contact.email ?? "",
         subject,
         body,
@@ -77,7 +78,6 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
       invalidate,
       successMessage: "Sent",
       onSuccess: () => {
-        onWritten();
         onClose();
       },
     },
@@ -87,7 +87,6 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
     invalidate,
     successMessage: "Skipped",
     onSuccess: () => {
-      onWritten();
       onClose();
     },
   });
@@ -105,7 +104,9 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
       title={message.contact.name}
       onClose={onClose}
       onSubmit={() => {
-        if (terminal) return;
+        if (terminal) {
+          return;
+        }
         if (canSendEmail) {
           send.mutate();
         } else {

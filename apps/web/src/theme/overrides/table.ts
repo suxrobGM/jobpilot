@@ -1,6 +1,16 @@
-import type { Components, Theme } from "@mui/material/styles";
+import type { Components, CSSObject, Theme } from "@mui/material/styles";
+
+/** Column-header text, shared with the DataGrid so the two table styles read as one. */
+export function columnHeaderTextStyles(theme: Theme): CSSObject {
+  return {
+    textTransform: "uppercase",
+    fontSize: theme.typography.caption.fontSize,
+    letterSpacing: "0.06em",
+  };
+}
 
 export const tableOverrides: Components<Theme>["MuiTable"] = {
+  defaultProps: { size: "small" },
   styleOverrides: { root: { borderCollapse: "separate", borderSpacing: 0 } },
 };
 
@@ -9,16 +19,12 @@ export const tableHeadOverrides: Components<Theme>["MuiTableHead"] = {
     root: ({ theme }) => ({
       backgroundColor: theme.palette.surfaces.elevated,
       "& th": {
-        textTransform: "uppercase",
-        fontSize: "0.7rem",
-        letterSpacing: "0.06em",
+        ...columnHeaderTextStyles(theme),
         color: (theme.vars ?? theme).palette.text.secondary,
       },
     }),
   },
 };
-
-export const tableBodyOverrides: Components<Theme>["MuiTableBody"] = {};
 
 export const tableRowOverrides: Components<Theme>["MuiTableRow"] = {
   styleOverrides: {
@@ -33,7 +39,7 @@ export const tableCellOverrides: Components<Theme>["MuiTableCell"] = {
     root: ({ theme }) => ({
       borderBottom: `1px solid ${theme.palette.line.divider}`,
       padding: "10px 14px",
-      fontSize: "0.875rem",
+      fontSize: theme.typography.body1.fontSize,
     }),
   },
 };

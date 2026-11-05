@@ -23,10 +23,10 @@ function makeService() {
       },
     },
     userJobBoard: {
-      findMany: async () => [{ id: "l1", jobBoard: linkedin }],
+      findMany: async () => [{ id: "l1", board: linkedin }],
       create: async ({ data }: { data: Record<string, unknown> }) => {
         links.push(data);
-        return { id: "l2", jobBoard: linkedin };
+        return { id: "l2", board: linkedin };
       },
     },
   } as unknown as PrismaClient;
@@ -45,7 +45,7 @@ describe("JobBoardService", () => {
     const { svc, upserts, links } = makeService();
     await svc.create("u1", { domain: "linkedin.com", name: "ignored" });
     expect(upserts[0]).toMatchObject({ where: { domain: "linkedin.com" }, update: {} });
-    expect(links[0]).toEqual({ userId: "u1", jobBoardId: "b1" });
+    expect(links[0]).toEqual({ userId: "u1", boardId: "b1" });
   });
 
   it("adds an unknown domain to the catalog unlisted, named by the domain when no name is given", async () => {
@@ -54,7 +54,7 @@ describe("JobBoardService", () => {
     expect(upserts[0]).toMatchObject({
       create: { domain: "jobs.example", name: "jobs.example", searchUrl: null },
     });
-    expect(links[0]).toEqual({ userId: "u1", jobBoardId: "new" });
+    expect(links[0]).toEqual({ userId: "u1", boardId: "new" });
   });
 });
 

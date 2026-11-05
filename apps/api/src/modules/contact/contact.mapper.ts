@@ -19,8 +19,8 @@ export function createContactPayload(c: CreateContactInput) {
     linkedinConnection: c.linkedinConnection ?? "none",
     discoverySource: c.discoverySource ?? null,
     matchConfidence: c.matchConfidence ?? null,
-    relatedAppId: c.relatedAppId ?? null,
-    relatedJobUrl: c.relatedJobUrl ? normalizeJobUrl(c.relatedJobUrl) : null,
+    applicationId: c.applicationId ?? null,
+    jobUrl: c.jobUrl ? normalizeJobUrl(c.jobUrl) : null,
     notes: c.notes ?? null,
   };
 }

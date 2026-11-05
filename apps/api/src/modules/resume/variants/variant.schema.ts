@@ -83,7 +83,7 @@ export const variantDetailSchema = z.object({
   jobUrl: z.string().nullable(),
   applicationId: z.uuid().nullable(),
   content: resumeDataSchema,
-  diffNotes: z.string().nullable(),
+  changeNotes: z.string().nullable(),
   rewrites: variantRewriteAuditSchema.nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -128,7 +128,7 @@ export const tailorResumeSchema = z.object({
   headline: z.string().optional(),
   emphasizedTech: z.array(z.string()).optional(),
   jobKeywords: z.array(z.string()).optional(),
-  diffNotes: z.string().optional().nullable(),
+  changeNotes: z.string().optional().nullable(),
   maxBulletsPerEntry: z.number().int().min(1).max(20).optional(),
   structure: resumeStructureSchema.optional(),
   bulletRewrites: z

@@ -2,8 +2,9 @@
 
 import type { ReactElement } from "react";
 import type { ResumeSkillGroup } from "@jobpilot/contracts/resume";
-import { Autocomplete, Stack, TextField } from "@mui/material";
+import { Stack, TextField } from "@mui/material";
 import { EntryList } from "./entry-list";
+import { TagInput } from "./tag-input";
 
 interface SkillsSectionProps {
   value: ResumeSkillGroup[];
@@ -29,18 +30,11 @@ export function SkillsSection(props: SkillsSectionProps): ReactElement {
             value={entry.group}
             onChange={(e) => onUpdate({ ...entry, group: e.target.value })}
           />
-          {/* Chips, not one comma-joined string: fixing item 9 of 12 shouldn't mean cursor-hunting. */}
-          <Autocomplete
-            multiple
-            freeSolo
-            options={[]}
+          <TagInput
+            label="Items"
+            placeholder="Type a skill, press Enter"
             value={entry.items}
-            onChange={(_e, items) =>
-              onUpdate({ ...entry, items: items.map((k) => k.trim()).filter(Boolean) })
-            }
-            renderInput={(params) => (
-              <TextField {...params} label="Items" placeholder="Type a skill, press Enter" />
-            )}
+            onChange={(items) => onUpdate({ ...entry, items })}
           />
         </Stack>
       )}

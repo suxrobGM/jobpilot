@@ -36,7 +36,7 @@ export function verdictOps(prisma: VerdictClient, args: VerdictArgs) {
     }),
     prisma.emailMessage.update({
       where: { id: args.messageId },
-      data: { reviewStatus: "approved", appliedStatus: args.toStatus },
+      data: { reviewStatus: "approved", resultingStatus: args.toStatus },
     }),
   ];
 }

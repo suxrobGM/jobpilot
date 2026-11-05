@@ -50,7 +50,7 @@ export class EmailService {
       where.OR = [
         { fromDomain: { contains: domainHint } },
         { subject: { contains: domainHint } },
-        { rawBody: { contains: domainHint } },
+        { body: { contains: domainHint } },
       ];
     }
 
@@ -73,7 +73,7 @@ export class EmailService {
         orderBy: { receivedAt: "desc" },
         ...pageSlice(query),
         include: {
-          matchedApp: { select: { id: true, title: true, company: true, status: true } },
+          application: { select: { id: true, title: true, company: true, status: true } },
         },
       }),
       this.prisma.emailMessage.count({ where }),
@@ -88,7 +88,7 @@ export class EmailService {
         this.prisma.emailMessage.findFirst({
           where,
           include: {
-            matchedApp: { select: { id: true, title: true, company: true, status: true } },
+            application: { select: { id: true, title: true, company: true, status: true } },
           },
         }),
       { id, account: { userId } },
@@ -111,7 +111,7 @@ export class EmailService {
     }
 
     const app = await this.prisma.application.findFirst({
-      where: { id: body.matchedAppId, userId, status: { in: [...AUTO_REJECTION_FROM_STATUSES] } },
+      where: { id: body.applicationId, userId, status: { in: [...AUTO_REJECTION_FROM_STATUSES] } },
       select: { id: true, status: true },
     });
 
@@ -140,11 +140,11 @@ export class EmailService {
         classification: body.classification,
         confidence: body.confidence,
         reasoning: body.reasoning,
-        matchedAppId: body.matchedAppId,
-        matchScore: body.matchScore,
+        applicationId: body.applicationId,
+        matchConfidence: body.matchConfidence,
         // Applied below, so the row is already reviewed and carries the status it applied -
         // leaving it "auto" would re-offer it.
-        appliedStatus: autoRejection ? "rejected" : body.appliedStatus,
+        resultingStatus: autoRejection ? "rejected" : body.resultingStatus,
         reviewStatus: autoRejection ? "approved" : reviewStatus,
         verificationCode: body.verificationCode,
         verificationLink: body.verificationLink,
@@ -152,7 +152,7 @@ export class EmailService {
         scannedAt: body.classification ? new Date() : undefined,
       },
       include: {
-        matchedApp: { select: { id: true, title: true, company: true, status: true } },
+        application: { select: { id: true, title: true, company: true, status: true } },
       },
     });
 
@@ -212,13 +212,13 @@ export class EmailService {
       "Message",
     );
 
-    if (!message.matchedAppId) {
+    if (!message.applicationId) {
       throw unprocessable("Message has no matched application");
     }
 
     const inferred: ApplicationStatus | undefined =
       body.toStatus ??
-      message.appliedStatus ??
+      message.resultingStatus ??
       (message.classification ? CLASSIFICATION_TO_STATUS[message.classification] : undefined);
 
     if (!inferred) {
@@ -226,7 +226,7 @@ export class EmailService {
     }
 
     const app = await this.prisma.application.findFirst({
-      where: { id: message.matchedAppId, userId },
+      where: { id: message.applicationId, userId },
     });
     if (!app) {
       throw notFound("Application not found");

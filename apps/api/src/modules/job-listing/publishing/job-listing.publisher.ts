@@ -14,7 +14,7 @@ const MAX_CONCURRENT = 4;
 /** Past this the producer is hopelessly ahead; drop rather than grow the queue without bound. */
 const MAX_QUEUED = 500;
 
-/** Publishes a campaign `Job` to the public job index, deduped across every user's campaigns. */
+/** Publishes a `CampaignJob` to the public job index, deduped across every user's campaigns. */
 @injectable()
 export class JobListingPublisher {
   private active = 0;
@@ -68,7 +68,7 @@ export class JobListingPublisher {
   }
 
   /**
-   * Identity is URL-first, then dedupe key: a known url is the stronger signal, and going by the key
+   * Identity is URL-first, then match key: a known url is the stronger signal, and going by the key
    * first would fork an orphan listing whenever a re-scrape reworded the title.
    *
    * No interactive transaction: at READ COMMITTED it never made the read-then-write atomic anyway,
@@ -99,7 +99,7 @@ export class JobListingPublisher {
       }
 
       const existing = await this.prisma.jobListing.findUnique({
-        where: { dedupeKey: draft.dedupeKey },
+        where: { matchKey: draft.matchKey },
         select: { id: true },
       });
 

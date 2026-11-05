@@ -14,14 +14,15 @@ import {
   SmartToy,
   type SvgIconComponent,
 } from "@mui/icons-material";
-import { BUG_REPORT_URL, FEATURE_REQUEST_URL } from "@/lib/constants";
+import type { Route } from "next";
+import { BUG_REPORT_URL, type ExternalUrl, FEATURE_REQUEST_URL } from "@/lib/constants";
 import { isAdminRole } from "@/lib/roles";
 
 export interface NavItem {
   label: string;
-  href: string;
+  href: Route;
   icon: SvgIconComponent;
-  /** Shown only to ADMIN/SUPER_ADMIN. Cosmetic - the API's requireRole is the real gate. */
+  /** Shown only to admin and super_admin. Cosmetic - the API's requireRole is the real gate. */
   adminOnly?: boolean;
   /** Live attention badge on the icon: open pilot questions. */
   badge?: "questions";
@@ -60,7 +61,7 @@ const navGroups: NavGroup[] = [
         label: "Documents",
         href: "/documents",
         icon: Description,
-        // Detail routes stayed at their old prefixes; keep Documents lit while viewing them.
+        // Document detail routes live outside /documents.
         matchHrefs: ["/resumes", "/cover-letters"],
       },
       { label: "Boards", href: "/boards", icon: BusinessCenter },
@@ -89,18 +90,20 @@ export function visibleNavGroups(role: string | undefined, groups = navGroups): 
     .filter((group) => group.items.length > 0);
 }
 
-/** External GitHub issue links - rendered as plain anchors, never through navGroups/next-link. */
-export const feedbackLinks: NavItem[] = [
+interface ExternalNavLink {
+  label: string;
+  href: ExternalUrl;
+  icon: SvgIconComponent;
+}
+
+/** GitHub issue links: off-site, so they stay out of the nav groups and their active matching. */
+export const feedbackLinks: ExternalNavLink[] = [
   { label: "Report a Bug", href: BUG_REPORT_URL, icon: BugReport },
   { label: "Feature Request", href: FEATURE_REQUEST_URL, icon: Lightbulb },
 ];
 
 export const APP_TITLE = "JobPilot";
 export const RAIL_WIDTH = 56;
-export const DOCK_COLLAPSED = 56;
-export const DOCK_EXPANDED = 380;
-export const DOCK_MIN_EXPANDED = 320;
-export const DOCK_MAX_EXPANDED = 640;
 export const MOBILE_NAV_HEIGHT = 56;
 
 function isHrefActive(pathname: string, href: string): boolean {

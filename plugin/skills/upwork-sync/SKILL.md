@@ -53,7 +53,7 @@ Write the body to `"$JOBPILOT_TEMP/upwork-inbox.json"`:
 { "items": [
   { "upworkId": "<upwork id>", "kind": "invitation", "title": "<job title>", "clientName": "<client>",
     "jobUrl": "<url>", "body": "<message or brief>", "receivedAt": "2026-09-07T12:00:00Z",
-    "raw": {} }
+    "payload": {} }
 ] }
 ```
 
@@ -67,7 +67,7 @@ Field mapping:
   room.
 - `title` - the job title for an invitation or offer, the room name or subject for a message.
 - `receivedAt` - an RFC3339 timestamp. Never invent one; omit the item if the source has no date.
-- `raw` - the source object, so a later feature can read a field this schema does not name yet.
+- `payload` - the full source item, for fields this schema does not name yet.
   Strip anything long: a full message thread belongs in `body` or nowhere.
 
 The API leaves an item's `status` alone on an update, so anything the user archived stays archived

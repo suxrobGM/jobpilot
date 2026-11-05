@@ -1,27 +1,22 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { Stack, Tab, Tabs, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import { CopyField } from "@/components/ui/display";
+import { formatSkillCommand, type TerminalProviderId } from "@/lib/terminal/client";
 import { HostInstallCommands } from "./host-install-commands";
-import { type InstallProvider, PLUGIN_COMMANDS, SETUP_COMMANDS } from "./provider-commands";
+import { PLUGIN_COMMANDS } from "./provider-commands";
+import { ProviderTabs } from "./provider-tabs";
 
 /** Provider tabs + plugin/setup copy commands, with a separate host repair command. */
 export function PluginInstallCommands(): ReactElement {
-  const [provider, setProvider] = useState<InstallProvider>("claude");
+  const [provider, setProvider] = useState<TerminalProviderId>("claude");
 
   return (
     <Stack spacing={2}>
-      <Tabs
-        value={provider}
-        onChange={(_, next: InstallProvider) => setProvider(next)}
-        sx={{ minHeight: 36, "& .MuiTab-root": { minHeight: 36 } }}
-      >
-        <Tab value="claude" label="Claude Code" />
-        <Tab value="codex" label="Codex" />
-      </Tabs>
+      <ProviderTabs value={provider} onChange={setProvider} />
       <Stack spacing={1}>
-        {[...PLUGIN_COMMANDS[provider], SETUP_COMMANDS[provider]].map((command) => (
+        {[...PLUGIN_COMMANDS[provider], formatSkillCommand(provider, "setup")].map((command) => (
           <CopyField
             key={command}
             value={command}

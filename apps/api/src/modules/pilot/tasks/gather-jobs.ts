@@ -1,10 +1,16 @@
-import { campaignConfigSchema } from "@jobpilot/contracts/campaign";
+import {
+  campaignConfigSchema,
+  type JobBriefData,
+  jobBriefSchema,
+} from "@jobpilot/contracts/campaign";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { CapExemptBasis, PrismaClient } from "@/generated/prisma/client";
 import { applyableJobWhere } from "@/modules/campaign/jobs/apply-guard";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "./run-history";
+
+const storedBriefSchema = jobBriefSchema.nullable();
 
 const WARM_INTRO_MIN_SCORE = 80;
 /** "I just applied" outreach still lands this long after the apply. */
@@ -24,16 +30,17 @@ export interface TaskJob {
   title: string;
   url: string;
   board: string | null;
-  brief: string | null;
+  brief: JobBriefData | null;
   matchScore: number | null;
   company: string | null;
+  capExemptBasis: CapExemptBasis | null;
   resumeId?: string;
   warmContacts?: WarmContact[];
 }
 
 /** Approved jobs of in-progress campaigns, best match first. */
 export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): Promise<TaskJob[]> {
-  const rows = await prisma.job.findMany({
+  const rows = await prisma.campaignJob.findMany({
     where: applyableJobWhere(userId),
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
@@ -46,12 +53,14 @@ export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): 
       brief: true,
       matchScore: true,
       company: true,
+      capExemptBasis: true,
       campaign: { select: { config: true } },
     },
   });
   return rows.map(({ campaign, board, ...job }) => ({
     ...job,
     board: board?.domain ?? null,
+    brief: storedBriefSchema.parse(job.brief),
     resumeId: campaignConfigSchema.parse(campaign.config).resumeId,
   }));
 }
@@ -66,12 +75,12 @@ export async function gatherWarmIntroCandidates(
   now: Date,
   approvedJobs: TaskJob[],
 ): Promise<TaskJob[]> {
-  const applied = await prisma.job.findMany({
+  const applied = await prisma.campaignJob.findMany({
     where: {
       status: "applied",
       appliedAt: { gte: new Date(now.getTime() - WARM_INTRO_APPLIED_WINDOW_MS) },
       matchScore: { gte: WARM_INTRO_MIN_SCORE },
-      campaign: { userId },
+      userId,
     },
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
@@ -86,7 +95,7 @@ export async function gatherWarmIntroCandidates(
   });
   const candidates: TaskJob[] = [
     ...approvedJobs.filter((job) => (job.matchScore ?? 0) >= WARM_INTRO_MIN_SCORE),
-    ...applied.map((job) => ({ ...job, board: null, brief: null })),
+    ...applied.map((job) => ({ ...job, board: null, brief: null, capExemptBasis: null })),
   ];
   const startable = await withoutRecentRuns(
     prisma,
@@ -132,8 +141,8 @@ export async function gatherBoardDiagnoses(
   userId: string,
   now: Date,
 ): Promise<TaskPayload<"board.diagnose">[]> {
-  const rows = await prisma.job.findMany({
-    where: { status: { in: ["applied", "failed"] }, boardId: { not: null }, campaign: { userId } },
+  const rows = await prisma.campaignJob.findMany({
+    where: { status: { in: ["applied", "failed"] }, boardId: { not: null }, userId },
     orderBy: { createdAt: "desc" },
     take: BOARD_HEALTH_SCAN,
     select: {
@@ -158,7 +167,7 @@ export async function gatherBoardDiagnoses(
     // The agent retries the test job into the apply queue, which only reads in-progress campaigns.
     const probe = failed.find((job) => job.campaign.status === "in_progress");
     unhealthy.push({
-      jobBoardId: board.id,
+      boardId: board.id,
       board: board.domain,
       consecutiveFailures: failed.length,
       recentFailReasons: failed
@@ -171,7 +180,7 @@ export async function gatherBoardDiagnoses(
     prisma,
     { userId, taskType: "board.diagnose", now, cooldownMs: BOARD_DIAGNOSE_COOLDOWN_MS },
     unhealthy,
-    (diagnosis) => diagnosis.jobBoardId,
+    (diagnosis) => diagnosis.boardId,
   );
   return due.sort((a, b) => b.consecutiveFailures - a.consecutiveFailures);
 }

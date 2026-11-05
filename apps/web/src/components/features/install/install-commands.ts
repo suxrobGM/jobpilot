@@ -15,8 +15,7 @@ type InstallCommand = (typeof INSTALL_COMMANDS)[number];
 
 const noSubscription = () => () => {};
 
-// The server can't see the visitor's OS, so it renders the fixed order and the client reorders
-// after hydration; reading navigator during render causes a hydration mismatch.
+// Reordered after hydration: the server can't see the OS, so reading navigator in render mismatches.
 const isWindows = (): boolean => /win/i.test(navigator.userAgent);
 const isWindowsOnServer = (): boolean => true;
 

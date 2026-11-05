@@ -12,7 +12,6 @@ import {
   ListItemText,
   MenuList,
 } from "@mui/material";
-import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
@@ -31,18 +30,13 @@ const MORE_VALUE = "more";
 /** Below MUI's 0.75rem default - "Workspace" has to fit a fifth of a 360px phone. */
 const LABEL_SIZE = "0.6875rem";
 
-/**
- * Bottom tab bar shown below md in place of the desktop rail: four primary
- * destinations plus a "More" sheet listing the rest and the sign-out action.
- */
 export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { user } = useSession();
 
-  // Close the sheet after the route commit, not during the click: closing and navigating in the
-  // same event lets the route transition interrupt the Modal's exit, stranding the invisible
-  // backdrop / scroll-lock over the whole app (this persistent shell never unmounts it).
+  // Close after the route commit: closing in the click lets the transition interrupt the
+  // Modal's exit and strand its invisible backdrop over the app.
   useEffect(() => {
     if (pathname) {
       setMoreOpen(false);
@@ -60,19 +54,19 @@ export function MobileNav(): ReactElement {
   const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));
   const moreActive = moreItems.some((item) => isNavEntryActive(pathname, item));
   const value = activePrimary?.href ?? (moreActive ? MORE_VALUE : false);
-  // Pilot sits on the tab bar now; More carries a badge only while a badged item lives in the drawer.
+  // More carries a badge only while a badged item lives in the drawer.
   const moreBadge = moreItems.find((item) => item.badge)?.badge;
 
   const renderTab = (item: NavItem): ReactElement => (
     <BottomNavigationAction
       key={item.href}
       component={Link}
-      href={item.href as Route}
+      href={item.href}
       value={item.href}
       label={item.label}
       icon={
         <NavBadge badge={item.badge}>
-          <item.icon fontSize="small" />
+          <item.icon fontSize="md" />
         </NavBadge>
       }
     />
@@ -91,7 +85,8 @@ export function MobileNav(): ReactElement {
           bottom: 0,
           height: MOBILE_NAV_HEIGHT,
           zIndex: theme.zIndex.appBar,
-          borderTop: `1px solid ${theme.palette.line.divider}`,
+          borderTop: 1,
+          borderColor: "divider",
           backgroundColor: theme.palette.surfaces.base,
           // Five tabs at MUI's 80px minimum overflow a 390px phone - share the width evenly instead.
           "& .MuiBottomNavigationAction-root": { minWidth: 0, paddingInline: 0.5 },
@@ -112,7 +107,7 @@ export function MobileNav(): ReactElement {
           label="More"
           icon={
             <NavBadge badge={moreBadge}>
-              <MoreHoriz fontSize="small" />
+              <MoreHoriz fontSize="md" />
             </NavBadge>
           }
           onClick={() => setMoreOpen(true)}
@@ -127,12 +122,12 @@ export function MobileNav(): ReactElement {
             <ListItemButton
               key={item.href}
               component={Link}
-              href={item.href as Route}
+              href={item.href}
               selected={isNavEntryActive(pathname, item)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
                 <NavBadge badge={item.badge}>
-                  <item.icon fontSize="small" />
+                  <item.icon fontSize="md" />
                 </NavBadge>
               </ListItemIcon>
               <ListItemText primary={item.label} />
@@ -149,7 +144,7 @@ export function MobileNav(): ReactElement {
               onClick={() => setMoreOpen(false)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
-                <link.icon fontSize="small" />
+                <link.icon fontSize="md" />
               </ListItemIcon>
               <ListItemText primary={link.label} />
             </ListItemButton>

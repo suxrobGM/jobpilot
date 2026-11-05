@@ -22,7 +22,7 @@ export function statusChangeOps(prisma: StatusChangeClient, args: StatusChangeAr
   return [
     prisma.application.update({
       where: { id: applicationId },
-      data: { status: toStatus, rejectedAt: toStatus === "rejected" ? new Date() : null },
+      data: { status: toStatus },
     }),
     prisma.applicationEvent.create({
       data: {

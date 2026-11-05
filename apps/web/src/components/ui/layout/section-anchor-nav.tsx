@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import { Box, Paper, Stack, Typography } from "@mui/material";
+import { Box, ButtonBase, Paper, Stack, Typography } from "@mui/material";
 
 export interface SectionAnchor {
   id: string;
@@ -12,22 +12,11 @@ export interface SectionAnchor {
 
 interface SectionAnchorNavProps {
   anchors: SectionAnchor[];
-  /**
-   * `rootMargin` for the intersection observer that detects which section is
-   * currently in view. Defaults to a top-heavy band that fires when the
-   * section's title crosses ~25% from the top of the viewport.
-   */
+  /** Observer band; the default fires as a section title crosses ~25% from the top. */
   rootMargin?: string;
 }
 
-/**
- * Sticky left-rail nav that highlights the section currently visible in the
- * scroll viewport. Pair with `<Box data-section-id={id}>` wrappers on each
- * target section. Clicking an anchor smooth-scrolls to its section.
- *
- * Hidden below the `lg` breakpoint to keep narrow viewports clean - the
- * sections themselves still render stacked.
- */
+/** Highlights the section in view; targets are `<Box data-section-id={id}>`. Hidden below `lg`. */
 export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
   const { anchors, rootMargin = "-25% 0px -65% 0px" } = props;
   const [activeId, setActiveId] = useState<string | null>(anchors[0]?.id ?? null);
@@ -60,7 +49,9 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
 
     for (const anchor of anchors) {
       const el = document.querySelector(`[data-section-id="${anchor.id}"]`);
-      if (el) observer.observe(el);
+      if (el) {
+        observer.observe(el);
+      }
     }
 
     return () => observer.disconnect();
@@ -90,16 +81,11 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
         {anchors.map((anchor) => {
           const active = anchor.id === activeId;
           return (
-            <Box
+            <ButtonBase
               key={anchor.id}
-              component="button"
-              type="button"
               onClick={() => handleClick(anchor.id)}
               sx={(theme) => ({
-                appearance: "none",
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
+                justifyContent: "flex-start",
                 textAlign: "left",
                 paddingInline: theme.spacing(1.25),
                 paddingBlock: theme.spacing(0.75),
@@ -113,12 +99,7 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
               })}
             >
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: active ? 500 : 400, fontSize: "0.8125rem" }}
-                >
-                  {anchor.label}
-                </Typography>
+                <Typography variant={active ? "body1Strong" : "body1"}>{anchor.label}</Typography>
                 {anchor.empty && (
                   <Paper
                     variant="panel"
@@ -126,7 +107,7 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
                   />
                 )}
               </Stack>
-            </Box>
+            </ButtonBase>
           );
         })}
       </Stack>

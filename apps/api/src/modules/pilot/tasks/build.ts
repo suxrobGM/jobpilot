@@ -10,6 +10,7 @@ import { nextDayReset } from "@/common/date/buckets";
 import { allowedToday } from "./allowed-today";
 import type { TaskJob } from "./gather-jobs";
 import type { Followup } from "./gather-outreach";
+import type { ResearchTask } from "./gather-research";
 import type { DueSearch } from "./gather-searches";
 import { makeTask, makeTasks, TASK_DEFS } from "./task-defs";
 
@@ -23,6 +24,8 @@ const MAX_IDLE_SLEEP_SECONDS = 6 * 60 * 60;
 const NEW_JOBS_TARGET_MIN = 5;
 const NEW_JOBS_TARGET_MAX = 20;
 const SEARCH_MAX_PAGES = 5;
+/** Enough to lift a cap-exempt job over an equal or slightly better match, not a much better one. */
+const CAP_EXEMPT_BOOST = 10;
 
 export interface TaskListInput {
   now: Date;
@@ -33,6 +36,7 @@ export interface TaskListInput {
   activeRuns: number;
   appliedToday: number;
   networkingSentToday: number;
+  preferCapExempt: boolean;
   // No searches yet, or no goals to derive them from.
   awaitingSetup: boolean;
   // The idle sleep never runs past this or the next job-alert slot.
@@ -58,6 +62,7 @@ export interface TaskListInput {
   rescanSkipped: TaskPayload<"job.rescanSkipped">[];
   retryFailed: TaskPayload<"job.retryFailed">[];
   setup: TaskPayload<"search.setup"> | null;
+  research: ResearchTask | null;
 }
 
 type PipelineWork = Pick<
@@ -74,7 +79,7 @@ export function isPipelineQuiet(work: PipelineWork): boolean {
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-function applyTask(job: TaskJob): PilotTask {
+function applyTask(job: TaskJob, preferCapExempt: boolean): PilotTask {
   const payload = {
     campaignId: job.campaignId,
     jobKey: job.key,
@@ -86,7 +91,8 @@ function applyTask(job: TaskJob): PilotTask {
     matchScore: job.matchScore,
     warmContacts: job.warmContacts,
   };
-  return makeTask("job.apply", payload, job.matchScore ?? 0);
+  const capExemptBoost = preferCapExempt && job.capExemptBasis ? CAP_EXEMPT_BOOST : 0;
+  return makeTask("job.apply", payload, (job.matchScore ?? 0) + capExemptBoost);
 }
 
 /** An empty contact list still earns the task: finding a first contact is the point. */
@@ -118,7 +124,9 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     ...makeTasks("promotion.post", input.approvedPromotions),
     ...makeTasks("promotion.draft", input.duePlatforms),
   ];
-  if (!capReached) tasks.push(...input.approvedJobs.map(applyTask));
+  if (!capReached) {
+    tasks.push(...input.approvedJobs.map((job) => applyTask(job, input.preferCapExempt)));
+  }
   if (input.inbox.count > 0) tasks.push(makeTask("inbox.review", input.inbox));
   // Ungated by the apply cap: importing only queues rows for later applies.
   if (input.jobAlerts) tasks.push(makeTask("inbox.jobAlerts", input.jobAlerts));
@@ -141,11 +149,18 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     );
   }
 
+  const newJobsTarget = clamp(appliesLeft, NEW_JOBS_TARGET_MIN, NEW_JOBS_TARGET_MAX);
+  const quiet = isPipelineQuiet(input);
+  const research = input.research ? { ...input.research, newJobsTarget } : null;
+  // Research now is the user asking, so it skips the quiet gate.
+  if (research && (research.trigger === "requested" || quiet)) {
+    tasks.push(makeTask("research.explore", research));
+  }
+
   // Scoring and discovery only matter once nothing approved is left to apply to.
   if (input.approvedJobs.length === 0) {
     const { boards } = config;
     const rotatedBoard = boards.length > 0 ? boards[input.cycleCount % boards.length] : undefined;
-    const newJobsTarget = clamp(appliesLeft, NEW_JOBS_TARGET_MIN, NEW_JOBS_TARGET_MAX);
     const discoveries = input.dueQueries.map((search) => ({
       ...search,
       board: rotatedBoard ?? search.board,
@@ -159,7 +174,7 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     );
   }
 
-  if (isPipelineQuiet(input)) {
+  if (quiet) {
     if (input.setup) tasks.push(makeTask("search.setup", input.setup));
     tasks.push(
       ...makeTasks("campaign.tune", input.campaignTunes),

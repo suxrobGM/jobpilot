@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 /** Validates a value for use in a Prisma JSON write. */
 export function toInputJson(value: unknown): Prisma.InputJsonValue {
@@ -22,4 +22,13 @@ function toJsonChild(value: unknown): Prisma.InputJsonValue | null {
     return result;
   }
   throw new TypeError(`Value of type ${typeof value} cannot be stored as JSON.`);
+}
+
+/** A nullable JSON column write: undefined leaves the column alone, null clears it. */
+export function toNullableInputJson(
+  value: unknown,
+): Prisma.InputJsonValue | typeof Prisma.DbNull | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return Prisma.DbNull;
+  return toInputJson(value);
 }

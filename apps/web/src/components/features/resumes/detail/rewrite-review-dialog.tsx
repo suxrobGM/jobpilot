@@ -22,7 +22,7 @@ interface RewriteReviewDialogProps {
 export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactElement {
   const { open, onClose, resume, suggestion, isLoading, onApply } = props;
   const changes = diffRewrite(resume.content ?? EMPTY_RESUME_DATA, suggestion.content);
-  const notes = suggestion.diffNotes?.trim();
+  const notes = suggestion.changeNotes?.trim();
 
   return (
     <FormDialogShell
@@ -46,10 +46,7 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
             size="small"
             variant="outlined"
             startIcon={<OpenInNew fontSize="sm" />}
-            component="a"
             href={resumePdfUrl(resume.id, resume.updatedAt)}
-            target="_blank"
-            rel="noopener noreferrer"
           >
             Current PDF
           </Button>
@@ -57,10 +54,7 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
             size="small"
             variant="outlined"
             startIcon={<OpenInNew fontSize="sm" />}
-            component="a"
             href={variantPdfUrl(suggestion.id, suggestion.updatedAt)}
-            target="_blank"
-            rel="noopener noreferrer"
           >
             Rewritten PDF
           </Button>
@@ -80,9 +74,7 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
                 <Typography variant="body2Strong">{change.where}</Typography>
                 <Paper variant="panel" sx={{ p: 1.5 }}>
                   <Typography variant="captionMuted">Now</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {change.before || "(empty)"}
-                  </Typography>
+                  <Typography variant="body2Muted">{change.before || "(empty)"}</Typography>
                 </Paper>
                 <Paper variant="panel" sx={{ p: 1.5, borderColor: "primary.main" }}>
                   <Typography variant="captionMuted">Suggested</Typography>

@@ -15,11 +15,7 @@ export interface KeyedList {
   onAdd: () => void;
 }
 
-/**
- * Stable React keys for a controlled array whose model carries no id, so a row
- * keeps its identity - and its focus/caret - when the list is reordered.
- * Call the matching `onMove`/`onRemove`/`onAdd` alongside the array mutation.
- */
+/** Keys for id-less rows, so a row keeps its focus on reorder. Call `on*` beside each mutation. */
 export function useKeyedList(length: number): KeyedList {
   const keys = useRef<string[]>([]);
 

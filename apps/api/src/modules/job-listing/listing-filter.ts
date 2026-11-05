@@ -14,8 +14,8 @@ export function listingWhere(
   variants: Map<string, string[]>,
   now: Date,
 ): Prisma.JobListingWhereInput {
-  const { q, location, remote, board, tech, posted, status } = query;
-  const skills = tech?.length ? resolveSkillFilter(tech, variants) : [];
+  const { q, location, remote, board, skills: wanted, posted, status } = query;
+  const skills = wanted?.length ? resolveSkillFilter(wanted, variants) : [];
 
   return {
     ...(status && { status }),

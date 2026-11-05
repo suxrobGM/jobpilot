@@ -1,0 +1,223 @@
+"use client";
+
+import { type ReactElement, type ReactNode, useEffect, useState } from "react";
+import type { PushSubscriptionInput } from "@jobpilot/contracts/web-push";
+import { Delete } from "@mui/icons-material";
+import {
+  Box,
+  Chip,
+  FormControlLabel,
+  LinearProgress,
+  Stack,
+  Switch,
+  Typography,
+} from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/api/client";
+import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipIconButton } from "@/components/ui/buttons";
+import { ItemList, ItemRow, RelativeTime } from "@/components/ui/display";
+import { LoadingSpinner } from "@/components/ui/feedback";
+import { SectionCard } from "@/components/ui/layout";
+import { useToast } from "@/providers/toast-provider";
+import { urlBase64ToUint8Array } from "@/utils/base64";
+
+export function NotificationsCard(): ReactNode {
+  const toast = useToast();
+  // null = support not probed yet; avoids flashing the unsupported caption on first paint.
+  const [supported, setSupported] = useState<boolean | null>(null);
+  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [currentEndpoint, setCurrentEndpoint] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const vapidQuery = useQuery(pilotQueries.vapidKey());
+  const publicKey = vapidQuery.data?.publicKey ?? null;
+
+  const devicesQuery = useQuery({
+    ...pilotQueries.pushDevices(),
+    enabled: supported === true && Boolean(publicKey),
+  });
+
+  const subscribe = useApiMutation(
+    (input: PushSubscriptionInput) => api["web-push"].subscriptions.post(input),
+    { invalidate: [pilotQueries.pushAll] },
+  );
+  const remove = useApiMutation(
+    (endpoint: string) => api["web-push"].subscriptions.delete({ endpoint }),
+    { invalidate: [pilotQueries.pushAll] },
+  );
+
+  useEffect(() => {
+    const ok = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    setSupported(ok);
+    if (!ok) {
+      return;
+    }
+    setPermission(Notification.permission);
+
+    // These reject in some privacy modes; read that as "not subscribed", but not past unmount.
+    let alive = true;
+    const readEndpoint = async (): Promise<string | null> => {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      return sub?.endpoint ?? null;
+    };
+    readEndpoint()
+      .catch(() => null)
+      .then((endpoint) => {
+        if (alive) {
+          setCurrentEndpoint(endpoint);
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const enable = async (): Promise<void> => {
+    if (!publicKey) {
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+      const json = sub.toJSON();
+      if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
+        throw new Error("Incomplete push subscription");
+      }
+      await subscribe.mutateAsync({
+        endpoint: json.endpoint,
+        keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+        userAgent: navigator.userAgent,
+      });
+      setCurrentEndpoint(sub.endpoint);
+    } catch {
+      toast.error("Could not enable notifications on this device.");
+    } finally {
+      setPermission(Notification.permission);
+      setIsLoading(false);
+    }
+  };
+
+  const removeDevice = async (endpoint: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      // Server first: re-enable mints a new endpoint, so a later failure would orphan the row.
+      await remove.mutateAsync(endpoint);
+      if (endpoint === currentEndpoint) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = await reg?.pushManager.getSubscription();
+        await sub?.unsubscribe();
+        setCurrentEndpoint(null);
+      }
+    } catch {
+      toast.error("Could not remove that device.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (vapidQuery.isLoading || supported === null) {
+    return (
+      <SectionCard title="Notifications">
+        <LoadingSpinner />
+      </SectionCard>
+    );
+  }
+
+  // No VAPID keys on the server = push disabled; say so instead of vanishing silently.
+  let unavailable: string | null = null;
+  if (!publicKey) {
+    unavailable = "aren't configured on this server";
+  } else if (!supported) {
+    unavailable = "aren't supported in this browser";
+  }
+  if (unavailable) {
+    return (
+      <SectionCard title="Notifications">
+        <Typography variant="body2Muted">
+          Push notifications {unavailable}, so Pilot alerts will only appear while a tab is open.
+        </Typography>
+      </SectionCard>
+    );
+  }
+
+  const devices = devicesQuery.data ?? [];
+  const thisDeviceOn = currentEndpoint !== null;
+
+  let control: ReactElement;
+  if (permission === "denied") {
+    control = (
+      <Typography variant="body2Muted">
+        Notifications are blocked for this site. Re-enable them in your browser settings to get
+        Pilot alerts here.
+      </Typography>
+    );
+  } else {
+    control = (
+      <FormControlLabel
+        control={
+          <Switch
+            checked={thisDeviceOn}
+            disabled={isLoading || thisDeviceOn}
+            onChange={() => void enable()}
+          />
+        }
+        label={thisDeviceOn ? "Notifications on for this device" : "Turn on for this device"}
+      />
+    );
+  }
+
+  return (
+    <SectionCard
+      title="Notifications"
+      description="Get a push when the Pilot needs you - even when this tab is closed."
+    >
+      <Stack spacing={2}>
+        {control}
+
+        {devices.length > 0 && (
+          <Stack spacing={1}>
+            <Typography variant="overlineMuted">Registered devices</Typography>
+            <ItemList>
+              {devices.map((device) => (
+                <ItemRow
+                  key={device.id}
+                  primary={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                      <Typography variant="body2Strong" noWrap>
+                        {device.userAgent ?? "Unknown device"}
+                      </Typography>
+                      {device.endpoint === currentEndpoint && (
+                        <Chip label="This device" color="primary" sx={{ flexShrink: 0 }} />
+                      )}
+                    </Box>
+                  }
+                  secondary={<RelativeTime value={device.createdAt} prefix="Added" />}
+                  action={
+                    <TooltipIconButton
+                      title="Remove device"
+                      size="small"
+                      disabled={isLoading}
+                      onClick={() => void removeDevice(device.endpoint)}
+                    >
+                      <Delete fontSize="sm" />
+                    </TooltipIconButton>
+                  }
+                />
+              ))}
+            </ItemList>
+          </Stack>
+        )}
+
+        {devicesQuery.isLoading && <LinearProgress />}
+      </Stack>
+    </SectionCard>
+  );
+}

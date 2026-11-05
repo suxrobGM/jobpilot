@@ -6,13 +6,15 @@ import {
 } from "@jobpilot/contracts/application";
 import { AUTH_TOKEN_KINDS, OAUTH_PROVIDERS } from "@jobpilot/contracts/auth";
 import {
-  CAMPAIGN_ACTORS,
+  ACTORS,
+  CAMPAIGN_FEEDS,
   CAMPAIGN_JOB_STATUSES,
   CAMPAIGN_SOURCES,
   CAMPAIGN_STATUSES,
+  CAP_EXEMPT_BASES,
 } from "@jobpilot/contracts/campaign";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
-import { CREDENTIAL_KINDS, SERVICE_PROVIDERS } from "@jobpilot/contracts/credential";
+import { CAPTCHA_PROVIDERS, CREDENTIAL_KINDS } from "@jobpilot/contracts/credential";
 import { CLASSIFICATIONS, EMAIL_PROVIDERS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
 import { JOB_LISTING_STATUSES } from "@jobpilot/contracts/job-listing";
 import {
@@ -27,6 +29,7 @@ import { PILOT_JOURNAL_KINDS } from "@jobpilot/contracts/pilot/journal";
 import { PROMOTION_STATUSES } from "@jobpilot/contracts/pilot/promotion";
 import { PILOT_QUESTION_KINDS, PILOT_QUESTION_STATUSES } from "@jobpilot/contracts/pilot/question";
 import { PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot/run";
+import { PILOT_SUBJECT_TYPES } from "@jobpilot/contracts/pilot/tasks";
 import { ROLES } from "@jobpilot/contracts/role";
 import {
   UPWORK_INBOX_KINDS,
@@ -55,10 +58,12 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   ApplicationStatus: APPLICATION_STATUSES,
   AuthTokenKind: AUTH_TOKEN_KINDS,
   Availability: AVAILABILITY,
-  CampaignActor: CAMPAIGN_ACTORS,
+  Actor: ACTORS,
+  CampaignFeed: CAMPAIGN_FEEDS,
   CampaignJobStatus: CAMPAIGN_JOB_STATUSES,
   CampaignSource: CAMPAIGN_SOURCES,
   CampaignStatus: CAMPAIGN_STATUSES,
+  CapExemptBasis: CAP_EXEMPT_BASES,
   ContactDiscoverySource: CONTACT_DISCOVERY_SOURCES,
   ContactEmailSource: CONTACT_EMAIL_SOURCES,
   ContactLinkedinConnection: CONTACT_LINKEDIN_CONNECTIONS,
@@ -76,10 +81,11 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   PilotQuestionKind: PILOT_QUESTION_KINDS,
   PilotQuestionStatus: PILOT_QUESTION_STATUSES,
   PilotRunOutcome: PILOT_RUN_OUTCOMES,
+  PilotSubjectType: PILOT_SUBJECT_TYPES,
   PromotionStatus: PROMOTION_STATUSES,
   SalaryCurrency: SALARY_CURRENCIES,
   SalaryPeriod: SALARY_PERIODS,
-  ServiceProvider: SERVICE_PROVIDERS,
+  CaptchaProvider: CAPTCHA_PROVIDERS,
   UpworkInboxKind: UPWORK_INBOX_KINDS,
   UpworkInboxStatus: UPWORK_INBOX_STATUSES,
   UpworkProfileStatus: UPWORK_PROFILE_STATUSES,

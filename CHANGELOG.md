@@ -2,6 +2,54 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.5 - 2026-11-05
+
+### Fixed
+
+- The web app tells you when the browser blocks local network access to the agent.
+- The pilot Start button no longer squeezes the status text.
+- Resume skills link to the Documents → Resumes page instead of a page that doesn't exist.
+
+## v2.3.4 - 2026-11-05
+
+Update the plugin and terminal host with this release: API routes were renamed and older agents will call paths that no longer exist.
+
+### Added
+
+- Pilot can research the open web: a Research now trigger, a job-researcher agent, and a "Search in" choice in the campaign composer (defaulting to Search only).
+- Each pilot feed and search keeps one standing campaign; standing campaigns the user paused are no longer offered for resuming.
+- Jobs record their cap-exempt basis, with cap-exempt tags on jobs and a cap-exempt preference.
+
+### Changed
+
+- API routes use REST nouns, and `jobsSeen` is now `jobsScanned`.
+- The public jobs filter parameter is now `?skills=` instead of `?tech=`. Old links to retired routes are no longer redirected.
+- Account security moved into a Settings tab.
+- Every status shows a readable label and color instead of a raw slug.
+- The web app was restructured around a shared UI kit and cached queries, so pages load from the cache and update live from one subscription.
+
+### Fixed
+
+- Dashboard totals count across all campaigns.
+- Failed loads show a retryable error instead of an endless loader, and a missing record is told apart from a failed load.
+- List filters stay in the URL.
+- Selected toggle buttons have readable text and full borders.
+- Failed form saves no longer show the API error twice.
+
+## v2.3.3 - 2026-11-04
+
+Update the plugin with this release: skills use the API's renamed fields and will not work against the new API with an older plugin.
+
+### Changed
+
+- The database schema was cleaned up: plain names for columns and relations, native UUIDs and timezone-aware timestamps, applicant fields moved into a profile, and stricter links between pilot runs, jobs and resumes.
+- Codex agent files are now written as readable TOML.
+
+### Fixed
+
+- Malformed IDs sent to the API return a 400 instead of a server error.
+- Cached pilot task lists are refreshed when job briefs change format.
+
 ## v2.3.2 - 2026-10-27
 
 Update the plugin with this release.

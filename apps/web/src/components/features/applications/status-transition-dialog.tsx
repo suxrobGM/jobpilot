@@ -1,61 +1,59 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
-import { APPLICATION_STATUSES, type ApplicationStatus } from "@jobpilot/contracts/application";
-import { Button, MenuItem, TextField } from "@mui/material";
-import { STATUS_LABEL } from "@/components/ui/display";
-import { FormDialogShell } from "@/components/ui/form";
+import type { ReactElement } from "react";
+import {
+  APPLICATION_STATUSES,
+  type ApplicationStatus,
+  type StatusTransitionInput,
+} from "@jobpilot/contracts/application";
+import { z } from "zod/v4";
+import { api } from "@/api/client";
+import { applicationQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { statusOptions } from "@/components/ui/display";
+import { FormDialog } from "@/components/ui/form";
+import { useAppForm } from "@/components/ui/form/tanstack";
+
+const STATUS_ITEMS = statusOptions("application");
 
 interface StatusTransitionDialogProps {
+  applicationId: string;
   open: boolean;
   currentStatus: ApplicationStatus;
   onClose: () => void;
-  onSubmit: (next: { toStatus: ApplicationStatus; note: string | null }) => void;
-  submitting?: boolean;
 }
 
 export function StatusTransitionDialog(props: StatusTransitionDialogProps): ReactElement {
-  const { open, currentStatus, onClose, onSubmit, submitting } = props;
-  const [toStatus, setToStatus] = useState<ApplicationStatus>(currentStatus);
-  const [note, setNote] = useState("");
+  const { applicationId, open, currentStatus, onClose } = props;
+
+  const updateStatus = useApiMutation(
+    (vars: StatusTransitionInput) => api.applications({ id: applicationId }).status.post(vars),
+    { successMessage: "Status updated", invalidate: [applicationQueries.all], onSuccess: onClose },
+  );
+
+  const schema = z.object({
+    toStatus: z
+      .enum(APPLICATION_STATUSES)
+      .refine((status) => status !== currentStatus, "Pick a status other than the current one"),
+    note: z.string(),
+  });
+
+  const form = useAppForm({
+    defaultValues: { toStatus: currentStatus, note: "" },
+    validators: { onSubmit: schema },
+    onSubmit: async ({ value }) => {
+      await updateStatus.mutateAsync({ toStatus: value.toStatus, note: value.note.trim() || null });
+    },
+  });
 
   return (
-    <FormDialogShell
-      open={open}
-      title="Update status"
-      onClose={onClose}
-      onSubmit={() => onSubmit({ toStatus, note: note.trim() || null })}
-      submit={
-        <Button
-          type="submit"
-          variant="contained"
-          disabled={submitting || toStatus === currentStatus}
-        >
-          Save
-        </Button>
-      }
-    >
-      <TextField
-        select
-        fullWidth
-        label="New status"
-        value={toStatus}
-        onChange={(e) => setToStatus(e.target.value as ApplicationStatus)}
-      >
-        {APPLICATION_STATUSES.map((s) => (
-          <MenuItem key={s} value={s}>
-            {STATUS_LABEL[s]}
-          </MenuItem>
-        ))}
-      </TextField>
-      <TextField
-        label="Note (optional)"
-        fullWidth
-        multiline
-        rows={3}
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-      />
-    </FormDialogShell>
+    <FormDialog open={open} title="Update status" onClose={onClose} form={form}>
+      <form.AppField name="toStatus">
+        {(field) => <field.Select label="New status" items={STATUS_ITEMS} />}
+      </form.AppField>
+      <form.AppField name="note">
+        {(field) => <field.TextField label="Note (optional)" multiline rows={3} />}
+      </form.AppField>
+    </FormDialog>
   );
 }

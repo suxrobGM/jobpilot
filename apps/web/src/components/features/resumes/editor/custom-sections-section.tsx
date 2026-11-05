@@ -6,16 +6,14 @@ import { Stack, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
+import { EntryTextField } from "./entry-text-field";
 
 interface CustomSectionsSectionProps {
   value: ResumeCustomSection[];
   onChange: (next: ResumeCustomSection[]) => void;
 }
 
-/**
- * Whatever the CV carried that the typed sections don't model - grants, invited talks, patents,
- * teaching, service. Extraction files anything it can't place here rather than dropping it.
- */
+/** Extraction files whatever the typed sections don't model here (grants, talks) rather than drop it. */
 export function CustomSectionsSection(props: CustomSectionsSectionProps): ReactElement {
   const { value, onChange } = props;
   return (
@@ -51,14 +49,12 @@ export function CustomSectionsSection(props: CustomSectionsSectionProps): ReactE
             renderEntry={(entry, onEntryUpdate) => (
               <Stack spacing={1.5}>
                 <Grid container spacing={1.5}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      fullWidth
-                      label="Heading"
-                      value={entry.heading}
-                      onChange={(e) => onEntryUpdate({ ...entry, heading: e.target.value })}
-                    />
-                  </Grid>
+                  <EntryTextField
+                    entry={entry}
+                    field="heading"
+                    label="Heading"
+                    onUpdate={onEntryUpdate}
+                  />
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
                       fullWidth

@@ -7,22 +7,21 @@ import {
   formatSkillCommand,
   providerDisplayName,
   TERMINAL_PROTOCOL_URL,
-  type TerminalProviderId,
-} from "@/lib/terminal";
+} from "@/lib/terminal/client";
+import { useAgentDock } from "@/providers/agent-provider";
 import { RecheckButton } from "./recheck-button";
 
 interface AgentOfflineCardProps {
-  onRecheck: () => void;
   /** Marks a host relaunch as in flight, so the dock shows its starting state and polls fast. */
   onStart: () => void;
-  provider: TerminalProviderId;
   /** Whether the host reported the jobpilot:// scheme is registered, so the browser can relaunch it. */
   canRelaunch: boolean;
 }
 
 /** Shown when a host previously connected from this browser but isn't answering now - installed, just stopped. */
 export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
-  const { onRecheck, onStart, provider, canRelaunch } = props;
+  const { onStart, canRelaunch } = props;
+  const { provider } = useAgentDock();
   const providerLabel = providerDisplayName(provider);
 
   return (
@@ -62,7 +61,7 @@ export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
         <CopyField value="jobpilot" copyMessage="Command copied" ariaLabel="Copy start command" />
       </Stack>
 
-      <RecheckButton onClick={onRecheck} />
+      <RecheckButton />
     </Stack>
   );
 }

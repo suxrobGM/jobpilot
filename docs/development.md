@@ -155,8 +155,8 @@ generation step:
   a skill. Skills refer to each other by name and to shared docs by relative
   path (`../_shared/<doc>.md`), so the same text works for both providers.
 - `agents/*.md`: worker subagents (`job-scorer`, `job-applier`,
-  `job-searcher`, `networking-worker`). Campaign skills hand them one item at a
-  time so heavy browser output stays out of the main session. Each worker
+  `job-searcher`, `job-researcher`, `networking-worker`). Campaign skills hand
+  them one item at a time so heavy browser output stays out of the main session. Each worker
   includes the rules it needs instead of reading shared docs, and uses the
   session's model. Claude finds them on its own; the host writes Codex copies
   (see below). Runtimes without subagents do the work inline.
@@ -214,7 +214,7 @@ sequenceDiagram
 
     W->>T: POST /sessions/inject
     T->>S: PTY stdin
-    S->>API: GET /health, /profile, /credentials, /applied/check
+    S->>API: GET /health, /profile, /credentials, /applications/duplicates
     S->>B: navigate, login, fill, submit
     S->>API: POST /campaigns/[id]/jobs/[jobKey]/result
     API-->>W: SSE campaign event → query invalidation → refetch
@@ -251,7 +251,7 @@ The resume skills form a chain, and each has one rule:
   improve anything or invent fields. On a *first* extraction it then runs
   `review-resume`. `--force` skips that step, because the user asked for
   exactly what the PDF says.
-- `review-resume` writes one `Suggested rewrite` variant whose `diffNotes`
+- `review-resume` writes one `Suggested rewrite` variant whose `changeNotes`
   list every change. It never edits a base resume. The dashboard's Apply
   button does that through `POST /api/resumes/variants/[id]/apply`, which
   copies the content onto the base and deletes the variant in one

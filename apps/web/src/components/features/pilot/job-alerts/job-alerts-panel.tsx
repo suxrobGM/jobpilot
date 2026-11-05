@@ -1,24 +1,22 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type {
-  JobAlertsStatus,
-  PILOT_RUN_OUTCOMES,
-  PilotJobAlerts,
-} from "@jobpilot/contracts/pilot";
+import type { JobAlertsStatus, PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot";
 import { Schedule } from "@mui/icons-material";
 import { Alert, Button, Chip, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
-import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { useQuery } from "@tanstack/react-query";
+import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
-import { QuerySection } from "@/components/ui/data";
+import { QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil, plural } from "@/utils/format";
-import { RunJobAlertsButton } from "./run-job-alerts-button";
+import { campaignHref } from "@/utils/routes";
+import { formatHour } from "../run-status";
+import { RunJobAlertsButton, runDisabledReason } from "./run-job-alerts-button";
 import { ScheduleDialog } from "./schedule-dialog";
-import { hourLabel, runDisabledReason, useJobAlerts } from "./use-job-alerts";
+
+// Run events arrive over SSE (pilot-live.tsx); the poll only catches newly synced mail.
+const POLL_INTERVAL_MS = 120_000;
 
 const OUTCOME_LABELS: Record<(typeof PILOT_RUN_OUTCOMES)[number], string> = {
   done: "finished",
@@ -29,8 +27,10 @@ const OUTCOME_LABELS: Record<(typeof PILOT_RUN_OUTCOMES)[number], string> = {
 
 function scheduleSummary(status: JobAlertsStatus): string {
   const { settings } = status;
-  if (!settings.enabled) return "Not scheduled - runs only when you click Run now.";
-  const times = settings.runHours.map(hourLabel).join(", ");
+  if (!settings.enabled) {
+    return "Not scheduled - runs only when you click Run now.";
+  }
+  const times = settings.runHours.map(formatHour).join(", ");
   const next = status.nextRunAt ? ` · next in ${formatTimeUntil(status.nextRunAt)}` : "";
   return `Runs daily at ${times} ${settings.timeZone}${next}`;
 }
@@ -53,10 +53,7 @@ function LastRun(props: LastRunProps): ReactElement {
           : `Importing now - started ${formatRelativeTime(lastRun.startedAt)} ago`}
       </Typography>
       {lastRun.campaign && (
-        <LinkButton
-          size="small"
-          href={`/campaigns/${encodeURIComponent(lastRun.campaign.id)}` as Route}
-        >
+        <LinkButton size="small" href={campaignHref(lastRun.campaign.id)}>
           {lastRun.campaign.query}
         </LinkButton>
       )}
@@ -66,13 +63,8 @@ function LastRun(props: LastRunProps): ReactElement {
 
 export function JobAlertsPanel(): ReactElement {
   const [editing, setEditing] = useState(false);
-  const { query, status, run } = useJobAlerts();
-
-  const save = useApiMutation((body: PilotJobAlerts) => api.pilot["job-alerts"].put(body), {
-    invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.taskList()],
-    successMessage: "Job alert schedule saved.",
-  });
-
+  const query = useQuery({ ...pilotQueries.jobAlerts(), refetchInterval: POLL_INTERVAL_MS });
+  const status = query.data;
   const disabledReason = status ? runDisabledReason(status) : null;
 
   return (
@@ -81,9 +73,7 @@ export function JobAlertsPanel(): ReactElement {
       description="Pulls every posting out of alert emails from LinkedIn, Ladders, FlexJobs and more, ranks them against your resume, and opens a campaign. Matches at or above your min score get applied to."
     >
       <QuerySection
-        isLoading={query.isLoading}
-        isError={query.isError}
-        onRetry={() => void query.refetch()}
+        query={query}
         errorTitle="Couldn't load the job alert schedule."
         isEmpty={false}
         empty={null}
@@ -97,7 +87,6 @@ export function JobAlertsPanel(): ReactElement {
               sx={{ alignItems: "center", flexWrap: "wrap" }}
             >
               <Chip
-                size="small"
                 color={status.settings.enabled ? "primary" : "default"}
                 label={status.settings.enabled ? "Scheduled" : "Off"}
               />
@@ -124,27 +113,13 @@ export function JobAlertsPanel(): ReactElement {
               <Button size="small" startIcon={<Schedule />} onClick={() => setEditing(true)}>
                 Schedule
               </Button>
-              <RunJobAlertsButton
-                status={status}
-                disabledReason={disabledReason}
-                submitting={run.isPending}
-                onRun={() => run.mutate()}
-              />
+              <RunJobAlertsButton status={status} />
             </Stack>
           </Stack>
         )}
       </QuerySection>
       {status && (
-        <ScheduleDialog
-          open={editing}
-          status={status}
-          submitting={save.isPending}
-          onClose={() => setEditing(false)}
-          onSubmit={async (settings) => {
-            await save.mutateAsync(settings);
-            setEditing(false);
-          }}
-        />
+        <ScheduleDialog open={editing} status={status} onClose={() => setEditing(false)} />
       )}
     </SectionCard>
   );

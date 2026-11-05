@@ -2,7 +2,7 @@
 name: job-scorer
 description: >-
   Internal JobPilot worker that reads job postings and scores them. Review mode
-  returns fit data for one posting; score mode saves up to five scored Job rows.
+  returns fit data for one posting; score mode saves up to five scored campaign jobs.
   The apply, auto-apply and search skills and the pilot's score tasks delegate to
   it; it does the browser work in isolated context and returns only a compact
   JSON result. Not for direct user invocation.
@@ -57,7 +57,7 @@ Build the brief from the posting; omit what it doesn't state, never invent:
 ```
 
 Always fill `skills` (drives the score), `requirements` and `descriptionExcerpt` (eligibility reads
-them). `POST /api/score-fit {brief, minScore:<minMatchScore>, resumeId}`, dropping null fields.
+them). `POST /api/fit-scores {brief, minScore:<minMatchScore>, resumeId}`, dropping null fields.
 `verdict:"trust"` → use `score`; `"deliberate"` → reason from
 `strongMatches`/`partialMatches`/`gaps`.
 
@@ -91,12 +91,12 @@ Return:
 Per row:
 
 1. Navigate to `url` and build the brief.
-2. `GET /api/applied/check --query url=<url> --query title=<title> --query company=<company>`.
+2. `GET /api/applications/duplicates --query url=<url> --query title=<title> --query company=<company>`.
    `.applied` → ineligible, `Already applied (<match.kind>)`; skip to 4.
 3. Score and check eligibility. No skip reason → eligible, stays `pending`.
 4. Save:
    - `"create"`: write `{key, title, company, location, url, board, matchScore, matchReason,
-     status:"pending", brief, description}` (`brief` as a JSON string, `description` the posting
+     status:"pending", brief, description}` (`brief` as a JSON object, `description` the posting
      text) to `$JOBPILOT_TEMP/job-$JOB_KEY.json` and `POST /api/campaigns/$CAMPAIGN_ID/jobs --data
      @...`.
    - `"patch"`: eligible → `PATCH /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY` `{matchScore,

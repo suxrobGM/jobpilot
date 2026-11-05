@@ -70,9 +70,9 @@ newJobsTarget`, after `maxPages` pages, or at the end (`reachedEnd: true` only t
 
 ## 3. Each row
 
-Count it in `jobsSeen`. Its key is a shell-safe slug of `company-title`.
+Count it in `jobsScanned`. Its key is a shell-safe slug of `company-title`.
 
-1. **Dedupe**: `GET /api/applied/check --query "url=<url>" --query "title=<title>" --query
+1. **Dedupe**: `GET /api/applications/duplicates --query "url=<url>" --query "title=<title>" --query
    "company=<company>"`. `.applied` → skip reason `Already applied (<.match.kind>)`; don't score.
 2. **Brief** from the row, never invented; omit what it doesn't state, always fill `skills`:
 
@@ -81,15 +81,15 @@ Count it in `jobsSeen`. Its key is a shell-safe slug of `company-title`.
      "skills": [""], "requirements": [""], "responsibilities": [""], "yearsExperience": 5, "descriptionExcerpt": "" }
    ```
 
-3. **Score**: `POST /api/score-fit` with `{brief, minScore, resumeId}` (drop a null `resumeId`).
+3. **Score**: `POST /api/fit-scores` with `{brief, minScore, resumeId}` (drop a null `resumeId`).
    `verdict:"trust"` → use `score`; `"deliberate"` → adjust from
    `strongMatches`/`partialMatches`/`gaps`. A row too thin to score confidently gets no
    `matchScore`. `eligibilityBlocked.kind` → skip reason: `sponsorship` → `No visa sponsorship (JD:
    "<evidence>")`, `citizenship` → `US citizenship required`, `clearance` → `Active security
    clearance required`.
 4. **Save**: write `{key, title, company, location, url, board, matchScore, matchReason,
-   status:"pending", brief}` (`brief` as a JSON string) to `$JOBPILOT_TEMP/<key>-job.json` and `POST
-   /api/campaigns/$CAMPAIGN_ID/jobs --data @...`. A `409` with code `DUPLICATE_JOB` means it's already in the campaign: seen,
+   status:"pending", brief}` (`brief` as a JSON object) to `$JOBPILOT_TEMP/<key>-job.json` and `POST
+   /api/campaigns/$CAMPAIGN_ID/jobs --data @...`. A `409` with code `DUPLICATE_JOB` means it's already in the campaign: scanned,
    not new.
 5. **Skip** a row you just created that has a skip reason: `POST
    /api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` `{"outcome":"skipped","skipReason":"<reason>"}`.
@@ -101,7 +101,7 @@ over-qualification, or a JD silent on sponsorship (append `sponsorship unstated 
 ## Output
 
 ```json
-{ "jobsSeen": 0, "newJobs": 0, "reachedEnd": false, "pagesRead": 0,
+{ "jobsScanned": 0, "newJobs": 0, "reachedEnd": false, "pagesRead": 0,
   "best": [{ "company": "", "title": "", "score": 0 }],
   "skipped": [{ "reason": "Already applied (url)", "count": 0 }],
   "error": null }

@@ -7,14 +7,14 @@ credentials per `./setup.md` first; each skill states only its deltas from what'
 ## Applied-check (dedupe before opening a tab)
 
 ```bash
-jobpilot-api GET /api/applied/check --query "url=<job-url>" --query "title=<title>" --query "company=<company>"
+jobpilot-api GET /api/applications/duplicates --query "url=<job-url>" --query "title=<title>" --query "company=<company>"
 ```
 
 Exact URL match plus fuzzy title+company over a 30-day window; `.match.kind` is `url` or
 `fuzzy` (with a score). Default handling for apply flows on `.applied`: create the Job as
 `pending`, POST its `/result` with `{outcome:"skipped", skipReason:"Already applied (<kind>)"}`,
 and move on without opening a tab. Skills that deviate (e.g. `networking` keeps applied jobs and
-records `.match.application.id` as `relatedAppId`) say so inline.
+records `.match.application.id` as `applicationId`) say so inline.
 
 The server enforces the same rule: moving a job into `applying` - the `PATCH` below or the pilot's
 run start - 409s with code `ALREADY_APPLIED` on a duplicate (`APPLY_IN_FLIGHT` when another worker
@@ -59,7 +59,7 @@ returning - re-select tab 0, then map the outcome to a terminal write (above). `
   answer for the campaign, re-delegate with `salaryExpectation` set.
 - `category:"question"` (a required form question the profile can't answer) - ask the user
   `question`, re-delegate with the reply as `answers`. File the question with the worker's
-  `answerKey` when it set one, so the answer is saved and never asked again.
+  `savedAnswerKey` when it set one, so the answer is saved and never asked again.
 - `category:"verification"` (2FA) - pause and ask; one-time per board.
 - `category:"payment"` - never pay: POST `/result` `{outcome:"failed", failReason:"Payment
   required"}`.

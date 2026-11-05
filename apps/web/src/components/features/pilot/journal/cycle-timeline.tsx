@@ -1,21 +1,28 @@
 "use client";
 
-import { type ReactElement, type ReactNode, useState } from "react";
+import type { ReactElement, ReactNode } from "react";
 import {
   type PilotJournalEntry,
   type PilotJournalKind,
   pilotCycleDetailSchema,
 } from "@jobpilot/contracts/pilot";
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { Box, Chip, Collapse, Divider, Paper, Stack, Typography } from "@mui/material";
-import { ColorChip, RelativeTime } from "@/components/ui/display";
-import { CYCLE_STATUS_COLOR } from "@/lib/terminal";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Chip,
+  Divider,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { formatDuration, formatSpanBetween } from "@/utils/format";
 import { JournalRow, KIND_META, KIND_ORDER, RunMeta } from "./journal-row";
 
 interface CycleBlock {
   type: "cycle";
-  cycleId: string;
+  runId: string;
   entries: PilotJournalEntry[];
 }
 
@@ -24,20 +31,20 @@ type Block = CycleBlock | { type: "entry"; entry: PilotJournalEntry };
 /** Each cycle sits at its newest entry's position; cycle-less (host/system) entries stay standalone. */
 function toBlocks(entries: PilotJournalEntry[]): Block[] {
   const blocks: Block[] = [];
-  const blockByCycle = new Map<string, CycleBlock>();
+  const blockByRun = new Map<string, CycleBlock>();
 
   for (const entry of entries) {
-    if (!entry.cycleId) {
+    if (!entry.runId) {
       blocks.push({ type: "entry", entry });
       continue;
     }
-    const block = blockByCycle.get(entry.cycleId);
+    const block = blockByRun.get(entry.runId);
     if (block) {
       block.entries.push(entry);
       continue;
     }
-    const created: CycleBlock = { type: "cycle", cycleId: entry.cycleId, entries: [entry] };
-    blockByCycle.set(entry.cycleId, created);
+    const created: CycleBlock = { type: "cycle", runId: entry.runId, entries: [entry] };
+    blockByRun.set(entry.runId, created);
     blocks.push(created);
   }
   return blocks;
@@ -64,7 +71,6 @@ function KindSummary(props: CycleEntriesProps): ReactNode {
       {kinds.map((kind) => (
         <Chip
           key={kind}
-          size="small"
           variant="outlined"
           color={KIND_META[kind].color}
           label={`${KIND_META[kind].label} ${counts.get(kind)}`}
@@ -80,7 +86,6 @@ interface CycleCardProps extends CycleEntriesProps {
 
 function CycleCard(props: CycleCardProps): ReactElement {
   const { entries, defaultOpen } = props;
-  const [open, setOpen] = useState(defaultOpen);
 
   const chronological = [...entries].reverse();
   const started = chronological[0]?.createdAt;
@@ -91,28 +96,12 @@ function CycleCard(props: CycleCardProps): ReactElement {
   const run = entries.find((entry) => entry.run)?.run ?? null;
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <Stack
-        component="button"
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        direction="row"
-        spacing={1.5}
-        sx={{
-          alignItems: "center",
-          width: "100%",
-          textAlign: "left",
-          background: "none",
-          border: 0,
-          p: 0,
-          cursor: "pointer",
-          color: "inherit",
-        }}
-      >
+    <Accordion defaultExpanded={defaultOpen} slotProps={{ transition: { unmountOnExit: true } }}>
+      <AccordionSummary>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
             <Typography variant="body1Strong">Cycle</Typography>
-            {detail?.status && <ColorChip value={detail.status} colors={CYCLE_STATUS_COLOR} />}
+            {detail?.status && <StatusChip domain="cycle" value={detail.status} />}
             {started && <RelativeTime value={started} />}
             {duration && <Typography variant="captionMuted">· {duration}</Typography>}
             {detail?.sleepSeconds != null && (
@@ -124,16 +113,15 @@ function CycleCard(props: CycleCardProps): ReactElement {
           </Stack>
           <KindSummary entries={entries} />
         </Box>
-        {open ? <ExpandLess fontSize="sm" /> : <ExpandMore fontSize="sm" />}
-      </Stack>
-      <Collapse in={open}>
-        <Stack spacing={1.5} divider={<Divider />} sx={{ mt: 2 }}>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Stack spacing={1.5} divider={<Divider />}>
           {chronological.map((entry) => (
             <JournalRow key={entry.id} entry={entry} />
           ))}
         </Stack>
-      </Collapse>
-    </Paper>
+      </AccordionDetails>
+    </Accordion>
   );
 }
 
@@ -150,7 +138,7 @@ export function CycleTimeline(props: CycleEntriesProps): ReactElement {
         }
         const defaultOpen = !firstCycleSeen;
         firstCycleSeen = true;
-        return <CycleCard key={block.cycleId} entries={block.entries} defaultOpen={defaultOpen} />;
+        return <CycleCard key={block.runId} entries={block.entries} defaultOpen={defaultOpen} />;
       })}
     </Stack>
   );

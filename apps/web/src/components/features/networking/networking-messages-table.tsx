@@ -9,17 +9,19 @@ import { NetworkingMessageDialog } from "./networking-message-dialog";
 interface NetworkingMessagesTableProps {
   messages: ReadonlyArray<NetworkingMessageDto>;
   loading?: boolean;
-  emptyMessage?: string;
+  /** Set when the read failed, so empty rows don't read as "no outreach". */
+  errorTitle?: string;
+  onRetry?: () => void;
   /** A draft to open on arrival, from the pilot's approval deep link. */
-  openMessageId?: string;
+  openMessageId?: string | null;
 }
 
-const DEFAULT_EMPTY = "No outreach yet - the pilot drafts intros as it applies.";
+const EMPTY_MESSAGE = "No outreach yet - the pilot drafts intros as it applies.";
 
 /** The campaign board covers networking campaigns only, so job-campaign drafts read through here. */
 export function NetworkingMessagesTable(props: NetworkingMessagesTableProps): ReactElement {
-  const { messages, loading, emptyMessage = DEFAULT_EMPTY, openMessageId } = props;
-  const [openId, setOpenId] = useState<string | null>(openMessageId ?? null);
+  const { messages, loading, errorTitle, onRetry, openMessageId = null } = props;
+  const [openId, setOpenId] = useState(openMessageId);
 
   const openMessage = messages.find((m) => m.id === openId) ?? null;
 
@@ -32,7 +34,9 @@ export function NetworkingMessagesTable(props: NetworkingMessagesTableProps): Re
         getRowId={(row) => row.id}
         autoHeight
         hideFooter
-        emptyMessage={emptyMessage}
+        emptyMessage={EMPTY_MESSAGE}
+        errorTitle={errorTitle}
+        onRetry={onRetry}
       />
 
       {openMessage?.campaignId && (

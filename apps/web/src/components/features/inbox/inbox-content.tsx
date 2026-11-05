@@ -1,43 +1,45 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
+import { REVIEW_STATUSES } from "@jobpilot/contracts/email";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { LinearProgress, Stack } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import { useApiQuery } from "@/api/hooks";
-import { emailQueries, type InboxFilter } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
-import { MailboxReauthAlert } from "@/components/features/settings/sections/mailbox-reauth-alert";
+import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
+import { emailQueries } from "@/api/queries";
+import { MailboxReauthAlert } from "@/components/features/settings";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data/empty-state";
+import { EmptyState } from "@/components/ui/feedback";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
-import { useSseChannel } from "@/lib/sse/client";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
+import { enumParam } from "@/utils/search-params";
 import { InboxTable } from "./inbox-table";
 import { InboxToolbar } from "./inbox-toolbar";
 import { MessageReviewDialog } from "./message-review-dialog";
 
 export function InboxContent(): ReactElement {
-  const [filter, setFilter] = useState<InboxFilter>("all");
+  // In the URL, so a refresh or a shared link keeps the filter along with the page.
+  const filter = enumParam(REVIEW_STATUSES, useSearchParams().get("filter"));
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
-  const { injectSkill } = useAgent();
-  const agentAvailable = useAgentAvailable();
 
-  const account = useApiQuery(emailQueries.account());
+  const account = useQuery(emailQueries.account());
 
   const status = account.data;
   const connected = status?.connected === true;
 
   const pagination = usePaginationParams();
-  const messages = useApiQuery(emailQueries.messages(filter, pagination.query), {
+  const messages = useQuery({
+    ...emailQueries.messages(filter, pagination.query),
     enabled: connected,
   });
 
-  useSseChannel(inboxChannel, null, {
+  useLiveInvalidation(inboxChannel, null, {
     enabled: connected,
-    onMessage: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.email.all });
+    on: {
+      "sync.started": [emailQueries.all],
+      "sync.progress": [emailQueries.all],
+      "message.scanned": [emailQueries.all],
+      "message.reviewed": [emailQueries.all],
     },
   });
 
@@ -45,7 +47,7 @@ export function InboxContent(): ReactElement {
     return <LinearProgress />;
   }
 
-  if (!status?.connected) {
+  if (!connected) {
     return (
       <EmptyState
         title="No mailbox connected"
@@ -72,28 +74,16 @@ export function InboxContent(): ReactElement {
       )}
       <InboxToolbar
         filter={filter}
-        onFilterChange={(next) => {
-          setFilter(next);
-          pagination.setPage(1);
-        }}
+        onFilterChange={(next) => pagination.setFilters({ filter: next })}
       />
-      {messages.isLoading ? (
-        <LinearProgress />
-      ) : (
-        <InboxTable
-          rows={messages.data?.items ?? []}
-          loading={messages.isFetching}
-          {...gridPagination(pagination, messages.data?.pagination)}
-          onRowClick={(row) => setSelectedId(row.id)}
-          onScanMessage={
-            agentAvailable
-              ? (row) => {
-                  void injectSkill("scan-inbox", String(row.id));
-                }
-              : undefined
-          }
-        />
-      )}
+      <InboxTable
+        rows={messages.data?.items ?? []}
+        loading={messages.isFetching}
+        errorTitle={messages.isError ? "Couldn't load your inbox." : undefined}
+        onRetry={() => void messages.refetch()}
+        {...gridPagination(pagination, messages.data?.pagination)}
+        onRowClick={(row) => setSelectedId(row.id)}
+      />
       <MessageReviewDialog
         messageId={selectedId}
         open={selectedId !== null}

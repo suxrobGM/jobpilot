@@ -71,7 +71,7 @@ describe("Microsoft mail", () => {
       providerId: "m1",
       threadId: "c1",
       fromAddress: "hiring@example.org",
-      rawBody: "Hello View job",
+      body: "Hello View job",
       links: [{ url: "https://example.org/job", text: "View job" }],
     });
     expect(result.deltaLink).toBe(delta);
@@ -223,7 +223,7 @@ describe("Microsoft mail", () => {
     const result = await client([
       Response.json({ value: [plain], "@odata.deltaLink": delta }),
     ]).sync(session);
-    expect(result.newMessages[0].rawBody).toContain("Interview invitation");
+    expect(result.newMessages[0].body).toContain("Interview invitation");
     expect(result.newMessages[0].links).toEqual([
       { url: "https://example.org/job", text: "View job" },
     ]);

@@ -2,9 +2,9 @@
 
 import type { ReactElement } from "react";
 import type { ResumePublication } from "@jobpilot/contracts/resume";
-import { Stack, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { EntryList } from "./entry-list";
+import { EntryTextField } from "./entry-text-field";
 
 interface PublicationsSectionProps {
   value: ResumePublication[];
@@ -30,59 +30,48 @@ export function PublicationsSection(props: PublicationsSectionProps): ReactEleme
       emptyLabel="No publications yet."
       renderTitle={(e, i) => e.title || `Publication ${i + 1}`}
       renderEntry={(entry, onUpdate) => (
-        <Stack spacing={1.5}>
-          <TextField
-            fullWidth
+        <Grid container spacing={1.5}>
+          <EntryTextField
+            entry={entry}
+            field="title"
             label="Title"
-            value={entry.title}
-            onChange={(e) => onUpdate({ ...entry, title: e.target.value })}
+            width={12}
+            onUpdate={onUpdate}
           />
-          <TextField
-            fullWidth
+          <EntryTextField
+            entry={entry}
+            field="authors"
             label="Authors"
             placeholder="Doe J., Smith A., et al."
             helperText="As the citation lists them, so the author order survives."
-            value={entry.authors ?? ""}
-            onChange={(e) => onUpdate({ ...entry, authors: e.target.value })}
+            width={12}
+            onUpdate={onUpdate}
           />
-          <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, sm: 8 }}>
-              <TextField
-                fullWidth
-                label="Venue"
-                placeholder="Journal, conference, or publisher"
-                value={entry.venue ?? ""}
-                onChange={(e) => onUpdate({ ...entry, venue: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                fullWidth
-                label="Year"
-                placeholder="2024, In press, …"
-                value={entry.year ?? ""}
-                onChange={(e) => onUpdate({ ...entry, year: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="DOI"
-                placeholder="10.1000/example"
-                value={entry.doi ?? ""}
-                onChange={(e) => onUpdate({ ...entry, doi: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="URL"
-                value={entry.url ?? ""}
-                onChange={(e) => onUpdate({ ...entry, url: e.target.value })}
-              />
-            </Grid>
-          </Grid>
-        </Stack>
+          <EntryTextField
+            entry={entry}
+            field="venue"
+            label="Venue"
+            placeholder="Journal, conference, or publisher"
+            width={8}
+            onUpdate={onUpdate}
+          />
+          <EntryTextField
+            entry={entry}
+            field="year"
+            label="Year"
+            placeholder="2024, In press, …"
+            width={4}
+            onUpdate={onUpdate}
+          />
+          <EntryTextField
+            entry={entry}
+            field="doi"
+            label="DOI"
+            placeholder="10.1000/example"
+            onUpdate={onUpdate}
+          />
+          <EntryTextField entry={entry} field="url" label="URL" onUpdate={onUpdate} />
+        </Grid>
       )}
     />
   );

@@ -5,22 +5,24 @@ import { Menu as MenuIcon } from "@mui/icons-material";
 import { Box, Container, Drawer, IconButton, Link, Stack } from "@mui/material";
 import type { Route } from "next";
 import { LinkButton } from "@/components/ui/buttons";
+import { GITHUB_URL } from "@/lib/constants";
 import { BrandMark } from "./brand-mark";
 import { MARKETING_NAV_HEIGHT, marketingLinkSx } from "./marketing-link-sx";
 
+type ExternalUrl = `https://${string}`;
+
 interface NavLink {
-  href: Route;
+  href: Route | ExternalUrl;
   label: string;
-  external?: boolean;
 }
 
 /** `/#how-it-works`, not `#how-it-works`: from /jobs or /docs the bare hash points at nothing. */
 const NAV_LINKS: NavLink[] = [
-  { href: "/jobs" as Route, label: "Jobs" },
-  { href: "/leaderboard" as Route, label: "Leaderboard" },
-  { href: "/docs" as Route, label: "Docs" },
+  { href: "/jobs", label: "Jobs" },
+  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/docs", label: "Docs" },
   { href: "/#how-it-works" as Route, label: "How it works" },
-  { href: "https://github.com/suxrobGM/jobpilot" as Route, label: "GitHub", external: true },
+  { href: GITHUB_URL, label: "GitHub" },
 ];
 
 const EXTERNAL_PROPS = { target: "_blank", rel: "noopener noreferrer" } as const;
@@ -34,7 +36,7 @@ function NavLinks(): ReactElement {
           href={link.href}
           underline="none"
           sx={marketingLinkSx}
-          {...(link.external && EXTERNAL_PROPS)}
+          {...(link.href.startsWith("https://") && EXTERNAL_PROPS)}
         >
           {link.label}
         </Link>
@@ -53,7 +55,8 @@ export function MarketingNav(): ReactElement {
         position: "sticky",
         top: 0,
         zIndex: theme.zIndex.appBar,
-        borderBottom: `1px solid ${theme.palette.line.divider}`,
+        borderBottom: 1,
+        borderColor: "divider",
         backgroundColor: `color-mix(in srgb, ${theme.palette.surfaces.base} 86%, transparent)`,
         backdropFilter: "blur(8px)",
       })}

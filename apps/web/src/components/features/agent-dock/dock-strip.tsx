@@ -2,7 +2,8 @@
 
 import type { ReactElement } from "react";
 import { ChevronLeft, Terminal as TerminalIcon } from "@mui/icons-material";
-import { Box, IconButton, Stack, Tooltip } from "@mui/material";
+import { Box, ButtonBase, Stack, Tooltip } from "@mui/material";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { useAgentDock } from "@/providers/agent-provider";
 import { AgentOrb } from "./agent-orb";
 
@@ -19,40 +20,40 @@ export function DockStrip(): ReactElement {
         paddingBlock: theme.spacing(1.5),
       })}
     >
-      <Tooltip title="Open agent dock" placement="left" arrow disableInteractive>
-        <Box
-          component="button"
+      <Tooltip title="Open agent dock" placement="left" arrow>
+        <ButtonBase
           onClick={() => expand()}
           aria-label="Open agent dock"
           sx={(theme) => ({
-            appearance: "none",
-            border: "none",
-            background: "transparent",
-            padding: 0,
-            cursor: "pointer",
             borderRadius: "50%",
-            display: "grid",
-            placeItems: "center",
-            "&:focus-visible": { boxShadow: theme.shadows_custom.focus },
+            "&.Mui-focusVisible": { boxShadow: theme.shadows_custom.focus },
           })}
         >
           <AgentOrb size="2xxl" />
-        </Box>
+        </ButtonBase>
       </Tooltip>
 
       <Box sx={{ flex: 1 }} />
 
-      <Tooltip title="Open terminal" placement="left" arrow disableInteractive>
-        <IconButton size="small" onClick={() => expand()} aria-label="Open terminal">
-          <TerminalIcon fontSize="sm" />
-        </IconButton>
-      </Tooltip>
+      <TooltipIconButton
+        title="Open terminal"
+        placement="left"
+        arrow
+        size="small"
+        onClick={() => expand()}
+      >
+        <TerminalIcon fontSize="sm" />
+      </TooltipIconButton>
 
-      <Tooltip title="Expand" placement="left" arrow disableInteractive>
-        <IconButton size="small" onClick={() => expand()} aria-label="Expand dock">
-          <ChevronLeft fontSize="md" />
-        </IconButton>
-      </Tooltip>
+      <TooltipIconButton
+        title="Expand dock"
+        placement="left"
+        arrow
+        size="small"
+        onClick={() => expand()}
+      >
+        <ChevronLeft fontSize="md" />
+      </TooltipIconButton>
     </Stack>
   );
 }

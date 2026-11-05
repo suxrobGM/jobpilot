@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Alert, AlertTitle, Button, Stack, Typography } from "@mui/material";
-import Link from "next/link";
+import { Alert, AlertTitle, Stack, Typography } from "@mui/material";
 import type { ResumeDto } from "@/api/types";
+import { LinkButton } from "@/components/ui/buttons";
 
 interface ProfileMismatchCardProps {
   mismatches: ResumeDto["profileMismatches"];
@@ -18,10 +18,7 @@ const FIELD_LABELS: Record<ResumeDto["profileMismatches"][number]["field"], stri
   website: "Website",
 };
 
-/**
- * Recruiters read the resume; forms and cover-letter headers come from the profile. Surface a
- * disagreement rather than silently shipping both versions.
- */
+/** Recruiters read the resume but forms use the profile, so a disagreement must not ship silently. */
 export function ProfileMismatchCard(props: ProfileMismatchCardProps): ReactNode {
   const { mismatches } = props;
 
@@ -34,9 +31,9 @@ export function ProfileMismatchCard(props: ProfileMismatchCardProps): ReactNode 
       severity="warning"
       variant="outlined"
       action={
-        <Button component={Link} href="/settings/profile" color="inherit" size="small">
+        <LinkButton href="/settings/profile" color="inherit" size="small">
           Edit profile
-        </Button>
+        </LinkButton>
       }
     >
       <AlertTitle>This resume disagrees with your profile</AlertTitle>
@@ -47,7 +44,7 @@ export function ProfileMismatchCard(props: ProfileMismatchCardProps): ReactNode 
       <Stack spacing={0.5}>
         {mismatches.map((mismatch) => (
           <Typography key={mismatch.field} variant="body2">
-            <strong>{FIELD_LABELS[mismatch.field]}</strong> — resume says {mismatch.resume}, profile
+            <strong>{FIELD_LABELS[mismatch.field]}</strong> - resume says {mismatch.resume}, profile
             says {mismatch.profile}
           </Typography>
         ))}

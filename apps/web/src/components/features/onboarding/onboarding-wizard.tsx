@@ -10,29 +10,29 @@ import {
   Alert,
   AlertTitle,
   Button,
+  LinearProgress,
   Stack,
   Step,
   StepLabel,
   Stepper,
   Typography,
 } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
-import { PersonalSection } from "@/components/features/settings/sections";
+import { userQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { PersonalSection, toProfileFormValues } from "@/components/features/settings";
+import { QueryError } from "@/components/ui/feedback";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { patchAgentStorage } from "@/lib/agent-storage";
-import { useToast } from "@/providers/notification-provider";
+import { patchAgentStorage } from "@/lib/terminal/agent-storage";
+import { useToast } from "@/providers/toast-provider";
 import { AgentSetupStep } from "./agent-setup-step";
 import { ResumeUploadStep } from "./resume-upload-step";
 import { describeIssues, firstStepWithIssue } from "./validation-issues";
 
-// Minimal first run: resume + personal basics + agent install. Everything else
-// (address, work auth, EEO, auto-apply, email, credentials) lives in Settings,
-// surfaced by the workspace's profile checklist.
+// Minimal first run; the rest lives in Settings, surfaced by the workspace's profile checklist.
 const STEPS = [
   { key: "resume", label: "Resume" },
   { key: "personal", label: "Personal" },
@@ -41,19 +41,34 @@ const STEPS = [
 
 /** Profile-form steps come first; the agent step is a self-contained section. */
 const PROFILE_STEPS = STEPS.findIndex((s) => s.key === "agent");
+const PERSONAL_STEP = STEPS.findIndex((s) => s.key === "personal");
 
 export function OnboardingWizard(): ReactElement {
+  const query = useQuery(userQueries.detail());
+
+  if (query.isLoading) {
+    return <LinearProgress />;
+  }
+  if (!query.data) {
+    return <QueryError title="Couldn't load your profile." onRetry={() => void query.refetch()} />;
+  }
+  return <OnboardingSteps initialValues={toProfileFormValues(query.data)} />;
+}
+
+interface OnboardingStepsProps {
+  initialValues: UserWithAutoApplyInput;
+}
+
+function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
+  const { initialValues } = props;
   const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [step, setStep] = useState(0);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
 
-  // The user's single profile is co-created at registration, so onboarding just
-  // populates it via PUT /profile - no draft/active-profile dance.
   const save = useApiMutation((vars: UserWithAutoApplyInput) => api.user.put(vars), {
     successMessage: "Profile saved",
-    invalidate: [queryKeys.user.all],
     onSuccess: () => {
       queryClient.invalidateQueries();
       // Profile saved (non-empty) clears the redirect gate, so the optional steps can navigate away safely.
@@ -62,7 +77,7 @@ export function OnboardingWizard(): ReactElement {
   });
 
   const form = useAppForm({
-    defaultValues: USER_DEFAULT_VALUES,
+    defaultValues: initialValues,
     validators: { onSubmit: userWithAutoApplySchema },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
@@ -77,7 +92,7 @@ export function OnboardingWizard(): ReactElement {
     router.push("/workspace");
   };
 
-  const submitForm = async (e: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isLastProfileStep) {
       setStep((s) => s + 1);
@@ -86,7 +101,7 @@ export function OnboardingWizard(): ReactElement {
 
     const result = userWithAutoApplySchema.safeParse(form.state.values);
     if (!result.success) {
-      const issues = describeIssues(result.error.issues);
+      const issues = describeIssues(result.error.issues, PERSONAL_STEP);
       setShowValidationErrors(true);
       const target = firstStepWithIssue(issues);
       if (target !== null) {
@@ -111,7 +126,7 @@ export function OnboardingWizard(): ReactElement {
       </Stepper>
       <SectionCard>
         {isProfileStep ? (
-          <form onSubmit={submitForm}>
+          <form onSubmit={handleSubmit}>
             <Stack spacing={3}>
               {step === 0 && <ResumeUploadStep form={form} onContinue={() => setStep(1)} />}
               {step === 1 && <PersonalSection form={form} />}
@@ -121,8 +136,8 @@ export function OnboardingWizard(): ReactElement {
                   <Button variant="outlined" onClick={() => setStep((s) => Math.max(0, s - 1))}>
                     Back
                   </Button>
-                  <Button type="submit" variant="contained" disabled={save.isPending}>
-                    {isLastProfileStep ? (save.isPending ? "Saving…" : "Save & continue") : "Next"}
+                  <Button type="submit" variant="contained" loading={save.isPending}>
+                    {isLastProfileStep ? "Save & continue" : "Next"}
                   </Button>
                 </Stack>
               )}
@@ -157,7 +172,7 @@ const ValidationSummary = withForm({
             return null;
           }
 
-          const issues = describeIssues(result.error.issues);
+          const issues = describeIssues(result.error.issues, PERSONAL_STEP);
           return (
             <Alert severity="error">
               <AlertTitle>Some fields need fixing</AlertTitle>

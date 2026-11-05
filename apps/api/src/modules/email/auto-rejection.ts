@@ -23,8 +23,8 @@ export const AUTO_REJECTION_FROM_STATUSES = [
 export interface AutoRejectionInput {
   classification?: Classification;
   reviewStatus?: ReviewStatus;
-  matchedAppId?: string | null;
-  appliedStatus?: ApplicationStatus | null;
+  applicationId?: string | null;
+  resultingStatus?: ApplicationStatus | null;
   confidence?: number;
 }
 
@@ -34,15 +34,15 @@ export interface AutoRejectionInput {
  */
 export function isAutoRejection(
   input: AutoRejectionInput,
-): input is AutoRejectionInput & { matchedAppId: string } {
-  if (input.reviewStatus !== "auto" || !input.matchedAppId) {
+): input is AutoRejectionInput & { applicationId: string } {
+  if (input.reviewStatus !== "auto" || !input.applicationId) {
     return false;
   }
   if (input.confidence !== undefined && input.confidence < AUTO_REJECTION_MIN_CONFIDENCE) {
     return false;
   }
   const classified = input.classification && CLASSIFICATION_TO_STATUS[input.classification];
-  return (input.appliedStatus ?? classified) === "rejected";
+  return (input.resultingStatus ?? classified) === "rejected";
 }
 
 /** Outcomes a human must confirm: both need a reply, and a wrong one is expensive to unwind. */
@@ -54,6 +54,6 @@ const HUMAN_REVIEW_STATUSES = [
 /** Whether a scan result belongs in the review queue rather than applying itself. */
 export function needsHumanReview(input: AutoRejectionInput): boolean {
   const classified = input.classification && CLASSIFICATION_TO_STATUS[input.classification];
-  const resolved = input.appliedStatus ?? classified;
+  const resolved = input.resultingStatus ?? classified;
   return (HUMAN_REVIEW_STATUSES as readonly (ApplicationStatus | undefined)[]).includes(resolved);
 }

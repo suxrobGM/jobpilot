@@ -82,8 +82,8 @@ const createContactSchema = z.object({
   linkedinConnection: contactLinkedinConnectionSchema.optional(),
   discoverySource: contactDiscoverySourceSchema.optional().nullable(),
   matchConfidence: z.number().min(0).max(1).optional().nullable(),
-  relatedAppId: z.uuid().optional().nullable(),
-  relatedJobUrl: z.url().optional().nullable(),
+  applicationId: z.uuid().optional().nullable(),
+  jobUrl: z.url().optional().nullable(),
   notes: reasonText.optional().nullable(),
 });
 
@@ -96,7 +96,7 @@ const networkingMessageFieldsSchema = z.object({
 });
 
 /**
- * POST /api/campaigns/[id]/networking - add a discovered contact (or attach to an
+ * POST /api/campaigns/[id]/networking/messages - add a discovered contact (or attach to an
  * existing one via `contactId`) plus an initial draft message. Mirrors the
  * `addCampaignJobSchema` create-and-relate shape.
  */
@@ -110,7 +110,7 @@ export const addCampaignNetworkingSchema = z
     message: "Provide either contactId or contact.",
   });
 
-/** PATCH /api/campaigns/[id]/networking/[messageId] - non-terminal edits. */
+/** PATCH /api/campaigns/[id]/networking/messages/[messageId] - non-terminal edits. */
 export const patchNetworkingMessageSchema = z.object({
   status: z.enum(["draft", "approved"]).optional(),
   subject: reasonText.optional().nullable(),
@@ -122,7 +122,7 @@ export const patchNetworkingMessageSchema = z.object({
 const NETWORKING_MESSAGE_OUTCOMES = ["sent", "failed", "skipped"] as const;
 const networkingMessageOutcomeSchema = z.enum(NETWORKING_MESSAGE_OUTCOMES);
 
-/** POST /api/campaigns/[id]/networking/[messageId]/result - terminal outcome. */
+/** POST /api/campaigns/[id]/networking/messages/[messageId]/result - terminal outcome. */
 export const networkingMessageResultSchema = z
   .object({
     outcome: networkingMessageOutcomeSchema,

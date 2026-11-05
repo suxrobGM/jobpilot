@@ -50,5 +50,7 @@ Invoke the `verify` skill before committing. Commit with the `commit` skill.
 - Export only what another file imports. `bun run knip` fails otherwise.
 - A barrel is allowed only for a directory's public API with several outside importers, using
   named re-exports. `export *` only for a `package.json` `exports` target.
+- Add a test only when it guards behavior that could realistically break. No redundant, duplicate,
+  or meaningless tests (restating the implementation, re-testing what another test covers).
 - Split a test file past a few hundred lines by domain. Shared fixtures go in `fakes.ts` or
   `builders.ts`.

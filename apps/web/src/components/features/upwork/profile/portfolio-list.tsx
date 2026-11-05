@@ -36,7 +36,7 @@ export function PortfolioList(props: PortfolioListProps): ReactElement {
               {p.skills && p.skills.length > 0 && (
                 <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
                   {p.skills.map((s) => (
-                    <Chip key={s} size="small" label={s} variant="outlined" />
+                    <Chip key={s} label={s} variant="outlined" />
                   ))}
                 </Stack>
               )}
@@ -44,7 +44,7 @@ export function PortfolioList(props: PortfolioListProps): ReactElement {
           }
           action={
             p.url && (
-              <Link href={p.url} target="_blank" rel="noopener noreferrer">
+              <Link href={p.url}>
                 <Launch fontSize="sm" />
               </Link>
             )

@@ -12,13 +12,7 @@ interface PaginationFooterProps {
   onPageSizeChange?: (pageSize: number) => void;
 }
 
-/**
- * "Showing X–Y of Z", a rows-per-page selector, and a page selector. Consumes a
- * {@link usePaginationParams} result plus the server's page metadata.
- *
- * The summary stays visible on a single page - it carries the collection's total, which is the
- * one number a user still wants when everything fits.
- */
+/** The summary shows even on a single page: the total is still the number a user wants. */
 export function PaginationFooter(props: PaginationFooterProps): ReactNode {
   const { pagination, onPageChange, onPageSizeChange } = props;
   const { page, limit, total, totalPages } = pagination;
@@ -29,8 +23,7 @@ export function PaginationFooter(props: PaginationFooterProps): ReactNode {
 
   const first = (page - 1) * limit + 1;
   const last = Math.min(page * limit, total);
-  // `?pageSize=` is only capped, not enumerated, so an off-menu size still needs an option to
-  // select - without one MUI renders the field blank.
+  // `?pageSize=` is only capped, so an off-menu size needs an option or MUI renders it blank.
   const sizes = PAGE_SIZE_OPTIONS.includes(limit as (typeof PAGE_SIZE_OPTIONS)[number])
     ? PAGE_SIZE_OPTIONS
     : [...PAGE_SIZE_OPTIONS, limit].sort((a, b) => a - b);

@@ -1,4 +1,8 @@
 import type { Data } from "@jobpilot/api-client";
 import type { api } from "@/api/client";
 
-export type SavedAnswerDto = Data<typeof api.pilot.answers.get>[number];
+export type ResearchStatusDto = Data<typeof api.pilot.research.get>;
+
+export type SavedAnswerDto = Data<(typeof api.pilot)["saved-answers"]["get"]>[number];
+
+export type SkipReason = Data<typeof api.pilot.stats.today.get>["skipReasons"][number]["reason"];

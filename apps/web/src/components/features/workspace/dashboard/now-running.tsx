@@ -1,33 +1,39 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { Stop } from "@mui/icons-material";
-import { Box, Button, LinearProgress, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
-import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { campaignQueries, OPTIONS_PAGE } from "@/api/queries";
-import { invalidations } from "@/api/query-keys";
+import { Box, LinearProgress, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { campaignQueries, FULL_PAGE } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
+import { PauseCampaignButton } from "@/components/features/campaigns/pause-campaign-button";
 import { LinkButton } from "@/components/ui/buttons";
+import { statusLabel } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { radii } from "@/theme";
+import { campaignHref } from "@/utils/routes";
 
-/** Folds a campaign's summary into a single progress reading, type-aware. */
-function progress(campaign: CampaignDto): { value: number; label: string } {
-  const s = campaign.summary;
-  if (s.kind === "networking") {
-    const total = Math.max(s.discovered, 1);
-    return { value: (s.sent / total) * 100, label: `${s.sent}/${s.discovered} sent` };
+interface CampaignProgress {
+  value: number;
+  label: string;
+}
+
+function getCampaignProgress(campaign: CampaignDto): CampaignProgress {
+  const { summary } = campaign;
+  if (summary.kind === "networking") {
+    const total = Math.max(summary.discovered, 1);
+    return {
+      value: (summary.sent / total) * 100,
+      label: `${summary.sent}/${summary.discovered} sent`,
+    };
   }
-  const total = Math.max(s.qualified || s.totalFound, 1);
-  return { value: (s.applied / total) * 100, label: `${s.applied}/${total} applied` };
+  const total = Math.max(summary.qualified || summary.totalFound, 1);
+  return { value: (summary.applied / total) * 100, label: `${summary.applied}/${total} applied` };
 }
 
 /** Live strip of in-progress campaigns. Renders nothing when nothing is running. */
 export function NowRunning(): ReactNode {
-  const campaigns = useApiQuery(campaignQueries.list({ ...OPTIONS_PAGE, status: ["in_progress"] }));
+  const campaigns = useQuery(campaignQueries.list({ ...FULL_PAGE, status: ["in_progress"] }));
   const running = campaigns.data?.items ?? [];
 
   if (running.length === 0) {
@@ -37,25 +43,21 @@ export function NowRunning(): ReactNode {
   return (
     <SectionCard title="Now running">
       <Stack spacing={1.5}>
-        {running.map((c) => (
-          <RunningRow key={c.id} campaign={c} />
+        {running.map((campaign) => (
+          <RunningRow key={campaign.id} campaign={campaign} />
         ))}
       </Stack>
     </SectionCard>
   );
 }
 
-function RunningRow(props: { campaign: CampaignDto }): ReactElement {
-  const { campaign } = props;
-  const p = progress(campaign);
+interface RunningRowProps {
+  campaign: CampaignDto;
+}
 
-  const pause = useApiMutation(
-    () => api.campaigns({ id: campaign.id }).status.post({ status: "paused", actor: "user" }),
-    {
-      successMessage: "Campaign paused",
-      invalidate: invalidations.campaign,
-    },
-  );
+function RunningRow(props: RunningRowProps): ReactElement {
+  const { campaign } = props;
+  const progress = getCampaignProgress(campaign);
 
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
@@ -66,32 +68,19 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
             {campaign.query}
           </Typography>
           <Typography variant="captionMuted" noWrap>
-            {campaign.source} · {p.label}
+            {statusLabel("source", campaign.source)} · {progress.label}
           </Typography>
         </Stack>
         <LinearProgress
           variant="determinate"
-          value={Math.min(100, p.value)}
+          value={Math.min(100, progress.value)}
           sx={{ mt: 0.75, borderRadius: radii.xs }}
         />
       </Box>
-      <LinkButton
-        size="small"
-        variant="text"
-        href={`/campaigns/${encodeURIComponent(campaign.id)}` as Route}
-      >
+      <LinkButton size="small" variant="text" href={campaignHref(campaign.id)}>
         Open
       </LinkButton>
-      <Button
-        size="small"
-        variant="outlined"
-        color="warning"
-        startIcon={<Stop fontSize="sm" />}
-        disabled={pause.isPending}
-        onClick={() => pause.mutate()}
-      >
-        Stop
-      </Button>
+      <PauseCampaignButton campaignId={campaign.id} size="small" />
     </Stack>
   );
 }

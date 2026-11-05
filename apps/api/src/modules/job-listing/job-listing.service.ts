@@ -24,8 +24,7 @@ import { loadSkillVocabulary, type SkillVocabulary } from "./skill-vocabulary";
 const SITEMAP_LIMIT = 44_000;
 const FACET_LIMIT = 40;
 const LOOKUP_TTL_MS = 10 * 60_000;
-// Rankings drift slowly and rows are re-read as published, so a long TTL is safe; each entry is a
-// handful of ids, so the cap can cover most of the sitemap.
+// Rankings drift slowly and rows are re-read as published, so a long TTL is safe.
 const SIMILAR_TTL_MS = 6 * 60 * 60_000;
 const SIMILAR_CACHE_SIZE = 20_000;
 
@@ -82,8 +81,7 @@ export class JobListingService {
       return [];
     }
 
-    // Only the ranking is cached; rows are re-read with the published filter, so a listing an
-    // admin hides drops out at once.
+    // Only the ranking is cached, so the published re-read drops a hidden listing at once.
     const ids = await this.similarIds.getOrLoad(listing.id, async () => {
       const { variants } = await this.skillVocabulary();
       return rankSimilarIds(this.prisma, listing, variants);
@@ -131,7 +129,7 @@ export class JobListingService {
     query: AdminJobListingQuery,
     findRows: (args: PageArgs) => Promise<R[]>,
   ) {
-    const variants = query.tech?.length ? (await this.skillVocabulary()).variants : new Map();
+    const variants = query.skills?.length ? (await this.skillVocabulary()).variants : new Map();
     const where = listingWhere(query, variants, new Date());
     const [rows, total] = await Promise.all([
       findRows({ where, orderBy: listingOrder(query.sort), ...pageSlice(query) }),

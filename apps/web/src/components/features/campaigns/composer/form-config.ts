@@ -33,6 +33,8 @@ export const composerFormSchema = z
   .object({
     mode: z.enum(["search", "auto_apply", "networking", "apply"]),
     query: z.string().trim(),
+    // Off a board: search and auto-apply research the open web, networking reaches by criteria.
+    searchIn: z.enum(["board", "anywhere"]),
     board: z.string(),
     // Base resume to score/tailor against; apply tailors per pasted job, so none up front.
     resumeId: z.string(),
@@ -40,12 +42,10 @@ export const composerFormSchema = z
     maxApps: z.union([z.number().int().min(1).max(500), z.null(), z.undefined()]),
     // Empty = unlimited (search until the board is exhausted), mirroring maxApps.
     maxJobs: z.union([z.number().int().min(1), z.null(), z.undefined()]),
-    // Networking campaign settings (mode === "networking").
     channels: z.array(z.enum(["email", "linkedin"])),
     linkedinTier: z.enum(["free", "premium"]),
     autonomy: z.enum(["draft", "review", "auto"]),
     dailyCap: z.number().int().min(1).max(100),
-    // Apply campaign settings (mode === "apply").
     urlsText: z.string(),
     applyLabel: z.string(),
   })
@@ -66,9 +66,7 @@ export const composerFormSchema = z
     if (!v.resumeId) {
       ctx.addIssue({ code: "custom", message: "Select a resume", path: ["resumeId"] });
     }
-    // Board is required for search/auto-apply; for networking it is optional (the
-    // control between board-grounded and criteria-only discovery).
-    if (v.mode !== "networking" && !v.board) {
+    if (v.searchIn === "board" && !v.board) {
       ctx.addIssue({ code: "custom", message: "Pick a board", path: ["board"] });
     }
     if (v.mode === "networking" && v.channels.length === 0) {
@@ -85,17 +83,11 @@ export type CampaignMode = Extract<
 >;
 export type ComposerFormValues = z.infer<typeof composerFormSchema>;
 
-export const UPWORK_MODE_DESCRIPTION =
-  "JobPilot searches Upwork, filters out low-quality and unresponsive clients, and ranks the rest by fit. Review the recommendations, then draft a proposal per job - you submit on Upwork yourself.";
-
-/**
- * Static defaults shared by the parent `useAppForm` and the `withForm` field
- * groups so their form types line up. The parent overlays runtime values
- * (first board, profile min-score) before mounting.
- */
+/** Shared with the `withForm` field groups so their form types line up with the parent's. */
 export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
-  mode: "auto_apply",
+  mode: "search",
   query: "",
+  searchIn: "board",
   board: "",
   resumeId: "",
   minScore: 60,
@@ -114,25 +106,36 @@ function isCap(value: number | null | undefined): value is number {
   return value != null && Number.isFinite(value);
 }
 
-/**
- * Whether the composer is set up to run Upwork's dedicated search skill. Apply never sources from
- * a board, so a board value left over from another mode must not hijack it into an Upwork search.
- */
-export function isUpworkSearch(values: Pick<ComposerFormValues, "mode" | "board">): boolean {
-  return values.mode !== "apply" && values.board === UPWORK_DOMAIN;
+/** Upwork has its own search skill; a board left over from another mode must not trigger it. */
+export function isUpworkSearch(
+  values: Pick<ComposerFormValues, "mode" | "board" | "searchIn">,
+): boolean {
+  return usesBoard(values) && values.board === UPWORK_DOMAIN;
 }
 
-/** Whether a networking campaign has a board picked (board-grounded vs criteria-only). */
-export function isBoardSelected(board: string): boolean {
-  return board.trim() !== "";
+/** Whether this run researches the open web: a board left over in the form is ignored. */
+export function isResearch(values: Pick<ComposerFormValues, "mode" | "searchIn">): boolean {
+  const canResearch = values.mode === "search" || values.mode === "auto_apply";
+  return canResearch && values.searchIn === "anywhere";
+}
+
+/** Whether the campaign runs on the picked board, not the open web or criteria alone. */
+export function usesBoard(
+  values: Pick<ComposerFormValues, "mode" | "board" | "searchIn">,
+): boolean {
+  return values.mode !== "apply" && values.searchIn === "board" && values.board.trim() !== "";
+}
+
+/** A past query, and whether it researched the open web, so a click restores both. */
+export interface RecentQuery {
+  query: string;
+  anywhere: boolean;
 }
 
 function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest["config"] {
   if (values.mode === "networking") {
-    // A selected board grounds networking in real openings; the optional cap
-    // (reusing the maxApps field) maps to config.maxJobs - omit it to run until
-    // the user stops. No board → criteria-only discovery.
-    const searchesBoard = isBoardSelected(values.board);
+    // The optional cap reuses the maxApps field; omit it to run until the user stops.
+    const searchesBoard = usesBoard(values);
     return {
       ...(searchesBoard && isCap(values.maxApps) ? { maxJobs: values.maxApps } : {}),
       networking: {
@@ -144,7 +147,6 @@ function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest[
     };
   }
   if (values.mode !== "auto_apply") {
-    // Omit maxJobs when empty so the search runs unlimited.
     return isCap(values.maxJobs) ? { maxJobs: values.maxJobs } : {};
   }
   return {
@@ -169,8 +171,7 @@ export function buildCreateCampaignRequest(values: ComposerFormValues): CreateCa
   return {
     query: values.query.trim(),
     source: values.mode,
-    // Networking without a board discovers from criteria alone.
-    ...(isBoardSelected(values.board) ? { board: values.board } : {}),
+    ...(usesBoard(values) ? { board: values.board } : {}),
     // resumeId is campaign-wide (mandatory for search/auto-apply/networking), not mode-specific.
     config: { resumeId: values.resumeId, ...buildCampaignConfig(values) },
     createdBy: "user",
@@ -186,35 +187,18 @@ export function buildSkillArg(values: ComposerFormValues, campaignId: string): s
     // The skill reads channels/tier/autonomy from the campaign's config.networking.
     return buildCliArgs({ positional: [values.query.trim()], flags: { campaign: campaignId } });
   }
+  const anywhere = isResearch(values);
   return buildCliArgs({
     positional: [values.query.trim()],
     flags: {
-      board: values.board,
+      board: anywhere ? undefined : values.board,
+      anywhere,
       "min-score": values.mode === "auto_apply" ? values.minScore : undefined,
       "max-apps":
         values.mode === "auto_apply" && isCap(values.maxApps) ? values.maxApps : undefined,
       "max-jobs": values.mode === "search" && isCap(values.maxJobs) ? values.maxJobs : undefined,
-      // Search saves results onto this campaign; pass the id the UI just created so
-      // the skill doesn't have to rediscover it.
+      // The skill saves results onto this campaign, so it needn't rediscover it.
       campaign: values.mode === "search" || values.mode === "auto_apply" ? campaignId : undefined,
     },
   });
 }
-
-export const SUBMIT_LABELS: Record<CampaignMode, string> = {
-  search: "Start search",
-  auto_apply: "Start auto-apply",
-  networking: "Start networking",
-  apply: "Apply to links",
-};
-
-export const MODE_DESCRIPTIONS: Record<CampaignMode, string> = {
-  search:
-    "Search a board and score matches in the selected board - nothing is sent. Review the ranked list yourself.",
-  auto_apply:
-    "Search, score, then auto-submit applications to matches above your score threshold in the selected board.",
-  networking:
-    "Find hiring managers or recruiters and message them directly. Pick a board to ground networking in real openings, or none to reach by criteria.",
-  apply:
-    "Already found the jobs yourself? Paste the links and the agent reviews fit, tailors your resume, and applies to each.",
-};

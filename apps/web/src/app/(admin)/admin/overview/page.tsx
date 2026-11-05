@@ -3,11 +3,12 @@ import { Grid, Skeleton, Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
+import { dataOrNullIf404 } from "@/api/error";
 import { getFetchOptions } from "@/api/server";
-import { ApplicationsTimelineChart } from "@/components/features/analytics/applications-timeline-chart";
-import { StatTile } from "@/components/features/analytics/stat-tile";
 import { StatusBreakdownChart } from "@/components/features/analytics/status-breakdown-chart";
-import { TopBoardsList } from "@/components/features/analytics/top-boards-list";
+import { RankedBarList } from "@/components/ui/data";
+import { TimelineChart } from "@/components/ui/data/timeline-chart";
+import { StatCard } from "@/components/ui/display";
 import { slotKeys } from "@/utils/array";
 
 export const metadata: Metadata = { title: "Overview" };
@@ -50,7 +51,10 @@ function AdminOverviewSkeleton(): ReactElement {
 
 /** Read-only, so it renders entirely on the server; only the charts ship as client leaves. */
 async function AdminOverview(): Promise<ReactElement> {
-  const { data } = await api.admin.stats.get(await getFetchOptions());
+  const data = dataOrNullIf404(
+    await api.admin.stats.get(await getFetchOptions()),
+    "Couldn't load overview",
+  );
 
   if (!data) {
     notFound();
@@ -77,14 +81,14 @@ async function AdminOverview(): Promise<ReactElement> {
       <Grid container spacing={TILE_GRID.spacing}>
         {tiles.map((tile) => (
           <Grid key={tile.label} size={TILE_GRID.size}>
-            <StatTile label={tile.label} value={tile.value} hint={tile.hint} />
+            <StatCard label={tile.label} value={tile.value} hint={tile.hint} />
           </Grid>
         ))}
       </Grid>
 
-      <ApplicationsTimelineChart
+      <TimelineChart
         data={signupsPerDay}
-        title="Signups"
+        eyebrow="Signups"
         metricLabel="signups"
         emptyMessage="No signups in the last 30 days."
       />
@@ -94,7 +98,7 @@ async function AdminOverview(): Promise<ReactElement> {
           <StatusBreakdownChart data={statusBreakdown} />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TopBoardsList
+          <RankedBarList
             title="Top boards"
             eyebrow="Platform"
             entries={topBoards.map((row) => ({ label: row.board, count: row.count }))}

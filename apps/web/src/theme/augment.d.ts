@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { accent, line, stages, surfaces } from "./palette";
-import type { controlHeights, gradients, iconSizes, motion, radii, shadows, tints } from "./tokens";
+import type { controlHeights, iconSizes, motion, radii, shadows, tints } from "./tokens";
 
 /** Add variants here only; the three MUI interfaces below derive from it. */
 interface CustomTypographyVariants {
@@ -43,7 +43,6 @@ declare module "@mui/material/styles" {
   }
 
   interface Theme {
-    gradients: typeof gradients;
     motion: typeof motion;
     radii: typeof radii;
     shadows_custom: typeof shadows;
@@ -52,7 +51,6 @@ declare module "@mui/material/styles" {
     controlHeights: typeof controlHeights;
   }
   interface ThemeOptions {
-    gradients?: typeof gradients;
     motion?: typeof motion;
     radii?: typeof radii;
     shadows_custom?: typeof shadows;
@@ -88,7 +86,6 @@ declare module "@mui/material/SvgIcon" {
 declare module "@mui/material/Paper" {
   interface PaperPropsVariantOverrides {
     interactive: true;
-    live: true;
     /** For a whole card that is a link. */
     lift: true;
     /** For inline CTA cards. */

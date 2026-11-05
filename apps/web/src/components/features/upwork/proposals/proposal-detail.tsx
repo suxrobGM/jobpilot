@@ -3,21 +3,20 @@
 import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
 import { AutoAwesome, ContentCopy, Delete, Launch, Send } from "@mui/icons-material";
-import { Box, Button, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import type { Route } from "next";
+import { Button, Stack, Typography } from "@mui/material";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { upworkAccountQueries, upworkProposalQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
-import type { UpdateUpworkProposalRequest } from "@/api/types";
-import { AgentOnlyButton } from "@/components/ui/buttons";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { AgentOnlyButton, TooltipIconButton } from "@/components/ui/buttons";
+import { LabelValue } from "@/components/ui/display";
+import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
-import { useSseChannel } from "@/lib/sse/client";
+import { useCopy } from "@/hooks/use-copy";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
-import { useToast } from "@/providers/notification-provider";
 import { ProposalNotes } from "./proposal-notes";
 import { ProposalStatusBar } from "./proposal-status-bar";
 
@@ -29,54 +28,48 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const { id } = props;
   const router = useRouter();
   const agent = useAgent();
-  const toast = useToast();
+  const copy = useCopy();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
 
-  const detail = useApiQuery(upworkProposalQueries.detail(id));
-  const account = useApiQuery(upworkAccountQueries.detail());
+  const detail = useQuery(upworkProposalQueries.detail(id));
+  const account = useQuery(upworkAccountQueries.detail());
 
-  useSseChannel(upworkChannel, null, {
+  useLiveInvalidation(upworkChannel, null, {
     on: {
-      "proposal.updated": (e) => {
-        if (e.id === id) {
-          queryClient.invalidateQueries({ queryKey: queryKeys.upworkProposals.detail(id) });
+      "proposal.updated": (event) => {
+        if (event.id === id) {
+          void queryClient.invalidateQueries({
+            queryKey: upworkProposalQueries.detail(id).queryKey,
+          });
         }
       },
-      "account.updated": () => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.upworkAccount.all });
-      },
+      "account.updated": [upworkAccountQueries.all],
     },
   });
 
-  const update = useApiMutation(
-    (body: UpdateUpworkProposalRequest) => api.upwork.proposals({ id }).patch(body),
-    { invalidate: [queryKeys.upworkProposals.all] },
-  );
-
   const remove = useApiMutation(() => api.upwork.proposals({ id }).delete(), {
     successMessage: "Proposal deleted",
-    invalidate: [queryKeys.upworkProposals.all],
-    onSuccess: () => router.replace("/upwork" as Route),
+    invalidate: [upworkProposalQueries.all],
+    onSuccess: () => router.replace("/upwork"),
   });
 
-  if (detail.isLoading) {
-    return <LinearProgress />;
+  if (detail.isPending) {
+    return <DetailSkeleton />;
   }
 
   const proposal = detail.data;
   if (!proposal) {
     return (
       <PageShell maxWidth="md">
-        <Typography variant="body1Muted">Proposal not found.</Typography>
+        <DetailLoadFailure
+          noun="proposal"
+          error={detail.error}
+          onRetry={() => void detail.refetch()}
+        />
       </PageShell>
     );
   }
-
-  const handleCopy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
-  };
 
   const handleDelete = async () => {
     const confirmed = await confirm({
@@ -103,10 +96,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
               <Button
                 variant="outlined"
                 startIcon={<Launch fontSize="md" />}
-                component="a"
                 href={proposal.jobUrl}
-                target="_blank"
-                rel="noopener noreferrer"
               >
                 Open posting
               </Button>
@@ -114,7 +104,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
             <AgentOnlyButton
               variant="outlined"
               startIcon={<AutoAwesome fontSize="md" />}
-              onClick={() => void agent.injectSkill("upwork-proposal", String(id))}
+              onClick={() => void agent.injectSkill("upwork-proposal", id)}
             >
               {proposal.proposalText ? "Regenerate" : "Generate"}
             </AgentOnlyButton>
@@ -122,13 +112,13 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
               variant="contained"
               startIcon={<Send fontSize="md" />}
               disabled={proposal.status !== "draft" || !proposal.proposalText}
-              onClick={() => void agent.injectSkill("upwork-submit", String(id))}
+              onClick={() => void agent.injectSkill("upwork-submit", id)}
             >
               Submit on Upwork
             </AgentOnlyButton>
-            <IconButton onClick={() => void handleDelete()} aria-label="Delete proposal">
+            <TooltipIconButton title="Delete proposal" onClick={() => void handleDelete()}>
               <Delete fontSize="md" />
-            </IconButton>
+            </TooltipIconButton>
           </>
         }
       />
@@ -141,7 +131,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
         </Typography>
       )}
 
-      <ProposalStatusBar proposal={proposal} onChange={(patch) => update.mutate(patch)} />
+      <ProposalStatusBar proposal={proposal} />
 
       <SectionCard
         title="Proposal"
@@ -150,7 +140,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
             <Button
               size="small"
               startIcon={<ContentCopy fontSize="sm" />}
-              onClick={() => void handleCopy(proposal.proposalText)}
+              onClick={() => void copy(proposal.proposalText)}
             >
               Copy
             </Button>
@@ -173,12 +163,11 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
         <SectionCard title="Screening answers">
           <Stack spacing={2}>
             {proposal.screeningAnswers.map((qa) => (
-              <Box key={qa.question}>
-                <Typography variant="overlineMuted">{qa.question}</Typography>
+              <LabelValue key={qa.question} label={qa.question}>
                 <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
                   {qa.answer}
                 </Typography>
-              </Box>
+              </LabelValue>
             ))}
           </Stack>
         </SectionCard>

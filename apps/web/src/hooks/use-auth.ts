@@ -1,24 +1,16 @@
 "use client";
 
 import type { LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import {
-  type ApiMutationResult,
-  type ApiQueryResult,
-  useApiMutation,
-  useApiQuery,
-} from "@/api/hooks";
 import { authQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
-import type { AuthSessionResponse, AuthUserDto, LogoutResponse, MeResponse } from "@/api/types";
+import type { AuthSessionResponse, AuthUserDto, LogoutResponse } from "@/api/types";
+import { type ApiMutationResult, useApiMutation } from "@/api/use-api-mutation";
 
 export interface UseSessionResult {
-  user: AuthUserDto | undefined;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  meQuery: ApiQueryResult<MeResponse>;
+  /** Null while loading and when signed out. */
+  user: AuthUserDto | null;
 }
 
 export interface UseAuthActionsResult {
@@ -27,36 +19,20 @@ export interface UseAuthActionsResult {
   logout: ApiMutationResult<LogoutResponse, void>;
 }
 
-/**
- * The signed-in user, read from `/api/auth/me` (auth rides the httpOnly cookie).
- * Kept separate from `useAuthActions` so the signed-out pages that only need
- * login/register can't drag a guaranteed-401 `me` fetch onto themselves.
- */
+/** Separate from `useAuthActions` so signed-out pages don't drag in a guaranteed-401 `me` fetch. */
 export function useSession(): UseSessionResult {
-  const meQuery = useApiQuery(authQueries.me(), {
-    retry: false,
-    staleTime: 30_000,
-  });
+  const meQuery = useQuery({ ...authQueries.me(), retry: false });
 
-  return {
-    user: meQuery.data,
-    isLoading: meQuery.isLoading,
-    isAuthenticated: Boolean(meQuery.data),
-    meQuery,
-  };
+  return { user: meQuery.data ?? null };
 }
 
-/**
- * Login/register/logout mutations. On a successful login or register the `me`
- * query is invalidated and the user is sent to `/workspace` - the proxy
- * middleware then routes on to `/onboarding` when the profile is empty.
- */
+/** Login and register land on `/workspace`; the proxy routes an empty profile on to onboarding. */
 export function useAuthActions(): UseAuthActionsResult {
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const onSession = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+    queryClient.invalidateQueries({ queryKey: authQueries.me().queryKey });
     router.push("/workspace");
   };
 

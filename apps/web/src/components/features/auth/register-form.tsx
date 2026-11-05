@@ -6,6 +6,7 @@ import { Alert, Link, Stack, Typography } from "@mui/material";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useAuthActions } from "@/hooks/use-auth";
 import { OAuthButtons } from "./oauth-buttons";
+import { PASSWORD_HINT } from "./password-hint";
 
 const DEFAULT_VALUES: RegisterInput = { email: "", password: "" };
 
@@ -48,14 +49,14 @@ export function RegisterForm(): ReactElement {
               label="Password"
               type="password"
               autoComplete="new-password"
-              helperText="8+ characters with an uppercase letter, a lowercase letter, a number, and a special character."
+              helperText={PASSWORD_HINT}
             />
           )}
         </form.AppField>
 
         <form.AppForm>
-          <form.SubmitButton disabled={register.isPending} fullWidth size="large">
-            {register.isPending ? "Creating account…" : "Create account"}
+          <form.SubmitButton fullWidth size="large">
+            Create account
           </form.SubmitButton>
         </form.AppForm>
 

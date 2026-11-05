@@ -77,7 +77,7 @@ export class EmailSyncService {
             fromName: m.fromName,
             fromDomain: m.fromDomain,
             snippet: m.snippet,
-            rawBody: m.rawBody,
+            body: m.body,
             links: toInputJson(m.links),
             receivedAt: m.receivedAt,
           },

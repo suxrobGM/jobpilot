@@ -2,33 +2,25 @@
 
 import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { analyticsQueries } from "@/api/queries";
+import { PortfolioRankChip } from "@/components/features/portfolio/portfolio-rank-chip";
+import { RankedBarList } from "@/components/ui/data";
+import { TimelineChart } from "@/components/ui/data/timeline-chart";
+import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
-import { ApplicationsTimelineChart } from "./applications-timeline-chart";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
-import { PortfolioRankChip } from "./portfolio-rank-chip";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
-import { TopBoardsList } from "./top-boards-list";
-
-function toEntries<T extends { count: number }>(
-  items: T[],
-  label: (item: T) => string,
-): { label: string; count: number }[] {
-  return items.map((item) => ({ label: label(item), count: item.count }));
-}
 
 export function AnalyticsView(): ReactElement {
-  const query = useApiQuery(analyticsQueries.stats(), {
-    errorMessage: "Failed to load analytics stats",
-  });
+  const query = useQuery(analyticsQueries.stats());
 
   if (query.isPending) {
-    return <Typography variant="body2Muted">Loading analytics</Typography>;
+    return <DetailSkeleton heights={[96, 280, 240]} />;
   }
 
   if (!query.data) {
-    return <Typography variant="body2Muted">No data available.</Typography>;
+    return <QueryError title="Couldn't load analytics." onRetry={() => void query.refetch()} />;
   }
 
   const stats = query.data;
@@ -41,7 +33,12 @@ export function AnalyticsView(): ReactElement {
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <ApplicationsTimelineChart data={stats.perDay} />
+          <TimelineChart
+            data={stats.perDay}
+            eyebrow="Applications over time"
+            metricLabel="submitted"
+            emptyMessage="No applications submitted yet."
+          />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <StatusBreakdownChart data={stats.statusBreakdown} />
@@ -50,18 +47,18 @@ export function AnalyticsView(): ReactElement {
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TopBoardsList
+          <RankedBarList
             eyebrow="Distribution"
             title="Top boards"
-            entries={toEntries(stats.topBoards, (b) => b.board)}
+            entries={stats.topBoards.map((b) => ({ label: b.board, count: b.count }))}
             emptyMessage="No applications have been linked to a job board yet."
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TopBoardsList
+          <RankedBarList
             eyebrow="Diagnostics"
             title="Top failure reasons"
-            entries={toEntries(stats.topRejectReasons, (r) => r.reason)}
+            entries={stats.topRejectReasons.map((r) => ({ label: r.reason, count: r.count }))}
             emptyMessage="No failed campaign jobs recorded."
           />
         </Grid>
@@ -74,18 +71,21 @@ export function AnalyticsView(): ReactElement {
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <ApplicationsTimelineChart
+          <TimelineChart
             data={stats.networking.perDaySent}
-            title="Messages over time"
+            eyebrow="Messages over time"
             metricLabel="sent"
             emptyMessage="No networking messages sent yet."
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TopBoardsList
+          <RankedBarList
             eyebrow="Distribution"
             title="Contact sources"
-            entries={toEntries(stats.networking.topContactSources, (s) => s.source)}
+            entries={stats.networking.topContactSources.map((s) => ({
+              label: s.source,
+              count: s.count,
+            }))}
             emptyMessage="No contacts discovered yet."
           />
         </Grid>

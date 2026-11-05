@@ -6,9 +6,9 @@ import { Delete, MoreVert, Visibility, VisibilityOff } from "@mui/icons-material
 import { IconButton } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import type { AdminJobListingDto } from "@/api/types";
-import { DropdownMenu } from "@/components/ui/feedback";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";
 
 interface AdminListingActionsProps {
@@ -23,14 +23,14 @@ export function AdminListingActions(props: AdminListingActionsProps): ReactEleme
   const hidden = listing.status === "hidden";
 
   const update = useApiMutation(
-    (patch: AdminJobListingPatch) => api.admin.listings({ id: listing.id }).patch(patch),
+    (patch: AdminJobListingPatch) => api.admin["job-listings"]({ id: listing.id }).patch(patch),
     {
       successMessage: hidden ? "Listing published" : "Listing hidden",
       onSuccess: () => router.refresh(),
     },
   );
 
-  const remove = useApiMutation(() => api.admin.listings({ id: listing.id }).delete(), {
+  const remove = useApiMutation(() => api.admin["job-listings"]({ id: listing.id }).delete(), {
     successMessage: "Listing deleted",
     onSuccess: () => router.refresh(),
   });

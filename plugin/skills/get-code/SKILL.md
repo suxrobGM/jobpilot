@@ -43,7 +43,7 @@ Read `.items`. Empty → `sleep 5` and call again, up to 6 attempts (~30s).
 If still nothing, also look for unclassified messages whose body matches the board domain (Gmail may have arrived but `scan-inbox` hasn't classified it yet). Classify inline:
 
 1. Read `.items[0]` (most recent first).
-2. Inspect `subject`, `fromAddress`, `snippet`, `rawBody`.
+2. Inspect `subject`, `fromAddress`, `snippet`, `body`.
 3. If it's not a real verification for `$BOARD_DOMAIN`, print `{}` and exit.
 4. Extract:
    - **`verificationCode`** - 4-8 characters, usually digits. Patterns: `\b\d{4,8}\b`, `code is (\S+)`, `verification code:\s*(\S+)`.

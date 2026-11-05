@@ -52,8 +52,8 @@ enum ContactDiscoverySource {
 }
 
 model Contact {
-  id     String @id @default(uuid())
-  userId String @map("user_id")
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   name            String
@@ -68,28 +68,28 @@ model Contact {
   discoverySource    ContactDiscoverySource?   @map("discovery_source")
   matchConfidence    Float?                    @map("match_confidence")
 
-  relatedAppId  String?      @map("related_app_id")
-  relatedApp    Application? @relation(fields: [relatedAppId], references: [id], onDelete: SetNull)
-  relatedJobUrl String?      @map("related_job_url")
+  applicationId String?      @map("application_id") @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  jobUrl        String?      @map("job_url")
 
   notes     String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   messages NetworkingMessage[]
 
-  @@index([userId])
   @@index([userId, company])
+  @@index([applicationId])
   @@map("contacts")
 }
 
 model NetworkingMessage {
-  id         String    @id @default(uuid())
-  userId     String    @map("user_id")
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contactId  String    @map("contact_id")
+  contactId  String    @map("contact_id") @db.Uuid
   contact    Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  campaignId String?   @map("campaign_id")
+  campaignId String?   @map("campaign_id") @db.Uuid
   campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
   channel      NetworkingChannel
@@ -101,10 +101,10 @@ model NetworkingMessage {
   failReason String?                 @map("fail_reason")
   providerId String?                 @map("provider_id")
   threadId   String?                 @map("thread_id")
-  sentAt     DateTime?               @map("sent_at")
-  repliedAt  DateTime?               @map("replied_at")
-  createdAt  DateTime                @default(now()) @map("created_at")
-  updatedAt  DateTime                @updatedAt @map("updated_at")
+  sentAt     DateTime?               @map("sent_at") @db.Timestamptz(3)
+  repliedAt  DateTime?               @map("replied_at") @db.Timestamptz(3)
+  createdAt  DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([userId, createdAt])
   @@index([campaignId, status])

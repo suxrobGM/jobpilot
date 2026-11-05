@@ -46,11 +46,11 @@ export async function writeDigestIfDue(
         promotionsPosted,
       ] = await Promise.all([
         tx.application.count({ where: { userId, appliedAt: { gte: since } } }),
-        tx.job.count({
-          where: { status: "failed", campaign: { userId }, createdAt: { gte: since } },
+        tx.campaignJob.count({
+          where: { status: "failed", userId, createdAt: { gte: since } },
         }),
-        tx.job.count({
-          where: { status: "skipped", campaign: { userId }, createdAt: { gte: since } },
+        tx.campaignJob.count({
+          where: { status: "skipped", userId, createdAt: { gte: since } },
         }),
         tx.networkingMessage.count({ where: { userId, sentAt: { gte: since } } }),
         tx.networkingMessage.count({ where: { userId, repliedAt: { gte: since } } }),

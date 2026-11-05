@@ -4,20 +4,17 @@ import {
   pilotInstructionsConfigSchema,
 } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
-import { DAY_MS } from "@/common/date/buckets";
 import { toInputJson } from "@/common/json";
-import { normalizeJobUrl } from "@/common/utils/url";
 import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
+import { resumePausedFeed } from "./feeds";
 import { PilotService } from "./pilot.service";
-import { hasPendingRunNow, pendingJobAlertsWhere } from "./tasks/gather-inbox";
+import { pendingJobAlertsWhere } from "./tasks/gather-inbox";
+import { hasPendingRunNow } from "./tasks/run-history";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 /** A run-now click syncs first so the count is current, but never re-pulls a mailbox just synced. */
 const RUN_NOW_SYNC_STALE_MS = 2 * 60 * 1000;
-
-/** Alert emails repeat a posting for days; a week back covers the repeats. */
-const SEEN_WINDOW_MS = 7 * DAY_MS;
 
 @injectable()
 export class JobAlertsService {
@@ -118,6 +115,7 @@ export class JobAlertsService {
       return { queued: false, pendingEmails };
     }
 
+    await resumePausedFeed(this.prisma, userId, "job_alerts");
     await this.prisma.pilotState.upsert({
       where: { userId },
       create: { userId, jobAlertsRequestedAt: now },
@@ -125,22 +123,6 @@ export class JobAlertsService {
     });
     await this.wakePilot(userId);
     return { queued: true, pendingEmails };
-  }
-
-  /** The given URLs already in one of the user's campaigns from the last week, compared normalized. */
-  async seenUrls(userId: string, urls: string[]) {
-    const normalized = urls.map(normalizeJobUrl);
-    const rows = await this.prisma.job.findMany({
-      where: {
-        url: { in: [...new Set(normalized)] },
-        createdAt: { gte: new Date(Date.now() - SEEN_WINDOW_MS) },
-        campaign: { userId },
-      },
-      distinct: ["url"],
-      select: { url: true },
-    });
-    const found = new Set(rows.map((row) => row.url));
-    return { seen: urls.filter((_, i) => found.has(normalized[i])) };
   }
 
   /** The terminal host ends its idle sleep on `state.changed`, so the run starts in seconds. */

@@ -76,7 +76,8 @@ internal sealed partial class CodexProvider : Provider
         }
 
         var body = string.Join('\n', lines[(end + 1)..]).Trim();
-        return $"name = {TomlString(name)}\ndescription = {TomlString(description)}\ndeveloper_instructions = {TomlString(body)}\n";
+        return $"name = {ReadableTomlString(name)}\ndescription = {ReadableTomlString(description)}\n"
+            + $"developer_instructions = {ReadableTomlString(body)}\n";
     }
 
     // Only the YAML the agent files use: `key: value`, or a folded `key: >-` with indented lines.
@@ -203,6 +204,25 @@ internal sealed partial class CodexProvider : Provider
 
     // JSON string escapes are a subset of TOML basic-string escapes, so the serializer doubles as the TOML quoter.
     private static string TomlString(string value) => JsonSerializer.Serialize(value, AppJsonContext.Default.String);
+
+    // Literal strings keep the checked-in agent files readable. Text a literal cannot hold (a `'''` run, a
+    // control character, a leading or trailing quote) falls back to the escaped form.
+    private static string ReadableTomlString(string value)
+    {
+        var needsEscapes = value.Contains("'''") || value.StartsWith('\'') || value.EndsWith('\'')
+            || value.Any(c => char.IsControl(c) && c is not '\n' and not '\t');
+        if (needsEscapes)
+        {
+            return TomlString(value);
+        }
+
+        if (value.Contains('\n'))
+        {
+            return $"'''\n{value}'''";
+        }
+
+        return value.Contains('\'') ? $"'''{value}'''" : $"'{value}'";
+    }
 
     [GeneratedRegex("^[a-zA-Z0-9_-]+$")]
     private static partial Regex BareTomlKey();

@@ -6,10 +6,7 @@ export interface ServerFetchOptions {
   fetch: { headers: Record<string, string> };
 }
 
-/**
- * Not for a `"use cache"` scope or a build-time render: `headers()` is a hard error there, and
- * they have no visitor anyway.
- */
+/** Not for `"use cache"` or a build-time render: `headers()` is a hard error there. */
 export async function getPublicFetchOptions(): Promise<ServerFetchOptions> {
   return { fetch: { headers: clientIpHeader(await headers()) } };
 }

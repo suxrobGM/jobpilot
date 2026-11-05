@@ -10,9 +10,8 @@ import { SectionHeading } from "../section-heading";
 const SHOWN = 6;
 
 /**
- * Renders nothing when the index is empty or the API is down; a decorative section must never 500.
- * Cached so the fetch runs in the prerender, not as a dynamic hole. The cards' `Date.now()` ages
- * are cached too and go stale with the entry.
+ * A decorative section must never 500, so failure renders nothing. Cached to run in the prerender;
+ * the cards' `Date.now()` ages go stale with the entry.
  */
 export async function LiveJobsStrip(): Promise<ReactNode> {
   "use cache";

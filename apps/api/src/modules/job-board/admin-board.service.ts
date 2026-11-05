@@ -93,10 +93,10 @@ export class AdminBoardService {
    * A board becoming default links to every existing user here, exactly once. After this moment a
    * missing link means the user removed the board, so nothing may ever re-create it for them.
    */
-  private async backfillDefault(jobBoardId: string) {
+  private async backfillDefault(boardId: string) {
     const users = await this.prisma.user.findMany({ select: { id: true } });
     await this.prisma.userJobBoard.createMany({
-      data: users.map((user) => ({ userId: user.id, jobBoardId })),
+      data: users.map((user) => ({ userId: user.id, boardId })),
       // Races with concurrent signups; whoever wins, the link exists.
       skipDuplicates: true,
     });

@@ -9,6 +9,7 @@ import type { z } from "zod/v4";
 import type { TaskListInput } from "./build";
 import type { TaskJob } from "./gather-jobs";
 import type { Followup } from "./gather-outreach";
+import type { ResearchTask } from "./gather-research";
 
 type ConfigOverrides = z.input<typeof pilotInstructionsConfigSchema>;
 type WarmContact = NonNullable<TaskJob["warmContacts"]>[number];
@@ -30,6 +31,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   activeRuns: 0,
   appliedToday: 0,
   networkingSentToday: 0,
+  preferCapExempt: false,
   awaitingSetup: true,
   nextSearchRunAt: null,
   answeredQuestions: [],
@@ -53,6 +55,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   rescanSkipped: [],
   retryFailed: [],
   setup: null,
+  research: null,
   ...over,
 });
 
@@ -65,6 +68,7 @@ export const job = (key: string, matchScore: number | null, over: Partial<TaskJo
   brief: null,
   matchScore,
   company: null,
+  capExemptBasis: null,
   ...over,
 });
 
@@ -129,7 +133,7 @@ export const prep = (applicationId: string): TaskPayload<"interview.prep"> => ({
 });
 
 export const boardDiagnose = (board: string): TaskPayload<"board.diagnose"> => ({
-  jobBoardId: `${board}-id`,
+  boardId: `${board}-id`,
   board,
   consecutiveFailures: 3,
   recentFailReasons: ["captcha"],
@@ -177,6 +181,16 @@ export const setup: TaskPayload<"search.setup"> = {
   goals: "Senior TypeScript roles, remote",
   minScore: 60,
 };
+
+export const research = (trigger: ResearchTask["trigger"]): ResearchTask => ({
+  goals: "ML research assistant roles at US universities",
+  resumeId: "0f4b6a52-7c1e-4d8a-9b3f-2e5c6d7a8b90",
+  minScore: 60,
+  preferCapExempt: true,
+  requiresSponsorship: true,
+  boards: ["linkedin.com"],
+  trigger,
+});
 
 type Tasks = Pick<TaskListContent, "tasks">;
 

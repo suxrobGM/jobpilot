@@ -1,14 +1,13 @@
-// Only the wizard's Personal step edits profile fields now; the rest live in
-// Settings, so issues on them (shouldn't happen - they're optional) get no step.
-const FIELD_TO_STEP: Record<string, number> = {
-  firstName: 1,
-  lastName: 1,
-  email: 1,
-  phone: 1,
-  website: 1,
-  linkedin: 1,
-  github: 1,
-};
+// Only the Personal step edits profile fields; issues on the rest (all optional) get no step.
+const PERSONAL_FIELDS = new Set([
+  "firstName",
+  "lastName",
+  "contactEmail",
+  "phone",
+  "website",
+  "linkedin",
+  "github",
+]);
 
 export interface ValidationIssue {
   field: string;
@@ -17,8 +16,14 @@ export interface ValidationIssue {
   stepIndex: number | null;
 }
 
+interface SchemaIssue {
+  path: PropertyKey[];
+  message: string;
+}
+
 export function describeIssues(
-  issues: readonly { path: PropertyKey[]; message: string }[],
+  issues: readonly SchemaIssue[],
+  personalStepIndex: number,
 ): ValidationIssue[] {
   return issues.map((issue) => {
     const field = String(issue.path[0] ?? "");
@@ -26,7 +31,7 @@ export function describeIssues(
       field,
       path: issue.path.map(String).join(".") || "form",
       message: issue.message,
-      stepIndex: FIELD_TO_STEP[field] ?? null,
+      stepIndex: PERSONAL_FIELDS.has(field) ? personalStepIndex : null,
     };
   });
 }

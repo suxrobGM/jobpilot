@@ -68,7 +68,7 @@ export const pilotController = new Elysia({
       description: "Stops the autonomous loop and returns the updated state.",
     },
   })
-  .post("/reset", ({ user }) => pilot.reset(user.id), {
+  .delete("/runs", ({ user }) => pilot.reset(user.id), {
     beforeHandle: limitMutation,
     response: pilotStateSchema,
     detail: {
@@ -77,7 +77,7 @@ export const pilotController = new Elysia({
         "Deletes the journal, zeroes the cycle count and drops the cached task list. Instructions, searches and the running flag stay.",
     },
   })
-  .post("/cycles/idle", ({ user, body }) => pilot.recordIdleCycle(user.id, body), {
+  .post("/idle-checks", ({ user, body }) => pilot.recordIdleCycle(user.id, body), {
     body: recordIdleCycleSchema,
     beforeHandle: limitTaskList,
     response: pilotStateSchema,

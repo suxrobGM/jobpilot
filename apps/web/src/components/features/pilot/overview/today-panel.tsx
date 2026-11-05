@@ -3,8 +3,9 @@
 import type { ReactElement, ReactNode } from "react";
 import { networkingMode, type PilotState } from "@jobpilot/contracts/pilot";
 import { LinearProgress, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
+import type { SkipReason } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 
@@ -33,8 +34,8 @@ function Meter(props: MeterProps): ReactElement {
   );
 }
 
-/** The API sends bucket slugs, so this stays the only copy of the wording. */
-const SKIP_LABELS: Record<string, string> = {
+// Keyed by the response enum, so a new API bucket fails the build here.
+const SKIP_LABELS: Record<SkipReason, string> = {
   sponsorship: "No visa sponsorship",
   citizenship: "Citizenship required",
   clearance: "Security clearance required",
@@ -62,7 +63,7 @@ interface TodayOutcomesProps {
 /** Without this, "16 applied" beside 52 quiet skips reads as a slow day, not a bad search. */
 function TodayOutcomes(props: TodayOutcomesProps): ReactNode {
   const { appliedToday } = props;
-  const outcomes = useApiQuery(pilotQueries.todayOutcomes()).data;
+  const outcomes = useQuery(pilotQueries.todayOutcomes()).data;
 
   if (!outcomes || outcomes.skipped + outcomes.failed === 0) {
     return null;
@@ -79,9 +80,7 @@ function TodayOutcomes(props: TodayOutcomesProps): ReactNode {
       <Typography variant="captionMuted">{parts.join(" · ")}</Typography>
       {outcomes.skipReasons.slice(0, TOP_REASONS).map((row) => (
         <Stack key={row.reason} direction="row" sx={{ justifyContent: "space-between" }}>
-          <Typography variant="captionMuted">
-            {SKIP_LABELS[row.reason] ?? SKIP_LABELS.other}
-          </Typography>
+          <Typography variant="captionMuted">{SKIP_LABELS[row.reason]}</Typography>
           <Typography variant="captionMuted">{row.count}</Typography>
         </Stack>
       ))}

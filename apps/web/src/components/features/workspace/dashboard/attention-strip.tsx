@@ -2,42 +2,35 @@
 
 import type { ReactNode } from "react";
 import { Alert } from "@mui/material";
-import type { Route } from "next";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
-import { networkingSummary } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
 import { plural } from "@/utils/format";
+import { campaignHref } from "@/utils/routes";
 
 /** Surfaces campaigns that need user action. Renders nothing when all clear. */
 export function AttentionStrip(): ReactNode {
-  const campaigns = useApiQuery(campaignQueries.list());
-  const rows = campaigns.data?.items ?? [];
+  const summary = useQuery(campaignQueries.summary());
+  const drafts = summary.data?.drafts;
 
-  const draftCampaigns = rows.filter((c) => (networkingSummary(c)?.drafted ?? 0) > 0);
-  if (draftCampaigns.length === 0) return null;
-
-  const totalDrafts = draftCampaigns.reduce((n, c) => n + (networkingSummary(c)?.drafted ?? 0), 0);
-  const only = draftCampaigns.length === 1 ? draftCampaigns[0] : undefined;
+  if (!drafts || drafts.messages === 0) {
+    return null;
+  }
 
   return (
     <Alert
       severity="info"
       variant="outlined"
       action={
-        only ? (
-          <LinkButton
-            size="small"
-            color="inherit"
-            href={`/campaigns/${encodeURIComponent(only.id)}` as Route}
-          >
+        drafts.campaignId && (
+          <LinkButton size="small" color="inherit" href={campaignHref(drafts.campaignId)}>
             Review
           </LinkButton>
-        ) : null
+        )
       }
     >
-      {plural(totalDrafts, "networking message")} {totalDrafts === 1 ? "is" : "are"} drafted and
-      waiting for you to send, in {plural(draftCampaigns.length, "campaign")}.
+      {plural(drafts.messages, "networking message")} {drafts.messages === 1 ? "is" : "are"} drafted
+      and waiting for you to send, in {plural(drafts.campaigns, "campaign")}.
     </Alert>
   );
 }

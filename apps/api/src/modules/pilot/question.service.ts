@@ -47,9 +47,9 @@ export class PilotQuestionService {
         subjectId: body.subjectId ?? null,
         prompt: body.prompt,
         options: toInputJson(body.options),
-        deepLink: body.deepLink ?? null,
+        link: body.link ?? null,
         expiresAt: expiryOf(body),
-        answerKey: body.answerKey ?? null,
+        savedAnswerKey: body.savedAnswerKey ?? null,
       },
     });
     const question = toPilotQuestion(row);
@@ -57,7 +57,7 @@ export class PilotQuestionService {
     void this.push.sendToUser(userId, {
       title: "JobPilot needs you",
       body: row.prompt,
-      url: row.deepLink ?? "/pilot",
+      url: row.link ?? "/pilot",
       tag: `question-${row.id}`,
     });
     return question;
@@ -87,8 +87,8 @@ export class PilotQuestionService {
       );
       throw conflict("Question is no longer open.");
     }
-    if (row.answerKey && SAVED_ANSWER_KINDS.includes(row.kind)) {
-      await this.answers.save(userId, row.answerKey, body.answer);
+    if (row.savedAnswerKey && SAVED_ANSWER_KINDS.includes(row.kind)) {
+      await this.answers.save(userId, row.savedAnswerKey, body.answer);
     }
 
     const question = toPilotQuestion(row);

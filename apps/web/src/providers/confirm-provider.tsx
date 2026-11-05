@@ -25,10 +25,6 @@ export type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>;
 
 const ConfirmContext = createContext<ConfirmFn | null>(null);
 
-/**
- * Provides a context for showing confirmation dialogs.
- * Components can call the `confirm` function to display a dialog and await the user's response.
- */
 export function ConfirmProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const [state, setState] = useState<(ConfirmOptions & { open: boolean }) | null>(null);
@@ -74,9 +70,6 @@ export function ConfirmProvider(props: PropsWithChildren): ReactElement {
   );
 }
 
-/**
- * Hook to access the confirm function from ConfirmContext.
- */
 export function useConfirm(): ConfirmFn {
   const confirm = use(ConfirmContext);
 

@@ -1,12 +1,15 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
-import { Button, TextField } from "@mui/material";
+import type { ReactElement } from "react";
 import { useRouter } from "next/navigation";
+import { z } from "zod/v4";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
-import { FormDialogShell } from "@/components/ui/form";
+import { invalidations } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { FormDialog } from "@/components/ui/form";
+import { useAppForm } from "@/components/ui/form/tanstack";
+
+const schema = z.object({ label: z.string().trim().min(1, "Give the resume a label") });
 
 interface NewResumeDialogProps {
   open: boolean;
@@ -16,39 +19,37 @@ interface NewResumeDialogProps {
 export function NewResumeDialog(props: NewResumeDialogProps): ReactElement {
   const { open, onClose } = props;
   const router = useRouter();
-  const [label, setLabel] = useState("");
 
-  const create = useApiMutation((vars: { label: string }) => api.resumes.post(vars), {
+  const create = useApiMutation((label: string) => api.resumes.post({ label }), {
     successMessage: "Resume created",
     invalidate: invalidations.resume,
     onSuccess: (data) => {
       onClose();
-      setLabel("");
+      form.reset();
       router.push(`/resumes/${data.id}`);
     },
   });
 
+  const form = useAppForm({
+    defaultValues: { label: "" },
+    validators: { onSubmit: schema },
+    onSubmit: async ({ value }) => {
+      await create.mutateAsync(value.label.trim());
+    },
+  });
+
   return (
-    <FormDialogShell
+    <FormDialog
       open={open}
       title="New blank resume"
       onClose={onClose}
-      onSubmit={() => create.mutate({ label: label.trim() })}
+      form={form}
+      submitLabel="Create"
       maxWidth="xs"
-      submit={
-        <Button type="submit" variant="contained" disabled={!label.trim() || create.isPending}>
-          Create
-        </Button>
-      }
     >
-      <TextField
-        label="Label"
-        placeholder="e.g. Senior Frontend"
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        autoFocus
-        fullWidth
-      />
-    </FormDialogShell>
+      <form.AppField name="label">
+        {(field) => <field.TextField label="Label" placeholder="e.g. Senior Frontend" autoFocus />}
+      </form.AppField>
+    </FormDialog>
   );
 }

@@ -42,7 +42,7 @@ export const jobListingPageSchema = paginatedSchema(jobListingSummarySchema);
 /** Bounded at six, so a bare array. */
 export const similarJobListingsSchema = z.array(jobListingSummarySchema);
 
-/** Only skills the index holds, so the `?tech=` filter never offers an option with no results. */
+/** Only skills the index holds, so the `?skills=` filter never offers an option with no results. */
 export const jobListingFacetsSchema = z.object({
   skills: z.array(z.object({ value: z.string(), count: z.number().int() })),
 });
@@ -53,7 +53,6 @@ export const jobListingSitemapSchema = z.array(
 
 export const adminJobListingSchema = jobListingSummarySchema.extend({
   status: jobListingStatusSchema,
-  createdAt: z.date(),
 });
 
 export const adminJobListingPageSchema = paginatedSchema(adminJobListingSchema);

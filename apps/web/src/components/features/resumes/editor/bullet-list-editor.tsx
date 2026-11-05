@@ -3,7 +3,8 @@
 import type { ReactElement } from "react";
 import { RESUME_BULLET_CHARS_PER_LINE } from "@jobpilot/contracts/resume";
 import { Add, ArrowDownward, ArrowUpward, Delete } from "@mui/icons-material";
-import { Button, IconButton, Stack, TextField } from "@mui/material";
+import { Button, Stack, TextField } from "@mui/material";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { useKeyedList } from "@/hooks/use-keyed-list";
 import { moveAt, removeAt, replaceAt } from "@/utils/array";
 
@@ -52,15 +53,25 @@ export function BulletListEditor(props: BulletListEditorProps): ReactElement {
               b.length > LONG_BULLET ? `${b.length} characters - runs past two lines` : undefined
             }
           />
-          <IconButton size="small" onClick={() => move(i, -1)} disabled={i === 0}>
+          <TooltipIconButton
+            title="Move up"
+            size="small"
+            onClick={() => move(i, -1)}
+            disabled={i === 0}
+          >
             <ArrowUpward fontSize="sm" />
-          </IconButton>
-          <IconButton size="small" onClick={() => move(i, 1)} disabled={i === value.length - 1}>
+          </TooltipIconButton>
+          <TooltipIconButton
+            title="Move down"
+            size="small"
+            onClick={() => move(i, 1)}
+            disabled={i === value.length - 1}
+          >
             <ArrowDownward fontSize="sm" />
-          </IconButton>
-          <IconButton size="small" onClick={() => remove(i)} aria-label="Remove bullet">
+          </TooltipIconButton>
+          <TooltipIconButton title="Remove bullet" size="small" onClick={() => remove(i)}>
             <Delete fontSize="sm" />
-          </IconButton>
+          </TooltipIconButton>
         </Stack>
       ))}
       <Button size="small" startIcon={<Add />} onClick={add} sx={{ alignSelf: "flex-start" }}>

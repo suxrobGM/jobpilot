@@ -1,13 +1,8 @@
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 
-/** A DataGrid selection model with nothing selected. */
 export const EMPTY_SELECTION: GridRowSelectionModel = { type: "include", ids: new Set() };
 
-/**
- * Resolve a DataGrid selection model to the matching rows. `include` matches
- * against `all`; `exclude` (select-all-across-pages) matches `visible`
- * (defaulting to `all`) minus the explicitly excluded ids.
- */
+/** `exclude` is select-all-across-pages, so it resolves against `visible` minus the excluded ids. */
 export function resolveSelectedRows<T extends { id: string }>(
   model: GridRowSelectionModel,
   all: ReadonlyArray<T>,

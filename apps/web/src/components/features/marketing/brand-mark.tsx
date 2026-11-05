@@ -12,7 +12,7 @@ interface BrandMarkProps {
 }
 
 export function BrandMark(props: BrandMarkProps): ReactElement {
-  const { iconOnly = false, href = "/" as Route } = props;
+  const { iconOnly = false, href = "/" } = props;
   return (
     <Stack
       component={Link}

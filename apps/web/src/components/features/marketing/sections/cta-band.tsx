@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { Card, CardContent, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
+import { SITE_HOST } from "@/lib/constants";
 import { radii } from "@/theme";
 import { Glow } from "../glow";
 import { type NumberedStep, NumberedSteps } from "../numbered-steps";
@@ -15,7 +16,7 @@ const SETUP: NumberedStep[] = [
   {
     title: "Create your account",
     body: "Sign up and upload your resume. The agent reads it and fills in your profile.",
-    snippet: "jobpilot.suxrobgm.net/register",
+    snippet: `${SITE_HOST}/register`,
   },
   {
     title: "Turn on the Pilot",

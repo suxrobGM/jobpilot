@@ -1,7 +1,7 @@
 import { ErrorCodes } from "@jobpilot/contracts/errors";
 import { z } from "zod/v4";
 import { conflict, HttpError } from "@/common/errors";
-import type { Job, Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { CampaignJob, Prisma, PrismaClient } from "@/generated/prisma/client";
 import {
   type AppliedDuplicate,
   type DuplicateReader,
@@ -12,7 +12,7 @@ import { findFuzzyDuplicate } from "@/modules/scoring/applied-duplicates";
 import { publishStatusChange } from "./job-events";
 import { JOB_INCLUDE, type JobRow } from "./job-row";
 
-type GuardReader = DuplicateReader & Pick<Prisma.TransactionClient, "job">;
+type GuardReader = DuplicateReader & Pick<Prisma.TransactionClient, "campaignJob">;
 
 export interface JobPosting {
   campaignId: string;
@@ -49,14 +49,14 @@ export class AlreadyAppliedError extends HttpError {
  * recorded, so until then the applied-duplicate rule cannot see an apply in progress.
  */
 async function findApplyingSibling(
-  db: Pick<Prisma.TransactionClient, "job">,
+  db: Pick<Prisma.TransactionClient, "campaignJob">,
   userId: string,
   job: JobPosting,
 ): Promise<JobPosting | null> {
-  const others = await db.job.findMany({
+  const others = await db.campaignJob.findMany({
     where: {
       status: "applying",
-      campaign: { userId },
+      userId,
       NOT: { campaignId: job.campaignId, key: job.key },
     },
     take: MAX_APPLYING,
@@ -68,12 +68,7 @@ async function findApplyingSibling(
     return sameUrl;
   }
 
-  const idOf = (other: JobPosting) => `${other.campaignId}:${other.key}`;
-  const fuzzy = findFuzzyDuplicate(
-    job,
-    others.map((other) => ({ ...other, id: idOf(other), appliedAt: new Date() })),
-  );
-  return others.find((other) => idOf(other) === fuzzy?.candidate.id) ?? null;
+  return findFuzzyDuplicate(job, others)?.candidate ?? null;
 }
 
 /**
@@ -115,7 +110,7 @@ export async function guardApply<T>(
     if (!(error instanceof AlreadyAppliedError)) throw error;
 
     const { campaignId, key } = error.job;
-    const [skipped] = await prisma.job.updateManyAndReturn({
+    const [skipped] = await prisma.campaignJob.updateManyAndReturn({
       where: { campaignId, key, status: { in: ["approved", "needs_user"] } },
       data: { status: "skipped", skipReason: duplicateSkipReason(error.duplicate) },
       include: JOB_INCLUDE,
@@ -131,7 +126,7 @@ export async function guardApply<T>(
   }
 }
 
-export type JobRef = Pick<Job, "campaignId" | "key">;
+export type JobRef = Pick<CampaignJob, "campaignId" | "key">;
 
 const jobRefSchema = z.object({ campaignId: z.string().min(1), jobKey: z.string().min(1) });
 
@@ -148,8 +143,8 @@ export async function revertApplyingJobs(
   jobs: JobRef[],
 ): Promise<void> {
   if (jobs.length === 0) return;
-  await tx.job.updateMany({
-    where: { status: "applying", campaign: { userId }, OR: jobs },
+  await tx.campaignJob.updateMany({
+    where: { status: "applying", userId, OR: jobs },
     data: { status: "approved" },
   });
 }
@@ -158,8 +153,9 @@ export async function revertApplyingJobs(
 export function applyableJobWhere(userId: string) {
   return {
     status: "approved",
-    campaign: { userId, status: "in_progress" },
-  } satisfies Prisma.JobWhereInput;
+    userId,
+    campaign: { status: "in_progress" },
+  } satisfies Prisma.CampaignJobWhereInput;
 }
 
 /** Moves an approved job into `applying` inside the caller's transaction; wrap it in `guardApply`. */
@@ -169,9 +165,13 @@ export async function startApplying(
   campaignId: string,
   key: string,
 ): Promise<JobRow> {
-  const where = { ...applyableJobWhere(userId), campaignId, key } satisfies Prisma.JobWhereInput;
+  const where = {
+    ...applyableJobWhere(userId),
+    campaignId,
+    key,
+  } satisfies Prisma.CampaignJobWhereInput;
 
-  const target = await tx.job.findFirst({
+  const target = await tx.campaignJob.findFirst({
     where,
     select: { url: true, title: true, company: true },
   });
@@ -179,7 +179,7 @@ export async function startApplying(
   await assertNotDuplicateApply(tx, userId, { ...target, campaignId, key });
 
   // An empty result is the lost race.
-  const [started] = await tx.job.updateManyAndReturn({
+  const [started] = await tx.campaignJob.updateManyAndReturn({
     where,
     data: { status: "applying" },
     include: JOB_INCLUDE,

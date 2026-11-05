@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 import { StealthCodeBanner } from "@/components/features/workspace/stealth-code-banner";
 import { WorkspaceLive } from "@/components/features/workspace/workspace-live";
 import { PageHeader, PageShell } from "@/components/ui/layout";
-import { type Tab, TabStrip } from "@/components/ui/navigation/tab-strip";
+import { type Tab, TabStrip } from "@/components/ui/navigation";
 
 const TABS: Tab[] = [
   { label: "Overview", href: "/workspace" },

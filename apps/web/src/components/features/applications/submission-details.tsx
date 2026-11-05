@@ -10,8 +10,8 @@ import {
 } from "@mui/material";
 import { resumePdfUrl, variantPdfUrl } from "@/api/resume-urls";
 import type { ApplicationDetailDto } from "@/api/types";
-import { EmptyState } from "@/components/ui/data";
 import { ExternalLink, ItemList, ItemRow, RelativeTime } from "@/components/ui/display";
+import { EmptyState } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 
 interface SubmissionDetailsProps {
@@ -31,13 +31,9 @@ export function SubmissionDetails(props: SubmissionDetailsProps): ReactElement {
   );
 }
 
-/**
- * The resume that went out, tailored or not. Tailoring reuses an existing variant far more often
- * than it creates one, so `resumeVariants` is empty for most applications and the base is all there
- * is to show.
- */
+/** Tailoring mostly reuses a variant, so `tailoredVariants` is usually empty: show the base. */
 function submittedResumeRow(app: ApplicationDetailDto): ReactNode {
-  const used = app.resumeVariantUsed;
+  const used = app.resumeVariant;
   const base = app.resume;
 
   if (used) {
@@ -46,7 +42,7 @@ function submittedResumeRow(app: ApplicationDetailDto): ReactNode {
         key={used.id}
         icon={<Description fontSize="sm" />}
         primary={<Link href={`/resumes/${used.resumeId}`}>{used.label}</Link>}
-        secondary={used.diffNotes ?? "Tailored for this job."}
+        secondary={used.changeNotes ?? "Tailored for this job."}
         action={<ExternalLink href={variantPdfUrl(used.id, used.updatedAt)}>PDF</ExternalLink>}
       />
     );
@@ -67,9 +63,8 @@ function submittedResumeRow(app: ApplicationDetailDto): ReactNode {
 
 function DocumentsCard(props: SubmissionDetailsProps): ReactElement {
   const { application: app } = props;
-  // Variants tailored for this job that were not the one submitted - a pre-submit draft, or a
-  // second attempt. The submitted row above already covers the one that went out.
-  const otherVariants = app.resumeVariants.filter((v) => v.id !== app.resumeVariantUsed?.id);
+  // Tailored for this job but not sent: a pre-submit draft or a second attempt.
+  const otherVariants = app.tailoredVariants.filter((v) => v.id !== app.resumeVariant?.id);
 
   const rows: ReactNode[] = [
     submittedResumeRow(app),
@@ -78,7 +73,7 @@ function DocumentsCard(props: SubmissionDetailsProps): ReactElement {
         key={v.id}
         icon={<Description fontSize="sm" />}
         primary={<Link href={`/resumes/${v.resumeId}`}>{v.label}</Link>}
-        secondary={v.diffNotes ?? undefined}
+        secondary={v.changeNotes ?? undefined}
         action={<RelativeTime value={v.createdAt} />}
       />
     )),
@@ -113,7 +108,9 @@ function JobDescriptionCard(props: SubmissionDetailsProps): ReactElement {
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
             {job.salary && <Typography variant="body2Muted">{job.salary}</Typography>}
-            {job.type && <Typography variant="body2Muted">{job.type}</Typography>}
+            {job.employmentType && (
+              <Typography variant="body2Muted">{job.employmentType}</Typography>
+            )}
           </Stack>
           <Accordion>
             <AccordionSummary>Read the posting</AccordionSummary>

@@ -23,7 +23,7 @@ function db(applications: (typeof EXISTING)[], applying: JobPosting[] = []) {
       findMany: async ({ where }: { where: { appliedAt: { gte: Date } } }) =>
         applications.filter((r) => r.appliedAt >= where.appliedAt.gte),
     },
-    job: {
+    campaignJob: {
       findMany: async ({ where }: { where: { NOT: { campaignId: string; key: string } } }) =>
         applying.filter(
           (row) => !(row.campaignId === where.NOT.campaignId && row.key === where.NOT.key),

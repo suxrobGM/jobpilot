@@ -4,6 +4,7 @@ import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
 import { MemoryCache } from "@/common/memory-cache";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { withProfile } from "@/modules/user/user.mapper";
 import type { LeaderboardResponse, LeaderboardWindow, PortfolioResponse } from "./portfolio.schema";
 
 const HEATMAP_DAYS = 365;
@@ -49,30 +50,35 @@ export class PortfolioService {
     where: { username: string } | { id: string },
     notFoundMessage: string,
   ): Promise<PortfolioResponse> {
-    const user = await this.prisma.user.findFirst({
+    const row = await this.prisma.user.findFirst({
       where,
       select: {
         id: true,
         username: true,
-        availability: true,
-        firstName: true,
-        lastName: true,
-        website: true,
-        linkedin: true,
-        github: true,
-        showResume: true,
-        showWebsite: true,
-        showLinkedin: true,
-        showGithub: true,
-        city: true,
-        state: true,
         primaryResumeId: true,
+        profile: {
+          select: {
+            availability: true,
+            firstName: true,
+            lastName: true,
+            website: true,
+            linkedin: true,
+            github: true,
+            showResume: true,
+            showWebsite: true,
+            showLinkedin: true,
+            showGithub: true,
+            city: true,
+            state: true,
+          },
+        },
       },
     });
 
-    if (!user) {
+    if (!row) {
       throw notFound(notFoundMessage);
     }
+    const user = withProfile(row);
 
     const start = this.heatmapStart();
 
@@ -185,17 +191,16 @@ export class PortfolioService {
     // Cap before reading any user row, so only the survivors are fetched.
     const ranked = active.sort((a, b) => activity(b) - activity(a)).slice(0, LEADERBOARD_CAP);
 
-    const users = await this.prisma.user.findMany({
+    const userRows = await this.prisma.user.findMany({
       where: { id: { in: ranked.map((r) => r.id) } },
       select: {
         id: true,
         username: true,
-        availability: true,
-        firstName: true,
-        lastName: true,
         primaryResumeId: true,
+        profile: { select: { availability: true, firstName: true, lastName: true } },
       },
     });
+    const users = userRows.flatMap((row) => (row.profile ? [withProfile(row)] : []));
     const userById = new Map(users.map((u) => [u.id, u]));
 
     // Headline only for the ranked subset - avoids parsing every user's resume JSON.
@@ -231,10 +236,15 @@ export class PortfolioService {
   }
 
   async sitemap(): Promise<{ username: string; updatedAt: Date }[]> {
-    return this.prisma.user.findMany({
-      select: { username: true, updatedAt: true },
+    // A portfolio changes with its profile, so that is the date search engines see.
+    const profiles = await this.prisma.profile.findMany({
+      select: { updatedAt: true, user: { select: { username: true } } },
       take: 5000,
     });
+    return profiles.map((profile) => ({
+      username: profile.user.username,
+      updatedAt: profile.updatedAt,
+    }));
   }
 
   private heatmapStart(): Date {

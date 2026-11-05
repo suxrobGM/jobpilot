@@ -26,6 +26,7 @@ export const cssBaselineOverrides: Components<Theme>["MuiCssBaseline"] = {
 };
 
 export const chipOverrides: Components<Theme>["MuiChip"] = {
+  defaultProps: { size: "small" },
   styleOverrides: {
     root: ({ theme }) => ({
       borderRadius: theme.radii.sm,
@@ -98,6 +99,11 @@ export const skeletonOverrides: Components<Theme>["MuiSkeleton"] = {
     // "rounded" skeleton a 1px square. Placeholders stand in for cards, so match those.
     rounded: ({ theme }) => ({ borderRadius: theme.radii.md }),
   },
+};
+
+/** Tooltips only label their trigger, so they should never catch the pointer on the way past. */
+export const tooltipOverrides: Components<Theme>["MuiTooltip"] = {
+  defaultProps: { disableInteractive: true },
 };
 
 /** Real `gap`, not MUI's child margins: margins indent the second line of a wrapped row. */

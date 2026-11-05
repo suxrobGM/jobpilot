@@ -28,7 +28,7 @@ export function decodeUpworkProposal(proposal: UpworkProposal) {
   return { ...proposal, screeningAnswers: screeningAnswersSchema.parse(proposal.screeningAnswers) };
 }
 
-export function toUpworkInboxItemDto(row: Omit<UpworkInboxItem, "raw">) {
+export function toUpworkInboxItemDto(row: Omit<UpworkInboxItem, "payload">) {
   return {
     id: row.id,
     upworkId: row.upworkId,

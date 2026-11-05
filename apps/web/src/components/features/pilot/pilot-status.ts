@@ -1,8 +1,8 @@
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import type { PulseDotTone } from "@/components/ui/feedback";
-import type { PilotHealth } from "@/lib/terminal";
+import type { TerminalHealth } from "@/hooks/use-terminal-health";
+import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
-import type { TerminalHealth } from "../agent-dock/use-terminal-health";
 
 export const PILOT_HOST_OFFLINE_MESSAGE =
   "Pilot is running but the terminal host is offline - start the JobPilot agent so cycles can run.";
@@ -40,7 +40,7 @@ export function hasGoals(state: Pick<PilotState, "instructionsGoals">): boolean 
 }
 
 function isHostOffline(health: TerminalHealth | null): boolean {
-  return health === "offline" || health === "uninstalled";
+  return health === "offline" || health === "uninstalled" || health === "blocked";
 }
 
 export function pilotMode(

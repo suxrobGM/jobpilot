@@ -18,14 +18,7 @@ export function ResumePdfPreview(props: ResumePdfPreviewProps): ReactElement {
     <SectionCard
       title="PDF preview"
       actions={
-        <Button
-          size="small"
-          endIcon={<OpenInNew fontSize="sm" />}
-          component="a"
-          href={src}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <Button size="small" endIcon={<OpenInNew fontSize="sm" />} href={src}>
           Open
         </Button>
       }
