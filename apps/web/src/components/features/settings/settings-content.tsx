@@ -8,6 +8,7 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import { QueryError } from "@/components/ui/data";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { StickyFooter } from "@/components/ui/layout";
 import { toProfileFormValues } from "./profile-form-values";
@@ -25,8 +26,11 @@ export function SettingsContent(): ReactElement {
     errorMessage: "Failed to load profile",
   });
 
-  if (query.isLoading || !query.data) {
+  if (query.isLoading) {
     return <LinearProgress />;
+  }
+  if (!query.data) {
+    return <QueryError title="Couldn't load your profile." onRetry={() => void query.refetch()} />;
   }
 
   return <SettingsForm initialData={toProfileFormValues(query.data)} />;

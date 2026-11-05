@@ -1,6 +1,6 @@
 import { type ReactElement, Suspense } from "react";
 import { JOB_LISTING_FILTER_KEYS, JOB_LISTING_MAX_PAGE } from "@jobpilot/contracts/job-listing";
-import { Skeleton, Stack, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { api } from "@/api/client";
 import { getPublicFetchOptions } from "@/api/server";
@@ -13,7 +13,7 @@ import {
 } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState, TableSkeleton } from "@/components/ui/data";
+import { DetailSkeleton, EmptyState, TableSkeleton } from "@/components/ui/data";
 import { breadcrumbLd } from "@/lib/structured-data";
 import { formatCount } from "@/utils/format";
 import { one, pageParam } from "@/utils/search-params";
@@ -88,7 +88,7 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
         </Typography>
       </Stack>
 
-      <Suspense fallback={<Skeleton variant="rounded" height={98} />}>
+      <Suspense fallback={<DetailSkeleton heights={[98]} />}>
         <JobFiltersPanel />
       </Suspense>
 

@@ -1,7 +1,7 @@
 import { type ReactElement, Suspense } from "react";
-import { Skeleton } from "@mui/material";
 import type { Metadata } from "next";
 import { ResumeDetail } from "@/components/features/resumes";
+import { DetailSkeleton } from "@/components/ui/data";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Resume" };
@@ -18,7 +18,7 @@ export default function ResumeDetailPage(props: PageProps): ReactElement {
         title="Edit resume"
         description="Structured fields render to PDF on the right. Variants tailored from this base appear below."
       />
-      <Suspense fallback={<Skeleton variant="rounded" height={560} />}>
+      <Suspense fallback={<DetailSkeleton heights={[560]} />}>
         <Resume params={props.params} />
       </Suspense>
     </PageShell>

@@ -3,13 +3,13 @@
 import { type ReactNode, useState } from "react";
 import { EMPTY_RESUME_DATA, SUGGESTED_REWRITE_LABEL } from "@jobpilot/contracts/resume";
 import { AutoFixHigh } from "@mui/icons-material";
-import { Alert, AlertTitle, Button, Skeleton, Stack, Typography } from "@mui/material";
+import { Alert, AlertTitle, Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { invalidations, queryKeys } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";
-import { QueryError } from "@/components/ui/data";
+import { DetailSkeleton, QueryError } from "@/components/ui/data";
 import { useConfirm } from "@/providers/confirm-provider";
 import { plural } from "@/utils/format";
 import { diffRewrite } from "./rewrite-diff";
@@ -56,7 +56,7 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
   }
 
   if (detail.isLoading) {
-    return <Skeleton variant="rounded" height={120} />;
+    return <DetailSkeleton heights={[120]} />;
   }
   if (!detail.data) {
     return (

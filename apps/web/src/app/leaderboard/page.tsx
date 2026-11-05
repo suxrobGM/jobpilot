@@ -1,9 +1,10 @@
 import { type ReactElement, Suspense } from "react";
-import { Skeleton, Stack, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { api } from "@/api/client";
 import { getPublicFetchOptions } from "@/api/server";
 import { LeaderboardView } from "@/components/features/portfolio";
+import { DetailSkeleton } from "@/components/ui/data";
 
 export const metadata: Metadata = {
   title: "Trending users",
@@ -24,7 +25,7 @@ export default function LeaderboardPage(): ReactElement {
         </Typography>
       </Stack>
       {/* The ranking is live, so it streams rather than taking a guessed cache lifetime. */}
-      <Suspense fallback={<Skeleton variant="rounded" height={480} />}>
+      <Suspense fallback={<DetailSkeleton heights={[480]} />}>
         <Leaderboard />
       </Suspense>
     </Stack>

@@ -7,12 +7,13 @@ import {
   type PilotState,
   type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
-import { Box, Skeleton, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import { DetailSkeleton, QueryError } from "@/components/ui/data";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import {
@@ -53,8 +54,13 @@ export function InstructionsTab(): ReactElement {
     errorMessage: "Failed to load pilot state",
   });
 
-  if (stateQuery.isLoading || !stateQuery.data) {
-    return <Skeleton variant="rounded" height={480} />;
+  if (stateQuery.isLoading) {
+    return <DetailSkeleton heights={[480]} />;
+  }
+  if (!stateQuery.data) {
+    return (
+      <QueryError title="Couldn't load the pilot." onRetry={() => void stateQuery.refetch()} />
+    );
   }
   // The form takes its defaults once, so it mounts only after the state has loaded.
   return (

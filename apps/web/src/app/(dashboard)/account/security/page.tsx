@@ -1,9 +1,9 @@
 import { type ReactElement, Suspense } from "react";
-import { Skeleton } from "@mui/material";
 import type { Metadata } from "next";
 import { ChangeEmailCard } from "@/components/features/security/change-email-card";
 import { ChangePasswordCard } from "@/components/features/security/change-password-card";
 import { ConnectedAccountsCard } from "@/components/features/security/connected-accounts-card";
+import { DetailSkeleton } from "@/components/ui/data";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export default function SecurityPage(props: SecurityPageProps): ReactElement {
       <ChangeEmailCard />
       <ChangePasswordCard />
       {/* Only this card reads the OAuth callback flags off the URL. */}
-      <Suspense fallback={<Skeleton variant="rounded" height={220} />}>
+      <Suspense fallback={<DetailSkeleton heights={[220]} />}>
         <ConnectedAccounts searchParams={props.searchParams} />
       </Suspense>
     </PageShell>

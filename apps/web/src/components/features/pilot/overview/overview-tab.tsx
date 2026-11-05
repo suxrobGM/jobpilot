@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Grid, Skeleton, Stack } from "@mui/material";
+import { Grid, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { DetailSkeleton, QueryError } from "@/components/ui/data";
 import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { NeedsAttention } from "../attention/needs-attention";
 import { JobAlertsPanel } from "../job-alerts/job-alerts-panel";
@@ -27,14 +28,12 @@ export function OverviewTab(): ReactElement {
   const nextWakeAt = useNextWake(stateQuery.data ?? null);
 
   const state = stateQuery.data;
-  if (stateQuery.isLoading || !state) {
+  if (stateQuery.isLoading) {
+    return <DetailSkeleton heights={[96, 56, 220, 180]} />;
+  }
+  if (!state) {
     return (
-      <Stack spacing={3}>
-        <Skeleton variant="rounded" height={96} />
-        <Skeleton variant="rounded" height={56} />
-        <Skeleton variant="rounded" height={220} />
-        <Skeleton variant="rounded" height={180} />
-      </Stack>
+      <QueryError title="Couldn't load the pilot." onRetry={() => void stateQuery.refetch()} />
     );
   }
 

@@ -1,7 +1,7 @@
 import { type ReactElement, Suspense } from "react";
-import { Skeleton } from "@mui/material";
 import type { Metadata } from "next";
 import { CampaignComposer } from "@/components/features/campaigns";
+import { DetailSkeleton } from "@/components/ui/data";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "New campaign" };
@@ -19,7 +19,7 @@ export default function NewCampaignPage(props: NewCampaignPageProps): ReactEleme
         description="Search a job board or the open web, score matches, and optionally batch-apply."
       />
       {/* `?board=` preselects the board, so only the composer waits on the URL. */}
-      <Suspense fallback={<Skeleton variant="rounded" height={480} />}>
+      <Suspense fallback={<DetailSkeleton heights={[480]} />}>
         <Composer searchParams={props.searchParams} />
       </Suspense>
     </PageShell>
