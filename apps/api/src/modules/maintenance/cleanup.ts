@@ -54,7 +54,7 @@ const RULES = [
   {
     key: "emailBodiesBlanked",
     run: (db, c) =>
-      db.emailMessage.updateMany({ where: emailBodyWhere(c), data: { rawBody: "", links: [] } }),
+      db.emailMessage.updateMany({ where: emailBodyWhere(c), data: { body: "", links: [] } }),
   },
   {
     key: "applicationEvents",

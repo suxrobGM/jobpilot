@@ -10,7 +10,7 @@ import { canUnlink, resolveOAuthLogin } from "./oauth-login";
 import { signInProviders } from "./oauth-providers";
 import type { OAuthProfile, OAuthProviderConfig } from "./oauth-providers/sign-in-provider";
 
-/** Google/GitHub sign-in. Identity only: no provider tokens stored, `wrappedDek` untouched. */
+/** Google/GitHub sign-in. Identity only: no provider tokens stored, `encryptedDataKey` untouched. */
 @injectable()
 export class OAuthService {
   constructor(

@@ -50,7 +50,7 @@ export class EmailService {
       where.OR = [
         { fromDomain: { contains: domainHint } },
         { subject: { contains: domainHint } },
-        { rawBody: { contains: domainHint } },
+        { body: { contains: domainHint } },
       ];
     }
 

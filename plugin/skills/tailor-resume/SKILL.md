@@ -141,7 +141,7 @@ Send only what changes something:
   skill groups.
 - **`jobKeywords`** - optional, about 10 terms. They rank bullets inside each entry. Defaults to
   `emphasizedTech`.
-- **`diffNotes`** - one or two sentences on what was emphasized and why.
+- **`changeNotes`** - one or two sentences on what was emphasized and why.
 
 ### Summary
 
@@ -218,7 +218,7 @@ A plain reorder:
 { "label": "<Company> - <Title>", "jobUrl": "<job-url>",
   "emphasizedTech": ["typescript", "react", "next.js", "aws"],
   "jobKeywords": ["typescript", "react", "next.js", "aws"],
-  "diffNotes": "Surfaced React/Next.js ahead of other tech." }
+  "changeNotes": "Surfaced React/Next.js ahead of other tech." }
 ```
 
 With a swapped summary sentence and one reword:
@@ -229,7 +229,7 @@ With a swapped summary sentence and one reword:
   "jobKeywords": ["typescript", "react", "next.js", "aws"],
   "summary": "<base summary with one sentence swapped>",
   "bulletRewrites": [{ "entryIndex": 0, "bullets": [{ "original": "<verbatim base bullet>", "tailored": "<same facts, relevant one first>" }] }],
-  "diffNotes": "Swapped the summary's last sentence for the HIPAA work; led the EmTech entry with the NLP bullet." }
+  "changeNotes": "Swapped the summary's last sentence for the HIPAA work; led the EmTech entry with the NLP bullet." }
 ```
 
 With a restructure:
@@ -240,7 +240,7 @@ With a restructure:
   "jobKeywords": ["pytorch", "computer vision", "python"],
   "structure": { "mergeEntries": [{ "into": 2, "from": [3], "company": "Independent / Contract" }],
     "promoteProjects": { "projects": [4] }, "entryOrder": [0, 1, 2] },
-  "diffNotes": "Merged two overlapping 2020-21 roles; promoted the CV research project; led with ML." }
+  "changeNotes": "Merged two overlapping 2020-21 roles; promoted the CV research project; led with ML." }
 ```
 
 Response `{ id, pdfUrl, rewordedBullets, flags }`. Echo:

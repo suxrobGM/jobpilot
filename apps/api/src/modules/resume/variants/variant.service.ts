@@ -128,7 +128,7 @@ export class ResumeVariantService {
       label: body.label,
       jobUrl: body.jobUrl,
       applicationId: body.applicationId,
-      diffNotes: body.diffNotes,
+      changeNotes: body.changeNotes,
       content: toStoredContent(tailored.content),
       rewrites: tailored.audit ? toInputJson(tailored.audit) : undefined,
     });
@@ -152,7 +152,7 @@ export class ResumeVariantService {
       jobUrl: variant.jobUrl,
       applicationId: variant.applicationId,
       content: readContent(variant.content),
-      diffNotes: variant.diffNotes,
+      changeNotes: variant.changeNotes,
       rewrites:
         variant.rewrites === null ? null : variantRewriteAuditSchema.parse(variant.rewrites),
       createdAt: variant.createdAt,

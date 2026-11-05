@@ -22,7 +22,7 @@ interface RewriteReviewDialogProps {
 export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactElement {
   const { open, onClose, resume, suggestion, isLoading, onApply } = props;
   const changes = diffRewrite(resume.content ?? EMPTY_RESUME_DATA, suggestion.content);
-  const notes = suggestion.diffNotes?.trim();
+  const notes = suggestion.changeNotes?.trim();
 
   return (
     <FormDialogShell

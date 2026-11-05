@@ -22,7 +22,7 @@ user approves or corrects the slots:
   "subjectId": "<emailMessageId>",
   "prompt": "Reply to <company> interview invite? Draft: <draft>",
   "options": ["Send", "Skip"],
-  "deepLink": "<JOBPILOT_WEB>/inbox"
+  "link": "<JOBPILOT_WEB>/inbox"
 }
 ```
 

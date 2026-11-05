@@ -68,7 +68,7 @@ export class JobListingPublisher {
   }
 
   /**
-   * Identity is URL-first, then dedupe key: a known url is the stronger signal, and going by the key
+   * Identity is URL-first, then match key: a known url is the stronger signal, and going by the key
    * first would fork an orphan listing whenever a re-scrape reworded the title.
    *
    * No interactive transaction: at READ COMMITTED it never made the read-then-write atomic anyway,
@@ -99,7 +99,7 @@ export class JobListingPublisher {
       }
 
       const existing = await this.prisma.jobListing.findUnique({
-        where: { dedupeKey: draft.dedupeKey },
+        where: { matchKey: draft.matchKey },
         select: { id: true },
       });
 

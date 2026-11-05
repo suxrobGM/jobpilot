@@ -76,7 +76,7 @@ export const emailMessageSchema = z.object({
   fromName: z.string().nullable(),
   fromDomain: z.string(),
   snippet: z.string(),
-  rawBody: z.string(),
+  body: z.string(),
   receivedAt: z.date(),
   fetchedAt: z.date(),
   scannedAt: z.date().nullable(),

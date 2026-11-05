@@ -17,7 +17,7 @@ the procedure. A message that is not a job alert (a connection request, a newsle
 1. **Collect.** `GET /api/email/messages/<id>` for each message. Its `links` is `[{url, text}]`:
    every link with the text a reader sees for it. Alert links are usually opaque click-trackers, so
    **the text is how you tell a posting from everything else**. Empty `links` → pull `https?://`
-   URLs out of `rawBody` with the words beside each.
+   URLs out of `body` with the words beside each.
 
    Keep a link only when its text names **one job posting** (a job title, optionally with company
    or location). Drop navigation and chrome - the board's name, "My Dashboard", "Find Jobs", "See

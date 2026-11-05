@@ -182,7 +182,7 @@ export class PilotService {
           },
           data: {
             status: "completed",
-            statusActor: "user",
+            statusChangedBy: "user",
             statusReason: "Goals changed.",
             completedAt: new Date(),
           },

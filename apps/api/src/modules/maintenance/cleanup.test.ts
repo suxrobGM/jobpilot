@@ -72,8 +72,8 @@ describe("runRetentionCleanup", () => {
 
     // email_messages: blanked via updateMany, never deleted.
     expect(calls.emailMessage).toHaveLength(1);
-    expect(calls.emailMessage?.[0]?.data).toEqual({ rawBody: "", links: [] });
-    expect(calls.emailMessage?.[0]?.where).toMatchObject({ rawBody: { not: "" } });
+    expect(calls.emailMessage?.[0]?.data).toEqual({ body: "", links: [] });
+    expect(calls.emailMessage?.[0]?.where).toMatchObject({ body: { not: "" } });
 
     // application_events: only for applications that are already closed.
     expect(calls.applicationEvent).toHaveLength(1);

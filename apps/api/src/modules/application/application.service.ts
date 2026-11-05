@@ -99,15 +99,15 @@ export class ApplicationService {
             events: { orderBy: { createdAt: "asc" } },
             job: { select: { description: true, salary: true, employmentType: true } },
             resume: { select: { id: true, label: true, updatedAt: true } },
-            resumeVariantUsed: {
-              select: { id: true, resumeId: true, label: true, diffNotes: true, updatedAt: true },
+            resumeVariant: {
+              select: { id: true, resumeId: true, label: true, changeNotes: true, updatedAt: true },
             },
-            resumeVariants: {
+            tailoredVariants: {
               select: {
                 id: true,
                 resumeId: true,
                 label: true,
-                diffNotes: true,
+                changeNotes: true,
                 createdAt: true,
                 updatedAt: true,
               },

@@ -23,17 +23,17 @@ export function normalizeListingLocation(location: string | null | undefined): s
   return normalizePhrase(cleaned.split(",")[0] ?? "");
 }
 
-export interface DedupeInput {
+export interface MatchKeyInput {
   title: string;
   company: string;
   location?: string | null;
 }
 
 /**
- * The dedupe key: sha256 of the normalized posting. Location is in it because the same role opened
+ * The match key: sha256 of the normalized posting. Location is in it because the same role opened
  * in two cities is two postings.
  */
-export function dedupeKey(input: DedupeInput): string {
+export function matchKey(input: MatchKeyInput): string {
   const parts = [
     normalizePhrase(input.title),
     normalizeCompanyName(input.company),
@@ -43,7 +43,7 @@ export function dedupeKey(input: DedupeInput): string {
 }
 
 /** SEO slug. The key suffix makes it collision-free without a retry loop, and stable. */
-export function listingSlug(input: DedupeInput, key: string = dedupeKey(input)): string {
+export function listingSlug(input: MatchKeyInput, key: string = matchKey(input)): string {
   const stem = [slugify(input.title), "at", slugify(input.company)].filter(Boolean).join("-");
   return `${stem}-${key.slice(0, 6)}`;
 }

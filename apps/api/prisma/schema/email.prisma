@@ -62,7 +62,7 @@ model EmailMessage {
   fromName    String?      @map("from_name")
   fromDomain  String       @map("from_domain")
   snippet     String
-  rawBody     String       @map("raw_body")
+  body        String
   receivedAt  DateTime     @map("received_at")
   fetchedAt   DateTime     @default(now()) @map("fetched_at")
 

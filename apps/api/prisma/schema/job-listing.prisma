@@ -8,10 +8,10 @@ enum JobListingStatus {
 // The public job index: one row per posting, deduped across all users. Must never record who
 // discovered or applied.
 model JobListing {
-  id        String @id @default(uuid())
-  slug      String @unique
+  id       String @id @default(uuid())
+  slug     String @unique
   // sha256(normTitle|normCompany|normLocation).
-  dedupeKey String @unique @map("dedupe_key")
+  matchKey String @unique @map("match_key")
 
   title              String
   company            String

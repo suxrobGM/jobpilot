@@ -234,7 +234,7 @@ export class GmailClient {
           fromName: name,
           fromDomain: domainOf(email),
           snippet: msg.data.snippet ?? "",
-          rawBody: stripQuotedReplies(extractPlainText(msg.data.payload)),
+          body: stripQuotedReplies(extractPlainText(msg.data.payload)),
           links: extractLinks(msg.data.payload),
           receivedAt,
         });

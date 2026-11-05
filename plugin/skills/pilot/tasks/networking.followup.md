@@ -21,7 +21,7 @@ body the `networking` skill saves); keep the returned `id` as `DRAFT_ID`. Then g
   "subjectId": "<DRAFT_ID>",
   "prompt": "Send follow-up to <contactName> re <subject>?",
   "options": ["Send", "Skip"],
-  "deepLink": "<JOBPILOT_WEB>/networking/messages?message=<DRAFT_ID>"
+  "link": "<JOBPILOT_WEB>/networking/messages?message=<DRAFT_ID>"
 }
 ```
 

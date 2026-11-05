@@ -251,7 +251,7 @@ The resume skills form a chain, and each has one rule:
   improve anything or invent fields. On a *first* extraction it then runs
   `review-resume`. `--force` skips that step, because the user asked for
   exactly what the PDF says.
-- `review-resume` writes one `Suggested rewrite` variant whose `diffNotes`
+- `review-resume` writes one `Suggested rewrite` variant whose `changeNotes`
   list every change. It never edits a base resume. The dashboard's Apply
   button does that through `POST /api/resumes/variants/[id]/apply`, which
   copies the content onto the base and deletes the variant in one

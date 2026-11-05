@@ -110,7 +110,7 @@ describe("where-builders", () => {
   it("emailBodyWhere skips already-blanked rows and messages still awaiting classification", () => {
     expect(emailBodyWhere(c)).toEqual({
       receivedAt: { lt: c.emailBody },
-      rawBody: { not: "" },
+      body: { not: "" },
       scannedAt: { not: null },
     });
   });

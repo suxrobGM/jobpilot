@@ -33,11 +33,11 @@ export function SubmissionDetails(props: SubmissionDetailsProps): ReactElement {
 
 /**
  * The resume that went out, tailored or not. Tailoring reuses an existing variant far more often
- * than it creates one, so `resumeVariants` is empty for most applications and the base is all there
+ * than it creates one, so `tailoredVariants` is empty for most applications and the base is all there
  * is to show.
  */
 function submittedResumeRow(app: ApplicationDetailDto): ReactNode {
-  const used = app.resumeVariantUsed;
+  const used = app.resumeVariant;
   const base = app.resume;
 
   if (used) {
@@ -46,7 +46,7 @@ function submittedResumeRow(app: ApplicationDetailDto): ReactNode {
         key={used.id}
         icon={<Description fontSize="sm" />}
         primary={<Link href={`/resumes/${used.resumeId}`}>{used.label}</Link>}
-        secondary={used.diffNotes ?? "Tailored for this job."}
+        secondary={used.changeNotes ?? "Tailored for this job."}
         action={<ExternalLink href={variantPdfUrl(used.id, used.updatedAt)}>PDF</ExternalLink>}
       />
     );
@@ -69,7 +69,7 @@ function DocumentsCard(props: SubmissionDetailsProps): ReactElement {
   const { application: app } = props;
   // Variants tailored for this job that were not the one submitted - a pre-submit draft, or a
   // second attempt. The submitted row above already covers the one that went out.
-  const otherVariants = app.resumeVariants.filter((v) => v.id !== app.resumeVariantUsed?.id);
+  const otherVariants = app.tailoredVariants.filter((v) => v.id !== app.resumeVariant?.id);
 
   const rows: ReactNode[] = [
     submittedResumeRow(app),
@@ -78,7 +78,7 @@ function DocumentsCard(props: SubmissionDetailsProps): ReactElement {
         key={v.id}
         icon={<Description fontSize="sm" />}
         primary={<Link href={`/resumes/${v.resumeId}`}>{v.label}</Link>}
-        secondary={v.diffNotes ?? undefined}
+        secondary={v.changeNotes ?? undefined}
         action={<RelativeTime value={v.createdAt} />}
       />
     )),

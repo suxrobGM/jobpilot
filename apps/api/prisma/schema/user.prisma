@@ -15,15 +15,15 @@ enum UserRole {
 }
 
 model User {
-  id              String    @id @default(uuid())
-  email           String    @unique
+  id               String    @id @default(uuid())
+  email            String    @unique
   // Null for OAuth-only accounts; the security page lets them set one later.
-  passwordHash    String?   @map("password_hash")
-  role            UserRole  @default(user)
-  emailVerifiedAt DateTime? @map("email_verified_at")
-  // Per-user data key, wrapped under SECRET_MASTER_KEY. Decrypts this account's secrets, so
-  // deleting the account crypto-shreds them.
-  wrappedDek      String?   @map("wrapped_dek")
+  passwordHash     String?   @map("password_hash")
+  role             UserRole  @default(user)
+  emailVerifiedAt  DateTime? @map("email_verified_at")
+  // Encrypted under SECRET_MASTER_KEY; decrypts this account's secrets, so deleting the account
+  // crypto-shreds them.
+  encryptedDataKey String?   @map("encrypted_data_key")
 
   username     String        @unique
   availability Availability?

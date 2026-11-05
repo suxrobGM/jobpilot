@@ -59,7 +59,7 @@ returning - re-select tab 0, then map the outcome to a terminal write (above). `
   answer for the campaign, re-delegate with `salaryExpectation` set.
 - `category:"question"` (a required form question the profile can't answer) - ask the user
   `question`, re-delegate with the reply as `answers`. File the question with the worker's
-  `answerKey` when it set one, so the answer is saved and never asked again.
+  `savedAnswerKey` when it set one, so the answer is saved and never asked again.
 - `category:"verification"` (2FA) - pause and ask; one-time per board.
 - `category:"payment"` - never pay: POST `/result` `{outcome:"failed", failReason:"Payment
   required"}`.

@@ -14,7 +14,7 @@ export function publicUser(user: User) {
 /**
  * The signed-in user's own merged view (`GET /me`): account fields plus the
  * applicant profile columns. `contactEmail` is the applicant address; `email`
- * stays the login address. Secrets (passwordHash, wrappedDek) are never included.
+ * stays the login address. Secrets (passwordHash, encryptedDataKey) are never included.
  */
 export function meUser(user: User & { oauthAccounts: { provider: OAuthProvider }[] }) {
   return {

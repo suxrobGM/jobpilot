@@ -200,7 +200,7 @@ export async function finalizeIdleCampaigns(
     where: { id: { in: idle.map((campaign) => campaign.id) }, userId, status: "in_progress" },
     data: {
       status: "completed",
-      statusActor: "pilot",
+      statusChangedBy: "pilot",
       statusReason: "No active work remaining.",
       completedAt: now,
     },

@@ -2,7 +2,7 @@
 
 Payload `{campaignId, query, board, pausedAt}`: an auto-apply campaign stuck in `paused`. No
 browser, no worker. `GET /api/campaigns/$CID` and classify the pause from
-`statusActor`/`statusReason` (else `/jobs/reasons`): missing resume, verification wall, user pause,
+`statusChangedBy`/`statusReason` (else `/jobs/reasons`): missing resume, verification wall, user pause,
 or unknown.
 
 - Missing resume, and the file is restorable per `../../_shared/setup.md` → resume it:
@@ -22,7 +22,7 @@ jobpilot-api POST /api/campaigns/$CID/status --data '{"status":"in_progress","ac
   "subjectId": "<campaignId>",
   "prompt": "Campaign '<query>' is paused (<reason>). Resume it?",
   "options": ["Resume", "Keep paused", "Complete campaign"],
-  "deepLink": "<JOBPILOT_WEB>/campaigns/<campaignId>"
+  "link": "<JOBPILOT_WEB>/campaigns/<campaignId>"
 }
 ```
 

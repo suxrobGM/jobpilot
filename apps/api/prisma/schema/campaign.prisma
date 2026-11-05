@@ -26,24 +26,24 @@ enum Actor {
 }
 
 model Campaign {
-  id            String         @id @default(uuid())
-  userId        String         @map("user_id")
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  query         String
-  source        CampaignSource
-  status        CampaignStatus @default(in_progress)
-  createdBy     Actor          @default(user) @map("created_by")
-  statusActor   Actor?         @map("status_actor")
-  statusReason  String?        @map("status_reason")
-  startedAt     DateTime       @default(now()) @map("started_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  completedAt   DateTime?      @map("completed_at")
-  config        Json           @default("{}")
+  id              String         @id @default(uuid())
+  userId          String         @map("user_id")
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query           String
+  source          CampaignSource
+  status          CampaignStatus @default(in_progress)
+  createdBy       Actor          @default(user) @map("created_by")
+  statusChangedBy Actor?         @map("status_changed_by")
+  statusReason    String?        @map("status_reason")
+  startedAt       DateTime       @default(now()) @map("started_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  completedAt     DateTime?      @map("completed_at")
+  config          Json           @default("{}")
   // Null for campaigns of pasted links.
-  boardId       String?        @map("board_id")
-  board         JobBoard?      @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  boardId         String?        @map("board_id")
+  board           JobBoard?      @relation(fields: [boardId], references: [id], onDelete: SetNull)
   // Discovery matches on this, not the query text: the pilot may rewrite the query.
-  pilotSearchId String?        @map("pilot_search_id")
+  pilotSearchId   String?        @map("pilot_search_id")
 
   jobs               CampaignJob[]
   applications       Application[]

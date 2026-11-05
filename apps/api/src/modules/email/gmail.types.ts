@@ -51,7 +51,7 @@ export interface NormalizedMessage {
   fromDomain: string;
   snippet: string;
   /** Plain-text body with quoted replies stripped. */
-  rawBody: string;
+  body: string;
   links: EmailLink[];
   receivedAt: Date;
 }

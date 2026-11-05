@@ -21,7 +21,7 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
       return { code: error.code, message: error.message, details: error.details };
     }
 
-    // Dead DEK: a code the web/agent can act on, not a raw AES-GCM 500.
+    // Unrecoverable data key: a code the web/agent can act on, not a raw AES-GCM 500.
     if (error instanceof KeyUnrecoverableError) {
       set.status = 500;
       logger.warn({ userId: error.userId }, "Encryption key unrecoverable");

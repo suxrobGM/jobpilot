@@ -157,7 +157,7 @@ export class CampaignService {
       where: { id, userId, status: existing.status },
       data: {
         status: body.status,
-        statusActor: body.actor,
+        statusChangedBy: body.actor,
         statusReason: body.reason ?? null,
         completedAt: finished ? new Date() : null,
       },

@@ -25,7 +25,7 @@ export const campaignSchema = z.object({
   source: campaignSourceSchema,
   status: campaignStatusSchema,
   createdBy: actorSchema,
-  statusActor: actorSchema.nullable(),
+  statusChangedBy: actorSchema.nullable(),
   statusReason: z.string().nullable(),
   startedAt: z.date(),
   updatedAt: z.date(),

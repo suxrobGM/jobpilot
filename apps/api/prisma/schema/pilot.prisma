@@ -147,21 +147,21 @@ model PilotRun {
 }
 
 model PilotQuestion {
-  id          String              @id @default(uuid())
-  userId      String              @map("user_id")
-  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind        PilotQuestionKind
-  status      PilotQuestionStatus @default(open)
-  subjectType PilotSubjectType?   @map("subject_type")
-  subjectId   String?             @map("subject_id")
-  prompt      String
-  options     Json                @default("[]")
-  deepLink    String?             @map("deep_link")
-  answer      String?
-  answerKey   String?             @map("answer_key")
-  answeredAt  DateTime?           @map("answered_at")
-  expiresAt   DateTime?           @map("expires_at")
-  createdAt   DateTime            @default(now()) @map("created_at")
+  id             String              @id @default(uuid())
+  userId         String              @map("user_id")
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind           PilotQuestionKind
+  status         PilotQuestionStatus @default(open)
+  subjectType    PilotSubjectType?   @map("subject_type")
+  subjectId      String?             @map("subject_id")
+  prompt         String
+  options        Json                @default("[]")
+  link           String?
+  answer         String?
+  savedAnswerKey String?             @map("saved_answer_key")
+  answeredAt     DateTime?           @map("answered_at")
+  expiresAt      DateTime?           @map("expires_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
 
   @@index([userId, status])
   @@index([status, expiresAt])

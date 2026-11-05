@@ -102,7 +102,7 @@ pass a screen.
   - a hard requirement the user doesn't meet (license, degree) → `skipped`, `Requirement not met
     (form: "<question>")`;
   - a fact only the user knows → `needs_user`, `category:"question"`, `kind:"question"` (or
-    `"choice"` with `options`), `answerKey` = a short snake_case name (`relocation`, `start_date`,
+    `"choice"` with `options`), `savedAnswerKey` = a short snake_case name (`relocation`, `start_date`,
     `notice_period`) when the answer would fit other jobs' forms, else null.
 - **Salary** required and unresolvable (below) → `needs_user`, `category:"salary"`.
 
@@ -147,7 +147,7 @@ Close tabs (except a tab left open above), select tab 0, return one of:
 { "outcome": "applied", "appliedAt": "...", "matchScore": 0, "resumeId": "...", "resumeVariantId": "...", "note": null }
 { "outcome": "failed",  "failReason": "...", "retryNotes": "..." }
 { "outcome": "skipped", "skipReason": "..." }
-{ "outcome": "needs_user", "category": "verification|payment|salary|question|review", "context": "...", "kind": "question|choice|two_factor|approval", "question": "...", "options": ["..."], "answerKey": null }
+{ "outcome": "needs_user", "category": "verification|payment|salary|question|review", "context": "...", "kind": "question|choice|two_factor|approval", "question": "...", "options": ["..."], "savedAnswerKey": null }
 ```
 
 - `appliedAt`: `node -p "new Date().toISOString()"`. `resumeId`/`resumeVariantId` from the

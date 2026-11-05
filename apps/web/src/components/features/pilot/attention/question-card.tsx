@@ -40,9 +40,9 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
             </Typography>
           </Stack>
 
-          {question.deepLink && (
+          {question.link && (
             <Link
-              href={question.deepLink}
+              href={question.link}
               target="_blank"
               rel="noopener"
               sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}

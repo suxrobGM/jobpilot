@@ -92,7 +92,7 @@ describe("CampaignService", () => {
     expect(updates).toEqual([
       {
         status: "paused",
-        statusActor: "agent",
+        statusChangedBy: "agent",
         statusReason: "verification required",
         completedAt: null,
       },

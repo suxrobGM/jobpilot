@@ -1,4 +1,4 @@
-import { dedupeKey, listingSlug, normalizeListingLocation } from "./listing-identity";
+import { listingSlug, matchKey, normalizeListingLocation } from "./listing-identity";
 import { describe, expect, it } from "bun:test";
 
 const acme = { title: "Senior Software Engineer", company: "Acme Inc.", location: "New York, NY" };
@@ -20,10 +20,10 @@ describe("normalizeListingLocation", () => {
   });
 });
 
-describe("dedupeKey", () => {
+describe("matchKey", () => {
   it("matches the same posting reposted on another board", () => {
-    expect(dedupeKey(acme)).toBe(
-      dedupeKey({
+    expect(matchKey(acme)).toBe(
+      matchKey({
         title: "senior  software   engineer",
         company: "ACME, Inc",
         location: "New York, NY, USA",
@@ -33,30 +33,30 @@ describe("dedupeKey", () => {
 
   // The reason this module does not reuse scoring's `normalizeJobTitle`, which strips seniority.
   it("does NOT merge different seniorities at the same company", () => {
-    expect(dedupeKey({ ...acme, title: "Senior Software Engineer" })).not.toBe(
-      dedupeKey({ ...acme, title: "Junior Software Engineer" }),
+    expect(matchKey({ ...acme, title: "Senior Software Engineer" })).not.toBe(
+      matchKey({ ...acme, title: "Junior Software Engineer" }),
     );
   });
 
   it("does not merge the same role opened in two cities", () => {
-    expect(dedupeKey({ ...acme, location: "New York, NY" })).not.toBe(
-      dedupeKey({ ...acme, location: "San Francisco, CA" }),
+    expect(matchKey({ ...acme, location: "New York, NY" })).not.toBe(
+      matchKey({ ...acme, location: "San Francisco, CA" }),
     );
   });
 
   it("separates a remote opening from an on-site one", () => {
-    expect(dedupeKey({ ...acme, location: "Remote" })).not.toBe(dedupeKey(acme));
+    expect(matchKey({ ...acme, location: "Remote" })).not.toBe(matchKey(acme));
   });
 
   it("distinguishes companies", () => {
-    expect(dedupeKey(acme)).not.toBe(dedupeKey({ ...acme, company: "Globex" }));
+    expect(matchKey(acme)).not.toBe(matchKey({ ...acme, company: "Globex" }));
   });
 });
 
 describe("listingSlug", () => {
   it("is kebab-cased, human-readable and key-suffixed", () => {
     expect(listingSlug(acme)).toBe(
-      `senior-software-engineer-at-acme-inc-${dedupeKey(acme).slice(0, 6)}`,
+      `senior-software-engineer-at-acme-inc-${matchKey(acme).slice(0, 6)}`,
     );
   });
 

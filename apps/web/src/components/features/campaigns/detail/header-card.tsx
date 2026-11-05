@@ -18,7 +18,9 @@ const CAMPAIGN_ACTOR_LABEL: Record<Actor, string> = {
 };
 
 function pausedLine(campaign: CampaignDetailDto): string {
-  const by = campaign.statusActor ? ` by ${CAMPAIGN_ACTOR_LABEL[campaign.statusActor]}` : "";
+  const by = campaign.statusChangedBy
+    ? ` by ${CAMPAIGN_ACTOR_LABEL[campaign.statusChangedBy]}`
+    : "";
   const reason = campaign.statusReason ? ` - ${campaign.statusReason}` : "";
   return `Paused${by}${reason} · resume to continue.`;
 }

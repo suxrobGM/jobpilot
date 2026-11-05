@@ -22,9 +22,9 @@ function makeService(over: Row = {}) {
     subjectId: null,
     prompt: "q",
     options: [],
-    deepLink: null,
+    link: null,
     answer: null,
-    answerKey: null,
+    savedAnswerKey: null,
     answeredAt: null,
     expiresAt: null,
     createdAt: new Date(),
@@ -61,7 +61,7 @@ describe("PilotQuestionService.createQuestion", () => {
       kind: "choice",
       prompt: "Which start date?",
       options: ["2 weeks", "immediately"],
-      deepLink: "/pilot/questions/e1",
+      link: "/pilot/questions/e1",
     });
     expect(question).toMatchObject({ status: "open", options: ["2 weeks", "immediately"] });
     expect(rec.created?.expiresAt).toBeNull();
@@ -96,7 +96,7 @@ describe("PilotQuestionService.answerQuestion", () => {
   });
 
   it("saves the answer to a keyed question for reuse", async () => {
-    const { svc, rec } = makeService({ answerKey: "relocation" });
+    const { svc, rec } = makeService({ savedAnswerKey: "relocation" });
     await svc.answerQuestion("p1", "e1", { answer: "Yes, anywhere in the US" });
     expect(rec.savedAnswers).toEqual([
       expect.objectContaining({
@@ -107,7 +107,7 @@ describe("PilotQuestionService.answerQuestion", () => {
   });
 
   it("never saves a 2FA code, even when keyed", async () => {
-    const { svc, rec } = makeService({ kind: "two_factor", answerKey: "otp" });
+    const { svc, rec } = makeService({ kind: "two_factor", savedAnswerKey: "otp" });
     await svc.answerQuestion("p1", "e1", { answer: "123456" });
     expect(rec.savedAnswers).toHaveLength(0);
   });

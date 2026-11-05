@@ -114,14 +114,14 @@ describe("projection", () => {
     expect(buildListingDraft(job({ brief: raw }))?.yearsExperience).toBeNull();
   });
 
-  it("gives two reposts of one posting the same dedupe key but different source urls", () => {
+  it("gives two reposts of one posting the same match key but different source urls", () => {
     const a = buildListingDraft(
       job({ url: "https://linkedin.com/jobs/1", boardId: "linkedin-board" }),
     );
     const b = buildListingDraft(
       job({ url: "https://indeed.com/viewjob?jk=9", boardId: "indeed-board" }),
     );
-    expect(a?.dedupeKey).toBe(b?.dedupeKey as string);
+    expect(a?.matchKey).toBe(b?.matchKey as string);
     expect(a?.slug).toBe(b?.slug as string);
     expect(a?.url).not.toBe(b?.url as string);
   });

@@ -171,7 +171,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
               backgroundColor: t.palette.surfaces.elevated,
             })}
           >
-            {m.rawBody || m.snippet}
+            {m.body || m.snippet}
           </Paper>
         </>
       ) : (

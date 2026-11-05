@@ -7,7 +7,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { AuthTokenService } from "./auth-token.service";
 import { VerificationService } from "./verification.service";
 
-/** Password change/set and the email-change request gate. Never touches `wrappedDek`. */
+/** Password change/set and the email-change request gate. Never touches `encryptedDataKey`. */
 @injectable()
 export class SecurityService {
   constructor(

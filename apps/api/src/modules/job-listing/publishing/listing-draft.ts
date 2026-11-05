@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { MAX_YEARS_EXPERIENCE } from "@/modules/scoring/scoring.schema";
-import { dedupeKey, listingSlug, normalizeListingLocation } from "./listing-identity";
+import { listingSlug, matchKey, normalizeListingLocation } from "./listing-identity";
 
 const MAX_EXCERPT = 600;
 
@@ -40,7 +40,7 @@ export interface ListingSourceJob {
 }
 
 export interface ListingDraft {
-  dedupeKey: string;
+  matchKey: string;
   slug: string;
   title: string;
   company: string;
@@ -117,10 +117,10 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
   }
 
   const location = clean(job.location) ?? clean(brief.location);
-  const key = dedupeKey({ title, company, location });
+  const key = matchKey({ title, company, location });
 
   return {
-    dedupeKey: key,
+    matchKey: key,
     slug: listingSlug({ title, company, location }, key),
     title,
     company,

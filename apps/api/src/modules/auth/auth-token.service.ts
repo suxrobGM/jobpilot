@@ -31,18 +31,18 @@ export class AuthTokenService {
     return raw;
   }
 
-  /** The user's single reusable terminal token (raw stored encrypted in `tokenCipher`), provisioned on first use. */
+  /** The user's single reusable terminal token (raw stored encrypted in `encryptedToken`), provisioned on first use. */
   async getOrCreateTerminalToken(userId: string) {
     const existing = await this.prisma.authToken.findFirst({
       where: { userId, kind: "terminal", revokedAt: null },
       orderBy: { createdAt: "desc" },
     });
-    if (existing?.tokenCipher) {
+    if (existing?.encryptedToken) {
       try {
         const token = await this.crypto.decryptFor(
           userId,
           SECRET_CONTEXTS.apiTokenTerminal,
-          existing.tokenCipher,
+          existing.encryptedToken,
         );
         return { id: existing.id, token, createdAt: existing.createdAt };
       } catch (error) {
@@ -64,7 +64,7 @@ export class AuthTokenService {
         userId,
         kind: "terminal",
         tokenHash: hashToken(raw),
-        tokenCipher: await this.crypto.encryptFor(userId, SECRET_CONTEXTS.apiTokenTerminal, raw),
+        encryptedToken: await this.crypto.encryptFor(userId, SECRET_CONTEXTS.apiTokenTerminal, raw),
       },
     });
     return { id: created.id, token: raw, createdAt: created.createdAt };

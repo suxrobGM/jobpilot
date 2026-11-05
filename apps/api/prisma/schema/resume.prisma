@@ -32,13 +32,13 @@ model ResumeVariant {
   label         String
   jobUrl        String?      @map("job_url")
   applicationId String?      @map("application_id")
-  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  application   Application? @relation("TailoredVariant", fields: [applicationId], references: [id], onDelete: SetNull)
 
-  // Applications submitted with this variant; `application` is the one it was tailored for.
-  usedByApplications Application[] @relation("ApplicationResumeUsed")
+  // `application` is the one this variant was tailored for; `submittedWith` are the ones that sent it.
+  submittedWith Application[] @relation("SubmittedVariant")
 
-  content   Json
-  diffNotes String? @map("diff_notes")
+  content     Json
+  changeNotes String? @map("change_notes")
 
   // Audit of rewording and restructuring (`VariantRewriteAudit`); null when the variant only reranked.
   rewrites Json?

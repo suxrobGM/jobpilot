@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { answerKeySchema } from "./answers";
+import { savedAnswerKeySchema } from "./answers";
 import { pilotSubjectTypeSchema } from "./tasks";
 import { webLinkSchema } from "./web-link";
 
@@ -15,10 +15,10 @@ export const createPilotQuestionSchema = z.object({
   subjectId: z.string().optional(),
   prompt: z.string().min(1),
   options: z.array(z.string()).default([]),
-  deepLink: webLinkSchema.optional(),
+  link: webLinkSchema.optional(),
   expiresAt: z.iso.datetime().optional(),
   // Set only for a reusable fact, so answering it saves a profile answer.
-  answerKey: answerKeySchema.optional(),
+  savedAnswerKey: savedAnswerKeySchema.optional(),
 });
 
 export const answerPilotQuestionSchema = z.object({ answer: z.string().min(1) });
@@ -36,9 +36,9 @@ export const pilotQuestionSchema = z.object({
   subjectId: z.string().nullable(),
   prompt: z.string(),
   options: z.array(z.string()),
-  deepLink: z.string().nullable(),
+  link: z.string().nullable(),
   answer: z.string().nullable(),
-  answerKey: answerKeySchema.nullable(),
+  savedAnswerKey: savedAnswerKeySchema.nullable(),
   answeredAt: z.date().nullable(),
   expiresAt: z.date().nullable(),
   createdAt: z.date(),

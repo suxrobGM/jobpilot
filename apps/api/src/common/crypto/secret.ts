@@ -32,15 +32,15 @@ export function decrypt(key: Buffer, ctx: string, blob: string): string {
 }
 
 /** A fresh 32-byte data-encryption key. */
-export function generateDek(): Buffer {
+export function generateDataKey(): Buffer {
   return randomBytes(32);
 }
 
-/** Wrap a DEK under the master key for storage (uses the same AEAD envelope). */
-export function wrapDek(masterKey: Buffer, dek: Buffer): string {
-  return encrypt(masterKey, "dek", dek.toString("base64"));
+/** Encrypt a data key under the master key for storage (uses the same AEAD envelope). */
+export function encryptDataKey(masterKey: Buffer, dataKey: Buffer): string {
+  return encrypt(masterKey, "dek", dataKey.toString("base64"));
 }
 
-export function unwrapDek(masterKey: Buffer, wrapped: string): Buffer {
-  return Buffer.from(decrypt(masterKey, "dek", wrapped), "base64");
+export function decryptDataKey(masterKey: Buffer, stored: string): Buffer {
+  return Buffer.from(decrypt(masterKey, "dek", stored), "base64");
 }

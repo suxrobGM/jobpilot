@@ -62,17 +62,17 @@ model Application {
   jobId      String?      @map("job_id")
   job        CampaignJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
-  // The resume actually submitted; `resumeVariants` are the ones tailored for this application.
-  resumeId          String?        @map("resume_id")
-  resume            Resume?        @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  resumeVariantId   String?        @map("resume_variant_id")
-  resumeVariantUsed ResumeVariant? @relation("ApplicationResumeUsed", fields: [resumeVariantId], references: [id], onDelete: SetNull)
+  // The resume and variant actually submitted; `tailoredVariants` were written for this application.
+  resumeId        String?        @map("resume_id")
+  resume          Resume?        @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  resumeVariantId String?        @map("resume_variant_id")
+  resumeVariant   ResumeVariant? @relation("SubmittedVariant", fields: [resumeVariantId], references: [id], onDelete: SetNull)
 
-  events         ApplicationEvent[]
-  emailMessages  EmailMessage[]
-  resumeVariants ResumeVariant[]
-  contacts       Contact[]
-  coverLetters   CoverLetter[]
+  events           ApplicationEvent[]
+  emailMessages    EmailMessage[]
+  tailoredVariants ResumeVariant[]    @relation("TailoredVariant")
+  contacts         Contact[]
+  coverLetters     CoverLetter[]
 
   @@unique([userId, url])
   @@index([boardId])
