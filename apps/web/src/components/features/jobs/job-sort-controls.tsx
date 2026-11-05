@@ -2,7 +2,6 @@
 
 import type { ReactElement } from "react";
 import {
-  type JobListingPosted,
   type JobListingSort,
   jobListingPostedSchema,
   jobListingSortSchema,
@@ -10,17 +9,12 @@ import {
 import { MenuItem, Stack, TextField } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { SelectFieldOption } from "@/components/ui/form";
+import { POSTED_OPTIONS } from "./job-filter-options";
 import { jobsHref } from "./jobs-href";
 
 const SORT_OPTIONS: SelectFieldOption<JobListingSort>[] = [
   { value: "recent", label: "Recently seen" },
   { value: "newest", label: "Newest" },
-];
-
-export const POSTED_OPTIONS: SelectFieldOption<JobListingPosted>[] = [
-  { value: "24h", label: "Past 24 hours" },
-  { value: "7d", label: "Past 7 days" },
-  { value: "30d", label: "Past 30 days" },
 ];
 
 /** `jobsHref` drops `page`, so a change always lands on page 1. */

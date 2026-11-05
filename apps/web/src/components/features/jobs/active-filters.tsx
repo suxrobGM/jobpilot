@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { Button, Chip, Stack } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
-import { POSTED_OPTIONS } from "./job-sort-controls";
+import { POSTED_OPTIONS } from "./job-filter-options";
 import { jobsHref } from "./jobs-href";
 
 /** No `tech`: the multi-select already shows it as chips. */

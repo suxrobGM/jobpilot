@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import type { JobAlertsStatus } from "@jobpilot/contracts/pilot";
 import { PlayArrow } from "@mui/icons-material";
 import { Box, Button, Tooltip } from "@mui/material";
-import { isRunPending } from "./use-job-alerts";
+import { isRunPending } from "../run-status";
 
 interface RunJobAlertsButtonProps {
   status: JobAlertsStatus;

@@ -10,8 +10,9 @@ import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, humanizeIsoInText } from "@/utils/format";
 import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../pilot-status";
 import { taskTypeAgent, taskTypeLabel } from "../task-types";
-import { AgentList, type Stage, StageArrow, StageCard } from "./stage-card";
-import { useTaskList } from "./task-list-preview";
+import { AgentList } from "./agent-list";
+import { type Stage, StageArrow, StageCard } from "./stage-card";
+import { useTaskList } from "./use-task-list";
 
 const HOST: Stage = { title: "Host", role: "Checks for work", tone: "blue" };
 const SERVER: Stage = { title: "Server", role: "Picks a task", tone: "peach" };

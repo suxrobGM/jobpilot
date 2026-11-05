@@ -16,9 +16,10 @@ import { QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil, plural } from "@/utils/format";
 import { campaignHref } from "@/utils/routes";
+import { hourLabel } from "../run-status";
 import { RunJobAlertsButton } from "./run-job-alerts-button";
 import { ScheduleDialog } from "./schedule-dialog";
-import { hourLabel, runDisabledReason, useJobAlerts } from "./use-job-alerts";
+import { runDisabledReason, useJobAlerts } from "./use-job-alerts";
 
 const OUTCOME_LABELS: Record<(typeof PILOT_RUN_OUTCOMES)[number], string> = {
   done: "finished",

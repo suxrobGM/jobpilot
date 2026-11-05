@@ -9,26 +9,14 @@ import { plural } from "@/utils/format";
 // Run events arrive over SSE (pilot-live.tsx); the poll only catches newly synced mail.
 const POLL_MS = 120_000;
 
-export function hourLabel(hour: number): string {
-  return `${String(hour).padStart(2, "0")}:00`;
-}
-
-interface RunStatus {
-  requestedAt: Date | null;
-  lastRun: { outcome: string | null } | null;
-}
-
-/** Queued by Run now, or running. */
-export function isRunPending(status: RunStatus): boolean {
-  if (status.requestedAt !== null) return true;
-  return status.lastRun !== null && status.lastRun.outcome === null;
-}
-
 /** Why a run can't be queued, or null when it can. */
 export function runDisabledReason(status: JobAlertsStatus): string | null {
-  if (!status.mailboxConnected)
+  if (!status.mailboxConnected) {
     return "Connect Gmail in Settings → Email so there is mail to read.";
-  if (!status.pilotRunning) return "Start the pilot - it is what does the importing.";
+  }
+  if (!status.pilotRunning) {
+    return "Start the pilot - it is what does the importing.";
+  }
   return null;
 }
 

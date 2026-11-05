@@ -11,7 +11,7 @@ import { Typography } from "@mui/material";
 import { z } from "zod/v4";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { hourLabel } from "./use-job-alerts";
+import { hourLabel } from "../run-status";
 
 /** Every whole hour as a run-time option, "00:00" through "23:00". */
 const RUN_TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => hourLabel(hour));

@@ -4,7 +4,6 @@ import type { ReactElement } from "react";
 import type { TaskList } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
 import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
-import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
@@ -14,6 +13,7 @@ import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { formatTimeUntil } from "@/utils/format";
 import { taskTypeLabel } from "../task-types";
+import { useTaskList } from "./use-task-list";
 
 const PREVIEW_COUNT = 6;
 
@@ -49,17 +49,6 @@ function TaskListEmpty(props: TaskListEmptyProps): ReactElement {
   }
   // No description: the status bar already carries the next-wake countdown.
   return <EmptyState variant="inline" title="No tasks right now." />;
-}
-
-/** Pinned to one fetch plus manual refresh: building a task list is costly. A stopped pilot has none. */
-export function useTaskList(running: boolean): UseQueryResult<TaskList | null> {
-  return useQuery({
-    ...pilotQueries.taskList(),
-    enabled: running,
-    staleTime: Number.POSITIVE_INFINITY,
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
 }
 
 interface TaskListPreviewProps {
