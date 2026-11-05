@@ -155,8 +155,8 @@ generation step:
   a skill. Skills refer to each other by name and to shared docs by relative
   path (`../_shared/<doc>.md`), so the same text works for both providers.
 - `agents/*.md`: worker subagents (`job-scorer`, `job-applier`,
-  `job-searcher`, `networking-worker`). Campaign skills hand them one item at a
-  time so heavy browser output stays out of the main session. Each worker
+  `job-searcher`, `job-researcher`, `networking-worker`). Campaign skills hand
+  them one item at a time so heavy browser output stays out of the main session. Each worker
   includes the rules it needs instead of reading shared docs, and uses the
   session's model. Claude finds them on its own; the host writes Codex copies
   (see below). Runtimes without subagents do the work inline.

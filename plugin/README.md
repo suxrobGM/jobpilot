@@ -32,7 +32,7 @@ The main skills are `search`, `auto-apply`, `apply`, `networking`, and
 | `skills/_shared/` | Notes that several skills read: setup, signing in, filling forms, browser tips, eligibility. It has no `SKILL.md`, so it doesn't show up as a skill. |
 | `skills/pilot/tasks/` | One file for each kind of task the Pilot can take on. |
 | `skills/humanizer/` | Edits letters, proposals, and messages so they read like a person wrote them. Adapted from [blader/humanizer](https://github.com/blader/humanizer) (MIT). |
-| `agents/` | `job-scorer`, `job-applier`, `job-searcher`, and `networking-worker`. Each handles one job, search, or contact at a time, which keeps the browser output out of the main session. |
+| `agents/` | `job-scorer`, `job-applier`, `job-searcher`, `job-researcher`, and `networking-worker`. Each handles one job, search, or contact at a time, which keeps the browser output out of the main session. |
 | `bin/` | `jobpilot-api`, the script every skill uses to call the API. |
 | `settings/` | Settings the terminal host passes to Claude and Codex. |
 | `.mcp.json` | The Playwright browser server. |
