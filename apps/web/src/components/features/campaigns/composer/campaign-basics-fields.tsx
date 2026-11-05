@@ -5,12 +5,29 @@ import { useSelector } from "@tanstack/react-form";
 import type { UserAggregateResponse } from "@/api/types";
 import { withForm } from "@/components/ui/form/tanstack";
 import {
+  ANYWHERE_BOARD,
+  ANYWHERE_MODE_DESCRIPTIONS,
   type BoardOption,
   COMPOSER_DEFAULT_VALUES,
+  type ComposerFormValues,
+  canResearch,
   isUpworkSearch,
   MODE_DESCRIPTIONS,
   UPWORK_MODE_DESCRIPTION,
 } from "./form-config";
+
+function modeDescription(mode: ComposerFormValues["mode"], board: string): string {
+  if (isUpworkSearch({ mode, board })) return UPWORK_MODE_DESCRIPTION;
+  const researching = mode === "search" || mode === "auto_apply";
+  if (board === ANYWHERE_BOARD && researching) return ANYWHERE_MODE_DESCRIPTIONS[mode];
+  return MODE_DESCRIPTIONS[mode];
+}
+
+function queryPlaceholder(mode: ComposerFormValues["mode"], board: string): string {
+  if (mode === "networking") return "Hiring managers at NYC fintech startups";
+  if (board === ANYWHERE_BOARD) return "ML research assistant roles at US universities";
+  return "Senior React TypeScript remote";
+}
 
 /** Campaign basics: the mode toggle, plus query (+ recent), board, and resume for every mode but apply. */
 export const CampaignBasicsFields = withForm({
@@ -26,6 +43,11 @@ export const CampaignBasicsFields = withForm({
     const isApply = mode === "apply";
     const isUpwork = isUpworkSearch({ mode, board });
     const isNetworking = mode === "networking";
+    const researchable = canResearch(mode);
+    const boardItems = [
+      ...(researchable ? [{ value: ANYWHERE_BOARD, label: "Anywhere on the web" }] : []),
+      ...boards.map((b) => ({ value: b.domain, label: b.name })),
+    ];
 
     return (
       <>
@@ -47,9 +69,7 @@ export const CampaignBasicsFields = withForm({
               />
             )}
           </form.AppField>
-          <Typography variant="captionMuted">
-            {isUpwork ? UPWORK_MODE_DESCRIPTION : MODE_DESCRIPTIONS[mode]}
-          </Typography>
+          <Typography variant="captionMuted">{modeDescription(mode, board)}</Typography>
         </Stack>
 
         {/* Apply has none of these - it takes pasted links and tailors a resume per job. */}
@@ -60,11 +80,7 @@ export const CampaignBasicsFields = withForm({
                 {(field) => (
                   <field.TextField
                     label={isNetworking ? "Target criteria" : "Query"}
-                    placeholder={
-                      isNetworking
-                        ? "Hiring managers at NYC fintech startups"
-                        : "Senior React TypeScript remote"
-                    }
+                    placeholder={queryPlaceholder(mode, board)}
                     autoFocus
                   />
                 )}
@@ -89,7 +105,7 @@ export const CampaignBasicsFields = withForm({
 
             {/* One board control: required for search/auto-apply, optional for networking, where it
                 toggles board-grounded vs criteria-only discovery. */}
-            {boards.length > 0 && (
+            {boardItems.length > 0 && (
               <Stack spacing={0.75}>
                 <form.AppField name="board">
                   {(field) => (
@@ -97,7 +113,7 @@ export const CampaignBasicsFields = withForm({
                       label="Board"
                       optional={isNetworking}
                       emptyLabel="No board - reach by criteria"
-                      items={boards.map((b) => ({ value: b.domain, label: b.name }))}
+                      items={boardItems}
                     />
                   )}
                 </form.AppField>
@@ -108,12 +124,6 @@ export const CampaignBasicsFields = withForm({
                   </Typography>
                 )}
               </Stack>
-            )}
-            {/* Networking can run on criteria alone, so a missing board only blocks the other modes. */}
-            {boards.length === 0 && !isNetworking && (
-              <Typography variant="body2Muted">
-                No boards configured. Add one on the Boards page first.
-              </Typography>
             )}
 
             {resumes.length > 0 ? (

@@ -1,7 +1,7 @@
 ---
 name: auto-apply
 description: Search a job board and autonomously apply to matching jobs one at a time, until paused, exhausted, or the max-applications cap is hit.
-argument-hint: "<query> --board <domain> [--campaign <campaign-id>] [--min-score N] [--max-apps N] | resume | retry-failed <campaign-id>"
+argument-hint: "<query> (--board <domain> | --anywhere) [--campaign <campaign-id>] [--min-score N] [--max-apps N] | resume | retry-failed <campaign-id>"
 ---
 
 # Auto-apply - Search + Apply On Demand
@@ -24,8 +24,9 @@ input, rules) live in `../_shared/campaign-flow.md`. Read `autoApply` (defaults 
 | `maxApplicationsPerCampaign` | `null` (unlimited) | Stop after this many successful applies. Inline `--max-apps` overrides; omit → unlimited. |
 | `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                |
 
-Inline argument overrides take precedence. `--board <domain>` is **required** unless the argument is
-`resume` or `retry-failed <campaign-id>`.
+Inline argument overrides take precedence. Exactly one of `--board <domain>` or `--anywhere` is
+**required** unless the argument is `resume` or `retry-failed <campaign-id>`. `--anywhere` searches
+the open web instead of a board: see **Anywhere on the web**.
 
 ### Campaign Modes
 
@@ -59,10 +60,26 @@ unlimited:
 jobpilot-api POST /api/campaigns --data '{"query":"<query>","source":"auto_apply","board":"<domain>","config":{"resumeId":"<RESUME_ID>","minScore":<n>}}'
 ```
 
+With `--anywhere`, send no `board`.
+
 Read `.id` as `CAMPAIGN_ID`.
 
 Either way, read the campaign's `config.resumeId` as `RESUME_ID` (`GET /api/campaigns/$CAMPAIGN_ID`;
 absent → the primary) and surface the live view: `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
+
+## Anywhere on the web
+
+With `--anywhere`, research first, then apply; Phases 1 and 2 below are for a board.
+
+1. **Research.** Delegate one `job-researcher` run with `{runId:null, campaignId:$CAMPAIGN_ID,
+   goals:<query>, resumeId:$RESUME_ID, minScore:$MIN_SCORE, approveAtOrAbove:$MIN_SCORE,
+   preferCapExempt:user.preferCapExempt, requiresSponsorship:user.requiresSponsorship,
+   boards:<every domain from GET /api/job-boards>, newJobsTarget:20}`. Without subagent support,
+   follow `$JOBPILOT_SKILLS_ROOT/../agents/job-researcher.md` inline. It saves rows at or above
+   `$MIN_SCORE` as `approved` and skips the rest.
+2. **Apply.** Run the `resume-campaign` skill's Phase 2 replay over the campaign's `approved` rows,
+   best first, with `MAX_APPS` = `--max-apps`. With `user.preferCapExempt`, a row with
+   `capExemptBasis` ranks as if it scored 10 higher. Then Phase 3 below.
 
 ## Phase 1: Open the Board (tab 1)
 

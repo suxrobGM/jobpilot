@@ -17,10 +17,12 @@ import { ApplyFields } from "./apply-fields";
 import { AutoApplyFields } from "./auto-apply-fields";
 import { CampaignBasicsFields } from "./campaign-basics-fields";
 import {
+  ANYWHERE_BOARD,
   type BoardOption,
   buildCreateCampaignRequest,
   buildSkillArg,
   COMPOSER_DEFAULT_VALUES,
+  canResearch,
   composerFormSchema,
   isUpworkSearch,
   SUBMIT_LABELS,
@@ -68,7 +70,6 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     new Set((recentCampaignsQuery.data?.items ?? []).map((r) => r.query)),
   ).slice(0, 5);
 
-  const hasBoards = boards.length > 0;
   const hasResumes = resumes.length > 0;
 
   const presetBoard = boards.find((b) => b.domain === defaultBoard)?.domain;
@@ -89,7 +90,8 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const form = useAppForm({
     defaultValues: {
       ...COMPOSER_DEFAULT_VALUES,
-      board: presetBoard ?? boards[0]?.domain ?? "",
+      // With no boards linked, research is the only way to search or auto-apply.
+      board: presetBoard ?? boards[0]?.domain ?? ANYWHERE_BOARD,
       resumeId: resumes.find((r) => r.isPrimary)?.id ?? resumes[0]?.id ?? "",
       minScore: profileQuery.data?.autoApply?.minMatchScore ?? COMPOSER_DEFAULT_VALUES.minScore,
     },
@@ -117,7 +119,13 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const board = useSelector(form.store, (s) => s.values.board);
   const isApply = mode === "apply";
   const isUpwork = isUpworkSearch({ mode, board });
-  const isNetworking = mode === "networking";
+
+  // Networking and apply have no "Anywhere" option, so the select would hold a value it can't show.
+  useEffect(() => {
+    if (board === ANYWHERE_BOARD && !canResearch(mode)) {
+      form.setFieldValue("board", "");
+    }
+  }, [board, mode, form]);
 
   // Upwork has no auto-apply/networking path - pin the mode to search.
   useEffect(() => {
@@ -169,11 +177,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={
-                    !canSubmit ||
-                    isSubmitting ||
-                    (!isApply && (!hasResumes || (!hasBoards && !isNetworking)))
-                  }
+                  disabled={!canSubmit || isSubmitting || (!isApply && !hasResumes)}
                 >
                   {isUpwork ? "Find Upwork jobs" : SUBMIT_LABELS[mode]}
                 </Button>

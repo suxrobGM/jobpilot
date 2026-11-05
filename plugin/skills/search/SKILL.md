@@ -1,19 +1,20 @@
 ---
 name: search
 description: Search a chosen job board via Playwright, rank results by fit against the user's resume, and save them to the campaign so the user can review.
-argument-hint: "<job_title_keywords_location> --board <domain> [--max-jobs N] [--campaign <campaign-id>]"
+argument-hint: "<job_title_keywords_location> (--board <domain> | --anywhere) [--max-jobs N] [--campaign <campaign-id>]"
 ---
 
 # Job Search
 
-Search a single board (picked by the user when launching the campaign) and rank results by
-qualification fit against the resume.
+Search a single board (picked by the user when launching the campaign), or the open web with
+`--anywhere`, and rank results by qualification fit against the resume.
 
 ## Setup
 
 1. Follow `../_shared/setup.md`.
 2. Parse and strip the flags; the rest is the free-text query.
-   - `--board <domain>` - **required** (e.g. `--board linkedin.com`).
+   - `--board <domain>` (e.g. `--board linkedin.com`) or `--anywhere` - exactly one is required.
+     `--anywhere` searches the open web instead of a board: see **Anywhere on the web**.
    - `--max-jobs <N>` - optional cap on results to rank. Absent = unlimited (rank until the board is
      exhausted).
    - `--campaign <campaign-id>` - campaign to save results to (Phase 5). The web UI passes it; if
@@ -30,6 +31,17 @@ qualification fit against the resume.
    not configured. Add it on /boards or run again with a different `--board`." When a `--campaign`
    id was given, first command it to `failed` with `POST /api/campaigns/<id>/status
    {"status":"failed"}`.
+
+## Anywhere on the web
+
+With `--anywhere`, skip step 3 of Setup and Phases 2-5. Delegate one `job-researcher` run with
+`{runId:null, campaignId:<campaign-id>, goals:<query>, resumeId:<config.resumeId>, minScore:0,
+approveAtOrAbove:null, preferCapExempt:user.preferCapExempt,
+requiresSponsorship:user.requiresSponsorship, boards:<every domain from GET /api/job-boards>,
+newJobsTarget:<--max-jobs, else 20>}`. Without subagent support, follow
+`$JOBPILOT_SKILLS_ROOT/../agents/job-researcher.md` inline. The agent saves its own rows as
+`pending`. Then close the campaign as in Phase 5 and hand off (Phase 6) from its output: list
+`best`, and add the `capExempt` count and any `boardsSuggested` under the table.
 
 ## Phase 1: Parse Query
 
@@ -111,8 +123,8 @@ Print a compact ranked table, then link to the campaign - nothing else:
 
 The shared campaign rules (`../_shared/campaign-flow.md`) apply throughout. On top of them:
 
-1. **Exactly one board per campaign** - the `--board` flag is required and the skill targets only
-   that board.
+1. **Exactly one board per campaign** - the skill targets only the `--board` given, or, with
+   `--anywhere`, no board at all.
 2. **Handle rate limiting** - if blocked, note it and continue.
 3. **Deduplicate** within the board.
 

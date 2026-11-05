@@ -122,9 +122,17 @@ export function isUpworkSearch(values: Pick<ComposerFormValues, "mode" | "board"
   return values.mode !== "apply" && values.board === UPWORK_DOMAIN;
 }
 
-/** Whether a networking campaign has a board picked (board-grounded vs criteria-only). */
+/** The Board select's "Anywhere on the web" choice: research instead of a board. No board is sent. */
+export const ANYWHERE_BOARD = "anywhere";
+
+/** Modes that can research the open web instead of searching a board. */
+export function canResearch(mode: ComposerFormValues["mode"]): boolean {
+  return mode === "search" || mode === "auto_apply";
+}
+
+/** Whether a real board is picked: not none, and not "Anywhere on the web". */
 export function isBoardSelected(board: string): boolean {
-  return board.trim() !== "";
+  return board.trim() !== "" && board !== ANYWHERE_BOARD;
 }
 
 function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest["config"] {
@@ -186,10 +194,12 @@ export function buildSkillArg(values: ComposerFormValues, campaignId: string): s
     // The skill reads channels/tier/autonomy from the campaign's config.networking.
     return buildCliArgs({ positional: [values.query.trim()], flags: { campaign: campaignId } });
   }
+  const anywhere = values.board === ANYWHERE_BOARD;
   return buildCliArgs({
     positional: [values.query.trim()],
     flags: {
-      board: values.board,
+      board: anywhere ? undefined : values.board,
+      anywhere,
       "min-score": values.mode === "auto_apply" ? values.minScore : undefined,
       "max-apps":
         values.mode === "auto_apply" && isCap(values.maxApps) ? values.maxApps : undefined,
@@ -206,6 +216,13 @@ export const SUBMIT_LABELS: Record<CampaignMode, string> = {
   auto_apply: "Start auto-apply",
   networking: "Start networking",
   apply: "Apply to links",
+};
+
+export const ANYWHERE_MODE_DESCRIPTIONS: Record<"search" | "auto_apply", string> = {
+  search:
+    "Search the open web beyond your boards - university and lab portals included - and score matches. Nothing is sent; review the ranked list yourself.",
+  auto_apply:
+    "Search the open web beyond your boards, score matches, then auto-submit applications to those above your score threshold.",
 };
 
 export const MODE_DESCRIPTIONS: Record<CampaignMode, string> = {
