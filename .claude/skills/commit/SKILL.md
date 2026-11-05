@@ -1,8 +1,9 @@
 ---
 name: commit
 description: Write a git commit with a one-sentence Conventional Commits subject and no narrative body. Use whenever the user asks to commit, stage and commit, or "save this work".
+model: haiku
 metadata:
-  version: "1.1"
+  version: "1.2"
 ---
 
 # Commit
@@ -38,18 +39,19 @@ Lowercase type, optional one-word scope, imperative summary, no trailing period,
 
 ## Steps
 
-1. Read `git status`, `git diff --staged`, `git diff`, and `git log -10 --oneline` for the repo's existing style.
+1. Read `git status` and `git diff --staged --stat`, then the staged diff. Read the unstaged diff only if nothing is staged.
 2. Stage only files relevant to the request. Ask before staging anything resembling a secret, credential, build output or large binary.
-3. Commit. Repeated `-m` flags are the safest form and behave the same in every shell:
+3. Commit and print the subject in one command. Repeated `-m` flags behave the same in every shell:
 
 ```bash
-git commit -m "fix(http): handle missing accept header" -m "One sentence of why."
+git commit -m "fix(http): handle missing accept header" -m "One sentence of why." && git log -1 --format=%s
 ```
 
 A heredoc works too, but it is bash. The lookalike `@'...'@` is PowerShell, and in bash the `@` survives into the message as `@ fix(http): ...`. Match the form to the shell you are actually invoking.
 
-4. Run `git log -1 --format=%s`. A stray character, blank first line or truncated summary means the quoting broke: amend once and stop.
-5. If a hook rewrote files, amend once and stop. Do not push unless asked.
+   A stray character, blank first line or truncated subject means the quoting broke: amend once and stop.
+
+4. If a hook rewrote files, amend once and stop. Do not push unless asked.
 
 ## Submodules
 
