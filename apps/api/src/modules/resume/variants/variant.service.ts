@@ -2,13 +2,11 @@ import type {
   resumeVariantCreateSchema,
   resumeVariantPatchSchema,
 } from "@jobpilot/contracts/resume";
-import { resumeChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { renderResumePdf } from "@/common/pdf/render";
-import { publish } from "@/common/sse";
 import {
   deleteGeneratedVariantFiles,
   generatedVariantPath,
@@ -17,6 +15,7 @@ import {
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { readContent, toStoredContent } from "../content";
+import { publishResumeEvent } from "../resume.events";
 import { ResumeService } from "../resume.service";
 import { buildTailoredVariant } from "../tailoring/build-variant";
 import {
@@ -67,23 +66,24 @@ export class ResumeVariantService {
   }
 
   private async create(
+    userId: string,
     resumeId: string,
     data: Omit<Prisma.ResumeVariantUncheckedCreateInput, "resumeId">,
   ): Promise<string> {
     const jobUrl = data.jobUrl ? normalizeJobUrl(data.jobUrl) : data.jobUrl;
     const variant = await this.prisma.resumeVariant.create({ data: { ...data, jobUrl, resumeId } });
-    publish(
-      resumeChannel,
-      { resumeId },
-      { type: "variant.created", resumeId, variantId: variant.id },
-    );
+    publishResumeEvent(userId, { type: "variant.created", resumeId, variantId: variant.id });
     return variant.id;
   }
 
   /** Every delete path ends here: the cache would otherwise keep files no request can reach. */
-  private async afterVariantsDeleted(resumeId: string, ...ids: string[]): Promise<void> {
+  private async afterVariantsDeleted(
+    userId: string,
+    resumeId: string,
+    ...ids: string[]
+  ): Promise<void> {
     await deleteGeneratedVariantFiles(...ids);
-    publish(resumeChannel, { resumeId }, { type: "variant.deleted", resumeId, variantIds: ids });
+    publishResumeEvent(userId, { type: "variant.deleted", resumeId, variantIds: ids });
   }
 
   async listVariants(userId: string, resumeId: string) {
@@ -108,7 +108,10 @@ export class ResumeVariantService {
     await this.resumes.findOwned(userId, resumeId);
     await this.assertApplicationOwned(userId, body.applicationId);
 
-    const id = await this.create(resumeId, { ...body, content: toStoredContent(body.content) });
+    const id = await this.create(userId, resumeId, {
+      ...body,
+      content: toStoredContent(body.content),
+    });
     return { id };
   }
 
@@ -124,7 +127,7 @@ export class ResumeVariantService {
     await this.assertApplicationOwned(userId, body.applicationId);
 
     const tailored = buildTailoredVariant(readContent(base.content), body);
-    const id = await this.create(resumeId, {
+    const id = await this.create(userId, resumeId, {
       label: body.label,
       jobUrl: body.jobUrl,
       applicationId: body.applicationId,
@@ -174,7 +177,7 @@ export class ResumeVariantService {
   async removeVariant(userId: string, id: string) {
     const variant = await this.findVariant(userId, id);
     await this.prisma.resumeVariant.delete({ where: { id } });
-    await this.afterVariantsDeleted(variant.resumeId, id);
+    await this.afterVariantsDeleted(userId, variant.resumeId, id);
     return { deleted: id };
   }
 
@@ -194,12 +197,8 @@ export class ResumeVariantService {
       this.prisma.resumeVariant.delete({ where: { id } }),
     ]);
 
-    publish(
-      resumeChannel,
-      { resumeId },
-      { type: "content.updated", resumeId, version: updated.version },
-    );
-    await this.afterVariantsDeleted(resumeId, id);
+    publishResumeEvent(userId, { type: "content.updated", resumeId, version: updated.version });
+    await this.afterVariantsDeleted(userId, resumeId, id);
 
     return { id: resumeId, version: updated.version };
   }
@@ -226,7 +225,7 @@ export class ResumeVariantService {
 
     const ids = candidates.map((variant) => variant.id);
     const result = await this.prisma.resumeVariant.deleteMany({ where: { id: { in: ids } } });
-    await this.afterVariantsDeleted(resumeId, ...ids);
+    await this.afterVariantsDeleted(userId, resumeId, ...ids);
 
     return { deletedCount: result.count };
   }

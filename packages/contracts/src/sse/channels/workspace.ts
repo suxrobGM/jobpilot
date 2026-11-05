@@ -6,7 +6,9 @@ export type WorkspaceEvent =
   | { type: "campaign.deleted"; campaignId: string }
   | { type: "campaignjob.created"; campaignId: string; key: string }
   | { type: "campaignjob.updated"; campaignId: string; key: string; status?: string }
-  | { type: "application.created"; campaignId: string | null };
+  | { type: "application.created"; campaignId: string | null }
+  // Mirrors the per-resume channel, so the resume list holds one connection, not one per row.
+  | { type: "resume.updated"; resumeId: string };
 
 /**
  * Profile-scoped live-refresh feed for the workspace UI (dashboard, auto-apply pill).

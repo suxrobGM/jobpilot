@@ -1,7 +1,7 @@
 "use client";
 
-import { type ReactElement, type ReactNode, useState } from "react";
-import { resumeChannel } from "@jobpilot/contracts/sse";
+import { type ReactElement, useState } from "react";
+import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import {
   Box,
@@ -15,7 +15,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,7 +26,7 @@ import { resumePdfUrl } from "@/api/resume-urls";
 import { RelativeTime } from "@/components/ui/display";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { useSseChannel } from "@/hooks/use-sse-channel";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
@@ -34,22 +34,11 @@ import { plural } from "@/utils/format";
 import { NewResumeDialog } from "./new-resume-dialog";
 import { useSetPrimaryResume } from "./use-set-primary-resume";
 
-/** Invisible per-resume SSE subscriber: refetches the list when content or variants change. */
-function ResumeEventsSubscriber({ resumeId }: { resumeId: string }): ReactNode {
-  const queryClient = useQueryClient();
-  useSseChannel(
-    resumeChannel,
-    { resumeId },
-    {
-      onMessage: () => {
-        void queryClient.invalidateQueries({ queryKey: resumeQueries.list().queryKey });
-      },
-    },
-  );
-  return null;
-}
-
 export function ResumesList(): ReactElement {
+  useLiveInvalidation(workspaceChannel, null, {
+    on: { "resume.updated": [resumeQueries.list().queryKey] },
+  });
+
   const toast = useToast();
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
@@ -109,10 +98,6 @@ export function ResumesList(): ReactElement {
           {plural(rows.length, "resume")}
         </Typography>
       </Stack>
-
-      {rows.map((r) => (
-        <ResumeEventsSubscriber key={`sse-${r.id}`} resumeId={r.id} />
-      ))}
 
       {rows.length === 0 ? (
         <SectionCard title="No resumes yet">

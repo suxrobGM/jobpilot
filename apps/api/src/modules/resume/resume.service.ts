@@ -1,10 +1,8 @@
 import path from "node:path";
-import { resumeChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { badRequest, findOwned, notFound } from "@/common/errors";
 import { renderResumePdf } from "@/common/pdf/render";
-import { publish } from "@/common/sse";
 import {
   deleteAllResumeArtifacts,
   deleteResumeFile,
@@ -17,6 +15,7 @@ import {
 import { PrismaClient, type Resume } from "@/generated/prisma/client";
 import { findProfileMismatches } from "./consistency";
 import { readContent, toStoredContent } from "./content";
+import { publishResumeEvent } from "./resume.events";
 import type { createResumeSchema, updateResumeSchema } from "./resume.schema";
 
 const MAX_RESUME_BYTES = 5 * 1024 * 1024;
@@ -142,11 +141,11 @@ export class ResumeService {
     });
 
     if (body.content) {
-      publish(
-        resumeChannel,
-        { resumeId: id },
-        { type: "content.updated", resumeId: id, version: updated.version },
-      );
+      publishResumeEvent(userId, {
+        type: "content.updated",
+        resumeId: id,
+        version: updated.version,
+      });
     }
     return { id, version: updated.version };
   }
