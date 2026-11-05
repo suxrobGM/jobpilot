@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.5 - 2026-11-05
+
+### Fixed
+
+- The web app tells you when the browser blocks local network access to the agent.
+- The pilot Start button no longer squeezes the status text.
+- Resume skills link to the Documents → Resumes page instead of a page that doesn't exist.
+
 ## v2.3.4 - 2026-11-05
 
 Update the plugin and terminal host with this release: API routes were renamed and older agents will call paths that no longer exist.
