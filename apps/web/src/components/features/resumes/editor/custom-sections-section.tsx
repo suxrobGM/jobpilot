@@ -6,6 +6,7 @@ import { Stack, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
+import { EntryTextField } from "./entry-text-field";
 
 interface CustomSectionsSectionProps {
   value: ResumeCustomSection[];
@@ -51,14 +52,12 @@ export function CustomSectionsSection(props: CustomSectionsSectionProps): ReactE
             renderEntry={(entry, onEntryUpdate) => (
               <Stack spacing={1.5}>
                 <Grid container spacing={1.5}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      fullWidth
-                      label="Heading"
-                      value={entry.heading}
-                      onChange={(e) => onEntryUpdate({ ...entry, heading: e.target.value })}
-                    />
-                  </Grid>
+                  <EntryTextField
+                    entry={entry}
+                    field="heading"
+                    label="Heading"
+                    onUpdate={onEntryUpdate}
+                  />
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
                       fullWidth

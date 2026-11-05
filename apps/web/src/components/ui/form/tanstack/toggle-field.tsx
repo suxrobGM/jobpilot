@@ -15,10 +15,10 @@ interface ToggleProps {
   exclusive?: boolean;
 }
 
-/** TanStack Form-bound toggle group - wires a string field to an exclusive (or multi) toggle. */
+/** Exclusive groups hold one string; `exclusive={false}` holds a string array. */
 export function Toggle(props: ToggleProps): ReactElement {
   const { label, options, exclusive = true } = props;
-  const field = useFieldContext<string>();
+  const field = useFieldContext<string | string[]>();
 
   return (
     <Stack spacing={0.5}>
@@ -27,8 +27,11 @@ export function Toggle(props: ToggleProps): ReactElement {
         size="small"
         exclusive={exclusive}
         value={field.state.value ?? ""}
-        onChange={(_, v) => {
-          if (exclusive ? v !== null : v.length > 0) field.handleChange(v);
+        onChange={(_, v: string | string[] | null) => {
+          // Never leave a group empty: a click on the last selected button is ignored.
+          if (v !== null && v.length > 0) {
+            field.handleChange(v);
+          }
         }}
       >
         {options.map((o) => (

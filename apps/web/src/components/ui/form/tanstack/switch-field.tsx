@@ -9,7 +9,6 @@ interface SwitchProps {
   disabled?: boolean;
 }
 
-/** TanStack Form-bound switch - wires a boolean field's value and change handler. */
 export function Switch(props: SwitchProps): ReactElement {
   const { label, disabled } = props;
   const field = useFieldContext<boolean>();

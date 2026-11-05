@@ -32,7 +32,7 @@ export const WorkAuthSection = withForm({
         </form.AppField>
         <form.AppField name="preferredLocations">
           {(field) => (
-            <field.Multiselect
+            <field.MultiSelect
               label="Preferred locations"
               placeholder="Type a city and press Enter"
             />

@@ -6,6 +6,7 @@ import { Stack, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
+import { EntryTextField } from "./entry-text-field";
 import { TagInput } from "./tag-input";
 
 interface ProjectsSectionProps {
@@ -33,22 +34,8 @@ export function ProjectsSection(props: ProjectsSectionProps): ReactElement {
       renderEntry={(entry, onUpdate) => (
         <Stack spacing={1.5}>
           <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Name"
-                value={entry.name}
-                onChange={(e) => onUpdate({ ...entry, name: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="URL"
-                value={entry.url ?? ""}
-                onChange={(e) => onUpdate({ ...entry, url: e.target.value })}
-              />
-            </Grid>
+            <EntryTextField entry={entry} field="name" label="Name" onUpdate={onUpdate} />
+            <EntryTextField entry={entry} field="url" label="URL" onUpdate={onUpdate} />
             <Grid size={{ xs: 6, sm: 3 }}>
               <TextField
                 fullWidth
@@ -59,23 +46,20 @@ export function ProjectsSection(props: ProjectsSectionProps): ReactElement {
                 onChange={(e) => onUpdate({ ...entry, start: e.target.value })}
               />
             </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <TextField
-                fullWidth
-                label="End"
-                placeholder="Present"
-                value={entry.end ?? ""}
-                onChange={(e) => onUpdate({ ...entry, end: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Description"
-                value={entry.description ?? ""}
-                onChange={(e) => onUpdate({ ...entry, description: e.target.value })}
-              />
-            </Grid>
+            <EntryTextField
+              entry={entry}
+              field="end"
+              label="End"
+              placeholder="Present"
+              width={3}
+              onUpdate={onUpdate}
+            />
+            <EntryTextField
+              entry={entry}
+              field="description"
+              label="Description"
+              onUpdate={onUpdate}
+            />
             <Grid size={{ xs: 12 }}>
               <TagInput
                 label="Keywords"

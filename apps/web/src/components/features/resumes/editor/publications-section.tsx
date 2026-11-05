@@ -5,6 +5,7 @@ import type { ResumePublication } from "@jobpilot/contracts/resume";
 import { Stack, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { EntryList } from "./entry-list";
+import { EntryTextField } from "./entry-text-field";
 
 interface PublicationsSectionProps {
   value: ResumePublication[];
@@ -64,23 +65,14 @@ export function PublicationsSection(props: PublicationsSectionProps): ReactEleme
                 onChange={(e) => onUpdate({ ...entry, year: e.target.value })}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="DOI"
-                placeholder="10.1000/example"
-                value={entry.doi ?? ""}
-                onChange={(e) => onUpdate({ ...entry, doi: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="URL"
-                value={entry.url ?? ""}
-                onChange={(e) => onUpdate({ ...entry, url: e.target.value })}
-              />
-            </Grid>
+            <EntryTextField
+              entry={entry}
+              field="doi"
+              label="DOI"
+              placeholder="10.1000/example"
+              onUpdate={onUpdate}
+            />
+            <EntryTextField entry={entry} field="url" label="URL" onUpdate={onUpdate} />
           </Grid>
         </Stack>
       )}

@@ -2,10 +2,11 @@
 
 import type { ReactElement } from "react";
 import type { ResumeExperience } from "@jobpilot/contracts/resume";
-import { Stack, TextField } from "@mui/material";
+import { Stack } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
+import { EntryTextField } from "./entry-text-field";
 
 interface ExperienceSectionProps {
   value: ResumeExperience[];
@@ -35,48 +36,25 @@ export function ExperienceSection(props: ExperienceSectionProps): ReactElement {
       renderEntry={(entry, onUpdate) => (
         <Stack spacing={1.5}>
           <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Company"
-                value={entry.company}
-                onChange={(e) => onUpdate({ ...entry, company: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Title"
-                value={entry.title}
-                onChange={(e) => onUpdate({ ...entry, title: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Location"
-                value={entry.location ?? ""}
-                onChange={(e) => onUpdate({ ...entry, location: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <TextField
-                fullWidth
-                label="Start"
-                placeholder="Jan 2022"
-                value={entry.start}
-                onChange={(e) => onUpdate({ ...entry, start: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <TextField
-                fullWidth
-                label="End"
-                placeholder="Present"
-                value={entry.end ?? ""}
-                onChange={(e) => onUpdate({ ...entry, end: e.target.value })}
-              />
-            </Grid>
+            <EntryTextField entry={entry} field="company" label="Company" onUpdate={onUpdate} />
+            <EntryTextField entry={entry} field="title" label="Title" onUpdate={onUpdate} />
+            <EntryTextField entry={entry} field="location" label="Location" onUpdate={onUpdate} />
+            <EntryTextField
+              entry={entry}
+              field="start"
+              label="Start"
+              placeholder="Jan 2022"
+              width={3}
+              onUpdate={onUpdate}
+            />
+            <EntryTextField
+              entry={entry}
+              field="end"
+              label="End"
+              placeholder="Present"
+              width={3}
+              onUpdate={onUpdate}
+            />
           </Grid>
           <BulletListEditor
             label="Achievements"

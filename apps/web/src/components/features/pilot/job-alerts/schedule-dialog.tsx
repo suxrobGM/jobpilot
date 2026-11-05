@@ -83,7 +83,7 @@ export function ScheduleDialog(props: ScheduleDialogProps): ReactElement {
       </form.AppField>
       <form.AppField name="runTimes">
         {(field) => (
-          <field.Multiselect
+          <field.MultiSelect
             label="Run times"
             options={RUN_TIME_OPTIONS}
             freeSolo={false}
@@ -98,7 +98,7 @@ export function ScheduleDialog(props: ScheduleDialogProps): ReactElement {
       </form.AppField>
       <form.AppField name="extraSenderDomains">
         {(field) => (
-          <field.Multiselect
+          <field.MultiSelect
             label="Extra sender domains"
             placeholder="e.g. jobs.example.com"
             helperText="Press Enter to add a domain. Subdomains match too."

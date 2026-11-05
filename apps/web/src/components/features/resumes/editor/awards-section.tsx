@@ -5,6 +5,7 @@ import type { ResumeAward } from "@jobpilot/contracts/resume";
 import { Stack, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { EntryList } from "./entry-list";
+import { EntryTextField } from "./entry-text-field";
 
 interface AwardsSectionProps {
   value: ResumeAward[];
@@ -30,14 +31,7 @@ export function AwardsSection(props: AwardsSectionProps): ReactElement {
       renderEntry={(entry, onUpdate) => (
         <Stack spacing={1.5}>
           <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Title"
-                value={entry.title}
-                onChange={(e) => onUpdate({ ...entry, title: e.target.value })}
-              />
-            </Grid>
+            <EntryTextField entry={entry} field="title" label="Title" onUpdate={onUpdate} />
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth

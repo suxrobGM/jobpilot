@@ -20,7 +20,6 @@ interface SelectProps {
   helperText?: string;
 }
 
-/** TanStack Form-bound select - wires value/change/blur and validation errors to the field context. */
 export function Select(props: SelectProps): ReactElement {
   const { label, items, optional, emptyLabel = "- none -", disabled, helperText } = props;
   const field = useFieldContext<string | number>();

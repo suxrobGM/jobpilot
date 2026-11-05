@@ -19,7 +19,7 @@ export const BoardsSection = withForm({
       >
         <form.AppField name="boards">
           {(field) => (
-            <field.Multiselect
+            <field.MultiSelect
               label="Boards"
               options={domains}
               helperText="The pilot moves to the next board each cycle, so all of them get worked. Empty = whichever board each saved search was created with."
