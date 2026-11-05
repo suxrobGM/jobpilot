@@ -1,15 +1,16 @@
 "use client";
 
 import { type ReactElement, useEffect } from "react";
-import { Button, LinearProgress, Stack } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { campaignQueries, jobBoardQueries, userQueries } from "@/api/queries";
-import type { CreateCampaignRequest } from "@/api/types";
+import type { CampaignDto, CreateCampaignRequest, UserAggregateResponse } from "@/api/types";
 import { useLinkBoard } from "@/components/features/boards/use-link-board";
+import { DetailSkeleton } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
@@ -17,6 +18,7 @@ import { campaignHref } from "@/utils/routes";
 import { ApplyFields } from "./apply-fields";
 import { AutoApplyFields } from "./auto-apply-fields";
 import { CampaignBasicsFields } from "./campaign-basics-fields";
+import { SUBMIT_LABELS } from "./copy";
 import {
   type BoardOption,
   buildCreateCampaignRequest,
@@ -27,7 +29,6 @@ import {
   isResearch,
   isUpworkSearch,
   type RecentQuery,
-  SUBMIT_LABELS,
 } from "./form-config";
 import { NetworkingFields } from "./networking-fields";
 
@@ -40,15 +41,9 @@ interface CampaignComposerProps {
 
 export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const { defaultBoard } = props;
-  const router = useRouter();
-  const agent = useAgent();
-
   const boardsQuery = useQuery(jobBoardQueries.list());
   const profileQuery = useQuery(userQueries.detail());
   const recentCampaignsQuery = useQuery(campaignQueries.list());
-
-  const linkedBoards = boardsQuery.data ?? [];
-
   // Upwork is picker-only, so /upwork's "Find jobs" presets a board most profiles have not
   // linked. Offer it from the catalog instead of falling back to the first linked board.
   const catalogQuery = useQuery({
@@ -57,6 +52,35 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     staleTime: 10 * 60_000,
   });
 
+  // The form takes its defaults once, so it mounts only after the data they come from.
+  if (boardsQuery.isPending || profileQuery.isPending || (defaultBoard && catalogQuery.isPending)) {
+    return <DetailSkeleton heights={[480]} />;
+  }
+
+  return (
+    <ComposerForm
+      defaultBoard={defaultBoard}
+      linkedBoards={boardsQuery.data ?? []}
+      catalogBoards={catalogQuery.data ?? []}
+      profile={profileQuery.data ?? null}
+      recentCampaigns={recentCampaignsQuery.data?.items ?? []}
+    />
+  );
+}
+
+interface ComposerFormProps {
+  defaultBoard: string | undefined;
+  linkedBoards: BoardOption[];
+  catalogBoards: BoardOption[];
+  profile: UserAggregateResponse | null;
+  recentCampaigns: CampaignDto[];
+}
+
+function ComposerForm(props: ComposerFormProps): ReactElement {
+  const { defaultBoard, linkedBoards, catalogBoards, profile, recentCampaigns } = props;
+  const router = useRouter();
+  const agent = useAgent();
+
   const createCampaign = useApiMutation((body: CreateCampaignRequest) => api.campaigns.post(body), {
     invalidate: [campaignQueries.all],
   });
@@ -64,17 +88,17 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const linkBoard = useLinkBoard();
 
   // The catalog lists only boards this profile has not linked, so a hit here is always unlinked.
-  const presetCatalogBoard = (catalogQuery.data ?? []).find((b) => b.domain === defaultBoard);
+  const presetCatalogBoard = catalogBoards.find((b) => b.domain === defaultBoard);
 
   const boards: BoardOption[] = presetCatalogBoard
     ? [...linkedBoards, presetCatalogBoard]
     : linkedBoards;
 
-  const resumes = profileQuery.data?.resumes ?? [];
+  const resumes = profile?.resumes ?? [];
   // The user's own searches only: pilot feeds and pasted-link batches aren't queries to reuse.
   const recentByQuery = new Map<string, RecentQuery>();
 
-  for (const campaign of recentCampaignsQuery.data?.items ?? []) {
+  for (const campaign of recentCampaigns) {
     if (campaign.createdBy !== "user" || campaign.source === "apply") continue;
     if (recentByQuery.has(campaign.query)) continue;
     recentByQuery.set(campaign.query, { query: campaign.query, anywhere: campaign.board === null });
@@ -106,7 +130,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
       searchIn: defaultSearchIn,
       board: presetBoard ?? boards[0]?.domain ?? "",
       resumeId: resumes.find((r) => r.isPrimary)?.id ?? resumes[0]?.id ?? "",
-      minScore: profileQuery.data?.autoApply?.minMatchScore ?? COMPOSER_DEFAULT_VALUES.minScore,
+      minScore: profile?.autoApply?.minMatchScore ?? COMPOSER_DEFAULT_VALUES.minScore,
     },
     validators: { onSubmit: composerFormSchema },
     onSubmit: async ({ value }) => {
@@ -141,10 +165,6 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
       form.setFieldValue("mode", "search");
     }
   }, [isUpwork, mode, form]);
-
-  if (boardsQuery.isLoading || catalogQuery.isLoading || profileQuery.isLoading) {
-    return <LinearProgress />;
-  }
 
   return (
     <SectionCard>

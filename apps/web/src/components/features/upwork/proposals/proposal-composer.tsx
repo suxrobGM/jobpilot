@@ -13,19 +13,14 @@ import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
 
-interface FormValues {
-  jobTitle: string;
-  clientName: string;
-  jobUrl: string;
-  jobDescription: string;
-}
-
 const formSchema = z.object({
   jobTitle: z.string().trim().min(2, "Enter a job title"),
   clientName: z.string(),
   jobUrl: z.string(),
   jobDescription: z.string().trim().min(20, "Paste the job description"),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function ProposalComposer(): ReactElement {
   const router = useRouter();

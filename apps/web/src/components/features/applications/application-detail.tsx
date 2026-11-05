@@ -137,6 +137,8 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
       </PageShell>
 
       <StatusTransitionDialog
+        // Remounts after each change, so the form starts from the new status.
+        key={app.status}
         open={statusDialogOpen}
         currentStatus={app.status}
         onClose={() => setStatusDialogOpen(false)}

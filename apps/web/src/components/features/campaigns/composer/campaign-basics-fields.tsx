@@ -4,14 +4,13 @@ import { Chip, Stack, Tooltip, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import type { UserAggregateResponse } from "@/api/types";
 import { withForm } from "@/components/ui/form/tanstack";
+import { MODE_DESCRIPTIONS, UPWORK_MODE_DESCRIPTION } from "./copy";
 import {
   type BoardOption,
   COMPOSER_DEFAULT_VALUES,
   isResearch,
   isUpworkSearch,
-  MODE_DESCRIPTIONS,
   type RecentQuery,
-  UPWORK_MODE_DESCRIPTION,
 } from "./form-config";
 
 interface SourceCopy {

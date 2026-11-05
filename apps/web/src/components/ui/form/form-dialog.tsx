@@ -55,16 +55,17 @@ export function FormDialogShell(props: FormDialogShellProps): ReactElement {
 interface FormDialogFormApi {
   handleSubmit: () => Promise<void>;
   AppForm: ComponentType<PropsWithChildren>;
-  SubmitButton: ComponentType<{ children: ReactNode; disabled?: boolean }>;
+  SubmitButton: ComponentType<{ children: ReactNode; loading?: boolean }>;
 }
 
 interface FormDialogProps extends Omit<FormDialogShellProps, "onSubmit" | "submit"> {
   form: FormDialogFormApi;
   submitting?: boolean;
+  submitLabel?: string;
 }
 
 export function FormDialog(props: FormDialogProps): ReactElement {
-  const { form, submitting, ...shell } = props;
+  const { form, submitting, submitLabel = "Save", ...shell } = props;
 
   return (
     <FormDialogShell
@@ -74,7 +75,7 @@ export function FormDialog(props: FormDialogProps): ReactElement {
       }}
       submit={
         <form.AppForm>
-          <form.SubmitButton disabled={submitting}>Save</form.SubmitButton>
+          <form.SubmitButton loading={submitting}>{submitLabel}</form.SubmitButton>
         </form.AppForm>
       }
     />
