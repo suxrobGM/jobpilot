@@ -5,6 +5,7 @@ import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
+import type { CampaignDetailDto } from "@/api/types";
 import { NetworkingBoard, NetworkingMessagesTable } from "@/components/features/networking";
 import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
@@ -16,11 +17,15 @@ import { CampaignSummaryTiles } from "./detail/summary-tiles";
 
 interface CampaignDetailProps {
   campaignId: string;
+  initialCampaign: CampaignDetailDto | null;
 }
 
 export function CampaignDetail(props: CampaignDetailProps): ReactElement {
-  const { campaignId } = props;
-  const detail = useQuery(campaignQueries.detail(campaignId));
+  const { campaignId, initialCampaign } = props;
+  const detail = useQuery({
+    ...campaignQueries.detail(campaignId),
+    initialData: initialCampaign ?? undefined,
+  });
 
   const detailKey = campaignQueries.detail(campaignId).queryKey;
   const jobKeys = [
@@ -97,8 +102,12 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   );
 }
 
+interface CampaignOutreachProps {
+  campaignId: string;
+}
+
 /** Its own component so the drafts are fetched only by the campaigns that have any. */
-function CampaignOutreach(props: CampaignDetailProps): ReactElement {
+function CampaignOutreach(props: CampaignOutreachProps): ReactElement {
   const { campaignId } = props;
   const messages = useQuery(campaignQueries.networking(campaignId));
 

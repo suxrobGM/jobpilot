@@ -1,4 +1,4 @@
-import { type ReactElement, Suspense } from "react";
+import { cache, type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
@@ -10,11 +10,16 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-/** Only the tab title is server-fetched; a failed read just keeps the generic one. */
+/** Shared by the title and the client's initialData; a failed read leaves both to the client. */
+const getCampaign = cache(async (id: string) => {
+  const { data } = await api.campaigns({ id }).get(await getFetchOptions());
+  return data;
+});
+
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const { id } = await props.params;
-  const { data } = await api.campaigns({ id }).get(await getFetchOptions());
-  return { title: data?.query ?? "Campaign" };
+  const campaign = await getCampaign(id);
+  return { title: campaign?.query ?? "Campaign" };
 }
 
 export default function CampaignDetailPage(props: PageProps): ReactElement {
@@ -29,5 +34,5 @@ export default function CampaignDetailPage(props: PageProps): ReactElement {
 
 async function Campaign(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
-  return <CampaignDetail campaignId={id} />;
+  return <CampaignDetail campaignId={id} initialCampaign={await getCampaign(id)} />;
 }
