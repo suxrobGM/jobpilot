@@ -83,27 +83,27 @@ model UpworkProfile {
   userId String @unique @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  currentTitle      String? @map("current_title")
-  currentOverview   String? @map("current_overview")
-  currentHourlyRate String? @map("current_hourly_rate")
+  currentTitle      String?  @map("current_title")
+  currentOverview   String?  @map("current_overview")
+  currentHourlyRate String?  @map("current_hourly_rate")
   currentPortfolio  Json     @default("[]") @map("current_portfolio")
   currentSkills     String[] @default([]) @map("current_skills")
 
-  suggestedTitle      String? @map("suggested_title")
-  suggestedOverview   String? @map("suggested_overview")
-  suggestedHourlyRate String? @map("suggested_hourly_rate")
+  suggestedTitle      String?  @map("suggested_title")
+  suggestedOverview   String?  @map("suggested_overview")
+  suggestedHourlyRate String?  @map("suggested_hourly_rate")
   suggestedPortfolio  Json     @default("[]") @map("suggested_portfolio")
   suggestedSkills     String[] @default([]) @map("suggested_skills")
 
   status    UpworkProfileStatus @default(empty)
+  createdAt DateTime            @default(now()) @map("created_at")
   updatedAt DateTime            @updatedAt @map("updated_at")
   appliedAt DateTime?           @map("applied_at")
 
   @@map("upwork_profiles")
 }
 
-// The MCP runs in the user's local agent, so the browser cannot reach it. The
-// sync skill mirrors the account here and the web reads it like any other row.
+// Mirrored by the sync skill: the Upwork MCP runs in the local agent, out of the browser's reach.
 model UpworkAccount {
   id     String @id @default(uuid())
   userId String @unique @map("user_id")
@@ -112,13 +112,13 @@ model UpworkAccount {
   connectsBalance Int? @map("connects_balance")
 
   lastSyncedAt DateTime? @map("last_synced_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("upwork_accounts")
 }
 
-// `upworkId` is Upwork's own id and makes the sync idempotent; `raw` keeps the
-// payload so a later feature can read a field this model does not name yet.
+// `upworkId` keeps the sync idempotent; `raw` keeps the full payload for fields not modeled yet.
 model UpworkInboxItem {
   id     String @id @default(uuid())
   userId String @map("user_id")

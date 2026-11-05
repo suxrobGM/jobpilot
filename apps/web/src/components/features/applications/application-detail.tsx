@@ -120,7 +120,6 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               {app.campaignId && <LabelValue label="Campaign">{app.campaignId}</LabelValue>}
             </Stack>
             {app.matchReason && <LabelValue label="Match reason">{app.matchReason}</LabelValue>}
-            {app.failReason && <LabelValue label="Fail reason">{app.failReason}</LabelValue>}
           </Stack>
         </SectionCard>
 

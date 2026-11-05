@@ -25,9 +25,9 @@ model User {
   // deleting the account crypto-shreds them.
   wrappedDek    String?  @map("wrapped_dek")
 
-  username     String        @unique @map("username")
-  availability Availability? @map("availability")
-  // Opt-in, not opt-out: each stays off the public portfolio until the owner turns it on.
+  username     String        @unique
+  availability Availability?
+  // Off the public portfolio until the owner opts in.
   showResume   Boolean       @default(false) @map("show_resume")
   showWebsite  Boolean       @default(false) @map("show_website")
   showLinkedin Boolean       @default(false) @map("show_linkedin")
@@ -36,7 +36,7 @@ model User {
   // Applicant profile, filled at onboarding.
   firstName    String  @default("") @map("first_name")
   lastName     String  @default("") @map("last_name")
-  // Distinct from `email` (login); the contact address shown on applications.
+  // Goes on applications; `email` is the login.
   contactEmail String  @default("") @map("contact_email")
   phone        String?
   website      String?
@@ -50,11 +50,11 @@ model User {
   zipCode String? @map("zip_code")
   country String?
 
-  usAuthorized        Boolean @default(false) @map("us_authorized")
-  requiresSponsorship Boolean @default(false) @map("requires_sponsorship")
-  visaStatus          String? @map("visa_status")
-  optExtension        String? @map("opt_extension")
-  willingToRelocate   Boolean @default(false) @map("willing_to_relocate")
+  usAuthorized        Boolean  @default(false) @map("us_authorized")
+  requiresSponsorship Boolean  @default(false) @map("requires_sponsorship")
+  visaStatus          String?  @map("visa_status")
+  optExtension        String?  @map("opt_extension")
+  willingToRelocate   Boolean  @default(false) @map("willing_to_relocate")
   preferredLocations  String[] @default([]) @map("preferred_locations")
 
   eeoGender           String? @map("eeo_gender")

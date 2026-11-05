@@ -29,14 +29,30 @@ model SalaryPreference {
 }
 
 model AutoApplySettings {
-  id                         String @id @default(uuid())
-  userId                     String @unique @map("user_id")
-  user                       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  minMatchScore              Int    @default(60) @map("min_match_score")
-  maxApplicationsPerCampaign Int?   @map("max_applications_per_campaign")
-  defaultStartDate           String @default("2 weeks notice") @map("default_start_date")
+  id                         String   @id @default(uuid())
+  userId                     String   @unique @map("user_id")
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minMatchScore              Int      @default(60) @map("min_match_score")
+  maxApplicationsPerCampaign Int?     @map("max_applications_per_campaign")
+  defaultStartDate           String   @default("2 weeks notice") @map("default_start_date")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
 
   @@map("auto_apply_settings")
+}
+
+// Answers the user gave, never the model's guesses.
+model ProfileAnswer {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, key])
+  @@map("profile_answers")
 }
 
 enum SalaryPeriod {

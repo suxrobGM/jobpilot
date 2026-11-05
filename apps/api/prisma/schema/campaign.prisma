@@ -16,7 +16,7 @@ enum CampaignStatus {
   @@map("campaign_status")
 }
 
-// Who performed an action. Self-reported: every actor calls with the user's own PAT.
+// Self-reported: every actor calls with the user's own token.
 enum CampaignActor {
   user
   agent
@@ -39,10 +39,10 @@ model Campaign {
   updatedAt     DateTime       @updatedAt @map("updated_at")
   completedAt   DateTime?      @map("completed_at")
   config        Json           @default("{}")
-  // The board a search, auto-apply or networking campaign works; null for pasted links.
+  // Null for campaigns of pasted links.
   boardId       String?        @map("board_id")
   board         JobBoard?      @relation(fields: [boardId], references: [id], onDelete: SetNull)
-  // Discovery reuses a campaign by this id, not by query text: the pilot may rewrite a search's query.
+  // Discovery matches on this, not the query text: the pilot may rewrite the query.
   pilotSearchId String?        @map("pilot_search_id")
 
   jobs               Job[]

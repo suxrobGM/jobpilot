@@ -33,8 +33,7 @@ model ResumeVariant {
   applicationId String?      @map("application_id")
   application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
 
-  // Applications submitted with this variant; distinct from `application` above, which is the one
-  // application this variant was created for.
+  // Applications submitted with this variant; `application` is the one it was tailored for.
   usedByApplications Application[] @relation("ApplicationResumeUsed")
 
   content   Json

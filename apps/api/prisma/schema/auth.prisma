@@ -6,14 +6,13 @@ enum VerificationTokenType {
   @@map("verification_token_type")
 }
 
-// Single-use tokens for email verification and password reset. Hash-only; the raw value
-// travels once, in the emailed link.
+// Single-use emailed tokens. Stores only the hash.
 model VerificationToken {
   id         String                @id @default(uuid())
   userId     String                @map("user_id")
   type       VerificationTokenType
   tokenHash  String                @unique @map("token_hash")
-  // EMAIL_CHANGE only: the pending address, applied when the link is clicked.
+  // EMAIL_CHANGE only: the address to switch to.
   newEmail   String?               @map("new_email")
   expiresAt  DateTime              @map("expires_at")
   consumedAt DateTime?             @map("consumed_at")
@@ -39,14 +38,13 @@ model OAuthAccount {
   userId            String        @map("user_id")
   provider          OAuthProvider
   providerAccountId String        @map("provider_account_id")
-  // Provider-reported address at link time; informational only.
+  // The provider's address at link time; display only.
   email             String?
   createdAt         DateTime      @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  // One identity per provider per user - keeps link/unlink UI unambiguous.
   @@unique([userId, provider])
   @@map("oauth_accounts")
 }
@@ -58,8 +56,8 @@ enum AuthTokenKind {
   @@map("auth_token_kind")
 }
 
-// Every bearer credential: web sessions (the `session` cookie) and the local agent's terminal
-// token. Hash-only, except the terminal token's `tokenCipher` so the web can re-fetch it.
+// Web sessions and the terminal token. Hash-only, except `tokenCipher`, which lets the web
+// re-fetch the terminal token.
 model AuthToken {
   id          String        @id @default(uuid())
   userId      String        @map("user_id")

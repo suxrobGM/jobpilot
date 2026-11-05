@@ -21,6 +21,7 @@ model CoverLetter {
   content  String // plain text
 
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId, createdAt])
   @@index([applicationId])

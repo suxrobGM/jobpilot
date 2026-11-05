@@ -32,10 +32,8 @@ const campaignApplicationSchema = z.object({
   source: z.string(),
   appliedAt: z.date(),
   status: statusSchema,
-  rejectedAt: z.date().nullable(),
   matchScore: z.number().int().nullable(),
   matchReason: z.string().nullable(),
-  failReason: z.string().nullable(),
   campaignId: z.string().nullable(),
 });
 

@@ -43,8 +43,8 @@ model EmailOAuthClient {
   id           String   @id @default(uuid())
   userId       String   @unique @map("user_id")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clientId     String   @map("client_id") // plaintext (semi-public)
-  clientSecret String   @map("client_secret") // ciphertext (per-user DEK)
+  clientId     String   @map("client_id")
+  clientSecret String   @map("client_secret") // encrypted
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -80,10 +80,9 @@ model EmailMessage {
   verificationLink   String? @map("verification_link")
   verificationDomain String? @map("verification_domain")
 
-  // `[{url, text}]` for every link, captured at sync: rawBody drops hrefs, and a job-alert tracker
-  // URL means nothing without its anchor text.
-  links       Json      @default("[]")
-  // Set once the pilot has pulled this alert email's job links into a campaign.
+  // `[{url, text}]`, captured at sync: the body drops hrefs, and a tracker URL needs its anchor text.
+  links      Json      @default("[]")
+  // Set once the pilot imports this job-alert email's links.
   importedAt DateTime? @map("imported_at")
 
   // Provider message ids are unique per mailbox, not globally.
@@ -93,6 +92,6 @@ model EmailMessage {
   @@index([accountId, fromDomain, receivedAt])
   @@index([accountId, verificationDomain, receivedAt])
   @@index([matchedAppId])
-  @@index([receivedAt]) // Retention sweep; no other index leads with receivedAt.
+  @@index([receivedAt]) // Retention sweep.
   @@map("email_messages")
 }

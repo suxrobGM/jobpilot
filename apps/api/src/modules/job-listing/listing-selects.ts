@@ -33,7 +33,6 @@ export const DETAIL_SELECT = {
 export const ADMIN_SELECT = {
   ...SUMMARY_SELECT,
   status: true,
-  createdAt: true,
 } satisfies Prisma.JobListingSelect;
 
 interface SourceBoard {

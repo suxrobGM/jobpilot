@@ -53,7 +53,6 @@ export const jobListingSitemapSchema = z.array(
 
 export const adminJobListingSchema = jobListingSummarySchema.extend({
   status: jobListingStatusSchema,
-  createdAt: z.date(),
 });
 
 export const adminJobListingPageSchema = paginatedSchema(adminJobListingSchema);

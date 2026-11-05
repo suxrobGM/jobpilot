@@ -19,18 +19,17 @@ model JobListing {
   remote             Boolean  @default(false)
   salary             String?
   employmentType     String?  @map("employment_type")
-  skills             String[] @map("skills")
+  skills             String[]
   descriptionExcerpt String?  @map("description_excerpt")
-  // From the agent's brief. Empty until a posting is re-scraped - there is no backfill.
-  requirements       String[] @map("requirements")
-  responsibilities   String[] @map("responsibilities")
+  // From the agent's brief; older postings stay empty until re-scraped.
+  requirements       String[]
+  responsibilities   String[]
   yearsExperience    Int?     @map("years_experience")
 
   // Auto-published behind the ingest quality gate; admins hide after the fact.
   status      JobListingStatus @default(published)
   firstSeenAt DateTime         @default(now()) @map("first_seen_at")
   lastSeenAt  DateTime         @default(now()) @map("last_seen_at")
-  createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @updatedAt @map("updated_at")
 
   sources JobListingSource[]
