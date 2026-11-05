@@ -35,11 +35,13 @@ import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
+import { ResearchSection } from "./research-section";
 import { SearchesList } from "./searches-list";
 
 const NAV_ANCHORS: SectionAnchor[] = [
   { id: "goals", label: "Goals" },
   { id: "searches", label: "Searches" },
+  { id: "research", label: "Research" },
   { id: "limits", label: "Limits" },
   { id: "networking", label: "Networking" },
   { id: "boards", label: "Boards" },
@@ -149,6 +151,14 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
                 description="The pilot creates and maintains these from your goals - shown read-only."
               >
                 <SearchesList />
+              </FormSection>
+            </Box>
+            <Box data-section-id="research">
+              <FormSection
+                title="Research"
+                description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
+              >
+                <ResearchSection />
               </FormSection>
             </Box>
           </Stack>

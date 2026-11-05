@@ -20,6 +20,7 @@ export function PilotLive(): ReactNode {
   const refreshRuns = (): void => {
     refreshState();
     invalidate(queryKeys.pilot.jobAlerts());
+    invalidate(queryKeys.pilot.research());
   };
 
   const status = useSseChannel(pilotChannel, null, {

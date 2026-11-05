@@ -229,6 +229,10 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.jobAlerts(),
     queryFn: () => api.pilot["job-alerts"].get(),
   }),
+  research: () => ({
+    queryKey: queryKeys.pilot.research(),
+    queryFn: () => api.pilot.research.get(),
+  }),
   taskList: () => ({
     queryKey: queryKeys.pilot.taskList(),
     queryFn: async () => {

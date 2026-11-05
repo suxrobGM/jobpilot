@@ -125,6 +125,7 @@ export const queryKeys = {
     // Mount-fetch + manual refresh only; PilotLive never invalidates this key (building the task list is costly).
     taskList: () => [...queryKeys.pilot.all, "task-list"] as const,
     jobAlerts: () => [...queryKeys.pilot.all, "job-alerts"] as const,
+    research: () => [...queryKeys.pilot.all, "research"] as const,
     journalAll: () => [...queryKeys.pilot.all, "journal"] as const,
     journal: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.pilot.journalAll(), filters] as const,

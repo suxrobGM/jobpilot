@@ -91,7 +91,7 @@ export function AgentList(props: AgentListProps): ReactElement {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(5, 1fr)" },
+          gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", lg: "repeat(6, 1fr)" },
           gap: 1,
         }}
       >

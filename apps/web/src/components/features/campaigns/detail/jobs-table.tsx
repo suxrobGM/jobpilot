@@ -2,12 +2,13 @@
 
 import type { ReactElement } from "react";
 import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
-import { Button, Link } from "@mui/material";
+import { Button, Link, Stack } from "@mui/material";
 import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import type { CampaignJobDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
 import type { GridPaginationProps } from "@/hooks/use-pagination";
 import { CampaignJobStatusChip } from "../campaign-status-chip";
+import { CapExemptChip } from "./cap-exempt-chip";
 
 /** Statuses that can still be applied to from the campaigns detail page. */
 function isApplicable(status: CampaignJobStatus): boolean {
@@ -60,9 +61,12 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       flex: 1.4,
       minWidth: 200,
       renderCell: (p) => (
-        <Link href={p.row.url} target="_blank" rel="noopener noreferrer" color="inherit">
-          {p.row.title}
-        </Link>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center", height: "100%" }}>
+          <Link href={p.row.url} target="_blank" rel="noopener noreferrer" color="inherit" noWrap>
+            {p.row.title}
+          </Link>
+          <CapExemptChip job={p.row} />
+        </Stack>
       ),
     },
     { field: "company", headerName: "Company", flex: 1, minWidth: 160 },
