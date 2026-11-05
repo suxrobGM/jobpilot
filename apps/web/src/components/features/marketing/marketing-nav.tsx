@@ -5,6 +5,7 @@ import { Menu as MenuIcon } from "@mui/icons-material";
 import { Box, Container, Drawer, IconButton, Link, Stack } from "@mui/material";
 import type { Route } from "next";
 import { LinkButton } from "@/components/ui/buttons";
+import { GITHUB_URL } from "@/lib/constants";
 import { BrandMark } from "./brand-mark";
 import { MARKETING_NAV_HEIGHT, marketingLinkSx } from "./marketing-link-sx";
 
@@ -20,7 +21,7 @@ const NAV_LINKS: NavLink[] = [
   { href: "/leaderboard" as Route, label: "Leaderboard" },
   { href: "/docs" as Route, label: "Docs" },
   { href: "/#how-it-works" as Route, label: "How it works" },
-  { href: "https://github.com/suxrobGM/jobpilot" as Route, label: "GitHub", external: true },
+  { href: GITHUB_URL as Route, label: "GitHub", external: true },
 ];
 
 const EXTERNAL_PROPS = { target: "_blank", rel: "noopener noreferrer" } as const;

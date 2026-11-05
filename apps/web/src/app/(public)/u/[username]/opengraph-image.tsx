@@ -1,10 +1,11 @@
 import { ImageResponse } from "next/og";
 import { api } from "@/api/client";
 import { getPublicFetchOptions } from "@/api/server";
-import { markDataUri } from "@/components/brand/mark-svg";
-import { accent, feedback, surfaces, textColors } from "@/theme/palette";
+import { OG_SIZE, OgFrame } from "@/components/seo/og-frame";
+import { SITE_HOST } from "@/lib/constants";
+import { accent, textColors } from "@/theme/palette";
 
-export const size = { width: 1200, height: 630 };
+export const size = OG_SIZE;
 export const contentType = "image/png";
 export const alt = "JobPilot portfolio";
 
@@ -12,7 +13,6 @@ interface OgProps {
   params: Promise<{ username: string }>;
 }
 
-// Satori renders this - inline styles only, no MUI/emotion, every multi-child div is flex.
 export default async function PortfolioOgImage(props: OgProps): Promise<ImageResponse> {
   const { username } = await props.params;
 
@@ -35,32 +35,21 @@ export default async function PortfolioOgImage(props: OgProps): Promise<ImageRes
   }
 
   return new ImageResponse(
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        backgroundColor: surfaces.base,
-        padding: 80,
-      }}
+    <OgFrame
+      markSize={56}
+      footer={
+        <>
+          <div style={{ display: "flex" }}>
+            {SITE_HOST}/u/{username}
+          </div>
+          {applications !== null && (
+            <div style={{ display: "flex", color: accent.primary }}>
+              {applications} applications tracked
+            </div>
+          )}
+        </>
+      }
     >
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: 10,
-          background: `linear-gradient(90deg, ${accent.primary}, ${feedback.warning}, ${accent.secondary})`,
-        }}
-      />
-      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        {/* biome-ignore lint/performance/noImgElement: this is a next/og data-URI SVG, not a Next <Image>. */}
-        <img width={56} height={56} src={markDataUri(56)} alt="" />
-        <div style={{ color: textColors.primary, fontSize: 34, fontWeight: 700 }}>JobPilot</div>
-      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div
           style={{
@@ -81,22 +70,7 @@ export default async function PortfolioOgImage(props: OgProps): Promise<ImageRes
           </div>
         )}
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          color: textColors.disabled,
-          fontSize: 24,
-        }}
-      >
-        <div style={{ display: "flex" }}>jobpilot.suxrobgm.net/u/{username}</div>
-        {applications !== null && (
-          <div style={{ display: "flex", color: accent.primary }}>
-            {applications} applications tracked
-          </div>
-        )}
-      </div>
-    </div>,
+    </OgFrame>,
     { ...size },
   );
 }
