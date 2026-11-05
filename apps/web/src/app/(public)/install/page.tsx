@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { InstallGuide } from "@/components/features/install";
-import { MarketingShell } from "@/components/features/marketing";
+import { MarketingMain } from "@/components/layout";
 
 export const ensureStatic = "navigation";
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function InstallPage(): ReactElement {
   return (
-    <MarketingShell maxWidth="md">
+    <MarketingMain maxWidth="md">
       <Stack spacing={4} sx={{ paddingBlock: { md: 4 } }}>
         <Stack spacing={2}>
           <Typography variant="eyebrow" color="primary">
@@ -29,6 +29,6 @@ export default function InstallPage(): ReactElement {
         </Stack>
         <InstallGuide />
       </Stack>
-    </MarketingShell>
+    </MarketingMain>
   );
 }

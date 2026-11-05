@@ -3,7 +3,7 @@ import { api } from "@/api/client";
 import { DOCS_NAV } from "@/components/features/docs";
 import { jobsHref } from "@/components/features/jobs";
 import { SITE_URL } from "@/lib/constants";
-import { getSkillFacets, sitemapLandingViews } from "./jobs/landing-views";
+import { getSkillFacets, sitemapLandingViews } from "./(public)/jobs/landing-views";
 import { PUBLIC_ROUTES } from "./public-routes";
 
 /** Every published listing, so the job pages are discoverable rather than orphaned. */

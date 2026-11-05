@@ -7,8 +7,6 @@ import {
   Faq,
   Hero,
   LiveJobsStrip,
-  MarketingFooter,
-  MarketingNav,
   Pilot,
   ProductTour,
   ProofStrip,
@@ -30,8 +28,7 @@ const SOFTWARE_DESCRIPTION =
 
 export default function LandingPage(): ReactElement {
   return (
-    // overflowX clip: decorative glows/orbs must never widen the page on mobile.
-    <Box sx={{ minHeight: "100vh", backgroundColor: "surfaces.base", overflowX: "clip" }}>
+    <>
       <JsonLd
         data={[
           organizationLd(),
@@ -40,7 +37,6 @@ export default function LandingPage(): ReactElement {
           faqPageLd(FAQ_ITEMS),
         ]}
       />
-      <MarketingNav />
       <Box component="main">
         <Hero />
         <Teaser footer={<ProofStrip />} />
@@ -51,7 +47,6 @@ export default function LandingPage(): ReactElement {
         <Faq />
         <CtaBand />
       </Box>
-      <MarketingFooter />
-    </Box>
+    </>
   );
 }
