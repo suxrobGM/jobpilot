@@ -1,13 +1,11 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { Stop } from "@mui/icons-material";
-import { Box, Button, LinearProgress, Stack, Typography } from "@mui/material";
-import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { Box, LinearProgress, Stack, Typography } from "@mui/material";
+import { useApiQuery } from "@/api/hooks";
 import { campaignQueries, OPTIONS_PAGE } from "@/api/queries";
-import { invalidations } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
+import { PauseCampaignButton } from "@/components/features/campaigns/pause-campaign-button";
 import { LinkButton } from "@/components/ui/buttons";
 import { statusLabel } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
@@ -46,17 +44,13 @@ export function NowRunning(): ReactNode {
   );
 }
 
-function RunningRow(props: { campaign: CampaignDto }): ReactElement {
+interface RunningRowProps {
+  campaign: CampaignDto;
+}
+
+function RunningRow(props: RunningRowProps): ReactElement {
   const { campaign } = props;
   const p = progress(campaign);
-
-  const pause = useApiMutation(
-    () => api.campaigns({ id: campaign.id }).status.post({ status: "paused", actor: "user" }),
-    {
-      successMessage: "Campaign paused",
-      invalidate: invalidations.campaign,
-    },
-  );
 
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
@@ -79,16 +73,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
       <LinkButton size="small" variant="text" href={campaignHref(campaign.id)}>
         Open
       </LinkButton>
-      <Button
-        size="small"
-        variant="outlined"
-        color="warning"
-        startIcon={<Stop fontSize="sm" />}
-        disabled={pause.isPending}
-        onClick={() => pause.mutate()}
-      >
-        Stop
-      </Button>
+      <PauseCampaignButton campaignId={campaign.id} size="small" />
     </Stack>
   );
 }

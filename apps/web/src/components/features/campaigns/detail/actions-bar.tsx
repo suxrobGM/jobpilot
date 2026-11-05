@@ -2,15 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
-import {
-  Autorenew,
-  Delete,
-  DoneAll,
-  MoreVert,
-  Pause,
-  PlayArrow,
-  Replay,
-} from "@mui/icons-material";
+import { Autorenew, Delete, DoneAll, MoreVert, PlayArrow, Replay } from "@mui/icons-material";
 import { Button, IconButton, Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
@@ -21,6 +13,7 @@ import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/navigation"
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { COMPOSER_DEFAULT_VALUES } from "../composer/form-config";
+import { PauseCampaignButton } from "../pause-campaign-button";
 import { RescanDialog } from "./rescan-dialog";
 
 interface CampaignActionsBarProps {
@@ -47,7 +40,6 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const campaignResource = api.campaigns({ id: campaign.id });
 
-  const stop = useStatusMutation(campaign.id, "paused", "Campaign paused");
   const complete = useStatusMutation(campaign.id, "completed", "Campaign marked as done");
 
   const [rescanOpen, setRescanOpen] = useState(false);
@@ -160,17 +152,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-      {isInProgress && (
-        <Button
-          variant="outlined"
-          color="warning"
-          startIcon={<Pause fontSize="sm" />}
-          onClick={() => stop.mutate()}
-          disabled={stop.isPending}
-        >
-          Stop
-        </Button>
-      )}
+      {isInProgress && <PauseCampaignButton campaignId={campaign.id} />}
       {isStopped && agentAvailable && (
         <Button variant="contained" startIcon={<PlayArrow fontSize="sm" />} onClick={handleResume}>
           Resume

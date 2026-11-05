@@ -1,9 +1,10 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { Button, Slider, Typography } from "@mui/material";
+import { Button, Typography } from "@mui/material";
 import { FormDialogShell } from "@/components/ui/form";
 import { plural } from "@/utils/format";
+import { MinScoreSlider } from "../min-score-slider";
 
 interface RescanDialogProps {
   open: boolean;
@@ -27,7 +28,7 @@ export function RescanDialog(props: RescanDialogProps): ReactElement {
       onClose={onClose}
       onSubmit={() => onConfirm(minScore)}
       submit={
-        <Button type="submit" variant="contained" disabled={pending}>
+        <Button type="submit" variant="contained" loading={pending}>
           Rescan
         </Button>
       }
@@ -37,16 +38,7 @@ export function RescanDialog(props: RescanDialogProps): ReactElement {
         eligible ones to <strong>approved</strong> - apply them from the jobs list or with Re-apply
         selected. Lower the threshold to recover jobs dropped just below the cutoff.
       </Typography>
-      <Typography variant="body2">Min match score: {minScore}</Typography>
-      <Slider
-        value={minScore}
-        min={0}
-        max={100}
-        step={5}
-        marks
-        valueLabelDisplay="auto"
-        onChange={(_, v) => setMinScore(v as number)}
-      />
+      <MinScoreSlider value={minScore} onChange={setMinScore} />
     </FormDialogShell>
   );
 }
