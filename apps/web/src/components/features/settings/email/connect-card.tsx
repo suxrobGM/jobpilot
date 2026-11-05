@@ -13,11 +13,7 @@ import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
 import { MailboxReauthAlert } from "./mailbox-reauth-alert";
 
-/**
- * Step 2 - connect / reconnect / disconnect the mailbox (gated on a saved
- * client). Reads the mailbox status and client config (shared keys dedupe
- * with the OAuth client card).
- */
+/** Step 2: connect the mailbox, once step 1 has saved an OAuth client. */
 export function ConnectCard(): ReactElement {
   const confirm = useConfirm();
 

@@ -6,11 +6,7 @@ import { Chip, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { userQueries } from "@/api/queries";
 
-/**
- * Compact inline identity line for the campaign header - the active profile's name +
- * email, so a wrong-identity issue (e.g. the agent filling the wrong email) is
- * obvious at a glance.
- */
+/** The profile's name and email, so the agent using the wrong identity is obvious at a glance. */
 export function CampaignIdentityBanner(): ReactNode {
   const query = useQuery(userQueries.detail());
   const profile = query.data?.user;

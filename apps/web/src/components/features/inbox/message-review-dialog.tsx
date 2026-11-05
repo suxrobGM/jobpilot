@@ -26,8 +26,7 @@ interface MessageReviewDialogProps {
   onClose: () => void;
 }
 
-// Only classifications with a mapped status can be approved ("verification" /
-// "irrelevant" have none); derived from the shared classification→status map.
+// Only classifications that map to a status can be approved ("verification" and "irrelevant" don't).
 const STATUS_CLASSIFICATIONS = new Set(Object.keys(CLASSIFICATION_TO_STATUS));
 
 export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode {

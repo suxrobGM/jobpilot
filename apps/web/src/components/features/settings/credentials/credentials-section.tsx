@@ -11,7 +11,7 @@ import { credentialQueries } from "@/api/queries";
 import type { CredentialDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { ItemList, ItemRow } from "@/components/ui/display";
-import { EmptyState, LoadingSpinner } from "@/components/ui/feedback";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { CredentialFormDialog, PROVIDER_LABELS } from "./credential-form-dialog";
@@ -87,15 +87,20 @@ export function CredentialsSection(): ReactElement {
         </Button>
       }
     >
-      {credentials.isLoading ? (
-        <LoadingSpinner />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          variant="inline"
-          title="No credentials yet"
-          description="Add a default login, or one per board (e.g. LinkedIn)."
-        />
-      ) : (
+      <QuerySection
+        isLoading={credentials.isPending}
+        isError={credentials.isError}
+        onRetry={() => void credentials.refetch()}
+        errorTitle="Couldn't load your credentials."
+        isEmpty={rows.length === 0}
+        empty={
+          <EmptyState
+            variant="inline"
+            title="No credentials yet"
+            description="Add a default login, or one per board (e.g. LinkedIn)."
+          />
+        }
+      >
         <Stack spacing={3}>
           {groups
             .filter((group) => group.items.length > 0)
@@ -120,7 +125,7 @@ export function CredentialsSection(): ReactElement {
               </CredentialGroup>
             ))}
         </Stack>
-      )}
+      </QuerySection>
 
       <CredentialFormDialog
         open={dialogOpen}

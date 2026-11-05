@@ -47,7 +47,7 @@ export function ProfileMismatchCard(props: ProfileMismatchCardProps): ReactNode 
       <Stack spacing={0.5}>
         {mismatches.map((mismatch) => (
           <Typography key={mismatch.field} variant="body2">
-            <strong>{FIELD_LABELS[mismatch.field]}</strong> — resume says {mismatch.resume}, profile
+            <strong>{FIELD_LABELS[mismatch.field]}</strong> - resume says {mismatch.resume}, profile
             says {mismatch.profile}
           </Typography>
         ))}

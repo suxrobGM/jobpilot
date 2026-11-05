@@ -3,7 +3,7 @@ export { AuthFormSkeleton } from "./auth-form-skeleton";
 export { ConfirmEmailChangeView } from "./confirm-email-change-view";
 export { ForgotPasswordForm } from "./forgot-password-form";
 export { LoginForm } from "./login-form";
-export { LogoutMenuItem } from "./logout-button";
+export { LogoutMenuItem } from "./logout-menu-item";
 export { OAUTH_PROVIDERS, oauthStartUrl, resolveOauthReason } from "./oauth";
 export { RegisterForm } from "./register-form";
 export { ResetPasswordForm } from "./reset-password-form";

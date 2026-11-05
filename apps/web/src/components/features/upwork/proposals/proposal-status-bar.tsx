@@ -13,7 +13,6 @@ interface ProposalStatusBarProps {
   onChange: (patch: UpdateUpworkProposalRequest) => void;
 }
 
-/** Status chip + status/outcome selectors + last-updated stamp for a proposal. */
 export function ProposalStatusBar(props: ProposalStatusBarProps): ReactElement {
   const { proposal, onChange } = props;
   return (

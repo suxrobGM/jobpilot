@@ -85,11 +85,7 @@ export type CampaignMode = Extract<
 >;
 export type ComposerFormValues = z.infer<typeof composerFormSchema>;
 
-/**
- * Static defaults shared by the parent `useAppForm` and the `withForm` field
- * groups so their form types line up. The parent overlays runtime values
- * (first board, profile min-score) before mounting.
- */
+/** Shared with the `withForm` field groups so their form types line up with the parent's. */
 export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   mode: "search",
   query: "",
@@ -112,10 +108,7 @@ function isCap(value: number | null | undefined): value is number {
   return value != null && Number.isFinite(value);
 }
 
-/**
- * Whether the composer is set up to run Upwork's dedicated search skill. Apply never sources from
- * a board, so a board value left over from another mode must not hijack it into an Upwork search.
- */
+/** Upwork has its own search skill; a board left over from another mode must not trigger it. */
 export function isUpworkSearch(
   values: Pick<ComposerFormValues, "mode" | "board" | "searchIn">,
 ): boolean {

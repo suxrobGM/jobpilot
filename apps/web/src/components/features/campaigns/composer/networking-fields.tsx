@@ -43,8 +43,7 @@ export const NetworkingFields = withForm({
           </form.AppField>
         )}
 
-        {/* Cap only applies when sourcing from a board. Reuses the optional `maxApps`
-            field (empty = unlimited) → mapped to config.maxJobs in buildCampaignConfig. */}
+        {/* Reuses `maxApps` (empty = unlimited); buildCampaignConfig maps it to maxJobs. */}
         {usesBoard({ mode: "networking", board, searchIn }) && (
           <form.AppField name="maxApps">
             {(field) => (

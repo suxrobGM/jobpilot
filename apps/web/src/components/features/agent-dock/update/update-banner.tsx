@@ -70,6 +70,8 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
 
   const manualOnly = canUpdate === false;
 
+  const restarting = phase === "restarting";
+
   return (
     <Alert
       severity="info"
@@ -89,17 +91,19 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
           Agent update available - v{latest} (you have v{currentVersion}).
         </Typography>
 
-        {phase === "restarting" ? (
+        {restarting && (
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
             <CircularProgress size={14} />
             <Typography variant="captionMuted">Restarting the agent on v{latest}…</Typography>
           </Stack>
-        ) : manualOnly ? (
+        )}
+        {!restarting && manualOnly && (
           <>
             <Typography variant="captionMuted">In {providerLabel}:</Typography>
             <UpdateManualSteps provider={provider} />
           </>
-        ) : (
+        )}
+        {!restarting && !manualOnly && (
           <>
             <Typography variant="captionMuted">
               Updating restarts the agent and stops any running session.
@@ -107,14 +111,11 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
             <Button
               size="small"
               variant="contained"
-              disabled={phase === "updating"}
+              loading={phase === "updating"}
               onClick={() => void handleUpdate()}
-              startIcon={
-                phase === "updating" ? <CircularProgress size={14} color="inherit" /> : undefined
-              }
               sx={{ alignSelf: "flex-start" }}
             >
-              {phase === "updating" ? "Updating…" : "Update now"}
+              Update now
             </Button>
             {phase === "error" && (
               <Typography variant="captionMuted" color="error">

@@ -10,12 +10,7 @@ interface PaginationControlsProps {
   pagination: PageMeta;
 }
 
-/**
- * Self-contained pager for a server-rendered page, which fetches its own rows and so has no
- * {@link usePaginationParams} instance to hand down. Its fetch only re-runs on a real
- * navigation, hence `navigate`. Client components pass their setters to
- * {@link PaginationFooter} directly instead.
- */
+/** The pager for a server-rendered page, whose fetch only re-runs on a real navigation. */
 export function PaginationControls(props: PaginationControlsProps): ReactNode {
   const { pagination } = props;
   const { setPage, setPageSize } = usePaginationParams({ navigate: true });

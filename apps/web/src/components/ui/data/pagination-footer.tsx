@@ -12,13 +12,7 @@ interface PaginationFooterProps {
   onPageSizeChange?: (pageSize: number) => void;
 }
 
-/**
- * "Showing X–Y of Z", a rows-per-page selector, and a page selector. Consumes a
- * {@link usePaginationParams} result plus the server's page metadata.
- *
- * The summary stays visible on a single page - it carries the collection's total, which is the
- * one number a user still wants when everything fits.
- */
+/** The summary shows even on a single page: the total is still the number a user wants. */
 export function PaginationFooter(props: PaginationFooterProps): ReactNode {
   const { pagination, onPageChange, onPageSizeChange } = props;
   const { page, limit, total, totalPages } = pagination;

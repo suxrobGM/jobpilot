@@ -22,11 +22,7 @@ const shortScope = (scope: string): string => scope.split("/").pop() ?? scope;
 const CARD_DESCRIPTION =
   "JobPilot connects Gmail through your own Google OAuth app, so it needs no Google verification. Create one in Google Cloud, then paste its Client ID and secret here.";
 
-/**
- * Step 1 - the user's own Google OAuth app. Reads its config and the mailbox
- * status (shared keys dedupe with the connect card), then mounts the form
- * once data is present so initial values are correct.
- */
+/** Step 1: the user's own Google OAuth app. The form mounts once the saved config loads. */
 export function OAuthClientCard(): ReactElement {
   const config = useQuery(emailQueries.oauthClient());
   const status = useQuery(emailQueries.account());

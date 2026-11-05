@@ -12,22 +12,11 @@ export interface SectionAnchor {
 
 interface SectionAnchorNavProps {
   anchors: SectionAnchor[];
-  /**
-   * `rootMargin` for the intersection observer that detects which section is
-   * currently in view. Defaults to a top-heavy band that fires when the
-   * section's title crosses ~25% from the top of the viewport.
-   */
+  /** Observer band; the default fires as a section title crosses ~25% from the top. */
   rootMargin?: string;
 }
 
-/**
- * Sticky left-rail nav that highlights the section currently visible in the
- * scroll viewport. Pair with `<Box data-section-id={id}>` wrappers on each
- * target section. Clicking an anchor smooth-scrolls to its section.
- *
- * Hidden below the `lg` breakpoint to keep narrow viewports clean - the
- * sections themselves still render stacked.
- */
+/** Highlights the section in view; targets are `<Box data-section-id={id}>`. Hidden below `lg`. */
 export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
   const { anchors, rootMargin = "-25% 0px -65% 0px" } = props;
   const [activeId, setActiveId] = useState<string | null>(anchors[0]?.id ?? null);

@@ -6,6 +6,7 @@ import { Alert, Stack } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { authQueries } from "@/api/queries";
+import { PASSWORD_HINT } from "@/components/features/auth/password-hint";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useSession } from "@/hooks/use-auth";
@@ -72,7 +73,7 @@ export function ChangePasswordCard(): ReactElement {
                 label="New password"
                 type="password"
                 autoComplete="new-password"
-                helperText="8+ characters with an uppercase letter, a lowercase letter, a number, and a special character."
+                helperText={PASSWORD_HINT}
               />
             )}
           </form.AppField>

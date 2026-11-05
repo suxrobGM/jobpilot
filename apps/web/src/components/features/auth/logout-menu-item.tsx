@@ -10,11 +10,6 @@ interface LogoutMenuItemProps {
   onClick?: () => void;
 }
 
-/**
- * Sign-out control shaped as a `MenuItem`, intended to live inside the
- * profile-switcher `Menu` in the app rail. Calls `useAuthActions().logout`, which
- * clears the session cookie and routes to `/login`.
- */
 export function LogoutMenuItem(props: LogoutMenuItemProps): ReactElement {
   const { onClick } = props;
   const { logout } = useAuthActions();

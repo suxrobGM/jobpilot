@@ -27,11 +27,7 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
   // The public param stays `?tech=` so links shared before the skills rename keep working.
   const skills = parseTechParam(params.get("tech"));
 
-  /**
-   * Seeds the query from the live form, then applies the patch (`null` drops a key). Reading the
-   * form - not just `params` - is what keeps text the user typed but has not submitted when they
-   * toggle Remote or pick a skill.
-   */
+  // Reads the live form, not just `params`, so unsubmitted text survives a Remote toggle.
   const apply = (patch: Record<string, string | null> = {}): void => {
     const next = new URLSearchParams(params);
     const data = form.current ? new FormData(form.current) : null;

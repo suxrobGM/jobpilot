@@ -111,7 +111,6 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       width: 140,
       renderCell: (p) => <RelativeTime value={p.row.receivedAt} />,
     },
-    // Scan action is agent-driven; omit the whole column when no handler is passed.
     ...(onScanMessage
       ? [
           {
@@ -127,7 +126,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
                 size="small"
                 variant="outlined"
                 onClick={(e) => {
-                  // Don't open the review dialog (row click) when scanning.
+                  // The row click would open the review dialog.
                   e.stopPropagation();
                   onScanMessage(p.row);
                 }}

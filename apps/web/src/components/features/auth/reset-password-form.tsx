@@ -8,6 +8,7 @@ import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useToast } from "@/providers/toast-provider";
+import { PASSWORD_HINT } from "./password-hint";
 
 export function ResetPasswordForm(): ReactElement {
   const token = useSearchParams().get("token") ?? "";
@@ -60,7 +61,7 @@ export function ResetPasswordForm(): ReactElement {
               type="password"
               autoComplete="new-password"
               autoFocus
-              helperText="8+ characters with an uppercase letter, a lowercase letter, a number, and a special character."
+              helperText={PASSWORD_HINT}
             />
           )}
         </form.AppField>

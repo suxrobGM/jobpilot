@@ -18,7 +18,7 @@ interface SearchStatus {
 
 function searchStatus(search: PilotSearch): SearchStatus | null {
   if (search.emptyRuns >= BACKOFF_THRESHOLD) {
-    return { label: "coming up dry — backing off", color: "warning" };
+    return { label: "coming up dry - backing off", color: "warning" };
   }
   if (new Date(search.nextRunAt).getTime() <= Date.now()) {
     return { label: "due now", color: "info" };
@@ -90,7 +90,7 @@ export function SearchesList(): ReactElement {
       errorTitle="Couldn't load the pilot's searches."
       isEmpty={searches.length === 0}
       empty={
-        <EmptyState variant="inline" title="None yet — the pilot creates these from your goals." />
+        <EmptyState variant="inline" title="None yet - the pilot creates these from your goals." />
       }
     >
       <Stack spacing={1.5} divider={<Divider />}>

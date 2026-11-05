@@ -5,7 +5,8 @@ import { Button, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { leaderboardQueries } from "@/api/queries";
 import type { LeaderboardDto, LeaderboardRow, LeaderboardWindow } from "@/api/types";
-import { EmptyState } from "@/components/ui/feedback";
+import { EmptyState, TableSkeleton } from "@/components/ui/feedback";
+import { plural } from "@/utils/format";
 import { LeaderboardList } from "./leaderboard-list";
 import { LeaderboardPodium } from "./leaderboard-podium";
 
@@ -71,7 +72,7 @@ export function LeaderboardView(props: LeaderboardViewProps): ReactElement {
           <Typography variant="body2Muted">
             {totalActive > rows.length
               ? `Top ${rows.length} of ${totalActive} people active ${WINDOW_SUFFIX[range]}`
-              : `${totalActive} ${totalActive === 1 ? "person" : "people"} active ${WINDOW_SUFFIX[range]}`}
+              : `${plural(totalActive, "person", "people")} active ${WINDOW_SUFFIX[range]}`}
           </Typography>
         )}
       </Stack>
@@ -111,15 +112,15 @@ function LeaderboardBody(props: LeaderboardBodyProps): ReactElement {
     );
   }
 
+  if (rows.length === 0 && loading) {
+    return <TableSkeleton />;
+  }
+
   if (rows.length === 0) {
     return (
       <EmptyState
-        title={loading ? "Loading" : "Nobody is on the board yet"}
-        description={
-          loading
-            ? "Fetching the leaderboard…"
-            : "Nobody has applied or sent a message in this window. Pick a longer one, or start applying yourself."
-        }
+        title="Nobody is on the board yet"
+        description="Nobody has applied or sent a message in this window. Pick a longer one, or start applying yourself."
       />
     );
   }
