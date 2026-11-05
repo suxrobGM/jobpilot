@@ -4,3 +4,5 @@ import type { api } from "@/api/client";
 export type ResearchStatusDto = Data<typeof api.pilot.research.get>;
 
 export type SavedAnswerDto = Data<(typeof api.pilot)["saved-answers"]["get"]>[number];
+
+export type SkipReason = Data<typeof api.pilot.stats.today.get>["skipReasons"][number]["reason"];

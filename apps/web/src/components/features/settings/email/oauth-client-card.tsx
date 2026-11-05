@@ -10,7 +10,7 @@ import { emailQueries } from "@/api/queries";
 import type { OAuthClientStatus } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipButton } from "@/components/ui/buttons";
-import { CopyField } from "@/components/ui/display";
+import { CopyField, LabelValue } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
@@ -115,21 +115,15 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
           </Typography>
         </Box>
 
-        <Box>
-          <Typography variant="overlineMuted" gutterBottom>
-            Redirect URI
-          </Typography>
+        <LabelValue label="Redirect URI">
           <CopyField
             value={config.redirectUri}
             copyMessage="Redirect URI copied"
             ariaLabel="Copy redirect URI"
           />
-        </Box>
+        </LabelValue>
 
-        <Box>
-          <Typography variant="overlineMuted" gutterBottom>
-            Scopes
-          </Typography>
+        <LabelValue label="Scopes">
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
             {config.scopes.map((scope) => (
               <Chip key={scope} label={shortScope(scope)} variant="outlined" />
@@ -139,7 +133,7 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
             gmail.readonly is a restricted scope, but works in your own Testing-mode project without
             a CASA audit.
           </Typography>
-        </Box>
+        </LabelValue>
 
         <Box
           component="form"

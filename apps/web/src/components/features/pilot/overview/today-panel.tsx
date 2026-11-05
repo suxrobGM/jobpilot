@@ -5,6 +5,7 @@ import { networkingMode, type PilotState } from "@jobpilot/contracts/pilot";
 import { LinearProgress, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
+import type { SkipReason } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 
@@ -33,8 +34,8 @@ function Meter(props: MeterProps): ReactElement {
   );
 }
 
-/** The API sends bucket slugs, so this stays the only copy of the wording. */
-const SKIP_LABELS: Record<string, string> = {
+// Keyed by the response enum, so a new API bucket fails the build here.
+const SKIP_LABELS: Record<SkipReason, string> = {
   sponsorship: "No visa sponsorship",
   citizenship: "Citizenship required",
   clearance: "Security clearance required",
@@ -79,9 +80,7 @@ function TodayOutcomes(props: TodayOutcomesProps): ReactNode {
       <Typography variant="captionMuted">{parts.join(" · ")}</Typography>
       {outcomes.skipReasons.slice(0, TOP_REASONS).map((row) => (
         <Stack key={row.reason} direction="row" sx={{ justifyContent: "space-between" }}>
-          <Typography variant="captionMuted">
-            {SKIP_LABELS[row.reason] ?? SKIP_LABELS.other}
-          </Typography>
+          <Typography variant="captionMuted">{SKIP_LABELS[row.reason]}</Typography>
           <Typography variant="captionMuted">{row.count}</Typography>
         </Stack>
       ))}
