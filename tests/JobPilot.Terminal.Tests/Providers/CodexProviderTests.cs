@@ -119,7 +119,7 @@ public sealed class CodexProviderTests : IDisposable
 
         var agents = Path.Combine(temp.Root, ".codex", "agents");
         Assert.Equal(["job-scorer.toml"], Directory.GetFiles(agents).Select(Path.GetFileName));
-        Assert.Contains("developer_instructions = \"Body\"", File.ReadAllText(Path.Combine(agents, "job-scorer.toml")));
+        Assert.Contains("developer_instructions = 'Body'", File.ReadAllText(Path.Combine(agents, "job-scorer.toml")));
     }
 
     [Fact]
@@ -141,11 +141,30 @@ public sealed class CodexProviderTests : IDisposable
             """;
 
         Assert.Equal(
-            "name = \"job-scorer\"\n"
-            + "description = \"Scores one posting for a campaign.\"\n"
-            + "developer_instructions = \"# Job Scorer\\n\\nSay \\u0022hi\\u0022.\"\n",
+            "name = 'job-scorer'\n"
+            + "description = 'Scores one posting for a campaign.'\n"
+            + "developer_instructions = '''\n# Job Scorer\n\nSay \"hi\".'''\n",
             CodexProvider.AgentToml(markdown));
         Assert.Null(CodexProvider.AgentToml("# No frontmatter"));
+    }
+
+    [Fact]
+    public void AgentToml_EscapesText_ALiteralStringCannotHold()
+    {
+        const string markdown = """
+            ---
+            name: job-scorer
+            description: The user's scorer
+            ---
+
+            Never write ''' here.
+            """;
+
+        Assert.Equal(
+            "name = 'job-scorer'\n"
+            + "description = '''The user's scorer'''\n"
+            + "developer_instructions = \"Never write \\u0027\\u0027\\u0027 here.\"\n",
+            CodexProvider.AgentToml(markdown));
     }
 
     [Fact]
