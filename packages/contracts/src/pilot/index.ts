@@ -1,4 +1,5 @@
 export * from "./answers";
+export * from "./change";
 export * from "./instructions";
 export * from "./job-alerts";
 export * from "./journal";

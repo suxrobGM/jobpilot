@@ -1,11 +1,6 @@
 "use client";
 
-import { type ReactElement, type ReactNode, useState } from "react";
-import {
-  NO_INSTRUCTIONS_CHANGE,
-  type PilotInstructionsChange,
-  type PilotInstructionsImpact,
-} from "@jobpilot/contracts/pilot";
+import { type ReactElement, useState } from "react";
 import {
   Button,
   Checkbox,
@@ -18,111 +13,87 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { LoadingSpinner } from "@/components/ui/feedback";
-import { formatRelativeTime, plural } from "@/utils/format";
+import { plural } from "@/utils/format";
+
+/** What the old goals left running, read when the user saves new ones. */
+export interface GoalsImpact {
+  searchNames: string[];
+  approvedJobs: number;
+}
+
+export interface GoalsRetirement {
+  rebuildSearches: boolean;
+  dropApprovedJobs: boolean;
+}
 
 interface GoalsChangeDialogProps {
-  open: boolean;
-  impact: PilotInstructionsImpact | null;
-  isLoading: boolean;
+  impact: GoalsImpact | null;
   saving: boolean;
-  onConfirm: (change: PilotInstructionsChange) => void;
+  onConfirm: (retire: GoalsRetirement) => void;
   onCancel: () => void;
 }
 
-const ALL_CHECKED: PilotInstructionsChange = {
-  rederiveSearches: true,
-  completeCampaigns: true,
-  dropApprovedJobs: true,
-};
-
-interface Option {
-  key: keyof PilotInstructionsChange;
-  label: string;
-  detail: ReactNode;
-}
-
-function options(impact: PilotInstructionsImpact): Option[] {
-  const list: Option[] = [];
-  if (impact.searches.length > 0) {
-    list.push({
-      key: "rederiveSearches",
-      label: `Re-derive ${plural(impact.searches.length, "search", "searches")} from the new goals`,
-      detail: impact.searches.map((s) => s.query).join(" · "),
-    });
-  }
-  if (impact.campaigns.length > 0) {
-    list.push({
-      key: "completeCampaigns",
-      label: `Complete ${plural(impact.campaigns.length, "campaign")} started under the old goals`,
-      detail: impact.campaigns.map((c) => c.query).join(" · "),
-    });
-  }
-  if (impact.approvedJobs > 0) {
-    list.push({
-      key: "dropApprovedJobs",
-      label: `Drop ${plural(impact.approvedJobs, "approved job")} not yet applied to`,
-      detail: impact.oldestApprovedAt
-        ? `Oldest found ${formatRelativeTime(impact.oldestApprovedAt)} ago.`
-        : null,
-    });
-  }
-  return list;
-}
-
-/** Searches, campaigns and approved jobs outlive a goals edit, so without this the pilot keeps the old plan. */
+/** Searches and approved jobs outlive a goals edit, so without this the pilot keeps the old plan. */
 export function GoalsChangeDialog(props: GoalsChangeDialogProps): ReactElement {
-  const { open, impact, isLoading, saving, onConfirm, onCancel } = props;
-  const [change, setChange] = useState<PilotInstructionsChange>(ALL_CHECKED);
-
-  const available = impact ? options(impact) : [];
+  const { impact, saving, onConfirm, onCancel } = props;
+  const [rebuildSearches, setRebuildSearches] = useState(true);
+  const [dropApprovedJobs, setDropApprovedJobs] = useState(true);
+  const searchCount = impact?.searchNames.length ?? 0;
+  const approvedJobs = impact?.approvedJobs ?? 0;
 
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
+    <Dialog open={impact !== null} onClose={onCancel} maxWidth="sm" fullWidth>
       <DialogTitle>Your goals changed</DialogTitle>
       <DialogContent>
-        {isLoading ? (
-          <LoadingSpinner py={3} />
-        ) : (
-          <Stack spacing={2}>
-            <DialogContentText>
-              The pilot keeps working from what it already set up. Pick what to retire alongside the
-              new goals.
-            </DialogContentText>
-            {available.map((option) => (
-              <Stack key={option.key} spacing={0.25}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={change[option.key]}
-                      onChange={(e) => setChange({ ...change, [option.key]: e.target.checked })}
-                    />
-                  }
-                  label={option.label}
+        <Stack spacing={2}>
+          <DialogContentText>
+            The pilot keeps working from what it already set up. Pick what to leave behind. You can
+            undo all of it from the Pilot page.
+          </DialogContentText>
+          {searchCount > 0 && (
+            <Stack spacing={0.25}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={rebuildSearches}
+                    onChange={(e) => setRebuildSearches(e.target.checked)}
+                  />
+                }
+                label={`Rebuild ${plural(searchCount, "search", "searches")} from the new goals`}
+              />
+              <Typography variant="captionMuted" sx={{ paddingInlineStart: 4 }}>
+                {impact?.searchNames.join(" · ")}
+              </Typography>
+            </Stack>
+          )}
+          {approvedJobs > 0 && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={dropApprovedJobs}
+                  onChange={(e) => setDropApprovedJobs(e.target.checked)}
                 />
-                {option.detail && (
-                  <Typography variant="captionMuted" sx={{ paddingInlineStart: 4 }}>
-                    {option.detail}
-                  </Typography>
-                )}
-              </Stack>
-            ))}
-          </Stack>
-        )}
+              }
+              label={`Drop ${plural(approvedJobs, "approved job")} that may no longer fit`}
+            />
+          )}
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel} disabled={saving}>
           Cancel
         </Button>
-        <Button onClick={() => onConfirm(NO_INSTRUCTIONS_CHANGE)} disabled={saving || isLoading}>
-          Save, keep everything
-        </Button>
         <Button
-          onClick={() => onConfirm(change)}
           variant="contained"
-          disabled={saving || isLoading}
+          loading={saving}
+          onClick={() =>
+            onConfirm({
+              rebuildSearches: searchCount > 0 && rebuildSearches,
+              dropApprovedJobs: approvedJobs > 0 && dropApprovedJobs,
+            })
+          }
         >
-          {saving ? "Saving" : "Save"}
+          Save
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { cursorPageSchema, cursorQuerySchema } from "../pagination";
+import { pilotChangeSchema } from "./change";
 import { pilotJournalEntrySchema } from "./journal";
 import { promotionSchema } from "./promotion";
 import { pilotQuestionSchema } from "./question";
@@ -44,6 +45,12 @@ const pilotThreadItemSchema = z.discriminatedUnion("type", [
     id: z.string(),
     at: z.date(),
     entry: pilotJournalEntrySchema,
+  }),
+  z.object({
+    type: z.literal("change"),
+    id: z.string(),
+    at: z.date(),
+    change: pilotChangeSchema,
   }),
   z.object({
     type: z.literal("note"),

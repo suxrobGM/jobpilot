@@ -1,10 +1,8 @@
 import {
-  type PilotInstructionsChange,
-  type PilotInstructionsImpact,
   type PilotState,
   pilotInstructionsConfigSchema,
   type RecordIdleCycleInput,
-  type UpdatePilotInstructionsInput,
+  type UpdatePilotSettingsInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
@@ -12,15 +10,11 @@ import { conflict } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
-import { publishCampaignStatus } from "@/modules/campaign/campaign.utils";
 import { recordCycle } from "./journal-entries";
 import { costByTaskType, countAppliedToday, countSentToday } from "./pilot.stats";
-import { SERVER_SKIP_REASONS } from "./skip-reasons";
 import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 import { taskTitle } from "./tasks/task-defs";
-
-const PILOT_CAMPAIGN = { createdBy: "pilot" } as const;
 
 /** Pilot state, instructions, and the stats and liveness reads. */
 @injectable()
@@ -95,49 +89,15 @@ export class PilotService {
     return this.toState(row);
   }
 
-  async instructionsImpact(userId: string): Promise<PilotInstructionsImpact> {
-    const [searches, campaigns, approved] = await Promise.all([
-      this.prisma.pilotSearch.findMany({
-        where: { userId },
-        orderBy: { createdAt: "asc" },
-        select: { id: true, query: true, reason: true },
-      }),
-      this.prisma.campaign.findMany({
-        where: { userId, ...PILOT_CAMPAIGN, status: "in_progress" },
-        orderBy: { startedAt: "asc" },
-        select: {
-          id: true,
-          query: true,
-          _count: { select: { jobs: { where: { status: "approved" } } } },
-        },
-      }),
-      this.prisma.campaignJob.aggregate({
-        where: { status: "approved", userId, campaign: { ...PILOT_CAMPAIGN } },
-        _count: { _all: true },
-        _min: { createdAt: true },
-      }),
-    ]);
-    return {
-      searches,
-      campaigns: campaigns.map(({ _count, ...campaign }) => ({
-        ...campaign,
-        approvedJobs: _count.jobs,
-      })),
-      approvedJobs: approved._count._all,
-      oldestApprovedAt: approved._min.createdAt,
-    };
-  }
-
-  async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
+  /** Settings outside goals and rules; the pilot reads them live, so nothing else moves. */
+  async updateSettings(userId: string, body: UpdatePilotSettingsInput) {
     const saved = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { instructionsGoals: true, instructionsConfig: true },
+      select: { instructionsConfig: true },
     });
-    const goalsChanged = (saved?.instructionsGoals ?? "") !== body.goals;
-    const { jobAlerts } = pilotInstructionsConfigSchema.parse(saved?.instructionsConfig ?? {});
+    const config = pilotInstructionsConfigSchema.parse(saved?.instructionsConfig ?? {});
     const instructions = {
-      instructionsGoals: body.goals,
-      instructionsConfig: toInputJson({ ...body.config, jobAlerts }),
+      instructionsConfig: toInputJson({ ...config, ...body }),
       instructionsUpdatedAt: new Date(),
       ...TASK_LIST_SNAPSHOT_RESET,
     };
@@ -146,62 +106,7 @@ export class PilotService {
       create: { userId, ...instructions },
       update: instructions,
     });
-    // Searches picked for the old goals all come due now, unless they are about to be deleted.
-    if (goalsChanged && !body.onChange.rederiveSearches) {
-      await this.prisma.pilotSearch.updateMany({
-        where: { userId },
-        data: { emptyRuns: 0, nextRunAt: new Date() },
-      });
-    }
-    await this.retire(userId, body.onChange);
     return this.publishState(row);
-  }
-
-  /** Retires what the user chose to leave behind with the old goals. */
-  private async retire(userId: string, change: PilotInstructionsChange) {
-    const writes = [];
-    if (change.rederiveSearches) {
-      writes.push(
-        this.prisma.pilotSearch.deleteMany({ where: { userId } }),
-        // The dampers would otherwise hold setup back a day and research a week.
-        this.prisma.pilotRun.deleteMany({
-          where: { userId, taskType: { in: ["search.setup", "research.explore"] } },
-        }),
-      );
-    }
-    if (change.dropApprovedJobs) {
-      writes.push(
-        this.prisma.campaignJob.updateMany({
-          where: { status: "approved", userId, campaign: { ...PILOT_CAMPAIGN } },
-          data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.goalsChanged },
-        }),
-      );
-    }
-    // Read first: updateMany returns no rows, and the campaign views need a status event per row.
-    const completing = change.completeCampaigns
-      ? await this.prisma.campaign.findMany({
-          where: { userId, ...PILOT_CAMPAIGN, status: "in_progress" },
-          select: { id: true, source: true },
-        })
-      : [];
-    if (completing.length > 0) {
-      writes.push(
-        this.prisma.campaign.updateMany({
-          where: {
-            id: { in: completing.map((campaign) => campaign.id) },
-            status: "in_progress",
-          },
-          data: {
-            status: "completed",
-            statusChangedBy: "user",
-            statusReason: "Goals changed.",
-            completedAt: new Date(),
-          },
-        }),
-      );
-    }
-    if (writes.length > 0) await this.prisma.$transaction(writes);
-    for (const campaign of completing) publishCampaignStatus(userId, campaign, "completed");
   }
 
   async start(userId: string) {

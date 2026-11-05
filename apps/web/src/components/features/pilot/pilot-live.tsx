@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
-import { pilotQueries } from "@/api/queries";
+import { pilotQueries, pipelineQueries } from "@/api/queries";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { refetchThread } from "./home/thread/thread-cache";
 import { prependJournalEntry, refetchJournal } from "./journal/journal-cache";
@@ -15,6 +15,7 @@ const RECONNECT_KEYS = [
   STATE_KEY,
   pilotQueries.questionsAll,
   pilotQueries.promotionsAll,
+  pilotQueries.changesAll,
   pilotQueries.searches().queryKey,
 ];
 
@@ -47,6 +48,14 @@ export function PilotLive(): ReactNode {
       "question.answered": () => invalidate([pilotQueries.questionsAll]),
       "promotion.created": () => invalidate([pilotQueries.promotionsAll]),
       "promotion.updated": () => invalidate([pilotQueries.promotionsAll]),
+      // A change can touch searches, answers and jobs as well as the state.
+      "change.updated": () =>
+        invalidate([
+          pilotQueries.changesAll,
+          pilotQueries.searches().queryKey,
+          pilotQueries.savedAnswers().queryKey,
+          pipelineQueries.all,
+        ]),
     },
     onReconnect: () => {
       refetchJournal(queryClient);

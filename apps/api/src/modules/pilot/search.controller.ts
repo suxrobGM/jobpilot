@@ -14,13 +14,11 @@ import { deletedResponseSchema } from "@/types/response";
 import { PilotSearchService } from "./search.service";
 
 const searches = container.get(PilotSearchService);
-const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pilotSearchController = new Elysia({ prefix: "/pilot", detail: { tags: ["Pilot"] } })
   .use(authGuard)
   .get("/searches", ({ user }) => searches.list(user.id), {
-    beforeHandle: limitTaskList,
     response: pilotSearchListSchema,
     detail: {
       summary: "List pilot searches",

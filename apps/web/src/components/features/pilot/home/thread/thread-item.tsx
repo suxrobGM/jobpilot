@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import type { PilotThreadItem } from "@jobpilot/contracts/pilot";
 import { PromotionDraftCard, PromotionSummary } from "../../attention/promotion-card";
 import { QuestionCard } from "../../attention/question-card";
+import { ChangeCard } from "../../changes/change-card";
 import { AskedRow } from "./asked-row";
 import { DigestCard } from "./digest-card";
 import { NoteRow } from "./note-row";
@@ -30,6 +31,8 @@ export function ThreadItem(props: ThreadItemProps): ReactElement {
       ) : (
         <PromotionSummary promotion={item.promotion} />
       );
+    case "change":
+      return <ChangeCard change={item.change} />;
     case "digest":
       return <DigestCard entry={item.entry} />;
     case "note":

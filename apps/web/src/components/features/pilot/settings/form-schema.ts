@@ -3,14 +3,11 @@ import {
   PILOT_LINKEDIN_AUTONOMY,
   type PilotState,
   pilotNetworkingSchema,
-  type UpdatePilotInstructionsInput,
+  type UpdatePilotSettingsInput,
 } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 
-export const instructionsFormSchema = z.object({
-  goals: z.string().trim().min(1, "Required"),
-  dailyApplyCap: z.number().int().min(0),
-  minScore: z.number().min(0).max(100),
+export const settingsFormSchema = z.object({
   checkIntervalMinutes: z.number().int().min(5),
   // Mirrors the config block so the section addresses its fields by their real path. Spelled out
   // rather than reusing pilotNetworkingSchema, whose defaults make every key optional on input.
@@ -30,23 +27,18 @@ export const instructionsFormSchema = z.object({
   ),
 });
 
-export type InstructionsFormValues = z.infer<typeof instructionsFormSchema>;
+export type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 /** Shared `defaultValues` the withForm sections type against; real values come from pilot state. */
-export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
-  goals: "",
-  dailyApplyCap: 10,
-  minScore: 60,
+export const SETTINGS_FORM_DEFAULTS: SettingsFormValues = {
   checkIntervalMinutes: 30,
   networking: pilotNetworkingSchema.parse({}),
   boards: [],
   promotionPlatforms: [],
 };
 
-export function toConfig(value: InstructionsFormValues): UpdatePilotInstructionsInput["config"] {
+export function toSettings(value: SettingsFormValues): UpdatePilotSettingsInput {
   return {
-    dailyApplyCap: value.dailyApplyCap,
-    minScore: value.minScore,
     checkIntervalMinutes: value.checkIntervalMinutes,
     boards: value.boards,
     networking: value.networking,
@@ -61,12 +53,9 @@ export function toConfig(value: InstructionsFormValues): UpdatePilotInstructions
   };
 }
 
-export function toFormValues(state: PilotState): InstructionsFormValues {
+export function toFormValues(state: PilotState): SettingsFormValues {
   const c = state.instructionsConfig;
   return {
-    goals: state.instructionsGoals,
-    dailyApplyCap: c.dailyApplyCap,
-    minScore: c.minScore,
     checkIntervalMinutes: c.checkIntervalMinutes,
     networking: { ...c.networking },
     boards: [...c.boards],

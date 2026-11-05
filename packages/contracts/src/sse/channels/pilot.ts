@@ -1,5 +1,6 @@
 import type {
   PILOT_RUN_OUTCOMES,
+  PilotChange,
   PilotJournalEntry,
   PilotQuestion,
   PilotState,
@@ -15,6 +16,7 @@ export type PilotEvent =
   | { type: "state.changed"; state: PilotState }
   | { type: "promotion.created"; promotion: Promotion }
   | { type: "promotion.updated"; promotion: Promotion }
+  | { type: "change.updated"; change: PilotChange }
   | { type: "run.started"; runId: string; taskType: TaskType }
   | { type: "run.finished"; runId: string; outcome: (typeof PILOT_RUN_OUTCOMES)[number] };
 

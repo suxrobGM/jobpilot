@@ -20,7 +20,6 @@ import { PersonalSection } from "./personal-section";
 import { toProfileFormValues } from "./profile-form-values";
 import { ReferencesSection } from "./references-section";
 import { SalarySection } from "./salary-section";
-import { SavedAnswersSection } from "./saved-answers-section";
 import { WorkAuthSection } from "./work-auth-section";
 
 export function ProfileSettingsForm(): ReactElement {
@@ -36,8 +35,6 @@ export function ProfileSettingsForm(): ReactElement {
   return (
     <Stack spacing={3}>
       <SettingsForm initialData={toProfileFormValues(query.data)} />
-      {/* Outside the form: saved answers save on their own, not with "Save settings". */}
-      <SavedAnswersSection />
     </Stack>
   );
 }

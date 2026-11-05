@@ -1,5 +1,6 @@
 import { cursorPage } from "@jobpilot/contracts/pagination";
 import type {
+  PilotChange,
   PilotJournalKind,
   PilotQuestion,
   PilotThreadItem,
@@ -13,6 +14,7 @@ import {
   type PilotRun as PilotRunModel,
   PrismaClient,
 } from "@/generated/prisma/client";
+import { toPilotChange } from "./changes/change-row";
 import { toJournalEntry } from "./journal-entries";
 import { toPilotQuestion } from "./question.service";
 import { taskTitle } from "./tasks/task-defs";
@@ -23,7 +25,7 @@ const THREAD_KINDS: PilotJournalKind[] = ["action", "digest", "system", "correct
 /** Runs closer together than this read as one sitting of work. */
 const WORK_GAP_MS = 20 * 60 * 1000;
 
-/** Questions and drafts per page; bounds the oldest page, which has no lower time bound. */
+/** Questions, drafts and changes per page; bounds the oldest page, which has no lower time bound. */
 const SIDE_ROWS_CAP = 100;
 
 type ThreadRunRow = Pick<
@@ -43,6 +45,7 @@ interface ThreadSources {
   runs: ThreadRunRow[];
   questions: PilotQuestion[];
   promotions: Promotion[];
+  changes: PilotChange[];
 }
 
 interface TimedRun {
@@ -133,6 +136,9 @@ export function buildThread(sources: ThreadSources): PilotThreadItem[] {
   for (const question of sources.questions) {
     items.push({ type: "question", id: question.id, at: question.createdAt, question });
   }
+  for (const change of sources.changes) {
+    items.push({ type: "change", id: change.id, at: change.createdAt, change });
+  }
   for (const promotion of sources.promotions) {
     items.push({ type: "promotion", id: promotion.id, at: promotion.createdAt, promotion });
   }
@@ -165,7 +171,7 @@ export class PilotThreadService {
     const createdAt = { lt: upper, gte: lower };
     const runIds = [...new Set(entries.flatMap((entry) => (entry.runId ? [entry.runId] : [])))];
 
-    const [runs, questions, promotions] = await Promise.all([
+    const [runs, questions, promotions, changes] = await Promise.all([
       runIds.length === 0
         ? []
         : this.prisma.pilotRun.findMany({
@@ -191,6 +197,11 @@ export class PilotThreadService {
         orderBy: { createdAt: "desc" },
         take: SIDE_ROWS_CAP,
       }),
+      this.prisma.pilotChange.findMany({
+        where: { userId, createdAt },
+        orderBy: { createdAt: "desc" },
+        take: SIDE_ROWS_CAP,
+      }),
     ]);
 
     const items = buildThread({
@@ -198,6 +209,7 @@ export class PilotThreadService {
       runs,
       questions: questions.map(toPilotQuestion),
       promotions,
+      changes: changes.map((row) => toPilotChange(row)),
     });
     return { items, nextCursor };
   }

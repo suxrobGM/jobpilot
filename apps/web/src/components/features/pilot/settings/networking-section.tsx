@@ -5,7 +5,7 @@ import { Alert, Grid } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
+import { SETTINGS_FORM_DEFAULTS } from "./form-schema";
 
 const AUTONOMY_LABELS = {
   off: "Off",
@@ -18,7 +18,7 @@ const autonomyItems = (modes: readonly (keyof typeof AUTONOMY_LABELS)[]) =>
   modes.map((value) => ({ value, label: AUTONOMY_LABELS[value] }));
 
 export const NetworkingSection = withForm({
-  defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
+  defaultValues: SETTINGS_FORM_DEFAULTS,
   render: function NetworkingSection({ form }) {
     const email = useSelector(form.store, (s) => s.values.networking.email);
     const linkedIn = useSelector(form.store, (s) => s.values.networking.linkedIn);

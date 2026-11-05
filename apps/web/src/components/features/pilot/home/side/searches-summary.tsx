@@ -22,9 +22,11 @@ export function SearchesSummary(): ReactElement {
           {searches.map((search) => (
             <Stack key={search.id} direction="row" spacing={1}>
               <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
-                {search.query}
+                {search.name}
               </Typography>
-              <Typography variant="body2Muted">{search.appliedThisWeek}</Typography>
+              <Typography variant="body2Muted">
+                {search.paused ? "paused" : search.appliedThisWeek}
+              </Typography>
             </Stack>
           ))}
         </Stack>

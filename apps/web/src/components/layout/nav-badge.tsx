@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { QuestionBadge } from "@/components/features/pilot/attention/question-badge";
+import { NeedsYouBadge } from "@/components/features/pilot/attention/needs-you-badge";
 import type { NavItem } from "./shell-config";
 
 interface NavBadgeProps extends PropsWithChildren {
@@ -9,8 +9,8 @@ interface NavBadgeProps extends PropsWithChildren {
 export function NavBadge(props: NavBadgeProps): ReactNode {
   const { badge, children } = props;
 
-  if (badge === "questions") {
-    return <QuestionBadge>{children}</QuestionBadge>;
+  if (badge === "needsYou") {
+    return <NeedsYouBadge>{children}</NeedsYouBadge>;
   }
   return children;
 }

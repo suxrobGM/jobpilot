@@ -1,7 +1,3 @@
-import {
-  pilotInstructionsChangeSchema,
-  pilotInstructionsConfigSchema,
-} from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { PilotService } from "./pilot.service";
 import { describe, expect, it } from "bun:test";
@@ -70,54 +66,6 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null, savedC
   };
   return { svc: new PilotService(db as unknown as PrismaClient), rec, runQueries, upserts };
 }
-
-describe("PilotService.updateInstructions", () => {
-  const body = (goals: string, onChange = {}) => ({
-    goals,
-    config: pilotInstructionsConfigSchema.omit({ jobAlerts: true }).parse({}),
-    onChange: pilotInstructionsChangeSchema.parse(onChange),
-  });
-
-  it("makes every search due when the goals change, and retires nothing unasked", async () => {
-    const { svc, rec } = stateService("old goals");
-    await svc.updateInstructions("p1", body("new goals"));
-    expect(rec).toEqual({
-      searchResets: 1,
-      searchDeletes: 0,
-      setupRunDeletes: 0,
-      campaignsCompleted: 0,
-      jobsDropped: 0,
-    });
-  });
-
-  it("leaves searches alone when the goals are unchanged", async () => {
-    const { svc, rec } = stateService("same goals");
-    await svc.updateInstructions("p1", body("same goals"));
-    expect(rec.searchResets).toBe(0);
-  });
-
-  it("clears the setup damper with the searches, or the re-derive waits a day", async () => {
-    const { svc, rec } = stateService("old goals");
-    await svc.updateInstructions("p1", body("new goals", { rederiveSearches: true }));
-    expect(rec).toMatchObject({ searchResets: 0, searchDeletes: 1, setupRunDeletes: 1 });
-  });
-
-  it("completes campaigns and drops the approved backlog when asked", async () => {
-    const { svc, rec } = stateService("old goals");
-    await svc.updateInstructions(
-      "p1",
-      body("new goals", { completeCampaigns: true, dropApprovedJobs: true }),
-    );
-    expect(rec).toMatchObject({ campaignsCompleted: 1, jobsDropped: 1 });
-  });
-
-  it("keeps the stored job-alert schedule, which only its own route edits", async () => {
-    const jobAlerts = { enabled: true, runHours: [9], timeZone: "America/Detroit" };
-    const { svc, upserts } = stateService("goals", null, { minScore: 80, jobAlerts });
-    await svc.updateInstructions("p1", body("goals"));
-    expect(upserts[0].update.instructionsConfig).toMatchObject({ minScore: 60, jobAlerts });
-  });
-});
 
 describe("PilotService.getState", () => {
   it("reports the newest open, unexpired run as currentRun, or null", async () => {

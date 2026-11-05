@@ -4,15 +4,14 @@ import { type ReactElement, useState } from "react";
 import { Delete, Edit } from "@mui/icons-material";
 import { Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import type { SavedAnswerDto } from "@/api/types";
-import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { FormDialogShell, FormSection } from "@/components/ui/form";
 import { useConfirm } from "@/providers/confirm-provider";
+import { useMakeChange } from "../changes/use-changes";
 
 /** `start_date` → "Start date". */
 function answerLabel(key: string): string {
@@ -20,26 +19,15 @@ function answerLabel(key: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-export function SavedAnswersSection(): ReactElement {
+/** Answers the pilot reuses on every application; each edit is a change with Undo. */
+export function AnswersSection(): ReactElement {
   const confirm = useConfirm();
   const [editing, setEditing] = useState<SavedAnswerDto | null>(null);
 
   const query = useQuery(pilotQueries.savedAnswers());
 
-  const save = useApiMutation(
-    ({ key, value }: Pick<SavedAnswerDto, "key" | "value">) =>
-      api.pilot["saved-answers"]({ key }).put({ value }),
-    {
-      invalidate: [pilotQueries.savedAnswers().queryKey],
-      successMessage: "Answer saved.",
-      onSuccess: () => setEditing(null),
-    },
-  );
-
-  const remove = useApiMutation((key: string) => api.pilot["saved-answers"]({ key }).delete(), {
-    invalidate: [pilotQueries.savedAnswers().queryKey],
-    successMessage: "Answer deleted.",
-  });
+  const save = useMakeChange(() => setEditing(null));
+  const remove = useMakeChange();
 
   const handleDelete = async (answer: SavedAnswerDto): Promise<void> => {
     const confirmed = await confirm({
@@ -49,7 +37,10 @@ export function SavedAnswersSection(): ReactElement {
       destructive: true,
     });
     if (confirmed) {
-      remove.mutate(answer.key);
+      remove.mutate({
+        summary: `Forgot the answer to "${answerLabel(answer.key)}"`,
+        actions: [{ type: "answer.delete", key: answer.key }],
+      });
     }
   };
 
@@ -57,8 +48,8 @@ export function SavedAnswersSection(): ReactElement {
 
   return (
     <FormSection
-      title="Saved answers"
-      description="Answers to application questions that come up again, like start date or relocation. Applications fill them in instead of asking you. Edits save right away."
+      title="Standing answers"
+      description="Answers to application questions that come up again, like start date or sponsorship. The pilot fills them in instead of asking you."
     >
       <QuerySection
         query={query}
@@ -87,7 +78,12 @@ export function SavedAnswersSection(): ReactElement {
         <EditAnswerDialog
           answer={editing}
           saving={save.isPending}
-          onSave={(value) => save.mutate({ key: editing.key, value })}
+          onSave={(value) =>
+            save.mutate({
+              summary: `Saved the answer to "${answerLabel(editing.key)}"`,
+              actions: [{ type: "answer.set", key: editing.key, value }],
+            })
+          }
           onClose={() => setEditing(null)}
         />
       )}

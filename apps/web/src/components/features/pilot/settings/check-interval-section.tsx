@@ -2,10 +2,10 @@
 
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
+import { SETTINGS_FORM_DEFAULTS } from "./form-schema";
 
 export const CheckIntervalSection = withForm({
-  defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
+  defaultValues: SETTINGS_FORM_DEFAULTS,
   render: function CheckIntervalSection({ form }) {
     return (
       <FormSection title="Schedule">

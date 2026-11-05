@@ -1,8 +1,7 @@
 import {
-  pilotInstructionsImpactSchema,
   pilotStateSchema,
   recordIdleCycleSchema,
-  updatePilotInstructionsSchema,
+  updatePilotSettingsSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
@@ -30,21 +29,14 @@ export const pilotController = new Elysia({
       description: "Returns the user's Pilot state, creating it with defaults on first read.",
     },
   })
-  .get("/instructions/impact", ({ user }) => pilot.instructionsImpact(user.id), {
-    response: pilotInstructionsImpactSchema,
-    detail: {
-      summary: "Preview what an instructions edit leaves running",
-      description:
-        "Lists the searches, pilot campaigns and approved backlog an instructions edit would leave running, so the caller can choose what to retire.",
-    },
-  })
-  .put("/instructions", ({ user, body }) => pilot.updateInstructions(user.id, body), {
-    body: updatePilotInstructionsSchema,
+  .patch("/settings", ({ user, body }) => pilot.updateSettings(user.id, body), {
+    body: updatePilotSettingsSchema,
     beforeHandle: limitMutation,
     response: pilotStateSchema,
     detail: {
-      summary: "Update instructions",
-      description: "Replaces the Pilot's goals and operating config and returns the updated state.",
+      summary: "Update pilot settings",
+      description:
+        "Patches boards, check interval, networking and promotion. Goals and rules change through /pilot/changes; job alerts through their own route.",
     },
   })
   .post("/start", ({ user }) => pilot.start(user.id), {

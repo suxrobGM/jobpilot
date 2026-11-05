@@ -25,7 +25,7 @@ export interface NavItem {
   /** Shown only to admin and super_admin. Cosmetic - the API's requireRole is the real gate. */
   adminOnly?: boolean;
   /** Live attention badge on the icon: open pilot questions. */
-  badge?: "questions";
+  badge?: "needsYou";
   /** Gets its own tab on the mobile bottom nav; the rest fall into its "More" sheet. */
   primary?: boolean;
   /** Extra pathname prefixes that keep this item highlighted (e.g. detail routes living outside its href). */
@@ -41,7 +41,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Core",
     items: [
-      { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "questions", primary: true },
+      { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "needsYou", primary: true },
       { label: "Pipeline", href: "/pipeline", icon: ViewKanban, primary: true },
       { label: "Inbox", href: "/inbox", icon: Inbox, primary: true },
       { label: "Analytics", href: "/analytics", icon: Insights, primary: true },

@@ -37,37 +37,18 @@ export const pilotInstructionsConfigSchema = z.object({
   minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
   checkIntervalMinutes: z.number().int().min(5).default(30),
+  // Rules the pilot screens postings against; the server enforces only the cap and min score.
+  dealBreakers: z.array(z.string()).default([]),
   // `prefault`, not `default`: a missing key is parsed as `{}` so every nested field defaults too.
   networking: pilotNetworkingSchema.prefault({}),
   promotion: pilotPromotionConfigSchema.prefault({}),
   jobAlerts: pilotJobAlertsSchema.prefault({}),
 });
 
-/** What to retire from the old goals. Nothing by default, so the web asks before sending any. */
-export const pilotInstructionsChangeSchema = z.object({
-  // `search.setup` starts from scratch only once no searches exist, so deleting them re-derives.
-  rederiveSearches: z.boolean().default(false),
-  completeCampaigns: z.boolean().default(false),
-  dropApprovedJobs: z.boolean().default(false),
-});
-
-export const NO_INSTRUCTIONS_CHANGE: PilotInstructionsChange = pilotInstructionsChangeSchema.parse(
-  {},
-);
-
-export const updatePilotInstructionsSchema = z.object({
-  goals: z.string().trim().min(1, "Write the pilot's goals before saving."),
-  // The job-alert block has its own route; the server keeps the stored one.
-  config: pilotInstructionsConfigSchema.omit({ jobAlerts: true }),
-  onChange: pilotInstructionsChangeSchema.prefault({}),
-});
-
-export const pilotInstructionsImpactSchema = z.object({
-  searches: z.array(z.object({ id: z.uuid(), query: z.string(), reason: z.string() })),
-  campaigns: z.array(z.object({ id: z.uuid(), query: z.string(), approvedJobs: z.number().int() })),
-  approvedJobs: z.number().int(),
-  oldestApprovedAt: z.date().nullable(),
-});
+/** Everything outside goals and rules; job alerts keep their own route. */
+export const updatePilotSettingsSchema = pilotInstructionsConfigSchema
+  .pick({ boards: true, checkIntervalMinutes: true, networking: true, promotion: true })
+  .partial();
 
 export const pilotStateSchema = z.object({
   userId: z.uuid(),
@@ -90,9 +71,7 @@ export const pilotStateSchema = z.object({
 });
 
 export type PilotInstructionsConfig = z.infer<typeof pilotInstructionsConfigSchema>;
-export type PilotInstructionsChange = z.infer<typeof pilotInstructionsChangeSchema>;
-export type PilotInstructionsImpact = z.infer<typeof pilotInstructionsImpactSchema>;
-export type UpdatePilotInstructionsInput = z.infer<typeof updatePilotInstructionsSchema>;
+export type UpdatePilotSettingsInput = z.infer<typeof updatePilotSettingsSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;
 
 export function channelAutonomy(

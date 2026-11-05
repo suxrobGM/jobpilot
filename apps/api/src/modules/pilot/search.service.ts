@@ -80,7 +80,7 @@ export class PilotSearchService {
   }
 
   async list(userId: string, now = new Date()) {
-    const [searches, applied] = await Promise.all([
+    const [searches, applied, paused] = await Promise.all([
       this.prisma.pilotSearch.findMany({
         where: { userId },
         include: SEARCH_INCLUDE,
@@ -94,13 +94,23 @@ export class PilotSearchService {
         },
         select: { campaign: { select: { pilotSearchId: true } } },
       }),
+      // A search is paused through its standing campaign, which discovery skips.
+      this.prisma.campaign.findMany({
+        where: { userId, status: "paused", pilotSearchId: { not: null } },
+        select: { pilotSearchId: true },
+      }),
     ]);
+    const pausedIds = new Set(paused.map((campaign) => campaign.pilotSearchId));
     const counts = new Map<string, number>();
     for (const { campaign } of applied) {
       const searchId = campaign?.pilotSearchId;
       if (searchId) counts.set(searchId, (counts.get(searchId) ?? 0) + 1);
     }
-    return searches.map((search) => ({ ...search, appliedThisWeek: counts.get(search.id) ?? 0 }));
+    return searches.map((search) => ({
+      ...search,
+      appliedThisWeek: counts.get(search.id) ?? 0,
+      paused: pausedIds.has(search.id),
+    }));
   }
 
   async create(userId: string, input: CreatePilotSearchInput) {
@@ -109,6 +119,7 @@ export class PilotSearchService {
     const row = await this.prisma.pilotSearch.create({
       data: {
         userId,
+        name: input.name ?? input.query,
         query: input.query,
         boardId,
         resumeId: input.resumeId ?? null,
@@ -133,6 +144,7 @@ export class PilotSearchService {
       where: { id },
       include: SEARCH_INCLUDE,
       data: {
+        name: input.name,
         query: input.query,
         ...(input.board !== undefined && { boardId }),
         resumeId: input.resumeId,

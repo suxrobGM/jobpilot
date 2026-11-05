@@ -1,7 +1,9 @@
-import type { ReactElement } from "react";
+"use client";
+
+import { type ReactElement, useState } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { Typography } from "@mui/material";
-import { LinkButton } from "@/components/ui/buttons";
+import { Button, Dialog, DialogContent, DialogTitle, Typography } from "@mui/material";
+import { RulesForm } from "../../goals/rules-form";
 import { SideSection } from "./side-section";
 
 interface RulesSummaryProps {
@@ -10,17 +12,28 @@ interface RulesSummaryProps {
 
 export function RulesSummary(props: RulesSummaryProps): ReactElement {
   const { state } = props;
-  const { dailyApplyCap, minScore } = state.instructionsConfig;
+  const [editing, setEditing] = useState(false);
+  const { dailyApplyCap, minScore, dealBreakers } = state.instructionsConfig;
+
   return (
     <SideSection
       title="Rules"
       action={
-        <LinkButton href="/pilot/goals" size="small">
+        <Button size="small" onClick={() => setEditing(true)}>
           Edit
-        </LinkButton>
+        </Button>
       }
     >
       <Typography variant="body2">{`${dailyApplyCap} a day · score ${minScore}+`}</Typography>
+      {dealBreakers.length > 0 && (
+        <Typography variant="body2Muted">{`Skip: ${dealBreakers.join(", ")}`}</Typography>
+      )}
+      <Dialog open={editing} onClose={() => setEditing(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Rules</DialogTitle>
+        <DialogContent>
+          <RulesForm state={state} onSaved={() => setEditing(false)} />
+        </DialogContent>
+      </Dialog>
     </SideSection>
   );
 }

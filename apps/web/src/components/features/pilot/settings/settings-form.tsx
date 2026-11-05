@@ -1,12 +1,7 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
-import {
-  NO_INSTRUCTIONS_CHANGE,
-  type PilotInstructionsChange,
-  type PilotState,
-  type UpdatePilotInstructionsInput,
-} from "@jobpilot/contracts/pilot";
+import type { ReactElement } from "react";
+import type { PilotState, UpdatePilotSettingsInput } from "@jobpilot/contracts/pilot";
 import { Box, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
@@ -27,50 +22,21 @@ import { useToast } from "@/providers/toast-provider";
 import { JobAlertsSetting } from "../job-alerts/job-alerts-setting";
 import { BoardsSection } from "./boards-section";
 import { CheckIntervalSection } from "./check-interval-section";
-import {
-  type InstructionsFormValues,
-  instructionsFormSchema,
-  toConfig,
-  toFormValues,
-} from "./form-schema";
-import { GoalsChangeDialog } from "./goals-change-dialog";
-import { GoalsSection } from "./goals-section";
-import { LimitsSection } from "./limits-section";
+import { settingsFormSchema, toFormValues, toSettings } from "./form-schema";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
 import { ResearchSection } from "./research-section";
-import { SearchesList } from "./searches-list";
 
-/** Goals & rules and Settings → Pilot edit one instructions record; each shows its own sections. */
-type InstructionsVariant = "goals" | "settings";
+const ANCHORS: SectionAnchor[] = [
+  { id: "schedule", label: "Schedule" },
+  { id: "job-alerts", label: "Job alerts" },
+  { id: "research", label: "Research" },
+  { id: "networking", label: "Networking" },
+  { id: "boards", label: "Boards" },
+  { id: "platforms", label: "Platforms" },
+];
 
-const ANCHORS: Record<InstructionsVariant, SectionAnchor[]> = {
-  goals: [
-    { id: "goals", label: "Goals" },
-    { id: "searches", label: "Searches" },
-    { id: "limits", label: "Rules" },
-  ],
-  settings: [
-    { id: "schedule", label: "Schedule" },
-    { id: "job-alerts", label: "Job alerts" },
-    { id: "research", label: "Research" },
-    { id: "networking", label: "Networking" },
-    { id: "boards", label: "Boards" },
-    { id: "platforms", label: "Platforms" },
-  ],
-};
-
-const SAVE_LABELS: Record<InstructionsVariant, string> = {
-  goals: "Save goals & rules",
-  settings: "Save settings",
-};
-
-interface InstructionsFormProps {
-  variant: InstructionsVariant;
-}
-
-export function InstructionsForm(props: InstructionsFormProps): ReactElement {
-  const { variant } = props;
+export function PilotSettingsForm(): ReactElement {
   const stateQuery = useQuery(pilotQueries.state());
 
   if (stateQuery.isLoading) {
@@ -83,64 +49,33 @@ export function InstructionsForm(props: InstructionsFormProps): ReactElement {
   }
   // The form takes its defaults once, so it mounts only after the state has loaded.
   return (
-    <SectionLayout anchors={ANCHORS[variant]}>
-      <InstructionsEditor state={stateQuery.data} variant={variant} />
+    <SectionLayout anchors={ANCHORS}>
+      <SettingsEditor state={stateQuery.data} />
     </SectionLayout>
   );
 }
 
-interface InstructionsEditorProps {
+interface SettingsEditorProps {
   state: PilotState;
-  variant: InstructionsVariant;
 }
 
-function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
-  const { state, variant } = props;
+function SettingsEditor(props: SettingsEditorProps): ReactElement {
+  const { state } = props;
   const toast = useToast();
 
-  const save = useApiMutation(
-    (body: UpdatePilotInstructionsInput) => api.pilot.instructions.put(body),
-    {
-      invalidate: [pilotQueries.state().queryKey, pilotQueries.searches().queryKey],
-      successMessage: "Saved.",
-    },
-  );
-
-  // Fetched on submit: a mount fetch still loading reads as "nothing in flight" and skips the ask.
-  const impact = useQuery({ ...pilotQueries.instructionsImpact(), enabled: false });
-
-  // Set while the goals-changed dialog is open; carries the values the save finishes with.
-  const [pending, setPending] = useState<InstructionsFormValues | null>(null);
-
-  const commit = async (value: InstructionsFormValues, onChange: PilotInstructionsChange) => {
-    await save.mutateAsync({
-      goals: value.goals,
-      config: toConfig(value),
-      onChange,
-    });
-    setPending(null);
-    // Re-baseline the defaults so the dirty save bar hides after a successful save.
-    form.reset(value);
-  };
+  const save = useApiMutation((body: UpdatePilotSettingsInput) => api.pilot.settings.patch(body), {
+    invalidate: [pilotQueries.state().queryKey],
+    successMessage: "Saved.",
+  });
 
   const form = useAppForm({
     defaultValues: toFormValues(state),
-    validators: { onSubmit: instructionsFormSchema },
+    validators: { onSubmit: settingsFormSchema },
     onSubmitInvalid: () => toast.error("Fix the highlighted fields"),
     onSubmit: async ({ value }) => {
-      // Only rewritten goals strand work - every config field is read live off the instructions.
-      if (value.goals !== state.instructionsGoals) {
-        // A failed check must not silently keep the old plan, so only a confirmed empty one skips.
-        const { data, isError } = await impact.refetch();
-        const inFlight = data
-          ? data.searches.length + data.campaigns.length + data.approvedJobs
-          : 0;
-        if (isError || inFlight > 0) {
-          setPending(value);
-          return;
-        }
-      }
-      await commit(value, NO_INSTRUCTIONS_CHANGE);
+      await save.mutateAsync(toSettings(value));
+      // Re-baseline the defaults so the dirty save bar hides after a successful save.
+      form.reset(value);
     },
   });
 
@@ -157,63 +92,36 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
         form.handleSubmit();
       }}
     >
-      <Stack spacing={3}>
-        {variant === "goals" ? (
-          <SectionCard
-            title="Instructions"
-            description="Goals are all the pilot needs - it creates and maintains its searches from them."
-          >
-            <Stack spacing={3}>
-              <Box data-section-id="goals">
-                <GoalsSection form={form} />
-              </Box>
-              {/* Server data the pilot owns, not form state. */}
-              <Box data-section-id="searches">
-                <FormSection
-                  title="Searches"
-                  description="The pilot creates and maintains these from your goals."
-                >
-                  <SearchesList />
-                </FormSection>
-              </Box>
-              <Box data-section-id="limits">
-                <LimitsSection form={form} />
-              </Box>
-            </Stack>
-          </SectionCard>
-        ) : (
-          <SectionCard
-            title="Pilot settings"
-            description="Optional - the defaults work for most people."
-          >
-            <Stack spacing={3}>
-              <Box data-section-id="schedule">
-                <CheckIntervalSection form={form} />
-              </Box>
-              <Box data-section-id="job-alerts">
-                <JobAlertsSetting />
-              </Box>
-              <Box data-section-id="research">
-                <FormSection
-                  title="Research"
-                  description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
-                >
-                  <ResearchSection />
-                </FormSection>
-              </Box>
-              <Box data-section-id="networking">
-                <NetworkingSection form={form} />
-              </Box>
-              <Box data-section-id="boards">
-                <BoardsSection form={form} />
-              </Box>
-              <Box data-section-id="platforms">
-                <PlatformsSection form={form} />
-              </Box>
-            </Stack>
-          </SectionCard>
-        )}
-      </Stack>
+      <SectionCard
+        title="Pilot settings"
+        description="Optional - the defaults work for most people."
+      >
+        <Stack spacing={3}>
+          <Box data-section-id="schedule">
+            <CheckIntervalSection form={form} />
+          </Box>
+          <Box data-section-id="job-alerts">
+            <JobAlertsSetting />
+          </Box>
+          <Box data-section-id="research">
+            <FormSection
+              title="Research"
+              description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
+            >
+              <ResearchSection />
+            </FormSection>
+          </Box>
+          <Box data-section-id="networking">
+            <NetworkingSection form={form} />
+          </Box>
+          <Box data-section-id="boards">
+            <BoardsSection form={form} />
+          </Box>
+          <Box data-section-id="platforms">
+            <PlatformsSection form={form} />
+          </Box>
+        </Stack>
+      </SectionCard>
 
       {showSaveBar && (
         <StickyFooter>
@@ -224,24 +132,11 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
           >
             <Typography variant="captionMuted">Unsaved changes</Typography>
             <form.AppForm>
-              <form.SubmitButton>{SAVE_LABELS[variant]}</form.SubmitButton>
+              <form.SubmitButton>Save settings</form.SubmitButton>
             </form.AppForm>
           </Stack>
         </StickyFooter>
       )}
-
-      <GoalsChangeDialog
-        open={pending !== null}
-        impact={impact.data ?? null}
-        isLoading={impact.isLoading}
-        saving={save.isPending}
-        onConfirm={(change) => {
-          if (pending) {
-            void commit(pending, change);
-          }
-        }}
-        onCancel={() => setPending(null)}
-      />
     </Box>
   );
 }

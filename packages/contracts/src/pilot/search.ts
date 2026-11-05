@@ -5,6 +5,8 @@ import { boardRefSchema } from "../job-board";
 const reasonSchema = z.string().max(500).default("");
 
 export const createPilotSearchSchema = z.object({
+  /** The plain name the user sees; the query when left out. */
+  name: z.string().trim().min(1).max(120).optional(),
   query: z.string().min(1),
   /** The board's domain, resolved to a catalog row. */
   board: z.string().trim().min(1).optional(),
@@ -23,6 +25,7 @@ export const reportPilotSearchRunSchema = z.object({
 export const pilotSearchSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
+  name: z.string(),
   query: z.string(),
   board: boardRefSchema.nullable(),
   resumeId: z.uuid().nullable(),
@@ -38,7 +41,7 @@ export const pilotSearchSchema = z.object({
 
 /** The list adds what the pilot home shows beside each search. */
 export const pilotSearchListSchema = z.array(
-  pilotSearchSchema.extend({ appliedThisWeek: z.number().int() }),
+  pilotSearchSchema.extend({ appliedThisWeek: z.number().int(), paused: z.boolean() }),
 );
 
 export type CreatePilotSearchInput = z.infer<typeof createPilotSearchSchema>;

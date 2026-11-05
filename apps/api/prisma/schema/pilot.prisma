@@ -16,6 +16,24 @@ enum PilotQuestionKind {
   @@map("pilot_question_kind")
 }
 
+enum PilotChangeSource {
+  user
+  chat
+  pilot
+  notice
+
+  @@map("pilot_change_source")
+}
+
+enum PilotChangeStatus {
+  proposed
+  applied
+  undone
+  dismissed
+
+  @@map("pilot_change_status")
+}
+
 enum PilotQuestionStatus {
   open
   answered
@@ -94,6 +112,8 @@ model PilotSearch {
   id           String    @id @default(uuid(7)) @db.Uuid
   userId       String    @map("user_id") @db.Uuid
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // The plain name the user sees; the query is shown on expand.
+  name         String
   query        String
   boardId      String?   @map("board_id") @db.Uuid
   board        JobBoard? @relation(fields: [boardId], references: [id], onDelete: SetNull)
@@ -140,6 +160,7 @@ model PilotRun {
   cacheWriteTokens Int              @default(0) @map("cache_write_tokens")
 
   journalEntries PilotJournalEntry[]
+  changes        PilotChange[]
 
   @@index([userId, subjectType, subjectId])
   @@index([finishedAt])
@@ -209,4 +230,26 @@ model PromotionPost {
   @@index([userId, status])
   @@index([updatedAt]) // Retention sweep.
   @@map("promotion_posts")
+}
+
+/** An edit to goals, rules, searches, answers or jobs, applied with an inverse or proposed. */
+model PilotChange {
+  id        String            @id @default(uuid(7)) @db.Uuid
+  userId    String            @map("user_id") @db.Uuid
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source    PilotChangeSource
+  status    PilotChangeStatus
+  summary   String
+  actions   Json
+  // The inverse actions, set once applied; replaying them undoes the change.
+  undo      Json?
+  runId     String?           @map("run_id") @db.Uuid
+  run       PilotRun?         @relation(fields: [runId], references: [id], onDelete: SetNull)
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  decidedAt DateTime?         @map("decided_at") @db.Timestamptz(3)
+
+  @@index([userId, status, createdAt])
+  @@index([userId, createdAt])
+  @@index([runId])
+  @@map("pilot_changes")
 }

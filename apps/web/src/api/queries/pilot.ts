@@ -1,5 +1,6 @@
 import { DEFAULT_CURSOR_PAGE_SIZE, type PaginationQuery } from "@jobpilot/contracts/pagination";
 import type {
+  PilotChange,
   PilotJournalKind,
   PilotQuestionStatus,
   PromotionStatus,
@@ -12,6 +13,7 @@ import { FULL_PAGE } from "./shared";
 const PILOT = ["pilot"] as const;
 const JOURNAL = [...PILOT, "journal"] as const;
 const THREAD = [...PILOT, "thread"] as const;
+const CHANGES = [...PILOT, "changes"] as const;
 const QUESTIONS = [...PILOT, "questions"] as const;
 const PROMOTIONS = [...PILOT, "promotions"] as const;
 const PUSH = [...PILOT, "push"] as const;
@@ -30,6 +32,7 @@ export const pilotQueries = {
   all: PILOT,
   journalAll: JOURNAL,
   threadAll: THREAD,
+  changesAll: CHANGES,
   questionsAll: QUESTIONS,
   promotionsAll: PROMOTIONS,
   pushAll: PUSH,
@@ -50,12 +53,6 @@ export const pilotQueries = {
     queryOptions({
       queryKey: [...PILOT, "savedAnswers"],
       queryFn: () => unwrap(api.pilot["saved-answers"].get()),
-    }),
-  /** What an instructions edit would leave running; read on demand, never prefetched. */
-  instructionsImpact: () =>
-    queryOptions({
-      queryKey: [...PILOT, "instructions-impact"],
-      queryFn: () => unwrap(api.pilot.instructions.impact.get()),
     }),
   jobAlerts: () =>
     queryOptions({
@@ -85,6 +82,11 @@ export const pilotQueries = {
       getNextPageParam: (page) => page.nextCursor,
     });
   },
+  changes: (status?: PilotChange["status"]) =>
+    queryOptions({
+      queryKey: [...CHANGES, { status: status ?? "all" }],
+      queryFn: () => unwrap(api.pilot.changes.get({ query: status ? { status } : {} })),
+    }),
   /** Newest page first; the thread renders the pages reversed. */
   thread: () =>
     infiniteQueryOptions({

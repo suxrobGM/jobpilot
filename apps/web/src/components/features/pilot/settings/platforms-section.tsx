@@ -3,12 +3,12 @@
 import { Grid, InputAdornment, Stack, Typography } from "@mui/material";
 import { FieldInfo, FieldRowList, FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
+import { SETTINGS_FORM_DEFAULTS } from "./form-schema";
 
 const EMPTY_PLATFORM = { platform: "", target: "", postEveryDays: 30 };
 
 export const PlatformsSection = withForm({
-  defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
+  defaultValues: SETTINGS_FORM_DEFAULTS,
   render: function PlatformsSection({ form }) {
     return (
       <FormSection
