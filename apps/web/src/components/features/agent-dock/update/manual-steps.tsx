@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Stack, Typography } from "@mui/material";
+import { CODEX_PLUGIN_ADD_COMMAND } from "@/components/features/install/provider-commands";
 import { CopyField } from "@/components/ui/display";
 import { formatSkillCommand, type TerminalProviderId } from "@/lib/terminal";
 
@@ -11,10 +12,12 @@ const RELOAD_PLUGINS_COMMAND = "/reload-plugins";
 
 const CODEX_MARKETPLACE_UPDATE_COMMAND = "codex plugin marketplace upgrade sukhrob-codex-plugins";
 
-const CODEX_PLUGIN_REFRESH_COMMAND = "codex plugin add jobpilot@sukhrob-codex-plugins";
-
 /** Manual plugin + setup update path, shown when the one-click self-update is unavailable or failed. */
-export function UpdateManualSteps(props: { provider: TerminalProviderId }): ReactElement {
+interface UpdateManualStepsProps {
+  provider: TerminalProviderId;
+}
+
+export function UpdateManualSteps(props: UpdateManualStepsProps): ReactElement {
   const { provider } = props;
 
   return (
@@ -53,7 +56,7 @@ export function UpdateManualSteps(props: { provider: TerminalProviderId }): Reac
           <Stack spacing={0.5}>
             <Typography variant="captionMuted">2. Refresh the installed plugin:</Typography>
             <CopyField
-              value={CODEX_PLUGIN_REFRESH_COMMAND}
+              value={CODEX_PLUGIN_ADD_COMMAND}
               copyMessage="Command copied"
               ariaLabel="Copy plugin refresh command"
             />

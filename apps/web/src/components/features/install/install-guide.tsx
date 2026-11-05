@@ -9,14 +9,14 @@ import {
   alpha,
   Paper,
   Stack,
-  Tab,
-  Tabs,
   Typography,
 } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { CopyField } from "@/components/ui/display";
+import { formatSkillCommand, type TerminalProviderId } from "@/lib/terminal";
 import { HostInstallCommands } from "./host-install-commands";
-import { type InstallProvider, PLUGIN_COMMANDS, SETUP_COMMANDS } from "./provider-commands";
+import { PLUGIN_COMMANDS } from "./provider-commands";
+import { ProviderTabs } from "./provider-tabs";
 
 interface InstallStepProps {
   number: number;
@@ -51,15 +51,12 @@ function InstallStep(props: InstallStepProps): ReactElement {
 }
 
 export function InstallGuide(): ReactElement {
-  const [provider, setProvider] = useState<InstallProvider>("claude");
+  const [provider, setProvider] = useState<TerminalProviderId>("claude");
 
   return (
     <Stack spacing={3}>
       <InstallStep number={1} title="Add the JobPilot plugin">
-        <Tabs value={provider} onChange={(_, next: InstallProvider) => setProvider(next)}>
-          <Tab value="claude" label="Claude Code" />
-          <Tab value="codex" label="Codex" />
-        </Tabs>
+        <ProviderTabs value={provider} onChange={setProvider} />
         <Typography variant="body2Muted">
           {provider === "claude"
             ? "Run these in Claude Code. The terminal, desktop app, and VS Code extension all work."
@@ -84,7 +81,7 @@ export function InstallGuide(): ReactElement {
             : "Start a new Codex session and run $setup. It installs the JobPilot agent on your computer and starts it. If it's already installed, setup updates it. This is the only command you need to type."}
         </Typography>
         <CopyField
-          value={SETUP_COMMANDS[provider]}
+          value={formatSkillCommand(provider, "setup")}
           copyMessage="Command copied"
           ariaLabel="Copy setup command"
         />
