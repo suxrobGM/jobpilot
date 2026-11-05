@@ -30,7 +30,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   "board.diagnose": {
     priority: 920,
     subjectType: "board",
-    subjectId: (p) => p.jobBoardId,
+    subjectId: (p) => p.boardId,
     title: (p) => `Board failing: ${p.board} (${p.consecutiveFailures})`,
     perList: 1,
   },

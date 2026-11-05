@@ -10,7 +10,7 @@ import { describe, expect, it } from "bun:test";
 interface Row {
   id: string;
   kind: "board" | "default";
-  jobBoardId: string | null;
+  boardId: string | null;
   email: string | null;
   password: string | null;
 }
@@ -22,7 +22,7 @@ function makeService(rows: Row[]) {
     credential: {
       findMany: async ({ where }: { where: { OR: Partial<Row>[] } }) =>
         rows.filter((r) =>
-          where.OR.some((clause) => r.kind === clause.kind || r.jobBoardId === clause.jobBoardId),
+          where.OR.some((clause) => r.kind === clause.kind || r.boardId === clause.boardId),
         ),
     },
   } as unknown as PrismaClient;
@@ -38,7 +38,7 @@ function makeService(rows: Row[]) {
 const defaultLogin: Row = {
   id: "c-default",
   kind: "default",
-  jobBoardId: null,
+  boardId: null,
   email: "me@x.io",
   password: "enc:pw0",
 };
@@ -47,7 +47,7 @@ describe("CredentialService.resolveCredential", () => {
   it("prefers the board's credential over default and returns its id", async () => {
     const svc = makeService([
       defaultLogin,
-      { id: "c-li", kind: "board", jobBoardId: "b-li", email: "li@x.io", password: "enc:pw1" },
+      { id: "c-li", kind: "board", boardId: "b-li", email: "li@x.io", password: "enc:pw1" },
     ]);
     expect(await svc.resolveCredential("u1", "linkedin.com")).toEqual({
       id: "c-li",
@@ -60,7 +60,7 @@ describe("CredentialService.resolveCredential", () => {
   it("falls back to default when the board credential has no password", async () => {
     const svc = makeService([
       defaultLogin,
-      { id: "c-li", kind: "board", jobBoardId: "b-li", email: "li@x.io", password: null },
+      { id: "c-li", kind: "board", boardId: "b-li", email: "li@x.io", password: null },
     ]);
     expect(await svc.resolveCredential("u1", "linkedin.com")).toMatchObject({
       id: "c-default",
@@ -75,7 +75,7 @@ describe("CredentialService.resolveCredential", () => {
 
   it("returns null when nothing matches", async () => {
     const svc = makeService([
-      { id: "c", kind: "board", jobBoardId: "b-indeed", email: "a", password: "enc:b" },
+      { id: "c", kind: "board", boardId: "b-indeed", email: "a", password: "enc:b" },
     ]);
     expect(await svc.resolveCredential("u1", "linkedin.com")).toBeNull();
   });

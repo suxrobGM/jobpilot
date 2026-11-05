@@ -66,15 +66,15 @@ model EmailMessage {
   receivedAt  DateTime     @map("received_at")
   fetchedAt   DateTime     @default(now()) @map("fetched_at")
 
-  scannedAt      DateTime?            @map("scanned_at")
-  classification EmailClassification?
-  confidence     Float?
-  reasoning      String?
-  matchedAppId   String?              @map("matched_app_id")
-  matchedApp     Application?         @relation(fields: [matchedAppId], references: [id], onDelete: SetNull)
-  matchScore     Float?               @map("match_score")
-  reviewStatus   EmailReviewStatus    @default(pending) @map("review_status")
-  appliedStatus  ApplicationStatus?   @map("applied_status")
+  scannedAt       DateTime?            @map("scanned_at")
+  classification  EmailClassification?
+  confidence      Float?
+  reasoning       String?
+  applicationId   String?              @map("application_id")
+  application     Application?         @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  matchConfidence Float?               @map("match_confidence")
+  reviewStatus    EmailReviewStatus    @default(pending) @map("review_status")
+  resultingStatus ApplicationStatus?   @map("resulting_status")
 
   verificationCode   String? @map("verification_code")
   verificationLink   String? @map("verification_link")
@@ -91,7 +91,7 @@ model EmailMessage {
   @@index([accountId, reviewStatus, receivedAt])
   @@index([accountId, fromDomain, receivedAt])
   @@index([accountId, verificationDomain, receivedAt])
-  @@index([matchedAppId])
+  @@index([applicationId])
   @@index([receivedAt]) // Retention sweep.
   @@map("email_messages")
 }

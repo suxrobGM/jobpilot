@@ -165,7 +165,7 @@ export async function gatherBoardDiagnoses(
     // The agent retries the test job into the apply queue, which only reads in-progress campaigns.
     const probe = failed.find((job) => job.campaign.status === "in_progress");
     unhealthy.push({
-      jobBoardId: board.id,
+      boardId: board.id,
       board: board.domain,
       consecutiveFailures: failed.length,
       recentFailReasons: failed
@@ -178,7 +178,7 @@ export async function gatherBoardDiagnoses(
     prisma,
     { userId, taskType: "board.diagnose", now, cooldownMs: BOARD_DIAGNOSE_COOLDOWN_MS },
     unhealthy,
-    (diagnosis) => diagnosis.jobBoardId,
+    (diagnosis) => diagnosis.boardId,
   );
   return due.sort((a, b) => b.consecutiveFailures - a.consecutiveFailures);
 }

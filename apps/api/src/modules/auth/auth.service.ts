@@ -62,7 +62,7 @@ export class AuthService {
           username: await this.uniqueUsername(),
           contactEmail: email,
           jobBoards: {
-            createMany: { data: defaults.map((board) => ({ jobBoardId: board.id })) },
+            createMany: { data: defaults.map((board) => ({ boardId: board.id })) },
           },
         },
       });

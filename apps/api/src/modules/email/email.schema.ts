@@ -49,7 +49,7 @@ export const oauthClientStatusSchema = z.object({
 });
 
 /** Confirmation returned by removing the OAuth client (`account.deleteOAuthClient`). */
-/** Matched-application summary embedded on a message (`matchedApp` relation). */
+/** Matched-application summary embedded on a message (`application` relation). */
 const matchedAppSchema = z
   .object({
     id: z.uuid(),
@@ -83,17 +83,17 @@ export const emailMessageSchema = z.object({
   classification: classificationSchema.nullable(),
   confidence: z.number().nullable(),
   reasoning: z.string().nullable(),
-  matchedAppId: z.uuid().nullable(),
-  matchScore: z.number().nullable(),
+  applicationId: z.uuid().nullable(),
+  matchConfidence: z.number().nullable(),
   reviewStatus: reviewStatusSchema,
   // Free String column; writes are validated against the status enum, reads stay lenient.
-  appliedStatus: z.string().nullable(),
+  resultingStatus: z.string().nullable(),
   verificationCode: z.string().nullable(),
   verificationLink: z.string().nullable(),
   verificationDomain: z.string().nullable(),
   links: emailLinksSchema,
   importedAt: z.date().nullable(),
-  matchedApp: matchedAppSchema,
+  application: matchedAppSchema,
 });
 
 /** List of serialized inbox messages (`svc.listMessages`). */

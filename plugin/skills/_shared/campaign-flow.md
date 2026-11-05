@@ -14,7 +14,7 @@ Exact URL match plus fuzzy title+company over a 30-day window; `.match.kind` is 
 `fuzzy` (with a score). Default handling for apply flows on `.applied`: create the Job as
 `pending`, POST its `/result` with `{outcome:"skipped", skipReason:"Already applied (<kind>)"}`,
 and move on without opening a tab. Skills that deviate (e.g. `networking` keeps applied jobs and
-records `.match.application.id` as `relatedAppId`) say so inline.
+records `.match.application.id` as `applicationId`) say so inline.
 
 The server enforces the same rule: moving a job into `applying` - the `PATCH` below or the pilot's
 run start - 409s with code `ALREADY_APPLIED` on a duplicate (`APPLY_IN_FLIGHT` when another worker

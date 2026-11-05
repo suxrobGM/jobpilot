@@ -32,7 +32,7 @@ const STATUS_CLASSIFICATIONS = new Set(Object.keys(CLASSIFICATION_TO_STATUS));
 
 export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode {
   const { messageId, open, onClose } = props;
-  const [matchedApp, setMatchedApp] = useState<ApplicationDto | null>(null);
+  const [application, setMatchedApp] = useState<ApplicationDto | null>(null);
   const [search, setSearch] = useState("");
 
   const message = useApiQuery(emailQueries.message(messageId ?? ""), {
@@ -44,9 +44,9 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
 
   if (message.data !== prevData) {
     setPrevData(message.data);
-    if (message.data?.matchedApp) {
-      setMatchedApp(message.data.matchedApp as ApplicationDto);
-      setSearch(message.data.matchedApp.company ?? "");
+    if (message.data?.application) {
+      setMatchedApp(message.data.application as ApplicationDto);
+      setSearch(message.data.application.company ?? "");
     } else {
       setMatchedApp(null);
       setSearch("");
@@ -56,7 +56,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
   const appOptions = useApiQuery(applicationQueries.search(search), { enabled: open });
 
   const patchMatch = useApiMutation(
-    (vars: { matchedAppId: string | null }) => api.email.messages({ id: messageId! }).patch(vars),
+    (vars: { applicationId: string | null }) => api.email.messages({ id: messageId! }).patch(vars),
     {
       invalidate: [queryKeys.email.all],
     },
@@ -83,7 +83,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
   const isReviewed = m?.reviewStatus === "approved" || m?.reviewStatus === "denied";
 
   const canApprove = Boolean(
-    m && (STATUS_CLASSIFICATIONS.has(m.classification ?? "") || m.appliedStatus),
+    m && (STATUS_CLASSIFICATIONS.has(m.classification ?? "") || m.resultingStatus),
   );
   const canDeny = isClassified && !isReviewed;
   const canApproveNow = canDeny && canApprove;
@@ -108,7 +108,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             <Button
               type="submit"
               variant="contained"
-              disabled={approve.isPending || !m?.matchedAppId}
+              disabled={approve.isPending || !m?.applicationId}
             >
               Approve
             </Button>
@@ -143,18 +143,18 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             size="small"
             options={appOptions.data?.items ?? []}
             getOptionLabel={(o) => `${o.title} ${o.company}`}
-            value={matchedApp}
+            value={application}
             onChange={(_, v) => {
               setMatchedApp(v);
-              patchMatch.mutate({ matchedAppId: v ? v.id : null });
+              patchMatch.mutate({ applicationId: v ? v.id : null });
             }}
             onInputChange={(_, v) => setSearch(v)}
             renderInput={(params) => <TextField {...params} label="Matched application" />}
             isOptionEqualToValue={(a, b) => a.id === b.id}
           />
 
-          {matchedApp && (
-            <Link href={`/applications/${matchedApp.id}`}>
+          {application && (
+            <Link href={`/applications/${application.id}`}>
               Open the application for the documents sent and the posting
             </Link>
           )}

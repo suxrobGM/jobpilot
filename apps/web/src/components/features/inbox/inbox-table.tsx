@@ -82,12 +82,12 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       valueFormatter: (v) => (v == null ? "" : `${Math.round((v as number) * 100)}%`),
     },
     {
-      field: "matchedAppId",
+      field: "applicationId",
       headerName: "Matched app",
       width: 200,
       sortable: false,
       renderCell: (p) => {
-        const matched = p.row.matchedApp;
+        const matched = p.row.application;
         if (!matched) {
           return (
             <Typography

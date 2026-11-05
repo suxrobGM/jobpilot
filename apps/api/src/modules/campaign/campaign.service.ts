@@ -185,7 +185,7 @@ export class CampaignService {
           id: { in: messages.map((message) => message.contactId) },
           userId,
           messages: { none: {} },
-          relatedAppId: null,
+          applicationId: null,
         },
       });
       await tx.campaign.delete({ where: { id } });

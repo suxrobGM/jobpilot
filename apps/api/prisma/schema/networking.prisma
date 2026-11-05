@@ -68,9 +68,9 @@ model Contact {
   discoverySource    ContactDiscoverySource?   @map("discovery_source")
   matchConfidence    Float?                    @map("match_confidence")
 
-  relatedAppId  String?      @map("related_app_id")
-  relatedApp    Application? @relation(fields: [relatedAppId], references: [id], onDelete: SetNull)
-  relatedJobUrl String?      @map("related_job_url")
+  applicationId String?      @map("application_id")
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  jobUrl        String?      @map("job_url")
 
   notes     String?
   createdAt DateTime @default(now()) @map("created_at")
@@ -79,7 +79,7 @@ model Contact {
   messages NetworkingMessage[]
 
   @@index([userId, company])
-  @@index([relatedAppId])
+  @@index([applicationId])
   @@map("contacts")
 }
 

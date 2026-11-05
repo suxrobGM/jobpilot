@@ -113,7 +113,9 @@ function JobDescriptionCard(props: SubmissionDetailsProps): ReactElement {
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
             {job.salary && <Typography variant="body2Muted">{job.salary}</Typography>}
-            {job.type && <Typography variant="body2Muted">{job.type}</Typography>}
+            {job.employmentType && (
+              <Typography variant="body2Muted">{job.employmentType}</Typography>
+            )}
           </Stack>
           <Accordion>
             <AccordionSummary>Read the posting</AccordionSummary>

@@ -82,8 +82,8 @@ const createContactSchema = z.object({
   linkedinConnection: contactLinkedinConnectionSchema.optional(),
   discoverySource: contactDiscoverySourceSchema.optional().nullable(),
   matchConfidence: z.number().min(0).max(1).optional().nullable(),
-  relatedAppId: z.uuid().optional().nullable(),
-  relatedJobUrl: z.url().optional().nullable(),
+  applicationId: z.uuid().optional().nullable(),
+  jobUrl: z.url().optional().nullable(),
   notes: reasonText.optional().nullable(),
 });
 

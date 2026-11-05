@@ -75,7 +75,7 @@ passionate about", or flattery. Plain ASCII only (the terminal mangles anything 
 
 ```json
 { "found": true,
-  "contact": { "name", "title", "company", "linkedinUrl", "email", "emailSource", "discoverySource", "relatedJobUrl" },
+  "contact": { "name", "title", "company", "linkedinUrl", "email", "emailSource", "discoverySource", "jobUrl" },
   "messages": [ { "channel": "email|linkedin", "subject", "body", "linkedinKind": "connect_note|inmail|dm|null" } ] }
 ```
 

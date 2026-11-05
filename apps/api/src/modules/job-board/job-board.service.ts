@@ -21,13 +21,13 @@ interface NewBoardFields {
 /** A link is identity plus the catalog fields it exposes; `id` is the link's, for DELETE. */
 const LINK_SELECT = {
   id: true,
-  jobBoard: { select: { name: true, domain: true, searchUrl: true } },
+  board: { select: { name: true, domain: true, searchUrl: true } },
 } satisfies Prisma.UserJobBoardSelect;
 
 type LinkRow = Prisma.UserJobBoardGetPayload<{ select: typeof LINK_SELECT }>;
 
 function project(row: LinkRow) {
-  return { id: row.id, ...row.jobBoard };
+  return { id: row.id, ...row.board };
 }
 
 @injectable()
@@ -41,8 +41,8 @@ export class JobBoardService {
       select: LINK_SELECT,
       // Curated boards in catalog order, then the user's own additions as they were added.
       orderBy: [
-        { jobBoard: { listed: "desc" } },
-        { jobBoard: { sortOrder: "asc" } },
+        { board: { listed: "desc" } },
+        { board: { sortOrder: "asc" } },
         { createdAt: "asc" },
       ],
     });
@@ -115,7 +115,7 @@ export class JobBoardService {
   async create(userId: string, input: JobBoardInput) {
     const board = await this.resolve(input.domain, input);
     const row = await this.prisma.userJobBoard.create({
-      data: { userId, jobBoardId: board.id },
+      data: { userId, boardId: board.id },
       select: LINK_SELECT,
     });
     return project(row);

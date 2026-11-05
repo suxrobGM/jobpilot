@@ -33,7 +33,7 @@ export interface ListingSourceJob {
   status?: string;
   location?: string | null;
   salary?: string | null;
-  type?: string | null;
+  employmentType?: string | null;
   boardId?: string | null;
   description?: string | null;
   brief?: unknown;
@@ -127,7 +127,7 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
     location,
     remote: brief.remote === true || normalizeListingLocation(location) === "remote",
     salary: clean(job.salary) ?? clean(brief.salary),
-    employmentType: clean(job.type) ?? clean(brief.employmentType),
+    employmentType: clean(job.employmentType) ?? clean(brief.employmentType),
     skills,
     descriptionExcerpt: excerpt(clean(brief.descriptionExcerpt) ?? clean(job.description)),
     requirements: bullets(brief.requirements),

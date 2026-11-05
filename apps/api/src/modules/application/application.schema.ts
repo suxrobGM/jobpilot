@@ -114,7 +114,7 @@ const applicationContactSchema = contactSchema.pick({
 const applicationJobSchema = campaignJobSchema.pick({
   description: true,
   salary: true,
-  type: true,
+  employmentType: true,
 });
 
 /** A single application with the documents sent, the posting, and everything that came back. */

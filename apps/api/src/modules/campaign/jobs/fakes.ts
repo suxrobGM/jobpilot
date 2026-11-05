@@ -28,7 +28,7 @@ export function setup() {
     company: "Acme",
     location: null,
     salary: null,
-    type: null,
+    employmentType: null,
     url: "https://example.test/jobs/1",
     board: "example",
     matchScore: 90,

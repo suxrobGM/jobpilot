@@ -28,7 +28,7 @@ interface ServiceKey {
 }
 
 const CREDENTIAL_INCLUDE = {
-  jobBoard: { select: BOARD_REF_SELECT },
+  board: { select: BOARD_REF_SELECT },
 } satisfies Prisma.CredentialInclude;
 
 type CredentialRow = Prisma.CredentialGetPayload<{ include: typeof CREDENTIAL_INCLUDE }>;
@@ -38,7 +38,7 @@ function toRecord(row: CredentialRow) {
   return {
     id: row.id,
     kind: row.kind,
-    board: row.jobBoard,
+    board: row.board,
     provider: row.provider,
     email: row.email,
     hasPassword: row.password !== null,
@@ -59,7 +59,7 @@ export class CredentialService {
     const rows = await this.prisma.credential.findMany({
       where: { userId },
       include: CREDENTIAL_INCLUDE,
-      orderBy: [{ kind: "asc" }, { jobBoard: { domain: "asc" } }, { provider: "asc" }],
+      orderBy: [{ kind: "asc" }, { board: { domain: "asc" } }, { provider: "asc" }],
     });
     return rows.map(toRecord);
   }
@@ -74,7 +74,7 @@ export class CredentialService {
       data.password = await this.encryptPassword(userId, input.password);
     }
     if (input.kind === "board") {
-      data.jobBoardId = (await this.boards.resolve(input.board)).id;
+      data.boardId = (await this.boards.resolve(input.board)).id;
     }
     // A second credential for the same board, provider or default is a 409 from a unique index.
     const row = await this.prisma.credential.create({ data, include: CREDENTIAL_INCLUDE });
@@ -100,7 +100,7 @@ export class CredentialService {
 
     const data: Prisma.CredentialUncheckedUpdateInput = { email: patch.email };
     if (patch.board !== undefined) {
-      data.jobBoardId = (await this.boards.resolve(patch.board)).id;
+      data.boardId = (await this.boards.resolve(patch.board)).id;
     }
     if (patch.password !== undefined) {
       data.password = await this.encryptPassword(userId, patch.password);
@@ -135,7 +135,7 @@ export class CredentialService {
     const creds = await this.prisma.credential.findMany({
       where: {
         userId,
-        OR: [{ kind: "default" }, ...(board ? [{ jobBoardId: board.id }] : [])],
+        OR: [{ kind: "default" }, ...(board ? [{ boardId: board.id }] : [])],
       },
       select: { id: true, kind: true, email: true, password: true },
     });

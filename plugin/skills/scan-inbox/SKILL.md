@@ -73,15 +73,15 @@ For `interviewing | rejected | offer`:
    ```
 
 2. Score each of `.items` against `fromName` / `fromDomain` / `subject`. Pick the best if score ≥ 0.7 (0–1).
-3. If nothing scores well enough - or the email only _mentions_ the company rather than addressing the user's application - leave `matchedAppId` and `matchScore` as `null`.
+3. If nothing scores well enough - or the email only _mentions_ the company rather than addressing the user's application - leave `applicationId` and `matchConfidence` as `null`.
 
 For `verification`: do NOT propose a match. `get-code` handles those.
 
 ### Propose Status Move
 
-For matched non-verification messages, set `appliedStatus`:
+For matched non-verification messages, set `resultingStatus`:
 
-| Classification | `appliedStatus` |
+| Classification | `resultingStatus` |
 | -------------- | --------------- |
 | `interviewing` | `interviewing`  |
 | `rejected`     | `rejected`      |
@@ -89,12 +89,12 @@ For matched non-verification messages, set `appliedStatus`:
 
 ## Phase 4: Write Back
 
-Write the body to `"$JOBPILOT_TEMP/classification-<id>.json"` (`appliedStatus` is `null` when not moving):
+Write the body to `"$JOBPILOT_TEMP/classification-<id>.json"` (`resultingStatus` is `null` when not moving):
 
 ```json
 { "classification": "<c>", "confidence": <0..1>, "reasoning": "<one line>",
-  "matchedAppId": <id-or-null>, "matchScore": <0..1-or-null>,
-  "appliedStatus": "<status-or-null>", "reviewStatus": "<pending|auto>" }
+  "applicationId": <id-or-null>, "matchConfidence": <0..1-or-null>,
+  "resultingStatus": "<status-or-null>", "reviewStatus": "<pending|auto>" }
 ```
 
 ```bash
@@ -104,7 +104,7 @@ jobpilot-api PATCH "/api/email/messages/<id>" --data @"$JOBPILOT_TEMP/classifica
 Rules:
 
 - Default `reviewStatus = "pending"` - human must Approve.
-- `reviewStatus = "auto"` is for `rejected` only, and only when `confidence ≥ 0.95` AND `matchedAppId` is set. The server applies it: it moves the Application and writes the `ApplicationEvent`. Still write no status moves here; just classify honestly, because `auto` now has an effect.
+- `reviewStatus = "auto"` is for `rejected` only, and only when `confidence ≥ 0.95` AND `applicationId` is set. The server applies it: it moves the Application and writes the `ApplicationEvent`. Still write no status moves here; just classify honestly, because `auto` now has an effect.
 - `interviewing` and `offer` always go out `pending` - they need a reply, so a human approves them in `/inbox`. The server rewrites `auto` to `pending` on those two, so sending `auto` only costs you accuracy in your own summary.
 
 ## Phase 5: Summary

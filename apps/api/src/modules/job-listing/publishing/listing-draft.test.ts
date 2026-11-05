@@ -12,7 +12,7 @@ const job = (overrides: Partial<ListingSourceJob> = {}): ListingSourceJob => ({
   url: "https://example.com/jobs/1?utm_source=x",
   location: "New York, NY",
   salary: "$180k",
-  type: "Full-time",
+  employmentType: "Full-time",
   boardId: "linkedin-board",
   description: "A long description.",
   brief,

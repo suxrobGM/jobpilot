@@ -33,8 +33,8 @@ export const networkingMessageColumns: GridColDef<NetworkingMessageDto>[] = [
     minWidth: 140,
     valueGetter: (_v, row) => row.contact.company ?? "",
     renderCell: (p) =>
-      p.row.contact.relatedJobUrl ? (
-        <ExternalLink href={p.row.contact.relatedJobUrl}>
+      p.row.contact.jobUrl ? (
+        <ExternalLink href={p.row.contact.jobUrl}>
           {p.row.contact.company ?? "View role"}
         </ExternalLink>
       ) : (
