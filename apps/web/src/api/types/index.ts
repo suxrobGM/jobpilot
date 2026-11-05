@@ -10,7 +10,6 @@ export type {
   AuthSessionResponse,
   AuthUserDto,
   LogoutResponse,
-  MeResponse,
 } from "./auth";
 export {
   type CampaignDetailDto,

@@ -7,7 +7,7 @@ import type {
   PilotJournalPage,
 } from "@jobpilot/contracts/pilot";
 import { type Jsonified, pilotChannel } from "@jobpilot/contracts/sse";
-import type { QueryClient } from "@tanstack/react-query";
+import type { InfiniteData, QueryClient } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { type SseConnectionStatus, useSseChannel } from "@/lib/sse/client";
 import { dedupeById } from "@/utils/array";
@@ -27,12 +27,26 @@ export function appendJournalEntry(
   streamed: Jsonified<PilotJournalEntry>,
 ): PilotJournalEntry {
   const entry = { ...streamed, createdAt: new Date(streamed.createdAt) };
-  queryClient.setQueriesData<PilotJournalPage>(
+  const prepend = (page: PilotJournalPage): PilotJournalPage => ({
+    ...page,
+    items: dedupeById([entry, ...page.items]).slice(0, CACHE_CAP),
+  });
+  // The overview caches one page; the journal tab caches its pages as infinite data.
+  queryClient.setQueriesData<PilotJournalPage | InfiniteData<PilotJournalPage>>(
     {
       queryKey: pilotQueries.journalAll,
       predicate: (query) => takesKind(query.queryKey, entry.kind),
     },
-    (page) => page && { ...page, items: dedupeById([entry, ...page.items]).slice(0, CACHE_CAP) },
+    (data) => {
+      if (!data) {
+        return data;
+      }
+      if (!("pages" in data)) {
+        return prepend(data);
+      }
+      const [first, ...rest] = data.pages;
+      return first ? { ...data, pages: [prepend(first), ...rest] } : data;
+    },
   );
   return entry;
 }

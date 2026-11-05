@@ -1,18 +1,16 @@
 "use client";
 
 import type { LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
-import { type UseQueryResult, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { type ApiMutationResult, useApiMutation } from "@/api/hooks";
 import { authQueries } from "@/api/queries";
-import type { AuthSessionResponse, AuthUserDto, LogoutResponse, MeResponse } from "@/api/types";
+import type { AuthSessionResponse, AuthUserDto, LogoutResponse } from "@/api/types";
 
 export interface UseSessionResult {
-  user: AuthUserDto | undefined;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  meQuery: UseQueryResult<MeResponse>;
+  /** Null while loading and when signed out. */
+  user: AuthUserDto | null;
 }
 
 export interface UseAuthActionsResult {
@@ -29,12 +27,7 @@ export interface UseAuthActionsResult {
 export function useSession(): UseSessionResult {
   const meQuery = useQuery({ ...authQueries.me(), retry: false, staleTime: 30_000 });
 
-  return {
-    user: meQuery.data,
-    isLoading: meQuery.isLoading,
-    isAuthenticated: Boolean(meQuery.data),
-    meQuery,
-  };
+  return { user: meQuery.data ?? null };
 }
 
 /**
