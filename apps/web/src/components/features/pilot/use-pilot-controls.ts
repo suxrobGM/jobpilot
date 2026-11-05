@@ -11,7 +11,7 @@ import {
   TerminalApiError,
   type TerminalProviderId,
 } from "@/lib/terminal/client";
-import { useAgentDock } from "@/providers/agent-provider";
+import { useAgentDrawer } from "@/providers/agent-provider";
 import { useToast } from "@/providers/toast-provider";
 
 export interface PilotControls {
@@ -41,7 +41,7 @@ export function usePilotControls(): PilotControls {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const { provider } = useAgentDock();
+  const { provider } = useAgentDrawer();
 
   const refreshState = (): void => {
     queryClient.invalidateQueries({ queryKey: pilotQueries.state().queryKey });

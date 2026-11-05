@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { recheckTerminalHealth } from "@/hooks/use-terminal-health";
 import { providerDisplayName, triggerUpdate } from "@/lib/terminal/client";
-import { useAgentDock } from "@/providers/agent-provider";
+import { useAgentDrawer } from "@/providers/agent-provider";
 import { UpdateManualSteps } from "./manual-steps";
 import { isNewerVersion, useLatestVersion } from "./use-latest-version";
 
@@ -21,7 +21,7 @@ type UpdatePhase = "idle" | "updating" | "restarting" | "error";
 
 interface AgentUpdateBannerProps {
   currentVersion: string;
-  /** The host accepted the update and is restarting - the dock shows its updating state and polls fast. */
+  /** The host accepted the update and is restarting - the agent drawer shows its updating state and polls fast. */
   onUpdating: () => void;
   /** False in a dev checkout - the one-click update is unavailable, so show manual steps only. */
   canUpdate?: boolean;
@@ -30,7 +30,7 @@ interface AgentUpdateBannerProps {
 /** When behind, offers the one-click self-update, else the manual plugin + setup path. */
 export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
   const { currentVersion, onUpdating, canUpdate } = props;
-  const { provider } = useAgentDock();
+  const { provider } = useAgentDrawer();
   const providerLabel = providerDisplayName(provider);
   const latest = useLatestVersion();
   const [dismissed, setDismissed] = useState(false);

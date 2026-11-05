@@ -122,8 +122,8 @@ export const ResumeUploadStep = withForm({
               </Button>
             }
           >
-            Still extracting. Check the terminal in the dock for progress, retry, or continue and
-            fill the rest in by hand.
+            Still extracting. Check the terminal in the agent drawer for progress, retry, or
+            continue and fill the rest in by hand.
           </Alert>
         )}
 

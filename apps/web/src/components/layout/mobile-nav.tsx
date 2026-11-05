@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import { MoreHoriz } from "@mui/icons-material";
+import { MoreHoriz, Terminal } from "@mui/icons-material";
 import {
   BottomNavigation,
   BottomNavigationAction,
@@ -16,6 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
 import { useSession } from "@/hooks/use-auth";
+import { useAgentDrawer } from "@/providers/agent-provider";
 import { NavBadge } from "./nav-badge";
 import {
   feedbackLinks,
@@ -33,6 +34,7 @@ const LABEL_SIZE = "0.6875rem";
 export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { openDrawer } = useAgentDrawer();
   const { user } = useSession();
 
   // Close after the route commit: closing in the click lets the transition interrupt the
@@ -133,6 +135,17 @@ export function MobileNav(): ReactElement {
               <ListItemText primary={item.label} />
             </ListItemButton>
           ))}
+          <ListItemButton
+            onClick={() => {
+              setMoreOpen(false);
+              openDrawer();
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <Terminal fontSize="md" />
+            </ListItemIcon>
+            <ListItemText primary="Agent" />
+          </ListItemButton>
           <Divider sx={{ my: 0.5 }} />
           {feedbackLinks.map((link) => (
             <ListItemButton

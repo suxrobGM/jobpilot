@@ -10,7 +10,7 @@ import { LinkButton } from "@/components/ui/buttons";
 import { ChecklistRow } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { useTerminalHealth } from "@/hooks/use-terminal-health";
-import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
+import { useAgentAvailable, useAgentDrawer } from "@/providers/agent-provider";
 import { hasGoals } from "../../pilot-status";
 import { usePilotControls } from "../../use-pilot-controls";
 
@@ -37,7 +37,7 @@ interface GetStartedCardProps {
 export function GetStartedCard(props: GetStartedCardProps): ReactNode {
   const { state } = props;
   const { status } = useTerminalHealth();
-  const dock = useAgentDock();
+  const agentDrawer = useAgentDrawer();
   const agentAvailable = useAgentAvailable();
   const controls = usePilotControls();
   const profile = useQuery(userQueries.detail()).data;
@@ -90,7 +90,7 @@ export function GetStartedCard(props: GetStartedCardProps): ReactNode {
       label: "Run the JobPilot agent on your computer. The pilot works through it.",
       done: paired || state.cycleCount > 0,
       action: agentAvailable ? (
-        <Button size="small" variant="outlined" onClick={dock.expand}>
+        <Button size="small" variant="outlined" onClick={agentDrawer.openDrawer}>
           Open agent
         </Button>
       ) : (

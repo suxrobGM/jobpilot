@@ -4,6 +4,7 @@ import { Fragment, type ReactElement, Suspense } from "react";
 import { Box, Divider, Stack } from "@mui/material";
 import NextLink from "next/link";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
+import { AgentButton } from "@/components/features/agent/agent-button";
 import { useSession } from "@/hooks/use-auth";
 import { AccountMenu } from "./account-menu";
 import { FeedbackMenu } from "./feedback-menu";
@@ -71,6 +72,7 @@ export function Rail(): ReactElement {
           </Suspense>
         </>
       )}
+      <AgentButton />
       <FeedbackMenu />
       <AccountMenu />
     </Stack>

@@ -23,7 +23,7 @@ export function AgentSetupStep(): ReactElement {
       <Stack spacing={1.5}>
         <Alert severity="success">
           Agent detected{status?.hostVersion ? ` (v${status.hostVersion})` : ""} - you&apos;re all
-          set. Finish to open your workspace and launch it from the agent dock.
+          set. Finish to open your pilot, with the agent drawer ready.
         </Alert>
       </Stack>
     );
@@ -43,7 +43,8 @@ export function AgentSetupStep(): ReactElement {
       )}
       <PluginInstallCommands />
       <Typography variant="body2Muted">
-        You can do this anytime later - the agent dock on the dashboard has the same instructions.
+        You can do this anytime later. The agent button at the bottom of the sidebar opens the same
+        instructions.
       </Typography>
     </Stack>
   );

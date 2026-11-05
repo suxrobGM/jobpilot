@@ -13,7 +13,7 @@ interface AgentInstallCardProps {
   detail?: string | null;
 }
 
-/** Shown in the dock when the local terminal host is unreachable: plugin-first install + recheck. */
+/** Shown in the agent drawer when the local terminal host is unreachable: plugin-first install + recheck. */
 export function AgentInstallCard(props: AgentInstallCardProps): ReactElement {
   const { title, description, detail } = props;
 

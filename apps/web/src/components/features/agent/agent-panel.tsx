@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { ChevronRight, RestartAlt, StopCircle } from "@mui/icons-material";
+import { Close, RestartAlt, StopCircle } from "@mui/icons-material";
 import {
   IconButton,
   MenuItem,
@@ -15,14 +15,14 @@ import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import { BROWSER_BLOCKED_MESSAGE, type TerminalHealth } from "@/hooks/use-terminal-health";
 import { readAgentStorage } from "@/lib/terminal/agent-storage";
 import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal/client";
-import { useAgentDock } from "@/providers/agent-provider";
+import { useAgentDrawer } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOfflineCard } from "./agent-offline-card";
 import { AgentOrb } from "./agent-orb";
 import { TerminalPanel } from "./terminal-panel";
 import { PendingRestartCard } from "./update/pending-restart-card";
 import { AgentUpdateBanner } from "./update/update-banner";
-import { useDockHealth } from "./use-dock-health";
+import { useAgentHealth } from "./use-agent-health";
 
 const PROVIDERS: TerminalProviderId[] = ["claude", "codex"];
 
@@ -35,9 +35,10 @@ const STATUS_LABELS: Record<TerminalHealth, string> = {
   blocked: "blocked by browser",
 };
 
-export function DockPanel(): ReactElement {
-  const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
-  const { health, status, pending, beginPending, unreachable } = useDockHealth();
+export function AgentPanel(): ReactElement {
+  const { closeDrawer, provider, switchProvider, restart, stop, terminalRevision } =
+    useAgentDrawer();
+  const { health, status, pending, beginPending, unreachable } = useAgentHealth();
   const providerLabel = providerDisplayName(provider);
 
   const statusLabel = pending && unreachable ? `${pending}…` : STATUS_LABELS[health];
@@ -75,8 +76,8 @@ export function DockPanel(): ReactElement {
             </Stack>
           </Stack>
         </Stack>
-        <IconButton size="small" onClick={collapse} aria-label="Collapse agent dock">
-          <ChevronRight fontSize="md" />
+        <IconButton size="small" onClick={closeDrawer} aria-label="Close agent">
+          <Close fontSize="md" />
         </IconButton>
       </Stack>
 

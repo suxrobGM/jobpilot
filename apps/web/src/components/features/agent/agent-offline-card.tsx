@@ -8,11 +8,11 @@ import {
   providerDisplayName,
   TERMINAL_PROTOCOL_URL,
 } from "@/lib/terminal/client";
-import { useAgentDock } from "@/providers/agent-provider";
+import { useAgentDrawer } from "@/providers/agent-provider";
 import { RecheckButton } from "./recheck-button";
 
 interface AgentOfflineCardProps {
-  /** Marks a host relaunch as in flight, so the dock shows its starting state and polls fast. */
+  /** Marks a host relaunch as in flight, so the agent drawer shows its starting state and polls fast. */
   onStart: () => void;
   /** Whether the host reported the jobpilot:// scheme is registered, so the browser can relaunch it. */
   canRelaunch: boolean;
@@ -21,7 +21,7 @@ interface AgentOfflineCardProps {
 /** Shown when a host previously connected from this browser but isn't answering now - installed, just stopped. */
 export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
   const { onStart, canRelaunch } = props;
-  const { provider } = useAgentDock();
+  const { provider } = useAgentDrawer();
   const providerLabel = providerDisplayName(provider);
 
   return (

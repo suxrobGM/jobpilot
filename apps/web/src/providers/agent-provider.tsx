@@ -11,7 +11,7 @@ import {
 import { useMediaQuery } from "@mui/material";
 import {
   patchAgentStorage,
-  readStoredExpanded,
+  readStoredDrawerOpen,
   readStoredProvider,
   subscribeAgentStorage,
 } from "@/lib/terminal/agent-storage";
@@ -30,36 +30,36 @@ export interface AgentContextValue {
   injectSkill: (skill: string, args?: string) => Promise<void>;
 }
 
-export interface AgentDockContextValue {
+export interface AgentDrawerContextValue {
   provider: TerminalProviderId;
   switchProvider: (next: TerminalProviderId) => Promise<void>;
   restart: () => Promise<void>;
   /** Resolves true when the host is shutting down, false when it stayed up. */
   stop: () => Promise<boolean>;
   terminalRevision: number;
-  expanded: boolean;
-  expand: () => void;
-  collapse: () => void;
+  drawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 }
 
 const AgentContext = createContext<AgentContextValue | null>(null);
-const AgentDockContext = createContext<AgentDockContextValue | null>(null);
+const AgentDrawerContext = createContext<AgentDrawerContextValue | null>(null);
 
 function describeInjectError(error: unknown): string {
   if (error instanceof TypeError) {
-    return "The JobPilot agent isn't reachable. Open the agent dock to install and start it, then try again.";
+    return "The JobPilot agent isn't reachable. Open the agent drawer to install and start it, then try again.";
   }
 
   if (error instanceof TerminalApiError) {
     if (error.status === 404) {
-      return "Terminal session has ended. Restart it from the Terminal tab in the dock.";
+      return "Terminal session has ended. Restart it from the Terminal tab in the agent drawer.";
     }
     // The host answers 409 both for "not running" and for a provider mismatch.
     if (error.status === 409 && /provider/i.test(error.message)) {
-      return "A different provider is running in the terminal. Switch provider in the dock or restart it.";
+      return "A different provider is running in the terminal. Switch provider in the agent drawer or restart it.";
     }
     if (error.status === 409 || error.status === 500) {
-      return "No active terminal session. Open the Terminal tab in the dock and start one.";
+      return "No active terminal session. Open the Terminal tab in the agent drawer and start one.";
     }
   }
   const message = error instanceof Error ? error.message : String(error);
@@ -78,7 +78,7 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     (): TerminalProviderId => "claude",
   );
 
-  const expanded = useSyncExternalStore(subscribeAgentStorage, readStoredExpanded, () => false);
+  const drawerOpen = useSyncExternalStore(subscribeAgentStorage, readStoredDrawerOpen, () => false);
   const [terminalRevision, setTerminalRevision] = useState(0);
 
   // True only when the host goes down; otherwise nothing would ever clear the "Stopping…" card.
@@ -121,7 +121,7 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
   };
 
   const runInject = async (command: string): Promise<void> => {
-    patchAgentStorage({ dockExpanded: true });
+    patchAgentStorage({ drawerOpen: true });
     try {
       await injectCommand(command, provider);
     } catch (error) {
@@ -134,20 +134,20 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     injectSkill: (skill, args) => runInject(formatSkillCommand(provider, skill, args)),
   };
 
-  const dockValue: AgentDockContextValue = {
+  const drawerValue: AgentDrawerContextValue = {
     provider,
     switchProvider,
     restart,
     stop,
     terminalRevision,
-    expanded,
-    expand: () => patchAgentStorage({ dockExpanded: true }),
-    collapse: () => patchAgentStorage({ dockExpanded: false }),
+    drawerOpen,
+    openDrawer: () => patchAgentStorage({ drawerOpen: true }),
+    closeDrawer: () => patchAgentStorage({ drawerOpen: false }),
   };
 
   return (
     <AgentContext.Provider value={publicValue}>
-      <AgentDockContext.Provider value={dockValue}>{children}</AgentDockContext.Provider>
+      <AgentDrawerContext.Provider value={drawerValue}>{children}</AgentDrawerContext.Provider>
     </AgentContext.Provider>
   );
 }
@@ -160,15 +160,15 @@ export function useAgent(): AgentContextValue {
   return ctx;
 }
 
-export function useAgentDock(): AgentDockContextValue {
-  const ctx = useContext(AgentDockContext);
+export function useAgentDrawer(): AgentDrawerContextValue {
+  const ctx = useContext(AgentDrawerContext);
   if (!ctx) {
-    throw new Error("useAgentDock must be used within an AgentProvider");
+    throw new Error("useAgentDrawer must be used within an AgentProvider");
   }
   return ctx;
 }
 
-/** Below md there is no dock to inject into, so agent-driving controls hide against this. */
+/** Below md there is no terminal to inject into, so agent-driving controls hide against this. */
 export function useAgentAvailable(): boolean {
   return useMediaQuery((theme) => theme.breakpoints.up("md"));
 }

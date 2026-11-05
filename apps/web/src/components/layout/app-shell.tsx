@@ -2,7 +2,7 @@
 
 import type { PropsWithChildren, ReactElement } from "react";
 import { Box } from "@mui/material";
-import { AgentDock } from "@/components/features/agent-dock/agent-dock";
+import { AgentDrawer } from "@/components/features/agent/agent-drawer";
 import { VerifyEmailBanner } from "@/components/features/auth";
 import { PilotLive } from "@/components/features/pilot/pilot-live";
 import { PipelineLive } from "@/components/features/pipeline";
@@ -13,7 +13,7 @@ import { MOBILE_NAV_HEIGHT } from "./shell-config";
 
 export function AppShell(props: PropsWithChildren): ReactElement {
   const { children } = props;
-  // The agent terminal is desktop-only, so below md a bottom bar replaces the rail and dock.
+  // Below md a bottom bar replaces the rail; the drawer still opens there for the agent's status.
   const isDesktop = useAgentAvailable();
 
   return (
@@ -39,7 +39,8 @@ export function AppShell(props: PropsWithChildren): ReactElement {
         <PipelineLive />
         {children}
       </Box>
-      {isDesktop ? <AgentDock /> : <MobileNav />}
+      <AgentDrawer />
+      {!isDesktop && <MobileNav />}
     </Box>
   );
 }

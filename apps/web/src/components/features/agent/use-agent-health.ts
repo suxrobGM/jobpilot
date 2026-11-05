@@ -8,7 +8,7 @@ export type PendingAction = "updating" | "starting" | "stopping";
 /** How long an expected restart may keep the calmer pending card up before the real offline card returns. */
 const PENDING_RESTART_TIMEOUT_MS = 45_000;
 
-export interface DockHealthState extends TerminalHealthState {
+export interface AgentHealthState extends TerminalHealthState {
   /** Expected host state change in flight (dashboard-triggered update, Start agent, or Stop agent). */
   pending: PendingAction | null;
   /** `null` cancels a pending action whose host change never happened (e.g. a failed stop). */
@@ -18,7 +18,7 @@ export interface DockHealthState extends TerminalHealthState {
 }
 
 /** Pending clears once the host has gone down and answered again, or at the deadline. */
-export function useDockHealth(): DockHealthState {
+export function useAgentHealth(): AgentHealthState {
   const [pending, setPending] = useState<PendingAction | null>(null);
   const healthState = useTerminalHealth(pending !== null);
   const sawHostDown = useRef(false);

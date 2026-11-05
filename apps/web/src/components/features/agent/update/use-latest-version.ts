@@ -43,7 +43,7 @@ async function fetchLatestVersion(): Promise<string | null> {
     : null;
 }
 
-/** Cached an hour: the dock remounts on every expand, and anonymous GitHub allows 60 requests an hour. */
+/** Cached an hour: the agent drawer remounts every time it opens, and anonymous GitHub allows 60 requests an hour. */
 export function useLatestVersion(): string | null {
   const query = useQuery({
     queryKey: ["github", "latest-release"],

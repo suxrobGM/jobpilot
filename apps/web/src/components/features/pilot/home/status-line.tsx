@@ -5,7 +5,7 @@ import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { PulseDot } from "@/components/ui/feedback";
-import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
+import { useAgentAvailable, useAgentDrawer } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime } from "@/utils/format";
 import { hasGoals, idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../pilot-status";
@@ -33,7 +33,7 @@ export function StatusLine(props: StatusLineProps): ReactElement {
   const { state } = props;
   const confirm = useConfirm();
   const controls = usePilotControls();
-  const dock = useAgentDock();
+  const agentDrawer = useAgentDrawer();
   const agentAvailable = useAgentAvailable();
   const { health, pilot, mode } = usePilotStatus(state, controls.isLoading);
   const nextWakeAt = useNextWake(state);
@@ -69,7 +69,7 @@ export function StatusLine(props: StatusLineProps): ReactElement {
         </Stack>
         <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
           {agentAvailable && (
-            <Button size="small" onClick={dock.expand}>
+            <Button size="small" onClick={agentDrawer.openDrawer}>
               {mode === "offline" ? "Start agent" : "Watch"}
             </Button>
           )}

@@ -87,8 +87,8 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
   const isLastProfileStep = step === PROFILE_STEPS - 1;
 
   const finish = (): void => {
-    // Land on the workspace with the dock open so the agent is the obvious next step.
-    patchAgentStorage({ dockExpanded: true });
+    // Land on the pilot with the agent drawer open so the agent is the obvious next step.
+    patchAgentStorage({ drawerOpen: true });
     router.push("/pilot");
   };
 
