@@ -11,13 +11,16 @@ import type { GridPaginationProps } from "@/hooks/use-pagination";
 interface InboxTableProps extends GridPaginationProps {
   rows: ReadonlyArray<EmailMessageDto>;
   loading?: boolean;
+  /** Set when the read failed, so empty rows don't read as an empty inbox. */
+  errorTitle?: string;
+  onRetry?: () => void;
   onRowClick: (row: EmailMessageDto) => void;
   /** When provided, each row gets a Scan/Rescan action that calls this. */
   onScanMessage?: (row: EmailMessageDto) => void;
 }
 
 export function InboxTable(props: InboxTableProps): ReactElement {
-  const { rows, loading, onRowClick, onScanMessage, ...pagination } = props;
+  const { rows, loading, errorTitle, onRetry, onRowClick, onScanMessage, ...pagination } = props;
 
   const columns: GridColDef<EmailMessageDto>[] = [
     {
@@ -142,6 +145,9 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       rows={rows}
       columns={columns}
       loading={loading}
+      errorTitle={errorTitle}
+      onRetry={onRetry}
+      emptyMessage="No messages here yet."
       rowHeight={60}
       onRowClick={onRowClick}
       {...pagination}

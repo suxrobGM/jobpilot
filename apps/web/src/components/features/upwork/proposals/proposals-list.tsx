@@ -1,27 +1,30 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
-import type { UpworkProposalStatus } from "@jobpilot/contracts/upwork";
-import { ChevronRight, Clear } from "@mui/icons-material";
-import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
+import { UPWORK_PROPOSAL_STATUSES } from "@jobpilot/contracts/upwork";
+import { ChevronRight } from "@mui/icons-material";
+import { Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
+import { useSearchParams } from "next/navigation";
 import { upworkProposalQueries } from "@/api/queries";
-import { PaginationFooter } from "@/components/ui/data";
 import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/feedback";
-import { SelectField } from "@/components/ui/form";
-import { SectionCard } from "@/components/ui/layout";
+import { FilterToggle } from "@/components/ui/form";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { plural } from "@/utils/format";
+import { enumParam } from "@/utils/search-params";
+import { UPWORK_PAGE_SIZE, UpworkListFrame } from "../upwork-list-frame";
 
-const PAGE_SIZE = 10;
+const STATUS_OPTIONS = statusOptions("upworkProposal");
 
 export function ProposalsList(): ReactElement {
-  const [statusFilter, setStatusFilter] = useState<UpworkProposalStatus | null>(null);
-  const { query, setPage, setPageSize } = usePaginationParams({ pageSize: PAGE_SIZE });
+  const status = enumParam(UPWORK_PROPOSAL_STATUSES, useSearchParams().get("status"));
+  const { query, setPage, setPageSize, setFilters } = usePaginationParams({
+    pageSize: UPWORK_PAGE_SIZE,
+  });
 
   useLiveInvalidation(upworkChannel, null, {
     on: {
@@ -31,96 +34,64 @@ export function ProposalsList(): ReactElement {
     },
   });
 
-  const proposals = useQuery(
-    upworkProposalQueries.list({ ...query, ...(statusFilter && { status: statusFilter }) }),
-  );
-
-  const pageRows = proposals.data?.items ?? [];
-  const total = proposals.data?.pagination.total ?? 0;
-  const hasFilters = statusFilter !== null;
+  const proposals = useQuery(upworkProposalQueries.list({ ...query, ...(status && { status }) }));
+  const hasFilters = status !== null;
 
   return (
-    <SectionCard>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={1.5}
-        sx={{ alignItems: { xs: "stretch", md: "center" }, mb: 2 }}
-      >
-        <SelectField
+    <UpworkListFrame
+      filters={
+        <FilterToggle
           label="Status"
-          value={statusFilter}
-          options={statusOptions("upworkProposal")}
-          onChange={(v) => {
-            setStatusFilter(v);
-            setPage(1);
-          }}
+          value={status}
+          options={STATUS_OPTIONS}
+          onChange={(next) => setFilters({ status: next })}
         />
-        {hasFilters && (
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<Clear fontSize="sm" />}
-            onClick={() => {
-              setStatusFilter(null);
-              setPage(1);
-            }}
-          >
-            Clear
-          </Button>
-        )}
-        <Box sx={{ flex: 1 }} />
-        <Typography variant="captionMuted">{plural(total, "proposal")}</Typography>
-      </Stack>
-
-      {pageRows.length === 0 ? (
+      }
+      hasFilters={hasFilters}
+      onClearFilters={() => setFilters({ status: null })}
+      countLabel={plural(proposals.data?.pagination.total ?? 0, "proposal")}
+      isLoading={proposals.isPending}
+      isError={proposals.isError}
+      onRetry={() => void proposals.refetch()}
+      errorTitle="Couldn't load your proposals."
+      empty={
         <EmptyState
           variant="inline"
           title={
             hasFilters
               ? "No proposals match the current filter."
-              : "No proposals yet. Start one from “New proposal”."
+              : "No proposals yet. Start one from \u201cNew proposal\u201d."
           }
         />
-      ) : (
-        <Stack spacing={1}>
-          {pageRows.map((p) => (
-            <Card key={p.id} variant="interactive">
-              <CardActionArea href={`/upwork/${p.id}` as Route} sx={{ padding: 1.5 }}>
-                <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-                  <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      sx={{ alignItems: "center", flexWrap: "wrap" }}
-                    >
-                      <StatusChip domain="upworkProposal" value={p.status} />
-                      {p.clientName && <Chip label={p.clientName} variant="outlined" />}
-                    </Stack>
-                    <Typography variant="body2Strong" noWrap>
-                      {p.jobTitle}
-                    </Typography>
-                    <Stack direction="row" spacing={0.5}>
-                      <RelativeTime prefix="Updated" value={p.updatedAt} />
-                      {!p.proposalText && (
-                        <Typography variant="captionMuted">· not generated yet</Typography>
-                      )}
-                    </Stack>
-                  </Stack>
-                  <ChevronRight fontSize="md" />
+      }
+      pagination={proposals.data?.pagination}
+      onPageChange={setPage}
+      onPageSizeChange={setPageSize}
+    >
+      {(proposals.data?.items ?? []).map((p) => (
+        <Card key={p.id} variant="interactive">
+          <CardActionArea href={`/upwork/${p.id}` as Route} sx={{ padding: 1.5 }}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+                  <StatusChip domain="upworkProposal" value={p.status} />
+                  {p.clientName && <Chip label={p.clientName} variant="outlined" />}
                 </Stack>
-              </CardActionArea>
-            </Card>
-          ))}
-        </Stack>
-      )}
-
-      {proposals.data && (
-        <PaginationFooter
-          pagination={proposals.data.pagination}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-        />
-      )}
-    </SectionCard>
+                <Typography variant="body2Strong" noWrap>
+                  {p.jobTitle}
+                </Typography>
+                <Stack direction="row" spacing={0.5}>
+                  <RelativeTime prefix="Updated" value={p.updatedAt} />
+                  {!p.proposalText && (
+                    <Typography variant="captionMuted">· not generated yet</Typography>
+                  )}
+                </Stack>
+              </Stack>
+              <ChevronRight fontSize="md" />
+            </Stack>
+          </CardActionArea>
+        </Card>
+      ))}
+    </UpworkListFrame>
   );
 }

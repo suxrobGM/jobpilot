@@ -46,7 +46,7 @@ export function toApiError(error: unknown): ApiError {
 }
 
 /** Pull a human-readable message out of an Eden Treaty error (`error.value.message`). */
-export function apiErrorMessage(error: unknown, fallback?: string): string {
+function apiErrorMessage(error: unknown, fallback?: string): string {
   const { status, value } = edenError(error);
   const body = errorMessageSchema.safeParse(value);
   if (body.success && body.data.message.length > 0) {

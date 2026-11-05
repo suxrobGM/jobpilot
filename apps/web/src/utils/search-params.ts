@@ -42,3 +42,8 @@ export interface PaginationSearchParams {
 export function paginationQuery(params: PaginationSearchParams): PaginationQuery {
   return { page: pageParam(params.page), limit: pageSizeParam(params.pageSize) };
 }
+
+/** A `?key=` value narrowed to an enum, or null when absent or hand-edited to junk. */
+export function enumParam<T extends string>(values: readonly T[], raw: string | null): T | null {
+  return values.find((value) => value === raw) ?? null;
+}

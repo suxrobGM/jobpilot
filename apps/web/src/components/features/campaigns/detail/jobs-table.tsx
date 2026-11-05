@@ -97,7 +97,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       : []),
     {
       field: "failReason",
-      headerName: "Fail reason",
+      headerName: "Reason",
       flex: 1,
       minWidth: 160,
       valueGetter: (_v, row) => row.failReason ?? row.skipReason ?? "",

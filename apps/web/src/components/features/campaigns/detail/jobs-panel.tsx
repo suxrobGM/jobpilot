@@ -1,33 +1,31 @@
 "use client";
 
 import { type ReactElement, useRef, useState } from "react";
-import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
+import { CAMPAIGN_JOB_STATUSES } from "@jobpilot/contracts/campaign";
 import { Autorenew, Clear, Replay } from "@mui/icons-material";
-import { Box, Button, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
-import { apiErrorMessage } from "@/api/error";
 import { useApiMutation } from "@/api/hooks";
 import { campaignQueries, invalidations } from "@/api/queries";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
 import { statusOptions } from "@/components/ui/display";
-import { SelectField } from "@/components/ui/form";
+import { SearchField, SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
+import { useUrlSearch } from "@/hooks/use-url-search";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { plural } from "@/utils/format";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
+import { enumParam } from "@/utils/search-params";
 import { UPWORK_DOMAIN } from "../constants";
 import { CampaignJobsTable, isReapplicable } from "./jobs-table";
 
 const STATUS_OPTIONS = statusOptions("campaignJob");
-
-const SEARCH_DEBOUNCE_MS = 300;
 
 interface CampaignJobsPanelProps {
   campaign: CampaignDetailDto;
@@ -42,20 +40,19 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [statusFilter, setStatusFilter] = useState<CampaignJobStatus | null>(null);
-  const [search, setSearch] = useState("");
   const pagination = usePaginationParams({ prefix: "jobs" });
+  const statusFilter = enumParam(CAMPAIGN_JOB_STATUSES, useSearchParams().get("jobsStatus"));
+  const search = useUrlSearch("jobsQ", pagination);
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
   const isUpwork = campaign.board?.domain === UPWORK_DOMAIN;
 
   // Filters run server-side, so they cover the whole campaign rather than the loaded page.
-  const term = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
   const jobs = useQuery(
     campaignQueries.jobs(campaign.id, {
       ...pagination.query,
       status: statusFilter ?? undefined,
-      search: term || undefined,
+      search: search.applied || undefined,
     }),
   );
   const visible = jobs.data?.items ?? [];
@@ -77,9 +74,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
     : [];
   const selectedSkipped = selected.filter((j) => j.status === "skipped");
   const selectedForReapply = selected.filter((job) => job.status !== "skipped");
-  const hasFilters = statusFilter !== null || term !== "";
-
-  const resetPage = (): void => pagination.setPage(1);
+  const hasFilters = statusFilter !== null || search.applied !== "";
 
   const resetSelection = (): void => {
     setSelection(EMPTY_SELECTION);
@@ -131,21 +126,28 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
 
   // Upwork recommendations are recommend-only: seed a proposal draft from the
   // recommendation, then hand off to the upwork-proposal skill to write it.
-  const draftProposal = async (job: CampaignJobDto): Promise<void> => {
-    const res = await api.upwork.proposals.post({
-      jobTitle: job.title,
-      clientName: job.company || null,
-      jobUrl: job.url,
-      jobDescription: job.description ?? "",
-      source: "search",
-      jobId: job.id,
-    });
-    if (res.error || !res.data) {
-      toast.error(apiErrorMessage(res.error, "Could not create the proposal draft"));
-      return;
+  const createDraft = useApiMutation(
+    (job: CampaignJobDto) =>
+      api.upwork.proposals.post({
+        jobTitle: job.title,
+        clientName: job.company || null,
+        jobUrl: job.url,
+        jobDescription: job.description ?? "",
+        source: "search",
+        jobId: job.id,
+      }),
+    {
+      onSuccess: ({ id }) => {
+        void agent.injectSkill("upwork-proposal", id);
+        router.push(`/upwork/${id}` as Route);
+      },
+    },
+  );
+  // A double click would otherwise create two drafts for one job.
+  const draftProposal = (job: CampaignJobDto): void => {
+    if (!createDraft.isPending) {
+      createDraft.mutate(job);
     }
-    void agent.injectSkill("upwork-proposal", String(res.data.id));
-    router.push(`/upwork/${res.data.id}` as Route);
   };
 
   return (
@@ -159,20 +161,12 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
           label="Status"
           value={statusFilter}
           options={STATUS_OPTIONS}
-          onChange={(next) => {
-            setStatusFilter(next);
-            resetPage();
-          }}
+          onChange={(next) => pagination.setFilters({ jobsStatus: next })}
         />
-        <TextField
-          size="small"
-          label="Search title / company"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            resetPage();
-          }}
-          sx={{ minWidth: 220 }}
+        <SearchField
+          placeholder="Search title / company"
+          value={search.draft}
+          onChange={search.setDraft}
         />
         {hasFilters && (
           <Button
@@ -180,9 +174,8 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
             variant="text"
             startIcon={<Clear fontSize="sm" />}
             onClick={() => {
-              setStatusFilter(null);
-              setSearch("");
-              resetPage();
+              search.setDraft("");
+              pagination.setFilters({ jobsStatus: null, jobsQ: null });
             }}
           >
             Clear

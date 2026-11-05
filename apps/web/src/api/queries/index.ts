@@ -23,7 +23,6 @@ export {
   campaignQueries,
   coverLetterQueries,
   emailQueries,
-  type InboxFilter,
   networkingQueries,
 } from "./work";
 

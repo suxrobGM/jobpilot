@@ -1,22 +1,26 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
+import { REVIEW_STATUSES } from "@jobpilot/contracts/email";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { LinearProgress, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { emailQueries, type InboxFilter } from "@/api/queries";
+import { useSearchParams } from "next/navigation";
+import { emailQueries } from "@/api/queries";
 import { MailboxReauthAlert } from "@/components/features/settings/sections/mailbox-reauth-alert";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/feedback";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
+import { enumParam } from "@/utils/search-params";
 import { InboxTable } from "./inbox-table";
 import { InboxToolbar } from "./inbox-toolbar";
 import { MessageReviewDialog } from "./message-review-dialog";
 
 export function InboxContent(): ReactElement {
-  const [filter, setFilter] = useState<InboxFilter>("all");
+  // In the URL, so a refresh or a shared link keeps the filter along with the page.
+  const filter = enumParam(REVIEW_STATUSES, useSearchParams().get("filter"));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { injectSkill } = useAgent();
   const agentAvailable = useAgentAvailable();
@@ -28,7 +32,7 @@ export function InboxContent(): ReactElement {
 
   const pagination = usePaginationParams();
   const messages = useQuery({
-    ...emailQueries.messages(filter, pagination.query),
+    ...emailQueries.messages(filter ?? "all", pagination.query),
     enabled: connected,
   });
 
@@ -73,28 +77,23 @@ export function InboxContent(): ReactElement {
       )}
       <InboxToolbar
         filter={filter}
-        onFilterChange={(next) => {
-          setFilter(next);
-          pagination.setPage(1);
-        }}
+        onFilterChange={(next) => pagination.setFilters({ filter: next })}
       />
-      {messages.isLoading ? (
-        <LinearProgress />
-      ) : (
-        <InboxTable
-          rows={messages.data?.items ?? []}
-          loading={messages.isFetching}
-          {...gridPagination(pagination, messages.data?.pagination)}
-          onRowClick={(row) => setSelectedId(row.id)}
-          onScanMessage={
-            agentAvailable
-              ? (row) => {
-                  void injectSkill("scan-inbox", String(row.id));
-                }
-              : undefined
-          }
-        />
-      )}
+      <InboxTable
+        rows={messages.data?.items ?? []}
+        loading={messages.isFetching}
+        errorTitle={messages.isError ? "Couldn't load your inbox." : undefined}
+        onRetry={() => void messages.refetch()}
+        {...gridPagination(pagination, messages.data?.pagination)}
+        onRowClick={(row) => setSelectedId(row.id)}
+        onScanMessage={
+          agentAvailable
+            ? (row) => {
+                void injectSkill("scan-inbox", String(row.id));
+              }
+            : undefined
+        }
+      />
       <MessageReviewDialog
         messageId={selectedId}
         open={selectedId !== null}

@@ -88,7 +88,7 @@ export const campaignQueries = {
 };
 
 /** The inbox list filter: a review status, or "all" for no filter. */
-export type InboxFilter = ReviewStatus | "all";
+type InboxFilter = ReviewStatus | "all";
 
 export const emailQueries = {
   all: EMAIL,

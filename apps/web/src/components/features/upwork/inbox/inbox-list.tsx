@@ -1,99 +1,85 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
-import type { UpworkInboxKind, UpworkInboxStatus } from "@jobpilot/contracts/upwork";
-import { Clear, CloudSync, Launch } from "@mui/icons-material";
+import {
+  UPWORK_INBOX_KINDS,
+  UPWORK_INBOX_STATUSES,
+  type UpworkInboxStatus,
+} from "@jobpilot/contracts/upwork";
+import { CloudSync, Launch } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { upworkInboxQueries } from "@/api/queries";
 import { AgentOnlyButton } from "@/components/ui/buttons";
-import { PaginationFooter } from "@/components/ui/data";
 import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/feedback";
-import { SelectField } from "@/components/ui/form";
-import { SectionCard } from "@/components/ui/layout";
+import { FilterToggle } from "@/components/ui/form";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { plural } from "@/utils/format";
-
-const PAGE_SIZE = 10;
+import { enumParam } from "@/utils/search-params";
+import { UPWORK_PAGE_SIZE, UpworkListFrame } from "../upwork-list-frame";
 
 const KIND_OPTIONS = statusOptions("upworkInboxKind");
 const INBOX_STATUS_OPTIONS = statusOptions("upworkInboxStatus");
 
+interface InboxStatusChange {
+  id: string;
+  status: UpworkInboxStatus;
+}
+
 export function InboxList(): ReactElement {
   const agent = useAgent();
-  const [kindFilter, setKindFilter] = useState<UpworkInboxKind | null>(null);
-  const [statusFilter, setStatusFilter] = useState<UpworkInboxStatus | null>(null);
-  const { query, setPage, setPageSize } = usePaginationParams({ pageSize: PAGE_SIZE });
+  const params = useSearchParams();
+  const kind = enumParam(UPWORK_INBOX_KINDS, params.get("kind"));
+  const status = enumParam(UPWORK_INBOX_STATUSES, params.get("status"));
+  const { query, setPage, setPageSize, setFilters } = usePaginationParams({
+    pageSize: UPWORK_PAGE_SIZE,
+  });
 
   useLiveInvalidation(upworkChannel, null, {
     on: { "inbox.synced": [upworkInboxQueries.all], "inbox.updated": [upworkInboxQueries.all] },
   });
 
   const inbox = useQuery(
-    upworkInboxQueries.list({
-      ...query,
-      ...(kindFilter && { kind: kindFilter }),
-      ...(statusFilter && { status: statusFilter }),
-    }),
+    upworkInboxQueries.list({ ...query, ...(kind && { kind }), ...(status && { status }) }),
   );
 
   const setStatus = useApiMutation(
-    ({ id, status }: { id: string; status: UpworkInboxStatus }) =>
-      api.upwork.inbox({ id }).patch({ status }),
+    (change: InboxStatusChange) =>
+      api.upwork.inbox({ id: change.id }).patch({ status: change.status }),
     { invalidate: [upworkInboxQueries.all] },
   );
 
-  const pageRows = inbox.data?.items ?? [];
-  const total = inbox.data?.pagination.total ?? 0;
-  const hasFilters = kindFilter !== null || statusFilter !== null;
+  const hasFilters = kind !== null || status !== null;
 
   return (
-    <SectionCard>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={1.5}
-        sx={{ alignItems: { xs: "stretch", md: "center" }, mb: 2 }}
-      >
-        <SelectField
-          label="Kind"
-          value={kindFilter}
-          options={KIND_OPTIONS}
-          onChange={(v) => {
-            setKindFilter(v);
-            setPage(1);
-          }}
-        />
-        <SelectField
-          label="Status"
-          value={statusFilter}
-          options={INBOX_STATUS_OPTIONS}
-          onChange={(v) => {
-            setStatusFilter(v);
-            setPage(1);
-          }}
-        />
-        {hasFilters && (
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<Clear fontSize="sm" />}
-            onClick={() => {
-              setKindFilter(null);
-              setStatusFilter(null);
-              setPage(1);
-            }}
-          >
-            Clear
-          </Button>
-        )}
-        <Box sx={{ flex: 1 }} />
-        <Typography variant="captionMuted">{plural(total, "item")}</Typography>
+    <UpworkListFrame
+      filters={
+        <>
+          <FilterToggle
+            label="Kind"
+            value={kind}
+            options={KIND_OPTIONS}
+            onChange={(next) => setFilters({ kind: next })}
+          />
+          <FilterToggle
+            label="Status"
+            value={status}
+            options={INBOX_STATUS_OPTIONS}
+            onChange={(next) => setFilters({ status: next })}
+          />
+        </>
+      }
+      hasFilters={hasFilters}
+      onClearFilters={() => setFilters({ kind: null, status: null })}
+      countLabel={plural(inbox.data?.pagination.total ?? 0, "item")}
+      actions={
         <AgentOnlyButton
           size="small"
           variant="outlined"
@@ -103,61 +89,51 @@ export function InboxList(): ReactElement {
         >
           Sync
         </AgentOnlyButton>
-      </Stack>
-
-      {pageRows.length === 0 ? (
-        <InboxEmptyState hasFilters={hasFilters} />
-      ) : (
-        <Stack spacing={1}>
-          {pageRows.map((item) => (
-            <Card key={item.id}>
-              <CardContent>
-                <Stack spacing={0.5}>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{ alignItems: "center", flexWrap: "wrap" }}
+      }
+      isLoading={inbox.isPending}
+      isError={inbox.isError}
+      onRetry={() => void inbox.refetch()}
+      errorTitle="Couldn't load your Upwork inbox."
+      empty={<InboxEmptyState hasFilters={hasFilters} />}
+      pagination={inbox.data?.pagination}
+      onPageChange={setPage}
+      onPageSizeChange={setPageSize}
+    >
+      {(inbox.data?.items ?? []).map((item) => (
+        <Card key={item.id}>
+          <CardContent>
+            <Stack spacing={0.5}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+                <StatusChip
+                  domain="upworkInboxKind"
+                  value={item.kind}
+                  variant={item.status === "unread" ? "filled" : "outlined"}
+                />
+                {item.clientName && <Chip label={item.clientName} variant="outlined" />}
+                <Box sx={{ flex: 1 }} />
+                {item.jobUrl && (
+                  <Button size="small" startIcon={<Launch fontSize="sm" />} href={item.jobUrl}>
+                    Open
+                  </Button>
+                )}
+                {item.status !== "archived" && (
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => setStatus.mutate({ id: item.id, status: "archived" })}
                   >
-                    <StatusChip
-                      domain="upworkInboxKind"
-                      value={item.kind}
-                      variant={item.status === "unread" ? "filled" : "outlined"}
-                    />
-                    {item.clientName && <Chip label={item.clientName} variant="outlined" />}
-                    <Box sx={{ flex: 1 }} />
-                    {item.jobUrl && (
-                      <Button size="small" startIcon={<Launch fontSize="sm" />} href={item.jobUrl}>
-                        Open
-                      </Button>
-                    )}
-                    {item.status !== "archived" && (
-                      <Button
-                        size="small"
-                        variant="text"
-                        onClick={() => setStatus.mutate({ id: item.id, status: "archived" })}
-                      >
-                        Archive
-                      </Button>
-                    )}
-                  </Stack>
-                  <Typography variant="body2Strong">{item.title}</Typography>
-                  {item.body && <Typography variant="body2Muted">{item.body}</Typography>}
-                  <RelativeTime prefix="Received" value={item.receivedAt} />
-                </Stack>
-              </CardContent>
-            </Card>
-          ))}
-        </Stack>
-      )}
-
-      {inbox.data && (
-        <PaginationFooter
-          pagination={inbox.data.pagination}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-        />
-      )}
-    </SectionCard>
+                    Archive
+                  </Button>
+                )}
+              </Stack>
+              <Typography variant="body2Strong">{item.title}</Typography>
+              {item.body && <Typography variant="body2Muted">{item.body}</Typography>}
+              <RelativeTime prefix="Received" value={item.receivedAt} />
+            </Stack>
+          </CardContent>
+        </Card>
+      ))}
+    </UpworkListFrame>
   );
 }
 
