@@ -3,13 +3,13 @@
 Payload `{campaignId, query, config, counts, topSkipReasons}`. No browser. Judge the yield: query
 too broad or narrow, `minScore` off, skip reasons clustered? Make one change:
 
-- **Config**: rewrite the query and/or move `minScore` by at most 10, staying within 50-95. Start
-  from a fresh `GET /api/campaigns/$CID`, write `{"config": <updated config>, "expectedUpdatedAt":
-  "<its updatedAt>"}` to `$JOBPILOT_TEMP/campaign.json`, then `PATCH /api/campaigns/$CID --data
-  @...`. A `409` with code `STALE_WRITE` means the user edited it meanwhile: re-fetch and decide once more. A bigger change
-  → ask a `choice` question instead.
-- **Search**: when the search itself is dry or off-target, change one saved search instead, via
-  `POST`/`PATCH`/`DELETE /api/pilot/searches[/:id]` (`GET /api/pilot/searches` for ids), with
-  `reason` saying why.
+- **Search**: when the search is dry or off-target, change it with one applied change (the user can
+  undo it). `GET /api/pilot/searches` for its id and name, then `POST /api/pilot/changes` with
+  `"source": "pilot"`, `"runId": "<RUN_ID>"` and one `search.update` (new `query`, a `name` to
+  match, `reason` saying why), `search.pause`, or `search.delete` action.
+- **Min score**: never change it yourself. When near misses cluster just below it, propose a
+  `rules.set` with the new `minScore` (at most 10 lower, never under 50): the same body with
+  `"propose": true` and a summary that says why ("12 jobs scored 55-59 this week").
 
-Summary: "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65."
+Summary: "'ML engineer, new grad' yielding 12% - narrowed its query to '<new>'." or "Proposed
+min score 65: 12 near misses this week."
