@@ -2,11 +2,11 @@
 
 import type { ReactNode } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { emailQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
+import { ChecklistRow } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
@@ -96,18 +96,13 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
     >
       <Stack spacing={2}>
         {steps.map((step) => (
-          <Stack key={step.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-            {step.done ? (
-              <CheckCircle fontSize="md" sx={{ color: "success.main" }} />
-            ) : (
-              <RadioButtonUnchecked fontSize="md" sx={{ color: "text.disabled" }} />
-            )}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body1Strong">{step.label}</Typography>
-              <Typography variant="captionMuted">{step.description}</Typography>
-            </Box>
-            {!step.done && step.action}
-          </Stack>
+          <ChecklistRow
+            key={step.id}
+            done={step.done}
+            label={step.label}
+            description={step.description}
+            action={step.action}
+          />
         ))}
       </Stack>
     </SectionCard>

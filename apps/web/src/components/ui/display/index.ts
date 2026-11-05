@@ -1,3 +1,4 @@
+export { ChecklistRow } from "./checklist-row";
 export { CopyField } from "./copy-field";
 export { ExternalLink } from "./external-link";
 export { ItemList, ItemRow } from "./item-row";

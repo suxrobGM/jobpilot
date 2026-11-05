@@ -1,12 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
-import { Stack, Typography } from "@mui/material";
+import { Stack } from "@mui/material";
 import type { Route } from "next";
 import { useApiQuery } from "@/api/hooks";
 import { credentialQueries, emailQueries, userQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
+import { ChecklistRow } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { useSession } from "@/hooks/use-auth";
 
@@ -19,8 +19,8 @@ interface ChecklistItem {
 }
 
 /**
- * Post-onboarding nudges for everything the 3-step wizard skipped. Rendered on
- * the pipeline until every item is done, then disappears.
+ * Post-onboarding nudges for everything the 3-step wizard skipped. Shown on the workspace
+ * until every item is done.
  */
 export function ProfileChecklistCard(): ReactNode {
   const { user } = useSession();
@@ -78,29 +78,16 @@ export function ProfileChecklistCard(): ReactNode {
     <SectionCard title={`Finish setting up · ${items.length - remaining.length}/${items.length}`}>
       <Stack spacing={1}>
         {items.map((item) => (
-          <Stack
+          <ChecklistRow
             key={item.key}
-            direction="row"
-            spacing={1.25}
-            sx={{ alignItems: "center", minHeight: 36 }}
-          >
-            {item.done ? (
-              <CheckCircle fontSize="md" sx={{ color: "success.main" }} />
-            ) : (
-              <RadioButtonUnchecked fontSize="md" sx={{ color: "text.disabled" }} />
-            )}
-            <Typography
-              variant="body2"
-              sx={{ flex: 1, color: item.done ? "text.disabled" : "text.primary" }}
-            >
-              {item.label}
-            </Typography>
-            {!item.done && (
+            done={item.done}
+            label={item.label}
+            action={
               <LinkButton href={item.href} size="small" variant="outlined">
                 {item.action}
               </LinkButton>
-            )}
-          </Stack>
+            }
+          />
         ))}
       </Stack>
     </SectionCard>
