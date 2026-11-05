@@ -4,10 +4,10 @@ import { type ReactElement, useState } from "react";
 import { type UserWithAutoApplyInput, userWithAutoApplySchema } from "@jobpilot/contracts/user";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { QueryError } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { StickyFooter } from "@/components/ui/layout";
@@ -22,9 +22,7 @@ import { SavedAnswersSection } from "./sections/saved-answers-section";
 import { WorkAuthSection } from "./sections/work-auth-section";
 
 export function SettingsContent(): ReactElement {
-  const query = useApiQuery(userQueries.detail(), {
-    errorMessage: "Failed to load profile",
-  });
+  const query = useQuery(userQueries.detail());
 
   if (query.isLoading) {
     return <LinearProgress />;
@@ -46,7 +44,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
 
   const save = useApiMutation((vars: UserWithAutoApplyInput) => api.user.put(vars), {
     successMessage: "Settings saved",
-    invalidate: [queryKeys.user.all],
+    invalidate: [userQueries.all],
     onSuccess: () => setDirty(false),
   });
 

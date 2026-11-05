@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Divider, Stack } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
@@ -16,7 +16,7 @@ const RECENT_LIMIT = 8;
 
 export function RecentActivity(): ReactElement {
   // Same query key as the Activity tab, so both share one cached first page.
-  const firstPage = useApiQuery(pilotQueries.journal());
+  const firstPage = useQuery(pilotQueries.journal());
   const status = useJournalLiveStatus();
 
   const items = firstPage.data?.items ?? [];

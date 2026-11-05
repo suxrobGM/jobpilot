@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Alert } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { plural } from "@/utils/format";
@@ -10,7 +10,7 @@ import { campaignHref } from "@/utils/routes";
 
 /** Surfaces campaigns that need user action. Renders nothing when all clear. */
 export function AttentionStrip(): ReactNode {
-  const summary = useApiQuery(campaignQueries.summary());
+  const summary = useQuery(campaignQueries.summary());
   const drafts = summary.data?.drafts;
 
   if (!drafts || drafts.messages === 0) {

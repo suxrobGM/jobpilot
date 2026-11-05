@@ -3,7 +3,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { networkingMode, type PilotState } from "@jobpilot/contracts/pilot";
 import { LinearProgress, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
@@ -62,7 +62,7 @@ interface TodayOutcomesProps {
 /** Without this, "16 applied" beside 52 quiet skips reads as a slow day, not a bad search. */
 function TodayOutcomes(props: TodayOutcomesProps): ReactNode {
   const { appliedToday } = props;
-  const outcomes = useApiQuery(pilotQueries.todayOutcomes()).data;
+  const outcomes = useQuery(pilotQueries.todayOutcomes()).data;
 
   if (!outcomes || outcomes.skipped + outcomes.failed === 0) {
     return null;

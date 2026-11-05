@@ -17,10 +17,10 @@ import {
   Stepper,
   Typography,
 } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
 import { toProfileFormValues } from "@/components/features/settings/profile-form-values";
 import { PersonalSection } from "@/components/features/settings/sections";
@@ -47,7 +47,7 @@ const PROFILE_STEPS = STEPS.findIndex((s) => s.key === "agent");
 const PERSONAL_STEP = STEPS.findIndex((s) => s.key === "personal");
 
 export function OnboardingWizard(): ReactElement {
-  const query = useApiQuery(userQueries.detail());
+  const query = useQuery(userQueries.detail());
 
   if (query.isLoading) {
     return <LinearProgress />;

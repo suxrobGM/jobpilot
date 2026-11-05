@@ -5,10 +5,8 @@ import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Box, LinearProgress, Stack } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { upworkProfileQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { StatusChip } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/feedback";
@@ -26,11 +24,11 @@ export function ProfileEnhancer(): ReactElement {
   useSseChannel(upworkChannel, null, {
     on: {
       "profile.updated": () =>
-        queryClient.invalidateQueries({ queryKey: queryKeys.upworkProfile.all }),
+        queryClient.invalidateQueries({ queryKey: upworkProfileQueries.all }),
     },
   });
 
-  const query = useApiQuery(upworkProfileQueries.detail());
+  const query = useQuery(upworkProfileQueries.detail());
 
   if (query.isLoading) {
     return (

@@ -3,10 +3,8 @@
 import { type ReactElement, useState } from "react";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { LinearProgress, Stack } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { emailQueries, type InboxFilter } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { MailboxReauthAlert } from "@/components/features/settings/sections/mailbox-reauth-alert";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/feedback";
@@ -24,20 +22,21 @@ export function InboxContent(): ReactElement {
   const { injectSkill } = useAgent();
   const agentAvailable = useAgentAvailable();
 
-  const account = useApiQuery(emailQueries.account());
+  const account = useQuery(emailQueries.account());
 
   const status = account.data;
   const connected = status?.connected === true;
 
   const pagination = usePaginationParams();
-  const messages = useApiQuery(emailQueries.messages(filter, pagination.query), {
+  const messages = useQuery({
+    ...emailQueries.messages(filter, pagination.query),
     enabled: connected,
   });
 
   useSseChannel(inboxChannel, null, {
     enabled: connected,
     onMessage: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.email.all });
+      queryClient.invalidateQueries({ queryKey: emailQueries.all });
     },
   });
 

@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { newTokens, sumTokenUsage } from "@jobpilot/contracts/pilot";
 import { EastRounded } from "@mui/icons-material";
 import { Box, Card, CardContent, Stack, Tooltip, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
 import { formatNewTokenParts, formatTokens } from "@/utils/format";
@@ -78,7 +78,7 @@ interface AgentListProps {
 /** `branch` is the agent on the current run, shown lit. */
 export function AgentList(props: AgentListProps): ReactElement {
   const { branch, dimmed } = props;
-  const cost = useApiQuery(pilotQueries.cost());
+  const cost = useQuery(pilotQueries.cost());
 
   const costByAgent = Map.groupBy(cost.data?.items ?? [], (item) => taskTypeAgent(item.taskType));
 

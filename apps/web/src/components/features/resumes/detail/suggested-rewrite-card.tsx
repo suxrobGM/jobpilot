@@ -4,10 +4,10 @@ import { type ReactNode, useState } from "react";
 import { EMPTY_RESUME_DATA, SUGGESTED_REWRITE_LABEL } from "@jobpilot/contracts/resume";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Alert, AlertTitle, Button, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { resumeQueries } from "@/api/queries";
-import { invalidations, queryKeys } from "@/api/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { invalidations, resumeQueries } from "@/api/queries";
 import type { ResumeDto } from "@/api/types";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -29,17 +29,18 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
   const confirm = useConfirm();
   const [reviewing, setReviewing] = useState(false);
 
-  const variants = useApiQuery(resumeQueries.variants(resumeId));
+  const variants = useQuery(resumeQueries.variants(resumeId));
   const suggestion = variants.data?.find((v) => v.label === SUGGESTED_REWRITE_LABEL);
 
   // Only the list is cached up front; the body arrives with the detail fetch.
-  const detail = useApiQuery(resumeQueries.variantDetail(suggestion?.id ?? ""), {
+  const detail = useQuery({
+    ...resumeQueries.variantDetail(suggestion?.id ?? ""),
     enabled: suggestion !== undefined,
   });
 
   const discard = useApiMutation((id: string) => api.resumes.variants({ id }).delete(), {
     successMessage: "Suggestion discarded",
-    invalidate: [queryKeys.resume.variants(resumeId)],
+    invalidate: [resumeQueries.variants(resumeId).queryKey],
   });
 
   // One call: the API writes the content onto the base and drops the suggestion in one transaction.
@@ -47,7 +48,7 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
     (variantId: string) => api.resumes.variants({ id: variantId }).apply.post(),
     {
       successMessage: "Resume updated",
-      invalidate: [queryKeys.resume.variants(resumeId), ...invalidations.resume],
+      invalidate: [resumeQueries.variants(resumeId).queryKey, ...invalidations.resume],
     },
   );
 

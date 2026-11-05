@@ -5,7 +5,7 @@ import type { ResumeData } from "@jobpilot/contracts/resume";
 import { Alert, Button, Stack } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
+import { invalidations } from "@/api/queries";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useConfirm } from "@/providers/confirm-provider";
 import { AwardsSection } from "./awards-section";

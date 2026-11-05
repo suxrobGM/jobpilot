@@ -2,7 +2,7 @@
 
 import { api } from "@/api/client";
 import { type ApiMutationResult, useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
+import { invalidations } from "@/api/queries";
 
 /** The base resume new campaigns, tailoring and onboarding fall back to. */
 export function useSetPrimaryResume(): ApiMutationResult<unknown, string> {

@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
+import { pilotQueries } from "@/api/queries";
 import { pilotStart, pilotStop, TerminalApiError, type TerminalProviderId } from "@/lib/terminal";
 import { useAgentDock } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
@@ -39,7 +39,7 @@ export function usePilotControls(): PilotControls {
   const { provider } = useAgentDock();
 
   const refreshState = (): void => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.pilot.state() });
+    queryClient.invalidateQueries({ queryKey: pilotQueries.state().queryKey });
   };
 
   const start = async (): Promise<void> => {

@@ -5,10 +5,10 @@ import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { campaignQueries, emailQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { CampaignSummaryDto, NetworkingConfigDto } from "@/api/types";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { DataTable } from "@/components/ui/data/data-table";
@@ -41,12 +41,12 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
   const [openId, setOpenId] = useState<string | null>(null);
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
-  const messagesQuery = useApiQuery(campaignQueries.networking(campaignId));
-  const accountQuery = useApiQuery(emailQueries.account());
+  const messagesQuery = useQuery(campaignQueries.networking(campaignId));
+  const accountQuery = useQuery(emailQueries.account());
 
   const invalidate = [
-    queryKeys.campaigns.networking(campaignId),
-    queryKeys.campaigns.detail(campaignId),
+    campaignQueries.networkingOf(campaignId),
+    campaignQueries.detail(campaignId).queryKey,
   ];
 
   const approveSelected = useApiMutation(

@@ -2,10 +2,8 @@
 
 import type { PilotQuestion } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { useQueryClient } from "@tanstack/react-query";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { useSseChannel } from "@/lib/sse/client";
 
 interface OpenQuestions {
@@ -18,10 +16,10 @@ interface OpenQuestions {
 /** Shared by the attention list, the nav badge and the dashboard card. */
 export function useOpenQuestions(): OpenQuestions {
   const queryClient = useQueryClient();
-  const query = useApiQuery(pilotQueries.questions("open"));
+  const query = useQuery(pilotQueries.questions("open"));
 
   const refresh = (): void => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.pilot.questionsAll() });
+    queryClient.invalidateQueries({ queryKey: pilotQueries.questionsAll });
   };
 
   // Repeats PilotLive's handlers because the nav badge lives outside the pilot layout.

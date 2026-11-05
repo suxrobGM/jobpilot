@@ -1,6 +1,6 @@
 "use client";
 
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { jobBoardQueries } from "@/api/queries";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
@@ -9,7 +9,7 @@ import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
 export const BoardsSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
   render: function BoardsSection({ form }) {
-    const boardsQuery = useApiQuery(jobBoardQueries.list());
+    const boardsQuery = useQuery(jobBoardQueries.list());
     const domains = boardsQuery.data?.map((board) => board.domain) ?? [];
 
     return (

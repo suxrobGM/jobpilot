@@ -6,7 +6,7 @@ import { Button, Stack, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/ma
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { InboxFilter } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { emailQueries } from "@/api/queries";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { useAgent } from "@/providers/agent-provider";
 
@@ -29,7 +29,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
 
   const sync = useApiMutation(() => api.email.sync.post(), {
     successMessage: "Inbox synced",
-    invalidate: [queryKeys.email.all],
+    invalidate: [emailQueries.all],
   });
 
   const handleScan = async (): Promise<void> => {

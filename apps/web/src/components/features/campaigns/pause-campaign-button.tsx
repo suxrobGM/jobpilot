@@ -5,7 +5,7 @@ import { Pause } from "@mui/icons-material";
 import { Button, type ButtonProps } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
+import { invalidations } from "@/api/queries";
 
 interface PauseCampaignButtonProps {
   campaignId: string;

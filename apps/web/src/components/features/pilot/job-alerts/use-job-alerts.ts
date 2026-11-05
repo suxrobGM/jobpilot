@@ -1,8 +1,8 @@
 import type { JobAlertsStatus } from "@jobpilot/contracts/pilot";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { useToast } from "@/providers/notification-provider";
 import { plural } from "@/utils/format";
 
@@ -34,9 +34,9 @@ export function runDisabledReason(status: JobAlertsStatus): string | null {
 
 export function useJobAlerts() {
   const toast = useToast();
-  const query = useApiQuery(pilotQueries.jobAlerts(), { refetchInterval: POLL_MS });
+  const query = useQuery({ ...pilotQueries.jobAlerts(), refetchInterval: POLL_MS });
   const run = useApiMutation(() => api.pilot["job-alerts"].runs.post(), {
-    invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.taskList()],
+    invalidate: [pilotQueries.jobAlerts().queryKey, pilotQueries.taskList().queryKey],
     onSuccess: (result) => {
       if (!result.queued) {
         toast.info("No new job alert emails to import.");

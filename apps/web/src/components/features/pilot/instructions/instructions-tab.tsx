@@ -9,10 +9,10 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { Box, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -50,9 +50,7 @@ const NAV_ANCHORS: SectionAnchor[] = [
 ];
 
 export function InstructionsTab(): ReactElement {
-  const stateQuery = useApiQuery(pilotQueries.state(), {
-    errorMessage: "Failed to load pilot state",
-  });
+  const stateQuery = useQuery(pilotQueries.state());
 
   if (stateQuery.isLoading) {
     return <DetailSkeleton heights={[480]} />;
@@ -81,17 +79,14 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const save = useApiMutation(
     (body: UpdatePilotInstructionsInput) => api.pilot.instructions.put(body),
     {
-      invalidate: [queryKeys.pilot.state(), queryKeys.pilot.searches()],
+      invalidate: [pilotQueries.state().queryKey, pilotQueries.searches().queryKey],
       successMessage: "Instructions saved.",
     },
   );
 
   // Fetched on submit, not on mount: a mount fetch still in flight reads as "nothing in flight"
   // and saves changed goals without ever asking, which is the case the dialog exists for.
-  const impact = useApiQuery(pilotQueries.instructionsImpact(), {
-    enabled: false,
-    errorMessage: "Failed to check what the pilot has in flight",
-  });
+  const impact = useQuery({ ...pilotQueries.instructionsImpact(), enabled: false });
 
   // Set while the goals-changed dialog is open; carries the values the save finishes with.
   const [pending, setPending] = useState<InstructionsFormValues | null>(null);

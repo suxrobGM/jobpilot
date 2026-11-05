@@ -5,14 +5,13 @@ import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Autorenew, Clear, Replay } from "@mui/icons-material";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { apiErrorMessage } from "@/api/error";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { campaignQueries } from "@/api/queries";
-import { invalidations } from "@/api/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { campaignQueries, invalidations } from "@/api/queries";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
 import { statusOptions } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
@@ -52,7 +51,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
 
   // Filters run server-side, so they cover the whole campaign rather than the loaded page.
   const term = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
-  const jobs = useApiQuery(
+  const jobs = useQuery(
     campaignQueries.jobs(campaign.id, {
       ...pagination.query,
       status: statusFilter ?? undefined,

@@ -1,24 +1,18 @@
 "use client";
 
 import type { LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
-import { useQueryClient } from "@tanstack/react-query";
+import { type UseQueryResult, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import {
-  type ApiMutationResult,
-  type ApiQueryResult,
-  useApiMutation,
-  useApiQuery,
-} from "@/api/hooks";
+import { type ApiMutationResult, useApiMutation } from "@/api/hooks";
 import { authQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { AuthSessionResponse, AuthUserDto, LogoutResponse, MeResponse } from "@/api/types";
 
 export interface UseSessionResult {
   user: AuthUserDto | undefined;
   isLoading: boolean;
   isAuthenticated: boolean;
-  meQuery: ApiQueryResult<MeResponse>;
+  meQuery: UseQueryResult<MeResponse>;
 }
 
 export interface UseAuthActionsResult {
@@ -33,10 +27,7 @@ export interface UseAuthActionsResult {
  * login/register can't drag a guaranteed-401 `me` fetch onto themselves.
  */
 export function useSession(): UseSessionResult {
-  const meQuery = useApiQuery(authQueries.me(), {
-    retry: false,
-    staleTime: 30_000,
-  });
+  const meQuery = useQuery({ ...authQueries.me(), retry: false, staleTime: 30_000 });
 
   return {
     user: meQuery.data,
@@ -56,7 +47,7 @@ export function useAuthActions(): UseAuthActionsResult {
   const queryClient = useQueryClient();
 
   const onSession = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+    queryClient.invalidateQueries({ queryKey: authQueries.me().queryKey });
     router.push("/workspace");
   };
 

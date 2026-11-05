@@ -11,8 +11,8 @@ import {
 } from "@jobpilot/contracts/credential";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod/v4";
-import { useApiQuery } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -87,7 +87,7 @@ const formSchema = z
 
 export function CredentialFormDialog(props: CredentialFormDialogProps): ReactElement {
   const { open, onClose, onSubmit, submitting } = props;
-  const boards = useApiQuery(jobBoardQueries.list());
+  const boards = useQuery(jobBoardQueries.list());
   const boardItems = (boards.data ?? []).map((b) => ({ value: b.domain, label: b.name }));
 
   const form = useAppForm({

@@ -3,7 +3,7 @@
 import type { JobBoardInput } from "@jobpilot/contracts/job-board";
 import { api } from "@/api/client";
 import { type ApiMutationResult, useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { jobBoardQueries } from "@/api/queries";
 import type { JobBoardDto } from "@/api/types";
 
 interface LinkBoardOptions {
@@ -16,7 +16,7 @@ export function useLinkBoard(
   options?: LinkBoardOptions,
 ): ApiMutationResult<JobBoardDto, JobBoardInput> {
   return useApiMutation((body: JobBoardInput) => api["job-boards"].post(body), {
-    invalidate: [queryKeys.jobBoards.all],
+    invalidate: [jobBoardQueries.all],
     ...options,
   });
 }

@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Grid, Stack } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
@@ -22,9 +22,7 @@ export function OverviewTab(): ReactElement {
   // Owned here so the status bar, checklist and diagram share one host poll and wake timer.
   const controls = usePilotControls();
   const { health, status } = useTerminalHealth(controls.isLoading);
-  const stateQuery = useApiQuery(pilotQueries.state(), {
-    errorMessage: "Failed to load pilot state",
-  });
+  const stateQuery = useQuery(pilotQueries.state());
   const nextWakeAt = useNextWake(stateQuery.data ?? null);
 
   const state = stateQuery.data;

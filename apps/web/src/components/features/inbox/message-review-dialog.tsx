@@ -12,10 +12,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { applicationQueries, emailQueries } from "@/api/queries";
-import { invalidations, queryKeys } from "@/api/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { applicationQueries, emailQueries, invalidations } from "@/api/queries";
 import type { ApplicationDto } from "@/api/types";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { FormDialogShell } from "@/components/ui/form";
@@ -35,7 +35,8 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
   const [application, setMatchedApp] = useState<ApplicationDto | null>(null);
   const [search, setSearch] = useState("");
 
-  const message = useApiQuery(emailQueries.message(messageId ?? ""), {
+  const message = useQuery({
+    ...emailQueries.message(messageId ?? ""),
     enabled: messageId !== null,
   });
 
@@ -53,12 +54,12 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
     }
   }
 
-  const appOptions = useApiQuery(applicationQueries.search(search), { enabled: open });
+  const appOptions = useQuery({ ...applicationQueries.search(search), enabled: open });
 
   const patchMatch = useApiMutation(
     (vars: { applicationId: string | null }) => api.email.messages({ id: messageId! }).patch(vars),
     {
-      invalidate: [queryKeys.email.all],
+      invalidate: [emailQueries.all],
     },
   );
 
@@ -70,7 +71,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
 
   const deny = useApiMutation(() => api.email.messages({ id: messageId! }).deny.post({}), {
     successMessage: "Denied",
-    invalidate: [queryKeys.email.all],
+    invalidate: [emailQueries.all],
     onSuccess: () => onClose(),
   });
 

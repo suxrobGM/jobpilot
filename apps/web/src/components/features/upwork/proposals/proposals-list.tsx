@@ -5,11 +5,9 @@ import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkProposalStatus } from "@jobpilot/contracts/upwork";
 import { ChevronRight, Clear } from "@mui/icons-material";
 import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
-import { useApiQuery } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { PaginationFooter } from "@/components/ui/data";
 import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/feedback";
@@ -27,7 +25,7 @@ export function ProposalsList(): ReactElement {
   const { query, setPage, setPageSize } = usePaginationParams({ pageSize: PAGE_SIZE });
 
   const invalidate = (): void => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.upworkProposals.all });
+    queryClient.invalidateQueries({ queryKey: upworkProposalQueries.all });
   };
   useSseChannel(upworkChannel, null, {
     on: {
@@ -37,7 +35,7 @@ export function ProposalsList(): ReactElement {
     },
   });
 
-  const proposals = useApiQuery(
+  const proposals = useQuery(
     upworkProposalQueries.list({ ...query, ...(statusFilter && { status: statusFilter }) }),
   );
 

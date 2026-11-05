@@ -6,7 +6,7 @@ import { OpenInNew } from "@mui/icons-material";
 import { Button, Card, CardContent, Chip, Link, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { pilotQueries } from "@/api/queries";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 
 interface PromotionCardProps {
@@ -22,7 +22,7 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
 
   const patch = useApiMutation(
     (input: PatchPromotionInput) => api.pilot.promotions({ id: promotion.id }).patch(input),
-    { invalidate: [queryKeys.pilot.promotionsAll()] },
+    { invalidate: [pilotQueries.promotionsAll] },
   );
   const isLoading = patch.isPending;
 

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Button, Stack } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { emailQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { ChecklistRow } from "@/components/ui/display";
@@ -31,7 +31,7 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
   const dock = useAgentDock();
   const agentAvailable = useAgentAvailable();
 
-  const mailbox = useApiQuery(emailQueries.account()).data;
+  const mailbox = useQuery(emailQueries.account()).data;
 
   const hostReady = health === "reachable";
   const goalsDone = hasGoals(state);

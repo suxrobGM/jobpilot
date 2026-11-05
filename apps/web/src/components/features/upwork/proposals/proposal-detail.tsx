@@ -4,13 +4,12 @@ import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
 import { AutoAwesome, ContentCopy, Delete, Launch, Send } from "@mui/icons-material";
 import { Box, Button, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { upworkAccountQueries, upworkProposalQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest } from "@/api/types";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
@@ -33,30 +32,30 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
 
-  const detail = useApiQuery(upworkProposalQueries.detail(id));
-  const account = useApiQuery(upworkAccountQueries.detail());
+  const detail = useQuery(upworkProposalQueries.detail(id));
+  const account = useQuery(upworkAccountQueries.detail());
 
   useSseChannel(upworkChannel, null, {
     on: {
       "proposal.updated": (e) => {
         if (e.id === id) {
-          queryClient.invalidateQueries({ queryKey: queryKeys.upworkProposals.detail(id) });
+          queryClient.invalidateQueries({ queryKey: upworkProposalQueries.detail(id).queryKey });
         }
       },
       "account.updated": () => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.upworkAccount.all });
+        queryClient.invalidateQueries({ queryKey: upworkAccountQueries.all });
       },
     },
   });
 
   const update = useApiMutation(
     (body: UpdateUpworkProposalRequest) => api.upwork.proposals({ id }).patch(body),
-    { invalidate: [queryKeys.upworkProposals.all] },
+    { invalidate: [upworkProposalQueries.all] },
   );
 
   const remove = useApiMutation(() => api.upwork.proposals({ id }).delete(), {
     successMessage: "Proposal deleted",
-    invalidate: [queryKeys.upworkProposals.all],
+    invalidate: [upworkProposalQueries.all],
     onSuccess: () => router.replace("/upwork" as Route),
   });
 

@@ -6,7 +6,7 @@ import { OpenInNew } from "@mui/icons-material";
 import { Button, Card, CardContent, Link, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { pilotQueries } from "@/api/queries";
 
 interface QuestionCardProps {
   question: PilotQuestion;
@@ -18,7 +18,7 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
 
   const answer = useApiMutation(
     (value: string) => api.pilot.questions({ id: question.id }).answer.post({ answer: value }),
-    { invalidate: [queryKeys.pilot.questionsAll()], successMessage: "Answer sent." },
+    { invalidate: [pilotQueries.questionsAll], successMessage: "Answer sent." },
   );
 
   const hasOptions = question.options.length > 0;

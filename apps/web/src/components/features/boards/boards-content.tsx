@@ -3,10 +3,10 @@
 import { type ReactElement, useState } from "react";
 import { Clear, Delete } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
@@ -24,7 +24,7 @@ export function BoardsContent(): ReactElement {
   const search = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
   const confirm = useConfirm();
 
-  const boards = useApiQuery(jobBoardQueries.list());
+  const boards = useQuery(jobBoardQueries.list());
   // Filtered here, not server-side: a profile's board list is bounded by the catalog.
   const needle = search.trim().toLowerCase();
   const rows = (boards.data ?? []).filter(
@@ -34,7 +34,7 @@ export function BoardsContent(): ReactElement {
 
   const remove = useApiMutation((id: string) => api["job-boards"]({ id }).delete(), {
     successMessage: "Board removed",
-    invalidate: [queryKeys.jobBoards.all],
+    invalidate: [jobBoardQueries.all],
   });
 
   const handleDelete = async (board: JobBoardDto): Promise<void> => {

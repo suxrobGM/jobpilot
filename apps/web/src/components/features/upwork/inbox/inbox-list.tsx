@@ -5,11 +5,10 @@ import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkInboxKind, UpworkInboxStatus } from "@jobpilot/contracts/upwork";
 import { Clear, CloudSync, Launch } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { upworkInboxQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { PaginationFooter } from "@/components/ui/data";
 import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display";
@@ -34,13 +33,13 @@ export function InboxList(): ReactElement {
   const { query, setPage, setPageSize } = usePaginationParams({ pageSize: PAGE_SIZE });
 
   const invalidate = (): void => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.upworkInbox.all });
+    queryClient.invalidateQueries({ queryKey: upworkInboxQueries.all });
   };
   useSseChannel(upworkChannel, null, {
     on: { "inbox.synced": invalidate, "inbox.updated": invalidate },
   });
 
-  const inbox = useApiQuery(
+  const inbox = useQuery(
     upworkInboxQueries.list({
       ...query,
       ...(kindFilter && { kind: kindFilter }),
@@ -51,7 +50,7 @@ export function InboxList(): ReactElement {
   const setStatus = useApiMutation(
     ({ id, status }: { id: string; status: UpworkInboxStatus }) =>
       api.upwork.inbox({ id }).patch({ status }),
-    { invalidate: [queryKeys.upworkInbox.all] },
+    { invalidate: [upworkInboxQueries.all] },
   );
 
   const pageRows = inbox.data?.items ?? [];

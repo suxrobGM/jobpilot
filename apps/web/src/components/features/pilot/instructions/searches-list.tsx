@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import type { PilotSearch } from "@jobpilot/contracts/pilot";
 import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
@@ -78,7 +78,7 @@ function SearchRow(props: SearchRowProps): ReactElement {
 }
 
 export function SearchesList(): ReactElement {
-  const query = useApiQuery(pilotQueries.searches());
+  const query = useQuery(pilotQueries.searches());
 
   const searches = query.data ?? [];
 

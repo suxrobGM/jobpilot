@@ -2,8 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import { Button, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
-import { keepPreviousData } from "@tanstack/react-query";
-import { useApiQuery } from "@/api/hooks";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { leaderboardQueries } from "@/api/queries";
 import type { LeaderboardDto, LeaderboardRow, LeaderboardWindow } from "@/api/types";
 import { EmptyState } from "@/components/ui/feedback";
@@ -33,7 +32,8 @@ export function LeaderboardView(props: LeaderboardViewProps): ReactElement {
   const { initial } = props;
   const [range, setRange] = useState<LeaderboardWindow>(initial?.window ?? DEFAULT_WINDOW);
 
-  const query = useApiQuery(leaderboardQueries.list(range), {
+  const query = useQuery({
+    ...leaderboardQueries.list(range),
     initialData: range === initial?.window ? initial : undefined,
     // Matches the API's own leaderboard cache, so a remount does not re-fetch the same board.
     staleTime: 5 * 60_000,

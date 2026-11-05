@@ -6,7 +6,7 @@ import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } f
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
+import { invalidations } from "@/api/queries";
 import { resumePdfUrl } from "@/api/resume-urls";
 import type { ResumeDto } from "@/api/types";
 import { useConfirm } from "@/providers/confirm-provider";

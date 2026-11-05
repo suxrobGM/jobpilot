@@ -3,7 +3,7 @@
 import { type ReactElement, type ReactNode, useState } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
 import { type CampaignDetailDto, type CampaignJobReasonDto, jobSummary } from "@/api/types";
 import { SectionCard } from "@/components/ui/layout";
@@ -73,7 +73,7 @@ export function CampaignReasonBreakdown(props: CampaignReasonBreakdownProps): Re
   const { campaign } = props;
   const [open, setOpen] = useState(true);
 
-  const reasons = useApiQuery(campaignQueries.reasons(campaign.id));
+  const reasons = useQuery(campaignQueries.reasons(campaign.id));
   const rows = reasons.data ?? [];
   const skipped = groupReasons(rows, "skipped");
   const failed = groupReasons(rows, "failed");

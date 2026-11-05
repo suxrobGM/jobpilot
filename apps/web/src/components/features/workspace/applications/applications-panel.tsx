@@ -3,8 +3,8 @@
 import { type ReactElement, useState } from "react";
 import { SINGLE_APPLY_CAMPAIGN } from "@jobpilot/contracts/application";
 import { Button, Stack, TextField } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { useApiQuery } from "@/api/hooks";
 import { applicationQueries, campaignQueries, jobBoardQueries } from "@/api/queries";
 import { PaginationFooter } from "@/components/ui/data";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
@@ -37,14 +37,14 @@ export function ApplicationsPanel(): ReactElement {
     ...(term && { search: term }),
   };
 
-  const apps = useApiQuery(
+  const apps = useQuery(
     applicationQueries.list({ ...query, ...filters, ...(group && { status: group }) }),
   );
 
   // Status is deliberately excluded: the tiles keep showing every bucket's size while one is picked.
-  const summary = useApiQuery(applicationQueries.summary(filters));
-  const campaigns = useApiQuery(campaignQueries.list());
-  const boards = useApiQuery(jobBoardQueries.list());
+  const summary = useQuery(applicationQueries.summary(filters));
+  const campaigns = useQuery(campaignQueries.list());
+  const boards = useQuery(jobBoardQueries.list());
 
   const rows = apps.data?.items ?? [];
   const campaignLabel = new Map((campaigns.data?.items ?? []).map((c) => [c.id, c.query]));

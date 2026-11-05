@@ -2,7 +2,7 @@
 
 import type { ResumeData } from "@jobpilot/contracts/resume";
 import { resumeChannel } from "@jobpilot/contracts/sse";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { resumeQueries } from "@/api/queries";
 import { useSseChannel } from "@/lib/sse/client";
 
@@ -18,7 +18,8 @@ interface ResumeExtraction {
 export function useResumeExtraction(resumeId: string | null, enabled: boolean): ResumeExtraction {
   const active = enabled && resumeId !== null;
 
-  const resume = useApiQuery(resumeQueries.detail(resumeId ?? ""), {
+  const resume = useQuery({
+    ...resumeQueries.detail(resumeId ?? ""),
     enabled: active,
     refetchInterval: POLL_MS,
   });

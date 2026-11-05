@@ -6,7 +6,7 @@ import { CloudUpload, TaskAlt } from "@mui/icons-material";
 import { Button, Divider, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { upworkProfileQueries } from "@/api/queries";
 import type { UpworkProfileDto } from "@/api/types";
 import { LabelValue } from "@/components/ui/display";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
@@ -31,7 +31,7 @@ export function ProfileReview(props: ProfileReviewProps): ReactElement {
   const [overview, setOverview] = useState(profile.suggestedOverview ?? "");
 
   const save = useApiMutation((body: UpdateUpworkProfileInput) => api.upwork.profile.put(body), {
-    invalidate: [queryKeys.upworkProfile.all],
+    invalidate: [upworkProfileQueries.all],
   });
 
   const isApplied = profile.status === "applied";

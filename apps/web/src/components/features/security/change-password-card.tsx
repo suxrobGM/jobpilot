@@ -5,7 +5,7 @@ import { type ChangePasswordInput, ChangePasswordSchema } from "@jobpilot/contra
 import { Alert, Stack } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { authQueries } from "@/api/queries";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useSession } from "@/hooks/use-auth";
@@ -23,7 +23,7 @@ export function ChangePasswordCard(): ReactElement {
       showErrorToast: false,
       successMessage: hasPassword ? "Password updated" : "Password set",
       // hasPassword flips for OAuth-only accounts setting their first password.
-      invalidate: [queryKeys.auth.me()],
+      invalidate: [authQueries.me().queryKey],
     },
   );
 

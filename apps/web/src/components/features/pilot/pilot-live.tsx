@@ -3,7 +3,7 @@
 import { type ReactNode, useEffect, useRef } from "react";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/api/query-keys";
+import { pilotQueries } from "@/api/queries";
 import { useSseChannel } from "@/lib/sse/client";
 import { appendJournalEntry } from "./journal/use-journal-live";
 
@@ -14,13 +14,13 @@ export function PilotLive(): ReactNode {
   const invalidate = (queryKey: readonly unknown[]): void => {
     queryClient.invalidateQueries({ queryKey });
   };
-  const refreshQuestions = (): void => invalidate(queryKeys.pilot.questionsAll());
-  const refreshPromotions = (): void => invalidate(queryKeys.pilot.promotionsAll());
-  const refreshState = (): void => invalidate(queryKeys.pilot.state());
+  const refreshQuestions = (): void => invalidate(pilotQueries.questionsAll);
+  const refreshPromotions = (): void => invalidate(pilotQueries.promotionsAll);
+  const refreshState = (): void => invalidate(pilotQueries.state().queryKey);
   const refreshRuns = (): void => {
     refreshState();
-    invalidate(queryKeys.pilot.jobAlerts());
-    invalidate(queryKeys.pilot.research());
+    invalidate(pilotQueries.jobAlerts().queryKey);
+    invalidate(pilotQueries.research().queryKey);
   };
 
   const status = useSseChannel(pilotChannel, null, {
@@ -46,10 +46,10 @@ export function PilotLive(): ReactNode {
   const previousStatus = useRef(status);
   useEffect(() => {
     if (previousStatus.current === "reconnecting" && status === "open") {
-      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.state() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.journalAll() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.questionsAll() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.promotionsAll() });
+      queryClient.invalidateQueries({ queryKey: pilotQueries.state().queryKey });
+      queryClient.invalidateQueries({ queryKey: pilotQueries.journalAll });
+      queryClient.invalidateQueries({ queryKey: pilotQueries.questionsAll });
+      queryClient.invalidateQueries({ queryKey: pilotQueries.promotionsAll });
     }
     previousStatus.current = status;
   }, [status, queryClient]);

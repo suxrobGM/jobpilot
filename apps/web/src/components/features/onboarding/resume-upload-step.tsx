@@ -6,7 +6,7 @@ import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material"
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
+import { invalidations } from "@/api/queries";
 import { useResumeExtraction } from "@/components/features/resumes/use-resume-extraction";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";

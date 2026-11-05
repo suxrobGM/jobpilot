@@ -2,10 +2,11 @@
 
 import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { analyticsQueries } from "@/api/queries";
 import { RankedBarList } from "@/components/ui/data";
 import { TimelineChart } from "@/components/ui/data/timeline-chart";
+import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
 import { PortfolioRankChip } from "./portfolio-rank-chip";
@@ -19,16 +20,14 @@ function toEntries<T extends { count: number }>(
 }
 
 export function AnalyticsView(): ReactElement {
-  const query = useApiQuery(analyticsQueries.stats(), {
-    errorMessage: "Failed to load analytics stats",
-  });
+  const query = useQuery(analyticsQueries.stats());
 
   if (query.isPending) {
-    return <Typography variant="body2Muted">Loading analytics</Typography>;
+    return <DetailSkeleton heights={[96, 280, 240]} />;
   }
 
   if (!query.data) {
-    return <Typography variant="body2Muted">No data available.</Typography>;
+    return <QueryError title="Couldn't load analytics." onRetry={() => void query.refetch()} />;
   }
 
   const stats = query.data;

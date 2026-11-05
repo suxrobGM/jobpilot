@@ -2,11 +2,11 @@
 
 import type { ReactElement } from "react";
 import { Alert, Box, Button, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { emailQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -21,12 +21,12 @@ import { MailboxReauthAlert } from "./mailbox-reauth-alert";
 export function ConnectCard(): ReactElement {
   const confirm = useConfirm();
 
-  const statusQuery = useApiQuery(emailQueries.account());
-  const configQuery = useApiQuery(emailQueries.oauthClient());
+  const statusQuery = useQuery(emailQueries.account());
+  const configQuery = useQuery(emailQueries.oauthClient());
 
   const disconnect = useApiMutation(() => api.email.account.delete(), {
     successMessage: "Email disconnected",
-    invalidate: [queryKeys.email.all],
+    invalidate: [emailQueries.all],
   });
 
   const connect = (): void => {

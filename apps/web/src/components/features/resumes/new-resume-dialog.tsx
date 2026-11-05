@@ -5,7 +5,7 @@ import { Button, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
+import { invalidations } from "@/api/queries";
 import { FormDialogShell } from "@/components/ui/form";
 
 interface NewResumeDialogProps {

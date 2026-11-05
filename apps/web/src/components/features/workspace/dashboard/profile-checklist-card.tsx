@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 import { Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
-import { useApiQuery } from "@/api/hooks";
 import { credentialQueries, emailQueries, userQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { ChecklistRow } from "@/components/ui/display";
@@ -24,9 +24,9 @@ interface ChecklistItem {
  */
 export function ProfileChecklistCard(): ReactNode {
   const { user } = useSession();
-  const profileQuery = useApiQuery(userQueries.detail());
-  const emailQuery = useApiQuery(emailQueries.account());
-  const credentialsQuery = useApiQuery(credentialQueries.list());
+  const profileQuery = useQuery(userQueries.detail());
+  const emailQuery = useQuery(emailQueries.account());
+  const credentialsQuery = useQuery(credentialQueries.list());
 
   // Don't flash an incomplete checklist while the queries load.
   if (!user || !profileQuery.data || !emailQuery.data || !credentialsQuery.data) {

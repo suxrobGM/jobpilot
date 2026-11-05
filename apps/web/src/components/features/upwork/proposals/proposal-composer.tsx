@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { upworkProposalQueries } from "@/api/queries";
 import type { CreateUpworkProposalRequest } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
@@ -33,7 +33,7 @@ export function ProposalComposer(): ReactElement {
 
   const createProposal = useApiMutation(
     (body: CreateUpworkProposalRequest) => api.upwork.proposals.post(body),
-    { invalidate: [queryKeys.upworkProposals.all] },
+    { invalidate: [upworkProposalQueries.all] },
   );
 
   const form = useAppForm({

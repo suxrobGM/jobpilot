@@ -3,14 +3,14 @@
 import type { ReactElement } from "react";
 import { EmojiEvents, Share } from "@mui/icons-material";
 import { Chip, Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useApiQuery } from "@/api/hooks";
 import { leaderboardQueries, userQueries } from "@/api/queries";
 
 /** Nudges the analytics viewer toward their public page; shows their leaderboard rank when they have one. */
 export function PortfolioRankChip(): ReactElement {
-  const settings = useApiQuery(userQueries.portfolio());
-  const board = useApiQuery(leaderboardQueries.list("all"));
+  const settings = useQuery(userQueries.portfolio());
+  const board = useQuery(leaderboardQueries.list("all"));
 
   const username = settings.data?.username;
   const rank = username

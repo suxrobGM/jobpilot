@@ -3,11 +3,11 @@
 import { type ReactElement, useState } from "react";
 import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Button, Stack, TextField, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { emailQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { campaignQueries, emailQueries } from "@/api/queries";
 import type { NetworkingMessageDto } from "@/api/types";
 import { FormDialogShell } from "@/components/ui/form";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
@@ -27,14 +27,14 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
-  const canSend = useApiQuery(emailQueries.account()).data?.canSend ?? false;
+  const canSend = useQuery(emailQueries.account()).data?.canSend ?? false;
   const messageApi = api
     .campaigns({ id: campaignId })
     .networking.messages({ messageId: message.id });
 
   // Drafts render from the query cache on a campaign and from the server on the cross-campaign
   // list, so a write refreshes both rather than making each caller declare which one it is.
-  const invalidate = [queryKeys.campaigns.all];
+  const invalidate = [campaignQueries.all];
   const onWritten = (): void => router.refresh();
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";

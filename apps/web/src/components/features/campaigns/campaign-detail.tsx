@@ -3,10 +3,8 @@
 import type { ReactElement } from "react";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Button, LinearProgress, Stack, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { NetworkingBoard, NetworkingMessagesTable } from "@/components/features/networking";
 import { SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
@@ -23,12 +21,12 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   const { campaignId } = props;
   const queryClient = useQueryClient();
 
-  const detail = useApiQuery(campaignQueries.detail(campaignId));
+  const detail = useQuery(campaignQueries.detail(campaignId));
 
   const invalidate = (key: readonly unknown[]): void => {
     queryClient.invalidateQueries({ queryKey: key });
   };
-  const invalidateDetail = (): void => invalidate(queryKeys.campaigns.detail(campaignId));
+  const invalidateDetail = (): void => invalidate(campaignQueries.detail(campaignId).queryKey);
 
   useSseChannel(
     campaignChannel,
@@ -40,11 +38,11 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
         progress: invalidateDetail,
         status: invalidateDetail,
         "job-update": () => {
-          invalidate(queryKeys.campaigns.jobs(campaignId));
-          invalidate(queryKeys.campaigns.reasons(campaignId));
+          invalidate(campaignQueries.jobsOf(campaignId));
+          invalidate(campaignQueries.reasons(campaignId).queryKey);
           invalidateDetail();
         },
-        "networking-update": () => invalidate(queryKeys.campaigns.networking(campaignId)),
+        "networking-update": () => invalidate(campaignQueries.networkingOf(campaignId)),
       },
     },
   );
@@ -96,7 +94,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 /** Its own component so the drafts are fetched only by the campaigns that have any. */
 function CampaignOutreach(props: CampaignDetailProps): ReactElement {
   const { campaignId } = props;
-  const messages = useApiQuery(campaignQueries.networking(campaignId));
+  const messages = useQuery(campaignQueries.networking(campaignId));
 
   return (
     <SectionCard title="Outreach" description="Warm intros drafted for these roles.">

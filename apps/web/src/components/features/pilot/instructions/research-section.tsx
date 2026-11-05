@@ -3,10 +3,10 @@
 import type { ReactElement } from "react";
 import { TravelExplore } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { ResearchStatusDto } from "@/api/types";
 import { isRunPending } from "@/components/features/pilot/job-alerts/use-job-alerts";
 import { LinkButton } from "@/components/ui/buttons";
@@ -24,9 +24,9 @@ function lastRunText(status: ResearchStatusDto): string {
 }
 
 export function ResearchSection(): ReactElement {
-  const query = useApiQuery(pilotQueries.research());
+  const query = useQuery(pilotQueries.research());
   const run = useApiMutation(() => api.pilot.research.runs.post(), {
-    invalidate: [queryKeys.pilot.research(), queryKeys.pilot.taskList()],
+    invalidate: [pilotQueries.research().queryKey, pilotQueries.taskList().queryKey],
     successMessage: "Research queued - the pilot picks it up on its next cycle.",
   });
   const status = query.data;

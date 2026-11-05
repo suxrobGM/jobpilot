@@ -50,6 +50,15 @@ export function apiErrorMessage(error: unknown, fallback?: string): string {
     : "Can't reach the server - check your connection";
 }
 
+/** Resolve an Eden call to its data, throwing an `ApiError` on any non-2xx - a query function's shape. */
+export async function unwrap<T>(request: Promise<EdenResult<T>>): Promise<T> {
+  const { data, error } = await request;
+  if (error) {
+    throw toApiError(error);
+  }
+  return data as T;
+}
+
 /**
  * Unwrap a public detail fetch whose caller maps a null row to `notFound()`. Eden reports every
  * non-2xx as `error`, and a 429 or a blip rendered as "not found" invites Google to deindex a live page.

@@ -4,10 +4,10 @@ import { type ReactElement, useState } from "react";
 import type { CredentialInput } from "@jobpilot/contracts/credential";
 import { Add, Delete, Key, Lock } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { credentialQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { ItemList, ItemRow } from "@/components/ui/display";
@@ -31,17 +31,17 @@ export function CredentialsSection(): ReactElement {
   const [dialogOpen, setDialogOpen] = useState(false);
   const confirm = useConfirm();
 
-  const credentials = useApiQuery(credentialQueries.list());
+  const credentials = useQuery(credentialQueries.list());
 
   const create = useApiMutation((vars: CredentialInput) => api.credentials.post(vars), {
     successMessage: "Credential added",
-    invalidate: [queryKeys.credentials.all],
+    invalidate: [credentialQueries.all],
     onSuccess: () => setDialogOpen(false),
   });
 
   const remove = useApiMutation((id: string) => api.credentials({ id }).delete(), {
     successMessage: "Credential removed",
-    invalidate: [queryKeys.credentials.all],
+    invalidate: [credentialQueries.all],
   });
 
   const handleDelete = async (credential: CredentialDto): Promise<void> => {

@@ -2,7 +2,7 @@
 
 import type { ReactElement, ReactNode } from "react";
 import { Box, LinearProgress, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { campaignQueries, OPTIONS_PAGE } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { PauseCampaignButton } from "@/components/features/campaigns/pause-campaign-button";
@@ -26,7 +26,7 @@ function progress(campaign: CampaignDto): { value: number; label: string } {
 
 /** Live strip of in-progress campaigns. Renders nothing when nothing is running. */
 export function NowRunning(): ReactNode {
-  const campaigns = useApiQuery(campaignQueries.list({ ...OPTIONS_PAGE, status: ["in_progress"] }));
+  const campaigns = useQuery(campaignQueries.list({ ...OPTIONS_PAGE, status: ["in_progress"] }));
   const running = campaigns.data?.items ?? [];
 
   if (running.length === 0) {

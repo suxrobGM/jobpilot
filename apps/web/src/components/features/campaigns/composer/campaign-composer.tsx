@@ -3,11 +3,11 @@
 import { type ReactElement, useEffect } from "react";
 import { Button, LinearProgress, Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { campaignQueries, jobBoardQueries, userQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { CreateCampaignRequest } from "@/api/types";
 import { useLinkBoard } from "@/components/features/boards/use-link-board";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -43,21 +43,22 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const router = useRouter();
   const agent = useAgent();
 
-  const boardsQuery = useApiQuery(jobBoardQueries.list());
-  const profileQuery = useApiQuery(userQueries.detail());
-  const recentCampaignsQuery = useApiQuery(campaignQueries.list());
+  const boardsQuery = useQuery(jobBoardQueries.list());
+  const profileQuery = useQuery(userQueries.detail());
+  const recentCampaignsQuery = useQuery(campaignQueries.list());
 
   const linkedBoards = boardsQuery.data ?? [];
 
   // Upwork is picker-only, so /upwork's "Find jobs" presets a board most profiles have not
   // linked. Offer it from the catalog instead of falling back to the first linked board.
-  const catalogQuery = useApiQuery(jobBoardQueries.catalog(), {
+  const catalogQuery = useQuery({
+    ...jobBoardQueries.catalog(),
     enabled: Boolean(defaultBoard),
     staleTime: 10 * 60_000,
   });
 
   const createCampaign = useApiMutation((body: CreateCampaignRequest) => api.campaigns.post(body), {
-    invalidate: [queryKeys.campaigns.all],
+    invalidate: [campaignQueries.all],
   });
 
   const linkBoard = useLinkBoard();

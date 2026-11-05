@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { PersonOutlined, WarningAmberOutlined } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { userQueries } from "@/api/queries";
 
 /**
@@ -12,7 +12,7 @@ import { userQueries } from "@/api/queries";
  * obvious at a glance.
  */
 export function CampaignIdentityBanner(): ReactNode {
-  const query = useApiQuery(userQueries.detail());
+  const query = useQuery(userQueries.detail());
   const profile = query.data?.user;
 
   // Staying silent on failure reads as "identity confirmed", which is the one thing

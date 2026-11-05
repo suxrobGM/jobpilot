@@ -4,9 +4,9 @@ import type { ReactElement } from "react";
 import { Launch } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
+import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useApiQuery } from "@/api/hooks";
 import { coverLetterQueries } from "@/api/queries";
 import type { CoverLetterListItem } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
@@ -16,7 +16,7 @@ import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 export function CoverLettersTable(): ReactElement {
   const router = useRouter();
   const pagination = usePaginationParams();
-  const lettersQuery = useApiQuery(coverLetterQueries.list(pagination.query));
+  const lettersQuery = useQuery(coverLetterQueries.list(pagination.query));
 
   const rows = lettersQuery.data?.items ?? [];
 

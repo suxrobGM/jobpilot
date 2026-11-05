@@ -3,10 +3,10 @@
 import { type ReactElement, useState } from "react";
 import { Delete, Edit } from "@mui/icons-material";
 import { Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { SavedAnswerDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
@@ -24,22 +24,20 @@ export function SavedAnswersSection(): ReactElement {
   const confirm = useConfirm();
   const [editing, setEditing] = useState<SavedAnswerDto | null>(null);
 
-  const query = useApiQuery(pilotQueries.savedAnswers(), {
-    errorMessage: "Failed to load saved answers",
-  });
+  const query = useQuery(pilotQueries.savedAnswers());
 
   const save = useApiMutation(
     ({ key, value }: Pick<SavedAnswerDto, "key" | "value">) =>
       api.pilot["saved-answers"]({ key }).put({ value }),
     {
-      invalidate: [queryKeys.pilot.savedAnswers()],
+      invalidate: [pilotQueries.savedAnswers().queryKey],
       successMessage: "Answer saved.",
       onSuccess: () => setEditing(null),
     },
   );
 
   const remove = useApiMutation((key: string) => api.pilot["saved-answers"]({ key }).delete(), {
-    invalidate: [queryKeys.pilot.savedAnswers()],
+    invalidate: [pilotQueries.savedAnswers().queryKey],
     successMessage: "Answer deleted.",
   });
 

@@ -14,7 +14,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { RelativeTime } from "@/components/ui/display";
 import { QuerySection } from "@/components/ui/feedback";
@@ -58,8 +58,8 @@ export function NeedsAttention(): ReactElement {
   const { questions } = questionsQuery;
 
   // Drafts are server-filtered so an aging one can't fall off the page; history may.
-  const draftsQuery = useApiQuery(pilotQueries.promotions("draft"));
-  const historyQuery = useApiQuery(pilotQueries.promotions());
+  const draftsQuery = useQuery(pilotQueries.promotions("draft"));
+  const historyQuery = useQuery(pilotQueries.promotions());
   // `undefined` = no user choice yet, so a lone draft starts expanded.
   const [userExpanded, setUserExpanded] = useState<string | null | undefined>(undefined);
   const [historyOpen, setHistoryOpen] = useState(false);

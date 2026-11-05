@@ -4,10 +4,10 @@ import type { ReactElement } from "react";
 import type { TaskList } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
 import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
+import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { type ApiQueryResult, useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { LinkButton, TooltipIconButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
@@ -52,8 +52,9 @@ function TaskListEmpty(props: TaskListEmptyProps): ReactElement {
 }
 
 /** Pinned to one fetch plus manual refresh: building a task list is costly. A stopped pilot has none. */
-export function useTaskList(running: boolean): ApiQueryResult<TaskList | null> {
-  return useApiQuery(pilotQueries.taskList(), {
+export function useTaskList(running: boolean): UseQueryResult<TaskList | null> {
+  return useQuery({
+    ...pilotQueries.taskList(),
     enabled: running,
     staleTime: Number.POSITIVE_INFINITY,
     refetchOnWindowFocus: false,
@@ -69,7 +70,7 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
   const { running } = props;
   const query = useTaskList(running);
   const refresh = useApiMutation(() => api.pilot.tasks.refresh.post(), {
-    invalidate: [queryKeys.pilot.taskList()],
+    invalidate: [pilotQueries.taskList().queryKey],
   });
 
   const taskList = query.data;

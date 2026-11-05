@@ -5,7 +5,7 @@ import { Delete, PictureAsPdf } from "@mui/icons-material";
 import { Box, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/query-keys";
+import { invalidations } from "@/api/queries";
 import type { ResumeDto } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";

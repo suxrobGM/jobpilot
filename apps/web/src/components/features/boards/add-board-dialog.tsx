@@ -8,8 +8,8 @@ import {
 } from "@jobpilot/contracts/job-board";
 import { Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod/v4";
-import { useApiQuery } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -46,7 +46,7 @@ interface AddBoardDialogProps {
 /** Pick a catalog board, or describe another site. Logins are added under Settings, Credentials. */
 export function AddBoardDialog(props: AddBoardDialogProps): ReactElement {
   const { open, onClose, onSubmit, submitting } = props;
-  const catalog = useApiQuery(jobBoardQueries.catalog(), { enabled: open });
+  const catalog = useQuery({ ...jobBoardQueries.catalog(), enabled: open });
 
   const form = useAppForm({
     defaultValues: EMPTY,

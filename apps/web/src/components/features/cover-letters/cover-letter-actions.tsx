@@ -7,7 +7,7 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { coverLetterQueries } from "@/api/queries";
 import { useConfirm } from "@/providers/confirm-provider";
 
 interface CoverLetterActionsProps {
@@ -21,7 +21,7 @@ export function CoverLetterActions(props: CoverLetterActionsProps): ReactElement
 
   const remove = useApiMutation(() => api["cover-letters"]({ id }).delete(), {
     successMessage: "Cover letter deleted",
-    invalidate: [queryKeys.coverLetters.all],
+    invalidate: [coverLetterQueries.all],
     onSuccess: () => router.replace("/documents/cover-letters" as Route),
   });
 

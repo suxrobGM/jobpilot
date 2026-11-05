@@ -10,7 +10,7 @@ import { Schedule } from "@mui/icons-material";
 import { Alert, Button, Chip, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
@@ -66,7 +66,7 @@ export function JobAlertsPanel(): ReactElement {
   const { query, status, run } = useJobAlerts();
 
   const save = useApiMutation((body: PilotJobAlerts) => api.pilot["job-alerts"].put(body), {
-    invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.taskList()],
+    invalidate: [pilotQueries.jobAlerts().queryKey, pilotQueries.taskList().queryKey],
     successMessage: "Job alert schedule saved.",
   });
 

@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { newTokens } from "@jobpilot/contracts/pilot";
 import { Box, LinearProgress, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
@@ -11,7 +11,7 @@ import { formatNewTokenParts, formatTokenSplit, formatTokens, plural } from "@/u
 import { taskTypeLabel } from "../task-types";
 
 export function CycleCost(): ReactElement {
-  const query = useApiQuery(pilotQueries.cost());
+  const query = useQuery(pilotQueries.cost());
   const items = query.data?.items ?? [];
   const heaviest = items.length > 0 ? newTokens(items[0].tokens) : 0;
 

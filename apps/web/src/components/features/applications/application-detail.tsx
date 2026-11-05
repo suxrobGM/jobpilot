@@ -4,11 +4,11 @@ import { type ReactElement, useState } from "react";
 import type { StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
 import { Button, IconButton, LinearProgress, Link, Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { applicationQueries } from "@/api/queries";
-import { invalidations } from "@/api/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { applicationQueries, invalidations } from "@/api/queries";
 import { LabelValue, StatusChip, statusLabel } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
@@ -30,7 +30,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const confirm = useConfirm();
 
-  const detail = useApiQuery(applicationQueries.detail(id));
+  const detail = useQuery(applicationQueries.detail(id));
 
   const updateStatus = useApiMutation(
     (vars: StatusTransitionInput) => api.applications({ id }).status.post(vars),

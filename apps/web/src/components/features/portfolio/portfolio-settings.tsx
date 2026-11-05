@@ -4,10 +4,10 @@ import type { ReactElement } from "react";
 import { type PortfolioSettingsPatch, usernameSchema } from "@jobpilot/contracts/user";
 import { OpenInNew } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { PortfolioSettingsDto } from "@/api/types";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
@@ -23,7 +23,7 @@ const AVAILABILITY_ITEMS = [
 ] as const;
 
 export function PortfolioSettings(): ReactElement {
-  const settingsQuery = useApiQuery(userQueries.portfolio());
+  const settingsQuery = useQuery(userQueries.portfolio());
 
   if (!settingsQuery.data) {
     return (
@@ -45,7 +45,7 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
 
   const save = useApiMutation((body: PortfolioSettingsPatch) => api.user.portfolio.patch(body), {
     successMessage: "Portfolio settings saved",
-    invalidate: [queryKeys.user.portfolio(), queryKeys.user.portfolioPreview()],
+    invalidate: [userQueries.portfolio().queryKey, userQueries.portfolioPreview().queryKey],
   });
 
   const form = useAppForm({
@@ -135,7 +135,7 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
 }
 
 function PortfolioPreview(): ReactElement {
-  const previewQuery = useApiQuery(userQueries.portfolioPreview());
+  const previewQuery = useQuery(userQueries.portfolioPreview());
 
   if (previewQuery.isPending) {
     return <LoadingSpinner />;

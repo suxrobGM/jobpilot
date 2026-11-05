@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import type { PilotState, TaskList } from "@jobpilot/contracts/pilot";
 import { Box, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
 import type { PilotHealth } from "@/lib/terminal";
@@ -55,7 +55,7 @@ interface OrchestrationPanelProps {
 
 export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement {
   const { state, pilot, mode, nextWakeAt } = props;
-  const journal = useApiQuery(pilotQueries.journal());
+  const journal = useQuery(pilotQueries.journal());
   const taskList = useTaskList(state.running);
 
   const { dimmed } = PILOT_MODE_LOOK[mode];

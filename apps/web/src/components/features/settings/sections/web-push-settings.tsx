@@ -12,10 +12,10 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { ItemList, ItemRow } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
@@ -32,20 +32,21 @@ export function WebPushSettings(): ReactNode {
   const [currentEndpoint, setCurrentEndpoint] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const vapidQuery = useApiQuery(pilotQueries.pushKey());
+  const vapidQuery = useQuery(pilotQueries.pushKey());
   const publicKey = vapidQuery.data?.publicKey ?? null;
 
-  const devicesQuery = useApiQuery(pilotQueries.pushDevices(), {
+  const devicesQuery = useQuery({
+    ...pilotQueries.pushDevices(),
     enabled: supported === true && Boolean(publicKey),
   });
 
   const subscribe = useApiMutation(
     (input: PushSubscriptionInput) => api["web-push"].subscriptions.post(input),
-    { invalidate: [queryKeys.pilot.push()] },
+    { invalidate: [pilotQueries.pushAll] },
   );
   const remove = useApiMutation(
     (endpoint: string) => api["web-push"].subscriptions.delete({ endpoint }),
-    { invalidate: [queryKeys.pilot.push()] },
+    { invalidate: [pilotQueries.pushAll] },
   );
 
   useEffect(() => {

@@ -3,11 +3,9 @@
 import type { ReactElement, ReactNode } from "react";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Alert, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import {
   PILOT_HOST_OFFLINE_MESSAGE,
   PILOT_MODE_LOOK,
@@ -43,13 +41,14 @@ interface PilotCardBodyProps {
 function PilotCardBody(props: PilotCardBodyProps): ReactNode {
   const { health, pilot } = props;
   const queryClient = useQueryClient();
-  const stateQuery = useApiQuery(pilotQueries.state());
+  const stateQuery = useQuery(pilotQueries.state());
   const openQuestions = useOpenQuestions().questions.length;
 
   // Rides the shared pilotChannel source (refcounted per URL), so this adds no connection.
   useSseChannel(pilotChannel, null, {
     on: {
-      "state.changed": () => queryClient.invalidateQueries({ queryKey: queryKeys.pilot.state() }),
+      "state.changed": () =>
+        queryClient.invalidateQueries({ queryKey: pilotQueries.state().queryKey }),
     },
   });
 

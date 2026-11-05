@@ -4,10 +4,10 @@ import { type ReactElement, useState } from "react";
 import { isProtectedVariantLabel, UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
 import { CleaningServices, Delete, OpenInNew } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, Chip, IconButton, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { variantPdfUrl } from "@/api/resume-urls";
 import type { ResumeVariantListItem } from "@/api/types";
 import { RelativeTime } from "@/components/ui/display";
@@ -29,18 +29,18 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
   const [search, setSearch] = useState("");
   const confirm = useConfirm();
 
-  const query = useApiQuery(resumeQueries.variants(resumeId));
+  const query = useQuery(resumeQueries.variants(resumeId));
 
   const remove = useApiMutation((id: string) => api.resumes.variants({ id }).delete(), {
     successMessage: "Variant deleted",
-    invalidate: [queryKeys.resume.variants(resumeId)],
+    invalidate: [resumeQueries.variants(resumeId).queryKey],
   });
 
   const prune = useApiMutation(
     () => api.resumes({ id: resumeId }).variants.delete(undefined, { query: {} }),
     {
       successMessage: "Unused variants pruned",
-      invalidate: [queryKeys.resume.variants(resumeId)],
+      invalidate: [resumeQueries.variants(resumeId).queryKey],
     },
   );
 

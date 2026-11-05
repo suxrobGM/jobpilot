@@ -4,10 +4,10 @@ import type { ReactElement } from "react";
 import { type OAuthClientUpsertInput, oauthClientUpsertSchema } from "@jobpilot/contracts/email";
 import { CheckCircle } from "@mui/icons-material";
 import { Alert, Box, Chip, Link, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { emailQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import type { OAuthClientStatus } from "@/api/types";
 import { TooltipButton } from "@/components/ui/buttons";
 import { CopyField } from "@/components/ui/display";
@@ -28,8 +28,8 @@ const CARD_DESCRIPTION =
  * once data is present so initial values are correct.
  */
 export function OAuthClientCard(): ReactElement {
-  const config = useApiQuery(emailQueries.oauthClient());
-  const status = useApiQuery(emailQueries.account());
+  const config = useQuery(emailQueries.oauthClient());
+  const status = useQuery(emailQueries.account());
 
   if (!config.data || !status.data) {
     return (
@@ -53,11 +53,11 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
 
   const save = useApiMutation((vars: OAuthClientUpsertInput) => api.email.oauth.client.put(vars), {
     successMessage: "OAuth client saved",
-    invalidate: [queryKeys.email.all],
+    invalidate: [emailQueries.all],
   });
   const remove = useApiMutation(() => api.email.oauth.client.delete(), {
     successMessage: "OAuth client removed",
-    invalidate: [queryKeys.email.all],
+    invalidate: [emailQueries.all],
   });
 
   const form = useAppForm({

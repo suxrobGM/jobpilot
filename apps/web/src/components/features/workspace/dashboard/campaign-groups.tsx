@@ -4,7 +4,7 @@ import type { ReactElement, ReactNode } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { Add } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { campaignQueries } from "@/api/queries";
 import { CampaignRow } from "@/components/features/campaigns";
 import { PaginationFooter } from "@/components/ui/data";
@@ -30,7 +30,7 @@ export function CampaignGroups(): ReactElement {
 
   const groups = [useCampaignGroup(GROUPS[0]), useCampaignGroup(GROUPS[1])];
   // Running campaigns render in Now running, so emptiness is judged on the whole account.
-  const summary = useApiQuery(campaignQueries.summary());
+  const summary = useQuery(campaignQueries.summary());
   const loading = summary.isLoading || groups.some((g) => g.isLoading);
   const isError = summary.isError || groups.some((g) => g.isError);
   const isEmpty = summary.data?.total === 0;
@@ -135,7 +135,7 @@ function useCampaignGroup(group: (typeof GROUPS)[number]) {
     pageSize: PAGE_SIZE,
     prefix: group.key,
   });
-  const result = useApiQuery(campaignQueries.list({ ...query, status: [...group.statuses] }));
+  const result = useQuery(campaignQueries.list({ ...query, status: [...group.statuses] }));
 
   return {
     label: group.label,

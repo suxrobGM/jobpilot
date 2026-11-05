@@ -8,7 +8,7 @@ import type {
 } from "@jobpilot/contracts/pilot";
 import { type Jsonified, pilotChannel } from "@jobpilot/contracts/sse";
 import type { QueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/api/query-keys";
+import { pilotQueries } from "@/api/queries";
 import { type SseConnectionStatus, useSseChannel } from "@/lib/sse/client";
 import { dedupeById } from "@/utils/array";
 
@@ -29,7 +29,7 @@ export function appendJournalEntry(
   const entry = { ...streamed, createdAt: new Date(streamed.createdAt) };
   queryClient.setQueriesData<PilotJournalPage>(
     {
-      queryKey: queryKeys.pilot.journalAll(),
+      queryKey: pilotQueries.journalAll,
       predicate: (query) => takesKind(query.queryKey, entry.kind),
     },
     (page) => page && { ...page, items: dedupeById([entry, ...page.items]).slice(0, CACHE_CAP) },

@@ -15,14 +15,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { resumeQueries } from "@/api/queries";
-import { invalidations, queryKeys } from "@/api/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { invalidations, resumeQueries } from "@/api/queries";
 import { resumePdfUrl } from "@/api/resume-urls";
 import { RelativeTime } from "@/components/ui/display";
 import { FileUpload } from "@/components/ui/form";
@@ -43,7 +42,7 @@ function ResumeEventsSubscriber({ resumeId }: { resumeId: string }): ReactNode {
     { resumeId },
     {
       onMessage: () => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.resume.list() });
+        void queryClient.invalidateQueries({ queryKey: resumeQueries.list().queryKey });
       },
     },
   );
@@ -57,7 +56,7 @@ export function ResumesList(): ReactElement {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const list = useApiQuery(resumeQueries.list());
+  const list = useQuery(resumeQueries.list());
 
   const upload = useApiMutation((file: File) => api.resumes.upload.post({ file }), {
     successMessage: "Resume uploaded",

@@ -5,7 +5,7 @@ import type { OAuthProviderInput } from "@jobpilot/contracts/auth";
 import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { authQueries } from "@/api/queries";
 import { OAUTH_PROVIDERS, oauthStartUrl, resolveOauthReason } from "@/components/features/auth";
 import { TooltipButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
@@ -30,7 +30,7 @@ export function ConnectedAccountsCard(props: ConnectedAccountsCardProps): ReactE
 
   const unlink = useApiMutation(
     (p: OAuthProviderInput) => api.auth.providers({ provider: p }).delete(),
-    { successMessage: "Account unlinked", invalidate: [queryKeys.auth.me()] },
+    { successMessage: "Account unlinked", invalidate: [authQueries.me().queryKey] },
   );
 
   const link = (p: OAuthProviderInput): void => {

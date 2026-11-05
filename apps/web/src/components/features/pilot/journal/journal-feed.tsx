@@ -15,11 +15,11 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { queryKeys } from "@/api/query-keys";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
@@ -41,7 +41,7 @@ export function JournalFeed(): ReactElement {
   const toast = useToast();
   const confirm = useConfirm();
   const [selectedKinds, setSelectedKinds] = useState<PilotJournalKind[]>([]);
-  const firstPage = useApiQuery(pilotQueries.journal(selectedKinds));
+  const firstPage = useQuery(pilotQueries.journal(selectedKinds));
   const status = useJournalLiveStatus();
   // Whole pages, so the resume cursor is simply the last page's.
   const [pages, setPages] = useState<PilotJournalPage[]>([]);
@@ -50,7 +50,7 @@ export function JournalFeed(): ReactElement {
 
   const reset = useApiMutation(() => api.pilot.runs.delete(), {
     successMessage: "Pilot reset",
-    invalidate: [queryKeys.pilot.all],
+    invalidate: [pilotQueries.all],
     onSuccess: () => setPages([]),
   });
 
