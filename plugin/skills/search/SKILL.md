@@ -83,7 +83,7 @@ per result (slug of `company-title` + rank, no spaces).
 
 Carry the `brief` you scored from (`../_shared/job-brief.md`). Per result, write `{key, title,
 company, location, url, board:"<domain>", matchScore, matchReason:"<one-line verdict>",
-status:"pending", brief}` (`brief` as a JSON string) to `$JOBPILOT_TEMP/job-<key>.json`, then:
+status:"pending", brief}` (`brief` as a JSON object) to `$JOBPILOT_TEMP/job-<key>.json`, then:
 
 ```bash
 jobpilot-api POST /api/campaigns/<campaign-id>/jobs --data @"$JOBPILOT_TEMP/job-<key>.json"

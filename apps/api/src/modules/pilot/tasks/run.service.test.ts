@@ -108,7 +108,9 @@ function runDb({ currentVersion = VERSION, openRun = null, campaignStillPaused =
         company: "Acme",
       }),
       findMany: async () => [],
-      updateManyAndReturn: async () => [{ campaignId: "c1", key: "j1", status: "applying" }],
+      updateManyAndReturn: async () => [
+        { campaignId: "c1", key: "j1", status: "applying", brief: null },
+      ],
     },
     application: { findUnique: async () => null, findMany: async () => [] },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
@@ -266,7 +268,7 @@ describe("RunService.postResult", () => {
     expect(jobReverts).toHaveLength(0);
     expect(appended).toEqual([
       expect.objectContaining({
-        cycleId: RUN_ID,
+        runId: RUN_ID,
         kind: "action",
         summary: result.summary,
         subjectType: "job",

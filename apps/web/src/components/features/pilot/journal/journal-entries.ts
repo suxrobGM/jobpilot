@@ -5,23 +5,23 @@ import { format, isThisYear, isToday, isYesterday } from "date-fns";
 export function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[] {
   const covered = new Set<string>();
   for (const entry of entries) {
-    if (entry.kind === "action" && entry.cycleId) {
-      covered.add(entry.cycleId);
+    if (entry.kind === "action" && entry.runId) {
+      covered.add(entry.runId);
     }
   }
-  return entries.filter((e) => !(e.kind === "cycle" && e.cycleId && covered.has(e.cycleId)));
+  return entries.filter((e) => !(e.kind === "cycle" && e.runId && covered.has(e.runId)));
 }
 
 /** Streamed actions predate the host's usage report, so every row takes its run's newest copy. */
 export function withLatestRuns(entries: PilotJournalEntry[]): PilotJournalEntry[] {
   const runs = new Map<string, PilotJournalRun>();
   for (const entry of entries) {
-    if (entry.cycleId && entry.run && !runs.has(entry.cycleId)) {
-      runs.set(entry.cycleId, entry.run);
+    if (entry.runId && entry.run && !runs.has(entry.runId)) {
+      runs.set(entry.runId, entry.run);
     }
   }
   return entries.map((entry) => {
-    const run = entry.cycleId ? runs.get(entry.cycleId) : null;
+    const run = entry.runId ? runs.get(entry.runId) : null;
     return run ? { ...entry, run } : entry;
   });
 }

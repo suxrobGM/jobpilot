@@ -16,12 +16,12 @@ import type {
 type JournalTransaction = Pick<Prisma.TransactionClient, "pilotJournalEntry" | "pilotState">;
 type CycleTransaction = Pick<Prisma.TransactionClient, "pilotState">;
 
-export type RunsByCycle = ReadonlyMap<string, PilotJournalRun>;
+export type RunsById = ReadonlyMap<string, PilotJournalRun>;
 
-const NO_RUNS: RunsByCycle = new Map();
+const NO_RUNS: RunsById = new Map();
 
-export function toJournalEntry(row: PilotJournalEntryModel, runs: RunsByCycle): PilotJournalEntry {
-  const run = row.cycleId ? (runs.get(row.cycleId) ?? null) : null;
+export function toJournalEntry(row: PilotJournalEntryModel, runs: RunsById): PilotJournalEntry {
+  const run = row.runId ? (runs.get(row.runId) ?? null) : null;
   return { ...row, detail: journalDetailSchema.parse(row.detail), run };
 }
 
@@ -54,7 +54,7 @@ export async function writeJournalEntries(
   const rows: PilotJournalEntryModel[] = body.entries.map((entry) => ({
     id: crypto.randomUUID(),
     userId,
-    cycleId: body.cycleId ?? null,
+    runId: body.runId ?? null,
     kind: entry.kind,
     summary: entry.summary,
     detail: entry.detail ?? {},
@@ -77,7 +77,7 @@ export async function writeJournalEntries(
 export function publishJournalEntries(
   userId: string,
   rows: PilotJournalEntryModel[],
-  runs: RunsByCycle = NO_RUNS,
+  runs: RunsById = NO_RUNS,
 ): PilotJournalEntry[] {
   const items = rows.map((row) => toJournalEntry(row, runs));
   for (const entry of items) {

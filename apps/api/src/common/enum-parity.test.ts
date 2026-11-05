@@ -27,6 +27,7 @@ import { PILOT_JOURNAL_KINDS } from "@jobpilot/contracts/pilot/journal";
 import { PROMOTION_STATUSES } from "@jobpilot/contracts/pilot/promotion";
 import { PILOT_QUESTION_KINDS, PILOT_QUESTION_STATUSES } from "@jobpilot/contracts/pilot/question";
 import { PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot/run";
+import { PILOT_SUBJECT_TYPES } from "@jobpilot/contracts/pilot/tasks";
 import { ROLES } from "@jobpilot/contracts/role";
 import {
   UPWORK_INBOX_KINDS,
@@ -75,6 +76,7 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   PilotQuestionKind: PILOT_QUESTION_KINDS,
   PilotQuestionStatus: PILOT_QUESTION_STATUSES,
   PilotRunOutcome: PILOT_RUN_OUTCOMES,
+  PilotSubjectType: PILOT_SUBJECT_TYPES,
   PromotionStatus: PROMOTION_STATUSES,
   SalaryCurrency: SALARY_CURRENCIES,
   SalaryPeriod: SALARY_PERIODS,

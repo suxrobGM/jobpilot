@@ -2,7 +2,7 @@
 
 import { UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
 import { DAY_MS } from "@/common/date/buckets";
-import type { Prisma } from "@/generated/prisma/client";
+import type { PilotSubjectType, Prisma } from "@/generated/prisma/client";
 import { notProtectedVariant } from "@/modules/resume/variants/variant.schema";
 
 export const RETENTION_DAYS = {
@@ -52,7 +52,7 @@ export function runDiscoverWhere(c: RetentionCutoffs): Prisma.PilotRunWhereInput
 }
 
 /** Subjects that stay live indefinitely and whose only re-offer suppressor is the answered question itself. */
-const QUESTION_TOMBSTONE_SUBJECTS = ["email", "campaign"];
+const QUESTION_TOMBSTONE_SUBJECTS: PilotSubjectType[] = ["email", "campaign"];
 
 export function questionTerminalWhere(c: RetentionCutoffs): Prisma.PilotQuestionWhereInput {
   // "open" is deliberately absent - never sweep a question still awaiting an answer.

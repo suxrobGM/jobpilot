@@ -128,7 +128,7 @@ export class UpworkService {
     const [items, total] = await Promise.all([
       this.prisma.upworkInboxItem.findMany({
         where,
-        omit: { raw: true },
+        omit: { payload: true },
         orderBy: { receivedAt: "desc" },
         ...pageSlice(query),
       }),
@@ -159,7 +159,7 @@ export class UpworkService {
           jobUrl: item.jobUrl ? normalizeJobUrl(item.jobUrl) : null,
           body: item.body ?? null,
           receivedAt: new Date(item.receivedAt),
-          raw: JSON.stringify(item.raw ?? {}),
+          payload: toInputJson(item.payload ?? {}),
         };
         return this.prisma.upworkInboxItem.upsert({
           where: { userId_upworkId: { userId, upworkId: item.upworkId } },
@@ -237,8 +237,7 @@ export class UpworkService {
         status: body.status ?? "draft",
         notes: body.notes ?? null,
         source: body.source ?? "manual",
-        campaignId: body.campaignId ?? null,
-        jobKey: body.jobKey ?? null,
+        jobId: body.jobId ?? null,
       },
     });
 

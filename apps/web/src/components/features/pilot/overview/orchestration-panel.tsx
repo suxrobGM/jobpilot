@@ -64,10 +64,10 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
   const running = run !== null;
   const branch = run ? taskTypeAgent(run.taskType) : null;
 
-  // A run's id is the cycleId of the action it posts.
+  // The action a run posts carries its id as `runId`.
   const journalItems = journal.data?.items ?? [];
   const posted = run
-    ? (journalItems.find((entry) => entry.kind === "action" && entry.cycleId === run.id) ?? null)
+    ? (journalItems.find((entry) => entry.kind === "action" && entry.runId === run.id) ?? null)
     : null;
   const journalCaption = posted
     ? truncate(humanizeIsoInText(posted.summary))

@@ -1,11 +1,12 @@
 import { z } from "zod/v4";
+import { jobBriefSchema } from "../campaign";
 import { networkingModeSchema } from "../networking";
 import { storedDate } from "../utils/json";
 
 // An "off" channel is never emitted, so a worker only ever sees a resolved channel and mode.
 const outgoingMode = networkingModeSchema.shape;
 
-export const TASK_SUBJECT_TYPES = [
+export const PILOT_SUBJECT_TYPES = [
   "job",
   "campaign",
   "question",
@@ -18,6 +19,7 @@ export const TASK_SUBJECT_TYPES = [
   "pilot",
   "upwork",
 ] as const;
+export const pilotSubjectTypeSchema = z.enum(PILOT_SUBJECT_TYPES);
 
 const nullableString = z.string().nullable();
 const optionalString = z.string().optional();
@@ -30,7 +32,7 @@ const warmContactSchema = z.object({
 
 const taskVariant = <K extends string, P extends z.ZodType>(
   taskType: K,
-  subjectType: (typeof TASK_SUBJECT_TYPES)[number],
+  subjectType: (typeof PILOT_SUBJECT_TYPES)[number],
   payload: P,
 ) =>
   z.object({
@@ -47,7 +49,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     z.object({
       questionId: z.string(),
       questionKind: z.string(),
-      subjectType: nullableString,
+      subjectType: pilotSubjectTypeSchema.nullable(),
       subjectId: nullableString,
       prompt: z.string(),
       answer: nullableString,
@@ -62,7 +64,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       jobTitle: z.string(),
       url: z.string(),
       board: nullableString,
-      brief: nullableString,
+      brief: jobBriefSchema.nullable(),
       resumeId: optionalString,
       matchScore: z.number().nullable(),
       warmContacts: z.array(warmContactSchema).optional(),

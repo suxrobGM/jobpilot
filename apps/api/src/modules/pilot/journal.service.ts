@@ -9,7 +9,7 @@ import { type PilotJournalEntry, PrismaClient } from "@/generated/prisma/client"
 import { WebPushService } from "@/modules/web-push/web-push.service";
 import {
   publishJournalEntries,
-  type RunsByCycle,
+  type RunsById,
   toJournalEntry,
   writeJournalEntries,
 } from "./journal-entries";
@@ -17,16 +17,16 @@ import { PilotService } from "./pilot.service";
 
 const EXPORT_BATCH = 500;
 
-/** A run's id is the cycleId of every entry it journals, so one read covers a page. */
+/** Every entry a run journals carries its `runId`, so one read covers a page. */
 async function loadRuns(
   prisma: Pick<PrismaClient, "pilotRun">,
   userId: string,
   rows: PilotJournalEntry[],
-): Promise<RunsByCycle> {
-  const cycleIds = [...new Set(rows.flatMap((row) => (row.cycleId ? [row.cycleId] : [])))];
-  if (cycleIds.length === 0) return new Map();
+): Promise<RunsById> {
+  const runIds = [...new Set(rows.flatMap((row) => (row.runId ? [row.runId] : [])))];
+  if (runIds.length === 0) return new Map();
   const runs = await prisma.pilotRun.findMany({
-    where: { userId, id: { in: cycleIds } },
+    where: { userId, id: { in: runIds } },
     select: {
       id: true,
       taskType: true,

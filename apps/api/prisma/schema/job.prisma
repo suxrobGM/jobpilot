@@ -32,11 +32,12 @@ model Job {
   retryNotes  String?           @map("retry_notes")
   skipReason  String?           @map("skip_reason")
   description String?
-  brief       String?
+  brief       Json?
   createdAt   DateTime          @default(now()) @map("created_at")
   updatedAt   DateTime          @updatedAt @map("updated_at")
 
-  applications Application[]
+  applications    Application[]
+  upworkProposals UpworkProposal[]
 
   @@unique([campaignId, key])
   @@index([campaignId, status])

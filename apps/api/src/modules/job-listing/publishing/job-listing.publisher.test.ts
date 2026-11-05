@@ -8,7 +8,7 @@ const job = (url: string): ListingSourceJob => ({
   company: "Acme",
   url,
   location: "Austin, TX",
-  brief: JSON.stringify({ skills: ["Go"] }),
+  brief: { skills: ["Go"] },
 });
 
 interface FakeOptions {
@@ -130,7 +130,7 @@ describe("publish", () => {
 describe("enrich", () => {
   const withBrief = (extra: Record<string, unknown>): ListingSourceJob => ({
     ...job("https://x.com/1"),
-    brief: JSON.stringify({ skills: ["Go"], ...extra }),
+    brief: { skills: ["Go"], ...extra },
   });
 
   it("writes the brief fields when the scrape has them", async () => {

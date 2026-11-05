@@ -5,7 +5,7 @@ import type { z } from "zod/v4";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { ensureCampaignOwned } from "../campaign.utils";
 import type { campaignJobsQuery } from "./job.schema";
-import { JOB_INCLUDE } from "./job-row";
+import { JOB_INCLUDE, toCampaignJob } from "./job-row";
 
 @injectable()
 export class CampaignJobQueryService {
@@ -34,7 +34,7 @@ export class CampaignJobQueryService {
       }),
       this.prisma.job.count({ where }),
     ]);
-    return paginate(jobs, query, total);
+    return paginate(jobs.map(toCampaignJob), query, total);
   }
 
   /** Grouped across every job, so the breakdown is not page-scoped. */

@@ -3,11 +3,15 @@ import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { publish } from "@/common/sse";
 import type { CampaignSource, PrismaClient } from "@/generated/prisma/client";
 import { deriveCampaignSummary } from "../campaign.summary";
-import type { JobRow } from "./job-row";
+import { type JobRow, toCampaignJob } from "./job-row";
 
 export function publishJob(userId: string, job: JobRow, kind: "added" | "updated"): void {
   const { campaignId } = job;
-  publish(campaignChannel, { campaignId }, { type: "job-update", payload: { kind, job } });
+  publish(
+    campaignChannel,
+    { campaignId },
+    { type: "job-update", payload: { kind, job: toCampaignJob(job) } },
+  );
   publish(
     workspaceChannel,
     { userId },

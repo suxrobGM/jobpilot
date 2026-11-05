@@ -62,17 +62,17 @@ model UpworkProposal {
   outcome UpworkProposalOutcome?
   notes   String?
 
-  // campaignId and jobKey are set only for search recommendations; loose columns, not FKs.
-  source     UpworkProposalSource @default(manual)
-  campaignId String?              @map("campaign_id")
-  jobKey     String?              @map("job_key")
+  source UpworkProposalSource @default(manual)
+  // The campaign job a `search` draft was seeded from.
+  jobId  String?              @map("job_id")
+  job    Job?                 @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   submittedAt DateTime? @map("submitted_at")
 
   @@index([userId, status])
-  @@index([campaignId])
+  @@index([jobId])
   @@map("upwork_proposals")
 }
 
@@ -118,7 +118,7 @@ model UpworkAccount {
   @@map("upwork_accounts")
 }
 
-// `upworkId` keeps the sync idempotent; `raw` keeps the full payload for fields not modeled yet.
+// `upworkId` keeps the sync idempotent; `payload` keeps the full item for fields not modeled yet.
 model UpworkInboxItem {
   id     String @id @default(uuid())
   userId String @map("user_id")
@@ -133,7 +133,7 @@ model UpworkInboxItem {
 
   status     UpworkInboxStatus @default(unread)
   receivedAt DateTime          @map("received_at")
-  raw        String            @default("{}")
+  payload    Json              @default("{}")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

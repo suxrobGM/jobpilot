@@ -12,9 +12,10 @@ model Resume {
   content Json?
   version Int   @default(1)
 
-  variants     ResumeVariant[]
-  primaryFor   User?           @relation("PrimaryResume")
-  applications Application[]
+  variants      ResumeVariant[]
+  primaryFor    User?           @relation("PrimaryResume")
+  applications  Application[]
+  pilotSearches PilotSearch[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

@@ -26,6 +26,7 @@ function setup() {
           key,
           url: `https://example.test/${key}`,
           status: args.data.status,
+          brief: null,
         }));
       },
       groupBy: async () => [],

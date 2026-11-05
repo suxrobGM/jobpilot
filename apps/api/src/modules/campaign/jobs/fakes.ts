@@ -14,6 +14,11 @@ export const OWNED_RESUME_ID = "11111111-1111-4111-8111-111111111111";
 export const OWNED_VARIANT_ID = "22222222-2222-4222-8222-222222222222";
 export const OTHER_USERS_VARIANT_ID = "33333333-3333-4333-8333-333333333333";
 
+// Prisma skips undefined fields on write; a plain spread would overwrite them.
+function withoutUndefined(data: Record<string, unknown>) {
+  return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
+}
+
 export function setup() {
   let job = {
     id: "j-id",
@@ -60,7 +65,7 @@ export function setup() {
         } else if (typeof where.status === "string" && job.status !== where.status) {
           return { count: 0 };
         }
-        job = { ...job, ...data } as typeof job;
+        job = { ...job, ...withoutUndefined(data) } as typeof job;
         return { count: 1 };
       },
       updateManyAndReturn: async ({
@@ -72,12 +77,12 @@ export function setup() {
       }) => {
         const allowed = typeof where.status === "string" ? [where.status] : where.status?.in;
         if (allowed && !allowed.includes(job.status)) return [];
-        job = { ...job, ...data } as typeof job;
+        job = { ...job, ...withoutUndefined(data) } as typeof job;
         return [job];
       },
       findUniqueOrThrow: async () => job,
       update: async ({ data }: { data: Record<string, unknown> }) => {
-        job = { ...job, ...data } as typeof job;
+        job = { ...job, ...withoutUndefined(data) } as typeof job;
         return job;
       },
       groupBy: async () => [

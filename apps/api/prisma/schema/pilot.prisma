@@ -36,6 +36,24 @@ enum PilotJournalKind {
   @@map("pilot_journal_kind")
 }
 
+// What a run, question or journal entry is about. `subjectId` stays text: it holds ids and keys
+// like `inbox` or `<campaignId>:<jobKey>`.
+enum PilotSubjectType {
+  job
+  campaign
+  question
+  networking
+  inbox
+  promotion
+  application
+  email
+  board
+  pilot
+  upwork
+
+  @@map("pilot_subject_type")
+}
+
 enum PromotionStatus {
   draft
   approved
@@ -78,6 +96,7 @@ model PilotSearch {
   boardId      String?   @map("board_id")
   board        JobBoard? @relation(fields: [boardId], references: [id], onDelete: SetNull)
   resumeId     String?   @map("resume_id")
+  resume       Resume?   @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
   reason       String    @default("")
   lastRunAt    DateTime? @map("last_run_at")
@@ -94,6 +113,7 @@ model PilotSearch {
 
   @@index([userId, nextRunAt])
   @@index([boardId])
+  @@index([resumeId])
   @@map("pilot_searches")
 }
 
@@ -102,7 +122,7 @@ model PilotRun {
   userId           String           @map("user_id")
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskType         String           @map("task_type")
-  subjectType      String           @map("subject_type")
+  subjectType      PilotSubjectType @map("subject_type")
   subjectId        String           @map("subject_id")
   payload          Json             @default("{}")
   startedAt        DateTime         @default(now()) @map("started_at")
@@ -117,6 +137,8 @@ model PilotRun {
   cacheReadTokens  Int              @default(0) @map("cache_read_tokens")
   cacheWriteTokens Int              @default(0) @map("cache_write_tokens")
 
+  journalEntries PilotJournalEntry[]
+
   @@index([userId, subjectType, subjectId])
   @@index([finishedAt])
   // Partial indexes live in the migration SQL: open runs by (userId, expiresAt), and one open run per
@@ -130,7 +152,7 @@ model PilotQuestion {
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind        PilotQuestionKind
   status      PilotQuestionStatus @default(open)
-  subjectType String?             @map("subject_type")
+  subjectType PilotSubjectType?   @map("subject_type")
   subjectId   String?             @map("subject_id")
   prompt      String
   options     Json                @default("[]")
@@ -147,20 +169,23 @@ model PilotQuestion {
 }
 
 model PilotJournalEntry {
-  id          String           @id @default(uuid())
-  userId      String           @map("user_id")
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cycleId     String?          @map("cycle_id")
+  id          String            @id @default(uuid())
+  userId      String            @map("user_id")
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // The run whose cycle wrote this entry.
+  runId       String?           @map("run_id")
+  run         PilotRun?         @relation(fields: [runId], references: [id], onDelete: SetNull)
   kind        PilotJournalKind
   summary     String
-  detail      Json             @default("{}")
-  subjectType String?          @map("subject_type")
-  subjectId   String?          @map("subject_id")
-  createdAt   DateTime         @default(now()) @map("created_at")
+  detail      Json              @default("{}")
+  subjectType PilotSubjectType? @map("subject_type")
+  subjectId   String?           @map("subject_id")
+  createdAt   DateTime          @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
   @@index([userId, kind, createdAt])
   @@index([createdAt])
+  @@index([runId])
   @@map("pilot_journal_entries")
 }
 

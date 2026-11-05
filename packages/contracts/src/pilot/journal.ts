@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { csvArray, cursorPageSchema, cursorQuerySchema } from "../pagination";
 import { journalDetailSchema, tokenUsageSchema } from "./run";
+import { pilotSubjectTypeSchema } from "./tasks";
 
 export const PILOT_JOURNAL_KINDS = [
   "cycle",
@@ -17,12 +18,12 @@ const pilotJournalEntryInputSchema = z.object({
   kind: pilotJournalKindSchema,
   summary: z.string(),
   detail: journalDetailSchema.optional(),
-  subjectType: z.string().optional(),
+  subjectType: pilotSubjectTypeSchema.optional(),
   subjectId: z.string().optional(),
 });
 
 export const createPilotJournalSchema = z.object({
-  cycleId: z.string().optional(),
+  runId: z.uuid().optional(),
   entries: z.array(pilotJournalEntryInputSchema).min(1),
 });
 
@@ -35,11 +36,11 @@ const pilotJournalRunSchema = z.object({
 export const pilotJournalEntrySchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
-  cycleId: z.string().nullable(),
+  runId: z.uuid().nullable(),
   kind: pilotJournalKindSchema,
   summary: z.string(),
   detail: journalDetailSchema,
-  subjectType: z.string().nullable(),
+  subjectType: pilotSubjectTypeSchema.nullable(),
   subjectId: z.string().nullable(),
   createdAt: z.date(),
   run: pilotJournalRunSchema.nullable(),

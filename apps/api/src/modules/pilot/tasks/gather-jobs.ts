@@ -1,10 +1,16 @@
-import { campaignConfigSchema } from "@jobpilot/contracts/campaign";
+import {
+  campaignConfigSchema,
+  type JobBriefData,
+  jobBriefSchema,
+} from "@jobpilot/contracts/campaign";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { applyableJobWhere } from "@/modules/campaign/jobs/apply-guard";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "./run-history";
+
+const storedBriefSchema = jobBriefSchema.nullable();
 
 const WARM_INTRO_MIN_SCORE = 80;
 /** "I just applied" outreach still lands this long after the apply. */
@@ -24,7 +30,7 @@ export interface TaskJob {
   title: string;
   url: string;
   board: string | null;
-  brief: string | null;
+  brief: JobBriefData | null;
   matchScore: number | null;
   company: string | null;
   resumeId?: string;
@@ -52,6 +58,7 @@ export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): 
   return rows.map(({ campaign, board, ...job }) => ({
     ...job,
     board: board?.domain ?? null,
+    brief: storedBriefSchema.parse(job.brief),
     resumeId: campaignConfigSchema.parse(campaign.config).resumeId,
   }));
 }

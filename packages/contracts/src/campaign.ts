@@ -1,20 +1,18 @@
 import { z } from "zod/v4";
 import { boardRefSchema } from "./job-board";
 import { networkingConfigSchema } from "./networking";
-import { isJsonObject } from "./utils/json";
 import { cleanReplacementChars } from "./utils/text";
 
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-/** The agent's job brief, as JSON text. An unset shell variable renders the brief as `""`, which read back
- *  as "has a brief" while the public index skipped the row - so empty drops to `undefined`. */
-const jobBrief = z
-  .string()
-  .refine((value) => value.trim() === "" || isJsonObject(value), {
-    message: "brief must be a JSON object.",
-  })
-  .transform((value) => value.trim() || undefined);
+/** The agent's job brief. `{}` drops to `undefined`: it would read as "has a brief" while the public
+ *  index skips the row. */
+export const jobBriefSchema = z.record(z.string(), z.json());
+export type JobBriefData = z.infer<typeof jobBriefSchema>;
+const jobBrief = jobBriefSchema.transform((value) =>
+  Object.keys(value).length === 0 ? undefined : value,
+);
 
 export const CAMPAIGN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
 export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
@@ -60,7 +58,7 @@ export const campaignJobSchema = z.object({
   retryNotes: z.string().nullable(),
   skipReason: z.string().nullable(),
   description: z.string().nullable(),
-  brief: z.string().nullable(),
+  brief: jobBriefSchema.nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

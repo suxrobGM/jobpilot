@@ -15,7 +15,7 @@ import { JournalRow, KIND_META, KIND_ORDER, RunMeta } from "./journal-row";
 
 interface CycleBlock {
   type: "cycle";
-  cycleId: string;
+  runId: string;
   entries: PilotJournalEntry[];
 }
 
@@ -24,20 +24,20 @@ type Block = CycleBlock | { type: "entry"; entry: PilotJournalEntry };
 /** Each cycle sits at its newest entry's position; cycle-less (host/system) entries stay standalone. */
 function toBlocks(entries: PilotJournalEntry[]): Block[] {
   const blocks: Block[] = [];
-  const blockByCycle = new Map<string, CycleBlock>();
+  const blockByRun = new Map<string, CycleBlock>();
 
   for (const entry of entries) {
-    if (!entry.cycleId) {
+    if (!entry.runId) {
       blocks.push({ type: "entry", entry });
       continue;
     }
-    const block = blockByCycle.get(entry.cycleId);
+    const block = blockByRun.get(entry.runId);
     if (block) {
       block.entries.push(entry);
       continue;
     }
-    const created: CycleBlock = { type: "cycle", cycleId: entry.cycleId, entries: [entry] };
-    blockByCycle.set(entry.cycleId, created);
+    const created: CycleBlock = { type: "cycle", runId: entry.runId, entries: [entry] };
+    blockByRun.set(entry.runId, created);
     blocks.push(created);
   }
   return blocks;
@@ -150,7 +150,7 @@ export function CycleTimeline(props: CycleEntriesProps): ReactElement {
         }
         const defaultOpen = !firstCycleSeen;
         firstCycleSeen = true;
-        return <CycleCard key={block.cycleId} entries={block.entries} defaultOpen={defaultOpen} />;
+        return <CycleCard key={block.runId} entries={block.entries} defaultOpen={defaultOpen} />;
       })}
     </Stack>
   );

@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { taskFieldsSchema } from "./tasks";
+import { pilotSubjectTypeSchema, taskFieldsSchema } from "./tasks";
 
 /** Free-form structured detail on a journal entry. */
 export const journalDetailSchema = z.record(z.string(), z.json());
@@ -15,7 +15,7 @@ export const pilotRunResultSchema = z.object({
   outcome: z.enum(["done", "failed"]),
   // The journal action line, human and specific.
   summary: z.string().trim().min(1),
-  subjectType: z.string().min(1).optional(),
+  subjectType: pilotSubjectTypeSchema.optional(),
   subjectId: z.string().min(1).optional(),
   detail: journalDetailSchema.optional(),
 });

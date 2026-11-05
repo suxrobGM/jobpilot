@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 // One definition of "still workable" per task type, shared by its gather and the run-start
 // re-check: two copies drift, and a looser re-check starts a run on a row the gather would drop.
@@ -7,7 +7,7 @@ import type { Prisma } from "@/generated/prisma/client";
 /** Pending rows a worker must open: never scored, or scored off a results row without a brief. */
 export const NEEDS_WORKER_VISIT = {
   status: "pending",
-  OR: [{ matchScore: null }, { brief: null }],
+  OR: [{ matchScore: null }, { brief: { equals: Prisma.DbNull } }],
 } satisfies Prisma.JobWhereInput;
 
 export function scorePendingWhere(userId: string): Prisma.CampaignWhereInput {

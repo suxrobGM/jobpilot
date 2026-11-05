@@ -23,7 +23,7 @@ internal sealed record IdleCycleRequest(int SleepSeconds);
 
 internal sealed record JournalRequest(
     JournalEntry[] Entries,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CycleId = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? RunId = null);
 
 internal sealed record JournalEntry(
     string Kind,

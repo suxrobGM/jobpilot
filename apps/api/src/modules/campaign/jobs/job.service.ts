@@ -9,6 +9,7 @@ import { ErrorCodes } from "@jobpilot/contracts/errors";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned, isPrismaError, PRISMA_ERRORS } from "@/common/errors";
+import { toNullableInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { normalizeJobUrl } from "@/common/utils/url";
 import {
@@ -24,7 +25,7 @@ import { ensureCampaignOwned, PROMOTABLE_SOURCES } from "../campaign.utils";
 import { assertNotDuplicateApply, guardApply } from "./apply-guard";
 import { publishJob, publishProgress, publishStatusChange } from "./job-events";
 import { isTerminalJob, writeJobResult } from "./job-result";
-import { JOB_INCLUDE, type JobRow } from "./job-row";
+import { JOB_INCLUDE, type JobRow, toCampaignJob } from "./job-row";
 
 const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
   // A score pass promotes a pasted link into the normal pipeline; nothing ever moves back to queued.
@@ -77,6 +78,7 @@ export class CampaignJobService {
       job = await this.prisma.job.create({
         data: {
           ...fields,
+          brief: toNullableInputJson(fields.brief),
           boardId,
           url: normalizeJobUrl(body.url),
           campaignId,
@@ -93,7 +95,7 @@ export class CampaignJobService {
 
     this.listings.publishInBackground(job);
     publishJob(userId, job, "added");
-    return job;
+    return toCampaignJob(job);
   }
 
   /** A field edit, moving the status too when the patch names a new one. Never idempotent. */
@@ -129,7 +131,7 @@ export class CampaignJobService {
         }
         return tx.job.update({
           where: { campaignId_key: { campaignId, key } },
-          data: { ...fields, ...boardField },
+          data: { ...fields, brief: toNullableInputJson(fields.brief), ...boardField },
           include: JOB_INCLUDE,
         });
       }),
@@ -141,7 +143,7 @@ export class CampaignJobService {
     } else {
       publishJob(userId, job, "updated");
     }
-    return job;
+    return toCampaignJob(job);
   }
 
   /** The only way out of `failed`. */
@@ -159,7 +161,7 @@ export class CampaignJobService {
       },
       rejection: (status) => `Only failed jobs can be retried; job is ${status}.`,
     });
-    return job;
+    return toCampaignJob(job);
   }
 
   async rescanJob(userId: string, campaignId: string, key: string, body: RescanCampaignJobInput) {
@@ -174,7 +176,7 @@ export class CampaignJobService {
         matchReason: body.matchReason,
         skipReason: body.decision === "skipped" ? body.skipReason : null,
         description: body.description,
-        brief: body.brief,
+        brief: toNullableInputJson(body.brief),
       },
       rejection: (status) => `Only skipped jobs can be rescanned; job is ${status}.`,
     });
@@ -182,7 +184,7 @@ export class CampaignJobService {
     if (changed) {
       this.listings.publishInBackground(job);
     }
-    return job;
+    return toCampaignJob(job);
   }
 
   /** Settles scored `pending` rows into `approved` or `skipped` by the campaign's threshold. */
@@ -242,7 +244,11 @@ export class CampaignJobService {
     if (result.changed && result.application) {
       publish(workspaceChannel, { userId }, { type: "application.created", campaignId });
     }
-    return { campaignJob: result.campaignJob, application: result.application, summary };
+    return {
+      campaignJob: toCampaignJob(result.campaignJob),
+      application: result.application,
+      summary,
+    };
   }
 
   private findJob(userId: string, campaignId: string, key: string) {

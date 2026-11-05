@@ -49,7 +49,7 @@ describe("PilotJournalService.appendJournal", () => {
   it("advances cycle accounting only for cycle entries", async () => {
     const { svc, rec } = makeService();
     const res = await svc.appendJournal("p1", {
-      cycleId: "cycle-1",
+      runId: "run-1",
       entries: [
         { kind: "cycle", summary: "Completed cycle 1" },
         { kind: "action", summary: "Applied to job" },
@@ -72,7 +72,7 @@ describe("PilotJournalService.appendJournal", () => {
     const { svc, rec } = makeService();
     const before = Date.now();
     await svc.appendJournal("p1", {
-      cycleId: "run-1",
+      runId: "run-1",
       entries: [{ kind: "cycle", summary: "Task - done.", detail: { sleepSeconds: 60 } }],
     });
     await svc.appendJournal("p1", { entries: [{ kind: "cycle", summary: "Recovered." }] });
@@ -93,7 +93,7 @@ describe("PilotJournalService.appendJournal", () => {
       { id: "run-2", taskType: "queue.score", model: null, ...tokens },
     ]);
     const res = await svc.appendJournal("p1", {
-      cycleId: "run-1",
+      runId: "run-1",
       entries: [{ kind: "action", summary: "Applied" }],
     });
     expect(res.items[0].run).toEqual({
@@ -102,7 +102,7 @@ describe("PilotJournalService.appendJournal", () => {
     });
 
     const pending = await svc.appendJournal("p1", {
-      cycleId: "run-2",
+      runId: "run-2",
       entries: [{ kind: "action", summary: "Scored" }],
     });
     expect(pending.items[0].run).toEqual({ taskType: "queue.score", tokens: null });
@@ -145,7 +145,7 @@ describe("PilotJournalService reads", () => {
     const entry = (id: string, minute: number) => ({
       id,
       userId: "p1",
-      cycleId: null,
+      runId: null,
       kind: "action",
       summary: `entry ${id}`,
       detail: {},

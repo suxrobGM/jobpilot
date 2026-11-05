@@ -11,7 +11,7 @@ const MAX_BULLET_LENGTH = 300;
 
 /**
  * Looser than scoring's `jobBriefSchema`, which strips the posting-shaped keys
- * (location/salary/remote) this index wants. `Job.brief` is raw JSON, so they are usually present.
+ * (location/salary/remote) this index wants. `Job.brief` is stored as sent, so they are usually present.
  */
 const briefSchema = z.object({
   skills: z.array(z.string()).optional(),
@@ -36,7 +36,7 @@ export interface ListingSourceJob {
   type?: string | null;
   boardId?: string | null;
   description?: string | null;
-  brief?: string | null;
+  brief?: unknown;
 }
 
 export interface ListingDraft {
@@ -57,17 +57,10 @@ export interface ListingDraft {
   url: string;
 }
 
-function parseBrief(raw: string | null | undefined): z.infer<typeof briefSchema> {
-  if (!raw) {
-    return {};
-  }
-  try {
-    const parsed = briefSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : {};
-  } catch {
-    // A malformed brief is a thin job, not an error - the next PATCH usually fixes it.
-    return {};
-  }
+function parseBrief(stored: unknown): z.infer<typeof briefSchema> {
+  // A malformed brief is a thin job, not an error - the next PATCH usually fixes it.
+  const parsed = briefSchema.safeParse(stored);
+  return parsed.success ? parsed.data : {};
 }
 
 function clean(value: string | null | undefined): string | null {

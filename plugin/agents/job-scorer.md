@@ -96,7 +96,7 @@ Per row:
 3. Score and check eligibility. No skip reason → eligible, stays `pending`.
 4. Save:
    - `"create"`: write `{key, title, company, location, url, board, matchScore, matchReason,
-     status:"pending", brief, description}` (`brief` as a JSON string, `description` the posting
+     status:"pending", brief, description}` (`brief` as a JSON object, `description` the posting
      text) to `$JOBPILOT_TEMP/job-$JOB_KEY.json` and `POST /api/campaigns/$CAMPAIGN_ID/jobs --data
      @...`.
    - `"patch"`: eligible → `PATCH /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY` `{matchScore,

@@ -142,8 +142,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
       jobUrl: job.url,
       jobDescription: job.description ?? "",
       source: "search",
-      campaignId: job.campaignId,
-      jobKey: job.key,
+      jobId: job.id,
     });
     if (res.error || !res.data) {
       toast.error(apiErrorMessage(res.error, "Could not create the proposal draft"));
