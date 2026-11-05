@@ -54,8 +54,9 @@ and one way work runs.
    leaves the UI and stays the internal job container of a search or feed. No Campaign→Run
    rename, no durable-campaign layer.
 9. **Pipeline** (`/pipeline`, since the public `/jobs` is taken) lists every job across searches
-   and feeds: Found, To apply, Applied, Needs you, Skipped, Failed. Deduplicated at read time by
-   normalized URL; no postings table.
+   and feeds: Found, To apply, Applied, Needs you, Skipped, Failed. A posting the user already
+   has from the last 30 days isn't added again, and the list dedupes older history by normalized
+   URL. No postings table.
 10. **Notices are deterministic server code**, computed on read. They check that their data is
     current before drawing conclusions.
 11. **The terminal opens on demand** in an agent drawer, with a Steps tab (readable,
@@ -245,6 +246,20 @@ Goals & rules, Settings → Pilot and Diagnostics hold everything the old tabs d
    so `queue.score` picks its jobs up (`tasks/gather-campaigns.ts:76` reads `source: "apply"`
    campaigns with queued jobs).
 3. The OAuth login redirect in `auth/providers.controller.ts:97` goes to `/pilot`.
+4. Don't add a posting twice. Search runs don't call `POST /api/pilot/jobs/existing` the way the
+   researcher and the job-alert import do, so two overlapping searches score the same posting
+   twice.
+   - In the job insert path (`campaign/jobs/job.service.ts`, `POST /api/campaigns/:id/jobs`), skip
+     a job when the user already has the same normalized `url` in any campaign from the last 30
+     days (the window `jobs/existing` uses).
+   - Respond with the existing row and `duplicate: true`. It's the same shape as a created job, so
+     older plugins keep working. Don't count it as new for the search.
+   - `POST /api/pipeline/links` reports duplicates too, so the dialog can say "2 already in your
+     pipeline".
+5. A standing **networking** campaign, like the links feed: add `networking` to `CampaignFeed`,
+   created with source `networking`. `POST /api/networking/campaign` returns it, creating it on
+   first use. Today the campaign composer is the web's only way to create a networking campaign,
+   and this phase deletes the composer.
 
 **Web**
 
@@ -266,20 +281,33 @@ Goals & rules, Settings → Pilot and Diagnostics hold everything the old tabs d
    - `auth/verify-email-view.tsx`, `app/robots.ts`
    - `applications/application-detail.tsx` goes back to `/pipeline?view=applied`
 4. `GET /api/campaigns/summary`: delete it if nothing reads it any more (check with knip and grep).
+5. Networking → Messages takes over the networking board. `NetworkingBoard` renders only on the
+   campaign detail page (`campaigns/campaign-detail.tsx:82`), which this phase deletes.
+   - Move its selection and Rewrite selected into `NetworkingMessagesList`. Until Phase 5, Rewrite
+     selected works only when the selected drafts share one campaign, since the skill takes one
+     `--campaign`.
+   - Add a **Find contacts** dialog (who to look for, in plain words). It gets the standing
+     networking campaign and injects `networking "<criteria>" --campaign <id>`.
+   - Phase 5 turns both actions into requests.
 
 **Plugin.** Ship a plugin patch release with batch A so agents stop linking to deleted pages:
 
 - `$JOBPILOT_WEB/campaigns/<id>` → `$JOBPILOT_WEB/pipeline?campaign=<id>` in
-  `apply/SKILL.md:111,264`, `auto-apply/SKILL.md:14,68,219`, `networking/SKILL.md:144,180` and
+  `apply/SKILL.md:111,264`, `auto-apply/SKILL.md:14,68,219` and
   `pilot/tasks/campaign.reviewPaused.md:25`.
+- `networking/SKILL.md:144,180` → `$JOBPILOT_WEB/networking/messages`, since the Pipeline leaves
+  networking campaigns out.
 - `apply/SKILL.md:133` and `auto-apply/SKILL.md:45`: Apply to links now lives in the Pipeline's
   Add job links.
 
-**Tests**: pipeline dedupe (the same URL in two campaigns shows once, and the most advanced status
-wins) and the view filters.
+**Tests**:
 
-**Done when**: nothing links to `/workspace` or `/campaigns`, and every job and application is
-reachable from `/pipeline`.
+- A job whose URL the user already has from the last 30 days isn't added again; an older one is.
+- Pipeline dedupe: the same URL in two campaigns shows once, and the most advanced status wins.
+- The view filters.
+
+**Done when**: nothing links to `/workspace` or `/campaigns`, every job and application is
+reachable from `/pipeline`, and outreach starts from Networking → Messages.
 
 ## Phase 3: Agent drawer replaces the dock
 
@@ -371,8 +399,8 @@ This phase changes the host, so it ships in batch B with a host and plugin relea
 **Contracts and task types** (`packages/contracts/src/pilot/tasks.ts`, `tasks/task-defs.ts`)
 
 - New: `chat.reply {messageId}`, `resume.extract {resumeId, force}`, `resume.tailor
-  {jobDescription, baseResumeId?}`, `networking.find {campaignId, criteria}`, `networking.rewrite
-  {messageId}`, `upwork.profile {mode: review | apply}`, `upwork.proposal {proposalId}`,
+  {jobDescription, baseResumeId?}`, `networking.find {criteria}`, `networking.rewrite
+  {messageIds}`, `upwork.profile {mode: review | apply}`, `upwork.proposal {proposalId}`,
   `upwork.submit {proposalId}`.
 - Existing types that become requestable: `job.apply`, `job.rescanSkipped` (plus optional
   `jobKeys`), `job.retryFailed`, `inbox.review` (its payload already takes `messageIds`),
@@ -440,7 +468,10 @@ This phase changes the host, so it ships in batch B with a host and plugin relea
    - Return the reply in `detail.reply`. Never touch rules or goals unless asked.
 2. New task files that delegate to the existing skills:
    - `resume.extract` → `../../extract-resume/SKILL.md`, and `resume.tailor`
-   - `networking.find` and `networking.rewrite` → `../../networking/SKILL.md`
+   - `networking.find` and `networking.rewrite` → `../../networking/SKILL.md`. `networking.find`
+     gets the standing networking campaign from `POST /api/networking/campaign`.
+     `networking.rewrite` looks up each message's campaign, so a selection that spans campaigns
+     works.
    - `upwork.profile`, `upwork.proposal`, `upwork.submit`
    - Update `job.rescanSkipped.md` for `jobKeys`.
 3. `search.setup.md` and `campaign.tune.md` write searches through `POST /api/pilot/changes`
@@ -453,15 +484,16 @@ This phase changes the host, so it ships in batch B with a host and plugin relea
    but not paired to the signed-in user, fetch the terminal token and call `/pilot/pair`. Delete
    `injectCommand`, `pilotStart` and `pilotStop` from `lib/terminal/client.ts` and
    `pilot/use-pilot-controls.ts`.
-2. A `useCreateRequest` mutation replaces all 24 calls:
+2. A `useCreateRequest` mutation replaces all 24 calls, plus the Find contacts dialog added in
+   Phase 2:
 
 | Call site | Request |
 |---|---|
 | `onboarding/resume-upload-step.tsx:37`, `resumes/detail/extraction-card.tsx:28`, `resumes/extract-resume-button.tsx:24`, `resumes/resumes-list.tsx:55` | `resume.extract` |
 | `resumes/tailor/job-description-dialog.tsx:25` | `resume.tailor` |
 | `inbox/inbox-table.tsx:132`, `inbox/inbox-toolbar.tsx:36` | `inbox.review` (one message, or all pending) |
-| `networking/networking-board.tsx:82` | `networking.find` |
-| `networking/networking-message-dialog.tsx:97` | `networking.rewrite` |
+| `networking/networking-board.tsx:82` (moved to Networking → Messages in Phase 2), `networking/networking-message-dialog.tsx:97` | `networking.rewrite` |
+| the Find contacts dialog added in Phase 2 | `networking.find` |
 | `upwork/inbox/inbox-list.tsx:86` | `upwork.syncInbox` |
 | `upwork/profile/profile-enhancer.tsx:56`, `upwork/profile/profile-review.tsx:119` | `upwork.profile` |
 | `upwork/proposals/proposal-composer.tsx:51`, `upwork/proposals/proposal-detail.tsx:107` | `upwork.proposal` |
@@ -533,7 +565,14 @@ coalescing; a request's status follows its run (done, failed, cancelled, expired
    - Update `app/(public)/docs/campaigns-and-skills/page.mdx`: the composer is gone, and skills
      still run when typed in the terminal.
    - Update getting started: pairing is automatic.
-3. CHANGELOG, then the `release` skill (one version for host and plugin).
+3. Wording pass, so "campaign" no longer reaches users:
+   - `analytics/analytics-view.tsx:62` ("No failed campaign jobs recorded.").
+   - The task titles in `tasks/task-defs.ts` that the status line and the thread show ("Review
+     paused campaign", "Tune campaign").
+   - The **Summary** lines in `plugin/skills/pilot/tasks/*.md`, e.g. `campaign.tune.md`.
+   - The rest of `git grep -i campaign` over `apps/web/src/components` and the API's user-facing
+     messages.
+4. CHANGELOG, then the `release` skill (one version for host and plugin).
 
 ## Deploy
 
@@ -544,8 +583,11 @@ coalescing; a request's status follows its run (done, failed, cancelled, expired
 
 ## Out of scope
 
-- A postings table, or deduplicating across campaigns on write.
-- Durable campaigns above searches, or renaming Campaign.
+- A postings table. Phase 2 removes duplicates on write and when reading the list.
+- Durable campaigns above searches.
+- Renaming Campaign (about 2,100 lines in 217 files). If wanted, make it a separate refactor after
+  batch B, since the redesign first deletes most of the campaign UI. Merge each search into its
+  standing campaign at the same time.
 - A second session lane, and a browser screencast tab.
 - A model running on the server.
-- Restructuring Upwork, Networking or Analytics.
+- Restructuring Upwork or Analytics. Networking gets only the Phase 2 fixes.
