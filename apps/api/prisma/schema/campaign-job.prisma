@@ -60,6 +60,8 @@ model CampaignJob {
   // The pilot activity probe and per-user daily counts.
   @@index([userId, updatedAt])
   @@index([userId, status, updatedAt])
+  // Recent-window scans: similar jobs and seen alert URLs.
+  @@index([userId, createdAt])
   @@index([boardId])
   @@map("campaign_jobs")
 }
