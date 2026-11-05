@@ -11,25 +11,11 @@ import { upworkProfileQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
-import { ColorChip } from "@/components/ui/display";
+import { StatusChip } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { ProfileReview } from "./profile-review";
-
-const STATUS_COLOR: Record<UpworkProfileStatus, "default" | "info" | "warning" | "success"> = {
-  empty: "default",
-  draft: "info",
-  approved: "warning",
-  applied: "success",
-};
-
-const STATUS_LABEL: Record<UpworkProfileStatus, string> = {
-  empty: "Not generated",
-  draft: "Draft - review",
-  approved: "Approved - ready to apply",
-  applied: "Applied to Upwork",
-};
 
 /** Loads the profile-enhancement record, streams live updates, and renders the review. */
 export function ProfileEnhancer(): ReactElement {
@@ -68,7 +54,7 @@ export function ProfileEnhancer(): ReactElement {
     >
       <Stack spacing={3}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-          <ColorChip value={status} colors={STATUS_COLOR} label={STATUS_LABEL[status]} />
+          <StatusChip domain="upworkProfile" value={status} />
           <Box sx={{ flex: 1 }} />
           <AgentOnlyButton
             variant={hasSuggestion ? "text" : "contained"}

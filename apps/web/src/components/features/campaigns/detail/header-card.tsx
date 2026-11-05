@@ -4,8 +4,8 @@ import type { ReactElement } from "react";
 import type { Actor } from "@jobpilot/contracts/campaign";
 import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { CampaignDetailDto } from "@/api/types";
+import { StatusChip, statusLabel } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
-import { CampaignStatusChip } from "../campaign-status-chip";
 import { PilotBadge } from "../pilot-badge";
 import { CampaignActionsBar } from "./actions-bar";
 import { CampaignIdentityBanner } from "./identity-banner";
@@ -49,9 +49,10 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
               spacing={1}
               sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
             >
-              <CampaignStatusChip status={campaign.status} />
+              <StatusChip domain="campaign" value={campaign.status} />
               <Typography variant="body2Muted">
-                {campaign.source} · Started {formatRelativeTime(campaign.startedAt)} ago
+                {statusLabel("source", campaign.source)} · Started{" "}
+                {formatRelativeTime(campaign.startedAt)} ago
               </Typography>
               <PilotBadge createdBy={campaign.createdBy} />
               {campaign.board && (

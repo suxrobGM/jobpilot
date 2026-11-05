@@ -1,12 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { Classification } from "@jobpilot/contracts/email";
 import { Button, Chip, Link, Stack, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ColorChip, RelativeTime } from "@/components/ui/display";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 import type { GridPaginationProps } from "@/hooks/use-pagination";
 
 interface InboxTableProps extends GridPaginationProps {
@@ -16,17 +15,6 @@ interface InboxTableProps extends GridPaginationProps {
   /** When provided, each row gets a Scan/Rescan action that calls this. */
   onScanMessage?: (row: EmailMessageDto) => void;
 }
-
-const CLASS_COLORS: Record<
-  Classification,
-  "default" | "primary" | "success" | "error" | "warning"
-> = {
-  interviewing: "primary",
-  offer: "success",
-  rejected: "error",
-  verification: "warning",
-  irrelevant: "default",
-};
 
 export function InboxTable(props: InboxTableProps): ReactElement {
   const { rows, loading, onRowClick, onScanMessage, ...pagination } = props;
@@ -65,7 +53,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
         }
         return (
           <Stack direction="row" spacing={0.5} sx={{ height: "100%", alignItems: "center" }}>
-            <ColorChip value={c} colors={CLASS_COLORS} variant="filled" />
+            <StatusChip domain="classification" value={c} variant="filled" />
             {p.row.reviewStatus === "auto" && <Chip label="auto" variant="outlined" color="info" />}
           </Stack>
         );

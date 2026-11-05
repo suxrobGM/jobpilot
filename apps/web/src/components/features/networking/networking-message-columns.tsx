@@ -1,8 +1,7 @@
 import { Button } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { NetworkingMessageDto } from "@/api/types";
-import { ExternalLink } from "@/components/ui/display";
-import { NetworkingStatusChip } from "./networking-status-chip";
+import { ExternalLink, StatusChip } from "@/components/ui/display";
 
 /** Shared by a campaign's board and the cross-campaign list, so a draft reads the same in both. */
 export const networkingMessageColumns: GridColDef<NetworkingMessageDto>[] = [
@@ -11,7 +10,7 @@ export const networkingMessageColumns: GridColDef<NetworkingMessageDto>[] = [
     headerName: "Status",
     width: 110,
     sortable: false,
-    renderCell: (p) => <NetworkingStatusChip status={p.row.status} />,
+    renderCell: (p) => <StatusChip domain="networking" value={p.row.status} />,
   },
   {
     field: "name",

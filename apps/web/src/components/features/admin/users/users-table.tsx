@@ -3,8 +3,8 @@ import { CheckCircle } from "@mui/icons-material";
 import { Stack, Typography } from "@mui/material";
 import type { AdminUserDto } from "@/api/types";
 import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
+import { StatusChip } from "@/components/ui/display";
 import { formatDate } from "@/utils/format";
-import { AdminRoleChip } from "./role-chip";
 import { AdminRoleMenu } from "./role-menu";
 
 const COLUMNS: SimpleColumn<AdminUserDto>[] = [
@@ -23,7 +23,7 @@ const COLUMNS: SimpleColumn<AdminUserDto>[] = [
     header: "Name",
     render: (user) => user.name ?? <Typography variant="captionMuted">-</Typography>,
   },
-  { key: "role", header: "Role", render: (user) => <AdminRoleChip role={user.role} /> },
+  { key: "role", header: "Role", render: (user) => <StatusChip domain="role" value={user.role} /> },
   {
     key: "applications",
     header: "Applications",

@@ -24,11 +24,11 @@ export function ActivityTimeline(props: ActivityTimelineProps): ReactElement {
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                   {e.fromStatus && (
                     <>
-                      <StatusChip status={e.fromStatus} />
+                      <StatusChip domain="application" value={e.fromStatus} />
                       <Typography variant="captionMuted">→</Typography>
                     </>
                   )}
-                  <StatusChip status={e.toStatus} />
+                  <StatusChip domain="application" value={e.toStatus} />
                 </Stack>
               )}
               <Box sx={{ flex: 1 }}>

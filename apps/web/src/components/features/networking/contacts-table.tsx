@@ -4,8 +4,7 @@ import type { ReactElement } from "react";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { ContactDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ExternalLink } from "@/components/ui/display";
-import { NetworkingConnectionChip } from "./networking-status-chip";
+import { ExternalLink, StatusChip } from "@/components/ui/display";
 
 interface ContactsTableProps {
   contacts: ReadonlyArray<ContactDto>;
@@ -37,7 +36,7 @@ const columns: GridColDef<ContactDto>[] = [
     field: "linkedinConnection",
     headerName: "LinkedIn",
     width: 130,
-    renderCell: (p) => <NetworkingConnectionChip connection={p.row.linkedinConnection} />,
+    renderCell: (p) => <StatusChip domain="connection" value={p.row.linkedinConnection} />,
   },
   {
     field: "discoverySource",

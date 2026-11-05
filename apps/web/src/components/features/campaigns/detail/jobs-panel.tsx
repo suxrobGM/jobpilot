@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useRef, useState } from "react";
-import { CAMPAIGN_JOB_STATUSES, type CampaignJobStatus } from "@jobpilot/contracts/campaign";
+import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Autorenew, Clear, Replay } from "@mui/icons-material";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
@@ -14,7 +14,8 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import { invalidations } from "@/api/query-keys";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
-import { SelectField, type SelectFieldOption } from "@/components/ui/form";
+import { statusOptions } from "@/components/ui/display";
+import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
@@ -25,11 +26,7 @@ import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { UPWORK_DOMAIN } from "../constants";
 import { CampaignJobsTable, isReapplicable } from "./jobs-table";
 
-const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<CampaignJobStatus>> =
-  CAMPAIGN_JOB_STATUSES.map((s) => ({
-    value: s,
-    label: s,
-  }));
+const STATUS_OPTIONS = statusOptions("campaignJob");
 
 const SEARCH_DEBOUNCE_MS = 300;
 

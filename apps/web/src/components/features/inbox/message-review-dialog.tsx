@@ -17,7 +17,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { applicationQueries, emailQueries } from "@/api/queries";
 import { invalidations, queryKeys } from "@/api/query-keys";
 import type { ApplicationDto } from "@/api/types";
-import { RelativeTime } from "@/components/ui/display";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { FormDialogShell } from "@/components/ui/form";
 
 interface MessageReviewDialogProps {
@@ -124,7 +124,9 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             <Typography variant="captionMuted">{m.fromDomain}</Typography>
             <Typography variant="captionMuted">·</Typography>
             <RelativeTime value={m.receivedAt} />
-            {m.classification && <Chip label={m.classification} />}
+            {m.classification && (
+              <StatusChip domain="classification" value={m.classification} variant="filled" />
+            )}
             {m.reviewStatus === "auto" && <Chip label="auto" color="info" variant="outlined" />}
           </Stack>
 

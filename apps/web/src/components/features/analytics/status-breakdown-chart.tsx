@@ -6,7 +6,7 @@ import { useTheme } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import type { AnalyticsStatusBreakdownEntry } from "@/api/types";
 import { ChartEmpty } from "@/components/ui/data";
-import { STATUS_LABEL } from "@/components/ui/display";
+import { statusLabel } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 
 const CHART_HEIGHT = 220;
@@ -35,7 +35,7 @@ export function StatusBreakdownChart(props: StatusBreakdownChartProps): ReactEle
     .filter((d) => d.count > 0)
     .map((d, i) => ({
       id: d.status,
-      label: STATUS_LABEL[d.status as ApplicationStatus] ?? d.status,
+      label: statusLabel("application", d.status as ApplicationStatus),
       value: d.count,
       color: colors[i % colors.length],
     }));

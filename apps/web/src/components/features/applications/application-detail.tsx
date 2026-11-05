@@ -10,7 +10,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { applicationQueries } from "@/api/queries";
 import { invalidations } from "@/api/query-keys";
 import { EmptyState } from "@/components/ui/data/empty-state";
-import { LabelValue, StatusChip } from "@/components/ui/display";
+import { LabelValue, StatusChip, statusLabel } from "@/components/ui/display";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
@@ -101,11 +101,11 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
         <SectionCard>
           <Stack spacing={2}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-              <StatusChip status={app.status} />
+              <StatusChip domain="application" value={app.status} />
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ flexWrap: "wrap" }}>
               <LabelValue label="Board">{app.board?.name ?? ""}</LabelValue>
-              <LabelValue label="Source">{app.source}</LabelValue>
+              <LabelValue label="Source">{statusLabel("source", app.source)}</LabelValue>
               <LabelValue label="Location">{app.location ?? ""}</LabelValue>
               <LabelValue label="Match score">
                 {app.matchScore !== null ? `${app.matchScore}/100` : ""}

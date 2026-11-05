@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import { Typography } from "@mui/material";
 import type { Route } from "next";
 import type { ApplicationDto } from "@/api/types";
@@ -23,7 +22,7 @@ export function ApplicationsTable(props: ApplicationsTableProps): ReactElement {
     {
       key: "status",
       header: "Status",
-      render: (a) => <StatusChip status={a.status as ApplicationStatus} />,
+      render: (a) => <StatusChip domain="application" value={a.status} />,
     },
     {
       key: "source",

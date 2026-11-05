@@ -3,7 +3,7 @@
 import { type ReactElement, useState } from "react";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@jobpilot/contracts/application";
 import { Button, MenuItem, TextField } from "@mui/material";
-import { STATUS_LABEL } from "@/components/ui/display";
+import { statusLabel } from "@/components/ui/display";
 import { FormDialogShell } from "@/components/ui/form";
 
 interface StatusTransitionDialogProps {
@@ -44,7 +44,7 @@ export function StatusTransitionDialog(props: StatusTransitionDialogProps): Reac
       >
         {APPLICATION_STATUSES.map((s) => (
           <MenuItem key={s} value={s}>
-            {STATUS_LABEL[s]}
+            {statusLabel("application", s)}
           </MenuItem>
         ))}
       </TextField>

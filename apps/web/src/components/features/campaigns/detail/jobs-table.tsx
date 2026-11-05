@@ -6,8 +6,8 @@ import { Button, Link, Stack } from "@mui/material";
 import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import type { CampaignJobDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
+import { StatusChip } from "@/components/ui/display";
 import type { GridPaginationProps } from "@/hooks/use-pagination";
-import { CampaignJobStatusChip } from "../campaign-status-chip";
 import { CapExemptChip } from "./cap-exempt-chip";
 
 /** Statuses that can still be applied to from the campaigns detail page. */
@@ -52,7 +52,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       field: "status",
       headerName: "Status",
       width: 130,
-      renderCell: (p) => <CampaignJobStatusChip status={p.row.status} />,
+      renderCell: (p) => <StatusChip domain="campaignJob" value={p.row.status} />,
       sortable: false,
     },
     {

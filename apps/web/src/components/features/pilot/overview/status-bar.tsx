@@ -4,10 +4,10 @@ import type { ReactElement } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import { AgentOnlyButton } from "@/components/ui/buttons";
-import { ColorChip } from "@/components/ui/display";
+import { StatusChip } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
 import { useClockTick } from "@/hooks/use-clock-tick";
-import { CYCLE_STATUS_COLOR, type PilotHealth, providerDisplayName } from "@/lib/terminal";
+import { type PilotHealth, providerDisplayName } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime, plural } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
@@ -114,7 +114,7 @@ export function StatusBar(props: StatusBarProps): ReactElement {
               >
                 <Typography variant="captionMuted">{meta.join(" · ")}</Typography>
                 {pilot?.lastCycleStatus && (
-                  <ColorChip value={pilot.lastCycleStatus} colors={CYCLE_STATUS_COLOR} />
+                  <StatusChip domain="cycle" value={pilot.lastCycleStatus} />
                 )}
                 {timeouts > 0 && (
                   <Chip color="warning" variant="outlined" label={plural(timeouts, "timeout")} />

@@ -10,14 +10,8 @@ import { useApiQuery } from "@/api/hooks";
 import { coverLetterQueries } from "@/api/queries";
 import type { CoverLetterListItem } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ColorChip, RelativeTime } from "@/components/ui/display";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
-
-const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "success"> = {
-  manual: "default",
-  apply: "info",
-  auto_apply: "success",
-};
 
 export function CoverLettersTable(): ReactElement {
   const router = useRouter();
@@ -51,7 +45,7 @@ export function CoverLettersTable(): ReactElement {
       field: "source",
       headerName: "Source",
       width: 130,
-      renderCell: (p) => <ColorChip value={p.row.source} colors={SOURCE_COLOR} />,
+      renderCell: (p) => <StatusChip domain="source" value={p.row.source} />,
     },
     {
       field: "jobUrl",

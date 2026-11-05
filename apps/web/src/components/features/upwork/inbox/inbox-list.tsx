@@ -12,16 +12,18 @@ import { upworkInboxQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
-import { ColorChip, RelativeTime } from "@/components/ui/display";
+import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { plural } from "@/utils/format";
-import { INBOX_STATUS_OPTIONS, KIND_COLOR, KIND_LABEL, KIND_OPTIONS } from "./inbox-kind";
 
 const PAGE_SIZE = 10;
+
+const KIND_OPTIONS = statusOptions("upworkInboxKind");
+const INBOX_STATUS_OPTIONS = statusOptions("upworkInboxStatus");
 
 export function InboxList(): ReactElement {
   const queryClient = useQueryClient();
@@ -120,10 +122,9 @@ export function InboxList(): ReactElement {
                     spacing={1}
                     sx={{ alignItems: "center", flexWrap: "wrap" }}
                   >
-                    <ColorChip
+                    <StatusChip
+                      domain="upworkInboxKind"
                       value={item.kind}
-                      colors={KIND_COLOR}
-                      label={KIND_LABEL[item.kind]}
                       variant={item.status === "unread" ? "filled" : "outlined"}
                     />
                     {item.clientName && <Chip label={item.clientName} variant="outlined" />}

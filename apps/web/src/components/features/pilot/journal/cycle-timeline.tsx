@@ -16,8 +16,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { ColorChip, RelativeTime } from "@/components/ui/display";
-import { CYCLE_STATUS_COLOR } from "@/lib/terminal";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { formatDuration, formatSpanBetween } from "@/utils/format";
 import { JournalRow, KIND_META, KIND_ORDER, RunMeta } from "./journal-row";
 
@@ -102,7 +101,7 @@ function CycleCard(props: CycleCardProps): ReactElement {
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
             <Typography variant="body1Strong">Cycle</Typography>
-            {detail?.status && <ColorChip value={detail.status} colors={CYCLE_STATUS_COLOR} />}
+            {detail?.status && <StatusChip domain="cycle" value={detail.status} />}
             {started && <RelativeTime value={started} />}
             {duration && <Typography variant="captionMuted">· {duration}</Typography>}
             {detail?.sleepSeconds != null && (

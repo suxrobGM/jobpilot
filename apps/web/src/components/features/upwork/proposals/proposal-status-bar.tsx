@@ -3,11 +3,10 @@
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
+import { StatusChip, statusOptions } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { formatAbsoluteTime } from "@/utils/format";
-import { OUTCOME_OPTIONS, STATUS_OPTIONS } from "./proposal-status";
-import { ProposalStatusChip } from "./proposal-status-chip";
 
 interface ProposalStatusBarProps {
   proposal: UpworkProposalDto;
@@ -20,11 +19,11 @@ export function ProposalStatusBar(props: ProposalStatusBarProps): ReactElement {
   return (
     <SectionCard>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: "center" }}>
-        <ProposalStatusChip status={proposal.status} size="medium" />
+        <StatusChip domain="upworkProposal" value={proposal.status} size="medium" />
         <SelectField
           label="Status"
           value={proposal.status}
-          options={STATUS_OPTIONS}
+          options={statusOptions("upworkProposal")}
           emptyLabel="-"
           onChange={(v) => v && onChange({ status: v })}
         />
@@ -32,7 +31,7 @@ export function ProposalStatusBar(props: ProposalStatusBarProps): ReactElement {
           <SelectField
             label="Outcome"
             value={proposal.outcome}
-            options={OUTCOME_OPTIONS}
+            options={statusOptions("upworkOutcome")}
             onChange={(v) => onChange({ outcome: v })}
           />
         )}

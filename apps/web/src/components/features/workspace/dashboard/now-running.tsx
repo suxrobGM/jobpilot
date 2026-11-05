@@ -9,6 +9,7 @@ import { campaignQueries, OPTIONS_PAGE } from "@/api/queries";
 import { invalidations } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
+import { statusLabel } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { radii } from "@/theme";
@@ -66,7 +67,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
             {campaign.query}
           </Typography>
           <Typography variant="captionMuted" noWrap>
-            {campaign.source} · {p.label}
+            {statusLabel("source", campaign.source)} · {p.label}
           </Typography>
         </Stack>
         <LinearProgress

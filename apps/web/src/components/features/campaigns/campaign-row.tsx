@@ -3,9 +3,8 @@
 import type { ReactElement } from "react";
 import { Box, Card, CardActionArea, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import type { CampaignDto } from "@/api/types";
-import { RelativeTime } from "@/components/ui/display";
+import { RelativeTime, StatusChip, statusLabel } from "@/components/ui/display";
 import { campaignHref } from "@/utils/routes";
-import { CampaignStatusChip } from "./campaign-status-chip";
 import { PilotBadge } from "./pilot-badge";
 
 interface CampaignRowProps {
@@ -38,8 +37,8 @@ export function CampaignRow(props: CampaignRowProps): ReactElement {
       <CardActionArea href={campaignHref(campaign.id)} sx={{ padding: 1.25 }}>
         <Stack spacing={0.5} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
-            <CampaignStatusChip status={campaign.status} />
-            <Chip label={campaign.source} variant="outlined" />
+            <StatusChip domain="campaign" value={campaign.status} />
+            <Chip label={statusLabel("source", campaign.source)} variant="outlined" />
             <PilotBadge createdBy={campaign.createdBy} />
             <Box sx={{ flex: 1 }} />
             <RelativeTime value={campaign.startedAt} />

@@ -9,16 +9,6 @@ export const TERMINAL_PROTOCOL_URL = "jobpilot://start";
 
 export type TerminalProviderId = "claude" | "codex";
 
-/** Shared chip colors for a cycle outcome (status hero, journal cycle cards). */
-export const CYCLE_STATUS_COLOR: Record<
-  PilotCycleStatus,
-  "success" | "warning" | "error" | "default"
-> = {
-  ok: "success",
-  empty: "default",
-  error: "error",
-};
-
 interface TerminalProviderInfo {
   id: TerminalProviderId;
   displayName: string;

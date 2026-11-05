@@ -11,14 +11,12 @@ import { useApiQuery } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
-import { RelativeTime } from "@/components/ui/display";
+import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useSseChannel } from "@/lib/sse/client";
 import { plural } from "@/utils/format";
-import { STATUS_OPTIONS } from "./proposal-status";
-import { ProposalStatusChip } from "./proposal-status-chip";
 
 const PAGE_SIZE = 10;
 
@@ -56,7 +54,7 @@ export function ProposalsList(): ReactElement {
         <SelectField
           label="Status"
           value={statusFilter}
-          options={STATUS_OPTIONS}
+          options={statusOptions("upworkProposal")}
           onChange={(v) => {
             setStatusFilter(v);
             setPage(1);
@@ -100,7 +98,7 @@ export function ProposalsList(): ReactElement {
                       spacing={1}
                       sx={{ alignItems: "center", flexWrap: "wrap" }}
                     >
-                      <ProposalStatusChip status={p.status} />
+                      <StatusChip domain="upworkProposal" value={p.status} />
                       {p.clientName && <Chip label={p.clientName} variant="outlined" />}
                     </Stack>
                     <Typography variant="body2Strong" noWrap>

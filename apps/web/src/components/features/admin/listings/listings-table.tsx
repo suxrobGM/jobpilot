@@ -3,9 +3,9 @@ import { Chip, Link, Typography } from "@mui/material";
 import type { Route } from "next";
 import type { AdminJobListingDto } from "@/api/types";
 import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
+import { StatusChip } from "@/components/ui/display";
 import { formatDate } from "@/utils/format";
 import { AdminListingActions } from "./listing-actions";
-import { ListingStatusChip } from "./listing-status-chip";
 
 const COLUMNS: SimpleColumn<AdminJobListingDto>[] = [
   {
@@ -38,7 +38,7 @@ const COLUMNS: SimpleColumn<AdminJobListingDto>[] = [
   {
     key: "status",
     header: "Status",
-    render: (listing) => <ListingStatusChip status={listing.status} />,
+    render: (listing) => <StatusChip domain="listing" value={listing.status} />,
   },
   {
     key: "lastSeen",
