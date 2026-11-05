@@ -20,11 +20,11 @@ const TWO_FACTOR_TTL_MS = 5 * 60 * 1000;
 /** A 2FA code or a per-job approval is never a reusable fact, whatever key the agent set. */
 const SAVED_ANSWER_KINDS: PilotQuestionModel["kind"][] = ["question", "choice"];
 
-function toPilotQuestion(row: PilotQuestionModel): PilotQuestion {
+export function toPilotQuestion(row: PilotQuestionModel): PilotQuestion {
   return { ...row, options: z.array(z.string()).parse(row.options) };
 }
 
-function expiryOf(body: CreatePilotQuestionInput): Date | null {
+function questionExpiry(body: CreatePilotQuestionInput): Date | null {
   if (body.expiresAt) return new Date(body.expiresAt);
   if (body.kind === "two_factor") return new Date(Date.now() + TWO_FACTOR_TTL_MS);
   return null;
@@ -48,7 +48,7 @@ export class PilotQuestionService {
         prompt: body.prompt,
         options: toInputJson(body.options),
         link: body.link ?? null,
-        expiresAt: expiryOf(body),
+        expiresAt: questionExpiry(body),
         savedAnswerKey: body.savedAnswerKey ?? null,
       },
     });

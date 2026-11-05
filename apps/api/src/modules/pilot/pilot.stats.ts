@@ -1,7 +1,6 @@
 import { newTokens, sumTokenUsage, tokenUsage } from "@jobpilot/contracts/pilot";
 import { DAY_MS, startOfDay } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { classifySkipReason, type SkipBucket } from "./skip-reasons";
 import { isCrash } from "./tasks/run-history";
 
 /** Runs older than a week describe a version of the agent you are no longer running. */
@@ -21,43 +20,6 @@ export function countSentToday(
   now: Date,
 ): Promise<number> {
   return prisma.networkingMessage.count({ where: { userId, sentAt: { gte: startOfDay(now) } } });
-}
-
-/** Skip reasons are bucketed, most frequent first. */
-export async function countTodayOutcomes(
-  prisma: Pick<PrismaClient, "campaignJob">,
-  userId: string,
-  now: Date,
-) {
-  const where = { userId, updatedAt: { gte: startOfDay(now) } };
-  const [byStatus, skipped] = await Promise.all([
-    prisma.campaignJob.groupBy({
-      by: ["status"],
-      where: { ...where, status: { in: ["skipped", "failed"] } },
-      _count: { _all: true },
-    }),
-    // Tens of rows a day, and the bucketing can't run in SQL.
-    prisma.campaignJob.findMany({
-      where: { ...where, status: "skipped", skipReason: { not: null } },
-      select: { skipReason: true },
-    }),
-  ]);
-
-  const counts = new Map<SkipBucket, number>();
-  for (const { skipReason } of skipped) {
-    const bucket = classifySkipReason(skipReason ?? "");
-    counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
-  }
-  const countOf = (status: "skipped" | "failed") =>
-    byStatus.find((row) => row.status === status)?._count._all ?? 0;
-
-  return {
-    skipped: countOf("skipped"),
-    failed: countOf("failed"),
-    skipReasons: [...counts]
-      .map(([reason, count]) => ({ reason, count }))
-      .sort((a, b) => b.count - a.count),
-  };
 }
 
 function median(sorted: number[]): number {

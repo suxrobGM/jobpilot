@@ -10,11 +10,7 @@ import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
-import {
-  pilotActivityResponseSchema,
-  pilotCostSchema,
-  pilotTodayOutcomesSchema,
-} from "./pilot.schema";
+import { pilotActivityResponseSchema, pilotCostSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
 
 const pilot = container.get(PilotService);
@@ -85,15 +81,6 @@ export const pilotController = new Elysia({
       summary: "Record an idle check",
       description:
         "The host found nothing to run: advances the cycle count and next wake without a journal entry.",
-    },
-  })
-  .get("/stats/today", ({ user }) => pilot.getTodayOutcomes(user.id), {
-    beforeHandle: limitTaskList,
-    response: pilotTodayOutcomesSchema,
-    detail: {
-      summary: "Today's non-applied outcomes",
-      description:
-        "Today's skipped and failed job counts, with skip reasons bucketed by frequency.",
     },
   })
   .get("/stats/cost", ({ user }) => pilot.getCost(user.id), {

@@ -1,0 +1,38 @@
+"use client";
+
+import type { ReactElement } from "react";
+import type { PilotThreadItem } from "@jobpilot/contracts/pilot";
+import { PromotionDraftCard, PromotionSummary } from "../../attention/promotion-card";
+import { QuestionCard } from "../../attention/question-card";
+import { AskedRow } from "./asked-row";
+import { DigestCard } from "./digest-card";
+import { NoteRow } from "./note-row";
+import { WorkCard } from "./work-card";
+
+interface ThreadItemProps {
+  item: PilotThreadItem;
+}
+
+export function ThreadItem(props: ThreadItemProps): ReactElement {
+  const { item } = props;
+  switch (item.type) {
+    case "work":
+      return <WorkCard item={item} />;
+    case "question":
+      return item.question.status === "open" ? (
+        <QuestionCard question={item.question} />
+      ) : (
+        <AskedRow question={item.question} />
+      );
+    case "promotion":
+      return item.promotion.status === "draft" ? (
+        <PromotionDraftCard promotion={item.promotion} />
+      ) : (
+        <PromotionSummary promotion={item.promotion} />
+      );
+    case "digest":
+      return <DigestCard entry={item.entry} />;
+    case "note":
+      return <NoteRow entry={item.entry} />;
+  }
+}

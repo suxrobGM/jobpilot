@@ -12,7 +12,7 @@ import { plural } from "@/utils/format";
 import { isRunPending } from "../run-status";
 
 /** Why a run can't be queued, or null when it can. */
-export function runDisabledReason(status: JobAlertsStatus): string | null {
+function runDisabledReason(status: JobAlertsStatus): string | null {
   if (!status.mailboxConnected) {
     return "Connect Gmail in Settings → Email so there is mail to read.";
   }

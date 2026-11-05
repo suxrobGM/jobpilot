@@ -6,16 +6,9 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { APPLIED_DUPLICATE_WINDOW_DAYS } from "@/modules/scoring/applied-duplicates";
-import { SKIP_BUCKETS } from "./skip-reasons";
 
 export const createPilotJournalResponseSchema = z.object({
   items: z.array(pilotJournalEntrySchema),
-});
-
-export const pilotTodayOutcomesSchema = z.object({
-  skipped: z.number().int(),
-  failed: z.number().int(),
-  skipReasons: z.array(z.object({ reason: z.enum(SKIP_BUCKETS), count: z.number().int() })),
 });
 
 export const pilotCostSchema = z.object({

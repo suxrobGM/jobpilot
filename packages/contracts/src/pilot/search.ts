@@ -36,7 +36,10 @@ export const pilotSearchSchema = z.object({
   updatedAt: z.date(),
 });
 
-export const pilotSearchListSchema = z.array(pilotSearchSchema);
+/** The list adds what the pilot home shows beside each search. */
+export const pilotSearchListSchema = z.array(
+  pilotSearchSchema.extend({ appliedThisWeek: z.number().int() }),
+);
 
 export type CreatePilotSearchInput = z.infer<typeof createPilotSearchSchema>;
 export type UpdatePilotSearchInput = z.infer<typeof updatePilotSearchSchema>;

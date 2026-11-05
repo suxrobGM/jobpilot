@@ -14,15 +14,11 @@ import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
 import { publishCampaignStatus } from "@/modules/campaign/campaign.utils";
 import { recordCycle } from "./journal-entries";
-import {
-  costByTaskType,
-  countAppliedToday,
-  countSentToday,
-  countTodayOutcomes,
-} from "./pilot.stats";
+import { costByTaskType, countAppliedToday, countSentToday } from "./pilot.stats";
 import { SERVER_SKIP_REASONS } from "./skip-reasons";
 import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
+import { taskTitle } from "./tasks/task-defs";
 
 const PILOT_CAMPAIGN = { createdBy: "pilot" } as const;
 
@@ -34,15 +30,28 @@ export class PilotService {
   private async toState(row: PilotStateModel): Promise<PilotState> {
     const config = pilotInstructionsConfigSchema.parse(row.instructionsConfig);
     const now = new Date();
-    const [appliedToday, networkingSentToday, currentRun] = await Promise.all([
+    const [appliedToday, networkingSentToday, openRun] = await Promise.all([
       countAppliedToday(this.prisma, row.userId, now),
       countSentToday(this.prisma, row.userId, now),
       this.prisma.pilotRun.findFirst({
         where: { userId: row.userId, finishedAt: null, expiresAt: { gt: now } },
         orderBy: { startedAt: "desc" },
-        select: { id: true, taskType: true, startedAt: true },
+        select: {
+          id: true,
+          taskType: true,
+          subjectType: true,
+          subjectId: true,
+          payload: true,
+          startedAt: true,
+        },
       }),
     ]);
+    const currentRun = openRun && {
+      id: openRun.id,
+      taskType: openRun.taskType,
+      title: taskTitle(openRun),
+      startedAt: openRun.startedAt,
+    };
     return {
       userId: row.userId,
       running: row.running,
@@ -245,10 +254,6 @@ export class PilotService {
     if (row) {
       await this.publishState(row);
     }
-  }
-
-  getTodayOutcomes(userId: string) {
-    return countTodayOutcomes(this.prisma, userId, new Date());
   }
 
   async getCost(userId: string) {

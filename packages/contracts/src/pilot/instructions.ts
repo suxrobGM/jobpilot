@@ -82,7 +82,9 @@ export const pilotStateSchema = z.object({
   capReached: z.boolean(),
   networkingSentToday: z.number().int(),
   // The newest unfinished, unexpired run.
-  currentRun: z.object({ id: z.uuid(), taskType: z.string(), startedAt: z.date() }).nullable(),
+  currentRun: z
+    .object({ id: z.uuid(), taskType: z.string(), title: z.string(), startedAt: z.date() })
+    .nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

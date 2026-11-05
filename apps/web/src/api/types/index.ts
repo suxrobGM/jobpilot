@@ -26,7 +26,7 @@ export type { EmailMessageDto, OAuthClientStatus } from "./email";
 export type { JobBoardDto } from "./job-board";
 export type { AdminJobListingDto, JobListingDto, JobListingSummaryDto } from "./job-listing";
 export type { ContactDto, NetworkingConfigDto, NetworkingMessageDto } from "./networking";
-export type { ResearchStatusDto, SavedAnswerDto, SkipReason } from "./pilot";
+export type { ResearchStatusDto, SavedAnswerDto } from "./pilot";
 export type {
   LeaderboardDto,
   LeaderboardRow,

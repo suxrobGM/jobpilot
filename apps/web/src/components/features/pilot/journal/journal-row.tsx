@@ -36,7 +36,7 @@ export const KIND_ORDER = Object.keys(KIND_META) as PilotJournalKind[];
 
 type JournalDetail = PilotJournalEntry["detail"];
 
-function countOf(detail: JournalDetail, key: string): number {
+function detailCount(detail: JournalDetail, key: string): number {
   const value = detail[key];
   return typeof value === "number" ? value : 0;
 }
@@ -45,14 +45,14 @@ interface DigestCountsProps {
   detail: JournalDetail;
 }
 
-function DigestCounts(props: DigestCountsProps): ReactElement {
+export function DigestCounts(props: DigestCountsProps): ReactElement {
   const { detail } = props;
   const parts = [
-    `${countOf(detail, "applicationsCreated")} applied`,
-    `${countOf(detail, "jobsFailed") + countOf(detail, "jobsSkipped")} not applied`,
-    `${countOf(detail, "networkingSent")} networking (${countOf(detail, "networkingReplies")} replies)`,
-    `${countOf(detail, "promotionsPosted")} posts`,
-    `${countOf(detail, "openQuestions")} open`,
+    `${detailCount(detail, "applicationsCreated")} applied`,
+    `${detailCount(detail, "jobsFailed") + detailCount(detail, "jobsSkipped")} not applied`,
+    `${detailCount(detail, "networkingSent")} networking (${detailCount(detail, "networkingReplies")} replies)`,
+    `${detailCount(detail, "promotionsPosted")} posts`,
+    `${detailCount(detail, "openQuestions")} open`,
   ];
   return <Typography variant="captionMuted">{parts.join(" · ")}</Typography>;
 }

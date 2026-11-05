@@ -9,10 +9,10 @@ import { formatRelativeTime, humanizeIsoInText } from "@/utils/format";
 import { useLatestJournalPage } from "../journal/journal-cache";
 import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../pilot-status";
 import { taskTypeAgent, taskTypeLabel } from "../task-types";
+import { useNextWake } from "../use-next-wake";
 import { usePilotStatus } from "../use-pilot-status";
 import { AgentList } from "./agent-list";
 import { type Stage, StageArrow, StageCard } from "./stage-card";
-import { useNextWake } from "./use-next-wake";
 import { useTaskList } from "./use-task-list";
 
 const HOST: Stage = { title: "Host", role: "Checks for work", tone: "blue" };

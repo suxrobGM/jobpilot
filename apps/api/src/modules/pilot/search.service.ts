@@ -15,6 +15,7 @@ const GOOD_RUN_NEW_JOBS = 3;
 const RERUN_GOOD_SEARCH_MS = 2 * HOUR_MS;
 /** A thin run, or a good one that reached the board's end. */
 const RERUN_SLOW_SEARCH_MS = 8 * HOUR_MS;
+const WEEK_MS = 7 * 24 * HOUR_MS;
 /** Consecutive empty runs climb this ladder and hold on its last rung. */
 const EMPTY_RUN_BACKOFF_MS = [8 * HOUR_MS, 24 * HOUR_MS, 48 * HOUR_MS];
 
@@ -78,12 +79,28 @@ export class PilotSearchService {
     );
   }
 
-  list(userId: string) {
-    return this.prisma.pilotSearch.findMany({
-      where: { userId },
-      include: SEARCH_INCLUDE,
-      orderBy: { nextRunAt: "asc" },
-    });
+  async list(userId: string, now = new Date()) {
+    const [searches, applied] = await Promise.all([
+      this.prisma.pilotSearch.findMany({
+        where: { userId },
+        include: SEARCH_INCLUDE,
+        orderBy: { nextRunAt: "asc" },
+      }),
+      this.prisma.application.findMany({
+        where: {
+          userId,
+          appliedAt: { gte: new Date(now.getTime() - WEEK_MS) },
+          campaign: { pilotSearchId: { not: null } },
+        },
+        select: { campaign: { select: { pilotSearchId: true } } },
+      }),
+    ]);
+    const counts = new Map<string, number>();
+    for (const { campaign } of applied) {
+      const searchId = campaign?.pilotSearchId;
+      if (searchId) counts.set(searchId, (counts.get(searchId) ?? 0) + 1);
+    }
+    return searches.map((search) => ({ ...search, appliedThisWeek: counts.get(search.id) ?? 0 }));
   }
 
   async create(userId: string, input: CreatePilotSearchInput) {

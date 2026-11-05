@@ -40,7 +40,7 @@ function TaskListEmpty(props: TaskListEmptyProps): ReactElement {
         title="Getting set up."
         description="The pilot derives goals and saved searches from your profile - this finishes on an upcoming cycle."
         action={
-          <LinkButton size="small" href="/pilot/instructions">
+          <LinkButton size="small" href="/pilot/goals">
             Edit instructions
           </LinkButton>
         }

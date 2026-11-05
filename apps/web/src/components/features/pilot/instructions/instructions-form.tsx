@@ -24,7 +24,9 @@ import {
 } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
+import { JobAlertsSetting } from "../job-alerts/job-alerts-setting";
 import { BoardsSection } from "./boards-section";
+import { CheckIntervalSection } from "./check-interval-section";
 import {
   type InstructionsFormValues,
   instructionsFormSchema,
@@ -39,17 +41,36 @@ import { PlatformsSection } from "./platforms-section";
 import { ResearchSection } from "./research-section";
 import { SearchesList } from "./searches-list";
 
-const NAV_ANCHORS: SectionAnchor[] = [
-  { id: "goals", label: "Goals" },
-  { id: "searches", label: "Searches" },
-  { id: "research", label: "Research" },
-  { id: "limits", label: "Limits" },
-  { id: "networking", label: "Networking" },
-  { id: "boards", label: "Boards" },
-  { id: "platforms", label: "Platforms" },
-];
+/** Goals & rules and Settings → Pilot edit one instructions record; each shows its own sections. */
+type InstructionsVariant = "goals" | "settings";
 
-export function InstructionsTab(): ReactElement {
+const ANCHORS: Record<InstructionsVariant, SectionAnchor[]> = {
+  goals: [
+    { id: "goals", label: "Goals" },
+    { id: "searches", label: "Searches" },
+    { id: "limits", label: "Rules" },
+  ],
+  settings: [
+    { id: "schedule", label: "Schedule" },
+    { id: "job-alerts", label: "Job alerts" },
+    { id: "research", label: "Research" },
+    { id: "networking", label: "Networking" },
+    { id: "boards", label: "Boards" },
+    { id: "platforms", label: "Platforms" },
+  ],
+};
+
+const SAVE_LABELS: Record<InstructionsVariant, string> = {
+  goals: "Save goals & rules",
+  settings: "Save settings",
+};
+
+interface InstructionsFormProps {
+  variant: InstructionsVariant;
+}
+
+export function InstructionsForm(props: InstructionsFormProps): ReactElement {
+  const { variant } = props;
   const stateQuery = useQuery(pilotQueries.state());
 
   if (stateQuery.isLoading) {
@@ -62,25 +83,26 @@ export function InstructionsTab(): ReactElement {
   }
   // The form takes its defaults once, so it mounts only after the state has loaded.
   return (
-    <SectionLayout anchors={NAV_ANCHORS}>
-      <InstructionsEditor state={stateQuery.data} />
+    <SectionLayout anchors={ANCHORS[variant]}>
+      <InstructionsEditor state={stateQuery.data} variant={variant} />
     </SectionLayout>
   );
 }
 
 interface InstructionsEditorProps {
   state: PilotState;
+  variant: InstructionsVariant;
 }
 
 function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
-  const { state } = props;
+  const { state, variant } = props;
   const toast = useToast();
 
   const save = useApiMutation(
     (body: UpdatePilotInstructionsInput) => api.pilot.instructions.put(body),
     {
       invalidate: [pilotQueries.state().queryKey, pilotQueries.searches().queryKey],
-      successMessage: "Instructions saved.",
+      successMessage: "Saved.",
     },
   );
 
@@ -136,53 +158,61 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
       }}
     >
       <Stack spacing={3}>
-        <SectionCard
-          title="Instructions"
-          description="Goals are all the pilot needs - it creates and maintains its saved searches from them."
-        >
-          <Stack spacing={3}>
-            <Box data-section-id="goals">
-              <GoalsSection form={form} />
-            </Box>
-            {/* Server data the pilot owns, not form state. */}
-            <Box data-section-id="searches">
-              <FormSection
-                title="Searches"
-                description="The pilot creates and maintains these from your goals - shown read-only."
-              >
-                <SearchesList />
-              </FormSection>
-            </Box>
-            <Box data-section-id="research">
-              <FormSection
-                title="Research"
-                description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
-              >
-                <ResearchSection />
-              </FormSection>
-            </Box>
-          </Stack>
-        </SectionCard>
-
-        <SectionCard
-          title="Tuning"
-          description="Optional - caps, networking, boards and platforms. The defaults work for most people."
-        >
-          <Stack spacing={3}>
-            <Box data-section-id="limits">
-              <LimitsSection form={form} />
-            </Box>
-            <Box data-section-id="networking">
-              <NetworkingSection form={form} />
-            </Box>
-            <Box data-section-id="boards">
-              <BoardsSection form={form} />
-            </Box>
-            <Box data-section-id="platforms">
-              <PlatformsSection form={form} />
-            </Box>
-          </Stack>
-        </SectionCard>
+        {variant === "goals" ? (
+          <SectionCard
+            title="Instructions"
+            description="Goals are all the pilot needs - it creates and maintains its searches from them."
+          >
+            <Stack spacing={3}>
+              <Box data-section-id="goals">
+                <GoalsSection form={form} />
+              </Box>
+              {/* Server data the pilot owns, not form state. */}
+              <Box data-section-id="searches">
+                <FormSection
+                  title="Searches"
+                  description="The pilot creates and maintains these from your goals."
+                >
+                  <SearchesList />
+                </FormSection>
+              </Box>
+              <Box data-section-id="limits">
+                <LimitsSection form={form} />
+              </Box>
+            </Stack>
+          </SectionCard>
+        ) : (
+          <SectionCard
+            title="Pilot settings"
+            description="Optional - the defaults work for most people."
+          >
+            <Stack spacing={3}>
+              <Box data-section-id="schedule">
+                <CheckIntervalSection form={form} />
+              </Box>
+              <Box data-section-id="job-alerts">
+                <JobAlertsSetting />
+              </Box>
+              <Box data-section-id="research">
+                <FormSection
+                  title="Research"
+                  description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
+                >
+                  <ResearchSection />
+                </FormSection>
+              </Box>
+              <Box data-section-id="networking">
+                <NetworkingSection form={form} />
+              </Box>
+              <Box data-section-id="boards">
+                <BoardsSection form={form} />
+              </Box>
+              <Box data-section-id="platforms">
+                <PlatformsSection form={form} />
+              </Box>
+            </Stack>
+          </SectionCard>
+        )}
       </Stack>
 
       {showSaveBar && (
@@ -194,7 +224,7 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
           >
             <Typography variant="captionMuted">Unsaved changes</Typography>
             <form.AppForm>
-              <form.SubmitButton>Save instructions</form.SubmitButton>
+              <form.SubmitButton>{SAVE_LABELS[variant]}</form.SubmitButton>
             </form.AppForm>
           </Stack>
         </StickyFooter>

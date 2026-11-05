@@ -11,6 +11,7 @@ import { FULL_PAGE } from "./shared";
 
 const PILOT = ["pilot"] as const;
 const JOURNAL = [...PILOT, "journal"] as const;
+const THREAD = [...PILOT, "thread"] as const;
 const QUESTIONS = [...PILOT, "questions"] as const;
 const PROMOTIONS = [...PILOT, "promotions"] as const;
 const PUSH = [...PILOT, "push"] as const;
@@ -28,16 +29,12 @@ function requestJournalPage(kinds: PilotJournalKind[], cursor: string | null) {
 export const pilotQueries = {
   all: PILOT,
   journalAll: JOURNAL,
+  threadAll: THREAD,
   questionsAll: QUESTIONS,
   promotionsAll: PROMOTIONS,
   pushAll: PUSH,
   state: () =>
     queryOptions({ queryKey: [...PILOT, "state"], queryFn: () => unwrap(api.pilot.get()) }),
-  todayOutcomes: () =>
-    queryOptions({
-      queryKey: [...PILOT, "today-outcomes"],
-      queryFn: () => unwrap(api.pilot.stats.today.get()),
-    }),
   cost: () =>
     queryOptions({
       queryKey: [...PILOT, "cost"],
@@ -88,6 +85,19 @@ export const pilotQueries = {
       getNextPageParam: (page) => page.nextCursor,
     });
   },
+  /** Newest page first; the thread renders the pages reversed. */
+  thread: () =>
+    infiniteQueryOptions({
+      queryKey: THREAD,
+      queryFn: ({ pageParam }) =>
+        unwrap(
+          api.pilot.thread.get({
+            query: { limit: DEFAULT_CURSOR_PAGE_SIZE, ...(pageParam ? { cursor: pageParam } : {}) },
+          }),
+        ),
+      initialPageParam: null as string | null,
+      getNextPageParam: (page) => page.nextCursor,
+    }),
   questions: (status?: PilotQuestionStatus) =>
     queryOptions({
       queryKey: [...QUESTIONS, { status: status ?? "all" }],

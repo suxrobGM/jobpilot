@@ -9,9 +9,9 @@ export const LimitsSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
   render: function LimitsSection({ form }) {
     return (
-      <FormSection title="Operating limits">
+      <FormSection title="Rules">
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <form.AppField name="dailyApplyCap">
               {(field) => (
                 <field.TextField
@@ -23,7 +23,7 @@ export const LimitsSection = withForm({
               )}
             </form.AppField>
           </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <form.AppField name="minScore">
               {(field) => (
                 <field.TextField
@@ -31,18 +31,6 @@ export const LimitsSection = withForm({
                   type="number"
                   helperText="Only apply to matches at or above this (0–100)."
                   slotProps={{ htmlInput: { min: 0, max: 100, step: 1 } }}
-                />
-              )}
-            </form.AppField>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <form.AppField name="checkIntervalMinutes">
-              {(field) => (
-                <field.TextField
-                  label="Check interval (min)"
-                  type="number"
-                  helperText="How often the pilot wakes to work."
-                  slotProps={{ htmlInput: { min: 5, step: 1 } }}
                 />
               )}
             </form.AppField>

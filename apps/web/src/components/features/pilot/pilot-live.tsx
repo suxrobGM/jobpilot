@@ -5,36 +5,52 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
+import { refetchThread } from "./home/thread/thread-cache";
 import { prependJournalEntry, refetchJournal } from "./journal/journal-cache";
 
 const STATE_KEY = pilotQueries.state().queryKey;
 // Never `pilot.all`: it would rebuild the task list.
 const RUN_KEYS = [STATE_KEY, pilotQueries.jobAlerts().queryKey, pilotQueries.research().queryKey];
-const RECONNECT_KEYS = [STATE_KEY, pilotQueries.questionsAll, pilotQueries.promotionsAll];
+const RECONNECT_KEYS = [
+  STATE_KEY,
+  pilotQueries.questionsAll,
+  pilotQueries.promotionsAll,
+  pilotQueries.searches().queryKey,
+];
 
 /** The app's one pilot subscription, in the shell so the nav badge and every pilot view share it. */
 export function PilotLive(): ReactNode {
   const queryClient = useQueryClient();
 
+  const invalidate = (keys: readonly (readonly unknown[])[]): void => {
+    for (const queryKey of keys) {
+      void queryClient.invalidateQueries({ queryKey });
+    }
+    refetchThread(queryClient);
+  };
+
   useLiveInvalidation(pilotChannel, null, {
     on: {
       "state.changed": RUN_KEYS,
-      "run.started": RUN_KEYS,
-      "run.finished": RUN_KEYS,
+      "run.started": () => invalidate(RUN_KEYS),
+      "run.finished": () => invalidate([...RUN_KEYS, pilotQueries.searches().queryKey]),
       // Written straight into the cache rather than refetched.
       "journal.appended": (event) => {
         const entry = prependJournalEntry(queryClient, event.entry);
         if (entry.kind === "cycle") {
           void queryClient.invalidateQueries({ queryKey: STATE_KEY });
+        } else {
+          refetchThread(queryClient);
         }
       },
-      "question.created": [pilotQueries.questionsAll],
-      "question.answered": [pilotQueries.questionsAll],
-      "promotion.created": [pilotQueries.promotionsAll],
-      "promotion.updated": [pilotQueries.promotionsAll],
+      "question.created": () => invalidate([pilotQueries.questionsAll]),
+      "question.answered": () => invalidate([pilotQueries.questionsAll]),
+      "promotion.created": () => invalidate([pilotQueries.promotionsAll]),
+      "promotion.updated": () => invalidate([pilotQueries.promotionsAll]),
     },
     onReconnect: () => {
       refetchJournal(queryClient);
+      refetchThread(queryClient);
       for (const queryKey of RECONNECT_KEYS) {
         void queryClient.invalidateQueries({ queryKey });
       }
