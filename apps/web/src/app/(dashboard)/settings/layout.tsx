@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
-import { SettingsTabs } from "@/components/features/settings/settings-tabs";
+import { SettingsTabs } from "@/components/features/settings";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 interface SettingsLayoutProps {
@@ -13,7 +13,7 @@ export default function SettingsLayout(props: SettingsLayoutProps): ReactElement
       <PageHeader
         eyebrow="Account"
         title="Settings"
-        description="Profile, work auth, auto-apply, email, notifications, and saved credentials."
+        description="Profile, work auth, auto-apply, email, notifications, credentials, and sign-in security."
       />
       <SettingsTabs />
       {children}

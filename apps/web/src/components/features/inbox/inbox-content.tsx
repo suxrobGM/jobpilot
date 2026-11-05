@@ -7,7 +7,7 @@ import { LinearProgress, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { emailQueries } from "@/api/queries";
-import { MailboxReauthAlert } from "@/components/features/settings/sections/mailbox-reauth-alert";
+import { MailboxReauthAlert } from "@/components/features/settings";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/feedback";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";

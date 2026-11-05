@@ -24,7 +24,7 @@ import { useToast } from "@/providers/notification-provider";
 import { urlBase64ToUint8Array } from "@/utils/base64";
 import { formatRelativeTime } from "@/utils/format";
 
-export function WebPushSettings(): ReactNode {
+export function NotificationsCard(): ReactNode {
   const toast = useToast();
   // null = support not probed yet; avoids flashing the unsupported caption on first paint.
   const [supported, setSupported] = useState<boolean | null>(null);

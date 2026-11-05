@@ -6,6 +6,7 @@ const TABS: Tab[] = [
   { label: "Email", href: "/settings/email" },
   { label: "Notifications", href: "/settings/notifications" },
   { label: "Credentials", href: "/settings/credentials" },
+  { label: "Security", href: "/settings/security" },
 ];
 
 export function SettingsTabs(): ReactElement {

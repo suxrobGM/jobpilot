@@ -13,17 +13,17 @@ import { QueryError } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { StickyFooter } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+import { AddressSection } from "./address-section";
+import { AutoApplySection } from "./auto-apply-section";
+import { EeoSection } from "./eeo-section";
+import { PersonalSection } from "./personal-section";
 import { toProfileFormValues } from "./profile-form-values";
-import { AddressSection } from "./sections/address-section";
-import { AutoApplySection } from "./sections/auto-apply-section";
-import { EeoSection } from "./sections/eeo-section";
-import { PersonalSection } from "./sections/personal-section";
-import { ReferencesSection } from "./sections/references-section";
-import { SalarySection } from "./sections/salary-section";
-import { SavedAnswersSection } from "./sections/saved-answers-section";
-import { WorkAuthSection } from "./sections/work-auth-section";
+import { ReferencesSection } from "./references-section";
+import { SalarySection } from "./salary-section";
+import { SavedAnswersSection } from "./saved-answers-section";
+import { WorkAuthSection } from "./work-auth-section";
 
-export function SettingsContent(): ReactElement {
+export function ProfileSettingsForm(): ReactElement {
   const query = useQuery(userQueries.detail());
 
   if (query.isLoading) {

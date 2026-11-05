@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import type { OAuthProviderInput } from "@jobpilot/contracts/auth";
 import { Alert, Box, Button, Stack, Typography } from "@mui/material";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { authQueries } from "@/api/queries";
@@ -12,15 +13,12 @@ import { SectionCard } from "@/components/ui/layout";
 import { useSession } from "@/hooks/use-auth";
 import { useConfirm } from "@/providers/confirm-provider";
 
-interface ConnectedAccountsCardProps {
-  /** `oauth` query flag from the OAuth callback redirect: "linked" or "error". */
-  oauthResult?: string;
-  provider?: string;
-  reason?: string;
-}
-
-export function ConnectedAccountsCard(props: ConnectedAccountsCardProps): ReactElement {
-  const { oauthResult, provider, reason } = props;
+export function ConnectedAccountsCard(): ReactElement {
+  // Flags the OAuth callback redirect appends: `oauth` is "linked" or "error".
+  const params = useSearchParams();
+  const oauthResult = params.get("oauth") ?? undefined;
+  const provider = params.get("provider") ?? undefined;
+  const reason = params.get("reason") ?? undefined;
   const { user } = useSession();
   const confirm = useConfirm();
 

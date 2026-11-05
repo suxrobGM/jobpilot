@@ -13,7 +13,6 @@ import {
   MenuItem,
   Tooltip,
 } from "@mui/material";
-import type { Route } from "next";
 import NextLink from "next/link";
 import type { AuthUserDto } from "@/api/types";
 import { LogoutMenuItem } from "@/components/features/auth";
@@ -102,11 +101,11 @@ export function AccountMenu(): ReactNode {
           />
         </MenuItem>
         <Divider />
-        <MenuItem component={NextLink} href={"/account/security" as Route} onClick={handleClose}>
+        <MenuItem component={NextLink} href="/settings/security" onClick={handleClose}>
           <ListItemIcon sx={{ minWidth: 32 }}>
             <Security fontSize="md" />
           </ListItemIcon>
-          <ListItemText primary="Account security" />
+          <ListItemText primary="Security settings" />
         </MenuItem>
         <LogoutMenuItem onClick={handleClose} />
       </Menu>
