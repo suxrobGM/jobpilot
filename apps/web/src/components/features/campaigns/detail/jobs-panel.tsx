@@ -88,8 +88,12 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
       const results = await Promise.allSettled(
         selectedForReapply.map((job) => {
           const endpoint = api.campaigns({ id: campaign.id }).jobs({ key: job.key });
-          if (job.status === "failed") return endpoint.retry.post({});
-          if (job.status === "approved") return Promise.resolve({ data: job, error: null });
+          if (job.status === "failed") {
+            return endpoint.retry.post({});
+          }
+          if (job.status === "approved") {
+            return Promise.resolve({ data: job, error: null });
+          }
           return endpoint.patch({ status: "approved" });
         }),
       );

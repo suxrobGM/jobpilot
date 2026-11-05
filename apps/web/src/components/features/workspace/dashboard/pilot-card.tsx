@@ -42,7 +42,9 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
   const openQuestions = useOpenQuestions().questions.length;
 
   const state = stateQuery.data;
-  if (!state) return null;
+  if (!state) {
+    return null;
+  }
 
   const mode = pilotMode(state, health, pilot);
   const look = PILOT_MODE_LOOK[mode];

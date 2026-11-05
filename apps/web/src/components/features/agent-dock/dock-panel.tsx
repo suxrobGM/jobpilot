@@ -59,7 +59,7 @@ export function DockPanel(): ReactElement {
           <AgentOrb size="xxl" />
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="h6">Agent</Typography>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", marginTop: "2px" }}>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.25 }}>
               <PulseDot
                 tone="muted"
                 pulsing={health === "checking" || (pending !== null && unreachable)}
@@ -132,7 +132,7 @@ export function DockPanel(): ReactElement {
               size="small"
               value={provider}
               onChange={handleProviderChange}
-              sx={{ minWidth: 120, fontSize: "0.75rem" }}
+              sx={{ minWidth: 120, typography: "body2" }}
             >
               <MenuItem value="claude">Claude Code</MenuItem>
               <MenuItem value="codex">Codex</MenuItem>

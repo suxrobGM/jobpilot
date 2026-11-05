@@ -16,10 +16,16 @@ import { isRunPending } from "../run-status";
 
 function lastRunText(status: ResearchStatusDto): string {
   const { lastRun } = status;
-  if (status.requestedAt) return "Queued - the pilot picks it up on its next cycle.";
-  if (!lastRun) return "No research run yet.";
+  if (status.requestedAt) {
+    return "Queued - the pilot picks it up on its next cycle.";
+  }
+  if (!lastRun) {
+    return "No research run yet.";
+  }
   const ago = `${formatRelativeTime(lastRun.startedAt)} ago`;
-  if (lastRun.outcome === null) return `Researching now - started ${ago}.`;
+  if (lastRun.outcome === null) {
+    return `Researching now - started ${ago}.`;
+  }
   return lastRun.summary ? `${ago}: ${lastRun.summary}` : `Last run ${ago}.`;
 }
 

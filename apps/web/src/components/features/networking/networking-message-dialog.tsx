@@ -99,7 +99,9 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
       title={message.contact.name}
       onClose={onClose}
       onSubmit={() => {
-        if (terminal) return;
+        if (terminal) {
+          return;
+        }
         if (canSendEmail) {
           send.mutate();
         } else {

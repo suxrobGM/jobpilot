@@ -80,7 +80,9 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
               onChangeAsyncDebounceMs: 350,
               // The caller's own username always reads as free, so skip the round trip.
               onChangeAsync: async ({ value }) => {
-                if (value === settings.username) return undefined;
+                if (value === settings.username) {
+                  return undefined;
+                }
                 const { data } = await api.user.portfolio.available.get({
                   query: { username: value },
                 });

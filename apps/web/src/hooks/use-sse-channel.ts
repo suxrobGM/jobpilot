@@ -38,7 +38,9 @@ const REDIAL_BASE_MS = 2_000;
 const REDIAL_MAX_MS = 30_000;
 
 function setEntryStatus(entry: SharedSource, status: SseConnectionStatus): void {
-  if (entry.status === status) return;
+  if (entry.status === status) {
+    return;
+  }
   entry.status = status;
   for (const listener of entry.onStatus) listener(status);
 }
@@ -61,7 +63,9 @@ function dial(url: string, entry: SharedSource, source: EventSource): void {
   };
   source.onerror = () => {
     // A superseded source's late error must not clobber the live one's status.
-    if (entry.source !== source) return;
+    if (entry.source !== source) {
+      return;
+    }
     setEntryStatus(entry, "reconnecting");
     // The package auto-retries only network drops; any non-200 response is a fatal
     // close (readyState CLOSED), so re-dial with capped backoff or one bad gateway

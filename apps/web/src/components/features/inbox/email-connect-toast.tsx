@@ -27,7 +27,9 @@ export function EmailConnectToast(): ReactNode {
   const fired = useRef(false);
 
   useEffect(() => {
-    if (!status || fired.current) return;
+    if (!status || fired.current) {
+      return;
+    }
     fired.current = true;
     if (status === "ok") {
       toast.success("Gmail connected");

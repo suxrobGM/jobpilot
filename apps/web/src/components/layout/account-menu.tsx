@@ -67,8 +67,7 @@ export function AccountMenu(): ReactNode {
             sx={(theme) => ({
               width: 36,
               height: 36,
-              fontSize: 14,
-              fontWeight: 600,
+              ...theme.typography.body1Strong,
               bgcolor: theme.palette.accent.primary,
               color: "primary.contrastText",
               border: `1px solid ${theme.palette.line.borderHi}`,

@@ -30,7 +30,9 @@ const OUTCOME_LABELS: Record<(typeof PILOT_RUN_OUTCOMES)[number], string> = {
 
 function scheduleSummary(status: JobAlertsStatus): string {
   const { settings } = status;
-  if (!settings.enabled) return "Not scheduled - runs only when you click Run now.";
+  if (!settings.enabled) {
+    return "Not scheduled - runs only when you click Run now.";
+  }
   const times = settings.runHours.map(hourLabel).join(", ");
   const next = status.nextRunAt ? ` · next in ${formatTimeUntil(status.nextRunAt)}` : "";
   return `Runs daily at ${times} ${settings.timeZone}${next}`;

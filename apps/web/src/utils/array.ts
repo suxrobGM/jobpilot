@@ -18,7 +18,9 @@ export function dedupeById<T extends { id: string }>(items: T[]): T[] {
  */
 export function moveAt<T>(arr: T[], idx: number, direction: -1 | 1): T[] {
   const target = idx + direction;
-  if (target < 0 || target >= arr.length) return arr;
+  if (target < 0 || target >= arr.length) {
+    return arr;
+  }
   const next = [...arr];
   [next[idx], next[target]] = [next[target], next[idx]];
   return next;

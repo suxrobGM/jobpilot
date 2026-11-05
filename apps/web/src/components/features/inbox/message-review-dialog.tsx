@@ -167,8 +167,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
               maxHeight: 320,
               overflowY: "auto",
               whiteSpace: "pre-wrap",
-              fontFamily: "monospace",
-              fontSize: "0.85rem",
+              ...t.typography.monoBody,
               backgroundColor: t.palette.surfaces.elevated,
             })}
           >

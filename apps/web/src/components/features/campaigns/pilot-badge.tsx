@@ -10,7 +10,9 @@ interface PilotBadgeProps {
 
 /** Marks a campaign the pilot created; renders nothing for user- or agent-created ones. */
 export function PilotBadge(props: PilotBadgeProps): ReactNode {
-  if (props.createdBy !== "pilot") return null;
+  if (props.createdBy !== "pilot") {
+    return null;
+  }
   return (
     <Tooltip
       title="The Pilot started this one on its own, from your instructions."

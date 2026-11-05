@@ -99,8 +99,12 @@ function ComposerForm(props: ComposerFormProps): ReactElement {
   const recentByQuery = new Map<string, RecentQuery>();
 
   for (const campaign of recentCampaigns) {
-    if (campaign.createdBy !== "user" || campaign.source === "apply") continue;
-    if (recentByQuery.has(campaign.query)) continue;
+    if (campaign.createdBy !== "user" || campaign.source === "apply") {
+      continue;
+    }
+    if (recentByQuery.has(campaign.query)) {
+      continue;
+    }
     recentByQuery.set(campaign.query, { query: campaign.query, anywhere: campaign.board === null });
   }
 

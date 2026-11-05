@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import type { PortfolioDayPoint } from "@/api/types";
+import { radii } from "@/theme";
 import { formatDayBucket } from "@/utils/format";
 
 interface ActivityHeatmapProps {
@@ -23,10 +24,18 @@ const WEEKDAYS = ["", "Mon", "", "Wed", "", "Fri", ""];
 
 /** 0 = empty, 1-4 = increasing activity. Fixed thresholds read consistently across users. */
 function level(count: number): number {
-  if (count <= 0) return 0;
-  if (count < 3) return 1;
-  if (count < 6) return 2;
-  if (count < 10) return 3;
+  if (count <= 0) {
+    return 0;
+  }
+  if (count < 3) {
+    return 1;
+  }
+  if (count < 6) {
+    return 2;
+  }
+  if (count < 10) {
+    return 3;
+  }
   return 4;
 }
 
@@ -67,7 +76,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
                 <Typography
                   key={tick.col}
                   variant="captionMuted"
-                  sx={{ position: "absolute", left: tick.col * STRIDE, fontSize: "0.7rem" }}
+                  sx={{ position: "absolute", left: tick.col * STRIDE, typography: "caption" }}
                 >
                   {tick.label}
                 </Typography>
@@ -92,7 +101,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
                   // biome-ignore lint/suspicious/noArrayIndexKey: fixed 7-row weekday axis
                   key={`wd-${row}`}
                   variant="captionMuted"
-                  sx={{ fontSize: "0.7rem", lineHeight: `${CELL}px`, textAlign: "right" }}
+                  sx={{ typography: "caption", lineHeight: `${CELL}px`, textAlign: "right" }}
                 >
                   {label}
                 </Typography>
@@ -118,7 +127,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
                     gridRow: i === 0 ? leadPad + 1 : undefined,
                     width: CELL,
                     height: CELL,
-                    borderRadius: "2px",
+                    borderRadius: radii.xs,
                     backgroundColor: shade(level(day.count)),
                   }}
                 />
@@ -136,7 +145,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
         {LEGEND_LEVELS.map((lvl) => (
           <Box
             key={`legend-${lvl}`}
-            sx={{ width: CELL, height: CELL, borderRadius: "2px", backgroundColor: shade(lvl) }}
+            sx={{ width: CELL, height: CELL, borderRadius: radii.xs, backgroundColor: shade(lvl) }}
           />
         ))}
         <Typography variant="captionMuted">More</Typography>

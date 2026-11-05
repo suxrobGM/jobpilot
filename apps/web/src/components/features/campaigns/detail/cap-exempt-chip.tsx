@@ -16,7 +16,9 @@ interface CapExemptChipProps {
 /** H-1B cap-exempt employer, linking to the page that shows it. */
 export function CapExemptChip(props: CapExemptChipProps): ReactNode {
   const { job } = props;
-  if (!job.capExemptBasis) return null;
+  if (!job.capExemptBasis) {
+    return null;
+  }
   const evidence = job.capExemptEvidenceUrl;
   return (
     <Tooltip title={BASIS_LABELS[job.capExemptBasis]}>

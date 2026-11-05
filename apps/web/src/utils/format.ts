@@ -20,7 +20,9 @@ const compactLocale = {
 
 /** `3 jobs` / `1 job`. Pass `pluralWord` for anything an `s` does not cover. */
 export function plural(count: number, word: string, pluralWord?: string): string {
-  if (count === 1) return `${count} ${word}`;
+  if (count === 1) {
+    return `${count} ${word}`;
+  }
   return `${count} ${pluralWord ?? `${word}s`}`;
 }
 
