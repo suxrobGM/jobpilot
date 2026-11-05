@@ -7,10 +7,11 @@ import {
 import { inject, injectable } from "@needle-di/core";
 import { conflict } from "@/common/errors";
 import { toInputJson } from "@/common/json";
-import { type CampaignFeed, PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { WebPushService } from "@/modules/web-push/web-push.service";
+import { liveFeeds } from "../feeds";
 import { PilotJournalService } from "../journal.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { allowedToday } from "./allowed-today";
@@ -69,14 +70,6 @@ const NO_REVIEWS: Pick<Gathered, "campaignTunes" | "rescanSkipped" | "retryFaile
   rescanSkipped: [],
   retryFailed: [],
 };
-
-/** Feeds whose standing campaign stays open while idle. */
-function liveFeeds(config: PilotInstructionsConfig, goals: string): CampaignFeed[] {
-  const feeds: CampaignFeed[] = [];
-  if (config.jobAlerts.enabled) feeds.push("job_alerts");
-  if (goals !== "") feeds.push("research");
-  return feeds;
-}
 
 /** `Promise.all` over named promises, so a long parallel read can't misalign its results. */
 async function allNamed<T extends Record<string, unknown>>(

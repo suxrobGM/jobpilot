@@ -1,5 +1,14 @@
+import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import type { CampaignFeed, PrismaClient } from "@/generated/prisma/client";
 import { publishCampaignStatus } from "@/modules/campaign/campaign.utils";
+
+/** Feeds whose standing campaign stays open while idle. */
+export function liveFeeds(config: PilotInstructionsConfig, goals: string): CampaignFeed[] {
+  const feeds: CampaignFeed[] = [];
+  if (config.jobAlerts.enabled) feeds.push("job_alerts");
+  if (goals !== "") feeds.push("research");
+  return feeds;
+}
 
 /** Pausing a feed's standing campaign pauses the feed. */
 export async function isFeedPaused(

@@ -3,7 +3,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { OPEN_CAMPAIGN_STATUSES } from "@/modules/campaign/campaign.utils";
 import { resumePausedFeed } from "./feeds";
 import { PilotService } from "./pilot.service";
-import { hasPendingRunNow } from "./tasks/gather-inbox";
+import { hasPendingRunNow } from "./tasks/run-history";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 @injectable()

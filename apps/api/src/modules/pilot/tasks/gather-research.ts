@@ -2,8 +2,7 @@ import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { isFeedPaused } from "../feeds";
-import { hasPendingRunNow } from "./gather-inbox";
-import { latestRun, ranRecently } from "./run-history";
+import { hasPendingRunNow, latestRun, ranRecently } from "./run-history";
 
 const PERIODIC_MS = 7 * DAY_MS;
 const DRY_COOLDOWN_MS = 24 * HOUR_MS;
