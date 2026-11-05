@@ -30,7 +30,7 @@ export function AdminListingsTable(props: AdminListingsTableProps): ReactElement
 
   return (
     <TableContainer>
-      <Table size="small">
+      <Table>
         <TableHead>
           <TableRow>
             <TableCell>Title</TableCell>
@@ -46,14 +46,14 @@ export function AdminListingsTable(props: AdminListingsTableProps): ReactElement
           {listings.map((listing) => (
             <TableRow key={listing.id} hover>
               <TableCell sx={{ fontWeight: 600 }}>
-                <Link href={`/jobs/${listing.slug}`} target="_blank" rel="noopener">
+                <Link href={`/jobs/${listing.slug}`} target="_blank" rel="noopener noreferrer">
                   {listing.title}
                 </Link>
               </TableCell>
               <TableCell>{listing.company}</TableCell>
               <TableCell>
                 {listing.remote ? (
-                  <Chip size="small" variant="outlined" color="success" label="remote" />
+                  <Chip variant="outlined" color="success" label="remote" />
                 ) : (
                   (listing.location ?? <Typography variant="captionMuted">-</Typography>)
                 )}

@@ -194,9 +194,7 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
           >
             <Typography variant="captionMuted">Unsaved changes</Typography>
             <form.AppForm>
-              <form.SubmitButton disabled={save.isPending}>
-                {save.isPending ? "Saving" : "Save instructions"}
-              </form.SubmitButton>
+              <form.SubmitButton loading={save.isPending}>Save instructions</form.SubmitButton>
             </form.AppForm>
           </Stack>
         </StickyFooter>

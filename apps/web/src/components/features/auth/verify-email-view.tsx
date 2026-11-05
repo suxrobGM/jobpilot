@@ -71,9 +71,9 @@ function VerifyGateView(): ReactElement {
         size="large"
         fullWidth
         onClick={() => resendVerification.mutate()}
-        disabled={resendVerification.isPending}
+        loading={resendVerification.isPending}
       >
-        {resendVerification.isPending ? "Sending…" : "Resend email"}
+        Resend email
       </Button>
 
       <Button variant="text" fullWidth onClick={() => logout.mutate()} disabled={logout.isPending}>

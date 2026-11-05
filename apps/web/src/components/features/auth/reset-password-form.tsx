@@ -70,8 +70,8 @@ export function ResetPasswordForm(props: ResetPasswordFormProps): ReactElement {
         </form.AppField>
 
         <form.AppForm>
-          <form.SubmitButton disabled={resetPassword.isPending} fullWidth size="large">
-            {resetPassword.isPending ? "Updating…" : "Update password"}
+          <form.SubmitButton loading={resetPassword.isPending} fullWidth size="large">
+            Update password
           </form.SubmitButton>
         </form.AppForm>
 

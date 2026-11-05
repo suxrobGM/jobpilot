@@ -54,7 +54,7 @@ function ReasonList(props: { title: string; reasons: ReasonCount[] }): ReactElem
                 <Typography variant="body2" sx={{ minWidth: 0, wordBreak: "break-word" }}>
                   {r.reason}
                 </Typography>
-                <Chip size="small" label={r.count} variant="outlined" />
+                <Chip label={r.count} variant="outlined" />
               </Stack>
             ))}
           </Stack>

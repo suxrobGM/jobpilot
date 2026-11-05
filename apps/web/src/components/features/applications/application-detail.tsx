@@ -85,14 +85,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
           title={app.title}
           actions={
             <>
-              <Button
-                variant="outlined"
-                startIcon={<Launch fontSize="md" />}
-                component="a"
-                href={app.url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Button variant="outlined" startIcon={<Launch fontSize="md" />} href={app.url}>
                 Open posting
               </Button>
               <Button variant="contained" onClick={() => setStatusDialogOpen(true)}>

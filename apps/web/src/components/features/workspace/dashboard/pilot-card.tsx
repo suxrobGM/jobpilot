@@ -78,7 +78,6 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
                 href="/pilot"
                 clickable
                 color="warning"
-                size="small"
                 label={`${plural(openQuestions, "question")} for you`}
               />
             )}

@@ -78,7 +78,8 @@ export function AgentDock(): ReactElement {
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        borderLeft: `1px solid ${theme.palette.line.divider}`,
+        borderLeft: 1,
+        borderColor: "divider",
         backgroundColor: theme.palette.surfaces.base,
         transition: dragging ? "none" : `width ${theme.motion.expressive}`,
       })}

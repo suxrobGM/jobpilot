@@ -34,15 +34,6 @@ export function DocsP(props: ComponentProps<"p">): ReactElement {
 
 export function DocsLink(props: ComponentProps<"a">): ReactElement {
   const { href = "", children, ...rest } = props;
-  if (href.startsWith("http")) {
-    // Explicit anchor: next/link is the theme default for MuiLink, and it should not render an
-    // off-site URL.
-    return (
-      <Link component="a" href={href} target="_blank" rel="noopener noreferrer" {...rest}>
-        {children}
-      </Link>
-    );
-  }
   return (
     <Link href={href as Route} {...rest}>
       {children}

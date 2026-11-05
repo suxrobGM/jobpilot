@@ -23,7 +23,8 @@ export function SubmitButton(props: SubmitButtonProps): ReactElement {
         <Button
           type="submit"
           variant="contained"
-          disabled={disabled || !canSubmit || isSubmitting}
+          disabled={disabled || !canSubmit}
+          loading={isSubmitting}
           {...rest}
         >
           {children}

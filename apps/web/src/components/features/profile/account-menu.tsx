@@ -104,7 +104,7 @@ export function AccountMenu(): ReactNode {
         <Divider />
         <MenuItem component={NextLink} href={"/account/security" as Route} onClick={handleClose}>
           <ListItemIcon sx={{ minWidth: 32 }}>
-            <Security fontSize="small" />
+            <Security fontSize="md" />
           </ListItemIcon>
           <ListItemText primary="Account security" />
         </MenuItem>

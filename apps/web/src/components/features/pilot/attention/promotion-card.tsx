@@ -56,8 +56,8 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
       <CardContent>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-            <Chip size="small" label={promotion.platform} color="primary" />
-            {promotion.target && <Chip size="small" variant="outlined" label={promotion.target} />}
+            <Chip label={promotion.platform} color="primary" />
+            {promotion.target && <Chip variant="outlined" label={promotion.target} />}
             <Typography variant="captionMuted" sx={{ ml: "auto", whiteSpace: "nowrap" }}>
               {formatRelativeTime(promotion.createdAt)} ago
             </Typography>
@@ -131,7 +131,7 @@ export function PromotionSummary(props: PromotionCardProps): ReactElement {
   const { promotion } = props;
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-      <Chip size="small" variant="outlined" label={promotion.platform} sx={{ minWidth: 90 }} />
+      <Chip variant="outlined" label={promotion.platform} sx={{ minWidth: 90 }} />
       <ColorChip
         value={promotion.status}
         colors={STATUS_COLOR}
@@ -144,8 +144,6 @@ export function PromotionSummary(props: PromotionCardProps): ReactElement {
       {promotion.postedUrl && (
         <Link
           href={promotion.postedUrl}
-          target="_blank"
-          rel="noopener noreferrer"
           sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, whiteSpace: "nowrap" }}
         >
           <OpenInNew fontSize="sm" />

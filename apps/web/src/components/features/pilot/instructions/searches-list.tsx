@@ -62,8 +62,8 @@ function SearchRow(props: SearchRowProps): ReactElement {
         <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
           {search.query}
         </Typography>
-        {search.board && <Chip size="small" variant="outlined" label={search.board.name} />}
-        {status && <Chip size="small" color={status.color} label={status.label} />}
+        {search.board && <Chip variant="outlined" label={search.board.name} />}
+        {status && <Chip color={status.color} label={status.label} />}
       </Stack>
       {search.reason && (
         <Typography variant="captionMuted" sx={{ display: "block", mt: 0.25 }}>

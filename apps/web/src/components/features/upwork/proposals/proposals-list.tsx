@@ -106,9 +106,7 @@ export function ProposalsList(): ReactElement {
                       sx={{ alignItems: "center", flexWrap: "wrap" }}
                     >
                       <ProposalStatusChip status={p.status} />
-                      {p.clientName && (
-                        <Chip size="small" label={p.clientName} variant="outlined" />
-                      )}
+                      {p.clientName && <Chip label={p.clientName} variant="outlined" />}
                     </Stack>
                     <Typography variant="body2Strong" noWrap>
                       {p.jobTitle}

@@ -41,13 +41,7 @@ interface ExternalFooterLinkProps {
 function ExternalFooterLink(props: ExternalFooterLinkProps): ReactElement {
   const { href, label } = props;
   return (
-    <Link
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      underline="none"
-      sx={marketingLinkSx}
-    >
+    <Link href={href} underline="none" sx={marketingLinkSx}>
       {label}
     </Link>
   );

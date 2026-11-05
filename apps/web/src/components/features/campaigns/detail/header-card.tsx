@@ -55,20 +55,16 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
               </Typography>
               <PilotBadge createdBy={campaign.createdBy} />
               {campaign.board && (
-                <Chip size="small" label={`Board: ${campaign.board.name}`} variant="outlined" />
+                <Chip label={`Board: ${campaign.board.name}`} variant="outlined" />
               )}
               {!isAutoApply && typeof cfg.maxJobs === "number" && (
-                <Chip size="small" label={`Jobs: ${cfg.maxJobs}`} variant="outlined" />
+                <Chip label={`Jobs: ${cfg.maxJobs}`} variant="outlined" />
               )}
               {isAutoApply && typeof cfg.minScore === "number" && (
-                <Chip size="small" label={`Min score: ${cfg.minScore}`} variant="outlined" />
+                <Chip label={`Min score: ${cfg.minScore}`} variant="outlined" />
               )}
               {isAutoApply && (
-                <Chip
-                  size="small"
-                  label={`Max apps: ${cfg.maxApplications ?? "∞"}`}
-                  variant="outlined"
-                />
+                <Chip label={`Max apps: ${cfg.maxApplications ?? "∞"}`} variant="outlined" />
               )}
             </Stack>
 

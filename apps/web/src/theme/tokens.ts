@@ -1,15 +1,5 @@
 import { alpha } from "@mui/material/styles";
-import { accent, feedback } from "./palette";
-
-// Gradient-only tints, so they live here and not in palette.ts.
-const flameLight = "#FF8A5C";
-const flameMid = "#FF7A4D";
-
-export const gradients = {
-  primary: `linear-gradient(135deg, ${flameLight}, ${accent.primary})`,
-  reversed: `linear-gradient(135deg, ${flameMid}, ${accent.dark})`,
-  orb: `conic-gradient(from 200deg, ${accent.primary}, ${feedback.warning}, ${accent.secondary}, ${accent.primary})`,
-} as const;
+import { accent } from "./palette";
 
 export const glows = {
   top: `radial-gradient(ellipse 80% 60% at 50% -10%, ${alpha(accent.primary, 0.09)}, transparent 60%)`,
@@ -29,11 +19,17 @@ export const motion = {
 } as const;
 
 export const shadows = {
-  sm: "none",
   highlight: "inset 0 1px 0 rgba(255,255,255,0.04)",
   md: "0 4px 14px rgba(0,0,0,0.45), 0 0 0 0.5px rgba(255,255,255,0.04)",
   lg: "0 18px 36px -10px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.05)",
   focus: `0 0 0 2px ${alpha(accent.primary, 0.5)}`,
+  // Contained button: a top sheen and a flame glow that blooms on hover.
+  button: `inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 12px -6px ${alpha(accent.primary, 0.45)}, 0 1px 0 rgba(0,0,0,0.25)`,
+  buttonHover: `inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 24px -6px ${alpha(accent.primary, 0.6)}, 0 1px 0 rgba(0,0,0,0.3)`,
+  buttonActive: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.3)",
+  // `filter` values: drop-shadow follows the mark's outline where box-shadow would draw a square.
+  markGlow: `drop-shadow(0 2px 8px rgba(0,0,0,0.4)) drop-shadow(0 0 12px ${alpha(accent.primary, 0.22)})`,
+  markGlowHover: `drop-shadow(0 6px 18px rgba(0,0,0,0.5)) drop-shadow(0 0 20px ${alpha(accent.primary, 0.45)})`,
 } as const;
 
 export const radii = {

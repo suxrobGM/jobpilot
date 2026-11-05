@@ -91,14 +91,8 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
         <Box component="ol" sx={{ pl: 2.5, m: 0 }}>
           <Typography component="li" variant="body2Muted">
             In the{" "}
-            <Link
-              href="https://console.cloud.google.com/projectcreate"
-              target="_blank"
-              rel="noopener"
-            >
-              Google Cloud Console
-            </Link>
-            , create or select a project, then enable the <strong>Gmail API</strong> (APIs &amp;
+            <Link href="https://console.cloud.google.com/projectcreate">Google Cloud Console</Link>,
+            create or select a project, then enable the <strong>Gmail API</strong> (APIs &amp;
             Services &rarr; Library).
           </Typography>
           <Typography component="li" variant="body2Muted">
@@ -141,7 +135,7 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
           </Typography>
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
             {config.scopes.map((scope) => (
-              <Chip key={scope} label={shortScope(scope)} size="small" variant="outlined" />
+              <Chip key={scope} label={shortScope(scope)} variant="outlined" />
             ))}
           </Stack>
           <Typography variant="captionMuted" sx={{ display: "block", mt: 0.5 }}>

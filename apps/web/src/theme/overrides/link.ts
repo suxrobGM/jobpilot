@@ -1,13 +1,13 @@
 import type { Components, Theme } from "@mui/material/styles";
-import NextLink from "next/link";
+import { AppLink } from "../app-link";
 
 /**
- * `component: NextLink` lives here, not at each call site: the theme is built inside the client
+ * The link component lives here, not at each call site: the theme is built inside the client
  * ThemeProvider, so the component *function* never crosses the RSC boundary as a prop and a server
- * component can link with a plain `href`. Absolute URLs still render as plain anchors.
+ * component can link with a plain `href`.
  */
 export const linkOverrides: Components<Theme>["MuiLink"] = {
-  defaultProps: { underline: "hover", component: NextLink },
+  defaultProps: { underline: "hover", component: AppLink },
   styleOverrides: {
     root: ({ theme }) => ({
       color: theme.palette.accent.primary,
@@ -18,5 +18,5 @@ export const linkOverrides: Components<Theme>["MuiLink"] = {
 
 /** Same, for everything built on ButtonBase (Button, CardActionArea, IconButton, Tab). */
 export const buttonBaseOverrides: Components<Theme>["MuiButtonBase"] = {
-  defaultProps: { LinkComponent: NextLink },
+  defaultProps: { LinkComponent: AppLink },
 };

@@ -23,6 +23,7 @@ export function PortfolioRankChip(): ReactElement {
         <Chip
           component={Link}
           href="/leaderboard"
+          size="medium"
           clickable
           icon={<EmojiEvents />}
           color="warning"
@@ -33,6 +34,7 @@ export function PortfolioRankChip(): ReactElement {
       <Chip
         component={Link}
         href="/portfolio"
+        size="medium"
         clickable
         icon={<Share />}
         variant="outlined"

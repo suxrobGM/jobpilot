@@ -150,7 +150,7 @@ export function StageArrow(props: StageArrowProps): ReactElement {
         transition: theme.transitions.create("color"),
       })}
     >
-      <EastRounded fontSize="small" sx={{ transform: { xs: "rotate(90deg)", md: "none" } }} />
+      <EastRounded fontSize="md" sx={{ transform: { xs: "rotate(90deg)", md: "none" } }} />
     </Box>
   );
 }

@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Launch } from "@mui/icons-material";
-import { IconButton, Link } from "@mui/material";
+import { IconButton } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
@@ -64,10 +64,7 @@ export function CoverLettersTable(): ReactElement {
         p.row.jobUrl ? (
           <IconButton
             size="small"
-            component={Link}
             href={p.row.jobUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             aria-label="Open job posting"
           >

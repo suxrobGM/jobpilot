@@ -88,13 +88,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
             </Button>
           )}
           <TailorForJobButton />
-          <IconButton
-            component="a"
-            href={resumePdfUrl(resume.id, resume.updatedAt)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Open PDF"
-          >
+          <IconButton href={resumePdfUrl(resume.id, resume.updatedAt)} aria-label="Open PDF">
             <PictureAsPdf fontSize="md" />
           </IconButton>
           <IconButton onClick={handleDelete} aria-label="Delete resume">

@@ -62,13 +62,13 @@ export function CredentialsSection(): ReactElement {
     {
       title: "Job board logins",
       items: rows.filter((c) => c.kind !== "service"),
-      icon: <Lock fontSize="small" color="action" />,
+      icon: <Lock fontSize="md" color="action" />,
       secondary: (c: CredentialDto) => c.email ?? "",
     },
     {
       title: "Captcha services",
       items: rows.filter((c) => c.kind === "service"),
-      icon: <Key fontSize="small" color="action" />,
+      icon: <Key fontSize="md" color="action" />,
       secondary: (c: CredentialDto) => (c.hasApiKey ? "API key saved" : "No API key"),
     },
   ];
@@ -113,7 +113,7 @@ export function CredentialsSection(): ReactElement {
                         title="Delete credential"
                         onClick={() => void handleDelete(c)}
                       >
-                        <Delete fontSize="small" />
+                        <Delete fontSize="sm" />
                       </TooltipIconButton>
                     }
                   />

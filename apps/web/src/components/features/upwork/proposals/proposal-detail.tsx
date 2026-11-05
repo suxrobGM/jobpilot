@@ -103,10 +103,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
               <Button
                 variant="outlined"
                 startIcon={<Launch fontSize="md" />}
-                component="a"
                 href={proposal.jobUrl}
-                target="_blank"
-                rel="noopener noreferrer"
               >
                 Open posting
               </Button>

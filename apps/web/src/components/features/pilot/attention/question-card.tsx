@@ -43,8 +43,6 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
           {question.link && (
             <Link
               href={question.link}
-              target="_blank"
-              rel="noopener"
               sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
             >
               <OpenInNew fontSize="sm" />

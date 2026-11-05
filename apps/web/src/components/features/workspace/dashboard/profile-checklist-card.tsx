@@ -85,9 +85,9 @@ export function ProfileChecklistCard(): ReactNode {
             sx={{ alignItems: "center", minHeight: 36 }}
           >
             {item.done ? (
-              <CheckCircle fontSize="small" sx={{ color: "success.main" }} />
+              <CheckCircle fontSize="md" sx={{ color: "success.main" }} />
             ) : (
-              <RadioButtonUnchecked fontSize="small" sx={{ color: "text.disabled" }} />
+              <RadioButtonUnchecked fontSize="md" sx={{ color: "text.disabled" }} />
             )}
             <Typography
               variant="body2"

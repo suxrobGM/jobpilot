@@ -113,18 +113,9 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
 
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1 }}>
             <form.AppForm>
-              <form.SubmitButton disabled={save.isPending}>
-                {save.isPending ? "Saving" : "Save settings"}
-              </form.SubmitButton>
+              <form.SubmitButton loading={save.isPending}>Save settings</form.SubmitButton>
             </form.AppForm>
-            <Button
-              component="a"
-              href={publicUrl}
-              target="_blank"
-              rel="noopener"
-              variant="outlined"
-              endIcon={<OpenInNew />}
-            >
+            <Button href={publicUrl} variant="outlined" endIcon={<OpenInNew />}>
               View public page
             </Button>
           </Stack>

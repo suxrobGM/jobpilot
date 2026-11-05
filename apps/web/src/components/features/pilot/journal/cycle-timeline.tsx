@@ -64,7 +64,6 @@ function KindSummary(props: CycleEntriesProps): ReactNode {
       {kinds.map((kind) => (
         <Chip
           key={kind}
-          size="small"
           variant="outlined"
           color={KIND_META[kind].color}
           label={`${KIND_META[kind].label} ${counts.get(kind)}`}

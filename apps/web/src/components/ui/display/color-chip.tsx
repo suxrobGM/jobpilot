@@ -12,7 +12,7 @@ interface ColorChipProps<T extends string> {
 }
 
 export function ColorChip<T extends string>(props: ColorChipProps<T>): ReactElement {
-  const { value, colors, label, size = "small", variant = "outlined", sx } = props;
+  const { value, colors, label, size, variant = "outlined", sx } = props;
   return (
     <Chip size={size} variant={variant} label={label ?? value} color={colors[value]} sx={sx} />
   );

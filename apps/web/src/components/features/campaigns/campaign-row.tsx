@@ -55,7 +55,7 @@ export function CampaignRow(props: CampaignRowProps): ReactElement {
         <Stack spacing={0.5} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
             <CampaignStatusChip status={campaign.status} />
-            <Chip size="small" label={campaign.source} variant="outlined" />
+            <Chip label={campaign.source} variant="outlined" />
             <PilotBadge createdBy={campaign.createdBy} />
             <Box sx={{ flex: 1 }} />
             <Typography variant="captionMuted" noWrap>

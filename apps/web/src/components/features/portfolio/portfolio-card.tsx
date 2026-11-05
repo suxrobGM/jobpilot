@@ -54,9 +54,9 @@ export function PortfolioCard(props: PortfolioCardProps): ReactElement {
       {skills.length > 0 && (
         <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75 }}>
           {skills.map((skill) => (
-            <Chip key={skill} label={skill} size="small" variant="outlined" />
+            <Chip key={skill} label={skill} variant="outlined" />
           ))}
-          {overflow > 0 && <Chip label={`+${overflow} more`} size="small" />}
+          {overflow > 0 && <Chip label={`+${overflow} more`} />}
         </Stack>
       )}
     </Stack>
@@ -79,10 +79,7 @@ function PortfolioLinks(props: PortfolioCardProps): ReactNode {
     <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>
       {primaryResumeId && (
         <Button
-          component="a"
           href={`${API_BASE_URL}/api/public/resumes/${primaryResumeId}/pdf`}
-          target="_blank"
-          rel="noopener"
           variant="contained"
           startIcon={<Download />}
         >
@@ -91,13 +88,7 @@ function PortfolioLinks(props: PortfolioCardProps): ReactNode {
       )}
       {icons.map((link) => (
         <Tooltip key={link.key} title={link.title}>
-          <IconButton
-            component="a"
-            href={link.href ?? ""}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={link.title}
-          >
+          <IconButton href={link.href ?? ""} aria-label={link.title}>
             {link.icon}
           </IconButton>
         </Tooltip>

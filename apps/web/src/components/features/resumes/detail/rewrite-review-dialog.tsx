@@ -46,10 +46,7 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
             size="small"
             variant="outlined"
             startIcon={<OpenInNew fontSize="sm" />}
-            component="a"
             href={resumePdfUrl(resume.id, resume.updatedAt)}
-            target="_blank"
-            rel="noopener noreferrer"
           >
             Current PDF
           </Button>
@@ -57,10 +54,7 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
             size="small"
             variant="outlined"
             startIcon={<OpenInNew fontSize="sm" />}
-            component="a"
             href={variantPdfUrl(suggestion.id, suggestion.updatedAt)}
-            target="_blank"
-            rel="noopener noreferrer"
           >
             Rewritten PDF
           </Button>

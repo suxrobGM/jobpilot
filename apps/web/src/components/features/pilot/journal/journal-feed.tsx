@@ -160,7 +160,6 @@ export function JournalFeed(): ReactElement {
               return (
                 <Chip
                   key={kind}
-                  size="small"
                   label={KIND_META[kind].label}
                   color={selected ? KIND_META[kind].color : "default"}
                   variant={selected ? "filled" : "outlined"}

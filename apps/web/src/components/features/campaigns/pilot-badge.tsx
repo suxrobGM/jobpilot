@@ -16,7 +16,7 @@ export function PilotBadge(props: PilotBadgeProps): ReactNode {
       title="The Pilot started this one on its own, from your instructions."
       enterDelay={400}
     >
-      <Chip size="small" label="Pilot" color="info" variant="outlined" />
+      <Chip label="Pilot" color="info" variant="outlined" />
     </Tooltip>
   );
 }

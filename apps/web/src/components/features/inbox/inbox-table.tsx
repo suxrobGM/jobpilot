@@ -66,9 +66,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
         return (
           <Stack direction="row" spacing={0.5} sx={{ height: "100%", alignItems: "center" }}>
             <ColorChip value={c} colors={CLASS_COLORS} variant="filled" />
-            {p.row.reviewStatus === "auto" && (
-              <Chip size="small" label="auto" variant="outlined" color="info" />
-            )}
+            {p.row.reviewStatus === "auto" && <Chip label="auto" variant="outlined" color="info" />}
           </Stack>
         );
       },

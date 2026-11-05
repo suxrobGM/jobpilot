@@ -62,7 +62,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       minWidth: 200,
       renderCell: (p) => (
         <Stack direction="row" spacing={1} sx={{ alignItems: "center", height: "100%" }}>
-          <Link href={p.row.url} target="_blank" rel="noopener noreferrer" color="inherit" noWrap>
+          <Link href={p.row.url} color="inherit" noWrap>
             {p.row.title}
           </Link>
           <CapExemptChip job={p.row} />

@@ -97,7 +97,6 @@ export function JobAlertsPanel(): ReactElement {
               sx={{ alignItems: "center", flexWrap: "wrap" }}
             >
               <Chip
-                size="small"
                 color={status.settings.enabled ? "primary" : "default"}
                 label={status.settings.enabled ? "Scheduled" : "Off"}
               />

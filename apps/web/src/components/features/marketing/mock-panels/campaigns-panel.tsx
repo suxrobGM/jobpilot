@@ -41,13 +41,7 @@ export function CampaignsPanel(): ReactElement {
             variant="inset"
             sx={{ padding: 1.25, display: "flex", alignItems: "center", gap: 1.5 }}
           >
-            <Chip
-              size="small"
-              variant="outlined"
-              color={mode.color}
-              label={mode.title}
-              sx={{ minWidth: 104 }}
-            />
+            <Chip variant="outlined" color={mode.color} label={mode.title} sx={{ minWidth: 104 }} />
             <Typography variant="captionMuted" noWrap>
               {mode.body}
             </Typography>

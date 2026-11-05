@@ -30,7 +30,7 @@ export function AdminUsersTable(props: AdminUsersTableProps): ReactElement {
 
   return (
     <TableContainer>
-      <Table size="small">
+      <Table>
         <TableHead>
           <TableRow>
             <TableCell>Email</TableCell>

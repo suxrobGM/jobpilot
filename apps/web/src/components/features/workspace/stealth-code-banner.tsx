@@ -18,8 +18,6 @@ export function StealthCodeBanner(): ReactElement {
         </Typography>
         <Link
           href={STEALTH_CODE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
           variant="body2"
           sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
         >

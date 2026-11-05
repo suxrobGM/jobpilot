@@ -45,9 +45,7 @@ export function InboxPanel(): ReactElement {
                 <Typography variant="body2Strong" noWrap>
                   {message.from}
                 </Typography>
-                {message.approve && (
-                  <Chip size="small" variant="outlined" color="success" label="Approve" />
-                )}
+                {message.approve && <Chip variant="outlined" color="success" label="Approve" />}
               </Stack>
               <Typography variant="captionMuted" noWrap>
                 {message.subject}

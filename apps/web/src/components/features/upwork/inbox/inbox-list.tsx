@@ -121,19 +121,10 @@ export function InboxList(): ReactElement {
                     label={KIND_LABEL[item.kind]}
                     variant={item.status === "unread" ? "filled" : "outlined"}
                   />
-                  {item.clientName && (
-                    <Chip size="small" label={item.clientName} variant="outlined" />
-                  )}
+                  {item.clientName && <Chip label={item.clientName} variant="outlined" />}
                   <Box sx={{ flex: 1 }} />
                   {item.jobUrl && (
-                    <Button
-                      size="small"
-                      startIcon={<Launch fontSize="sm" />}
-                      component="a"
-                      href={item.jobUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <Button size="small" startIcon={<Launch fontSize="sm" />} href={item.jobUrl}>
                       Open
                     </Button>
                   )}

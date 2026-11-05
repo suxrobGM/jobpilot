@@ -35,13 +35,7 @@ import {
   svgIconOverrides,
   typographyOverrides,
 } from "./misc";
-import {
-  tableBodyOverrides,
-  tableCellOverrides,
-  tableHeadOverrides,
-  tableOverrides,
-  tableRowOverrides,
-} from "./table";
+import { tableCellOverrides, tableHeadOverrides, tableOverrides, tableRowOverrides } from "./table";
 import { tabOverrides, tabsOverrides } from "./tabs";
 import { toggleButtonGroupOverrides, toggleButtonOverrides } from "./toggle-button";
 
@@ -77,7 +71,6 @@ export const componentOverrides: Components<Theme> = {
   MuiSvgIcon: svgIconOverrides,
   MuiTab: tabOverrides,
   MuiTable: tableOverrides,
-  MuiTableBody: tableBodyOverrides,
   MuiTableCell: tableCellOverrides,
   MuiTableHead: tableHeadOverrides,
   MuiTableRow: tableRowOverrides,

@@ -121,7 +121,7 @@ function AnswerRow(props: AnswerRowProps): ReactElement {
         </Typography>
       </Box>
       <TooltipIconButton title="Edit" aria-label={`Edit ${label}`} size="small" onClick={onEdit}>
-        <Edit fontSize="small" />
+        <Edit fontSize="sm" />
       </TooltipIconButton>
       <TooltipIconButton
         title="Delete"
@@ -129,7 +129,7 @@ function AnswerRow(props: AnswerRowProps): ReactElement {
         size="small"
         onClick={onDelete}
       >
-        <Delete fontSize="small" />
+        <Delete fontSize="sm" />
       </TooltipIconButton>
     </Stack>
   );

@@ -26,7 +26,7 @@ export function ApplicationsTable(props: ApplicationsTableProps): ReactElement {
 
   return (
     <Box sx={{ overflowX: "auto" }}>
-      <Table size="small">
+      <Table>
         <TableHead>
           <TableRow>
             <TableCell>Role</TableCell>

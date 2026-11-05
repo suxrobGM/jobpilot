@@ -41,7 +41,7 @@ export function CopyField(props: CopyFieldProps): ReactElement {
       </Box>
       <Tooltip title="Copy">
         <IconButton onClick={() => void copy()} aria-label={ariaLabel}>
-          <ContentCopy fontSize="small" />
+          <ContentCopy fontSize="sm" />
         </IconButton>
       </Tooltip>
     </Stack>

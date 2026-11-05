@@ -35,7 +35,7 @@ export function SectionBlock(props: SectionBlockProps): ReactElement {
       >
         <AccordionSummary>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
-            <Icon fontSize="small" sx={{ color: "text.secondary" }} />
+            <Icon fontSize="md" sx={{ color: "text.secondary" }} />
             <Typography variant="body1Strong">{section.label}</Typography>
             <Typography variant="captionMuted" sx={{ ml: "auto", pr: 1 }}>
               {summary}

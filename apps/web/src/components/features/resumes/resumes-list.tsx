@@ -141,12 +141,11 @@ export function ResumesList(): ReactElement {
                   >
                     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                       <Typography variant="body1Strong">{r.label}</Typography>
-                      {r.isPrimary && <Chip label="Primary" size="small" color="primary" />}
-                      {!r.hasData && <Chip label="No structure" size="small" variant="outlined" />}
+                      {r.isPrimary && <Chip label="Primary" color="primary" />}
+                      {!r.hasData && <Chip label="No structure" variant="outlined" />}
                       {r.variantCount > 0 && (
                         <Chip
                           label={`${r.variantCount} variant${r.variantCount === 1 ? "" : "s"}`}
-                          size="small"
                           variant="outlined"
                         />
                       )}
@@ -163,13 +162,7 @@ export function ResumesList(): ReactElement {
                   >
                     {r.isPrimary ? <Star fontSize="md" /> : <StarBorder fontSize="md" />}
                   </IconButton>
-                  <IconButton
-                    component="a"
-                    href={resumePdfUrl(r.id, r.updatedAt)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Open PDF"
-                  >
+                  <IconButton href={resumePdfUrl(r.id, r.updatedAt)} aria-label="Open PDF">
                     <PictureAsPdf fontSize="md" />
                   </IconButton>
                 </Stack>

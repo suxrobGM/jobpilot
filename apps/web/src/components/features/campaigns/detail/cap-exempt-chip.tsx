@@ -21,7 +21,6 @@ export function CapExemptChip(props: CapExemptChipProps): ReactNode {
   return (
     <Tooltip title={BASIS_LABELS[job.capExemptBasis]}>
       <Chip
-        size="small"
         variant="outlined"
         color="success"
         label="Cap-exempt"

@@ -51,7 +51,8 @@ export function DockPanel(): ReactElement {
           alignItems: "center",
           paddingInline: theme.spacing(1.75),
           paddingBlock: theme.spacing(1.25),
-          borderBottom: `1px solid ${theme.palette.line.divider}`,
+          borderBottom: 1,
+          borderColor: "divider",
         })}
       >
         <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
@@ -120,7 +121,8 @@ export function DockPanel(): ReactElement {
               alignItems: "center",
               paddingInline: theme.spacing(1.5),
               paddingBlock: theme.spacing(0.75),
-              borderBottom: `1px solid ${theme.palette.line.divider}`,
+              borderBottom: 1,
+              borderColor: "divider",
             })}
           >
             <Typography variant="captionMuted" sx={{ flex: 1 }}>

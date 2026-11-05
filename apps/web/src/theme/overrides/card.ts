@@ -23,22 +23,6 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
       }),
     },
     {
-      props: { variant: "live" },
-      style: ({ theme }) => {
-        const flame = theme.palette.accent.primary;
-        return {
-          cursor: "pointer",
-          border: `1px solid ${alpha(flame, 0.45)}`,
-          backgroundColor: alpha(flame, 0.07),
-          boxShadow: `0 0 0 1px ${alpha(flame, 0.18)}, 0 6px 24px ${alpha(flame, 0.15)}`,
-          "&:hover": {
-            borderColor: alpha(flame, 0.7),
-            backgroundColor: alpha(flame, 0.11),
-          },
-        };
-      },
-    },
-    {
       props: { variant: "lift" },
       style: ({ theme }) => ({
         height: "100%",

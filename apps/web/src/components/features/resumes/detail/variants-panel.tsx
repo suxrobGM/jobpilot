@@ -156,7 +156,6 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
                               <Typography variant="body2Strong">{v.label}</Typography>
                               <Chip
                                 label={v.applicationId ? "Applied with this" : "Unused"}
-                                size="small"
                                 variant="outlined"
                                 color={v.applicationId ? "success" : "default"}
                               />
@@ -167,10 +166,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
                             </Typography>
                           </Box>
                           <IconButton
-                            component="a"
                             href={variantPdfUrl(v.id, v.updatedAt)}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             aria-label="Open variant PDF"
                           >
                             <OpenInNew fontSize="md" />

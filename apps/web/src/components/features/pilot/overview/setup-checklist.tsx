@@ -98,9 +98,9 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
         {steps.map((step) => (
           <Stack key={step.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
             {step.done ? (
-              <CheckCircle fontSize="small" sx={{ color: "success.main" }} />
+              <CheckCircle fontSize="md" sx={{ color: "success.main" }} />
             ) : (
-              <RadioButtonUnchecked fontSize="small" sx={{ color: "text.disabled" }} />
+              <RadioButtonUnchecked fontSize="md" sx={{ color: "text.disabled" }} />
             )}
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography variant="body1Strong">{step.label}</Typography>

@@ -88,9 +88,9 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
             type="submit"
             variant="contained"
             startIcon={<Save fontSize="md" />}
-            disabled={save.isPending}
+            loading={save.isPending}
           >
-            {save.isPending ? "Saving" : "Save settings"}
+            Save settings
           </Button>
         </Stack>
       </Stack>

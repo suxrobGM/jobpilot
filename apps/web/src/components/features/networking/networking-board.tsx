@@ -108,9 +108,9 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
 
       <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>
         {config?.channels.map((c) => (
-          <Chip key={c} size="small" label={c} variant="outlined" />
+          <Chip key={c} label={c} variant="outlined" />
         ))}
-        {config?.autonomy && <Chip size="small" label={`autonomy: ${config.autonomy}`} />}
+        {config?.autonomy && <Chip label={`autonomy: ${config.autonomy}`} />}
       </Stack>
 
       {config?.channels.includes("email") && !canSend && (

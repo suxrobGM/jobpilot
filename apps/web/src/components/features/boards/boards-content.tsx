@@ -98,7 +98,7 @@ export function BoardsContent(): ReactElement {
         />
       ) : (
         <TableContainer>
-          <Table size="small">
+          <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>

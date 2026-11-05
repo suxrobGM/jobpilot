@@ -40,7 +40,7 @@ export function CampaignIdentityBanner(): ReactNode {
     >
       <PersonOutlined fontSize="sm" color="action" />
       <Typography variant="body2Strong">Applying as {name || "your profile"}</Typography>
-      <Chip size="small" label={profile.contactEmail} variant="outlined" />
+      <Chip label={profile.contactEmail} variant="outlined" />
     </Stack>
   );
 }

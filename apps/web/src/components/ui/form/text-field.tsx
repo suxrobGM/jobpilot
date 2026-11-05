@@ -36,7 +36,7 @@ export function TextField(props: TextFieldProps): ReactElement {
           size="small"
           aria-label={showPassword ? "Hide password" : "Show password"}
         >
-          {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+          {showPassword ? <VisibilityOff fontSize="sm" /> : <Visibility fontSize="sm" />}
         </IconButton>
       </Tooltip>
     </InputAdornment>

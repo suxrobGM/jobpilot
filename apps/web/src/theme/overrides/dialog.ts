@@ -1,4 +1,4 @@
-import type { Components, Theme } from "@mui/material/styles";
+import { alpha, type Components, type Theme } from "@mui/material/styles";
 
 export const dialogOverrides: Components<Theme>["MuiDialog"] = {
   styleOverrides: {
@@ -24,6 +24,9 @@ export const dialogActionsOverrides: Components<Theme>["MuiDialogActions"] = {
 
 export const backdropOverrides: Components<Theme>["MuiBackdrop"] = {
   styleOverrides: {
-    root: { backgroundColor: "rgba(8,8,7,0.6)", backdropFilter: "blur(3px)" },
+    root: ({ theme }) => ({
+      backgroundColor: alpha(theme.palette.surfaces.base, 0.6),
+      backdropFilter: "blur(3px)",
+    }),
   },
 };

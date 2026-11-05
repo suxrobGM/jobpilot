@@ -16,7 +16,7 @@ export function FeedbackMenu(): ReactElement {
     <>
       <Tooltip title="Feedback" placement="right">
         <IconButton size="small" onClick={handleOpen} sx={{ color: "text.secondary" }}>
-          <Feedback fontSize="small" />
+          <Feedback fontSize="md" />
         </IconButton>
       </Tooltip>
       <Menu
@@ -36,7 +36,7 @@ export function FeedbackMenu(): ReactElement {
             onClick={handleClose}
           >
             <ListItemIcon>
-              <link.icon fontSize="small" />
+              <link.icon fontSize="md" />
             </ListItemIcon>
             <ListItemText>{link.label}</ListItemText>
           </MenuItem>

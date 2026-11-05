@@ -80,7 +80,7 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
           aria-label="Dismiss update notice"
           onClick={() => setDismissed(true)}
         >
-          <Close fontSize="small" />
+          <Close fontSize="sm" />
         </IconButton>
       }
     >

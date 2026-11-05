@@ -34,8 +34,8 @@ function DraftRow(props: DraftRowProps): ReactElement {
   return (
     <Box>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-        <Chip size="small" color="primary" label={promotion.platform} />
-        {promotion.target && <Chip size="small" variant="outlined" label={promotion.target} />}
+        <Chip color="primary" label={promotion.platform} />
+        {promotion.target && <Chip variant="outlined" label={promotion.target} />}
         <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
           {promotion.title ?? promotion.body}
         </Typography>
@@ -117,7 +117,7 @@ export function NeedsAttention(): ReactElement {
   return (
     <SectionCard
       title="Needs attention"
-      actions={count > 0 && <Chip size="small" color="warning" label={count} />}
+      actions={count > 0 && <Chip color="warning" label={count} />}
     >
       <Stack spacing={2}>
         <QuerySection

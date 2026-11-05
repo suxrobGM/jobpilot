@@ -57,8 +57,8 @@ export function LoginForm(): ReactElement {
         </Typography>
 
         <form.AppForm>
-          <form.SubmitButton disabled={login.isPending} fullWidth size="large">
-            {login.isPending ? "Signing in…" : "Sign in"}
+          <form.SubmitButton loading={login.isPending} fullWidth size="large">
+            Sign in
           </form.SubmitButton>
         </form.AppForm>
 

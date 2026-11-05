@@ -60,8 +60,8 @@ export function ForgotPasswordForm(): ReactElement {
         </form.AppField>
 
         <form.AppForm>
-          <form.SubmitButton disabled={forgotPassword.isPending} fullWidth size="large">
-            {forgotPassword.isPending ? "Sending…" : "Send reset link"}
+          <form.SubmitButton loading={forgotPassword.isPending} fullWidth size="large">
+            Send reset link
           </form.SubmitButton>
         </form.AppForm>
 

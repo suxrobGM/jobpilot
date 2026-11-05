@@ -76,8 +76,8 @@ export function ChangeEmailCard(): ReactElement {
           )}
 
           <form.AppForm>
-            <form.SubmitButton disabled={changeEmail.isPending}>
-              {changeEmail.isPending ? "Sending…" : "Send confirmation link"}
+            <form.SubmitButton loading={changeEmail.isPending}>
+              Send confirmation link
             </form.SubmitButton>
           </form.AppForm>
         </Stack>

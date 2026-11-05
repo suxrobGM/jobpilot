@@ -72,7 +72,7 @@ export function MobileNav(): ReactElement {
       label={item.label}
       icon={
         <NavBadge badge={item.badge}>
-          <item.icon fontSize="small" />
+          <item.icon fontSize="md" />
         </NavBadge>
       }
     />
@@ -91,7 +91,8 @@ export function MobileNav(): ReactElement {
           bottom: 0,
           height: MOBILE_NAV_HEIGHT,
           zIndex: theme.zIndex.appBar,
-          borderTop: `1px solid ${theme.palette.line.divider}`,
+          borderTop: 1,
+          borderColor: "divider",
           backgroundColor: theme.palette.surfaces.base,
           // Five tabs at MUI's 80px minimum overflow a 390px phone - share the width evenly instead.
           "& .MuiBottomNavigationAction-root": { minWidth: 0, paddingInline: 0.5 },
@@ -112,7 +113,7 @@ export function MobileNav(): ReactElement {
           label="More"
           icon={
             <NavBadge badge={moreBadge}>
-              <MoreHoriz fontSize="small" />
+              <MoreHoriz fontSize="md" />
             </NavBadge>
           }
           onClick={() => setMoreOpen(true)}
@@ -132,7 +133,7 @@ export function MobileNav(): ReactElement {
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
                 <NavBadge badge={item.badge}>
-                  <item.icon fontSize="small" />
+                  <item.icon fontSize="md" />
                 </NavBadge>
               </ListItemIcon>
               <ListItemText primary={item.label} />
@@ -149,7 +150,7 @@ export function MobileNav(): ReactElement {
               onClick={() => setMoreOpen(false)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
-                <link.icon fontSize="small" />
+                <link.icon fontSize="md" />
               </ListItemIcon>
               <ListItemText primary={link.label} />
             </ListItemButton>

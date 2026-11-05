@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, type ReactElement, Suspense } from "react";
-import { alpha, Box, Divider, Stack } from "@mui/material";
+import { Box, Divider, Stack } from "@mui/material";
 import NextLink from "next/link";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 import { AccountMenu } from "@/components/features/profile/account-menu";
@@ -26,7 +26,8 @@ export function Rail(): ReactElement {
         flexShrink: 0,
         height: "100%",
         paddingBlock: theme.spacing(1.5),
-        borderRight: `1px solid ${theme.palette.line.divider}`,
+        borderRight: 1,
+        borderColor: "divider",
         backgroundColor: theme.palette.surfaces.base,
       })}
     >
@@ -40,10 +41,10 @@ export function Rail(): ReactElement {
           textDecoration: "none",
           borderRadius: theme.radii.sm,
           transition: theme.motion.standard,
-          filter: `drop-shadow(0 2px 8px rgba(0,0,0,0.4)) drop-shadow(0 0 12px ${alpha(theme.palette.accent.primary, 0.22)})`,
+          filter: theme.shadows_custom.markGlow,
           "&:hover": {
             transform: "translateY(-1px)",
-            filter: `drop-shadow(0 6px 18px rgba(0,0,0,0.5)) drop-shadow(0 0 20px ${alpha(theme.palette.accent.primary, 0.45)})`,
+            filter: theme.shadows_custom.markGlowHover,
           },
           "&:focus-visible": { outline: "none", boxShadow: theme.shadows_custom.focus },
         })}

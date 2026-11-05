@@ -99,7 +99,7 @@ function JobHeader(props: JobDetailProps): ReactElement {
         {job.employmentType && <Typography variant="body2Muted">{job.employmentType}</Typography>}
         <RemoteBadge job={job} />
         {job.yearsExperience !== null && (
-          <Chip label={`${job.yearsExperience}+ years`} size="small" variant="outlined" />
+          <Chip label={`${job.yearsExperience}+ years`} variant="outlined" />
         )}
       </Stack>
 
@@ -131,8 +131,6 @@ function ApplyOnBoard(props: ApplyOnBoardProps): ReactElement {
       variant="contained"
       href={source.url}
       LinkComponent="a"
-      target="_blank"
-      rel="noopener noreferrer"
       endIcon={<OpenInNew fontSize="sm" />}
     >
       {source.board ? `Apply on ${source.board}` : "Apply on the original posting"}

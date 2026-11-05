@@ -29,7 +29,7 @@ export function AdminBoardsTable(props: AdminBoardsTableProps): ReactElement {
 
   return (
     <TableContainer>
-      <Table size="small">
+      <Table>
         <TableHead>
           <TableRow>
             <TableCell>Name</TableCell>
@@ -57,14 +57,11 @@ export function AdminBoardsTable(props: AdminBoardsTableProps): ReactElement {
               <TableCell>
                 <Stack direction="row" spacing={0.5}>
                   <Chip
-                    size="small"
                     variant="outlined"
                     color={board.listed ? "primary" : "default"}
                     label={board.listed ? "listed" : "unlisted"}
                   />
-                  {board.isDefault && (
-                    <Chip size="small" variant="outlined" color="success" label="default" />
-                  )}
+                  {board.isDefault && <Chip variant="outlined" color="success" label="default" />}
                 </Stack>
               </TableCell>
               <TableCell align="right">{board.adoption}</TableCell>

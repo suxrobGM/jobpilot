@@ -53,7 +53,8 @@ export function MarketingNav(): ReactElement {
         position: "sticky",
         top: 0,
         zIndex: theme.zIndex.appBar,
-        borderBottom: `1px solid ${theme.palette.line.divider}`,
+        borderBottom: 1,
+        borderColor: "divider",
         backgroundColor: `color-mix(in srgb, ${theme.palette.surfaces.base} 86%, transparent)`,
         backdropFilter: "blur(8px)",
       })}

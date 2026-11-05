@@ -1,20 +1,13 @@
 import type { Components, Theme } from "@mui/material/styles";
+import { listOption, listPaper } from "./menu";
 
-/** The popup is an MuiAutocomplete slot, not MuiMenu, so it needs its own border/shadow to lift off the page. */
+/** The popup is an MuiAutocomplete slot, not MuiMenu, so it takes the menu styles explicitly. */
 export const autocompleteOverrides: Components<Theme>["MuiAutocomplete"] = {
   styleOverrides: {
-    paper: ({ theme }) => ({
-      borderRadius: theme.radii.md,
-      border: `1px solid ${theme.palette.line.divider}`,
-      boxShadow: theme.shadows_custom.md,
-    }),
+    paper: ({ theme }) => listPaper(theme),
     listbox: { paddingBlock: 4 },
     option: ({ theme }) => ({
-      fontSize: "0.875rem",
-      borderRadius: theme.radii.xs,
-      marginInline: 4,
-      paddingBlock: 6,
-      "&:hover": { backgroundColor: theme.palette.surfaces.hover },
+      ...listOption(theme),
       '&[aria-selected="true"]': {
         backgroundColor: theme.tints.selected,
         "&:hover": { backgroundColor: theme.tints.selectedHover },

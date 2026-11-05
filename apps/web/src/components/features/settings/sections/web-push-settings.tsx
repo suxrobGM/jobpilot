@@ -197,12 +197,7 @@ export function WebPushSettings(): ReactNode {
                         {device.userAgent ?? "Unknown device"}
                       </Typography>
                       {device.endpoint === currentEndpoint && (
-                        <Chip
-                          label="This device"
-                          size="small"
-                          color="primary"
-                          sx={{ flexShrink: 0 }}
-                        />
+                        <Chip label="This device" color="primary" sx={{ flexShrink: 0 }} />
                       )}
                     </Box>
                   }

@@ -27,7 +27,7 @@ export function TabLink(props: TabLinkProps): ReactElement {
         alignItems: "center",
         minHeight: 38,
         px: 1.5,
-        fontSize: "0.875rem",
+        fontSize: theme.typography.body1.fontSize,
         fontWeight: 500,
         textDecoration: "none",
         color: active ? "accent.primary" : "text.secondary",

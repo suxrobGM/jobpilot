@@ -27,7 +27,7 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
 
   return (
     <TableContainer>
-      <Table size="small">
+      <Table>
         <TableHead>
           <TableRow>
             <TableCell>Email</TableCell>
@@ -45,7 +45,6 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
               <TableCell sx={{ fontWeight: 600 }}>{pilot.userEmail}</TableCell>
               <TableCell>
                 <Chip
-                  size="small"
                   color={pilot.running ? "success" : "default"}
                   label={pilot.running ? "Running" : "Stopped"}
                 />
@@ -60,7 +59,6 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
               <TableCell align="right">{pilot.cycleCount}</TableCell>
               <TableCell align="right">
                 <Chip
-                  size="small"
                   variant={pilot.openQuestions > 0 ? "filled" : "outlined"}
                   color={pilot.openQuestions > 0 ? "error" : "default"}
                   label={pilot.openQuestions}

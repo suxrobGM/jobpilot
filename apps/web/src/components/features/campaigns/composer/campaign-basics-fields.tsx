@@ -131,7 +131,6 @@ export const CampaignBasicsFields = withForm({
                     <Tooltip key={recent.query} title={recent.query}>
                       <Chip
                         label={recent.query}
-                        size="small"
                         variant="outlined"
                         sx={{ maxWidth: 280 }}
                         onClick={() => pickRecent(recent)}

@@ -8,19 +8,12 @@ interface ExternalLinkProps {
   truncateTo?: number;
 }
 
-/**
- * External link with standard new-tab / noopener / inherited-color styling (e.g. grid cells).
- * `component="a"` is explicit: next/link is the theme's default for MuiLink, and it has no business
- * rendering an off-site URL.
- */
+/** An inherited-color link for grid cells; the theme's link component opens it in a new tab. */
 export function ExternalLink(props: ExternalLinkProps): ReactElement {
   const { href, children, truncateTo } = props;
   return (
     <Link
-      component="a"
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
       color="inherit"
       sx={
         truncateTo

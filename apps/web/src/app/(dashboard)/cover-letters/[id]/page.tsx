@@ -47,24 +47,14 @@ async function CoverLetter(props: PageProps): Promise<ReactElement> {
         actions={
           <>
             {letter.jobUrl && (
-              <Button
-                variant="outlined"
-                startIcon={<Launch fontSize="md" />}
-                component="a"
-                href={letter.jobUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Button variant="outlined" startIcon={<Launch fontSize="md" />} href={letter.jobUrl}>
                 Open posting
               </Button>
             )}
             <Button
               variant="outlined"
               startIcon={<PictureAsPdf fontSize="md" />}
-              component="a"
               href={`${API_BASE_URL}/api/cover-letters/${letter.id}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
             >
               Open PDF
             </Button>
@@ -75,14 +65,7 @@ async function CoverLetter(props: PageProps): Promise<ReactElement> {
 
       <SectionCard
         title="Cover letter"
-        actions={
-          <Chip
-            size="small"
-            label={letter.source}
-            variant="outlined"
-            sx={{ textTransform: "none" }}
-          />
-        }
+        actions={<Chip label={letter.source} variant="outlined" sx={{ textTransform: "none" }} />}
       >
         <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
           {letter.content}

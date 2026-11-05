@@ -44,9 +44,9 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
           variant="outlined"
           startIcon={<CloudSync />}
           onClick={() => sync.mutate()}
-          disabled={sync.isPending}
+          loading={sync.isPending}
         >
-          {sync.isPending ? "Syncing" : "Sync"}
+          Sync
         </Button>
       </Tooltip>
       <AgentOnlyButton

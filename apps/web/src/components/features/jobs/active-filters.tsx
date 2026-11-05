@@ -48,7 +48,6 @@ export function ActiveFilters(): ReactNode {
         <Chip
           key={filter.key}
           label={filter.label}
-          size="small"
           variant="outlined"
           onDelete={() => drop(filter.key)}
         />

@@ -10,7 +10,6 @@ export const fontFamilies = {
 
 const displayStretch = "125%";
 
-/** `docsH4` reuses this size so an h4 sits flush with the prose around it. */
 const monoPill = {
   fontFamily: fontFamilies.mono,
   display: "inline-block",
@@ -21,6 +20,7 @@ const monoPill = {
   backgroundColor: surfaces.elevated,
 };
 
+/** `docsH4` reuses this size so an h4 sits flush with the prose around it. */
 const docsBody = {
   fontFamily: fontFamilies.body,
   fontSize: "0.9375rem",
@@ -33,6 +33,25 @@ const docsHeading = {
   fontFamily: fontFamilies.body,
   fontWeight: 600,
 } as const;
+
+// The Muted and Strong variants are these plus one property, so the scale has one source.
+const body1 = { fontFamily: fontFamilies.body, fontSize: "0.8125rem", lineHeight: 1.55 } as const;
+const body2 = { fontFamily: fontFamilies.body, fontSize: "0.75rem", lineHeight: 1.5 } as const;
+const caption = {
+  fontFamily: fontFamilies.body,
+  fontSize: "0.6875rem",
+  letterSpacing: "0",
+} as const;
+const overline = {
+  fontFamily: fontFamilies.body,
+  fontSize: "0.6875rem",
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  lineHeight: 1,
+  fontWeight: 600,
+} as const;
+const muted = { color: textColors.secondary } as const;
+const strong = { fontWeight: 600 } as const;
 
 export const typography: TypographyVariantsOptions = {
   fontFamily: fontFamilies.body,
@@ -80,8 +99,8 @@ export const typography: TypographyVariantsOptions = {
     fontSize: "0.8125rem",
     lineHeight: 1.4,
   },
-  body1: { fontFamily: fontFamilies.body, fontSize: "0.8125rem", lineHeight: 1.55 },
-  body2: { fontFamily: fontFamilies.body, fontSize: "0.75rem", lineHeight: 1.5 },
+  body1,
+  body2,
   button: {
     fontFamily: fontFamilies.body,
     textTransform: "none",
@@ -89,46 +108,12 @@ export const typography: TypographyVariantsOptions = {
     fontSize: "0.8125rem",
     letterSpacing: 0,
   },
-  caption: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.6875rem",
-    letterSpacing: "0",
-  },
-  overline: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.6875rem",
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    lineHeight: 1,
-    fontWeight: 600,
-  },
-  overlineMuted: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.6875rem",
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    lineHeight: 1,
-    fontWeight: 600,
-    color: textColors.secondary,
-  },
-  body1Muted: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.8125rem",
-    lineHeight: 1.55,
-    color: textColors.secondary,
-  },
-  body2Muted: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.75rem",
-    lineHeight: 1.5,
-    color: textColors.secondary,
-  },
-  captionMuted: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.6875rem",
-    letterSpacing: "0",
-    color: textColors.secondary,
-  },
+  caption,
+  overline,
+  overlineMuted: { ...overline, ...muted },
+  body1Muted: { ...body1, ...muted },
+  body2Muted: { ...body2, ...muted },
+  captionMuted: { ...caption, ...muted },
   // Callers override `fontSize`: ring labels run smaller than board chips.
   monoChip: { ...monoPill, fontSize: "0.75rem", lineHeight: 1.55, padding: "4px 10px" },
   skillChip: { ...monoPill, fontSize: "0.7rem", lineHeight: 1.5, padding: "2px 8px" },
@@ -149,18 +134,8 @@ export const typography: TypographyVariantsOptions = {
     fontWeight: 600,
     color: textColors.secondary,
   },
-  body1Strong: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.8125rem",
-    lineHeight: 1.55,
-    fontWeight: 600,
-  },
-  body2Strong: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.75rem",
-    lineHeight: 1.5,
-    fontWeight: 600,
-  },
+  body1Strong: { ...body1, ...strong },
+  body2Strong: { ...body2, ...strong },
   lead: {
     fontFamily: fontFamilies.body,
     fontSize: "clamp(0.875rem, 0.8rem + 0.3vw, 1rem)",

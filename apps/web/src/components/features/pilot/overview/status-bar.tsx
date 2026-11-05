@@ -117,12 +117,7 @@ export function StatusBar(props: StatusBarProps): ReactElement {
                   <ColorChip value={pilot.lastCycleStatus} colors={CYCLE_STATUS_COLOR} />
                 )}
                 {timeouts > 0 && (
-                  <Chip
-                    color="warning"
-                    variant="outlined"
-                    label={plural(timeouts, "timeout")}
-                    size="small"
-                  />
+                  <Chip color="warning" variant="outlined" label={plural(timeouts, "timeout")} />
                 )}
               </Stack>
             </Box>

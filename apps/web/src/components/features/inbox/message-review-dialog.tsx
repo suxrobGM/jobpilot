@@ -124,10 +124,8 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
             <Typography variant="captionMuted">{m.fromDomain}</Typography>
             <Typography variant="captionMuted">·</Typography>
             <RelativeTime value={m.receivedAt} />
-            {m.classification && <Chip size="small" label={m.classification} />}
-            {m.reviewStatus === "auto" && (
-              <Chip size="small" label="auto" color="info" variant="outlined" />
-            )}
+            {m.classification && <Chip label={m.classification} />}
+            {m.reviewStatus === "auto" && <Chip label="auto" color="info" variant="outlined" />}
           </Stack>
 
           {m.reasoning && <Typography variant="captionMuted">Reasoning: {m.reasoning}</Typography>}

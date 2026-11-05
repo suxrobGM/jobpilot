@@ -26,6 +26,7 @@ export const cssBaselineOverrides: Components<Theme>["MuiCssBaseline"] = {
 };
 
 export const chipOverrides: Components<Theme>["MuiChip"] = {
+  defaultProps: { size: "small" },
   styleOverrides: {
     root: ({ theme }) => ({
       borderRadius: theme.radii.sm,

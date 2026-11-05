@@ -15,6 +15,12 @@ export const accent = {
   dark: "#D9532A",
 } as const;
 
+/** Text on a filled accent: near-black, tinted toward the fill so it doesn't read as a hole. */
+export const onAccent = {
+  primary: "#1A0A05",
+  secondary: "#0A1220",
+} as const;
+
 export const textColors = {
   primary: "#F4F2EE",
   secondary: "#A7A49D",

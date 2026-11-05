@@ -137,7 +137,7 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
                           {task.title}
                         </Typography>
                       </Box>
-                      <Chip size="small" variant="outlined" label={task.subjectType} />
+                      <Chip variant="outlined" label={task.subjectType} />
                     </Stack>
                   ))}
                 </Stack>

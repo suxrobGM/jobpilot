@@ -31,9 +31,9 @@ export function VerifyEmailBanner(): ReactElement | null {
           color="inherit"
           size="small"
           onClick={() => resend.mutate()}
-          disabled={resend.isPending}
+          loading={resend.isPending}
         >
-          {resend.isPending ? "Sending…" : "Resend email"}
+          Resend email
         </Button>
       }
     >
