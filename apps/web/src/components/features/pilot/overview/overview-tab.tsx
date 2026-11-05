@@ -5,7 +5,7 @@ import { Grid, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
-import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
+import { useTerminalHealth } from "@/hooks/use-terminal-health";
 import { NeedsAttention } from "../attention/needs-attention";
 import { JobAlertsPanel } from "../job-alerts/job-alerts-panel";
 import { pilotMode } from "../pilot-status";

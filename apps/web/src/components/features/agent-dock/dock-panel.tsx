@@ -13,6 +13,7 @@ import {
 import { TerminalPanel } from "@/components/features/terminal/terminal-panel";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
+import type { TerminalHealth } from "@/hooks/use-terminal-health";
 import { readAgentStorage } from "@/lib/agent-storage";
 import { providerDisplayName } from "@/lib/terminal";
 import { useAgentDock } from "@/providers/agent-provider";
@@ -22,7 +23,6 @@ import { AgentOrb } from "./agent-orb";
 import { PendingRestartCard } from "./update/pending-restart-card";
 import { AgentUpdateBanner } from "./update/update-banner";
 import { useDockHealth } from "./use-dock-health";
-import type { TerminalHealth } from "./use-terminal-health";
 
 const STATUS_LABELS: Record<TerminalHealth, string> = {
   checking: "connecting",

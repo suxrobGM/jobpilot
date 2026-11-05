@@ -7,10 +7,10 @@ import { AgentOnlyButton } from "@/components/ui/buttons";
 import { StatusChip } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
 import { useClockTick } from "@/hooks/use-clock-tick";
+import type { TerminalHealth } from "@/hooks/use-terminal-health";
 import { type PilotHealth, providerDisplayName } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime, plural } from "@/utils/format";
-import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import {
   hasGoals,
   idleCaption,

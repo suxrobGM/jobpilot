@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { type TerminalHealthState, useTerminalHealth } from "./use-terminal-health";
+import { type TerminalHealthState, useTerminalHealth } from "@/hooks/use-terminal-health";
 
 export type PendingAction = "updating" | "starting" | "stopping";
 

@@ -2,9 +2,9 @@
 
 import type { ReactElement } from "react";
 import { Alert, Stack, Typography } from "@mui/material";
-import { useTerminalHealth } from "@/components/features/agent-dock/use-terminal-health";
 import { PluginInstallCommands } from "@/components/features/install";
 import { LoadingSpinner } from "@/components/ui/feedback";
+import { useTerminalHealth } from "@/hooks/use-terminal-health";
 
 /** Onboarding's "Connect agent" step: detects a running host, or shows compact install commands. */
 export function AgentSetupStep(): ReactElement {

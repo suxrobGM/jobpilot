@@ -8,8 +8,8 @@ import { emailQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { ChecklistRow } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
+import type { TerminalHealth } from "@/hooks/use-terminal-health";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
-import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { hasGoals } from "../pilot-status";
 
 interface ChecklistStep {
