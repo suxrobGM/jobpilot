@@ -21,7 +21,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { EmptyState, QuerySection } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";

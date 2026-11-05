@@ -7,7 +7,7 @@ import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
 import { CoverLetterActions } from "@/components/features/cover-letters";
-import { DetailSkeleton } from "@/components/ui/data";
+import { DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { formatAbsoluteTime } from "@/utils/format";
 

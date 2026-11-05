@@ -12,7 +12,7 @@ import type { PortfolioSettingsDto } from "@/api/types";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { SectionCard } from "@/components/ui/layout";
 import { toPortfolioFormValues } from "./portfolio-form-values";
 import { PortfolioView } from "./portfolio-view";
 import { PortfolioVisibilityFields } from "./portfolio-visibility-fields";

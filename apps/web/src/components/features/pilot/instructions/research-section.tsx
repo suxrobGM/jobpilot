@@ -10,7 +10,7 @@ import { queryKeys } from "@/api/query-keys";
 import type { ResearchStatusDto } from "@/api/types";
 import { isRunPending } from "@/components/features/pilot/job-alerts/use-job-alerts";
 import { LinkButton } from "@/components/ui/buttons";
-import { QuerySection } from "@/components/ui/data";
+import { QuerySection } from "@/components/ui/feedback";
 import { formatRelativeTime } from "@/utils/format";
 import { campaignHref } from "@/utils/routes";
 

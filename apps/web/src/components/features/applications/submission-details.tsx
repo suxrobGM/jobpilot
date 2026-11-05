@@ -10,8 +10,8 @@ import {
 } from "@mui/material";
 import { resumePdfUrl, variantPdfUrl } from "@/api/resume-urls";
 import type { ApplicationDetailDto } from "@/api/types";
-import { EmptyState } from "@/components/ui/data";
 import { ExternalLink, ItemList, ItemRow, RelativeTime } from "@/components/ui/display";
+import { EmptyState } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 
 interface SubmissionDetailsProps {

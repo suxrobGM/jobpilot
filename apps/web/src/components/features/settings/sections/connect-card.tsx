@@ -8,7 +8,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { LoadingSpinner } from "@/components/ui/feedback";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
 import { MailboxReauthAlert } from "./mailbox-reauth-alert";

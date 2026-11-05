@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState } from "@/components/ui/feedback";
 
 export default function PortfolioNotFound(): ReactElement {
   return (

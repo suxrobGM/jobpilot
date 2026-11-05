@@ -5,7 +5,7 @@ import { api } from "@/api/client";
 import { dataOrThrow } from "@/api/error";
 import { getFetchOptions } from "@/api/server";
 import { CampaignDetail } from "@/components/features/campaigns";
-import { DetailSkeleton } from "@/components/ui/data";
+import { DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 interface PageProps {

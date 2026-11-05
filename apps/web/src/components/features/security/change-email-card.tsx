@@ -6,7 +6,7 @@ import { Alert, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { SectionCard } from "@/components/ui/layout";
 import { useSession } from "@/hooks/use-auth";
 
 const DEFAULT_VALUES: ChangeEmailInput = { newEmail: "", currentPassword: "" };

@@ -6,7 +6,7 @@ import { dataOrThrow } from "@/api/error";
 import { getPublicFetchOptions } from "@/api/server";
 import { PortfolioView } from "@/components/features/portfolio";
 import { JsonLd } from "@/components/seo/json-ld";
-import { DetailSkeleton } from "@/components/ui/data";
+import { DetailSkeleton } from "@/components/ui/feedback";
 import { breadcrumbLd, personLd } from "@/lib/structured-data";
 
 interface PortfolioPageProps {

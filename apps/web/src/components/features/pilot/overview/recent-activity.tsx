@@ -5,7 +5,7 @@ import { Divider, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState, QuerySection } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { collapseCoveredCycles, withLatestRuns } from "../journal/journal-entries";
 import { JournalRow } from "../journal/journal-row";

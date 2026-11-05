@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { Grid, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { DetailSkeleton, QueryError } from "@/components/ui/data";
+import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { NeedsAttention } from "../attention/needs-attention";
 import { JobAlertsPanel } from "../job-alerts/job-alerts-panel";

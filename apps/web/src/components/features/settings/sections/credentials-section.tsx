@@ -10,10 +10,9 @@ import { credentialQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data";
 import { ItemList, ItemRow } from "@/components/ui/display";
-import { LoadingSpinner } from "@/components/ui/feedback";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { EmptyState, LoadingSpinner } from "@/components/ui/feedback";
+import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { CredentialFormDialog, PROVIDER_LABELS } from "./credential-form-dialog";
 

@@ -1,6 +1,6 @@
 import { type ReactElement, Suspense } from "react";
 import { AuthCard, ConfirmEmailChangeView } from "@/components/features/auth";
-import { DetailSkeleton } from "@/components/ui/data";
+import { DetailSkeleton } from "@/components/ui/feedback";
 
 interface ConfirmEmailChangePageProps {
   searchParams: Promise<{ token?: string }>;

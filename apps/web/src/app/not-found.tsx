@@ -3,7 +3,7 @@ import { Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { MarketingShell } from "@/components/features/marketing";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState } from "@/components/ui/feedback";
 
 export const metadata: Metadata = {
   title: "Page not found",

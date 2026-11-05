@@ -9,7 +9,7 @@ import { emailQueries, type InboxFilter } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { MailboxReauthAlert } from "@/components/features/settings/sections/mailbox-reauth-alert";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data/empty-state";
+import { EmptyState } from "@/components/ui/feedback";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";

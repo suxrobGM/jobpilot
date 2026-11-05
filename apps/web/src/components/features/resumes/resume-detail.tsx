@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import { QueryError } from "@/components/ui/data";
+import { QueryError } from "@/components/ui/feedback";
 import { type SectionAnchor, SectionLayout } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import { ExtractionCard } from "./detail/extraction-card";

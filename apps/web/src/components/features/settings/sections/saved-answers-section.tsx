@@ -9,8 +9,8 @@ import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { SavedAnswerDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { EmptyState, QuerySection } from "@/components/ui/data";
 import { RelativeTime } from "@/components/ui/display";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { FormDialogShell, FormSection } from "@/components/ui/form";
 import { useConfirm } from "@/providers/confirm-provider";
 

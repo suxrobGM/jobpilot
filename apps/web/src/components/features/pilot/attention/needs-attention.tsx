@@ -16,8 +16,8 @@ import {
 } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { QuerySection } from "@/components/ui/data";
 import { RelativeTime } from "@/components/ui/display";
+import { QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { PromotionDraftCard, PromotionSummary } from "./promotion-card";
 import { QuestionCard } from "./question-card";

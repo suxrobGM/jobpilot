@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
 import { Button, Container } from "@mui/material";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState } from "@/components/ui/feedback";
 
 interface ErrorFallbackProps {
   error: Error & { digest?: string };

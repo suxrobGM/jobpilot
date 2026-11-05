@@ -5,7 +5,7 @@ import { newTokens } from "@jobpilot/contracts/pilot";
 import { Box, LinearProgress, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { EmptyState, QuerySection } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { formatNewTokenParts, formatTokenSplit, formatTokens, plural } from "@/utils/format";
 import { taskTypeLabel } from "../task-types";

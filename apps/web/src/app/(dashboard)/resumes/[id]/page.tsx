@@ -1,7 +1,7 @@
 import { type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { ResumeDetail } from "@/components/features/resumes";
-import { DetailSkeleton } from "@/components/ui/data";
+import { DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Resume" };

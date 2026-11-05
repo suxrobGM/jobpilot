@@ -5,7 +5,7 @@ import type { PilotSearch } from "@jobpilot/contracts/pilot";
 import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { EmptyState, QuerySection } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 
 /** The empty-run streak that puts a search on the API backoff ladder's top (48h) rung. */

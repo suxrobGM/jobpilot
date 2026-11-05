@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ChangeEmailCard } from "@/components/features/security/change-email-card";
 import { ChangePasswordCard } from "@/components/features/security/change-password-card";
 import { ConnectedAccountsCard } from "@/components/features/security/connected-accounts-card";
-import { DetailSkeleton } from "@/components/ui/data";
+import { DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = {

@@ -2,7 +2,7 @@ import { type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ApplicationDetail } from "@/components/features/applications/application-detail";
-import { DetailSkeleton } from "@/components/ui/data";
+import { DetailSkeleton } from "@/components/ui/feedback";
 
 export const metadata: Metadata = { title: "Application" };
 

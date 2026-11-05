@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
 import { NetworkingMessagesTable } from "@/components/features/networking";
-import { PaginationControls, TableSkeleton } from "@/components/ui/data";
+import { PaginationControls } from "@/components/ui/data";
+import { TableSkeleton } from "@/components/ui/feedback";
 import { one, type PaginationSearchParams, paginationQuery } from "@/utils/search-params";
 
 export const metadata: Metadata = { title: "Outreach messages" };

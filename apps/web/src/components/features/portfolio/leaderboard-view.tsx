@@ -6,7 +6,7 @@ import { keepPreviousData } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { leaderboardQueries } from "@/api/queries";
 import type { LeaderboardDto, LeaderboardRow, LeaderboardWindow } from "@/api/types";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState } from "@/components/ui/feedback";
 import { LeaderboardList } from "./leaderboard-list";
 import { LeaderboardPodium } from "./leaderboard-podium";
 

@@ -24,7 +24,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
 import { toProfileFormValues } from "@/components/features/settings/profile-form-values";
 import { PersonalSection } from "@/components/features/settings/sections";
-import { QueryError } from "@/components/ui/data";
+import { QueryError } from "@/components/ui/feedback";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { patchAgentStorage } from "@/lib/agent-storage";

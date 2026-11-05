@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { api } from "@/api/client";
 import { getPublicFetchOptions } from "@/api/server";
 import { LeaderboardView } from "@/components/features/portfolio";
-import { DetailSkeleton } from "@/components/ui/data";
+import { DetailSkeleton } from "@/components/ui/feedback";
 
 export const metadata: Metadata = {
   title: "Trending users",

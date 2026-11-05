@@ -7,7 +7,7 @@ import { dataOrThrow } from "@/api/error";
 import { getPublicFetchOptions } from "@/api/server";
 import { JobDetail, JobList } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
-import { DetailSkeleton, TableSkeleton } from "@/components/ui/data";
+import { DetailSkeleton, TableSkeleton } from "@/components/ui/feedback";
 import { jobPostingLd } from "@/lib/job-posting-ld";
 import { breadcrumbLd } from "@/lib/structured-data";
 

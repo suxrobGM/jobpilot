@@ -10,7 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { Route } from "next";
-import { EmptyState } from "./empty-state";
+import { EmptyState } from "@/components/ui/feedback";
 
 export interface SimpleColumn<T> {
   key: string;

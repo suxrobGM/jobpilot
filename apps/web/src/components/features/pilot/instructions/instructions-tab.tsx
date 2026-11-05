@@ -13,7 +13,7 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import { DetailSkeleton, QueryError } from "@/components/ui/data";
+import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import {

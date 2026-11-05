@@ -9,7 +9,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { invalidations, queryKeys } from "@/api/query-keys";
 import type { ResumeDto } from "@/api/types";
-import { DetailSkeleton, QueryError } from "@/components/ui/data";
+import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
 import { plural } from "@/utils/format";
 import { diffRewrite } from "./rewrite-diff";

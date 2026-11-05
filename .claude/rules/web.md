@@ -30,7 +30,7 @@ When a page depends on `params`, `searchParams`, or a fetch:
 1. Keep the default export synchronous. It renders only the frame.
 2. Put each dynamic dependency in its own `async` child inside `<Suspense>`. Data that arrives
    together shares one boundary.
-3. Use a shared skeleton: `DetailSkeleton` / `TableSkeleton` from `@/components/ui/data`, or
+3. Use a shared skeleton: `DetailSkeleton` / `TableSkeleton` from `@/components/ui/feedback`, or
    `AuthFormSkeleton` from `@/components/features/auth`. Add to that set, no page-local ones.
 
 A client leaf that only reads the URL calls `useSearchParams()` itself. No server wrapper.

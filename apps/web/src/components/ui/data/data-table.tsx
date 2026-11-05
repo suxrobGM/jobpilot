@@ -8,7 +8,7 @@ import {
   type GridColDef,
   type GridValidRowModel,
 } from "@mui/x-data-grid";
-import { EmptyState } from "./empty-state";
+import { EmptyState } from "@/components/ui/feedback";
 
 interface DataTableProps<TRow extends GridValidRowModel>
   extends Omit<

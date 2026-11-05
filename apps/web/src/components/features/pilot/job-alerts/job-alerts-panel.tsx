@@ -12,7 +12,7 @@ import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { LinkButton } from "@/components/ui/buttons";
-import { QuerySection } from "@/components/ui/data";
+import { QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil, plural } from "@/utils/format";
 import { campaignHref } from "@/utils/routes";

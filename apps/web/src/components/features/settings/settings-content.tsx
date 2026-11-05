@@ -8,7 +8,7 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import { QueryError } from "@/components/ui/data";
+import { QueryError } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { StickyFooter } from "@/components/ui/layout";
 import { toProfileFormValues } from "./profile-form-values";
