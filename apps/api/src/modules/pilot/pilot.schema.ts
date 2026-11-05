@@ -60,12 +60,14 @@ export const researchStatusSchema = z.object({
 const withinDaysSchema = z.number().int().min(1).max(90);
 
 /** A POST so a digest's worth of URLs fits; nothing is written. */
-export const jobAlertsSeenBodySchema = z.object({
+export const existingJobsBodySchema = z.object({
   urls: z.array(z.string().trim().min(1)).min(1).max(500),
   withinDays: withinDaysSchema.default(7),
 });
 
-export const jobAlertsSeenSchema = z.object({ seen: z.array(z.string()) });
+export type ExistingJobsBody = z.infer<typeof existingJobsBodySchema>;
+
+export const existingJobsSchema = z.object({ existing: z.array(z.string()) });
 
 const similarJobsPostingSchema = z.object({
   title: z.string().trim().min(1),

@@ -39,7 +39,7 @@ export const campaignJobController = new Elysia({
         "Returns one page of jobs for the owned campaign, ordered by creation. Optional status and title/company search filters apply across the whole campaign.",
     },
   })
-  .get("/:id/jobs/reasons", ({ user, params }) => queries.listJobReasons(user.id, params.id), {
+  .get("/:id/job-reasons", ({ user, params }) => queries.listJobReasons(user.id, params.id), {
     params: idParam,
     response: campaignJobReasonListSchema,
     detail: {

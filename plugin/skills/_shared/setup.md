@@ -18,7 +18,7 @@ the bearer token, targets `$JOBPILOT_API`, and refuses any other origin:
 
 ```bash
 jobpilot-api GET /api/user
-jobpilot-api GET /api/applied --query search=Acme --query limit=100      # values are URL-encoded for you
+jobpilot-api GET /api/applications --query search=Acme --query limit=100      # values are URL-encoded for you
 jobpilot-api PATCH /api/campaigns/42 --data '{"status":"paused"}'
 jobpilot-api POST /api/campaigns --data @"$JOBPILOT_TEMP/campaign.json"  # body from a file
 jobpilot-api GET /api/resumes/3/pdf --out "$JOBPILOT_TEMP/resume-3.pdf"  # binary body to a file
@@ -78,7 +78,7 @@ on message text.
 ## Profile
 
 Each account has exactly one profile; the API resolves it from your token automatically - no id
-threading, no profile switching. Endpoints (`/api/user`, `/api/resumes`, `/api/applied`,
+threading, no profile switching. Endpoints (`/api/user`, `/api/resumes`, `/api/applications`,
 `/api/campaigns`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) are all scoped to it.
 
 **Don't invent endpoints.** Settings = `GET /api/user` → `autoApply`. Resumes = `resumes` or `GET

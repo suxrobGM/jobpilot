@@ -2,7 +2,7 @@
 
 Payload `{campaignId, query, board, pausedAt}`: an auto-apply campaign stuck in `paused`. No
 browser, no worker. `GET /api/campaigns/$CID` and classify the pause from
-`statusChangedBy`/`statusReason` (else `/jobs/reasons`): missing resume, verification wall, user pause,
+`statusChangedBy`/`statusReason` (else `/job-reasons`): missing resume, verification wall, user pause,
 or unknown.
 
 - Missing resume, and the file is restorable per `../../_shared/setup.md` → resume it:

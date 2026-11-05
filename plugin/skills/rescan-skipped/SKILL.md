@@ -41,7 +41,7 @@ at/above threshold.
    narrowed `browser_snapshot`; log in via `../_shared/auth.md` if walled) and rebuild the brief.
    Send that brief and posting text with the rescan command below; terminal rows cannot be PATCHed.
 
-3. **Re-score** - every target gets a fresh `POST /api/score-fit` with `{brief,
+3. **Re-score** - every target gets a fresh `POST /api/fit-scores` with `{brief,
    minScore:<threshold>}`; never reuse the stored `matchScore`. Take the returned `score` as-is when
    `verdict` is `trust`; on `deliberate`, reason from `strongMatches`/`partialMatches`/`gaps`. A
    zero/low score with no `skipReason` (common at defense/federal employers) is not a disqualifier;

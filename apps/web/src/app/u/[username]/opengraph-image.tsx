@@ -24,7 +24,7 @@ export default async function PortfolioOgImage(props: OgProps): Promise<ImageRes
   let headline: string | null = null;
   let applications: number | null = null;
   try {
-    const { data } = await api.public.portfolio({ username }).get(options);
+    const { data } = await api.public.portfolios({ username }).get(options);
     if (data) {
       name = data.displayName;
       headline = data.headline;

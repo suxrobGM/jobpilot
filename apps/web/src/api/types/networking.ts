@@ -5,9 +5,9 @@ import type { CampaignConfigDto } from "./campaign";
 /** A networking contact, inferred from `GET /api/contacts`. */
 export type ContactDto = Data<typeof api.contacts.get>["items"][number];
 
-/** A networking message with its contact, from `GET /api/campaigns/:id/networking`. */
+/** A networking message with its contact, from `GET /api/campaigns/:id/networking/messages`. */
 export type NetworkingMessageDto = Data<
-  ReturnType<typeof api.campaigns>["networking"]["get"]
+  ReturnType<typeof api.campaigns>["networking"]["messages"]["get"]
 >["items"][number];
 
 /** The networking sub-config carried inside a campaign config. */

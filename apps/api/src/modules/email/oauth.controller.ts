@@ -45,7 +45,7 @@ export const emailOAuthController = new Elysia({
     },
   })
   .get(
-    "/oauth/start",
+    "/oauth/authorize",
     async ({ user, cookie, redirect }) => {
       const { authorizeUrl, state } = await account.buildAuthorizeUrl(user.id);
 

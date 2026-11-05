@@ -15,7 +15,7 @@ const svc = container.get(AdminBoardService);
 
 /** Catalog CRUD for admins. Register new admin controllers in `admin.guard.test.ts`. */
 export const adminBoardController = new Elysia({
-  prefix: "/admin/boards",
+  prefix: "/admin/job-boards",
   detail: { tags: ["Admin"] },
 })
   .use(requireRole("admin"))

@@ -22,7 +22,7 @@ const svc = container.get(ApplicationService);
 const limitNote = rateLimit(RATE_LIMITS.applicationNote);
 
 export const applicationController = new Elysia({
-  prefix: "/applied",
+  prefix: "/applications",
   detail: { tags: ["Applied"] },
 })
   .use(authGuard)
@@ -44,7 +44,7 @@ export const applicationController = new Elysia({
         "Returns the user's application count grouped by status across every row matching the given filters, so funnel tallies cover the whole account rather than one page.",
     },
   })
-  .get("/check", ({ user, query }) => svc.check(user.id, query), {
+  .get("/duplicates", ({ user, query }) => svc.check(user.id, query), {
     query: applicationQuerySchema,
     response: applicationCheckSchema,
     detail: {

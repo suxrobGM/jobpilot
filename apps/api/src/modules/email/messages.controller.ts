@@ -81,7 +81,7 @@ export const emailMessagesController = new Elysia({
     },
   )
   .post(
-    "/job-alerts/imported",
+    "/job-alerts/imports",
     ({ user, body }) => svc.markJobAlertsImported(user.id, body.messageIds),
     {
       body: markJobAlertsImportedSchema,

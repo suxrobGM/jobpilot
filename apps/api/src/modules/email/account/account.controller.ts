@@ -30,7 +30,7 @@ export const emailAccountController = new Elysia({
         "Removes the user's connected email account and returns a confirmation that it was disconnected.",
     },
   })
-  .post("/send", ({ user, body }) => account.send(user.id, body), {
+  .post("/outbound", ({ user, body }) => account.send(user.id, body), {
     body: sendEmailSchema,
     response: sentMessageSchema,
     detail: {

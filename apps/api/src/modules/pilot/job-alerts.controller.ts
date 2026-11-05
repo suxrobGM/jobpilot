@@ -8,7 +8,6 @@ import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { JobAlertsService } from "./job-alerts.service";
-import { jobAlertsSeenBodySchema, jobAlertsSeenSchema } from "./pilot.schema";
 
 const jobAlerts = container.get(JobAlertsService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
@@ -36,7 +35,7 @@ export const pilotJobAlertsController = new Elysia({
         "Replaces only the import block of the pilot instructions (on/off, run hours, time zone, extra sender domains), wakes the pilot, and returns the refreshed status.",
     },
   })
-  .post("/job-alerts/run", ({ user }) => jobAlerts.runNow(user.id), {
+  .post("/job-alerts/runs", ({ user }) => jobAlerts.runNow(user.id), {
     beforeHandle: limitMutation,
     response: runJobAlertsResultSchema,
     detail: {
@@ -44,17 +43,4 @@ export const pilotJobAlertsController = new Elysia({
       description:
         "Syncs the mailbox if it is stale, then queues an off-schedule import for the next pilot cycle and wakes the pilot. Nothing is queued when no unimported alert emails are waiting (`queued: false`); the request lapses after an hour if the pilot never gets to it.",
     },
-  })
-  .post(
-    "/job-alerts/seen",
-    ({ user, body }) => jobAlerts.seenUrls(user.id, body.urls, body.withinDays),
-    {
-      body: jobAlertsSeenBodySchema,
-      response: jobAlertsSeenSchema,
-      detail: {
-        summary: "Find job-alert postings already imported",
-        description:
-          "Returns the given URLs, as sent, whose normalized form is already a job in one of the user's campaigns from the last `withinDays` days (default 7). The import skips those instead of paging every recent campaign. Read-only.",
-      },
-    },
-  );
+  });

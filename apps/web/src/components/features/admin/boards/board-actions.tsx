@@ -24,7 +24,7 @@ export function AdminBoardActions(props: AdminBoardActionsProps): ReactElement {
   const confirm = useConfirm();
 
   const update = useApiMutation(
-    (patch: AdminBoardPatch) => api.admin.boards({ id: board.id }).patch(patch),
+    (patch: AdminBoardPatch) => api.admin["job-boards"]({ id: board.id }).patch(patch),
     {
       successMessage: "Board updated",
       onSuccess: () => {
@@ -34,7 +34,7 @@ export function AdminBoardActions(props: AdminBoardActionsProps): ReactElement {
     },
   );
 
-  const remove = useApiMutation(() => api.admin.boards({ id: board.id }).delete(), {
+  const remove = useApiMutation(() => api.admin["job-boards"]({ id: board.id }).delete(), {
     successMessage: "Board removed",
     onSuccess: () => router.refresh(),
   });

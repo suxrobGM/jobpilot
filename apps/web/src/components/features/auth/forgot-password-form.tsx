@@ -11,7 +11,7 @@ const DEFAULT_VALUES: ForgotPasswordInput = { email: "" };
 
 export function ForgotPasswordForm(): ReactElement {
   const forgotPassword = useApiMutation((body: ForgotPasswordInput) =>
-    api.auth.password.forgot.post(body),
+    api.auth.password.reset.post(body),
   );
 
   const form = useAppForm({

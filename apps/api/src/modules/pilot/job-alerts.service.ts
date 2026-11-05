@@ -4,9 +4,7 @@ import {
   pilotInstructionsConfigSchema,
 } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
-import { DAY_MS } from "@/common/date/buckets";
 import { toInputJson } from "@/common/json";
-import { normalizeJobUrl } from "@/common/utils/url";
 import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { resumePausedFeed } from "./feeds";
@@ -125,22 +123,6 @@ export class JobAlertsService {
     });
     await this.wakePilot(userId);
     return { queued: true, pendingEmails };
-  }
-
-  /** The given URLs already in one of the user's campaigns from the window, compared normalized. */
-  async seenUrls(userId: string, urls: string[], withinDays: number) {
-    const normalized = urls.map(normalizeJobUrl);
-    const rows = await this.prisma.campaignJob.findMany({
-      where: {
-        url: { in: [...new Set(normalized)] },
-        createdAt: { gte: new Date(Date.now() - withinDays * DAY_MS) },
-        userId,
-      },
-      distinct: ["url"],
-      select: { url: true },
-    });
-    const found = new Set(rows.map((row) => row.url));
-    return { seen: urls.filter((_, i) => found.has(normalized[i])) };
   }
 
   /** The terminal host ends its idle sleep on `state.changed`, so the run starts in seconds. */

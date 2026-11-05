@@ -17,8 +17,8 @@ Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarg
 3. **Report** its counts (a `404` means the search was deleted meanwhile: say so in the summary):
 
    ```bash
-   jobpilot-api POST /api/pilot/searches/$SEARCH_ID/run-result \
-     --data '{"jobsSeen":<jobsSeen>,"newJobs":<newJobs>,"reachedEnd":<reachedEnd>}'
+   jobpilot-api POST /api/pilot/searches/$SEARCH_ID/runs \
+     --data '{"jobsScanned":<jobsScanned>,"newJobs":<newJobs>,"reachedEnd":<reachedEnd>}'
    ```
 
 An `error` with no new jobs is `outcome:"failed"`; otherwise `done`, naming any `error` in the

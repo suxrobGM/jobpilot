@@ -127,7 +127,7 @@ Persist the worker's `contact` + each `message` (body already composed and human
 ```
 
 ```bash
-jobpilot-api POST /api/campaigns/<campaign-id>/networking --data @"$JOBPILOT_TEMP/draft.json"
+jobpilot-api POST /api/campaigns/<campaign-id>/networking/messages --data @"$JOBPILOT_TEMP/draft.json"
 ```
 
 Add `applicationId:<id>` when applied-check matched. Keep the returned `id` (messageId) and
@@ -156,8 +156,8 @@ For each message to send:
   threading), send it, then record the send with the response's `providerId` and `threadId` and the
   current UTC time:
   ```bash
-  jobpilot-api POST /api/email/send --data @"$JOBPILOT_TEMP/email.json"
-  jobpilot-api POST /api/campaigns/<campaign-id>/networking/<messageId>/result \
+  jobpilot-api POST /api/email/outbound --data @"$JOBPILOT_TEMP/email.json"
+  jobpilot-api POST /api/campaigns/<campaign-id>/networking/messages/<messageId>/result \
     --data '{"outcome":"sent","sentAt":"<ISO-8601 UTC>","providerId":"<providerId>","threadId":"<threadId>"}'
   ```
 - **LinkedIn Premium** - navigate to the profile, open Message (InMail), type, send. POST

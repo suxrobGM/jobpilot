@@ -34,7 +34,7 @@ async function jobLandingEntries(): Promise<MetadataRoute.Sitemap> {
 /** Every portfolio, so the /u/[username] pages are indexable. */
 async function portfolioEntries(): Promise<MetadataRoute.Sitemap> {
   try {
-    const { data } = await api.public.portfolio.sitemap.get();
+    const { data } = await api.public.portfolios.sitemap.get();
     return (data ?? []).map((p) => ({
       url: `${SITE_URL}/u/${p.username}`,
       lastModified: new Date(p.updatedAt),

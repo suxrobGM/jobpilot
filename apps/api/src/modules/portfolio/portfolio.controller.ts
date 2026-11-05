@@ -15,7 +15,7 @@ const svc = container.get(PortfolioService);
 
 /** Deliberately unguarded (auth is opt-in): this backs the crawlable public /u/[username] pages. */
 export const publicPortfolioController = new Elysia({
-  prefix: "/public/portfolio",
+  prefix: "/public/portfolios",
   detail: { tags: ["Portfolio"] },
 })
   .guard({ beforeHandle: rateLimit(RATE_LIMITS.publicPortfolio) })

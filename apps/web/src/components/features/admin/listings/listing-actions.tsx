@@ -23,14 +23,14 @@ export function AdminListingActions(props: AdminListingActionsProps): ReactEleme
   const hidden = listing.status === "hidden";
 
   const update = useApiMutation(
-    (patch: AdminJobListingPatch) => api.admin.listings({ id: listing.id }).patch(patch),
+    (patch: AdminJobListingPatch) => api.admin["job-listings"]({ id: listing.id }).patch(patch),
     {
       successMessage: hidden ? "Listing published" : "Listing hidden",
       onSuccess: () => router.refresh(),
     },
   );
 
-  const remove = useApiMutation(() => api.admin.listings({ id: listing.id }).delete(), {
+  const remove = useApiMutation(() => api.admin["job-listings"]({ id: listing.id }).delete(), {
     successMessage: "Listing deleted",
     onSuccess: () => router.refresh(),
   });

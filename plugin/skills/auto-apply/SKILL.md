@@ -126,7 +126,7 @@ the brief (`../_shared/job-brief.md`), then score server-side. Write `$JOBPILOT_
 when there is none):
 
 ```bash
-jobpilot-api POST /api/score-fit --data @"$JOBPILOT_TEMP/fit.json"
+jobpilot-api POST /api/fit-scores --data @"$JOBPILOT_TEMP/fit.json"
 ```
 
 Read `.score` as `SCORE` and `.verdict` as `FIT_VERDICT`, then branch (eligibility per

@@ -94,7 +94,7 @@ public sealed class PilotApiTests
                 "POST /api/pilot/tasks/refresh",
                 """POST /api/pilot/journal {"entries":[{"kind":"system","summary":"hello world"}]}""",
                 """POST /api/pilot/journal {"entries":[{"kind":"cycle","summary":"Task 1 - done.","detail":{"status":"ok","sleepSeconds":30}}],"runId":"run-1"}""",
-                """POST /api/pilot/cycles/idle {"sleepSeconds":1800}""",
+                """POST /api/pilot/idle-checks {"sleepSeconds":1800}""",
                 """POST /api/pilot/runs {"taskId":"t1","taskListVersion":"v1"}""",
                 "GET /api/pilot/runs/run-1",
                 "POST /api/pilot/runs/run-1/cancel",

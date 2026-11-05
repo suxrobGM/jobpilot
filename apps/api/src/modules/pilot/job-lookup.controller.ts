@@ -3,17 +3,32 @@ import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { APPLIED_DUPLICATE_WINDOW_DAYS } from "@/modules/scoring/applied-duplicates";
-import { similarJobsBodySchema, similarJobsSchema } from "./pilot.schema";
-import { SimilarJobsService } from "./similar-jobs.service";
+import { JobLookupService } from "./job-lookup.service";
+import {
+  existingJobsBodySchema,
+  existingJobsSchema,
+  similarJobsBodySchema,
+  similarJobsSchema,
+} from "./pilot.schema";
 
-const similarJobs = container.get(SimilarJobsService);
+const lookup = container.get(JobLookupService);
 
-export const pilotSimilarJobsController = new Elysia({
+export const pilotJobLookupController = new Elysia({
   prefix: "/pilot",
   detail: { tags: ["Pilot"] },
 })
   .use(authGuard)
-  .post("/jobs/similar", ({ user, body }) => similarJobs.findSimilar(user.id, body), {
+  .post("/jobs/existing", ({ user, body }) => lookup.findExisting(user.id, body), {
+    body: existingJobsBodySchema,
+    beforeHandle: rateLimit(RATE_LIMITS.pilotMutation),
+    response: existingJobsSchema,
+    detail: {
+      summary: "Find postings already in a campaign",
+      description:
+        "Returns the given URLs, as sent, whose normalized form is already a job in one of the user's campaigns from the last `withinDays` days (default 7). Read-only.",
+    },
+  })
+  .post("/jobs/similar", ({ user, body }) => lookup.findSimilar(user.id, body), {
     body: similarJobsBodySchema,
     beforeHandle: rateLimit(RATE_LIMITS.pilotMutation),
     response: similarJobsSchema,

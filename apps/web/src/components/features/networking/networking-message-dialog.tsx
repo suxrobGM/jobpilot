@@ -28,7 +28,9 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   const [body, setBody] = useState(message.body);
 
   const canSend = useApiQuery(emailQueries.account()).data?.canSend ?? false;
-  const messageApi = api.campaigns({ id: campaignId }).networking({ messageId: message.id });
+  const messageApi = api
+    .campaigns({ id: campaignId })
+    .networking.messages({ messageId: message.id });
 
   // Drafts render from the query cache on a campaign and from the server on the cross-campaign
   // list, so a write refreshes both rather than making each caller declare which one it is.
@@ -58,7 +60,7 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
 
   const send = useApiMutation(
     async () => {
-      const sent = await api.email.send.post({
+      const sent = await api.email.outbound.post({
         to: message.contact.email ?? "",
         subject,
         body,

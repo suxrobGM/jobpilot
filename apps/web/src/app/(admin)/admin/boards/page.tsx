@@ -37,7 +37,7 @@ export default function AdminBoardsPage(props: AdminBoardsPageProps): ReactEleme
 async function AdminBoards(props: AdminBoardsPageProps): Promise<ReactElement> {
   const search = await props.searchParams;
 
-  const { data } = await api.admin.boards.get({
+  const { data } = await api.admin["job-boards"].get({
     query: {
       ...paginationQuery(search),
       ...(search.q?.trim() && { q: search.q.trim() }),

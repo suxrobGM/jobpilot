@@ -30,8 +30,8 @@ function yieldStats(search: PilotSearch): string {
   const parts: string[] = [];
   if (search.lastRunAt) {
     parts.push(`Last run ${formatRelativeTime(search.lastRunAt)} ago`);
-    if (search.lastNewJobs !== null && search.lastJobsSeen !== null) {
-      parts.push(`${search.lastNewJobs} new / ${search.lastJobsSeen} seen`);
+    if (search.lastNewJobs !== null && search.lastJobsScanned !== null) {
+      parts.push(`${search.lastNewJobs} new / ${search.lastJobsScanned} seen`);
     }
   } else {
     parts.push("Not run yet");

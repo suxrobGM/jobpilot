@@ -60,11 +60,11 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    Dedupe across all messages, keeping the richest listing text for each posting.
 
 3. **Skip what is already in the pipeline.** Alert emails repeat postings for days. Send every
-   canonical URL (at most 500) in one call; `.seen` lists those already in one of your campaigns
+   canonical URL (at most 500) in one call; `.existing` lists those already in one of your campaigns
    from the last 7 days, exactly as sent. Drop them.
 
    ```bash
-   jobpilot-api POST /api/pilot/job-alerts/seen --data '{"urls":["<url>","<url>"]}'
+   jobpilot-api POST /api/pilot/jobs/existing --data '{"urls":["<url>","<url>"]}'
    ```
 
    The same job also arrives from LinkedIn and Indeed under different URLs. Send the rest in one
@@ -81,10 +81,10 @@ the procedure. A message that is not a job alert (a connection request, a newsle
 
 4. **Rank** each remaining posting **in place** from its listing text - no navigation, no worker.
    Build a brief per `../../_shared/job-brief.md` from what the email states. Alert emails rarely
-   list skills, and `POST /api/score-fit` floors a skill-less brief at 10 with `confidence: 0` - a
+   list skills, and `POST /api/fit-scores` floors a skill-less brief at 10 with `confidence: 0` - a
    non-answer, not a low fit. So:
 
-   - **Skills or requirements stated** → `POST /api/score-fit` `{brief, resumeId, minScore}`
+   - **Skills or requirements stated** → `POST /api/fit-scores` `{brief, resumeId, minScore}`
      (`brief` a JSON object). `verdict:"trust"` → use `score`; `"deliberate"` → reason from the
      matches and gaps.
    - **Title only, and it rules the role out** against the pilot goals and the resume (wrong
@@ -120,7 +120,7 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    payload `messageIds`, not only those that yielded postings:
 
    ```bash
-   jobpilot-api POST /api/email/job-alerts/imported --data '{"messageIds":["<id>","<id>"]}'
+   jobpilot-api POST /api/email/job-alerts/imports --data '{"messageIds":["<id>","<id>"]}'
    ```
 
    A run that fails before this call skips it: the server re-offers the emails, and step 3 keeps the

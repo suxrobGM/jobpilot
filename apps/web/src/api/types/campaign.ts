@@ -12,7 +12,7 @@ export type CampaignConfigDto = CampaignDto["config"];
 export type CampaignSummaryDto = CampaignDto["summary"];
 export type CampaignJobDto = Data<ReturnType<typeof api.campaigns>["jobs"]["get"]>["items"][number];
 export type CampaignJobReasonDto = Data<
-  ReturnType<typeof api.campaigns>["jobs"]["reasons"]["get"]
+  ReturnType<typeof api.campaigns>["job-reasons"]["get"]
 >[number];
 
 export type CampaignJobSummaryDto = Extract<CampaignSummaryDto, { kind: "jobs" }>;

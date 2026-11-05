@@ -56,7 +56,7 @@ export const userQueries = {
 export const leaderboardQueries = {
   list: (window: LeaderboardWindow) => ({
     queryKey: queryKeys.leaderboard.list(window),
-    queryFn: () => api.public.portfolio.leaderboard.get({ query: { window } }),
+    queryFn: () => api.public.portfolios.leaderboard.get({ query: { window } }),
   }),
 };
 
@@ -91,20 +91,20 @@ export const jobBoardQueries = {
 export const applicationQueries = {
   list: (query: PaginationQuery & ApplicationFilters) => ({
     queryKey: queryKeys.applications.list({ ...query }),
-    queryFn: () => api.applied.get({ query }),
+    queryFn: () => api.applications.get({ query }),
   }),
   /** Whole-account totals per status - the funnel tiles must not be page-scoped. */
   summary: (filters: Omit<ApplicationFilters, "status"> = {}) => ({
     queryKey: queryKeys.applications.summary({ ...filters }),
-    queryFn: () => api.applied.summary.get({ query: filters }),
+    queryFn: () => api.applications.summary.get({ query: filters }),
   }),
   detail: (id: string) => ({
     queryKey: queryKeys.applications.detail(id),
-    queryFn: () => api.applied({ id }).get(),
+    queryFn: () => api.applications({ id }).get(),
   }),
   search: (search: string) => ({
     queryKey: queryKeys.applications.search(search),
-    queryFn: () => api.applied.get({ query: { ...OPTIONS_PAGE, ...(search && { search }) } }),
+    queryFn: () => api.applications.get({ query: { ...OPTIONS_PAGE, ...(search && { search }) } }),
   }),
 };
 
@@ -130,11 +130,11 @@ export const campaignQueries = {
   /** Skip/fail reasons aggregated server-side, so counts cover every job rather than one page. */
   reasons: (id: string) => ({
     queryKey: queryKeys.campaigns.reasons(id),
-    queryFn: () => api.campaigns({ id }).jobs.reasons.get(),
+    queryFn: () => api.campaigns({ id })["job-reasons"].get(),
   }),
   networking: (campaignId: string, query: PaginationQuery = OPTIONS_PAGE) => ({
     queryKey: queryKeys.campaigns.networking(campaignId, query),
-    queryFn: () => api.campaigns({ id: campaignId }).networking.get({ query }),
+    queryFn: () => api.campaigns({ id: campaignId }).networking.messages.get({ query }),
   }),
 };
 
@@ -217,9 +217,9 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.searches(),
     queryFn: () => api.pilot.searches.get(),
   }),
-  answers: () => ({
-    queryKey: queryKeys.pilot.answers(),
-    queryFn: () => api.pilot.answers.get(),
+  savedAnswers: () => ({
+    queryKey: queryKeys.pilot.savedAnswers(),
+    queryFn: () => api.pilot["saved-answers"].get(),
   }),
   instructionsImpact: () => ({
     queryKey: queryKeys.pilot.instructionsImpact(),

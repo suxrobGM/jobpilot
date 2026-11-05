@@ -25,7 +25,7 @@ runId }`; absent fields are null. The job is already `applying`.
 - `answers`: the user's reply to the question an earlier run returned. It wins for the field it
   answers; never ask it again.
 
-Load `GET /api/user` (read `user` and `autoApply`) and `GET /api/pilot/answers` (`[{key, value}]`,
+Load `GET /api/user` (read `user` and `autoApply`) and `GET /api/pilot/saved-answers` (`[{key, value}]`,
 saved answers to reusable questions like `relocation` or `start_date`; use one for a form question
 asking the same thing). Use `resumeId` when set, else `user.primaryResumeId`.
 

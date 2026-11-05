@@ -48,7 +48,7 @@ export function JournalFeed(): ReactElement {
   const [loadingMore, setLoadingMore] = useState(false);
   const [view, setView] = useState<"flat" | "cycle">("flat");
 
-  const reset = useApiMutation(() => api.pilot.reset.post(), {
+  const reset = useApiMutation(() => api.pilot.runs.delete(), {
     successMessage: "Pilot reset",
     invalidate: [queryKeys.pilot.all],
     onSuccess: () => setPages([]),

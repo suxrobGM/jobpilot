@@ -30,7 +30,7 @@ export const userController = new Elysia({
   .get("/", ({ user }) => svc.get(user.id), {
     response: userAggregateSchema,
     detail: {
-      summary: "Get current user",
+      summary: "Get current user's settings",
       description:
         "Returns the current user aggregate, including its auto-apply settings, references, and resumes.",
     },

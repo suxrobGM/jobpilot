@@ -21,7 +21,7 @@ const EMPTY_RUN_BACKOFF_MS = [8 * HOUR_MS, 24 * HOUR_MS, 48 * HOUR_MS];
 /** The next-run schedule after one discovery run. `emptyRuns` is the streak before this run. */
 export function scheduleNextRun(emptyRuns: number, run: ReportPilotSearchRunInput, now: Date) {
   const at = (ms: number) => new Date(now.getTime() + ms);
-  const recorded = { lastRunAt: now, lastJobsSeen: run.jobsSeen, lastNewJobs: run.newJobs };
+  const recorded = { lastRunAt: now, lastJobsScanned: run.jobsScanned, lastNewJobs: run.newJobs };
 
   if (run.newJobs === 0) {
     const rung = EMPTY_RUN_BACKOFF_MS[Math.min(emptyRuns, EMPTY_RUN_BACKOFF_MS.length - 1)];
@@ -121,7 +121,7 @@ export class PilotSearchService {
         resumeId: input.resumeId,
         reason: input.reason,
         ...(isNewSearch
-          ? { emptyRuns: 0, nextRunAt: new Date(), lastJobsSeen: null, lastNewJobs: null }
+          ? { emptyRuns: 0, nextRunAt: new Date(), lastJobsScanned: null, lastNewJobs: null }
           : {}),
       },
     });

@@ -1,15 +1,32 @@
 import { inject, injectable } from "@needle-di/core";
 import { DAY_MS } from "@/common/date/buckets";
+import { normalizeJobUrl } from "@/common/utils/url";
 import { PrismaClient } from "@/generated/prisma/client";
 import { findFuzzyDuplicates } from "@/modules/scoring/applied-duplicates";
-import type { SimilarJobsBody } from "./pilot.schema";
+import type { ExistingJobsBody, SimilarJobsBody } from "./pilot.schema";
 
 /** The fuzzy scan runs in-process, so it has to stay bounded. */
 const MAX_CANDIDATES = 2000;
 
 @injectable()
-export class SimilarJobsService {
+export class JobLookupService {
   constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
+
+  /** The given URLs already in one of the user's campaigns from the window, compared normalized. */
+  async findExisting(userId: string, body: ExistingJobsBody) {
+    const normalized = body.urls.map(normalizeJobUrl);
+    const rows = await this.prisma.campaignJob.findMany({
+      where: {
+        url: { in: [...new Set(normalized)] },
+        createdAt: { gte: new Date(Date.now() - body.withinDays * DAY_MS) },
+        userId,
+      },
+      distinct: ["url"],
+      select: { url: true },
+    });
+    const found = new Set(rows.map((row) => row.url));
+    return { existing: body.urls.filter((_, i) => found.has(normalized[i])) };
+  }
 
   /** Each posting's likeliest copy in any campaign, skipped rows included. */
   async findSimilar(userId: string, body: SimilarJobsBody) {

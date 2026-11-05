@@ -75,7 +75,7 @@ row field, so a client that fails one costs a single call instead of a full job 
 into context.
 
 ```bash
-jobpilot-api POST /api/upwork/client-quality --data '{ "client": { "paymentVerified": true,
+jobpilot-api POST /api/upwork/client-scores --data '{ "client": { "paymentVerified": true,
   "totalSpent": 12000, "rating": 4.9, "reviewsCount": 24, "proposalsCount": 7,
   "postedHoursAgo": 6, "jobType": "hourly" } }'
 ```
@@ -113,7 +113,7 @@ card here and no need to delegate to `job-scorer`:
 Write `{"brief": <brief>, "minScore": <minScore>}` to `"$JOBPILOT_TEMP/fit.json"`:
 
 ```bash
-jobpilot-api POST /api/score-fit --data @"$JOBPILOT_TEMP/fit.json"
+jobpilot-api POST /api/fit-scores --data @"$JOBPILOT_TEMP/fit.json"
 ```
 
 Keep the response as `FIT` and its `.score` as `SCORE`. Use it directly when `FIT.verdict` is

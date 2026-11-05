@@ -14,7 +14,7 @@ const svc = container.get(JobListingService);
 
 /** Moderation for the public job index. Register new admin controllers in `admin.guard.test.ts`. */
 export const adminJobListingController = new Elysia({
-  prefix: "/admin/listings",
+  prefix: "/admin/job-listings",
   detail: { tags: ["Admin"] },
 })
   .use(requireRole("admin"))

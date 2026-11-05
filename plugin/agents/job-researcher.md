@@ -70,22 +70,22 @@ follow its apply link to the employer's own posting and use that URL. Fall back 
 when the employer page needs a login or can't be found. Skip anything that is not one open job
 posting (a program, a list of openings, a closed posting).
 
-Count each posting in `jobsSeen`. Its key is a shell-safe slug of `company-title`, plus the
+Count each posting in `jobsScanned`. Its key is a shell-safe slug of `company-title`, plus the
 requisition id when the posting has one. Run steps 1-2 once per query over all its postings, not
 per posting.
 
-1. **Seen**: `POST /api/pilot/job-alerts/seen --data '{"urls":["<url>","<url>"],"withinDays":30}'`.
-   Listed → seen, not new; drop it.
+1. **Existing**: `POST /api/pilot/jobs/existing --data '{"urls":["<url>","<url>"],"withinDays":30}'`.
+   Listed → already in a campaign, not new; drop it.
 2. **Similar**: `POST /api/pilot/jobs/similar --data
    '{"postings":[{"title":"<t>","company":"<c>","location":"<l>"}]}'`; each match names the request
    `index`. A match is a hint: universities post many same-title roles for different labs. Count it
    in `duplicates` and drop it only on the same requisition id, or the same title, location and lab
    or department.
-3. **Applied**: `GET /api/applied/check --query "url=<url>" --query "title=<title>" --query
+3. **Applied**: `GET /api/applications/duplicates --query "url=<url>" --query "title=<title>" --query
    "company=<company>"`. `.applied` → skip reason `Already applied (<.match.kind>)`; don't score.
 4. **Brief** per `$JOBPILOT_SKILLS_ROOT/_shared/job-brief.md` from the posting you read, never
    invented.
-5. **Score**: `POST /api/score-fit` with `{brief, minScore, resumeId}`. `verdict:"trust"` → use
+5. **Score**: `POST /api/fit-scores` with `{brief, minScore, resumeId}`. `verdict:"trust"` → use
    `score`; `"deliberate"` → adjust from `strongMatches`/`partialMatches`/`gaps`. Skip reasons
    follow `$JOBPILOT_SKILLS_ROOT/_shared/eligibility.md`; a JD silent on sponsorship while
    `requiresSponsorship` is true is not a skip (append `sponsorship unstated in JD` to
@@ -116,7 +116,7 @@ line on why. Never add it yourself: boards are the user's call.
 ## Output
 
 ```json
-{ "newJobs": 0, "jobsSeen": 0, "queries": [""],
+{ "newJobs": 0, "jobsScanned": 0, "queries": [""],
   "best": [{ "company": "", "title": "", "score": 0 }],
   "capExempt": 0, "duplicates": 0,
   "boardsSuggested": [{ "domain": "", "why": "" }],

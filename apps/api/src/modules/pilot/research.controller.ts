@@ -20,7 +20,7 @@ export const pilotResearchController = new Elysia({
         "Returns the last research run with its summary, the standing research campaign, and any pending Research now request.",
     },
   })
-  .post("/research/run", ({ user }) => research.runNow(user.id), {
+  .post("/research/runs", ({ user }) => research.runNow(user.id), {
     beforeHandle: rateLimit(RATE_LIMITS.pilotMutation),
     response: researchStatusSchema,
     detail: {

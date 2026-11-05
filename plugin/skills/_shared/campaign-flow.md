@@ -7,7 +7,7 @@ credentials per `./setup.md` first; each skill states only its deltas from what'
 ## Applied-check (dedupe before opening a tab)
 
 ```bash
-jobpilot-api GET /api/applied/check --query "url=<job-url>" --query "title=<title>" --query "company=<company>"
+jobpilot-api GET /api/applications/duplicates --query "url=<job-url>" --query "title=<title>" --query "company=<company>"
 ```
 
 Exact URL match plus fuzzy title+company over a 30-day window; `.match.kind` is `url` or

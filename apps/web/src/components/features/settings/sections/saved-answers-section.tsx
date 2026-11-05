@@ -24,22 +24,22 @@ export function SavedAnswersSection(): ReactElement {
   const confirm = useConfirm();
   const [editing, setEditing] = useState<SavedAnswerDto | null>(null);
 
-  const query = useApiQuery(pilotQueries.answers(), {
+  const query = useApiQuery(pilotQueries.savedAnswers(), {
     errorMessage: "Failed to load saved answers",
   });
 
   const save = useApiMutation(
     ({ key, value }: Pick<SavedAnswerDto, "key" | "value">) =>
-      api.pilot.answers({ key }).put({ value }),
+      api.pilot["saved-answers"]({ key }).put({ value }),
     {
-      invalidate: [queryKeys.pilot.answers()],
+      invalidate: [queryKeys.pilot.savedAnswers()],
       successMessage: "Answer saved.",
       onSuccess: () => setEditing(null),
     },
   );
 
-  const remove = useApiMutation((key: string) => api.pilot.answers({ key }).delete(), {
-    invalidate: [queryKeys.pilot.answers()],
+  const remove = useApiMutation((key: string) => api.pilot["saved-answers"]({ key }).delete(), {
+    invalidate: [queryKeys.pilot.savedAnswers()],
     successMessage: "Answer deleted.",
   });
 

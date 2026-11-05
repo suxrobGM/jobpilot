@@ -36,7 +36,7 @@ export default function AdminListingsPage(props: AdminListingsPageProps): ReactE
 async function AdminListings(props: AdminListingsPageProps): Promise<ReactElement> {
   const search = await props.searchParams;
 
-  const { data } = await api.admin.listings.get({
+  const { data } = await api.admin["job-listings"].get({
     query: {
       ...paginationQuery(search),
       ...(search.q?.trim() && { q: search.q.trim() }),

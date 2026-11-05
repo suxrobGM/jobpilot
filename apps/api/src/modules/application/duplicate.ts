@@ -35,7 +35,7 @@ export type AppliedDuplicate =
 
 /**
  * Exact URL at any age, else fuzzy title+company inside the window, where old near-matches would
- * be false positives. Shared by `/applied/check` and the apply guard so advice and enforcement
+ * be false positives. Shared by `/applications/duplicates` and the apply guard so advice and enforcement
  * cannot drift apart.
  */
 export async function findAppliedDuplicate(

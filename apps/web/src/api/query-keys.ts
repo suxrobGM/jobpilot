@@ -119,7 +119,7 @@ export const queryKeys = {
     cost: () => [...queryKeys.pilot.all, "cost"] as const,
     // Read-only view of the pilot's self-managed discovery searches.
     searches: () => [...queryKeys.pilot.all, "searches"] as const,
-    answers: () => [...queryKeys.pilot.all, "answers"] as const,
+    savedAnswers: () => [...queryKeys.pilot.all, "savedAnswers"] as const,
     // What an instructions edit would leave running; read on demand, never prefetched.
     instructionsImpact: () => [...queryKeys.pilot.all, "instructions-impact"] as const,
     // Mount-fetch + manual refresh only; PilotLive never invalidates this key (building the task list is costly).

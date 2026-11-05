@@ -13,7 +13,7 @@ import { useSession } from "@/hooks/use-auth";
 export function VerifyEmailBanner(): ReactElement | null {
   const { user } = useSession();
   const [dismissed, setDismissed] = useState(false);
-  const resend = useApiMutation(() => api.auth.email.resend.post(), {
+  const resend = useApiMutation(() => api.auth.email.verification.post(), {
     successMessage: "Verification email sent - check your inbox.",
   });
 

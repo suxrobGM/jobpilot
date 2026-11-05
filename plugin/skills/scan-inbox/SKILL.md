@@ -69,7 +69,7 @@ For `interviewing | rejected | offer`:
 1. Pull candidates:
 
    ```bash
-   jobpilot-api GET /api/applied --query "search=<company-or-from-domain>" --query limit=100
+   jobpilot-api GET /api/applications --query "search=<company-or-from-domain>" --query limit=100
    ```
 
 2. Score each of `.items` against `fromName` / `fromDomain` / `subject`. Pick the best if score ≥ 0.7 (0–1).

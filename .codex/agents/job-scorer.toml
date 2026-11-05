@@ -48,7 +48,7 @@ Build the brief from the posting; omit what it doesn't state, never invent:
 ```
 
 Always fill `skills` (drives the score), `requirements` and `descriptionExcerpt` (eligibility reads
-them). `POST /api/score-fit {brief, minScore:<minMatchScore>, resumeId}`, dropping null fields.
+them). `POST /api/fit-scores {brief, minScore:<minMatchScore>, resumeId}`, dropping null fields.
 `verdict:"trust"` → use `score`; `"deliberate"` → reason from
 `strongMatches`/`partialMatches`/`gaps`.
 
@@ -82,7 +82,7 @@ Return:
 Per row:
 
 1. Navigate to `url` and build the brief.
-2. `GET /api/applied/check --query url=<url> --query title=<title> --query company=<company>`.
+2. `GET /api/applications/duplicates --query url=<url> --query title=<title> --query company=<company>`.
    `.applied` → ineligible, `Already applied (<match.kind>)`; skip to 4.
 3. Score and check eligibility. No skip reason → eligible, stays `pending`.
 4. Save:

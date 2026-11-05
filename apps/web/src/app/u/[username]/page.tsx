@@ -16,7 +16,7 @@ interface PortfolioPageProps {
 /** Called by both generateMetadata and the page; `cache` collapses that to one request. */
 const getPortfolio = cache(async (username: string) =>
   dataOrThrow(
-    await api.public.portfolio({ username }).get(await getPublicFetchOptions()),
+    await api.public.portfolios({ username }).get(await getPublicFetchOptions()),
     "Couldn't load this portfolio",
   ),
 );

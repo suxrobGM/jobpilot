@@ -80,7 +80,7 @@ Score each non-applied result server-side, like every other campaign skill. Buil
 server uses the primary):
 
 ```bash
-jobpilot-api POST /api/score-fit --data @"$JOBPILOT_TEMP/fit.json"
+jobpilot-api POST /api/fit-scores --data @"$JOBPILOT_TEMP/fit.json"
 ```
 
 Use `.score` when `.verdict` is `trust`; on `deliberate`, adjust it from

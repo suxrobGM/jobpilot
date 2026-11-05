@@ -33,7 +33,7 @@ export default function LeaderboardPage(): ReactElement {
 
 /** Server-fetch the default window for SEO; the client view refetches on toggle. */
 async function Leaderboard(): Promise<ReactElement> {
-  const { data } = await api.public.portfolio.leaderboard.get({
+  const { data } = await api.public.portfolios.leaderboard.get({
     query: { window: "month" },
     ...(await getPublicFetchOptions()),
   });

@@ -52,9 +52,12 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
   const approveSelected = useApiMutation(
     async (ids: string[]) => {
       for (const id of ids) {
-        const res = await api.campaigns({ id: campaignId }).networking({ messageId: id }).patch({
-          status: "approved",
-        });
+        const res = await api
+          .campaigns({ id: campaignId })
+          .networking.messages({ messageId: id })
+          .patch({
+            status: "approved",
+          });
         if (res.error) {
           return { data: null, error: res.error };
         }

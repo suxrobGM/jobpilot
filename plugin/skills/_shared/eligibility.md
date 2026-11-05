@@ -6,7 +6,7 @@
 - `Below minimum match score (X < Y)` - only after reading the actual posting.
 - A hard requirement **the JD itself states** the user can't meet. Never infer from industry or
   company name.
-  - **`POST /api/score-fit` detects these for you**, returning `eligibilityBlocked: { kind, evidence
+  - **`POST /api/fit-scores` detects these for you**, returning `eligibilityBlocked: { kind, evidence
     }` when the brief states one. Present ⇒ skip, with the reason its `kind` calls for:
     - `sponsorship` → `No visa sponsorship (JD: "<evidence>")` - only raised when
       `user.requiresSponsorship` is true.

@@ -25,7 +25,7 @@ async function checkPublicDetail(request: NextRequest, kind: string, id: string)
   const { status } =
     kind === "jobs"
       ? await api.public.jobs({ slug: key }).exists.get()
-      : await api.public.portfolio({ username: key }).exists.get();
+      : await api.public.portfolios({ username: key }).exists.get();
 
   // Only a definite 404: a 429 or an API blip must not get a live page deindexed.
   return status === 404 ? NextResponse.rewrite(new URL("/404", request.url)) : NextResponse.next();

@@ -35,7 +35,7 @@ export function runDisabledReason(status: JobAlertsStatus): string | null {
 export function useJobAlerts() {
   const toast = useToast();
   const query = useApiQuery(pilotQueries.jobAlerts(), { refetchInterval: POLL_MS });
-  const run = useApiMutation(() => api.pilot["job-alerts"].run.post(), {
+  const run = useApiMutation(() => api.pilot["job-alerts"].runs.post(), {
     invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.taskList()],
     onSuccess: (result) => {
       if (!result.queued) {

@@ -6,8 +6,8 @@ type AdminUserPageDto = Data<typeof api.admin.users.get>;
 /** One row of the admin users table. */
 export type AdminUserDto = AdminUserPageDto["items"][number];
 
-/** A global catalog board with its adoption count, from `GET /api/admin/boards`. */
-export type AdminBoardDto = Data<typeof api.admin.boards.get>["items"][number];
+/** A global catalog board with its adoption count, from `GET /api/admin/job-boards`. */
+export type AdminBoardDto = Data<(typeof api.admin)["job-boards"]["get"]>["items"][number];
 
 type AdminPilotPageDto = Data<typeof api.admin.pilots.get>;
 

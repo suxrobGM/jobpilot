@@ -14,7 +14,7 @@ export function AddBoardButton(): ReactElement {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const create = useApiMutation((values: AdminBoardInput) => api.admin.boards.post(values), {
+  const create = useApiMutation((values: AdminBoardInput) => api.admin["job-boards"].post(values), {
     successMessage: "Board added to the catalog",
     onSuccess: () => {
       setOpen(false);

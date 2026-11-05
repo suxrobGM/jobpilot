@@ -214,7 +214,7 @@ sequenceDiagram
 
     W->>T: POST /sessions/inject
     T->>S: PTY stdin
-    S->>API: GET /health, /profile, /credentials, /applied/check
+    S->>API: GET /health, /profile, /credentials, /applications/duplicates
     S->>B: navigate, login, fill, submit
     S->>API: POST /campaigns/[id]/jobs/[jobKey]/result
     API-->>W: SSE campaign event → query invalidation → refetch

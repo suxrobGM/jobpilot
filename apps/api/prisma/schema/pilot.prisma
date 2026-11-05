@@ -102,7 +102,7 @@ model PilotSearch {
   // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
   reason       String    @default("")
   lastRunAt    DateTime? @map("last_run_at") @db.Timestamptz(3)
-  lastJobsSeen Int?      @map("last_jobs_seen")
+  lastJobsScanned Int?  @map("last_jobs_scanned")
   lastNewJobs  Int?      @map("last_new_jobs")
   // Consecutive runs with no new jobs; 3 or more backs the search off.
   emptyRuns    Int       @default(0) @map("empty_runs")

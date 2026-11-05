@@ -32,7 +32,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   const detail = useApiQuery(applicationQueries.detail(id));
 
   const updateStatus = useApiMutation(
-    (vars: StatusTransitionInput) => api.applied({ id }).status.post(vars),
+    (vars: StatusTransitionInput) => api.applications({ id }).status.post(vars),
     {
       successMessage: "Status updated",
       invalidate: invalidations.application,
@@ -40,7 +40,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     },
   );
 
-  const remove = useApiMutation(() => api.applied({ id }).delete(), {
+  const remove = useApiMutation(() => api.applications({ id }).delete(), {
     successMessage: "Application deleted",
     invalidate: invalidations.application,
     onSuccess: () => router.replace("/"),

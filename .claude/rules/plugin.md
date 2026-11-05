@@ -40,7 +40,7 @@ owns per-job variants, guarded in `apps/api/src/modules/resume/tailoring/structu
   links).
 - Load profile, resume, and credentials per `skills/_shared/setup.md`. Resolve a board login with
   `GET /api/credentials/resolve` (the board's login, else the default). Log in before searching.
-- Dedupe with `GET /api/applied/check` before applying.
+- Dedupe with `GET /api/applications/duplicates` before applying.
 - Campaigns: `PATCH /api/campaigns/[id]/jobs/[jobKey]` for non-terminal transitions.
   `POST .../jobs/[jobKey]/result` for applied / failed / skipped. It updates the job and creates
   the application in one call.

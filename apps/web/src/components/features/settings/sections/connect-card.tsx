@@ -30,7 +30,7 @@ export function ConnectCard(): ReactElement {
   });
 
   const connect = (): void => {
-    window.location.href = `${API_BASE_URL}/api/email/oauth/start`;
+    window.location.href = `${API_BASE_URL}/api/email/oauth/authorize`;
   };
 
   const handleDisconnect = async (): Promise<void> => {

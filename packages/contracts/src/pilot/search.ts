@@ -15,7 +15,7 @@ export const createPilotSearchSchema = z.object({
 export const updatePilotSearchSchema = createPilotSearchSchema.partial();
 
 export const reportPilotSearchRunSchema = z.object({
-  jobsSeen: z.number().int().min(0),
+  jobsScanned: z.number().int().min(0),
   newJobs: z.number().int().min(0),
   reachedEnd: z.boolean(),
 });
@@ -28,7 +28,7 @@ export const pilotSearchSchema = z.object({
   resumeId: z.uuid().nullable(),
   reason: z.string(),
   lastRunAt: z.date().nullable(),
-  lastJobsSeen: z.number().int().nullable(),
+  lastJobsScanned: z.number().int().nullable(),
   lastNewJobs: z.number().int().nullable(),
   emptyRuns: z.number().int(),
   nextRunAt: z.date(),

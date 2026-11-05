@@ -26,7 +26,9 @@ export function VerifyEmailView(props: VerifyEmailViewProps): ReactElement {
 
 function VerifyTokenView(props: { token: string }): ReactElement {
   const { token } = props;
-  const verifyEmail = useApiMutation((body: VerifyEmailInput) => api.auth.email.verify.post(body));
+  const verifyEmail = useApiMutation((body: VerifyEmailInput) =>
+    api.auth.email.verification.confirm.post(body),
+  );
 
   return (
     <MagicLinkView
@@ -44,7 +46,7 @@ function VerifyTokenView(props: { token: string }): ReactElement {
 function VerifyGateView(): ReactElement {
   const { user } = useSession();
   const { logout } = useAuthActions();
-  const resendVerification = useApiMutation(() => api.auth.email.resend.post());
+  const resendVerification = useApiMutation(() => api.auth.email.verification.post());
 
   return (
     <Stack spacing={2.5}>
