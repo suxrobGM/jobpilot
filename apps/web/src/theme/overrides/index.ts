@@ -43,7 +43,7 @@ import {
   tableRowOverrides,
 } from "./table";
 import { tabOverrides, tabsOverrides } from "./tabs";
-import { toggleButtonOverrides } from "./toggle-button";
+import { toggleButtonGroupOverrides, toggleButtonOverrides } from "./toggle-button";
 
 export const componentOverrides: Components<Theme> = {
   MuiAccordion: accordionOverrides,
@@ -84,5 +84,6 @@ export const componentOverrides: Components<Theme> = {
   MuiTabs: tabsOverrides,
   MuiTextField: textFieldOverrides,
   MuiToggleButton: toggleButtonOverrides,
+  MuiToggleButtonGroup: toggleButtonGroupOverrides,
   MuiTypography: typographyOverrides,
 };
