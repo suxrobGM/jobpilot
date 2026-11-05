@@ -14,10 +14,10 @@ import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest } from "@/api/types";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
+import { useCopy } from "@/hooks/use-copy";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
-import { useToast } from "@/providers/notification-provider";
 import { ProposalNotes } from "./proposal-notes";
 import { ProposalStatusBar } from "./proposal-status-bar";
 
@@ -29,7 +29,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const { id } = props;
   const router = useRouter();
   const agent = useAgent();
-  const toast = useToast();
+  const copy = useCopy();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
 
@@ -72,11 +72,6 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
       </PageShell>
     );
   }
-
-  const handleCopy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
-  };
 
   const handleDelete = async () => {
     const confirmed = await confirm({
@@ -147,7 +142,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
             <Button
               size="small"
               startIcon={<ContentCopy fontSize="sm" />}
-              onClick={() => void handleCopy(proposal.proposalText)}
+              onClick={() => void copy(proposal.proposalText)}
             >
               Copy
             </Button>
