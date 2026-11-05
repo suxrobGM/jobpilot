@@ -7,7 +7,7 @@ enum Availability {
 
 // The applicant: who they are on applications and on the public portfolio. One per user.
 model Profile {
-  userId String @id @map("user_id")
+  userId String @id @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   availability Availability?
@@ -47,15 +47,15 @@ model Profile {
   eeoVeteranStatus    String? @map("eeo_veteran_status")
   eeoDisabilityStatus String? @map("eeo_disability_status")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("profiles")
 }
 
 model ProfessionalReference {
-  id           String  @id @default(uuid())
-  userId       String  @map("user_id")
+  id           String  @id @default(uuid(7)) @db.Uuid
+  userId       String  @map("user_id") @db.Uuid
   user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   name         String
   relationship String?
@@ -69,8 +69,8 @@ model ProfessionalReference {
 }
 
 model SalaryPreference {
-  id        String         @id @default(uuid())
-  userId    String         @map("user_id")
+  id        String         @id @default(uuid(7)) @db.Uuid
+  userId    String         @map("user_id") @db.Uuid
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   appliesTo String         @map("applies_to")
   minAmount Float?         @map("min_amount")
@@ -84,27 +84,27 @@ model SalaryPreference {
 }
 
 model AutoApplySettings {
-  id                         String   @id @default(uuid())
-  userId                     String   @unique @map("user_id")
+  id                         String   @id @default(uuid(7)) @db.Uuid
+  userId                     String   @unique @map("user_id") @db.Uuid
   user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   minMatchScore              Int      @default(60) @map("min_match_score")
   maxApplicationsPerCampaign Int?     @map("max_applications_per_campaign")
   defaultStartDate           String   @default("2 weeks notice") @map("default_start_date")
-  createdAt                  DateTime @default(now()) @map("created_at")
-  updatedAt                  DateTime @updatedAt @map("updated_at")
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("auto_apply_settings")
 }
 
 // Answers the user gave, never the model's guesses.
 model ProfileAnswer {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   key       String
   value     String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([userId, key])
   @@map("profile_answers")

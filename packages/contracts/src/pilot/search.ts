@@ -8,7 +8,7 @@ export const createPilotSearchSchema = z.object({
   query: z.string().min(1),
   /** The board's domain, resolved to a catalog row. */
   board: z.string().trim().min(1).optional(),
-  resumeId: z.string().optional(),
+  resumeId: z.uuid().optional(),
   reason: reasonSchema,
 });
 
@@ -25,7 +25,7 @@ export const pilotSearchSchema = z.object({
   userId: z.uuid(),
   query: z.string(),
   board: boardRefSchema.nullable(),
-  resumeId: z.string().nullable(),
+  resumeId: z.uuid().nullable(),
   reason: z.string(),
   lastRunAt: z.date().nullable(),
   lastJobsSeen: z.number().int().nullable(),

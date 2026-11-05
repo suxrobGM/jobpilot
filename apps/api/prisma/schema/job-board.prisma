@@ -1,6 +1,6 @@
 // The global, admin-curated board catalog. A user adding an unknown domain creates an unlisted row.
 model JobBoard {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid(7)) @db.Uuid
   name      String
   domain    String   @unique
   searchUrl String?  @map("search_url")
@@ -9,8 +9,8 @@ model JobBoard {
   // Auto-linked to every new user at registration.
   isDefault Boolean  @default(false) @map("is_default")
   sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   userBoards     UserJobBoard[]
   credentials    Credential[]
@@ -25,10 +25,10 @@ model JobBoard {
 
 // A user's adoption of a global board. Logins live in Credential, keyed by the board.
 model UserJobBoard {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  boardId   String   @map("board_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  boardId   String   @map("board_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   user  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   board JobBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)

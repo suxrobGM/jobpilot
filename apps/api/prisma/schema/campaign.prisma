@@ -26,8 +26,8 @@ enum Actor {
 }
 
 model Campaign {
-  id              String         @id @default(uuid())
-  userId          String         @map("user_id")
+  id              String         @id @default(uuid(7)) @db.Uuid
+  userId          String         @map("user_id") @db.Uuid
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   query           String
   source          CampaignSource
@@ -35,15 +35,15 @@ model Campaign {
   createdBy       Actor          @default(user) @map("created_by")
   statusChangedBy Actor?         @map("status_changed_by")
   statusReason    String?        @map("status_reason")
-  startedAt       DateTime       @default(now()) @map("started_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
-  completedAt     DateTime?      @map("completed_at")
+  startedAt       DateTime       @default(now()) @map("started_at") @db.Timestamptz(3)
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  completedAt     DateTime?      @map("completed_at") @db.Timestamptz(3)
   config          Json           @default("{}")
   // Null for campaigns of pasted links.
-  boardId         String?        @map("board_id")
+  boardId         String?        @map("board_id") @db.Uuid
   board           JobBoard?      @relation(fields: [boardId], references: [id], onDelete: SetNull)
   // Discovery matches on this, not the query text: the pilot may rewrite the query.
-  pilotSearchId   String?        @map("pilot_search_id")
+  pilotSearchId   String?        @map("pilot_search_id") @db.Uuid
 
   jobs               CampaignJob[]
   applications       Application[]

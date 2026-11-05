@@ -1,7 +1,7 @@
 import { ErrorCodes, type ErrorResponse } from "@jobpilot/contracts/errors";
 import { Elysia } from "elysia";
 import { KeyUnrecoverableError } from "@/common/crypto/errors";
-import { HttpError, prismaCode } from "@/common/errors";
+import { HttpError, PRISMA_ERRORS, prismaCode } from "@/common/errors";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
 
@@ -34,6 +34,12 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
     if (prismaCode(error) === "P2002") {
       set.status = 409;
       return { code: ErrorCodes.CONFLICT, message: "Already exists" };
+    }
+
+    // Path ids are validated as uuids; a malformed one in a body or query reaches the database.
+    if (prismaCode(error) === PRISMA_ERRORS.INVALID_VALUE) {
+      set.status = 400;
+      return { code: ErrorCodes.INVALID_REQUEST, message: "Malformed id" };
     }
 
     // Update/delete on a row that vanished (concurrent delete) is a 404, not a 500.

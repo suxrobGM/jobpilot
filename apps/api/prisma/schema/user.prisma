@@ -8,23 +8,23 @@ enum UserRole {
 }
 
 model User {
-  id               String    @id @default(uuid())
+  id               String    @id @default(uuid(7)) @db.Uuid
   email            String    @unique
   // Null for OAuth-only accounts; the security page lets them set one later.
   passwordHash     String?   @map("password_hash")
   role             UserRole  @default(user)
-  emailVerifiedAt  DateTime? @map("email_verified_at")
+  emailVerifiedAt  DateTime? @map("email_verified_at") @db.Timestamptz(3)
   // Encrypted under SECRET_MASTER_KEY; decrypts this account's secrets, so deleting the account
   // crypto-shreds them.
   encryptedDataKey String?   @map("encrypted_data_key")
 
   username String @unique
 
-  primaryResumeId String? @unique @map("primary_resume_id")
+  primaryResumeId String? @unique @map("primary_resume_id") @db.Uuid
   primaryResume   Resume? @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   profile            Profile?
   authTokens         AuthToken[]

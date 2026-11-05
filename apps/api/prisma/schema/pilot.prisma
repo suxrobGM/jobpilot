@@ -67,46 +67,46 @@ enum PromotionStatus {
 }
 
 model PilotState {
-  userId                String    @id @map("user_id")
+  userId                String    @id @map("user_id") @db.Uuid
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   running               Boolean   @default(false)
   instructionsGoals     String    @default("") @map("instructions_goals")
   instructionsConfig    Json      @default("{}") @map("instructions_config")
-  instructionsUpdatedAt DateTime? @map("instructions_updated_at")
+  instructionsUpdatedAt DateTime? @map("instructions_updated_at") @db.Timestamptz(3)
   taskListVersion       String?   @map("task_list_version")
-  taskListExpiresAt     DateTime? @map("task_list_expires_at")
+  taskListExpiresAt     DateTime? @map("task_list_expires_at") @db.Timestamptz(3)
   taskListSnapshot      Json?     @map("task_list_snapshot")
-  lastCycleAt           DateTime? @map("last_cycle_at")
+  lastCycleAt           DateTime? @map("last_cycle_at") @db.Timestamptz(3)
   // When the host plans its next task list check; idle checks write here, not to the journal.
-  nextWakeAt            DateTime? @map("next_wake_at")
+  nextWakeAt            DateTime? @map("next_wake_at") @db.Timestamptz(3)
   cycleCount            Int       @default(0) @map("cycle_count")
   // "Run now" for the job-alert import: offered off-schedule until a later run or an hour passes.
-  jobAlertsRequestedAt  DateTime? @map("job_alerts_requested_at")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
+  jobAlertsRequestedAt  DateTime? @map("job_alerts_requested_at") @db.Timestamptz(3)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("pilot_states")
 }
 
 model PilotSearch {
-  id           String    @id @default(uuid())
-  userId       String    @map("user_id")
+  id           String    @id @default(uuid(7)) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   query        String
-  boardId      String?   @map("board_id")
+  boardId      String?   @map("board_id") @db.Uuid
   board        JobBoard? @relation(fields: [boardId], references: [id], onDelete: SetNull)
-  resumeId     String?   @map("resume_id")
+  resumeId     String?   @map("resume_id") @db.Uuid
   resume       Resume?   @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
   reason       String    @default("")
-  lastRunAt    DateTime? @map("last_run_at")
+  lastRunAt    DateTime? @map("last_run_at") @db.Timestamptz(3)
   lastJobsSeen Int?      @map("last_jobs_seen")
   lastNewJobs  Int?      @map("last_new_jobs")
   // Consecutive runs with no new jobs; 3 or more backs the search off.
   emptyRuns    Int       @default(0) @map("empty_runs")
-  nextRunAt    DateTime  @default(now()) @map("next_run_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  nextRunAt    DateTime  @default(now()) @map("next_run_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   // A run opens a new campaign once the previous one completes.
   campaigns Campaign[]
@@ -118,17 +118,17 @@ model PilotSearch {
 }
 
 model PilotRun {
-  id               String           @id @default(uuid())
-  userId           String           @map("user_id")
+  id               String           @id @default(uuid(7)) @db.Uuid
+  userId           String           @map("user_id") @db.Uuid
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskType         String           @map("task_type")
   subjectType      PilotSubjectType @map("subject_type")
   subjectId        String           @map("subject_id")
   payload          Json             @default("{}")
-  startedAt        DateTime         @default(now()) @map("started_at")
-  heartbeatAt      DateTime?        @map("heartbeat_at")
-  expiresAt        DateTime         @map("expires_at")
-  finishedAt       DateTime?        @map("finished_at")
+  startedAt        DateTime         @default(now()) @map("started_at") @db.Timestamptz(3)
+  heartbeatAt      DateTime?        @map("heartbeat_at") @db.Timestamptz(3)
+  expiresAt        DateTime         @map("expires_at") @db.Timestamptz(3)
+  finishedAt       DateTime?        @map("finished_at") @db.Timestamptz(3)
   outcome          PilotRunOutcome?
   // Null until the host reports the usage of the cycle that started this run.
   model            String?
@@ -147,8 +147,8 @@ model PilotRun {
 }
 
 model PilotQuestion {
-  id             String              @id @default(uuid())
-  userId         String              @map("user_id")
+  id             String              @id @default(uuid(7)) @db.Uuid
+  userId         String              @map("user_id") @db.Uuid
   user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind           PilotQuestionKind
   status         PilotQuestionStatus @default(open)
@@ -159,9 +159,9 @@ model PilotQuestion {
   link           String?
   answer         String?
   savedAnswerKey String?             @map("saved_answer_key")
-  answeredAt     DateTime?           @map("answered_at")
-  expiresAt      DateTime?           @map("expires_at")
-  createdAt      DateTime            @default(now()) @map("created_at")
+  answeredAt     DateTime?           @map("answered_at") @db.Timestamptz(3)
+  expiresAt      DateTime?           @map("expires_at") @db.Timestamptz(3)
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([userId, status])
   @@index([status, expiresAt])
@@ -169,18 +169,18 @@ model PilotQuestion {
 }
 
 model PilotJournalEntry {
-  id          String            @id @default(uuid())
-  userId      String            @map("user_id")
+  id          String            @id @default(uuid(7)) @db.Uuid
+  userId      String            @map("user_id") @db.Uuid
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   // The run whose cycle wrote this entry.
-  runId       String?           @map("run_id")
+  runId       String?           @map("run_id") @db.Uuid
   run         PilotRun?         @relation(fields: [runId], references: [id], onDelete: SetNull)
   kind        PilotJournalKind
   summary     String
   detail      Json              @default("{}")
   subjectType PilotSubjectType? @map("subject_type")
   subjectId   String?           @map("subject_id")
-  createdAt   DateTime          @default(now()) @map("created_at")
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([userId, createdAt])
   @@index([userId, kind, createdAt])
@@ -190,8 +190,8 @@ model PilotJournalEntry {
 }
 
 model PromotionPost {
-  id           String          @id @default(uuid())
-  userId       String          @map("user_id")
+  id           String          @id @default(uuid(7)) @db.Uuid
+  userId       String          @map("user_id") @db.Uuid
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   platform     String
   target       String?
@@ -199,10 +199,10 @@ model PromotionPost {
   body         String
   status       PromotionStatus @default(draft)
   postedUrl    String?         @map("posted_url")
-  scheduledFor DateTime?       @map("scheduled_for")
-  postedAt     DateTime?       @map("posted_at")
-  createdAt    DateTime        @default(now()) @map("created_at")
-  updatedAt    DateTime        @updatedAt @map("updated_at")
+  scheduledFor DateTime?       @map("scheduled_for") @db.Timestamptz(3)
+  postedAt     DateTime?       @map("posted_at") @db.Timestamptz(3)
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([userId, status])
   @@index([updatedAt]) // Retention sweep.

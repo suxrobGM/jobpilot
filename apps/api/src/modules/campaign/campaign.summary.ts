@@ -99,7 +99,7 @@ export async function summarizeCampaigns<T extends CampaignRef>(
       ? client.$queryRaw<{ campaignId: string; discovered: number }[]>(Prisma.sql`
           SELECT campaign_id AS "campaignId", COUNT(DISTINCT contact_id)::integer AS discovered
           FROM networking_messages
-          WHERE campaign_id IN (${Prisma.join(networkingIds)})
+          WHERE campaign_id = ANY(${networkingIds}::uuid[])
           GROUP BY campaign_id
         `)
       : [],

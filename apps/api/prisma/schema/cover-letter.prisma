@@ -7,11 +7,11 @@ enum CoverLetterSource {
 }
 
 model CoverLetter {
-  id     String @id @default(uuid())
-  userId String @map("user_id")
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  applicationId String?      @map("application_id")
+  applicationId String?      @map("application_id") @db.Uuid
   application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
 
   jobUrl   String?           @map("job_url")
@@ -20,8 +20,8 @@ model CoverLetter {
   source   CoverLetterSource @default(manual)
   content  String // plain text
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([userId, createdAt])
   @@index([applicationId])

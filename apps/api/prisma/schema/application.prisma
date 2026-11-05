@@ -39,33 +39,33 @@ enum ApplicationStatus {
 }
 
 model Application {
-  id        String            @id @default(uuid())
-  userId    String            @map("user_id")
+  id        String            @id @default(uuid(7)) @db.Uuid
+  userId    String            @map("user_id") @db.Uuid
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   url       String
   title     String
   company   String
   location  String?
-  boardId   String?           @map("board_id")
+  boardId   String?           @map("board_id") @db.Uuid
   board     JobBoard?         @relation(fields: [boardId], references: [id], onDelete: SetNull)
   source    ApplicationSource
-  appliedAt DateTime          @default(now()) @map("applied_at")
+  appliedAt DateTime          @default(now()) @map("applied_at") @db.Timestamptz(3)
 
   status ApplicationStatus @default(applied)
 
   matchScore  Int?    @map("match_score")
   matchReason String? @map("match_reason")
 
-  campaignId String?      @map("campaign_id")
+  campaignId String?      @map("campaign_id") @db.Uuid
   campaign   Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   // Always a job of `campaignId`.
-  jobId      String?      @map("job_id")
+  jobId      String?      @map("job_id") @db.Uuid
   job        CampaignJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   // The resume and variant actually submitted; `tailoredVariants` were written for this application.
-  resumeId        String?        @map("resume_id")
+  resumeId        String?        @map("resume_id") @db.Uuid
   resume          Resume?        @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  resumeVariantId String?        @map("resume_variant_id")
+  resumeVariantId String?        @map("resume_variant_id") @db.Uuid
   resumeVariant   ResumeVariant? @relation("SubmittedVariant", fields: [resumeVariantId], references: [id], onDelete: SetNull)
 
   events           ApplicationEvent[]
@@ -88,15 +88,15 @@ model Application {
 }
 
 model ApplicationEvent {
-  id            String                  @id @default(uuid())
-  applicationId String                  @map("application_id")
+  id            String                  @id @default(uuid(7)) @db.Uuid
+  applicationId String                  @map("application_id") @db.Uuid
   application   Application             @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   kind          ApplicationEventKind
   fromStatus    ApplicationStatus?      @map("from_status")
   toStatus      ApplicationStatus?      @map("to_status")
   note          String?
   source        ApplicationEventSource?
-  createdAt     DateTime                @default(now()) @map("created_at")
+  createdAt     DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([applicationId, createdAt])
   @@index([createdAt])

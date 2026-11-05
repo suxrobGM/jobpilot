@@ -46,8 +46,8 @@ enum UpworkInboxStatus {
 }
 
 model UpworkProposal {
-  id     String @id @default(uuid())
-  userId String @map("user_id")
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   jobTitle       String  @map("job_title")
@@ -64,12 +64,12 @@ model UpworkProposal {
 
   source UpworkProposalSource @default(manual)
   // The campaign job a `search` draft was seeded from.
-  jobId  String?              @map("job_id")
+  jobId  String?              @map("job_id") @db.Uuid
   job    CampaignJob?         @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  submittedAt DateTime? @map("submitted_at")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  submittedAt DateTime? @map("submitted_at") @db.Timestamptz(3)
 
   @@index([userId, status])
   @@index([jobId])
@@ -79,8 +79,8 @@ model UpworkProposal {
 // Only an `approved` row may be written back to Upwork. Portfolio columns hold
 // portfolioProjectSchema[]; the MCP cannot write portfolio or hourly rate, so those two stay advisory.
 model UpworkProfile {
-  id     String @id @default(uuid())
-  userId String @unique @map("user_id")
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   currentTitle      String?  @map("current_title")
@@ -96,32 +96,32 @@ model UpworkProfile {
   suggestedSkills     String[] @default([]) @map("suggested_skills")
 
   status    UpworkProfileStatus @default(empty)
-  createdAt DateTime            @default(now()) @map("created_at")
-  updatedAt DateTime            @updatedAt @map("updated_at")
-  appliedAt DateTime?           @map("applied_at")
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  appliedAt DateTime?           @map("applied_at") @db.Timestamptz(3)
 
   @@map("upwork_profiles")
 }
 
 // Mirrored by the sync skill: the Upwork MCP runs in the local agent, out of the browser's reach.
 model UpworkAccount {
-  id     String @id @default(uuid())
-  userId String @unique @map("user_id")
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   connectsBalance Int? @map("connects_balance")
 
-  lastSyncedAt DateTime? @map("last_synced_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  lastSyncedAt DateTime? @map("last_synced_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("upwork_accounts")
 }
 
 // `upworkId` keeps the sync idempotent; `payload` keeps the full item for fields not modeled yet.
 model UpworkInboxItem {
-  id     String @id @default(uuid())
-  userId String @map("user_id")
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   upworkId   String          @map("upwork_id")
@@ -132,11 +132,11 @@ model UpworkInboxItem {
   body       String?
 
   status     UpworkInboxStatus @default(unread)
-  receivedAt DateTime          @map("received_at")
+  receivedAt DateTime          @map("received_at") @db.Timestamptz(3)
   payload    Json              @default("{}")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([userId, upworkId])
   @@index([userId, kind, receivedAt])

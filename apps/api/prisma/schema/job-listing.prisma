@@ -8,7 +8,7 @@ enum JobListingStatus {
 // The public job index: one row per posting, deduped across all users. Must never record who
 // discovered or applied.
 model JobListing {
-  id       String @id @default(uuid())
+  id       String @id @default(uuid(7)) @db.Uuid
   slug     String @unique
   // sha256(normTitle|normCompany|normLocation).
   matchKey String @unique @map("match_key")
@@ -28,9 +28,9 @@ model JobListing {
 
   // Auto-published behind the ingest quality gate; admins hide after the fact.
   status      JobListingStatus @default(published)
-  firstSeenAt DateTime         @default(now()) @map("first_seen_at")
-  lastSeenAt  DateTime         @default(now()) @map("last_seen_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  firstSeenAt DateTime         @default(now()) @map("first_seen_at") @db.Timestamptz(3)
+  lastSeenAt  DateTime         @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   sources JobListingSource[]
 
@@ -50,12 +50,12 @@ model JobListing {
 // Where one posting was seen. A repost across boards collapses into one JobListing with several
 // sources; `url @unique` is what keeps the ingest upsert atomic under concurrent agents.
 model JobListingSource {
-  id         String   @id @default(uuid())
-  listingId  String   @map("listing_id")
-  boardId    String?  @map("board_id")
+  id         String   @id @default(uuid(7)) @db.Uuid
+  listingId  String   @map("listing_id") @db.Uuid
+  boardId    String?  @map("board_id") @db.Uuid
   // Normalized by normalizeJobUrl.
   url        String   @unique
-  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(3)
 
   listing JobListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
   board   JobBoard?  @relation(fields: [boardId], references: [id], onDelete: SetNull)

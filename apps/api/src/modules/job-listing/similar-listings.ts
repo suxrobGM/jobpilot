@@ -60,7 +60,7 @@ export async function rankSimilarIds(
   const ranked = await prisma.$queryRaw<{ id: string }[]>`
     SELECT id FROM job_listings
     WHERE status = 'published'::job_listing_status
-      AND id <> ${listing.id}
+      AND id <> ${listing.id}::uuid
       AND skills && ${resolveSkillFilter(listing.skills, variants)}::text[]
     ORDER BY
       ${SKILL_WEIGHT} * cardinality(ARRAY(

@@ -1,6 +1,6 @@
 model Resume {
-  id     String @id @default(uuid())
-  userId String @map("user_id")
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   label String
@@ -17,21 +17,21 @@ model Resume {
   applications  Application[]
   pilotSearches PilotSearch[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([userId])
   @@map("resumes")
 }
 
 model ResumeVariant {
-  id       String @id @default(uuid())
-  resumeId String @map("resume_id")
+  id       String @id @default(uuid(7)) @db.Uuid
+  resumeId String @map("resume_id") @db.Uuid
   resume   Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   label         String
   jobUrl        String?      @map("job_url")
-  applicationId String?      @map("application_id")
+  applicationId String?      @map("application_id") @db.Uuid
   application   Application? @relation("TailoredVariant", fields: [applicationId], references: [id], onDelete: SetNull)
 
   // `application` is the one this variant was tailored for; `submittedWith` are the ones that sent it.
@@ -43,8 +43,8 @@ model ResumeVariant {
   // Audit of rewording and restructuring (`VariantRewriteAudit`); null when the variant only reranked.
   rewrites Json?
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([resumeId])
   @@index([applicationId])
