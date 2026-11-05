@@ -12,7 +12,9 @@ public sealed record PilotSettings
     public required string ApiToken { get; init; }
     public required string ApiUrl { get; init; }
     public required string WebUrl { get; init; }
-    public bool Running { get; init; }
+
+    /// <summary>The account the host is paired to, so the web can tell a stale pairing from its own.</summary>
+    public string? UserId { get; init; }
 }
 
 /// <summary>Shape of pilot.json. The token is DPAPI-wrapped on Windows and 0600 plaintext elsewhere.</summary>
@@ -21,7 +23,7 @@ internal sealed record PilotSettingsFile
     public required string Provider { get; init; }
     public required string ApiUrl { get; init; }
     public required string WebUrl { get; init; }
-    public required bool Running { get; init; }
+    public string? UserId { get; init; }
     public required string Token { get; init; }
     public required bool Protected { get; init; }
 }
@@ -70,19 +72,18 @@ public sealed class PilotStore
         Changed?.Invoke();
     }
 
-    /// <summary>A no-op when nothing is saved.</summary>
-    public void SetRunning(bool running)
+    /// <summary>Unpairs: deletes pilot.json, so the loop parks until the next pairing.</summary>
+    public void Clear()
     {
         lock (sync)
         {
-            if (current is null || current.Running == running)
+            if (current is null)
             {
                 return;
             }
 
-            var updated = current with { Running = running };
-            Persist(updated);
-            current = updated;
+            File.Delete(filePath);
+            current = null;
         }
 
         Changed?.Invoke();
@@ -96,7 +97,7 @@ public sealed class PilotStore
             Provider = settings.Provider.Id,
             ApiUrl = settings.ApiUrl,
             WebUrl = settings.WebUrl,
-            Running = settings.Running,
+            UserId = settings.UserId,
             Token = token,
             Protected = isProtected,
         };
@@ -164,7 +165,7 @@ public sealed class PilotStore
                 ApiToken = token,
                 ApiUrl = file.ApiUrl,
                 WebUrl = file.WebUrl,
-                Running = file.Running,
+                UserId = file.UserId,
             };
         }
         catch (Exception ex) when (ex is JsonException or IOException or FormatException or ArgumentException)

@@ -258,6 +258,7 @@ public sealed class TerminalRelay : IDisposable
             case "input":
                 if (DecodeInput(message.Data) is { } bytes)
                 {
+                    session.MarkUserInput();
                     session.Write(bytes);
                 }
 

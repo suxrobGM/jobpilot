@@ -7,18 +7,23 @@ namespace JobPilot.Terminal.Pilot;
 
 /// <summary>The event type is in the JSON, not the SSE event name.</summary>
 internal sealed record PilotEvent(
-    string? Type, PilotEventPromotion? Promotion, PilotEventState? State, string? RunId = null, string? Outcome = null);
+    string? Type, PilotEventPromotion? Promotion, string? RunId = null, string? Outcome = null, string? Text = null);
 
 internal sealed record PilotEventPromotion(string? Status);
 
-internal sealed record PilotEventState(bool? Running);
+/// <summary>What the listener hands on: a wake, a finished run, and the user's interrupt or steer of a run.</summary>
+public sealed record PilotEventHandlers(
+    Action Wake,
+    Action<string, string> RunFinished,
+    Func<string, CancellationToken, Task> Interrupt,
+    Func<string, string, CancellationToken, Task> Steer);
 
 /// <summary>
-/// Holds the pilot event stream open while the pilot runs. It wakes the loop on events that unblock a cycle and
-/// passes each finished run to the session waiting on it.
+/// Holds the pilot event stream open while the host is paired. It wakes the loop on work the user asked for, passes
+/// each finished run to the session waiting on it, and relays interrupts and steers of the run in flight.
 /// </summary>
 public sealed class PilotEventListener(
-    PilotStore store, PilotApi api, Action wake, Action<string, string> runFinished, ILogger<PilotEventListener> logger)
+    PilotStore store, PilotApi api, PilotEventHandlers handlers, ILogger<PilotEventListener> logger)
     : BackgroundService
 {
     private static readonly TimeSpan InitialBackoff = TimeSpan.FromSeconds(5);
@@ -26,12 +31,10 @@ public sealed class PilotEventListener(
 
     internal static bool ShouldWake(PilotEvent e) => e.Type switch
     {
-        "question.answered" or "state.changed" => true,
+        "question.answered" or "state.changed" or "message.created" or "request.created" => true,
         "promotion.updated" => e.Promotion?.Status == "approved",
         _ => false,
     };
-
-    internal static bool IsRemoteStop(PilotEvent e) => e.Type == "state.changed" && e.State?.Running == false;
 
     internal static PilotEvent? Parse(string data)
     {
@@ -63,7 +66,7 @@ public sealed class PilotEventListener(
             try
             {
                 // Read after subscribing, so a change in between still cancels this pass.
-                if (store.Current is not { Running: true } settings)
+                if (store.Current is not { } settings)
                 {
                     await Task.Delay(Timeout.Infinite, changed.Token);
                     continue;
@@ -108,7 +111,7 @@ public sealed class PilotEventListener(
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             await foreach (var item in SseParser.Create(stream).EnumerateAsync(ct))
             {
-                Handle(item.Data);
+                await HandleAsync(item.Data, ct);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -119,28 +122,29 @@ public sealed class PilotEventListener(
         return connected;
     }
 
-    private void Handle(string data)
+    private async Task HandleAsync(string data, CancellationToken ct)
     {
         if (Parse(data) is not { } e)
         {
             return;
         }
 
-        // A stop from another device reaches this host only here. Mirror it before waking, or the loop re-reads
-        // Running=true and keeps starting cycles.
-        if (IsRemoteStop(e))
+        switch (e)
         {
-            store.SetRunning(false);
-        }
-
-        if (e is { Type: "run.finished", RunId: { } runId })
-        {
-            runFinished(runId, e.Outcome ?? "failed");
+            case { Type: "run.finished", RunId: { } runId }:
+                handlers.RunFinished(runId, e.Outcome ?? "failed");
+                break;
+            case { Type: "run.interrupt", RunId: { } runId }:
+                await handlers.Interrupt(runId, ct);
+                break;
+            case { Type: "run.steer", RunId: { } runId, Text: { } text }:
+                await handlers.Steer(runId, text, ct);
+                break;
         }
 
         if (ShouldWake(e))
         {
-            wake();
+            handlers.Wake();
         }
     }
 }

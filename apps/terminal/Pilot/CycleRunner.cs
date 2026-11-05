@@ -24,6 +24,9 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     private static readonly TimeSpan MismatchPoll = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RefreshRetry = TimeSpan.FromMinutes(1);
 
+    // The user's typing holds new runs this long, so an always-on loop never clears their session.
+    public static readonly TimeSpan HoldWindow = TimeSpan.FromMinutes(3);
+
     // A run that keeps showing activity still hands over to the ladder after this long.
     private static readonly TimeSpan MaxCycleWait = TimeSpan.FromMinutes(60);
 
@@ -34,6 +37,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
     private TimeSpan totalWaited;
     private bool extensionReported;
+    private bool holdReported;
 
     public int ConsecutiveRestarts { get; private set; }
 
@@ -46,6 +50,10 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
     /// <summary>False while paused because the user runs the other provider.</summary>
     public bool Conducting { get; private set; }
+
+    /// <summary>When the user's typing stops holding new runs back, or null when it isn't.</summary>
+    public DateTimeOffset? HeldUntil(DateTimeOffset now) =>
+        session.LastUserInputAt is { } at && at + HoldWindow > now ? at + HoldWindow : null;
 
     /// <summary>The rest of the last inter-cycle break, so a host restart does not skip it.</summary>
     public static TimeSpan OwedBreak(PilotActivity? activity, DateTimeOffset now)
@@ -79,7 +87,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
         Conducting = true;
 
-        // Only a cycle with work wakes the model. A stopped pilot also fails the refresh; its stop event ends the retry sleep.
+        // Only a cycle with work wakes the model.
         var taskList = await session.RefreshTasksAsync(ct);
         if (taskList is null)
         {
@@ -92,6 +100,20 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
             return await FinishEmptyAsync(sleep, ct);
         }
 
+        // A run starts with /clear, which would wipe what the user is doing in the terminal.
+        var now = DateTimeOffset.UtcNow;
+        if (HeldUntil(now) is { } until)
+        {
+            if (!holdReported)
+            {
+                await session.ReportAsync(Reports.Hold, ct);
+                holdReported = true;
+            }
+
+            return until - now;
+        }
+
+        holdReported = false;
         var task = taskList.Tasks[0];
         var runId = await session.StartRunAsync(task.Id, taskList.Version, ct);
         if (runId is null)
@@ -253,6 +275,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         public const string Restart = "Pilot orchestrator: the agent stopped responding - restarted its session and cancelled the run.";
         public const string Backoff = "Pilot orchestrator: 3 runs in a row got stuck - taking a 30-minute break before trying again.";
         public const string ExitBackoff = "Pilot orchestrator: the provider CLI keeps exiting right after startup - check its install and sign-in - taking a 30-minute break.";
+        public const string Hold = "Waiting while you use the terminal.";
         public const string Extend = "Pilot orchestrator: this run is taking longer than usual but is still making progress - giving it more time.";
     }
 }

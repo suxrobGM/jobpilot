@@ -36,6 +36,9 @@ public interface IPilotSession
     /// <summary>Null when no session is running.</summary>
     Provider? RunningProvider { get; }
 
+    /// <summary>When the user last typed into the terminal.</summary>
+    DateTimeOffset? LastUserInputAt { get; }
+
     void Start(PilotSettings settings);
 
     /// <summary>Clears the agent's context and hands it the run.</summary>

@@ -34,6 +34,50 @@ public class CycleRunnerTests
     }
 
     [Fact]
+    public async Task Run_HoldsNewRuns_WhileTheUserTypes_AndSaysSoOnce()
+    {
+        var session = new FakePilotSession { LastUserInputAt = DateTimeOffset.UtcNow };
+        var runner = Runner(session);
+
+        var first = await RunAsync(runner);
+        var second = await RunAsync(runner);
+
+        Assert.DoesNotContain("cycle", session.Actions);
+        Assert.InRange(first!.Value, TimeSpan.FromMinutes(2), CycleRunner.HoldWindow);
+        Assert.NotNull(second);
+        Assert.Equal([Reports.Hold], session.Reports);
+        Assert.NotNull(runner.HeldUntil(DateTimeOffset.UtcNow));
+    }
+
+    [Fact]
+    public async Task Run_StartsTheRun_OnceTheHoldHasPassed()
+    {
+        var session = new FakePilotSession { LastUserInputAt = DateTimeOffset.UtcNow - CycleRunner.HoldWindow };
+        session.Signals.Enqueue(WaitResult.Finished("done"));
+        var runner = Runner(session);
+
+        await RunAsync(runner);
+
+        Assert.Contains("cycle", session.Actions);
+        Assert.Null(runner.HeldUntil(DateTimeOffset.UtcNow));
+    }
+
+    [Theory]
+    [InlineData("skip cover letters", "skip cover letters")]
+    [InlineData("line one\nline two\r\n", "line one line two")]
+    [InlineData("\u001b[2Jclear\u0003", "[2Jclear")]
+    public void SanitizeSteer_KeepsOneLineOfPlainText(string text, string expected)
+    {
+        Assert.Equal(expected, PilotSession.SanitizeSteer(text));
+    }
+
+    [Fact]
+    public void SanitizeSteer_CapsTheLength()
+    {
+        Assert.Equal(1000, PilotSession.SanitizeSteer(new string('a', 5000)).Length);
+    }
+
+    [Fact]
     public async Task Run_RecordsAFailedResultAsAnErrorCycle()
     {
         var session = new FakePilotSession { RunningProvider = Provider.Claude };

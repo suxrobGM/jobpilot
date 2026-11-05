@@ -43,8 +43,11 @@ public static class HostingExtensions
         services.AddHostedService(sp => new PilotEventListener(
             sp.GetRequiredService<PilotStore>(),
             sp.GetRequiredService<PilotApi>(),
-            sp.GetRequiredService<PilotLoop>().Wake,
-            sp.GetRequiredService<PilotSession>().OnRunFinished,
+            new PilotEventHandlers(
+                sp.GetRequiredService<PilotLoop>().Wake,
+                sp.GetRequiredService<PilotSession>().OnRunFinished,
+                sp.GetRequiredService<PilotSession>().InterruptRunAsync,
+                sp.GetRequiredService<PilotSession>().SteerRunAsync),
             sp.GetRequiredService<ILogger<PilotEventListener>>()));
 
         services.AddSingleton<HostUpdater>();

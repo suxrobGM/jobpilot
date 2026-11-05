@@ -6,7 +6,7 @@ using System.Text.Json.Serialization.Metadata;
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>GET /api/pilot/activity.</summary>
-public sealed record PilotActivity(bool Running, DateTimeOffset? LastActivityAt, CompletedCycle? LastCycle);
+public sealed record PilotActivity(DateTimeOffset? LastActivityAt, CompletedCycle? LastCycle);
 
 public sealed record CompletedCycle(DateTimeOffset CompletedAt, int? SleepSeconds);
 

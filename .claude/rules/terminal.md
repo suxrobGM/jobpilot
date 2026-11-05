@@ -7,7 +7,7 @@ paths:
 # Terminal host conventions (`apps/terminal`, `tests/`)
 
 `JobPilot.Terminal` is a .NET 10 minimal API that hosts one provider PTY on the user's machine.
-Endpoints: `/ws`, `/sessions/start`, `/sessions/inject`, `/pilot/start`, `/pilot/stop`,
+Endpoints: `/ws`, `/sessions/start`, `/pilot/pair`, `/pilot/unpair`, `/pilot/handback`,
 `/update`, `/shutdown`, `/healthz`. `/sessions/start` takes the user's `apiToken` and sets it
 in the PTY as `JOBPILOT_API_TOKEN`. The host env var is a local-dev fallback only.
 

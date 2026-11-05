@@ -183,6 +183,13 @@ public sealed class TerminalSession : IDisposable
 
     public void Write(byte[] data) => current?.Write(data);
 
+    /// <summary>When the user last typed into the terminal; the pilot holds new runs for a while after.</summary>
+    public DateTimeOffset? LastUserInputAt { get; private set; }
+
+    public void MarkUserInput() => LastUserInputAt = DateTimeOffset.UtcNow;
+
+    public void ClearUserInput() => LastUserInputAt = null;
+
     public void Resize(int cols, int rows) => current?.Resize(cols, rows);
 
     public void Stop()

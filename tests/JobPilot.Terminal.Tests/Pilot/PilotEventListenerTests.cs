@@ -16,6 +16,9 @@ public sealed class PilotEventListenerTests
     [InlineData("""{"type":"promotion.updated","promotion":{"status":"draft"}}""", false)]
     [InlineData("""{"type":"journal.appended","entry":{}}""", false)]
     [InlineData("""{"type":"question.created","question":{}}""", false)]
+    [InlineData("""{"type":"message.created","message":{}}""", true)]
+    [InlineData("""{"type":"request.created","request":{}}""", true)]
+    [InlineData("""{"type":"change.updated","change":{}}""", false)]
     public void ShouldWake_OnlyOnEventsThatUnblockTheNextCycle(string data, bool expected)
     {
         Assert.Equal(expected, PilotEventListener.ShouldWake(PilotEventListener.Parse(data)!));
@@ -27,15 +30,6 @@ public sealed class PilotEventListenerTests
     public void Parse_IgnoresControlFramesAndGarbage(string data)
     {
         Assert.Null(PilotEventListener.Parse(data));
-    }
-
-    [Theory]
-    [InlineData("""{"type":"state.changed","state":{"running":false}}""", true)]
-    [InlineData("""{"type":"state.changed","state":{"running":true}}""", false)]
-    [InlineData("""{"type":"state.changed","state":{}}""", false)]
-    public void IsRemoteStop_OnlyForAStateChangeToStopped(string data, bool expected)
-    {
-        Assert.Equal(expected, PilotEventListener.IsRemoteStop(PilotEventListener.Parse(data)!));
     }
 
     [Fact]
@@ -64,24 +58,25 @@ public sealed class PilotEventListenerTests
     }
 
     [Fact]
-    public async Task Listener_Disconnects_WhenThePilotStops()
+    public async Task Listener_Disconnects_WhenTheHostIsUnpaired()
     {
         await using var h = await Harness.StartAsync();
 
-        h.Store.SetRunning(false);
+        h.Store.Clear();
 
         await TestWait.Until(() => h.Handler.Stream.Disposed);
     }
 
     [Fact]
-    public async Task Listener_MirrorsARemoteStop_AndWakes()
+    public async Task Listener_HandsInterruptsAndSteersOn()
     {
         await using var h = await Harness.StartAsync();
 
-        h.Push("data: {\"type\":\"state.changed\",\"state\":{\"running\":false}}\n\n");
+        h.Push("data: {\"type\":\"run.interrupt\",\"runId\":\"run-1\"}\n\n");
+        h.Push("data: {\"type\":\"run.steer\",\"runId\":\"run-1\",\"text\":\"skip cover letters\"}\n\n");
 
-        await TestWait.Until(() => h.Store.Current is { Running: false });
-        await TestWait.Until(() => h.Wakes == 1);
+        await TestWait.Until(() => h.RunCommands.Count == 2);
+        Assert.Equal(["interrupt:run-1", "steer:run-1:skip cover letters"], h.RunCommands);
     }
 
     [Fact]
@@ -117,17 +112,27 @@ public sealed class PilotEventListenerTests
             Handler = new FakeSseHandler { Status = status };
             Store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
             var api = new PilotApi(new HttpClient(Handler), NullLogger<PilotApi>.Instance);
-            listener = new PilotEventListener(
-                Store,
-                api,
+            var handlers = new PilotEventHandlers(
                 () => Interlocked.Increment(ref wakes),
                 (runId, outcome) => FinishedRuns.Enqueue($"{runId}:{outcome}"),
-                NullLogger<PilotEventListener>.Instance);
+                (runId, _) =>
+                {
+                    RunCommands.Enqueue($"interrupt:{runId}");
+                    return Task.CompletedTask;
+                },
+                (runId, text, _) =>
+                {
+                    RunCommands.Enqueue($"steer:{runId}:{text}");
+                    return Task.CompletedTask;
+                });
+            listener = new PilotEventListener(Store, api, handlers, NullLogger<PilotEventListener>.Instance);
         }
 
         public FakeSseHandler Handler { get; }
 
         public ConcurrentQueue<string> FinishedRuns { get; } = new();
+
+        public ConcurrentQueue<string> RunCommands { get; } = new();
 
         public PilotStore Store { get; }
 

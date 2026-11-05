@@ -9,7 +9,7 @@ namespace JobPilot.Terminal.Tests;
 public sealed class PilotApiTests
 {
     private const string ActivityJson =
-        """{"running":true,"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"completedAt":"2026-07-19T18:30:00Z","sleepSeconds":300},"activeRuns":2}""";
+        """{"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"completedAt":"2026-07-19T18:30:00Z","sleepSeconds":300},"activeRuns":2}""";
 
     private static PilotApi Api(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) =>
         new(new HttpClient(new StubHandler(respond)), NullLogger<PilotApi>.Instance);
@@ -34,7 +34,6 @@ public sealed class PilotApiTests
         Assert.Equal("Bearer tok", seen.Headers.Authorization!.ToString());
         Assert.Equal(
             new PilotActivity(
-                true,
                 new DateTimeOffset(2026, 7, 19, 18, 34, 43, TimeSpan.Zero),
                 new CompletedCycle(new DateTimeOffset(2026, 7, 19, 18, 30, 0, TimeSpan.Zero), 300)),
             activity);

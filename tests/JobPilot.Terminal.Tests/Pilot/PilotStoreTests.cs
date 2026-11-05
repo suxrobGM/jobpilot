@@ -19,13 +19,13 @@ public sealed class PilotStoreTests : IDisposable
 
     private PilotStore NewStore() => new(path, NullLogger<PilotStore>.Instance);
 
-    private static PilotSettings SavedSettings(bool running = true) => new()
+    private static PilotSettings SavedSettings(string userId = "user-1") => new()
     {
         Provider = Provider.Codex,
         ApiToken = "secret-token",
         ApiUrl = "https://api.example",
         WebUrl = "https://web.example",
-        Running = running,
+        UserId = userId,
     };
 
     [Fact]
@@ -40,38 +40,38 @@ public sealed class PilotStoreTests : IDisposable
         Assert.Equal("secret-token", reloaded.ApiToken);
         Assert.Equal("https://api.example", reloaded.ApiUrl);
         Assert.Equal("https://web.example", reloaded.WebUrl);
-        Assert.True(reloaded.Running);
+        Assert.Equal("user-1", reloaded.UserId);
     }
 
     [Fact]
-    public void SetRunning_KeepsTheRest_AndPersists()
-    {
-        var store = NewStore();
-        store.Save(SavedSettings());
-
-        store.SetRunning(false);
-
-        Assert.False(store.Current!.Running);
-        Assert.Equal("secret-token", store.Current.ApiToken);
-        Assert.False(NewStore().Current!.Running); // survived a reload
-    }
-
-    [Fact]
-    public void Changed_IsRaisedOnlyWhenSomethingChanged()
+    public void Clear_Unpairs_AndRaisesChangedOnlyWhenPaired()
     {
         var store = NewStore();
         var changes = 0;
         store.Changed += () => changes++;
 
-        store.SetRunning(false); // nothing saved yet
+        store.Clear(); // nothing saved yet
+        store.Save(SavedSettings());
+        store.Clear();
+
         Assert.Null(store.Current);
         Assert.False(File.Exists(path));
-
-        store.Save(SavedSettings());
-        store.SetRunning(true);  // already running
-        store.SetRunning(false);
-
+        Assert.Null(NewStore().Current);
         Assert.Equal(2, changes);
+    }
+
+    [Fact]
+    public void Load_ReadsAFileFromBeforePairing_IgnoringItsRunningFlag()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(
+            path,
+            """{"provider":"claude","token":"t","protected":false,"apiUrl":"https://a","webUrl":"https://w","running":false}""");
+
+        var loaded = NewStore().Current;
+
+        Assert.NotNull(loaded);
+        Assert.Null(loaded!.UserId);
     }
 
     [Theory]
@@ -118,9 +118,9 @@ public sealed class PilotStoreTests : IDisposable
         var store = NewStore();
         store.Save(SavedSettings());
 
-        store.Save(SavedSettings(running: false));
+        store.Save(SavedSettings(userId: "user-2"));
 
-        Assert.False(NewStore().Current!.Running);
+        Assert.Equal("user-2", NewStore().Current!.UserId);
         Assert.Empty(Directory.EnumerateFiles(temp.Root, ".pilot.json.*.tmp"));
     }
 }

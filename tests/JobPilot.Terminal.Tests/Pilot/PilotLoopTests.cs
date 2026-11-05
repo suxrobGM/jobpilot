@@ -36,7 +36,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        store.SetRunning(false);
+        store.Clear();
         await loop.StopAsync(CancellationToken.None);
         loop.Dispose();
         temp.Dispose();
@@ -55,22 +55,23 @@ public sealed class PilotLoopTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Start_RunsCycles_AndStop_InterruptsTheTurnButKeepsTheSession()
+    public async Task Pairing_RunsCycles_AndUnpairing_InterruptsTheTurnButKeepsTheSession()
     {
         await loop.StartAsync(CancellationToken.None);
 
         store.Save(Settings());
         await TestWait.Until(() => CyclesSent == 1);
         Assert.True(loop.GetStatus().Conducting);
+        Assert.Equal("user-1", loop.GetStatus().UserId);
 
-        store.SetRunning(false);
+        store.Clear();
         await TestWait.Until(() => !loop.GetStatus().Conducting);
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, CyclesSent);
         Assert.Contains("interrupt", session.Actions);
         Assert.DoesNotContain("stop", session.Actions);
-        Assert.True(loop.GetStatus().Paired);
+        Assert.False(loop.GetStatus().Paired);
     }
 
     [Fact]
@@ -120,14 +121,14 @@ public sealed class PilotLoopTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Stop_DoesNotInterrupt_TheUsersOwnSessionOnTheOtherProvider()
+    public async Task Unpairing_DoesNotInterrupt_TheUsersOwnSessionOnTheOtherProvider()
     {
         session.RunningProvider = Provider.Codex;
         await loop.StartAsync(CancellationToken.None);
         store.Save(Settings());
         await TestWait.Until(() => session.Actions.Contains("sleep:5"));
 
-        store.SetRunning(false);
+        store.Clear();
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain("interrupt", session.Actions);
@@ -171,20 +172,6 @@ public sealed class PilotLoopTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task StandsDown_WithoutACycle_WhenTheServerSaysStopped()
-    {
-        session.DefaultActivity = Activity(running: false);
-        await loop.StartAsync(CancellationToken.None);
-
-        store.Save(Settings());
-
-        await TestWait.Until(() => store.Current is { Running: false });
-        await TestWait.Until(() => session.Reports.Contains(PilotLoop.StandingDownReport));
-        Assert.Equal(0, CyclesSent);
-        Assert.True(loop.GetStatus().Paired);
-    }
-
-    [Fact]
     public async Task BacksOff_WhileTheApiIsUnreachable_AndAWakeProbesAgain()
     {
         session.BlockSleep = true;
@@ -194,7 +181,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
 
         await TestWait.Until(() => session.Actions.Any(a => a.StartsWith("sleep:", StringComparison.Ordinal)));
         Assert.Equal(0, CyclesSent);
-        Assert.True(store.Current is { Running: true });
+        Assert.NotNull(store.Current);
 
         session.DefaultActivity = Activity();
         loop.Wake();

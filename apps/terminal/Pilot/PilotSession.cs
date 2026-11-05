@@ -10,6 +10,8 @@ public sealed class PilotSession : IPilotSession, IDisposable
     private const string ClearCommand = "/clear";
     private const int Cols = 220;
     private const int Rows = 50;
+    private const int MaxSteerLength = 1000;
+    private const string StopLine = "The user stopped this task. Do nothing more on it.";
 
     // Redraw time between /clear and the cycle command landing on the fresh prompt.
     private static readonly TimeSpan ClearSettle = TimeSpan.FromSeconds(2);
@@ -41,6 +43,39 @@ public sealed class PilotSession : IPilotSession, IDisposable
     }
 
     public Provider? RunningProvider => terminal.IsRunning ? terminal.ActiveProvider : null;
+
+    public DateTimeOffset? LastUserInputAt => terminal.LastUserInputAt;
+
+    /// <summary>One line the user typed for the agent: no control characters, no newlines, capped.</summary>
+    internal static string SanitizeSteer(string text)
+    {
+        var line = new string([.. text.Select(c => char.IsControl(c) ? ' ' : c)]).Trim();
+        return line.Length > MaxSteerLength ? line[..MaxSteerLength] : line;
+    }
+
+    /// <summary>Stops the run in flight: aborts the turn, tells the agent why, and cancels the run.</summary>
+    public async Task InterruptRunAsync(string runId, CancellationToken ct)
+    {
+        if (runId != currentRunId || store.Current is not { } settings)
+        {
+            return;
+        }
+
+        Interrupt();
+        await SendAsync(StopLine, settings.Provider, ct);
+        await api.CancelRunAsync(settings, runId, ct);
+    }
+
+    /// <summary>Types the user's words into the run in flight, without stopping it.</summary>
+    public async Task SteerRunAsync(string runId, string text, CancellationToken ct)
+    {
+        if (runId != currentRunId || store.Current is not { } settings || SanitizeSteer(text) is not { Length: > 0 } line)
+        {
+            return;
+        }
+
+        await SendAsync(line, settings.Provider, ct);
+    }
 
     public void Start(PilotSettings settings) =>
         terminal.Start(settings.Provider, Cols, Rows, settings.ApiToken, settings.ApiUrl, settings.WebUrl);
@@ -150,6 +185,8 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     public async Task RecordCycleAsync(string runId, string summary, CycleDetail detail, CancellationToken ct)
     {
+        // The run is over, so interrupts, steers and the stuck heuristic stop applying to it.
+        currentRunId = null;
         await Task.Delay(UsageFlush, ct);
         if (store.Current is not { } settings)
         {
@@ -180,8 +217,8 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     private void OnOutput(byte[] data)
     {
-        // Interactive sessions skip the stuck heuristic; start saves the store before the first cycle.
-        if (store.Current is not { Running: true })
+        // Only a run in flight can be stuck; output between runs is the user's own session.
+        if (currentRunId is null)
         {
             return;
         }

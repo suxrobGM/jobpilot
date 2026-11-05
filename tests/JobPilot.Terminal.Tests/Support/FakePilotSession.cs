@@ -23,6 +23,9 @@ internal sealed class FakePilotSession : IPilotSession
 
     public List<int> IdleCycles { get; } = [];
 
+    /// <summary>When the user last typed; null means never, so no hold.</summary>
+    public DateTimeOffset? LastUserInputAt { get; set; }
+
     /// <summary>Null makes the server refuse the start.</summary>
     public string? StartedRunId { get; set; } = "run-1";
 

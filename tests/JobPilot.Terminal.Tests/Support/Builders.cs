@@ -7,21 +7,21 @@ namespace JobPilot.Terminal.Tests;
 
 internal static class Builders
 {
-    public static PilotSettings Settings(bool running = true, string apiUrl = "https://api", string apiToken = "tok") => new()
+    public static PilotSettings Settings(string apiUrl = "https://api", string apiToken = "tok") => new()
     {
         Provider = Provider.Claude,
         ApiToken = apiToken,
         ApiUrl = apiUrl,
         WebUrl = "https://web",
-        Running = running,
+        UserId = "user-1",
     };
 
     public static DateTimeOffset Fresh => DateTimeOffset.UtcNow;
 
     public static DateTimeOffset Stale => DateTimeOffset.UtcNow - CycleRunner.ActiveWindow - TimeSpan.FromMinutes(5);
 
-    public static PilotActivity Activity(DateTimeOffset? at = null, CompletedCycle? lastCycle = null, bool running = true) =>
-        new(running, at, lastCycle);
+    public static PilotActivity Activity(DateTimeOffset? at = null, CompletedCycle? lastCycle = null) =>
+        new(at, lastCycle);
 
     public static CompletedCycle Completed(int? sleep) => new(DateTimeOffset.UtcNow, sleep);
 

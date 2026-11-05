@@ -4,11 +4,10 @@ using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal.Pilot;
 
-/// <summary>Runs cycles while the pilot is running and parks while it is stopped.</summary>
+/// <summary>Runs cycles whenever the host is paired and parks while it is not.</summary>
 public sealed class PilotLoop : BackgroundService
 {
     public const string ResumeReport = "Pilot resumed after the app restarted.";
-    public const string StandingDownReport = "Pilot is stopped on the server - standing down.";
 
     private static readonly TimeSpan ErrorBackoff = TimeSpan.FromSeconds(30);
 
@@ -40,14 +39,14 @@ public sealed class PilotLoop : BackgroundService
         store.Changed += Wake;
     }
 
-    /// <summary>Ends an inter-cycle sleep early. If the pilot is no longer running, also aborts the live cycle.</summary>
+    /// <summary>Ends an inter-cycle sleep early. If the host was unpaired, also aborts the live cycle.</summary>
     public void Wake()
     {
         wakes.Writer.TryWrite(true);
         lock (sync)
         {
-            // A wake that leaves the pilot running must never interrupt the agent mid-turn.
-            if (store.Current is not { Running: true })
+            // A wake that leaves the host paired must never interrupt the agent mid-turn.
+            if (store.Current is null)
             {
                 cycleCts?.Cancel();
             }
@@ -59,9 +58,10 @@ public sealed class PilotLoop : BackgroundService
         var settings = store.Current;
         return new PilotStatus
         {
-            Running = settings?.Running ?? false,
             Paired = settings is not null,
+            UserId = settings?.UserId,
             Conducting = working && runner.Conducting,
+            HeldUntil = runner.HeldUntil(DateTimeOffset.UtcNow),
             LastCycleAt = runner.LastCycleAt,
             LastCycleStatus = runner.LastCycleStatus?.ToString().ToLowerInvariant(),
             ConsecutiveTimeouts = runner.ConsecutiveRestarts,
@@ -83,7 +83,7 @@ public sealed class PilotLoop : BackgroundService
     {
         try
         {
-            await ResumeIfRunningAsync(stoppingToken);
+            await ResumeIfPairedAsync(stoppingToken);
         }
         catch (OperationCanceledException)
         {
@@ -101,11 +101,11 @@ public sealed class PilotLoop : BackgroundService
 
             working = false;
 
-            // Read only after publishing the token: a stop then either cancels this token or shows up in this read.
+            // Read only after publishing the token: an unpair then either cancels this token or shows up in this read.
             var settings = store.Current;
             try
             {
-                if (settings is not { Running: true })
+                if (settings is null)
                 {
                     await wakes.Reader.ReadAsync(stoppingToken);
                     continue;
@@ -115,8 +115,8 @@ public sealed class PilotLoop : BackgroundService
             }
             catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
             {
-                // A stop aborts the agent's turn, unless it is the user's own session on the other provider.
-                if (runner.Conducting && store.Current is not { Running: true })
+                // An unpair aborts the agent's turn, unless it is the user's own session on the other provider.
+                if (runner.Conducting && store.Current is null)
                 {
                     session.Interrupt();
                 }
@@ -143,7 +143,7 @@ public sealed class PilotLoop : BackgroundService
 
     private async Task RunOnceAsync(PilotSettings settings, CancellationToken ct, CancellationToken stoppingToken)
     {
-        // One probe gates the cycle on the server's run-state.
+        // One probe checks the API is reachable before the cycle spends a refresh.
         var activity = await session.GetActivityAsync(ct);
         if (activity is null)
         {
@@ -152,13 +152,6 @@ public sealed class PilotLoop : BackgroundService
         }
 
         apiBackoff.Reset();
-        if (!activity.Running)
-        {
-            // Stopped on the server: mirror it locally so the loop parks. That save cancels ct, so report on stoppingToken.
-            store.SetRunning(false);
-            await session.ReportAsync(StandingDownReport, stoppingToken);
-            return;
-        }
 
         // This cycle reads the current settings, which covers any wake that came before it.
         wakes.Reader.TryRead(out _);
@@ -171,9 +164,9 @@ public sealed class PilotLoop : BackgroundService
         }
     }
 
-    private async Task ResumeIfRunningAsync(CancellationToken stoppingToken)
+    private async Task ResumeIfPairedAsync(CancellationToken stoppingToken)
     {
-        if (store.Current is not { Running: true })
+        if (store.Current is null)
         {
             return;
         }

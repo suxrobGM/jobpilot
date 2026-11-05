@@ -28,13 +28,11 @@ public class AppJsonContextTests
             """{"provider":"codex","cols":120,"rows":40,"apiToken":"tok","apiUrl":"https://api","webUrl":"https://web"}""",
             AppJsonContext.Default.StartSessionRequest);
         var pilot = JsonSerializer.Deserialize(
-            """{"provider":"claude","apiToken":"tok","apiUrl":"https://api","webUrl":"https://web"}""",
-            AppJsonContext.Default.PilotStartRequest);
-        var inject = JsonSerializer.Deserialize("""{"command":"$pilot"}""", AppJsonContext.Default.InjectRequest);
+            """{"provider":"claude","apiToken":"tok","apiUrl":"https://api","webUrl":"https://web","userId":"u1"}""",
+            AppJsonContext.Default.PilotPairRequest);
 
         Assert.Equal(new StartSessionRequest(120, 40, "codex", "tok", "https://api", "https://web"), start);
-        Assert.Equal(new PilotStartRequest("claude", "tok", "https://api", "https://web"), pilot);
-        Assert.Equal(new InjectRequest("$pilot"), inject);
+        Assert.Equal(new PilotPairRequest("claude", "tok", "https://api", "https://web", "u1"), pilot);
     }
 
     [Fact]
@@ -50,7 +48,7 @@ public class AppJsonContextTests
                 HostVersion = "2.0.8",
                 CanRelaunch = true,
                 CanUpdate = false,
-                Pilot = new PilotStatus { Running = false, Paired = false, Conducting = false, ConsecutiveTimeouts = 0 },
+                Pilot = new PilotStatus { Paired = false, Conducting = false, ConsecutiveTimeouts = 0 },
             },
             AppJsonContext.Default.StatusResponse);
 
