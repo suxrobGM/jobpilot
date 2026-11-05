@@ -150,7 +150,7 @@ Use the row's `url`, which the MCP returns ready to link.
 jobpilot-api POST "/api/campaigns/<campaign-id>/status" --data '{"status":"completed"}'
 ```
 
-Print a compact ranked table and link to `$JOBPILOT_WEB/campaigns/<campaign-id>` - nothing else.
+Print a compact ranked table and link to `$JOBPILOT_WEB/pipeline?campaign=<campaign-id>` - nothing else.
 The user reviews, hits **Draft proposal** on the ones they want, and submits from JobPilot.
 
 ## Rules

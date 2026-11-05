@@ -99,7 +99,8 @@ per posting.
    brief, capExemptBasis, capExemptEvidenceUrl}` (`board` the posting's host, `brief` a JSON
    object) to `$JOBPILOT_TEMP/<key>-job.json` and `POST /api/campaigns/$CAMPAIGN_ID/jobs --data
    @...`. `status` is `pending`, except when `approveAtOrAbove` is a number: `approved` at or above
-   it. A `409` with code `DUPLICATE_JOB` means it's already in the campaign: a duplicate, not new.
+   it. A `409` with code `DUPLICATE_JOB`, or a response with `duplicate: true` (the user already
+   has the posting from the last 30 days), means a duplicate, not new: skip step 8 for it.
 8. **Skip** a row you just created that has a skip reason, or that scored below a numeric
    `approveAtOrAbove` (`Below minimum match score (<score> < <approveAtOrAbove>)`): `POST
    /api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` `{"outcome":"skipped","skipReason":"<reason>"}`.

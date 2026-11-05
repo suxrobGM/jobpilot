@@ -11,7 +11,7 @@ Keep the chosen board open in tab 1; for each result that qualifies, delegate th
 job. **No batch pre-discovery and no per-job approval - launching the campaign is the
 confirmation.** Pause only for 2FA / payment. **A CAPTCHA is not a pause** - attempt the
 `solve-captcha` skill; if unsolved, skip the job (never pause) and the user finishes it later via
-the `apply` skill. Live view at `$JOBPILOT_WEB/campaigns/<campaign-id>`.
+the `apply` skill. Live view at `$JOBPILOT_WEB/pipeline?campaign=<campaign-id>`.
 
 ## Setup
 
@@ -41,8 +41,7 @@ promotes to `approved`; apply them afterward).
 
 ## Phase 0: Resolve the Campaign
 
-**`--campaign <id>` passed** (the web UI always passes it - it created the campaign when the user
-submitted `/campaigns/new`): use it as `CAMPAIGN_ID` and skip the checks below.
+**`--campaign <id>` passed**: use it as `CAMPAIGN_ID` and skip the checks below.
 
 **No `--campaign`** (manual run): look for an unfinished campaign first.
 
@@ -65,7 +64,7 @@ With `--anywhere`, send no `board`.
 Read `.id` as `CAMPAIGN_ID`.
 
 Either way, read the campaign's `config.resumeId` as `RESUME_ID` (`GET /api/campaigns/$CAMPAIGN_ID`;
-absent → the primary) and surface the live view: `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
+absent → the primary) and surface the live view: `$JOBPILOT_WEB/pipeline?campaign=<CAMPAIGN_ID>`.
 
 ## Anywhere on the web
 
@@ -216,7 +215,7 @@ The loop ends **only** on one of these. Before picking the next result, refetch 
 jobpilot-api POST /api/campaigns/$CAMPAIGN_ID/status --data '{"status":"completed"}'
 ```
 
-Print a summary table, link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`, suggest `retry-failed
+Print a summary table, link to `$JOBPILOT_WEB/pipeline?campaign=<CAMPAIGN_ID>`, suggest `retry-failed
 <CAMPAIGN_ID>`, the `rescan-skipped` skill on `<CAMPAIGN_ID>` to recover dropped jobs, or a new
 search.
 

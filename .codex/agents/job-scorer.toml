@@ -89,7 +89,7 @@ Per row:
    - `"create"`: write `{key, title, company, location, url, board, matchScore, matchReason,
      status:"pending", brief, description}` (`brief` as a JSON object, `description` the posting
      text) to `$JOBPILOT_TEMP/job-$JOB_KEY.json` and `POST /api/campaigns/$CAMPAIGN_ID/jobs --data
-     @...`.
+     @...`. A response with `duplicate: true` means the user already has the posting: stop there.
    - `"patch"`: eligible → `PATCH /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY` `{matchScore,
      matchReason, brief, description}`, plus the real `title`, `company`, `location`, `board` and
      `status:"pending"` for a `queued` row.

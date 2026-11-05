@@ -10,7 +10,7 @@ Resumes a `paused` Campaign by replaying the apply loop on jobs that
 are still `approved` (or `pending` if approval was implicit). The user already
 approved the fit when the campaign was first launched, so no re-confirmation gate.
 
-Live view: `$JOBPILOT_WEB/campaigns/<campaign-id>`.
+Live view: `$JOBPILOT_WEB/pipeline?campaign=<campaign-id>`.
 
 ## Setup
 
@@ -88,7 +88,7 @@ user"` for each remaining `approved` job, then stop.
 jobpilot-api POST "/api/campaigns/$CAMPAIGN_ID/status" --data '{"status":"completed"}'
 ```
 
-Print a summary table and the campaign link `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
+Print a summary table and the campaign link `$JOBPILOT_WEB/pipeline?campaign=<CAMPAIGN_ID>`.
 Suggest re-running the `auto-apply` skill in `retry-failed <CAMPAIGN_ID>` mode if any jobs failed.
 
 ## Rules

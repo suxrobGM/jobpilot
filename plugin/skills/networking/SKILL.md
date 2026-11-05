@@ -141,7 +141,7 @@ Add `applicationId:<id>` when applied-check matched. Keep the returned `id` (mes
 In the board loop this runs per contact as drafted; for criteria-only, once over the drafted set.
 
 - **draft** → stop after drafting. Tell the user to review and send from
-  `$JOBPILOT_WEB/campaigns/<campaign-id>`.
+  `$JOBPILOT_WEB/networking/messages`.
 - **review** → present a table (contact, channel, subject/preview); user approves which to send.
   PATCH approved messages `{"status":"approved"}`, then proceed for those only.
 - **auto** → send within `dailyCap`. **Email only**; LinkedIn connect requests pace at a low cap;
@@ -177,7 +177,7 @@ will surface later via inbox sync.
 jobpilot-api POST /api/campaigns/<campaign-id>/status --data '{"status":"completed"}'
 ```
 
-Print a table (contact, channel, status) and link to `$JOBPILOT_WEB/campaigns/<campaign-id>`.
+Print a table (contact, channel, status) and link to `$JOBPILOT_WEB/networking/messages`.
 
 ## Rules
 

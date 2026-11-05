@@ -22,7 +22,7 @@ jobpilot-api POST /api/campaigns/$CID/status --data '{"status":"in_progress","ac
   "subjectId": "<campaignId>",
   "prompt": "Campaign '<query>' is paused (<reason>). Resume it?",
   "options": ["Resume", "Keep paused", "Complete campaign"],
-  "link": "<JOBPILOT_WEB>/campaigns/<campaignId>"
+  "link": "<JOBPILOT_WEB>/pipeline?campaign=<campaignId>"
 }
 ```
 

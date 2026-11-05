@@ -19,7 +19,7 @@ and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
   "prompt": "<worker question>",
   "options": ["<worker options>"],
   "savedAnswerKey": "<worker savedAnswerKey>",
-  "link": "<JOBPILOT_WEB>/campaigns/<campaignId>"
+  "link": "<JOBPILOT_WEB>/pipeline?campaign=<campaignId>"
 }
 ```
 

@@ -113,7 +113,7 @@ jobpilot-api POST /api/campaigns/<campaign-id>/status --data '{"status":"complet
 Print a compact ranked table, then link to the campaign - nothing else:
 
 ```
-## Saved <N> jobs · "[query]" - review and apply at $JOBPILOT_WEB/campaigns/<campaign-id>
+## Saved <N> jobs · "[query]" - review and apply at $JOBPILOT_WEB/pipeline?campaign=<campaign-id>
 
 | # | Score | Title | Company | Location |
 |---|-------|-------|---------|----------|

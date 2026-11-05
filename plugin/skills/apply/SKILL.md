@@ -108,7 +108,9 @@ is the stringified brief, `description` the posting text):
 jobpilot-api POST "/api/campaigns/$CAMPAIGN_ID/jobs" --data @"$JOBPILOT_TEMP/job.json"
 ```
 
-Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`. Jump
+A response with `duplicate: true` means the user already has this posting from the last 30 days:
+set `$CAMPAIGN_ID` and `$JOB_KEY` from its `campaignId` and `key`, and if its `status` is
+`applied`, tell the user and stop. Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `$JOBPILOT_WEB/pipeline?campaign=<CAMPAIGN_ID>`. Jump
 to **Phase 5**.
 
 ---
@@ -129,8 +131,8 @@ jobpilot-api GET /api/campaigns --query status=in_progress --query source=apply 
   --query jobStatus=queued --query page=1 --query limit=1
 ```
 
-Take `.items[0].id` as `CAMPAIGN_ID`. Empty `.items` → **"Nothing queued. Start a campaign
-at $JOBPILOT_WEB/campaigns/new, pick Apply to links, and run this again."** and stop. Otherwise read
+Take `.items[0].id` as `CAMPAIGN_ID`. Empty `.items` → **"Nothing queued. Add job links
+in the Pipeline at $JOBPILOT_WEB/pipeline, then run this again."** and stop. Otherwise read
 `config` off that same campaign row: `minScore` overrides `minMatchScore`, `resumeId` overrides the
 primary resume, `maxApplications` caps Phase 5.
 
@@ -261,7 +263,7 @@ remaining `approved` jobs as-is.
 jobpilot-api POST "/api/campaigns/$CAMPAIGN_ID/status" --data '{"status":"completed"}'
 ```
 
-Print a summary table and link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
+Print a summary table and link to `$JOBPILOT_WEB/pipeline?campaign=<CAMPAIGN_ID>`.
 
 ## Rules
 
