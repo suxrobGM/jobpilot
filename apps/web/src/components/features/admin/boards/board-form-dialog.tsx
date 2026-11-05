@@ -11,8 +11,7 @@ interface AdminBoardFormDialogProps {
   initial?: AdminBoardInput | null;
   title: string;
   onClose: () => void;
-  onSubmit: (values: AdminBoardInput) => void;
-  submitting?: boolean;
+  onSubmit: (values: AdminBoardInput) => Promise<unknown>;
 }
 
 const EMPTY: AdminBoardInput = {
@@ -25,17 +24,15 @@ const EMPTY: AdminBoardInput = {
 };
 
 export function AdminBoardFormDialog(props: AdminBoardFormDialogProps): ReactElement {
-  const { open, initial, title, onClose, onSubmit, submitting } = props;
+  const { open, initial, title, onClose, onSubmit } = props;
   const form = useAppForm({
     defaultValues: initial ?? EMPTY,
     validators: { onSubmit: adminBoardSchema },
-    onSubmit: async ({ value }) => {
-      onSubmit(value);
-    },
+    onSubmit: ({ value }) => onSubmit(value),
   });
 
   return (
-    <FormDialog open={open} title={title} onClose={onClose} form={form} submitting={submitting}>
+    <FormDialog open={open} title={title} onClose={onClose} form={form}>
       <Stack direction="row" spacing={2}>
         <form.AppField name="name">
           {(field) => <field.TextField label="Display name" />}

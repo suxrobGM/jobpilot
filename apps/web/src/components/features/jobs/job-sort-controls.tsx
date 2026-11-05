@@ -10,14 +10,14 @@ import { MenuItem, Stack, TextField } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { SelectFieldOption } from "@/components/ui/form";
 import { POSTED_OPTIONS } from "./job-filter-options";
-import { jobsHref } from "./jobs-href";
+import { jobsHrefWith } from "./jobs-href";
 
 const SORT_OPTIONS: SelectFieldOption<JobListingSort>[] = [
   { value: "recent", label: "Recently seen" },
   { value: "newest", label: "Newest" },
 ];
 
-/** `jobsHref` drops `page`, so a change always lands on page 1. */
+/** `jobsHrefWith` drops `page`, so a change always lands on page 1. */
 export function JobSortControls(): ReactElement {
   const router = useRouter();
   const params = useSearchParams();
@@ -26,17 +26,10 @@ export function JobSortControls(): ReactElement {
   const posted = jobListingPostedSchema.nullable().catch(null).parse(params.get("posted"));
 
   const set = (key: string, value: string | null): void => {
-    const next = new URLSearchParams(params);
-    if (value) {
-      next.set(key, value);
-    } else {
-      next.delete(key);
-    }
-    router.push(jobsHref(next));
+    router.push(jobsHrefWith(params, { [key]: value }));
   };
 
-  // Not SelectField: its empty "All" option turns the label into a placeholder, and these two
-  // must always show their label ("Posted: Any time").
+  // Not SelectField: its empty "All" option hides the label, and these must always show theirs.
   return (
     <Stack direction="row" spacing={1.5}>
       <TextField

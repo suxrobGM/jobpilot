@@ -5,8 +5,8 @@ import type { TaskList } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
 import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { LinkButton, TooltipIconButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
@@ -91,9 +91,7 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
       )}
       {running && (
         <QuerySection
-          isLoading={query.isLoading}
-          isError={query.isError}
-          onRetry={() => void query.refetch()}
+          query={query}
           errorTitle="Couldn't load the task list."
           isEmpty={!taskList}
           empty={

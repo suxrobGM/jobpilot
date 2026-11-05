@@ -16,7 +16,7 @@ export const accent = {
 } as const;
 
 /** Text on a filled accent: near-black, tinted toward the fill so it doesn't read as a hole. */
-export const onAccent = {
+export const textOnAccent = {
   primary: "#1A0A05",
   secondary: "#0A1220",
 } as const;

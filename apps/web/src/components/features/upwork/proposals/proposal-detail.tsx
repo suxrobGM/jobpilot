@@ -3,17 +3,15 @@
 import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
 import { AutoAwesome, ContentCopy, Delete, Launch, Send } from "@mui/icons-material";
-import { Box, Button, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { isNotFound } from "@/api/error";
-import { useApiMutation } from "@/api/hooks";
 import { upworkAccountQueries, upworkProposalQueries } from "@/api/queries";
-import type { UpdateUpworkProposalRequest } from "@/api/types";
-import { AgentOnlyButton } from "@/components/ui/buttons";
-import { QueryError } from "@/components/ui/feedback";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { AgentOnlyButton, TooltipIconButton } from "@/components/ui/buttons";
+import { LabelValue } from "@/components/ui/display";
+import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useCopy } from "@/hooks/use-copy";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
@@ -50,30 +48,25 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
     },
   });
 
-  const update = useApiMutation(
-    (body: UpdateUpworkProposalRequest) => api.upwork.proposals({ id }).patch(body),
-    { invalidate: [upworkProposalQueries.all] },
-  );
-
   const remove = useApiMutation(() => api.upwork.proposals({ id }).delete(), {
     successMessage: "Proposal deleted",
     invalidate: [upworkProposalQueries.all],
-    onSuccess: () => router.replace("/upwork" as Route),
+    onSuccess: () => router.replace("/upwork"),
   });
 
-  if (detail.isLoading) {
-    return <LinearProgress />;
+  if (detail.isPending) {
+    return <DetailSkeleton />;
   }
 
   const proposal = detail.data;
   if (!proposal) {
     return (
       <PageShell maxWidth="md">
-        {isNotFound(detail.error) ? (
-          <Typography variant="body1Muted">Proposal not found.</Typography>
-        ) : (
-          <QueryError title="Couldn't load this proposal." onRetry={() => void detail.refetch()} />
-        )}
+        <DetailLoadFailure
+          noun="proposal"
+          error={detail.error}
+          onRetry={() => void detail.refetch()}
+        />
       </PageShell>
     );
   }
@@ -123,9 +116,9 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
             >
               Submit on Upwork
             </AgentOnlyButton>
-            <IconButton onClick={() => void handleDelete()} aria-label="Delete proposal">
+            <TooltipIconButton title="Delete proposal" onClick={() => void handleDelete()}>
               <Delete fontSize="md" />
-            </IconButton>
+            </TooltipIconButton>
           </>
         }
       />
@@ -138,7 +131,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
         </Typography>
       )}
 
-      <ProposalStatusBar proposal={proposal} onChange={(patch) => update.mutate(patch)} />
+      <ProposalStatusBar proposal={proposal} />
 
       <SectionCard
         title="Proposal"
@@ -170,12 +163,11 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
         <SectionCard title="Screening answers">
           <Stack spacing={2}>
             {proposal.screeningAnswers.map((qa) => (
-              <Box key={qa.question}>
-                <Typography variant="overlineMuted">{qa.question}</Typography>
+              <LabelValue key={qa.question} label={qa.question}>
                 <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
                   {qa.answer}
                 </Typography>
-              </Box>
+              </LabelValue>
             ))}
           </Stack>
         </SectionCard>

@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Chip, Stack, Typography } from "@mui/material";
+import { Chip, Stack } from "@mui/material";
 import type { AdminBoardDto } from "@/api/types";
 import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
 import { ExternalLink } from "@/components/ui/display";
@@ -12,12 +12,10 @@ const COLUMNS: SimpleColumn<AdminBoardDto>[] = [
     key: "searchUrl",
     header: "Search URL",
     render: (board) =>
-      board.searchUrl ? (
+      board.searchUrl && (
         <ExternalLink href={board.searchUrl} truncateTo={240}>
           {board.searchUrl}
         </ExternalLink>
-      ) : (
-        <Typography variant="captionMuted">-</Typography>
       ),
   },
   {

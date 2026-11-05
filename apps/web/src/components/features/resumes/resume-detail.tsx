@@ -3,10 +3,10 @@
 import { type ReactElement, useState } from "react";
 import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { resumeChannel } from "@jobpilot/contracts/sse";
-import { Box, LinearProgress, Stack } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { resumeQueries } from "@/api/queries";
-import { QueryError } from "@/components/ui/feedback";
+import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { type SectionAnchor, SectionLayout } from "@/components/ui/layout";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { ExtractionCard } from "./detail/extraction-card";
@@ -54,12 +54,14 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
     },
   );
 
-  if (detail.isLoading) {
-    return <LinearProgress />;
+  if (detail.isPending) {
+    return <DetailSkeleton />;
   }
   const resume = detail.data;
   if (!resume) {
-    return <QueryError title="Couldn't load this resume." onRetry={() => void detail.refetch()} />;
+    return (
+      <DetailLoadFailure noun="resume" error={detail.error} onRetry={() => void detail.refetch()} />
+    );
   }
   const initialData: ResumeData = resume.content ?? EMPTY_RESUME_DATA;
   // A source PDF with no structure yet means `extract-resume` is either running or worth retrying.

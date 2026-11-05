@@ -18,6 +18,7 @@ export interface SimpleColumn<T> {
   align?: "left" | "right";
   /** For action menus and dates that must not wrap. */
   nowrap?: boolean;
+  /** Null or "" renders a muted dash. */
   render: (row: T) => ReactNode;
 }
 
@@ -71,7 +72,7 @@ export function SimpleTable<T>(props: SimpleTableProps<T>): ReactElement {
                     {index === 0 ? (
                       <RowName href={href}>{column.render(row)}</RowName>
                     ) : (
-                      column.render(row)
+                      <CellContent>{column.render(row)}</CellContent>
                     )}
                   </TableCell>
                 ))}
@@ -82,6 +83,19 @@ export function SimpleTable<T>(props: SimpleTableProps<T>): ReactElement {
       </Table>
     </TableContainer>
   );
+}
+
+interface CellContentProps {
+  children: ReactNode;
+}
+
+function CellContent(props: CellContentProps): ReactNode {
+  const { children } = props;
+  const isBlank = children === null || children === undefined || children === "";
+  if (isBlank) {
+    return <Typography variant="captionMuted">-</Typography>;
+  }
+  return children;
 }
 
 interface RowNameProps {

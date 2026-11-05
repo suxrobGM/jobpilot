@@ -8,7 +8,7 @@ import { emailQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { ChecklistRow } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
-import type { TerminalHealth } from "@/hooks/use-terminal-health";
+import { useTerminalHealth } from "@/hooks/use-terminal-health";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
 import { hasGoals } from "../pilot-status";
 
@@ -22,12 +22,12 @@ interface ChecklistStep {
 
 interface PilotSetupChecklistProps {
   state: PilotState;
-  health: TerminalHealth;
 }
 
 /** The pilot's prerequisites; Start lives on the status bar. Renders nothing once all are met. */
 export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode {
-  const { state, health } = props;
+  const { state } = props;
+  const { health } = useTerminalHealth();
   const dock = useAgentDock();
   const agentAvailable = useAgentAvailable();
 

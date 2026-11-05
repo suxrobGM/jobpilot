@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { ExternalStore } from "@/lib/external-store";
 import { patchAgentStorage, readAgentStorage } from "@/lib/terminal/agent-storage";
-import { getStatus, type SessionStatus } from "@/lib/terminal/client";
+import { getTerminalHostStatus, type SessionStatus } from "@/lib/terminal/client";
 
 export type TerminalHealth = "checking" | "reachable" | "degraded" | "offline" | "uninstalled";
 
@@ -15,29 +15,25 @@ const FAST_POLL_INTERVAL_MS = 1500;
 /** Consecutive failed probes required before a reachable host is reported offline. */
 const OFFLINE_CONFIRM_PROBES = 2;
 
-interface HealthSnapshot {
+export interface TerminalHealthState {
   health: TerminalHealth;
   /** Last successful /healthz payload (host version, providers, …); null until first reachable. */
   status: SessionStatus | null;
 }
 
-export interface TerminalHealthState extends HealthSnapshot {
-  recheck: () => void;
-}
-
-const INITIAL: HealthSnapshot = { health: "checking", status: null };
+const INITIAL: TerminalHealthState = { health: "checking", status: null };
 
 // One poller for the whole page: the dock, pilot views and onboarding all read this store.
-let active = false;
+let isPolling = false;
 let timer: ReturnType<typeof setTimeout> | null = null;
-let failures = 0;
-let fastRequests = 0;
+let consecutiveFailures = 0;
+let fastPollRequests = 0;
 
-const store = new ExternalStore<HealthSnapshot>(INITIAL, () => {
-  active = true;
+const store = new ExternalStore<TerminalHealthState>(INITIAL, () => {
+  isPolling = true;
   void probe();
   return () => {
-    active = false;
+    isPolling = false;
     clearTimer();
   };
 });
@@ -49,42 +45,53 @@ function clearTimer(): void {
   }
 }
 
-function schedule(): void {
+// Skips unchanged probes, which would otherwise re-render every subscriber on each poll.
+function setSnapshot(next: TerminalHealthState): void {
+  const previous = store.get();
+  if (
+    previous.health !== next.health ||
+    JSON.stringify(previous.status) !== JSON.stringify(next.status)
+  ) {
+    store.set(next);
+  }
+}
+
+function scheduleNextProbe(): void {
   clearTimer();
-  if (active) {
-    timer = setTimeout(probe, fastRequests > 0 ? FAST_POLL_INTERVAL_MS : POLL_INTERVAL_MS);
+  if (isPolling) {
+    timer = setTimeout(probe, fastPollRequests > 0 ? FAST_POLL_INTERVAL_MS : POLL_INTERVAL_MS);
   }
 }
 
 async function probe(): Promise<void> {
   clearTimer();
   try {
-    const status = await getStatus();
-    failures = 0;
-    store.set({ health: status.status === "degraded" ? "degraded" : "reachable", status });
-    // Persist that a host answered (the dock only auto-expands before that) and its relaunch
-    // capability, so the offline card can gate the Start-agent button across reloads.
+    const status = await getTerminalHostStatus();
+    consecutiveFailures = 0;
+    setSnapshot({ health: status.status === "degraded" ? "degraded" : "reachable", status });
+    // Persisted so the dock's auto-expand and the Start-agent gate survive reloads.
     const stored = readAgentStorage();
     if (!stored?.everReachable || stored.canRelaunch !== status.canRelaunch) {
       patchAgentStorage({ everReachable: true, canRelaunch: status.canRelaunch });
     }
   } catch {
-    failures++;
+    consecutiveFailures++;
     const previous = store.get();
     // A single dropped probe must not unmount a healthy terminal.
-    if (previous.health !== "reachable" || failures >= OFFLINE_CONFIRM_PROBES) {
+    if (previous.health !== "reachable" || consecutiveFailures >= OFFLINE_CONFIRM_PROBES) {
       const health = readAgentStorage()?.everReachable ? "offline" : "uninstalled";
-      store.set({ health, status: previous.status });
+      setSnapshot({ health, status: previous.status });
     }
   }
-  schedule();
+  scheduleNextProbe();
 }
 
-/**
- * The local terminal host's health: "reachable" when /healthz answers, "degraded" when it runs but
- * can't start sessions. Unreachable reads "offline" if a host has ever answered from this browser,
- * else "uninstalled". Pass `expectingReturn` while the host is deliberately restarting to poll faster.
- */
+/** Probes now, outside React, so a button can recheck without subscribing. */
+export function recheckTerminalHealth(): void {
+  void probe();
+}
+
+/** Unreachable reads "offline" once a host has ever answered from this browser, else "uninstalled". */
 export function useTerminalHealth(expectingReturn = false): TerminalHealthState {
   const snapshot = useSyncExternalStore(store.subscribe, store.get, () => INITIAL);
 
@@ -92,12 +99,12 @@ export function useTerminalHealth(expectingReturn = false): TerminalHealthState 
     if (!expectingReturn) {
       return;
     }
-    fastRequests++;
-    schedule();
+    fastPollRequests++;
+    scheduleNextProbe();
     return () => {
-      fastRequests--;
+      fastPollRequests--;
     };
   }, [expectingReturn]);
 
-  return { ...snapshot, recheck: () => void probe() };
+  return snapshot;
 }

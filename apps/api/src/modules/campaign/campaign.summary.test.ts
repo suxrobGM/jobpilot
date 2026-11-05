@@ -57,8 +57,7 @@ describe("summarizeCampaigns", () => {
 });
 
 describe("jobSummary", () => {
-  // The roll-ups ship on the wire for the installed agent skills, but they are a projection of
-  // byStatus; this pins that they cannot drift apart for any mix of statuses.
+  // Installed skills read the roll-ups, so they must never drift from byStatus.
   it("keeps every roll-up consistent with byStatus", () => {
     const summary = jobSummary(
       ["pending", "approved", "applying", "applied", "failed", "skipped", "needs_user"].map(

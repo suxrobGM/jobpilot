@@ -31,10 +31,7 @@ function displayName(u: AuthUserDto): string {
   return name || u.email || "Your profile";
 }
 
-/**
- * Account avatar for the app rail. One profile per user, so this is an identity
- * + sign-out menu rather than a switcher. Shows the account's login email.
- */
+/** One profile per user, so an identity + sign-out menu rather than a switcher. */
 export function AccountMenu(): ReactNode {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);

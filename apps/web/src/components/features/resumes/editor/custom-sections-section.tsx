@@ -13,10 +13,7 @@ interface CustomSectionsSectionProps {
   onChange: (next: ResumeCustomSection[]) => void;
 }
 
-/**
- * Whatever the CV carried that the typed sections don't model - grants, invited talks, patents,
- * teaching, service. Extraction files anything it can't place here rather than dropping it.
- */
+/** Extraction files whatever the typed sections don't model here (grants, talks) rather than drop it. */
 export function CustomSectionsSection(props: CustomSectionsSectionProps): ReactElement {
   const { value, onChange } = props;
   return (

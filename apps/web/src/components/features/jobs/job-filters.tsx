@@ -6,17 +6,14 @@ import { Button, Card, CardContent, Stack, TextField, ToggleButton } from "@mui/
 import { useRouter, useSearchParams } from "next/navigation";
 import { MultiSelect } from "@/components/ui/form";
 import { ActiveFilters } from "./active-filters";
-import { jobsHref } from "./jobs-href";
+import { jobsHrefWith } from "./jobs-href";
 
 interface JobFiltersProps {
   /** The skills the index actually contains, most common first. */
   skillOptions: string[];
 }
 
-/**
- * Filters navigate to a real `/jobs?q=…` URL rather than holding client state, so results stay
- * shareable and crawlable.
- */
+/** Filters navigate to a real `/jobs?q=…` URL, not client state, so results stay crawlable. */
 export function JobFilters(props: JobFiltersProps): ReactElement {
   const { skillOptions } = props;
   const router = useRouter();
@@ -28,20 +25,11 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
 
   // Reads the live form, not just `params`, so unsubmitted text survives a Remote toggle.
   const apply = (patch: Record<string, string | null> = {}): void => {
-    const next = new URLSearchParams(params);
     const data = form.current ? new FormData(form.current) : null;
-
     for (const key of ["q", "location"] as const) {
       patch[key] ??= String(data?.get(key) ?? "").trim() || null;
     }
-    for (const [key, value] of Object.entries(patch)) {
-      if (value) {
-        next.set(key, value);
-      } else {
-        next.delete(key);
-      }
-    }
-    router.push(jobsHref(next));
+    router.push(jobsHrefWith(params, patch));
   };
 
   const onSubmit = (event: SubmitEvent<HTMLFormElement>): void => {

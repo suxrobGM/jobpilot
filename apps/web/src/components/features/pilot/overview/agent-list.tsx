@@ -24,13 +24,12 @@ const AGENT_ROLES: Record<PilotAgent, string> = {
 const AGENTS = Object.keys(AGENT_ROLES) as PilotAgent[];
 
 interface AgentListProps {
-  branch: PilotAgent | null;
+  activeAgent: PilotAgent | null;
   dimmed: boolean;
 }
 
-/** `branch` is the agent on the current run, shown lit. */
 export function AgentList(props: AgentListProps): ReactElement {
-  const { branch, dimmed } = props;
+  const { activeAgent, dimmed } = props;
   const cost = useQuery(pilotQueries.cost());
 
   const costByAgent = Map.groupBy(cost.data?.items ?? [], (item) => taskTypeAgent(item.taskType));
@@ -49,13 +48,13 @@ export function AgentList(props: AgentListProps): ReactElement {
         }}
       >
         {AGENTS.map((agent) => {
-          const active = agent === branch;
+          const active = agent === activeAgent;
           const usage = sumTokenUsage((costByAgent.get(agent) ?? []).map((item) => item.tokens));
           return (
             <Card
               key={agent}
               variant={active ? "accent" : undefined}
-              sx={{ px: 1.5, py: 1, opacity: branch !== null && !active ? DIM_OPACITY : 1 }}
+              sx={{ px: 1.5, py: 1, opacity: activeAgent !== null && !active ? DIM_OPACITY : 1 }}
             >
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                 <PulseDot

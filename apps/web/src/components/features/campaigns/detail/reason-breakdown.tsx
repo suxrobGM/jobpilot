@@ -13,8 +13,7 @@ interface ReasonCount {
   count: number;
 }
 
-/** Re-collapses the server's per-reason groups: it counts raw strings, but score-threshold
- * variants ("(35 < 50)", "(40 < 50)") read as one cause, so strip the numeric tail and sum. */
+/** The server groups raw strings, but "(35 < 50)" and "(40 < 50)" are one cause, so strip the tail. */
 function groupReasons(
   rows: ReadonlyArray<CampaignJobReasonDto>,
   kind: CampaignJobReasonDto["kind"],

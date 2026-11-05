@@ -6,8 +6,6 @@ import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/ma
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { StatusChip } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
-import { useClockTick } from "@/hooks/use-clock-tick";
-import type { TerminalHealth } from "@/hooks/use-terminal-health";
 import { type PilotHealth, providerDisplayName } from "@/lib/terminal/client";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime, plural } from "@/utils/format";
@@ -19,7 +17,9 @@ import {
   type PilotMode,
 } from "../pilot-status";
 import { AGENT_LABELS, taskTypeAgent, taskTypeLabel } from "../task-types";
-import type { PilotControls } from "../use-pilot-controls";
+import { usePilotControls } from "../use-pilot-controls";
+import { usePilotStatus } from "../use-pilot-status";
+import { useNextWake } from "./use-next-wake";
 
 function statusDetail(
   mode: PilotMode,
@@ -50,19 +50,16 @@ function statusDetail(
 
 interface StatusBarProps {
   state: PilotState;
-  controls: PilotControls;
-  health: TerminalHealth;
-  pilot: PilotHealth | null;
-  mode: PilotMode;
-  nextWakeAt: Date | null;
 }
 
 /** The pilot's one status readout and its Start/Stop control. */
 export function StatusBar(props: StatusBarProps): ReactElement {
-  const { state, controls, health, pilot, mode, nextWakeAt } = props;
+  const { state } = props;
   const confirm = useConfirm();
-  // The run and last-cycle ages are plain text, so they need the shared tick to climb.
-  useClockTick();
+  const controls = usePilotControls();
+  // Polls fast while Start/Stop is in flight; also ticks the plain-text run and cycle ages.
+  const { health, pilot, mode } = usePilotStatus(state, controls.isLoading);
+  const nextWakeAt = useNextWake(state);
 
   const look = PILOT_MODE_LOOK[mode];
   const detail = statusDetail(mode, state, pilot, nextWakeAt);

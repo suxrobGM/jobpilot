@@ -12,8 +12,7 @@ import { MOBILE_NAV_HEIGHT } from "./shell-config";
 
 export function AppShell(props: PropsWithChildren): ReactElement {
   const { children } = props;
-  // The local agent terminal only runs on desktop, so below md we drop the rail
-  // and dock entirely and navigate via a bottom bar - a read-only, browse-only UI.
+  // The agent terminal is desktop-only, so below md a bottom bar replaces the rail and dock.
   const isDesktop = useAgentAvailable();
 
   return (

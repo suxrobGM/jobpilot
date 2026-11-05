@@ -3,15 +3,16 @@
 import { type ReactElement, useState } from "react";
 import { isProtectedVariantLabel, UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
 import { CleaningServices, Delete, OpenInNew } from "@mui/icons-material";
-import { Box, Button, Card, CardContent, Chip, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { variantPdfUrl } from "@/api/resume-urls";
 import type { ResumeVariantListItem } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
-import { QuerySection } from "@/components/ui/feedback";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SearchField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -63,7 +64,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
 
   const handlePrune = async (): Promise<void> => {
     const confirmed = await confirm({
-      title: `Prune ${prunable.length} unused variant${prunable.length === 1 ? "" : "s"}?`,
+      title: `Prune ${plural(prunable.length, "unused variant")}?`,
       description:
         "Deletes every variant not linked to an application. Variants you actually applied with are kept, as are pending suggestions. This cannot be undone.",
       confirmLabel: "Prune",
@@ -104,17 +105,15 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
       }
     >
       <QuerySection
-        isLoading={query.isLoading}
-        isError={query.isError}
-        onRetry={() => void query.refetch()}
+        query={query}
         errorTitle="Couldn't load the variants."
         isEmpty={variants.length === 0}
         empty={
-          <Typography variant="body2Muted">
-            No variants yet. Click &ldquo;Tailor for job&rdquo;, paste a job description or URL, and
-            the AI will either reuse a close match (if you had previous variants) or create a new
-            one.
-          </Typography>
+          <EmptyState
+            variant="inline"
+            title="No variants yet."
+            description="Click “Tailor for job”, paste a job description or URL, and the AI will either reuse a close match (if you had previous variants) or create a new one."
+          />
         }
       >
         <Stack spacing={1.5}>
@@ -124,7 +123,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
             onChange={setSearch}
           />
           {filtered.length === 0 ? (
-            <Typography variant="body2Muted">No variants match &ldquo;{search}&rdquo;.</Typography>
+            <EmptyState variant="inline" title={`No variants match “${search}”.`} />
           ) : (
             <Stack spacing={1.5} sx={{ maxHeight: 480, overflowY: "auto", pr: 0.5 }}>
               {groupVariants(filtered).map((group) => (
@@ -151,18 +150,18 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
                               <RelativeTime value={v.createdAt} />
                             </Typography>
                           </Box>
-                          <IconButton
+                          <TooltipIconButton
+                            title="Open variant PDF"
                             href={variantPdfUrl(v.id, v.updatedAt)}
-                            aria-label="Open variant PDF"
                           >
                             <OpenInNew fontSize="md" />
-                          </IconButton>
-                          <IconButton
+                          </TooltipIconButton>
+                          <TooltipIconButton
+                            title="Delete variant"
                             onClick={() => void handleDelete(v)}
-                            aria-label="Delete variant"
                           >
                             <Delete fontSize="md" />
-                          </IconButton>
+                          </TooltipIconButton>
                         </Stack>
                       </CardContent>
                     </Card>

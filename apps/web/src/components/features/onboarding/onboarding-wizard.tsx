@@ -20,8 +20,8 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { PersonalSection, toProfileFormValues } from "@/components/features/settings";
 import { QueryError } from "@/components/ui/feedback";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
@@ -32,9 +32,7 @@ import { AgentSetupStep } from "./agent-setup-step";
 import { ResumeUploadStep } from "./resume-upload-step";
 import { describeIssues, firstStepWithIssue } from "./validation-issues";
 
-// Minimal first run: resume + personal basics + agent install. Everything else
-// (address, work auth, EEO, auto-apply, email, credentials) lives in Settings,
-// surfaced by the workspace's profile checklist.
+// Minimal first run; the rest lives in Settings, surfaced by the workspace's profile checklist.
 const STEPS = [
   { key: "resume", label: "Resume" },
   { key: "personal", label: "Personal" },

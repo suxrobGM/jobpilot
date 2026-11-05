@@ -13,15 +13,15 @@ interface NetworkingMessagesTableProps {
   errorTitle?: string;
   onRetry?: () => void;
   /** A draft to open on arrival, from the pilot's approval deep link. */
-  openMessageId?: string;
+  openMessageId?: string | null;
 }
 
 const EMPTY_MESSAGE = "No outreach yet - the pilot drafts intros as it applies.";
 
 /** The campaign board covers networking campaigns only, so job-campaign drafts read through here. */
 export function NetworkingMessagesTable(props: NetworkingMessagesTableProps): ReactElement {
-  const { messages, loading, errorTitle, onRetry, openMessageId } = props;
-  const [openId, setOpenId] = useState<string | null>(openMessageId ?? null);
+  const { messages, loading, errorTitle, onRetry, openMessageId = null } = props;
+  const [openId, setOpenId] = useState(openMessageId);
 
   const openMessage = messages.find((m) => m.id === openId) ?? null;
 

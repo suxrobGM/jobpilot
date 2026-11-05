@@ -6,7 +6,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { type EdenResult, toApiError } from "@/api/error";
+import { type EdenResult, unwrap } from "@/api/error";
 import { useToast } from "@/providers/toast-provider";
 
 type MutationFn<TData, TVariables> = (vars: TVariables) => Promise<EdenResult<TData>>;
@@ -49,13 +49,7 @@ export function useApiMutation<TData, TVariables = void, TContext = unknown>(
   const queryClient = useQueryClient();
 
   return useMutation<TData, Error, TVariables, TContext>({
-    mutationFn: async (vars: TVariables) => {
-      const { data, error } = await mutationFn(vars);
-      if (error) {
-        throw toApiError(error);
-      }
-      return data as TData;
-    },
+    mutationFn: (vars: TVariables) => unwrap(mutationFn(vars)),
     onSuccess: (data: TData, vars: TVariables) => {
       if (invalidate) {
         for (const key of invalidate) {

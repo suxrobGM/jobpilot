@@ -6,9 +6,9 @@ import { AutoFixHigh } from "@mui/icons-material";
 import { Alert, AlertTitle, Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { invalidations, resumeQueries } from "@/api/queries";
 import type { ResumeDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
 import { plural } from "@/utils/format";
@@ -19,10 +19,7 @@ interface SuggestedRewriteCardProps {
   resume: ResumeDto;
 }
 
-/**
- * Surfaces the `Suggested rewrite` variant `review-resume` leaves after an upload. Accept writes it
- * onto the base via the ordinary update route; the uploaded PDF stays the way back.
- */
+/** Accept overwrites the base with `review-resume`'s suggestion; the uploaded PDF stays the way back. */
 export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNode {
   const { resume } = props;
   const resumeId = resume.id;

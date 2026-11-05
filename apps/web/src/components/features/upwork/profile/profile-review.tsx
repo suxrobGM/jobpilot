@@ -5,9 +5,9 @@ import type { UpdateUpworkProfileInput } from "@jobpilot/contracts/upwork";
 import { CloudUpload, TaskAlt } from "@mui/icons-material";
 import { Button, Divider, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { upworkProfileQueries } from "@/api/queries";
 import type { UpworkProfileDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { LabelValue } from "@/components/ui/display";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { PortfolioList } from "./portfolio-list";
@@ -16,11 +16,7 @@ interface ProfileReviewProps {
   profile: UpworkProfileDto;
 }
 
-/**
- * Current-vs-suggested editor. The user tweaks the suggestion, saves it, approves
- * it, then dispatches the upwork-profile skill to write it to the live profile.
- * Remount via `key` (the parent keys on `updatedAt`) reseeds the local drafts.
- */
+/** The parent keys this on `updatedAt`, so a remount reseeds the local drafts. */
 export function ProfileReview(props: ProfileReviewProps): ReactElement {
   const { profile } = props;
   const agent = useAgent();

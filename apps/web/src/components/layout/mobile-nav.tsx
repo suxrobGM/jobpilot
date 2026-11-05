@@ -30,18 +30,13 @@ const MORE_VALUE = "more";
 /** Below MUI's 0.75rem default - "Workspace" has to fit a fifth of a 360px phone. */
 const LABEL_SIZE = "0.6875rem";
 
-/**
- * Bottom tab bar shown below md in place of the desktop rail: four primary
- * destinations plus a "More" sheet listing the rest and the sign-out action.
- */
 export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { user } = useSession();
 
-  // Close the sheet after the route commit, not during the click: closing and navigating in the
-  // same event lets the route transition interrupt the Modal's exit, stranding the invisible
-  // backdrop / scroll-lock over the whole app (this persistent shell never unmounts it).
+  // Close after the route commit: closing in the click lets the transition interrupt the
+  // Modal's exit and strand its invisible backdrop over the app.
   useEffect(() => {
     if (pathname) {
       setMoreOpen(false);
@@ -59,7 +54,7 @@ export function MobileNav(): ReactElement {
   const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));
   const moreActive = moreItems.some((item) => isNavEntryActive(pathname, item));
   const value = activePrimary?.href ?? (moreActive ? MORE_VALUE : false);
-  // Pilot sits on the tab bar now; More carries a badge only while a badged item lives in the drawer.
+  // More carries a badge only while a badged item lives in the drawer.
   const moreBadge = moreItems.find((item) => item.badge)?.badge;
 
   const renderTab = (item: NavItem): ReactElement => (

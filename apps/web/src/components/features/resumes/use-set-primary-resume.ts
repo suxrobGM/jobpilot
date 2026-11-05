@@ -1,8 +1,8 @@
 "use client";
 
 import { api } from "@/api/client";
-import { type ApiMutationResult, useApiMutation } from "@/api/hooks";
 import { invalidations } from "@/api/queries";
+import { type ApiMutationResult, useApiMutation } from "@/api/use-api-mutation";
 
 /** The base resume new campaigns, tailoring and onboarding fall back to. */
 export function useSetPrimaryResume(): ApiMutationResult<unknown, string> {

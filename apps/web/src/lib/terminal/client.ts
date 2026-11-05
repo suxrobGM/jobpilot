@@ -86,7 +86,7 @@ async function send<T>(method: string, path: string, body?: unknown): Promise<T>
   return text ? (JSON.parse(text) as T) : (null as T);
 }
 
-export function getStatus(): Promise<SessionStatus> {
+export function getTerminalHostStatus(): Promise<SessionStatus> {
   return send<SessionStatus>("GET", "/healthz");
 }
 
@@ -106,10 +106,7 @@ export function startSession(options: StartOptions): Promise<SessionStatus> {
   return send<SessionStatus>("POST", "/sessions/start", options);
 }
 
-/**
- * Inject a command into the active session. Pass a bare command line with no
- * trailing newline - the terminal host submits it with a separate Enter keystroke.
- */
+/** No trailing newline: the host submits with a separate Enter keystroke. */
 export function injectCommand(command: string, provider?: TerminalProviderId): Promise<void> {
   return send<void>("POST", "/sessions/inject", { command, provider });
 }

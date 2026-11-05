@@ -9,12 +9,15 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { Typography } from "@mui/material";
 import { z } from "zod/v4";
+import { api } from "@/api/client";
+import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { hourLabel } from "../run-status";
+import { formatHour } from "../run-status";
 
 /** Every whole hour as a run-time option, "00:00" through "23:00". */
-const RUN_TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => hourLabel(hour));
+const RUN_TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => formatHour(hour));
 
 function browserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -34,7 +37,7 @@ function toFormValues(status: JobAlertsStatus): ScheduleFormValues {
   const { settings } = status;
   return {
     enabled: settings.enabled,
-    runTimes: settings.runHours.map(hourLabel),
+    runTimes: settings.runHours.map(formatHour),
     // A schedule never switched on still carries the schema's UTC; offer the viewer's own zone.
     timeZone: settings.enabled ? settings.timeZone : browserTimeZone(),
     extraSenderDomains: settings.extraSenderDomains,
@@ -44,24 +47,27 @@ function toFormValues(status: JobAlertsStatus): ScheduleFormValues {
 interface ScheduleDialogProps {
   open: boolean;
   status: JobAlertsStatus;
-  submitting: boolean;
   onClose: () => void;
-  onSubmit: (settings: PilotJobAlerts) => Promise<void>;
 }
 
 export function ScheduleDialog(props: ScheduleDialogProps): ReactElement {
-  const { open, status, submitting, onClose, onSubmit } = props;
+  const { open, status, onClose } = props;
+  const save = useApiMutation((body: PilotJobAlerts) => api.pilot["job-alerts"].put(body), {
+    invalidate: [pilotQueries.jobAlerts().queryKey, pilotQueries.taskList().queryKey],
+    successMessage: "Job alert schedule saved.",
+  });
 
   const form = useAppForm({
     defaultValues: toFormValues(status),
     validators: { onSubmit: scheduleFormSchema },
     onSubmit: async ({ value }) => {
-      await onSubmit({
+      await save.mutateAsync({
         enabled: value.enabled,
         runHours: value.runTimes.map((label) => Number(label.slice(0, 2))),
         timeZone: value.timeZone.trim(),
         extraSenderDomains: value.extraSenderDomains,
       });
+      onClose();
     },
   });
 
@@ -71,13 +77,7 @@ export function ScheduleDialog(props: ScheduleDialogProps): ReactElement {
   };
 
   return (
-    <FormDialog
-      open={open}
-      title="Job alert email schedule"
-      onClose={handleClose}
-      form={form}
-      submitting={submitting}
-    >
+    <FormDialog open={open} title="Job alert email schedule" onClose={handleClose} form={form}>
       <form.AppField name="enabled">
         {(field) => <field.Switch label="Import job alert emails on a schedule" />}
       </form.AppField>

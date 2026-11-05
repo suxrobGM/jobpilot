@@ -1,5 +1,5 @@
 /** A run's hour on the schedule, e.g. 09:00. */
-export function hourLabel(hour: number): string {
+export function formatHour(hour: number): string {
   return `${String(hour).padStart(2, "0")}:00`;
 }
 

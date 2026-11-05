@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Button, Chip, Stack } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { POSTED_OPTIONS } from "./job-filter-options";
-import { jobsHref } from "./jobs-href";
+import { jobsHrefWith } from "./jobs-href";
 
 /** No `skills`: the multi-select already shows it as chips. */
 const CHIPPED = ["q", "location", "board", "remote", "posted"] as const;
@@ -37,9 +37,7 @@ export function ActiveFilters(): ReactNode {
   }
 
   const drop = (key: string): void => {
-    const next = new URLSearchParams(params);
-    next.delete(key);
-    router.push(jobsHref(next));
+    router.push(jobsHrefWith(params, { [key]: null }));
   };
 
   return (

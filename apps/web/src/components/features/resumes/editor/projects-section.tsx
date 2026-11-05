@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { ResumeProject } from "@jobpilot/contracts/resume";
-import { Stack, TextField } from "@mui/material";
+import { Stack } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
@@ -36,16 +36,15 @@ export function ProjectsSection(props: ProjectsSectionProps): ReactElement {
           <Grid container spacing={1.5}>
             <EntryTextField entry={entry} field="name" label="Name" onUpdate={onUpdate} />
             <EntryTextField entry={entry} field="url" label="URL" onUpdate={onUpdate} />
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <TextField
-                fullWidth
-                label="Start"
-                placeholder="Jan 2024"
-                helperText="Enables promoting to experience"
-                value={entry.start ?? ""}
-                onChange={(e) => onUpdate({ ...entry, start: e.target.value })}
-              />
-            </Grid>
+            <EntryTextField
+              entry={entry}
+              field="start"
+              label="Start"
+              placeholder="Jan 2024"
+              helperText="Enables promoting to experience"
+              width={3}
+              onUpdate={onUpdate}
+            />
             <EntryTextField
               entry={entry}
               field="end"

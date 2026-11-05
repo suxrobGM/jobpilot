@@ -27,10 +27,7 @@ interface StatusCount {
 
 export type WithSummary<T> = T & { summary: CampaignSummary };
 
-/**
- * The roll-ups beside `byStatus` stay on the wire because installed agent skills read them
- * (`summary.applied` gates the max-applications cap); deriving them here keeps them in step.
- */
+/** Installed skills read the roll-ups (`summary.applied` gates the cap), so derive them here. */
 export function jobSummary(rows: StatusCount[], networkingCount = 0): CampaignJobSummary {
   const byStatus = Object.fromEntries(CAMPAIGN_JOB_STATUSES.map((status) => [status, 0])) as Record<
     CampaignJobStatus,

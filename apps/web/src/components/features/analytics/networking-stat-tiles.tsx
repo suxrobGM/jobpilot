@@ -33,7 +33,7 @@ export function NetworkingStatTiles(props: NetworkingStatTilesProps): ReactEleme
         <StatCard label="Reply rate" value={`${replyRatePct}%`} />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatCard label="Bounced" value={totals.bounced} accent="danger" />
+        <StatCard label="Bounced" value={totals.bounced} accent="error" />
       </Grid>
     </Grid>
   );

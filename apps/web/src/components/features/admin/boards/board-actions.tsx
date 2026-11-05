@@ -6,8 +6,8 @@ import { Delete, Edit, MoreVert } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import type { AdminBoardDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";
 import { AdminBoardFormDialog } from "./board-form-dialog";
@@ -96,8 +96,7 @@ export function AdminBoardActions(props: AdminBoardActionsProps): ReactElement {
         }}
         title="Edit catalog board"
         onClose={() => setEditing(false)}
-        onSubmit={(values: AdminBoardInput) => update.mutate(values)}
-        submitting={update.isPending}
+        onSubmit={(values: AdminBoardInput) => update.mutateAsync(values)}
       />
     </>
   );

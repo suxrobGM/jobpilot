@@ -55,14 +55,13 @@ export function subscribeAgentStorage(listener: () => void): () => void {
   };
 }
 
-export function getStoredProvider(): TerminalProviderId {
-  const p = readAgentStorage()?.provider;
-  return p === "codex" || p === "claude" ? p : "claude";
+export function readStoredProvider(): TerminalProviderId {
+  const provider = readAgentStorage()?.provider;
+  return provider === "codex" || provider === "claude" ? provider : "claude";
 }
 
-export function getStoredExpanded(): boolean {
+export function readStoredExpanded(): boolean {
   const stored = readAgentStorage();
-  // Default expanded until a host has ever connected, so new users see the install card;
-  // an explicit collapse (stored dockExpanded) always wins.
+  // Expanded until a host has connected, so new users see install; a stored collapse wins.
   return stored?.dockExpanded ?? !stored?.everReachable;
 }

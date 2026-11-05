@@ -1,14 +1,13 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { CredentialInput } from "@jobpilot/contracts/credential";
 import { Add, Delete, Key, Lock } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { credentialQueries } from "@/api/queries";
 import type { CredentialDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { ItemList, ItemRow } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
@@ -32,12 +31,6 @@ export function CredentialsSection(): ReactElement {
   const confirm = useConfirm();
 
   const credentials = useQuery(credentialQueries.list());
-
-  const create = useApiMutation((vars: CredentialInput) => api.credentials.post(vars), {
-    successMessage: "Credential added",
-    invalidate: [credentialQueries.all],
-    onSuccess: () => setDialogOpen(false),
-  });
 
   const remove = useApiMutation((id: string) => api.credentials({ id }).delete(), {
     successMessage: "Credential removed",
@@ -88,9 +81,7 @@ export function CredentialsSection(): ReactElement {
       }
     >
       <QuerySection
-        isLoading={credentials.isPending}
-        isError={credentials.isError}
-        onRetry={() => void credentials.refetch()}
+        query={credentials}
         errorTitle="Couldn't load your credentials."
         isEmpty={rows.length === 0}
         empty={
@@ -127,12 +118,7 @@ export function CredentialsSection(): ReactElement {
         </Stack>
       </QuerySection>
 
-      <CredentialFormDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSubmit={(values) => create.mutate(values)}
-        submitting={create.isPending}
-      />
+      <CredentialFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
     </SectionCard>
   );
 }

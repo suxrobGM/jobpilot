@@ -1,10 +1,8 @@
 "use client";
 
 import { Grid, InputAdornment, Stack, Typography } from "@mui/material";
-import { useSelector } from "@tanstack/react-form";
 import { FieldInfo, FieldRowList, FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { useKeyedList } from "@/hooks/use-keyed-list";
 import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
 
 const EMPTY_PLATFORM = { platform: "", target: "", postEveryDays: 30 };
@@ -12,9 +10,6 @@ const EMPTY_PLATFORM = { platform: "", target: "", postEveryDays: 30 };
 export const PlatformsSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
   render: function PlatformsSection({ form }) {
-    const platformCount = useSelector(form.store, (s) => s.values.promotionPlatforms.length);
-    const platformList = useKeyedList(platformCount);
-
     return (
       <FormSection
         title="Platforms"
@@ -28,15 +23,11 @@ export const PlatformsSection = withForm({
             {(field) => (
               <FieldRowList
                 count={field.state.value?.length ?? 0}
-                keys={platformList.keys}
                 emptyText="No platforms yet."
                 addLabel="Add platform"
                 rowLabel={(i) => `Platform ${i + 1}`}
                 onAdd={() => field.pushValue({ ...EMPTY_PLATFORM })}
-                onRemove={(i) => {
-                  platformList.onRemove(i);
-                  field.removeValue(i);
-                }}
+                onRemove={(i) => field.removeValue(i)}
               >
                 {(i) => (
                   <>

@@ -1,17 +1,16 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { Clear, Delete } from "@mui/icons-material";
-import { Button, Stack, Typography } from "@mui/material";
+import { Delete } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
 import type { JobBoardDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
 import { ExternalLink } from "@/components/ui/display";
-import { SearchField } from "@/components/ui/form";
+import { FilterBar, SearchField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 
@@ -53,12 +52,10 @@ export function BoardsContent(): ReactElement {
       key: "searchUrl",
       header: "Search URL",
       render: (board) =>
-        board.searchUrl ? (
+        board.searchUrl && (
           <ExternalLink href={board.searchUrl} truncateTo={280}>
             {board.searchUrl}
           </ExternalLink>
-        ) : (
-          <Typography variant="captionMuted">-</Typography>
         ),
     },
     {
@@ -74,27 +71,11 @@ export function BoardsContent(): ReactElement {
     },
   ];
 
-  const handleResetFilters = (): void => setSearch("");
-
   return (
     <SectionCard>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={1.5}
-        sx={{ alignItems: { xs: "stretch", md: "center" }, mb: 2 }}
-      >
+      <FilterBar hasFilters={isAnyFilterActive} onClear={() => setSearch("")}>
         <SearchField value={search} placeholder="Search name or domain" onChange={setSearch} />
-        {isAnyFilterActive && (
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<Clear fontSize="sm" />}
-            onClick={handleResetFilters}
-          >
-            Clear
-          </Button>
-        )}
-      </Stack>
+      </FilterBar>
 
       <SimpleTable
         columns={columns}

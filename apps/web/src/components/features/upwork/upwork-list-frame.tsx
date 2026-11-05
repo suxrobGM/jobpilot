@@ -2,13 +2,18 @@
 
 import type { ReactElement, ReactNode } from "react";
 import type { Pagination as PageMeta } from "@jobpilot/contracts/pagination";
-import { Clear } from "@mui/icons-material";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import { PaginationFooter } from "@/components/ui/data";
-import { QuerySection } from "@/components/ui/feedback";
+import { QuerySection, type QueryState } from "@/components/ui/feedback";
+import { FilterBar } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
+import type { PaginationParams } from "@/hooks/use-pagination";
 
 export const UPWORK_PAGE_SIZE = 10;
+
+interface PagedQuery extends QueryState {
+  data: { pagination: PageMeta } | undefined;
+}
 
 interface UpworkListFrameProps {
   filters: ReactNode;
@@ -17,14 +22,10 @@ interface UpworkListFrameProps {
   /** e.g. "12 proposals", beside the filters. */
   countLabel: string;
   actions?: ReactNode;
-  isLoading: boolean;
-  isError: boolean;
-  onRetry: () => void;
+  query: PagedQuery;
+  pager: PaginationParams;
   errorTitle: string;
   empty: ReactNode;
-  pagination: PageMeta | undefined;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
   /** The rows of the current page; an empty array shows `empty`. */
   children: ReactNode[];
 }
@@ -37,44 +38,31 @@ export function UpworkListFrame(props: UpworkListFrameProps): ReactElement {
     onClearFilters,
     countLabel,
     actions,
-    isLoading,
-    isError,
-    onRetry,
+    query,
+    pager,
     errorTitle,
     empty,
-    pagination,
-    onPageChange,
-    onPageSizeChange,
     children,
   } = props;
+  const pagination = query.data?.pagination;
 
   return (
     <SectionCard>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={1.5}
-        sx={{ alignItems: { xs: "stretch", md: "center" }, mb: 2 }}
+      <FilterBar
+        hasFilters={hasFilters}
+        onClear={onClearFilters}
+        end={
+          <>
+            <Typography variant="captionMuted">{countLabel}</Typography>
+            {actions}
+          </>
+        }
       >
         {filters}
-        {hasFilters && (
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<Clear fontSize="sm" />}
-            onClick={onClearFilters}
-          >
-            Clear
-          </Button>
-        )}
-        <Box sx={{ flex: 1 }} />
-        <Typography variant="captionMuted">{countLabel}</Typography>
-        {actions}
-      </Stack>
+      </FilterBar>
 
       <QuerySection
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={onRetry}
+        query={query}
         errorTitle={errorTitle}
         isEmpty={children.length === 0}
         empty={empty}
@@ -85,8 +73,8 @@ export function UpworkListFrame(props: UpworkListFrameProps): ReactElement {
       {pagination && (
         <PaginationFooter
           pagination={pagination}
-          onPageChange={onPageChange}
-          onPageSizeChange={onPageSizeChange}
+          onPageChange={pager.setPage}
+          onPageSizeChange={pager.setPageSize}
         />
       )}
     </SectionCard>

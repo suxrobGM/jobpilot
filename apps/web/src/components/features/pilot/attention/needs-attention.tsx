@@ -17,7 +17,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { RelativeTime } from "@/components/ui/display";
-import { QuerySection } from "@/components/ui/feedback";
+import { QuerySection, type QueryState } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { PromotionDraftCard, PromotionSummary } from "./promotion-card";
 import { QuestionCard } from "./question-card";
@@ -71,13 +71,14 @@ export function NeedsAttention(): ReactElement {
   const expandedId = userExpanded === undefined ? loneDraftId : userExpanded;
 
   const count = questions.length + drafts.length;
-  const loading = questionsQuery.isLoading || draftsQuery.isLoading;
-  const isError = questionsQuery.isError || draftsQuery.isError;
-
-  const retry = (): void => {
-    questionsQuery.refetch();
-    void draftsQuery.refetch();
-    void historyQuery.refetch();
+  const query: QueryState = {
+    isLoading: questionsQuery.isLoading || draftsQuery.isLoading,
+    isError: questionsQuery.isError || draftsQuery.isError,
+    refetch: () => {
+      questionsQuery.refetch();
+      void draftsQuery.refetch();
+      void historyQuery.refetch();
+    },
   };
 
   const postHistory = history.length > 0 && (
@@ -101,7 +102,7 @@ export function NeedsAttention(): ReactElement {
   );
 
   // All clear shrinks to one line, so the overview's live sections stay above the fold.
-  if (!loading && !isError && count === 0) {
+  if (!query.isLoading && !query.isError && count === 0) {
     return (
       <Stack spacing={1}>
         <Alert severity="success" variant="outlined">
@@ -119,9 +120,7 @@ export function NeedsAttention(): ReactElement {
     >
       <Stack spacing={2}>
         <QuerySection
-          isLoading={loading}
-          isError={isError}
-          onRetry={retry}
+          query={query}
           errorTitle="Couldn't load what needs your attention."
           isEmpty={false}
           empty={null}
@@ -140,7 +139,7 @@ export function NeedsAttention(): ReactElement {
             ))}
           </Stack>
         </QuerySection>
-        {!loading && !isError && postHistory}
+        {!query.isLoading && !query.isError && postHistory}
       </Stack>
     </SectionCard>
   );

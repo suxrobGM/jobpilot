@@ -19,7 +19,6 @@ const config: NextConfig = {
   typedRoutes: true,
   allowedDevOrigins: ["127.0.0.1"],
   pageExtensions: ["ts", "tsx", "md", "mdx"],
-  // Compile the workspace TS packages consumed by the app.
   transpilePackages: ["@jobpilot/contracts", "@jobpilot/api-client"],
   // Index routes that only pick a default tab.
   redirects: async () => [

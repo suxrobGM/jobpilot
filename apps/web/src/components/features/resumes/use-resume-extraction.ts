@@ -7,7 +7,7 @@ import { resumeQueries } from "@/api/queries";
 import { useSseChannel } from "@/hooks/use-sse-channel";
 
 /** Covers the race where the agent's PUT lands before the EventSource subscription is up. */
-const POLL_MS = 2_000;
+const POLL_INTERVAL_MS = 2_000;
 
 interface ResumeExtraction {
   /** Non-null once the agent has written structured fields. */
@@ -21,7 +21,7 @@ export function useResumeExtraction(resumeId: string | null, enabled: boolean): 
   const resume = useQuery({
     ...resumeQueries.detail(resumeId ?? ""),
     enabled: active,
-    refetchInterval: POLL_MS,
+    refetchInterval: POLL_INTERVAL_MS,
   });
 
   useSseChannel(

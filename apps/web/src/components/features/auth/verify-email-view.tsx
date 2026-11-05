@@ -5,16 +5,11 @@ import type { VerifyEmailInput } from "@jobpilot/contracts/auth";
 import { Alert, Button, Stack, Typography } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { useAuthActions, useSession } from "@/hooks/use-auth";
 import { MagicLinkView } from "./magic-link-view";
 
-/**
- * Two modes share the `/verify-email` route:
- * - With a `token` (magic link), auto-confirm the address and offer to continue.
- * - Without one, act as the gate for a signed-in but unverified user: tell them
- *   to check their inbox, and let them resend or sign out.
- */
+/** With a `token`, confirms the address; without one, it is the gate for an unverified user. */
 export function VerifyEmailView(): ReactElement {
   const token = useSearchParams().get("token");
   return token ? <VerifyTokenView token={token} /> : <VerifyGateView />;

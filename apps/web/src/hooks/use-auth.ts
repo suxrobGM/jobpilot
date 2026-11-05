@@ -4,9 +4,9 @@ import type { LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { type ApiMutationResult, useApiMutation } from "@/api/hooks";
 import { authQueries } from "@/api/queries";
 import type { AuthSessionResponse, AuthUserDto, LogoutResponse } from "@/api/types";
+import { type ApiMutationResult, useApiMutation } from "@/api/use-api-mutation";
 
 export interface UseSessionResult {
   /** Null while loading and when signed out. */
@@ -19,22 +19,14 @@ export interface UseAuthActionsResult {
   logout: ApiMutationResult<LogoutResponse, void>;
 }
 
-/**
- * The signed-in user, read from `/api/auth/me` (auth rides the httpOnly cookie).
- * Kept separate from `useAuthActions` so the signed-out pages that only need
- * login/register can't drag a guaranteed-401 `me` fetch onto themselves.
- */
+/** Separate from `useAuthActions` so signed-out pages don't drag in a guaranteed-401 `me` fetch. */
 export function useSession(): UseSessionResult {
-  const meQuery = useQuery({ ...authQueries.me(), retry: false, staleTime: 30_000 });
+  const meQuery = useQuery({ ...authQueries.me(), retry: false });
 
   return { user: meQuery.data ?? null };
 }
 
-/**
- * Login/register/logout mutations. On a successful login or register the `me`
- * query is invalidated and the user is sent to `/workspace` - the proxy
- * middleware then routes on to `/onboarding` when the profile is empty.
- */
+/** Login and register land on `/workspace`; the proxy routes an empty profile on to onboarding. */
 export function useAuthActions(): UseAuthActionsResult {
   const router = useRouter();
   const queryClient = useQueryClient();

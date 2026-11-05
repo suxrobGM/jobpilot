@@ -21,9 +21,7 @@ export function CycleCost(): ReactElement {
       description="The last 7 days of runs by task type, most new tokens first. Cached tokens are cheap re-reads of context."
     >
       <QuerySection
-        isLoading={query.isLoading}
-        isError={query.isError}
-        onRetry={() => void query.refetch()}
+        query={query}
         errorTitle="Couldn't load cycle costs."
         isEmpty={items.length === 0}
         empty={<EmptyState variant="inline" title="No finished cycles in the last 7 days." />}

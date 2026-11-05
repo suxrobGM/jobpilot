@@ -8,10 +8,8 @@ import {
   USER_DEFAULT_VALUES,
 } from "@jobpilot/contracts/user";
 import { Stack } from "@mui/material";
-import { useSelector } from "@tanstack/react-form";
 import { FieldRowList, FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { useKeyedList } from "@/hooks/use-keyed-list";
 
 const EMPTY_SALARY_PREFERENCE: SalaryPreferenceInput = {
   appliesTo: "",
@@ -40,9 +38,6 @@ const CURRENCIES = SALARY_CURRENCIES.map((code) => ({ value: code, label: code }
 export const SalarySection = withForm({
   defaultValues: USER_DEFAULT_VALUES,
   render: function SalarySection({ form }) {
-    const count = useSelector(form.store, (s) => s.values.salaryPreferences?.length ?? 0);
-    const { keys, onRemove, onAdd } = useKeyedList(count);
-
     return (
       <FormSection
         title="Salary preferences"
@@ -54,18 +49,11 @@ export const SalarySection = withForm({
             return (
               <FieldRowList
                 count={prefs.length}
-                keys={keys}
                 addLabel="Add salary preference"
                 rowLabel={(i) => `Salary preference ${i + 1}`}
                 max={5}
-                onAdd={() => {
-                  onAdd();
-                  field.pushValue(EMPTY_SALARY_PREFERENCE);
-                }}
-                onRemove={(i) => {
-                  onRemove(i);
-                  field.removeValue(i);
-                }}
+                onAdd={() => field.pushValue(EMPTY_SALARY_PREFERENCE)}
+                onRemove={(i) => field.removeValue(i)}
               >
                 {(i) => (
                   <>

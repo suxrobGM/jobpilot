@@ -5,9 +5,9 @@ import { Delete, Edit } from "@mui/icons-material";
 import { Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import type { SavedAnswerDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
@@ -61,9 +61,7 @@ export function SavedAnswersSection(): ReactElement {
       description="Answers to application questions that come up again, like start date or relocation. Applications fill them in instead of asking you. Edits save right away."
     >
       <QuerySection
-        isLoading={query.isLoading}
-        isError={query.isError}
-        onRetry={() => void query.refetch()}
+        query={query}
         errorTitle="Couldn't load saved answers."
         isEmpty={answers.length === 0}
         empty={

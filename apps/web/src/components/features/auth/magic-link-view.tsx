@@ -3,7 +3,7 @@
 import { type ReactElement, useEffect, useRef } from "react";
 import { Alert, Box, Button, CircularProgress, Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import type { ApiMutationResult } from "@/api/hooks";
+import type { ApiMutationResult } from "@/api/use-api-mutation";
 
 interface MagicLinkViewProps {
   token?: string;
@@ -22,8 +22,7 @@ export function MagicLinkView(props: MagicLinkViewProps): ReactElement {
   const fired = useRef(false);
 
   useEffect(() => {
-    // Fire once - the token is single-use, so a strict-mode double-invoke would
-    // make the second call fail against an already-consumed token.
+    // Fire once: the token is single-use, so strict mode's second invoke would fail.
     if (fired.current || !token) {
       return;
     }

@@ -12,11 +12,14 @@ export async function getSkillFacets(): Promise<string[]> {
 }
 
 /** The skill takes the facet's casing so `?skills=react` and `?skills=React` aren't duplicates. */
-export function landingParams(filters: Record<string, string>, skills: string[]): URLSearchParams {
+export function buildLandingParams(
+  filters: Record<string, string>,
+  knownSkills: string[],
+): URLSearchParams {
   const landing = new URLSearchParams();
   const wanted = parseSkillsParam(filters.skills);
   const skill =
-    wanted.length === 1 && skills.find((s) => s.toLowerCase() === wanted[0].toLowerCase());
+    wanted.length === 1 && knownSkills.find((s) => s.toLowerCase() === wanted[0].toLowerCase());
   if (skill) {
     landing.set("skills", skill);
   }
@@ -37,5 +40,5 @@ export function landingTitle(landing: URLSearchParams): string {
 /** The landing views worth a sitemap entry: remote-only, and each skill on its own. */
 export function sitemapLandingViews(skills: string[]): URLSearchParams[] {
   const views = [{ remote: "true" }, ...skills.map((skill) => ({ skills: skill }))];
-  return views.map((view) => landingParams(view, skills));
+  return views.map((view) => buildLandingParams(view, skills));
 }

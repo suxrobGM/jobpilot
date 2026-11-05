@@ -5,8 +5,9 @@ import type { PilotQuestion } from "@jobpilot/contracts/pilot";
 import { OpenInNew } from "@mui/icons-material";
 import { Button, Card, CardContent, Link, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { statusLabel } from "@/components/ui/display";
 
 interface QuestionCardProps {
   question: PilotQuestion;
@@ -32,11 +33,8 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
             <Typography variant="body1Strong" sx={{ flex: 1, minWidth: 0 }}>
               {question.prompt}
             </Typography>
-            <Typography
-              variant="captionMuted"
-              sx={{ flexShrink: 0, textTransform: "capitalize", whiteSpace: "nowrap" }}
-            >
-              {question.kind}
+            <Typography variant="captionMuted" sx={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+              {statusLabel("questionKind", question.kind)}
             </Typography>
           </Stack>
 

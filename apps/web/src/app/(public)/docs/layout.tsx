@@ -16,8 +16,7 @@ export default function DocsLayout(props: DocsLayoutProps): ReactElement {
       <Box
         sx={{
           display: "grid",
-          // minmax(0, ...), not 1fr: an auto track is sized to its min-content, and on xs the sidebar
-          // is a row of nowrap pills - it would push the whole page wider than the phone.
+          // minmax(0, ...), not 1fr: on xs the nowrap sidebar pills' min-content widens the page.
           gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "200px minmax(0, 720px)" },
           gap: { xs: 3, md: 8 },
           alignItems: "start",

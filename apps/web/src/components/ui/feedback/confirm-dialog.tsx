@@ -41,8 +41,7 @@ export function ConfirmDialog(props: ConfirmDialogProps): ReactElement {
 
   const [typed, setTyped] = useState("");
 
-  // Reset the typed confirmation when the dialog closes (adjust state during
-  // render rather than in an effect).
+  // Reset on close during render, not in an effect.
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);

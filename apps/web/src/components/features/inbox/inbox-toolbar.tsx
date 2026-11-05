@@ -3,11 +3,11 @@
 import type { ReactElement } from "react";
 import type { ReviewStatus } from "@jobpilot/contracts/email";
 import { CloudSync, FormatListBulleted } from "@mui/icons-material";
-import { Box, Button, Stack, Tooltip } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { emailQueries } from "@/api/queries";
-import { AgentOnlyButton } from "@/components/ui/buttons";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { AgentOnlyButton, TooltipButton } from "@/components/ui/buttons";
 import { FilterToggle, type SelectFieldOption } from "@/components/ui/form";
 import { useAgent } from "@/providers/agent-provider";
 
@@ -38,17 +38,16 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
 
   return (
     <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", alignItems: "center" }}>
-      <Tooltip title="Fetch new mail from Gmail">
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<CloudSync />}
-          onClick={() => sync.mutate()}
-          loading={sync.isPending}
-        >
-          Sync
-        </Button>
-      </Tooltip>
+      <TooltipButton
+        title="Fetch new mail from Gmail"
+        size="small"
+        variant="outlined"
+        startIcon={<CloudSync />}
+        onClick={() => sync.mutate()}
+        loading={sync.isPending}
+      >
+        Sync
+      </TooltipButton>
       <AgentOnlyButton
         size="small"
         variant="contained"

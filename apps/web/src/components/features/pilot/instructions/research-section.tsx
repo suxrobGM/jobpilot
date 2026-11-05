@@ -5,9 +5,9 @@ import { TravelExplore } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import type { ResearchStatusDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/feedback";
 import { formatRelativeTime } from "@/utils/format";
@@ -39,9 +39,7 @@ export function ResearchSection(): ReactElement {
 
   return (
     <QuerySection
-      isLoading={query.isLoading}
-      isError={query.isError}
-      onRetry={() => void query.refetch()}
+      query={query}
       errorTitle="Couldn't load research status."
       isEmpty={false}
       empty={null}

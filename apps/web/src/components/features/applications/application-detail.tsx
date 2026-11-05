@@ -1,17 +1,16 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
-import { Button, IconButton, LinearProgress, Link, Stack } from "@mui/material";
+import { Button, Link, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { isNotFound } from "@/api/error";
-import { useApiMutation } from "@/api/hooks";
-import { applicationQueries, invalidations } from "@/api/queries";
+import { applicationQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { LabelValue, StatusChip, statusLabel } from "@/components/ui/display";
-import { EmptyState, QueryError } from "@/components/ui/feedback";
+import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
@@ -33,18 +32,9 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
 
   const detail = useQuery(applicationQueries.detail(id));
 
-  const updateStatus = useApiMutation(
-    (vars: StatusTransitionInput) => api.applications({ id }).status.post(vars),
-    {
-      successMessage: "Status updated",
-      invalidate: invalidations.application,
-      onSuccess: () => setStatusDialogOpen(false),
-    },
-  );
-
   const remove = useApiMutation(() => api.applications({ id }).delete(), {
     successMessage: "Application deleted",
-    invalidate: invalidations.application,
+    invalidate: [applicationQueries.all],
     onSuccess: () => router.replace("/workspace/applications"),
   });
 
@@ -61,8 +51,8 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     }
   };
 
-  if (detail.isLoading) {
-    return <LinearProgress />;
+  if (detail.isPending) {
+    return <DetailSkeleton />;
   }
 
   const app = detail.data;
@@ -70,17 +60,11 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   if (!app) {
     return (
       <PageShell maxWidth="lg">
-        {isNotFound(detail.error) ? (
-          <EmptyState
-            title="Application not found"
-            description="It may have been deleted, or the link is incorrect."
-          />
-        ) : (
-          <QueryError
-            title="Couldn't load this application."
-            onRetry={() => void detail.refetch()}
-          />
-        )}
+        <DetailLoadFailure
+          noun="application"
+          error={detail.error}
+          onRetry={() => void detail.refetch()}
+        />
       </PageShell>
     );
   }
@@ -99,9 +83,9 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               <Button variant="contained" onClick={() => setStatusDialogOpen(true)}>
                 Update status
               </Button>
-              <IconButton onClick={() => void handleDelete()} aria-label="Delete application">
+              <TooltipIconButton title="Delete application" onClick={() => void handleDelete()}>
                 <Delete fontSize="md" />
-              </IconButton>
+              </TooltipIconButton>
             </>
           }
         />
@@ -139,11 +123,10 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
       <StatusTransitionDialog
         // Remounts after each change, so the form starts from the new status.
         key={app.status}
+        applicationId={app.id}
         open={statusDialogOpen}
         currentStatus={app.status}
         onClose={() => setStatusDialogOpen(false)}
-        onSubmit={(values) => updateStatus.mutate(values)}
-        submitting={updateStatus.isPending}
       />
     </>
   );

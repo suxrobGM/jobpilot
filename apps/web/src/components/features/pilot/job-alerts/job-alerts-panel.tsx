@@ -1,25 +1,22 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type {
-  JobAlertsStatus,
-  PILOT_RUN_OUTCOMES,
-  PilotJobAlerts,
-} from "@jobpilot/contracts/pilot";
+import type { JobAlertsStatus, PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot";
 import { Schedule } from "@mui/icons-material";
 import { Alert, Button, Chip, Stack, Typography } from "@mui/material";
-import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil, plural } from "@/utils/format";
 import { campaignHref } from "@/utils/routes";
-import { hourLabel } from "../run-status";
-import { RunJobAlertsButton } from "./run-job-alerts-button";
+import { formatHour } from "../run-status";
+import { RunJobAlertsButton, runDisabledReason } from "./run-job-alerts-button";
 import { ScheduleDialog } from "./schedule-dialog";
-import { runDisabledReason, useJobAlerts } from "./use-job-alerts";
+
+// Run events arrive over SSE (pilot-live.tsx); the poll only catches newly synced mail.
+const POLL_INTERVAL_MS = 120_000;
 
 const OUTCOME_LABELS: Record<(typeof PILOT_RUN_OUTCOMES)[number], string> = {
   done: "finished",
@@ -33,7 +30,7 @@ function scheduleSummary(status: JobAlertsStatus): string {
   if (!settings.enabled) {
     return "Not scheduled - runs only when you click Run now.";
   }
-  const times = settings.runHours.map(hourLabel).join(", ");
+  const times = settings.runHours.map(formatHour).join(", ");
   const next = status.nextRunAt ? ` · next in ${formatTimeUntil(status.nextRunAt)}` : "";
   return `Runs daily at ${times} ${settings.timeZone}${next}`;
 }
@@ -66,13 +63,8 @@ function LastRun(props: LastRunProps): ReactElement {
 
 export function JobAlertsPanel(): ReactElement {
   const [editing, setEditing] = useState(false);
-  const { query, status, run } = useJobAlerts();
-
-  const save = useApiMutation((body: PilotJobAlerts) => api.pilot["job-alerts"].put(body), {
-    invalidate: [pilotQueries.jobAlerts().queryKey, pilotQueries.taskList().queryKey],
-    successMessage: "Job alert schedule saved.",
-  });
-
+  const query = useQuery({ ...pilotQueries.jobAlerts(), refetchInterval: POLL_INTERVAL_MS });
+  const status = query.data;
   const disabledReason = status ? runDisabledReason(status) : null;
 
   return (
@@ -81,9 +73,7 @@ export function JobAlertsPanel(): ReactElement {
       description="Pulls every posting out of alert emails from LinkedIn, Ladders, FlexJobs and more, ranks them against your resume, and opens a campaign. Matches at or above your min score get applied to."
     >
       <QuerySection
-        isLoading={query.isLoading}
-        isError={query.isError}
-        onRetry={() => void query.refetch()}
+        query={query}
         errorTitle="Couldn't load the job alert schedule."
         isEmpty={false}
         empty={null}
@@ -123,27 +113,13 @@ export function JobAlertsPanel(): ReactElement {
               <Button size="small" startIcon={<Schedule />} onClick={() => setEditing(true)}>
                 Schedule
               </Button>
-              <RunJobAlertsButton
-                status={status}
-                disabledReason={disabledReason}
-                submitting={run.isPending}
-                onRun={() => run.mutate()}
-              />
+              <RunJobAlertsButton status={status} />
             </Stack>
           </Stack>
         )}
       </QuerySection>
       {status && (
-        <ScheduleDialog
-          open={editing}
-          status={status}
-          submitting={save.isPending}
-          onClose={() => setEditing(false)}
-          onSubmit={async (settings) => {
-            await save.mutateAsync(settings);
-            setEditing(false);
-          }}
-        />
+        <ScheduleDialog open={editing} status={status} onClose={() => setEditing(false)} />
       )}
     </SectionCard>
   );

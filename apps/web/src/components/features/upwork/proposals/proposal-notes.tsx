@@ -3,9 +3,9 @@
 import { type ReactElement, useState } from "react";
 import { Button, Stack, TextField } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import type { UpdateUpworkProposalRequest } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { SectionCard } from "@/components/ui/layout";
 
 interface ProposalNotesProps {

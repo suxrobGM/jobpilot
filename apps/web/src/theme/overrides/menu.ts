@@ -1,7 +1,7 @@
 import type { Components, CSSObject, Theme } from "@mui/material/styles";
 
 /** One row in a floating list; MenuItem and the Autocomplete option share it. */
-export function listOption(theme: Theme): CSSObject {
+export function listOptionStyles(theme: Theme): CSSObject {
   return {
     fontSize: theme.typography.body1.fontSize,
     borderRadius: theme.radii.xs,
@@ -12,7 +12,7 @@ export function listOption(theme: Theme): CSSObject {
 }
 
 /** The floating surface under a menu or an Autocomplete popup. */
-export function listPaper(theme: Theme): CSSObject {
+export function listPaperStyles(theme: Theme): CSSObject {
   return {
     borderRadius: theme.radii.md,
     border: `1px solid ${theme.palette.line.divider}`,
@@ -22,13 +22,13 @@ export function listPaper(theme: Theme): CSSObject {
 
 export const menuOverrides: Components<Theme>["MuiMenu"] = {
   styleOverrides: {
-    paper: ({ theme }) => listPaper(theme),
+    paper: ({ theme }) => listPaperStyles(theme),
     list: { paddingBlock: 4 },
   },
 };
 
 export const menuItemOverrides: Components<Theme>["MuiMenuItem"] = {
   styleOverrides: {
-    root: ({ theme }) => listOption(theme),
+    root: ({ theme }) => listOptionStyles(theme),
   },
 };

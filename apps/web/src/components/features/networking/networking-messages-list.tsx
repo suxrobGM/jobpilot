@@ -12,7 +12,7 @@ import { NetworkingMessagesTable } from "./networking-messages-table";
 export function NetworkingMessagesList(): ReactElement {
   const pagination = usePaginationParams();
   // The pilot's approval question deep-links straight to one draft.
-  const openMessageId = useSearchParams().get("message") ?? undefined;
+  const openMessageId = useSearchParams().get("message");
   const messages = useQuery(networkingQueries.messages(pagination.query));
 
   return (

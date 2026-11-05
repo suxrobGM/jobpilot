@@ -6,7 +6,7 @@ import { Add } from "@mui/icons-material";
 import { Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { AdminBoardFormDialog } from "./board-form-dialog";
 
 /** Adds a board to the global catalog. Remounted by `key` so the dialog resets between opens. */
@@ -32,8 +32,7 @@ export function AddBoardButton(): ReactElement {
         open={open}
         title="Add catalog board"
         onClose={() => setOpen(false)}
-        onSubmit={(values) => create.mutate(values)}
-        submitting={create.isPending}
+        onSubmit={(values) => create.mutateAsync(values)}
       />
     </>
   );

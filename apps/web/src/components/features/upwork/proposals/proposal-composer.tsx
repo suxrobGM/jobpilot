@@ -2,16 +2,16 @@
 
 import type { ReactElement } from "react";
 import { Button, Stack } from "@mui/material";
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import type { CreateUpworkProposalRequest } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
+import { proposalHref } from "@/utils/routes";
 
 const formSchema = z.object({
   jobTitle: z.string().trim().min(2, "Enter a job title"),
@@ -49,7 +49,7 @@ export function ProposalComposer(): ReactElement {
       });
 
       await agent.injectSkill("upwork-proposal", String(created.id));
-      router.push(`/upwork/${created.id}` as Route);
+      router.push(proposalHref(created.id));
     },
   });
 

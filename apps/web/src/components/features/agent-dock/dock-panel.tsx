@@ -14,7 +14,7 @@ import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import type { TerminalHealth } from "@/hooks/use-terminal-health";
 import { readAgentStorage } from "@/lib/terminal/agent-storage";
-import { providerDisplayName } from "@/lib/terminal/client";
+import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal/client";
 import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOfflineCard } from "./agent-offline-card";
@@ -23,6 +23,8 @@ import { TerminalPanel } from "./terminal-panel";
 import { PendingRestartCard } from "./update/pending-restart-card";
 import { AgentUpdateBanner } from "./update/update-banner";
 import { useDockHealth } from "./use-dock-health";
+
+const PROVIDERS: TerminalProviderId[] = ["claude", "codex"];
 
 const STATUS_LABELS: Record<TerminalHealth, string> = {
   checking: "connecting",
@@ -34,7 +36,7 @@ const STATUS_LABELS: Record<TerminalHealth, string> = {
 
 export function DockPanel(): ReactElement {
   const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
-  const { health, status, recheck, pending, beginPending, unreachable } = useDockHealth();
+  const { health, status, pending, beginPending, unreachable } = useDockHealth();
   const providerLabel = providerDisplayName(provider);
 
   const statusLabel = pending && unreachable ? `${pending}…` : STATUS_LABELS[health];
@@ -87,17 +89,14 @@ export function DockPanel(): ReactElement {
           <PendingRestartCard action={pending} />
         ) : (
           <AgentOfflineCard
-            onRecheck={recheck}
             onStart={() => beginPending("starting")}
-            provider={provider}
             // Live status while warm-offline; the persisted copy covers a cold reload (status is null then).
             canRelaunch={status?.canRelaunch ?? readAgentStorage()?.canRelaunch ?? false}
           />
         ))}
-      {health === "uninstalled" && <AgentInstallCard onRecheck={recheck} />}
+      {health === "uninstalled" && <AgentInstallCard />}
       {health === "degraded" && (
         <AgentInstallCard
-          onRecheck={recheck}
           title="Reinstall the JobPilot agent"
           description="The agent host is running but its plugin files are missing or corrupt. Re-run setup to refresh it, then recheck."
           detail={status?.detail}
@@ -108,9 +107,7 @@ export function DockPanel(): ReactElement {
           {status && (
             <AgentUpdateBanner
               currentVersion={status.hostVersion}
-              provider={provider}
               canUpdate={status.canUpdate}
-              onUpdated={recheck}
               onUpdating={() => beginPending("updating")}
             />
           )}
@@ -134,8 +131,11 @@ export function DockPanel(): ReactElement {
               onChange={handleProviderChange}
               sx={{ minWidth: 120, typography: "body2" }}
             >
-              <MenuItem value="claude">Claude Code</MenuItem>
-              <MenuItem value="codex">Codex</MenuItem>
+              {PROVIDERS.map((id) => (
+                <MenuItem key={id} value={id}>
+                  {providerDisplayName(id)}
+                </MenuItem>
+              ))}
             </Select>
             <TooltipIconButton
               title={`Restart ${providerLabel}`}

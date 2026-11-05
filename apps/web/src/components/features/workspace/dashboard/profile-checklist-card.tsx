@@ -18,10 +18,7 @@ interface ChecklistItem {
   action: string;
 }
 
-/**
- * Post-onboarding nudges for everything the 3-step wizard skipped. Shown on the workspace
- * until every item is done.
- */
+/** Nudges for everything the onboarding wizard skipped, until every item is done. */
 export function ProfileChecklistCard(): ReactNode {
   const { user } = useSession();
   const profileQuery = useQuery(userQueries.detail());
@@ -41,14 +38,14 @@ export function ProfileChecklistCard(): ReactNode {
       key: "verify-email",
       label: "Verify your email so you can apply and send messages.",
       done: user.emailVerified,
-      href: "/verify-email" as Route,
+      href: "/verify-email",
       action: "Resend link",
     },
     {
       key: "address",
       label: "Add your address and work authorization. Application forms ask for both.",
       done: Boolean(profile?.street && profile.city),
-      href: "/settings/profile" as Route,
+      href: "/settings/profile",
       action: "Fill in",
     },
     {
@@ -57,14 +54,14 @@ export function ProfileChecklistCard(): ReactNode {
         ? "Reconnect your mailbox - Google rejected its access grant, so mail sync has stopped."
         : "Connect your mailbox so the agent can read verification codes and recruiter replies.",
       done: mailbox.connected && !needsReauth,
-      href: "/settings/email" as Route,
+      href: "/settings/email",
       action: needsReauth ? "Reconnect" : "Connect",
     },
     {
       key: "credentials",
       label: "Save your job-board logins so the agent can sign in before it applies.",
       done: credentialsQuery.data.length > 0,
-      href: "/settings/credentials" as Route,
+      href: "/settings/credentials",
       action: "Add",
     },
   ];

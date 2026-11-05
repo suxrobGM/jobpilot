@@ -36,10 +36,7 @@ export const jobListingQuerySchema = paginationQuerySchema.extend({
   location: queryText.optional(),
   remote: z.stringbool().optional(),
   board: z.string().trim().min(1).optional(),
-  /**
-   * A listing matches ANY entry. Both shapes, because Elysia splits `?skills=React,TypeScript`
-   * into an array but passes a lone value through as a string.
-   */
+  /** Matches ANY entry. Elysia splits `a,b` into an array but passes a lone value as a string. */
   skills: z
     .union([z.string(), z.array(z.string())])
     .transform(parseSkillsParam)

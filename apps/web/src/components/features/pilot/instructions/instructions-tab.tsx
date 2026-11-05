@@ -11,8 +11,8 @@ import { Box, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -84,8 +84,7 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
     },
   );
 
-  // Fetched on submit, not on mount: a mount fetch still in flight reads as "nothing in flight"
-  // and saves changed goals without ever asking, which is the case the dialog exists for.
+  // Fetched on submit: a mount fetch still loading reads as "nothing in flight" and skips the ask.
   const impact = useQuery({ ...pilotQueries.instructionsImpact(), enabled: false });
 
   // Set while the goals-changed dialog is open; carries the values the save finishes with.
@@ -195,7 +194,7 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
           >
             <Typography variant="captionMuted">Unsaved changes</Typography>
             <form.AppForm>
-              <form.SubmitButton loading={save.isPending}>Save instructions</form.SubmitButton>
+              <form.SubmitButton>Save instructions</form.SubmitButton>
             </form.AppForm>
           </Stack>
         </StickyFooter>

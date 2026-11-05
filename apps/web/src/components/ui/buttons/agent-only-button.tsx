@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { Box, Button, type ButtonProps, Tooltip } from "@mui/material";
+import type { ButtonProps } from "@mui/material";
 import { useAgentAvailable } from "@/providers/agent-provider";
+import { TooltipButton } from "./tooltip-button";
 
 const UNAVAILABLE = "Open JobPilot on your desktop to run this.";
 
@@ -18,13 +19,12 @@ export function AgentOnlyButton(props: AgentOnlyButtonProps): ReactElement {
   const available = useAgentAvailable();
 
   return (
-    <Tooltip title={available ? tooltip : UNAVAILABLE}>
-      {/* A disabled button emits no pointer events, so the tooltip needs an enabled wrapper. */}
-      <Box component="span" sx={{ display: "inline-flex" }}>
-        <Button {...rest} disabled={disabled || !available}>
-          {children}
-        </Button>
-      </Box>
-    </Tooltip>
+    <TooltipButton
+      title={available ? tooltip : UNAVAILABLE}
+      disabled={disabled || !available}
+      {...rest}
+    >
+      {children}
+    </TooltipButton>
   );
 }

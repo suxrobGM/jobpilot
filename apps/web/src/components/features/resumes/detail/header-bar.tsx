@@ -2,13 +2,14 @@
 
 import { type ReactElement, useState } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
-import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } from "@mui/material";
+import { Button, Card, CardContent, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { invalidations } from "@/api/queries";
 import { resumePdfUrl } from "@/api/resume-urls";
 import type { ResumeDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useSetPrimaryResume } from "../use-set-primary-resume";
 
@@ -86,12 +87,12 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
               Set primary
             </Button>
           )}
-          <IconButton href={resumePdfUrl(resume.id, resume.updatedAt)} aria-label="Open PDF">
+          <TooltipIconButton title="Open PDF" href={resumePdfUrl(resume.id, resume.updatedAt)}>
             <PictureAsPdf fontSize="md" />
-          </IconButton>
-          <IconButton onClick={handleDelete} aria-label="Delete resume">
+          </TooltipIconButton>
+          <TooltipIconButton title="Delete resume" onClick={handleDelete}>
             <Delete fontSize="md" />
-          </IconButton>
+          </TooltipIconButton>
         </Stack>
       </CardContent>
     </Card>

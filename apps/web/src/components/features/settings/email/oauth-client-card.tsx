@@ -6,9 +6,9 @@ import { CheckCircle } from "@mui/icons-material";
 import { Alert, Box, Chip, Link, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { emailQueries } from "@/api/queries";
 import type { OAuthClientStatus } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipButton } from "@/components/ui/buttons";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
@@ -59,8 +59,8 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
   const form = useAppForm({
     defaultValues: { clientId: "", clientSecret: "" } as OAuthClientUpsertInput,
     validators: { onSubmit: oauthClientUpsertSchema },
-    onSubmit: ({ value }) => {
-      save.mutate({ clientId: value.clientId, clientSecret: value.clientSecret });
+    onSubmit: async ({ value }) => {
+      await save.mutateAsync({ clientId: value.clientId, clientSecret: value.clientSecret });
     },
   });
 
@@ -175,7 +175,7 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
             </form.AppField>
             <Stack direction="row" spacing={1.5}>
               <form.AppForm>
-                <form.SubmitButton disabled={save.isPending}>
+                <form.SubmitButton>
                   {config.configured ? "Update client" : "Save client"}
                 </form.SubmitButton>
               </form.AppForm>

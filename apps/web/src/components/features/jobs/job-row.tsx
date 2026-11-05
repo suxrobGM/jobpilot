@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { ListItemButton, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
 import type { JobListingSummaryDto } from "@/api/types";
+import { jobHref } from "@/utils/routes";
 import { jobMetaLine, RemoteBadge } from "./job-meta";
 import { SkillChips } from "./skill-chips";
 
@@ -15,7 +15,7 @@ export function JobRow(props: JobRowProps): ReactElement {
   return (
     // ListItemButton is a ButtonBase, so the theme's NextLink default makes `href` a client link.
     <ListItemButton
-      href={`/jobs/${job.slug}` as Route}
+      href={jobHref(job.slug)}
       sx={{
         display: "grid",
         gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "minmax(0, 1fr) auto" },

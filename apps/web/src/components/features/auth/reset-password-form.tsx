@@ -5,7 +5,7 @@ import { type ResetPasswordInput, ResetPasswordSchema } from "@jobpilot/contract
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useToast } from "@/providers/toast-provider";
 import { PASSWORD_HINT } from "./password-hint";
@@ -67,7 +67,7 @@ export function ResetPasswordForm(): ReactElement {
         </form.AppField>
 
         <form.AppForm>
-          <form.SubmitButton loading={resetPassword.isPending} fullWidth size="large">
+          <form.SubmitButton fullWidth size="large">
             Update password
           </form.SubmitButton>
         </form.AppForm>

@@ -14,11 +14,7 @@ interface JobPagerProps {
   params: Record<string, string>;
 }
 
-/**
- * Real `<a href>` links, not `PaginationFooter`: a crawler can't click a React handler, and a
- * rows-per-page control would multiply the crawlable URLs. Client only for `renderItem`; the
- * links are still in the server-rendered HTML.
- */
+/** Real `<a href>` links, not `PaginationFooter`: a crawler can't click a React handler. */
 export function JobPager(props: JobPagerProps): ReactNode {
   const { pagination, params } = props;
   const { page, totalPages, total } = pagination;

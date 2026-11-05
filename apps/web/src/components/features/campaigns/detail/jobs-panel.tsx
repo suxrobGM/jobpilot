@@ -2,18 +2,17 @@
 
 import { type ReactElement, useRef, useState } from "react";
 import { CAMPAIGN_JOB_STATUSES } from "@jobpilot/contracts/campaign";
-import { Autorenew, Clear, Replay } from "@mui/icons-material";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Autorenew, Replay } from "@mui/icons-material";
+import { Button, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { campaignQueries, invalidations } from "@/api/queries";
+import { campaignQueries } from "@/api/queries";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { statusOptions } from "@/components/ui/display";
-import { SearchField, SelectField } from "@/components/ui/form";
+import { FilterBar, SearchField, SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 import { useUrlSearch } from "@/hooks/use-url-search";
@@ -21,6 +20,7 @@ import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/toast-provider";
 import { plural } from "@/utils/format";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
+import { proposalHref } from "@/utils/routes";
 import { enumParam } from "@/utils/search-params";
 import { UPWORK_DOMAIN } from "../constants";
 import { CampaignJobsTable, isReapplicable } from "./jobs-table";
@@ -51,15 +51,14 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const jobs = useQuery(
     campaignQueries.jobs(campaign.id, {
       ...pagination.query,
-      status: statusFilter ?? undefined,
+      ...(statusFilter && { status: statusFilter }),
       search: search.applied || undefined,
     }),
   );
   const visible = jobs.data?.items ?? [];
   const total = jobs.data?.pagination.total ?? 0;
 
-  // The grid keeps off-page ids selected (keepNonExistentRowsSelected), so resolving
-  // against the current page alone would silently drop selections made on other pages.
+  // The grid keeps off-page ids selected, so resolving against this page alone would drop them.
   const seenJobs = useRef(new Map<string, CampaignJobDto>());
   for (const job of visible) {
     seenJobs.current.set(job.id, job);
@@ -78,11 +77,10 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
 
   const resetSelection = (): void => {
     setSelection(EMPTY_SELECTION);
-    for (const key of invalidations.campaign) queryClient.invalidateQueries({ queryKey: key });
+    void queryClient.invalidateQueries({ queryKey: campaignQueries.all });
   };
 
-  // Per-job requests commit independently, so a rejection can't invalidate the whole
-  // batch - report the split instead of surfacing the first error as a total failure.
+  // Per-job requests commit independently, so report the split, not one error as total failure.
   const reapply = useApiMutation(
     async () => {
       const results = await Promise.allSettled(
@@ -101,7 +99,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
       return { data: { ok, failed: results.length - ok }, error: null };
     },
     {
-      invalidate: invalidations.campaign,
+      invalidate: [campaignQueries.all],
       successMessage: ({ ok, failed }) =>
         failed === 0
           ? `Re-applying ${plural(ok, "job")}`
@@ -122,14 +120,12 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
     resetSelection();
   };
 
-  // Auto-apply campaigns apply on their own; on other campaigns (e.g. search results) the
-  // user dispatches a job to the single-job apply flow by its URL.
+  // Auto-apply campaigns apply on their own; elsewhere the user sends one job to the apply flow.
   const applyJob = (job: CampaignJobDto): void => {
     void agent.injectSkill("apply", job.url);
   };
 
-  // Upwork recommendations are recommend-only: seed a proposal draft from the
-  // recommendation, then hand off to the upwork-proposal skill to write it.
+  // Upwork is recommend-only: seed a draft, then the upwork-proposal skill writes it.
   const createDraft = useApiMutation(
     (job: CampaignJobDto) =>
       api.upwork.proposals.post({
@@ -143,7 +139,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
     {
       onSuccess: ({ id }) => {
         void agent.injectSkill("upwork-proposal", id);
-        router.push(`/upwork/${id}` as Route);
+        router.push(proposalHref(id));
       },
     },
   );
@@ -156,10 +152,36 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
 
   return (
     <SectionCard title="Jobs" description="Updated live as the campaign progresses.">
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={1.5}
-        sx={{ alignItems: { xs: "stretch", md: "center" }, mb: 2 }}
+      <FilterBar
+        hasFilters={hasFilters}
+        onClear={() => {
+          search.setDraft("");
+          pagination.setFilters({ jobsStatus: null, jobsQ: null });
+        }}
+        end={
+          <>
+            {selectedSkipped.length > 0 && (
+              <Button
+                variant="outlined"
+                startIcon={<Autorenew fontSize="sm" />}
+                onClick={rescanSelected}
+              >
+                Rescan selected ({selectedSkipped.length})
+              </Button>
+            )}
+            {selectedForReapply.length > 0 && (
+              <Button
+                variant="contained"
+                startIcon={<Replay fontSize="sm" />}
+                disabled={reapply.isPending}
+                onClick={() => reapply.mutate()}
+              >
+                Re-apply selected ({selectedForReapply.length})
+              </Button>
+            )}
+            <Typography variant="captionMuted">{plural(total, "job")}</Typography>
+          </>
+        }
       >
         <SelectField
           label="Status"
@@ -172,41 +194,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
           value={search.draft}
           onChange={search.setDraft}
         />
-        {hasFilters && (
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<Clear fontSize="sm" />}
-            onClick={() => {
-              search.setDraft("");
-              pagination.setFilters({ jobsStatus: null, jobsQ: null });
-            }}
-          >
-            Clear
-          </Button>
-        )}
-        <Box sx={{ flex: 1 }} />
-        {canReapply && selectedSkipped.length > 0 && (
-          <Button
-            variant="outlined"
-            startIcon={<Autorenew fontSize="sm" />}
-            onClick={rescanSelected}
-          >
-            Rescan selected ({selectedSkipped.length})
-          </Button>
-        )}
-        {canReapply && selectedForReapply.length > 0 && (
-          <Button
-            variant="contained"
-            startIcon={<Replay fontSize="sm" />}
-            disabled={reapply.isPending}
-            onClick={() => reapply.mutate()}
-          >
-            Re-apply selected ({selectedForReapply.length})
-          </Button>
-        )}
-        <Typography variant="captionMuted">{plural(total, "job")}</Typography>
-      </Stack>
+      </FilterBar>
       <CampaignJobsTable
         rows={visible}
         loading={jobs.isLoading}

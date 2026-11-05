@@ -14,15 +14,14 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { ItemList, ItemRow } from "@/components/ui/display";
+import { ItemList, ItemRow, RelativeTime } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/toast-provider";
 import { urlBase64ToUint8Array } from "@/utils/base64";
-import { formatRelativeTime } from "@/utils/format";
 
 export function NotificationsCard(): ReactNode {
   const toast = useToast();
@@ -32,7 +31,7 @@ export function NotificationsCard(): ReactNode {
   const [currentEndpoint, setCurrentEndpoint] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const vapidQuery = useQuery(pilotQueries.pushKey());
+  const vapidQuery = useQuery(pilotQueries.vapidKey());
   const publicKey = vapidQuery.data?.publicKey ?? null;
 
   const devicesQuery = useQuery({
@@ -57,8 +56,7 @@ export function NotificationsCard(): ReactNode {
     }
     setPermission(Notification.permission);
 
-    // getRegistration/getSubscription reject in some privacy modes; treating that as
-    // "no device subscribed" is the safe read, but it must not outlive the mount.
+    // These reject in some privacy modes; read that as "not subscribed", but not past unmount.
     let alive = true;
     const readEndpoint = async (): Promise<string | null> => {
       const reg = await navigator.serviceWorker.getRegistration();
@@ -110,8 +108,7 @@ export function NotificationsCard(): ReactNode {
   const removeDevice = async (endpoint: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Server first: unsubscribing locally mints a new endpoint on re-enable, so a
-      // failure after the local teardown would orphan the row and keep pushing to it.
+      // Server first: re-enable mints a new endpoint, so a later failure would orphan the row.
       await remove.mutateAsync(endpoint);
       if (endpoint === currentEndpoint) {
         const reg = await navigator.serviceWorker.getRegistration();
@@ -202,7 +199,7 @@ export function NotificationsCard(): ReactNode {
                       )}
                     </Box>
                   }
-                  secondary={`Added ${formatRelativeTime(device.createdAt)} ago`}
+                  secondary={<RelativeTime value={device.createdAt} prefix="Added" />}
                   action={
                     <TooltipIconButton
                       title="Remove device"

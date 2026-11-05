@@ -2,7 +2,9 @@
 
 import { Chip, Stack, Tooltip, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
-import type { UserAggregateResponse } from "@/api/types";
+import { useQuery } from "@tanstack/react-query";
+import { campaignQueries, userQueries } from "@/api/queries";
+import type { CampaignDto } from "@/api/types";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MODE_DESCRIPTIONS, UPWORK_MODE_DESCRIPTION } from "./copy";
 import {
@@ -38,15 +40,34 @@ const NETWORKING_SOURCE: SourceCopy = {
   noBoards: "No boards linked yet. Add one on the Boards page, or reach contacts by criteria.",
 };
 
+const MAX_RECENT_QUERIES = 4;
+
+/** The user's own searches only: pilot feeds and pasted-link batches aren't queries to reuse. */
+function recentQueriesFrom(campaigns: CampaignDto[]): RecentQuery[] {
+  const recentByQuery = new Map<string, RecentQuery>();
+  for (const campaign of campaigns) {
+    if (campaign.createdBy !== "user" || campaign.source === "apply") {
+      continue;
+    }
+    if (!recentByQuery.has(campaign.query)) {
+      recentByQuery.set(campaign.query, {
+        query: campaign.query,
+        anywhere: campaign.board === null,
+      });
+    }
+  }
+  return [...recentByQuery.values()].slice(0, MAX_RECENT_QUERIES);
+}
+
 /** Campaign basics: the mode toggle, plus query (+ recent), board, and resume for every mode but apply. */
 export const CampaignBasicsFields = withForm({
   defaultValues: COMPOSER_DEFAULT_VALUES,
   props: {
     boards: [] as BoardOption[],
-    resumes: [] as UserAggregateResponse["resumes"],
-    recentQueries: [] as RecentQuery[],
   },
-  render: function CampaignBasicsFields({ form, boards, resumes, recentQueries }) {
+  render: function CampaignBasicsFields({ form, boards }) {
+    const resumes = useQuery(userQueries.detail()).data?.resumes ?? [];
+    const recentQueries = recentQueriesFrom(useQuery(campaignQueries.list()).data?.items ?? []);
     const mode = useSelector(form.store, (s) => s.values.mode);
     const board = useSelector(form.store, (s) => s.values.board);
     const searchIn = useSelector(form.store, (s) => s.values.searchIn);

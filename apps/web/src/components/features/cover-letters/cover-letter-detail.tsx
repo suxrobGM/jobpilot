@@ -5,10 +5,9 @@ import { Launch, PictureAsPdf } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/api/base-url";
-import { isNotFound } from "@/api/error";
 import { coverLetterQueries } from "@/api/queries";
 import { StatusChip } from "@/components/ui/display";
-import { DetailSkeleton, EmptyState, QueryError } from "@/components/ui/feedback";
+import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { formatAbsoluteTime } from "@/utils/format";
 import { CoverLetterActions } from "./cover-letter-actions";
@@ -27,13 +26,12 @@ export function CoverLetterDetail(props: CoverLetterDetailProps): ReactElement {
   }
 
   if (!letter) {
-    return isNotFound(query.error) ? (
-      <EmptyState
-        title="Cover letter not found"
-        description="It may have been deleted, or the link is incorrect."
+    return (
+      <DetailLoadFailure
+        noun="cover letter"
+        error={query.error}
+        onRetry={() => void query.refetch()}
       />
-    ) : (
-      <QueryError title="Couldn't load this cover letter." onRetry={() => void query.refetch()} />
     );
   }
 

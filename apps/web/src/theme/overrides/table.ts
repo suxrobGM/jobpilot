@@ -1,7 +1,7 @@
 import type { Components, CSSObject, Theme } from "@mui/material/styles";
 
 /** Column-header text, shared with the DataGrid so the two table styles read as one. */
-export function columnHeaderText(theme: Theme): CSSObject {
+export function columnHeaderTextStyles(theme: Theme): CSSObject {
   return {
     textTransform: "uppercase",
     fontSize: theme.typography.caption.fontSize,
@@ -19,7 +19,7 @@ export const tableHeadOverrides: Components<Theme>["MuiTableHead"] = {
     root: ({ theme }) => ({
       backgroundColor: theme.palette.surfaces.elevated,
       "& th": {
-        ...columnHeaderText(theme),
+        ...columnHeaderTextStyles(theme),
         color: (theme.vars ?? theme).palette.text.secondary,
       },
     }),

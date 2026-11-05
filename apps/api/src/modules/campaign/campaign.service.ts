@@ -197,8 +197,7 @@ export class CampaignService {
         "config.resumeId is required for search, auto-apply, and networking campaigns.",
       );
     }
-    // Guarded in the write: comparing against `existing` leaves a window for the pilot's campaign
-    // tune and a user edit to clobber each other.
+    // Guarded in the write: checking `existing` first lets the pilot's tune and a user edit race.
     const updated = await this.prisma.campaign.updateMany({
       where: {
         id,

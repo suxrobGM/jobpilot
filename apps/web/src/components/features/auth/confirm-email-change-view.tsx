@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import type { ConfirmEmailChangeInput } from "@jobpilot/contracts/auth";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { MagicLinkView } from "./magic-link-view";
 
 /** Lands from the email-change magic link; confirming revokes all sessions. */

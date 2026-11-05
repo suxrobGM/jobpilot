@@ -12,7 +12,6 @@ import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/feedback";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { enumParam } from "@/utils/search-params";
 import { InboxTable } from "./inbox-table";
 import { InboxToolbar } from "./inbox-toolbar";
@@ -22,8 +21,6 @@ export function InboxContent(): ReactElement {
   // In the URL, so a refresh or a shared link keeps the filter along with the page.
   const filter = enumParam(REVIEW_STATUSES, useSearchParams().get("filter"));
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { injectSkill } = useAgent();
-  const agentAvailable = useAgentAvailable();
 
   const account = useQuery(emailQueries.account());
 
@@ -32,7 +29,7 @@ export function InboxContent(): ReactElement {
 
   const pagination = usePaginationParams();
   const messages = useQuery({
-    ...emailQueries.messages(filter ?? "all", pagination.query),
+    ...emailQueries.messages(filter, pagination.query),
     enabled: connected,
   });
 
@@ -50,7 +47,7 @@ export function InboxContent(): ReactElement {
     return <LinearProgress />;
   }
 
-  if (!status?.connected) {
+  if (!connected) {
     return (
       <EmptyState
         title="No mailbox connected"
@@ -86,13 +83,6 @@ export function InboxContent(): ReactElement {
         onRetry={() => void messages.refetch()}
         {...gridPagination(pagination, messages.data?.pagination)}
         onRowClick={(row) => setSelectedId(row.id)}
-        onScanMessage={
-          agentAvailable
-            ? (row) => {
-                void injectSkill("scan-inbox", row.id);
-              }
-            : undefined
-        }
       />
       <MessageReviewDialog
         messageId={selectedId}

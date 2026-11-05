@@ -3,7 +3,12 @@
 import type { AnyChannel, ChannelEvent, Jsonified } from "@jobpilot/contracts/sse";
 import { type QueryKey, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { type SseConnectionStatus, type UrlParamsArg, useSseChannel } from "./use-sse-channel";
+import {
+  type SseConnectionStatus,
+  type SseHandlers,
+  type UrlParamsArg,
+  useSseChannel,
+} from "./use-sse-channel";
 
 /** The queries an event makes stale, or a handler for anything richer (a direct cache write). */
 type LiveHandler<TEvent> = readonly QueryKey[] | ((event: TEvent) => void);
@@ -14,8 +19,8 @@ type LiveHandlers<TEvent extends { type: string }> = Partial<{
 
 interface UseLiveInvalidationOptions<TEvent extends { type: string }> {
   on: LiveHandlers<TEvent>;
-  /** Refetched once a dropped stream reconnects, to catch up on the events it missed. */
-  onReconnect?: readonly QueryKey[];
+  /** Runs once a dropped stream reconnects, to catch up on the events it missed. */
+  onReconnect?: LiveHandler<void>;
   enabled?: boolean;
 }
 
@@ -41,13 +46,17 @@ export function useLiveInvalidation<C extends AnyChannel>(
   }
   const status = useSseChannel(channel, params, {
     enabled,
-    onMessage: (event) => handlers[event.type]?.(event),
+    on: handlers as SseHandlers<TEvent>,
   });
 
   const previous = useRef(status);
   useEffect(() => {
     if (previous.current === "reconnecting" && status === "open" && onReconnect) {
-      invalidate(onReconnect);
+      if (typeof onReconnect === "function") {
+        onReconnect();
+      } else {
+        invalidate(onReconnect);
+      }
     }
     previous.current = status;
   });

@@ -9,19 +9,20 @@ import { GITHUB_URL } from "@/lib/constants";
 import { BrandMark } from "./brand-mark";
 import { MARKETING_NAV_HEIGHT, marketingLinkSx } from "./marketing-link-sx";
 
+type ExternalUrl = `https://${string}`;
+
 interface NavLink {
-  href: Route;
+  href: Route | ExternalUrl;
   label: string;
-  external?: boolean;
 }
 
 /** `/#how-it-works`, not `#how-it-works`: from /jobs or /docs the bare hash points at nothing. */
 const NAV_LINKS: NavLink[] = [
-  { href: "/jobs" as Route, label: "Jobs" },
-  { href: "/leaderboard" as Route, label: "Leaderboard" },
-  { href: "/docs" as Route, label: "Docs" },
+  { href: "/jobs", label: "Jobs" },
+  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/docs", label: "Docs" },
   { href: "/#how-it-works" as Route, label: "How it works" },
-  { href: GITHUB_URL as Route, label: "GitHub", external: true },
+  { href: GITHUB_URL, label: "GitHub" },
 ];
 
 const EXTERNAL_PROPS = { target: "_blank", rel: "noopener noreferrer" } as const;
@@ -35,7 +36,7 @@ function NavLinks(): ReactElement {
           href={link.href}
           underline="none"
           sx={marketingLinkSx}
-          {...(link.external && EXTERNAL_PROPS)}
+          {...(link.href.startsWith("https://") && EXTERNAL_PROPS)}
         >
           {link.label}
         </Link>

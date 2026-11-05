@@ -13,15 +13,15 @@ import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod/v4";
-import { jobBoardQueries } from "@/api/queries";
+import { api } from "@/api/client";
+import { credentialQueries, jobBoardQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 interface CredentialFormDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: CredentialInput) => void;
-  submitting?: boolean;
 }
 
 export const PROVIDER_LABELS: Record<CaptchaProvider, string> = {
@@ -86,14 +86,21 @@ const formSchema = z
   });
 
 export function CredentialFormDialog(props: CredentialFormDialogProps): ReactElement {
-  const { open, onClose, onSubmit, submitting } = props;
+  const { open, onClose } = props;
+  const create = useApiMutation((vars: CredentialInput) => api.credentials.post(vars), {
+    successMessage: "Credential added",
+    invalidate: [credentialQueries.all],
+  });
   const boards = useQuery(jobBoardQueries.list());
   const boardItems = (boards.data ?? []).map((b) => ({ value: b.domain, label: b.name }));
 
   const form = useAppForm({
     defaultValues: DEFAULTS,
     validators: { onSubmit: formSchema },
-    onSubmit: async ({ value }) => onSubmit(credentialSchema.parse(toInput(value))),
+    onSubmit: async ({ value }) => {
+      await create.mutateAsync(credentialSchema.parse(toInput(value)));
+      handleClose();
+    },
   });
   const kind = useSelector(form.store, (s) => s.values.kind);
 
@@ -104,13 +111,7 @@ export function CredentialFormDialog(props: CredentialFormDialogProps): ReactEle
   };
 
   return (
-    <FormDialog
-      open={open}
-      title="Add credential"
-      onClose={handleClose}
-      form={form}
-      submitting={submitting}
-    >
+    <FormDialog open={open} title="Add credential" onClose={handleClose} form={form}>
       <ToggleButtonGroup
         exclusive
         size="small"

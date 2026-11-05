@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
 import type { ApplicationEventDto } from "@/api/types";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
+import { EmptyState } from "@/components/ui/feedback";
 
 interface ActivityTimelineProps {
   events: ReadonlyArray<ApplicationEventDto>;
@@ -12,7 +13,7 @@ interface ActivityTimelineProps {
 export function ActivityTimeline(props: ActivityTimelineProps): ReactElement {
   const { events } = props;
   if (events.length === 0) {
-    return <Typography variant="body2Muted">No activity yet.</Typography>;
+    return <EmptyState variant="inline" title="No activity yet." />;
   }
   return (
     <Stack spacing={1.25}>

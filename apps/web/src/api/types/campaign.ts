@@ -1,11 +1,9 @@
 import type { Body, Data } from "@jobpilot/api-client";
 import type { api } from "@/api/client";
 
-/** A campaign list row, inferred from `GET /api/campaigns`. */
 export type CampaignDto = Data<typeof api.campaigns.get>["items"][number];
 
-/** A campaign, from `GET /api/campaigns/:id`. Jobs are fetched separately and paginated
- * server-side - a campaign can hold far more than one page of them. */
+/** No jobs: a campaign can hold far more than a page, so they're fetched separately. */
 export type CampaignDetailDto = Data<ReturnType<typeof api.campaigns>["get"]>;
 
 export type CampaignConfigDto = CampaignDto["config"];
@@ -24,5 +22,4 @@ export function jobSummary(campaign: {
   return campaign.summary.kind === "jobs" ? campaign.summary : null;
 }
 
-/** Create-campaign request body, from `POST /api/campaigns`. */
 export type CreateCampaignRequest = Body<typeof api.campaigns.post>;

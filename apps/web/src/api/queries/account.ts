@@ -37,6 +37,8 @@ export const leaderboardQueries = {
     queryOptions({
       queryKey: [...LEADERBOARD, window],
       queryFn: () => unwrap(api.public.portfolios.leaderboard.get({ query: { window } })),
+      // Matches the API's own leaderboard cache.
+      staleTime: 5 * 60_000,
     }),
 };
 
@@ -81,5 +83,6 @@ export const jobBoardQueries = {
     queryOptions({
       queryKey: [...JOB_BOARDS, "catalog"],
       queryFn: () => unwrap(api["job-boards"].catalog.get()),
+      staleTime: 10 * 60_000,
     }),
 };

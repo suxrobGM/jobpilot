@@ -34,10 +34,7 @@ export function formatRelativeTime(value: string | Date): string {
     : formatDistanceToNowStrict(date, { locale: compactLocale });
 }
 
-/**
- * Compact countdown, e.g. `3h`. A passed target returns `0s`: strict distance is unsigned and
- * would read as time remaining.
- */
+/** A passed target returns `0s`: strict distance is unsigned and would read as time left. */
 export function formatTimeUntil(value: string | Date): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {

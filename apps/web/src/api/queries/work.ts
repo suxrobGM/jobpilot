@@ -9,7 +9,7 @@ import type { PaginationQuery } from "@jobpilot/contracts/pagination";
 import { queryOptions } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { unwrap } from "@/api/error";
-import { OPTIONS_PAGE } from "./shared";
+import { FULL_PAGE } from "./shared";
 
 const APPLICATIONS = ["applications"] as const;
 const CAMPAIGNS = ["campaigns"] as const;
@@ -43,13 +43,13 @@ export const applicationQueries = {
     queryOptions({
       queryKey: [...APPLICATIONS, "search", search],
       queryFn: () =>
-        unwrap(api.applications.get({ query: { ...OPTIONS_PAGE, ...(search && { search }) } })),
+        unwrap(api.applications.get({ query: { ...FULL_PAGE, ...(search && { search }) } })),
     }),
 };
 
 export const campaignQueries = {
   all: CAMPAIGNS,
-  list: (query: CampaignListQuery = OPTIONS_PAGE) =>
+  list: (query: CampaignListQuery = FULL_PAGE) =>
     queryOptions({
       queryKey: [...CAMPAIGNS, "list", query],
       queryFn: () => unwrap(api.campaigns.get({ query })),
@@ -66,11 +66,11 @@ export const campaignQueries = {
       queryFn: () => unwrap(api.campaigns({ id }).get()),
     }),
   /** Every cached page and filter of one campaign's jobs. */
-  jobsOf: (id: string) => [...CAMPAIGNS, "jobs", id] as const,
+  jobsKey: (id: string) => [...CAMPAIGNS, "jobs", id] as const,
   /** One server-filtered page of a campaign's jobs; filters apply across the whole campaign. */
   jobs: (id: string, params: CampaignJobsQuery) =>
     queryOptions({
-      queryKey: [...campaignQueries.jobsOf(id), params],
+      queryKey: [...campaignQueries.jobsKey(id), params],
       queryFn: () => unwrap(api.campaigns({ id }).jobs.get({ query: params })),
     }),
   /** Skip/fail reasons aggregated server-side, so counts cover every job rather than one page. */
@@ -79,16 +79,13 @@ export const campaignQueries = {
       queryKey: [...CAMPAIGNS, "reasons", id],
       queryFn: () => unwrap(api.campaigns({ id })["job-reasons"].get()),
     }),
-  networkingOf: (id: string) => [...CAMPAIGNS, "networking", id] as const,
-  networking: (id: string, query: PaginationQuery = OPTIONS_PAGE) =>
+  networkingKey: (id: string) => [...CAMPAIGNS, "networking", id] as const,
+  networking: (id: string, query: PaginationQuery = FULL_PAGE) =>
     queryOptions({
-      queryKey: [...campaignQueries.networkingOf(id), query],
+      queryKey: [...campaignQueries.networkingKey(id), query],
       queryFn: () => unwrap(api.campaigns({ id }).networking.messages.get({ query })),
     }),
 };
-
-/** The inbox list filter: a review status, or "all" for no filter. */
-type InboxFilter = ReviewStatus | "all";
 
 export const emailQueries = {
   all: EMAIL,
@@ -102,14 +99,12 @@ export const emailQueries = {
       queryKey: [...EMAIL, "oauthClient"],
       queryFn: () => unwrap(api.email.oauth.client.get()),
     }),
-  messages: (filter: InboxFilter, page: PaginationQuery) =>
+  messages: (filter: ReviewStatus | null, page: PaginationQuery) =>
     queryOptions({
       queryKey: [...EMAIL, "messages", { filter, ...page }],
       queryFn: () =>
         unwrap(
-          api.email.messages.get({
-            query: { ...page, ...(filter === "all" ? {} : { reviewStatus: filter }) },
-          }),
+          api.email.messages.get({ query: { ...page, ...(filter && { reviewStatus: filter }) } }),
         ),
     }),
   message: (messageId: string) =>

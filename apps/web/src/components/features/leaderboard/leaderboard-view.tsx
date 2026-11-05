@@ -36,8 +36,6 @@ export function LeaderboardView(props: LeaderboardViewProps): ReactElement {
   const query = useQuery({
     ...leaderboardQueries.list(range),
     initialData: range === initial?.window ? initial : undefined,
-    // Matches the API's own leaderboard cache, so a remount does not re-fetch the same board.
-    staleTime: 5 * 60_000,
     // Holds the old window's rows on screen while the next loads, instead of blanking.
     placeholderData: keepPreviousData,
   });

@@ -1,6 +1,7 @@
 export { FieldInfo } from "./field-info";
 export { FieldRowList } from "./field-row-list";
 export { FileUpload } from "./file-upload";
+export { FilterBar } from "./filter-bar";
 export { FilterToggle } from "./filter-toggle";
 export { FormDialog, FormDialogShell } from "./form-dialog";
 export { FormSection } from "./form-section";

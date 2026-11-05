@@ -7,6 +7,7 @@ import type { EmailMessageDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 import type { GridPaginationProps } from "@/hooks/use-pagination";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 
 interface InboxTableProps extends GridPaginationProps {
   rows: ReadonlyArray<EmailMessageDto>;
@@ -15,12 +16,12 @@ interface InboxTableProps extends GridPaginationProps {
   errorTitle?: string;
   onRetry?: () => void;
   onRowClick: (row: EmailMessageDto) => void;
-  /** When provided, each row gets a Scan/Rescan action that calls this. */
-  onScanMessage?: (row: EmailMessageDto) => void;
 }
 
 export function InboxTable(props: InboxTableProps): ReactElement {
-  const { rows, loading, errorTitle, onRetry, onRowClick, onScanMessage, ...pagination } = props;
+  const { rows, loading, errorTitle, onRetry, onRowClick, ...pagination } = props;
+  const { injectSkill } = useAgent();
+  const agentAvailable = useAgentAvailable();
 
   const columns: GridColDef<EmailMessageDto>[] = [
     {
@@ -111,7 +112,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       width: 140,
       renderCell: (p) => <RelativeTime value={p.row.receivedAt} />,
     },
-    ...(onScanMessage
+    ...(agentAvailable
       ? [
           {
             field: "scan",
@@ -128,7 +129,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
                 onClick={(e) => {
                   // The row click would open the review dialog.
                   e.stopPropagation();
-                  onScanMessage(p.row);
+                  void injectSkill("scan-inbox", p.row.id);
                 }}
               >
                 {p.row.classification ? "Rescan" : "Scan"}

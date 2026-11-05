@@ -6,7 +6,6 @@ import { UPWORK_PROPOSAL_STATUSES } from "@jobpilot/contracts/upwork";
 import { ChevronRight } from "@mui/icons-material";
 import { Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import type { Route } from "next";
 import { useSearchParams } from "next/navigation";
 import { upworkProposalQueries } from "@/api/queries";
 import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display";
@@ -15,6 +14,7 @@ import { FilterToggle } from "@/components/ui/form";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { plural } from "@/utils/format";
+import { proposalHref } from "@/utils/routes";
 import { enumParam } from "@/utils/search-params";
 import { UPWORK_PAGE_SIZE, UpworkListFrame } from "../upwork-list-frame";
 
@@ -22,9 +22,8 @@ const STATUS_OPTIONS = statusOptions("upworkProposal");
 
 export function ProposalsList(): ReactElement {
   const status = enumParam(UPWORK_PROPOSAL_STATUSES, useSearchParams().get("status"));
-  const { query, setPage, setPageSize, setFilters } = usePaginationParams({
-    pageSize: UPWORK_PAGE_SIZE,
-  });
+  const pager = usePaginationParams({ pageSize: UPWORK_PAGE_SIZE });
+  const { query, setFilters } = pager;
 
   useLiveInvalidation(upworkChannel, null, {
     on: {
@@ -50,9 +49,8 @@ export function ProposalsList(): ReactElement {
       hasFilters={hasFilters}
       onClearFilters={() => setFilters({ status: null })}
       countLabel={plural(proposals.data?.pagination.total ?? 0, "proposal")}
-      isLoading={proposals.isPending}
-      isError={proposals.isError}
-      onRetry={() => void proposals.refetch()}
+      query={proposals}
+      pager={pager}
       errorTitle="Couldn't load your proposals."
       empty={
         <EmptyState
@@ -64,13 +62,10 @@ export function ProposalsList(): ReactElement {
           }
         />
       }
-      pagination={proposals.data?.pagination}
-      onPageChange={setPage}
-      onPageSizeChange={setPageSize}
     >
       {(proposals.data?.items ?? []).map((p) => (
         <Card key={p.id} variant="interactive">
-          <CardActionArea href={`/upwork/${p.id}` as Route} sx={{ padding: 1.5 }}>
+          <CardActionArea href={proposalHref(p.id)} sx={{ padding: 1.5 }}>
             <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>

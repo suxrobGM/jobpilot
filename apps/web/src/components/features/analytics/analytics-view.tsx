@@ -12,18 +12,6 @@ import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
 
-interface RankedEntry {
-  label: string;
-  count: number;
-}
-
-function toEntries<T extends { count: number }>(
-  items: T[],
-  label: (item: T) => string,
-): RankedEntry[] {
-  return items.map((item) => ({ label: label(item), count: item.count }));
-}
-
 export function AnalyticsView(): ReactElement {
   const query = useQuery(analyticsQueries.stats());
 
@@ -62,7 +50,7 @@ export function AnalyticsView(): ReactElement {
           <RankedBarList
             eyebrow="Distribution"
             title="Top boards"
-            entries={toEntries(stats.topBoards, (b) => b.board)}
+            entries={stats.topBoards.map((b) => ({ label: b.board, count: b.count }))}
             emptyMessage="No applications have been linked to a job board yet."
           />
         </Grid>
@@ -70,7 +58,7 @@ export function AnalyticsView(): ReactElement {
           <RankedBarList
             eyebrow="Diagnostics"
             title="Top failure reasons"
-            entries={toEntries(stats.topRejectReasons, (r) => r.reason)}
+            entries={stats.topRejectReasons.map((r) => ({ label: r.reason, count: r.count }))}
             emptyMessage="No failed campaign jobs recorded."
           />
         </Grid>
@@ -94,7 +82,10 @@ export function AnalyticsView(): ReactElement {
           <RankedBarList
             eyebrow="Distribution"
             title="Contact sources"
-            entries={toEntries(stats.networking.topContactSources, (s) => s.source)}
+            entries={stats.networking.topContactSources.map((s) => ({
+              label: s.source,
+              count: s.count,
+            }))}
             emptyMessage="No contacts discovered yet."
           />
         </Grid>

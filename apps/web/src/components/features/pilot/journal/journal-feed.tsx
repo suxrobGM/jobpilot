@@ -17,8 +17,8 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
@@ -140,9 +140,7 @@ export function JournalFeed(): ReactElement {
           </ToggleButtonGroup>
         </Stack>
         <QuerySection
-          isLoading={feed.isPending}
-          isError={feed.isError}
-          onRetry={() => void feed.refetch()}
+          query={feed}
           errorTitle="Couldn't load the journal."
           isEmpty={visible.length === 0}
           empty={<EmptyState variant="inline" title={emptyMessage} />}

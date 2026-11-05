@@ -12,16 +12,13 @@ interface SelectFieldProps<TValue extends string = string> {
   label: string;
   value: TValue | null;
   options: ReadonlyArray<SelectFieldOption<TValue>>;
-  /** Label shown for the empty / "all" sentinel. Defaults to "All". */
+  /** Defaults to "All". */
   emptyLabel?: string;
   minWidth?: number;
   onChange: (value: TValue | null) => void;
 }
 
-/**
- * Compact non-form-bound select used inside a FilterBar. Empty value
- * means "no filter" - selecting the empty option calls onChange(null).
- */
+/** The empty option means "no filter" and calls onChange(null). */
 export function SelectField<TValue extends string = string>(
   props: SelectFieldProps<TValue>,
 ): ReactElement {

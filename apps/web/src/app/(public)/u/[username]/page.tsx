@@ -2,7 +2,7 @@ import { cache, type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
-import { dataOrThrow } from "@/api/error";
+import { dataOrNullIf404 } from "@/api/error";
 import { getPublicFetchOptions } from "@/api/server";
 import { PortfolioView } from "@/components/features/portfolio";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -15,7 +15,7 @@ interface PortfolioPageProps {
 
 /** Called by both generateMetadata and the page; `cache` collapses that to one request. */
 const getPortfolio = cache(async (username: string) =>
-  dataOrThrow(
+  dataOrNullIf404(
     await api.public.portfolios({ username }).get(await getPublicFetchOptions()),
     "Couldn't load this portfolio",
   ),

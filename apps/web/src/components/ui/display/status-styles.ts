@@ -11,7 +11,7 @@ import type {
   CONTACT_LINKEDIN_CONNECTIONS,
   NetworkingMessageStatus,
 } from "@jobpilot/contracts/networking";
-import type { PilotCycleStatus, PromotionStatus } from "@jobpilot/contracts/pilot";
+import type { PilotCycleStatus, PilotQuestion, PromotionStatus } from "@jobpilot/contracts/pilot";
 import type { Role } from "@jobpilot/contracts/role";
 import type {
   UpworkInboxKind,
@@ -20,7 +20,7 @@ import type {
   UpworkProposalOutcome,
   UpworkProposalStatus,
 } from "@jobpilot/contracts/upwork";
-import type { ChipProps } from "@mui/material";
+import type { ChipProps, Theme } from "@mui/material";
 
 interface StatusStyle {
   label: string;
@@ -141,6 +141,13 @@ const listing: Styles<JobListingStatus> = {
   hidden: { label: "Hidden", color: "default" },
 };
 
+const questionKind: Styles<PilotQuestion["kind"]> = {
+  question: { label: "Question", color: "default" },
+  choice: { label: "Choice", color: "default" },
+  two_factor: { label: "Two-factor code", color: "default" },
+  approval: { label: "Approval", color: "default" },
+};
+
 const role: Styles<Role> = {
   super_admin: { label: "Super admin", color: "warning" },
   admin: { label: "Admin", color: "primary" },
@@ -163,25 +170,39 @@ const STATUS_STYLES = {
   upworkInboxStatus,
   upworkProfile,
   listing,
+  questionKind,
   role,
 } as const;
 
 export type StatusDomain = keyof typeof STATUS_STYLES;
 export type StatusValue<D extends StatusDomain> = keyof (typeof STATUS_STYLES)[D] & string;
 
-function styleOf<D extends StatusDomain>(domain: D, value: StatusValue<D>): StatusStyle {
+function getStatusStyle<D extends StatusDomain>(domain: D, value: StatusValue<D>): StatusStyle {
   return (STATUS_STYLES[domain] as Record<string, StatusStyle>)[value];
 }
 
 export function statusLabel<D extends StatusDomain>(domain: D, value: StatusValue<D>): string {
-  return styleOf(domain, value).label;
+  return getStatusStyle(domain, value).label;
 }
 
 export function statusColor<D extends StatusDomain>(
   domain: D,
   value: StatusValue<D>,
 ): ChipProps["color"] {
-  return styleOf(domain, value).color;
+  return getStatusStyle(domain, value).color;
+}
+
+/** The chip's palette color, so a chart slice matches the chip for the same status. */
+export function statusChartColor<D extends StatusDomain>(
+  theme: Theme,
+  domain: D,
+  value: StatusValue<D>,
+): string {
+  const { color } = getStatusStyle(domain, value);
+  if (!color || color === "default") {
+    return theme.palette.text.disabled;
+  }
+  return theme.palette[color].main;
 }
 
 interface StatusOption<T extends string> {

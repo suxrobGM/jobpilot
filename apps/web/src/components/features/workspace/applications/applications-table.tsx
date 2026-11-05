@@ -2,10 +2,10 @@
 
 import type { ReactElement } from "react";
 import { Typography } from "@mui/material";
-import type { Route } from "next";
 import type { ApplicationDto } from "@/api/types";
 import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
+import { applicationHref } from "@/utils/routes";
 
 interface ApplicationsTableProps {
   rows: ApplicationDto[];
@@ -47,7 +47,7 @@ export function ApplicationsTable(props: ApplicationsTableProps): ReactElement {
       columns={columns}
       rows={rows}
       rowKey={(a) => a.id}
-      rowHref={(a) => `/applications/${a.id}` as Route}
+      rowHref={(a) => applicationHref(a.id)}
       emptyTitle="No applications match the filters."
     />
   );

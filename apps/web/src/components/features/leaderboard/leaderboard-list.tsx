@@ -1,9 +1,9 @@
 import type { ReactElement } from "react";
 import { Box, ButtonBase, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
 import type { LeaderboardRow } from "@/api/types";
 import { AvailabilityBadge } from "@/components/features/portfolio/availability-badge";
 import { PortfolioAvatar } from "@/components/features/portfolio/portfolio-avatar";
+import { profileHref } from "@/utils/routes";
 
 interface LeaderboardListProps {
   rows: LeaderboardRow[];
@@ -16,7 +16,7 @@ export function LeaderboardList(props: LeaderboardListProps): ReactElement {
       {props.rows.map((row) => (
         <Box component="li" key={row.username}>
           <ButtonBase
-            href={`/u/${row.username}` as Route}
+            href={profileHref(row.username)}
             sx={{
               width: "100%",
               textAlign: "left",

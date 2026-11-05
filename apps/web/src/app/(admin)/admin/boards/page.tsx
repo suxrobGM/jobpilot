@@ -3,7 +3,7 @@ import { Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
-import { dataOrThrow } from "@/api/error";
+import { dataOrNullIf404 } from "@/api/error";
 import { getFetchOptions } from "@/api/server";
 import { AddBoardButton, AdminBoardsTable, AdminSearchField } from "@/components/features/admin";
 import { PaginationControls } from "@/components/ui/data";
@@ -39,7 +39,7 @@ export default function AdminBoardsPage(props: AdminBoardsPageProps): ReactEleme
 async function AdminBoards(props: AdminBoardsPageProps): Promise<ReactElement> {
   const search = await props.searchParams;
 
-  const data = dataOrThrow(
+  const data = dataOrNullIf404(
     await api.admin["job-boards"].get({
       query: {
         ...paginationQuery(search),

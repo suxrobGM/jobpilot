@@ -4,8 +4,8 @@ import type { ReactElement } from "react";
 import { type ChangePasswordInput, ChangePasswordSchema } from "@jobpilot/contracts/auth";
 import { Alert, Stack } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { authQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { PASSWORD_HINT } from "@/components/features/auth/password-hint";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
@@ -79,7 +79,7 @@ export function ChangePasswordCard(): ReactElement {
           </form.AppField>
 
           <form.AppForm>
-            <form.SubmitButton disabled={changePassword.isPending}>
+            <form.SubmitButton>
               {hasPassword ? "Change password" : "Set password"}
             </form.SubmitButton>
           </form.AppForm>

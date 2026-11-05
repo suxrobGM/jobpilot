@@ -3,7 +3,7 @@ import { Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
-import { dataOrThrow } from "@/api/error";
+import { dataOrNullIf404 } from "@/api/error";
 import { getPublicFetchOptions } from "@/api/server";
 import { JobDetail, JobList } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -17,7 +17,7 @@ interface JobPageProps {
 
 /** Called by both generateMetadata and the page; `cache` collapses that to one request. */
 const getJob = cache(async (slug: string) =>
-  dataOrThrow(
+  dataOrNullIf404(
     await api.public.jobs({ slug }).get(await getPublicFetchOptions()),
     "Couldn't load this job listing",
   ),

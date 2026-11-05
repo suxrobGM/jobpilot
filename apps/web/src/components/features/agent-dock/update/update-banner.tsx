@@ -11,31 +11,28 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { providerDisplayName, type TerminalProviderId, triggerUpdate } from "@/lib/terminal/client";
+import { recheckTerminalHealth } from "@/hooks/use-terminal-health";
+import { providerDisplayName, triggerUpdate } from "@/lib/terminal/client";
+import { useAgentDock } from "@/providers/agent-provider";
 import { UpdateManualSteps } from "./manual-steps";
-import { isNewer, useLatestRelease } from "./use-latest-release";
+import { isNewerVersion, useLatestVersion } from "./use-latest-version";
 
 type UpdatePhase = "idle" | "updating" | "restarting" | "error";
 
 interface AgentUpdateBannerProps {
   currentVersion: string;
-  provider: TerminalProviderId;
-  /** Re-probe host health after triggering an update, so the banner clears once the new version is live. */
-  onUpdated: () => void;
   /** The host accepted the update and is restarting - the dock shows its updating state and polls fast. */
   onUpdating: () => void;
   /** False in a dev checkout - the one-click update is unavailable, so show manual steps only. */
   canUpdate?: boolean;
 }
 
-/**
- * Checks GitHub for the latest terminal release; when behind, offers a one-click self-update (the host
- * swaps + relaunches) and falls back to the manual plugin + setup path when that isn't available.
- */
+/** When behind, offers the one-click self-update, else the manual plugin + setup path. */
 export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
-  const { currentVersion, provider, onUpdated, onUpdating, canUpdate } = props;
+  const { currentVersion, onUpdating, canUpdate } = props;
+  const { provider } = useAgentDock();
   const providerLabel = providerDisplayName(provider);
-  const latest = useLatestRelease();
+  const latest = useLatestVersion();
   const [dismissed, setDismissed] = useState(false);
   const [phase, setPhase] = useState<UpdatePhase>("idle");
   const [showManual, setShowManual] = useState(false);
@@ -48,7 +45,7 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
         // The host is relaunching (here or in another tab); let the health poll ride it back to reachable.
         setPhase("restarting");
         onUpdating();
-        onUpdated();
+        recheckTerminalHealth();
         return;
       }
       // dev-checkout / no-asset / up-to-date - fall back to the manual steps.
@@ -56,7 +53,7 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
       setShowManual(true);
       setPhase(upToDate ? "idle" : "error");
       if (upToDate) {
-        onUpdated();
+        recheckTerminalHealth();
       }
     } catch {
       setShowManual(true);
@@ -64,7 +61,7 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
     }
   };
 
-  if (dismissed || !latest || !currentVersion || !isNewer(latest, currentVersion)) {
+  if (dismissed || !latest || !currentVersion || !isNewerVersion(latest, currentVersion)) {
     return null;
   }
 

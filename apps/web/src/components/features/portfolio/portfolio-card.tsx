@@ -1,8 +1,9 @@
 import type { ReactElement, ReactNode } from "react";
 import { Download, GitHub, LanguageOutlined, LinkedIn } from "@mui/icons-material";
-import { Button, Chip, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Button, Chip, Stack, Typography } from "@mui/material";
 import { API_BASE_URL } from "@/api/base-url";
 import type { PortfolioDto } from "@/api/types";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { AvailabilityBadge } from "./availability-badge";
 import { PortfolioAvatar } from "./portfolio-avatar";
 
@@ -87,11 +88,9 @@ function PortfolioLinks(props: PortfolioCardProps): ReactNode {
         </Button>
       )}
       {icons.map((link) => (
-        <Tooltip key={link.key} title={link.title}>
-          <IconButton href={link.href ?? ""} aria-label={link.title}>
-            {link.icon}
-          </IconButton>
-        </Tooltip>
+        <TooltipIconButton key={link.key} title={link.title} href={link.href ?? ""}>
+          {link.icon}
+        </TooltipIconButton>
       ))}
     </Stack>
   );

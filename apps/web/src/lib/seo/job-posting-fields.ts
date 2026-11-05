@@ -1,7 +1,6 @@
 import { getCountries } from "libphonenumber-js";
 
-// Free-text listing fields as Google JobPosting values. Each parser returns null rather than
-// guess: a missing field is only a warning, a wrong one makes the item invalid.
+// Parsers return null rather than guess: a missing field is a warning, a wrong one invalid.
 
 const EMPLOYMENT_TYPES: [RegExp, string][] = [
   [/full[\s_-]?time|permanent|\bcdi\b/i, "FULL_TIME"],

@@ -6,9 +6,9 @@ import { OpenInNew } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
 import type { PortfolioSettingsDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -115,7 +115,7 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
 
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1 }}>
             <form.AppForm>
-              <form.SubmitButton loading={save.isPending}>Save settings</form.SubmitButton>
+              <form.SubmitButton>Save settings</form.SubmitButton>
             </form.AppForm>
             <Button href={publicUrl} variant="outlined" endIcon={<OpenInNew />}>
               View public page

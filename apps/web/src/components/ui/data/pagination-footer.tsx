@@ -23,8 +23,7 @@ export function PaginationFooter(props: PaginationFooterProps): ReactNode {
 
   const first = (page - 1) * limit + 1;
   const last = Math.min(page * limit, total);
-  // `?pageSize=` is only capped, not enumerated, so an off-menu size still needs an option to
-  // select - without one MUI renders the field blank.
+  // `?pageSize=` is only capped, so an off-menu size needs an option or MUI renders it blank.
   const sizes = PAGE_SIZE_OPTIONS.includes(limit as (typeof PAGE_SIZE_OPTIONS)[number])
     ? PAGE_SIZE_OPTIONS
     : [...PAGE_SIZE_OPTIONS, limit].sort((a, b) => a - b);

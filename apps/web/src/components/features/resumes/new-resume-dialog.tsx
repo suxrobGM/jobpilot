@@ -4,8 +4,8 @@ import type { ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { invalidations } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
@@ -44,7 +44,6 @@ export function NewResumeDialog(props: NewResumeDialogProps): ReactElement {
       title="New blank resume"
       onClose={onClose}
       form={form}
-      submitting={create.isPending}
       submitLabel="Create"
       maxWidth="xs"
     >

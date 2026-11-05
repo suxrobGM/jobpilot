@@ -45,7 +45,7 @@ export function AnalyticsStatTiles(props: AnalyticsStatTilesProps): ReactElement
           label="Rejected"
           value={totals.rejected}
           hint={`${thisWeek.rejected} this week`}
-          accent="danger"
+          accent="error"
         />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>

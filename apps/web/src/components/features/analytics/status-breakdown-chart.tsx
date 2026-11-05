@@ -1,12 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import { useTheme } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import type { AnalyticsStatusBreakdownEntry } from "@/api/types";
 import { ChartEmpty } from "@/components/ui/data";
-import { statusLabel } from "@/components/ui/display";
+import { statusChartColor, statusLabel } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 
 const CHART_HEIGHT = 220;
@@ -19,25 +18,13 @@ export function StatusBreakdownChart(props: StatusBreakdownChartProps): ReactEle
   const { data } = props;
   const theme = useTheme();
 
-  const colors = [
-    theme.palette.stages.submitted,
-    theme.palette.info.main,
-    theme.palette.stages.queued,
-    theme.palette.accent.primary,
-    theme.palette.warning.main,
-    theme.palette.stages.interviewing,
-    theme.palette.success.main,
-    theme.palette.error.main,
-    theme.palette.text.disabled,
-  ];
-
   const series = data
     .filter((d) => d.count > 0)
-    .map((d, i) => ({
+    .map((d) => ({
       id: d.status,
-      label: statusLabel("application", d.status as ApplicationStatus),
+      label: statusLabel("application", d.status),
       value: d.count,
-      color: colors[i % colors.length],
+      color: statusChartColor(theme, "application", d.status),
     }));
 
   const total = series.reduce((sum, s) => sum + s.value, 0);

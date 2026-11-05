@@ -6,13 +6,12 @@ import { Autorenew, Delete, DoneAll, MoreVert, PlayArrow, Replay } from "@mui/ic
 import { Button, IconButton, Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/queries";
+import { campaignQueries } from "@/api/queries";
 import { type CampaignDetailDto, jobSummary } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/navigation";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
-import { COMPOSER_DEFAULT_VALUES } from "../composer/form-config";
 import { PauseCampaignButton } from "../pause-campaign-button";
 import { RescanDialog } from "./rescan-dialog";
 
@@ -27,7 +26,7 @@ function useStatusMutation(
 ): ReturnType<typeof useApiMutation<unknown, void>> {
   return useApiMutation(
     () => api.campaigns({ id: campaignId }).status.post({ status, actor: "user" }),
-    { successMessage, invalidate: invalidations.campaign },
+    { successMessage, invalidate: [campaignQueries.all] },
   );
 }
 
@@ -38,20 +37,13 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const confirm = useConfirm();
   const router = useRouter();
 
-  const campaignResource = api.campaigns({ id: campaign.id });
-
   const complete = useStatusMutation(campaign.id, "completed", "Campaign marked as done");
 
   const [rescanOpen, setRescanOpen] = useState(false);
 
-  const rescan = useApiMutation(
-    (minScore: number) => campaignResource.patch({ config: { ...campaign.config, minScore } }),
-    { invalidate: invalidations.campaign },
-  );
-
-  const remove = useApiMutation(() => campaignResource.delete(), {
+  const remove = useApiMutation(() => api.campaigns({ id: campaign.id }).delete(), {
     successMessage: "Campaign deleted",
-    invalidate: invalidations.campaign,
+    invalidate: [campaignQueries.all],
     onSuccess: () => router.replace("/workspace"),
   });
 
@@ -89,17 +81,6 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     if (confirmed) {
       remove.mutate();
     }
-  };
-
-  const handleRescanConfirm = async (minScore: number): Promise<void> => {
-    try {
-      await rescan.mutateAsync(minScore);
-    } catch {
-      // onError already toasted; keep the dialog open so the threshold isn't lost.
-      return;
-    }
-    void agent.injectSkill("rescan-skipped", campaign.id);
-    setRescanOpen(false);
   };
 
   // Networking campaigns have no jobs to replay - re-run the networking skill instead of `resume-campaign`.
@@ -169,14 +150,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
         />
       )}
 
-      <RescanDialog
-        open={rescanOpen}
-        onClose={() => setRescanOpen(false)}
-        skippedCount={skippedCount}
-        defaultMinScore={campaign.config.minScore ?? COMPOSER_DEFAULT_VALUES.minScore}
-        pending={rescan.isPending}
-        onConfirm={(minScore) => void handleRescanConfirm(minScore)}
-      />
+      <RescanDialog campaign={campaign} open={rescanOpen} onClose={() => setRescanOpen(false)} />
     </Stack>
   );
 }

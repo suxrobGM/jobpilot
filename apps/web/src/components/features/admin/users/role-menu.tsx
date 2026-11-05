@@ -6,8 +6,8 @@ import { MoreVert, PersonRemove, Shield } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import type { AdminUserDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";
 

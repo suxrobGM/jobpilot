@@ -13,11 +13,7 @@ import { API_BASE_URL } from "@/api/base-url";
 /** "idle" = no connection requested; "reconnecting" = auto-retry or our backoff re-dial after a fatal close. */
 export type SseConnectionStatus = "idle" | "connecting" | "open" | "reconnecting";
 
-/**
- * Hook input for a channel's URL params. Channels with no URL params
- * (`TUrlParams = void`) take `null` at the call site as an explicit "no
- * params" marker; typed channels still require their full param object.
- */
+/** Paramless channels (`TUrlParams = void`) take an explicit `null`; typed ones their full params. */
 export type UrlParamsArg<C extends AnyChannel> =
   // biome-ignore lint/suspicious/noConfusingVoidType: probes the `TUrlParams = void` channels declare
   void extends ChannelUrlParams<C> ? null : ChannelUrlParams<C>;
@@ -50,7 +46,6 @@ function openSource(url: string): EventSource {
   return new EventSource(url, { withCredentials: true });
 }
 
-/** Wire a freshly opened source into the shared entry; the initial connect and every re-dial go through here. */
 function dial(url: string, entry: SharedSource, source: EventSource): void {
   entry.source = source;
   // A listener may remove itself during dispatch; Sets tolerate deletion while iterating.
@@ -67,9 +62,8 @@ function dial(url: string, entry: SharedSource, source: EventSource): void {
       return;
     }
     setEntryStatus(entry, "reconnecting");
-    // The package auto-retries only network drops; any non-200 response is a fatal
-    // close (readyState CLOSED), so re-dial with capped backoff or one bad gateway
-    // response during a deploy would kill live updates until a hard reload.
+    // The package retries only network drops; without a re-dial, one bad gateway during a deploy
+    // kills live updates until a hard reload.
     if (source.readyState === source.CLOSED && entry.redialTimer === null) {
       entry.redialTimer = setTimeout(() => {
         entry.redialTimer = null;
@@ -80,7 +74,7 @@ function dial(url: string, entry: SharedSource, source: EventSource): void {
   };
 }
 
-/** Refcount one EventSource per URL so a page with several panels holds one connection, not one per subscriber. */
+/** Refcounted per URL, so a page with several panels holds one connection. */
 function acquireSource(
   url: string,
   onMessage: (event: MessageEvent<string>) => void,
@@ -121,23 +115,16 @@ function acquireSource(
   };
 }
 
-type SseHandlers<TEvent extends { type: string }> = Partial<{
+export type SseHandlers<TEvent extends { type: string }> = Partial<{
   [K in TEvent["type"]]: (event: Extract<TEvent, { type: K }>) => void;
 }>;
 
 interface UseSseChannelOptions<TEvent extends { type: string }> {
   /** When false, the hook stays mounted without opening a connection. */
   enabled?: boolean;
-  /** Called for every event, regardless of type. Fires before `on[type]`. */
-  onMessage?: (event: TEvent) => void;
-  /** Per-event-type handlers. Exhaustively type-checked against the channel's event union. */
   on?: SseHandlers<TEvent>;
 }
 
-/**
- * Subscribe to a typed channel. The URL is the descriptor's API-relative path against the API
- * origin; `on` dispatches by `event.type` with full type narrowing per variant.
- */
 export function useSseChannel<C extends AnyChannel>(
   channel: C,
   params: UrlParamsArg<C>,
@@ -167,9 +154,7 @@ export function useSseChannel<C extends AnyChannel>(
       } catch {
         return;
       }
-      const current = optionsRef.current;
-      current.onMessage?.(event);
-      const handler = current.on?.[event.type as TEvent["type"]] as
+      const handler = optionsRef.current.on?.[event.type as TEvent["type"]] as
         | ((e: TEvent) => void)
         | undefined;
       handler?.(event);

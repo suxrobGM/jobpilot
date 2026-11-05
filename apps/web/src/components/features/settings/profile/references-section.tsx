@@ -2,10 +2,8 @@
 
 import { type ReferenceInput, USER_DEFAULT_VALUES } from "@jobpilot/contracts/user";
 import { Stack } from "@mui/material";
-import { useSelector } from "@tanstack/react-form";
 import { FieldRowList, FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { useKeyedList } from "@/hooks/use-keyed-list";
 
 const EMPTY_REFERENCE: ReferenceInput = {
   name: "",
@@ -18,9 +16,6 @@ const EMPTY_REFERENCE: ReferenceInput = {
 export const ReferencesSection = withForm({
   defaultValues: USER_DEFAULT_VALUES,
   render: function ReferencesSection({ form }) {
-    const count = useSelector(form.store, (s) => s.values.references?.length ?? 0);
-    const { keys, onRemove, onAdd } = useKeyedList(count);
-
     return (
       <FormSection
         title="References"
@@ -30,18 +25,11 @@ export const ReferencesSection = withForm({
           {(field) => (
             <FieldRowList
               count={field.state.value?.length ?? 0}
-              keys={keys}
               addLabel="Add reference"
               rowLabel={(i) => `Reference ${i + 1}`}
               max={3}
-              onAdd={() => {
-                onAdd();
-                field.pushValue(EMPTY_REFERENCE);
-              }}
-              onRemove={(i) => {
-                onRemove(i);
-                field.removeValue(i);
-              }}
+              onAdd={() => field.pushValue(EMPTY_REFERENCE)}
+              onRemove={(i) => field.removeValue(i)}
             >
               {(i) => (
                 <>

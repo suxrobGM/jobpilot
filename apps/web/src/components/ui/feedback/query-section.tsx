@@ -4,11 +4,15 @@ import type { ReactNode } from "react";
 import { LinearProgress } from "@mui/material";
 import { QueryError } from "./query-error";
 
-interface QuerySectionProps {
+/** The slice of a `useQuery` result the section reads; combined queries pass a literal. */
+export interface QueryState {
   isLoading: boolean;
-  /** Required, not optional: a failed query rendering as "empty" is the bug this prevents. */
   isError: boolean;
-  onRetry?: () => void;
+  refetch: () => unknown;
+}
+
+interface QuerySectionProps {
+  query: QueryState;
   errorTitle?: string;
   isEmpty: boolean;
   /** Rendered when the query succeeded with nothing to show. */
@@ -18,14 +22,14 @@ interface QuerySectionProps {
 
 /** Callers keep their own SectionCard so the title and actions stay theirs. */
 export function QuerySection(props: QuerySectionProps): ReactNode {
-  const { isLoading, isError, onRetry, errorTitle, isEmpty, empty, children } = props;
+  const { query, errorTitle, isEmpty, empty, children } = props;
 
-  if (isLoading) {
+  if (query.isLoading) {
     return <LinearProgress />;
   }
 
-  if (isError) {
-    return <QueryError title={errorTitle} onRetry={onRetry} />;
+  if (query.isError) {
+    return <QueryError title={errorTitle} onRetry={() => void query.refetch()} />;
   }
 
   return isEmpty ? empty : children;

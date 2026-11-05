@@ -7,9 +7,9 @@ import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { campaignQueries, emailQueries } from "@/api/queries";
 import type { CampaignSummaryDto, NetworkingConfigDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { DataTable } from "@/components/ui/data/data-table";
 import { StatCard } from "@/components/ui/display";
@@ -45,7 +45,7 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
   const accountQuery = useQuery(emailQueries.account());
 
   const invalidate = [
-    campaignQueries.networkingOf(campaignId),
+    campaignQueries.networkingKey(campaignId),
     campaignQueries.detail(campaignId).queryKey,
   ];
 

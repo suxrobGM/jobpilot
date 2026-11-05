@@ -4,8 +4,7 @@ import { Box, Link, Typography } from "@mui/material";
 import { motion } from "@/theme";
 import { jobsHref } from "./jobs-href";
 
-// The raw token, not an `sx` theme callback: this renders in a server component, and a function
-// cannot cross the RSC boundary into MUI's client Link.
+// The raw token, not an `sx` callback: a function can't cross the RSC boundary into MUI's Link.
 const linkedChipSx = {
   // MuiLink's theme default paints links in the accent; a tag only takes it on hover.
   color: "text.secondary",

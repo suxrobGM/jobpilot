@@ -113,9 +113,7 @@ export function ApplicationsPanel(): ReactElement {
             )}
           </Stack>
           <QuerySection
-            isLoading={apps.isPending}
-            isError={apps.isError}
-            onRetry={() => void apps.refetch()}
+            query={apps}
             errorTitle="Couldn't load your applications."
             isEmpty={false}
             empty={null}

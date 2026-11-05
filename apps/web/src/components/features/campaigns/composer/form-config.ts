@@ -42,12 +42,10 @@ export const composerFormSchema = z
     maxApps: z.union([z.number().int().min(1).max(500), z.null(), z.undefined()]),
     // Empty = unlimited (search until the board is exhausted), mirroring maxApps.
     maxJobs: z.union([z.number().int().min(1), z.null(), z.undefined()]),
-    // Networking campaign settings (mode === "networking").
     channels: z.array(z.enum(["email", "linkedin"])),
     linkedinTier: z.enum(["free", "premium"]),
     autonomy: z.enum(["draft", "review", "auto"]),
     dailyCap: z.number().int().min(1).max(100),
-    // Apply campaign settings (mode === "apply").
     urlsText: z.string(),
     applyLabel: z.string(),
   })
@@ -149,7 +147,6 @@ function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest[
     };
   }
   if (values.mode !== "auto_apply") {
-    // Omit maxJobs when empty so the search runs unlimited.
     return isCap(values.maxJobs) ? { maxJobs: values.maxJobs } : {};
   }
   return {
@@ -200,8 +197,7 @@ export function buildSkillArg(values: ComposerFormValues, campaignId: string): s
       "max-apps":
         values.mode === "auto_apply" && isCap(values.maxApps) ? values.maxApps : undefined,
       "max-jobs": values.mode === "search" && isCap(values.maxJobs) ? values.maxJobs : undefined,
-      // Search saves results onto this campaign; pass the id the UI just created so
-      // the skill doesn't have to rediscover it.
+      // The skill saves results onto this campaign, so it needn't rediscover it.
       campaign: values.mode === "search" || values.mode === "auto_apply" ? campaignId : undefined,
     },
   });

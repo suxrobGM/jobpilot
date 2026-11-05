@@ -6,4 +6,4 @@ export { LabelValue } from "./label-value";
 export { RelativeTime } from "./relative-time";
 export { StatCard } from "./stat-card";
 export { StatusChip } from "./status-chip";
-export { statusLabel, statusOptions } from "./status-styles";
+export { statusChartColor, statusLabel, statusOptions } from "./status-styles";

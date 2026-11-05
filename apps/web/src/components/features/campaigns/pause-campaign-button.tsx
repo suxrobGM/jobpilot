@@ -4,8 +4,8 @@ import type { ReactElement } from "react";
 import { Pause } from "@mui/icons-material";
 import { Button, type ButtonProps } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
-import { invalidations } from "@/api/queries";
+import { campaignQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 
 interface PauseCampaignButtonProps {
   campaignId: string;
@@ -16,7 +16,7 @@ export function PauseCampaignButton(props: PauseCampaignButtonProps): ReactEleme
   const { campaignId, size } = props;
   const pause = useApiMutation(
     () => api.campaigns({ id: campaignId }).status.post({ status: "paused", actor: "user" }),
-    { successMessage: "Campaign paused", invalidate: invalidations.campaign },
+    { successMessage: "Campaign paused", invalidate: [campaignQueries.all] },
   );
 
   return (

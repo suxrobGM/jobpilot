@@ -1,10 +1,10 @@
 import type { ReactElement } from "react";
-import { Chip, Link, Typography } from "@mui/material";
-import type { Route } from "next";
+import { Chip, Link } from "@mui/material";
 import type { AdminJobListingDto } from "@/api/types";
 import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
 import { StatusChip } from "@/components/ui/display";
 import { formatDate } from "@/utils/format";
+import { jobHref } from "@/utils/routes";
 import { AdminListingActions } from "./listing-actions";
 
 const COLUMNS: SimpleColumn<AdminJobListingDto>[] = [
@@ -13,12 +13,7 @@ const COLUMNS: SimpleColumn<AdminJobListingDto>[] = [
     header: "Title",
     // A new tab, so reviewing a listing keeps the admin's place in this list.
     render: (listing) => (
-      <Link
-        href={`/jobs/${listing.slug}` as Route}
-        target="_blank"
-        rel="noopener noreferrer"
-        color="inherit"
-      >
+      <Link href={jobHref(listing.slug)} target="_blank" rel="noopener noreferrer" color="inherit">
         {listing.title}
       </Link>
     ),
@@ -31,7 +26,7 @@ const COLUMNS: SimpleColumn<AdminJobListingDto>[] = [
       listing.remote ? (
         <Chip variant="outlined" color="success" label="remote" />
       ) : (
-        (listing.location ?? <Typography variant="captionMuted">-</Typography>)
+        listing.location
       ),
   },
   { key: "boards", header: "Boards", align: "right", render: (listing) => listing.sourceCount },

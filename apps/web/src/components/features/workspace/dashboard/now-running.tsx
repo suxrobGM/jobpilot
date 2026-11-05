@@ -3,7 +3,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { Box, LinearProgress, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { campaignQueries, OPTIONS_PAGE } from "@/api/queries";
+import { campaignQueries, FULL_PAGE } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { PauseCampaignButton } from "@/components/features/campaigns/pause-campaign-button";
 import { LinkButton } from "@/components/ui/buttons";
@@ -13,25 +13,27 @@ import { SectionCard } from "@/components/ui/layout";
 import { radii } from "@/theme";
 import { campaignHref } from "@/utils/routes";
 
-/** Folds a campaign's summary into a single progress reading, type-aware. */
 interface CampaignProgress {
   value: number;
   label: string;
 }
 
-function progress(campaign: CampaignDto): CampaignProgress {
-  const s = campaign.summary;
-  if (s.kind === "networking") {
-    const total = Math.max(s.discovered, 1);
-    return { value: (s.sent / total) * 100, label: `${s.sent}/${s.discovered} sent` };
+function getCampaignProgress(campaign: CampaignDto): CampaignProgress {
+  const { summary } = campaign;
+  if (summary.kind === "networking") {
+    const total = Math.max(summary.discovered, 1);
+    return {
+      value: (summary.sent / total) * 100,
+      label: `${summary.sent}/${summary.discovered} sent`,
+    };
   }
-  const total = Math.max(s.qualified || s.totalFound, 1);
-  return { value: (s.applied / total) * 100, label: `${s.applied}/${total} applied` };
+  const total = Math.max(summary.qualified || summary.totalFound, 1);
+  return { value: (summary.applied / total) * 100, label: `${summary.applied}/${total} applied` };
 }
 
 /** Live strip of in-progress campaigns. Renders nothing when nothing is running. */
 export function NowRunning(): ReactNode {
-  const campaigns = useQuery(campaignQueries.list({ ...OPTIONS_PAGE, status: ["in_progress"] }));
+  const campaigns = useQuery(campaignQueries.list({ ...FULL_PAGE, status: ["in_progress"] }));
   const running = campaigns.data?.items ?? [];
 
   if (running.length === 0) {
@@ -41,8 +43,8 @@ export function NowRunning(): ReactNode {
   return (
     <SectionCard title="Now running">
       <Stack spacing={1.5}>
-        {running.map((c) => (
-          <RunningRow key={c.id} campaign={c} />
+        {running.map((campaign) => (
+          <RunningRow key={campaign.id} campaign={campaign} />
         ))}
       </Stack>
     </SectionCard>
@@ -55,7 +57,7 @@ interface RunningRowProps {
 
 function RunningRow(props: RunningRowProps): ReactElement {
   const { campaign } = props;
-  const p = progress(campaign);
+  const progress = getCampaignProgress(campaign);
 
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
@@ -66,12 +68,12 @@ function RunningRow(props: RunningRowProps): ReactElement {
             {campaign.query}
           </Typography>
           <Typography variant="captionMuted" noWrap>
-            {statusLabel("source", campaign.source)} · {p.label}
+            {statusLabel("source", campaign.source)} · {progress.label}
           </Typography>
         </Stack>
         <LinearProgress
           variant="determinate"
-          value={Math.min(100, p.value)}
+          value={Math.min(100, progress.value)}
           sx={{ mt: 0.75, borderRadius: radii.xs }}
         />
       </Box>

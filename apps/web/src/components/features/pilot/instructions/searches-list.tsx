@@ -84,9 +84,7 @@ export function SearchesList(): ReactElement {
 
   return (
     <QuerySection
-      isLoading={query.isLoading}
-      isError={query.isError}
-      onRetry={() => void query.refetch()}
+      query={query}
       errorTitle="Couldn't load the pilot's searches."
       isEmpty={searches.length === 0}
       empty={

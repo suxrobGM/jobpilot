@@ -10,15 +10,12 @@ import { campaignQueries } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { CampaignRow } from "@/components/features/campaigns";
 import { PaginationFooter } from "@/components/ui/data";
-import { EmptyState, QuerySection } from "@/components/ui/feedback";
+import { EmptyState, QuerySection, type QueryState } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
 
-/**
- * Each group is its own server-filtered page, so neither can hide behind the other's rows.
- * Running campaigns live in Now running, so they are left out here.
- */
+/** Each group is its own server-filtered page, so neither can hide behind the other's rows. */
 const GROUPS = [
   { key: "paused", label: "Paused", statuses: ["paused"] },
   { key: "completed", label: "Completed", statuses: ["completed", "failed"] },
@@ -33,8 +30,16 @@ export function CampaignGroups(): ReactElement {
   const groups = [useCampaignGroup(GROUPS[0]), useCampaignGroup(GROUPS[1])];
   // Running campaigns render in Now running, so emptiness is judged on the whole account.
   const summary = useQuery(campaignQueries.summary());
-  const loading = summary.isLoading || groups.some((g) => g.isLoading);
-  const isError = summary.isError || groups.some((g) => g.isError);
+  const query: QueryState = {
+    isLoading: summary.isLoading || groups.some((group) => group.isLoading),
+    isError: summary.isError || groups.some((group) => group.isError),
+    refetch: () => {
+      void summary.refetch();
+      for (const group of groups) {
+        group.refetch();
+      }
+    },
+  };
   const isEmpty = summary.data?.total === 0;
 
   return (
@@ -55,14 +60,7 @@ export function CampaignGroups(): ReactElement {
       }
     >
       <QuerySection
-        isLoading={loading}
-        isError={isError}
-        onRetry={() => {
-          void summary.refetch();
-          for (const group of groups) {
-            void group.refetch();
-          }
-        }}
+        query={query}
         errorTitle="Couldn't load your campaigns."
         isEmpty={isEmpty}
         empty={
@@ -85,7 +83,7 @@ export function CampaignGroups(): ReactElement {
         }
       >
         <Stack spacing={2}>
-          {groups.every((g) => !g.pagination?.total) && (
+          {groups.every((group) => !group.pagination?.total) && (
             <Typography variant="body2Muted">
               Paused and finished campaigns show up here.
             </Typography>
@@ -116,8 +114,8 @@ function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
       <Typography variant="overlineMuted">
         {group.label} · {pagination.total}
       </Typography>
-      {group.items.map((c) => (
-        <CampaignRow key={c.id} campaign={c} />
+      {group.items.map((campaign) => (
+        <CampaignRow key={campaign.id} campaign={campaign} />
       ))}
       {/* The group heading already carries the total, so a one-page footer is noise. */}
       {pagination.totalPages > 1 && (

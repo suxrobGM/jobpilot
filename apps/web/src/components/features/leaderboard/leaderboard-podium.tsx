@@ -1,9 +1,9 @@
 import type { ReactElement } from "react";
 import { Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
 import type { LeaderboardRow } from "@/api/types";
 import { AvailabilityBadge } from "@/components/features/portfolio/availability-badge";
 import { PortfolioAvatar } from "@/components/features/portfolio/portfolio-avatar";
+import { profileHref } from "@/utils/routes";
 
 interface LeaderboardPodiumProps {
   rows: LeaderboardRow[];
@@ -26,7 +26,7 @@ export function LeaderboardPodium(props: LeaderboardPodiumProps): ReactElement {
             variant="accent"
             sx={{ flex: 1, alignSelf: { sm: row.rank === 1 ? "stretch" : "flex-end" } }}
           >
-            <CardActionArea href={`/u/${row.username}` as Route} sx={{ height: "100%" }}>
+            <CardActionArea href={profileHref(row.username)} sx={{ height: "100%" }}>
               <CardContent>
                 <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center" }}>
                   <Typography variant="statValue" sx={{ color: medal }}>

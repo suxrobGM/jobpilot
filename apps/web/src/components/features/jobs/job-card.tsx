@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
 import type { JobListingSummaryDto } from "@/api/types";
+import { jobHref } from "@/utils/routes";
 import { jobMetaLine, RemoteBadge } from "./job-meta";
 import { SkillChips } from "./skill-chips";
 
@@ -14,9 +14,8 @@ export function JobCard(props: JobCardProps): ReactElement {
 
   return (
     <Card variant="lift">
-      {/* CardActionArea is a ButtonBase, so the theme's NextLink default makes `href` a client link
-          with no `component` prop, and this card stays a server component. */}
-      <CardActionArea href={`/jobs/${job.slug}` as Route} sx={{ height: "100%" }}>
+      {/* The theme's ButtonBase NextLink default makes `href` a client link, so this stays RSC. */}
+      <CardActionArea href={jobHref(job.slug)} sx={{ height: "100%" }}>
         <CardContent sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Stack spacing={0.5}>
             {/* Scraped titles can be one long unbroken token; on a phone that overflows the card. */}

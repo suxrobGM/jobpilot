@@ -10,8 +10,7 @@ export const toggleButtonOverrides: Components<Theme>["MuiToggleButton"] = {
       ...outlinedControl(theme),
       color: (theme.vars ?? theme).palette.text.secondary,
       textTransform: "none",
-      // Tinted accent fill, not surfaces.hover, so selected != hovered-but-off. Orange text on the
-      // orange tint read as brown and low-contrast, so the text stays primary.
+      // Accent tint, not surfaces.hover, so selected != hovered; orange text on it read as brown.
       "&.Mui-selected": {
         color: (theme.vars ?? theme).palette.text.primary,
         borderColor: theme.palette.accent.primary,

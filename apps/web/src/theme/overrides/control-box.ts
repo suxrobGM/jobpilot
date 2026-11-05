@@ -1,10 +1,6 @@
 import type { CSSObject, Theme } from "@mui/material/styles";
 
-/**
- * The box every clickable control shares. Height comes from the token, not from padding: a button
- * has to line up with the input next to it, and padding math drifts with the font size. Spread into
- * Button and ToggleButton so the two cannot diverge.
- */
+/** Height from the token, not padding: a button must line up with its input, and padding drifts. */
 export function controlBox(theme: Theme): CSSObject {
   return {
     borderRadius: theme.radii.sm,

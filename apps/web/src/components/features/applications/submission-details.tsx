@@ -31,11 +31,7 @@ export function SubmissionDetails(props: SubmissionDetailsProps): ReactElement {
   );
 }
 
-/**
- * The resume that went out, tailored or not. Tailoring reuses an existing variant far more often
- * than it creates one, so `tailoredVariants` is empty for most applications and the base is all there
- * is to show.
- */
+/** Tailoring mostly reuses a variant, so `tailoredVariants` is usually empty: show the base. */
 function submittedResumeRow(app: ApplicationDetailDto): ReactNode {
   const used = app.resumeVariant;
   const base = app.resume;
@@ -67,8 +63,7 @@ function submittedResumeRow(app: ApplicationDetailDto): ReactNode {
 
 function DocumentsCard(props: SubmissionDetailsProps): ReactElement {
   const { application: app } = props;
-  // Variants tailored for this job that were not the one submitted - a pre-submit draft, or a
-  // second attempt. The submitted row above already covers the one that went out.
+  // Tailored for this job but not sent: a pre-submit draft or a second attempt.
   const otherVariants = app.tailoredVariants.filter((v) => v.id !== app.resumeVariant?.id);
 
   const rows: ReactNode[] = [

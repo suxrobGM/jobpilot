@@ -115,10 +115,7 @@ export class ResumeVariantService {
     return { id };
   }
 
-  /**
-   * The model writes prose and hint arrays, never structured ResumeData - `buildTailoredVariant`
-   * applies them and rejects invented facts.
-   */
+  /** The model sends prose and hints, never ResumeData; `buildTailoredVariant` rejects inventions. */
   async createTailoredVariant(userId: string, resumeId: string, body: TailorVariantBody) {
     const base = await this.resumes.findOwned(userId, resumeId);
     if (base.content === null) {
@@ -181,10 +178,7 @@ export class ResumeVariantService {
     return { deleted: id };
   }
 
-  /**
-   * What the dashboard's Apply does to a suggested rewrite. One transaction: as two browser calls,
-   * a dropped connection left the base rewritten with the suggestion still on offer.
-   */
+  /** One transaction: as two calls, a drop left the base rewritten and the suggestion on offer. */
   async applyVariant(userId: string, id: string) {
     const variant = await this.findVariant(userId, id);
     const { resumeId } = variant;

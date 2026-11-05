@@ -5,9 +5,9 @@ import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { campaignQueries, emailQueries, networkingQueries } from "@/api/queries";
 import type { NetworkingMessageDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { FormDialogShell } from "@/components/ui/form";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 
@@ -30,8 +30,13 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
     .campaigns({ id: campaignId })
     .networking.messages({ messageId: message.id });
 
-  // A draft shows on its campaign and on the cross-campaign list, so a write refreshes both.
-  const invalidate = [campaignQueries.all, networkingQueries.all];
+  // A draft shows on its campaign (whose detail and summary count drafts) and the cross-campaign list.
+  const invalidate = [
+    campaignQueries.networkingKey(campaignId),
+    campaignQueries.detail(campaignId).queryKey,
+    campaignQueries.summary().queryKey,
+    networkingQueries.all,
+  ];
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";
   const terminal = isTerminalNetworkingStatus(message.status);

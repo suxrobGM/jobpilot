@@ -6,10 +6,7 @@ interface JobPilotMarkProps {
   size?: number;
 }
 
-/**
- * The brand glyph; `public/icon.svg` and `mark-svg.ts` mirror its artwork. Gradient ids repeat
- * across instances on purpose: each defines them identically, so it needs no `useId`.
- */
+/** Mirrored by `public/icon.svg` and `mark-svg.ts`. Repeated gradient ids match, so no `useId`. */
 export function JobPilotMark(props: JobPilotMarkProps): ReactElement {
   const { size = 36 } = props;
   return (

@@ -1,45 +1,30 @@
 "use client";
 
 export interface WebSocketClient {
-  /** Current native WebSocket readyState. */
   readonly readyState: number;
 
-  /**
-   * Close the socket with an optional WebSocket close code and reason.
-   * Also detaches every callback: the caller is tearing down, so nothing fires after this.
-   */
+  /** Also detaches every callback, so nothing fires after teardown. */
   close: (code?: number, reason?: string) => void;
 
-  /** Send a JSON message if the socket is open. Returns false otherwise. */
+  /** False when the socket isn't open. */
   sendJson: (message: unknown) => boolean;
 }
 
 interface WebSocketOptions {
-  /** Native WebSocket binaryType. Defaults to arraybuffer. */
+  /** Defaults to arraybuffer. */
   binaryType?: BinaryType;
 
-  /** Called once the socket is open and ready to send. */
   onOpen?: (client: WebSocketClient, event: Event) => void;
 
-  /** Called for text frames. */
   onText?: (data: string, event: MessageEvent<string>) => void;
 
-  /** Called for ArrayBuffer frames, normalized to Uint8Array. */
   onBinary?: (data: Uint8Array, event: MessageEvent<ArrayBuffer>) => void;
 
-  /** Called when the socket closes. */
   onClose?: (event: CloseEvent) => void;
 
-  /** Called when the socket reports an error. */
   onError?: (event: Event) => void;
 }
 
-/**
- * Open a WebSocket and expose a small typed adapter for common app usage.
- *
- * The helper normalizes binary messages to Uint8Array and centralizes the
- * "send only when open" guard while leaving protocol-specific logic to callers.
- */
 export function connectWebSocket(url: string, options: WebSocketOptions = {}): WebSocketClient {
   const socket = new WebSocket(url);
   socket.binaryType = options.binaryType ?? "arraybuffer";

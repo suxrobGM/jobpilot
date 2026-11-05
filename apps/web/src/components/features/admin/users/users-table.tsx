@@ -21,7 +21,7 @@ const COLUMNS: SimpleColumn<AdminUserDto>[] = [
   {
     key: "name",
     header: "Name",
-    render: (user) => user.name ?? <Typography variant="captionMuted">-</Typography>,
+    render: (user) => user.name,
   },
   { key: "role", header: "Role", render: (user) => <StatusChip domain="role" value={user.role} /> },
   {

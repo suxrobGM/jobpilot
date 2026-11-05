@@ -55,7 +55,7 @@ export function RegisterForm(): ReactElement {
         </form.AppField>
 
         <form.AppForm>
-          <form.SubmitButton loading={register.isPending} fullWidth size="large">
+          <form.SubmitButton fullWidth size="large">
             Create account
           </form.SubmitButton>
         </form.AppForm>

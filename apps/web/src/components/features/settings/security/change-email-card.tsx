@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { type ChangeEmailInput, ChangeEmailSchema } from "@jobpilot/contracts/auth";
 import { Alert, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useSession } from "@/hooks/use-auth";
@@ -76,9 +76,7 @@ export function ChangeEmailCard(): ReactElement {
           )}
 
           <form.AppForm>
-            <form.SubmitButton loading={changeEmail.isPending}>
-              Send confirmation link
-            </form.SubmitButton>
+            <form.SubmitButton>Send confirmation link</form.SubmitButton>
           </form.AppForm>
         </Stack>
       </form>

@@ -4,10 +4,9 @@ import type { ReactElement } from "react";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { isNotFound } from "@/api/error";
 import { campaignQueries } from "@/api/queries";
 import { NetworkingBoard, NetworkingMessagesTable } from "@/components/features/networking";
-import { DetailSkeleton, EmptyState, QueryError } from "@/components/ui/feedback";
+import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { CampaignHeaderCard } from "./detail/header-card";
@@ -25,12 +24,11 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   const detailKey = campaignQueries.detail(campaignId).queryKey;
   const jobKeys = [
-    campaignQueries.jobsOf(campaignId),
+    campaignQueries.jobsKey(campaignId),
     campaignQueries.reasons(campaignId).queryKey,
     detailKey,
   ];
-  // Scoped per event type: a scoring pass emits one `job-update` per job, so a blanket
-  // `campaigns.all` here would refetch every cached list, page and aggregate on each one.
+  // Per event type: a scoring pass emits a `job-update` per job, and `campaigns.all` refetches all.
   useLiveInvalidation(
     campaignChannel,
     { campaignId },
@@ -39,9 +37,9 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
         progress: [detailKey],
         status: [detailKey],
         "job-update": jobKeys,
-        "networking-update": [campaignQueries.networkingOf(campaignId)],
+        "networking-update": [campaignQueries.networkingKey(campaignId)],
       },
-      onReconnect: [...jobKeys, campaignQueries.networkingOf(campaignId)],
+      onReconnect: [...jobKeys, campaignQueries.networkingKey(campaignId)],
     },
   );
 
@@ -52,13 +50,12 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   }
 
   if (!campaign) {
-    return isNotFound(detail.error) ? (
-      <EmptyState
-        title="Campaign not found"
-        description="It may have been deleted, or the link is incorrect."
+    return (
+      <DetailLoadFailure
+        noun="campaign"
+        error={detail.error}
+        onRetry={() => void detail.refetch()}
       />
-    ) : (
-      <QueryError title="Couldn't load this campaign." onRetry={() => void detail.refetch()} />
     );
   }
 

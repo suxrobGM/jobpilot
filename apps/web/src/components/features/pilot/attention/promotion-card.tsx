@@ -5,8 +5,8 @@ import type { PatchPromotionInput, Promotion } from "@jobpilot/contracts/pilot";
 import { OpenInNew } from "@mui/icons-material";
 import { Button, Card, CardContent, Chip, Link, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 
 interface PromotionCardProps {
@@ -109,12 +109,7 @@ export function PromotionSummary(props: PromotionCardProps): ReactElement {
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
       <Chip variant="outlined" label={promotion.platform} sx={{ minWidth: 90 }} />
-      <StatusChip
-        domain="promotion"
-        value={promotion.status}
-        variant="filled"
-        sx={{ textTransform: "capitalize" }}
-      />
+      <StatusChip domain="promotion" value={promotion.status} variant="filled" />
       <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
         {promotion.title ?? promotion.body}
       </Typography>

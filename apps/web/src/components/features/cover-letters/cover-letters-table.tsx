@@ -5,13 +5,13 @@ import { Launch } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { useQuery } from "@tanstack/react-query";
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { coverLetterQueries } from "@/api/queries";
 import type { CoverLetterListItem } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
+import { coverLetterHref } from "@/utils/routes";
 
 export function CoverLettersTable(): ReactElement {
   const router = useRouter();
@@ -76,7 +76,7 @@ export function CoverLettersTable(): ReactElement {
       errorTitle={lettersQuery.isError ? "Couldn't load your cover letters." : undefined}
       onRetry={() => void lettersQuery.refetch()}
       getRowId={(row) => row.id}
-      onRowClick={(row) => router.push(`/cover-letters/${row.id}` as Route)}
+      onRowClick={(row) => router.push(coverLetterHref(row.id))}
       {...gridPagination(pagination, lettersQuery.data?.pagination)}
     />
   );

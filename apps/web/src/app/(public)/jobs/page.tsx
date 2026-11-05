@@ -17,7 +17,7 @@ import { DetailSkeleton, EmptyState, TableSkeleton } from "@/components/ui/feedb
 import { breadcrumbLd } from "@/lib/seo/structured-data";
 import { formatCount } from "@/utils/format";
 import { one, pageParam } from "@/utils/search-params";
-import { getSkillFacets, landingParams, landingTitle } from "./landing-views";
+import { buildLandingParams, getSkillFacets, landingTitle } from "./landing-views";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -46,7 +46,7 @@ interface JobsView {
 
 async function readView(params: SearchParams): Promise<JobsView> {
   const filters = readFilters(params);
-  const landing = landingParams(filters, await getSkillFacets());
+  const landing = buildLandingParams(filters, await getSkillFacets());
   return {
     filters,
     landing,

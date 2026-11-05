@@ -14,9 +14,9 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { applicationQueries, emailQueries, invalidations } from "@/api/queries";
 import type { ApplicationDto } from "@/api/types";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { FormDialogShell } from "@/components/ui/form";
 
@@ -50,7 +50,6 @@ function ReviewDialog(props: ReviewDialogProps): ReactElement {
 
   const message = useQuery(emailQueries.message(messageId));
 
-  // Seed the editable match/search from the fetched message whenever it changes
   const [prevData, setPrevData] = useState(message.data);
 
   if (message.data !== prevData) {

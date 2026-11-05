@@ -3,19 +3,15 @@
 import type { ReactElement } from "react";
 import { Refresh } from "@mui/icons-material";
 import { Button } from "@mui/material";
+import { recheckTerminalHealth } from "@/hooks/use-terminal-health";
 
-/** "Recheck" action shared by the dock's install/offline cards - re-probes the local host. */
-interface RecheckButtonProps {
-  onClick: () => void;
-}
-
-export function RecheckButton(props: RecheckButtonProps): ReactElement {
+export function RecheckButton(): ReactElement {
   return (
     <Button
       variant="outlined"
       size="small"
       startIcon={<Refresh />}
-      onClick={props.onClick}
+      onClick={recheckTerminalHealth}
       sx={{ alignSelf: "flex-start" }}
     >
       Recheck

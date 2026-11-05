@@ -23,10 +23,10 @@ const DOCK_EXPANDED = 380;
 const DOCK_MIN_EXPANDED = 320;
 const DOCK_MAX_EXPANDED = 640;
 
-function getStoredDockWidth(): number {
-  const w = readAgentStorage()?.dockWidth;
-  return typeof w === "number" && Number.isFinite(w)
-    ? clamp(Math.round(w), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED)
+function readStoredDockWidth(): number {
+  const width = readAgentStorage()?.dockWidth;
+  return typeof width === "number" && Number.isFinite(width)
+    ? clamp(Math.round(width), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED)
     : DOCK_EXPANDED;
 }
 
@@ -34,9 +34,12 @@ const getServerDockWidth = (): number => DOCK_EXPANDED;
 
 export function AgentDock(): ReactElement {
   const { expanded } = useAgentDock();
-  // Persisted dock width lives in localStorage (source of truth); reads stay
-  // SSR-safe via useSyncExternalStore's server snapshot.
-  const width = useSyncExternalStore(subscribeAgentStorage, getStoredDockWidth, getServerDockWidth);
+  // localStorage is the source of truth; the server snapshot keeps the read SSR-safe.
+  const width = useSyncExternalStore(
+    subscribeAgentStorage,
+    readStoredDockWidth,
+    getServerDockWidth,
+  );
   const [dragging, setDragging] = useState(false);
   const draggingRef = useRef(false);
 

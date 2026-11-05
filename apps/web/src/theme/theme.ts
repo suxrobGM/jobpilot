@@ -1,6 +1,6 @@
 import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 import { componentOverrides } from "./overrides";
-import { accent, feedback, line, onAccent, stages, surfaces, textColors } from "./palette";
+import { accent, feedback, line, stages, surfaces, textColors, textOnAccent } from "./palette";
 import { controlHeights, iconSizes, motion, radii, shadows, tints } from "./tokens";
 import { typography } from "./typography";
 
@@ -8,8 +8,8 @@ const baseTheme = createTheme({
   cssVariables: true,
   palette: {
     mode: "dark",
-    primary: { main: accent.primary, contrastText: onAccent.primary },
-    secondary: { main: accent.secondary, contrastText: onAccent.secondary },
+    primary: { main: accent.primary, contrastText: textOnAccent.primary },
+    secondary: { main: accent.secondary, contrastText: textOnAccent.secondary },
     warning: { main: feedback.warning },
     error: { main: feedback.error },
     success: { main: feedback.success },

@@ -12,8 +12,8 @@ import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/ma
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
 import { upworkInboxQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/feedback";
@@ -38,9 +38,8 @@ export function InboxList(): ReactElement {
   const params = useSearchParams();
   const kind = enumParam(UPWORK_INBOX_KINDS, params.get("kind"));
   const status = enumParam(UPWORK_INBOX_STATUSES, params.get("status"));
-  const { query, setPage, setPageSize, setFilters } = usePaginationParams({
-    pageSize: UPWORK_PAGE_SIZE,
-  });
+  const pager = usePaginationParams({ pageSize: UPWORK_PAGE_SIZE });
+  const { query, setFilters } = pager;
 
   useLiveInvalidation(upworkChannel, null, {
     on: { "inbox.synced": [upworkInboxQueries.all], "inbox.updated": [upworkInboxQueries.all] },
@@ -90,14 +89,10 @@ export function InboxList(): ReactElement {
           Sync
         </AgentOnlyButton>
       }
-      isLoading={inbox.isPending}
-      isError={inbox.isError}
-      onRetry={() => void inbox.refetch()}
+      query={inbox}
+      pager={pager}
       errorTitle="Couldn't load your Upwork inbox."
       empty={<InboxEmptyState hasFilters={hasFilters} />}
-      pagination={inbox.data?.pagination}
-      onPageChange={setPage}
-      onPageSizeChange={setPageSize}
     >
       {(inbox.data?.items ?? []).map((item) => (
         <Card key={item.id}>

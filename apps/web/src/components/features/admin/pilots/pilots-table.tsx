@@ -3,7 +3,8 @@ import { newTokens } from "@jobpilot/contracts/pilot";
 import { Chip, Typography } from "@mui/material";
 import type { AdminPilotDto } from "@/api/types";
 import { type SimpleColumn, SimpleTable } from "@/components/ui/data/simple-table";
-import { formatRelativeTime, formatTokens } from "@/utils/format";
+import { RelativeTime } from "@/components/ui/display";
+import { formatTokens } from "@/utils/format";
 
 const COLUMNS: SimpleColumn<AdminPilotDto>[] = [
   { key: "email", header: "Email", render: (pilot) => pilot.userEmail },
@@ -21,11 +22,7 @@ const COLUMNS: SimpleColumn<AdminPilotDto>[] = [
     key: "lastCycle",
     header: "Last cycle",
     render: (pilot) =>
-      pilot.lastCycleAt ? (
-        `${formatRelativeTime(pilot.lastCycleAt)} ago`
-      ) : (
-        <Typography variant="captionMuted">-</Typography>
-      ),
+      pilot.lastCycleAt && <RelativeTime value={pilot.lastCycleAt} variant="inherit" />,
   },
   { key: "cycles", header: "Cycles", align: "right", render: (pilot) => pilot.cycleCount },
   {
