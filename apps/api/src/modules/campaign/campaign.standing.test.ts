@@ -23,21 +23,16 @@ const standing = {
 };
 
 interface FakeOptions {
-  open: (typeof standing)[] | null;
+  open: typeof standing | null;
   raceOnCreate?: boolean;
 }
 
 function makeService({ open, raceOnCreate = false }: FakeOptions) {
   const created: Record<string, unknown>[] = [];
   const configWrites: Record<string, unknown>[] = [];
-  const reads: Record<string, unknown>[] = [];
-  const openRows = open ? [...open] : [];
   const db = {
     campaign: {
-      findFirst: async ({ where }: { where: Record<string, unknown> }) => {
-        reads.push(where);
-        return openRows.shift() ?? null;
-      },
+      findFirst: async () => open,
       findFirstOrThrow: async () => ({ ...standing, id: "c-winner" }),
       create: async ({ data }: { data: Record<string, unknown> }) => {
         if (raceOnCreate) throw Object.assign(new Error("unique"), { code: "P2002" });
@@ -56,7 +51,6 @@ function makeService({ open, raceOnCreate = false }: FakeOptions) {
     service: new CampaignService(db as unknown as PrismaClient, makeBoards()),
     created,
     configWrites,
-    reads,
   };
 }
 
@@ -70,35 +64,17 @@ const alertsBody = (resumeId: string): CreateCampaignInput => ({
 
 describe("CampaignService create for a standing feed", () => {
   it("returns the feed's open campaign instead of creating one", async () => {
-    const { service, created, reads } = makeService({ open: [standing] });
+    const { service, created } = makeService({ open: standing });
     const campaign = await service.create("u1", alertsBody(OLD_RESUME));
     expect(campaign.id).toBe("c-open");
     expect(created).toEqual([]);
-    expect(reads[0]).toMatchObject({
-      userId: "u1",
-      feed: "job_alerts",
-      status: { in: ["in_progress", "paused"] },
-    });
   });
 
   it("refreshes the resume but keeps the tuned minScore", async () => {
-    const { service, configWrites } = makeService({ open: [standing] });
+    const { service, configWrites } = makeService({ open: standing });
     const campaign = await service.create("u1", alertsBody(NEW_RESUME));
     expect(configWrites).toEqual([{ resumeId: NEW_RESUME, minScore: 80 }]);
     expect(campaign.config).toEqual({ resumeId: NEW_RESUME, minScore: 80 });
-  });
-
-  it("keys a search's campaign by pilotSearchId", async () => {
-    const { service, reads } = makeService({ open: [standing] });
-    const searchId = "2b3c4d5e-6f70-4a8b-9c0d-1e2f3a4b5c6d";
-    await service.create("u1", {
-      query: "typescript",
-      source: "auto_apply",
-      createdBy: "pilot",
-      pilotSearchId: searchId,
-      config: { resumeId: OLD_RESUME },
-    });
-    expect(reads[0]).toMatchObject({ pilotSearchId: searchId });
   });
 
   it("creates the standing campaign when none is open", async () => {

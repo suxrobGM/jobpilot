@@ -24,7 +24,11 @@ import {
   summarizeCampaigns,
   type WithSummary,
 } from "./campaign.summary";
-import { ensureCampaignOwned, publishCampaignStatus } from "./campaign.utils";
+import {
+  ensureCampaignOwned,
+  OPEN_CAMPAIGN_STATUSES,
+  publishCampaignStatus,
+} from "./campaign.utils";
 
 const STATUS_TRANSITIONS: Record<CampaignStatus, readonly CampaignStatus[]> = {
   in_progress: ["paused", "completed", "failed"],
@@ -42,7 +46,7 @@ function standingWhere(
   userId: string,
   body: CreateCampaignInput,
 ): Prisma.CampaignWhereInput | null {
-  const open = { userId, status: { in: ["in_progress", "paused"] as CampaignStatus[] } };
+  const open = { userId, status: { in: OPEN_CAMPAIGN_STATUSES } };
   if (body.feed) return { ...open, feed: body.feed };
   if (body.pilotSearchId) return { ...open, pilotSearchId: body.pilotSearchId };
   return null;

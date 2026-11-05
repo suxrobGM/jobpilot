@@ -221,13 +221,17 @@ export class TaskListService {
       minScore: config.minScore,
       boards: config.boards,
       requestedAt: context.researchRequestedAt,
+      searchCount,
       preferCapExempt,
       requiresSponsorship: profile?.requiresSponsorship ?? false,
     };
     const [reviews, setup, research] = await Promise.all([
       quiet ? gatherCampaignReviews(prisma, userId, now) : NO_REVIEWS,
       canSetUp ? gatherSetup(prisma, userId, { goals, minScore: config.minScore }, now) : null,
-      goals !== "" ? gatherResearch(prisma, userId, researchContext, now) : null,
+      // Only Research now outruns a busy pipeline; buildTaskList drops the rest.
+      goals !== "" && (quiet || context.researchRequestedAt !== null)
+        ? gatherResearch(prisma, userId, researchContext, now)
+        : null,
     ]);
 
     return {

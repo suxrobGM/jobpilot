@@ -150,9 +150,12 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
   }
 
   const newJobsTarget = clamp(appliesLeft, NEW_JOBS_TARGET_MIN, NEW_JOBS_TARGET_MAX);
+  const quiet = isPipelineQuiet(input);
   const research = input.research ? { ...input.research, newJobsTarget } : null;
   // Research now is the user asking, so it skips the quiet gate.
-  if (research?.trigger === "requested") tasks.push(makeTask("research.explore", research));
+  if (research && (research.trigger === "requested" || quiet)) {
+    tasks.push(makeTask("research.explore", research));
+  }
 
   // Scoring and discovery only matter once nothing approved is left to apply to.
   if (input.approvedJobs.length === 0) {
@@ -171,11 +174,8 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     );
   }
 
-  if (isPipelineQuiet(input)) {
+  if (quiet) {
     if (input.setup) tasks.push(makeTask("search.setup", input.setup));
-    if (research && research.trigger !== "requested") {
-      tasks.push(makeTask("research.explore", research));
-    }
     tasks.push(
       ...makeTasks("campaign.tune", input.campaignTunes),
       ...makeTasks("job.rescanSkipped", input.rescanSkipped),

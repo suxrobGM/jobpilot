@@ -71,12 +71,7 @@ export async function findAppliedDuplicate(
     candidates,
     APPLIED_DUPLICATE_THRESHOLD,
   );
-  if (!fuzzy) {
-    return null;
-  }
-
-  const matched = candidates.find((c) => c.id === fuzzy.candidate.id);
-  return matched ? { kind: "fuzzy", score: fuzzy.score, application: matched } : null;
+  return fuzzy ? { kind: "fuzzy", score: fuzzy.score, application: fuzzy.candidate } : null;
 }
 
 /** The skip reason the apply skills already write, so blocked and self-skipped rows read alike. */

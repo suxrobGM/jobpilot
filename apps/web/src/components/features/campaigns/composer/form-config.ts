@@ -125,14 +125,10 @@ export function isUpworkSearch(
   return usesBoard(values) && values.board === UPWORK_DOMAIN;
 }
 
-/** Modes that can research the open web instead of searching a board. */
-function canResearch(mode: ComposerFormValues["mode"]): boolean {
-  return mode === "search" || mode === "auto_apply";
-}
-
 /** Whether this run researches the open web: a board left over in the form is ignored. */
 export function isResearch(values: Pick<ComposerFormValues, "mode" | "searchIn">): boolean {
-  return canResearch(values.mode) && values.searchIn === "anywhere";
+  const canResearch = values.mode === "search" || values.mode === "auto_apply";
+  return canResearch && values.searchIn === "anywhere";
 }
 
 /** Whether the campaign runs on the picked board, not the open web or criteria alone. */
@@ -150,9 +146,7 @@ export interface RecentQuery {
 
 function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest["config"] {
   if (values.mode === "networking") {
-    // A selected board grounds networking in real openings; the optional cap
-    // (reusing the maxApps field) maps to config.maxJobs - omit it to run until
-    // the user stops. No board → criteria-only discovery.
+    // The optional cap reuses the maxApps field; omit it to run until the user stops.
     const searchesBoard = usesBoard(values);
     return {
       ...(searchesBoard && isCap(values.maxApps) ? { maxJobs: values.maxApps } : {}),
@@ -190,7 +184,6 @@ export function buildCreateCampaignRequest(values: ComposerFormValues): CreateCa
   return {
     query: values.query.trim(),
     source: values.mode,
-    // Networking without a board discovers from criteria alone.
     ...(usesBoard(values) ? { board: values.board } : {}),
     // resumeId is campaign-wide (mandatory for search/auto-apply/networking), not mode-specific.
     config: { resumeId: values.resumeId, ...buildCampaignConfig(values) },

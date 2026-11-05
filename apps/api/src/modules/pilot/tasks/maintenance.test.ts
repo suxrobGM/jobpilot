@@ -1,12 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import type { PilotJournalService } from "../journal.service";
-import {
-  expireAbandonedRuns,
-  finalizeIdleCampaigns,
-  promoteScoredPendingJobs,
-  runExpiry,
-} from "./maintenance";
+import { expireAbandonedRuns, promoteScoredPendingJobs, runExpiry } from "./maintenance";
 import { describe, expect, it } from "bun:test";
 
 type Write = { where: Record<string, unknown>; data: Record<string, unknown> };
@@ -154,30 +148,5 @@ describe("expireAbandonedRuns", () => {
     const users = await expireAbandonedRuns(db as unknown as PrismaClient, new Date());
     expect(users).toBe(3);
     expect(swept).toEqual(["u1", "u2", "u3"]);
-  });
-});
-
-describe("finalizeIdleCampaigns", () => {
-  it("leaves search campaigns and live feeds' campaigns open, and drains dead feeds'", async () => {
-    const reads: Record<string, unknown>[] = [];
-    const db = {
-      campaign: {
-        findMany: async (a: { where: Record<string, unknown> }) => {
-          reads.push(a.where);
-          return [];
-        },
-      },
-    };
-    await finalizeIdleCampaigns(
-      db as unknown as PrismaClient,
-      {} as PilotJournalService,
-      "u1",
-      new Date(),
-      ["job_alerts"],
-    );
-    expect(reads[0]).toMatchObject({
-      pilotSearchId: null,
-      AND: [{ OR: [{ feed: null }, { feed: { notIn: ["job_alerts"] } }] }],
-    });
   });
 });

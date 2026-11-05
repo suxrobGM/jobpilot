@@ -1,6 +1,7 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { OPEN_CAMPAIGN_STATUSES } from "@/modules/campaign/campaign.utils";
 import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "./run-history";
 
 /** With apply room left, an idle search reruns early, and setup refills, at most this often. */
@@ -45,7 +46,7 @@ export async function gatherDueSearches(
     prisma.campaign.findMany({
       where: {
         userId,
-        status: { in: ["in_progress", "paused"] },
+        status: { in: OPEN_CAMPAIGN_STATUSES },
         source: "auto_apply",
         pilotSearchId: { in: ids },
       },

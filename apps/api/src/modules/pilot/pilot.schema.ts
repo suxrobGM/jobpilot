@@ -5,6 +5,7 @@ import {
   tokenUsageSchema,
 } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
+import { APPLIED_DUPLICATE_WINDOW_DAYS } from "@/modules/scoring/applied-duplicates";
 import { SKIP_BUCKETS } from "./skip-reasons";
 
 export const createPilotJournalResponseSchema = z.object({
@@ -56,10 +57,12 @@ export const researchStatusSchema = z.object({
   requestedAt: z.date().nullable(),
 });
 
+const withinDaysSchema = z.number().int().min(1).max(90);
+
 /** A POST so a digest's worth of URLs fits; nothing is written. */
 export const jobAlertsSeenBodySchema = z.object({
   urls: z.array(z.string().trim().min(1)).min(1).max(500),
-  withinDays: z.number().int().min(1).max(90).default(7),
+  withinDays: withinDaysSchema.default(7),
 });
 
 export const jobAlertsSeenSchema = z.object({ seen: z.array(z.string()) });
@@ -73,7 +76,7 @@ const similarJobsPostingSchema = z.object({
 /** A POST so a batch fits; nothing is written. */
 export const similarJobsBodySchema = z.object({
   postings: z.array(similarJobsPostingSchema).min(1).max(100),
-  withinDays: z.number().int().min(1).max(90).default(30),
+  withinDays: withinDaysSchema.default(APPLIED_DUPLICATE_WINDOW_DAYS),
 });
 export type SimilarJobsBody = z.infer<typeof similarJobsBodySchema>;
 

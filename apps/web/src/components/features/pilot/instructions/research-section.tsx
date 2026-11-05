@@ -8,13 +8,13 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import type { ResearchStatusDto } from "@/api/types";
+import { isRunPending } from "@/components/features/pilot/job-alerts/use-job-alerts";
 import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/data";
 import { formatRelativeTime } from "@/utils/format";
 
-type ResearchStatus = NonNullable<Awaited<ReturnType<typeof api.pilot.research.get>>["data"]>;
-
-function lastRunText(status: ResearchStatus): string {
+function lastRunText(status: ResearchStatusDto): string {
   const { lastRun } = status;
   if (status.requestedAt) return "Queued - the pilot picks it up on its next cycle.";
   if (!lastRun) return "No research run yet.";
@@ -32,7 +32,6 @@ export function ResearchSection(): ReactElement {
     successMessage: "Research queued - the pilot picks it up on its next cycle.",
   });
   const status = query.data;
-  const busy = status?.requestedAt != null || status?.lastRun?.outcome === null;
 
   return (
     <QuerySection
@@ -51,7 +50,7 @@ export function ResearchSection(): ReactElement {
               size="small"
               variant="outlined"
               startIcon={<TravelExplore />}
-              disabled={busy || run.isPending}
+              disabled={isRunPending(status) || run.isPending}
               onClick={() => run.mutate()}
             >
               Research now

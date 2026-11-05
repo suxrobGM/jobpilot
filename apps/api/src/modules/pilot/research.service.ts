@@ -1,5 +1,6 @@
 import { inject, injectable } from "@needle-di/core";
 import { PrismaClient } from "@/generated/prisma/client";
+import { OPEN_CAMPAIGN_STATUSES } from "@/modules/campaign/campaign.utils";
 import { resumePausedFeed } from "./feeds";
 import { PilotService } from "./pilot.service";
 import { hasPendingRunNow } from "./tasks/gather-inbox";
@@ -34,7 +35,7 @@ export class ResearchService {
         },
       }),
       this.prisma.campaign.findFirst({
-        where: { userId, feed: "research", status: { in: ["in_progress", "paused"] } },
+        where: { userId, feed: "research", status: { in: OPEN_CAMPAIGN_STATUSES } },
         select: { id: true },
       }),
     ]);
@@ -54,12 +55,14 @@ export class ResearchService {
 
   async runNow(userId: string) {
     const now = new Date();
-    await resumePausedFeed(this.prisma, userId, "research");
-    await this.prisma.pilotState.upsert({
-      where: { userId },
-      create: { userId, researchRequestedAt: now },
-      update: { researchRequestedAt: now, ...TASK_LIST_SNAPSHOT_RESET },
-    });
+    await Promise.all([
+      resumePausedFeed(this.prisma, userId, "research"),
+      this.prisma.pilotState.upsert({
+        where: { userId },
+        create: { userId, researchRequestedAt: now },
+        update: { researchRequestedAt: now, ...TASK_LIST_SNAPSHOT_RESET },
+      }),
+    ]);
     // The terminal host ends its idle sleep on `state.changed`, so the run starts in seconds.
     await this.pilot.publishCurrentState(userId);
     return this.getStatus(userId);

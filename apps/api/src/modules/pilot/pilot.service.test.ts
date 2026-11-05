@@ -93,7 +93,7 @@ describe("PilotService.updateInstructions", () => {
     expect(rec.searchResets).toBe(0);
   });
 
-  it("clears the setup and research dampers with the searches", async () => {
+  it("clears the setup damper with the searches, or the re-derive waits a day", async () => {
     const { svc, rec } = stateService("old goals");
     await svc.updateInstructions("p1", body("new goals", { rederiveSearches: true }));
     expect(rec).toMatchObject({ searchResets: 0, searchDeletes: 1, setupRunDeletes: 1 });

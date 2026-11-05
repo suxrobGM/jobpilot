@@ -10,7 +10,6 @@ const DRY_COOLDOWN_MS = 24 * HOUR_MS;
 /** A search this many empty runs in a row is backing off. */
 const BACKING_OFF_RUNS = 3;
 
-type ResearchTrigger = TaskPayload<"research.explore">["trigger"];
 export type ResearchTask = Omit<TaskPayload<"research.explore">, "newJobsTarget">;
 
 interface TriggerInput {
@@ -21,7 +20,7 @@ interface TriggerInput {
   now: Date;
 }
 
-export function researchTrigger(input: TriggerInput): ResearchTrigger | null {
+export function researchTrigger(input: TriggerInput): ResearchTask["trigger"] | null {
   const { lastRun, now } = input;
   if (lastRun && !lastRun.finishedAt) return null;
   if (hasPendingRunNow(input.requestedAt, lastRun, now)) return "requested";
@@ -33,13 +32,9 @@ export function researchTrigger(input: TriggerInput): ResearchTrigger | null {
   return null;
 }
 
-interface ResearchContext {
-  goals: string;
-  minScore: number;
-  boards: string[];
+interface ResearchContext extends Omit<ResearchTask, "resumeId" | "trigger"> {
   requestedAt: Date | null;
-  preferCapExempt: boolean;
-  requiresSponsorship: boolean;
+  searchCount: number;
 }
 
 /** The primary resume, or the only one; research can't score against an ambiguous choice. */
@@ -63,30 +58,17 @@ export async function gatherResearch(
   ctx: ResearchContext,
   now: Date,
 ): Promise<ResearchTask | null> {
-  const [lastRun, searches, paused] = await Promise.all([
+  const { requestedAt, searchCount, ...fields } = ctx;
+  const [lastRun, backingOffCount, paused] = await Promise.all([
     latestRun(prisma, userId, "research.explore"),
-    prisma.pilotSearch.findMany({ where: { userId }, select: { emptyRuns: true } }),
+    prisma.pilotSearch.count({ where: { userId, emptyRuns: { gte: BACKING_OFF_RUNS } } }),
     isFeedPaused(prisma, userId, "research"),
   ]);
   if (paused) return null;
-  const trigger = researchTrigger({
-    searchCount: searches.length,
-    backingOffCount: searches.filter((search) => search.emptyRuns >= BACKING_OFF_RUNS).length,
-    lastRun,
-    requestedAt: ctx.requestedAt,
-    now,
-  });
+  const trigger = researchTrigger({ searchCount, backingOffCount, lastRun, requestedAt, now });
   if (!trigger) return null;
 
   const resumeId = await researchResumeId(prisma, userId);
   if (!resumeId) return null;
-  return {
-    goals: ctx.goals,
-    resumeId,
-    minScore: ctx.minScore,
-    preferCapExempt: ctx.preferCapExempt,
-    requiresSponsorship: ctx.requiresSponsorship,
-    boards: ctx.boards,
-    trigger,
-  };
+  return { ...fields, resumeId, trigger };
 }

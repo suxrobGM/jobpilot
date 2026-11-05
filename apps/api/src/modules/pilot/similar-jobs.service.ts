@@ -1,7 +1,7 @@
 import { inject, injectable } from "@needle-di/core";
 import { DAY_MS } from "@/common/date/buckets";
 import { PrismaClient } from "@/generated/prisma/client";
-import { findFuzzyDuplicate } from "@/modules/scoring/applied-duplicates";
+import { findFuzzyDuplicates } from "@/modules/scoring/applied-duplicates";
 import type { SimilarJobsBody } from "./pilot.schema";
 
 /** The fuzzy scan runs in-process, so it has to stay bounded. */
@@ -27,11 +27,9 @@ export class SimilarJobsService {
         status: true,
       },
     });
-    const candidates = rows.map((row, i) => ({ ...row, id: String(i) }));
-    const matches = body.postings.flatMap((posting, index) => {
-      const hit = findFuzzyDuplicate(posting, candidates);
-      return hit ? [{ index, ...rows[Number(hit.candidate.id)] }] : [];
-    });
+    const matches = findFuzzyDuplicates(body.postings, rows).flatMap((hit, index) =>
+      hit ? [{ index, ...hit.candidate }] : [],
+    );
     return { matches };
   }
 }

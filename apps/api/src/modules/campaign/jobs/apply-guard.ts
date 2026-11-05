@@ -68,12 +68,7 @@ async function findApplyingSibling(
     return sameUrl;
   }
 
-  const idOf = (other: JobPosting) => `${other.campaignId}:${other.key}`;
-  const fuzzy = findFuzzyDuplicate(
-    job,
-    others.map((other) => ({ ...other, id: idOf(other) })),
-  );
-  return others.find((other) => idOf(other) === fuzzy?.candidate.id) ?? null;
+  return findFuzzyDuplicate(job, others)?.candidate ?? null;
 }
 
 /**
