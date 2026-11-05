@@ -19,8 +19,19 @@ export function scorePendingWhere(userId: string): Prisma.CampaignWhereInput {
   };
 }
 
+/** A standing campaign the user paused is their way of pausing its feed, so it isn't asked about. */
 export function reviewPausedWhere(userId: string): Prisma.CampaignWhereInput {
-  return { userId, status: "paused", source: "auto_apply" };
+  return {
+    userId,
+    status: "paused",
+    source: "auto_apply",
+    // Not `NOT { statusChangedBy: "user" }`: that is NULL in SQL for rows with no actor.
+    OR: [
+      { feed: null, pilotSearchId: null },
+      { statusChangedBy: null },
+      { statusChangedBy: { in: ["agent", "pilot"] } },
+    ],
+  };
 }
 
 /** Email drafts only: LinkedIn drafts are never sent by the pilot. */
