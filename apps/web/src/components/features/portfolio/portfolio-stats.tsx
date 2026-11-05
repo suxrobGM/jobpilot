@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Grid } from "@mui/material";
 import type { PortfolioStats } from "@/api/types";
-import { StatTile } from "@/components/features/analytics/stat-tile";
+import { StatCard } from "@/components/ui/display";
 
 interface PortfolioStatsRowProps {
   stats: PortfolioStats;
@@ -36,7 +36,7 @@ export function PortfolioStatsRow(props: PortfolioStatsRowProps): ReactElement {
     <Grid container spacing={1.5}>
       {tiles.map((tile) => (
         <Grid key={tile.label} size={{ xs: 6, md: 3 }}>
-          <StatTile label={tile.label} value={tile.value} hint={tile.hint} accent={tile.accent} />
+          <StatCard label={tile.label} value={tile.value} hint={tile.hint} accent={tile.accent} />
         </Grid>
       ))}
     </Grid>

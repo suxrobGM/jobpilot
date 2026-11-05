@@ -4,12 +4,12 @@ import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { analyticsQueries } from "@/api/queries";
+import { RankedBarList } from "@/components/ui/data";
+import { TimelineChart } from "@/components/ui/data/timeline-chart";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
-import { ApplicationsTimelineChart } from "./applications-timeline-chart";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
 import { PortfolioRankChip } from "./portfolio-rank-chip";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
-import { TopBoardsList } from "./top-boards-list";
 
 function toEntries<T extends { count: number }>(
   items: T[],
@@ -41,7 +41,12 @@ export function AnalyticsView(): ReactElement {
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <ApplicationsTimelineChart data={stats.perDay} />
+          <TimelineChart
+            data={stats.perDay}
+            eyebrow="Applications over time"
+            metricLabel="submitted"
+            emptyMessage="No applications submitted yet."
+          />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <StatusBreakdownChart data={stats.statusBreakdown} />
@@ -50,7 +55,7 @@ export function AnalyticsView(): ReactElement {
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TopBoardsList
+          <RankedBarList
             eyebrow="Distribution"
             title="Top boards"
             entries={toEntries(stats.topBoards, (b) => b.board)}
@@ -58,7 +63,7 @@ export function AnalyticsView(): ReactElement {
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TopBoardsList
+          <RankedBarList
             eyebrow="Diagnostics"
             title="Top failure reasons"
             entries={toEntries(stats.topRejectReasons, (r) => r.reason)}
@@ -74,15 +79,15 @@ export function AnalyticsView(): ReactElement {
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <ApplicationsTimelineChart
+          <TimelineChart
             data={stats.networking.perDaySent}
-            title="Messages over time"
+            eyebrow="Messages over time"
             metricLabel="sent"
             emptyMessage="No networking messages sent yet."
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TopBoardsList
+          <RankedBarList
             eyebrow="Distribution"
             title="Contact sources"
             entries={toEntries(stats.networking.topContactSources, (s) => s.source)}

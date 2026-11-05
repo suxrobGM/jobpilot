@@ -89,21 +89,17 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
   return (
     <Stack spacing={2}>
       <Grid container spacing={2}>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Discovered" value={summary.discovered} />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Drafted" value={summary.drafted} />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Sent" value={summary.sent} />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Replied" value={summary.replied} />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-          <StatCard label="Bounced" value={summary.bounced} />
-        </Grid>
+        {[
+          { label: "Discovered", value: summary.discovered },
+          { label: "Drafted", value: summary.drafted },
+          { label: "Sent", value: summary.sent },
+          { label: "Replied", value: summary.replied },
+          { label: "Bounced", value: summary.bounced },
+        ].map((tile) => (
+          <Grid key={tile.label} size={{ xs: 6, sm: 4, md: 2.4 }}>
+            <StatCard label={tile.label} value={tile.value} />
+          </Grid>
+        ))}
       </Grid>
 
       <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>

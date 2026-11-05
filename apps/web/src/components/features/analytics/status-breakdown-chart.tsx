@@ -2,10 +2,12 @@
 
 import type { ReactElement } from "react";
 import type { ApplicationStatus } from "@jobpilot/contracts/application";
-import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
+import { useTheme } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import type { AnalyticsStatusBreakdownEntry } from "@/api/types";
+import { ChartEmpty } from "@/components/ui/data";
 import { STATUS_LABEL } from "@/components/ui/display";
+import { SectionCard } from "@/components/ui/layout";
 
 const CHART_HEIGHT = 220;
 
@@ -41,49 +43,29 @@ export function StatusBreakdownChart(props: StatusBreakdownChartProps): ReactEle
   const total = series.reduce((sum, s) => sum + s.value, 0);
 
   return (
-    <Card sx={{ height: "100%" }}>
-      <CardContent>
-        <Typography variant="overlineMuted">Status breakdown</Typography>
-        <Typography variant="h5" sx={{ mt: 0.5 }}>
-          {total} applications by status
-        </Typography>
-
-        {series.length === 0 ? (
-          <Stack
-            sx={{
-              mt: 2,
-              flex: 1,
-              minHeight: CHART_HEIGHT,
-              alignItems: "center",
-              justifyContent: "center",
-              color: "text.disabled",
-            }}
-          >
-            <Typography variant="captionMuted">No applications yet.</Typography>
-          </Stack>
-        ) : (
-          <Box sx={{ mt: 1, flex: 1 }}>
-            <PieChart
-              series={[
-                {
-                  data: series,
-                  innerRadius: 48,
-                  paddingAngle: 1.5,
-                  cornerRadius: 2,
-                  highlightScope: { fade: "global", highlight: "item" },
-                },
-              ]}
-              height={CHART_HEIGHT}
-              slotProps={{
-                legend: {
-                  direction: "vertical",
-                  position: { vertical: "middle", horizontal: "end" },
-                },
-              }}
-            />
-          </Box>
-        )}
-      </CardContent>
-    </Card>
+    <SectionCard eyebrow="Status breakdown" title={`${total} applications by status`} fullHeight>
+      {series.length === 0 ? (
+        <ChartEmpty message="No applications yet." height={CHART_HEIGHT} />
+      ) : (
+        <PieChart
+          series={[
+            {
+              data: series,
+              innerRadius: 48,
+              paddingAngle: 1.5,
+              cornerRadius: 2,
+              highlightScope: { fade: "global", highlight: "item" },
+            },
+          ]}
+          height={CHART_HEIGHT}
+          slotProps={{
+            legend: {
+              direction: "vertical",
+              position: { vertical: "middle", horizontal: "end" },
+            },
+          }}
+        />
+      )}
+    </SectionCard>
   );
 }

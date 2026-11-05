@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Grid } from "@mui/material";
 import type { AnalyticsNetworkingStats } from "@/api/types";
-import { StatTile } from "./stat-tile";
+import { StatCard } from "@/components/ui/display";
 
 interface NetworkingStatTilesProps {
   networking: AnalyticsNetworkingStats;
@@ -16,13 +16,13 @@ export function NetworkingStatTiles(props: NetworkingStatTilesProps): ReactEleme
   return (
     <Grid container spacing={1.5}>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile label="Contacts" value={totals.contacts} />
+        <StatCard label="Contacts" value={totals.contacts} />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile label="Sent" value={totals.sent} hint={`${thisWeek.sent} this week`} />
+        <StatCard label="Sent" value={totals.sent} hint={`${thisWeek.sent} this week`} />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile
+        <StatCard
           label="Replied"
           value={totals.replied}
           hint={`${thisWeek.replied} this week`}
@@ -30,10 +30,10 @@ export function NetworkingStatTiles(props: NetworkingStatTilesProps): ReactEleme
         />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile label="Reply rate" value={`${replyRatePct}%`} />
+        <StatCard label="Reply rate" value={`${replyRatePct}%`} />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile label="Bounced" value={totals.bounced} accent="danger" />
+        <StatCard label="Bounced" value={totals.bounced} accent="danger" />
       </Grid>
     </Grid>
   );
