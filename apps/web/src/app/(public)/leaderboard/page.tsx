@@ -3,7 +3,7 @@ import { Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { api } from "@/api/client";
 import { getPublicFetchOptions } from "@/api/server";
-import { LeaderboardView } from "@/components/features/portfolio";
+import { LeaderboardView } from "@/components/features/leaderboard/leaderboard-view";
 import { DetailSkeleton } from "@/components/ui/feedback";
 
 export const metadata: Metadata = {

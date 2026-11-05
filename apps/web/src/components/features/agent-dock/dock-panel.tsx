@@ -10,7 +10,6 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { TerminalPanel } from "@/components/features/terminal/terminal-panel";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import type { TerminalHealth } from "@/hooks/use-terminal-health";
@@ -20,6 +19,7 @@ import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOfflineCard } from "./agent-offline-card";
 import { AgentOrb } from "./agent-orb";
+import { TerminalPanel } from "./terminal-panel";
 import { PendingRestartCard } from "./update/pending-restart-card";
 import { AgentUpdateBanner } from "./update/update-banner";
 import { useDockHealth } from "./use-dock-health";

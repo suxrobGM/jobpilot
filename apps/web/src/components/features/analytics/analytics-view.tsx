@@ -4,12 +4,12 @@ import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsQueries } from "@/api/queries";
+import { PortfolioRankChip } from "@/components/features/portfolio/portfolio-rank-chip";
 import { RankedBarList } from "@/components/ui/data";
 import { TimelineChart } from "@/components/ui/data/timeline-chart";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
-import { PortfolioRankChip } from "./portfolio-rank-chip";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
 
 function toEntries<T extends { count: number }>(

@@ -2,8 +2,8 @@ import type { ReactElement } from "react";
 import { Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import type { LeaderboardRow } from "@/api/types";
-import { AvailabilityBadge } from "./availability-badge";
-import { PortfolioAvatar } from "./portfolio-avatar";
+import { AvailabilityBadge } from "@/components/features/portfolio/availability-badge";
+import { PortfolioAvatar } from "@/components/features/portfolio/portfolio-avatar";
 
 interface LeaderboardPodiumProps {
   rows: LeaderboardRow[];
