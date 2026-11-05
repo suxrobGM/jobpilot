@@ -4,6 +4,7 @@ import type { PropsWithChildren, ReactElement } from "react";
 import { Box } from "@mui/material";
 import { AgentDock } from "@/components/features/agent-dock/agent-dock";
 import { VerifyEmailBanner } from "@/components/features/auth";
+import { PilotLive } from "@/components/features/pilot/pilot-live";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { MobileNav } from "./mobile-nav";
 import { Rail } from "./rail";
@@ -34,6 +35,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
         }}
       >
         <VerifyEmailBanner />
+        <PilotLive />
         {children}
       </Box>
       {isDesktop ? <AgentDock /> : <MobileNav />}

@@ -9,7 +9,7 @@ import type {
 import { type Jsonified, pilotChannel } from "@jobpilot/contracts/sse";
 import type { InfiniteData, QueryClient } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import { type SseConnectionStatus, useSseChannel } from "@/lib/sse/client";
+import { type SseConnectionStatus, useSseChannel } from "@/hooks/use-sse-channel";
 import { dedupeById } from "@/utils/array";
 
 /** Roomy enough that the fetched page's tail (where `nextCursor` resumes) survives live prepends. */

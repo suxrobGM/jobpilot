@@ -5,7 +5,7 @@ import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkProposalStatus } from "@jobpilot/contracts/upwork";
 import { ChevronRight, Clear } from "@mui/icons-material";
 import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import { upworkProposalQueries } from "@/api/queries";
 import { PaginationFooter } from "@/components/ui/data";
@@ -13,25 +13,21 @@ import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display
 import { EmptyState } from "@/components/ui/feedback";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { usePaginationParams } from "@/hooks/use-pagination";
-import { useSseChannel } from "@/lib/sse/client";
 import { plural } from "@/utils/format";
 
 const PAGE_SIZE = 10;
 
 export function ProposalsList(): ReactElement {
-  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<UpworkProposalStatus | null>(null);
   const { query, setPage, setPageSize } = usePaginationParams({ pageSize: PAGE_SIZE });
 
-  const invalidate = (): void => {
-    queryClient.invalidateQueries({ queryKey: upworkProposalQueries.all });
-  };
-  useSseChannel(upworkChannel, null, {
+  useLiveInvalidation(upworkChannel, null, {
     on: {
-      "proposal.created": invalidate,
-      "proposal.updated": invalidate,
-      "proposal.deleted": invalidate,
+      "proposal.created": [upworkProposalQueries.all],
+      "proposal.updated": [upworkProposalQueries.all],
+      "proposal.deleted": [upworkProposalQueries.all],
     },
   });
 

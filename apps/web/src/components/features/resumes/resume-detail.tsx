@@ -4,11 +4,11 @@ import { type ReactElement, useState } from "react";
 import { EMPTY_RESUME_DATA, type ResumeData } from "@jobpilot/contracts/resume";
 import { resumeChannel } from "@jobpilot/contracts/sse";
 import { Box, LinearProgress, Stack } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { resumeQueries } from "@/api/queries";
 import { QueryError } from "@/components/ui/feedback";
 import { type SectionAnchor, SectionLayout } from "@/components/ui/layout";
-import { useSseChannel } from "@/lib/sse/client";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { ExtractionCard } from "./detail/extraction-card";
 import { ResumeHeaderBar } from "./detail/header-bar";
 import { ResumePdfPreview } from "./detail/pdf-preview";
@@ -37,29 +37,19 @@ function anchorsFor(data: ResumeData): SectionAnchor[] {
 
 export function ResumeDetail(props: ResumeDetailProps): ReactElement {
   const { resumeId } = props;
-  const queryClient = useQueryClient();
   const [skippedExtraction, setSkippedExtraction] = useState(false);
 
   const detail = useQuery(resumeQueries.detail(resumeId));
 
-  useSseChannel(
+  const variantsKey = resumeQueries.variants(resumeId).queryKey;
+  useLiveInvalidation(
     resumeChannel,
     { resumeId },
     {
       on: {
-        "content.updated": () => {
-          void queryClient.invalidateQueries({ queryKey: resumeQueries.detail(resumeId).queryKey });
-        },
-        "variant.created": () => {
-          void queryClient.invalidateQueries({
-            queryKey: resumeQueries.variants(resumeId).queryKey,
-          });
-        },
-        "variant.deleted": () => {
-          void queryClient.invalidateQueries({
-            queryKey: resumeQueries.variants(resumeId).queryKey,
-          });
-        },
+        "content.updated": [resumeQueries.detail(resumeId).queryKey],
+        "variant.created": [variantsKey],
+        "variant.deleted": [variantsKey],
       },
     },
   );

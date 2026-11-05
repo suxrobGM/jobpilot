@@ -16,7 +16,7 @@ import { AgentOnlyButton } from "@/components/ui/buttons";
 import { QueryError } from "@/components/ui/feedback";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useCopy } from "@/hooks/use-copy";
-import { useSseChannel } from "@/lib/sse/client";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { ProposalNotes } from "./proposal-notes";
@@ -37,16 +37,16 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const detail = useQuery(upworkProposalQueries.detail(id));
   const account = useQuery(upworkAccountQueries.detail());
 
-  useSseChannel(upworkChannel, null, {
+  useLiveInvalidation(upworkChannel, null, {
     on: {
-      "proposal.updated": (e) => {
-        if (e.id === id) {
-          queryClient.invalidateQueries({ queryKey: upworkProposalQueries.detail(id).queryKey });
+      "proposal.updated": (event) => {
+        if (event.id === id) {
+          void queryClient.invalidateQueries({
+            queryKey: upworkProposalQueries.detail(id).queryKey,
+          });
         }
       },
-      "account.updated": () => {
-        queryClient.invalidateQueries({ queryKey: upworkAccountQueries.all });
-      },
+      "account.updated": [upworkAccountQueries.all],
     },
   });
 

@@ -5,13 +5,13 @@ import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Box, LinearProgress, Stack } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { upworkProfileQueries } from "@/api/queries";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { StatusChip } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
-import { useSseChannel } from "@/lib/sse/client";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { ProfileReview } from "./profile-review";
 
@@ -19,13 +19,9 @@ import { ProfileReview } from "./profile-review";
 export function ProfileEnhancer(): ReactElement {
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
-  const queryClient = useQueryClient();
 
-  useSseChannel(upworkChannel, null, {
-    on: {
-      "profile.updated": () =>
-        queryClient.invalidateQueries({ queryKey: upworkProfileQueries.all }),
-    },
+  useLiveInvalidation(upworkChannel, null, {
+    on: { "profile.updated": [upworkProfileQueries.all] },
   });
 
   const query = useQuery(upworkProfileQueries.detail());

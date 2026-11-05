@@ -3,13 +3,13 @@
 import { type ReactElement, useState } from "react";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { LinearProgress, Stack } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { emailQueries, type InboxFilter } from "@/api/queries";
 import { MailboxReauthAlert } from "@/components/features/settings/sections/mailbox-reauth-alert";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/feedback";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
-import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { InboxTable } from "./inbox-table";
 import { InboxToolbar } from "./inbox-toolbar";
@@ -18,7 +18,6 @@ import { MessageReviewDialog } from "./message-review-dialog";
 export function InboxContent(): ReactElement {
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
   const { injectSkill } = useAgent();
   const agentAvailable = useAgentAvailable();
 
@@ -33,10 +32,13 @@ export function InboxContent(): ReactElement {
     enabled: connected,
   });
 
-  useSseChannel(inboxChannel, null, {
+  useLiveInvalidation(inboxChannel, null, {
     enabled: connected,
-    onMessage: () => {
-      queryClient.invalidateQueries({ queryKey: emailQueries.all });
+    on: {
+      "sync.started": [emailQueries.all],
+      "sync.progress": [emailQueries.all],
+      "message.scanned": [emailQueries.all],
+      "message.reviewed": [emailQueries.all],
     },
   });
 

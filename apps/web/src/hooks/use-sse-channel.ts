@@ -18,32 +18,14 @@ export type SseConnectionStatus = "idle" | "connecting" | "open" | "reconnecting
  * (`TUrlParams = void`) take `null` at the call site as an explicit "no
  * params" marker; typed channels still require their full param object.
  */
-type UrlParamsArg<C extends AnyChannel> =
+export type UrlParamsArg<C extends AnyChannel> =
   // biome-ignore lint/suspicious/noConfusingVoidType: probes the `TUrlParams = void` channels declare
   void extends ChannelUrlParams<C> ? null : ChannelUrlParams<C>;
-
-interface UseEventSourceOptions<TEvent> {
-  /** When false, the hook stays mounted without opening a connection. */
-  enabled?: boolean;
-  /** Convert the raw `data` string into the event. Defaults to `JSON.parse`. */
-  parse?: (data: string) => TEvent;
-  /** Called for each parsed message. */
-  onMessage?: (event: TEvent, raw: MessageEvent<string>) => void;
-  /** Called when EventSource reports a connection error or reconnect attempt. */
-  onError?: (event: Event) => void;
-  /** Called when `parse` throws for an incoming message. */
-  onParseError?: (error: unknown, raw: MessageEvent<string>) => void;
-}
-
-function parseJson<TEvent>(data: string): TEvent {
-  return JSON.parse(data) as TEvent;
-}
 
 interface SharedSource {
   source: EventSource;
   status: SseConnectionStatus;
   onMessage: Set<(event: MessageEvent<string>) => void>;
-  onError: Set<(event: Event) => void>;
   onStatus: Set<(status: SseConnectionStatus) => void>;
   /** Pending re-dial after a fatal close; cleared when the last subscriber leaves. */
   redialTimer: ReturnType<typeof setTimeout> | null;
@@ -77,7 +59,7 @@ function dial(url: string, entry: SharedSource, source: EventSource): void {
     entry.redialDelayMs = REDIAL_BASE_MS;
     setEntryStatus(entry, "open");
   };
-  source.onerror = (event) => {
+  source.onerror = () => {
     // A superseded source's late error must not clobber the live one's status.
     if (entry.source !== source) return;
     setEntryStatus(entry, "reconnecting");
@@ -91,7 +73,6 @@ function dial(url: string, entry: SharedSource, source: EventSource): void {
         dial(url, entry, openSource(url));
       }, entry.redialDelayMs);
     }
-    for (const listener of entry.onError) listener(event);
   };
 }
 
@@ -99,7 +80,6 @@ function dial(url: string, entry: SharedSource, source: EventSource): void {
 function acquireSource(
   url: string,
   onMessage: (event: MessageEvent<string>) => void,
-  onError: (event: Event) => void,
   onStatus: (status: SseConnectionStatus) => void,
 ): () => void {
   let shared = sharedSources.get(url);
@@ -109,7 +89,6 @@ function acquireSource(
       source: openSource(url),
       status: "connecting",
       onMessage: new Set(),
-      onError: new Set(),
       onStatus: new Set(),
       redialTimer: null,
       redialDelayMs: REDIAL_BASE_MS,
@@ -120,14 +99,12 @@ function acquireSource(
   }
 
   shared.onMessage.add(onMessage);
-  shared.onError.add(onError);
   shared.onStatus.add(onStatus);
   // Replay the current status so late subscribers don't sit on a stale "idle".
   onStatus(shared.status);
 
   return () => {
     shared.onMessage.delete(onMessage);
-    shared.onError.delete(onError);
     shared.onStatus.delete(onStatus);
     if (shared.onMessage.size === 0) {
       if (shared.redialTimer !== null) {
@@ -138,50 +115,6 @@ function acquireSource(
       sharedSources.delete(url);
     }
   };
-}
-
-/**
- * Subscribe to a raw SSE stream by URL. Prefer {@link useSseChannel} when
- * you have a channel descriptor; reach for this only when the URL is dynamic
- * or you want fully opaque message handling.
- */
-function useEventSource<TEvent = unknown>(
-  url: string | null | undefined,
-  options: UseEventSourceOptions<TEvent> = {},
-): SseConnectionStatus {
-  const [status, setStatus] = useState<SseConnectionStatus>("idle");
-  const parseRef = useRef(options.parse ?? parseJson<TEvent>);
-  const onMessageRef = useRef(options.onMessage);
-  const onErrorRef = useRef(options.onError);
-  const onParseErrorRef = useRef(options.onParseError);
-
-  useEffect(() => {
-    parseRef.current = options.parse ?? parseJson<TEvent>;
-    onMessageRef.current = options.onMessage;
-    onErrorRef.current = options.onError;
-    onParseErrorRef.current = options.onParseError;
-  }, [options.parse, options.onMessage, options.onError, options.onParseError]);
-
-  useEffect(() => {
-    if (options.enabled === false || !url) {
-      setStatus("idle");
-      return;
-    }
-
-    const onRawMessage = (event: MessageEvent<string>) => {
-      try {
-        onMessageRef.current?.(parseRef.current(event.data), event);
-      } catch (err) {
-        onParseErrorRef.current?.(err, event);
-      }
-    };
-    const onRawError = (event: Event) => {
-      onErrorRef.current?.(event);
-    };
-    return acquireSource(url, onRawMessage, onRawError, setStatus);
-  }, [url, options.enabled]);
-
-  return status;
 }
 
 type SseHandlers<TEvent extends { type: string }> = Partial<{
@@ -198,9 +131,8 @@ interface UseSseChannelOptions<TEvent extends { type: string }> {
 }
 
 /**
- * Subscribe to a typed channel. The URL is the descriptor's API-relative path
- * against the API origin; `on` dispatches by `event.type` with full type
- * narrowing per variant.
+ * Subscribe to a typed channel. The URL is the descriptor's API-relative path against the API
+ * origin; `on` dispatches by `event.type` with full type narrowing per variant.
  */
 export function useSseChannel<C extends AnyChannel>(
   channel: C,
@@ -209,17 +141,37 @@ export function useSseChannel<C extends AnyChannel>(
 ): SseConnectionStatus {
   // Events arrive as parsed JSON: no Date revival, unlike Eden responses.
   type TEvent = Jsonified<ChannelEvent<C>>;
-  const url =
-    options.enabled === false
-      ? null
-      : `${API_BASE_URL}${channel.path(params as ChannelUrlParams<C>)}`;
+  const { enabled = true } = options;
+  const url = enabled ? `${API_BASE_URL}${channel.path(params as ChannelUrlParams<C>)}` : null;
+  const [status, setStatus] = useState<SseConnectionStatus>("idle");
 
-  return useEventSource<TEvent>(url, {
-    enabled: options.enabled,
-    onMessage: (event) => {
-      options.onMessage?.(event);
-      const handler = options.on?.[event.type as TEvent["type"]] as (e: TEvent) => void;
-      handler?.(event);
-    },
+  // Handlers change every render; the connection must not, so it reads them through a ref.
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
   });
+
+  useEffect(() => {
+    if (!url) {
+      setStatus("idle");
+      return;
+    }
+    const onMessage = (raw: MessageEvent<string>): void => {
+      let event: TEvent;
+      try {
+        event = JSON.parse(raw.data) as TEvent;
+      } catch {
+        return;
+      }
+      const current = optionsRef.current;
+      current.onMessage?.(event);
+      const handler = current.on?.[event.type as TEvent["type"]] as
+        | ((e: TEvent) => void)
+        | undefined;
+      handler?.(event);
+    };
+    return acquireSource(url, onMessage, setStatus);
+  }, [url]);
+
+  return status;
 }

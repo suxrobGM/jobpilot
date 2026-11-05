@@ -2,20 +2,23 @@
 
 import type { ReactNode } from "react";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
-import { useQueryClient } from "@tanstack/react-query";
 import { applicationQueries, campaignQueries } from "@/api/queries";
-import { useSseChannel } from "@/lib/sse/client";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 
-/** The workspace layout's one SSE subscription; any event refreshes campaigns and applications. */
+const KEYS = [campaignQueries.all, applicationQueries.all];
+
+/** The workspace layout's one subscription: campaign and application events refresh both trees. */
 export function WorkspaceLive(): ReactNode {
-  const queryClient = useQueryClient();
-
-  useSseChannel(workspaceChannel, null, {
-    onMessage: () => {
-      queryClient.invalidateQueries({ queryKey: campaignQueries.all });
-      queryClient.invalidateQueries({ queryKey: applicationQueries.all });
+  useLiveInvalidation(workspaceChannel, null, {
+    on: {
+      "campaign.updated": KEYS,
+      "campaign.completed": KEYS,
+      "campaign.deleted": KEYS,
+      "campaignjob.created": KEYS,
+      "campaignjob.updated": KEYS,
+      "application.created": KEYS,
     },
+    onReconnect: KEYS,
   });
-
   return null;
 }

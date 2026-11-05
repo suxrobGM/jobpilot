@@ -4,7 +4,7 @@ import type { ResumeData } from "@jobpilot/contracts/resume";
 import { resumeChannel } from "@jobpilot/contracts/sse";
 import { useQuery } from "@tanstack/react-query";
 import { resumeQueries } from "@/api/queries";
-import { useSseChannel } from "@/lib/sse/client";
+import { useSseChannel } from "@/hooks/use-sse-channel";
 
 /** Covers the race where the agent's PUT lands before the EventSource subscription is up. */
 const POLL_MS = 2_000;

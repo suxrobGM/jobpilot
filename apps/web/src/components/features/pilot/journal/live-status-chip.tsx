@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Chip } from "@mui/material";
-import type { SseConnectionStatus } from "@/lib/sse/client";
+import type { SseConnectionStatus } from "@/hooks/use-sse-channel";
 
 interface LiveStatusChipProps {
   status: SseConnectionStatus;

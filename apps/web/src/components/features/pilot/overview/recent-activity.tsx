@@ -7,10 +7,10 @@ import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
+import { useJournalLiveStatus } from "../journal/journal-cache";
 import { collapseCoveredCycles, withLatestRuns } from "../journal/journal-entries";
 import { JournalRow } from "../journal/journal-row";
 import { LiveStatusChip } from "../journal/live-status-chip";
-import { useJournalLiveStatus } from "../journal/use-journal-live";
 
 const RECENT_LIMIT = 8;
 

@@ -3,13 +3,13 @@
 import type { ReactElement } from "react";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Stack } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { isNotFound } from "@/api/error";
 import { campaignQueries } from "@/api/queries";
 import { NetworkingBoard, NetworkingMessagesTable } from "@/components/features/networking";
 import { DetailSkeleton, EmptyState, QueryError } from "@/components/ui/feedback";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
-import { useSseChannel } from "@/lib/sse/client";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
 import { CampaignReasonBreakdown } from "./detail/reason-breakdown";
@@ -21,31 +21,27 @@ interface CampaignDetailProps {
 
 export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   const { campaignId } = props;
-  const queryClient = useQueryClient();
-
   const detail = useQuery(campaignQueries.detail(campaignId));
 
-  const invalidate = (key: readonly unknown[]): void => {
-    queryClient.invalidateQueries({ queryKey: key });
-  };
-  const invalidateDetail = (): void => invalidate(campaignQueries.detail(campaignId).queryKey);
-
-  useSseChannel(
+  const detailKey = campaignQueries.detail(campaignId).queryKey;
+  const jobKeys = [
+    campaignQueries.jobsOf(campaignId),
+    campaignQueries.reasons(campaignId).queryKey,
+    detailKey,
+  ];
+  // Scoped per event type: a scoring pass emits one `job-update` per job, so a blanket
+  // `campaigns.all` here would refetch every cached list, page and aggregate on each one.
+  useLiveInvalidation(
     campaignChannel,
     { campaignId },
     {
-      // Scoped per event type: a scoring pass emits one `job-update` per job, so a blanket
-      // `campaigns.all` here would refetch every cached list, page and aggregate on each one.
       on: {
-        progress: invalidateDetail,
-        status: invalidateDetail,
-        "job-update": () => {
-          invalidate(campaignQueries.jobsOf(campaignId));
-          invalidate(campaignQueries.reasons(campaignId).queryKey);
-          invalidateDetail();
-        },
-        "networking-update": () => invalidate(campaignQueries.networkingOf(campaignId)),
+        progress: [detailKey],
+        status: [detailKey],
+        "job-update": jobKeys,
+        "networking-update": [campaignQueries.networkingOf(campaignId)],
       },
+      onReconnect: [...jobKeys, campaignQueries.networkingOf(campaignId)],
     },
   );
 

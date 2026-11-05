@@ -5,7 +5,7 @@ import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkInboxKind, UpworkInboxStatus } from "@jobpilot/contracts/upwork";
 import { Clear, CloudSync, Launch } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { upworkInboxQueries } from "@/api/queries";
@@ -15,8 +15,8 @@ import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display
 import { EmptyState } from "@/components/ui/feedback";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { usePaginationParams } from "@/hooks/use-pagination";
-import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { plural } from "@/utils/format";
 
@@ -26,17 +26,13 @@ const KIND_OPTIONS = statusOptions("upworkInboxKind");
 const INBOX_STATUS_OPTIONS = statusOptions("upworkInboxStatus");
 
 export function InboxList(): ReactElement {
-  const queryClient = useQueryClient();
   const agent = useAgent();
   const [kindFilter, setKindFilter] = useState<UpworkInboxKind | null>(null);
   const [statusFilter, setStatusFilter] = useState<UpworkInboxStatus | null>(null);
   const { query, setPage, setPageSize } = usePaginationParams({ pageSize: PAGE_SIZE });
 
-  const invalidate = (): void => {
-    queryClient.invalidateQueries({ queryKey: upworkInboxQueries.all });
-  };
-  useSseChannel(upworkChannel, null, {
-    on: { "inbox.synced": invalidate, "inbox.updated": invalidate },
+  useLiveInvalidation(upworkChannel, null, {
+    on: { "inbox.synced": [upworkInboxQueries.all], "inbox.updated": [upworkInboxQueries.all] },
   });
 
   const inbox = useQuery(

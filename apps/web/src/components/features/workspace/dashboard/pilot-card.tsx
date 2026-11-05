@@ -1,9 +1,8 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Alert, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { pilotQueries } from "@/api/queries";
 import {
@@ -14,7 +13,6 @@ import {
 import { LinkButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
-import { useSseChannel } from "@/lib/sse/client";
 import type { PilotHealth } from "@/lib/terminal";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { plural } from "@/utils/format";
@@ -40,17 +38,8 @@ interface PilotCardBodyProps {
 
 function PilotCardBody(props: PilotCardBodyProps): ReactNode {
   const { health, pilot } = props;
-  const queryClient = useQueryClient();
   const stateQuery = useQuery(pilotQueries.state());
   const openQuestions = useOpenQuestions().questions.length;
-
-  // Rides the shared pilotChannel source (refcounted per URL), so this adds no connection.
-  useSseChannel(pilotChannel, null, {
-    on: {
-      "state.changed": () =>
-        queryClient.invalidateQueries({ queryKey: pilotQueries.state().queryKey }),
-    },
-  });
 
   const state = stateQuery.data;
   if (!state) return null;

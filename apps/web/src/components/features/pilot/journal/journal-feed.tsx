@@ -26,10 +26,10 @@ import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";
 import { dedupeById } from "@/utils/array";
 import { CycleTimeline } from "./cycle-timeline";
+import { useJournalLiveStatus } from "./journal-cache";
 import { collapseCoveredCycles, groupByDay, withLatestRuns } from "./journal-entries";
 import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
-import { useJournalLiveStatus } from "./use-journal-live";
 
 /** A top-level anchor download carries the same-site auth cookie, so no fetch is needed. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
