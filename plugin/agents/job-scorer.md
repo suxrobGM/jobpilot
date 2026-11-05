@@ -69,6 +69,8 @@ Skip reasons, exact phrasing:
 - `Below minimum match score (X < Y)`.
 - From `eligibilityBlocked.kind`: `sponsorship` → `No visa sponsorship (JD: "<evidence>")`;
   `citizenship` → `US citizenship required`; `clearance` → `Active security clearance required`.
+- `Deal-breaker: <rule>`: the posting clearly hits one of the user's deal-breakers (`GET /api/pilot`
+  → `instructionsConfig.dealBreakers`, read once). Only on what the posting states.
 
 Never skip for: another city or onsite/hybrid when `willingToRelocate` is true or
 `preferredLocations` is empty or `"Anywhere"`; a sparse posting; contract or 1099 work; a defense or
