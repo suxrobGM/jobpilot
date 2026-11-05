@@ -169,10 +169,8 @@ const STATUS_STYLES = {
 export type StatusDomain = keyof typeof STATUS_STYLES;
 export type StatusValue<D extends StatusDomain> = keyof (typeof STATUS_STYLES)[D] & string;
 
-// Falls back to the raw value: an API ahead of this build must not crash the page.
 function styleOf<D extends StatusDomain>(domain: D, value: StatusValue<D>): StatusStyle {
-  const styles = STATUS_STYLES[domain] as Record<string, StatusStyle | undefined>;
-  return styles[value] ?? { label: value, color: "default" };
+  return (STATUS_STYLES[domain] as Record<string, StatusStyle>)[value];
 }
 
 export function statusLabel<D extends StatusDomain>(domain: D, value: StatusValue<D>): string {

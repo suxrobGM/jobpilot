@@ -34,7 +34,7 @@ export interface AgentDockContextValue {
   provider: TerminalProviderId;
   switchProvider: (next: TerminalProviderId) => Promise<void>;
   restart: () => Promise<void>;
-  /** Resolves true when the host is shutting down, false when it stayed up (failure or legacy fallback). */
+  /** Resolves true when the host is shutting down, false when it stayed up. */
   stop: () => Promise<boolean>;
   terminalRevision: number;
   expanded: boolean;
