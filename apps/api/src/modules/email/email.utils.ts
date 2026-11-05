@@ -13,7 +13,7 @@ export interface EmailHeader {
  * trailing whitespace or stray `>` characters so callers can pass raw header
  * values without sanitising first.
  */
-export function domainOf(address: string): string {
+export function emailDomain(address: string): string {
   const at = address.lastIndexOf("@");
   if (at < 0) return "";
   return address

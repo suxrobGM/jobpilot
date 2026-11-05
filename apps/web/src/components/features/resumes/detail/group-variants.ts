@@ -9,7 +9,7 @@ export interface VariantGroup {
 const UNGROUPED = "Other";
 
 /** The tailor skill labels variants `"<Company> - <Job title>"`; the URL host is the fallback. */
-function companyOf(variant: ResumeVariantListItem): string {
+function variantCompany(variant: ResumeVariantListItem): string {
   const [head, ...rest] = variant.label.split(" - ");
   if (rest.length > 0 && head.trim()) {
     return head.trim();
@@ -28,7 +28,7 @@ function companyOf(variant: ResumeVariantListItem): string {
 export function groupVariants(variants: ResumeVariantListItem[]): VariantGroup[] {
   const byCompany = new Map<string, ResumeVariantListItem[]>();
   for (const variant of variants) {
-    const company = companyOf(variant);
+    const company = variantCompany(variant);
     byCompany.set(company, [...(byCompany.get(company) ?? []), variant]);
   }
 

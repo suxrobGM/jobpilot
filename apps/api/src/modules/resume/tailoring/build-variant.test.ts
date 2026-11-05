@@ -49,7 +49,7 @@ function body(over: Partial<TailorVariantBody> = {}): TailorVariantBody {
   return { label: "Acme - Engineer", ...over };
 }
 
-function violationsOf(fn: () => unknown): string[] {
+function collectViolations(fn: () => unknown): string[] {
   try {
     fn();
   } catch (error) {
@@ -123,7 +123,7 @@ describe("buildTailoredVariant", () => {
   });
 
   it("rejects the whole request when the structure plan is invalid", () => {
-    const violations = violationsOf(() =>
+    const violations = collectViolations(() =>
       buildTailoredVariant(base(), body({ structure: { dropEntries: [0, 1, 2, 3] } })),
     );
 

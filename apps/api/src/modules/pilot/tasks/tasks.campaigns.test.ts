@@ -132,14 +132,14 @@ describe("TaskListService campaign reviews", () => {
       ...laggard,
       skipReasonRows: [{ campaignId: "c1", skipReason: "overqualified", _count: { _all: 20 } }],
     }).refresh("p1");
-    const payloadOf = (taskType: TaskType) => findTask(taskList, taskType)?.payload;
-    expect(payloadOf("campaign.tune")).toMatchObject({
+    const taskPayload = (taskType: TaskType) => findTask(taskList, taskType)?.payload;
+    expect(taskPayload("campaign.tune")).toMatchObject({
       config: { minScore: 70, board: "linkedin.com" },
       counts: { totalFound: 40, qualified: 4, applied: 1, skipped: 36 },
       topSkipReasons: ["overqualified"],
     });
-    expect(payloadOf("job.rescanSkipped")).toMatchObject({ skippedCount: 36 });
-    expect(payloadOf("job.retryFailed")).toMatchObject({ failedCount: 3 });
+    expect(taskPayload("job.rescanSkipped")).toMatchObject({ skippedCount: 36 });
+    expect(taskPayload("job.retryFailed")).toMatchObject({ failedCount: 3 });
   });
 
   it("skips a review that ran for the same campaign this week", async () => {

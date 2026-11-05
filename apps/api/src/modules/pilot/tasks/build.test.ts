@@ -24,7 +24,7 @@ import { describe, expect, it } from "bun:test";
 const NETWORKING_OFF = cfg({ networking: { email: "off", linkedIn: "off" } });
 type Built = ReturnType<typeof buildTaskList>;
 const taskTypes = (taskList: Built) => taskList.tasks.map((task) => task.taskType);
-const countOf = (taskList: Built, taskType: string) =>
+const countTasks = (taskList: Built, taskType: string) =>
   taskTypes(taskList).filter((type) => type === taskType).length;
 
 describe("buildTaskList ranking", () => {
@@ -162,10 +162,10 @@ describe("buildTaskList gating", () => {
         interviewPreps: [prep("a1"), prep("a2")],
       }),
     );
-    expect(countOf(taskList, "board.diagnose")).toBe(1);
-    expect(countOf(taskList, "campaign.reviewPaused")).toBe(1);
-    expect(countOf(taskList, "interview.reply")).toBe(2);
-    expect(countOf(taskList, "interview.prep")).toBe(1);
+    expect(countTasks(taskList, "board.diagnose")).toBe(1);
+    expect(countTasks(taskList, "campaign.reviewPaused")).toBe(1);
+    expect(countTasks(taskList, "interview.reply")).toBe(2);
+    expect(countTasks(taskList, "interview.prep")).toBe(1);
 
     const quiet = buildTaskList(
       base({
@@ -175,10 +175,10 @@ describe("buildTaskList gating", () => {
         campaignTunes: [tune("c1"), tune("c2")],
       }),
     );
-    expect(countOf(quiet, "networking.warmIntro")).toBe(1);
-    expect(countOf(quiet, "networking.followup")).toBe(2);
-    expect(countOf(quiet, "promotion.draft")).toBe(1);
-    expect(countOf(quiet, "campaign.tune")).toBe(1);
+    expect(countTasks(quiet, "networking.warmIntro")).toBe(1);
+    expect(countTasks(quiet, "networking.followup")).toBe(2);
+    expect(countTasks(quiet, "promotion.draft")).toBe(1);
+    expect(countTasks(quiet, "campaign.tune")).toBe(1);
   });
 });
 
@@ -192,8 +192,8 @@ describe("buildTaskList networking", () => {
         followups: [followup("f1"), followup("f2")],
       }),
     );
-    expect(countOf(withRoom, "networking.send")).toBe(1);
-    expect(countOf(withRoom, "networking.followup")).toBe(1);
+    expect(countTasks(withRoom, "networking.send")).toBe(1);
+    expect(countTasks(withRoom, "networking.followup")).toBe(1);
 
     const spent = buildTaskList(
       base({

@@ -3,8 +3,8 @@ import { google } from "googleapis";
 import { badGateway, unprocessable } from "@/common/errors";
 import {
   buildMimeMessage,
-  domainOf,
   type EmailHeader,
+  emailDomain,
   encodeBase64Url,
   extractLinks,
   extractPlainText,
@@ -232,7 +232,7 @@ export class GmailClient {
           subject: headerValue(headers, "Subject"),
           fromAddress: email,
           fromName: name,
-          fromDomain: domainOf(email),
+          fromDomain: emailDomain(email),
           snippet: msg.data.snippet ?? "",
           body: stripQuotedReplies(extractPlainText(msg.data.payload)),
           links: extractLinks(msg.data.payload),

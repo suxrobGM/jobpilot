@@ -61,8 +61,8 @@ function insertByStart(
   entries: ResumeExperience[],
   promoted: ResumeExperience,
 ): ResumeExperience[] {
-  const startOf = (entry: ResumeExperience) => parseResumeDate(entry.start) ?? 0;
-  const at = entries.findIndex((entry) => startOf(entry) < startOf(promoted));
+  const startTime = (entry: ResumeExperience) => parseResumeDate(entry.start) ?? 0;
+  const at = entries.findIndex((entry) => startTime(entry) < startTime(promoted));
   if (at === -1) {
     return [...entries, promoted];
   }

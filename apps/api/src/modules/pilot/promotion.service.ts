@@ -22,7 +22,7 @@ interface PromotionsQuery extends PaginationQuery {
 type Correction = Pick<CreatePilotJournalInput["entries"][number], "summary" | "detail">;
 
 /** A decline or a content edit overrides the agent, so it is journaled as a correction. */
-function correctionOf(
+function toCorrection(
   before: PromotionPost,
   after: PromotionPost,
   body: PatchPromotionInput,
@@ -116,7 +116,7 @@ export class PromotionService {
     });
     publish(pilotChannel, { userId }, { type: "promotion.updated", promotion });
 
-    const correction = correctionOf(existing, promotion, body);
+    const correction = toCorrection(existing, promotion, body);
     if (correction) {
       await this.journal.appendJournal(userId, {
         entries: [{ kind: "correction", subjectType: "promotion", subjectId: id, ...correction }],
