@@ -10,7 +10,9 @@ const styles = StyleSheet.create({
     paddingBottom: 54,
     paddingLeft: 64,
     paddingRight: 64,
-    fontFamily: "Helvetica",
+    fontFamily: "JobPilot Lato",
+    // Avoid ligature glyph mappings that can break downstream PDF text extraction.
+    fontFeatureSettings: { liga: false, clig: false },
     fontSize: 11,
     color: "#111",
     lineHeight: 1.5,
