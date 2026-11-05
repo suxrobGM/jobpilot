@@ -21,12 +21,12 @@ import { api } from "@/api/client";
 import { invalidations, resumeQueries } from "@/api/queries";
 import { resumePdfUrl } from "@/api/resume-urls";
 import { useApiMutation } from "@/api/use-api-mutation";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { RelativeTime } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { FileUpload } from "@/components/ui/form";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/toast-provider";
 import { plural } from "@/utils/format";
 import { resumeHref } from "@/utils/routes";
@@ -39,8 +39,7 @@ export function ResumesList(): ReactElement {
   });
 
   const toast = useToast();
-  const agent = useAgent();
-  const agentAvailable = useAgentAvailable();
+  const request = useCreateRequest();
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -50,10 +49,7 @@ export function ResumesList(): ReactElement {
     successMessage: "Resume uploaded",
     invalidate: invalidations.resume,
     onSuccess: ({ id }) => {
-      // Needs the local agent, so on mobile the upload waits for a desktop session, as in onboarding.
-      if (agentAvailable) {
-        void agent.injectSkill("extract-resume", id);
-      }
+      request.mutate({ taskType: "resume.extract", payload: { resumeId: id, force: false } });
       // Extraction progress only shows on the detail page, not on a row saying "No structure".
       router.push(resumeHref(id));
     },

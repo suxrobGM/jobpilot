@@ -52,7 +52,6 @@ function service(row: Record<string, unknown> | null) {
 describe("TaskListService current snapshot", () => {
   it("returns the typed current snapshot with one read and no maintenance writes", async () => {
     const fixture = service({
-      running: true,
       taskListSnapshot: snapshot,
       taskListExpiresAt: snapshot.expiresAt,
     });
@@ -63,16 +62,10 @@ describe("TaskListService current snapshot", () => {
 
   it("returns no task list after the snapshot expires", async () => {
     const fixture = service({
-      running: true,
       taskListSnapshot: snapshot,
       taskListExpiresAt: new Date(now.getTime() - 1),
     });
 
     expect(await fixture.taskList.getCurrent("u1")).toEqual({ taskList: null });
-  });
-
-  it("rejects reads while the pilot is stopped", async () => {
-    const fixture = service({ running: false });
-    await expect(fixture.taskList.getCurrent("u1")).rejects.toThrow("stopped");
   });
 });

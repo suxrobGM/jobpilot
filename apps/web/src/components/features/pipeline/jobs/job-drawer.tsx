@@ -8,10 +8,9 @@ import { api } from "@/api/client";
 import { pipelineQueries } from "@/api/queries";
 import type { PipelineJobDto } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { LinkButton } from "@/components/ui/buttons";
 import { StatusChip } from "@/components/ui/display";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
-import { useToast } from "@/providers/toast-provider";
 import { proposalHref } from "@/utils/routes";
 
 /** Upwork is recommend-only: its jobs get a proposal, never an application. */
@@ -56,19 +55,13 @@ interface JobActionsProps {
 
 function JobActions(props: JobActionsProps): ReactNode {
   const { job } = props;
-  const agent = useAgent();
-  const agentAvailable = useAgentAvailable();
-  const toast = useToast();
+  const request = useCreateRequest();
   const router = useRouter();
   const endpoint = api.campaigns({ id: job.campaignId }).jobs({ key: job.key });
   const invalidate = [pipelineQueries.all];
 
   const setStatus = useApiMutation((status: "approved" | "pending") => endpoint.patch({ status }), {
     invalidate,
-  });
-  const retry = useApiMutation(() => endpoint.retry.post({}), {
-    invalidate,
-    successMessage: "Back in To apply. The pilot retries it on a later cycle.",
   });
   const draftProposal = useApiMutation(
     () =>
@@ -82,7 +75,7 @@ function JobActions(props: JobActionsProps): ReactNode {
       }),
     {
       onSuccess: ({ id }) => {
-        void agent.injectSkill("upwork-proposal", id);
+        request.mutate({ taskType: "upwork.proposal", payload: { proposalId: id } });
         router.push(proposalHref(id));
       },
     },
@@ -90,37 +83,55 @@ function JobActions(props: JobActionsProps): ReactNode {
 
   if (job.board?.domain === UPWORK_DOMAIN) {
     return (
-      agentAvailable && (
-        <Button
-          variant="contained"
-          loading={draftProposal.isPending}
-          onClick={() => draftProposal.mutate()}
-        >
-          Draft proposal
-        </Button>
-      )
+      <Button
+        variant="contained"
+        loading={draftProposal.isPending}
+        onClick={() => draftProposal.mutate()}
+      >
+        Draft proposal
+      </Button>
     );
   }
 
   switch (job.status) {
     case "pending":
       return (
-        <Button
-          variant="contained"
-          loading={setStatus.isPending}
-          onClick={() => setStatus.mutate("approved")}
-        >
-          Approve
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="contained"
+            loading={setStatus.isPending}
+            onClick={() => setStatus.mutate("approved")}
+          >
+            Approve
+          </Button>
+          <Button
+            loading={request.isPending}
+            onClick={() =>
+              request.mutate({
+                taskType: "job.apply",
+                payload: { campaignId: job.campaignId, jobKey: job.key },
+              })
+            }
+          >
+            Apply now
+          </Button>
+        </Stack>
       );
     case "approved":
       return (
         <Stack direction="row" spacing={1}>
-          {agentAvailable && (
-            <Button variant="contained" onClick={() => void agent.injectSkill("apply", job.url)}>
-              Apply now
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            loading={request.isPending}
+            onClick={() =>
+              request.mutate({
+                taskType: "job.apply",
+                payload: { campaignId: job.campaignId, jobKey: job.key },
+              })
+            }
+          >
+            Apply now
+          </Button>
           <Button loading={setStatus.isPending} onClick={() => setStatus.mutate("pending")}>
             Move back to Found
           </Button>
@@ -134,23 +145,30 @@ function JobActions(props: JobActionsProps): ReactNode {
       );
     case "failed":
       return (
-        <Button variant="contained" loading={retry.isPending} onClick={() => retry.mutate()}>
+        <Button
+          variant="contained"
+          loading={request.isPending}
+          onClick={() =>
+            request.mutate({ taskType: "job.retryFailed", payload: { campaignId: job.campaignId } })
+          }
+        >
           Retry
         </Button>
       );
     case "skipped":
       return (
-        agentAvailable && (
-          <Button
-            variant="outlined"
-            onClick={() => {
-              void agent.injectSkill("rescan-skipped", `${job.campaignId} --jobs ${job.key}`);
-              toast.success("Rescanning this job.");
-            }}
-          >
-            Rescan
-          </Button>
-        )
+        <Button
+          variant="outlined"
+          loading={request.isPending}
+          onClick={() =>
+            request.mutate({
+              taskType: "job.rescanSkipped",
+              payload: { campaignId: job.campaignId, jobKeys: [job.key] },
+            })
+          }
+        >
+          Rescan
+        </Button>
       );
     default:
       return null;

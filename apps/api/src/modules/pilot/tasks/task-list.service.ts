@@ -1,11 +1,9 @@
-import { ErrorCodes } from "@jobpilot/contracts/errors";
 import {
   type PilotInstructionsConfig,
   pilotInstructionsConfigSchema,
   type TaskList,
 } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
-import { conflict } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
@@ -43,6 +41,7 @@ import {
   gatherDuePlatforms,
   gatherFollowups,
 } from "./gather-outreach";
+import { gatherChat, gatherRequests } from "./gather-requests";
 import { gatherResearch } from "./gather-research";
 import { gatherDueSearches, gatherSetup } from "./gather-searches";
 import { finalizeIdleCampaigns, promoteScoredPendingJobs, runExpiry } from "./maintenance";
@@ -52,7 +51,10 @@ const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
 /** The default check interval: idle cycles always pull mail, busy 15s cycles don't. */
 export const INBOX_SYNC_STALE_MS = 30 * 60 * 1000;
 
-type Gathered = Omit<TaskListInput, "now" | "config" | "cycleCount">;
+type Gathered = Omit<
+  TaskListInput,
+  "now" | "config" | "cycleCount" | "autopilot" | "requests" | "chat" | "jobAlertsRequested"
+>;
 
 interface GatherContext {
   config: PilotInstructionsConfig;
@@ -95,17 +97,20 @@ export class TaskListService {
   /** The current snapshot, with none of refresh's writes. */
   async getCurrent(userId: string) {
     const state = await this.prisma.pilotState.findUnique({ where: { userId } });
-    if (!state?.running) throw conflict("Pilot is stopped.", ErrorCodes.PILOT_CONFLICT);
-    const expiresAt = state.taskListExpiresAt;
-    const live = state.taskListSnapshot && expiresAt && expiresAt > new Date();
-    return { taskList: live ? parseTaskListSnapshot(state.taskListSnapshot) : null };
+    const expiresAt = state?.taskListExpiresAt;
+    const snapshot = state?.taskListSnapshot;
+    const live = snapshot && expiresAt && expiresAt > new Date();
+    return { taskList: live ? parseTaskListSnapshot(snapshot) : null };
   }
 
+  /** Runs whether or not autopilot is on: requests, chat and answered questions always run. */
   async refresh(userId: string): Promise<TaskList> {
-    const state = await this.prisma.pilotState.findUnique({
+    const state = await this.prisma.pilotState.upsert({
       where: { userId },
+      create: { userId },
+      update: {},
       select: {
-        running: true,
+        autopilot: true,
         cycleCount: true,
         instructionsConfig: true,
         instructionsGoals: true,
@@ -113,7 +118,6 @@ export class TaskListService {
         researchRequestedAt: true,
       },
     });
-    if (!state?.running) throw conflict("Pilot is stopped.", ErrorCodes.PILOT_CONFLICT);
 
     const now = new Date();
     const config = pilotInstructionsConfigSchema.parse(state.instructionsConfig);
@@ -136,11 +140,24 @@ export class TaskListService {
       },
       now,
     );
+    const [requests, chat] = await Promise.all([
+      gatherRequests(this.prisma, userId, config.minScore, now),
+      gatherChat(this.prisma, userId),
+    ]);
     const deps = { prisma: this.prisma, journal: this.journal, push: this.push };
     void writeDigestIfDue(deps, userId, now, gathered.openQuestions);
 
     const taskList: TaskList = {
-      ...buildTaskList({ ...gathered, now, config, cycleCount: state.cycleCount }),
+      ...buildTaskList({
+        ...gathered,
+        now,
+        config,
+        cycleCount: state.cycleCount,
+        autopilot: state.autopilot,
+        requests,
+        chat,
+        jobAlertsRequested: state.jobAlertsRequestedAt !== null,
+      }),
       version: crypto.randomUUID(),
       expiresAt: new Date(now.getTime() + SNAPSHOT_TTL_MS),
     };

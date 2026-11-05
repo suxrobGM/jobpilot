@@ -23,6 +23,7 @@ const JOURNAL: Stage = { title: "Journal", role: "Records the outcome", tone: "g
 const EMPTY_REASON_CAPTIONS: Record<NonNullable<TaskList["emptyReason"]>, string> = {
   capReached: "Daily cap reached",
   awaitingSetup: "Waiting for your goals",
+  autopilotOff: "Autopilot off",
   clear: "Nothing to do",
 };
 
@@ -57,7 +58,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
   const { pilot, mode } = usePilotStatus(state);
   const nextWakeAt = useNextWake(state);
   const journal = useLatestJournalPage();
-  const taskList = useTaskList(state.running);
+  const taskList = useTaskList();
 
   const { dimmed } = PILOT_MODE_LOOK[mode];
   const working = mode === "working";

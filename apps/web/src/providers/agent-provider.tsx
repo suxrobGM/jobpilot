@@ -16,19 +16,12 @@ import {
   subscribeAgentStorage,
 } from "@/lib/terminal/agent-storage";
 import {
-  formatSkillCommand,
-  injectCommand,
   killSession,
   shutdownHost,
   TerminalApiError,
   type TerminalProviderId,
 } from "@/lib/terminal/client";
 import { useToast } from "@/providers/toast-provider";
-
-export interface AgentContextValue {
-  inject: (command: string) => Promise<void>;
-  injectSkill: (skill: string, args?: string) => Promise<void>;
-}
 
 export interface AgentDrawerContextValue {
   provider: TerminalProviderId;
@@ -42,29 +35,7 @@ export interface AgentDrawerContextValue {
   closeDrawer: () => void;
 }
 
-const AgentContext = createContext<AgentContextValue | null>(null);
 const AgentDrawerContext = createContext<AgentDrawerContextValue | null>(null);
-
-function describeInjectError(error: unknown): string {
-  if (error instanceof TypeError) {
-    return "The JobPilot agent isn't reachable. Open the agent drawer to install and start it, then try again.";
-  }
-
-  if (error instanceof TerminalApiError) {
-    if (error.status === 404) {
-      return "Terminal session has ended. Restart it from the Terminal tab in the agent drawer.";
-    }
-    // The host answers 409 both for "not running" and for a provider mismatch.
-    if (error.status === 409 && /provider/i.test(error.message)) {
-      return "A different provider is running in the terminal. Switch provider in the agent drawer or restart it.";
-    }
-    if (error.status === 409 || error.status === 500) {
-      return "No active terminal session. Open the Terminal tab in the agent drawer and start one.";
-    }
-  }
-  const message = error instanceof Error ? error.message : String(error);
-  return `Failed to send command to terminal: ${message}`;
-}
 
 export function AgentProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
@@ -120,20 +91,6 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     setTerminalRevision((n) => n + 1);
   };
 
-  const runInject = async (command: string): Promise<void> => {
-    patchAgentStorage({ drawerOpen: true });
-    try {
-      await injectCommand(command, provider);
-    } catch (error) {
-      toast.error(describeInjectError(error));
-    }
-  };
-
-  const publicValue: AgentContextValue = {
-    inject: (command) => runInject(command),
-    injectSkill: (skill, args) => runInject(formatSkillCommand(provider, skill, args)),
-  };
-
   const drawerValue: AgentDrawerContextValue = {
     provider,
     switchProvider,
@@ -145,19 +102,7 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     closeDrawer: () => patchAgentStorage({ drawerOpen: false }),
   };
 
-  return (
-    <AgentContext.Provider value={publicValue}>
-      <AgentDrawerContext.Provider value={drawerValue}>{children}</AgentDrawerContext.Provider>
-    </AgentContext.Provider>
-  );
-}
-
-export function useAgent(): AgentContextValue {
-  const ctx = useContext(AgentContext);
-  if (!ctx) {
-    throw new Error("useAgent must be used within an AgentProvider");
-  }
-  return ctx;
+  return <AgentDrawerContext.Provider value={drawerValue}>{children}</AgentDrawerContext.Provider>;
 }
 
 export function useAgentDrawer(): AgentDrawerContextValue {

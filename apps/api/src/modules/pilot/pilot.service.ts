@@ -48,7 +48,7 @@ export class PilotService {
     };
     return {
       userId: row.userId,
-      running: row.running,
+      autopilot: row.autopilot,
       instructionsGoals: row.instructionsGoals,
       instructionsConfig: config,
       instructionsUpdatedAt: row.instructionsUpdatedAt,
@@ -109,27 +109,20 @@ export class PilotService {
     return this.publishState(row);
   }
 
-  async start(userId: string) {
-    if ((await this.readGoals(userId)).trim() === "") {
-      throw conflict("Write the pilot's goals before starting it.");
+  /** Autopilot gates only autonomous work; it needs goals to have anything to work toward. */
+  async setAutopilot(userId: string, on: boolean) {
+    if (on && (await this.readGoals(userId)).trim() === "") {
+      throw conflict("Write the pilot's goals before turning on autopilot.");
     }
-    return this.setRunning(userId, true);
-  }
-
-  stop(userId: string) {
-    return this.setRunning(userId, false);
-  }
-
-  private async setRunning(userId: string, running: boolean) {
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
-      create: { userId, running },
-      update: { running, ...TASK_LIST_SNAPSHOT_RESET },
+      create: { userId, autopilot: on },
+      update: { autopilot: on, ...TASK_LIST_SNAPSHOT_RESET },
     });
     return this.publishState(row);
   }
 
-  /** Clears run history only; instructions, searches and the running flag survive. */
+  /** Clears run history only; instructions, searches and autopilot survive. */
   async reset(userId: string) {
     const row = await this.prisma.$transaction(async (tx) => {
       await tx.pilotJournalEntry.deleteMany({ where: { userId } });
@@ -178,7 +171,7 @@ export class PilotService {
       prisma.campaignJob.aggregate({ where: { userId }, _max: { updatedAt: true } }),
       prisma.pilotState.findUnique({
         where: { userId },
-        select: { running: true, lastCycleAt: true, nextWakeAt: true },
+        select: { lastCycleAt: true, nextWakeAt: true },
       }),
     ]);
 
@@ -199,7 +192,6 @@ export class PilotService {
       ),
       // An expired run nobody has swept yet still counts as activity, but not as active.
       activeRuns: runs.filter((run) => run.expiresAt > now).length,
-      running: state?.running ?? false,
       // A stuck-recovery cycle plans no wake, and the host still needs its completedAt.
       lastCycle: lastCycleAt && {
         completedAt: lastCycleAt,

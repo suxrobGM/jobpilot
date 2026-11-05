@@ -89,7 +89,6 @@ const jobAlertsLastRunSchema = z.object({
 
 export const jobAlertsStatusSchema = z.object({
   settings: pilotJobAlertsSchema,
-  pilotRunning: z.boolean(),
   mailboxConnected: z.boolean(),
   // Unimported alert emails inside the lookback window - what a run would read right now.
   pendingEmails: z.number().int(),

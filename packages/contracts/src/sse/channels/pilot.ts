@@ -2,7 +2,9 @@ import type {
   PILOT_RUN_OUTCOMES,
   PilotChange,
   PilotJournalEntry,
+  PilotMessage,
   PilotQuestion,
+  PilotRequest,
   PilotState,
   Promotion,
   TaskType,
@@ -17,6 +19,11 @@ export type PilotEvent =
   | { type: "promotion.created"; promotion: Promotion }
   | { type: "promotion.updated"; promotion: Promotion }
   | { type: "change.updated"; change: PilotChange }
+  | { type: "message.created"; message: PilotMessage }
+  | { type: "request.created"; request: PilotRequest }
+  | { type: "request.updated"; request: PilotRequest }
+  | { type: "run.interrupt"; runId: string }
+  | { type: "run.steer"; runId: string; text: string }
   | { type: "run.started"; runId: string; taskType: TaskType }
   | { type: "run.finished"; runId: string; outcome: (typeof PILOT_RUN_OUTCOMES)[number] };
 

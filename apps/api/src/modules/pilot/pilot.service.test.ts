@@ -4,7 +4,7 @@ import { describe, expect, it } from "bun:test";
 
 const stateRow = (over: Record<string, unknown>) => ({
   userId: "p1",
-  running: false,
+  autopilot: false,
   instructionsGoals: "",
   instructionsConfig: {},
   instructionsUpdatedAt: new Date(),
@@ -93,15 +93,17 @@ describe("PilotService.getState", () => {
   });
 });
 
-describe("PilotService.start", () => {
-  it("refuses to start without goals, but always stops", async () => {
-    await expect(stateService("   ").svc.start("p1")).rejects.toMatchObject({ status: 409 });
-    expect((await stateService("").svc.stop("p1")).running).toBe(false);
+describe("PilotService.setAutopilot", () => {
+  it("refuses to turn on without goals, but always turns off", async () => {
+    await expect(stateService("   ").svc.setAutopilot("p1", true)).rejects.toMatchObject({
+      status: 409,
+    });
+    expect((await stateService("").svc.setAutopilot("p1", false)).autopilot).toBe(false);
   });
 
-  it("starts once goals are written", async () => {
-    const state = await stateService("ship senior frontend roles").svc.start("p1");
-    expect(state.running).toBe(true);
+  it("turns on once goals are written", async () => {
+    const state = await stateService("ship senior frontend roles").svc.setAutopilot("p1", true);
+    expect(state.autopilot).toBe(true);
   });
 });
 
@@ -118,9 +120,7 @@ describe("PilotService.recordIdleCycle", () => {
 describe("PilotService.getActivity", () => {
   const completedAt = new Date("2026-07-20T12:00:00Z");
 
-  function activityService(
-    state: { running: boolean; lastCycleAt: Date | null; nextWakeAt: Date | null } | null,
-  ) {
+  function activityService(state: { lastCycleAt: Date | null; nextWakeAt: Date | null } | null) {
     const noMax = { _max: { createdAt: null, updatedAt: null } };
     const db = {
       pilotRun: { findMany: async () => [] },
@@ -137,17 +137,12 @@ describe("PilotService.getActivity", () => {
     [new Date(completedAt.getTime() + 300_000), 300],
     [null, null],
   ])("reports the last cycle's planned sleep (wake %p)", async (nextWakeAt, sleepSeconds) => {
-    const svc = activityService({ running: true, lastCycleAt: completedAt, nextWakeAt });
+    const svc = activityService({ lastCycleAt: completedAt, nextWakeAt });
     expect((await svc.getActivity("p1")).lastCycle).toEqual({ completedAt, sleepSeconds });
   });
 
-  it("reads a profile with no state row as never run and stopped", async () => {
+  it("reads a profile with no state row as never run", async () => {
     const activity = await activityService(null).getActivity("p1");
-    expect(activity).toMatchObject({ lastCycle: null, running: false, lastActivityAt: null });
-    const idle = { running: true, lastCycleAt: null, nextWakeAt: null };
-    expect(await activityService(idle).getActivity("p1")).toMatchObject({
-      lastCycle: null,
-      running: true,
-    });
+    expect(activity).toMatchObject({ lastCycle: null, lastActivityAt: null });
   });
 });

@@ -8,9 +8,9 @@ import { api } from "@/api/client";
 import { upworkProposalQueries } from "@/api/queries";
 import type { CreateUpworkProposalRequest } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { useAgent } from "@/providers/agent-provider";
 import { proposalHref } from "@/utils/routes";
 
 const formSchema = z.object({
@@ -24,7 +24,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function ProposalComposer(): ReactElement {
   const router = useRouter();
-  const agent = useAgent();
+  const request = useCreateRequest();
 
   const createProposal = useApiMutation(
     (body: CreateUpworkProposalRequest) => api.upwork.proposals.post(body),
@@ -48,7 +48,10 @@ export function ProposalComposer(): ReactElement {
         status: "draft",
       });
 
-      await agent.injectSkill("upwork-proposal", String(created.id));
+      await request.mutateAsync({
+        taskType: "upwork.proposal",
+        payload: { proposalId: created.id },
+      });
       router.push(proposalHref(created.id));
     },
   });

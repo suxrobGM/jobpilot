@@ -38,7 +38,15 @@ function run(id: string, startMin: number, endMin: number) {
 }
 
 function thread(entries: PilotJournalEntry[], runs: ReturnType<typeof run>[]) {
-  return buildThread({ entries, runs, questions: [], promotions: [], changes: [] });
+  return buildThread({
+    entries,
+    runs,
+    questions: [],
+    promotions: [],
+    changes: [],
+    messages: [],
+    requests: [],
+  });
 }
 
 describe("buildThread", () => {

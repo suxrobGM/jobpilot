@@ -8,8 +8,8 @@ import { api } from "@/api/client";
 import { campaignQueries, emailQueries, networkingQueries } from "@/api/queries";
 import type { NetworkingMessageDto } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { FormDialogShell } from "@/components/ui/form";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 
 interface NetworkingMessageDialogProps {
   campaignId: string;
@@ -20,8 +20,7 @@ interface NetworkingMessageDialogProps {
 /** Owns every write against one draft, so a caller only decides which draft is open. */
 export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): ReactElement {
   const { campaignId, message, onClose } = props;
-  const agent = useAgent();
-  const agentAvailable = useAgentAvailable();
+  const rewrite = useCreateRequest();
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
@@ -88,7 +87,7 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   const canSendEmail = isEmail && canSend && !!message.contact.email && !terminal;
 
   const regenerate = (): void => {
-    void agent.injectSkill("networking", `--campaign ${campaignId} --rewrite ${message.id}`);
+    rewrite.mutate({ taskType: "networking.rewrite", payload: { messageIds: [message.id] } });
     onClose();
   };
 
@@ -113,7 +112,7 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
             <Button onClick={() => skip.mutate()} color="warning" disabled={skip.isPending}>
               Skip
             </Button>
-            {agentAvailable && <Button onClick={regenerate}>Regenerate</Button>}
+            <Button onClick={regenerate}>Regenerate</Button>
             <Button variant="outlined" onClick={() => save.mutate()} disabled={save.isPending}>
               Save
             </Button>

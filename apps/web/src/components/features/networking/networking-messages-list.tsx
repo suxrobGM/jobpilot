@@ -3,18 +3,17 @@
 import { type ReactElement, useState } from "react";
 import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { PersonSearch } from "@mui/icons-material";
-import { Box, Button, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
 import { networkingQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
-import { AgentOnlyButton } from "@/components/ui/buttons";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { PaginationFooter } from "@/components/ui/data";
 import { DataTable } from "@/components/ui/data/data-table";
 import { usePaginationParams } from "@/hooks/use-pagination";
-import { useAgent } from "@/providers/agent-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { FindContactsDialog } from "./find-contacts-dialog";
 import { networkingMessageColumns, openActionColumn } from "./networking-message-columns";
@@ -24,7 +23,7 @@ const EMPTY_MESSAGE = "No outreach yet. The pilot drafts intros as it applies.";
 
 /** Every outreach draft, one server page at a time, with bulk approve and rewrite. */
 export function NetworkingMessagesList(): ReactElement {
-  const agent = useAgent();
+  const request = useCreateRequest();
   const pagination = usePaginationParams();
   // The pilot's approval question deep-links straight to one draft.
   const [openId, setOpenId] = useState(useSearchParams().get("message"));
@@ -39,9 +38,6 @@ export function NetworkingMessagesList(): ReactElement {
       ? [{ id: m.id, campaignId: m.campaignId }]
       : [],
   );
-  const campaignIds = [...new Set(selected.map((m) => m.campaignId))];
-  // The skill rewrites within one campaign at a time.
-  const rewriteCampaign = campaignIds.length === 1 ? campaignIds[0] : null;
 
   const approveSelected = useApiMutation(
     async () => {
@@ -64,8 +60,10 @@ export function NetworkingMessagesList(): ReactElement {
   );
 
   const rewriteSelected = (): void => {
-    const ids = selected.map((m) => m.id).join(",");
-    void agent.injectSkill("networking", `--campaign ${rewriteCampaign} --rewrite ${ids}`);
+    request.mutate({
+      taskType: "networking.rewrite",
+      payload: { messageIds: selected.map((m) => m.id) },
+    });
     setSelection(EMPTY_SELECTION);
   };
 
@@ -75,20 +73,9 @@ export function NetworkingMessagesList(): ReactElement {
         {selected.length > 0 && (
           <>
             <Typography variant="body2Muted">{selected.length} selected</Typography>
-            <Tooltip
-              title={rewriteCampaign ? "" : "Pick drafts from one search to rewrite them together."}
-            >
-              <Box component="span">
-                <AgentOnlyButton
-                  size="small"
-                  variant="outlined"
-                  disabled={!rewriteCampaign}
-                  onClick={rewriteSelected}
-                >
-                  Rewrite selected
-                </AgentOnlyButton>
-              </Box>
-            </Tooltip>
+            <Button size="small" variant="outlined" onClick={rewriteSelected}>
+              Rewrite selected
+            </Button>
             <Button
               size="small"
               variant="outlined"
@@ -100,14 +87,14 @@ export function NetworkingMessagesList(): ReactElement {
           </>
         )}
         <Box sx={{ ml: "auto" }}>
-          <AgentOnlyButton
+          <Button
             size="small"
             variant="contained"
             startIcon={<PersonSearch fontSize="sm" />}
             onClick={() => setFinding(true)}
           >
             Find contacts
-          </AgentOnlyButton>
+          </Button>
         </Box>
       </Stack>
       <DataTable

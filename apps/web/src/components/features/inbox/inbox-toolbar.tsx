@@ -7,9 +7,9 @@ import { Box, Stack } from "@mui/material";
 import { api } from "@/api/client";
 import { emailQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
-import { AgentOnlyButton, TooltipButton } from "@/components/ui/buttons";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
+import { TooltipButton } from "@/components/ui/buttons";
 import { FilterToggle, type SelectFieldOption } from "@/components/ui/form";
-import { useAgent } from "@/providers/agent-provider";
 
 interface InboxToolbarProps {
   filter: ReviewStatus | null;
@@ -25,16 +25,12 @@ const FILTERS: SelectFieldOption<ReviewStatus>[] = [
 
 export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   const { filter, onFilterChange } = props;
-  const { injectSkill } = useAgent();
+  const request = useCreateRequest();
 
   const sync = useApiMutation(() => api.email.sync.post(), {
     successMessage: "Inbox synced",
     invalidate: [emailQueries.all],
   });
-
-  const handleScan = async (): Promise<void> => {
-    await injectSkill("scan-inbox");
-  };
 
   return (
     <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", alignItems: "center" }}>
@@ -48,15 +44,16 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
       >
         Sync
       </TooltipButton>
-      <AgentOnlyButton
+      <TooltipButton
+        title="Ask the pilot to classify the pending messages"
         size="small"
         variant="contained"
         startIcon={<FormatListBulleted />}
-        onClick={handleScan}
-        tooltip="Run the scan-inbox skill to classify pending messages"
+        loading={request.isPending}
+        onClick={() => request.mutate({ taskType: "inbox.review", payload: {} })}
       >
         Scan pending
-      </AgentOnlyButton>
+      </TooltipButton>
       <Box sx={{ ml: { sm: "auto" } }}>
         <FilterToggle
           label="Review status"

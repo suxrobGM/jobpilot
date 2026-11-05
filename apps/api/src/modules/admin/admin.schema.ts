@@ -17,7 +17,7 @@ export const adminUserPageSchema = paginatedSchema(adminUserSchema);
 const adminPilotSchema = z.object({
   userEmail: z.string(),
   userId: z.uuid(),
-  running: z.boolean(),
+  autopilot: z.boolean(),
   lastCycleAt: z.date().nullable(),
   cycleCount: z.number().int(),
   openQuestions: z.number().int(),

@@ -4,9 +4,10 @@ import type { TerminalHealth } from "@/hooks/use-terminal-health";
 import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 
-/** `unknown` is a running pilot with no host to ask: mobile, or the first probe still in flight. */
+/** `unknown` is a pilot with no host to ask: mobile, or the first probe still in flight. */
 export type PilotMode =
   | "off"
+  | "held"
   | "offline"
   | "working"
   | "starting"
@@ -23,7 +24,14 @@ interface PilotModeLook {
 }
 
 export const PILOT_MODE_LOOK: Record<PilotMode, PilotModeLook> = {
-  off: { tone: "muted", label: "Off", pulsing: false, dimmed: true },
+  // Off means autopilot off: what the user asks for still runs.
+  off: { tone: "muted", label: "Autopilot off", pulsing: false, dimmed: false },
+  held: {
+    tone: "amber",
+    label: "Waiting while you use the terminal",
+    pulsing: false,
+    dimmed: false,
+  },
   offline: { tone: "amber", label: "Agent offline", pulsing: false, dimmed: true },
   working: { tone: "violet", label: "Working", pulsing: true, dimmed: false },
   starting: { tone: "blue", label: "Starting up", pulsing: true, dimmed: false },
@@ -40,27 +48,37 @@ function isHostOffline(health: TerminalHealth | null): boolean {
   return health === "offline" || health === "uninstalled" || health === "blocked";
 }
 
+/** The user typed into the terminal recently, so the host holds new runs. */
+function isHeld(pilot: PilotHealth | null): boolean {
+  const heldUntil = pilot?.heldUntil;
+  return heldUntil != null && new Date(heldUntil).getTime() > Date.now();
+}
+
+/** The host runs whenever paired; autopilot only decides whether it picks work on its own. */
 export function pilotMode(
-  state: Pick<PilotState, "running" | "cycleCount">,
+  state: Pick<PilotState, "autopilot" | "cycleCount">,
   health: TerminalHealth | null,
   pilot: PilotHealth | null,
 ): PilotMode {
-  if (!state.running) {
-    return "off";
-  }
   if (isHostOffline(health)) {
     return "offline";
   }
   if (pilot?.conducting) {
     return "working";
   }
+  if (health === "reachable" && !pilot?.paired) {
+    return "unpaired";
+  }
+  if (isHeld(pilot)) {
+    return "held";
+  }
+  if (!state.autopilot) {
+    return "off";
+  }
   if (state.cycleCount === 0) {
     return "starting";
   }
-  if (pilot?.paired) {
-    return "idle";
-  }
-  return health === "reachable" ? "unpaired" : "unknown";
+  return pilot?.paired ? "idle" : "unknown";
 }
 
 /** What an idle pilot last found and when it looks again, e.g. "Checked 4m ago, nothing to do · wakes in 11m". */

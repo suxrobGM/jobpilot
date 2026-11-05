@@ -30,6 +30,12 @@ const CAP_EXEMPT_BOOST = 10;
 export interface TaskListInput {
   now: Date;
   config: PilotInstructionsConfig;
+  // Off: only what the user asked for runs.
+  autopilot: boolean;
+  requests: PilotTask[];
+  chat: PilotTask | null;
+  // A Run now on job alerts is the user asking, so it runs with autopilot off too.
+  jobAlertsRequested: boolean;
   // Rotates discovery across the configured boards.
   cycleCount: number;
   openQuestions: number;
@@ -79,7 +85,7 @@ export function isPipelineQuiet(work: PipelineWork): boolean {
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-function applyTask(job: TaskJob, preferCapExempt: boolean): PilotTask {
+export function applyTask(job: TaskJob, preferCapExempt: boolean): PilotTask {
   const payload = {
     campaignId: job.campaignId,
     jobKey: job.key,
@@ -108,9 +114,48 @@ function warmIntroPayload(job: TaskJob, mode: NetworkingMode): TaskPayload<"netw
   };
 }
 
+/** The user's own asks: they run with autopilot off. */
+function userDrivenTasks(input: TaskListInput, newJobsTarget: number): PilotTask[] {
+  const tasks = [
+    ...input.requests,
+    ...makeTasks("question.answered", input.answeredQuestions),
+    ...makeTasks("promotion.post", input.approvedPromotions),
+  ];
+  if (input.chat) tasks.push(input.chat);
+  if (input.jobAlerts && input.jobAlertsRequested) {
+    tasks.push(makeTask("inbox.jobAlerts", input.jobAlerts));
+  }
+  if (input.research?.trigger === "requested") {
+    tasks.push(makeTask("research.explore", { ...input.research, newJobsTarget }));
+  }
+  return tasks;
+}
+
+/** Highest priority wins when a request and the pilot's own pick name the same task. */
+function dedupeById(tasks: PilotTask[]): PilotTask[] {
+  const best = new Map<string, PilotTask>();
+  for (const task of tasks) {
+    const current = best.get(task.id);
+    if (!current || task.priority > current.priority) best.set(task.id, task);
+  }
+  return [...best.values()];
+}
+
 /** Ranks already-gathered work into the task list. Pure, so every gating rule is unit-testable. */
 export function buildTaskList(input: TaskListInput): TaskListContent {
-  const { now, config } = input;
+  const { config } = input;
+  const { appliesLeft } = allowedToday(config, input);
+  const capReached = appliesLeft === 0;
+  const newJobsTarget = clamp(appliesLeft, NEW_JOBS_TARGET_MIN, NEW_JOBS_TARGET_MAX);
+  const tasks = input.autopilot
+    ? [...input.requests, ...(input.chat ? [input.chat] : []), ...autonomousTasks(input)]
+    : userDrivenTasks(input, newJobsTarget);
+  return finishTaskList(input, dedupeById(tasks), capReached);
+}
+
+/** Everything the pilot picks on its own; runs only with autopilot on. */
+function autonomousTasks(input: TaskListInput): PilotTask[] {
+  const { config } = input;
   const { emailAutonomy, outreach, appliesLeft, sendsLeft } = allowedToday(config, input);
   const capReached = appliesLeft === 0;
 
@@ -182,7 +227,15 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
       ...makeTasks("job.retryFailed", input.retryFailed),
     );
   }
+  return tasks;
+}
 
+function finishTaskList(
+  input: TaskListInput,
+  tasks: PilotTask[],
+  capReached: boolean,
+): TaskListContent {
+  const { now, config } = input;
   const ranked = tasks
     .sort((a, b) => b.priority - a.priority)
     .slice(0, MAX_TASKS)
@@ -222,7 +275,7 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
       networkingSentToday: input.networkingSentToday,
       resetsAt: nextDayReset(now),
     },
-    emptyReason: emptyReason(ranked.length, capReached, input.awaitingSetup),
+    emptyReason: emptyReason(ranked.length, capReached, input.awaitingSetup, input.autopilot),
     sleepSeconds,
     nextWakeAt: new Date(now.getTime() + sleepSeconds * 1000),
   };
@@ -233,8 +286,10 @@ function emptyReason(
   taskCount: number,
   capReached: boolean,
   awaitingSetup: boolean,
+  autopilot: boolean,
 ): TaskListContent["emptyReason"] {
   if (taskCount > 0) return null;
+  if (!autopilot) return "autopilotOff";
   if (capReached) return "capReached";
   if (awaitingSetup) return "awaitingSetup";
   return "clear";

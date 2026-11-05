@@ -47,6 +47,14 @@ const TASK_TYPES: Record<TaskType, TaskTypeInfo> = {
   "search.setup": { label: "Set up goals and saved searches", agent: "session" },
   "research.explore": { label: "Research jobs", agent: "job-researcher" },
   "upwork.syncInbox": { label: "Refresh the Upwork inbox", agent: "session" },
+  "chat.reply": { label: "Reply to you", agent: "session" },
+  "resume.extract": { label: "Read a resume", agent: "session" },
+  "resume.tailor": { label: "Tailor a resume", agent: "session" },
+  "networking.find": { label: "Find contacts", agent: "networking-worker" },
+  "networking.rewrite": { label: "Rewrite outreach drafts", agent: "session" },
+  "upwork.profile": { label: "Work on the Upwork profile", agent: "session" },
+  "upwork.proposal": { label: "Write an Upwork proposal", agent: "session" },
+  "upwork.submit": { label: "Submit an Upwork proposal", agent: "session" },
 };
 
 /** Cost history still holds types the task list no longer emits, so unknown ones fall back. */

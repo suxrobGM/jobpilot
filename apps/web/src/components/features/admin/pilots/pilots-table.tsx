@@ -13,8 +13,8 @@ const COLUMNS: SimpleColumn<AdminPilotDto>[] = [
     header: "Status",
     render: (pilot) => (
       <Chip
-        color={pilot.running ? "success" : "default"}
-        label={pilot.running ? "Running" : "Stopped"}
+        color={pilot.autopilot ? "success" : "default"}
+        label={pilot.autopilot ? "Autopilot" : "Manual"}
       />
     ),
   },

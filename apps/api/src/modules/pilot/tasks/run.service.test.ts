@@ -84,8 +84,8 @@ function runDb({ currentVersion = VERSION, openRun = null, campaignStillPaused =
     pilotState: {
       updateManyAndReturn: async (a: { where: { taskListVersion: string } }) =>
         a.where.taskListVersion === currentVersion ? [{ taskListSnapshot: snapshot }] : [],
-      findUnique: async () => ({ running: true }),
     },
+    pilotRequest: { updateManyAndReturn: async () => [] },
     pilotRun: {
       findFirst: async () => openRun,
       create: async (a: { data: Record<string, unknown> }) => {
@@ -132,6 +132,7 @@ const runRow = (over: Record<string, unknown> = {}) => {
 /** A fake for the close path: one owned row, updated in place. */
 function closeDb(row: ReturnType<typeof runRow>) {
   const jobReverts: unknown[] = [];
+  const requestWrites: { where: unknown; data: unknown }[] = [];
   const db = {
     pilotRun: {
       findFirst: async () => row,
@@ -144,9 +145,15 @@ function closeDb(row: ReturnType<typeof runRow>) {
       },
     },
     pilotJournalEntry: { createMany: async () => ({ count: 1 }) },
+    pilotRequest: {
+      updateManyAndReturn: async (a: { where: unknown; data: unknown }) => {
+        requestWrites.push(a);
+        return [];
+      },
+    },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
-  return { db, jobReverts };
+  return { db, jobReverts, requestWrites };
 }
 
 /** Runs `act` and returns its result with the pilot event it published. */
@@ -284,5 +291,28 @@ describe("RunService.postResult", () => {
     const { run, appended } = await post(USER_ID, now);
     expect(run.finishedAt).toEqual(now);
     expect(appended).toHaveLength(0);
+  });
+});
+
+describe("a request follows the run that picked it up", () => {
+  it.each([
+    ["done", "done"],
+    ["failed", "failed"],
+  ] as const)("a %s result marks it %s", async (outcome, status) => {
+    const { db, requestWrites } = closeDb(runRow());
+    const { journal } = fakeJournal();
+    await makeRunService(db, journal).postResult(USER_ID, RUN_ID, { outcome, summary: "x" });
+    expect(requestWrites).toEqual([
+      {
+        where: { runId: { in: [RUN_ID] }, status: "running" },
+        data: expect.objectContaining({ status }),
+      },
+    ]);
+  });
+
+  it("a cancelled run cancels it", async () => {
+    const { db, requestWrites } = closeDb(runRow());
+    await makeRunService(db).cancel(USER_ID, RUN_ID);
+    expect(requestWrites[0]?.data).toMatchObject({ status: "cancelled" });
   });
 });

@@ -1,6 +1,7 @@
 import {
   pilotStateSchema,
   recordIdleCycleSchema,
+  setAutopilotSchema,
   updatePilotSettingsSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
@@ -39,21 +40,14 @@ export const pilotController = new Elysia({
         "Patches boards, check interval, networking and promotion. Goals and rules change through /pilot/changes; job alerts through their own route.",
     },
   })
-  .post("/start", ({ user }) => pilot.start(user.id), {
+  .put("/autopilot", ({ user, body }) => pilot.setAutopilot(user.id, body.on), {
+    body: setAutopilotSchema,
     beforeHandle: limitMutation,
     response: pilotStateSchema,
     detail: {
-      summary: "Start the pilot",
+      summary: "Turn autopilot on or off",
       description:
-        "Starts the autonomous loop and returns the updated state. Rejects with 409 when the pilot's goals are empty.",
-    },
-  })
-  .post("/stop", ({ user }) => pilot.stop(user.id), {
-    beforeHandle: limitMutation,
-    response: pilotStateSchema,
-    detail: {
-      summary: "Stop the pilot",
-      description: "Stops the autonomous loop and returns the updated state.",
+        "With autopilot off, the pilot runs only what the user asks for: requests, chat and answered questions. Turning it on rejects with 409 when the goals are empty.",
     },
   })
   .delete("/runs", ({ user }) => pilot.reset(user.id), {
@@ -62,7 +56,7 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Reset the pilot's run history",
       description:
-        "Deletes the journal, zeroes the cycle count and drops the cached task list. Instructions, searches and the running flag stay.",
+        "Deletes the journal, zeroes the cycle count and drops the cached task list. Instructions, searches and autopilot stay.",
     },
   })
   .post("/idle-checks", ({ user, body }) => pilot.recordIdleCycle(user.id, body), {

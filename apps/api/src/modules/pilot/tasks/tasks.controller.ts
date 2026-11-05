@@ -4,6 +4,7 @@ import {
   pilotRunSchema,
   reportPilotUsageSchema,
   startPilotRunSchema,
+  steerPilotRunSchema,
   taskListSchema,
 } from "@jobpilot/contracts/pilot";
 import { idParam } from "@jobpilot/contracts/shared";
@@ -11,6 +12,7 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
+import { okResponseSchema } from "@/types/response";
 import { RunService } from "./run.service";
 import { TaskListService } from "./task-list.service";
 
@@ -73,6 +75,27 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
       summary: "Cancel a run",
       description:
         "Closes an open run as cancelled and returns an applying job to approved. A finished run is returned unchanged.",
+    },
+  })
+  .post("/runs/:id/interrupt", ({ user, params }) => runs.interrupt(user.id, params.id), {
+    params: idParam,
+    beforeHandle: limitRun,
+    response: okResponseSchema,
+    detail: {
+      summary: "Interrupt a run",
+      description:
+        "Asks the host working the run to stop it. Rejects with 409 once the run is finished.",
+    },
+  })
+  .post("/runs/:id/steer", ({ user, params, body }) => runs.steer(user.id, params.id, body.text), {
+    params: idParam,
+    body: steerPilotRunSchema,
+    beforeHandle: limitRun,
+    response: okResponseSchema,
+    detail: {
+      summary: "Tell the running task something",
+      description:
+        "Asks the host to type one line into the session working the run, without stopping it.",
     },
   })
   .post("/runs/:id/result", ({ user, params, body }) => runs.postResult(user.id, params.id, body), {

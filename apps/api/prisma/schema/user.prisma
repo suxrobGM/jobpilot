@@ -54,6 +54,8 @@ model User {
   pilotRuns            PilotRun[]
   pilotQuestions       PilotQuestion[]
   pilotChanges         PilotChange[]
+  pilotMessages        PilotMessage[]
+  pilotRequests        PilotRequest[]
   pilotJournal         PilotJournalEntry[]
   profileAnswers       ProfileAnswer[]
   webPushSubscriptions WebPushSubscription[]

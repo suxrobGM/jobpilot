@@ -7,6 +7,10 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { jobSubjectId } from "./run-history";
 
+const CHAT_PRIORITY = 1100;
+/** Above answered questions (1000): the user asked for this by name. */
+export const REQUEST_PRIORITY = 1050;
+
 interface TaskDef<K extends TaskType> {
   /** Higher runs first; `job.apply` adds its matchScore, so a perfect match reaches 900. */
   priority: number;
@@ -19,6 +23,56 @@ interface TaskDef<K extends TaskType> {
 
 /** One entry per task type: a new type fails typecheck until it has its priority and subject. */
 export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
+  // The user is waiting on a reply, so chat outranks everything.
+  "chat.reply": {
+    priority: CHAT_PRIORITY,
+    subjectType: "chat",
+    subjectId: (p) => p.messageId,
+    title: () => "Reply to your message",
+  },
+  "resume.extract": {
+    priority: REQUEST_PRIORITY,
+    subjectType: "resume",
+    subjectId: (p) => p.resumeId,
+    title: () => "Read your resume",
+  },
+  "resume.tailor": {
+    priority: REQUEST_PRIORITY,
+    subjectType: "request",
+    subjectId: (p) => p.requestId,
+    title: () => "Tailor a resume to a job",
+  },
+  "networking.find": {
+    priority: REQUEST_PRIORITY,
+    subjectType: "request",
+    subjectId: (p) => p.requestId,
+    title: (p) => `Find contacts: ${p.criteria}`,
+  },
+  "networking.rewrite": {
+    priority: REQUEST_PRIORITY,
+    subjectType: "request",
+    subjectId: (p) => p.requestId,
+    title: (p) => `Rewrite ${p.messageIds.length} outreach draft(s)`,
+  },
+  "upwork.profile": {
+    priority: REQUEST_PRIORITY,
+    subjectType: "upwork",
+    subjectId: () => "profile",
+    title: (p) =>
+      p.mode === "apply" ? "Improve your Upwork profile" : "Review your Upwork profile",
+  },
+  "upwork.proposal": {
+    priority: REQUEST_PRIORITY,
+    subjectType: "upwork",
+    subjectId: (p) => p.proposalId,
+    title: () => "Write an Upwork proposal",
+  },
+  "upwork.submit": {
+    priority: REQUEST_PRIORITY,
+    subjectType: "upwork",
+    subjectId: (p) => p.proposalId,
+    title: () => "Submit an Upwork proposal",
+  },
   "question.answered": {
     priority: 1000,
     subjectType: "question",

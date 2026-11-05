@@ -8,8 +8,8 @@ import { api } from "@/api/client";
 import { upworkProfileQueries } from "@/api/queries";
 import type { UpworkProfileDto } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { LabelValue } from "@/components/ui/display";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { PortfolioList } from "./portfolio-list";
 
 interface ProfileReviewProps {
@@ -19,8 +19,7 @@ interface ProfileReviewProps {
 /** The parent keys this on `updatedAt`, so a remount reseeds the local drafts. */
 export function ProfileReview(props: ProfileReviewProps): ReactElement {
   const { profile } = props;
-  const agent = useAgent();
-  const agentAvailable = useAgentAvailable();
+  const request = useCreateRequest();
 
   const [title, setTitle] = useState(profile.suggestedTitle ?? "");
   const [hourlyRate, setHourlyRate] = useState(profile.suggestedHourlyRate ?? "");
@@ -112,11 +111,13 @@ export function ProfileReview(props: ProfileReviewProps): ReactElement {
               Approve
             </Button>
           )}
-          {isApproved && agentAvailable && (
+          {isApproved && (
             <Button
               variant="contained"
               startIcon={<CloudUpload fontSize="sm" />}
-              onClick={() => void agent.injectSkill("upwork-profile", "apply")}
+              onClick={() =>
+                request.mutate({ taskType: "upwork.profile", payload: { mode: "apply" } })
+              }
             >
               Apply to Upwork
             </Button>

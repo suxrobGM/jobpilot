@@ -5,6 +5,7 @@ import { PROMOTABLE_SOURCES, publishCampaignStatus } from "@/modules/campaign/ca
 import { parseJobRef, revertApplyingJobs } from "@/modules/campaign/jobs/apply-guard";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { PilotJournalService } from "../journal.service";
+import { finishRequests } from "../requests/request-row";
 import { SERVER_SKIP_REASONS } from "../skip-reasons";
 import { GATHER_CAP, parseJobSubject } from "./run-history";
 
@@ -28,10 +29,12 @@ async function expireRuns(tx: Prisma.TransactionClient, userId: string, now: Dat
     select: { id: true, taskType: true, payload: true },
   });
   if (expiredRuns.length > 0) {
+    const runIds = expiredRuns.map((run) => run.id);
     await tx.pilotRun.updateMany({
-      where: { id: { in: expiredRuns.map((run) => run.id) }, finishedAt: null },
+      where: { id: { in: runIds }, finishedAt: null },
       data: { finishedAt: now, outcome: "expired" },
     });
+    await finishRequests(tx, runIds, "expired", now);
     const jobs = expiredRuns
       .filter((run) => run.taskType === "job.apply")
       .map((run) => parseJobRef(run.payload));

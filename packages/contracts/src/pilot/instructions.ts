@@ -52,7 +52,8 @@ export const updatePilotSettingsSchema = pilotInstructionsConfigSchema
 
 export const pilotStateSchema = z.object({
   userId: z.uuid(),
-  running: z.boolean(),
+  // Autonomous work runs only while on; requests, chat and answered questions always run.
+  autopilot: z.boolean(),
   instructionsGoals: z.string(),
   instructionsConfig: pilotInstructionsConfigSchema,
   instructionsUpdatedAt: z.date().nullable(),
@@ -71,6 +72,8 @@ export const pilotStateSchema = z.object({
 });
 
 export type PilotInstructionsConfig = z.infer<typeof pilotInstructionsConfigSchema>;
+export const setAutopilotSchema = z.object({ on: z.boolean() });
+
 export type UpdatePilotSettingsInput = z.infer<typeof updatePilotSettingsSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;
 

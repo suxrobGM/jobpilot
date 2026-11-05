@@ -27,11 +27,10 @@ export class JobAlertsService {
   private async loadState(userId: string) {
     const row = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { instructionsConfig: true, running: true, jobAlertsRequestedAt: true },
+      select: { instructionsConfig: true, jobAlertsRequestedAt: true },
     });
     return {
       config: pilotInstructionsConfigSchema.parse(row?.instructionsConfig ?? {}),
-      running: row?.running ?? false,
       requestedAt: row?.jobAlertsRequestedAt ?? null,
     };
   }
@@ -69,7 +68,6 @@ export class JobAlertsService {
     const { requestedAt } = state;
     return {
       settings,
-      pilotRunning: state.running,
       mailboxConnected: account !== null,
       pendingEmails,
       nextRunAt: settings.enabled ? nextDailyRun(settings.runHours, settings.timeZone, now) : null,

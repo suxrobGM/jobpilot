@@ -153,8 +153,8 @@ function makeTaskListDb(over: Over = {}) {
   let txChain: Promise<unknown> = Promise.resolve();
   const db = {
     pilotState: {
-      findUnique: async () => ({
-        running: true,
+      upsert: async () => ({
+        autopilot: true,
         cycleCount: 0,
         instructionsConfig: config,
         instructionsGoals: over.instructionsGoals ?? "",
@@ -163,6 +163,8 @@ function makeTaskListDb(over: Over = {}) {
       }),
       update: async () => ({}),
     },
+    pilotRequest: { findMany: async () => [] },
+    pilotMessage: { findFirst: async () => null },
     pilotSearch: {
       findMany: async () => over.pilotSearches ?? [],
       count: async () => (over.pilotSearches ?? []).length,

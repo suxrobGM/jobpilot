@@ -48,6 +48,9 @@ export function PilotLive(): ReactNode {
       "question.answered": () => invalidate([pilotQueries.questionsAll]),
       "promotion.created": () => invalidate([pilotQueries.promotionsAll]),
       "promotion.updated": () => invalidate([pilotQueries.promotionsAll]),
+      "message.created": () => refetchThread(queryClient),
+      "request.created": () => refetchThread(queryClient),
+      "request.updated": () => refetchThread(queryClient),
       // A change can touch searches, answers and jobs as well as the state.
       "change.updated": () =>
         invalidate([

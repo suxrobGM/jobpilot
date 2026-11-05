@@ -25,7 +25,7 @@ export function DiagnosticsView(): ReactElement {
   return (
     <Stack spacing={3}>
       <OrchestrationPanel state={state} />
-      <TaskListPreview running={state.running} />
+      <TaskListPreview />
       <CycleCost />
       <JournalFeed />
     </Stack>

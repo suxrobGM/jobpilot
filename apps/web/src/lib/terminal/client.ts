@@ -16,9 +16,12 @@ interface TerminalProviderInfo {
 
 /** Autonomous pilot-mode health from the host's /healthz. Additive; absent on older hosts. */
 export interface PilotHealth {
-  running: boolean;
   paired: boolean;
+  /** The account the host is paired to; a different one means it needs pairing again. */
+  userId?: string | null;
   conducting: boolean;
+  /** Set while the user's typing in the terminal holds new runs back. */
+  heldUntil?: string | null;
   lastCycleAt?: string | null;
   lastCycleStatus?: PilotCycleStatus | null;
   consecutiveTimeouts: number;
@@ -106,21 +109,16 @@ export function startSession(options: StartOptions): Promise<SessionStatus> {
   return send<SessionStatus>("POST", "/sessions/start", options);
 }
 
-/** No trailing newline: the host submits with a separate Enter keystroke. */
-export function injectCommand(command: string, provider?: TerminalProviderId): Promise<void> {
-  return send<void>("POST", "/sessions/inject", { command, provider });
-}
-
 export function killSession(): Promise<SessionStatus> {
   return send<SessionStatus>("DELETE", "/sessions/current");
 }
 
-/** Stops the session and the pilot loop, then exits the host app entirely (pairing/pilot run state survives for the next launch). */
+/** Stops the session and the pilot loop, then exits the host app entirely (the pairing survives for the next launch). */
 export function shutdownHost(): Promise<void> {
   return send<void>("POST", "/shutdown");
 }
 
-interface PilotStartOptions {
+interface PilotPairOptions {
   provider: TerminalProviderId;
   /** Per-user agent PAT the pilot loop authenticates with. */
   apiToken: string;
@@ -128,16 +126,18 @@ interface PilotStartOptions {
   apiUrl: string;
   /** Web origin injected as JOBPILOT_WEB for user-facing links. */
   webUrl: string;
+  /** The signed-in account, so a host paired to someone else gets re-paired. */
+  userId: string;
 }
 
-/** Store the provider pairing and start the local pilot loop. */
-export function pilotStart(options: PilotStartOptions): Promise<SessionStatus> {
-  return send<SessionStatus>("POST", "/pilot/start", options);
+/** Pairs the host with this account; its loop runs whenever it is paired. */
+export function pilotPair(options: PilotPairOptions): Promise<SessionStatus> {
+  return send<SessionStatus>("POST", "/pilot/pair", options);
 }
 
-/** Stop the local pilot loop; the host keeps the pairing and any mid-cycle session. */
-export function pilotStop(): Promise<SessionStatus> {
-  return send<SessionStatus>("POST", "/pilot/stop");
+/** Ends the hold the user's typing put on new pilot runs. */
+export function pilotHandback(): Promise<SessionStatus> {
+  return send<SessionStatus>("POST", "/pilot/handback");
 }
 
 /** Ask the running host to self-update and relaunch; on `updating: true` poll health to see it return on the new version. */

@@ -10,7 +10,12 @@ function expiryDb(options: {
   openApplyRuns?: Record<string, unknown>[];
   expiredQuestions?: Record<string, unknown>[];
 }) {
-  const writes = { jobs: [] as Write[], runs: [] as Write[], questions: [] as Write[] };
+  const writes = {
+    jobs: [] as Write[],
+    runs: [] as Write[],
+    questions: [] as Write[],
+    requests: [] as Write[],
+  };
   let transactions = 0;
   const db = {
     pilotRun: {
@@ -20,6 +25,12 @@ function expiryDb(options: {
       updateMany: async (a: Write) => {
         writes.runs.push(a);
         return { count: 1 };
+      },
+    },
+    pilotRequest: {
+      updateManyAndReturn: async (a: Write) => {
+        writes.requests.push(a);
+        return [];
       },
     },
     pilotQuestion: {
@@ -55,6 +66,8 @@ describe("runExpiry", () => {
     await db.run();
     expect(db.transactions()).toBe(1);
     expect(db.writes.runs[0]).toMatchObject({ data: { outcome: "expired" } });
+    // The agent never finished, so whatever it was asked for failed.
+    expect(db.writes.requests[0]).toMatchObject({ data: { status: "failed" } });
     expect(db.writes.jobs[0]).toMatchObject({
       where: { status: "applying", OR: [{ campaignId: "c1", key: "j1" }] },
       data: { status: "approved" },

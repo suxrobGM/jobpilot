@@ -1,53 +1,67 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Button, Paper, Stack, Typography } from "@mui/material";
-import { AgentOnlyButton } from "@/components/ui/buttons";
+import { api } from "@/api/client";
+import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipButton } from "@/components/ui/buttons";
 import { PulseDot } from "@/components/ui/feedback";
-import { useAgentAvailable, useAgentDrawer } from "@/providers/agent-provider";
+import { pilotHandback } from "@/lib/terminal/client";
+import { useAgentDrawer } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime } from "@/utils/format";
 import { hasGoals, idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../pilot-status";
+import { useAutopilot } from "../use-autopilot";
 import { useNextWake } from "../use-next-wake";
-import { usePilotControls } from "../use-pilot-controls";
 import { usePilotStatus } from "../use-pilot-status";
+import { SteerDialog } from "./steer-dialog";
 
 function headline(mode: PilotMode, state: PilotState, caption: string): string {
   const run = state.currentRun;
-  if (mode === "working" && run) {
+  if (run) {
     return `${run.title} · ${formatRelativeTime(run.startedAt)}`;
   }
   if (mode === "off") {
-    return hasGoals(state) ? "Paused" : "Write your goals to start";
+    return "Autopilot off · runs only what you ask for";
   }
-  return caption ? `${PILOT_MODE_LOOK[mode].label} · ${caption}` : PILOT_MODE_LOOK[mode].label;
+  const { label } = PILOT_MODE_LOOK[mode];
+  return caption && mode === "idle" ? `${label} · ${caption}` : label;
 }
 
 interface StatusLineProps {
   state: PilotState;
 }
 
-/** Is it working, on what, and how far into today's cap; plus Watch and Pause/Resume. */
+/** Is it working, on what, and how far into today's cap; plus Watch, Interrupt and autopilot. */
 export function StatusLine(props: StatusLineProps): ReactElement {
   const { state } = props;
   const confirm = useConfirm();
-  const controls = usePilotControls();
-  const agentDrawer = useAgentDrawer();
-  const agentAvailable = useAgentAvailable();
-  const { health, pilot, mode } = usePilotStatus(state, controls.isLoading);
+  const autopilot = useAutopilot();
+  const { openDrawer } = useAgentDrawer();
+  const [steering, setSteering] = useState(false);
+  const { pilot, mode } = usePilotStatus(state);
   const nextWakeAt = useNextWake(state);
   const look = PILOT_MODE_LOOK[mode];
-  const cap = state.instructionsConfig.dailyApplyCap;
+  const run = state.currentRun;
+
+  const interrupt = useApiMutation(
+    (runId: string) => api.pilot.runs({ id: runId }).interrupt.post(),
+    { successMessage: "Asked the pilot to stop this task." },
+  );
+  const handBack = useApiMutation(async () => ({ data: await pilotHandback(), error: null }), {
+    successMessage: "Handed the terminal back to the pilot.",
+  });
 
   const pause = async (): Promise<void> => {
     const ok = await confirm({
-      title: "Pause the pilot?",
-      description: "No applying, networking, or posting until you resume it.",
+      title: "Pause autopilot?",
+      description:
+        "The pilot stops picking work on its own. Anything you ask for in chat or with a button still runs.",
       confirmLabel: "Pause",
     });
     if (ok) {
-      await controls.stop();
+      autopilot.mutate(false);
     }
   };
 
@@ -59,42 +73,61 @@ export function StatusLine(props: StatusLineProps): ReactElement {
         sx={{ alignItems: { xs: "stretch", sm: "center" } }}
       >
         <Stack direction="row" spacing={1.5} sx={{ flex: 1, minWidth: 0, alignItems: "center" }}>
-          <PulseDot tone={look.tone} pulsing={look.pulsing} size="md" />
+          <PulseDot tone={look.tone} pulsing={look.pulsing || run !== null} size="md" />
           <Typography variant="body1Strong" noWrap sx={{ minWidth: 0 }}>
             {headline(mode, state, idleCaption(pilot, nextWakeAt))}
           </Typography>
           <Typography variant="body2Muted" sx={{ whiteSpace: "nowrap" }}>
-            {`${state.appliedToday}/${cap} today`}
+            {`${state.appliedToday}/${state.instructionsConfig.dailyApplyCap} today`}
           </Typography>
         </Stack>
-        <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
-          {agentAvailable && (
-            <Button size="small" onClick={agentDrawer.openDrawer}>
-              {mode === "offline" ? "Start agent" : "Watch"}
+        <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
+          <Button size="small" onClick={openDrawer}>
+            {mode === "offline" ? "Start agent" : "Watch"}
+          </Button>
+          {mode === "held" && (
+            <Button size="small" loading={handBack.isPending} onClick={() => handBack.mutate()}>
+              Hand back
             </Button>
           )}
-          {state.running ? (
+          {run && (
+            <>
+              <Button size="small" onClick={() => setSteering(true)}>
+                Tell this task
+              </Button>
+              <Button
+                size="small"
+                color="error"
+                loading={interrupt.isPending}
+                onClick={() => interrupt.mutate(run.id)}
+              >
+                Interrupt
+              </Button>
+            </>
+          )}
+          {state.autopilot ? (
             <Button
               size="small"
               variant="outlined"
-              disabled={controls.isLoading}
+              disabled={autopilot.isPending}
               onClick={() => void pause()}
             >
               Pause
             </Button>
           ) : (
-            <AgentOnlyButton
+            <TooltipButton
+              title={hasGoals(state) ? "" : "Write your goals before turning on autopilot."}
               size="small"
               variant="contained"
-              tooltip={hasGoals(state) ? "" : "Write the pilot's goals before starting it."}
-              disabled={controls.isLoading || health !== "reachable" || !hasGoals(state)}
-              onClick={() => void controls.start()}
+              disabled={autopilot.isPending || !hasGoals(state)}
+              onClick={() => autopilot.mutate(true)}
             >
               Resume
-            </AgentOnlyButton>
+            </TooltipButton>
           )}
         </Stack>
       </Stack>
+      {run && <SteerDialog runId={run.id} open={steering} onClose={() => setSteering(false)} />}
     </Paper>
   );
 }

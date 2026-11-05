@@ -2,8 +2,10 @@ import { z } from "zod/v4";
 import { cursorPageSchema, cursorQuerySchema } from "../pagination";
 import { pilotChangeSchema } from "./change";
 import { pilotJournalEntrySchema } from "./journal";
+import { pilotMessageSchema } from "./message";
 import { promotionSchema } from "./promotion";
 import { pilotQuestionSchema } from "./question";
+import { pilotRequestSchema } from "./request";
 import { PILOT_RUN_OUTCOMES } from "./run";
 import { pilotSubjectTypeSchema } from "./tasks";
 
@@ -51,6 +53,18 @@ const pilotThreadItemSchema = z.discriminatedUnion("type", [
     id: z.string(),
     at: z.date(),
     change: pilotChangeSchema,
+  }),
+  z.object({
+    type: z.literal("message"),
+    id: z.string(),
+    at: z.date(),
+    message: pilotMessageSchema,
+  }),
+  z.object({
+    type: z.literal("request"),
+    id: z.string(),
+    at: z.date(),
+    request: pilotRequestSchema,
   }),
   z.object({
     type: z.literal("note"),

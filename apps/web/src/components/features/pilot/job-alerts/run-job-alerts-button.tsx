@@ -16,9 +16,6 @@ function runDisabledReason(status: JobAlertsStatus): string | null {
   if (!status.mailboxConnected) {
     return "Connect Gmail in Settings → Email so there is mail to read.";
   }
-  if (!status.pilotRunning) {
-    return "Start the pilot - it is what does the importing.";
-  }
   return null;
 }
 

@@ -33,6 +33,15 @@ function TaskListEmpty(props: TaskListEmptyProps): ReactElement {
       />
     );
   }
+  if (reason === "autopilotOff") {
+    return (
+      <EmptyState
+        variant="inline"
+        title="Autopilot is off."
+        description="The pilot only runs what you ask for until you turn it back on."
+      />
+    );
+  }
   if (reason === "awaitingSetup") {
     return (
       <EmptyState
@@ -51,13 +60,8 @@ function TaskListEmpty(props: TaskListEmptyProps): ReactElement {
   return <EmptyState variant="inline" title="No tasks right now." />;
 }
 
-interface TaskListPreviewProps {
-  running: boolean;
-}
-
-export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
-  const { running } = props;
-  const query = useTaskList(running);
+export function TaskListPreview(): ReactElement {
+  const query = useTaskList();
   const refresh = useApiMutation(() => api.pilot.tasks.refresh.post(), {
     invalidate: [pilotQueries.taskList().queryKey],
   });
@@ -71,76 +75,58 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
       title="Up next"
       description="What the pilot plans to work on next cycle."
       actions={
-        running && (
-          <TooltipIconButton
-            title="Refresh task list"
-            disabled={query.isFetching || refresh.isPending}
-            onClick={() => refresh.mutate()}
-          >
-            <Refresh fontSize="sm" />
-          </TooltipIconButton>
-        )
+        <TooltipIconButton
+          title="Refresh task list"
+          disabled={query.isFetching || refresh.isPending}
+          onClick={() => refresh.mutate()}
+        >
+          <Refresh fontSize="sm" />
+        </TooltipIconButton>
       }
     >
-      {!running && (
-        <EmptyState
-          variant="inline"
-          title="The pilot is off."
-          description="Start it and it plans its next tasks here."
-        />
-      )}
-      {running && (
-        <QuerySection
-          query={query}
-          errorTitle="Couldn't load the task list."
-          isEmpty={!taskList}
-          empty={
-            <EmptyState
-              variant="inline"
-              title="No current task list."
-              description="Refresh to build the pilot's next task list."
-            />
-          }
-        >
-          {taskList && (
-            <Stack spacing={2}>
-              {visible.length === 0 ? (
-                <TaskListEmpty reason={taskList.emptyReason} budget={taskList.budget} />
-              ) : (
-                <Stack spacing={1.5} divider={<Divider />}>
-                  {visible.map((task, index) => (
-                    <Stack
-                      key={task.id}
-                      direction="row"
-                      spacing={1.5}
-                      sx={{ alignItems: "center" }}
-                    >
-                      <Typography variant="overlineMuted" sx={{ width: 16, flexShrink: 0 }}>
-                        {index + 1}
+      <QuerySection
+        query={query}
+        errorTitle="Couldn't load the task list."
+        isEmpty={!taskList}
+        empty={
+          <EmptyState
+            variant="inline"
+            title="No current task list."
+            description="Refresh to build the pilot's next task list."
+          />
+        }
+      >
+        {taskList && (
+          <Stack spacing={2}>
+            {visible.length === 0 ? (
+              <TaskListEmpty reason={taskList.emptyReason} budget={taskList.budget} />
+            ) : (
+              <Stack spacing={1.5} divider={<Divider />}>
+                {visible.map((task, index) => (
+                  <Stack key={task.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                    <Typography variant="overlineMuted" sx={{ width: 16, flexShrink: 0 }}>
+                      {index + 1}
+                    </Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="captionMuted">{taskTypeLabel(task.taskType)}</Typography>
+                      <Typography variant="body2" noWrap>
+                        {task.title}
                       </Typography>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="captionMuted">
-                          {taskTypeLabel(task.taskType)}
-                        </Typography>
-                        <Typography variant="body2" noWrap>
-                          {task.title}
-                        </Typography>
-                      </Box>
-                      <Chip variant="outlined" label={task.subjectType} />
-                    </Stack>
-                  ))}
-                </Stack>
-              )}
-              {taskList.tasks.length > PREVIEW_COUNT && (
-                <Typography variant="captionMuted">
-                  +{taskList.tasks.length - PREVIEW_COUNT} more
-                </Typography>
-              )}
-              <RelativeTime prefix="Built" value={taskList.builtAt} />
-            </Stack>
-          )}
-        </QuerySection>
-      )}
+                    </Box>
+                    <Chip variant="outlined" label={task.subjectType} />
+                  </Stack>
+                ))}
+              </Stack>
+            )}
+            {taskList.tasks.length > PREVIEW_COUNT && (
+              <Typography variant="captionMuted">
+                +{taskList.tasks.length - PREVIEW_COUNT} more
+              </Typography>
+            )}
+            <RelativeTime prefix="Built" value={taskList.builtAt} />
+          </Stack>
+        )}
+      </QuerySection>
     </SectionCard>
   );
 }

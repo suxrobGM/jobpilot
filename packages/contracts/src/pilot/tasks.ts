@@ -18,6 +18,10 @@ export const PILOT_SUBJECT_TYPES = [
   "board",
   "pilot",
   "upwork",
+  "chat",
+  "resume",
+  // Work with no record of its own, keyed by the request that asked for it.
+  "request",
 ] as const;
 export const pilotSubjectTypeSchema = z.enum(PILOT_SUBJECT_TYPES);
 
@@ -257,7 +261,12 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
   taskVariant(
     "job.rescanSkipped",
     "campaign",
-    z.object({ campaignId: z.uuid(), skippedCount: z.number().int() }),
+    z.object({
+      campaignId: z.uuid(),
+      skippedCount: z.number().int(),
+      // Set when the user picked jobs; otherwise every skipped job of the campaign.
+      jobKeys: z.array(z.string()).optional(),
+    }),
   ),
   taskVariant(
     "job.retryFailed",
@@ -287,6 +296,30 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       trigger: z.enum(["requested", "initial", "dry", "periodic"]),
     }),
   ),
+  taskVariant("chat.reply", "chat", z.object({ messageId: z.uuid() })),
+  taskVariant("resume.extract", "resume", z.object({ resumeId: z.uuid(), force: z.boolean() })),
+  taskVariant(
+    "resume.tailor",
+    "request",
+    z.object({
+      requestId: z.uuid(),
+      jobDescription: z.string(),
+      baseResumeId: z.uuid().optional(),
+    }),
+  ),
+  taskVariant(
+    "networking.find",
+    "request",
+    z.object({ requestId: z.uuid(), criteria: z.string() }),
+  ),
+  taskVariant(
+    "networking.rewrite",
+    "request",
+    z.object({ requestId: z.uuid(), messageIds: z.array(z.uuid()) }),
+  ),
+  taskVariant("upwork.profile", "upwork", z.object({ mode: z.enum(["review", "apply"]) })),
+  taskVariant("upwork.proposal", "upwork", z.object({ proposalId: z.uuid() })),
+  taskVariant("upwork.submit", "upwork", z.object({ proposalId: z.uuid() })),
 ]);
 
 type TaskFields = z.infer<typeof taskFieldsSchema>;
@@ -319,7 +352,7 @@ const taskListContentSchema = z.object({
     networkingSentToday: z.number().int(),
     resetsAt: storedDate,
   }),
-  emptyReason: z.enum(["capReached", "awaitingSetup", "clear"]).nullable(),
+  emptyReason: z.enum(["capReached", "awaitingSetup", "autopilotOff", "clear"]).nullable(),
   sleepSeconds: z.number(),
   nextWakeAt: storedDate,
 });

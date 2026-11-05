@@ -20,6 +20,9 @@ export const pilotRunResultSchema = z.object({
   detail: journalDetailSchema.optional(),
 });
 
+/** Typed into the running session as one line. */
+export const steerPilotRunSchema = z.object({ text: z.string().trim().min(1).max(1000) });
+
 export const reportPilotUsageSchema = z.object({
   model: z.string().min(1),
   inputTokens: z.number().int().min(0),

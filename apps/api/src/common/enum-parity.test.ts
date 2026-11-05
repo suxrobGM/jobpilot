@@ -27,8 +27,10 @@ import {
 } from "@jobpilot/contracts/networking";
 import { PILOT_CHANGE_SOURCES, PILOT_CHANGE_STATUSES } from "@jobpilot/contracts/pilot/change";
 import { PILOT_JOURNAL_KINDS } from "@jobpilot/contracts/pilot/journal";
+import { PILOT_MESSAGE_AUTHORS } from "@jobpilot/contracts/pilot/message";
 import { PROMOTION_STATUSES } from "@jobpilot/contracts/pilot/promotion";
 import { PILOT_QUESTION_KINDS, PILOT_QUESTION_STATUSES } from "@jobpilot/contracts/pilot/question";
+import { PILOT_REQUEST_SOURCES, PILOT_REQUEST_STATUSES } from "@jobpilot/contracts/pilot/request";
 import { PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot/run";
 import { PILOT_SUBJECT_TYPES } from "@jobpilot/contracts/pilot/tasks";
 import { ROLES } from "@jobpilot/contracts/role";
@@ -82,6 +84,9 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   PilotQuestionStatus: PILOT_QUESTION_STATUSES,
   PilotChangeSource: PILOT_CHANGE_SOURCES,
   PilotChangeStatus: PILOT_CHANGE_STATUSES,
+  PilotMessageAuthor: PILOT_MESSAGE_AUTHORS,
+  PilotRequestStatus: PILOT_REQUEST_STATUSES,
+  PilotRequestSource: PILOT_REQUEST_SOURCES,
   PilotRunOutcome: PILOT_RUN_OUTCOMES,
   PilotSubjectType: PILOT_SUBJECT_TYPES,
   PromotionStatus: PROMOTION_STATUSES,

@@ -7,7 +7,9 @@ import { QuestionCard } from "../../attention/question-card";
 import { ChangeCard } from "../../changes/change-card";
 import { AskedRow } from "./asked-row";
 import { DigestCard } from "./digest-card";
+import { MessageBubble } from "./message-bubble";
 import { NoteRow } from "./note-row";
+import { RequestRow } from "./request-row";
 import { WorkCard } from "./work-card";
 
 interface ThreadItemProps {
@@ -31,6 +33,10 @@ export function ThreadItem(props: ThreadItemProps): ReactElement {
       ) : (
         <PromotionSummary promotion={item.promotion} />
       );
+    case "message":
+      return <MessageBubble message={item.message} />;
+    case "request":
+      return <RequestRow request={item.request} />;
     case "change":
       return <ChangeCard change={item.change} />;
     case "digest":

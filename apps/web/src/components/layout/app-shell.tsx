@@ -3,6 +3,7 @@
 import type { PropsWithChildren, ReactElement } from "react";
 import { Box } from "@mui/material";
 import { AgentDrawer } from "@/components/features/agent/agent-drawer";
+import { PilotPairing } from "@/components/features/agent/pilot-pairing";
 import { VerifyEmailBanner } from "@/components/features/auth";
 import { PilotLive } from "@/components/features/pilot/pilot-live";
 import { PipelineLive } from "@/components/features/pipeline";
@@ -37,6 +38,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
         <VerifyEmailBanner />
         <PilotLive />
         <PipelineLive />
+        <PilotPairing />
         {children}
       </Box>
       <AgentDrawer />

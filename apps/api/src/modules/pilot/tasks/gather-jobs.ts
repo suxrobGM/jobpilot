@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/campaign";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
-import type { CapExemptBasis, PrismaClient } from "@/generated/prisma/client";
+import type { CapExemptBasis, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { applyableJobWhere } from "@/modules/campaign/jobs/apply-guard";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "./run-history";
@@ -38,31 +38,54 @@ export interface TaskJob {
   warmContacts?: WarmContact[];
 }
 
+const TASK_JOB_SELECT = {
+  campaignId: true,
+  key: true,
+  title: true,
+  url: true,
+  board: { select: { domain: true } },
+  brief: true,
+  matchScore: true,
+  company: true,
+  capExemptBasis: true,
+  campaign: { select: { config: true } },
+} satisfies Prisma.CampaignJobSelect;
+
+type TaskJobRow = Prisma.CampaignJobGetPayload<{ select: typeof TASK_JOB_SELECT }>;
+
+function toTaskJob(row: TaskJobRow): TaskJob {
+  const { campaign, board, ...job } = row;
+  return {
+    ...job,
+    board: board?.domain ?? null,
+    brief: storedBriefSchema.parse(job.brief),
+    resumeId: campaignConfigSchema.parse(campaign.config).resumeId,
+  };
+}
+
 /** Approved jobs of in-progress campaigns, best match first. */
 export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): Promise<TaskJob[]> {
   const rows = await prisma.campaignJob.findMany({
     where: applyableJobWhere(userId),
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
-    select: {
-      campaignId: true,
-      key: true,
-      title: true,
-      url: true,
-      board: { select: { domain: true } },
-      brief: true,
-      matchScore: true,
-      company: true,
-      capExemptBasis: true,
-      campaign: { select: { config: true } },
-    },
+    select: TASK_JOB_SELECT,
   });
-  return rows.map(({ campaign, board, ...job }) => ({
-    ...job,
-    board: board?.domain ?? null,
-    brief: storedBriefSchema.parse(job.brief),
-    resumeId: campaignConfigSchema.parse(campaign.config).resumeId,
-  }));
+  return rows.map(toTaskJob);
+}
+
+/** One approved job the user asked to apply to, whatever its campaign's state. */
+export async function findApprovedJob(
+  prisma: PrismaClient,
+  userId: string,
+  campaignId: string,
+  key: string,
+): Promise<TaskJob | null> {
+  const row = await prisma.campaignJob.findFirst({
+    where: { userId, campaignId, key, status: "approved" },
+    select: TASK_JOB_SELECT,
+  });
+  return row && toTaskJob(row);
 }
 
 /**

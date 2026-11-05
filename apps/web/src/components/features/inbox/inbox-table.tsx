@@ -4,10 +4,10 @@ import type { ReactElement } from "react";
 import { Button, Chip, Link, Stack, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { DataTable } from "@/components/ui/data/data-table";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 import type { GridPaginationProps } from "@/hooks/use-pagination";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 
 interface InboxTableProps extends GridPaginationProps {
   rows: ReadonlyArray<EmailMessageDto>;
@@ -20,8 +20,7 @@ interface InboxTableProps extends GridPaginationProps {
 
 export function InboxTable(props: InboxTableProps): ReactElement {
   const { rows, loading, errorTitle, onRetry, onRowClick, ...pagination } = props;
-  const { injectSkill } = useAgent();
-  const agentAvailable = useAgentAvailable();
+  const request = useCreateRequest();
 
   const columns: GridColDef<EmailMessageDto>[] = [
     {
@@ -112,32 +111,33 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       width: 140,
       renderCell: (p) => <RelativeTime value={p.row.receivedAt} />,
     },
-    ...(agentAvailable
-      ? [
-          {
-            field: "scan",
-            headerName: "",
-            width: 100,
-            sortable: false,
-            filterable: false,
-            align: "right",
-            headerAlign: "right",
-            renderCell: (p) => (
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={(e) => {
-                  // The row click would open the review dialog.
-                  e.stopPropagation();
-                  void injectSkill("scan-inbox", p.row.id);
-                }}
-              >
-                {p.row.classification ? "Rescan" : "Scan"}
-              </Button>
-            ),
-          } satisfies GridColDef<EmailMessageDto>,
-        ]
-      : []),
+    ...[
+      {
+        field: "scan",
+        headerName: "",
+        width: 100,
+        sortable: false,
+        filterable: false,
+        align: "right",
+        headerAlign: "right",
+        renderCell: (p) => (
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={(e) => {
+              // The row click would open the review dialog.
+              e.stopPropagation();
+              request.mutate({
+                taskType: "inbox.review",
+                payload: { messageIds: [p.row.id] },
+              });
+            }}
+          >
+            {p.row.classification ? "Rescan" : "Scan"}
+          </Button>
+        ),
+      } satisfies GridColDef<EmailMessageDto>,
+    ],
   ];
 
   return (

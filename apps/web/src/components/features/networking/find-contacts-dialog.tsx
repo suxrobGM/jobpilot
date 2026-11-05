@@ -2,10 +2,8 @@
 
 import { type ReactElement, useState } from "react";
 import { Button, TextField } from "@mui/material";
-import { api } from "@/api/client";
-import { useApiMutation } from "@/api/use-api-mutation";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { FormDialogShell } from "@/components/ui/form";
-import { useAgent } from "@/providers/agent-provider";
 
 interface FindContactsDialogProps {
   open: boolean;
@@ -15,14 +13,9 @@ interface FindContactsDialogProps {
 /** Outreach that belongs to no job runs on the standing networking campaign. */
 export function FindContactsDialog(props: FindContactsDialogProps): ReactElement {
   const { open, onClose } = props;
-  const agent = useAgent();
   const [criteria, setCriteria] = useState("");
-
-  const find = useApiMutation(() => api.networking.campaign.post(), {
-    onSuccess: ({ id }) => {
-      // The skill reads the criteria as one quoted argument.
-      const quoted = criteria.trim().replaceAll('"', "'");
-      void agent.injectSkill("networking", `"${quoted}" --campaign ${id}`);
+  const find = useCreateRequest({
+    onSuccess: () => {
       setCriteria("");
       onClose();
     },
@@ -34,7 +27,9 @@ export function FindContactsDialog(props: FindContactsDialogProps): ReactElement
       title="Find contacts"
       maxWidth="sm"
       onClose={onClose}
-      onSubmit={() => find.mutate()}
+      onSubmit={() =>
+        find.mutate({ taskType: "networking.find", payload: { criteria: criteria.trim() } })
+      }
       submit={
         <Button
           type="submit"

@@ -7,11 +7,11 @@ import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/materia
 import { api } from "@/api/client";
 import { invalidations } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { useResumeExtraction } from "@/components/features/resumes/use-resume-extraction";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/toast-provider";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
@@ -25,8 +25,7 @@ export const ResumeUploadStep = withForm({
   props: { onContinue: () => {} },
   render: function ResumeUploadStep({ form, onContinue }) {
     const toast = useToast();
-    const agent = useAgent();
-    const agentAvailable = useAgentAvailable();
+    const request = useCreateRequest();
     const [state, setState] = useState<StepState>("idle");
     const [resumeId, setResumeId] = useState<string | null>(null);
     const [slow, setSlow] = useState(false);
@@ -34,7 +33,10 @@ export const ResumeUploadStep = withForm({
     const startExtraction = async (id: string): Promise<void> => {
       setState("extracting");
       setSlow(false);
-      await agent.injectSkill("extract-resume", id);
+      await request.mutateAsync({
+        taskType: "resume.extract",
+        payload: { resumeId: id, force: false },
+      });
     };
 
     const upload = useApiMutation((file: File) => api.resumes.upload.post({ file }), {
@@ -43,13 +45,7 @@ export const ResumeUploadStep = withForm({
       onSuccess: ({ id }) => {
         setResumeId(id);
         form.setFieldValue("primaryResumeId", id);
-        // Auto-fill needs the local agent; on mobile just keep the upload and move on.
-        if (agentAvailable) {
-          void startExtraction(id);
-        } else {
-          toast.info("Uploaded. Open JobPilot on your desktop to auto-fill your profile from it.");
-          onContinue();
-        }
+        void startExtraction(id);
       },
     });
 

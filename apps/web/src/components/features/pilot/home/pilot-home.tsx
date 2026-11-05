@@ -6,6 +6,7 @@ import { Box, Button, Divider, Drawer, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
+import { Composer } from "./composer";
 import { NeedsYou } from "./side/needs-you";
 import { RulesSummary } from "./side/rules-summary";
 import { SearchesSummary } from "./side/searches-summary";
@@ -67,6 +68,7 @@ export function PilotHome(): ReactElement {
           Needs you, searches and rules
         </Button>
         <Thread header={<GetStartedCard state={state} />} />
+        <Composer state={state} />
       </Stack>
       <Box
         sx={{ display: { xs: "none", md: "block" }, width: 300, flexShrink: 0, overflowY: "auto" }}

@@ -27,8 +27,6 @@ export const pilotCostSchema = z.object({
 export const pilotActivityResponseSchema = z.object({
   lastActivityAt: z.date().nullable(),
   activeRuns: z.number().int(),
-  // The host's pre-inject gate reads this, so a probe costs no PilotState write.
-  running: z.boolean(),
   // The last cycle's planned sleep, so a restarted host waits out the break.
   lastCycle: z
     .object({

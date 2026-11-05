@@ -12,7 +12,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { useTerminalHealth } from "@/hooks/use-terminal-health";
 import { useAgentAvailable, useAgentDrawer } from "@/providers/agent-provider";
 import { hasGoals } from "../../pilot-status";
-import { usePilotControls } from "../../use-pilot-controls";
+import { useAutopilot } from "../../use-autopilot";
 
 interface Step {
   key: string;
@@ -39,7 +39,7 @@ export function GetStartedCard(props: GetStartedCardProps): ReactNode {
   const { status } = useTerminalHealth();
   const agentDrawer = useAgentDrawer();
   const agentAvailable = useAgentAvailable();
-  const controls = usePilotControls();
+  const autopilot = useAutopilot();
   const profile = useQuery(userQueries.detail()).data;
   const mailbox = useQuery(emailQueries.account()).data;
   const resumes = useQuery(resumeQueries.list()).data;
@@ -88,7 +88,7 @@ export function GetStartedCard(props: GetStartedCardProps): ReactNode {
     {
       key: "agent",
       label: "Run the JobPilot agent on your computer. The pilot works through it.",
-      done: paired || state.cycleCount > 0,
+      done: paired,
       action: agentAvailable ? (
         <Button size="small" variant="outlined" onClick={agentDrawer.openDrawer}>
           Open agent
@@ -99,16 +99,16 @@ export function GetStartedCard(props: GetStartedCardProps): ReactNode {
     },
     {
       key: "autopilot",
-      label: "Turn the pilot on. It finds, scores and applies to jobs on its own.",
-      done: state.running,
+      label: "Turn on autopilot. The pilot finds, scores and applies to jobs on its own.",
+      done: state.autopilot,
       action: (
         <Button
           size="small"
           variant="contained"
-          disabled={controls.isLoading || !hasGoals(state)}
-          onClick={() => void controls.start()}
+          disabled={autopilot.isPending || !hasGoals(state)}
+          onClick={() => autopilot.mutate(true)}
         >
-          Start
+          Turn on
         </Button>
       ),
     },

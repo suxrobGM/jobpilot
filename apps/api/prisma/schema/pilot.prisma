@@ -34,6 +34,31 @@ enum PilotChangeStatus {
   @@map("pilot_change_status")
 }
 
+enum PilotMessageAuthor {
+  user
+  pilot
+
+  @@map("pilot_message_author")
+}
+
+enum PilotRequestStatus {
+  pending
+  running
+  done
+  failed
+  cancelled
+
+  @@map("pilot_request_status")
+}
+
+enum PilotRequestSource {
+  web
+  chat
+  notice
+
+  @@map("pilot_request_source")
+}
+
 enum PilotQuestionStatus {
   open
   answered
@@ -68,6 +93,9 @@ enum PilotSubjectType {
   board
   pilot
   upwork
+  chat
+  resume
+  request
 
   @@map("pilot_subject_type")
 }
@@ -87,7 +115,8 @@ enum PromotionStatus {
 model PilotState {
   userId                String    @id @map("user_id") @db.Uuid
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  running               Boolean   @default(false)
+  // Autonomous work runs only while on; requests, chat and answered questions always run.
+  autopilot             Boolean   @default(false)
   instructionsGoals     String    @default("") @map("instructions_goals")
   instructionsConfig    Json      @default("{}") @map("instructions_config")
   instructionsUpdatedAt DateTime? @map("instructions_updated_at") @db.Timestamptz(3)
@@ -161,6 +190,8 @@ model PilotRun {
 
   journalEntries PilotJournalEntry[]
   changes        PilotChange[]
+  messages       PilotMessage[]
+  requests       PilotRequest[]
 
   @@index([userId, subjectType, subjectId])
   @@index([finishedAt])
@@ -252,4 +283,45 @@ model PilotChange {
   @@index([userId, createdAt])
   @@index([runId])
   @@map("pilot_changes")
+}
+
+/** The conversation with the pilot: the user's messages and its replies. */
+model PilotMessage {
+  id        String             @id @default(uuid(7)) @db.Uuid
+  userId    String             @map("user_id") @db.Uuid
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  author    PilotMessageAuthor
+  body      String
+  // The chat.reply run that wrote a pilot message.
+  runId     String?            @map("run_id") @db.Uuid
+  run       PilotRun?          @relation(fields: [runId], references: [id], onDelete: SetNull)
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+  @@index([runId])
+  @@map("pilot_messages")
+}
+
+/** Work the user asked for by name; it follows the run that picks it up. */
+model PilotRequest {
+  id          String             @id @default(uuid(7)) @db.Uuid
+  userId      String             @map("user_id") @db.Uuid
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskType    String             @map("task_type")
+  // The request's input, expanded into a task payload when the task list is built.
+  payload     Json               @default("{}")
+  // The task's subject, so the run that starts on it can be matched back.
+  subjectType PilotSubjectType   @map("subject_type")
+  subjectId   String             @map("subject_id")
+  status      PilotRequestStatus @default(pending)
+  source      PilotRequestSource
+  runId       String?            @map("run_id") @db.Uuid
+  run         PilotRun?          @relation(fields: [runId], references: [id], onDelete: SetNull)
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  finishedAt  DateTime?          @map("finished_at") @db.Timestamptz(3)
+
+  @@index([userId, status, createdAt])
+  @@index([userId, createdAt])
+  @@index([runId])
+  @@map("pilot_requests")
 }
