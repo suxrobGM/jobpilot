@@ -8,7 +8,6 @@ function candidate(title: string, company: string) {
       url: "https://hiringcafe.com/job/prior",
       title,
       company,
-      appliedAt: new Date("2026-08-05T12:00:00Z"),
     },
   ];
 }

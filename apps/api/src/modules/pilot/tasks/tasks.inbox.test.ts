@@ -150,4 +150,13 @@ describe("TaskListService job-alert import", () => {
     }).refresh("p1");
     expect(hasTaskType(taskList, "inbox.jobAlerts")).toBe(false);
   });
+
+  it("offers nothing while the alerts campaign is paused", async () => {
+    const taskList = await service({
+      instructionsConfig: { jobAlerts: { enabled: true, runHours: [0] } },
+      pausedFeeds: ["job_alerts"],
+      jobAlertEmails: emails,
+    }).refresh("p1");
+    expect(hasTaskType(taskList, "inbox.jobAlerts")).toBe(false);
+  });
 });

@@ -41,7 +41,8 @@ export interface Over {
   approvedJobs?: Row[];
   recentAppliedJobs?: Row[];
   contacts?: Row[];
-  dueSearchCampaigns?: { id: string; pilotSearchId: string }[];
+  pausedFeeds?: string[];
+  dueSearchCampaigns?: { id: string; pilotSearchId: string; status: string }[];
   scorePendingCampaigns?: Row[];
   scoredPendingJobs?: Row[];
   pausedCampaigns?: Row[];
@@ -116,16 +117,17 @@ function fakeCampaignJob(over: Over) {
 
 function fakeCampaign(over: Over, rec: Recorder) {
   return {
-    // Each gather is told apart by a field only it sets. Finalize also filters `jobs`, so its `OR`
-    // check has to come before score-pending's.
+    // Routed by a field only that read sets; finalize also sets `pilotSearchId`, so it goes first.
     findMany: async (a: { where: { status?: string; source?: string } }) => {
       if (a.where.status === "paused") return over.pausedCampaigns ?? [];
-      if ("pilotSearchId" in a.where) return over.dueSearchCampaigns ?? [];
       if ("OR" in a.where) return over.finalizeCampaigns ?? [];
+      if ("pilotSearchId" in a.where) return over.dueSearchCampaigns ?? [];
       if (a.where.source === "apply") return over.queuedCampaigns ?? [];
       if ("jobs" in a.where) return over.scorePendingCampaigns ?? [];
       return over.quietCampaigns ?? [];
     },
+    count: async (a: { where: { feed?: string } }) =>
+      (over.pausedFeeds ?? []).filter((feed) => feed === a.where.feed).length,
     updateManyAndReturn: async (a: { where: Row; data: Row }) => {
       rec.campaignUpdates.push(a);
       return over.finalizeCampaigns ?? [];

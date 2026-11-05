@@ -8,6 +8,7 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { isFeedPaused } from "../feeds";
 import { GATHER_CAP, latestRun, ranRecently, withoutConsumingRuns } from "./run-history";
 
 const INBOX_BATCH = 10;
@@ -236,6 +237,7 @@ export async function gatherJobAlerts(
 
   const lastRun = await latestRun(prisma, userId, "inbox.jobAlerts");
   if (!jobAlertsDue(settings, lastRun, requestedAt, now)) return null;
+  if (await isFeedPaused(prisma, userId, "job_alerts")) return null;
 
   const where = pendingJobAlertsWhere(userId, settings, now);
   const [rows, count] = await Promise.all([

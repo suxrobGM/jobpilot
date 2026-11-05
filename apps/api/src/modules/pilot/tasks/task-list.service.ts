@@ -7,7 +7,7 @@ import {
 import { inject, injectable } from "@needle-di/core";
 import { conflict } from "@/common/errors";
 import { toInputJson } from "@/common/json";
-import { PrismaClient } from "@/generated/prisma/client";
+import { type CampaignFeed, PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { WebPushService } from "@/modules/web-push/web-push.service";
@@ -68,6 +68,14 @@ const NO_REVIEWS: Pick<Gathered, "campaignTunes" | "rescanSkipped" | "retryFaile
   retryFailed: [],
 };
 
+/** Feeds whose standing campaign stays open while idle. */
+function liveFeeds(config: PilotInstructionsConfig, goals: string): CampaignFeed[] {
+  const feeds: CampaignFeed[] = [];
+  if (config.jobAlerts.enabled) feeds.push("job_alerts");
+  if (goals !== "") feeds.push("research");
+  return feeds;
+}
+
 /** `Promise.all` over named promises, so a long parallel read can't misalign its results. */
 async function allNamed<T extends Record<string, unknown>>(
   named: T,
@@ -119,13 +127,14 @@ export class TaskListService {
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
     await runExpiry(this.prisma, userId, now);
     await promoteScoredPendingJobs(this.prisma, this.campaignJobs, userId, config.minScore);
-    await finalizeIdleCampaigns(this.prisma, this.journal, userId, now);
+    const goals = state.instructionsGoals.trim();
+    await finalizeIdleCampaigns(this.prisma, this.journal, userId, now, liveFeeds(config, goals));
 
     const gathered = await this.gather(
       userId,
       {
         config,
-        goals: state.instructionsGoals.trim(),
+        goals,
         jobAlertsRequestedAt: state.jobAlertsRequestedAt,
       },
       now,

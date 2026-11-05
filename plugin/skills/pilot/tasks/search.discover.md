@@ -2,8 +2,8 @@
 
 Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`.
 
-1. **Campaign.** Use `campaignId` when set; never open a second campaign for one search. Otherwise
-   create one and read `.id` as `CID` (`pilotSearchId` is how later runs find it):
+1. **Campaign.** Use `campaignId` when set. Otherwise this returns the search's open campaign, or
+   creates it; read `.id` as `CID`:
 
    ```bash
    jobpilot-api POST /api/campaigns \

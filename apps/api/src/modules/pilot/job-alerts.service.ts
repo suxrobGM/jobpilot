@@ -9,6 +9,7 @@ import { toInputJson } from "@/common/json";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
+import { resumePausedFeed } from "./feeds";
 import { PilotService } from "./pilot.service";
 import { hasPendingRunNow, pendingJobAlertsWhere } from "./tasks/gather-inbox";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
@@ -118,6 +119,7 @@ export class JobAlertsService {
       return { queued: false, pendingEmails };
     }
 
+    await resumePausedFeed(this.prisma, userId, "job_alerts");
     await this.prisma.pilotState.upsert({
       where: { userId },
       create: { userId, jobAlertsRequestedAt: now },

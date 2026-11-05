@@ -7,6 +7,7 @@ import {
 import { AUTH_TOKEN_KINDS, OAUTH_PROVIDERS } from "@jobpilot/contracts/auth";
 import {
   ACTORS,
+  CAMPAIGN_FEEDS,
   CAMPAIGN_JOB_STATUSES,
   CAMPAIGN_SOURCES,
   CAMPAIGN_STATUSES,
@@ -57,6 +58,7 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   AuthTokenKind: AUTH_TOKEN_KINDS,
   Availability: AVAILABILITY,
   Actor: ACTORS,
+  CampaignFeed: CAMPAIGN_FEEDS,
   CampaignJobStatus: CAMPAIGN_JOB_STATUSES,
   CampaignSource: CAMPAIGN_SOURCES,
   CampaignStatus: CAMPAIGN_STATUSES,

@@ -1,6 +1,6 @@
 import { CAMPAIGN_JOB_ACTIVE_STATUSES, campaignConfigSchema } from "@jobpilot/contracts/campaign";
 import { DAY_MS } from "@/common/date/buckets";
-import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { CampaignFeed, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { PROMOTABLE_SOURCES, publishCampaignStatus } from "@/modules/campaign/campaign.utils";
 import { parseJobRef, revertApplyingJobs } from "@/modules/campaign/jobs/apply-guard";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
@@ -168,17 +168,21 @@ export async function promoteScoredPendingJobs(
   }
 }
 
-/** Server-side because a bare status flip needs no agent, and as a task it starved forever. */
+/** Server-side because as a task it starved forever. Standing campaigns of live feeds stay open. */
 export async function finalizeIdleCampaigns(
   prisma: PrismaClient,
   journal: PilotJournalService,
   userId: string,
   now: Date,
+  liveFeeds: CampaignFeed[],
 ): Promise<void> {
   const idle = await prisma.campaign.findMany({
     where: {
       userId,
       status: "in_progress",
+      pilotSearchId: null,
+      // Not `NOT { feed: { in } }`: that is NULL in SQL for feedless rows.
+      AND: [{ OR: [{ feed: null }, { feed: { notIn: liveFeeds } }] }],
       jobs: { none: { updatedAt: { gt: new Date(now.getTime() - FINALIZE_IDLE_MS) } } },
       OR: [
         {

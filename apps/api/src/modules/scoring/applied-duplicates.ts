@@ -192,7 +192,6 @@ export interface FuzzyMatchCandidate {
   url: string;
   title: string;
   company: string;
-  appliedAt: Date | string;
 }
 
 export interface FuzzyMatchResult {

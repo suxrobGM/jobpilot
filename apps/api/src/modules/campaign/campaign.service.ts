@@ -10,7 +10,7 @@ import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
-import { conflict, findOwned, unprocessable } from "@/common/errors";
+import { conflict, findOwned, isPrismaError, PRISMA_ERRORS, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { normalizeJobUrl } from "@/common/utils/url";
@@ -36,6 +36,17 @@ const STATUS_TRANSITIONS: Record<CampaignStatus, readonly CampaignStatus[]> = {
 const CAMPAIGN_INCLUDE = { board: { select: BOARD_REF_SELECT } } satisfies Prisma.CampaignInclude;
 
 type CampaignRow = Prisma.CampaignGetPayload<{ include: typeof CAMPAIGN_INCLUDE }>;
+
+/** Where a pilot feed's or search's open campaign is, or null for a plain campaign. */
+function standingWhere(
+  userId: string,
+  body: CreateCampaignInput,
+): Prisma.CampaignWhereInput | null {
+  const open = { userId, status: { in: ["in_progress", "paused"] as CampaignStatus[] } };
+  if (body.feed) return { ...open, feed: body.feed };
+  if (body.pilotSearchId) return { ...open, pilotSearchId: body.pilotSearchId };
+  return null;
+}
 
 function toRow(campaign: WithSummary<CampaignRow>) {
   return { ...campaign, config: campaignConfigSchema.parse(campaign.config) };
@@ -69,6 +80,15 @@ export class CampaignService {
   }
 
   async create(userId: string, body: CreateCampaignInput) {
+    const standing = standingWhere(userId, body);
+    if (standing) {
+      const open = await this.prisma.campaign.findFirst({
+        where: standing,
+        include: CAMPAIGN_INCLUDE,
+      });
+      if (open) return this.reuseStanding(open, body);
+    }
+
     const data: Prisma.CampaignUncheckedCreateInput = {
       userId,
       query: body.query,
@@ -77,14 +97,38 @@ export class CampaignService {
       config: toInputJson(body.config ?? {}),
       createdBy: body.createdBy,
       pilotSearchId: body.pilotSearchId ?? null,
+      feed: body.feed ?? null,
     };
     if (body.urls) {
       return this.createWithQueuedJobs(data, body.urls);
     }
 
-    const campaign = await this.prisma.campaign.create({ data, include: CAMPAIGN_INCLUDE });
-    // A just-created campaign provably has no jobs or messages; skip the aggregate round trip.
-    return toRow({ ...campaign, summary: emptySummary(campaign.source) });
+    try {
+      const campaign = await this.prisma.campaign.create({ data, include: CAMPAIGN_INCLUDE });
+      // A just-created campaign provably has no jobs or messages; skip the aggregate round trip.
+      return toRow({ ...campaign, summary: emptySummary(campaign.source) });
+    } catch (error) {
+      // A concurrent create won the partial unique index.
+      if (!standing || !isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) throw error;
+      const winner = await this.prisma.campaign.findFirstOrThrow({
+        where: standing,
+        include: CAMPAIGN_INCLUDE,
+      });
+      return this.reuseStanding(winner, body);
+    }
+  }
+
+  /** Only the resume follows the caller: `campaign.tune` owns `minScore`. */
+  private async reuseStanding(open: CampaignRow, body: CreateCampaignInput) {
+    const config = campaignConfigSchema.parse(open.config);
+    const resumeId = body.config?.resumeId;
+    if (!resumeId || resumeId === config.resumeId) return this.withSummary(open);
+    const updated = await this.prisma.campaign.update({
+      where: { id: open.id },
+      data: { config: toInputJson({ ...config, resumeId }) },
+      include: CAMPAIGN_INCLUDE,
+    });
+    return this.withSummary(updated);
   }
 
   /** Seeds pasted links as `queued` jobs with the campaign, so a half-written batch can't strand them. */

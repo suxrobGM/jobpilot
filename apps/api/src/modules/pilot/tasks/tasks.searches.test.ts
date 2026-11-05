@@ -71,18 +71,20 @@ describe("TaskListService search.discover", () => {
     expect(discoverOf(unreported)).toBeUndefined();
   });
 
-  it("reuses the newest campaign the search spawned, whatever its query is now", async () => {
+  it("reuses the search's open campaign, whatever its query is now", async () => {
     const taskList = await service({
       pilotSearches: [dueRow({ id: "s1", query: "senior react" })],
-      dueSearchCampaigns: [
-        { id: "c-old", pilotSearchId: "s1" },
-        { id: "c-new", pilotSearchId: "s1" },
-      ],
+      dueSearchCampaigns: [{ id: "c-open", pilotSearchId: "s1", status: "in_progress" }],
     }).refresh("p1");
-    expect(discoverOf(taskList)?.payload).toMatchObject({ campaignId: "c-new" });
+    expect(discoverOf(taskList)?.payload).toMatchObject({ campaignId: "c-open" });
+  });
 
-    const fresh = await service({ pilotSearches: [dueRow()] }).refresh("p1");
-    expect(discoverOf(fresh)?.payload).toMatchObject({ campaignId: undefined });
+  it("holds a search back while its campaign is paused", async () => {
+    const taskList = await service({
+      pilotSearches: [dueRow({ id: "s1" })],
+      dueSearchCampaigns: [{ id: "c-open", pilotSearchId: "s1", status: "paused" }],
+    }).refresh("p1");
+    expect(discoverOf(taskList)).toBeUndefined();
   });
 });
 

@@ -43,15 +43,19 @@ export async function gatherDueSearches(
     latestRunBySubject(prisma, userId, "search.discover", ids),
     // Keyed by search id, not query, so a rewritten query still reuses its campaign.
     prisma.campaign.findMany({
-      where: { userId, status: "in_progress", source: "auto_apply", pilotSearchId: { in: ids } },
-      orderBy: { startedAt: "asc" },
-      select: { id: true, pilotSearchId: true },
+      where: {
+        userId,
+        status: { in: ["in_progress", "paused"] },
+        source: "auto_apply",
+        pilotSearchId: { in: ids },
+      },
+      select: { id: true, pilotSearchId: true, status: true },
     }),
   ]);
 
-  // Oldest first, so the newest campaign of a search wins the map entry.
-  const campaignBySearch = new Map(campaigns.map((c) => [c.pilotSearchId, c.id]));
+  const campaignBySearch = new Map(campaigns.map((c) => [c.pilotSearchId, c]));
   const startable = searches.filter((search) => {
+    if (campaignBySearch.get(search.id)?.status === "paused") return false;
     const last = latest.get(search.id);
     // A run report or a query rewrite moves `nextRunAt` past the run, and the cadence takes over.
     const rescheduled = last?.finishedAt != null && search.nextRunAt > last.startedAt;
@@ -71,7 +75,7 @@ export async function gatherDueSearches(
       query: search.query,
       board: search.board?.domain,
       resumeId: search.resumeId ?? undefined,
-      campaignId: campaignBySearch.get(search.id),
+      campaignId: campaignBySearch.get(search.id)?.id,
     })),
     nextSearchRunAt: searches[0].nextRunAt,
   };

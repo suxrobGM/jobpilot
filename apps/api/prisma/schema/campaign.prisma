@@ -16,6 +16,14 @@ enum CampaignStatus {
   @@map("campaign_status")
 }
 
+// A pilot feed that keeps one standing campaign. Search feeds are keyed by `pilotSearchId` instead.
+enum CampaignFeed {
+  job_alerts
+  research
+
+  @@map("campaign_feed")
+}
+
 // Self-reported: every actor calls with the user's own token.
 enum Actor {
   user
@@ -44,6 +52,8 @@ model Campaign {
   board           JobBoard?      @relation(fields: [boardId], references: [id], onDelete: SetNull)
   // Discovery matches on this, not the query text: the pilot may rewrite the query.
   pilotSearchId   String?        @map("pilot_search_id") @db.Uuid
+  // One open campaign per feed or search: partial unique indexes, hand-written in the migration.
+  feed            CampaignFeed?
 
   jobs               CampaignJob[]
   applications       Application[]

@@ -20,6 +20,10 @@ export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
 export const CAMPAIGN_SOURCES = ["search", "auto_apply", "apply", "networking"] as const;
 export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 
+/** A pilot feed that keeps one standing campaign; a search's is keyed by `pilotSearchId`. */
+export const CAMPAIGN_FEEDS = ["job_alerts", "research"] as const;
+const campaignFeedSchema = z.enum(CAMPAIGN_FEEDS);
+
 /** Who acted: the web user, the terminal agent on their behalf, or the autonomous pilot. */
 export const ACTORS = ["user", "agent", "pilot"] as const;
 export const actorSchema = z.enum(ACTORS);
@@ -129,6 +133,8 @@ export const createCampaignSchema = z
     createdBy: actorSchema.default("user"),
     /** Set by the pilot's discovery run so the search can find this campaign again by id. */
     pilotSearchId: z.uuid().optional(),
+    /** Get-or-create: with `feed` or `pilotSearchId`, an open campaign for it is returned. */
+    feed: campaignFeedSchema.optional(),
     /** Pasted links seeded as `queued` jobs, before anything is known about the posting. */
     urls: applyUrlsSchema.optional(),
   })
@@ -139,6 +145,14 @@ export const createCampaignSchema = z
   .refine((v) => !v.urls || v.source === "apply", {
     message: "urls is only valid for apply campaigns.",
     path: ["urls"],
+  })
+  .refine((v) => !v.feed || (v.createdBy === "pilot" && v.source === "auto_apply"), {
+    message: "feed is only valid for pilot-created auto_apply campaigns.",
+    path: ["feed"],
+  })
+  .refine((v) => !v.feed || !v.pilotSearchId, {
+    message: "feed and pilotSearchId are mutually exclusive.",
+    path: ["feed"],
   });
 
 export const updateCampaignConfigSchema = z.object({

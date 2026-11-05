@@ -1,3 +1,4 @@
+import { campaignJobStatusSchema } from "@jobpilot/contracts/campaign";
 import { pilotJournalEntrySchema, tokenUsageSchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { SKIP_BUCKETS } from "./skip-reasons";
@@ -45,3 +46,31 @@ export const jobAlertsSeenBodySchema = z.object({
 });
 
 export const jobAlertsSeenSchema = z.object({ seen: z.array(z.string()) });
+
+const similarJobsPostingSchema = z.object({
+  title: z.string().trim().min(1),
+  company: z.string().trim().min(1),
+  location: z.string().nullish(),
+});
+
+/** A POST so a batch fits; nothing is written. */
+export const similarJobsBodySchema = z.object({
+  postings: z.array(similarJobsPostingSchema).min(1).max(100),
+  withinDays: z.number().int().min(1).max(90).default(30),
+});
+export type SimilarJobsBody = z.infer<typeof similarJobsBodySchema>;
+
+export const similarJobsSchema = z.object({
+  matches: z.array(
+    z.object({
+      index: z.number().int(),
+      campaignId: z.uuid(),
+      key: z.string(),
+      title: z.string(),
+      company: z.string(),
+      location: z.string().nullable(),
+      url: z.string(),
+      status: campaignJobStatusSchema,
+    }),
+  ),
+});
