@@ -131,7 +131,7 @@ export function StatusBar(props: StatusBarProps): ReactElement {
           ) : (
             <AgentOnlyButton
               variant="contained"
-              fullWidth
+              sx={{ width: { xs: "100%", sm: "auto" } }}
               tooltip={goalsEmpty ? "Write the pilot's goals before starting it." : ""}
               disabled={controls.isLoading || health !== "reachable" || goalsEmpty}
               onClick={() => void controls.start()}
