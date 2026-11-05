@@ -48,7 +48,6 @@ model OAuthAccount {
   @@unique([provider, providerAccountId])
   // One identity per provider per user - keeps link/unlink UI unambiguous.
   @@unique([userId, provider])
-  @@index([userId])
   @@map("oauth_accounts")
 }
 

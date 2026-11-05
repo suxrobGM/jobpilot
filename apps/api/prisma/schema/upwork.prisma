@@ -71,7 +71,6 @@ model UpworkProposal {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   submittedAt DateTime? @map("submitted_at")
 
-  @@index([userId])
   @@index([userId, status])
   @@index([campaignId])
   @@map("upwork_proposals")

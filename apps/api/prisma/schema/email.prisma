@@ -88,10 +88,11 @@ model EmailMessage {
 
   // Provider message ids are unique per mailbox, not globally.
   @@unique([accountId, providerId])
-  @@index([reviewStatus, receivedAt])
+  // Every read is scoped through `account: { userId }`, so each filter index leads with the account.
+  @@index([accountId, reviewStatus, receivedAt])
+  @@index([accountId, fromDomain, receivedAt])
+  @@index([accountId, verificationDomain, receivedAt])
   @@index([matchedAppId])
-  @@index([fromDomain, receivedAt])
-  @@index([verificationDomain, receivedAt])
   @@index([receivedAt]) // Retention sweep; no other index leads with receivedAt.
   @@map("email_messages")
 }

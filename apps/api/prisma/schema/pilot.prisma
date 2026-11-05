@@ -118,11 +118,10 @@ model PilotRun {
   cacheReadTokens  Int              @default(0) @map("cache_read_tokens")
   cacheWriteTokens Int              @default(0) @map("cache_write_tokens")
 
-  @@index([userId, expiresAt])
   @@index([userId, subjectType, subjectId])
   @@index([finishedAt])
-  // No @@unique on (userId, taskType, subject): one open run per subject is an *open*-run rule, and
-  // finished rows are kept as history for the retry damper. RunService enforces it in-transaction.
+  // Partial indexes live in the migration SQL: open runs by (userId, expiresAt), and one open run per
+  // (userId, subjectType, subjectId). Finished rows stay as history for the retry damper.
   @@map("pilot_runs")
 }
 

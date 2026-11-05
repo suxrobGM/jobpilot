@@ -78,8 +78,8 @@ model Contact {
 
   messages NetworkingMessage[]
 
-  @@index([userId])
   @@index([userId, company])
+  @@index([relatedAppId])
   @@map("contacts")
 }
 

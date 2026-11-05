@@ -34,6 +34,6 @@ model UserJobBoard {
   jobBoard JobBoard @relation(fields: [jobBoardId], references: [id], onDelete: Cascade)
 
   @@unique([userId, jobBoardId])
-  @@index([userId])
+  @@index([jobBoardId])
   @@map("user_job_boards")
 }
