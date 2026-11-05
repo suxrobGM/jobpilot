@@ -16,8 +16,7 @@ const USER_SELECT = {
   role: true,
   emailVerifiedAt: true,
   createdAt: true,
-  firstName: true,
-  lastName: true,
+  profile: { select: { firstName: true, lastName: true } },
 } satisfies Prisma.UserSelect;
 
 type AdminUserRow = Prisma.UserGetPayload<{ select: typeof USER_SELECT }>;
@@ -205,7 +204,7 @@ export class AdminService {
         byCampaign.get(row.id),
         byToken.get(row.id),
       ].filter((date): date is Date => Boolean(date));
-      const name = `${row.firstName} ${row.lastName}`.trim();
+      const name = `${row.profile?.firstName ?? ""} ${row.profile?.lastName ?? ""}`.trim();
 
       return {
         id: row.id,

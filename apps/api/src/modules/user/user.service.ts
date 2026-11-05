@@ -3,38 +3,13 @@ import { inject, injectable } from "@needle-di/core";
 import { conflict, emailNotVerified, findOwned, notFound } from "@/common/errors";
 import { resumePath } from "@/common/storage/storage";
 import { Prisma, PrismaClient } from "@/generated/prisma/client";
-import { PORTFOLIO_SETTINGS_SELECT } from "./user.mapper";
+import { PORTFOLIO_SETTINGS_SELECT, PROFILE_SELECT, withProfile } from "./user.mapper";
 
-const USER_SCALAR_SELECT = {
+const USER_SELECT = {
   id: true,
-  firstName: true,
-  lastName: true,
-  contactEmail: true,
-  phone: true,
-  website: true,
-  linkedin: true,
-  github: true,
-  street: true,
-  aptUnit: true,
-  city: true,
-  state: true,
-  zipCode: true,
-  country: true,
-  usAuthorized: true,
-  requiresSponsorship: true,
-  visaStatus: true,
-  optExtension: true,
-  willingToRelocate: true,
-  preferredLocations: true,
-  eeoGender: true,
-  eeoRace: true,
-  eeoEthnicity: true,
-  eeoHispanicOrLatino: true,
-  eeoVeteranStatus: true,
-  eeoDisabilityStatus: true,
   primaryResumeId: true,
-  updatedAt: true,
-} as const;
+  profile: { select: PROFILE_SELECT },
+} satisfies Prisma.UserSelect;
 
 @injectable()
 export class UserService {
@@ -55,10 +30,12 @@ export class UserService {
   }
 
   async get(userId: string) {
-    const user = await findOwned(
-      (where) => this.prisma.user.findFirst({ where, select: USER_SCALAR_SELECT }),
-      { id: userId },
-      "User",
+    const user = withProfile(
+      await findOwned(
+        (where) => this.prisma.user.findFirst({ where, select: USER_SELECT }),
+        { id: userId },
+        "User",
+      ),
     );
 
     const [autoApply, primarySource, resumeRows, withContent, references, salaryPreferences] =
@@ -123,12 +100,7 @@ export class UserService {
     }));
 
     return {
-      user: {
-        ...user,
-        references,
-        salaryPreferences,
-        updatedAt: user.updatedAt,
-      },
+      user: { ...user, references, salaryPreferences },
       autoApply,
       primaryResumeSourceAbsolutePath: primarySource?.sourceFilename
         ? resumePath(primarySource.sourceFilename)
@@ -144,19 +116,18 @@ export class UserService {
       primaryResumeId,
       references,
       salaryPreferences,
-      ...userFields
+      ...profileFields
     } = body;
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...userFields,
-        preferredLocations,
-        primaryResumeId: primaryResumeId ?? null,
-      },
-    });
-
     // Replace the reference and salary-preference sets wholesale - the settings form submits the full lists.
     await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { primaryResumeId: primaryResumeId ?? null },
+      }),
+      this.prisma.profile.update({
+        where: { userId },
+        data: { ...profileFields, preferredLocations },
+      }),
       this.prisma.professionalReference.deleteMany({ where: { userId } }),
       this.prisma.professionalReference.createMany({
         data: references.map((r, i) => ({
@@ -218,7 +189,7 @@ export class UserService {
       select: PORTFOLIO_SETTINGS_SELECT,
     });
     if (!user) throw notFound("User not found");
-    return user;
+    return withProfile(user);
   }
 
   /** Free when no other user holds it; the caller's own current username also reads as free.
@@ -242,19 +213,13 @@ export class UserService {
       }
     }
 
+    const { username, ...visibility } = body;
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: {
-        ...(body.username !== undefined && { username: body.username }),
-        ...(body.availability !== undefined && { availability: body.availability }),
-        ...(body.showResume !== undefined && { showResume: body.showResume }),
-        ...(body.showWebsite !== undefined && { showWebsite: body.showWebsite }),
-        ...(body.showLinkedin !== undefined && { showLinkedin: body.showLinkedin }),
-        ...(body.showGithub !== undefined && { showGithub: body.showGithub }),
-      },
+      data: { username, profile: { update: visibility } },
       select: PORTFOLIO_SETTINGS_SELECT,
     });
 
-    return updated;
+    return withProfile(updated);
   }
 }

@@ -1,10 +1,3 @@
-enum Availability {
-  open
-  not_looking
-
-  @@map("availability")
-}
-
 // super_admin is a singleton granted only from SUPER_ADMIN_EMAIL (seed / register); no API route assigns it.
 enum UserRole {
   super_admin
@@ -25,44 +18,7 @@ model User {
   // crypto-shreds them.
   encryptedDataKey String?   @map("encrypted_data_key")
 
-  username     String        @unique
-  availability Availability?
-  // Off the public portfolio until the owner opts in.
-  showResume   Boolean       @default(false) @map("show_resume")
-  showWebsite  Boolean       @default(false) @map("show_website")
-  showLinkedin Boolean       @default(false) @map("show_linkedin")
-  showGithub   Boolean       @default(false) @map("show_github")
-
-  // Applicant profile, filled at onboarding.
-  firstName    String  @default("") @map("first_name")
-  lastName     String  @default("") @map("last_name")
-  // Goes on applications; `email` is the login.
-  contactEmail String  @default("") @map("contact_email")
-  phone        String?
-  website      String?
-  linkedin     String?
-  github       String?
-
-  street  String?
-  aptUnit String? @map("apt_unit")
-  city    String?
-  state   String?
-  zipCode String? @map("zip_code")
-  country String?
-
-  usAuthorized        Boolean  @default(false) @map("us_authorized")
-  requiresSponsorship Boolean  @default(false) @map("requires_sponsorship")
-  visaStatus          String?  @map("visa_status")
-  optExtension        String?  @map("opt_extension")
-  willingToRelocate   Boolean  @default(false) @map("willing_to_relocate")
-  preferredLocations  String[] @default([]) @map("preferred_locations")
-
-  eeoGender           String? @map("eeo_gender")
-  eeoRace             String? @map("eeo_race")
-  eeoEthnicity        String? @map("eeo_ethnicity")
-  eeoHispanicOrLatino String? @map("eeo_hispanic_or_latino")
-  eeoVeteranStatus    String? @map("eeo_veteran_status")
-  eeoDisabilityStatus String? @map("eeo_disability_status")
+  username String @unique
 
   primaryResumeId String? @unique @map("primary_resume_id")
   primaryResume   Resume? @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
@@ -70,6 +26,7 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  profile            Profile?
   authTokens         AuthToken[]
   verificationTokens VerificationToken[]
   oauthAccounts      OAuthAccount[]

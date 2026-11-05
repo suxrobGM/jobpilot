@@ -29,7 +29,10 @@ export class ScoringService {
       this.resolveBaseResumeContent(userId, resumeId),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { requiresSponsorship: true, autoApply: { select: { minMatchScore: true } } },
+        select: {
+          profile: { select: { requiresSponsorship: true } },
+          autoApply: { select: { minMatchScore: true } },
+        },
       }),
     ]);
 
@@ -44,7 +47,7 @@ export class ScoringService {
       yearsExperience:
         profile?.yearsExperience !== undefined ? profile.yearsExperience : derived.yearsExperience,
       // From the profile, not the caller: omitting the flag must not skip the eligibility check.
-      requiresSponsorship: user?.requiresSponsorship ?? false,
+      requiresSponsorship: user?.profile?.requiresSponsorship ?? false,
     };
 
     // A caller that omits the threshold gets the user's own auto-apply bar, not a global constant.

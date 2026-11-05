@@ -85,18 +85,22 @@ export class ResumeService {
   }
 
   async get(userId: string, id: string) {
-    const [profile, resume] = await Promise.all([
+    const [user, resume] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
         select: {
           primaryResumeId: true,
-          city: true,
-          state: true,
-          contactEmail: true,
-          phone: true,
-          linkedin: true,
-          github: true,
-          website: true,
+          profile: {
+            select: {
+              city: true,
+              state: true,
+              contactEmail: true,
+              phone: true,
+              linkedin: true,
+              github: true,
+              website: true,
+            },
+          },
         },
       }),
       this.findOwned(userId, id),
@@ -112,9 +116,9 @@ export class ResumeService {
       sourceFilename: resume.sourceFilename,
       sourceMimeType: resume.sourceMimeType,
       sourceSizeBytes: resume.sourceSizeBytes,
-      isPrimary: profile?.primaryResumeId === resume.id,
+      isPrimary: user?.primaryResumeId === resume.id,
       // Served here rather than behind its own route: every reader of the contact block needs it.
-      profileMismatches: profile ? findProfileMismatches(content?.basics, profile) : [],
+      profileMismatches: user?.profile ? findProfileMismatches(content?.basics, user.profile) : [],
       createdAt: resume.createdAt,
       updatedAt: resume.updatedAt,
     };
