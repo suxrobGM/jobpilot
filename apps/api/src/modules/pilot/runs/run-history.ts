@@ -68,11 +68,11 @@ export async function withoutRecentRuns<T>(
   prisma: PrismaClient,
   { userId, taskType, now, cooldownMs }: RecentRunFilter,
   rows: T[],
-  subjectOf: (row: T) => string,
+  toSubjectId: (row: T) => string,
 ): Promise<T[]> {
   if (rows.length === 0) return [];
-  const latest = await latestRunBySubject(prisma, userId, taskType, rows.map(subjectOf));
-  return rows.filter((row) => !ranRecently(latest.get(subjectOf(row)), now, cooldownMs));
+  const latest = await latestRunBySubject(prisma, userId, taskType, rows.map(toSubjectId));
+  return rows.filter((row) => !ranRecently(latest.get(toSubjectId(row)), now, cooldownMs));
 }
 
 /** Rows no open or decided run has taken yet: once-only work, where a crash hands it back. */
@@ -81,19 +81,19 @@ export async function withoutConsumingRuns<T>(
   userId: string,
   taskType: string,
   rows: T[],
-  subjectOf: (row: T) => string,
+  toSubjectId: (row: T) => string,
 ): Promise<T[]> {
   if (rows.length === 0) return [];
   const runs = await prisma.pilotRun.findMany({
     where: {
       userId,
       taskType,
-      subjectId: { in: rows.map(subjectOf) },
+      subjectId: { in: rows.map(toSubjectId) },
       OR: [{ finishedAt: null }, { outcome: { notIn: CRASH_OUTCOMES } }],
     },
     take: GATHER_CAP,
     select: { subjectId: true },
   });
   const consumed = new Set(runs.map((run) => run.subjectId));
-  return rows.filter((row) => !consumed.has(subjectOf(row)));
+  return rows.filter((row) => !consumed.has(toSubjectId(row)));
 }

@@ -23,7 +23,7 @@ import {
 import { guardApply } from "@/modules/feed/jobs/apply-guard";
 import { revertApplyingJobs, startApplying } from "@/modules/feed/jobs/applying";
 import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
-import { parseJobRef } from "../job-subject";
+import { parseJobRef, toJobRef } from "../job-subject";
 import { publishRequest } from "../requests/request.service";
 import { finishRequests } from "../requests/request-row";
 import {
@@ -152,7 +152,7 @@ export class RunService {
     await assertStillStartable(tx, userId, task);
     const startedJob =
       task.taskType === "job.apply"
-        ? await startApplying(tx, userId, { feedId: task.payload.feedId, key: task.payload.jobKey })
+        ? await startApplying(tx, userId, toJobRef(task.payload))
         : null;
 
     const run = await tx.pilotRun.create({

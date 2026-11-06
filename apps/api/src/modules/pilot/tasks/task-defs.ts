@@ -4,7 +4,7 @@ import {
   type TaskPayload,
   type TaskType,
 } from "@jobpilot/contracts/pilot";
-import { jobSubjectId } from "../job-subject";
+import { jobSubjectId, toJobRef } from "../job-subject";
 
 const CHAT_PRIORITY = 1100;
 /** Above answered questions (1000): the user asked for this by name. */
@@ -90,7 +90,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   },
   "job.apply": {
     priority: 800,
-    subjectId: (p) => jobSubjectId({ feedId: p.feedId, key: p.jobKey }),
+    subjectId: (p) => jobSubjectId(toJobRef(p)),
     title: (p) => p.jobTitle,
   },
   "interview.prep": {
@@ -121,7 +121,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   },
   "networking.warmIntro": {
     priority: 550,
-    subjectId: (p) => jobSubjectId({ feedId: p.feedId, key: p.jobKey }),
+    subjectId: (p) => jobSubjectId(toJobRef(p)),
     title: (p) => `Warm intro: ${p.jobTitle}`,
     perList: 1,
   },

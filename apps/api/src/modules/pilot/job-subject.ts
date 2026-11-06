@@ -1,3 +1,4 @@
+import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import type { JobRef } from "@/modules/feed/jobs/applying";
 
@@ -17,8 +18,14 @@ export function parseJobSubject(subjectId: string): JobRef {
 
 const jobRefSchema = z.object({ feedId: z.string().min(1), jobKey: z.string().min(1) });
 
-/** The job a `job.apply` run payload points at. */
-export function parseJobRef(payload: unknown): JobRef {
-  const { feedId, jobKey } = jobRefSchema.parse(payload);
+type JobPayload = Pick<TaskPayload<"job.apply">, "feedId" | "jobKey">;
+
+/** Task payloads name the key `jobKey`; jobs name it `key`. */
+export function toJobRef({ feedId, jobKey }: JobPayload): JobRef {
   return { feedId, key: jobKey };
+}
+
+/** The job a stored `job.apply` run payload points at. */
+export function parseJobRef(payload: unknown): JobRef {
+  return toJobRef(jobRefSchema.parse(payload));
 }

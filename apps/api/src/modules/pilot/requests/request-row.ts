@@ -11,7 +11,7 @@ import type {
   PilotSubjectType,
   Prisma,
 } from "@/generated/prisma/client";
-import { jobSubjectId } from "../job-subject";
+import { jobSubjectId, toJobRef } from "../job-subject";
 
 interface RequestSubject {
   subjectType: PilotSubjectType;
@@ -22,7 +22,7 @@ interface RequestSubject {
 function requestSubjectId(input: CreatePilotRequestInput, requestId: string): string {
   switch (input.taskType) {
     case "job.apply":
-      return jobSubjectId({ feedId: input.payload.feedId, key: input.payload.jobKey });
+      return jobSubjectId(toJobRef(input.payload));
     case "job.rescanSkipped":
     case "job.retryFailed":
       return input.payload.feedId;

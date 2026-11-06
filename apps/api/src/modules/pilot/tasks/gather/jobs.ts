@@ -1,13 +1,12 @@
-import { type JobBriefData, jobBriefSchema } from "@jobpilot/contracts/feed";
+import type { JobBriefData } from "@jobpilot/contracts/feed";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { CapExemptBasis, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { applyableJobWhere } from "@/modules/feed/jobs/applying";
+import { toJob } from "@/modules/feed/jobs/job-row";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { jobSubjectId } from "../../job-subject";
 import { GATHER_CAP, withoutRecentRuns } from "../../runs/run-history";
-
-const storedBriefSchema = jobBriefSchema.nullable();
 
 const WARM_INTRO_MIN_SCORE = 80;
 /** "I just applied" outreach still lands this long after the apply. */
@@ -51,11 +50,10 @@ const TASK_JOB_SELECT = {
 type TaskJobRow = Prisma.JobGetPayload<{ select: typeof TASK_JOB_SELECT }>;
 
 function toTaskJob(row: TaskJobRow): TaskJob {
-  const { feed, board, ...job } = row;
+  const { feed, board, ...job } = toJob(row);
   return {
     ...job,
     board: board?.domain ?? null,
-    brief: storedBriefSchema.parse(job.brief),
     resumeId: feed.resumeId ?? undefined,
   };
 }
