@@ -1,6 +1,8 @@
 import {
   addedPipelineLinksSchema,
   addPipelineLinksSchema,
+  pipelineBulkResultSchema,
+  pipelineBulkSchema,
   pipelineCountsQuerySchema,
   pipelineCountsSchema,
   pipelineJobListSchema,
@@ -45,5 +47,15 @@ export const pipelineController = new Elysia({
       summary: "Add job links",
       description:
         "Queues the links on the standing links feed for the pilot to score. Links the user already has from the last 30 days are reported in duplicates and not added again.",
+    },
+  })
+  .post("/jobs/bulk", ({ user, body }) => pipeline.bulk(user.id, body), {
+    body: pipelineBulkSchema,
+    beforeHandle: limitMutation,
+    response: pipelineBulkResultSchema,
+    detail: {
+      summary: "Approve, skip or retry jobs",
+      description:
+        "Applies one action to up to a page of jobs through the normal transitions. Rows whose status no longer allows it are counted in refused.",
     },
   });

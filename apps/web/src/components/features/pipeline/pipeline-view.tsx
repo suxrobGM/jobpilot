@@ -94,9 +94,9 @@ export function PipelineView(): ReactElement {
               onChange={search.setDraft}
             />
             <SelectField
-              label="From"
+              label="Feed"
               value={feedId}
-              emptyLabel="All searches and feeds"
+              emptyLabel="All feeds"
               options={feedOptions}
               onChange={(next) => pagination.setFilters({ feed: next })}
             />
@@ -111,7 +111,7 @@ export function PipelineView(): ReactElement {
           {view === "applied" ? (
             <AppliedView filters={filters} feedLabel={feedLabel} pagination={pagination} />
           ) : (
-            <JobsView view={view} filters={filters} pagination={pagination} />
+            <JobsView key={view} view={view} filters={filters} pagination={pagination} />
           )}
         </Stack>
       </SectionCard>

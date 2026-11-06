@@ -1,15 +1,18 @@
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import {
   PIPELINE_VIEW_STATUSES,
+  type PipelineBulkInput,
   type PipelineFilters,
   type PipelineJobsQuery,
   type PipelineJobView,
 } from "@jobpilot/contracts/pipeline";
 import { inject, injectable } from "@needle-di/core";
+import { HttpError } from "@/common/errors";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { FeedService } from "@/modules/feed/feed.service";
 import { queuedJobRows } from "@/modules/feed/feed.utils";
+import { JobService } from "@/modules/feed/jobs/job.service";
 import { JOB_INCLUDE, toJob } from "@/modules/feed/jobs/job-row";
 import { findRecentPostings } from "@/modules/feed/jobs/recent-postings";
 import { boardFilter } from "@/modules/job-board/board-host";
@@ -21,6 +24,16 @@ const JOB_FEEDS = { kind: { not: "networking" } } satisfies Prisma.FeedWhereInpu
 /** Upwork jobs get proposals, not applications; they show only when the Upwork board is picked. */
 const UPWORK = "upwork.com";
 
+const RECENT_ORDER: Prisma.JobOrderByWithRelationInput[] = [{ updatedAt: "desc" }, { id: "desc" }];
+
+/** Found reads best first; rows still waiting for a score go last. */
+const FOUND_ORDER: Prisma.JobOrderByWithRelationInput[] = [
+  { matchScore: { sort: "desc", nulls: "last" } },
+  ...RECENT_ORDER,
+];
+
+const BULK_SKIP_REASON = "Skipped by you";
+
 const PIPELINE_INCLUDE = {
   ...JOB_INCLUDE,
   feed: { select: { id: true, name: true } },
@@ -31,6 +44,7 @@ export class PipelineService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly feeds = inject(FeedService),
+    private readonly jobs = inject(JobService),
   ) {}
 
   /** The rows a further-along copy of the same posting hides; few, since only repeats count. */
@@ -78,12 +92,45 @@ export class PipelineService {
       this.prisma.job.findMany({
         where,
         include: PIPELINE_INCLUDE,
-        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        orderBy: query.view === "found" ? FOUND_ORDER : RECENT_ORDER,
         ...pageSlice(query),
       }),
       this.prisma.job.count({ where }),
     ]);
     return paginate(rows.map(toJob), query, total);
+  }
+
+  /** Runs each row through the job service, so every transition guard and event still applies. */
+  async bulk(userId: string, input: PipelineBulkInput) {
+    const rows = await this.prisma.job.findMany({
+      where: { userId, id: { in: input.ids } },
+      select: { feedId: true, key: true },
+    });
+    let updated = 0;
+    for (const row of rows) {
+      try {
+        await this.bulkOne(userId, row.feedId, row.key, input.action);
+        updated += 1;
+      } catch (error) {
+        if (!(error instanceof HttpError)) throw error;
+      }
+    }
+    return { updated, refused: input.ids.length - updated };
+  }
+
+  private bulkOne(
+    userId: string,
+    feedId: string,
+    key: string,
+    action: PipelineBulkInput["action"],
+  ) {
+    if (action === "approve")
+      return this.jobs.patchJob(userId, feedId, key, { status: "approved" });
+    if (action === "retry") return this.jobs.retryJob(userId, feedId, key, {});
+    return this.jobs.recordJobResult(userId, feedId, key, {
+      outcome: "skipped",
+      skipReason: BULK_SKIP_REASON,
+    });
   }
 
   async counts(userId: string, filters: PipelineFilters) {
