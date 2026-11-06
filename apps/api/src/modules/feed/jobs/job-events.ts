@@ -2,7 +2,9 @@ import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { publish } from "@/common/sse";
 import type { JobRow } from "./job-row";
 
-export function publishJob(userId: string, job: JobRow, kind: "added" | "updated"): void {
+type PublishedJob = Pick<JobRow, "feedId" | "key" | "status">;
+
+export function publishJob(userId: string, job: PublishedJob, kind: "added" | "updated"): void {
   publish(
     workspaceChannel,
     { userId },

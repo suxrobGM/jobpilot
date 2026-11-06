@@ -45,6 +45,8 @@ export function describeAction(action: PilotChangeAction, names: SearchNames): s
       return `Forgot answer: ${action.key.replaceAll("_", " ")}`;
     case "jobs.skip":
       return `Skipped ${plural(action.refs.length, "job")}: ${action.reason}`;
+    case "jobs.skipApproved":
+      return `Skipped approved jobs: ${action.reason}`;
     case "jobs.restore":
       return `Restored ${plural(action.refs.length, "job")}`;
   }

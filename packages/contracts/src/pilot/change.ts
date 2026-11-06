@@ -50,6 +50,8 @@ export const pilotChangeActionSchema = z.discriminatedUnion("type", [
     refs: z.array(jobRefSchema).min(1).max(500),
     reason: z.string().trim().min(1).max(500),
   }),
+  /** Every approved job, picked in the transaction so none past a page is missed. */
+  z.object({ type: z.literal("jobs.skipApproved"), reason: z.string().trim().min(1).max(500) }),
   z.object({
     type: z.literal("jobs.restore"),
     refs: z.array(jobRefSchema.extend({ status: z.enum(JOB_STATUSES) })).max(500),

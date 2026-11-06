@@ -1,6 +1,6 @@
 import type { PilotChangeAction } from "@jobpilot/contracts/pilot";
 import type { ActionContext } from "./action-context";
-import { restoreJobs, skipJobs } from "./job-actions";
+import { restoreJobs, skipApprovedJobs, skipJobs } from "./job-actions";
 import {
   createSearch,
   deleteSearch,
@@ -33,6 +33,8 @@ function applyAction(ctx: ActionContext, action: PilotChangeAction): Promise<Pil
       return deleteAnswer(ctx, action);
     case "jobs.skip":
       return skipJobs(ctx, action);
+    case "jobs.skipApproved":
+      return skipApprovedJobs(ctx, action);
     case "jobs.restore":
       return restoreJobs(ctx, action);
   }

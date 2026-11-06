@@ -52,8 +52,9 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
           pipelineQueries.jobs({ view: "toApply", page: 1, limit: MAX_PAGE_SIZE }),
         ),
       ]);
-      const approved = toApply.items.filter((job) => job.status === "approved");
-      if (searches.length === 0 && approved.length === 0) {
+      // Only the count; the change itself picks every approved job on the server.
+      const approvedJobs = toApply.items.filter((job) => job.status === "approved").length;
+      if (searches.length === 0 && approvedJobs === 0) {
         await commit(value.goals, []);
         return;
       }
@@ -61,7 +62,7 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
         goals: value.goals,
         impact: {
           searches: searches.map(({ id, name }) => ({ id, name })),
-          approved: approved.map(({ feedId, key }) => ({ feedId, key })),
+          approvedJobs,
         },
       });
     },
@@ -79,11 +80,7 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
       );
     }
     if (retire.dropApprovedJobs) {
-      actions.push({
-        type: "jobs.skip",
-        refs: pending.impact.approved,
-        reason: GOALS_CHANGED_REASON,
-      });
+      actions.push({ type: "jobs.skipApproved", reason: GOALS_CHANGED_REASON });
     }
     void commit(pending.goals, actions);
   };
