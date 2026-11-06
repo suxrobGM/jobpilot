@@ -84,7 +84,7 @@ export const pilotRunsController = new Elysia({
         "Asks the host to type one line into the session working the run, without stopping it.",
     },
   })
-  .post("/:id/result", ({ user, params, body }) => runs.postResult(user.id, params.id, body), {
+  .post("/:id/result", ({ user, params, body }) => runs.recordResult(user.id, params.id, body), {
     params: idParam,
     body: pilotRunResultSchema,
     beforeHandle: limitRun,

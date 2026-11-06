@@ -7,6 +7,7 @@ import {
 import { inject, injectable } from "@needle-di/core";
 import { DAY_MS } from "@/common/date/buckets";
 import { toInputJson } from "@/common/json";
+import { allNamed } from "@/common/utils";
 import { PrismaClient } from "@/generated/prisma/client";
 import {
   buildNotices,
@@ -23,6 +24,11 @@ const DISMISS_MS = 14 * DAY_MS;
 interface FactsInput {
   config: PilotConfig;
   autopilotSince: Date | null;
+}
+
+function emailStatus(account: { refreshFailedAt: Date | null } | null): NoticeFacts["email"] {
+  if (!account) return "missing";
+  return account.refreshFailedAt ? "reconnect" : "connected";
 }
 
 /** Computed on read from live data; only dismissals are stored. */
@@ -73,24 +79,16 @@ export class NoticeService {
 
   private async gatherFacts(userId: string, now: Date, input: FactsInput): Promise<NoticeFacts> {
     const { config, autopilotSince } = input;
+    const { prisma } = this;
     const ago = (ms: number) => new Date(now.getTime() - ms);
     const outcomesSince = ago(OUTCOMES_WINDOW_MS);
-    const [
-      account,
-      staleMail,
-      recentApplications,
-      progressed,
-      recruiterReplies,
-      nearMisses,
-      appliedLastWeek,
-      approvedWaiting,
-    ] = await Promise.all([
-      this.prisma.emailAccount.findUnique({
+    const { account, ...counts } = await allNamed({
+      account: prisma.emailAccount.findUnique({
         where: { userId },
         select: { refreshFailedAt: true },
       }),
       // The set the inbox review reads.
-      this.prisma.emailMessage.count({
+      staleMail: prisma.emailMessage.count({
         where: {
           account: { userId },
           classification: null,
@@ -98,49 +96,41 @@ export class NoticeService {
           receivedAt: { lt: ago(STALE_MAIL_MS) },
         },
       }),
-      this.prisma.application.count({ where: { userId, appliedAt: { gte: outcomesSince } } }),
-      this.prisma.application.count({
+      recentApplications: prisma.application.count({
+        where: { userId, appliedAt: { gte: outcomesSince } },
+      }),
+      progressed: prisma.application.count({
         where: {
           userId,
           appliedAt: { gte: outcomesSince },
           status: { in: ["screening", "interviewing", "offer"] },
         },
       }),
-      this.prisma.emailMessage.count({
+      recruiterReplies: prisma.emailMessage.count({
         where: {
           account: { userId },
           classification: { in: ["interviewing", "offer"] },
           receivedAt: { gte: outcomesSince },
         },
       }),
-      this.prisma.job.count({
+      nearMisses: prisma.job.count({
         where: {
           userId,
           createdAt: { gte: ago(NEAR_MISS_WINDOW_MS) },
           matchScore: { gte: config.minScore - NEAR_MISS_BAND, lt: config.minScore },
         },
       }),
-      this.prisma.application.count({ where: { userId, appliedAt: { gte: ago(CAP_WINDOW_MS) } } }),
-      this.prisma.job.count({ where: { userId, status: "approved" } }),
-    ]);
-    let email: NoticeFacts["email"] = "connected";
-    if (!account) {
-      email = "missing";
-    } else if (account.refreshFailedAt) {
-      email = "reconnect";
-    }
+      appliedLastWeek: prisma.application.count({
+        where: { userId, appliedAt: { gte: ago(CAP_WINDOW_MS) } },
+      }),
+      approvedWaiting: prisma.job.count({ where: { userId, status: "approved" } }),
+    });
     return {
-      email,
-      staleMail,
-      recentApplications,
-      progressed,
-      recruiterReplies,
-      nearMisses,
+      ...counts,
+      email: emailStatus(account),
       minScore: config.minScore,
       dailyApplyCap: config.dailyApplyCap,
       autopilotSince,
-      appliedLastWeek,
-      approvedWaiting,
     };
   }
 }

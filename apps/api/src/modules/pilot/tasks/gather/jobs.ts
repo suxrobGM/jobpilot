@@ -4,7 +4,8 @@ import { HOUR_MS } from "@/common/date/buckets";
 import type { CapExemptBasis, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { applyableJobWhere } from "@/modules/feed/jobs/applying";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
-import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "../../runs/run-history";
+import { jobSubjectId } from "../../job-subject";
+import { GATHER_CAP, withoutRecentRuns } from "../../runs/run-history";
 
 const storedBriefSchema = jobBriefSchema.nullable();
 

@@ -1,5 +1,5 @@
 import { HOUR_MS } from "@/common/date/buckets";
-import { parseJobSubject, ranRecently } from "./run-history";
+import { ranRecently } from "./run-history";
 import { describe, expect, it } from "bun:test";
 
 describe("ranRecently", () => {
@@ -25,16 +25,5 @@ describe("ranRecently", () => {
     expect(ranRecently(finishedHoursAgo(1, "expired"), now, DAY)).toBe(true);
     expect(ranRecently(finishedHoursAgo(3, "expired"), now, DAY)).toBe(false);
     expect(ranRecently(finishedHoursAgo(3, "cancelled"), now, DAY)).toBe(false);
-  });
-});
-
-describe("parseJobSubject", () => {
-  it("splits on the first colon, so job keys may contain colons", () => {
-    expect(parseJobSubject("c1:a:b")).toEqual({ feedId: "c1", key: "a:b" });
-  });
-
-  it("rejects a subject missing either half", () => {
-    expect(() => parseJobSubject(":j1")).toThrow();
-    expect(() => parseJobSubject("c1:")).toThrow();
   });
 });

@@ -46,47 +46,29 @@ export class ChangeService {
   }
 
   async create(userId: string, input: CreatePilotChangeInput) {
-    const { summary, actions, source, runId } = input;
+    const { summary, actions, source, runId, propose } = input;
     // A notice's change is the user's click on it; only the pilot acting alone must propose.
-    if (
-      source === "pilot" &&
-      !input.propose &&
-      actions.some((a) => USER_OWNED_ACTIONS.includes(a.type))
-    ) {
+    const touchesUserOwned = actions.some((action) => USER_OWNED_ACTIONS.includes(action.type));
+    if (source === "pilot" && !propose && touchesUserOwned) {
       throw forbidden("The pilot can only propose changes to goals, rules and answers.");
     }
-    if (input.propose) {
+    const change = { userId, source, summary, actions: toInputJson(actions), runId: runId ?? null };
+    if (propose) {
       const row = await this.prisma.pilotChange.create({
-        data: {
-          userId,
-          source,
-          status: "proposed",
-          summary,
-          actions: toInputJson(actions),
-          runId: runId ?? null,
-        },
+        data: { ...change, status: "proposed" },
       });
       return this.publishChange(row);
     }
-    return this.run(userId, actions, (tx, undo, now) =>
+    return this.applyAndRecord(userId, actions, (tx, undo, now) =>
       tx.pilotChange.create({
-        data: {
-          userId,
-          source,
-          status: "applied",
-          summary,
-          actions: toInputJson(actions),
-          undo: toInputJson(undo),
-          runId: runId ?? null,
-          decidedAt: now,
-        },
+        data: { ...change, status: "applied", undo: toInputJson(undo), decidedAt: now },
       }),
     );
   }
 
   async applyProposed(userId: string, id: string) {
     const row = await this.findChange(userId, id, "proposed");
-    return this.run(userId, storedActionsSchema.parse(row.actions), (tx, undo, now) =>
+    return this.applyAndRecord(userId, storedActionsSchema.parse(row.actions), (tx, undo, now) =>
       tx.pilotChange.update({
         where: { id },
         data: { status: "applied", undo: toInputJson(undo), decidedAt: now },
@@ -108,7 +90,7 @@ export class ChangeService {
     if (!canUndo(row, Date.now())) {
       throw conflict("This change is too old to undo.");
     }
-    return this.run(userId, storedActionsSchema.parse(row.undo), (tx, _undo, now) =>
+    return this.applyAndRecord(userId, storedActionsSchema.parse(row.undo), (tx, _undo, now) =>
       tx.pilotChange.update({ where: { id }, data: { status: "undone", decidedAt: now } }),
     );
   }
@@ -126,7 +108,7 @@ export class ChangeService {
   }
 
   /** Applies the actions and writes the change row in one transaction, then publishes. */
-  private async run(
+  private async applyAndRecord(
     userId: string,
     actions: PilotChangeAction[],
     record: (

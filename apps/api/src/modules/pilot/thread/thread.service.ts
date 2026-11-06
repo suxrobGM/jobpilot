@@ -16,7 +16,7 @@ import {
   PrismaClient,
 } from "@/generated/prisma/client";
 import { toPilotChange } from "../changes/change-row";
-import { toPilotQuestion } from "../questions/question.service";
+import { toPilotQuestion } from "../questions/question-row";
 import { toPilotRequest } from "../requests/request-row";
 import { toJournalEntry } from "./journal-entries";
 
@@ -48,7 +48,7 @@ interface TimedRun {
   startedAt: Date;
 }
 
-/** The run's line, from entries oldest first: its newest action entry is the result summary `postResult` journals. */
+/** The run's line, from entries oldest first: its newest action entry is the result summary `recordResult` journals. */
 function toRunLine(run: ThreadRunRow, entries: PilotJournalEntryModel[]): TimedRun {
   const newest = entries[entries.length - 1];
   const result = entries.filter((entry) => entry.kind === "action").at(-1) ?? newest;
@@ -142,7 +142,7 @@ export function buildThread(sources: ThreadSources): PilotThreadItem[] {
 export class PilotThreadService {
   constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
-  async getThread(
+  async getPage(
     userId: string,
     cursor: string | undefined,
     limit: number,

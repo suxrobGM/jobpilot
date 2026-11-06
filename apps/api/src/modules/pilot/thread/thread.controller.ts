@@ -8,7 +8,7 @@ const thread = container.get(PilotThreadService);
 
 export const pilotThreadController = new Elysia({ prefix: "/pilot", detail: { tags: ["Pilot"] } })
   .use(authGuard)
-  .get("/thread", ({ user, query }) => thread.getThread(user.id, query.cursor, query.limit), {
+  .get("/thread", ({ user, query }) => thread.getPage(user.id, query.cursor, query.limit), {
     query: pilotThreadQuerySchema,
     response: pilotThreadPageSchema,
     detail: {

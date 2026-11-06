@@ -49,7 +49,7 @@ User decisions:
 - Behavior keys off the code registry (`isApiSourceDomain`), not the DB `kind`. The DB field is
   UI metadata. The run endpoint returns 409 when the board has no adapter.
 - Server-found applied-duplicates are counted in the run summary, not persisted as skipped rows.
-- `auto_apply` campaigns promote inline via `CampaignJobService.promoteScoredJobs`; `search`
+- `auto_apply` campaigns promote inline via `JobService.settleScored`; `search`
   campaigns stay `pending` for the normal review flow.
 - Pilot API runs are fire-and-forget with a `nextRunAt` hold (now + 10 min, written before
   launch, overwritten by `reportRun`). Crash-safe, no new claim kind, survives the 5-min agenda
@@ -115,7 +115,7 @@ User decisions:
     (`splitNewPostings`) and applied duplicates (load the 30-day window once, then in-process
     `canonicalizeJobUrl` set + `findFuzzyDuplicate` from `modules/application/`), then per new
     posting: `scoreJobFit` then `campaignJobs.addJob` as `pending` (fires SSE and
-    `publishInBackground` for free). For `auto_apply` campaigns call `promoteScoredJobs`.
+    `publishInBackground` for free). For `auto_apply` campaigns call `settleScored`.
     If `opts.pilotSearchId`, call `pilotSearches.reportRun`. Return summary
     `{campaignId, board, total, fetched, added, duplicateApplied, duplicateExisting, approved,
     skippedLowScore, reachedEnd}`. Also `launchPilotRuns` (milestone 4).

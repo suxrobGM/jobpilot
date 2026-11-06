@@ -1,12 +1,10 @@
 import type {
   AnswerPilotQuestionInput,
   CreatePilotQuestionInput,
-  PilotQuestion,
   PilotQuestionStatus,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
-import { z } from "zod/v4";
 import { DAY_MS } from "@/common/date/buckets";
 import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
@@ -14,6 +12,7 @@ import { publish } from "@/common/sse";
 import { type PilotQuestion as PilotQuestionModel, PrismaClient } from "@/generated/prisma/client";
 import { WebPushService } from "@/modules/web-push/web-push.service";
 import { ProfileAnswerService } from "./answer.service";
+import { toPilotQuestion } from "./question-row";
 
 /** An unanswered 2FA code is useless within minutes, and expiring it frees the job it parked. */
 const TWO_FACTOR_TTL_MS = 5 * 60 * 1000;
@@ -22,10 +21,6 @@ const QUESTION_TTL_MS = 14 * DAY_MS;
 
 /** A 2FA code or a per-job approval is never a reusable fact, whatever key the agent set. */
 const SAVED_ANSWER_KINDS: PilotQuestionModel["kind"][] = ["question", "choice"];
-
-export function toPilotQuestion(row: PilotQuestionModel): PilotQuestion {
-  return { ...row, options: z.array(z.string()).parse(row.options) };
-}
 
 function questionExpiry(body: CreatePilotQuestionInput): Date {
   if (body.expiresAt) return new Date(body.expiresAt);
@@ -41,7 +36,7 @@ export class PilotQuestionService {
     private readonly answers = inject(ProfileAnswerService),
   ) {}
 
-  async createQuestion(userId: string, body: CreatePilotQuestionInput) {
+  async create(userId: string, body: CreatePilotQuestionInput) {
     const row = await this.prisma.pilotQuestion.create({
       data: {
         userId,
@@ -67,7 +62,7 @@ export class PilotQuestionService {
   }
 
   /** Unpaginated: the attention panel shows every open question, and there are few. */
-  async listQuestions(userId: string, status?: PilotQuestionStatus) {
+  async list(userId: string, status?: PilotQuestionStatus) {
     const rows = await this.prisma.pilotQuestion.findMany({
       where: { userId, status },
       orderBy: { createdAt: "desc" },
@@ -76,7 +71,7 @@ export class PilotQuestionService {
     return rows.map(toPilotQuestion);
   }
 
-  async answerQuestion(userId: string, id: string, body: AnswerPilotQuestionInput) {
+  async answer(userId: string, id: string, body: AnswerPilotQuestionInput) {
     // Expiry publishes no event, so a stale card or push link can still answer an expired question.
     const [row] = await this.prisma.pilotQuestion.updateManyAndReturn({
       where: { id, userId, status: "open" },

@@ -257,13 +257,13 @@ describe("RunService.cancel", () => {
   });
 });
 
-describe("RunService.postResult", () => {
+describe("RunService.recordResult", () => {
   const result = { outcome: "done" as const, summary: "Applied to Engineer at Acme" };
 
   const post = async (userId: string, finishedAt: Date | null) => {
     const { db, jobReverts } = closeDb(runRow({ userId, finishedAt }));
     const { journal, appended } = fakeJournal();
-    const run = await makeRunService(db, journal).postResult(userId, RUN_ID, result);
+    const run = await makeRunService(db, journal).recordResult(userId, RUN_ID, result);
     return { run, appended, jobReverts };
   };
 
@@ -301,7 +301,7 @@ describe("a request follows the run that picked it up", () => {
   ] as const)("a %s result marks it %s", async (outcome, status) => {
     const { db, requestWrites } = closeDb(runRow());
     const { journal } = fakeJournal();
-    await makeRunService(db, journal).postResult(USER_ID, RUN_ID, { outcome, summary: "x" });
+    await makeRunService(db, journal).recordResult(USER_ID, RUN_ID, { outcome, summary: "x" });
     expect(requestWrites).toEqual([
       {
         where: { runId: { in: [RUN_ID] }, status: "running" },

@@ -7,8 +7,9 @@ import {
   revertApplyingJobs,
 } from "@/modules/feed/jobs/applying";
 import type { JobService } from "@/modules/feed/jobs/job.service";
+import { parseJobSubject } from "../job-subject";
 import { finishRequests } from "../requests/request-row";
-import { GATHER_CAP, parseJobSubject } from "../runs/run-history";
+import { GATHER_CAP } from "../runs/run-history";
 import { SERVER_SKIP_REASONS } from "../skip-reasons";
 
 /** An `applying` job with no open run and no update for this long lost its driver. */

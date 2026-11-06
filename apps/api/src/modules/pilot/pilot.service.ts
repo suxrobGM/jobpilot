@@ -14,6 +14,10 @@ import { costByTaskType, countAppliedToday, countSentToday } from "./pilot.stats
 import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
+function latest(times: Date[]): Date | null {
+  return times.reduce<Date | null>((max, time) => (!max || time > max ? time : max), null);
+}
+
 /** Pilot state, instructions, and the stats and liveness reads. */
 @injectable()
 export class PilotService {
@@ -175,10 +179,7 @@ export class PilotService {
     const nextWakeAt = state?.nextWakeAt ?? null;
 
     return {
-      lastActivityAt: times.reduce<Date | null>(
-        (max, time) => (!max || time > max ? time : max),
-        null,
-      ),
+      lastActivityAt: latest(times),
       // An expired run nobody has swept yet still counts as activity, but not as active.
       activeRuns: runs.filter((run) => run.expiresAt > now).length,
       // A stuck-recovery cycle plans no wake, and the host still needs its completedAt.

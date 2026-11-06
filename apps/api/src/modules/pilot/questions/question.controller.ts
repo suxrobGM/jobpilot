@@ -20,7 +20,7 @@ export const pilotQuestionsController = new Elysia({
   detail: { tags: ["Pilot"] },
 })
   .use(authGuard)
-  .post("/questions", ({ user, body }) => questions.createQuestion(user.id, body), {
+  .post("/questions", ({ user, body }) => questions.create(user.id, body), {
     body: createPilotQuestionSchema,
     beforeHandle: limitMutation,
     response: pilotQuestionSchema,
@@ -29,7 +29,7 @@ export const pilotQuestionsController = new Elysia({
       description: "Opens a question/choice/2fa/approval question and notifies subscribers.",
     },
   })
-  .get("/questions", ({ user, query }) => questions.listQuestions(user.id, query.status), {
+  .get("/questions", ({ user, query }) => questions.list(user.id, query.status), {
     query: pilotQuestionsQuerySchema,
     response: pilotQuestionListSchema,
     detail: {
@@ -39,7 +39,7 @@ export const pilotQuestionsController = new Elysia({
   })
   .post(
     "/questions/:id/answer",
-    ({ user, params, body }) => questions.answerQuestion(user.id, params.id, body),
+    ({ user, params, body }) => questions.answer(user.id, params.id, body),
     {
       params: idParam,
       body: answerPilotQuestionSchema,
