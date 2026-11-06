@@ -11,7 +11,7 @@ same way the pilot does. The caller sets `FEED_ID`, `MIN_SCORE` and `NEW_JOBS`. 
 support, follow `$JOBPILOT_SKILLS_ROOT/../agents/<agent>.md` inline.
 
 - **`--board <domain>`**: `GET /api/job-boards` must list `<domain>`, else stop with "Board
-  `<domain>` is not configured. Add it under Settings → Job boards or run again with a different
+  `<domain>` is not configured. Add it under Settings → Pilot or run again with a different
   `--board`." Delegate one `job-searcher` run with `{runId:null, feedId:$FEED_ID, query,
   board:<domain>, resumeId:user.primaryResumeId, minScore:$MIN_SCORE, newJobsTarget:$NEW_JOBS,
   maxPages:null}`.

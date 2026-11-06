@@ -4,17 +4,14 @@ import type { ReactElement } from "react";
 import {
   CAPTCHA_PROVIDERS,
   type CaptchaProvider,
-  CREDENTIAL_KINDS,
   type CredentialInput,
-  type CredentialKind,
   credentialSchema,
 } from "@jobpilot/contracts/credential";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
-import { useQuery } from "@tanstack/react-query";
 import { z } from "zod/v4";
 import { api } from "@/api/client";
-import { credentialQueries, jobBoardQueries } from "@/api/queries";
+import { credentialQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -31,16 +28,18 @@ export const PROVIDER_LABELS: Record<CaptchaProvider, string> = {
 
 const PROVIDER_ITEMS = CAPTCHA_PROVIDERS.map((p) => ({ value: p, label: PROVIDER_LABELS[p] }));
 
-const KIND_LABELS: Record<CredentialKind, string> = {
-  board: "Board login",
+/** Board logins are added per board under Settings → Pilot. */
+const KINDS = ["default", "service"] as const;
+type Kind = (typeof KINDS)[number];
+
+const KIND_LABELS: Record<Kind, string> = {
   default: "Default login",
   service: "Captcha service",
 };
 
 /** One flat shape for every kind, so switching kinds keeps the form's fields stable. */
 interface CredentialFormValues {
-  kind: CredentialKind;
-  board: string;
+  kind: Kind;
   email: string;
   password: string;
   provider: CaptchaProvider;
@@ -48,8 +47,7 @@ interface CredentialFormValues {
 }
 
 const DEFAULTS: CredentialFormValues = {
-  kind: "board",
-  board: "",
+  kind: "default",
   email: "",
   password: "",
   provider: CAPTCHA_PROVIDERS[0],
@@ -58,12 +56,8 @@ const DEFAULTS: CredentialFormValues = {
 
 /** Only the chosen kind's fields, so the others persist as null. */
 function toInput(values: CredentialFormValues) {
-  const login = { email: values.email, password: values.password };
-  if (values.kind === "board") {
-    return { kind: values.kind, board: values.board, ...login };
-  }
   if (values.kind === "default") {
-    return { kind: values.kind, ...login };
+    return { kind: values.kind, email: values.email, password: values.password };
   }
   return { kind: values.kind, provider: values.provider, apiKey: values.apiKey };
 }
@@ -71,8 +65,7 @@ function toInput(values: CredentialFormValues) {
 // Validated through the contract, re-pathed onto the flat fields.
 const formSchema = z
   .object({
-    kind: z.enum(CREDENTIAL_KINDS),
-    board: z.string(),
+    kind: z.enum(KINDS),
     email: z.string(),
     password: z.string(),
     provider: z.enum(CAPTCHA_PROVIDERS),
@@ -91,8 +84,6 @@ export function CredentialFormDialog(props: CredentialFormDialogProps): ReactEle
     successMessage: "Credential added",
     invalidate: [credentialQueries.all],
   });
-  const boards = useQuery(jobBoardQueries.list());
-  const boardItems = (boards.data ?? []).map((b) => ({ value: b.domain, label: b.name }));
 
   const form = useAppForm({
     defaultValues: DEFAULTS,
@@ -117,28 +108,16 @@ export function CredentialFormDialog(props: CredentialFormDialogProps): ReactEle
         size="small"
         color="primary"
         value={kind}
-        onChange={(_, next: CredentialKind | null) => next && form.setFieldValue("kind", next)}
+        onChange={(_, next: Kind | null) => next && form.setFieldValue("kind", next)}
       >
-        {CREDENTIAL_KINDS.map((k) => (
+        {KINDS.map((k) => (
           <ToggleButton key={k} value={k}>
             {KIND_LABELS[k]}
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
 
-      {kind === "board" && (
-        <form.AppField name="board">
-          {(field) => (
-            <field.Select
-              label="Board"
-              items={boardItems}
-              helperText="Your boards. Add another under Boards first."
-            />
-          )}
-        </form.AppField>
-      )}
-
-      {kind !== "service" && (
+      {kind === "default" && (
         <>
           <form.AppField name="email">
             {(field) => <field.TextField label="Email or username" />}

@@ -32,7 +32,7 @@ const ANCHORS: SectionAnchor[] = [
   { id: "job-alerts", label: "Job alerts" },
   { id: "research", label: "Research" },
   { id: "networking", label: "Networking" },
-  { id: "boards", label: "Boards" },
+  { id: "boards", label: "Job boards" },
   { id: "platforms", label: "Platforms" },
 ];
 

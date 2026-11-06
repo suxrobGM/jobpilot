@@ -40,7 +40,7 @@ export function CredentialsSection(): ReactElement {
   const handleDelete = async (credential: CredentialDto): Promise<void> => {
     const confirmed = await confirm({
       title: "Delete credential?",
-      description: `Remove the "${credentialLabel(credential)}" credential? Board logins fall back to the default.`,
+      description: `Remove the "${credentialLabel(credential)}" credential?`,
       confirmLabel: "Delete",
       destructive: true,
     });
@@ -52,8 +52,8 @@ export function CredentialsSection(): ReactElement {
   const rows = credentials.data ?? [];
   const groups = [
     {
-      title: "Job board logins",
-      items: rows.filter((c) => c.kind !== "service"),
+      title: "Default login",
+      items: rows.filter((c) => c.kind === "default"),
       icon: <Lock fontSize="md" color="action" />,
       secondary: (c: CredentialDto) => c.email ?? "",
     },
@@ -68,7 +68,7 @@ export function CredentialsSection(): ReactElement {
   return (
     <SectionCard
       title="Login credentials"
-      description="Used by skills to log into job boards, plus captcha-service API keys (2Captcha / CapSolver). Secrets are encrypted at rest."
+      description="The login the pilot tries on boards without their own, and captcha-service API keys (2Captcha / CapSolver). Board logins live under Settings → Pilot. Secrets are encrypted at rest."
       actions={
         <Button
           size="small"
@@ -88,7 +88,7 @@ export function CredentialsSection(): ReactElement {
           <EmptyState
             variant="inline"
             title="No credentials yet"
-            description="Add a default login, or one per board (e.g. LinkedIn)."
+            description="Add a default login, or a captcha service's API key."
           />
         }
       >
