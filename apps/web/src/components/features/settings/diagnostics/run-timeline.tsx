@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
 import { formatSpanBetween } from "@/utils/format";
-import { JournalRow, KIND_META, KIND_ORDER, RunMeta } from "./journal-row";
+import { JournalRow, KIND_META, KIND_ORDER, RunMeta } from "../../pilot/journal/journal-row";
 
 interface RunBlock {
   type: "run";

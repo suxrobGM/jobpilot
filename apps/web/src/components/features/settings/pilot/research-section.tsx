@@ -10,8 +10,8 @@ import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/feedback";
 import { formatRelativeTime } from "@/utils/format";
 import { pipelineHref } from "@/utils/routes";
-import { useCreateRequest } from "../requests/use-create-request";
-import { isRunning } from "../run-status";
+import { useCreateRequest } from "../../pilot/requests/use-create-request";
+import { isRunning } from "../../pilot/run-status";
 
 function lastRunText(status: ResearchStatusDto): string {
   const { lastRun } = status;

@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import type { Metadata } from "next";
-import { DiagnosticsView } from "@/components/features/pilot";
+import { DiagnosticsView } from "@/components/features/settings";
 
 export const metadata: Metadata = { title: "Diagnostics" };
 

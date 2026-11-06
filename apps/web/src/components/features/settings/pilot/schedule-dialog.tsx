@@ -14,7 +14,7 @@ import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { formatHour } from "../run-status";
+import { formatHour } from "../../pilot/run-status";
 
 /** Every whole hour as a run-time option, "00:00" through "23:00". */
 const RUN_TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => formatHour(hour));

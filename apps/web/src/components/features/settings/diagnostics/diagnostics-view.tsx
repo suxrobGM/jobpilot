@@ -5,8 +5,8 @@ import { Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
-import { CycleCost } from "../journal/cycle-cost";
-import { JournalFeed } from "../journal/journal-feed";
+import { CycleCost } from "./cycle-cost";
+import { JournalFeed } from "./journal-feed";
 import { OrchestrationPanel } from "./orchestration-panel";
 import { TaskListPreview } from "./task-list-preview";
 

@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { FormSection } from "@/components/ui/form";
 import { formatTimeUntil, plural } from "@/utils/format";
-import { formatHour } from "../run-status";
+import { formatHour } from "../../pilot/run-status";
 import { RunJobAlertsButton } from "./run-job-alerts-button";
 import { ScheduleDialog } from "./schedule-dialog";
 

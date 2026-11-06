@@ -25,9 +25,9 @@ import { SectionCard } from "@/components/ui/layout";
 import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";
 import { dedupeById } from "@/utils/array";
-import { useJournalLiveStatus } from "./journal-cache";
+import { useJournalLiveStatus } from "../../pilot/journal/journal-cache";
+import { JournalRow, KIND_META, KIND_ORDER } from "../../pilot/journal/journal-row";
 import { groupByDay, withLatestRuns } from "./journal-entries";
-import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
 import { RunTimeline } from "./run-timeline";
 

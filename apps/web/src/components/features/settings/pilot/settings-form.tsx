@@ -19,10 +19,10 @@ import {
 } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
-import { JobAlertsSetting } from "../job-alerts/job-alerts-setting";
 import { BoardsSection } from "./boards-section";
 import { CheckIntervalSection } from "./check-interval-section";
 import { settingsFormSchema, toFormValues, toSettings } from "./form-schema";
+import { JobAlertsSetting } from "./job-alerts-setting";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
 import { ResearchSection } from "./research-section";
