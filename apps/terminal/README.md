@@ -36,7 +36,11 @@ Each folder is one feature and holds its endpoints, request and response records
   OTLP logs on `/v1/logs`. `PilotEventListener` holds the API's event stream open while paired,
   passes `run.finished` to the session, wakes the loop on messages, requests and answered questions,
   and hands `run.interrupt` (Esc, a stop line, then a cancel) and `run.steer` (one sanitized line
-  typed into the session) to the session for the run in flight.
+  typed into the session) to the session for the run in flight. While a run is open,
+  `StepRecorder` reads the same OTLP logs for tool calls, `StepMapper` turns each into a short
+  label ("Opened boards.greenhouse.io/acme/jobs/42", "Filled 6 fields", "Updated a job"), and the
+  batch goes to `POST /api/pilot/runs/:id/steps` every 2 seconds. Labels never carry typed values,
+  page text, query strings or whole commands; tool calls outside a run are never sent.
 - **Update.** `HostUpdater` downloads the release, moves the running executable aside, and copies
   the release over the install. `HostHandoff.Relaunch` starts the new host, which waits for this one
   to release the port. Only the executable and `plugin/` are the updater's; the rest of the install

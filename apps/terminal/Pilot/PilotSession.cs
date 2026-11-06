@@ -23,6 +23,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
     private readonly PilotStore store;
     private readonly PilotApi api;
     private readonly UsageMeter usage;
+    private readonly StepRecorder steps;
     private readonly ILogger<PilotSession> logger;
     private readonly StuckDetector stuck = new();
 
@@ -32,12 +33,13 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     private volatile string? currentRunId;
 
-    public PilotSession(TerminalSession terminal, PilotStore store, PilotApi api, UsageMeter usage, ILogger<PilotSession> logger)
+    public PilotSession(TerminalSession terminal, PilotStore store, PilotApi api, UsageMeter usage, StepRecorder steps, ILogger<PilotSession> logger)
     {
         this.terminal = terminal;
         this.store = store;
         this.api = api;
         this.usage = usage;
+        this.steps = steps;
         this.logger = logger;
         terminal.Output += OnOutput;
     }
@@ -94,6 +96,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
         currentRunId = runId;
         stuck.Reset();
         usage.Start();
+        steps.Start(runId);
         await SendAsync($"{settings.Provider.SkillCommand(PilotSkill)} {runId}", settings.Provider, ct);
     }
 
@@ -187,6 +190,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
     {
         // The run is over, so interrupts, steers and the stuck heuristic stop applying to it.
         currentRunId = null;
+        steps.Stop();
         await Task.Delay(UsageFlush, ct);
         if (store.Current is not { } settings)
         {

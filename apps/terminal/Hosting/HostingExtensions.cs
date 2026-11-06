@@ -36,6 +36,8 @@ public static class HostingExtensions
             sp.GetRequiredService<ILogger<PilotStore>>()));
         services.AddSingleton<PilotApi>();
         services.AddSingleton<UsageMeter>();
+        services.AddSingleton<StepRecorder>();
+        services.AddHostedService(sp => sp.GetRequiredService<StepRecorder>());
         services.AddSingleton<PilotSession>();
         services.AddSingleton<IPilotSession>(sp => sp.GetRequiredService<PilotSession>());
         services.AddSingleton<PilotLoop>();

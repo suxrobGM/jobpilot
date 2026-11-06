@@ -1,5 +1,5 @@
-using System.Globalization;
 using System.Text.Json;
+using static JobPilot.Terminal.Pilot.OtlpLogs;
 
 namespace JobPilot.Terminal.Pilot;
 
@@ -44,9 +44,8 @@ public sealed class UsageMeter
 
     public void Read(JsonElement export)
     {
-        foreach (var record in LogRecords(export))
+        foreach (var attributes in OtlpLogs.Records(export))
         {
-            var attributes = Attributes(record);
             var name = Text(attributes, "event.name");
             if (name == "api_request")
             {
@@ -87,54 +86,5 @@ public sealed class UsageMeter
             cacheRead += requestCacheRead;
             cacheWrite += requestCacheWrite;
         }
-    }
-
-    private static IEnumerable<JsonElement> LogRecords(JsonElement export) =>
-        from resource in Array(export, "resourceLogs")
-        from scope in Array(resource, "scopeLogs")
-        from record in Array(scope, "logRecords")
-        select record;
-
-    private static IEnumerable<JsonElement> Array(JsonElement parent, string name) =>
-        parent.ValueKind == JsonValueKind.Object && parent.TryGetProperty(name, out var array) && array.ValueKind == JsonValueKind.Array
-            ? array.EnumerateArray()
-            : [];
-
-    private static Dictionary<string, JsonElement> Attributes(JsonElement record)
-    {
-        Dictionary<string, JsonElement> attributes = [];
-        foreach (var attribute in Array(record, "attributes"))
-        {
-            if (attribute.TryGetProperty("key", out var key) && attribute.TryGetProperty("value", out var value))
-            {
-                attributes[key.GetString() ?? ""] = value;
-            }
-        }
-
-        return attributes;
-    }
-
-    private static string? Text(Dictionary<string, JsonElement> attributes, string key) =>
-        attributes.TryGetValue(key, out var value) && value.TryGetProperty("stringValue", out var text) ? text.GetString() : null;
-
-    // OTLP JSON allows an int as a number or a string, and Codex sends some counts as stringValue.
-    private static long Number(Dictionary<string, JsonElement> attributes, string key)
-    {
-        if (!attributes.TryGetValue(key, out var value))
-        {
-            return 0;
-        }
-
-        foreach (var property in value.EnumerateObject())
-        {
-            var raw = property.Value;
-            var text = raw.ValueKind == JsonValueKind.String ? raw.GetString() : raw.GetRawText();
-            if (long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))
-            {
-                return number;
-            }
-        }
-
-        return 0;
     }
 }

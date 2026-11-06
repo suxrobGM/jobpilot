@@ -75,6 +75,9 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
     public Task ReportUsageAsync(PilotSettings settings, string runId, PilotUsage usage, CancellationToken ct) =>
         PostAsync(settings, $"/api/pilot/runs/{runId}/usage", JsonContent.Create(usage, AppJsonContext.Default.PilotUsage), ct);
 
+    public Task PostStepsAsync(PilotSettings settings, string runId, PilotStep[] steps, CancellationToken ct) =>
+        PostAsync(settings, $"/api/pilot/runs/{runId}/steps", JsonContent.Create(new PostStepsRequest(steps), AppJsonContext.Default.PostStepsRequest), ct);
+
     /// <summary>Null when the server rejects the stream. Unlike the calls above, transport failures throw.</summary>
     public async Task<HttpResponseMessage?> OpenEventsAsync(PilotSettings settings, CancellationToken ct)
     {

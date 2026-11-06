@@ -8,6 +8,7 @@
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4102",
     "OTEL_LOGS_EXPORT_INTERVAL": "1000",
+    "OTEL_LOG_TOOL_DETAILS": "1",
     "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "false"
   },
   "permissions": {

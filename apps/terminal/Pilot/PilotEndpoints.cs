@@ -79,13 +79,14 @@ public static class PilotEndpoints
             return TypedResults.Ok(status.Get());
         });
 
-        // The provider CLI's OpenTelemetry log exporter (OTLP/HTTP JSON) posts here; see UsageMeter.
-        app.MapPost("/v1/logs", async Task<IResult> (HttpRequest request, UsageMeter meter) =>
+        // The provider CLI's OpenTelemetry log exporter (OTLP/HTTP JSON) posts here; see UsageMeter and StepRecorder.
+        app.MapPost("/v1/logs", async Task<IResult> (HttpRequest request, UsageMeter meter, StepRecorder steps) =>
         {
             try
             {
                 using var export = await JsonDocument.ParseAsync(request.Body, cancellationToken: request.HttpContext.RequestAborted);
                 meter.Read(export.RootElement);
+                steps.Read(export.RootElement);
                 return Results.Text("{}", "application/json");
             }
             catch (JsonException)
