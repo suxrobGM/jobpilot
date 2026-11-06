@@ -79,6 +79,10 @@ Choices made in this plan (veto before the phase that needs them):
   changes a task payload shape resets `pilot_states.task_list_snapshot` and rewrites
   `pilot_runs.payload`; after migrating, parse every `pilot_runs` row with `taskFieldsSchema`.
 - Click through each UI phase in a real browser (`run` skill).
+- **Tests shrink as code goes.** Tests of deleted code are deleted, not ported. A test stays only
+  if it guards behavior that could realistically break. Delete tests that restate the
+  implementation, re-test what another test covers, assert only that an event was published or
+  a mock was called, or check trivia (string caps, default values). One shared fake per module.
 - Follow `CLAUDE.md`, `.claude/rules/*.md`, and the memories on vocabulary, null over undefined,
   named param types, simple conditions, file size, terse comments, no redirects.
 - New vocabulary from Phase 4: **feed** (kind, `autoApply`), **job**. "Campaign" leaves code,
@@ -199,7 +203,26 @@ reads its `upwork` feed; Networking reads its `networking` feed.
 
 **Memory**: update the vocabulary memory (campaign → feed, CampaignJob → job).
 
-## Phase 5: Code layout (no behavior change)
+## Phase 5: Plugin (4,900 lines: 22 skills, 30 pilot task files, 5 agents)
+
+Check each overlap at the start of the phase by reading the files; delete before rewriting.
+
+1. Delete `resume-campaign`: pausing and resuming is a search change now.
+2. `apply` takes one job (URL or pasted page) only. Its no-argument mode, scoring and applying a
+   campaign's pasted links, duplicates the Pipeline's Add job links plus `feed.score` and
+   `job.apply`.
+3. `auto-apply` and `search` stop running their own search, score and apply loops. They write
+   jobs to the `manual` feed through the same agents the pilot uses (`job-searcher`,
+   `job-scorer`, `job-applier`), so one copy of each procedure exists.
+4. `_shared/campaign-flow.md` becomes `_shared/feed-flow.md`, holding only what more than one
+   skill reads. Fold single-reader `_shared/*` files into their reader.
+5. Pilot task files: one shape (Summary, Steps, Result), no restating `pilot/SKILL.md`.
+6. A check that every `jobpilot-api <METHOD> /api/...` call and every `$JOBPILOT_WEB/...` link in
+   `plugin/` matches a real API route or web page, run by `verify`. It would have caught the
+   stale `/campaigns/<id>` links and guards Phase 4's renames.
+7. After editing `plugin/agents`, regenerate `.codex/agents/*.toml` (CodexProvider.AgentToml).
+
+## Phase 6: Code layout and test trim (no behavior change)
 
 - `modules/pilot/` regroups: `state/` (pilot controller/service/stats), `thread/` (thread,
   journal), `tasks/` (task list, build, defs, maintenance, digest, `gather/`), `runs/` (run
@@ -212,8 +235,13 @@ reads its `upwork` feed; Networking reads its `networking` feed.
 - Web: `features/pilot/{settings,job-alerts}` → `features/settings/pilot/`;
   `features/pilot/{diagnostics,journal}` → `features/settings/diagnostics/`. `features/pilot/`
   keeps the home: `home/`, `thread/`, `attention/`, `changes/`, `steps/`.
+- Test trim, by the rule under Execution. API tests are 8,500 lines in 84 files: pilot 3,017
+  plus 645 of fakes (`tasks/fakes.ts`, `tasks/builders.ts`, `changes/fakes.ts`), feeds/jobs
+  about 900 plus 165. Merge the fakes into one per module. Terminal tests are 3,200 lines
+  (`CycleRunnerTests.cs` 320, `TerminalSessionTests.cs` 227); same rule. Report lines removed
+  per module in the commit body.
 
-## Phase 6: Shell and sidebar
+## Phase 7: Shell and sidebar
 
 ```
 ┌──────────────────────┬─────────────────────────────────────────────────────────┐
@@ -244,7 +272,7 @@ reads its `upwork` feed; Networking reads its `networking` feed.
   networking channel is on or messages exist.
 - Page headers drop the eyebrow (nav group names). Mobile bottom nav keeps its four tabs.
 
-## Phase 7: Pilot home
+## Phase 8: Pilot home
 
 ```
  ● Idle · next check 10:22 · 3/30 applied today                    [Watch] [Pause]
@@ -278,7 +306,7 @@ reads its `upwork` feed; Networking reads its `networking` feed.
   **Resume**), Rules. Section actions align right.
 - `search.tune` names searches whose name still equals their query.
 
-## Phase 8: Pipeline
+## Phase 9: Pipeline
 
 ```
  Pipeline                                                         [+ Add job links]
@@ -296,7 +324,7 @@ reads its `upwork` feed; Networking reads its `networking` feed.
 - Feed filter lists feeds by name; the Feed column shows the name.
 - Row selection with bulk Approve and Skip (Found, To apply), Retry (Failed).
 
-## Phase 9: Goals & rules and Settings
+## Phase 10: Goals & rules and Settings
 
 - **Goals & rules** (`/pilot/goals`): goals; searches (name, applied/week, pause/resume/delete,
   query and reason on expand); rules (cap, min score, deal-breakers, prefer cap-exempt); standing
@@ -307,7 +335,7 @@ reads its `upwork` feed; Networking reads its `networking` feed.
   - Credentials keeps the default login and the captcha key.
   - Profile loses work-preference fields that are rules.
 
-## Phase 10: Docs and wording
+## Phase 11: Docs and wording
 
 - Docs (`app/(public)/docs/**`): feeds, Goals & rules, the sidebar, Settings → Pilot.
 - `git grep -i campaign` over web, plugin and docs comes back empty outside migrations and
