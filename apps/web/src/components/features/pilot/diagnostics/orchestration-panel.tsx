@@ -2,13 +2,13 @@
 
 import type { ReactElement } from "react";
 import type { PilotState, TaskList } from "@jobpilot/contracts/pilot";
+import { taskTypeAgent, taskTypeLabel } from "@jobpilot/contracts/pilot";
 import { Box, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
 import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, humanizeIsoInText } from "@/utils/format";
 import { useLatestJournalPage } from "../journal/journal-cache";
 import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../pilot-status";
-import { taskTypeAgent, taskTypeLabel } from "../task-types";
 import { useNextWake } from "../use-next-wake";
 import { usePilotStatus } from "../use-pilot-status";
 import { AgentList } from "./agent-list";

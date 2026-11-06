@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { PilotThreadItem, PilotThreadRun } from "@jobpilot/contracts/pilot";
+import { taskTypeLabel } from "@jobpilot/contracts/pilot";
 import type { SvgIconComponent } from "@mui/icons-material";
 import {
   CheckCircleOutlined,
@@ -13,7 +14,6 @@ import { Card, CardContent, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { humanizeIsoInText } from "@/utils/format";
 import { pipelineHref } from "@/utils/routes";
-import { taskTypeLabel } from "../../task-types";
 
 type WorkItem = Extract<PilotThreadItem, { type: "work" }>;
 

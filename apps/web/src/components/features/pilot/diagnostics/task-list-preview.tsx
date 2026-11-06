@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { TaskList } from "@jobpilot/contracts/pilot";
+import { taskTypeLabel } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
 import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
@@ -12,7 +13,6 @@ import { RelativeTime } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { formatTimeUntil } from "@/utils/format";
-import { taskTypeLabel } from "../task-types";
 import { useTaskList } from "./use-task-list";
 
 const PREVIEW_COUNT = 6;

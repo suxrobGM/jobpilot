@@ -1,14 +1,19 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { newTokens, sumTokenUsage } from "@jobpilot/contracts/pilot";
+import {
+  AGENT_LABELS,
+  newTokens,
+  type PilotAgent,
+  sumTokenUsage,
+  taskTypeAgent,
+} from "@jobpilot/contracts/pilot";
 import { Box, Card, Stack, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { PulseDot } from "@/components/ui/feedback";
 import { formatNewTokenParts, formatTokens } from "@/utils/format";
 import { PILOT_MODE_LOOK } from "../pilot-status";
-import { AGENT_LABELS, type PilotAgent, taskTypeAgent } from "../task-types";
 import { DIM_OPACITY } from "./stage-card";
 
 /** Required record, so a new agent fails typecheck instead of silently missing from the list. */

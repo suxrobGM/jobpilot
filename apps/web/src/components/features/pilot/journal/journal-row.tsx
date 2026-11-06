@@ -6,12 +6,12 @@ import type {
   PilotJournalKind,
   PilotJournalRun,
 } from "@jobpilot/contracts/pilot";
+import { AGENT_LABELS, taskTypeAgent } from "@jobpilot/contracts/pilot";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { Bolt, NotificationImportant, Rule, Summarize, Terminal } from "@mui/icons-material";
 import { alpha, Box, type ChipProps, Stack, Tooltip, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
 import { formatTokenSplit, humanizeIsoInText } from "@/utils/format";
-import { AGENT_LABELS, taskTypeAgent } from "../task-types";
 
 export const KIND_META: Record<
   PilotJournalKind,

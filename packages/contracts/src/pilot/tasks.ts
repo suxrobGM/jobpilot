@@ -24,6 +24,7 @@ export const PILOT_SUBJECT_TYPES = [
   "request",
 ] as const;
 export const pilotSubjectTypeSchema = z.enum(PILOT_SUBJECT_TYPES);
+type PilotSubjectType = (typeof PILOT_SUBJECT_TYPES)[number];
 
 const nullableString = z.string().nullable();
 const optionalString = z.string().optional();
@@ -322,12 +323,16 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
 ]);
 
 type TaskFields = z.infer<typeof taskFieldsSchema>;
+
+/** Each task type's subject type, read off its variant so it is declared once. */
+export const TASK_SUBJECT_TYPES = Object.fromEntries(
+  taskFieldsSchema.options.map((variant) => [
+    variant.shape.taskType.value,
+    variant.shape.subjectType.value,
+  ]),
+) as Record<TaskType, PilotSubjectType>;
 export type TaskType = TaskFields["taskType"];
 export type TaskPayload<K extends TaskType> = Extract<TaskFields, { taskType: K }>["payload"];
-export type TaskSubjectType<K extends TaskType> = Extract<
-  TaskFields,
-  { taskType: K }
->["subjectType"];
 
 const taskSchema = z.intersection(
   z.object({ id: z.string(), priority: z.number(), title: z.string() }),

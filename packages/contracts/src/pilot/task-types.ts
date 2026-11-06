@@ -1,4 +1,4 @@
-import type { TaskType } from "@jobpilot/contracts/pilot";
+import type { TaskType } from "./tasks";
 
 /** `session` is the pilot session doing text-only work itself. */
 export type PilotAgent =

@@ -1,14 +1,13 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { newTokens } from "@jobpilot/contracts/pilot";
+import { newTokens, taskTypeLabel } from "@jobpilot/contracts/pilot";
 import { Box, LinearProgress, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { formatNewTokenParts, formatTokenSplit, formatTokens, plural } from "@/utils/format";
-import { taskTypeLabel } from "../task-types";
 
 export function CycleCost(): ReactElement {
   const query = useQuery(pilotQueries.cost());
