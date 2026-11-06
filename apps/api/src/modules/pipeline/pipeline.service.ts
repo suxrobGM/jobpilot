@@ -18,6 +18,9 @@ import { shadowedJobIds } from "./shadowed-jobs";
 /** Outreach lives in Networking → Messages, so its campaigns stay out of the Pipeline. */
 const JOB_CAMPAIGNS = { source: { not: "networking" } } satisfies Prisma.CampaignWhereInput;
 
+/** Upwork jobs get proposals, not applications; they show only when the Upwork board is picked. */
+const UPWORK = "upwork.com";
+
 const PIPELINE_INCLUDE = {
   ...JOB_INCLUDE,
   campaign: { select: { id: true, query: true } },
@@ -50,12 +53,15 @@ export class PipelineService {
     filters: PipelineFilters,
   ): Promise<Prisma.CampaignJobWhereInput> {
     const { campaignId, board, search } = filters;
+    const boardWhere: Prisma.CampaignJobWhereInput = board
+      ? { board: boardFilter(board) }
+      : { NOT: { board: boardFilter(UPWORK) } };
     return {
       userId,
       campaign: JOB_CAMPAIGNS,
       id: { notIn: await this.shadowed(userId) },
       ...(campaignId && { campaignId }),
-      ...(board && { board: boardFilter(board) }),
+      ...boardWhere,
       ...(search && {
         OR: [
           { title: { contains: search, mode: "insensitive" } },
