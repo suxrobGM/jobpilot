@@ -15,8 +15,8 @@ import {
 } from "@mui/material";
 import { RunSteps } from "@/components/features/pilot/steps/run-steps";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
-import { BROWSER_BLOCKED_MESSAGE, type TerminalHealth } from "@/hooks/use-terminal-health";
+import { LoadingSpinner } from "@/components/ui/feedback";
+import { BROWSER_BLOCKED_MESSAGE } from "@/hooks/use-terminal-health";
 import { readAgentStorage } from "@/lib/terminal/agent-storage";
 import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal/client";
 import { type AgentDrawerTab, useAgentDrawer } from "@/providers/agent-provider";
@@ -26,18 +26,10 @@ import { AgentOrb } from "./agent-orb";
 import { TerminalPanel } from "./terminal-panel";
 import { PendingRestartCard } from "./update/pending-restart-card";
 import { AgentUpdateBanner } from "./update/update-banner";
+import { useAgentActivity } from "./use-agent-activity";
 import { useAgentHealth } from "./use-agent-health";
 
 const PROVIDERS: TerminalProviderId[] = ["claude", "codex"];
-
-const STATUS_LABELS: Record<TerminalHealth, string> = {
-  checking: "connecting",
-  reachable: "ready",
-  degraded: "needs reinstall",
-  offline: "offline",
-  uninstalled: "not installed",
-  blocked: "blocked by browser",
-};
 
 export function AgentPanel(): ReactElement {
   const {
@@ -51,9 +43,9 @@ export function AgentPanel(): ReactElement {
     terminalRevision,
   } = useAgentDrawer();
   const { health, status, pending, beginPending, unreachable } = useAgentHealth();
+  const activity = useAgentActivity();
   const providerLabel = providerDisplayName(provider);
-
-  const statusLabel = pending && unreachable ? `${pending}…` : STATUS_LABELS[health];
+  const restarting = pending !== null && unreachable;
 
   const handleProviderChange = (event: SelectChangeEvent<string>): void => {
     void switchProvider(event.target.value === "codex" ? "codex" : "claude");
@@ -72,16 +64,13 @@ export function AgentPanel(): ReactElement {
         })}
       >
         <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
-          <AgentOrb size="xxl" />
+          <AgentOrb state={restarting ? "connecting" : activity.orb} size="xxl" />
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="h6">Agent</Typography>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.25 }}>
-              <PulseDot
-                tone="muted"
-                pulsing={health === "checking" || (pending !== null && unreachable)}
-                size="xs"
-              />
-              <Typography variant="overlineMuted">{statusLabel}</Typography>
+              <Typography variant="overlineMuted" noWrap>
+                {restarting ? `${pending}…` : activity.label}
+              </Typography>
               {status?.hostVersion && (
                 <Typography variant="overlineMuted">· v{status.hostVersion}</Typography>
               )}
