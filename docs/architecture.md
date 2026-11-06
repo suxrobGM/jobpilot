@@ -9,8 +9,8 @@ You don't need to know how to code to follow it. For technical details, see
 JobPilot has two halves:
 
 - **The dashboard** is a website. You sign up there, fill in your profile,
-  manage your resumes, start campaigns, and follow each application from
-  "applied" to "offer".
+  manage your resumes, talk to the Pilot, and follow each job from "found" to
+  "offer".
 - **The agent** runs on your computer. It's Claude Code or Codex, on your own
   subscription, with the JobPilot plugin added. It opens a browser on your
   machine and does the work: searching job boards, tailoring your resume,
@@ -21,7 +21,7 @@ JobPilot has two halves:
   ┌──────────────────────┐             ┌───────────────────────────┐
   │  JobPilot dashboard  │ ◄────────►  │  AI agent (Claude/Codex)  │
   │  profile · resumes   │             │  + JobPilot plugin        │
-  │  campaigns · inbox   │             │  + a web browser          │
+  │  pilot · pipeline    │             │  + a web browser          │
   └──────────────────────┘             └───────────────────────────┘
 ```
 
@@ -39,9 +39,10 @@ There are three reasons it's split this way:
 ### 1. The dashboard
 
 Your data lives at [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net):
-your profile, your resumes and their tailored copies, campaigns, the list of
-applications, recruiter emails, networking contacts, and charts. The site also
-has a terminal panel called the dock, where you can watch and control the
+your profile, your resumes and their tailored copies, the Pilot's thread, the
+pipeline of jobs and applications, recruiter emails, networking contacts, and
+charts. The site also has an agent drawer, where you can follow the Pilot's
+current task step by step, or open the terminal to watch and control the
 agent on your computer.
 
 ### 2. The agent
@@ -67,41 +68,38 @@ The same plugin works in Claude Code and Codex, so use whichever you have.
 
 This is a small program that runs in the background on your computer. It keeps
 the agent's session running and connects it to the dashboard. That's how the
-dock on the website can show the agent working, and how buttons on the website
-can tell it what to do. When it starts the agent, it also hands over a token
-that lets the agent act as you, so you don't have to set anything up.
+agent drawer on the website can show the agent working, and how the Pilot
+gets its work. When it starts the agent, it also hands over a token that lets
+the agent act as you, so you don't have to set anything up.
 
 You never deal with it directly. Setup installs and starts it for you, and the
-dock can start it again later.
+agent drawer can start it again later.
 
-## What happens during a campaign
+## What happens when it applies
 
-Say you start an auto-apply campaign for "senior typescript remote":
+Say your goals ask for "senior TypeScript, remote":
 
-1. The agent checks in with the dashboard and loads your profile, settings,
-   and main resume.
-2. It opens a browser on your computer and searches the job board you picked,
-   signing in with your saved login if it needs to.
-3. It scores each job against your resume. It skips jobs that don't fit, jobs
-   you've already applied to, and low-quality postings.
+1. The Pilot turns your goals into a few named searches, like "Senior
+   TypeScript, remote".
+2. A search runs: the agent opens a browser on your computer and searches a
+   job board, signing in with your saved login if it needs to.
+3. It scores each job against your resume. It skips jobs that don't fit, that
+   hit one of your deal-breakers, that you already have, and low-quality
+   postings. Every job lands in your pipeline either way, with the reason.
 4. For each good match, it picks or makes the right version of your resume,
    fills in the form, answers the screening questions, and writes a cover
    letter if one is asked for.
-5. After every job it reports back, so the campaign page shows each job as
-   applied, skipped, or failed, with the reason.
-6. Each application it sends appears in your list. When a recruiter replies
-   later, the reply is matched to that application.
-
-In Search only mode, the agent waits for you to approve matches before
-applying. In Apply to links mode, it applies to the jobs you pasted. In
-Auto-apply mode, it applies on its own up to the limit you set.
+5. After every job it reports back, so the pipeline shows each one as applied,
+   skipped, or failed.
+6. Each application it sends appears under **Applied**. When a recruiter
+   replies later, the reply is matched to that application.
 
 ## The Pilot
 
-You can still do everything above by hand, but you can also let JobPilot run
-the whole search. You write your instructions once: your goals, daily limits,
-networking settings, and where it may draft posts. The Pilot then repeats the
-same loop for as long as it's on:
+The Pilot is what runs all of this. You write your goals and a few rules
+once, then talk to it like an assistant: tell it what to change, ask why it
+skipped a job, or press a button anywhere on the site to ask for a task. It
+repeats the same loop for as long as the agent is running:
 
 ```text
   look for work ──► claim a task ──► agent works ──► agent reports ──► log it
@@ -110,42 +108,46 @@ same loop for as long as it's on:
 ```
 
 - **Look for work.** A small program on your computer asks the server for a
-  to-do list, which the server builds fresh from your data each time: jobs to
-  apply to, replies to read, follow-ups that are due. There's no separate
-  queue or scheduled job behind it. If the list is empty, the program logs a
-  quiet cycle and waits, and the AI never starts.
+  to-do list, which the server builds fresh from your data each time: your
+  messages, work you asked for, jobs to apply to, replies to read, follow-ups
+  that are due. With autopilot off, only the things you asked for are on it.
+  There's no separate queue or scheduled job behind it. If the list is empty,
+  the program waits, and the AI never starts.
 - **Claim a task.** It takes the top task and locks it for a limited time,
   then clears the agent's memory and gives it that task.
 - **Agent works.** The agent does that one thing, like applying to one job,
-  sending one follow-up, or drafting one interview reply. Results are saved to
-  the server as they happen, so a crash halfway through loses nothing.
+  answering your message, or drafting one interview reply. Results are saved
+  to the server as they happen, so a crash halfway through loses nothing.
+  Each tool call it makes becomes a short readable step you can watch from
+  any device.
 - **Agent reports.** Its last step is to report whether the task worked, with
-  a one-line summary. The server writes it to the journal, releases the lock,
-  and tells the program on your computer.
-- **Log it.** The program records the cycle, including how much AI usage it
+  a one-line summary. The server adds it to the Pilot's thread, releases the
+  lock, and tells the program on your computer.
+- **Log it.** The program records the task, including how much AI usage it
   took, and decides when to look again. If the agent goes quiet or gets stuck,
   it gets a reminder first, then a fresh session. If it never reports back,
   the task is cancelled, and an application it didn't finish goes back on the
   list.
 
-Two things let this run without a browser tab open. The first time you start
-the Pilot, your computer is **paired** with it: your login token is stored
-safely with the terminal host, so it can start sessions on its own after a
-restart or crash. And the dashboard keeps a live connection to the host, so it
-can wake the agent as soon as something urgent comes in instead of waiting
-for the next check.
+The program on your computer pairs with the Pilot by itself whenever you have
+JobPilot open, and keeps a live connection to the server, so it can start work
+as soon as you ask for something instead of waiting for the next check. If
+you type in the terminal yourself, it waits a few minutes before starting
+anything new.
 
 When the Pilot isn't sure what to do, for example with a salary question, an
-odd form field, or an interview invite, it sends you a short question that you
-can answer from your phone. The job waits until you answer. The most important
-rules aren't just instructions to the AI. The daily application and
-networking limits, "never send a LinkedIn message by yourself", and "never
-publish a post without my approval" are enforced by the dashboard, so they
-hold even if the AI makes a mistake.
+odd form field, or an interview invite, it asks you a short question that you
+can answer from your phone. The job waits until you answer. Changes to your
+goals, rules, and saved answers are only ever suggested, never made on its
+own, and every change has an Undo. The most important rules aren't just
+instructions to the AI. The daily application and networking limits, "never
+send a LinkedIn message by yourself", and "never publish a post without my
+approval" are enforced by the dashboard, so they hold even if the AI makes a
+mistake.
 
 ## Where your data lives
 
-- Your profile, resumes, applications, and campaigns are stored in your
+- Your profile, resumes, applications, and searches are stored in your
   JobPilot account.
 - Job board passwords and tokens are encrypted with a key that belongs only to
   your account.
@@ -157,13 +159,13 @@ hold even if the AI makes a mistake.
 ## Live updates
 
 While the agent works, every open dashboard page updates by itself. The
-campaign page shows each job's progress, the application list shows new
-applications, and the inbox shows newly matched replies. You never need to
+Pilot's thread shows each finished task, the pipeline shows each job's
+progress, and the inbox shows newly matched replies. You never need to
 refresh.
 
 ## Further reading
 
 - [development.md](development.md): running JobPilot locally, the repository
   layout, the tech stack, and the technical details behind this page.
-- [User guide](https://jobpilot.suxrobgm.net/docs): getting started, campaigns
-  and skills, email setup, credentials, and the FAQ.
+- [User guide](https://jobpilot.suxrobgm.net/docs): getting started, the
+  Pilot, skills, email setup, credentials, and the FAQ.

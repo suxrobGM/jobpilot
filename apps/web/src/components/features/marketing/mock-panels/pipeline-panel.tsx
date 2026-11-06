@@ -22,9 +22,9 @@ const APPLICATIONS: MockApplication[] = [
   { company: "Supabase", role: "Senior TypeScript Engineer", status: "Offer", color: "success" },
 ];
 
-export function WorkspacePanel(): ReactElement {
+export function PipelinePanel(): ReactElement {
   return (
-    <PanelFrame label="workspace">
+    <PanelFrame label="pipeline · applied">
       <Stack spacing={1.5}>
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1 }}>
           {FUNNEL.map((group) => (

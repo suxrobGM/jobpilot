@@ -2,7 +2,7 @@ import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("getting-started", {
   description:
-    "Install the JobPilot plugin, run setup, create your account, and launch your first campaign.",
+    "Install the JobPilot plugin, run setup, create your account, and set up the Pilot.",
 });
 
 # Getting started
@@ -87,7 +87,7 @@ confirm your email. Onboarding then has three steps.
    job scoring and tailoring use the resume.
 3. **Connect agent.** This checks that the terminal host from step 2 is
    running. If it isn't, the install commands are shown again. Press
-   **Finish** to open your workspace.
+   **Finish** to open the Pilot.
 
 You can change all of this later under **Settings**.
 
@@ -102,25 +102,28 @@ is, so **Re-extract from PDF** always gets the original text back.
 > Recruiters see the resume, but application forms and cover letters use your
 > profile. The resume page warns you when the two don't match.
 
-## 4. Run your first campaign
+## 4. Set up the Pilot
 
-From now on you work from the dashboard. Setup is the only command you type.
+From now on you work from the website. Setup is the only command you have to
+type.
 
-For your first campaign, search without applying so you can see how the
-agent scores jobs. Press **New campaign**, describe the job you want, and pick
-a board. The mode starts on **Auto-apply**, so change it to **Search only**.
-The agent searches the board, scores each job against your resume, and saves
-the matches. Look through the list and approve the jobs you want to apply to.
+The **Pilot** page opens with a **Get started** card listing what's left.
 
-Once the scores look right to you, keep the mode on **Auto-apply**. The agent
-then searches, scores, and applies to one job at a time. It stops when it runs
-out of jobs, when you pause it, or when it reaches the application limit you
-set under **Settings → Profile**.
+1. **Write your goals.** Describe the job you want in your own words, for
+   example "ML engineer, new grad, Pittsburgh or remote, visa sponsorship".
+   The Pilot builds its searches from them. Set your daily limit and minimum
+   score under **Rules** on the same page.
+2. **Connect your email.** Optional, but the Pilot needs it to read replies,
+   interview invites and sign-in codes. See [Email setup](/docs/email-setup).
+3. **Keep the agent running.** The Pilot connects to the agent on your
+   computer by itself whenever you have JobPilot open; there's nothing to
+   start or pair.
+4. **Turn on autopilot.** The Pilot starts finding, scoring and applying to
+   jobs within your rules. Want to see how it scores first? Leave autopilot
+   off and ask in the message box: "find ML engineer jobs in Pittsburgh but
+   don't apply yet".
 
-Each application shows up in your workspace, where you can follow it from
-applied to offer.
-
-If you'd rather not run campaigns one at a time, turn on the Pilot. It creates
-its own searches from your goals, applies up to a daily limit, handles replies,
-and asks you only when it needs a decision, like how to answer a salary
-question. Read [The Pilot](/docs/pilot) next.
+Every job it finds lands in your **Pipeline**, and every application in its
+**Applied** tab, where you can follow it from applied to offer. Press
+**Watch** on the Pilot page to see what it's doing step by step. Read
+[The Pilot](/docs/pilot) next.

@@ -47,20 +47,22 @@ Any board you can open in a browser. New accounts start with LinkedIn, Indeed,
 Hiring Cafe, and We Work Remotely. You can add Wellfound, Y Combinator (Work at
 a Startup), Welcome to the Jungle, Hacker News "Who's Hiring", Remote OK,
 4 Day Week, and Upwork from the board picker, or add any other site from the
-boards page.
+Settings → Job boards.
 
 ## How many jobs does the Pilot apply to each day?
 
-As many as your daily limit allows, one per cycle. The server enforces the
+As many as your daily limit allows, one per task. The server enforces the
 limit, not just the AI's instructions, so it holds even if something goes
-wrong in a cycle. The networking limit works the same way.
+wrong partway. The networking limit works the same way. Change it under
+**Rules** on the Pilot page.
 
 ## How does the Pilot decide what to do first?
 
-The server sorts the to-do list before every cycle. Questions you've just
-answered come first, then interview replies, then applications (best matches
-first), then networking, and finally searching for new jobs. You steer it
-with your goals and limits. See [the Pilot](/docs/pilot).
+The server sorts the to-do list before every task. Your messages come first,
+then work you asked for with a button, then questions you've just answered,
+interview replies, applications (best matches first), networking, and finally
+searching for new jobs. You steer it with your goals, rules, and messages. See
+[the Pilot](/docs/pilot).
 
 ## Will the Pilot send messages or post anything without asking me?
 
@@ -69,24 +71,25 @@ networking emails if you set email to **Auto-send**. LinkedIn messages and
 public posts always wait for your approval, and interview replies are always
 drafts for you to check. The server enforces these rules.
 
-## What if my computer sleeps or crashes in the middle of a cycle?
+## What if my computer sleeps or crashes in the middle of a task?
 
-You don't lose anything. Each cycle does one task and saves the result before
-moving on. If a cycle crashes partway, its task times out and goes back on the
-to-do list. The host starts cycles again by itself after a reboot or when the
+You don't lose anything. The Pilot does one task at a time and saves the
+result before moving on. If a task crashes partway, it times out and goes back
+on the to-do list. The agent starts again by itself after a reboot or when the
 computer wakes up.
 
 ## Can I use JobPilot myself while the Pilot is running?
 
-Yes. Campaigns and every dashboard button work as normal. If you start a
-session with the other provider yourself, the Pilot pauses so the two don't
-fight over the terminal, and carries on when you're done.
+Yes. Every button works as normal, and buttons simply ask the Pilot for that
+work, so it runs next. If you type in the terminal yourself, the Pilot waits
+3 minutes after your last keystroke before starting anything new, so the two
+of you don't collide. **Hand back** on the Pilot page ends the wait early.
 
-## What is a "cycle" in the journal?
+## Can I see exactly what it did?
 
-One task the Pilot did on its own, like one application, one inbox check, or
-one search. The "By cycle" view on the Activity tab groups the journal so you
-can see what each cycle did, how it went, and how long it took.
+Yes. The Pilot's thread shows every task with its result. **Watch** shows the
+task in progress step by step, from any device. **Settings → Diagnostics**
+has the full run history, what each run cost in tokens, and an export.
 
 ## How long do I have to answer a question?
 

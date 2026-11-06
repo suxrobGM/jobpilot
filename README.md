@@ -43,10 +43,11 @@ you. You can watch it, or leave it alone and check what it did later.
   resume. It can apply to the jobs you pick, or work through a list on its own
   up to a limit you set. It answers screening questions and writes cover
   letters along the way.
-- **Runs without you.** With the Pilot turned on, you write down your goals
-  and a daily limit, and it keeps finding jobs, applying, and following up.
-  If it needs a decision from you, it sends a notification to your phone.
-  Everything else goes into a journal you can read later.
+- **Works like an assistant.** You write down your goals and a few rules, and
+  with autopilot on it keeps finding jobs, applying, and following up. Tell
+  it what to change in plain words and it does it, with Undo. If it needs a
+  decision from you, it sends a notification to your phone, and you can watch
+  any task step by step from there too.
 - **Reaches out to people.** It finds the recruiter or hiring manager for a
   job and writes them a personal email or LinkedIn message. If you connect
   Gmail, it reads the replies, matches them to your applications, and
@@ -69,8 +70,8 @@ You need a Claude Code or Codex subscription and [Node.js](https://nodejs.org)
    updates it.
 3. [Create an account](https://jobpilot.suxrobgm.net) and upload your resume.
    The agent reads it and fills in your profile.
-4. Start a search campaign. Look over the matches, then apply to the ones you
-   like, or let an auto-apply campaign handle them.
+4. Write your goals on the Pilot page and turn on autopilot. Or leave it off
+   and ask for a search first to check the matches.
 
 > Claude Code starts on the latest Sonnet model and Codex on GPT 6 Luna. Bigger
 > models use up your weekly limit much faster and don't send any more
@@ -103,8 +104,8 @@ Then start a new Codex session and run:
 $setup
 ```
 
-Once setup is done, you can start the agent from the dock on the right side
-of the dashboard.
+Once setup is done, you can start the agent from the agent drawer, opened by
+the agent button at the bottom of the sidebar.
 
 <details>
 <summary><b>Install the terminal host without the plugin</b></summary>
@@ -144,33 +145,32 @@ It installs the terminal host, starts the agent, and opens the dashboard. If
 the host is already installed, it updates it, so you can run it again whenever
 you want to update or fix your install.
 
-Everything else starts from a button in the dashboard. JobPilot passes the
-matching skill to the agent, and you can watch it work in the dock:
+Everything else starts from the website. Buttons ask the Pilot for that
+work, it runs next on your agent, and you can watch it in the agent drawer:
 
-| In the dashboard                             | What the agent does                                                      |
-| -------------------------------------------- | ------------------------------------------------------------------------ |
-| New campaign → Search only (`search`)        | Searches a board and scores every job against your resume.               |
-| New campaign → Auto-apply (`auto-apply`)     | Searches, then applies to matches one at a time, up to your limit.       |
-| New campaign → Networking (`networking`)     | Finds the recruiter or hiring manager and drafts a message to each.      |
-| New campaign on Upwork (`upwork-search`)     | Searches Upwork, drops low-quality clients, and ranks the rest.          |
-| New campaign → Apply to links (`apply`)      | Checks the fit of each job link you paste, then applies.                 |
-| Campaign → Resume (`resume-campaign`)        | Restarts a paused campaign and finishes its approved jobs.               |
-| Campaign → Rescan skipped (`rescan-skipped`) | Checks skipped jobs again in case they were skipped by mistake.          |
-| Campaign → Retry failed (`auto-apply`)       | Tries the failed applications again.                                     |
-| Inbox → Scan pending (`scan-inbox`)          | Sorts new email, matches it to applications, suggests status changes.    |
-| Networking → Regenerate (`networking`)       | Writes a new version of a draft message.                                 |
-| Resume → Extract from PDF (`extract-resume`) | Reads an uploaded PDF into your resume editor.                           |
-| Resume → Tailor (`tailor-resume`)            | Rewrites a copy of your resume for one job posting.                      |
-| Upwork → Proposal (`upwork-proposal`)        | Drafts a proposal for one job.                                           |
-| Upwork → Submit (`upwork-submit`)            | Sends a draft proposal after showing you the Connects cost.              |
-| Upwork → Profile (`upwork-profile`)          | Suggests a better title, overview, and skills; saves them if you agree.  |
-| Upwork → Inbox sync (`upwork-sync`)          | Brings in invitations, offers, messages, and your Connects balance.      |
-| Pilot → Start (`pilot`)                      | Hands your whole job search to the agent until you stop it.              |
+| On the website                     | What the agent does                                                   |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| Pilot → message box                | Answers you, changes goals, rules or searches, or queues work.        |
+| Pipeline → Apply now               | Applies to that job.                                                  |
+| Pipeline → Retry                   | Tries the failed applications again.                                  |
+| Pipeline → Rescan                  | Checks skipped jobs again in case they were skipped by mistake.       |
+| Inbox → Scan pending               | Sorts new email, matches it to applications, suggests status changes. |
+| Networking → Find contacts         | Finds recruiters or hiring managers and drafts a message to each.     |
+| Networking → Rewrite               | Writes a new version of the selected draft messages.                  |
+| Resume → Extract from PDF          | Reads an uploaded PDF into your resume editor.                        |
+| Resume → Tailor                    | Rewrites a copy of your resume for one job posting.                   |
+| Upwork → Proposal                  | Drafts a proposal for one job.                                        |
+| Upwork → Submit                    | Sends a draft proposal after showing you the Connects cost.           |
+| Upwork → Profile                   | Suggests a better title, overview, and skills; saves them if you agree. |
+| Upwork → Sync                      | Brings in invitations, offers, messages, and your Connects balance.   |
+
+You can also type any skill into the terminal yourself, like
+`/jobpilot:search` or `/jobpilot:apply <link>`.
 
 Some skills run in the middle of other work, and you never start them
 yourself. The agent uses them to tailor your resume before applying, write a
 cover letter, solve a captcha, or read a sign-in code from your email. The
-[full list](https://jobpilot.suxrobgm.net/docs/campaigns-and-skills) covers
+[full list](https://jobpilot.suxrobgm.net/docs/skills) covers
 every skill.
 
 Reading replies, picking up sign-in codes, and sending networking emails all
@@ -180,7 +180,7 @@ through it.
 
 ## Documentation
 
-- [User guide](https://jobpilot.suxrobgm.net/docs): setup, campaigns, skills,
+- [User guide](https://jobpilot.suxrobgm.net/docs): setup, the Pilot, skills,
   email, credentials, and the FAQ.
 - [How JobPilot works](docs/architecture.md): a plain-language overview of
   the website, the agent, and the terminal host.

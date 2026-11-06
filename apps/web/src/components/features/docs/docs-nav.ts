@@ -11,17 +11,18 @@ export const DOCS_NAV: DocsNavEntry[] = [
   {
     title: "Getting started",
     href: "/docs/getting-started",
-    description: "Install the plugin, create your account, and run your first campaign.",
+    description: "Install the plugin, create your account, and set up the Pilot.",
   },
   {
     title: "The Pilot",
     href: "/docs/pilot",
-    description: "Let JobPilot run your search on its own, within limits you set.",
+    description: "Your assistant for the job search: chat, autopilot, goals and rules.",
   },
   {
-    title: "Campaigns & skills",
-    href: "/docs/campaigns-and-skills",
-    description: "The four campaign modes, what each button does, and application statuses.",
+    title: "Skills",
+    href: "/docs/skills",
+    description:
+      "What each button asks the Pilot to do, the skills you can run yourself, and application statuses.",
   },
   {
     title: "Email setup",

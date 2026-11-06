@@ -101,11 +101,12 @@ flowchart LR
 
 ### Web
 
-[apps/web/](../apps/web/) is the Next.js UI: the application pipeline,
-campaigns with live per-job progress, inbox, networking, the resume studio,
-Upwork (proposals, profile, inbox), analytics, settings, and the agent dock.
-The dock is an xterm.js panel that installs, starts, and monitors the local
-agent.
+[apps/web/](../apps/web/) is the Next.js UI: the Pilot home (thread, chat,
+needs-you, notices), the pipeline with live per-job progress, inbox,
+networking, the resume studio, Upwork (proposals, profile, inbox), analytics,
+settings, and the agent drawer. The drawer has a Steps tab (the running task's
+readable steps, streamed from the API) and a Terminal tab, an xterm.js panel
+that installs, starts, and monitors the local agent.
 
 Both the browser and the Next.js server call the API directly through
 `API_BASE_URL`. Nothing proxies data in between.
@@ -122,8 +123,10 @@ by domain under `apps/api/prisma/schema/`.
 one provider PTY (ConPTY via Quick.PtyNet). It streams that PTY to the web's
 xterm.js over a WebSocket.
 
-Endpoints: `POST /sessions/start`, `POST /sessions/inject`,
-`DELETE /sessions/current`, `GET /healthz`, `GET /ws`.
+Endpoints: `POST /sessions/start`, `DELETE /sessions/current`,
+`POST /pilot/pair`, `POST /pilot/unpair`, `POST /pilot/handback`,
+`POST /v1/logs` (the CLI's OTLP log export, read for token usage and live
+steps), `GET /healthz`, `GET /ws`.
 
 `/sessions/start` takes the user's terminal token and starts the provider
 with these environment variables:
@@ -140,8 +143,11 @@ When the panel reopens, it reconnects a WebSocket to the running session and
 replays the most recent output (`TerminalRelay`, 512 KB, cleared when a new
 session starts). Switching providers restarts the PTY.
 
-The web sends skills as `/jobpilot:<skill>` for Claude and `$<skill>` for
-Codex. When a new release is out, the dock shows an update banner. The guided
+The web never types into the PTY. Buttons create pilot requests
+(`POST /api/pilot/requests`), and the paired host's pilot loop runs them as
+normal runs, typing the pilot skill with the run id (`/jobpilot:pilot` for
+Claude, `$pilot` for Codex). When a new release is out, the agent drawer shows
+an update banner. The guided
 update replaces the host and plugin and, on Claude, finishes with
 `/reload-plugins`.
 
@@ -206,18 +212,21 @@ trust policy for this repo; behavior belongs to the plugin.
 
 ```mermaid
 sequenceDiagram
-    participant W as Web (agent dock)
-    participant T as Terminal :4102
-    participant S as apply skill (PTY)
+    participant W as Web (Pipeline)
     participant API as API :4101
+    participant T as Terminal :4102 (pilot loop)
+    participant S as pilot skill (PTY)
     participant B as Browser (Playwright MCP)
 
-    W->>T: POST /sessions/inject
-    T->>S: PTY stdin
-    S->>API: GET /health, /profile, /credentials, /applications/duplicates
+    W->>API: POST /pilot/requests {taskType: "job.apply"}
+    API-->>T: SSE request.created (wake)
+    T->>API: POST /pilot/tasks/refresh, POST /pilot/runs
+    T->>S: PTY stdin: /jobpilot:pilot <runId>
+    S->>API: GET /health, /user, /credentials/resolve, /applications/duplicates
     S->>B: navigate, login, fill, submit
-    S->>API: POST /campaigns/[id]/jobs/[jobKey]/result
-    API-->>W: SSE campaign event → query invalidation → refetch
+    T->>API: POST /pilot/runs/[id]/steps (from the CLI's OTLP logs)
+    S->>API: PATCH /campaigns/[id]/jobs/[jobKey], POST /pilot/runs/[id]/result
+    API-->>W: SSE run.steps, run.finished → query invalidation → refetch
 ```
 
 ### Live updates
@@ -226,7 +235,8 @@ Skills write through `/api/campaigns/*`. The web opens
 `EventSource /api/campaigns/[id]/events` and, on each event, invalidates the
 TanStack Query cache so the page refetches the real state from PostgreSQL.
 Five more channels (`workspace`, `inbox`, `resume`, `upwork`, `pilot`) work
-the same way. They're defined in `packages/contracts/src/sse/channels/`.
+the same way. The pilot channel also carries the host's control events
+(`run.interrupt`, `run.steer`) and live `run.steps`. They're defined in `packages/contracts/src/sse/channels/`.
 
 ### Skills
 

@@ -8,11 +8,11 @@ import { SectionHeading } from "../section-heading";
 const STEPS: NumberedStep[] = [
   {
     title: "Say what you want",
-    body: "Describe the jobs you're after in a few sentences. Set a daily application limit and decide whether it may email recruiters for you.",
+    body: "Describe the jobs you're after in a few sentences, and set a daily limit and any deal-breakers. Change your mind later by just telling it.",
   },
   {
     title: "It gets to work",
-    body: "It looks for jobs, scores them against your resume, applies to the good ones, and finds people worth contacting. With nothing to do, the AI stays off and uses none of your quota.",
+    body: "With autopilot on, it looks for jobs, scores them against your resume, applies to the good ones, and finds people worth contacting. With nothing to do, the AI stays off and uses none of your quota.",
   },
   {
     title: "Answer from your phone",
@@ -20,7 +20,7 @@ const STEPS: NumberedStep[] = [
   },
   {
     title: "See what it did",
-    body: "Everything goes into a journal, and each morning you get a summary of applications sent and replies received.",
+    body: "It reports each task as it finishes, you can watch the one in progress step by step, and each morning you get a summary of applications sent and replies received.",
   },
 ];
 
@@ -33,7 +33,7 @@ export function Pilot(): ReactElement {
             <SectionHeading
               eyebrow="How the Pilot works"
               title="Set it up once. It keeps your search going."
-              lead="You set the goals and the limits. It searches, applies, and follows up on its own, and asks you when it needs a decision."
+              lead="Like an assistant: you set the goals and the rules, it searches, applies, and follows up, and it asks you when it needs a decision."
             />
             <Stack direction="row" sx={{ flexWrap: "wrap", gap: 2, alignItems: "center" }}>
               <LinkButton href="/install" variant="contained">

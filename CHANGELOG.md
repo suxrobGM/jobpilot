@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+Update the plugin and terminal host with this release. Older hosts stop running the pilot once the API is deployed, because the pilot no longer has a Start/Stop switch; the update banner brings them current.
+
+### Added
+
+- The Pilot page is a conversation: a thread of the pilot's work, questions, changes and replies, a message box to ask or tell it anything, and a status line with Watch, Interrupt and Pause/Resume.
+- Autopilot: on, the pilot picks its own work; off, it runs only what you ask for. Buttons across the app ask the pilot for work, and those requests run next from any device.
+- Goals & rules: deal-breakers, named searches you can pause or delete, and standing answers. Every edit is a change with Undo for 7 days; the pilot only suggests changes to your goals, rules and answers.
+- Heads up notices for missing email, unread mail, no replies, near-miss scores and an unused daily limit, each with one button to act on it.
+- Live steps: the agent drawer's Steps tab and the status line show what the running task is doing, readable on a phone. Steps never include typed values or page text.
+- Pasting a job link offers to add it to your pipeline without waiting for the pilot.
+
+### Changed
+
+- The Pipeline replaces the workspace and campaign pages: Found, To apply, Applied, Needs you, Skipped and Failed, with jobs you already have never added twice.
+- The agent dock is now an on-demand drawer, and the host pairs with the pilot automatically. Typing in the terminal holds new pilot work for 3 minutes; Hand back ends the wait.
+- Job boards moved to Settings → Job boards, and Portfolio to Documents → Portfolio.
+- Settings gained Pilot and Diagnostics tabs; the run history and token costs live under Diagnostics.
+- The docs were rewritten for the new Pilot, and "Campaigns & skills" is now "Skills".
+
+### Fixed
+
+- The terminal host builds on the patched .NET 10.0.14 compiler and runtime (CVE-2026-111497).
+
 ## v2.3.5 - 2026-11-05
 
 ### Fixed

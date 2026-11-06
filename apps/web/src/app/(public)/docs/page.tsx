@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { DocsIndexCards } from "@/components/features/docs";
 
 const description =
-  "How to set up and use JobPilot: installing the agent, the Pilot, campaigns, email, and credentials.";
+  "How to set up and use JobPilot: installing the agent, the Pilot, skills, email, and credentials.";
 
 export const metadata: Metadata = {
   title: "Docs",
@@ -28,8 +28,9 @@ export default function DocsIndexPage(): ReactElement {
         <Typography variant="docsBody">
           The agent searches job boards, scores each job against your resume, makes a tailored
           resume for each application, fills in the form, and matches replies from recruiters to the
-          right application. You can start each task yourself from the dashboard, or turn on the
-          Pilot and let it run the whole search. These guides cover setup and day-to-day use.
+          right application. The Pilot runs the whole search like an assistant: tell it what you
+          want, and it works through your goals and asks when it needs you. These guides cover setup
+          and day-to-day use.
         </Typography>
       </Stack>
       <DocsIndexCards />
