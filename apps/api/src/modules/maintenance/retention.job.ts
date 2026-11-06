@@ -3,19 +3,19 @@ import { container } from "@/common/di/container";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
-import { runRetentionCleanup } from "./cleanup";
+import { applyRetention } from "./retention";
 
-/** Daily job (03:30 server time, offset from prune-pdf-cache) that sweeps expired pilot/auth rows. */
-export const cleanupJob = cron({
+/** Daily at 03:30 server time, offset from prune-pdf-cache. */
+export const retentionJob = cron({
   name: "retention-cleanup",
   pattern: Patterns.everyDayAt("03:30"),
   run() {
-    // No local DB: a dev host left running overnight would sweep every user's rows in the shared instance.
+    // No local DB: a dev host left running overnight would trim every user's rows in the shared instance.
     if (env.NODE_ENV !== "production") {
       return;
     }
 
-    runRetentionCleanup(container.get(PrismaClient))
+    applyRetention(container.get(PrismaClient), new Date())
       .then((counts) => logger.info({ ...counts }, "Retention cleanup complete"))
       .catch((err) => logger.error({ err }, "Retention cleanup failed"));
   },

@@ -25,8 +25,8 @@ import { adminBoardController } from "@/modules/job-board/admin-board.controller
 import { jobBoardController } from "@/modules/job-board/job-board.controller";
 import { adminJobListingController } from "@/modules/job-listing/admin-listing.controller";
 import { publicJobListingController } from "@/modules/job-listing/job-listing.controller";
-import { cleanupJob } from "@/modules/maintenance/cleanup.job";
 import { pdfCacheJob } from "@/modules/maintenance/pdf-cache.job";
+import { retentionJob } from "@/modules/maintenance/retention.job";
 import { networkingController } from "@/modules/networking/networking.controller";
 import { profileAnswersController } from "@/modules/pilot/answer.controller";
 import { pilotChangesController } from "@/modules/pilot/changes/change.controller";
@@ -62,7 +62,7 @@ const app = new Elysia()
   .use(corsPlugin)
   .use(openapiPlugin)
   .use(pdfCacheJob)
-  .use(cleanupJob)
+  .use(retentionJob)
   .use(expiryJob)
   .onStop(async () => {
     await db.$disconnect();
