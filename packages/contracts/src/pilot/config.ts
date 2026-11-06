@@ -54,8 +54,18 @@ const pilotSettingsSchema = z.object({
 /** Stored as JSON in `PilotState.config`; `{}` parses to a full config. */
 export const pilotConfigSchema = pilotRulesSchema.extend(pilotSettingsSchema.shape);
 
+const settings = pilotSettingsSchema.shape;
+
 /** Settings other than job alerts, which keep their own route. */
-export const updatePilotSettingsSchema = pilotSettingsSchema.omit({ jobAlerts: true }).partial();
+// Unwrapped: Zod 4 still applies a default under .partial(), so a one-key patch would reset the rest.
+export const updatePilotSettingsSchema = z
+  .object({
+    boards: settings.boards.unwrap(),
+    checkIntervalMinutes: settings.checkIntervalMinutes.unwrap(),
+    networking: settings.networking.unwrap(),
+    promotion: settings.promotion.unwrap(),
+  })
+  .partial();
 
 export const pilotStateSchema = z.object({
   userId: z.uuid(),
