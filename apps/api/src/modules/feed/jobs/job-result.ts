@@ -5,9 +5,10 @@ import type {
   Application,
   ApplicationSource,
   FeedKind,
+  Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { JOB_INCLUDE } from "./job-row";
+import { JOB_INCLUDE, type JobRow } from "./job-row";
 
 export function isTerminalJob(status: JobStatus): boolean {
   return (JOB_TERMINAL_OUTCOMES as readonly string[]).includes(status);
@@ -46,7 +47,6 @@ async function resolveSubmittedResume(
   return NO_RESUME;
 }
 
-/** Records an idempotent terminal job result and, when applied, its Application and documents. */
 /** How an application from this kind of feed was made. */
 const APPLICATION_SOURCES: Record<FeedKind, ApplicationSource> = {
   search: "auto_apply",
@@ -58,6 +58,65 @@ const APPLICATION_SOURCES: Record<FeedKind, ApplicationSource> = {
   networking: "networking",
 };
 
+interface AppliedResult {
+  userId: string;
+  source: ApplicationSource;
+  appliedAt: Date;
+  submitted: SubmittedResume;
+  /** False when this result was already recorded, so a retry must not log a second event. */
+  firstWrite: boolean;
+}
+
+/** Upserts the Application for an applied job and links the documents sent with it. */
+async function recordApplication(
+  tx: Prisma.TransactionClient,
+  job: JobRow,
+  { userId, source, appliedAt, submitted, firstWrite }: AppliedResult,
+): Promise<Application> {
+  const logApplied = {
+    create: { kind: "status_change", toStatus: "applied", source: "feed" },
+  } as const;
+  const application = await tx.application.upsert({
+    where: { userId_url: { userId, url: job.url } },
+    // A repost reuses this row, so the date has to move: the duplicate window measures from it.
+    update: firstWrite ? { appliedAt, events: logApplied, ...submitted } : {},
+    create: {
+      userId,
+      url: job.url,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      boardId: job.boardId,
+      source,
+      feedId: job.feedId,
+      jobId: job.id,
+      matchScore: job.matchScore,
+      matchReason: job.matchReason,
+      appliedAt,
+      events: logApplied,
+      ...submitted,
+    },
+  });
+
+  // Marks the variant used, which the resume page's prune filter reads. A reused variant keeps
+  // its first link: the application it was created for.
+  if (submitted.resumeVariantId) {
+    await tx.resumeVariant.updateMany({
+      where: { id: submitted.resumeVariantId, applicationId: null },
+      data: { applicationId: application.id },
+    });
+  }
+
+  // The letter is written before this row exists, so link it by the url; both sides are
+  // normalized on write.
+  await tx.coverLetter.updateMany({
+    where: { jobUrl: job.url, applicationId: null, userId },
+    data: { applicationId: application.id },
+  });
+  return application;
+}
+
+/** Records an idempotent terminal job result and, when applied, its Application and documents. */
 export async function writeJobResult(
   prisma: PrismaClient,
   userId: string,
@@ -74,7 +133,6 @@ export async function writeJobResult(
     { feedId, key, userId },
     "Feed job",
   );
-  const source = APPLICATION_SOURCES[existing.feed.kind];
 
   if (isTerminalJob(existing.status)) {
     if (existing.status !== data.outcome) {
@@ -93,6 +151,7 @@ export async function writeJobResult(
   const appliedAt = data.outcome === "applied" && data.appliedAt ? new Date(data.appliedAt) : null;
   // Read outside the transaction: rows it never writes need not sit in its lock window.
   const submitted = appliedAt ? await resolveSubmittedResume(prisma, userId, data) : NO_RESUME;
+  const source = APPLICATION_SOURCES[existing.feed.kind];
 
   return prisma.$transaction(async (tx) => {
     const changed = await tx.job.updateMany({
@@ -114,51 +173,10 @@ export async function writeJobResult(
       throw conflict(`Job already finished with outcome ${job.status}.`);
     }
 
-    let application: Application | null = null;
-    if (appliedAt) {
-      const logApplied = {
-        create: { kind: "status_change", toStatus: "applied", source: "feed" },
-      } as const;
-      application = await tx.application.upsert({
-        where: { userId_url: { userId, url: job.url } },
-        // A repost reuses this row, so the date has to move: the duplicate window measures from
-        // it. A result already recorded (`count === 0`) must not, or the retry logs a second event.
-        update: changed.count === 0 ? {} : { appliedAt, events: logApplied, ...submitted },
-        create: {
-          userId,
-          url: job.url,
-          title: job.title,
-          company: job.company,
-          location: job.location,
-          boardId: job.boardId,
-          source,
-          feedId,
-          jobId: job.id,
-          matchScore: job.matchScore,
-          matchReason: job.matchReason,
-          appliedAt,
-          events: logApplied,
-          ...submitted,
-        },
-      });
-
-      // Marks the variant used, which the resume page's prune filter reads. A reused variant keeps
-      // its first link: the application it was created for.
-      if (submitted.resumeVariantId) {
-        await tx.resumeVariant.updateMany({
-          where: { id: submitted.resumeVariantId, applicationId: null },
-          data: { applicationId: application.id },
-        });
-      }
-
-      // The letter is written before this row exists, so link it by the url; both sides are
-      // normalized on write.
-      await tx.coverLetter.updateMany({
-        where: { jobUrl: job.url, applicationId: null, userId },
-        data: { applicationId: application.id },
-      });
-    }
-
-    return { job, application, changed: changed.count > 0 };
+    const firstWrite = changed.count > 0;
+    const application = appliedAt
+      ? await recordApplication(tx, job, { userId, source, appliedAt, submitted, firstWrite })
+      : null;
+    return { job, application, changed: firstWrite };
   });
 }

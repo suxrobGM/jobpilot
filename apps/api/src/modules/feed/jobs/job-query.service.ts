@@ -3,15 +3,19 @@ import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { ensureFeedOwned } from "../feed.utils";
+import { ensureFeedOwned } from "../feed-ownership";
 import type { jobsQuery } from "./job.schema";
 import { JOB_INCLUDE, toJob } from "./job-row";
+
+function reasonCount(kind: JobReason["kind"], reason: string | null, count: number): JobReason {
+  return { kind, reason: reason ?? "", count };
+}
 
 @injectable()
 export class JobQueryService {
   constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
-  async listJobs(userId: string, feedId: string, query: z.infer<typeof jobsQuery>) {
+  async list(userId: string, feedId: string, query: z.infer<typeof jobsQuery>) {
     const where: Prisma.JobWhereInput = {
       feedId,
       userId,
@@ -38,7 +42,7 @@ export class JobQueryService {
   }
 
   /** Grouped across every job, so the breakdown is not page-scoped. */
-  async listJobReasons(userId: string, feedId: string): Promise<JobReason[]> {
+  async listReasons(userId: string, feedId: string): Promise<JobReason[]> {
     await ensureFeedOwned(this.prisma, userId, feedId);
 
     const [skipped, failed] = await Promise.all([
@@ -55,16 +59,8 @@ export class JobQueryService {
     ]);
 
     return [
-      ...skipped.map((row) => ({
-        kind: "skipped" as const,
-        reason: row.skipReason ?? "",
-        count: row._count._all,
-      })),
-      ...failed.map((row) => ({
-        kind: "failed" as const,
-        reason: row.failReason ?? "",
-        count: row._count._all,
-      })),
+      ...skipped.map((row) => reasonCount("skipped", row.skipReason, row._count._all)),
+      ...failed.map((row) => reasonCount("failed", row.failReason, row._count._all)),
     ].sort((a, b) => b.count - a.count);
   }
 }

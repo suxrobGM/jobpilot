@@ -1,6 +1,6 @@
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PilotRun, PilotRunOutcome, PrismaClient } from "@/generated/prisma/client";
-import type { JobRef } from "@/modules/feed/jobs/apply-guard";
+import type { JobRef } from "@/modules/feed/jobs/applying";
 
 /** Row cap for the unbounded gather and expiry scans. */
 export const GATHER_CAP = 200;

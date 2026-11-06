@@ -5,7 +5,7 @@ describe("JobService queued rows", () => {
   it("promotes a scored pasted link from queued to pending", async () => {
     const state = setup();
     state.setStatus("queued");
-    const patched = await state.service.patchJob("u1", "c1", "j1", {
+    const patched = await state.service.update("u1", "c1", "j1", {
       status: "pending",
       title: "Staff Engineer",
       company: "Acme",
@@ -16,7 +16,7 @@ describe("JobService queued rows", () => {
   it("refuses to skip the score pass by approving a queued row outright", async () => {
     const state = setup();
     state.setStatus("queued");
-    await expect(state.service.patchJob("u1", "c1", "j1", { status: "approved" })).rejects.toThrow(
+    await expect(state.service.update("u1", "c1", "j1", { status: "approved" })).rejects.toThrow(
       "cannot transition from queued to approved",
     );
   });
@@ -39,7 +39,7 @@ describe("JobService duplicate apply guard", () => {
     state.setStatus("approved");
     state.setApplication(EXISTING);
 
-    await expect(state.service.patchJob("u1", "c1", "j1", { status: "applying" })).rejects.toThrow(
+    await expect(state.service.update("u1", "c1", "j1", { status: "applying" })).rejects.toThrow(
       /Already applied/,
     );
     expect(state.job.status).toBe("skipped");
@@ -61,7 +61,7 @@ describe("JobService duplicate apply guard", () => {
     const state = setup();
     state.setStatus("approved");
 
-    const patched = await state.service.patchJob("u1", "c1", "j1", { status: "applying" });
+    const patched = await state.service.update("u1", "c1", "j1", { status: "applying" });
 
     expect(patched).toMatchObject({ status: "applying" });
   });

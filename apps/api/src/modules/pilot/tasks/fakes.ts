@@ -19,7 +19,7 @@ interface RunRow {
 type LatestRun = Omit<RunRow, "subjectId" | "startedAt"> & { startedAt?: Date };
 
 interface Recorder {
-  promoteScoredJobs: unknown[][];
+  settleScored: unknown[][];
   journals: Row[];
   pushes: SentPush[];
   inboxSyncs: { userId: string; staleMs: number }[];
@@ -136,7 +136,7 @@ function fakeFeed(over: Over) {
 /** A fake Prisma covering every read and write a task list refresh issues. */
 function makeTaskListDb(over: Over = {}) {
   const rec: Recorder = {
-    promoteScoredJobs: [],
+    settleScored: [],
     journals: [],
     pushes: [],
     inboxSyncs: [],
@@ -209,8 +209,8 @@ function makeTaskListDb(over: Over = {}) {
 export function makeTaskListDeps(over: Over = {}) {
   const { prisma, rec } = makeTaskListDb(over);
   const jobs = {
-    promoteScoredJobs: async (...args: unknown[]) => {
-      rec.promoteScoredJobs.push(args);
+    settleScored: async (...args: unknown[]) => {
+      rec.settleScored.push(args);
     },
   } as unknown as JobService;
   const journal = {

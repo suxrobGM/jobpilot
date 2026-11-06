@@ -2,7 +2,7 @@ import { type JobBriefData, jobBriefSchema } from "@jobpilot/contracts/feed";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { CapExemptBasis, Prisma, PrismaClient } from "@/generated/prisma/client";
-import { applyableJobWhere } from "@/modules/feed/jobs/apply-guard";
+import { applyableJobWhere } from "@/modules/feed/jobs/applying";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "../../runs/run-history";
 

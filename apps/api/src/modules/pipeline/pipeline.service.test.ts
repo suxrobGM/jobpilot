@@ -16,7 +16,7 @@ const prisma = {
 
 const patched: string[] = [];
 const jobs = {
-  patchJob: async (_userId: string, _feedId: string, key: string) => {
+  update: async (_userId: string, _feedId: string, key: string) => {
     if (key === "taken") throw conflict("Already applying");
     patched.push(key);
   },

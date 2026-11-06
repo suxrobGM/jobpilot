@@ -1,7 +1,7 @@
 import { AUTO_APPLY_FEED_KINDS } from "@jobpilot/contracts/feed";
 import type { PilotChangeAction } from "@jobpilot/contracts/pilot";
 import type { JobStatus, Prisma } from "@/generated/prisma/client";
-import { publishJob } from "@/modules/feed/jobs/job-events";
+import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import type { ActionContext, ActionOf } from "./action-context";
 
 /** Jobs still on their way; anything applied, applying or finished is left alone. */
@@ -28,7 +28,7 @@ async function skipWhere(
       data: { status: "skipped", skipReason: reason },
     });
     ctx.afterCommit.push(() => {
-      for (const job of jobs) publishJob(ctx.userId, { ...job, status: "skipped" }, "updated");
+      for (const job of jobs) publishJobUpdated(ctx.userId, { ...job, status: "skipped" });
     });
   }
   return {
@@ -65,7 +65,7 @@ export async function restoreJobs(
   }
   if (restored.length === 0) return { type: "jobs.restore", refs: [] };
   ctx.afterCommit.push(() => {
-    for (const ref of restored) publishJob(ctx.userId, ref, "updated");
+    for (const ref of restored) publishJobUpdated(ctx.userId, ref);
   });
   const refs = restored.map((ref) => ({ feedId: ref.feedId, key: ref.key }));
   return { type: "jobs.skip", refs, reason: RESTORED_REASON };

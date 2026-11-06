@@ -12,9 +12,8 @@ import { HttpError } from "@/common/errors";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { FeedService } from "@/modules/feed/feed.service";
-import { queuedJobRows } from "@/modules/feed/feed.utils";
 import { JobService } from "@/modules/feed/jobs/job.service";
-import { JOB_INCLUDE, toJob } from "@/modules/feed/jobs/job-row";
+import { JOB_INCLUDE, queuedJobRows, toJob } from "@/modules/feed/jobs/job-row";
 import { findRecentPostings } from "@/modules/feed/jobs/recent-postings";
 import { boardFilter } from "@/modules/job-board/board-host";
 import { shadowedJobIds } from "./shadowed-jobs";
@@ -133,10 +132,9 @@ export class PipelineService {
     key: string,
     action: PipelineBulkInput["action"],
   ) {
-    if (action === "approve")
-      return this.jobs.patchJob(userId, feedId, key, { status: "approved" });
-    if (action === "retry") return this.jobs.retryJob(userId, feedId, key, {});
-    return this.jobs.recordJobResult(userId, feedId, key, {
+    if (action === "approve") return this.jobs.update(userId, feedId, key, { status: "approved" });
+    if (action === "retry") return this.jobs.retry(userId, feedId, key, {});
+    return this.jobs.recordResult(userId, feedId, key, {
       outcome: "skipped",
       skipReason: BULK_SKIP_REASON,
     });

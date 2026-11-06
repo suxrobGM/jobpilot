@@ -1,6 +1,6 @@
 import type { PilotChangeAction } from "@jobpilot/contracts/pilot";
 import { conflict, notFound } from "@/common/errors";
-import { publishFeedUpdated } from "@/modules/feed/feed.utils";
+import { publishFeedUpdated } from "@/modules/feed/feed-events";
 import type { ActionContext, ActionOf } from "./action-context";
 
 /** Deleting the last search re-derives them; these dampers would otherwise hold that back. */

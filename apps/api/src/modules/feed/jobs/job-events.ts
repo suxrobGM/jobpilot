@@ -4,15 +4,14 @@ import type { JobRow } from "./job-row";
 
 type PublishedJob = Pick<JobRow, "feedId" | "key" | "status">;
 
-export function publishJob(userId: string, job: PublishedJob, kind: "added" | "updated"): void {
+export function publishJobAdded(userId: string, job: PublishedJob): void {
+  publish(workspaceChannel, { userId }, { type: "job.created", feedId: job.feedId, key: job.key });
+}
+
+export function publishJobUpdated(userId: string, job: PublishedJob): void {
   publish(
     workspaceChannel,
     { userId },
-    {
-      type: kind === "added" ? "job.created" : "job.updated",
-      feedId: job.feedId,
-      key: job.key,
-      ...(kind === "updated" && { status: job.status }),
-    },
+    { type: "job.updated", feedId: job.feedId, key: job.key, status: job.status },
   );
 }

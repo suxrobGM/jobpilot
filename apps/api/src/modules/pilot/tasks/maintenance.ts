@@ -5,7 +5,7 @@ import {
   LIVE_AUTO_APPLY_FEED,
   parseJobRef,
   revertApplyingJobs,
-} from "@/modules/feed/jobs/apply-guard";
+} from "@/modules/feed/jobs/applying";
 import type { JobService } from "@/modules/feed/jobs/job.service";
 import { finishRequests } from "../requests/request-row";
 import { GATHER_CAP, parseJobSubject } from "../runs/run-history";
@@ -167,6 +167,6 @@ export async function promoteScoredPendingJobs(
       matchScore: job.matchScore ?? 0,
       threshold,
     }));
-    await jobService.promoteScoredJobs(userId, feedId, candidates);
+    await jobService.settleScored(userId, feedId, candidates);
   }
 }

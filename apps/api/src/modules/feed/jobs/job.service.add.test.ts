@@ -34,7 +34,7 @@ function setup(stored: StoredJob[]) {
   const listings = { publishInBackground: () => undefined } as unknown as JobListingPublisher;
   const service = new JobService(db as unknown as PrismaClient, listings, makeBoards());
   const add = () =>
-    service.addJob("u1", "c2", { key: "k", title: "Engineer", company: "Acme", url: URL });
+    service.add("u1", "c2", { key: "k", title: "Engineer", company: "Acme", url: URL });
   return { add, created };
 }
 

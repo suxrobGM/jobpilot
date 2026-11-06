@@ -21,7 +21,7 @@ import {
 import { JobService } from "./job.service";
 import { JobQueryService } from "./job-query.service";
 
-const svc = container.get(JobService);
+const jobs = container.get(JobService);
 const queries = container.get(JobQueryService);
 
 export const jobController = new Elysia({
@@ -30,7 +30,7 @@ export const jobController = new Elysia({
   detail: { tags: ["Feeds"] },
 })
   .use(authGuard)
-  .get("/:id/jobs", ({ user, params, query }) => queries.listJobs(user.id, params.id, query), {
+  .get("/:id/jobs", ({ user, params, query }) => queries.list(user.id, params.id, query), {
     params: idParam,
     query: jobsQuery,
     response: jobListSchema,
@@ -40,7 +40,7 @@ export const jobController = new Elysia({
         "Returns one page of jobs for the owned feed, ordered by creation. Optional status and title/company search filters apply across the whole feed.",
     },
   })
-  .get("/:id/job-reasons", ({ user, params }) => queries.listJobReasons(user.id, params.id), {
+  .get("/:id/job-reasons", ({ user, params }) => queries.listReasons(user.id, params.id), {
     params: idParam,
     response: jobReasonListSchema,
     detail: {
@@ -48,7 +48,7 @@ export const jobController = new Elysia({
       description: "Returns every skip and fail reason with its job count, most frequent first.",
     },
   })
-  .post("/:id/jobs", ({ user, params, body }) => svc.addJob(user.id, params.id, body), {
+  .post("/:id/jobs", ({ user, params, body }) => jobs.add(user.id, params.id, body), {
     params: idParam,
     body: addJobSchema,
     response: addedJobSchema,
@@ -60,7 +60,7 @@ export const jobController = new Elysia({
   })
   .patch(
     "/:id/jobs/:key",
-    ({ user, params, body }) => svc.patchJob(user.id, params.id, params.key, body),
+    ({ user, params, body }) => jobs.update(user.id, params.id, params.key, body),
     {
       params: jobParams,
       body: patchJobSchema,
@@ -74,7 +74,7 @@ export const jobController = new Elysia({
   )
   .post(
     "/:id/jobs/:key/result",
-    ({ user, params, body }) => svc.recordJobResult(user.id, params.id, params.key, body),
+    ({ user, params, body }) => jobs.recordResult(user.id, params.id, params.key, body),
     {
       params: jobParams,
       body: jobResultSchema,
@@ -88,7 +88,7 @@ export const jobController = new Elysia({
   )
   .post(
     "/:id/jobs/:key/retry",
-    ({ user, params, body }) => svc.retryJob(user.id, params.id, params.key, body),
+    ({ user, params, body }) => jobs.retry(user.id, params.id, params.key, body),
     {
       params: jobParams,
       body: retryJobSchema,
@@ -102,7 +102,7 @@ export const jobController = new Elysia({
   )
   .post(
     "/:id/jobs/:key/rescan",
-    ({ user, params, body }) => svc.rescanJob(user.id, params.id, params.key, body),
+    ({ user, params, body }) => jobs.rescan(user.id, params.id, params.key, body),
     {
       params: jobParams,
       body: rescanJobSchema,

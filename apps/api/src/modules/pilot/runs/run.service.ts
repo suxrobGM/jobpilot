@@ -18,13 +18,9 @@ import {
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
-import {
-  guardApply,
-  parseJobRef,
-  revertApplyingJobs,
-  startApplying,
-} from "@/modules/feed/jobs/apply-guard";
-import { publishJob } from "@/modules/feed/jobs/job-events";
+import { guardApply } from "@/modules/feed/jobs/apply-guard";
+import { parseJobRef, revertApplyingJobs, startApplying } from "@/modules/feed/jobs/applying";
+import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import { publishRequest } from "../requests/request.service";
 import { finishRequests } from "../requests/request-row";
 import {
@@ -92,7 +88,7 @@ export class RunService {
         this.startInTransaction(tx, userId, taskListVersion, taskId),
       ),
     );
-    if (startedJob) publishJob(userId, startedJob, "updated");
+    if (startedJob) publishJobUpdated(userId, startedJob);
     for (const request of requests) publishRequest(userId, request, "request.updated");
     const started = toPilotRun(run);
     publish(
@@ -143,7 +139,7 @@ export class RunService {
     await assertStillStartable(tx, userId, task);
     const startedJob =
       task.taskType === "job.apply"
-        ? await startApplying(tx, userId, task.payload.feedId, task.payload.jobKey)
+        ? await startApplying(tx, userId, { feedId: task.payload.feedId, key: task.payload.jobKey })
         : null;
 
     const run = await tx.pilotRun.create({

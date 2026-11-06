@@ -1,9 +1,9 @@
 import { Prisma } from "@/generated/prisma/client";
-import { LIVE_AUTO_APPLY_FEED } from "@/modules/feed/jobs/apply-guard";
+import { LIVE_AUTO_APPLY_FEED } from "@/modules/feed/jobs/applying";
 
 // One definition of "still workable" per task type, shared by its gather and the run-start
 // re-check: two copies drift, and a looser re-check starts a run on a row the gather would drop.
-// `job.apply`'s lives beside `startApplying` in feed/jobs/apply-guard.ts.
+// `job.apply`'s lives beside `startApplying` in feed/jobs/applying.ts.
 
 /** Pending rows a worker must open: never scored, or scored off a results row without a brief. */
 export const NEEDS_WORKER_VISIT = {

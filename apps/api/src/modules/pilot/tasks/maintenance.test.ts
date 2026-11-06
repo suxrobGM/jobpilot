@@ -119,7 +119,7 @@ describe("promoteScoredPendingJobs", () => {
     const calls: unknown[][] = [];
     const prisma = { job: { findMany: async () => rows } } as unknown as PrismaClient;
     const jobs = {
-      promoteScoredJobs: async (...args: unknown[]) => {
+      settleScored: async (...args: unknown[]) => {
         calls.push(args);
       },
     } as unknown as JobService;

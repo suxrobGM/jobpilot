@@ -4,7 +4,8 @@ import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { makeBoards } from "@/modules/job-board/job-board.fake";
 import type { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
-import { guardApply, startApplying } from "./apply-guard";
+import { guardApply } from "./apply-guard";
+import { startApplying } from "./applying";
 import { JobService } from "./job.service";
 
 /** Relative to now, so the duplicate fixtures stay inside the window as the calendar moves. */
@@ -143,7 +144,7 @@ export function setup() {
     /** Starting a job.apply run: the move happens in a transaction wrapped in the duplicate guard. */
     startApplying: () =>
       guardApply(db as unknown as PrismaClient, "u1", () =>
-        startApplying(db as unknown as Prisma.TransactionClient, "u1", "c1", "j1"),
+        startApplying(db as unknown as Prisma.TransactionClient, "u1", { feedId: "c1", key: "j1" }),
       ),
     get job() {
       return job;

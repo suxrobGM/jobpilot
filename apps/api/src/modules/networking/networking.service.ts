@@ -13,7 +13,7 @@ import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact/contact.mapper";
-import { ensureFeedOwned } from "@/modules/feed/feed.utils";
+import { ensureFeedOwned } from "@/modules/feed/feed-ownership";
 import { publishJournalEntries, writeJournalEntries } from "@/modules/pilot/thread/journal-entries";
 
 export interface NetworkingMessageFilters {

@@ -44,10 +44,10 @@ function setup() {
   };
 }
 
-describe("JobService.promoteScoredJobs", () => {
+describe("JobService.settleScored", () => {
   it("keeps the concurrent-rescore guard exact by grouping on the candidate's score", async () => {
     const state = setup();
-    await state.service.promoteScoredJobs("u1", "c1", [
+    await state.service.settleScored("u1", "c1", [
       { key: "a", matchScore: 90, threshold: 50 },
       { key: "d", matchScore: 30, threshold: 50 },
     ]);
@@ -60,7 +60,7 @@ describe("JobService.promoteScoredJobs", () => {
 
   it("carries each skipped group's own score into its reason", async () => {
     const state = setup();
-    await state.service.promoteScoredJobs("u1", "c1", [
+    await state.service.settleScored("u1", "c1", [
       { key: "d", matchScore: 30, threshold: 50 },
       { key: "f", matchScore: 10, threshold: 50 },
     ]);
@@ -74,9 +74,7 @@ describe("JobService.promoteScoredJobs", () => {
 
   it("promotes only in the feeds the pilot applies from on its own", async () => {
     const state = setup();
-    await state.service.promoteScoredJobs("u1", "c1", [
-      { key: "a", matchScore: 90, threshold: 50 },
-    ]);
+    await state.service.settleScored("u1", "c1", [{ key: "a", matchScore: 90, threshold: 50 }]);
 
     expect(state.jobUpdates[0]?.where.feed?.kind?.in).toEqual([...AUTO_APPLY_FEED_KINDS]);
     expect(state.jobUpdates[0]?.data.status).toBe("approved");

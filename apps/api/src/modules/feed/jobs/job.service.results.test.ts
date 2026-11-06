@@ -11,7 +11,7 @@ import { describe, expect, it } from "bun:test";
 describe("JobService terminal results", () => {
   it("atomically records an application and its first event", async () => {
     const state = setup();
-    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+    const result = await state.service.recordResult("u1", "c1", "j1", {
       outcome: "applied",
       appliedAt: APPLIED_AT,
     });
@@ -23,7 +23,7 @@ describe("JobService terminal results", () => {
 
   it("records the reported variant as the resume the application went out with", async () => {
     const state = setup();
-    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+    const result = await state.service.recordResult("u1", "c1", "j1", {
       outcome: "applied",
       appliedAt: APPLIED_AT,
       resumeVariantId: OWNED_VARIANT_ID,
@@ -43,7 +43,7 @@ describe("JobService terminal results", () => {
 
   it("records a base resume submitted without tailoring", async () => {
     const state = setup();
-    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+    const result = await state.service.recordResult("u1", "c1", "j1", {
       outcome: "applied",
       appliedAt: APPLIED_AT,
       resumeId: OWNED_RESUME_ID,
@@ -57,7 +57,7 @@ describe("JobService terminal results", () => {
 
   it("drops resume ids the user does not own", async () => {
     const state = setup();
-    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+    const result = await state.service.recordResult("u1", "c1", "j1", {
       outcome: "applied",
       appliedAt: APPLIED_AT,
       resumeVariantId: OTHER_USERS_VARIANT_ID,
@@ -68,7 +68,7 @@ describe("JobService terminal results", () => {
 
   it("links the job's cover letter to the new application", async () => {
     const state = setup();
-    await state.service.recordJobResult("u1", "c1", "j1", {
+    await state.service.recordResult("u1", "c1", "j1", {
       outcome: "applied",
       appliedAt: APPLIED_AT,
     });
@@ -82,7 +82,7 @@ describe("JobService terminal results", () => {
 
   it("does not link documents when the job was not applied to", async () => {
     const state = setup();
-    await state.service.recordJobResult("u1", "c1", "j1", {
+    await state.service.recordResult("u1", "c1", "j1", {
       outcome: "skipped",
       skipReason: "Already applied (url)",
     });
@@ -100,7 +100,7 @@ describe("JobService terminal results", () => {
       appliedAt: new Date(Date.now() - 200 * DAY_MS),
     });
 
-    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+    const result = await state.service.recordResult("u1", "c1", "j1", {
       outcome: "applied",
       appliedAt: APPLIED_AT,
     });
@@ -114,19 +114,19 @@ describe("JobService terminal results", () => {
   it("returns the same result idempotently without a second application upsert", async () => {
     const state = setup();
     const input = { outcome: "applied" as const, appliedAt: APPLIED_AT };
-    await state.service.recordJobResult("u1", "c1", "j1", input);
-    await state.service.recordJobResult("u1", "c1", "j1", input);
+    await state.service.recordResult("u1", "c1", "j1", input);
+    await state.service.recordResult("u1", "c1", "j1", input);
     expect(state.applicationUpserts).toBe(1);
   });
 
   it("rejects a different outcome after the job is terminal", async () => {
     const state = setup();
-    await state.service.recordJobResult("u1", "c1", "j1", {
+    await state.service.recordResult("u1", "c1", "j1", {
       outcome: "failed",
       failReason: "blocked",
     });
     await expect(
-      state.service.recordJobResult("u1", "c1", "j1", {
+      state.service.recordResult("u1", "c1", "j1", {
         outcome: "skipped",
         skipReason: "duplicate",
       }),
@@ -135,22 +135,22 @@ describe("JobService terminal results", () => {
 
   it("does not allow PATCH to rewrite an applied job", async () => {
     const state = setup();
-    await state.service.recordJobResult("u1", "c1", "j1", {
+    await state.service.recordResult("u1", "c1", "j1", {
       outcome: "applied",
       appliedAt: APPLIED_AT,
     });
     await expect(
-      state.service.patchJob("u1", "c1", "j1", { description: "late edit" }),
+      state.service.update("u1", "c1", "j1", { description: "late edit" }),
     ).rejects.toThrow("Terminal jobs cannot be edited");
   });
 
   it("retries a failed job only through the explicit retry command", async () => {
     const state = setup();
-    await state.service.recordJobResult("u1", "c1", "j1", {
+    await state.service.recordResult("u1", "c1", "j1", {
       outcome: "failed",
       failReason: "timeout",
     });
-    const retried = await state.service.retryJob("u1", "c1", "j1", {
+    const retried = await state.service.retry("u1", "c1", "j1", {
       retryNotes: "Try after login refresh",
     });
     expect(retried).toMatchObject({
@@ -162,11 +162,11 @@ describe("JobService terminal results", () => {
 
   it("rescans a skipped job only through the explicit rescan command", async () => {
     const state = setup();
-    await state.service.recordJobResult("u1", "c1", "j1", {
+    await state.service.recordResult("u1", "c1", "j1", {
       outcome: "skipped",
       skipReason: "Old score",
     });
-    const rescanned = await state.service.rescanJob("u1", "c1", "j1", {
+    const rescanned = await state.service.rescan("u1", "c1", "j1", {
       decision: "approved",
       matchScore: 88,
       matchReason: "Fresh posting supports the match",

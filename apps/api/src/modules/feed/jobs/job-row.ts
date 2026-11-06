@@ -15,3 +15,21 @@ const storedBriefSchema = jobBriefSchema.nullable();
 export function toJob<T extends { brief: Prisma.JsonValue }>(row: T) {
   return { ...row, brief: storedBriefSchema.parse(row.brief) };
 }
+
+/** Pasted links as `queued` rows; nothing is known about a link until a worker opens it. */
+export function queuedJobRows(
+  userId: string,
+  feedId: string,
+  urls: string[],
+): Prisma.JobCreateManyInput[] {
+  return urls.map((url) => ({
+    userId,
+    feedId,
+    key: crypto.randomUUID(),
+    // The host stands in for the title until the score pass reads the posting.
+    title: new URL(url).hostname,
+    company: "",
+    url,
+    status: "queued",
+  }));
+}

@@ -11,7 +11,7 @@ import { findOwned, isPrismaError, PRISMA_ERRORS } from "@/common/errors";
 import { type Actor, type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { BOARD_REF_SELECT } from "@/modules/job-board/job-board.service";
 import { TASK_LIST_SNAPSHOT_RESET } from "@/modules/pilot/tasks/snapshot";
-import { publishFeedUpdated } from "./feed.utils";
+import { publishFeedUpdated } from "./feed-events";
 
 /** A run with this many new jobs is "good": re-run it soon while the board is yielding. */
 const GOOD_RUN_NEW_JOBS = 3;

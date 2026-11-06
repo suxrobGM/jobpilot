@@ -15,9 +15,10 @@ import { normalizeJobUrl } from "@/common/utils/url";
 import { type JobStatus, type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
-import { ensureFeedOwned } from "../feed.utils";
-import { assertNotDuplicateApply, guardApply, LIVE_AUTO_APPLY_FEED } from "./apply-guard";
-import { publishJob } from "./job-events";
+import { ensureFeedOwned } from "../feed-ownership";
+import { assertNotDuplicateApply, guardApply } from "./apply-guard";
+import { LIVE_AUTO_APPLY_FEED } from "./applying";
+import { publishJobAdded, publishJobUpdated } from "./job-events";
 import { isTerminalJob, writeJobResult } from "./job-result";
 import { JOB_INCLUDE, type JobRow, toJob } from "./job-row";
 import { recentPostingsWhere } from "./recent-postings";
@@ -34,6 +35,9 @@ const ALLOWED_TRANSITIONS: Record<JobStatus, readonly JobStatus[]> = {
   skipped: [],
 };
 
+/** A job back in the approved queue carries no trace of an earlier outcome. */
+const OUTCOME_CLEARED = { appliedAt: null, failReason: null, skipReason: null };
+
 interface JobTransition {
   from: JobStatus;
   /** A concurrent writer already landing here makes the command a no-op. */
@@ -49,10 +53,33 @@ interface TransitionResult {
   changed: boolean;
 }
 
-export interface ScoredJobPromotion {
+export interface ScoredJob {
   key: string;
   matchScore: number;
   threshold: number;
+}
+
+/** Guarded on the old status, so a concurrent move fails rather than being overwritten. */
+async function moveStatus(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  job: JobRow,
+  to: JobStatus,
+): Promise<void> {
+  if (to === "applying") await assertNotDuplicateApply(tx, userId, job);
+  const { count } = await tx.job.updateMany({
+    where: { feedId: job.feedId, key: job.key, status: job.status },
+    data: { status: to, ...(to === "approved" && OUTCOME_CLEARED) },
+  });
+  if (count === 0) throw conflict("Job status changed concurrently.");
+}
+
+function settledData(matchScore: number, threshold: number): Prisma.JobUpdateManyMutationInput {
+  if (matchScore >= threshold) return { status: "approved" };
+  return {
+    status: "skipped",
+    skipReason: `Below minimum match score (${matchScore} < ${threshold})`,
+  };
 }
 
 @injectable()
@@ -64,7 +91,7 @@ export class JobService {
   ) {}
 
   /** A posting the user already has from the window comes back as that row, flagged `duplicate`. */
-  async addJob(userId: string, feedId: string, body: AddJobInput) {
+  async add(userId: string, feedId: string, body: AddJobInput) {
     await ensureFeedOwned(this.prisma, userId, feedId);
 
     const url = normalizeJobUrl(body.url);
@@ -99,12 +126,12 @@ export class JobService {
     }
 
     this.listings.publishInBackground(job);
-    publishJob(userId, job, "added");
+    publishJobAdded(userId, job);
     return { ...toJob(job), duplicate: false };
   }
 
   /** A field edit, moving the status too when the patch names a new one. Never idempotent. */
-  async patchJob(userId: string, feedId: string, key: string, patch: PatchJobInput) {
+  async update(userId: string, feedId: string, key: string, patch: PatchJobInput) {
     const existing = await this.findJob(userId, feedId, key);
     if (isTerminalJob(existing.status)) {
       throw conflict("Terminal jobs cannot be edited; use the retry or rescan command.");
@@ -115,25 +142,10 @@ export class JobService {
     }
 
     const { status: _, board, ...fields } = patch;
-    // An absent or unchanged `board` leaves the column alone; null clears it.
-    const keepsBoard = board === undefined || board === existing.board?.domain;
-    const boardField = keepsBoard ? {} : { boardId: await this.boards.resolveId(board) };
+    const boardField = await this.boardChange(existing, board);
     const job = await guardApply(this.prisma, userId, () =>
       this.prisma.$transaction(async (tx) => {
-        if (moveTo === "applying") {
-          await assertNotDuplicateApply(tx, userId, existing);
-        }
-        if (moveTo) {
-          const clearsOutcome = moveTo === "approved";
-          const changed = await tx.job.updateMany({
-            where: { feedId, key, status: existing.status },
-            data: {
-              status: moveTo,
-              ...(clearsOutcome && { appliedAt: null, failReason: null, skipReason: null }),
-            },
-          });
-          if (changed.count === 0) throw conflict("Job status changed concurrently.");
-        }
+        if (moveTo) await moveStatus(tx, userId, existing, moveTo);
         return tx.job.update({
           where: { feedId_key: { feedId, key } },
           data: { ...fields, brief: toNullableInputJson(fields.brief), ...boardField },
@@ -143,30 +155,24 @@ export class JobService {
     );
 
     this.listings.publishInBackground(job);
-    publishJob(userId, job, "updated");
+    publishJobUpdated(userId, job);
     return toJob(job);
   }
 
   /** The only way out of `failed`. */
-  async retryJob(userId: string, feedId: string, key: string, body: RetryJobInput) {
-    const { job } = await this.applyTransition(userId, feedId, key, {
+  async retry(userId: string, feedId: string, key: string, body: RetryJobInput) {
+    const { job } = await this.transition(userId, feedId, key, {
       from: "failed",
       to: "approved",
       idempotentAt: "approved",
-      data: {
-        status: "approved",
-        appliedAt: null,
-        failReason: null,
-        skipReason: null,
-        retryNotes: body.retryNotes,
-      },
+      data: { status: "approved", ...OUTCOME_CLEARED, retryNotes: body.retryNotes },
       rejection: (status) => `Only failed jobs can be retried; job is ${status}.`,
     });
     return toJob(job);
   }
 
-  async rescanJob(userId: string, feedId: string, key: string, body: RescanJobInput) {
-    const { job, changed } = await this.applyTransition(userId, feedId, key, {
+  async rescan(userId: string, feedId: string, key: string, body: RescanJobInput) {
+    const { job, changed } = await this.transition(userId, feedId, key, {
       from: "skipped",
       to: body.decision,
       // A rescan of a still-skipped job must re-score it rather than short-circuit.
@@ -189,55 +195,44 @@ export class JobService {
   }
 
   /** Settles scored `pending` rows into `approved` or `skipped` by the feed's threshold. */
-  async promoteScoredJobs(
-    userId: string,
-    feedId: string,
-    candidates: ScoredJobPromotion[],
-  ): Promise<void> {
+  async settleScored(userId: string, feedId: string, scored: ScoredJob[]): Promise<void> {
     // One write per (outcome, score) rather than per row. Grouping by score keeps the `matchScore`
     // guard, which detects a concurrent rescore, exact under an `in` on keys.
-    const groups = Map.groupBy(candidates, (c) => `${c.matchScore >= c.threshold}:${c.matchScore}`);
+    const groups = Map.groupBy(
+      scored,
+      (job) => `${job.matchScore >= job.threshold}:${job.matchScore}`,
+    );
 
-    const jobs = await this.prisma.$transaction(async (tx) => {
+    const settled = await this.prisma.$transaction(async (tx) => {
       const moved: JobRow[] = [];
       for (const group of groups.values()) {
         const { matchScore, threshold } = group[0];
-        const approved = matchScore >= threshold;
         const updated = await tx.job.updateManyAndReturn({
           where: {
             feedId,
             status: "pending",
             matchScore,
-            key: { in: group.map((c) => c.key) },
+            key: { in: group.map((job) => job.key) },
             userId,
             feed: LIVE_AUTO_APPLY_FEED,
           },
-          data: approved
-            ? { status: "approved" }
-            : {
-                status: "skipped",
-                skipReason: `Below minimum match score (${matchScore} < ${threshold})`,
-              },
+          data: settledData(matchScore, threshold),
           include: JOB_INCLUDE,
         });
         moved.push(...updated);
       }
       return moved;
     });
-    if (jobs.length === 0) return;
-
-    for (const job of jobs) {
-      publishJob(userId, job, "updated");
-    }
+    for (const job of settled) publishJobUpdated(userId, job);
   }
 
-  async recordJobResult(userId: string, feedId: string, key: string, data: JobResultInput) {
+  async recordResult(userId: string, feedId: string, key: string, data: JobResultInput) {
     const result = await writeJobResult(this.prisma, userId, feedId, key, data);
     if (result.changed) {
-      publishJob(userId, result.job, "updated");
-    }
-    if (result.changed && result.application) {
-      publish(workspaceChannel, { userId }, { type: "application.created", feedId });
+      publishJobUpdated(userId, result.job);
+      if (result.application) {
+        publish(workspaceChannel, { userId }, { type: "application.created", feedId });
+      }
     }
     return { job: toJob(result.job), application: result.application };
   }
@@ -250,8 +245,14 @@ export class JobService {
     );
   }
 
+  /** An absent or unchanged `board` leaves the column alone; null clears it. */
+  private async boardChange(existing: JobRow, board: string | null | undefined) {
+    if (board === undefined || board === existing.board?.domain) return {};
+    return { boardId: await this.boards.resolveId(board) };
+  }
+
   /** A guarded status transition that absorbs repeat commands and lost races as no-ops. */
-  private async applyTransition(
+  private async transition(
     userId: string,
     feedId: string,
     key: string,
@@ -278,7 +279,7 @@ export class JobService {
       throw conflict(`Job changed concurrently to ${job.status}.`);
     }
 
-    publishJob(userId, job, "updated");
+    publishJobUpdated(userId, job);
     return { job, changed: true };
   }
 }
