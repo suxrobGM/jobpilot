@@ -1,5 +1,4 @@
 import { AUTO_APPLY_FEED_KINDS } from "@jobpilot/contracts/feed";
-import { z } from "zod/v4";
 import { conflict } from "@/common/errors";
 import type { Job, Prisma } from "@/generated/prisma/client";
 import { assertNotDuplicateApply } from "./apply-guard";
@@ -13,14 +12,6 @@ export const LIVE_AUTO_APPLY_FEED = {
 } satisfies Prisma.FeedWhereInput;
 
 export type JobRef = Pick<Job, "feedId" | "key">;
-
-const jobRefSchema = z.object({ feedId: z.string().min(1), jobKey: z.string().min(1) });
-
-/** The job a `job.apply` run payload points at. */
-export function parseJobRef(payload: unknown): JobRef {
-  const { feedId, jobKey } = jobRefSchema.parse(payload);
-  return { feedId, key: jobKey };
-}
 
 /** Jobs ready to apply to: the pilot's `job.apply` gather and its run-start re-check share this. */
 export function applyableJobWhere(userId: string) {

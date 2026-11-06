@@ -1,13 +1,9 @@
 import { feedConfigSchema } from "@jobpilot/contracts/feed";
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
-import {
-  LIVE_AUTO_APPLY_FEED,
-  parseJobRef,
-  revertApplyingJobs,
-} from "@/modules/feed/jobs/applying";
+import { LIVE_AUTO_APPLY_FEED, revertApplyingJobs } from "@/modules/feed/jobs/applying";
 import type { JobService } from "@/modules/feed/jobs/job.service";
-import { parseJobSubject } from "../job-subject";
+import { parseJobRef, parseJobSubject } from "../job-subject";
 import { finishRequests } from "../requests/request-row";
 import { GATHER_CAP } from "../runs/run-history";
 import { SERVER_SKIP_REASONS } from "../skip-reasons";

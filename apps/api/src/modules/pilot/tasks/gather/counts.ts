@@ -5,7 +5,7 @@ import type { TaskCounts } from "../build";
 import { gatherApprovedJobs } from "./jobs";
 import { gatherAnsweredQuestions } from "./questions";
 
-interface GatheredCounts extends TaskCounts {
+export interface GatheredCounts extends TaskCounts {
   searchCount: number;
 }
 

@@ -8,7 +8,7 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
 import { type AllowedToday, allowedToday } from "./allowed-today";
-import type { FeedReviews } from "./gather/feeds";
+import type { FeedReviews } from "./gather/feed-reviews";
 import type { TaskJob } from "./gather/jobs";
 import type { Followup } from "./gather/outreach";
 import type { ResearchTask } from "./gather/research";

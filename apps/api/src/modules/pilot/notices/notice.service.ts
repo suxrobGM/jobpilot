@@ -8,7 +8,7 @@ import { inject, injectable } from "@needle-di/core";
 import { DAY_MS } from "@/common/date/buckets";
 import { toInputJson } from "@/common/json";
 import { allNamed } from "@/common/utils";
-import { PrismaClient } from "@/generated/prisma/client";
+import { type EmailAccount, PrismaClient } from "@/generated/prisma/client";
 import {
   buildNotices,
   CAP_WINDOW_MS,
@@ -26,7 +26,7 @@ interface FactsInput {
   autopilotSince: Date | null;
 }
 
-function emailStatus(account: { refreshFailedAt: Date | null } | null): NoticeFacts["email"] {
+function emailStatus(account: Pick<EmailAccount, "refreshFailedAt"> | null): NoticeFacts["email"] {
   if (!account) return "missing";
   return account.refreshFailedAt ? "reconnect" : "connected";
 }

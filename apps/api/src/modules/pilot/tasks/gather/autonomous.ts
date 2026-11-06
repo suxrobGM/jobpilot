@@ -2,14 +2,10 @@ import type { PilotConfig } from "@jobpilot/contracts/pilot";
 import { allNamed } from "@/common/utils";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { allowedToday } from "../allowed-today";
-import { type AutonomousWork, isPipelineQuiet, type TaskCounts } from "../build";
-import {
-  type FeedReviews,
-  gatherFeedReviews,
-  gatherPausedFeeds,
-  gatherQueueScores,
-  gatherScorePending,
-} from "./feeds";
+import { type AutonomousWork, isPipelineQuiet } from "../build";
+import type { GatheredCounts } from "./counts";
+import { type FeedReviews, gatherFeedReviews } from "./feed-reviews";
+import { gatherPausedFeeds, gatherQueueScores, gatherScorePending } from "./feeds";
 import { gatherInbox, gatherUpworkSync } from "./inbox";
 import { gatherInterviewPreps, gatherInterviewReplies } from "./interviews";
 import { gatherJobAlerts } from "./job-alerts";
@@ -43,8 +39,8 @@ export const NO_AUTONOMOUS_WORK: AutonomousWork = {
 interface AutonomousContext {
   config: PilotConfig;
   goals: string;
-  searchCount: number;
-  counts: TaskCounts;
+  /** Still in flight, so the signals wave overlaps it. */
+  counts: Promise<GatheredCounts>;
   now: Date;
 }
 
@@ -54,17 +50,20 @@ export async function gatherAutonomousWork(
   userId: string,
   ctx: AutonomousContext,
 ): Promise<AutonomousWork> {
-  const { config, goals, searchCount, counts, now } = ctx;
-  const signals = await allNamed({
-    queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
-    pausedFeeds: gatherPausedFeeds(prisma, userId, now),
-    boardDiagnoses: gatherBoardDiagnoses(prisma, userId, now),
-    inbox: gatherInbox(prisma, userId),
-    jobAlerts: gatherJobAlerts(prisma, userId, config, now),
-    interviewReplies: gatherInterviewReplies(prisma, userId),
-    interviewPreps: gatherInterviewPreps(prisma, userId),
-    upworkSync: gatherUpworkSync(prisma, userId, now),
-  });
+  const { config, goals, now } = ctx;
+  const [{ searchCount, ...counts }, signals] = await Promise.all([
+    ctx.counts,
+    allNamed({
+      queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
+      pausedFeeds: gatherPausedFeeds(prisma, userId, now),
+      boardDiagnoses: gatherBoardDiagnoses(prisma, userId, now),
+      inbox: gatherInbox(prisma, userId),
+      jobAlerts: gatherJobAlerts(prisma, userId, config, now),
+      interviewReplies: gatherInterviewReplies(prisma, userId),
+      interviewPreps: gatherInterviewPreps(prisma, userId),
+      upworkSync: gatherUpworkSync(prisma, userId, now),
+    }),
+  ]);
 
   const { emailAutonomy, outreach, appliesLeft, sendsLeft } = allowedToday(config, counts);
   const emailOn = emailAutonomy !== null && sendsLeft > 0;

@@ -1,4 +1,5 @@
 import { DAY_MS, minutesOfDay, startOfDay } from "@/common/date/buckets";
+import { allNamed } from "@/common/utils";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { WebPushService } from "@/modules/web-push/web-push.service";
 import type { PilotJournalService } from "../thread/journal.service";
@@ -23,31 +24,17 @@ type DigestCounts = {
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
-async function countLastDay(
-  tx: Prisma.TransactionClient,
-  userId: string,
-  now: Date,
-  openQuestions: number,
-): Promise<DigestCounts> {
+function countLastDay(tx: Prisma.TransactionClient, userId: string, now: Date) {
   const since = new Date(now.getTime() - DAY_MS);
   const jobs = (status: "failed" | "skipped") =>
     tx.job.count({ where: { status, userId, createdAt: { gte: since } } });
-  const [applicationsCreated, jobsFailed, jobsSkipped, networkingSent, networkingReplies] =
-    await Promise.all([
-      tx.application.count({ where: { userId, appliedAt: { gte: since } } }),
-      jobs("failed"),
-      jobs("skipped"),
-      tx.networkingMessage.count({ where: { userId, sentAt: { gte: since } } }),
-      tx.networkingMessage.count({ where: { userId, repliedAt: { gte: since } } }),
-    ]);
-  return {
-    applicationsCreated,
-    jobsFailed,
-    jobsSkipped,
-    openQuestions,
-    networkingSent,
-    networkingReplies,
-  };
+  return allNamed({
+    applicationsCreated: tx.application.count({ where: { userId, appliedAt: { gte: since } } }),
+    jobsFailed: jobs("failed"),
+    jobsSkipped: jobs("skipped"),
+    networkingSent: tx.networkingMessage.count({ where: { userId, sentAt: { gte: since } } }),
+    networkingReplies: tx.networkingMessage.count({ where: { userId, repliedAt: { gte: since } } }),
+  });
 }
 
 function digestSummary(counts: DigestCounts): string {
@@ -83,7 +70,7 @@ export async function writeDigestIfDue(
       const written = await tx.pilotJournalEntry.count({ where: todaysDigest });
       if (written > 0) return;
 
-      const detail = await countLastDay(tx, userId, now, openQuestions);
+      const detail = { ...(await countLastDay(tx, userId, now)), openQuestions };
       const summary = digestSummary(detail);
       await journal.append(userId, { entries: [{ kind: "digest", summary, detail }] });
       void push.sendToUser(userId, {

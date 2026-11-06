@@ -21,8 +21,9 @@ import {
   PrismaClient,
 } from "@/generated/prisma/client";
 import { guardApply } from "@/modules/feed/jobs/apply-guard";
-import { parseJobRef, revertApplyingJobs, startApplying } from "@/modules/feed/jobs/applying";
+import { revertApplyingJobs, startApplying } from "@/modules/feed/jobs/applying";
 import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
+import { parseJobRef } from "../job-subject";
 import { publishRequest } from "../requests/request.service";
 import { finishRequests } from "../requests/request-row";
 import {

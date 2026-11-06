@@ -246,7 +246,7 @@ export class JobService {
   }
 
   /** An absent or unchanged `board` leaves the column alone; null clears it. */
-  private async boardChange(existing: JobRow, board: string | null | undefined) {
+  private async boardChange(existing: JobRow, board: PatchJobInput["board"]) {
     if (board === undefined || board === existing.board?.domain) return {};
     return { boardId: await this.boards.resolveId(board) };
   }
