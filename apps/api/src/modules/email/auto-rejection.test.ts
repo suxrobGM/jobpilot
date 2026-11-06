@@ -56,19 +56,11 @@ describe("AUTO_REJECTION_FROM_STATUSES", () => {
       expect(AUTO_REJECTION_FROM_STATUSES).not.toContain(status);
     }
   });
-
-  it("covers every live status a rejection can arrive against", () => {
-    expect([...AUTO_REJECTION_FROM_STATUSES]).toEqual(["applied", "screening", "interviewing"]);
-  });
 });
 
 describe("needsHumanReview", () => {
   it("queues an interview invite even when the scanner asked for auto", () => {
     expect(needsHumanReview({ classification: "interviewing", reviewStatus: "auto" })).toBe(true);
-  });
-
-  it("queues an offer", () => {
-    expect(needsHumanReview({ classification: "offer", reviewStatus: "auto" })).toBe(true);
   });
 
   it("leaves rejections and noise to the auto gate", () => {

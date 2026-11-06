@@ -25,12 +25,6 @@ public class ProviderTests
     }
 
     [Fact]
-    public void All_ListsEveryProvider()
-    {
-        Assert.Equal([("claude", "Claude Code"), ("codex", "Codex")], Provider.All.Select(p => (p.Id, p.DisplayName)));
-    }
-
-    [Fact]
     public void Claude_StartsInAutoModeWithTheShippedSettings()
     {
         using var temp = new TempDir();

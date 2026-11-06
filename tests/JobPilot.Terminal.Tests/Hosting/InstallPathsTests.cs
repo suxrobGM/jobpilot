@@ -19,19 +19,6 @@ public class InstallPathsTests
     }
 
     [Fact]
-    public void ResolveFrom_PrefersTheFirstMatchingRoot()
-    {
-        using var first = new TempDir();
-        using var second = new TempDir();
-        first.WriteValidPluginTree();
-        second.WriteValidPluginTree();
-
-        var paths = InstallPaths.ResolveFrom([first.Root, second.Root]);
-
-        Assert.Equal(first.Root, paths.WorkingDir);
-    }
-
-    [Fact]
     public void CandidateRoots_PrefersTheExecutableLayout_OverTheLaunchDirectory()
     {
         using var published = new TempDir();

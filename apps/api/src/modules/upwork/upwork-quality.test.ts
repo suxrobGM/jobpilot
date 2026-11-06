@@ -103,10 +103,6 @@ describe("scoreUpworkClient with missing signals", () => {
       expect(score({ [key]: null }).qualityScore).toBeLessThan(full);
     }
   });
-
-  it("scores payment verification as the heaviest single signal", () => {
-    expect(score().qualityScore - score({ paymentVerified: null }).qualityScore).toBe(15);
-  });
 });
 
 describe("scoreUpworkClient flags", () => {

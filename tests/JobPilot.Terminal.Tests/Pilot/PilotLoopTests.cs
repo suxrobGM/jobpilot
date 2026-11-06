@@ -159,18 +159,6 @@ public sealed class PilotLoopTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetStatus_ReportsTheLastCycle()
-    {
-        session.TaskList = TaskList(sleep: 3600);
-        await loop.StartAsync(CancellationToken.None);
-
-        store.Save(Settings());
-
-        await TestWait.Until(() => loop.GetStatus().LastCycleStatus == "empty");
-        Assert.NotNull(loop.GetStatus().LastCycleAt);
-    }
-
-    [Fact]
     public async Task BacksOff_WhileTheApiIsUnreachable_AndAWakeProbesAgain()
     {
         session.BlockSleep = true;

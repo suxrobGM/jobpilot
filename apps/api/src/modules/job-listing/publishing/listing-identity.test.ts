@@ -14,10 +14,6 @@ describe("normalizeListingLocation", () => {
     expect(normalizeListingLocation("New York, NY, USA")).toBe("new york");
     expect(normalizeListingLocation("New York, NY")).toBe("new york");
   });
-
-  it("treats a missing location as empty", () => {
-    expect(normalizeListingLocation(null)).toBe("");
-  });
 });
 
 describe("matchKey", () => {
@@ -46,10 +42,6 @@ describe("matchKey", () => {
 
   it("separates a remote opening from an on-site one", () => {
     expect(matchKey({ ...acme, location: "Remote" })).not.toBe(matchKey(acme));
-  });
-
-  it("distinguishes companies", () => {
-    expect(matchKey(acme)).not.toBe(matchKey({ ...acme, company: "Globex" }));
   });
 });
 

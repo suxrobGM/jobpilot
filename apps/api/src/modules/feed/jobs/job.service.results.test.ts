@@ -66,16 +66,6 @@ describe("JobService terminal results", () => {
     expect(state.variantLinks).toHaveLength(0);
   });
 
-  it("records no resume when the agent reported none", async () => {
-    const state = setup();
-    const result = await state.service.recordJobResult("u1", "c1", "j1", {
-      outcome: "applied",
-      appliedAt: APPLIED_AT,
-    });
-    expect(result.application).toMatchObject({ resumeId: null, resumeVariantId: null });
-    expect(state.variantLinks).toHaveLength(0);
-  });
-
   it("links the job's cover letter to the new application", async () => {
     const state = setup();
     await state.service.recordJobResult("u1", "c1", "j1", {

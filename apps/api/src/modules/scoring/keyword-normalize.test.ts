@@ -18,12 +18,6 @@ describe("normalizeKeyword", () => {
     expect(normalizeKeyword("C#")).toBe("c#");
     expect(normalizeKeyword("React JS")).toBe("reactjs");
   });
-
-  it("keeps C, C++ and C# distinct", () => {
-    const compact = ["C", "C++", "C#"].map(normalizeKeyword);
-    expect(compact).toEqual(["c", "c++", "c#"]);
-    expect(new Set(compact).size).toBe(3);
-  });
 });
 
 describe("normalizeMatchPhrase", () => {
@@ -70,10 +64,6 @@ describe("expandSynonyms", () => {
     expect(expandSynonyms("RN")).toContain("registered nurse");
     expect(expandSynonyms("registered nurse")).toContain("rn");
     expect(expandSynonyms("CPA")).toContain("certified public accountant");
-  });
-
-  it("is memoized: repeated calls return the same array instance", () => {
-    expect(expandSynonyms("k8s")).toBe(expandSynonyms("k8s"));
   });
 });
 

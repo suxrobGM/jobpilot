@@ -100,11 +100,13 @@ const service = (over: Over) => {
 };
 
 describe("networking send gate: LinkedIn InMail", () => {
-  it("rejects a sent result for an unapproved InMail", () => {
+  it("rejects a sent result for an unapproved InMail", async () => {
     const { svc } = service({
       message: { channel: "linkedin", linkedinKind: "inmail", status: "draft" },
     });
-    expect(svc.recordNetworkingResult("p1", "c1", "m1", { outcome: "sent" })).rejects.toThrow();
+    await expect(
+      svc.recordNetworkingResult("p1", "c1", "m1", { outcome: "sent" }),
+    ).rejects.toThrow();
   });
 
   it("allows a sent result once the InMail is approved", async () => {

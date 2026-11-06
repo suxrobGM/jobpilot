@@ -123,7 +123,7 @@ describe("publish", () => {
       },
     } as unknown as PrismaClient;
 
-    expect(new JobListingPublisher(always).publish(job("https://x.com/1"))).rejects.toThrow();
+    await expect(new JobListingPublisher(always).publish(job("https://x.com/1"))).rejects.toThrow();
   });
 });
 

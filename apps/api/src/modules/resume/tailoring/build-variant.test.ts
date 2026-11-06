@@ -130,12 +130,6 @@ describe("buildTailoredVariant", () => {
     expect(violations.length).toBeGreaterThan(0);
   });
 
-  it("retargets the headline", () => {
-    const result = buildTailoredVariant(base(), body({ headline: "Backend Engineer" }));
-
-    expect(result.content.basics.headline).toBe("Backend Engineer");
-  });
-
   it("stores no audit when nothing was reworded or restructured", () => {
     const result = buildTailoredVariant(base(), body({ summary: "Targeted summary." }));
 

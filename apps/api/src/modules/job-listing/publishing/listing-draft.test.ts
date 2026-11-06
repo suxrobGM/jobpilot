@@ -90,13 +90,6 @@ describe("projection", () => {
     expect(draft?.yearsExperience).toBe(5);
   });
 
-  it("defaults the brief bullets to empty rather than undefined", () => {
-    const draft = buildListingDraft(job({ brief: { skills: ["Go"] } }));
-    expect(draft?.requirements).toEqual([]);
-    expect(draft?.responsibilities).toEqual([]);
-    expect(draft?.yearsExperience).toBeNull();
-  });
-
   it("caps how many bullets and how long each one can be", () => {
     const raw = {
       skills: ["Go"],

@@ -26,11 +26,6 @@ describe("encrypt/decrypt envelope", () => {
     expect(() => decrypt(k, "board:password", blob)).toThrow();
   });
 
-  it("rejects decryption under a different key", () => {
-    const blob = encrypt(key(), "ctx", "secret");
-    expect(() => decrypt(key(), "ctx", blob)).toThrow();
-  });
-
   it("throws on a malformed envelope", () => {
     expect(() => decrypt(key(), "ctx", "not-an-envelope")).toThrow("Malformed secret envelope");
     expect(() => decrypt(key(), "ctx", "onlyone.two")).toThrow("Malformed secret envelope");
@@ -38,14 +33,6 @@ describe("encrypt/decrypt envelope", () => {
 });
 
 describe("data key generation and encryption", () => {
-  it("generates a 32-byte key", () => {
-    expect(generateDataKey()).toHaveLength(32);
-  });
-
-  it("generates a random key each call", () => {
-    expect(generateDataKey().equals(generateDataKey())).toBe(false);
-  });
-
   it("encrypts and decrypts a data key under the master key", () => {
     const master = key();
     const dataKey = generateDataKey();

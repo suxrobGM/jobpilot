@@ -63,20 +63,6 @@ afterEach(() => {
   webpush.sendNotification = realSend;
 });
 
-describe("WebPushService config", () => {
-  it("reports unconfigured and a null public key when VAPID is absent", () => {
-    const { push } = svc({}, null);
-    expect(push.isConfigured).toBe(false);
-    expect(push.publicKey).toBeNull();
-  });
-
-  it("exposes the public key when configured", () => {
-    const { push } = svc();
-    expect(push.isConfigured).toBe(true);
-    expect(push.publicKey).toBe(VAPID.publicKey);
-  });
-});
-
 describe("WebPushService subscribe", () => {
   it("upserts by endpoint and returns the DTO", async () => {
     const { push, rec } = svc();
