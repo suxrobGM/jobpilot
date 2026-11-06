@@ -45,7 +45,6 @@ const userViewSchema = z.object({
   country: z.string().nullable(),
   usAuthorized: z.boolean(),
   requiresSponsorship: z.boolean(),
-  preferCapExempt: z.boolean(),
   visaStatus: z.string().nullable(),
   optExtension: z.string().nullable(),
   willingToRelocate: z.boolean(),
@@ -62,15 +61,6 @@ const userViewSchema = z.object({
   updatedAt: z.date(),
 });
 
-/** Persisted auto-apply settings (mirrors the `AutoApplySettings` row). */
-const autoApplySettingsViewSchema = z.object({
-  id: z.uuid(),
-  userId: z.uuid(),
-  minMatchScore: z.number().int(),
-  maxApplicationsPerCampaign: z.number().int().nullable(),
-  defaultStartDate: z.string(),
-});
-
 /** A row in the user's resume summary list. */
 const userResumeSummarySchema = z.object({
   id: z.uuid(),
@@ -85,7 +75,6 @@ const userResumeSummarySchema = z.object({
 /** The full current-user aggregate returned by `GET /user`. */
 export const userAggregateSchema = z.object({
   user: userViewSchema,
-  autoApply: autoApplySettingsViewSchema.nullable(),
   primaryResumeSourceAbsolutePath: z.string().nullable(),
   resumes: z.array(userResumeSummarySchema),
 });

@@ -27,19 +27,6 @@ export function latestRun(prisma: PrismaClient, userId: string, taskType: string
   });
 }
 
-/** A Run now the pilot never got to lapses rather than firing hours later. */
-const RUN_NOW_EXPIRES_AFTER_MS = HOUR_MS;
-
-export function hasPendingRunNow(
-  requestedAt: Date | null,
-  lastRun: Pick<RunHistory, "startedAt"> | null,
-  now: Date,
-): boolean {
-  if (requestedAt === null) return false;
-  if (now.getTime() - requestedAt.getTime() >= RUN_NOW_EXPIRES_AFTER_MS) return false;
-  return !lastRun || lastRun.startedAt < requestedAt;
-}
-
 export async function latestRunBySubject(
   prisma: PrismaClient,
   userId: string,

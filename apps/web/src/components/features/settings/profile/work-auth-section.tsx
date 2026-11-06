@@ -18,9 +18,6 @@ export const WorkAuthSection = withForm({
         <form.AppField name="requiresSponsorship">
           {(field) => <field.Switch label="Requires visa sponsorship" />}
         </form.AppField>
-        <form.AppField name="preferCapExempt">
-          {(field) => <field.Switch label="Prefer H-1B cap-exempt employers" />}
-        </form.AppField>
         <form.AppField name="visaStatus">
           {(field) => <field.TextField label="Visa status (e.g. OPT, H1B, GC, Citizen)" />}
         </form.AppField>

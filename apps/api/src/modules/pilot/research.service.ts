@@ -1,30 +1,18 @@
 import { inject, injectable } from "@needle-di/core";
 import { PrismaClient } from "@/generated/prisma/client";
 import { OPEN_CAMPAIGN_STATUSES } from "@/modules/campaign/campaign.utils";
-import { resumePausedFeed } from "./feeds";
-import { PilotService } from "./pilot.service";
-import { hasPendingRunNow } from "./tasks/run-history";
-import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 @injectable()
 export class ResearchService {
-  constructor(
-    private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly pilot = inject(PilotService),
-  ) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   async getStatus(userId: string) {
-    const [state, lastRun, campaign] = await Promise.all([
-      this.prisma.pilotState.findUnique({
-        where: { userId },
-        select: { researchRequestedAt: true },
-      }),
+    const [lastRun, campaign] = await Promise.all([
       this.prisma.pilotRun.findFirst({
         where: { userId, taskType: "research.explore" },
         orderBy: { startedAt: "desc" },
         select: {
           startedAt: true,
-          finishedAt: true,
           outcome: true,
           journalEntries: {
             where: { kind: "action" },
@@ -39,7 +27,6 @@ export class ResearchService {
         select: { id: true },
       }),
     ]);
-    const requestedAt = state?.researchRequestedAt ?? null;
     return {
       lastRun: lastRun
         ? {
@@ -49,22 +36,6 @@ export class ResearchService {
           }
         : null,
       campaignId: campaign?.id ?? null,
-      requestedAt: hasPendingRunNow(requestedAt, lastRun, new Date()) ? requestedAt : null,
     };
-  }
-
-  async runNow(userId: string) {
-    const now = new Date();
-    await Promise.all([
-      resumePausedFeed(this.prisma, userId, "research"),
-      this.prisma.pilotState.upsert({
-        where: { userId },
-        create: { userId, researchRequestedAt: now },
-        update: { researchRequestedAt: now, ...TASK_LIST_SNAPSHOT_RESET },
-      }),
-    ]);
-    // The terminal host ends its idle sleep on `state.changed`, so the run starts in seconds.
-    await this.pilot.publishCurrentState(userId);
-    return this.getStatus(userId);
   }
 }

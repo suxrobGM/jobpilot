@@ -1,7 +1,7 @@
 import type { NetworkingMode } from "@jobpilot/contracts/networking";
 import {
   nextDailyRun,
-  type PilotInstructionsConfig,
+  type PilotConfig,
   type PilotTask,
   type TaskListContent,
   type TaskPayload,
@@ -29,13 +29,11 @@ const CAP_EXEMPT_BOOST = 10;
 
 export interface TaskListInput {
   now: Date;
-  config: PilotInstructionsConfig;
+  config: PilotConfig;
   // Off: only what the user asked for runs.
   autopilot: boolean;
   requests: PilotTask[];
   chat: PilotTask | null;
-  // A Run now on job alerts is the user asking, so it runs with autopilot off too.
-  jobAlertsRequested: boolean;
   // Rotates discovery across the configured boards.
   cycleCount: number;
   openQuestions: number;
@@ -115,19 +113,13 @@ function warmIntroPayload(job: TaskJob, mode: NetworkingMode): TaskPayload<"netw
 }
 
 /** The user's own asks: they run with autopilot off. */
-function userDrivenTasks(input: TaskListInput, newJobsTarget: number): PilotTask[] {
+function userDrivenTasks(input: TaskListInput): PilotTask[] {
   const tasks = [
     ...input.requests,
     ...makeTasks("question.answered", input.answeredQuestions),
     ...makeTasks("promotion.post", input.approvedPromotions),
   ];
   if (input.chat) tasks.push(input.chat);
-  if (input.jobAlerts && input.jobAlertsRequested) {
-    tasks.push(makeTask("inbox.jobAlerts", input.jobAlerts));
-  }
-  if (input.research?.trigger === "requested") {
-    tasks.push(makeTask("research.explore", { ...input.research, newJobsTarget }));
-  }
   return tasks;
 }
 
@@ -146,10 +138,9 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
   const { config } = input;
   const { appliesLeft } = allowedToday(config, input);
   const capReached = appliesLeft === 0;
-  const newJobsTarget = clamp(appliesLeft, NEW_JOBS_TARGET_MIN, NEW_JOBS_TARGET_MAX);
   const tasks = input.autopilot
     ? [...input.requests, ...(input.chat ? [input.chat] : []), ...autonomousTasks(input)]
-    : userDrivenTasks(input, newJobsTarget);
+    : userDrivenTasks(input);
   return finishTaskList(input, dedupeById(tasks), capReached);
 }
 
@@ -198,7 +189,7 @@ function autonomousTasks(input: TaskListInput): PilotTask[] {
   const quiet = isPipelineQuiet(input);
   const research = input.research ? { ...input.research, newJobsTarget } : null;
   // Research now is the user asking, so it skips the quiet gate.
-  if (research && (research.trigger === "requested" || quiet)) {
+  if (research && quiet) {
     tasks.push(makeTask("research.explore", research));
   }
 

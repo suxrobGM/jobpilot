@@ -2,7 +2,7 @@ import {
   portfolioSettingsPatchSchema,
   setPrimaryResumeSchema,
   usernameSchema,
-  userWithAutoApplySchema,
+  userUpdateSchema,
 } from "@jobpilot/contracts/user";
 import { Elysia } from "elysia";
 import { z } from "zod/v4";
@@ -36,7 +36,7 @@ export const userController = new Elysia({
     },
   })
   .put("/", ({ user, body }) => svc.update(user.id, body), {
-    body: userWithAutoApplySchema,
+    body: userUpdateSchema,
     response: idResponseSchema,
     detail: {
       summary: "Replace current user",

@@ -19,13 +19,8 @@ User approves once up front. No per-job confirmation after that.
 Follow `../_shared/setup.md` to load profile, resume, credentials. Shared campaign mechanics
 (applied-check, result writes, worker input, rules) live in `../_shared/campaign-flow.md`.
 
-Read `autoApply` for config (defaults applied per field):
-
-| Setting                      | Default            | Notes                                                                                            |
-| ---------------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
-| `minMatchScore`              | 60                 | Batch-mode threshold (0-100); the campaign's `config.minScore` wins when set. Ignored in single-job mode. |
-| `maxApplicationsPerCampaign` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
-| `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                       |
+`minMatchScore` = `GET /api/pilot` → `config.minScore` (default 60): the batch-mode threshold,
+which the campaign's `config.minScore` overrides when set. Single-job mode ignores it.
 
 For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in
 `/api/job-boards`; the `job-applier` handles login/registration there per `../_shared/auth.md`.

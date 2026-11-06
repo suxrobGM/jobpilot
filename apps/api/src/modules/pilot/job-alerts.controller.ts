@@ -1,8 +1,4 @@
-import {
-  jobAlertsStatusSchema,
-  pilotJobAlertsSchema,
-  runJobAlertsResultSchema,
-} from "@jobpilot/contracts/pilot";
+import { jobAlertsStatusSchema, pilotJobAlertsSchema } from "@jobpilot/contracts/pilot";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
@@ -22,7 +18,7 @@ export const pilotJobAlertsController = new Elysia({
     detail: {
       summary: "Get the job-alert import status",
       description:
-        "Returns the import schedule, how many unimported job-alert emails are waiting, the next scheduled run, any pending Run now request, and the most recent run with the campaign it opened.",
+        "Returns the import schedule, how many unimported job-alert emails are waiting, the next scheduled run, and the most recent run with the campaign it opened.",
     },
   })
   .put("/job-alerts", ({ user, body }) => jobAlerts.updateSettings(user.id, body), {
@@ -32,15 +28,6 @@ export const pilotJobAlertsController = new Elysia({
     detail: {
       summary: "Update the job-alert import schedule",
       description:
-        "Replaces only the import block of the pilot instructions (on/off, run hours, time zone, extra sender domains), wakes the pilot, and returns the refreshed status.",
-    },
-  })
-  .post("/job-alerts/runs", ({ user }) => jobAlerts.runNow(user.id), {
-    beforeHandle: limitMutation,
-    response: runJobAlertsResultSchema,
-    detail: {
-      summary: "Run the job-alert import now",
-      description:
-        "Syncs the mailbox if it is stale, then queues an off-schedule import for the next pilot cycle and wakes the pilot. Nothing is queued when no unimported alert emails are waiting (`queued: false`); the request lapses after an hour if the pilot never gets to it.",
+        "Replaces only the import block of the pilot config (on/off, run hours, time zone, extra sender domains), wakes the pilot, and returns the refreshed status.",
     },
   });

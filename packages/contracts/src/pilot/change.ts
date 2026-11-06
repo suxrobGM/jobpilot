@@ -18,6 +18,7 @@ export const pilotChangeActionSchema = z.discriminatedUnion("type", [
     dailyApplyCap: z.number().int().min(0).optional(),
     minScore: z.number().min(0).max(100).optional(),
     dealBreakers: dealBreakersSchema.optional(),
+    preferCapExempt: z.boolean().optional(),
   }),
   z.object({
     type: z.literal("search.create"),

@@ -1,10 +1,9 @@
-import { USER_DEFAULT_VALUES, type UserWithAutoApplyInput } from "@jobpilot/contracts/user";
+import type { UserUpdateInput } from "@jobpilot/contracts/user";
 import type { UserAggregateResponse } from "@/api/types";
 
 /** The saved profile as form values, so a full-profile PUT never resets fields the form doesn't show. */
-export function toProfileFormValues(data: UserAggregateResponse): UserWithAutoApplyInput {
+export function toProfileFormValues(data: UserAggregateResponse): UserUpdateInput {
   const p = data.user;
-  const a = data.autoApply ?? USER_DEFAULT_VALUES.autoApply!;
   return {
     firstName: p.firstName,
     lastName: p.lastName,
@@ -21,7 +20,6 @@ export function toProfileFormValues(data: UserAggregateResponse): UserWithAutoAp
     country: p.country ?? "",
     usAuthorized: p.usAuthorized,
     requiresSponsorship: p.requiresSponsorship,
-    preferCapExempt: p.preferCapExempt,
     visaStatus: p.visaStatus ?? "",
     optExtension: p.optExtension ?? "",
     willingToRelocate: p.willingToRelocate,
@@ -47,6 +45,5 @@ export function toProfileFormValues(data: UserAggregateResponse): UserWithAutoAp
     eeoVeteranStatus: p.eeoVeteranStatus ?? "",
     eeoDisabilityStatus: p.eeoDisabilityStatus ?? "",
     primaryResumeId: p.primaryResumeId,
-    autoApply: a,
   };
 }

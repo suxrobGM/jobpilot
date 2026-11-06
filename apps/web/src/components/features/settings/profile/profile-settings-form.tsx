@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { type UserWithAutoApplyInput, userWithAutoApplySchema } from "@jobpilot/contracts/user";
+import { type UserUpdateInput, userUpdateSchema } from "@jobpilot/contracts/user";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
@@ -14,7 +14,6 @@ import { useAppForm } from "@/components/ui/form/tanstack";
 import { StickyFooter } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { AddressSection } from "./address-section";
-import { AutoApplySection } from "./auto-apply-section";
 import { EeoSection } from "./eeo-section";
 import { PersonalSection } from "./personal-section";
 import { toProfileFormValues } from "./profile-form-values";
@@ -40,12 +39,12 @@ export function ProfileSettingsForm(): ReactElement {
 }
 
 interface SettingsFormProps {
-  initialData: UserWithAutoApplyInput;
+  initialData: UserUpdateInput;
 }
 
 function SettingsForm(props: SettingsFormProps): ReactElement {
   const { initialData } = props;
-  const save = useApiMutation((vars: UserWithAutoApplyInput) => api.user.put(vars), {
+  const save = useApiMutation((vars: UserUpdateInput) => api.user.put(vars), {
     successMessage: "Settings saved",
     invalidate: [userQueries.all],
     // The saved values become the new baseline, so the leave-page prompt clears.
@@ -54,7 +53,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
 
   const form = useAppForm({
     defaultValues: initialData,
-    validators: { onSubmit: userWithAutoApplySchema },
+    validators: { onSubmit: userUpdateSchema },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },
@@ -78,7 +77,6 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
         <ReferencesSection form={form} />
         <SalarySection form={form} />
         <EeoSection form={form} />
-        <AutoApplySection form={form} />
 
         <StickyFooter>
           <Stack direction="row" sx={{ justifyContent: "flex-end" }}>

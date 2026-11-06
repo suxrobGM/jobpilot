@@ -35,6 +35,10 @@ export function requestSubject(input: CreatePilotRequestInput, requestId: string
       return { subjectType: "inbox", subjectId: "inbox" };
     case "upwork.syncInbox":
       return { subjectType: "upwork", subjectId: "inbox" };
+    case "inbox.jobAlerts":
+      return { subjectType: "inbox", subjectId: "jobAlerts" };
+    case "research.explore":
+      return { subjectType: "pilot", subjectId: "research" };
     case "search.discover":
       return { subjectType: "campaign", subjectId: input.payload.searchId };
     case "resume.extract":
@@ -58,6 +62,8 @@ const REQUEST_TITLES: Record<RequestableTaskType, string> = {
   "inbox.review": "Review the inbox",
   "upwork.syncInbox": "Refresh the Upwork inbox",
   "search.discover": "Run a search now",
+  "inbox.jobAlerts": "Import job alert emails",
+  "research.explore": "Research jobs beyond your boards",
   "resume.extract": "Read a resume",
   "resume.tailor": "Tailor a resume",
   "networking.find": "Find contacts",

@@ -13,7 +13,7 @@ campaign <campaign-id>`) or the campaign page.
 ## Setup
 
 Follow `../_shared/setup.md`. Fetch the campaign: `jobpilot-api GET /api/campaigns/<campaign-id>`.
-Threshold = `config.minScore` (fallback `autoApply.minMatchScore`, else 60).
+Threshold = the campaign's `config.minScore`, else `GET /api/pilot` → `config.minScore`, else 60.
 
 ## Step 1: Select Targets
 

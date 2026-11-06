@@ -93,14 +93,7 @@ export const jobAlertsStatusSchema = z.object({
   // Unimported alert emails inside the lookback window - what a run would read right now.
   pendingEmails: z.number().int(),
   nextRunAt: z.date().nullable(),
-  requestedAt: z.date().nullable(),
   lastRun: jobAlertsLastRunSchema.nullable(),
-});
-
-export const runJobAlertsResultSchema = z.object({
-  // False when there was nothing to import, so no run was queued.
-  queued: z.boolean(),
-  pendingEmails: z.number().int(),
 });
 
 export type JobAlertsStatus = z.infer<typeof jobAlertsStatusSchema>;

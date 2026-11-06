@@ -43,10 +43,10 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
   };
 
   const form = useAppForm({
-    defaultValues: { goals: state.instructionsGoals },
+    defaultValues: { goals: state.goals },
     validators: { onSubmit: goalsSchema },
     onSubmit: async ({ value }) => {
-      if (value.goals === state.instructionsGoals) return;
+      if (value.goals === state.goals) return;
       // Read on save, not on mount, so the dialog sees what the old goals left running now.
       const [searches, toApply] = await Promise.all([
         queryClient.fetchQuery(pilotQueries.searches()),

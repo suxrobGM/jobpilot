@@ -1,6 +1,6 @@
 import {
-  type PilotInstructionsConfig,
-  pilotInstructionsConfigSchema,
+  type PilotConfig,
+  pilotConfigSchema,
   type TaskListContent,
   type TaskPayload,
   type TaskType,
@@ -11,12 +11,12 @@ import type { TaskJob } from "./gather-jobs";
 import type { Followup } from "./gather-outreach";
 import type { ResearchTask } from "./gather-research";
 
-type ConfigOverrides = z.input<typeof pilotInstructionsConfigSchema>;
+type ConfigOverrides = z.input<typeof pilotConfigSchema>;
 type WarmContact = NonNullable<TaskJob["warmContacts"]>[number];
 
 // Networking is off by default, but these suites exercise it, so both channels start on here.
-export const cfg = (over: ConfigOverrides = {}): PilotInstructionsConfig =>
-  pilotInstructionsConfigSchema.parse({
+export const cfg = (over: ConfigOverrides = {}): PilotConfig =>
+  pilotConfigSchema.parse({
     ...over,
     networking: { email: "review", linkedIn: "draft", ...over.networking },
   });
@@ -29,7 +29,6 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   autopilot: true,
   requests: [],
   chat: null,
-  jobAlertsRequested: false,
   cycleCount: 0,
   openQuestions: 0,
   activeRuns: 0,

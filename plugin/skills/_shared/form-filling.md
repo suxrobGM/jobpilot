@@ -24,7 +24,7 @@ All paths refer to `GET /api/user` (already loaded by setup.md).
 - **Phone** → `user.phone`
 - **LinkedIn / GitHub / Website** → `user.{linkedin,github,website}`
 - **Salary expectations** → a caller-supplied `salaryExpectation` wins when non-null. Else `user.salaryPreferences[]`, each `{appliesTo, minAmount, maxAmount, currency, period}`: pick the entry whose `appliesTo` best matches this job's title/seniority/type (a lone generic entry matches everything). Range fields → min-max; single field → `maxAmount` (else `minAmount`). Convert period if the form asks in another unit (yearly ≈ monthly × 12 ≈ hourly × 2080). Radios/dropdowns → closest bracket. Empty list or no plausible match → ask the user (workers: return `needs_user category:"salary"`); remember the answer for the campaign.
-- **Start date** → "Immediately" or "2 weeks notice" unless `autoApply.defaultStartDate` overrides.
+- **Start date** → the `start_date` saved answer (`GET /api/pilot/saved-answers`), else "2 weeks notice".
 - **Cover letter** (a textarea or a file-upload field labelled "cover letter") → generate via the `cover-letter` skill (already humanized; it also saves the letter to history - pass `source` = the invoking skill, `apply` or `auto_apply`). Then:
   - Text area → paste the text directly.
   - File upload → render the text to PDF and upload it: write `{"text":"<letter text>"}` to `$JOBPILOT_TEMP/cover-letter-pdf.json`, run `jobpilot-api POST /api/cover-letters/pdf --data @"$JOBPILOT_TEMP/cover-letter-pdf.json" --out "$JOBPILOT_TEMP/cover-letter.pdf"`, then `browser_file_upload` that path (overwritten each time).

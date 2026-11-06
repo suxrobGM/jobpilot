@@ -73,7 +73,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
     : null;
   const journalCaption = posted
     ? truncate(humanizeIsoInText(posted.summary))
-    : `${state.appliedToday} / ${state.instructionsConfig.dailyApplyCap} applied today`;
+    : `${state.appliedToday} / ${state.config.dailyApplyCap} applied today`;
   const sessionCaption = run
     ? `${taskTypeLabel(run.taskType)} · running ${formatRelativeTime(run.startedAt)}`
     : "Idle";

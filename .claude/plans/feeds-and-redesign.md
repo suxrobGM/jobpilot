@@ -130,11 +130,10 @@ rows; Needs you matches the Pipeline's Needs you count.
 - `pilot_runs.title text NOT NULL`, backfilled from the payload with a SQL `CASE` per task type
   (the same strings `TASK_DEFS[*].title` builds). `RunService.start` writes it; the thread and
   `currentRun` read it and never parse stored payloads.
-- `pilot_states`: `instructions_goals` → `goals`; `instructions_config` splits into `rules`
-  jsonb (`dailyApplyCap`, `minScore`, `dealBreakers`, `preferCapExempt`) and `settings` jsonb
-  (`boards`, `checkIntervalMinutes`, `networking`, `promotion`, `jobAlerts`);
+- `pilot_states`: `instructions_goals` → `goals`, `instructions_config` → `config`,
   `instructions_updated_at` → `goals_updated_at`; drop `job_alerts_requested_at` and
-  `research_requested_at`.
+  `research_requested_at`. The config stays one jsonb column (every task builder reads rules and
+  settings together); the contract splits it into `pilotRulesSchema` and `pilotSettingsSchema`.
 - Drop `auto_apply_settings`: `default_start_date` becomes a `profile_answers` row
   (`startDate`); `min_match_score` and `max_applications_per_campaign` go (rules own the score;
   the daily cap replaces the per-run cap).

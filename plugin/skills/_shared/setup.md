@@ -81,7 +81,8 @@ Each account has exactly one profile; the API resolves it from your token automa
 threading, no profile switching. Endpoints (`/api/user`, `/api/resumes`, `/api/applications`,
 `/api/campaigns`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) are all scoped to it.
 
-**Don't invent endpoints.** Settings = `GET /api/user` → `autoApply`. Resumes = `resumes` or `GET
+**Don't invent endpoints.** Rules = `GET /api/pilot` → `config` (minScore, dealBreakers,
+preferCapExempt). Resumes = `resumes` or `GET
 /api/resumes`.
 
 **Growing lists are paginated** - `applied`, `campaigns` (+ `/jobs`, `/networking`),
@@ -111,8 +112,7 @@ jobpilot-api GET /api/user
 - If `user` is `null`: "Open $JOBPILOT_WEB/onboarding to set up your profile, then re-run this
   skill."
 - Otherwise read from `user` (firstName, lastName, email, phone, address, work auth, EEO,
-  preferredLocations, salaryPreferences, …) and `autoApply` (minMatchScore,
-  maxApplicationsPerCampaign, defaultStartDate).
+  preferredLocations, salaryPreferences, …).
 
 The response also includes:
 

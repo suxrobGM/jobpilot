@@ -23,6 +23,8 @@ export const createPilotRequestSchema = z.discriminatedUnion("taskType", [
   request("inbox.review", z.object({ messageIds: z.array(z.string().min(1)).max(100).optional() })),
   request("upwork.syncInbox", z.object({})),
   request("search.discover", z.object({ searchId: z.uuid() })),
+  request("inbox.jobAlerts", z.object({})),
+  request("research.explore", z.object({})),
   request("resume.extract", z.object({ resumeId: z.uuid(), force: z.boolean().default(false) })),
   request(
     "resume.tailor",

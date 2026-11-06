@@ -23,7 +23,6 @@ export const PROFILE_SELECT = {
   country: true,
   usAuthorized: true,
   requiresSponsorship: true,
-  preferCapExempt: true,
   visaStatus: true,
   optExtension: true,
   willingToRelocate: true,

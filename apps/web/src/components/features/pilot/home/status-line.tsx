@@ -80,7 +80,7 @@ export function StatusLine(props: StatusLineProps): ReactElement {
             {headline(mode, state, idleCaption(pilot, nextWakeAt))}
           </Typography>
           <Typography variant="body2Muted" sx={{ whiteSpace: "nowrap" }}>
-            {`${state.appliedToday}/${state.instructionsConfig.dailyApplyCap} today`}
+            {`${state.appliedToday}/${state.config.dailyApplyCap} today`}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", flexWrap: "wrap" }}>

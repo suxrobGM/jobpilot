@@ -1,4 +1,4 @@
-import { type PilotChangeAction, pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
+import { type PilotChangeAction, pilotConfigSchema } from "@jobpilot/contracts/pilot";
 import { applyActions } from "./apply-action";
 import { type FakeState, fakeContext } from "./fakes";
 import { describe, expect, it } from "bun:test";
@@ -9,7 +9,7 @@ const SEARCH = "22222222-2222-4222-8222-222222222222";
 function initialState(): FakeState {
   return {
     goals: "ML engineer, new grad",
-    config: pilotInstructionsConfigSchema.parse({ dealBreakers: ["clearance"] }),
+    config: pilotConfigSchema.parse({ dealBreakers: ["clearance"] }),
     searches: [
       {
         id: SEARCH,

@@ -1,6 +1,6 @@
 import {
   type PilotState,
-  pilotInstructionsConfigSchema,
+  pilotConfigSchema,
   type RecordCycleInput,
   type UpdatePilotSettingsInput,
 } from "@jobpilot/contracts/pilot";
@@ -20,7 +20,7 @@ export class PilotService {
   constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private async toState(row: PilotStateModel): Promise<PilotState> {
-    const config = pilotInstructionsConfigSchema.parse(row.instructionsConfig);
+    const config = pilotConfigSchema.parse(row.config);
     const now = new Date();
     const [appliedToday, networkingSentToday, openRun] = await Promise.all([
       countAppliedToday(this.prisma, row.userId, now),
@@ -34,9 +34,9 @@ export class PilotService {
     return {
       userId: row.userId,
       autopilot: row.autopilot,
-      instructionsGoals: row.instructionsGoals,
-      instructionsConfig: config,
-      instructionsUpdatedAt: row.instructionsUpdatedAt,
+      goals: row.goals,
+      config: config,
+      goalsUpdatedAt: row.goalsUpdatedAt,
       lastCycleAt: row.lastCycleAt,
       nextWakeAt: row.nextWakeAt,
       cycleCount: row.cycleCount,
@@ -59,9 +59,9 @@ export class PilotService {
   private async readGoals(userId: string): Promise<string> {
     const row = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { instructionsGoals: true },
+      select: { goals: true },
     });
-    return row?.instructionsGoals ?? "";
+    return row?.goals ?? "";
   }
 
   /** Every profile has exactly one state row, created with defaults on first read. */
@@ -78,12 +78,12 @@ export class PilotService {
   async updateSettings(userId: string, body: UpdatePilotSettingsInput) {
     const saved = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { instructionsConfig: true },
+      select: { config: true },
     });
-    const config = pilotInstructionsConfigSchema.parse(saved?.instructionsConfig ?? {});
+    const config = pilotConfigSchema.parse(saved?.config ?? {});
     const instructions = {
-      instructionsConfig: toInputJson({ ...config, ...body }),
-      instructionsUpdatedAt: new Date(),
+      config: toInputJson({ ...config, ...body }),
+      goalsUpdatedAt: new Date(),
       ...TASK_LIST_SNAPSHOT_RESET,
     };
     const row = await this.prisma.pilotState.upsert({

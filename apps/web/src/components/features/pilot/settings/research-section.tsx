@@ -4,21 +4,17 @@ import type { ReactElement } from "react";
 import { TravelExplore } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import type { ResearchStatusDto } from "@/api/types";
-import { useApiMutation } from "@/api/use-api-mutation";
 import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/feedback";
 import { formatRelativeTime } from "@/utils/format";
 import { pipelineHref } from "@/utils/routes";
-import { isRunPending } from "../run-status";
+import { useCreateRequest } from "../requests/use-create-request";
+import { isRunning } from "../run-status";
 
 function lastRunText(status: ResearchStatusDto): string {
   const { lastRun } = status;
-  if (status.requestedAt) {
-    return "Queued - the pilot picks it up on its next cycle.";
-  }
   if (!lastRun) {
     return "No research run yet.";
   }
@@ -31,10 +27,7 @@ function lastRunText(status: ResearchStatusDto): string {
 
 export function ResearchSection(): ReactElement {
   const query = useQuery(pilotQueries.research());
-  const run = useApiMutation(() => api.pilot.research.runs.post(), {
-    invalidate: [pilotQueries.research().queryKey, pilotQueries.taskList().queryKey],
-    successMessage: "Research queued - the pilot picks it up on its next cycle.",
-  });
+  const request = useCreateRequest();
   const status = query.data;
 
   return (
@@ -52,8 +45,9 @@ export function ResearchSection(): ReactElement {
               size="small"
               variant="outlined"
               startIcon={<TravelExplore />}
-              disabled={isRunPending(status) || run.isPending}
-              onClick={() => run.mutate()}
+              disabled={isRunning(status)}
+              loading={request.isPending}
+              onClick={() => request.mutate({ taskType: "research.explore", payload: {} })}
             >
               Research now
             </Button>

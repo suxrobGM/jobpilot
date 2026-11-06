@@ -25,7 +25,7 @@ runId }`; absent fields are null. The job is already `applying`.
 - `answers`: the user's reply to the question an earlier run returned. It wins for the field it
   answers; never ask it again.
 
-Load `GET /api/user` (read `user` and `autoApply`) and `GET /api/pilot/saved-answers` (`[{key, value}]`,
+Load `GET /api/user` (read `user`) and `GET /api/pilot/saved-answers` (`[{key, value}]`,
 saved answers to reusable questions like `relocation` or `start_date`; use one for a form question
 asking the same thing). Use `resumeId` when set, else `user.primaryResumeId`.
 
@@ -128,7 +128,7 @@ the step snapshot didn't enumerate (date picker, autocomplete), snapshot just it
   minAmount, maxAmount, currency, period}`) whose `appliesTo` best fits (a lone generic entry fits
   all). Range → min-max; one field → `maxAmount`, else `minAmount`; convert the period when asked
   (yearly ≈ monthly × 12 ≈ hourly × 2080); brackets → closest. No plausible entry → unresolvable.
-- **Start date**: `autoApply.defaultStartDate`, else "2 weeks notice".
+- **Start date**: the `start_date` saved answer, else "2 weeks notice".
 - **Work authorization**: `user.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`,
   closest option.
 - **Relocation**: `user.willingToRelocate`; empty or `"Anywhere"` `preferredLocations` means open.

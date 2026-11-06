@@ -36,7 +36,7 @@ Search a single board (picked by the user when launching the campaign), or the o
 
 With `--anywhere`, skip step 3 of Setup and Phases 2-5. Delegate one `job-researcher` run with
 `{runId:null, campaignId:<campaign-id>, goals:<query>, resumeId:<config.resumeId>, minScore:0,
-approveAtOrAbove:null, preferCapExempt:user.preferCapExempt,
+approveAtOrAbove:null, preferCapExempt:<GET /api/pilot → config.preferCapExempt>,
 requiresSponsorship:user.requiresSponsorship, boards:<every domain from GET /api/job-boards>,
 newJobsTarget:<--max-jobs, else 20>}`. Without subagent support, follow
 `$JOBPILOT_SKILLS_ROOT/../agents/job-researcher.md` inline. The agent saves its own rows as

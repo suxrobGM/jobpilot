@@ -19,7 +19,7 @@
 - `CAPTCHA - apply manually via the apply skill` / `Payment required` - surface during apply, not
   scoring.
 - `Deal-breaker: <rule>` - the posting clearly hits one of the user's deal-breakers
-  (`GET /api/pilot` → `instructionsConfig.dealBreakers`, plain-language rules). Only on what the
+  (`GET /api/pilot` → `config.dealBreakers`, plain-language rules). Only on what the
   posting states, never on a guess.
 
 **Never skip for:** onsite/hybrid/other city when `willingToRelocate` is true or

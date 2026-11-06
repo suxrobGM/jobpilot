@@ -15,50 +15,25 @@ const run = (startedAt: string, outcome: "done" | "failed" | "expired" | null) =
 
 describe("jobAlertsDue", () => {
   it("is never due while the import is off", () => {
-    expect(jobAlertsDue(cfg().jobAlerts, null, null, NOW)).toBe(false);
+    expect(jobAlertsDue(cfg().jobAlerts, null, NOW)).toBe(false);
   });
 
   it("is due on the first run", () => {
-    expect(jobAlertsDue(enabled, null, null, NOW)).toBe(true);
+    expect(jobAlertsDue(enabled, null, NOW)).toBe(true);
   });
 
   it("runs once per slot: a success after 08:00 holds until 17:00", () => {
-    expect(jobAlertsDue(enabled, run("2026-07-15T08:05:00Z", "done"), null, NOW)).toBe(false);
-    expect(jobAlertsDue(enabled, run("2026-07-14T17:05:00Z", "done"), null, NOW)).toBe(true);
+    expect(jobAlertsDue(enabled, run("2026-07-15T08:05:00Z", "done"), NOW)).toBe(false);
+    expect(jobAlertsDue(enabled, run("2026-07-14T17:05:00Z", "done"), NOW)).toBe(true);
   });
 
   it("stays quiet while an import is in flight", () => {
-    expect(jobAlertsDue(enabled, run("2026-07-15T11:58:00Z", null), null, NOW)).toBe(false);
+    expect(jobAlertsDue(enabled, run("2026-07-15T11:58:00Z", null), NOW)).toBe(false);
   });
 
   it("retries a failed import after the retry gap, not the next slot", () => {
-    expect(jobAlertsDue(enabled, run("2026-07-15T11:30:00Z", "failed"), null, NOW)).toBe(false);
-    expect(jobAlertsDue(enabled, run("2026-07-15T10:30:00Z", "expired"), null, NOW)).toBe(true);
-  });
-});
-
-describe("jobAlertsDue with Run now", () => {
-  const off = cfg().jobAlerts;
-  const request = at("2026-07-15T11:50:00Z");
-
-  it("fires a fresh request even with the schedule off", () => {
-    expect(jobAlertsDue(off, null, request, NOW)).toBe(true);
-  });
-
-  it("is spent once an import started after it", () => {
-    expect(jobAlertsDue(off, run("2026-07-15T11:52:00Z", "done"), request, NOW)).toBe(false);
-  });
-
-  it("fires even when this slot already ran", () => {
-    expect(jobAlertsDue(enabled, run("2026-07-15T08:05:00Z", "done"), request, NOW)).toBe(true);
-  });
-
-  it("lapses after an hour so a stopped pilot does not fire it later", () => {
-    expect(jobAlertsDue(off, null, at("2026-07-15T10:30:00Z"), NOW)).toBe(false);
-  });
-
-  it("waits for an in-flight import", () => {
-    expect(jobAlertsDue(off, run("2026-07-15T11:40:00Z", null), request, NOW)).toBe(false);
+    expect(jobAlertsDue(enabled, run("2026-07-15T11:30:00Z", "failed"), NOW)).toBe(false);
+    expect(jobAlertsDue(enabled, run("2026-07-15T10:30:00Z", "expired"), NOW)).toBe(true);
   });
 });
 

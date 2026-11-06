@@ -31,10 +31,8 @@ export interface Over {
   runs?: Partial<Record<TaskType, RunRow[]>>;
   /** The latest run per task type, for the once-per-user dampers. */
   latestRuns?: Partial<Record<TaskType, LatestRun | null>>;
-  instructionsConfig?: unknown;
-  instructionsGoals?: string;
-  jobAlertsRequestedAt?: Date | null;
-  researchRequestedAt?: Date | null;
+  config?: unknown;
+  goals?: string;
   jobAlertEmails?: { id: string }[];
   appliedToday?: number;
   pilotSearches?: Row[];
@@ -44,7 +42,8 @@ export interface Over {
   contacts?: Row[];
   pausedFeeds?: string[];
   primaryResumeId?: string | null;
-  profile?: { requiresSponsorship: boolean; preferCapExempt: boolean } | null;
+  profile?: { requiresSponsorship: boolean } | null;
+  pendingRequests?: Record<string, unknown>[];
   dueSearchCampaigns?: { id: string; pilotSearchId: string; status: string }[];
   scorePendingCampaigns?: Row[];
   scoredPendingJobs?: Row[];
@@ -148,7 +147,7 @@ function makeTaskListDb(over: Over = {}) {
     inboxSyncs: [],
   };
   // Networking is off by default in prod; these suites exercise it.
-  const config = over.instructionsConfig ?? { networking: { email: "review", linkedIn: "draft" } };
+  const config = over.config ?? { networking: { email: "review", linkedIn: "draft" } };
 
   let txChain: Promise<unknown> = Promise.resolve();
   const db = {
@@ -156,14 +155,12 @@ function makeTaskListDb(over: Over = {}) {
       upsert: async () => ({
         autopilot: true,
         cycleCount: 0,
-        instructionsConfig: config,
-        instructionsGoals: over.instructionsGoals ?? "",
-        jobAlertsRequestedAt: over.jobAlertsRequestedAt ?? null,
-        researchRequestedAt: over.researchRequestedAt ?? null,
+        config: config,
+        goals: over.goals ?? "",
       }),
       update: async () => ({}),
     },
-    pilotRequest: { findMany: async () => [] },
+    pilotRequest: { findMany: async () => over.pendingRequests ?? [] },
     pilotMessage: { findFirst: async () => null },
     pilotSearch: {
       findMany: async () => over.pilotSearches ?? [],

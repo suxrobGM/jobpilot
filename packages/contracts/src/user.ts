@@ -78,7 +78,7 @@ const salaryPreferenceSchema = z.object({
 
 export type SalaryPreferenceInput = z.infer<typeof salaryPreferenceSchema>;
 
-const userUpdateSchema = z.object({
+export const userUpdateSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
   contactEmail: z.email(),
@@ -96,7 +96,6 @@ const userUpdateSchema = z.object({
 
   usAuthorized: z.boolean(),
   requiresSponsorship: z.boolean(),
-  preferCapExempt: z.boolean(),
   visaStatus: z.string().optional().nullable(),
   optExtension: z.string().optional().nullable(),
   willingToRelocate: z.boolean(),
@@ -114,27 +113,17 @@ const userUpdateSchema = z.object({
   primaryResumeId: z.uuid().nullable().optional(),
 });
 
-/** Auto-apply threshold when the user has not set one; also the fit scorer's fallback. */
+/** The fit scorer's threshold when the caller passes none. */
 export const DEFAULT_MIN_MATCH_SCORE = 60;
-
-const autoApplySettingsSchema = z.object({
-  minMatchScore: z.number().int().min(0).max(100),
-  maxApplicationsPerCampaign: z.number().int().min(1).max(500).optional().nullable(),
-  defaultStartDate: z.string(),
-});
-
-export const userWithAutoApplySchema = userUpdateSchema.extend({
-  autoApply: autoApplySettingsSchema.optional(),
-});
 
 /** Body for setting (or clearing, with `null`) the user's primary resume. */
 export const setPrimaryResumeSchema = z.object({
   resumeId: z.uuid().nullable(),
 });
 
-export type UserWithAutoApplyInput = z.infer<typeof userWithAutoApplySchema>;
+export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 
-export const USER_DEFAULT_VALUES: UserWithAutoApplyInput = {
+export const USER_DEFAULT_VALUES: UserUpdateInput = {
   firstName: "",
   lastName: "",
   contactEmail: "",
@@ -150,7 +139,6 @@ export const USER_DEFAULT_VALUES: UserWithAutoApplyInput = {
   country: "United States",
   usAuthorized: true,
   requiresSponsorship: false,
-  preferCapExempt: false,
   visaStatus: "",
   optExtension: "",
   willingToRelocate: false,
@@ -164,11 +152,6 @@ export const USER_DEFAULT_VALUES: UserWithAutoApplyInput = {
   eeoVeteranStatus: "Prefer not to disclose",
   eeoDisabilityStatus: "Prefer not to disclose",
   primaryResumeId: null,
-  autoApply: {
-    minMatchScore: DEFAULT_MIN_MATCH_SCORE,
-    maxApplicationsPerCampaign: null,
-    defaultStartDate: "2 weeks notice",
-  },
 };
 
 /** The /u/[username] slug. Lowercased; letters, digits, and interior hyphens only. */

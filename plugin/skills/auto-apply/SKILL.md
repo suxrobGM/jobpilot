@@ -16,13 +16,10 @@ the `apply` skill. Live view at `$JOBPILOT_WEB/pipeline?campaign=<campaign-id>`.
 ## Setup
 
 Follow `../_shared/setup.md`. Shared campaign mechanics (applied-check, result writes, worker
-input, rules) live in `../_shared/campaign-flow.md`. Read `autoApply` (defaults applied per field):
+input, rules) live in `../_shared/campaign-flow.md`.
 
-| Setting                      | Default            | Notes                                                                                     |
-| ---------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
-| `minMatchScore`              | 60                 | Qualification threshold (0-100). Inline `--min-score` overrides.                          |
-| `maxApplicationsPerCampaign` | `null` (unlimited) | Stop after this many successful applies. Inline `--max-apps` overrides; omit → unlimited. |
-| `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                |
+- `minMatchScore` = `--min-score`, else `GET /api/pilot` → `config.minScore` (default 60).
+- Stop after `--max-apps` successful applies; without it, run until the board is exhausted.
 
 Inline argument overrides take precedence. Exactly one of `--board <domain>` or `--anywhere` is
 **required** unless the argument is `resume` or `retry-failed <campaign-id>`. `--anywhere` searches
@@ -72,12 +69,12 @@ With `--anywhere`, research first, then apply; Phases 1 and 2 below are for a bo
 
 1. **Research.** Delegate one `job-researcher` run with `{runId:null, campaignId:$CAMPAIGN_ID,
    goals:<query>, resumeId:$RESUME_ID, minScore:$MIN_SCORE, approveAtOrAbove:$MIN_SCORE,
-   preferCapExempt:user.preferCapExempt, requiresSponsorship:user.requiresSponsorship,
+   preferCapExempt:config.preferCapExempt, requiresSponsorship:user.requiresSponsorship,
    boards:<every domain from GET /api/job-boards>, newJobsTarget:20}`. Without subagent support,
    follow `$JOBPILOT_SKILLS_ROOT/../agents/job-researcher.md` inline. It saves rows at or above
    `$MIN_SCORE` as `approved` and skips the rest.
 2. **Apply.** Run the `resume-campaign` skill's Phase 2 replay over the campaign's `approved` rows,
-   best first, with `MAX_APPS` = `--max-apps`. With `user.preferCapExempt`, a row with
+   best first, with `MAX_APPS` = `--max-apps`. With `config.preferCapExempt`, a row with
    `capExemptBasis` ranks as if it scored 10 higher. Then Phase 3 below.
 
 ## Phase 1: Open the Board (tab 1)

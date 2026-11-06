@@ -1,44 +1,30 @@
-import {
-  nextDailyRun,
-  type PilotJobAlerts,
-  pilotInstructionsConfigSchema,
-} from "@jobpilot/contracts/pilot";
+import { nextDailyRun, type PilotJobAlerts, pilotConfigSchema } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
-import { EmailSyncService } from "@/modules/email/sync/sync.service";
-import { resumePausedFeed } from "./feeds";
 import { PilotService } from "./pilot.service";
 import { pendingJobAlertsWhere } from "./tasks/gather-inbox";
-import { hasPendingRunNow } from "./tasks/run-history";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
-
-/** A run-now click syncs first so the count is current, but never re-pulls a mailbox just synced. */
-const RUN_NOW_SYNC_STALE_MS = 2 * 60 * 1000;
 
 @injectable()
 export class JobAlertsService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly emailSync = inject(EmailSyncService),
     private readonly pilot = inject(PilotService),
   ) {}
 
-  private async loadState(userId: string) {
+  private async loadConfig(userId: string) {
     const row = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { instructionsConfig: true, jobAlertsRequestedAt: true },
+      select: { config: true },
     });
-    return {
-      config: pilotInstructionsConfigSchema.parse(row?.instructionsConfig ?? {}),
-      requestedAt: row?.jobAlertsRequestedAt ?? null,
-    };
+    return pilotConfigSchema.parse(row?.config ?? {});
   }
 
   async getStatus(userId: string) {
     const now = new Date();
-    const [state, lastRun, account] = await Promise.all([
-      this.loadState(userId),
+    const [config, lastRun, account] = await Promise.all([
+      this.loadConfig(userId),
       this.prisma.pilotRun.findFirst({
         where: { userId, taskType: "inbox.jobAlerts" },
         orderBy: { startedAt: "desc" },
@@ -52,7 +38,7 @@ export class JobAlertsService {
       }),
       this.prisma.emailAccount.findUnique({ where: { userId }, select: { id: true } }),
     ]);
-    const settings = state.config.jobAlerts;
+    const settings = config.jobAlerts;
 
     const [pendingEmails, campaign] = await Promise.all([
       this.prisma.emailMessage.count({ where: pendingJobAlertsWhere(userId, settings, now) }),
@@ -65,13 +51,11 @@ export class JobAlertsService {
         : null,
     ]);
 
-    const { requestedAt } = state;
     return {
       settings,
       mailboxConnected: account !== null,
       pendingEmails,
       nextRunAt: settings.enabled ? nextDailyRun(settings.runHours, settings.timeZone, now) : null,
-      requestedAt: hasPendingRunNow(requestedAt, lastRun, now) ? requestedAt : null,
       lastRun: lastRun
         ? {
             startedAt: lastRun.startedAt,
@@ -83,44 +67,16 @@ export class JobAlertsService {
     };
   }
 
-  /** Edits only the import block, so it never races the instructions editor's other fields. */
+  /** Edits only the import block, so it never races an edit to the rest of the config. */
   async updateSettings(userId: string, settings: PilotJobAlerts) {
-    const { config } = await this.loadState(userId);
-    const instructionsConfig = toInputJson({ ...config, jobAlerts: settings });
+    const config = toInputJson({ ...(await this.loadConfig(userId)), jobAlerts: settings });
     await this.prisma.pilotState.upsert({
       where: { userId },
-      create: { userId, instructionsConfig },
-      update: {
-        instructionsConfig,
-        instructionsUpdatedAt: new Date(),
-        ...TASK_LIST_SNAPSHOT_RESET,
-      },
+      create: { userId, config },
+      update: { config, ...TASK_LIST_SNAPSHOT_RESET },
     });
     await this.wakePilot(userId);
     return this.getStatus(userId);
-  }
-
-  async runNow(userId: string) {
-    const now = new Date();
-    await this.emailSync.syncIfStale(userId, RUN_NOW_SYNC_STALE_MS, now);
-    const { config } = await this.loadState(userId);
-    const pendingEmails = await this.prisma.emailMessage.count({
-      where: pendingJobAlertsWhere(userId, config.jobAlerts, now),
-    });
-
-    // Nothing to read: a queued request would sit until mail arrived and then fire unasked.
-    if (pendingEmails === 0) {
-      return { queued: false, pendingEmails };
-    }
-
-    await resumePausedFeed(this.prisma, userId, "job_alerts");
-    await this.prisma.pilotState.upsert({
-      where: { userId },
-      create: { userId, jobAlertsRequestedAt: now },
-      update: { jobAlertsRequestedAt: now, ...TASK_LIST_SNAPSHOT_RESET },
-    });
-    await this.wakePilot(userId);
-    return { queued: true, pendingEmails };
   }
 
   /** The terminal host ends its idle sleep on `state.changed`, so the run starts in seconds. */

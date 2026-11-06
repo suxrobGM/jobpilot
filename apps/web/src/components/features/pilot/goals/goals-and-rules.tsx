@@ -31,7 +31,7 @@ export function GoalsAndRules(): ReactElement {
     );
   }
 
-  const { dailyApplyCap, minScore, dealBreakers } = state.instructionsConfig;
+  const { dailyApplyCap, minScore, dealBreakers } = state.config;
   // Keyed the same way, so Undo or chat refreshes the rules form.
   const rulesKey = [dailyApplyCap, minScore, ...dealBreakers].join("|");
 
@@ -41,7 +41,7 @@ export function GoalsAndRules(): ReactElement {
         <Box data-section-id="goals">
           <SectionCard title="Goals">
             {/* Keyed so a goals change made elsewhere (chat, Undo) resets the form. */}
-            <GoalsForm key={state.instructionsGoals} state={state} />
+            <GoalsForm key={state.goals} state={state} />
           </SectionCard>
         </Box>
         <Box data-section-id="searches">

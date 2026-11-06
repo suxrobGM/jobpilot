@@ -1,6 +1,6 @@
 export * from "./answers";
 export * from "./change";
-export * from "./instructions";
+export * from "./config";
 export * from "./job-alerts";
 export * from "./journal";
 export * from "./message";

@@ -40,7 +40,6 @@ const RETENTION_BY_MODEL = {
   Profile: "bounded",
   ProfessionalReference: "userData",
   SalaryPreference: "userData",
-  AutoApplySettings: "bounded",
   ProfileAnswer: "userData",
   Resume: "userData",
   ResumeVariant: ["resumeVariants"],

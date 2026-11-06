@@ -54,7 +54,7 @@ export function toSettings(value: SettingsFormValues): UpdatePilotSettingsInput 
 }
 
 export function toFormValues(state: PilotState): SettingsFormValues {
-  const c = state.instructionsConfig;
+  const c = state.config;
   return {
     checkIntervalMinutes: c.checkIntervalMinutes,
     networking: { ...c.networking },

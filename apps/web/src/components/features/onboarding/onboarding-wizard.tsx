@@ -3,8 +3,8 @@
 import { type ReactElement, type SubmitEvent, useState } from "react";
 import {
   USER_DEFAULT_VALUES,
-  type UserWithAutoApplyInput,
-  userWithAutoApplySchema,
+  type UserUpdateInput,
+  userUpdateSchema,
 } from "@jobpilot/contracts/user";
 import {
   Alert,
@@ -56,7 +56,7 @@ export function OnboardingWizard(): ReactElement {
 }
 
 interface OnboardingStepsProps {
-  initialValues: UserWithAutoApplyInput;
+  initialValues: UserUpdateInput;
 }
 
 function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
@@ -67,7 +67,7 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
   const [step, setStep] = useState(0);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
 
-  const save = useApiMutation((vars: UserWithAutoApplyInput) => api.user.put(vars), {
+  const save = useApiMutation((vars: UserUpdateInput) => api.user.put(vars), {
     successMessage: "Profile saved",
     onSuccess: () => {
       queryClient.invalidateQueries();
@@ -78,7 +78,7 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
 
   const form = useAppForm({
     defaultValues: initialValues,
-    validators: { onSubmit: userWithAutoApplySchema },
+    validators: { onSubmit: userUpdateSchema },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },
@@ -99,7 +99,7 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
       return;
     }
 
-    const result = userWithAutoApplySchema.safeParse(form.state.values);
+    const result = userUpdateSchema.safeParse(form.state.values);
     if (!result.success) {
       const issues = describeIssues(result.error.issues, PERSONAL_STEP);
       setShowValidationErrors(true);
@@ -167,7 +167,7 @@ const ValidationSummary = withForm({
     return (
       <form.Subscribe selector={(s) => s.values}>
         {(values) => {
-          const result = userWithAutoApplySchema.safeParse(values);
+          const result = userUpdateSchema.safeParse(values);
           if (result.success) {
             return null;
           }

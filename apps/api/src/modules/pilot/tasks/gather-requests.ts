@@ -1,10 +1,11 @@
-import type { CreatePilotRequestInput, PilotTask } from "@jobpilot/contracts/pilot";
+import type { CreatePilotRequestInput, PilotConfig, PilotTask } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { publishRequest } from "../requests/request.service";
 import { parseRequest } from "../requests/request-row";
 import { applyTask } from "./build";
-import { gatherInbox } from "./gather-inbox";
+import { gatherInbox, jobAlertsPayload } from "./gather-inbox";
 import { findApprovedJob } from "./gather-jobs";
+import { researchPayload } from "./gather-research";
 import { makeTask, REQUEST_PRIORITY } from "./task-defs";
 
 /** Requests waiting at once; more just wait a cycle. */
@@ -12,11 +13,16 @@ const REQUEST_BATCH = 20;
 const SEARCH_NEW_JOBS_TARGET = 10;
 const SEARCH_MAX_PAGES = 5;
 
-interface RequestContext {
+interface PilotGoals {
+  config: PilotConfig;
+  goals: string;
+}
+
+interface RequestContext extends PilotGoals {
   prisma: PrismaClient;
   userId: string;
   requestId: string;
-  minScore: number;
+  now: Date;
 }
 
 /** The task a request asks for, or null when its subject is gone and it can't run. */
@@ -24,7 +30,7 @@ async function requestTask(
   ctx: RequestContext,
   input: CreatePilotRequestInput,
 ): Promise<PilotTask | null> {
-  const { prisma, userId, requestId } = ctx;
+  const { prisma, userId, requestId, config } = ctx;
   switch (input.taskType) {
     case "job.apply": {
       const { campaignId, jobKey } = input.payload;
@@ -76,10 +82,27 @@ async function requestTask(
         board: search.board?.domain,
         resumeId: search.resumeId ?? undefined,
         campaignId: search.campaigns[0]?.id,
-        minScore: ctx.minScore,
+        minScore: config.minScore,
         newJobsTarget: SEARCH_NEW_JOBS_TARGET,
         maxPages: SEARCH_MAX_PAGES,
       });
+    }
+    // Asked for by name, so they run off-schedule and past a paused feed.
+    case "inbox.jobAlerts": {
+      const alerts = await jobAlertsPayload(prisma, userId, config, ctx.now);
+      return alerts && makeTask("inbox.jobAlerts", alerts);
+    }
+    case "research.explore": {
+      if (ctx.goals === "") return null;
+      const research = await researchPayload(prisma, userId, {
+        goals: ctx.goals,
+        config,
+        trigger: "requested",
+      });
+      return (
+        research &&
+        makeTask("research.explore", { ...research, newJobsTarget: SEARCH_NEW_JOBS_TARGET })
+      );
     }
     case "resume.extract":
       return makeTask("resume.extract", input.payload);
@@ -105,7 +128,7 @@ async function requestTask(
 export async function gatherRequests(
   prisma: PrismaClient,
   userId: string,
-  minScore: number,
+  pilot: PilotGoals,
   now: Date,
 ): Promise<PilotTask[]> {
   const rows = await prisma.pilotRequest.findMany({
@@ -116,7 +139,7 @@ export async function gatherRequests(
   const tasks: PilotTask[] = [];
   for (const row of rows) {
     const task = await requestTask(
-      { prisma, userId, requestId: row.id, minScore },
+      { ...pilot, prisma, userId, requestId: row.id, now },
       parseRequest(row),
     );
     if (task) {

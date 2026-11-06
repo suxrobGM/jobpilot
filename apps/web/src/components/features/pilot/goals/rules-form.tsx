@@ -12,6 +12,7 @@ const rulesSchema = z.object({
   dailyApplyCap: z.number().int().min(0),
   minScore: z.number().min(0).max(100),
   dealBreakers: z.array(z.string().trim().min(1)),
+  preferCapExempt: z.boolean(),
 });
 
 interface RulesFormProps {
@@ -20,15 +21,15 @@ interface RulesFormProps {
   onSaved?: () => void;
 }
 
-/** The cap, the min score and the deal-breakers, saved as one change with Undo. */
+/** The cap, min score, deal-breakers and cap-exempt preference, as one change with Undo. */
 export function RulesForm(props: RulesFormProps): ReactElement {
   const { state, onSaved } = props;
   const toast = useToast();
-  const { dailyApplyCap, minScore, dealBreakers } = state.instructionsConfig;
+  const { dailyApplyCap, minScore, dealBreakers, preferCapExempt } = state.config;
   const save = useMakeChange(onSaved);
 
   const form = useAppForm({
-    defaultValues: { dailyApplyCap, minScore, dealBreakers },
+    defaultValues: { dailyApplyCap, minScore, dealBreakers, preferCapExempt },
     validators: { onSubmit: rulesSchema },
     onSubmitInvalid: () => toast.error("Fix the highlighted fields"),
     onSubmit: async ({ value }) => {
@@ -83,6 +84,9 @@ export function RulesForm(props: RulesFormProps): ReactElement {
             helperText="The pilot skips any job that hits one of these. Type one and press Enter."
           />
         )}
+      </form.AppField>
+      <form.AppField name="preferCapExempt">
+        {(field) => <field.Switch label="Prefer H-1B cap-exempt employers" />}
       </form.AppField>
       <Stack direction="row" sx={{ justifyContent: "flex-end" }}>
         <form.AppForm>

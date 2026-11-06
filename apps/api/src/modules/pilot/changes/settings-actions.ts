@@ -1,4 +1,4 @@
-import { type PilotChangeAction, pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
+import { type PilotChangeAction, pilotConfigSchema } from "@jobpilot/contracts/pilot";
 import { notFound } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import type { ActionContext, ActionOf } from "./action-context";
@@ -8,11 +8,11 @@ async function readInstructions(ctx: ActionContext) {
     where: { userId: ctx.userId },
     create: { userId: ctx.userId },
     update: {},
-    select: { instructionsGoals: true, instructionsConfig: true },
+    select: { goals: true, config: true },
   });
   return {
-    goals: row.instructionsGoals,
-    config: pilotInstructionsConfigSchema.parse(row.instructionsConfig),
+    goals: row.goals,
+    config: pilotConfigSchema.parse(row.config),
   };
 }
 
@@ -23,7 +23,7 @@ export async function setGoals(
   const { goals } = await readInstructions(ctx);
   await ctx.tx.pilotState.update({
     where: { userId: ctx.userId },
-    data: { instructionsGoals: action.goals, instructionsUpdatedAt: ctx.now },
+    data: { goals: action.goals, goalsUpdatedAt: ctx.now },
   });
   // Searches picked for the old goals all come due now.
   if (goals !== action.goals) {
@@ -44,8 +44,8 @@ export async function setRules(
   await ctx.tx.pilotState.update({
     where: { userId: ctx.userId },
     data: {
-      instructionsConfig: toInputJson({ ...config, ...rules }),
-      instructionsUpdatedAt: ctx.now,
+      config: toInputJson({ ...config, ...rules }),
+      goalsUpdatedAt: ctx.now,
     },
   });
   return {

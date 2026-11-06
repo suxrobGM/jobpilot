@@ -13,7 +13,7 @@ interface RulesSummaryProps {
 export function RulesSummary(props: RulesSummaryProps): ReactElement {
   const { state } = props;
   const [editing, setEditing] = useState(false);
-  const { dailyApplyCap, minScore, dealBreakers } = state.instructionsConfig;
+  const { dailyApplyCap, minScore, dealBreakers } = state.config;
 
   return (
     <SideSection

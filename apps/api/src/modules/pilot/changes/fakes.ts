@@ -69,14 +69,10 @@ function fakeTx(state: FakeState): ChangeTx {
 
   const tx = {
     pilotState: {
-      upsert: async () => ({ instructionsGoals: state.goals, instructionsConfig: state.config }),
-      update: async ({
-        data,
-      }: {
-        data: { instructionsGoals?: string; instructionsConfig?: Record<string, unknown> };
-      }) => {
-        if (data.instructionsGoals !== undefined) state.goals = data.instructionsGoals;
-        if (data.instructionsConfig !== undefined) state.config = data.instructionsConfig;
+      upsert: async () => ({ goals: state.goals, config: state.config }),
+      update: async ({ data }: { data: { goals?: string; config?: Record<string, unknown> } }) => {
+        if (data.goals !== undefined) state.goals = data.goals;
+        if (data.config !== undefined) state.config = data.config;
         return {};
       },
     },

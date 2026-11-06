@@ -1,4 +1,4 @@
-import type { PortfolioSettingsPatch, UserWithAutoApplyInput } from "@jobpilot/contracts/user";
+import type { PortfolioSettingsPatch, UserUpdateInput } from "@jobpilot/contracts/user";
 import { inject, injectable } from "@needle-di/core";
 import { conflict, emailNotVerified, findOwned, notFound } from "@/common/errors";
 import { resumePath } from "@/common/storage/storage";
@@ -38,9 +38,8 @@ export class UserService {
       ),
     );
 
-    const [autoApply, primarySource, resumeRows, withContent, references, salaryPreferences] =
+    const [primarySource, resumeRows, withContent, references, salaryPreferences] =
       await Promise.all([
-        this.prisma.autoApplySettings.findUnique({ where: { userId } }),
         user.primaryResumeId
           ? this.prisma.resume.findUnique({
               where: { id: user.primaryResumeId },
@@ -101,7 +100,6 @@ export class UserService {
 
     return {
       user: { ...user, references, salaryPreferences },
-      autoApply,
       primaryResumeSourceAbsolutePath: primarySource?.sourceFilename
         ? resumePath(primarySource.sourceFilename)
         : null,
@@ -109,15 +107,9 @@ export class UserService {
     };
   }
 
-  async update(userId: string, body: UserWithAutoApplyInput) {
-    const {
-      autoApply,
-      preferredLocations,
-      primaryResumeId,
-      references,
-      salaryPreferences,
-      ...profileFields
-    } = body;
+  async update(userId: string, body: UserUpdateInput) {
+    const { preferredLocations, primaryResumeId, references, salaryPreferences, ...profileFields } =
+      body;
     // Replace the reference and salary-preference sets wholesale - the settings form submits the full lists.
     await this.prisma.$transaction([
       this.prisma.user.update({
@@ -153,14 +145,6 @@ export class UserService {
         })),
       }),
     ]);
-
-    if (autoApply) {
-      await this.prisma.autoApplySettings.upsert({
-        where: { userId },
-        create: { userId, ...autoApply },
-        update: autoApply,
-      });
-    }
 
     return { id: userId };
   }

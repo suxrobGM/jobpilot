@@ -124,36 +124,29 @@ describe("TaskListService mail and Upwork sync", () => {
 describe("TaskListService job-alert import", () => {
   const emails = [{ id: "m1" }, { id: "m2" }];
 
-  it("offers an import for a live Run now request, even with the schedule off", async () => {
-    const taskList = await service({
-      jobAlertsRequestedAt: new Date(Date.now() - 60_000),
-      jobAlertEmails: emails,
-    }).refresh("p1");
+  it("imports on request, even with the schedule off", async () => {
+    const request = {
+      id: "r1",
+      taskType: "inbox.jobAlerts",
+      payload: {},
+      subjectType: "inbox",
+      subjectId: "jobAlerts",
+      status: "pending",
+      source: "web",
+      createdAt: new Date(),
+    };
+    const taskList = await service({ pendingRequests: [request], jobAlertEmails: emails }).refresh(
+      "p1",
+    );
     expect(findTask(taskList, "inbox.jobAlerts")?.payload).toMatchObject({
       messageIds: ["m1", "m2"],
       count: 2,
     });
   });
 
-  it("offers nothing once an import has started since the request", async () => {
-    const now = Date.now();
-    const taskList = await service({
-      jobAlertsRequestedAt: new Date(now - 60_000),
-      latestRuns: {
-        "inbox.jobAlerts": {
-          startedAt: new Date(now - 30_000),
-          finishedAt: new Date(now - 10_000),
-          outcome: "done",
-        },
-      },
-      jobAlertEmails: emails,
-    }).refresh("p1");
-    expect(hasTaskType(taskList, "inbox.jobAlerts")).toBe(false);
-  });
-
   it("offers nothing while the alerts campaign is paused", async () => {
     const taskList = await service({
-      instructionsConfig: { jobAlerts: { enabled: true, runHours: [0] } },
+      config: { jobAlerts: { enabled: true, runHours: [0] } },
       pausedFeeds: ["job_alerts"],
       jobAlertEmails: emails,
     }).refresh("p1");

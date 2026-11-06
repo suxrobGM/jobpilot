@@ -8,7 +8,7 @@ const dueRow = (over: Record<string, unknown> = {}) =>
 const futureRow = (over: Record<string, unknown> = {}) =>
   pilotSearchRow({ nextRunAt: new Date(Date.now() + HOUR_MS), ...over });
 
-const spentCap = { instructionsConfig: { dailyApplyCap: 5 }, appliedToday: 5 };
+const spentCap = { config: { dailyApplyCap: 5 }, appliedToday: 5 };
 
 const findDiscover = (taskList: Parameters<typeof findTask>[0]) =>
   findTask(taskList, "search.discover");
@@ -95,22 +95,22 @@ describe("TaskListService search.setup", () => {
 
   it("derives searches from the goals when none exist", async () => {
     const taskList = await service({
-      instructionsConfig: { minScore: 70 },
-      instructionsGoals: `  ${goals} `,
+      config: { minScore: 70 },
+      goals: `  ${goals} `,
     }).refresh("p1");
     expect(findSetup(taskList)?.payload).toEqual({ goals, minScore: 70 });
   });
 
   it("refills while the apply cap has room and every search is waiting", async () => {
     const taskList = await service({
-      instructionsGoals: goals,
+      goals: goals,
       pilotSearches: [futureRow({ lastRunAt: new Date() })],
     }).refresh("p1");
     expect(findSetup(taskList)).toBeDefined();
   });
 
   it("stays out when goals are blank, the cap is spent, a try is recent, or work is queued", async () => {
-    const blank = await service({ instructionsGoals: "   " }).refresh("p1");
+    const blank = await service({ goals: "   " }).refresh("p1");
     expect(findSetup(blank)).toBeUndefined();
     expect(blank.emptyReason).toBe("awaitingSetup");
 
@@ -120,7 +120,7 @@ describe("TaskListService search.setup", () => {
       { approvedJobs: [approvedJob()] },
     ];
     for (const over of cases) {
-      const taskList = await service({ instructionsGoals: goals, ...over }).refresh("p1");
+      const taskList = await service({ goals: goals, ...over }).refresh("p1");
       expect(findSetup(taskList)).toBeUndefined();
     }
   });

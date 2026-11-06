@@ -5,9 +5,9 @@ import { describe, expect, it } from "bun:test";
 const stateRow = (over: Record<string, unknown>) => ({
   userId: "p1",
   autopilot: false,
-  instructionsGoals: "",
-  instructionsConfig: {},
-  instructionsUpdatedAt: new Date(),
+  goals: "",
+  config: {},
+  goalsUpdatedAt: new Date(),
   lastCycleAt: null,
   nextWakeAt: null,
   cycleCount: 0,
@@ -39,10 +39,10 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null, savedC
   };
   const db = {
     pilotState: {
-      findUnique: async () => ({ instructionsGoals: savedGoals, instructionsConfig: savedConfig }),
+      findUnique: async () => ({ goals: savedGoals, config: savedConfig }),
       upsert: async (a: { update: Record<string, unknown> }) => {
         upserts.push(a);
-        return stateRow({ instructionsGoals: savedGoals, ...a.update });
+        return stateRow({ goals: savedGoals, ...a.update });
       },
     },
     pilotSearch: { updateMany: count("searchResets"), deleteMany: count("searchDeletes") },

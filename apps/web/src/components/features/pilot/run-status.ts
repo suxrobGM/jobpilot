@@ -4,14 +4,9 @@ export function formatHour(hour: number): string {
 }
 
 interface RunStatus {
-  requestedAt: Date | null;
   lastRun: { outcome: string | null } | null;
 }
 
-/** Queued by Run now, or running. */
-export function isRunPending(status: RunStatus): boolean {
-  if (status.requestedAt !== null) {
-    return true;
-  }
+export function isRunning(status: RunStatus): boolean {
   return status.lastRun !== null && status.lastRun.outcome === null;
 }

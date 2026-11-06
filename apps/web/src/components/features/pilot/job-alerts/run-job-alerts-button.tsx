@@ -3,18 +3,20 @@
 import type { ReactElement } from "react";
 import type { JobAlertsStatus } from "@jobpilot/contracts/pilot";
 import { PlayArrow } from "@mui/icons-material";
-import { api } from "@/api/client";
-import { pilotQueries } from "@/api/queries";
-import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipButton } from "@/components/ui/buttons";
-import { useToast } from "@/providers/toast-provider";
-import { plural } from "@/utils/format";
-import { isRunPending } from "../run-status";
+import { useCreateRequest } from "../requests/use-create-request";
+import { isRunning } from "../run-status";
 
-/** Why a run can't be queued, or null when it can. */
+/** Why a run can't be asked for, or null when it can. */
 function runDisabledReason(status: JobAlertsStatus): string | null {
   if (!status.mailboxConnected) {
     return "Connect Gmail in Settings → Email so there is mail to read.";
+  }
+  if (isRunning(status)) {
+    return "An import is running.";
+  }
+  if (status.pendingEmails === 0) {
+    return "No new job alert emails to import.";
   }
   return null;
 }
@@ -25,33 +27,18 @@ interface RunJobAlertsButtonProps {
 
 export function RunJobAlertsButton(props: RunJobAlertsButtonProps): ReactElement {
   const { status } = props;
-  const toast = useToast();
-  const run = useApiMutation(() => api.pilot["job-alerts"].runs.post(), {
-    invalidate: [pilotQueries.jobAlerts().queryKey, pilotQueries.taskList().queryKey],
-    onSuccess: (result) => {
-      if (!result.queued) {
-        toast.info("No new job alert emails to import.");
-        return;
-      }
-      toast.success(
-        `Queued ${plural(result.pendingEmails, "alert email")} - the pilot picks it up on its next cycle.`,
-      );
-    },
-  });
-
+  const request = useCreateRequest();
   const disabledReason = runDisabledReason(status);
-  const active = isRunPending(status);
-  const hint = disabledReason ?? (active ? "An import is already queued or running." : "");
 
   return (
     <TooltipButton
-      title={hint}
+      title={disabledReason ?? ""}
       size="small"
       variant="contained"
       startIcon={<PlayArrow />}
-      disabled={disabledReason !== null || active}
-      loading={run.isPending}
-      onClick={() => run.mutate()}
+      disabled={disabledReason !== null}
+      loading={request.isPending}
+      onClick={() => request.mutate({ taskType: "inbox.jobAlerts", payload: {} })}
     >
       Run now
     </TooltipButton>

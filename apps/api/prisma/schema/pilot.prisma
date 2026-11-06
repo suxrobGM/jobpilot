@@ -118,9 +118,10 @@ model PilotState {
   autopilot             Boolean   @default(false)
   // Set when autopilot turns on; `cap.unused` waits for a week of it.
   autopilotSince        DateTime? @map("autopilot_since") @db.Timestamptz(3)
-  instructionsGoals     String    @default("") @map("instructions_goals")
-  instructionsConfig    Json      @default("{}") @map("instructions_config")
-  instructionsUpdatedAt DateTime? @map("instructions_updated_at") @db.Timestamptz(3)
+  goals                 String    @default("")
+  // Rules and settings; `pilotConfigSchema` parses it.
+  config                Json      @default("{}")
+  goalsUpdatedAt        DateTime? @map("goals_updated_at") @db.Timestamptz(3)
   taskListVersion       String?   @map("task_list_version")
   taskListExpiresAt     DateTime? @map("task_list_expires_at") @db.Timestamptz(3)
   taskListSnapshot      Json?     @map("task_list_snapshot")
@@ -128,10 +129,6 @@ model PilotState {
   // When the host plans its next task list check; idle checks write here, not to the journal.
   nextWakeAt            DateTime? @map("next_wake_at") @db.Timestamptz(3)
   cycleCount            Int       @default(0) @map("cycle_count")
-  // "Run now" for the job-alert import: offered off-schedule until a later run or an hour passes.
-  jobAlertsRequestedAt  DateTime? @map("job_alerts_requested_at") @db.Timestamptz(3)
-  // "Research now": offered ungated until a later research run or an hour passes.
-  researchRequestedAt   DateTime? @map("research_requested_at") @db.Timestamptz(3)
   // Notice key to the ISO time it may show again.
   dismissedNotices      Json      @default("{}") @map("dismissed_notices")
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)

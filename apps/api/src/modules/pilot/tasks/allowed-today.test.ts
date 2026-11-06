@@ -1,8 +1,8 @@
-import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
+import { pilotConfigSchema } from "@jobpilot/contracts/pilot";
 import { allowedToday } from "./allowed-today";
 import { describe, expect, it } from "bun:test";
 
-const config = (over: Record<string, unknown> = {}) => pilotInstructionsConfigSchema.parse(over);
+const config = (over: Record<string, unknown> = {}) => pilotConfigSchema.parse(over);
 
 describe("allowedToday", () => {
   it("reads a cap of 0 as reached and never goes negative", () => {

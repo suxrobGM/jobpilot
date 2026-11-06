@@ -1,3 +1,4 @@
+import { pilotConfigSchema } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { readContent } from "@/modules/resume/content";
@@ -31,7 +32,7 @@ export class ScoringService {
         where: { id: userId },
         select: {
           profile: { select: { requiresSponsorship: true } },
-          autoApply: { select: { minMatchScore: true } },
+          pilotState: { select: { config: true } },
         },
       }),
     ]);
@@ -50,8 +51,9 @@ export class ScoringService {
       requiresSponsorship: user?.profile?.requiresSponsorship ?? false,
     };
 
-    // A caller that omits the threshold gets the user's own auto-apply bar, not a global constant.
-    return scoreFit(brief, fitProfile, minScore ?? user?.autoApply?.minMatchScore);
+    // A caller that omits the threshold gets the user's own rule, not a global constant.
+    const rules = pilotConfigSchema.parse(user?.pilotState?.config ?? {});
+    return scoreFit(brief, fitProfile, minScore ?? rules.minScore);
   }
 
   /**

@@ -1,4 +1,4 @@
-import type { PilotInstructionsConfig, TaskPayload } from "@jobpilot/contracts/pilot";
+import type { PilotConfig, TaskPayload } from "@jobpilot/contracts/pilot";
 import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP } from "./run-history";
@@ -46,7 +46,7 @@ export async function gatherApprovedNetworking(
 export async function gatherFollowups(
   prisma: PrismaClient,
   userId: string,
-  config: PilotInstructionsConfig,
+  config: PilotConfig,
   now: Date,
 ): Promise<Followup[]> {
   const rows = await prisma.networkingMessage.findMany({
@@ -113,7 +113,7 @@ export async function gatherApprovedPromotions(
 export async function gatherDuePlatforms(
   prisma: PrismaClient,
   userId: string,
-  config: PilotInstructionsConfig,
+  config: PilotConfig,
   now: Date,
 ): Promise<TaskPayload<"promotion.draft">[]> {
   const { platforms } = config.promotion;

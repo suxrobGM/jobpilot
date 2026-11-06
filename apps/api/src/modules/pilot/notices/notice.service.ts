@@ -1,8 +1,8 @@
 import {
   dismissedNoticesSchema,
-  type PilotInstructionsConfig,
+  type PilotConfig,
   type PilotNoticeKey,
-  pilotInstructionsConfigSchema,
+  pilotConfigSchema,
 } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
 import { DAY_MS } from "@/common/date/buckets";
@@ -21,7 +21,7 @@ import {
 const DISMISS_MS = 14 * DAY_MS;
 
 interface FactsInput {
-  config: PilotInstructionsConfig;
+  config: PilotConfig;
   autopilotSince: Date | null;
 }
 
@@ -34,7 +34,7 @@ export class NoticeService {
     const state = await this.prisma.pilotState.findUnique({
       where: { userId },
       select: {
-        instructionsConfig: true,
+        config: true,
         autopilot: true,
         autopilotSince: true,
         dismissedNotices: true,
@@ -42,7 +42,7 @@ export class NoticeService {
     });
     const dismissed = dismissedNoticesSchema.parse(state?.dismissedNotices ?? {});
     const facts = await this.gatherFacts(userId, now, {
-      config: pilotInstructionsConfigSchema.parse(state?.instructionsConfig ?? {}),
+      config: pilotConfigSchema.parse(state?.config ?? {}),
       autopilotSince: state?.autopilot ? (state.autopilotSince ?? null) : null,
     });
     return buildNotices(facts, now).filter((notice) => {

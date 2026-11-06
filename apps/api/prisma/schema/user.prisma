@@ -32,7 +32,6 @@ model User {
   oauthAccounts      OAuthAccount[]
 
   resumes              Resume[]
-  autoApply            AutoApplySettings?
   applications         Application[]
   campaigns            Campaign[]
   campaignJobs         CampaignJob[]

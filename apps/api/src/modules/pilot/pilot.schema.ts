@@ -45,7 +45,6 @@ export const researchStatusSchema = z.object({
     })
     .nullable(),
   campaignId: z.uuid().nullable(),
-  requestedAt: z.date().nullable(),
 });
 
 const withinDaysSchema = z.number().int().min(1).max(90);

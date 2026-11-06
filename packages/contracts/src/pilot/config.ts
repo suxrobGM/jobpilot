@@ -31,32 +31,39 @@ const pilotPromotionConfigSchema = z.object({
   autonomy: z.literal("review").default("review"),
 });
 
-/** Stored as JSON in `PilotState.instructionsConfig`; `{}` parses to a full config. */
-export const pilotInstructionsConfigSchema = z.object({
+/** What the pilot may apply to; edited through changes. */
+const pilotRulesSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
   minScore: z.number().min(0).max(100).default(60),
-  boards: z.array(z.string()).default([]),
-  checkIntervalMinutes: z.number().int().min(5).default(30),
   // Rules the pilot screens postings against; the server enforces only the cap and min score.
   dealBreakers: z.array(z.string()).default([]),
+  // Ranks H-1B cap-exempt employers higher.
+  preferCapExempt: z.boolean().default(false),
+});
+
+/** How the pilot runs. */
+const pilotSettingsSchema = z.object({
+  boards: z.array(z.string()).default([]),
+  checkIntervalMinutes: z.number().int().min(5).default(30),
   // `prefault`, not `default`: a missing key is parsed as `{}` so every nested field defaults too.
   networking: pilotNetworkingSchema.prefault({}),
   promotion: pilotPromotionConfigSchema.prefault({}),
   jobAlerts: pilotJobAlertsSchema.prefault({}),
 });
 
-/** Everything outside goals and rules; job alerts keep their own route. */
-export const updatePilotSettingsSchema = pilotInstructionsConfigSchema
-  .pick({ boards: true, checkIntervalMinutes: true, networking: true, promotion: true })
-  .partial();
+/** Stored as JSON in `PilotState.config`; `{}` parses to a full config. */
+export const pilotConfigSchema = pilotRulesSchema.extend(pilotSettingsSchema.shape);
+
+/** Settings other than job alerts, which keep their own route. */
+export const updatePilotSettingsSchema = pilotSettingsSchema.omit({ jobAlerts: true }).partial();
 
 export const pilotStateSchema = z.object({
   userId: z.uuid(),
   // Autonomous work runs only while on; requests, chat and answered questions always run.
   autopilot: z.boolean(),
-  instructionsGoals: z.string(),
-  instructionsConfig: pilotInstructionsConfigSchema,
-  instructionsUpdatedAt: z.date().nullable(),
+  goals: z.string(),
+  config: pilotConfigSchema,
+  goalsUpdatedAt: z.date().nullable(),
   lastCycleAt: z.date().nullable(),
   nextWakeAt: z.date().nullable(),
   cycleCount: z.number().int(),
@@ -71,14 +78,14 @@ export const pilotStateSchema = z.object({
   updatedAt: z.date(),
 });
 
-export type PilotInstructionsConfig = z.infer<typeof pilotInstructionsConfigSchema>;
+export type PilotConfig = z.infer<typeof pilotConfigSchema>;
 export const setAutopilotSchema = z.object({ on: z.boolean() });
 
 export type UpdatePilotSettingsInput = z.infer<typeof updatePilotSettingsSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;
 
 export function channelAutonomy(
-  config: PilotInstructionsConfig,
+  config: PilotConfig,
   channel: NetworkingChannel,
 ): NetworkingAutonomy | null {
   const mode = channel === "email" ? config.networking.email : config.networking.linkedIn;
@@ -88,7 +95,7 @@ export function channelAutonomy(
 // A warm intro prefers email when both channels are on.
 const CHANNEL_PREFERENCE = ["email", "linkedin"] as const satisfies readonly NetworkingChannel[];
 
-export function networkingMode(config: PilotInstructionsConfig): NetworkingMode | null {
+export function networkingMode(config: PilotConfig): NetworkingMode | null {
   for (const channel of CHANNEL_PREFERENCE) {
     const autonomy = channelAutonomy(config, channel);
     if (autonomy) return { channel, autonomy };
