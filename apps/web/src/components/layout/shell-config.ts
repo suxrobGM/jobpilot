@@ -14,47 +14,34 @@ import {
 } from "@mui/icons-material";
 import type { Route } from "next";
 import { BUG_REPORT_URL, type ExternalUrl, FEATURE_REQUEST_URL } from "@/lib/constants";
-import { isAdminRole } from "@/lib/roles";
 
 export interface NavItem {
   label: string;
   href: Route;
   icon: SvgIconComponent;
-  /** Shown only to admin and super_admin. Cosmetic - the API's requireRole is the real gate. */
-  adminOnly?: boolean;
-  /** Live attention badge on the icon: open pilot questions. */
+  /** Live attention badge: open pilot questions. */
   badge?: "needsYou";
   /** Gets its own tab on the mobile bottom nav; the rest fall into its "More" sheet. */
   primary?: boolean;
   /** Extra pathname prefixes that keep this item highlighted (e.g. detail routes living outside its href). */
   matchHrefs?: string[];
+  /** Shown only once the user works that channel (see `useNavGroups`). */
+  channel?: "upwork" | "networking";
 }
 
 export interface NavGroup {
+  /** Shown as a heading in the expanded sidebar. */
   label?: string;
   items: NavItem[];
 }
 
-const navGroups: NavGroup[] = [
+export const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Core",
     items: [
       { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "needsYou", primary: true },
       { label: "Pipeline", href: "/pipeline", icon: ViewKanban, primary: true },
       { label: "Inbox", href: "/inbox", icon: Inbox, primary: true },
       { label: "Analytics", href: "/analytics", icon: Insights, primary: true },
-    ],
-  },
-  {
-    label: "Channels",
-    items: [
-      { label: "Upwork", href: "/upwork", icon: Handshake },
-      { label: "Networking", href: "/networking", icon: Forum },
-    ],
-  },
-  {
-    label: "Library",
-    items: [
       {
         label: "Documents",
         href: "/documents",
@@ -64,27 +51,19 @@ const navGroups: NavGroup[] = [
       },
     ],
   },
-];
-
-/** Pinned to the foot of the rail, by the feedback and account controls - not part of the app's own nav. */
-export const footerNavGroups: NavGroup[] = [
   {
+    label: "Channels",
     items: [
-      { label: "Settings", href: "/settings", icon: Settings },
-      { label: "Admin", href: "/admin", icon: AdminPanelSettings, adminOnly: true },
+      { label: "Upwork", href: "/upwork", icon: Handshake, channel: "upwork" },
+      { label: "Networking", href: "/networking", icon: Forum, channel: "networking" },
     ],
   },
 ];
 
-/** The nav a given role may see. The rail and the mobile nav render from this, never from the raw groups. */
-export function visibleNavGroups(role: string | undefined, groups = navGroups): NavGroup[] {
-  return groups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => !item.adminOnly || isAdminRole(role)),
-    }))
-    .filter((group) => group.items.length > 0);
-}
+export const SETTINGS_NAV_ITEM: NavItem = { label: "Settings", href: "/settings", icon: Settings };
+
+/** Shown only to admin and super_admin. Cosmetic - the API's requireRole is the real gate. */
+export const ADMIN_NAV_ITEM: NavItem = { label: "Admin", href: "/admin", icon: AdminPanelSettings };
 
 interface ExternalNavLink {
   label: string;
@@ -99,7 +78,8 @@ export const feedbackLinks: ExternalNavLink[] = [
 ];
 
 export const APP_TITLE = "JobPilot";
-export const RAIL_WIDTH = 56;
+export const SIDEBAR_WIDTH = 220;
+export const SIDEBAR_COLLAPSED_WIDTH = 56;
 export const MOBILE_NAV_HEIGHT = 56;
 
 function isHrefActive(pathname: string, href: string): boolean {
@@ -107,7 +87,7 @@ function isHrefActive(pathname: string, href: string): boolean {
   return target === "/" ? pathname === "/" : pathname.startsWith(target);
 }
 
-/** Active-route test shared by the desktop rail and the mobile bottom nav: the item's own href plus any matchHrefs prefixes. */
+/** Active-route test shared by the sidebar and the mobile bottom nav: the item's own href plus any matchHrefs prefixes. */
 export function isNavEntryActive(pathname: string, item: NavItem): boolean {
   return (
     isHrefActive(pathname, item.href) ||

@@ -14,7 +14,6 @@ export default function ResumeDetailPage(props: PageProps): ReactElement {
   return (
     <PageShell maxWidth="xl">
       <PageHeader
-        eyebrow="Documents"
         title="Edit resume"
         description="Structured fields render to PDF on the right. Variants tailored from this base appear below."
       />

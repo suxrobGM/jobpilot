@@ -1,22 +1,24 @@
 "use client";
 
 import { type MouseEvent, type ReactNode, useState } from "react";
-import { Security } from "@mui/icons-material";
+import { MoreHoriz, Security } from "@mui/icons-material";
 import {
   Avatar,
-  Box,
+  ButtonBase,
   Divider,
-  IconButton,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import NextLink from "next/link";
 import type { AuthUserDto } from "@/api/types";
 import { LogoutMenuItem } from "@/components/features/auth";
 import { useSession } from "@/hooks/use-auth";
+import { isAdminRole } from "@/lib/roles";
+import { ADMIN_NAV_ITEM, feedbackLinks } from "./shell-config";
 
 function initials(u: AuthUserDto): string {
   const both = `${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.trim();
@@ -31,8 +33,13 @@ function displayName(u: AuthUserDto): string {
   return name || u.email || "Your profile";
 }
 
-/** One profile per user, so an identity + sign-out menu rather than a switcher. */
-export function AccountMenu(): ReactNode {
+interface AccountMenuProps {
+  collapsed: boolean;
+}
+
+/** One profile per user, so identity, feedback, admin and sign-out rather than a switcher. */
+export function AccountMenu(props: AccountMenuProps): ReactNode {
+  const { collapsed } = props;
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
 
@@ -44,27 +51,32 @@ export function AccountMenu(): ReactNode {
 
   const handleOpen = (e: MouseEvent<HTMLElement>) => setAnchor(e.currentTarget);
   const handleClose = () => setAnchor(null);
+  const name = displayName(user);
 
   return (
-    <Box sx={{ pb: 1 }}>
-      <Tooltip title={displayName(user)} placement="right">
-        <IconButton
-          aria-label={`Account: ${displayName(user)}`}
+    <>
+      <Tooltip title={collapsed ? name : ""} placement="right">
+        <ButtonBase
+          aria-label={`Account: ${name}`}
           aria-haspopup="menu"
           aria-controls={open ? "account-menu" : undefined}
           aria-expanded={open}
           onClick={handleOpen}
           sx={(theme) => ({
-            p: 0,
+            justifyContent: "flex-start",
+            gap: 1.5,
+            height: 40,
+            paddingInline: 0.5,
             borderRadius: theme.radii.sm,
-            "&:focus-visible": { boxShadow: theme.shadows_custom.focus },
+            "&:hover": { backgroundColor: theme.palette.surfaces.card },
+            "&.Mui-focusVisible": { boxShadow: theme.shadows_custom.focus },
           })}
         >
           <Avatar
             sx={(theme) => ({
-              width: 36,
-              height: 36,
-              ...theme.typography.body1Strong,
+              width: 28,
+              height: 28,
+              ...theme.typography.caption,
               bgcolor: theme.palette.accent.primary,
               color: "primary.contrastText",
               border: `1px solid ${theme.palette.line.borderHi}`,
@@ -72,7 +84,15 @@ export function AccountMenu(): ReactNode {
           >
             {initials(user)}
           </Avatar>
-        </IconButton>
+          {!collapsed && (
+            <>
+              <Typography variant="body2" noWrap sx={{ flex: 1, textAlign: "left" }}>
+                {name}
+              </Typography>
+              <MoreHoriz fontSize="md" sx={{ color: "text.secondary" }} />
+            </>
+          )}
+        </ButtonBase>
       </Tooltip>
       <Menu
         id="account-menu"
@@ -88,7 +108,7 @@ export function AccountMenu(): ReactNode {
       >
         <MenuItem disabled sx={{ opacity: "1 !important" }}>
           <ListItemText
-            primary={displayName(user)}
+            primary={name}
             secondary={user.email || undefined}
             slotProps={{
               primary: { variant: "body2" },
@@ -103,8 +123,33 @@ export function AccountMenu(): ReactNode {
           </ListItemIcon>
           <ListItemText primary="Security settings" />
         </MenuItem>
+        {isAdminRole(user.role) && (
+          <MenuItem component={NextLink} href={ADMIN_NAV_ITEM.href} onClick={handleClose}>
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <ADMIN_NAV_ITEM.icon fontSize="md" />
+            </ListItemIcon>
+            <ListItemText primary={ADMIN_NAV_ITEM.label} />
+          </MenuItem>
+        )}
+        <Divider />
+        {feedbackLinks.map((link) => (
+          <MenuItem
+            key={link.href}
+            component="a"
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleClose}
+          >
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <link.icon fontSize="md" />
+            </ListItemIcon>
+            <ListItemText primary={link.label} />
+          </MenuItem>
+        ))}
+        <Divider />
         <LogoutMenuItem onClick={handleClose} />
       </Menu>
-    </Box>
+    </>
   );
 }

@@ -9,12 +9,12 @@ import { PilotLive } from "@/components/features/pilot/pilot-live";
 import { PipelineLive } from "@/components/features/pipeline";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { MobileNav } from "./mobile-nav";
-import { Rail } from "./rail";
 import { MOBILE_NAV_HEIGHT } from "./shell-config";
+import { Sidebar } from "./sidebar";
 
 export function AppShell(props: PropsWithChildren): ReactElement {
   const { children } = props;
-  // Below md a bottom bar replaces the rail; the drawer still opens there for the agent's status.
+  // Below md a bottom bar replaces the sidebar; the drawer still opens there for the agent's status.
   const isDesktop = useAgentAvailable();
 
   return (
@@ -25,7 +25,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
         backgroundColor: theme.palette.surfaces.base,
       })}
     >
-      {isDesktop && <Rail />}
+      {isDesktop && <Sidebar />}
       <Box
         component="main"
         sx={{

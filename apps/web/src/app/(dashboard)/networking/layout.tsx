@@ -16,7 +16,6 @@ export default function NetworkingLayout(props: NetworkingLayoutProps): ReactEle
   return (
     <PageShell maxWidth="lg">
       <PageHeader
-        eyebrow="Networking"
         title="Outreach"
         description="Hiring managers and recruiters the pilot found, and every message drafted to them."
       />

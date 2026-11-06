@@ -9,7 +9,6 @@ export default function UpworkInboxPage(): ReactElement {
   return (
     <PageShell maxWidth="lg">
       <PageHeader
-        eyebrow="Upwork"
         title="Inbox"
         description="Invitations, offers and message threads mirrored from Upwork by the upwork-sync skill."
         backHref="/upwork"

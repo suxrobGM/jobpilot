@@ -14,7 +14,6 @@ export default function InboxPage(): ReactElement {
         <EmailConnectToast />
       </Suspense>
       <PageHeader
-        eyebrow="Email"
         title="Inbox"
         description="Replies, rejections, and offers from the boards you applied to. Approve to update the matching application's status."
       />

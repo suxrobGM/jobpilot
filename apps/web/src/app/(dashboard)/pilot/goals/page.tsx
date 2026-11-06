@@ -9,7 +9,6 @@ export default function PilotGoalsPage(): ReactElement {
   return (
     <PageShell maxWidth="lg">
       <PageHeader
-        eyebrow="Pilot"
         title="Goals & rules"
         description="What you want, and the limits the pilot keeps to while it gets there."
       />

@@ -9,7 +9,6 @@ export default function AnalyticsPage(): ReactElement {
   return (
     <PageShell maxWidth="xl">
       <PageHeader
-        eyebrow="Workspace"
         title="Analytics"
         description="Roll-up stats across your applications, searches, and networking."
       />

@@ -12,7 +12,6 @@ export default function UpworkPage(): ReactElement {
   return (
     <PageShell maxWidth="lg">
       <PageHeader
-        eyebrow="Upwork"
         title="Proposals"
         description="Drafted and submitted Upwork proposals, newest first."
         actions={

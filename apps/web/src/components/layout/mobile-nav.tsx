@@ -16,16 +16,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
 import { useSession } from "@/hooks/use-auth";
+import { isAdminRole } from "@/lib/roles";
 import { useAgentDrawer } from "@/providers/agent-provider";
 import { NavBadge } from "./nav-badge";
 import {
+  ADMIN_NAV_ITEM,
   feedbackLinks,
-  footerNavGroups,
   isNavEntryActive,
   MOBILE_NAV_HEIGHT,
   type NavItem,
-  visibleNavGroups,
+  SETTINGS_NAV_ITEM,
 } from "./shell-config";
+import { useNavGroups } from "./use-nav-groups";
 
 const MORE_VALUE = "more";
 /** Below MUI's 0.75rem default - "Workspace" has to fit a fifth of a 360px phone. */
@@ -45,12 +47,13 @@ export function MobileNav(): ReactElement {
     }
   }, [pathname]);
 
-  // Derived per render, not at module scope: the visible set depends on the signed-in role.
-  const allItems = visibleNavGroups(user?.role).flatMap((group) => group.items);
-  const footerItems = visibleNavGroups(user?.role, footerNavGroups).flatMap((group) => group.items);
+  const allItems = useNavGroups().flatMap((group) => group.items);
+  const footerItems = isAdminRole(user?.role)
+    ? [SETTINGS_NAV_ITEM, ADMIN_NAV_ITEM]
+    : [SETTINGS_NAV_ITEM];
   const primaryItems = allItems.filter((item) => item.primary);
 
-  // The rail pins these to its foot, so they land at the end of the drawer here.
+  // The sidebar pins these to its foot, so they land at the end of the drawer here.
   const moreItems = [...allItems.filter((item) => !item.primary), ...footerItems];
 
   const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));

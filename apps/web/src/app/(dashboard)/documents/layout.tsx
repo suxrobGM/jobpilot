@@ -17,7 +17,6 @@ export default function DocumentsLayout(props: DocumentsLayoutProps): ReactEleme
   return (
     <PageShell maxWidth="lg">
       <PageHeader
-        eyebrow="Library"
         title="Documents"
         description="Base resumes, tailored variants, cover letters, and your public portfolio."
       />

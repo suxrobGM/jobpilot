@@ -1,26 +1,31 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Stack } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import { NavItem } from "./nav-item";
 import type { NavGroup as NavGroupType } from "./shell-config";
 
 interface NavGroupProps {
   group: NavGroupType;
+  collapsed: boolean;
 }
 
 export function NavGroup(props: NavGroupProps): ReactElement {
-  const { group } = props;
+  const { group, collapsed } = props;
   return (
-    // No room for visible labels on the 56px rail - expose the group name to AT only.
     <Stack
-      spacing={0.5}
-      sx={{ alignItems: "center" }}
+      spacing={0.25}
       role={group.label ? "group" : undefined}
       aria-label={group.label}
+      sx={{ mt: group.label ? 2 : 0 }}
     >
+      {group.label && !collapsed && (
+        <Typography variant="overlineMuted" sx={{ px: 1, pb: 0.5 }}>
+          {group.label}
+        </Typography>
+      )}
       {group.items.map((item) => (
-        <NavItem key={item.href} item={item} />
+        <NavItem key={item.href} item={item} collapsed={collapsed} />
       ))}
     </Stack>
   );
