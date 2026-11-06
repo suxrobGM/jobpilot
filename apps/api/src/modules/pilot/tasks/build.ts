@@ -7,7 +7,8 @@ import {
   type TaskPayload,
 } from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
-import { allowedToday } from "./allowed-today";
+import { type AllowedToday, allowedToday } from "./allowed-today";
+import type { FeedReviews } from "./gather/feeds";
 import type { TaskJob } from "./gather/jobs";
 import type { Followup } from "./gather/outreach";
 import type { ResearchTask } from "./gather/research";
@@ -23,30 +24,24 @@ const MIN_IDLE_SLEEP_SECONDS = 30;
 const MAX_IDLE_SLEEP_SECONDS = 6 * 60 * 60;
 const NEW_JOBS_TARGET_MIN = 5;
 const NEW_JOBS_TARGET_MAX = 20;
-const SEARCH_MAX_PAGES = 5;
+export const SEARCH_MAX_PAGES = 5;
 /** Enough to lift a cap-exempt job over an equal or slightly better match, not a much better one. */
 const CAP_EXEMPT_BOOST = 10;
 
-export interface TaskListInput {
-  now: Date;
-  config: PilotConfig;
-  // Off: only what the user asked for runs.
-  autopilot: boolean;
-  requests: PilotTask[];
-  chat: PilotTask | null;
-  // Rotates discovery across the configured boards.
-  cycleCount: number;
+/** Read whether or not autopilot is on. */
+export interface TaskCounts {
   openQuestions: number;
   activeRuns: number;
   appliedToday: number;
   networkingSentToday: number;
-  preferCapExempt: boolean;
-  // No searches yet, or no goals to derive them from.
-  awaitingSetup: boolean;
-  // The idle sleep never runs past this or the next job-alert slot.
-  nextSearchRunAt: Date | null;
   answeredQuestions: TaskPayload<"question.answered">[];
   approvedJobs: TaskJob[];
+}
+
+/** Everything only autonomous work reads, empty while autopilot is off. */
+export interface AutonomousWork extends FeedReviews {
+  // The idle sleep never runs past this or the next job-alert slot.
+  nextSearchRunAt: Date | null;
   warmIntroCandidates: TaskJob[];
   dueQueries: DueSearch[];
   scorePending: TaskPayload<"feed.score">[];
@@ -60,11 +55,21 @@ export interface TaskListInput {
   upworkSync: TaskPayload<"upwork.syncInbox"> | null;
   approvedNetworking: TaskPayload<"networking.send">[];
   followups: Followup[];
-  feedTunes: TaskPayload<"search.tune">[];
-  rescanSkipped: TaskPayload<"job.rescanSkipped">[];
-  retryFailed: TaskPayload<"job.retryFailed">[];
   setup: TaskPayload<"search.setup"> | null;
   research: ResearchTask | null;
+}
+
+export interface TaskListInput extends TaskCounts, AutonomousWork {
+  now: Date;
+  config: PilotConfig;
+  // Off: only what the user asked for runs.
+  autopilot: boolean;
+  requests: PilotTask[];
+  chat: PilotTask | null;
+  // Rotates discovery across the configured boards.
+  cycleCount: number;
+  // No searches yet, or no goals to derive them from.
+  awaitingSetup: boolean;
 }
 
 type PipelineWork = Pick<
@@ -110,13 +115,6 @@ function warmIntroPayload(job: TaskJob, mode: NetworkingMode): TaskPayload<"netw
   };
 }
 
-/** The user's own asks: they run with autopilot off. */
-function userDrivenTasks(input: TaskListInput): PilotTask[] {
-  const tasks = [...input.requests, ...makeTasks("question.answered", input.answeredQuestions)];
-  if (input.chat) tasks.push(input.chat);
-  return tasks;
-}
-
 /** Highest priority wins when a request and the pilot's own pick name the same task. */
 function dedupeById(tasks: PilotTask[]): PilotTask[] {
   const best = new Map<string, PilotTask>();
@@ -129,37 +127,55 @@ function dedupeById(tasks: PilotTask[]): PilotTask[] {
 
 /** Ranks already-gathered work into the task list. Pure, so every gating rule is unit-testable. */
 export function buildTaskList(input: TaskListInput): TaskListContent {
-  const { config } = input;
-  const { appliesLeft } = allowedToday(config, input);
-  const capReached = appliesLeft === 0;
-  const tasks = input.autopilot
-    ? [...input.requests, ...(input.chat ? [input.chat] : []), ...autonomousTasks(input)]
-    : userDrivenTasks(input);
-  return finishTaskList(input, dedupeById(tasks), capReached);
+  const allowed = allowedToday(input.config, input);
+  // The user's own asks run with autopilot off too.
+  const tasks = [...input.requests, ...makeTasks("question.answered", input.answeredQuestions)];
+  if (input.chat) tasks.push(input.chat);
+  if (input.autopilot) tasks.push(...autonomousTasks(input, allowed));
+  return finishTaskList(input, dedupeById(tasks), allowed.appliesLeft === 0);
 }
 
 /** Everything the pilot picks on its own; runs only with autopilot on. */
-function autonomousTasks(input: TaskListInput): PilotTask[] {
-  const { config } = input;
-  const { emailAutonomy, outreach, appliesLeft, sendsLeft } = allowedToday(config, input);
-  const capReached = appliesLeft === 0;
-
+function autonomousTasks(input: TaskListInput, allowed: AllowedToday): PilotTask[] {
   const tasks: PilotTask[] = [
-    ...makeTasks("question.answered", input.answeredQuestions),
     ...makeTasks("board.diagnose", input.boardDiagnoses),
     ...makeTasks("search.review", input.pausedFeeds),
     ...makeTasks("interview.reply", input.interviewReplies),
     ...makeTasks("interview.prep", input.interviewPreps),
     ...makeTasks("queue.score", input.queueScores),
   ];
-  if (!capReached) {
-    tasks.push(...input.approvedJobs.map((job) => applyTask(job, input.preferCapExempt)));
+  if (allowed.appliesLeft > 0) {
+    const { preferCapExempt } = input.config;
+    tasks.push(...input.approvedJobs.map((job) => applyTask(job, preferCapExempt)));
   }
   if (input.inbox.count > 0) tasks.push(makeTask("inbox.review", input.inbox));
   // Ungated by the apply cap: importing only queues rows for later applies.
   if (input.jobAlerts) tasks.push(makeTask("inbox.jobAlerts", input.jobAlerts));
   if (input.upworkSync) tasks.push(makeTask("upwork.syncInbox", input.upworkSync));
+  tasks.push(...outreachTasks(input, allowed));
 
+  const newJobsTarget = clamp(allowed.appliesLeft, NEW_JOBS_TARGET_MIN, NEW_JOBS_TARGET_MAX);
+  // Scoring and discovery only matter once nothing approved is left to apply to.
+  if (input.approvedJobs.length === 0) tasks.push(...discoveryTasks(input, newJobsTarget));
+
+  if (isPipelineQuiet(input)) {
+    // A requested research run comes in through `requests`, past this gate.
+    if (input.research) {
+      tasks.push(makeTask("research.explore", { ...input.research, newJobsTarget }));
+    }
+    if (input.setup) tasks.push(makeTask("search.setup", input.setup));
+    tasks.push(
+      ...makeTasks("search.tune", input.feedTunes),
+      ...makeTasks("job.rescanSkipped", input.rescanSkipped),
+      ...makeTasks("job.retryFailed", input.retryFailed),
+    );
+  }
+  return tasks;
+}
+
+function outreachTasks(input: TaskListInput, allowed: AllowedToday): PilotTask[] {
+  const { emailAutonomy, outreach, sendsLeft } = allowed;
+  const tasks: PilotTask[] = [];
   if (outreach && sendsLeft > 0) {
     const intros = input.warmIntroCandidates.map((job) => warmIntroPayload(job, outreach));
     tasks.push(...makeTasks("networking.warmIntro", intros));
@@ -176,41 +192,40 @@ function autonomousTasks(input: TaskListInput): PilotTask[] {
       ...makeTasks("networking.followup", followups),
     );
   }
-
-  const newJobsTarget = clamp(appliesLeft, NEW_JOBS_TARGET_MIN, NEW_JOBS_TARGET_MAX);
-  const quiet = isPipelineQuiet(input);
-  const research = input.research ? { ...input.research, newJobsTarget } : null;
-  // Research now is the user asking, so it skips the quiet gate.
-  if (research && quiet) {
-    tasks.push(makeTask("research.explore", research));
-  }
-
-  // Scoring and discovery only matter once nothing approved is left to apply to.
-  if (input.approvedJobs.length === 0) {
-    const { boards } = config;
-    const rotatedBoard = boards.length > 0 ? boards[input.cycleCount % boards.length] : undefined;
-    const discoveries = input.dueQueries.map((search) => ({
-      ...search,
-      board: rotatedBoard ?? search.board,
-      minScore: config.minScore,
-      newJobsTarget,
-      maxPages: SEARCH_MAX_PAGES,
-    }));
-    tasks.push(
-      ...makeTasks("feed.score", input.scorePending),
-      ...makeTasks("search.discover", discoveries),
-    );
-  }
-
-  if (quiet) {
-    if (input.setup) tasks.push(makeTask("search.setup", input.setup));
-    tasks.push(
-      ...makeTasks("search.tune", input.feedTunes),
-      ...makeTasks("job.rescanSkipped", input.rescanSkipped),
-      ...makeTasks("job.retryFailed", input.retryFailed),
-    );
-  }
   return tasks;
+}
+
+function discoveryTasks(input: TaskListInput, newJobsTarget: number): PilotTask[] {
+  const { boards, minScore } = input.config;
+  const rotatedBoard = boards.length > 0 ? boards[input.cycleCount % boards.length] : undefined;
+  const discoveries = input.dueQueries.map((search) => ({
+    ...search,
+    board: rotatedBoard ?? search.board,
+    minScore,
+    newJobsTarget,
+    maxPages: SEARCH_MAX_PAGES,
+  }));
+  return [
+    ...makeTasks("feed.score", input.scorePending),
+    ...makeTasks("search.discover", discoveries),
+  ];
+}
+
+/** Sleeps until the next check, search or job-alert slot, whichever is first, within bounds. */
+function idleSleepSeconds(input: TaskListInput): number {
+  const { now, config } = input;
+  const { jobAlerts } = config;
+  const nextJobAlertsAt = jobAlerts.enabled
+    ? nextDailyRun(jobAlerts.runHours, jobAlerts.timeZone, now)
+    : null;
+  const secondsUntil = (at: Date | null) =>
+    at ? Math.max(0, Math.round((at.getTime() - now.getTime()) / 1000)) : Number.POSITIVE_INFINITY;
+  const soonest = Math.min(
+    config.checkIntervalMinutes * 60,
+    secondsUntil(input.nextSearchRunAt),
+    secondsUntil(nextJobAlertsAt),
+  );
+  return clamp(soonest, MIN_IDLE_SLEEP_SECONDS, MAX_IDLE_SLEEP_SECONDS);
 }
 
 function finishTaskList(
@@ -223,23 +238,7 @@ function finishTaskList(
     .sort((a, b) => b.priority - a.priority)
     .slice(0, MAX_TASKS)
     .map((task) => ({ ...task, title: task.title.slice(0, MAX_TITLE_LENGTH) }));
-
-  const { jobAlerts } = config;
-  const nextJobAlertsAt = jobAlerts.enabled
-    ? nextDailyRun(jobAlerts.runHours, jobAlerts.timeZone, now)
-    : null;
-  const secondsUntil = (at: Date | null) =>
-    at ? Math.max(0, Math.round((at.getTime() - now.getTime()) / 1000)) : Number.POSITIVE_INFINITY;
-  const idleSleep = clamp(
-    Math.min(
-      config.checkIntervalMinutes * 60,
-      secondsUntil(input.nextSearchRunAt),
-      secondsUntil(nextJobAlertsAt),
-    ),
-    MIN_IDLE_SLEEP_SECONDS,
-    MAX_IDLE_SLEEP_SECONDS,
-  );
-  const sleepSeconds = ranked.length > 0 ? ACTIVE_SLEEP_SECONDS : idleSleep;
+  const sleepSeconds = ranked.length > 0 ? ACTIVE_SLEEP_SECONDS : idleSleepSeconds(input);
 
   return {
     builtAt: now,

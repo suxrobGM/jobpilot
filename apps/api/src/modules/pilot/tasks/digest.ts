@@ -1,5 +1,5 @@
 import { DAY_MS, minutesOfDay, startOfDay } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { WebPushService } from "@/modules/web-push/web-push.service";
 import type { PilotJournalService } from "../thread/journal.service";
 
@@ -11,7 +11,54 @@ interface DigestDeps {
   push: WebPushService;
 }
 
+// A type, not an interface: journal `detail` needs the implicit index signature.
+type DigestCounts = {
+  applicationsCreated: number;
+  jobsFailed: number;
+  jobsSkipped: number;
+  openQuestions: number;
+  networkingSent: number;
+  networkingReplies: number;
+};
+
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+async function countLastDay(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  now: Date,
+  openQuestions: number,
+): Promise<DigestCounts> {
+  const since = new Date(now.getTime() - DAY_MS);
+  const jobs = (status: "failed" | "skipped") =>
+    tx.job.count({ where: { status, userId, createdAt: { gte: since } } });
+  const [applicationsCreated, jobsFailed, jobsSkipped, networkingSent, networkingReplies] =
+    await Promise.all([
+      tx.application.count({ where: { userId, appliedAt: { gte: since } } }),
+      jobs("failed"),
+      jobs("skipped"),
+      tx.networkingMessage.count({ where: { userId, sentAt: { gte: since } } }),
+      tx.networkingMessage.count({ where: { userId, repliedAt: { gte: since } } }),
+    ]);
+  return {
+    applicationsCreated,
+    jobsFailed,
+    jobsSkipped,
+    openQuestions,
+    networkingSent,
+    networkingReplies,
+  };
+}
+
+function digestSummary(counts: DigestCounts): string {
+  const parts = [
+    plural(counts.applicationsCreated, "application", "applications"),
+    `${counts.jobsFailed + counts.jobsSkipped} not applied`,
+    `${counts.networkingSent} networking sent (${plural(counts.networkingReplies, "reply", "replies")})`,
+    plural(counts.openQuestions, "open question", "open questions"),
+  ];
+  return `Last 24h: ${parts.join(", ")}.`;
+}
 
 /**
  * Writes one "digest" journal entry per UTC day, after 07:00, and pushes it. Called fire-and-forget,
@@ -36,35 +83,9 @@ export async function writeDigestIfDue(
       const written = await tx.pilotJournalEntry.count({ where: todaysDigest });
       if (written > 0) return;
 
-      const since = new Date(now.getTime() - DAY_MS);
-      const [applicationsCreated, jobsFailed, jobsSkipped, networkingSent, networkingReplies] =
-        await Promise.all([
-          tx.application.count({ where: { userId, appliedAt: { gte: since } } }),
-          tx.job.count({
-            where: { status: "failed", userId, createdAt: { gte: since } },
-          }),
-          tx.job.count({
-            where: { status: "skipped", userId, createdAt: { gte: since } },
-          }),
-          tx.networkingMessage.count({ where: { userId, sentAt: { gte: since } } }),
-          tx.networkingMessage.count({ where: { userId, repliedAt: { gte: since } } }),
-        ]);
-
-      const summary = `Last 24h: ${[
-        plural(applicationsCreated, "application", "applications"),
-        `${jobsFailed + jobsSkipped} not applied`,
-        `${networkingSent} networking sent (${plural(networkingReplies, "reply", "replies")})`,
-        plural(openQuestions, "open question", "open questions"),
-      ].join(", ")}.`;
-      const detail = {
-        applicationsCreated,
-        jobsFailed,
-        jobsSkipped,
-        openQuestions,
-        networkingSent,
-        networkingReplies,
-      };
-      await journal.appendJournal(userId, { entries: [{ kind: "digest", summary, detail }] });
+      const detail = await countLastDay(tx, userId, now, openQuestions);
+      const summary = digestSummary(detail);
+      await journal.append(userId, { entries: [{ kind: "digest", summary, detail }] });
       void push.sendToUser(userId, {
         title: "Your Pilot's morning digest",
         body: summary,

@@ -10,7 +10,7 @@ import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import { findOwned, isPrismaError, PRISMA_ERRORS } from "@/common/errors";
 import { type Actor, type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { BOARD_REF_SELECT } from "@/modules/job-board/job-board.service";
-import { TASK_LIST_SNAPSHOT_RESET } from "@/modules/pilot/tasks/snapshot";
+import { dropTaskList } from "@/modules/pilot/tasks/snapshot";
 import { publishFeedUpdated } from "./feed-events";
 
 /** A run with this many new jobs is "good": re-run it soon while the board is yielding. */
@@ -116,7 +116,7 @@ export class FeedService {
       : { pausedAt: null, pausedBy: null, pausedReason: null };
     const [row] = await this.prisma.$transaction([
       this.prisma.feed.update({ where: { id }, data: pause, include: FEED_INCLUDE }),
-      this.prisma.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET }),
+      dropTaskList(this.prisma, userId),
     ]);
     publishFeedUpdated(userId, id);
     return toFeed(row);
@@ -130,7 +130,7 @@ export class FeedService {
         include: FEED_INCLUDE,
         data: scheduleNextRun(existing.emptyRuns, input, new Date()),
       }),
-      this.prisma.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET }),
+      dropTaskList(this.prisma, userId),
     ]);
     return toFeed(row);
   }

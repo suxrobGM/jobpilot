@@ -9,7 +9,7 @@ import {
   type PilotRequestSource,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { TASK_LIST_SNAPSHOT_RESET } from "../tasks/snapshot";
+import { dropTaskList } from "../tasks/snapshot";
 import { requestSubject, toPilotRequest } from "./request-row";
 
 export function publishRequest(
@@ -43,7 +43,7 @@ export class RequestService {
           source,
         },
       });
-      await tx.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET });
+      await dropTaskList(tx, userId);
       return created;
     });
     return publishRequest(userId, row, "request.created");

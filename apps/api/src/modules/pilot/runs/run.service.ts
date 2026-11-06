@@ -6,6 +6,7 @@ import {
   type PilotTask,
   pilotRunSchema,
   type ReportPilotUsageInput,
+  taskListSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
@@ -28,7 +29,6 @@ import {
   reviewPausedWhere,
   scorePendingWhere,
 } from "../tasks/gather/workable";
-import { parseTaskListSnapshot } from "../tasks/snapshot";
 import { PilotJournalService } from "../thread/journal.service";
 import { writeJournalEntries } from "../thread/journal-entries";
 
@@ -119,9 +119,9 @@ export class RunService {
       );
     }
 
-    const task = parseTaskListSnapshot(locked.taskListSnapshot).tasks.find(
-      (entry) => entry.id === taskId,
-    );
+    const task = taskListSchema
+      .parse(locked.taskListSnapshot)
+      .tasks.find((entry) => entry.id === taskId);
     if (!task) throw conflict("Task is no longer available.", ErrorCodes.PILOT_CONFLICT);
 
     const open = await tx.pilotRun.findFirst({

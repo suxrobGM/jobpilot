@@ -51,7 +51,7 @@ export class PilotJournalService {
     private readonly push = inject(WebPushService),
   ) {}
 
-  async appendJournal(userId: string, body: CreatePilotJournalInput) {
+  async append(userId: string, body: CreatePilotJournalInput) {
     const rows = await this.prisma.$transaction((tx) => writeJournalEntries(tx, userId, body));
     return { items: await this.publishAppended(userId, rows) };
   }
@@ -71,7 +71,7 @@ export class PilotJournalService {
     return items;
   }
 
-  async listJournal(
+  async list(
     userId: string,
     cursor: string | undefined,
     limit: number,
@@ -90,7 +90,7 @@ export class PilotJournalService {
   }
 
   /** Oldest first, read in batches so the journal is never all in memory. */
-  streamJournalExport(userId: string): Response {
+  streamExport(userId: string): Response {
     const { prisma } = this;
     const encoder = new TextEncoder();
     let cursor: string | undefined;

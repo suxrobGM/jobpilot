@@ -17,7 +17,7 @@ const limitJournalExport = rateLimit(RATE_LIMITS.pilotJournalExport);
 
 export const pilotJournalController = new Elysia({ prefix: "/pilot", detail: { tags: ["Pilot"] } })
   .use(authGuard)
-  .post("/journal", ({ user, body }) => journal.appendJournal(user.id, body), {
+  .post("/journal", ({ user, body }) => journal.append(user.id, body), {
     body: createPilotJournalSchema,
     beforeHandle: limitJournal,
     response: createPilotJournalResponseSchema,
@@ -29,7 +29,7 @@ export const pilotJournalController = new Elysia({ prefix: "/pilot", detail: { t
   })
   .get(
     "/journal",
-    ({ user, query }) => journal.listJournal(user.id, query.cursor, query.limit, query.kinds),
+    ({ user, query }) => journal.list(user.id, query.cursor, query.limit, query.kinds),
     {
       query: pilotJournalQuerySchema,
       beforeHandle: limitTaskList,
@@ -40,7 +40,7 @@ export const pilotJournalController = new Elysia({ prefix: "/pilot", detail: { t
       },
     },
   )
-  .get("/journal/export", ({ user }) => journal.streamJournalExport(user.id), {
+  .get("/journal/export", ({ user }) => journal.streamExport(user.id), {
     beforeHandle: limitJournalExport,
     detail: {
       summary: "Export the journal",

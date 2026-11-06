@@ -3,7 +3,7 @@ import { inject, injectable } from "@needle-di/core";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { PilotService } from "../pilot.service";
-import { pendingJobAlertsWhere } from "../tasks/gather/inbox";
+import { pendingJobAlertsWhere } from "../tasks/gather/job-alerts";
 import { TASK_LIST_SNAPSHOT_RESET } from "../tasks/snapshot";
 
 @injectable()

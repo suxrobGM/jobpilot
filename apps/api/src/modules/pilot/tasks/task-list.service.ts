@@ -1,110 +1,26 @@
-import { type PilotConfig, pilotConfigSchema, type TaskList } from "@jobpilot/contracts/pilot";
+import {
+  type PilotConfig,
+  pilotConfigSchema,
+  type TaskList,
+  taskListSchema,
+} from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { JobService } from "@/modules/feed/jobs/job.service";
 import { WebPushService } from "@/modules/web-push/web-push.service";
-import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { PilotJournalService } from "../thread/journal.service";
-import { allowedToday } from "./allowed-today";
-import { buildTaskList, isPipelineQuiet, type TaskListInput } from "./build";
+import { buildTaskList } from "./build";
 import { writeDigestIfDue } from "./digest";
-import {
-  gatherFeedReviews,
-  gatherPausedFeeds,
-  gatherQueueScores,
-  gatherScorePending,
-} from "./gather/feeds";
-import {
-  gatherAnsweredQuestions,
-  gatherInbox,
-  gatherInterviewPreps,
-  gatherInterviewReplies,
-  gatherJobAlerts,
-  gatherUpworkSync,
-} from "./gather/inbox";
-import {
-  attachWarmContacts,
-  gatherApprovedJobs,
-  gatherBoardDiagnoses,
-  gatherWarmIntroCandidates,
-} from "./gather/jobs";
-import { gatherApprovedNetworking, gatherFollowups } from "./gather/outreach";
+import { gatherAutonomousWork, NO_AUTONOMOUS_WORK } from "./gather/autonomous";
+import { gatherCounts } from "./gather/counts";
 import { gatherChat, gatherRequests } from "./gather/requests";
-import { gatherResearch } from "./gather/research";
-import { gatherDueSearches, gatherSetup } from "./gather/searches";
-import { promoteScoredPendingJobs, runExpiry } from "./maintenance";
-import { parseTaskListSnapshot } from "./snapshot";
+import { expireStaleWork, settleScoredJobs } from "./maintenance";
 
 const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
 /** The default check interval: idle cycles always pull mail, busy 15s cycles don't. */
 export const INBOX_SYNC_STALE_MS = 30 * 60 * 1000;
-
-type Gathered = Omit<
-  TaskListInput,
-  "now" | "config" | "cycleCount" | "autopilot" | "requests" | "chat"
->;
-
-interface GatherContext {
-  config: PilotConfig;
-  goals: string;
-  autopilot: boolean;
-}
-
-type Counts = Pick<
-  Gathered,
-  | "openQuestions"
-  | "activeRuns"
-  | "appliedToday"
-  | "networkingSentToday"
-  | "answeredQuestions"
-  | "approvedJobs"
->;
-
-/** Everything only autonomous work reads, empty while autopilot is off. */
-const NO_AUTONOMOUS_WORK: Omit<Gathered, keyof Counts | "preferCapExempt" | "awaitingSetup"> = {
-  warmIntroCandidates: [],
-  dueQueries: [],
-  nextSearchRunAt: null,
-  scorePending: [],
-  queueScores: [],
-  pausedFeeds: [],
-  boardDiagnoses: [],
-  inbox: { messageIds: [], count: 0 },
-  jobAlerts: null,
-  interviewReplies: [],
-  interviewPreps: [],
-  upworkSync: null,
-  approvedNetworking: [],
-  followups: [],
-  feedTunes: [],
-  rescanSkipped: [],
-  retryFailed: [],
-  setup: null,
-  research: null,
-};
-
-const NO_DUE_SEARCHES: Pick<Gathered, "dueQueries" | "nextSearchRunAt"> = {
-  dueQueries: [],
-  nextSearchRunAt: null,
-};
-const NO_REVIEWS: Pick<Gathered, "feedTunes" | "rescanSkipped" | "retryFailed"> = {
-  feedTunes: [],
-  rescanSkipped: [],
-  retryFailed: [],
-};
-
-/** `Promise.all` over named promises, so a long parallel read can't misalign its results. */
-async function allNamed<T extends Record<string, unknown>>(
-  named: T,
-): Promise<{ [K in keyof T]: Awaited<T[K]> }> {
-  const values = await Promise.all(Object.values(named));
-  const keys = Object.keys(named);
-  return Object.fromEntries(keys.map((key, index) => [key, values[index]])) as {
-    [K in keyof T]: Awaited<T[K]>;
-  };
-}
 
 @injectable()
 export class TaskListService {
@@ -122,7 +38,7 @@ export class TaskListService {
     const expiresAt = state?.taskListExpiresAt;
     const snapshot = state?.taskListSnapshot;
     const live = snapshot && expiresAt && expiresAt > new Date();
-    return { taskList: live ? parseTaskListSnapshot(snapshot) : null };
+    return { taskList: live ? taskListSchema.parse(snapshot) : null };
   }
 
   /** Runs whether or not autopilot is on: requests, chat and answered questions always run. */
@@ -131,44 +47,38 @@ export class TaskListService {
       where: { userId },
       create: { userId },
       update: {},
-      select: {
-        autopilot: true,
-        cycleCount: true,
-        config: true,
-        goals: true,
-      },
+      select: { autopilot: true, cycleCount: true, config: true, goals: true },
     });
-
+    const { autopilot, cycleCount } = state;
     const now = new Date();
     const config = pilotConfigSchema.parse(state.config);
-
-    // Mail first so inbox.review sees it; promotion before finalize so fresh approvals keep a
-    // feed open.
-    await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
-    await runExpiry(this.prisma, userId, now);
-    if (state.autopilot) {
-      await promoteScoredPendingJobs(this.prisma, this.jobs, userId, config.minScore);
-    }
     const goals = state.goals.trim();
 
-    const gathered = await this.gather(userId, { config, goals, autopilot: state.autopilot }, now);
-    const [requests, chat] = await Promise.all([
+    await this.maintain(userId, config, autopilot, now);
+    const { searchCount, ...counts } = await gatherCounts(this.prisma, userId, now);
+    const [work, requests, chat] = await Promise.all([
+      autopilot
+        ? gatherAutonomousWork(this.prisma, userId, { config, goals, searchCount, counts, now })
+        : NO_AUTONOMOUS_WORK,
       gatherRequests(this.prisma, userId, { config, goals }, now),
       gatherChat(this.prisma, userId),
     ]);
     const deps = { prisma: this.prisma, journal: this.journal, push: this.push };
-    void writeDigestIfDue(deps, userId, now, gathered.openQuestions);
+    void writeDigestIfDue(deps, userId, now, counts.openQuestions);
 
+    const content = buildTaskList({
+      ...counts,
+      ...work,
+      now,
+      config,
+      autopilot,
+      cycleCount,
+      requests,
+      chat,
+      awaitingSetup: searchCount === 0 || goals === "",
+    });
     const taskList: TaskList = {
-      ...buildTaskList({
-        ...gathered,
-        now,
-        config,
-        cycleCount: state.cycleCount,
-        autopilot: state.autopilot,
-        requests,
-        chat,
-      }),
+      ...content,
       version: crypto.randomUUID(),
       expiresAt: new Date(now.getTime() + SNAPSHOT_TTL_MS),
     };
@@ -183,88 +93,12 @@ export class TaskListService {
     return taskList;
   }
 
-  private async gather(userId: string, context: GatherContext, now: Date): Promise<Gathered> {
-    const { config, goals, autopilot } = context;
-    const { prisma } = this;
-    const counts = allNamed({
-      openQuestions: prisma.pilotQuestion.count({ where: { userId, status: "open" } }),
-      activeRuns: prisma.pilotRun.count({
-        where: { userId, finishedAt: null, expiresAt: { gt: now } },
-      }),
-      searchCount: prisma.feed.count({ where: { userId, kind: "search", archivedAt: null } }),
-      appliedToday: countAppliedToday(prisma, userId, now),
-      networkingSentToday: countSentToday(prisma, userId, now),
-      answeredQuestions: gatherAnsweredQuestions(prisma, userId),
-      approvedJobs: gatherApprovedJobs(prisma, userId),
-    });
-    if (!autopilot) {
-      const { searchCount, ...idle } = await counts;
-      return {
-        ...NO_AUTONOMOUS_WORK,
-        ...idle,
-        preferCapExempt: config.preferCapExempt,
-        awaitingSetup: searchCount === 0 || goals === "",
-      };
+  /** Mail first so inbox.review sees it; settling before the gather so fresh approvals keep a feed open. */
+  private async maintain(userId: string, config: PilotConfig, autopilot: boolean, now: Date) {
+    await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
+    await expireStaleWork(this.prisma, userId, now);
+    if (autopilot) {
+      await settleScoredJobs(this.prisma, this.jobs, userId, config.minScore);
     }
-    const [{ searchCount, ...countsRest }, work] = await Promise.all([
-      counts,
-      allNamed({
-        queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
-        pausedFeeds: gatherPausedFeeds(prisma, userId, now),
-        boardDiagnoses: gatherBoardDiagnoses(prisma, userId, now),
-        inbox: gatherInbox(prisma, userId),
-        jobAlerts: gatherJobAlerts(prisma, userId, config, now),
-        interviewReplies: gatherInterviewReplies(prisma, userId),
-        interviewPreps: gatherInterviewPreps(prisma, userId),
-        upworkSync: gatherUpworkSync(prisma, userId, now),
-      }),
-    ]);
-    const base = { ...countsRest, ...work };
-
-    // Work today's config or counts rule out skips its reads entirely.
-    const { emailAutonomy, outreach, appliesLeft, sendsLeft } = allowedToday(config, base);
-    const canApplyMore = appliesLeft > 0;
-    // Scoring and discovery only matter once nothing approved is left to apply to.
-    const nothingApproved = base.approvedJobs.length === 0;
-    const emailOn = emailAutonomy !== null && sendsLeft > 0;
-    const [approvedNetworking, followups, warmIntroCandidates, searches, scorePending] =
-      await Promise.all([
-        emailOn ? gatherApprovedNetworking(prisma, userId) : [],
-        emailOn ? gatherFollowups(prisma, userId, config, now) : [],
-        outreach && sendsLeft > 0
-          ? gatherWarmIntroCandidates(prisma, userId, now, base.approvedJobs)
-          : [],
-        nothingApproved ? gatherDueSearches(prisma, userId, now, canApplyMore) : NO_DUE_SEARCHES,
-        nothingApproved ? gatherScorePending(prisma, userId, config.minScore, now) : [],
-      ]);
-    // A job can sit in both lists; the Set keeps one contacts pass per job.
-    await attachWarmContacts(prisma, userId, [
-      ...new Set([...base.approvedJobs, ...warmIntroCandidates]),
-    ]);
-
-    const quiet = isPipelineQuiet({ ...base, ...searches, scorePending });
-    // Blank goals need no task: emptyReason "awaitingSetup" already says so.
-    const canSetUp = quiet && goals !== "" && (searchCount === 0 || canApplyMore);
-    const [reviews, setup, research] = await Promise.all([
-      quiet ? gatherFeedReviews(prisma, userId, now) : NO_REVIEWS,
-      canSetUp ? gatherSetup(prisma, userId, { goals, minScore: config.minScore }, now) : null,
-      goals !== "" && quiet
-        ? gatherResearch(prisma, userId, { goals, config, searchCount }, now)
-        : null,
-    ]);
-
-    return {
-      ...base,
-      ...searches,
-      ...reviews,
-      approvedNetworking,
-      followups,
-      warmIntroCandidates,
-      scorePending,
-      setup,
-      research,
-      preferCapExempt: config.preferCapExempt,
-      awaitingSetup: searchCount === 0 || goals === "",
-    };
   }
 }

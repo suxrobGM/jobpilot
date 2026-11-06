@@ -1,4 +1,3 @@
-import { type TaskList, taskListSchema } from "@jobpilot/contracts/pilot";
 import { Prisma } from "@/generated/prisma/client";
 
 /**
@@ -11,6 +10,7 @@ export const TASK_LIST_SNAPSHOT_RESET = {
   taskListSnapshot: Prisma.DbNull,
 } as const;
 
-export function parseTaskListSnapshot(value: unknown): TaskList {
-  return taskListSchema.parse(value);
+/** {@link TASK_LIST_SNAPSHOT_RESET} as its own write, for edits made outside the state row. */
+export function dropTaskList(db: Pick<Prisma.TransactionClient, "pilotState">, userId: string) {
+  return db.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET });
 }

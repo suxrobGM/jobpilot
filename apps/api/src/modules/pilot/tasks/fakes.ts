@@ -214,7 +214,7 @@ export function makeTaskListDeps(over: Over = {}) {
     },
   } as unknown as JobService;
   const journal = {
-    appendJournal: async (_userId: string, body: { entries: Row[] }) => {
+    append: async (_userId: string, body: { entries: Row[] }) => {
       rec.journals.push(...body.entries);
       return { items: [] };
     },

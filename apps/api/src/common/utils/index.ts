@@ -1,2 +1,2 @@
-export { sleep } from "./async";
+export { allNamed, sleep } from "./async";
 export { slugify } from "./slug";

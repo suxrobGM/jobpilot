@@ -2,7 +2,7 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
-import { TASK_LIST_SNAPSHOT_RESET } from "../tasks/snapshot";
+import { dropTaskList } from "../tasks/snapshot";
 
 @injectable()
 export class MessageService {
@@ -12,7 +12,7 @@ export class MessageService {
   async create(userId: string, body: string) {
     const message = await this.prisma.$transaction(async (tx) => {
       const created = await tx.pilotMessage.create({ data: { userId, author: "user", body } });
-      await tx.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET });
+      await dropTaskList(tx, userId);
       return created;
     });
     publish(pilotChannel, { userId }, { type: "message.created", message });

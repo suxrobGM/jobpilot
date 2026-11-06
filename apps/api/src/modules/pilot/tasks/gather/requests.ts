@@ -2,16 +2,16 @@ import type { CreatePilotRequestInput, PilotConfig, PilotTask } from "@jobpilot/
 import type { PrismaClient } from "@/generated/prisma/client";
 import { publishRequest } from "../../requests/request.service";
 import { parseRequest } from "../../requests/request-row";
-import { applyTask } from "../build";
+import { applyTask, SEARCH_MAX_PAGES } from "../build";
 import { makeTask, REQUEST_PRIORITY } from "../task-defs";
-import { gatherInbox, jobAlertsPayload } from "./inbox";
+import { gatherInbox } from "./inbox";
+import { findJobAlerts } from "./job-alerts";
 import { findApprovedJob } from "./jobs";
 import { researchPayload } from "./research";
 
 /** Requests waiting at once; more just wait a cycle. */
 const REQUEST_BATCH = 20;
 const SEARCH_NEW_JOBS_TARGET = 10;
-const SEARCH_MAX_PAGES = 5;
 
 interface PilotGoals {
   config: PilotConfig;
@@ -78,7 +78,7 @@ async function requestTask(
     }
     // Asked for by name, so they run off-schedule and past a paused feed.
     case "inbox.jobAlerts": {
-      const alerts = await jobAlertsPayload(prisma, userId, config, ctx.now);
+      const alerts = await findJobAlerts(prisma, userId, config, ctx.now);
       return alerts && makeTask("inbox.jobAlerts", alerts);
     }
     case "research.explore": {

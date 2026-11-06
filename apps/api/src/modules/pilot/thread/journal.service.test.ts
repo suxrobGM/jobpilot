@@ -29,7 +29,7 @@ function makeService(rows: Row[] = [], pageSize = 2, runs: Row[] = []) {
   return { svc, rec };
 }
 
-describe("PilotJournalService.appendJournal", () => {
+describe("PilotJournalService.append", () => {
   it("attaches each entry's run, with tokens only once usage is reported", async () => {
     const tokens = {
       inputTokens: 100,
@@ -41,7 +41,7 @@ describe("PilotJournalService.appendJournal", () => {
       { id: "run-1", taskType: "job.apply", model: "claude-opus-5-5", ...tokens },
       { id: "run-2", taskType: "queue.score", model: null, ...tokens },
     ]);
-    const res = await svc.appendJournal("p1", {
+    const res = await svc.append("p1", {
       runId: "run-1",
       entries: [{ kind: "action", summary: "Applied" }],
     });
@@ -50,7 +50,7 @@ describe("PilotJournalService.appendJournal", () => {
       tokens: { input: 100, output: 20, cacheRead: 300, cacheWrite: 0 },
     });
 
-    const pending = await svc.appendJournal("p1", {
+    const pending = await svc.append("p1", {
       runId: "run-2",
       entries: [{ kind: "action", summary: "Scored" }],
     });
@@ -59,7 +59,7 @@ describe("PilotJournalService.appendJournal", () => {
 
   it("pushes an alert for a system entry only", async () => {
     const { svc, rec } = makeService();
-    await svc.appendJournal("p1", {
+    await svc.append("p1", {
       entries: [
         { kind: "action", summary: "applied to a job" },
         { kind: "system", summary: "Pilot stopped unexpectedly (orchestrator)" },
@@ -93,7 +93,7 @@ describe("PilotJournalService reads", () => {
       createdAt: new Date(Date.UTC(2026, 0, 1, 0, minute)),
     });
     const { svc } = makeService(["a", "b", "c", "d", "e"].map(entry));
-    const res = svc.streamJournalExport("p1");
+    const res = svc.streamExport("p1");
     expect(res.headers.get("content-type")).toBe("application/x-ndjson");
 
     const lines = (await res.text()).trim().split("\n");

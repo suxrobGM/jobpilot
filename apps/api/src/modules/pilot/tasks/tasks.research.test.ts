@@ -1,6 +1,6 @@
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import { buildTaskList } from "./build";
-import { base, findTask, job, research } from "./builders";
+import { base, cfg, findTask, job, research } from "./builders";
 import { pilotSearchRow, service } from "./fakes";
 import { researchTrigger } from "./gather/research";
 import { describe, expect, it } from "bun:test";
@@ -91,7 +91,7 @@ describe("buildTaskList research.explore", () => {
   it("ranks a cap-exempt job above an equal match only with the preference on", () => {
     const approvedJobs = [job("plain", 80), job("exempt", 80, { capExemptBasis: "university" })];
     const firstKey = (preferCapExempt: boolean) =>
-      buildTaskList(base({ approvedJobs, preferCapExempt })).tasks[0].payload;
+      buildTaskList(base({ approvedJobs, config: cfg({ preferCapExempt }) })).tasks[0].payload;
     expect(firstKey(true)).toMatchObject({ jobKey: "exempt" });
     expect(firstKey(false)).toMatchObject({ jobKey: "plain" });
   });

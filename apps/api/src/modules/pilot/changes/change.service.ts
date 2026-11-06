@@ -11,7 +11,7 @@ import {
 } from "@/generated/prisma/client";
 import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { PilotService } from "../pilot.service";
-import { TASK_LIST_SNAPSHOT_RESET } from "../tasks/snapshot";
+import { dropTaskList } from "../tasks/snapshot";
 import type { ActionContext } from "./action-context";
 import { applyActions } from "./apply-action";
 import { canUndo, storedActionsSchema, toPilotChange } from "./change-row";
@@ -148,7 +148,7 @@ export class ChangeService {
       const now = new Date();
       const undo = await applyActions({ tx, userId, now, boardIds, afterCommit }, actions);
       // Any edit can change what the pilot should do next.
-      await tx.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET });
+      await dropTaskList(tx, userId);
       return record(tx, undo, now);
     });
 

@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { JobService } from "@/modules/feed/jobs/job.service";
-import { expireAbandonedRuns, promoteScoredPendingJobs, runExpiry } from "./maintenance";
+import { expireAbandonedRuns, expireStaleWork, settleScoredJobs } from "./maintenance";
 import { describe, expect, it } from "bun:test";
 
 type Write = { where: Record<string, unknown>; data: Record<string, unknown> };
@@ -51,12 +51,12 @@ function expiryDb(options: {
       return work(db);
     },
   };
-  const run = () => runExpiry(db as unknown as PrismaClient, "u1", new Date());
+  const run = () => expireStaleWork(db as unknown as PrismaClient, "u1", new Date());
   const jobWrite = (status: string) => writes.jobs.find((w) => w.where.status === status);
   return { run, writes, jobWrite, transactions: () => transactions };
 }
 
-describe("runExpiry", () => {
+describe("expireStaleWork", () => {
   it("expires a lapsed run and returns its applying job to approved, in one transaction", async () => {
     const db = expiryDb({
       expiredRuns: [{ id: "l1", taskType: "job.apply", payload: { feedId: "c1", jobKey: "j1" } }],
@@ -107,7 +107,7 @@ describe("runExpiry", () => {
   });
 });
 
-describe("promoteScoredPendingJobs", () => {
+describe("settleScoredJobs", () => {
   const scored = (matchScore: number, config: Record<string, unknown> = {}) => ({
     feedId: "c1",
     key: "jobkey",
@@ -123,7 +123,7 @@ describe("promoteScoredPendingJobs", () => {
         calls.push(args);
       },
     } as unknown as JobService;
-    await promoteScoredPendingJobs(prisma, jobs, "p1", 60);
+    await settleScoredJobs(prisma, jobs, "p1", 60);
     return calls;
   };
 

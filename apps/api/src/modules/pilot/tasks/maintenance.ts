@@ -60,7 +60,7 @@ async function expireRuns(tx: Prisma.TransactionClient, userId: string, now: Dat
 
 /**
  * {@link expireRuns} for every user, so a stopped pilot's runs still end and its jobs leave
- * `applying`. Nothing else: the rest of {@link runExpiry} reshapes a queue only a running pilot owns.
+ * `applying`. Nothing else: the rest of {@link expireStaleWork} reshapes a queue only a running pilot owns.
  */
 export async function expireAbandonedRuns(prisma: PrismaClient, now: Date): Promise<number> {
   const [withRuns, withJobs] = await Promise.all([
@@ -91,11 +91,40 @@ export async function expireAbandonedRuns(prisma: PrismaClient, now: Date): Prom
   return userIds.size;
 }
 
+/** Expires open questions past their date and skips the jobs they parked in `needs_user`. */
+async function expireQuestions(tx: Prisma.TransactionClient, userId: string, now: Date) {
+  const expired = await tx.pilotQuestion.findMany({
+    where: { userId, status: "open", expiresAt: { lt: now } },
+    take: GATHER_CAP,
+    select: { id: true, subjectType: true, subjectId: true },
+  });
+  if (expired.length === 0) return;
+
+  await tx.pilotQuestion.updateMany({
+    where: { id: { in: expired.map((question) => question.id) }, status: "open" },
+    data: { status: "expired" },
+  });
+  const parkedJobs = expired.flatMap((question) =>
+    question.subjectType === "job" && question.subjectId
+      ? [parseJobSubject(question.subjectId)]
+      : [],
+  );
+  if (parkedJobs.length === 0) return;
+
+  await tx.job.updateMany({
+    where: { status: "needs_user", userId, OR: parkedJobs },
+    data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.unanswered },
+  });
+}
+
 /** Expires runs and questions, and returns what they held to a workable state. */
-export async function runExpiry(prisma: PrismaClient, userId: string, now: Date): Promise<void> {
+export async function expireStaleWork(
+  prisma: PrismaClient,
+  userId: string,
+  now: Date,
+): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await expireRuns(tx, userId, now);
-
     // Pilot feeds only: a user's own queue is theirs to clear.
     await tx.job.updateMany({
       where: {
@@ -106,38 +135,12 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       },
       data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.wentStale },
     });
-
-    const expiredQuestions = await tx.pilotQuestion.findMany({
-      where: { userId, status: "open", expiresAt: { lt: now } },
-      take: GATHER_CAP,
-      select: { id: true, subjectType: true, subjectId: true },
-    });
-    if (expiredQuestions.length === 0) return;
-
-    await tx.pilotQuestion.updateMany({
-      where: { id: { in: expiredQuestions.map((question) => question.id) }, status: "open" },
-      data: { status: "expired" },
-    });
-    const parkedJobs = expiredQuestions.flatMap((question) =>
-      question.subjectType === "job" && question.subjectId
-        ? [parseJobSubject(question.subjectId)]
-        : [],
-    );
-    if (parkedJobs.length === 0) return;
-
-    await tx.job.updateMany({
-      where: {
-        status: "needs_user",
-        userId,
-        OR: parkedJobs,
-      },
-      data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.unanswered },
-    });
+    await expireQuestions(tx, userId, now);
   });
 }
 
 /** Settles scored pending jobs now instead of waiting for the next discovery run. */
-export async function promoteScoredPendingJobs(
+export async function settleScoredJobs(
   prisma: PrismaClient,
   jobService: JobService,
   userId: string,
@@ -162,11 +165,11 @@ export async function promoteScoredPendingJobs(
   for (const [feedId, jobs] of Map.groupBy(rows, (row) => row.feedId)) {
     const { config } = jobs[0].feed;
     const threshold = feedConfigSchema.parse(config).minScore ?? fallbackMinScore;
-    const candidates = jobs.map((job) => ({
+    const scored = jobs.map((job) => ({
       key: job.key,
       matchScore: job.matchScore ?? 0,
       threshold,
     }));
-    await jobService.settleScored(userId, feedId, candidates);
+    await jobService.settleScored(userId, feedId, scored);
   }
 }
