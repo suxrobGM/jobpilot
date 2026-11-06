@@ -6,13 +6,22 @@ using static JobPilot.Terminal.Tests.Builders;
 
 namespace JobPilot.Terminal.Tests;
 
-public sealed class PilotApiTests
+public sealed class PilotApiTests : IDisposable
 {
     private const string ActivityJson =
         """{"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"completedAt":"2026-07-19T18:30:00Z","sleepSeconds":300},"activeRuns":2}""";
 
-    private static PilotApi Api(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) =>
-        new(new HttpClient(new StubHandler(respond)), NullLogger<PilotApi>.Instance);
+    private readonly TempDir temp = new();
+
+    private PilotApi Api(
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond, PilotSettings? settings = null)
+    {
+        var store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
+        store.Save(settings ?? Settings());
+        return new(new HttpClient(new StubHandler(respond)), store, NullLogger<PilotApi>.Instance);
+    }
+
+    public void Dispose() => temp.Dispose();
 
     private static Task<HttpResponseMessage> Respond(HttpStatusCode status, string? body = null) =>
         Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body ?? "") });
@@ -21,13 +30,15 @@ public sealed class PilotApiTests
     public async Task GetActivity_ParsesTheResponse_WithABearerHeader()
     {
         HttpRequestMessage? seen = null;
-        var api = Api((request, _) =>
-        {
-            seen = request;
-            return Respond(HttpStatusCode.OK, ActivityJson);
-        });
+        var api = Api(
+            (request, _) =>
+            {
+                seen = request;
+                return Respond(HttpStatusCode.OK, ActivityJson);
+            },
+            Settings(apiUrl: "https://api.example.test/"));
 
-        var activity = await api.GetActivityAsync(Settings(apiUrl: "https://api.example.test/"), TestContext.Current.CancellationToken);
+        var activity = await api.GetActivityAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpMethod.Get, seen!.Method);
         Assert.Equal("https://api.example.test/api/pilot/activity", seen.RequestUri!.ToString());
@@ -44,10 +55,10 @@ public sealed class PilotApiTests
     {
         var ct = TestContext.Current.CancellationToken;
 
-        Assert.Null(await Api((_, _) => Respond(HttpStatusCode.Unauthorized)).GetActivityAsync(Settings(), ct));
-        Assert.Null(await Api((_, _) => throw new HttpRequestException("refused")).GetActivityAsync(Settings(), ct));
-        Assert.Null(await Api((_, token) => throw new TaskCanceledException("timed out", null, token)).GetActivityAsync(Settings(), ct));
-        Assert.Null(await Api((_, _) => Respond(HttpStatusCode.OK, "{ not json")).GetActivityAsync(Settings(), ct));
+        Assert.Null(await Api((_, _) => Respond(HttpStatusCode.Unauthorized)).GetActivityAsync(ct));
+        Assert.Null(await Api((_, _) => throw new HttpRequestException("refused")).GetActivityAsync(ct));
+        Assert.Null(await Api((_, token) => throw new TaskCanceledException("timed out", null, token)).GetActivityAsync(ct));
+        Assert.Null(await Api((_, _) => Respond(HttpStatusCode.OK, "{ not json")).GetActivityAsync(ct));
     }
 
     [Fact]
@@ -56,7 +67,7 @@ public sealed class PilotApiTests
         const string body = """{"tasks":[{"id":"t1","title":"Apply to Acme","taskType":"job.apply"}],"emptyReason":null,"sleepSeconds":15,"nextWakeAt":"2026-10-02T12:00:15Z","version":"v1"}""";
         var api = Api((_, _) => Respond(HttpStatusCode.OK, body));
 
-        var taskList = await api.RefreshTasksAsync(Settings(), TestContext.Current.CancellationToken);
+        var taskList = await api.RefreshTasksAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal([new PilotTask("t1", "Apply to Acme")], taskList!.Tasks);
         Assert.Equal("v1", taskList.Version);
@@ -76,16 +87,15 @@ public sealed class PilotApiTests
                 Content = new StringContent("""{"id":"run-1","finishedAt":null,"outcome":null,"taskType":"job.apply"}"""),
             };
         });
-        var settings = Settings();
         var ct = TestContext.Current.CancellationToken;
 
-        await api.RefreshTasksAsync(settings, ct);
-        await api.ReportAsync(settings, "hello world", ct);
-        await api.RecordCycleAsync(settings, 1800, ct);
-        Assert.Equal(new PilotRun("run-1", null, null), await api.StartRunAsync(settings, "t1", "v1", ct));
-        Assert.NotNull(await api.GetRunAsync(settings, "run-1", ct));
-        await api.CancelRunAsync(settings, "run-1", ct);
-        await api.ReportUsageAsync(settings, "run-1", new PilotUsage("claude-sonnet-5", 4, 320, 130000, 600), ct);
+        await api.RefreshTasksAsync(ct);
+        await api.ReportAsync("hello world", ct);
+        await api.RecordCycleAsync(1800, ct);
+        Assert.Equal(new PilotRun("run-1", null, null), await api.StartRunAsync("t1", "v1", ct));
+        Assert.NotNull(await api.GetRunAsync("run-1", ct));
+        await api.CancelRunAsync("run-1", ct);
+        await api.ReportUsageAsync("run-1", new PilotUsage("claude-sonnet-5", 4, 320, 130000, 600), ct);
 
         Assert.Equal(
             [
@@ -111,8 +121,8 @@ public sealed class PilotApiTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.GetActivityAsync(Settings(), cts.Token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.ReportAsync(Settings(), "stop", cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.GetActivityAsync(cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.ReportAsync("stop", cts.Token));
     }
 
     private sealed class StubHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond)

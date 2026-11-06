@@ -8,7 +8,7 @@ public sealed record PilotStep(DateTimeOffset At, string Label);
 internal sealed record PostStepsRequest(PilotStep[] Steps);
 
 /// <summary>Collects the run's tool calls from the CLI's log export and posts them as steps every 2 seconds.</summary>
-public sealed class StepRecorder(PilotStore store, PilotApi api) : BackgroundService
+public sealed class StepRecorder(PilotApi api) : BackgroundService
 {
     private const int MaxBatch = 100;
     private static readonly TimeSpan FlushEvery = TimeSpan.FromSeconds(2);
@@ -76,11 +76,9 @@ public sealed class StepRecorder(PilotStore store, PilotApi api) : BackgroundSer
             pending.Clear();
         }
 
-        if (run is null || batch.Length == 0 || store.Current is not { } settings)
+        if (run is not null && batch.Length > 0)
         {
-            return;
+            await api.PostStepsAsync(run, batch, ct);
         }
-
-        await api.PostStepsAsync(settings, run, batch, ct);
     }
 }

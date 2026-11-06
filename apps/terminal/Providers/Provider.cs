@@ -10,7 +10,9 @@ public abstract class Provider
     public static readonly Provider Claude = new ClaudeProvider();
     public static readonly Provider Codex = new CodexProvider();
 
-    public static readonly ProviderInfo[] All = [Claude.Info, Codex.Info];
+    private static readonly Provider[] Known = [Claude, Codex];
+
+    public static readonly ProviderInfo[] All = [.. Known.Select(p => p.Info)];
 
     public abstract string Id { get; }
 
@@ -25,23 +27,14 @@ public abstract class Provider
     /// <exception cref="ArgumentException">The id is not a known provider.</exception>
     public static Provider Find(string? id)
     {
-        var normalized = id?.Trim().ToLowerInvariant();
-        if (string.IsNullOrEmpty(normalized))
+        var trimmed = id?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
         {
             return Claude;
         }
 
-        if (normalized == Claude.Id)
-        {
-            return Claude;
-        }
-
-        if (normalized == Codex.Id)
-        {
-            return Codex;
-        }
-
-        throw new ArgumentException($"Unsupported terminal provider '{id}'.");
+        return Known.FirstOrDefault(p => p.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"Unsupported terminal provider '{id}'.");
     }
 
     /// <summary>Launch arguments, reading the provider's shipped settings from the plugin dir.</summary>

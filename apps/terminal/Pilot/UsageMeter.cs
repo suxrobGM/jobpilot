@@ -11,18 +11,14 @@ public sealed record PilotUsage(
 public sealed class UsageMeter
 {
     private readonly Lock sync = new();
-    private string? model;
-    private long input;
-    private long output;
-    private long cacheRead;
-    private long cacheWrite;
+    private PilotUsage? total;
 
     /// <summary>Drops what came before, such as the user's own session between cycles.</summary>
     public void Start()
     {
         lock (sync)
         {
-            Reset();
+            total = null;
         }
     }
 
@@ -31,13 +27,8 @@ public sealed class UsageMeter
     {
         lock (sync)
         {
-            if (model is null)
-            {
-                return null;
-            }
-
-            var usage = new PilotUsage(model, input, output, cacheRead, cacheWrite);
-            Reset();
+            var usage = total;
+            total = null;
             return usage;
         }
     }
@@ -70,21 +61,16 @@ public sealed class UsageMeter
         }
     }
 
-    private void Reset()
-    {
-        model = null;
-        input = output = cacheRead = cacheWrite = 0;
-    }
-
-    private void Add(string? requestModel, long requestInput, long requestOutput, long requestCacheRead, long requestCacheWrite)
+    private void Add(string? model, long input, long output, long cacheRead, long cacheWrite)
     {
         lock (sync)
         {
-            model = requestModel ?? model ?? "unknown";
-            input += requestInput;
-            output += requestOutput;
-            cacheRead += requestCacheRead;
-            cacheWrite += requestCacheWrite;
+            total = new PilotUsage(
+                model ?? total?.Model ?? "unknown",
+                (total?.InputTokens ?? 0) + input,
+                (total?.OutputTokens ?? 0) + output,
+                (total?.CacheReadTokens ?? 0) + cacheRead,
+                (total?.CacheWriteTokens ?? 0) + cacheWrite);
         }
     }
 }

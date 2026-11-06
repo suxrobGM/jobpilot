@@ -1,6 +1,5 @@
 using System.Threading.Channels;
 using JobPilot.Terminal.Common;
-using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal.Pilot;
 

@@ -109,7 +109,7 @@ public sealed class PilotEventListenerTests
         {
             Handler = new FakeSseHandler { Status = status };
             Store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
-            var api = new PilotApi(new HttpClient(Handler), NullLogger<PilotApi>.Instance);
+            var api = new PilotApi(new HttpClient(Handler), Store, NullLogger<PilotApi>.Instance);
             var handlers = new PilotEventHandlers(
                 () => Interlocked.Increment(ref wakes),
                 (runId, outcome) => FinishedRuns.Enqueue($"{runId}:{outcome}"),

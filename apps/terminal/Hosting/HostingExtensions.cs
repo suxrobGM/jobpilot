@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Updates;
@@ -26,8 +27,7 @@ public static class HostingExtensions
         services.AddSingleton<HostStatus>();
         services.AddSingleton<UrlScheme>();
 
-        services.AddSingleton<ScratchCleaner>();
-        services.AddHostedService(sp => sp.GetRequiredService<ScratchCleaner>());
+        services.AddHostedSingleton<ScratchCleaner>();
         services.AddSingleton<TerminalSession>();
         services.AddSingleton<TerminalRelay>();
 
@@ -36,21 +36,17 @@ public static class HostingExtensions
             sp.GetRequiredService<ILogger<PilotStore>>()));
         services.AddSingleton<PilotApi>();
         services.AddSingleton<UsageMeter>();
-        services.AddSingleton<StepRecorder>();
-        services.AddHostedService(sp => sp.GetRequiredService<StepRecorder>());
+        services.AddHostedSingleton<StepRecorder>();
         services.AddSingleton<PilotSession>();
         services.AddSingleton<IPilotSession>(sp => sp.GetRequiredService<PilotSession>());
-        services.AddSingleton<PilotLoop>();
-        services.AddHostedService(sp => sp.GetRequiredService<PilotLoop>());
-        services.AddHostedService(sp => new PilotEventListener(
-            sp.GetRequiredService<PilotStore>(),
-            sp.GetRequiredService<PilotApi>(),
-            new PilotEventHandlers(
-                sp.GetRequiredService<PilotLoop>().Wake,
-                sp.GetRequiredService<PilotSession>().OnRunFinished,
-                sp.GetRequiredService<PilotSession>().InterruptRunAsync,
-                sp.GetRequiredService<PilotSession>().SteerRunAsync),
-            sp.GetRequiredService<ILogger<PilotEventListener>>()));
+        services.AddHostedSingleton<PilotLoop>();
+        services.AddSingleton(sp =>
+        {
+            var session = sp.GetRequiredService<PilotSession>();
+            var loop = sp.GetRequiredService<PilotLoop>();
+            return new PilotEventHandlers(loop.Wake, session.OnRunFinished, session.InterruptRunAsync, session.SteerRunAsync);
+        });
+        services.AddHostedService<PilotEventListener>();
 
         services.AddSingleton<HostUpdater>();
 
@@ -63,6 +59,15 @@ public static class HostingExtensions
         services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSeconds(5));
 
         return services;
+    }
+
+    /// <summary>A hosted service other services also inject, so both resolve the same instance.</summary>
+    private static void AddHostedSingleton<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(
+        this IServiceCollection services)
+        where T : class, IHostedService
+    {
+        services.AddSingleton<T>();
+        services.AddHostedService(sp => sp.GetRequiredService<T>());
     }
 
     public static WebApplication UseTerminalPipeline(this WebApplication app)

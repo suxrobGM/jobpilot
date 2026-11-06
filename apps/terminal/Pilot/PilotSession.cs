@@ -65,7 +65,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
         Interrupt();
         await SendAsync(StopLine, settings.Provider, ct);
-        await api.CancelRunAsync(settings, runId, ct);
+        await api.CancelRunAsync(runId, ct);
     }
 
     /// <summary>Types the user's words into the run in flight, without stopping it.</summary>
@@ -168,23 +168,18 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     public Task DelayAsync(TimeSpan duration, CancellationToken ct) => Task.Delay(duration, ct);
 
-    public Task<PilotActivity?> GetActivityAsync(CancellationToken ct) =>
-        store.Current is { } settings ? api.GetActivityAsync(settings, ct) : Task.FromResult<PilotActivity?>(null);
+    public Task<PilotActivity?> GetActivityAsync(CancellationToken ct) => api.GetActivityAsync(ct);
 
-    public Task ReportAsync(string summary, CancellationToken ct) =>
-        store.Current is { } settings ? api.ReportAsync(settings, summary, ct) : Task.CompletedTask;
+    public Task ReportAsync(string summary, CancellationToken ct) => api.ReportAsync(summary, ct);
 
-    public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) =>
-        store.Current is { } settings ? api.RefreshTasksAsync(settings, ct) : Task.FromResult<PilotTaskList?>(null);
+    public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) => api.RefreshTasksAsync(ct);
 
     public async Task<string?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct) =>
-        store.Current is { } settings ? (await api.StartRunAsync(settings, taskId, taskListVersion, ct))?.Id : null;
+        (await api.StartRunAsync(taskId, taskListVersion, ct))?.Id;
 
-    public Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct) =>
-        store.Current is { } settings ? api.GetRunAsync(settings, runId, ct) : Task.FromResult<PilotRun?>(null);
+    public Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct) => api.GetRunAsync(runId, ct);
 
-    public Task CancelRunAsync(string runId, CancellationToken ct) =>
-        store.Current is { } settings ? api.CancelRunAsync(settings, runId, ct) : Task.CompletedTask;
+    public Task CancelRunAsync(string runId, CancellationToken ct) => api.CancelRunAsync(runId, ct);
 
     public async Task RecordCycleAsync(string? runId, int sleepSeconds, CancellationToken ct)
     {
@@ -194,19 +189,13 @@ public sealed class PilotSession : IPilotSession, IDisposable
             currentRunId = null;
             steps.Stop();
             await Task.Delay(UsageFlush, ct);
+            if (usage.Take() is { } measured)
+            {
+                await api.ReportUsageAsync(runId, measured, ct);
+            }
         }
 
-        if (store.Current is not { } settings)
-        {
-            return;
-        }
-
-        if (runId is not null && usage.Take() is { } measured)
-        {
-            await api.ReportUsageAsync(settings, runId, measured, ct);
-        }
-
-        await api.RecordCycleAsync(settings, sleepSeconds, ct);
+        await api.RecordCycleAsync(sleepSeconds, ct);
     }
 
     public void Dispose() => terminal.Output -= OnOutput;

@@ -1,7 +1,6 @@
 using System.Net.ServerSentEvents;
 using System.Text.Json;
 using JobPilot.Terminal.Common;
-using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal.Pilot;
 

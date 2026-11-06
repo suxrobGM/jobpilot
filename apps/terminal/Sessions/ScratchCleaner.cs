@@ -1,6 +1,5 @@
 using JobPilot.Terminal.Common;
 using JobPilot.Terminal.Hosting;
-using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal.Sessions;
 
