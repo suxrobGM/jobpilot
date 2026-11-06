@@ -56,14 +56,15 @@ function isHeld(pilot: PilotHealth | null): boolean {
 
 /** The host runs whenever paired; autopilot only decides whether it picks work on its own. */
 export function pilotMode(
-  state: Pick<PilotState, "autopilot" | "cycleCount">,
+  state: Pick<PilotState, "autopilot" | "cycleCount" | "currentRun">,
   health: TerminalHealth | null,
   pilot: PilotHealth | null,
 ): PilotMode {
   if (isHostOffline(health)) {
     return "offline";
   }
-  if (pilot?.conducting) {
+  // An open run is work too: a request runs with the conductor between cycles.
+  if (pilot?.conducting || state.currentRun) {
     return "working";
   }
   if (health === "reachable" && !pilot?.paired) {

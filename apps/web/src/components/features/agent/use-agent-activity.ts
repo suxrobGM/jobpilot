@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { type TerminalHealth, useTerminalHealth } from "@/hooks/use-terminal-health";
+import { pilotMode } from "../pilot/pilot-status";
 import type { AgentOrbState } from "./agent-orb";
 
 const HEALTH_ORB: Record<TerminalHealth, AgentOrbState> = {
@@ -34,11 +35,14 @@ interface AgentActivity {
 export function useAgentActivity(): AgentActivity {
   const { health, status } = useTerminalHealth();
   const { data: state } = useQuery(pilotQueries.state());
-  const run = state?.currentRun ?? null;
-  const working = health === "reachable" && (run !== null || status?.pilot?.conducting === true);
+  // The same rule as the pilot's status line, so the two never disagree on working.
+  const working =
+    health === "reachable" &&
+    state &&
+    pilotMode(state, health, status?.pilot ?? null) === "working";
 
   if (working) {
-    return { health, orb: "working", label: run?.title ?? "working" };
+    return { health, orb: "working", label: state.currentRun?.title ?? "working" };
   }
   return { health, orb: HEALTH_ORB[health], label: HEALTH_LABELS[health] };
 }
