@@ -23,6 +23,8 @@ import {
 } from "@/lib/terminal/client";
 import { useToast } from "@/providers/toast-provider";
 
+export type AgentDrawerTab = "steps" | "terminal";
+
 export interface AgentDrawerContextValue {
   provider: TerminalProviderId;
   switchProvider: (next: TerminalProviderId) => Promise<void>;
@@ -31,7 +33,12 @@ export interface AgentDrawerContextValue {
   stop: () => Promise<boolean>;
   terminalRevision: number;
   drawerOpen: boolean;
+  drawerTab: AgentDrawerTab;
+  setDrawerTab: (tab: AgentDrawerTab) => void;
+  /** Opens on the terminal. */
   openDrawer: () => void;
+  /** Opens on the running task's steps, which also work away from this computer. */
+  watchSteps: () => void;
   closeDrawer: () => void;
 }
 
@@ -51,6 +58,7 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
 
   const drawerOpen = useSyncExternalStore(subscribeAgentStorage, readStoredDrawerOpen, () => false);
   const [terminalRevision, setTerminalRevision] = useState(0);
+  const [drawerTab, setDrawerTab] = useState<AgentDrawerTab>("terminal");
 
   // True only when the host goes down; otherwise nothing would ever clear the "Stopping…" card.
   const stop = async (): Promise<boolean> => {
@@ -98,7 +106,16 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     stop,
     terminalRevision,
     drawerOpen,
-    openDrawer: () => patchAgentStorage({ drawerOpen: true }),
+    drawerTab,
+    setDrawerTab,
+    openDrawer: () => {
+      setDrawerTab("terminal");
+      patchAgentStorage({ drawerOpen: true });
+    },
+    watchSteps: () => {
+      setDrawerTab("steps");
+      patchAgentStorage({ drawerOpen: true });
+    },
     closeDrawer: () => patchAgentStorage({ drawerOpen: false }),
   };
 

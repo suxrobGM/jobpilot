@@ -6,6 +6,7 @@ import type {
   PilotQuestion,
   PilotRequest,
   PilotState,
+  PilotStep,
   Promotion,
   TaskType,
 } from "../../pilot";
@@ -24,6 +25,7 @@ export type PilotEvent =
   | { type: "request.updated"; request: PilotRequest }
   | { type: "run.interrupt"; runId: string }
   | { type: "run.steer"; runId: string; text: string }
+  | { type: "run.steps"; runId: string; steps: PilotStep[] }
   | { type: "run.started"; runId: string; taskType: TaskType }
   | { type: "run.finished"; runId: string; outcome: (typeof PILOT_RUN_OUTCOMES)[number] };
 

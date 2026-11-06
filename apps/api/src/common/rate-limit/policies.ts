@@ -86,6 +86,8 @@ export const RATE_LIMITS = {
 
   /** Run/heartbeat/finish bookkeeping, a few per worked item. */
   pilotRun: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
+  /** The host posts a run's steps every 2 seconds while it works. */
+  pilotSteps: { key: byUser, limit: 2400, windowMs: HOUR, burst: 20 },
 
   /** User- or agent-driven Pilot mutations (instructions, enable, questions) - infrequent. */
   pilotMutation: { key: byUser, limit: 120, windowMs: HOUR },

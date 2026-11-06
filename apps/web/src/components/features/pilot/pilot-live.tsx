@@ -7,6 +7,7 @@ import { pilotQueries, pipelineQueries } from "@/api/queries";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { refetchThread } from "./home/thread/thread-cache";
 import { prependJournalEntry, refetchJournal } from "./journal/journal-cache";
+import { appendRunSteps } from "./steps/steps-cache";
 
 const STATE_KEY = pilotQueries.state().queryKey;
 // Never `pilot.all`: it would rebuild the task list.
@@ -54,6 +55,7 @@ export function PilotLive(): ReactNode {
       "question.answered": () => invalidate([pilotQueries.questionsAll]),
       "promotion.created": () => invalidate([pilotQueries.promotionsAll]),
       "promotion.updated": () => invalidate([pilotQueries.promotionsAll]),
+      "run.steps": (event) => appendRunSteps(queryClient, event.runId, event.steps),
       "message.created": () => refetchThread(queryClient),
       "request.created": () => refetchThread(queryClient),
       "request.updated": () => refetchThread(queryClient),

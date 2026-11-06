@@ -49,6 +49,12 @@ export const pilotQueries = {
       queryKey: [...PILOT, "searches"],
       queryFn: () => unwrap(api.pilot.searches.get()),
     }),
+  /** A run's live steps so far; `run.steps` events append to it. */
+  runSteps: (runId: string) =>
+    queryOptions({
+      queryKey: [...PILOT, "runs", runId, "steps"],
+      queryFn: () => unwrap(api.pilot.runs({ id: runId }).steps.get()),
+    }),
   notices: () =>
     queryOptions({
       queryKey: [...PILOT, "notices"],

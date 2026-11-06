@@ -11,5 +11,6 @@ export * from "./request";
 export * from "./run";
 export * from "./schedule";
 export * from "./search";
+export * from "./step";
 export * from "./tasks";
 export * from "./thread";

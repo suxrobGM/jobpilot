@@ -34,7 +34,7 @@ const LABEL_SIZE = "0.6875rem";
 export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
-  const { openDrawer } = useAgentDrawer();
+  const { watchSteps } = useAgentDrawer();
   const { user } = useSession();
 
   // Close after the route commit: closing in the click lets the transition interrupt the
@@ -138,7 +138,7 @@ export function MobileNav(): ReactElement {
           <ListItemButton
             onClick={() => {
               setMoreOpen(false);
-              openDrawer();
+              watchSteps();
             }}
           >
             <ListItemIcon sx={{ minWidth: 40 }}>
