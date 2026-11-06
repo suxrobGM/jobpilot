@@ -1,17 +1,6 @@
 import type { PilotJournalEntry, PilotJournalRun } from "@jobpilot/contracts/pilot";
 import { format, isThisYear, isToday, isYesterday } from "date-fns";
 
-/** Drops cycle rows whose actions already repeat them; lone (error) cycle rows stay. */
-export function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[] {
-  const covered = new Set<string>();
-  for (const entry of entries) {
-    if (entry.kind === "action" && entry.runId) {
-      covered.add(entry.runId);
-    }
-  }
-  return entries.filter((e) => !(e.kind === "cycle" && e.runId && covered.has(e.runId)));
-}
-
 /** Streamed actions predate the host's usage report, so every row takes its run's newest copy. */
 export function withLatestRuns(entries: PilotJournalEntry[]): PilotJournalEntry[] {
   const runs = new Map<string, PilotJournalRun>();

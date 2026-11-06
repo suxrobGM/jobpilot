@@ -186,27 +186,28 @@ public sealed class PilotSession : IPilotSession, IDisposable
     public Task CancelRunAsync(string runId, CancellationToken ct) =>
         store.Current is { } settings ? api.CancelRunAsync(settings, runId, ct) : Task.CompletedTask;
 
-    public async Task RecordCycleAsync(string runId, string summary, CycleDetail detail, CancellationToken ct)
+    public async Task RecordCycleAsync(string? runId, int sleepSeconds, CancellationToken ct)
     {
-        // The run is over, so interrupts, steers and the stuck heuristic stop applying to it.
-        currentRunId = null;
-        steps.Stop();
-        await Task.Delay(UsageFlush, ct);
+        if (runId is not null)
+        {
+            // The run is over, so interrupts, steers and the stuck heuristic stop applying to it.
+            currentRunId = null;
+            steps.Stop();
+            await Task.Delay(UsageFlush, ct);
+        }
+
         if (store.Current is not { } settings)
         {
             return;
         }
 
-        if (usage.Take() is { } measured)
+        if (runId is not null && usage.Take() is { } measured)
         {
             await api.ReportUsageAsync(settings, runId, measured, ct);
         }
 
-        await api.JournalCycleAsync(settings, runId, summary, detail, ct);
+        await api.RecordCycleAsync(settings, sleepSeconds, ct);
     }
-
-    public Task RecordIdleCycleAsync(int sleepSeconds, CancellationToken ct) =>
-        store.Current is { } settings ? api.RecordIdleCycleAsync(settings, sleepSeconds, ct) : Task.CompletedTask;
 
     public void Dispose() => terminal.Output -= OnOutput;
 

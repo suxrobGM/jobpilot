@@ -25,11 +25,11 @@ import { SectionCard } from "@/components/ui/layout";
 import { DropdownMenu } from "@/components/ui/navigation";
 import { useConfirm } from "@/providers/confirm-provider";
 import { dedupeById } from "@/utils/array";
-import { CycleTimeline } from "./cycle-timeline";
 import { useJournalLiveStatus } from "./journal-cache";
-import { collapseCoveredCycles, groupByDay, withLatestRuns } from "./journal-entries";
+import { groupByDay, withLatestRuns } from "./journal-entries";
 import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
+import { RunTimeline } from "./run-timeline";
 
 /** A top-level anchor download carries the same-site auth cookie, so no fetch is needed. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
@@ -40,7 +40,7 @@ export function JournalFeed(): ReactElement {
   const [selectedKinds, setSelectedKinds] = useState<PilotJournalKind[]>([]);
   const feed = useInfiniteQuery(pilotQueries.journalFeed(selectedKinds));
   const status = useJournalLiveStatus();
-  const [view, setView] = useState<"flat" | "cycle">("flat");
+  const [view, setView] = useState<"flat" | "run">("flat");
 
   const reset = useApiMutation(() => api.pilot.runs.delete(), {
     successMessage: "Pilot reset",
@@ -69,7 +69,6 @@ export function JournalFeed(): ReactElement {
 
   // Live prepends keep the first page's tail, which the next page repeats.
   const entries = withLatestRuns(dedupeById(feed.data?.pages.flatMap((page) => page.items) ?? []));
-  const visible = view === "flat" ? collapseCoveredCycles(entries) : entries;
 
   const emptyMessage =
     selectedKinds.length > 0 ? "No entries match the selected filters." : "No journal entries yet.";
@@ -136,20 +135,20 @@ export function JournalFeed(): ReactElement {
             aria-label="Journal view"
           >
             <ToggleButton value="flat">By day</ToggleButton>
-            <ToggleButton value="cycle">By cycle</ToggleButton>
+            <ToggleButton value="run">By run</ToggleButton>
           </ToggleButtonGroup>
         </Stack>
         <QuerySection
           query={feed}
           errorTitle="Couldn't load the journal."
-          isEmpty={visible.length === 0}
+          isEmpty={entries.length === 0}
           empty={<EmptyState variant="inline" title={emptyMessage} />}
         >
-          {view === "cycle" ? (
-            <CycleTimeline entries={visible} />
+          {view === "run" ? (
+            <RunTimeline entries={entries} />
           ) : (
             <Stack spacing={3}>
-              {groupByDay(visible).map((day) => (
+              {groupByDay(entries).map((day) => (
                 <Box key={day.key}>
                   <Typography variant="overlineMuted" sx={{ display: "block", mb: 1.5 }}>
                     {day.label}

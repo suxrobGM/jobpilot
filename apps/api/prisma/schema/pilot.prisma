@@ -69,7 +69,6 @@ enum PilotQuestionStatus {
 }
 
 enum PilotJournalKind {
-  cycle
   action
   question
   system
@@ -218,7 +217,7 @@ model PilotQuestion {
   answer         String?
   savedAnswerKey String?             @map("saved_answer_key")
   answeredAt     DateTime?           @map("answered_at") @db.Timestamptz(3)
-  expiresAt      DateTime?           @map("expires_at") @db.Timestamptz(3)
+  expiresAt      DateTime            @map("expires_at") @db.Timestamptz(3)
   createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([userId, status])

@@ -44,12 +44,8 @@ export function PilotLive(): ReactNode {
         ]),
       // Written straight into the cache rather than refetched.
       "journal.appended": (event) => {
-        const entry = prependJournalEntry(queryClient, event.entry);
-        if (entry.kind === "cycle") {
-          void queryClient.invalidateQueries({ queryKey: STATE_KEY });
-        } else {
-          refetchThread(queryClient);
-        }
+        prependJournalEntry(queryClient, event.entry);
+        refetchThread(queryClient);
       },
       "question.created": () => invalidate([pilotQueries.questionsAll]),
       "question.answered": () => invalidate([pilotQueries.questionsAll]),

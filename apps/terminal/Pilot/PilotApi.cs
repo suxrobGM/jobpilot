@@ -19,19 +19,13 @@ public sealed record PilotRun(string Id, DateTimeOffset? FinishedAt, string? Out
 
 internal sealed record StartRunRequest(string TaskId, string TaskListVersion);
 
-internal sealed record IdleCycleRequest(int SleepSeconds);
+internal sealed record CycleRequest(int SleepSeconds);
 
 internal sealed record JournalRequest(
     JournalEntry[] Entries,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? RunId = null);
 
-internal sealed record JournalEntry(
-    string Kind,
-    string Summary,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CycleDetail? Detail = null);
-
-/// <summary>The API reads the run's task type and tokens from the run itself.</summary>
-public sealed record CycleDetail(string Status, int SleepSeconds);
+internal sealed record JournalEntry(string Kind, string Summary);
 
 /// <summary>Probes and reports throw only on the caller's cancellation, so a briefly unreachable API cannot take the loop down.</summary>
 public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
@@ -51,13 +45,9 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
     public Task ReportAsync(PilotSettings settings, string summary, CancellationToken ct) =>
         PostJournalAsync(settings, new JournalRequest([new JournalEntry("system", summary)]), ct);
 
-    /// <summary>The activity probe reads the cycle entry's detail back as the cycle's completion.</summary>
-    public Task JournalCycleAsync(PilotSettings settings, string runId, string summary, CycleDetail detail, CancellationToken ct) =>
-        PostJournalAsync(settings, new JournalRequest([new JournalEntry("cycle", summary, detail)], runId), ct);
-
-    /// <summary>Recorded on the pilot state, not the journal; the activity probe reads it back.</summary>
-    public Task RecordIdleCycleAsync(PilotSettings settings, int sleepSeconds, CancellationToken ct) =>
-        PostAsync(settings, "/api/pilot/idle-checks", JsonContent.Create(new IdleCycleRequest(sleepSeconds), AppJsonContext.Default.IdleCycleRequest), ct);
+    /// <summary>Recorded on the pilot state; the activity probe reads it back as the cycle's completion.</summary>
+    public Task RecordCycleAsync(PilotSettings settings, int sleepSeconds, CancellationToken ct) =>
+        PostAsync(settings, "/api/pilot/cycles", JsonContent.Create(new CycleRequest(sleepSeconds), AppJsonContext.Default.CycleRequest), ct);
 
     public Task<PilotRun?> StartRunAsync(PilotSettings settings, string taskId, string taskListVersion, CancellationToken ct)
     {

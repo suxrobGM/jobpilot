@@ -86,8 +86,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
         await TestWait.Until(() => session.Actions.Contains("sleep:1800"));
         Assert.Equal(0, CyclesSent);
         Assert.DoesNotContain("start", session.Actions);
-        Assert.Empty(session.Cycles);
-        Assert.Equal([1800], session.IdleCycles);
+        Assert.Equal(["idle/1800"], session.Cycles);
     }
 
     [Fact]

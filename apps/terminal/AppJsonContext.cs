@@ -28,7 +28,7 @@ namespace JobPilot.Terminal;
 [JsonSerializable(typeof(PostStepsRequest))]
 [JsonSerializable(typeof(PilotRun))]
 [JsonSerializable(typeof(StartRunRequest))]
-[JsonSerializable(typeof(IdleCycleRequest))]
+[JsonSerializable(typeof(CycleRequest))]
 [JsonSerializable(typeof(PilotEvent))]
 [JsonSerializable(typeof(UpdateResult))]
 [JsonSerializable(typeof(ShutdownResult))]

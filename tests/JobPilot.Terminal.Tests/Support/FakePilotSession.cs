@@ -16,12 +16,10 @@ internal sealed class FakePilotSession : IPilotSession
 
     public List<string> Reports => Snapshot(reports);
 
-    /// <summary>The recorded cycles, as "status/sleep: summary".</summary>
+    /// <summary>The recorded cycles, as "runId/sleep", or "idle/sleep" for a cycle without a run.</summary>
     public List<string> Cycles => Snapshot(cycles);
 
     public List<string> CancelledRuns => Snapshot(cancelledRuns);
-
-    public List<int> IdleCycles { get; } = [];
 
     /// <summary>When the user last typed; null means never, so no hold.</summary>
     public DateTimeOffset? LastUserInputAt { get; set; }
@@ -137,21 +135,11 @@ internal sealed class FakePilotSession : IPilotSession
         return Task.CompletedTask;
     }
 
-    public Task RecordCycleAsync(string runId, string summary, CycleDetail detail, CancellationToken ct)
+    public Task RecordCycleAsync(string? runId, int sleepSeconds, CancellationToken ct)
     {
         lock (sync)
         {
-            cycles.Add($"{detail.Status}/{detail.SleepSeconds}: {summary}");
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public Task RecordIdleCycleAsync(int sleepSeconds, CancellationToken ct)
-    {
-        lock (sync)
-        {
-            IdleCycles.Add(sleepSeconds);
+            cycles.Add($"{runId ?? "idle"}/{sleepSeconds}");
         }
 
         return Task.CompletedTask;

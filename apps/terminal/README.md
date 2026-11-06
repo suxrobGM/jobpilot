@@ -32,8 +32,8 @@ Each folder is one feature and holds its endpoints, request and response records
   (`/pilot/handback` ends it early). Otherwise it starts the run, types `/clear` and the pilot skill with the run id, and waits for the run
   to finish: the `run.finished` event the agent's result publishes, or a poll of the run. A stuck
   run climbs check-in, skip, then restart, and a run with no result is cancelled by the host. The
-  host then journals the cycle and posts its token usage, which `UsageMeter` sums from the CLI's
-  OTLP logs on `/v1/logs`. `PilotEventListener` holds the API's event stream open while paired,
+  host then posts the run's token usage, which `UsageMeter` sums from the CLI's OTLP logs on
+  `/v1/logs`, and reports the cycle to `/api/pilot/cycles`, as it does after an idle check. `PilotEventListener` holds the API's event stream open while paired,
   passes `run.finished` to the session, wakes the loop on messages, requests and answered questions,
   and hands `run.interrupt` (Esc, a stop line, then a cancel) and `run.steer` (one sanitized line
   typed into the session) to the session for the run in flight. While a run is open,

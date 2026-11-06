@@ -64,7 +64,10 @@ describe("PilotQuestionService.createQuestion", () => {
       link: "/pilot/questions/e1",
     });
     expect(question).toMatchObject({ status: "open", options: ["2 weeks", "immediately"] });
-    expect(rec.created?.expiresAt).toBeNull();
+    // Unanswered, it lapses in two weeks and frees whatever it parked.
+    const expiresAt = rec.created?.expiresAt as Date;
+    const ttlDays = (expiresAt.getTime() - Date.now()) / 86_400_000;
+    expect(Math.round(ttlDays)).toBe(14);
     expect(rec.pushes[0]?.payload).toEqual({
       title: "JobPilot needs you",
       body: "Which start date?",

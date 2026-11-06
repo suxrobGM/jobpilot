@@ -53,11 +53,6 @@ export function formatSpanBetween(start: string | Date, end: string | Date): str
   return formatDistanceStrict(from, to, { locale: compactLocale });
 }
 
-/** Compact duration from a plain second count, e.g. `20m`. */
-export function formatDuration(seconds: number): string {
-  return formatSpanBetween(new Date(0), new Date(seconds * 1000));
-}
-
 const countFormat = new Intl.NumberFormat("en-US");
 
 /** Whole count with a fixed locale, so server and browser render the same digits. */

@@ -1,6 +1,6 @@
 import {
   pilotStateSchema,
-  recordIdleCycleSchema,
+  recordCycleSchema,
   setAutopilotSchema,
   updatePilotSettingsSchema,
 } from "@jobpilot/contracts/pilot";
@@ -59,14 +59,14 @@ export const pilotController = new Elysia({
         "Deletes the journal, zeroes the cycle count and drops the cached task list. Instructions, searches and autopilot stay.",
     },
   })
-  .post("/idle-checks", ({ user, body }) => pilot.recordIdleCycle(user.id, body), {
-    body: recordIdleCycleSchema,
+  .post("/cycles", ({ user, body }) => pilot.recordCycle(user.id, body), {
+    body: recordCycleSchema,
     beforeHandle: limitTaskList,
     response: pilotStateSchema,
     detail: {
-      summary: "Record an idle check",
+      summary: "Record a cycle",
       description:
-        "The host found nothing to run: advances the cycle count and next wake without a journal entry.",
+        "The host finished one loop pass, with or without a run: advances the cycle count and plans the next wake.",
     },
   })
   .get("/stats/cost", ({ user }) => pilot.getCost(user.id), {

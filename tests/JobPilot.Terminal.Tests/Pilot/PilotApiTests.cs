@@ -81,8 +81,7 @@ public sealed class PilotApiTests
 
         await api.RefreshTasksAsync(settings, ct);
         await api.ReportAsync(settings, "hello world", ct);
-        await api.JournalCycleAsync(settings, "run-1", "Task 1 - done.", new CycleDetail("ok", 30), ct);
-        await api.RecordIdleCycleAsync(settings, 1800, ct);
+        await api.RecordCycleAsync(settings, 1800, ct);
         Assert.Equal(new PilotRun("run-1", null, null), await api.StartRunAsync(settings, "t1", "v1", ct));
         Assert.NotNull(await api.GetRunAsync(settings, "run-1", ct));
         await api.CancelRunAsync(settings, "run-1", ct);
@@ -92,8 +91,7 @@ public sealed class PilotApiTests
             [
                 "POST /api/pilot/tasks/refresh",
                 """POST /api/pilot/journal {"entries":[{"kind":"system","summary":"hello world"}]}""",
-                """POST /api/pilot/journal {"entries":[{"kind":"cycle","summary":"Task 1 - done.","detail":{"status":"ok","sleepSeconds":30}}],"runId":"run-1"}""",
-                """POST /api/pilot/idle-checks {"sleepSeconds":1800}""",
+                """POST /api/pilot/cycles {"sleepSeconds":1800}""",
                 """POST /api/pilot/runs {"taskId":"t1","taskListVersion":"v1"}""",
                 "GET /api/pilot/runs/run-1",
                 "POST /api/pilot/runs/run-1/cancel",

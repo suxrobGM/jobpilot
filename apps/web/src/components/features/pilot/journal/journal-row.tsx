@@ -7,14 +7,7 @@ import type {
   PilotJournalRun,
 } from "@jobpilot/contracts/pilot";
 import type { SvgIconComponent } from "@mui/icons-material";
-import {
-  Autorenew,
-  Bolt,
-  NotificationImportant,
-  Rule,
-  Summarize,
-  Terminal,
-} from "@mui/icons-material";
+import { Bolt, NotificationImportant, Rule, Summarize, Terminal } from "@mui/icons-material";
 import { alpha, Box, type ChipProps, Stack, Tooltip, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
 import { formatTokenSplit, humanizeIsoInText } from "@/utils/format";
@@ -24,7 +17,6 @@ export const KIND_META: Record<
   PilotJournalKind,
   { icon: SvgIconComponent; color: ChipProps["color"]; label: string }
 > = {
-  cycle: { icon: Autorenew, color: "primary", label: "Cycle" },
   action: { icon: Bolt, color: "info", label: "Action" },
   question: { icon: NotificationImportant, color: "warning", label: "Question" },
   system: { icon: Terminal, color: "default", label: "System" },

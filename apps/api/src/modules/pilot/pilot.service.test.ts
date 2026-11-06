@@ -116,11 +116,11 @@ describe("PilotService.setAutopilot", () => {
   });
 });
 
-describe("PilotService.recordIdleCycle", () => {
+describe("PilotService.recordCycle", () => {
   it("counts the check as a cycle and plans the next wake", async () => {
     const { svc } = stateService("goals");
     const before = Date.now();
-    const state = await svc.recordIdleCycle("p1", { sleepSeconds: 1800 });
+    const state = await svc.recordCycle("p1", { sleepSeconds: 1800 });
     expect(state.lastCycleAt).toBeInstanceOf(Date);
     expect(state.nextWakeAt?.getTime()).toBeGreaterThanOrEqual(before + 1_800_000);
   });

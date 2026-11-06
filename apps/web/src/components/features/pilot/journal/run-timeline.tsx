@@ -1,11 +1,7 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import {
-  type PilotJournalEntry,
-  type PilotJournalKind,
-  pilotCycleDetailSchema,
-} from "@jobpilot/contracts/pilot";
+import type { PilotJournalEntry, PilotJournalKind } from "@jobpilot/contracts/pilot";
 import {
   Accordion,
   AccordionDetails,
@@ -16,22 +12,22 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { RelativeTime, StatusChip } from "@/components/ui/display";
-import { formatDuration, formatSpanBetween } from "@/utils/format";
+import { RelativeTime } from "@/components/ui/display";
+import { formatSpanBetween } from "@/utils/format";
 import { JournalRow, KIND_META, KIND_ORDER, RunMeta } from "./journal-row";
 
-interface CycleBlock {
-  type: "cycle";
+interface RunBlock {
+  type: "run";
   runId: string;
   entries: PilotJournalEntry[];
 }
 
-type Block = CycleBlock | { type: "entry"; entry: PilotJournalEntry };
+type Block = RunBlock | { type: "entry"; entry: PilotJournalEntry };
 
-/** Each cycle sits at its newest entry's position; cycle-less (host/system) entries stay standalone. */
+/** Each run sits at its newest entry's position; entries without a run (host reports) stand alone. */
 function toBlocks(entries: PilotJournalEntry[]): Block[] {
   const blocks: Block[] = [];
-  const blockByRun = new Map<string, CycleBlock>();
+  const blockByRun = new Map<string, RunBlock>();
 
   for (const entry of entries) {
     if (!entry.runId) {
@@ -43,25 +39,24 @@ function toBlocks(entries: PilotJournalEntry[]): Block[] {
       block.entries.push(entry);
       continue;
     }
-    const created: CycleBlock = { type: "cycle", runId: entry.runId, entries: [entry] };
+    const created: RunBlock = { type: "run", runId: entry.runId, entries: [entry] };
     blockByRun.set(entry.runId, created);
     blocks.push(created);
   }
   return blocks;
 }
 
-interface CycleEntriesProps {
+interface RunEntriesProps {
   entries: PilotJournalEntry[];
 }
 
-/** The `cycle` kind is skipped: the card header already says "Cycle" with its status. */
-function KindSummary(props: CycleEntriesProps): ReactNode {
+function KindSummary(props: RunEntriesProps): ReactNode {
   const { entries } = props;
   const counts = new Map<PilotJournalKind, number>();
   for (const entry of entries) {
     counts.set(entry.kind, (counts.get(entry.kind) ?? 0) + 1);
   }
-  const kinds = KIND_ORDER.filter((kind) => kind !== "cycle" && counts.has(kind));
+  const kinds = KIND_ORDER.filter((kind) => counts.has(kind));
   if (kinds.length === 0) {
     return null;
   }
@@ -80,19 +75,17 @@ function KindSummary(props: CycleEntriesProps): ReactNode {
   );
 }
 
-interface CycleCardProps extends CycleEntriesProps {
+interface RunCardProps extends RunEntriesProps {
   defaultOpen: boolean;
 }
 
-function CycleCard(props: CycleCardProps): ReactElement {
+function RunCard(props: RunCardProps): ReactElement {
   const { entries, defaultOpen } = props;
 
   const chronological = [...entries].reverse();
   const started = chronological[0]?.createdAt;
   const duration =
     entries.length < 2 ? "" : formatSpanBetween(chronological[0].createdAt, entries[0].createdAt);
-  const cycleEntry = entries.find((entry) => entry.kind === "cycle");
-  const detail = cycleEntry && pilotCycleDetailSchema.safeParse(cycleEntry.detail).data;
   const run = entries.find((entry) => entry.run)?.run ?? null;
 
   return (
@@ -100,15 +93,9 @@ function CycleCard(props: CycleCardProps): ReactElement {
       <AccordionSummary>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-            <Typography variant="body1Strong">Cycle</Typography>
-            {detail?.status && <StatusChip domain="cycle" value={detail.status} />}
+            <Typography variant="body1Strong">Run</Typography>
             {started && <RelativeTime value={started} />}
             {duration && <Typography variant="captionMuted">· {duration}</Typography>}
-            {detail?.sleepSeconds != null && (
-              <Typography variant="captionMuted">
-                · sleeps {formatDuration(detail.sleepSeconds)}
-              </Typography>
-            )}
             {run && <RunMeta run={run} />}
           </Stack>
           <KindSummary entries={entries} />
@@ -125,10 +112,10 @@ function CycleCard(props: CycleCardProps): ReactElement {
   );
 }
 
-export function CycleTimeline(props: CycleEntriesProps): ReactElement {
+export function RunTimeline(props: RunEntriesProps): ReactElement {
   const { entries } = props;
   const blocks = toBlocks(entries);
-  let firstCycleSeen = false;
+  let firstRunSeen = false;
 
   return (
     <Stack spacing={1.5}>
@@ -136,9 +123,9 @@ export function CycleTimeline(props: CycleEntriesProps): ReactElement {
         if (block.type === "entry") {
           return <JournalRow key={block.entry.id} entry={block.entry} />;
         }
-        const defaultOpen = !firstCycleSeen;
-        firstCycleSeen = true;
-        return <CycleCard key={block.runId} entries={block.entries} defaultOpen={defaultOpen} />;
+        const defaultOpen = !firstRunSeen;
+        firstRunSeen = true;
+        return <RunCard key={block.runId} entries={block.entries} defaultOpen={defaultOpen} />;
       })}
     </Stack>
   );

@@ -13,7 +13,6 @@ import {
   toJournalEntry,
   writeJournalEntries,
 } from "./journal-entries";
-import { PilotService } from "./pilot.service";
 
 const EXPORT_BATCH = 500;
 
@@ -50,7 +49,6 @@ export class PilotJournalService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly push = inject(WebPushService),
-    private readonly pilot = inject(PilotService),
   ) {}
 
   async appendJournal(userId: string, body: CreatePilotJournalInput) {
@@ -58,7 +56,7 @@ export class PilotJournalService {
     return { items: await this.publishAppended(userId, rows) };
   }
 
-  /** After the entries commit: stream them, push alerts, and publish the state a cycle moved. */
+  /** After the entries commit: stream them and push alerts. */
   async publishAppended(userId: string, rows: PilotJournalEntry[]) {
     const items = publishJournalEntries(userId, rows, await loadRuns(this.prisma, userId, rows));
     // The host journals orchestrator failures as system entries; push them so they reach the phone.
@@ -69,9 +67,6 @@ export class PilotJournalService {
         url: "/pilot",
         tag: "pilot-system",
       });
-    }
-    if (rows.some((row) => row.kind === "cycle")) {
-      await this.pilot.publishCurrentState(userId);
     }
     return items;
   }

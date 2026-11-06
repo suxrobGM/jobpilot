@@ -108,7 +108,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
     });
 
     const expiredQuestions = await tx.pilotQuestion.findMany({
-      where: { userId, status: "open", expiresAt: { not: null, lt: now } },
+      where: { userId, status: "open", expiresAt: { lt: now } },
       take: GATHER_CAP,
       select: { id: true, subjectType: true, subjectId: true },
     });

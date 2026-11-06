@@ -4,7 +4,6 @@ import { journalDetailSchema, tokenUsageSchema } from "./run";
 import { pilotSubjectTypeSchema } from "./tasks";
 
 export const PILOT_JOURNAL_KINDS = [
-  "cycle",
   "action",
   "question",
   "system",
@@ -59,18 +58,10 @@ export type PilotJournalEntry = z.infer<typeof pilotJournalEntrySchema>;
 export type PilotJournalPage = z.infer<typeof pilotJournalPageSchema>;
 export type PilotJournalRun = z.infer<typeof pilotJournalRunSchema>;
 
-/** An idle check: the host found nothing to do and sleeps this long. */
-export const recordIdleCycleSchema = z.object({ sleepSeconds: z.number().int().min(0) });
-export type RecordIdleCycleInput = z.infer<typeof recordIdleCycleSchema>;
+/** One host loop pass, with or without a run; the host sleeps this long before the next. */
+export const recordCycleSchema = z.object({ sleepSeconds: z.number().int().min(0) });
+export type RecordCycleInput = z.infer<typeof recordCycleSchema>;
 
-/** A cycle's outcome; an empty one is reported in host health, never journaled. */
+/** Reported in host health only. */
 const pilotCycleStatusSchema = z.enum(["ok", "empty", "error"]);
 export type PilotCycleStatus = z.infer<typeof pilotCycleStatusSchema>;
-
-/** Optional fields: stuck-recovery cycles usually journal an empty detail. */
-export const pilotCycleDetailSchema = z
-  .object({
-    status: pilotCycleStatusSchema.optional(),
-    sleepSeconds: z.number().int().optional(),
-  })
-  .loose();

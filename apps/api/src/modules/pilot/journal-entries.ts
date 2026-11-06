@@ -3,7 +3,6 @@ import {
   journalDetailSchema,
   type PilotJournalEntry,
   type PilotJournalRun,
-  pilotCycleDetailSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { toInputJson } from "@/common/json";
@@ -13,8 +12,7 @@ import type {
   Prisma,
 } from "@/generated/prisma/client";
 
-type JournalTransaction = Pick<Prisma.TransactionClient, "pilotJournalEntry" | "pilotState">;
-type CycleTransaction = Pick<Prisma.TransactionClient, "pilotState">;
+type JournalTransaction = Pick<Prisma.TransactionClient, "pilotJournalEntry">;
 
 export type RunsById = ReadonlyMap<string, PilotJournalRun>;
 
@@ -25,26 +23,7 @@ export function toJournalEntry(row: PilotJournalEntryModel, runs: RunsById): Pil
   return { ...row, detail: journalDetailSchema.parse(row.detail), run };
 }
 
-/**
- * Counts finished pilot cycles: journaled or idle, each advances board rotation. A null sleep
- * (stuck recovery) leaves no wake planned.
- */
-export function recordCycle(
-  tx: CycleTransaction,
-  userId: string,
-  cycles: number,
-  sleepSeconds: number | null,
-  now: Date,
-) {
-  const nextWakeAt = sleepSeconds === null ? null : new Date(now.getTime() + sleepSeconds * 1000);
-  return tx.pilotState.upsert({
-    where: { userId },
-    create: { userId, lastCycleAt: now, cycleCount: cycles, nextWakeAt },
-    update: { lastCycleAt: now, cycleCount: { increment: cycles }, nextWakeAt },
-  });
-}
-
-/** Runs inside the caller's transaction, so cycle accounting commits with the entries. */
+/** Runs inside the caller's transaction. */
 export async function writeJournalEntries(
   tx: JournalTransaction,
   userId: string,
@@ -65,12 +44,6 @@ export async function writeJournalEntries(
   await tx.pilotJournalEntry.createMany({
     data: rows.map((row) => ({ ...row, detail: toInputJson(row.detail) })),
   });
-  const cycles = rows.filter((entry) => entry.kind === "cycle");
-  const last = cycles.at(-1);
-  if (last) {
-    const sleepSeconds = pilotCycleDetailSchema.safeParse(last.detail).data?.sleepSeconds ?? null;
-    await recordCycle(tx, userId, cycles.length, sleepSeconds, now);
-  }
   return rows;
 }
 

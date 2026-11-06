@@ -69,8 +69,6 @@ public interface IPilotSession
 
     Task CancelRunAsync(string runId, CancellationToken ct);
 
-    /// <summary>Posts the run's measured token usage, then the cycle entry observers treat as the cycle's end.</summary>
-    Task RecordCycleAsync(string runId, string summary, CycleDetail detail, CancellationToken ct);
-
-    Task RecordIdleCycleAsync(int sleepSeconds, CancellationToken ct);
+    /// <summary>Ends a cycle: posts a run's measured token usage first, if the cycle had a run.</summary>
+    Task RecordCycleAsync(string? runId, int sleepSeconds, CancellationToken ct);
 }

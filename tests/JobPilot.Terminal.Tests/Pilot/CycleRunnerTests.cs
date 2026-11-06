@@ -27,7 +27,7 @@ public class CycleRunnerTests
 
         Assert.Equal(["start", "sleep:15", "cycle", "wait"], session.Actions);
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
-        Assert.Equal(["ok/30: Task 1 - done."], session.Cycles);
+        Assert.Equal(["run-1/30"], session.Cycles);
         Assert.Empty(session.CancelledRuns);
         Assert.Equal(CycleStatus.Ok, runner.LastCycleStatus);
         Assert.True(runner.Conducting);
@@ -85,7 +85,7 @@ public class CycleRunnerTests
         var runner = Runner(session);
 
         Assert.Equal(TimeSpan.FromSeconds(30), await RunAsync(runner));
-        Assert.Equal(["error/30: Task 1 - failed."], session.Cycles);
+        Assert.Equal(["run-1/30"], session.Cycles);
         Assert.Equal(CycleStatus.Error, runner.LastCycleStatus);
     }
 
@@ -99,8 +99,7 @@ public class CycleRunnerTests
 
         Assert.Empty(session.Actions);
         Assert.Equal(TimeSpan.FromSeconds(1800), sleep);
-        Assert.Empty(session.Cycles);
-        Assert.Equal([1800], session.IdleCycles);
+        Assert.Equal(["idle/1800"], session.Cycles);
         Assert.Equal(CycleStatus.Empty, runner.LastCycleStatus);
     }
 
@@ -159,7 +158,7 @@ public class CycleRunnerTests
         Assert.Null(sleep);
         Assert.Equal(["cycle", "wait"], session.Actions);
         Assert.Equal(["run-1"], session.CancelledRuns);
-        Assert.Equal(["error/30: Task 1 - no result, cancelled by the host."], session.Cycles);
+        Assert.Equal(["run-1/30"], session.Cycles);
         Assert.Equal(0, runner.ConsecutiveRestarts);
     }
 
@@ -267,7 +266,7 @@ public class CycleRunnerTests
 
         Assert.Equal(["cycle", "wait"], session.Actions);
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
-        Assert.Equal(["ok/30: Task 1 - done."], session.Cycles);
+        Assert.Equal(["run-1/30"], session.Cycles);
     }
 
     [Fact]

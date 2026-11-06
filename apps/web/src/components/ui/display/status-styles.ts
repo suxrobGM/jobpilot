@@ -11,7 +11,7 @@ import type {
   CONTACT_LINKEDIN_CONNECTIONS,
   NetworkingMessageStatus,
 } from "@jobpilot/contracts/networking";
-import type { PilotCycleStatus, PilotQuestion, PromotionStatus } from "@jobpilot/contracts/pilot";
+import type { PilotQuestion, PromotionStatus } from "@jobpilot/contracts/pilot";
 import type { Role } from "@jobpilot/contracts/role";
 import type {
   UpworkInboxKind,
@@ -92,12 +92,6 @@ const promotion: Styles<PromotionStatus> = {
   expired: { label: "Expired", color: "default" },
 };
 
-const cycle: Styles<PilotCycleStatus> = {
-  ok: { label: "OK", color: "success" },
-  empty: { label: "Nothing to do", color: "default" },
-  error: { label: "Error", color: "error" },
-};
-
 const classification: Styles<Classification> = {
   interviewing: { label: "Interviewing", color: "primary" },
   offer: { label: "Offer", color: "success" },
@@ -162,7 +156,6 @@ const STATUS_STYLES = {
   networking,
   connection,
   promotion,
-  cycle,
   classification,
   upworkProposal,
   upworkOutcome,

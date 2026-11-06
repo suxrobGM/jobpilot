@@ -1,7 +1,7 @@
 import {
   type PilotState,
   pilotInstructionsConfigSchema,
-  type RecordIdleCycleInput,
+  type RecordCycleInput,
   type UpdatePilotSettingsInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
@@ -10,7 +10,6 @@ import { conflict } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
-import { recordCycle } from "./journal-entries";
 import { costByTaskType, countAppliedToday, countSentToday } from "./pilot.stats";
 import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
@@ -146,13 +145,19 @@ export class PilotService {
     return this.publishState(row);
   }
 
-  /** Counts as a cycle like a journaled one, so board rotation still advances while idle. */
-  async recordIdleCycle(userId: string, body: RecordIdleCycleInput) {
-    const row = await recordCycle(this.prisma, userId, 1, body.sleepSeconds, new Date());
+  /** Every cycle counts, idle or not, so board rotation advances while idle. */
+  async recordCycle(userId: string, body: RecordCycleInput) {
+    const now = new Date();
+    const nextWakeAt = new Date(now.getTime() + body.sleepSeconds * 1000);
+    const row = await this.prisma.pilotState.upsert({
+      where: { userId },
+      create: { userId, lastCycleAt: now, cycleCount: 1, nextWakeAt },
+      update: { lastCycleAt: now, cycleCount: { increment: 1 }, nextWakeAt },
+    });
     return this.publishState(row);
   }
 
-  /** For writes made elsewhere, such as a journaled cycle. */
+  /** For state writes made by other services. */
   async publishCurrentState(userId: string) {
     const row = await this.prisma.pilotState.findUnique({ where: { userId } });
     if (row) {

@@ -134,19 +134,19 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         await session.SendCycleAsync(settings, runId, ct);
         var result = await WaitForResultAsync(settings, runId, ct);
         await TrackStreaksAsync(result, ct);
-        return await RecordRunAsync(task, runId, sleep, result, ct);
+        return await RecordRunAsync(runId, sleep, result, ct);
     }
 
     private async Task<TimeSpan?> FinishEmptyAsync(int sleep, CancellationToken ct)
     {
-        await session.RecordIdleCycleAsync(sleep, ct);
+        await session.RecordCycleAsync(null, sleep, ct);
         LastCycleAt = DateTimeOffset.UtcNow;
         LastCycleStatus = CycleStatus.Empty;
         return TimeSpan.FromSeconds(sleep);
     }
 
     /// <summary>A run the agent never finished is cancelled here, so it does not hold its task.</summary>
-    private async Task<TimeSpan?> RecordRunAsync(PilotTask task, string runId, int sleep, WaitResult result, CancellationToken ct)
+    private async Task<TimeSpan?> RecordRunAsync(string runId, int sleep, WaitResult result, CancellationToken ct)
     {
         var posted = result.Outcome is WaitOutcome.Finished;
         if (!posted)
@@ -154,9 +154,8 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
             await session.CancelRunAsync(runId, ct);
         }
 
+        await session.RecordCycleAsync(runId, sleep, ct);
         var ok = posted && result.RunOutcome == "done";
-        var ending = posted ? result.RunOutcome : "no result, cancelled by the host";
-        await session.RecordCycleAsync(runId, $"{task.Title} - {ending}.", new CycleDetail(ok ? "ok" : "error", sleep), ct);
 
         LastCycleAt = DateTimeOffset.UtcNow;
         LastCycleStatus = ok ? CycleStatus.Ok : CycleStatus.Error;
