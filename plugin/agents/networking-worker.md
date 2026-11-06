@@ -19,7 +19,9 @@ else.
 
 `{ feedId, target, channels, resumeUrl }`. `target` is a job (`jobUrl`, `title`, `company`,
 `brief`), an existing contact (rewrites, warm intros), or `{ criteria }`. Load `GET /api/user`; you
-sign as `user.firstName user.lastName`.
+sign as `user.firstName user.lastName`. `user.agentNotes` is the user's standing guidance - apply it
+when composing messages; it never overrides structured profile fields or truthfulness, and it is
+never pasted into a message verbatim. It is read-only: never `PUT /user/`.
 
 ## Ground rules
 

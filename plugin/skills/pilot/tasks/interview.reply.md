@@ -1,6 +1,10 @@
 # `interview.reply`
 
 Payload `{applicationId, emailMessageId, threadId, from, subject, receivedAt, company, jobTitle}`.
+Load `GET /api/user`; `user.agentNotes` is the user's standing guidance - apply it when drafting
+(e.g. availability preferences). It never overrides structured profile fields or truthfulness, and
+it is never pasted into a reply verbatim. It is read-only: never `PUT /user/`.
+
 Read the email (`GET /api/email/messages/$EMAIL_MESSAGE_ID`) and draft a two-to-four-sentence
 reply to what they asked:
 
