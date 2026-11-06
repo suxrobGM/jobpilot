@@ -10,7 +10,7 @@ import { deletedResponseSchema } from "@/types/response";
 import { adminJobListingPageSchema, adminJobListingSchema } from "./job-listing.schema";
 import { JobListingService } from "./job-listing.service";
 
-const svc = container.get(JobListingService);
+const listings = container.get(JobListingService);
 
 /** Moderation for the public job index. Register new admin controllers in `admin.guard.test.ts`. */
 export const adminJobListingController = new Elysia({
@@ -18,7 +18,7 @@ export const adminJobListingController = new Elysia({
   detail: { tags: ["Admin"] },
 })
   .use(requireRole("admin"))
-  .get("/", ({ query }) => svc.listForAdmin(query), {
+  .get("/", ({ query }) => listings.listForAdmin(query), {
     query: adminJobListingQuerySchema,
     response: adminJobListingPageSchema,
     detail: {
@@ -27,7 +27,7 @@ export const adminJobListingController = new Elysia({
         "Returns a page of public job listings, including hidden ones. The moderation view of the deduped job index.",
     },
   })
-  .patch("/:id", ({ params, body }) => svc.setStatus(params.id, body.status), {
+  .patch("/:id", ({ params, body }) => listings.setStatus(params.id, body.status), {
     params: idParam,
     body: adminJobListingPatchSchema,
     response: adminJobListingSchema,
@@ -37,7 +37,7 @@ export const adminJobListingController = new Elysia({
         "Sets a listing's moderation status. A hidden listing disappears from the public /jobs pages but is kept, so a re-scrape does not resurrect it as published.",
     },
   })
-  .delete("/:id", ({ params }) => svc.remove(params.id), {
+  .delete("/:id", ({ params }) => listings.remove(params.id), {
     params: idParam,
     response: deletedResponseSchema,
     detail: {

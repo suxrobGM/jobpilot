@@ -45,7 +45,7 @@ export class PipelineService {
   ) {}
 
   /** The rows a further-along copy of the same posting hides; few, since only repeats count. */
-  private async shadowed(userId: string): Promise<string[]> {
+  private async shadowedIds(userId: string): Promise<string[]> {
     const repeated = await this.prisma.job.groupBy({
       by: ["url"],
       where: { userId, feed: JOB_FEEDS },
@@ -59,7 +59,7 @@ export class PipelineService {
     return shadowedJobIds(rows);
   }
 
-  private async where(userId: string, filters: PipelineFilters): Promise<Prisma.JobWhereInput> {
+  private async jobWhere(userId: string, filters: PipelineFilters): Promise<Prisma.JobWhereInput> {
     const { feedId, board, search } = filters;
     // Upwork jobs show only when the Upwork board is picked.
     const boardWhere: Prisma.JobWhereInput = board
@@ -68,7 +68,7 @@ export class PipelineService {
     return {
       userId,
       feed: JOB_FEEDS,
-      id: { notIn: await this.shadowed(userId) },
+      id: { notIn: await this.shadowedIds(userId) },
       ...(feedId && { feedId }),
       ...boardWhere,
       ...(search && {
@@ -81,9 +81,9 @@ export class PipelineService {
     };
   }
 
-  async listJobs(userId: string, query: PipelineJobsQuery) {
+  async list(userId: string, query: PipelineJobsQuery) {
     const where = {
-      ...(await this.where(userId, query)),
+      ...(await this.jobWhere(userId, query)),
       status: { in: PIPELINE_VIEW_STATUSES[query.view] },
     };
     const [rows, total] = await Promise.all([
@@ -101,7 +101,10 @@ export class PipelineService {
   /** Needs you as refs only, for the always-mounted nav badge. */
   async needsYouRefs(userId: string) {
     return this.prisma.job.findMany({
-      where: { ...(await this.where(userId, {})), status: { in: PIPELINE_VIEW_STATUSES.needsYou } },
+      where: {
+        ...(await this.jobWhere(userId, {})),
+        status: { in: PIPELINE_VIEW_STATUSES.needsYou },
+      },
       orderBy: RECENT_ORDER,
       take: MAX_PAGE_SIZE,
       select: { feedId: true, key: true },
@@ -117,7 +120,7 @@ export class PipelineService {
     let updated = 0;
     for (const row of rows) {
       try {
-        await this.bulkOne(userId, row.feedId, row.key, input.action);
+        await this.applyBulkAction(userId, row.feedId, row.key, input.action);
         updated += 1;
       } catch (error) {
         if (!(error instanceof HttpError)) throw error;
@@ -126,7 +129,7 @@ export class PipelineService {
     return { updated, refused: input.ids.length - updated };
   }
 
-  private bulkOne(
+  private applyBulkAction(
     userId: string,
     feedId: string,
     key: string,
@@ -143,7 +146,7 @@ export class PipelineService {
   async counts(userId: string, filters: PipelineFilters) {
     const groups = await this.prisma.job.groupBy({
       by: ["status"],
-      where: await this.where(userId, filters),
+      where: await this.jobWhere(userId, filters),
       _count: { _all: true },
     });
     const byStatus = new Map(groups.map((group) => [group.status, group._count._all]));

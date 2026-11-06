@@ -23,7 +23,7 @@ export const pipelineController = new Elysia({
   detail: { tags: ["Pipeline"] },
 })
   .use(authGuard)
-  .get("/jobs", ({ user, query }) => pipeline.listJobs(user.id, query), {
+  .get("/jobs", ({ user, query }) => pipeline.list(user.id, query), {
     query: pipelineJobsQuerySchema,
     response: pipelineJobListSchema,
     detail: {

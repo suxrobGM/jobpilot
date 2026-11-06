@@ -66,7 +66,7 @@ export class JobListingService {
     return { skills: facets.slice(0, FACET_LIMIT) };
   }
 
-  async bySlug(slug: string) {
+  async getBySlug(slug: string) {
     const listing = await this.findPublished(slug, DETAIL_SELECT);
     const sources = listing.sources.map((source) => ({
       ...source,
