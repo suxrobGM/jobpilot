@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
-import { SettingsTabs } from "@/components/features/settings";
+import { Box } from "@mui/material";
+import { SettingsNav } from "@/components/features/settings";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 interface SettingsLayoutProps {
@@ -9,13 +10,33 @@ interface SettingsLayoutProps {
 export default function SettingsLayout(props: SettingsLayoutProps): ReactElement {
   const { children } = props;
   return (
-    <PageShell maxWidth="md">
+    <PageShell maxWidth="lg">
       <PageHeader
         title="Settings"
-        description="Profile, email, notifications, credentials, job boards, sign-in security, and how the pilot runs."
+        description="Your profile, how the pilot works, and your account."
       />
-      <SettingsTabs />
-      {children}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          gap: { xs: 2, md: 4 },
+          alignItems: "flex-start",
+        }}
+      >
+        <SettingsNav />
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          {children}
+        </Box>
+      </Box>
     </PageShell>
   );
 }

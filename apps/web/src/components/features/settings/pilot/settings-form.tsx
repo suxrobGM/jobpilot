@@ -49,7 +49,7 @@ export function PilotSettingsForm(): ReactElement {
   }
   // The form takes its defaults once, so it mounts only after the state has loaded.
   return (
-    <SectionLayout anchors={ANCHORS}>
+    <SectionLayout anchors={ANCHORS} railSide="end">
       <SettingsEditor state={stateQuery.data} />
     </SectionLayout>
   );
