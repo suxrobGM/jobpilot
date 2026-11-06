@@ -3,7 +3,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
 import type { JobService } from "@/modules/feed/jobs/job.service";
 import type { WebPushService } from "@/modules/web-push/web-push.service";
-import type { PilotJournalService } from "../journal.service";
+import type { PilotJournalService } from "../thread/journal.service";
 import { TaskListService } from "./task-list.service";
 import { describe, expect, it } from "bun:test";
 

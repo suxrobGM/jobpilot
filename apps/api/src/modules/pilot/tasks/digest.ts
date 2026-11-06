@@ -1,7 +1,7 @@
 import { DAY_MS, minutesOfDay, startOfDay } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { WebPushService } from "@/modules/web-push/web-push.service";
-import type { PilotJournalService } from "../journal.service";
+import type { PilotJournalService } from "../thread/journal.service";
 
 const DIGEST_HOUR_UTC = 7;
 

@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { WebPushService } from "@/modules/web-push/web-push.service";
-import type { PilotJournalService } from "./journal.service";
+import type { PilotJournalService } from "../pilot/thread/journal.service";
 import { PromotionService } from "./promotion.service";
 import { describe, expect, it } from "bun:test";
 

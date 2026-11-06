@@ -5,8 +5,8 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { JobService } from "@/modules/feed/jobs/job.service";
 import { WebPushService } from "@/modules/web-push/web-push.service";
-import { PilotJournalService } from "../journal.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
+import { PilotJournalService } from "../thread/journal.service";
 import { allowedToday } from "./allowed-today";
 import { buildTaskList, isPipelineQuiet, type TaskListInput } from "./build";
 import { writeDigestIfDue } from "./digest";
@@ -15,7 +15,7 @@ import {
   gatherPausedFeeds,
   gatherQueueScores,
   gatherScorePending,
-} from "./gather-feeds";
+} from "./gather/feeds";
 import {
   gatherAnsweredQuestions,
   gatherInbox,
@@ -23,22 +23,22 @@ import {
   gatherInterviewReplies,
   gatherJobAlerts,
   gatherUpworkSync,
-} from "./gather-inbox";
+} from "./gather/inbox";
 import {
   attachWarmContacts,
   gatherApprovedJobs,
   gatherBoardDiagnoses,
   gatherWarmIntroCandidates,
-} from "./gather-jobs";
+} from "./gather/jobs";
 import {
   gatherApprovedNetworking,
   gatherApprovedPromotions,
   gatherDuePlatforms,
   gatherFollowups,
-} from "./gather-outreach";
-import { gatherChat, gatherRequests } from "./gather-requests";
-import { gatherResearch } from "./gather-research";
-import { gatherDueSearches, gatherSetup } from "./gather-searches";
+} from "./gather/outreach";
+import { gatherChat, gatherRequests } from "./gather/requests";
+import { gatherResearch } from "./gather/research";
+import { gatherDueSearches, gatherSetup } from "./gather/searches";
 import { promoteScoredPendingJobs, runExpiry } from "./maintenance";
 import { parseTaskListSnapshot } from "./snapshot";
 

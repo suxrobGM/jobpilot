@@ -3,13 +3,13 @@ import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { APPLIED_DUPLICATE_WINDOW_DAYS } from "@/modules/scoring/applied-duplicates";
-import { JobLookupService } from "./job-lookup.service";
 import {
   existingJobsBodySchema,
   existingJobsSchema,
   similarJobsBodySchema,
   similarJobsSchema,
-} from "./pilot.schema";
+} from "../pilot.schema";
+import { JobLookupService } from "./job-lookup.service";
 
 const lookup = container.get(JobLookupService);
 

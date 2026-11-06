@@ -2,7 +2,7 @@ import type { PilotTask, TaskList } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { subscribe } from "@/common/sse/server";
 import type { PilotJournalEntry, PrismaClient } from "@/generated/prisma/client";
-import type { PilotJournalService } from "../journal.service";
+import type { PilotJournalService } from "../thread/journal.service";
 import { RunService } from "./run.service";
 import { describe, expect, it } from "bun:test";
 

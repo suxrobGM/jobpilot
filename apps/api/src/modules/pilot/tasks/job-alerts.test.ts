@@ -1,6 +1,6 @@
 import { buildTaskList } from "./build";
 import { base, cfg, job } from "./builders";
-import { jobAlertsDue } from "./gather-inbox";
+import { jobAlertsDue } from "./gather/inbox";
 import { describe, expect, it } from "bun:test";
 
 // In UTC the 08:00 slot has struck and 17:00 is ahead.

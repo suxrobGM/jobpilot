@@ -10,7 +10,7 @@ import type {
   PilotSubjectType,
   Prisma,
 } from "@/generated/prisma/client";
-import { jobSubjectId } from "../tasks/run-history";
+import { jobSubjectId } from "../runs/run-history";
 
 interface RequestSubject {
   subjectType: PilotSubjectType;

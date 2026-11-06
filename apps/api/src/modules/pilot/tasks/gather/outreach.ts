@@ -1,7 +1,7 @@
 import type { PilotConfig, TaskPayload } from "@jobpilot/contracts/pilot";
 import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { GATHER_CAP } from "./run-history";
+import { GATHER_CAP } from "../../runs/run-history";
 import { networkingSendWhere, promotionPostWhere } from "./workable";
 
 /** The build step adds the channel and mode, which come from config rather than the row. */

@@ -14,7 +14,7 @@ import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact/contact.mapper";
 import { ensureFeedOwned } from "@/modules/feed/feed.utils";
-import { publishJournalEntries, writeJournalEntries } from "@/modules/pilot/journal-entries";
+import { publishJournalEntries, writeJournalEntries } from "@/modules/pilot/thread/journal-entries";
 
 export interface NetworkingMessageFilters {
   feedId?: string;

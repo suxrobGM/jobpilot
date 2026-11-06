@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
-import { researchStatusSchema } from "./pilot.schema";
+import { researchStatusSchema } from "../pilot.schema";
 import { ResearchService } from "./research.service";
 
 const research = container.get(ResearchService);

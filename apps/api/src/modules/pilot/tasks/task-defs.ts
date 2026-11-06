@@ -1,5 +1,5 @@
 import type { PilotTask, TaskPayload, TaskSubjectType, TaskType } from "@jobpilot/contracts/pilot";
-import { jobSubjectId } from "./run-history";
+import { jobSubjectId } from "../runs/run-history";
 
 const CHAT_PRIORITY = 1100;
 /** Above answered questions (1000): the user asked for this by name. */

@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { buildTaskList } from "./build";
 import { base, job, question } from "./builders";
-import { gatherChat } from "./gather-requests";
+import { gatherChat } from "./gather/requests";
 import { makeTask } from "./task-defs";
 import { describe, expect, it } from "bun:test";
 

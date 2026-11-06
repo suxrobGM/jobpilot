@@ -16,10 +16,10 @@ import {
   type PilotRun as PilotRunModel,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { toPilotChange } from "./changes/change-row";
+import { toPilotChange } from "../changes/change-row";
+import { toPilotQuestion } from "../questions/question.service";
+import { toPilotRequest } from "../requests/request-row";
 import { toJournalEntry } from "./journal-entries";
-import { toPilotQuestion } from "./question.service";
-import { toPilotRequest } from "./requests/request-row";
 
 /** Cycle entries are the loop's bookkeeping; questions arrive as their own rows. */
 const THREAD_KINDS: PilotJournalKind[] = ["action", "digest", "system", "correction"];

@@ -25,17 +25,17 @@ import {
   startApplying,
 } from "@/modules/feed/jobs/apply-guard";
 import { publishJob } from "@/modules/feed/jobs/job-events";
-import { PilotJournalService } from "../journal.service";
-import { writeJournalEntries } from "../journal-entries";
 import { publishRequest } from "../requests/request.service";
 import { finishRequests } from "../requests/request-row";
-import { parseTaskListSnapshot } from "./snapshot";
 import {
   networkingSendWhere,
   promotionPostWhere,
   reviewPausedWhere,
   scorePendingWhere,
-} from "./workable";
+} from "../tasks/gather/workable";
+import { parseTaskListSnapshot } from "../tasks/snapshot";
+import { PilotJournalService } from "../thread/journal.service";
+import { writeJournalEntries } from "../thread/journal-entries";
 
 const RUN_TTL_MS = 15 * 60 * 1000;
 /** Counted from `startedAt`, so a stuck driver that keeps heartbeating still expires. */

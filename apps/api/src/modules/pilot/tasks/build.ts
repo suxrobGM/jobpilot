@@ -8,10 +8,10 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
 import { allowedToday } from "./allowed-today";
-import type { TaskJob } from "./gather-jobs";
-import type { Followup } from "./gather-outreach";
-import type { ResearchTask } from "./gather-research";
-import type { DueSearch } from "./gather-searches";
+import type { TaskJob } from "./gather/jobs";
+import type { Followup } from "./gather/outreach";
+import type { ResearchTask } from "./gather/research";
+import type { DueSearch } from "./gather/searches";
 import { makeTask, makeTasks, TASK_DEFS } from "./task-defs";
 
 const MAX_TASKS = 10;

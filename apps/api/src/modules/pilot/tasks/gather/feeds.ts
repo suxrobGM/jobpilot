@@ -2,7 +2,12 @@ import { feedConfigSchema } from "@jobpilot/contracts/feed";
 import type { TaskPayload, TaskType } from "@jobpilot/contracts/pilot";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import type { JobStatus, Prisma, PrismaClient } from "@/generated/prisma/client";
-import { GATHER_CAP, latestRunBySubject, ranRecently, withoutRecentRuns } from "./run-history";
+import {
+  GATHER_CAP,
+  latestRunBySubject,
+  ranRecently,
+  withoutRecentRuns,
+} from "../../runs/run-history";
 import { NEEDS_WORKER_VISIT, reviewPausedWhere, scorePendingWhere } from "./workable";
 
 const BATCH_SIZE = 5;

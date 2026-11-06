@@ -4,8 +4,8 @@ import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { parseJobRef, revertApplyingJobs } from "@/modules/feed/jobs/apply-guard";
 import type { JobService } from "@/modules/feed/jobs/job.service";
 import { finishRequests } from "../requests/request-row";
+import { GATHER_CAP, parseJobSubject } from "../runs/run-history";
 import { SERVER_SKIP_REASONS } from "../skip-reasons";
-import { GATHER_CAP, parseJobSubject } from "./run-history";
 
 /** An `applying` job with no open run and no update for this long lost its driver. */
 const STALE_APPLYING_MS = 30 * 60 * 1000;

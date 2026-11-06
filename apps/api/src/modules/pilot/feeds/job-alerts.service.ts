@@ -2,9 +2,9 @@ import { nextDailyRun, type PilotJobAlerts, pilotConfigSchema } from "@jobpilot/
 import { inject, injectable } from "@needle-di/core";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
-import { PilotService } from "./pilot.service";
-import { pendingJobAlertsWhere } from "./tasks/gather-inbox";
-import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
+import { PilotService } from "../pilot.service";
+import { pendingJobAlertsWhere } from "../tasks/gather/inbox";
+import { TASK_LIST_SNAPSHOT_RESET } from "../tasks/snapshot";
 
 @injectable()
 export class JobAlertsService {

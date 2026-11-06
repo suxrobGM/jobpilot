@@ -1,7 +1,7 @@
 import { newTokens, sumTokenUsage, tokenUsage } from "@jobpilot/contracts/pilot";
 import { DAY_MS, startOfDay } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { isCrash } from "./tasks/run-history";
+import { isCrash } from "./runs/run-history";
 
 /** Runs older than a week describe a version of the agent you are no longer running. */
 export const COST_WINDOW_MS = 7 * DAY_MS;

@@ -7,8 +7,8 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
+import { createPilotJournalResponseSchema } from "../pilot.schema";
 import { PilotJournalService } from "./journal.service";
-import { createPilotJournalResponseSchema } from "./pilot.schema";
 
 const journal = container.get(PilotJournalService);
 const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);

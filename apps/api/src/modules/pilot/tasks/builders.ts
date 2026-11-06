@@ -7,9 +7,9 @@ import {
 } from "@jobpilot/contracts/pilot";
 import type { z } from "zod/v4";
 import type { TaskListInput } from "./build";
-import type { TaskJob } from "./gather-jobs";
-import type { Followup } from "./gather-outreach";
-import type { ResearchTask } from "./gather-research";
+import type { TaskJob } from "./gather/jobs";
+import type { Followup } from "./gather/outreach";
+import type { ResearchTask } from "./gather/research";
 
 type ConfigOverrides = z.input<typeof pilotConfigSchema>;
 type WarmContact = NonNullable<TaskJob["warmContacts"]>[number];

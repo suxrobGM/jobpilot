@@ -7,8 +7,8 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
-import { isFeedPaused } from "../feeds";
-import { GATHER_CAP, latestRun, ranRecently, withoutConsumingRuns } from "./run-history";
+import { GATHER_CAP, latestRun, ranRecently, withoutConsumingRuns } from "../../runs/run-history";
+import { isFeedPaused } from "./feed-paused";
 
 const INBOX_BATCH = 10;
 const UPWORK_SYNC_STALE_MS = 6 * HOUR_MS;

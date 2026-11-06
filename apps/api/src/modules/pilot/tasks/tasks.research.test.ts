@@ -2,7 +2,7 @@ import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import { buildTaskList } from "./build";
 import { base, findTask, job, research } from "./builders";
 import { pilotSearchRow, service } from "./fakes";
-import { researchTrigger } from "./gather-research";
+import { researchTrigger } from "./gather/research";
 import { describe, expect, it } from "bun:test";
 
 const NOW = new Date("2026-11-04T12:00:00Z");

@@ -3,7 +3,7 @@ import { DAY_MS } from "@/common/date/buckets";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { PrismaClient } from "@/generated/prisma/client";
 import { findFuzzyDuplicates } from "@/modules/scoring/applied-duplicates";
-import type { ExistingJobsBody, SimilarJobsBody } from "./pilot.schema";
+import type { ExistingJobsBody, SimilarJobsBody } from "../pilot.schema";
 
 /** The fuzzy scan runs in-process, so it has to stay bounded. */
 const MAX_CANDIDATES = 2000;

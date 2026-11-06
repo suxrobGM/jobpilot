@@ -3,14 +3,14 @@ import { container } from "@/common/di/container";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
-import { expireAbandonedRuns } from "./maintenance";
+import { expireAbandonedRuns } from "../tasks/maintenance";
 
 /** Every 10 minutes: task-list refreshes only expire a running pilot's runs, not a stopped one's. */
 export const expiryJob = cron({
   name: "pilot-run-expiry",
   pattern: "*/10 * * * *",
   run() {
-    // Production only, like the cleanup job: a dev host shares the remote database.
+    // Production only, like the retention job: a dev host shares the remote database.
     if (env.NODE_ENV !== "production") {
       return;
     }

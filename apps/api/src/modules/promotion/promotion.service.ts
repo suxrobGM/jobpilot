@@ -13,7 +13,7 @@ import { conflict, findOwned, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { PrismaClient, type PromotionPost } from "@/generated/prisma/client";
 import { WebPushService } from "@/modules/web-push/web-push.service";
-import { PilotJournalService } from "./journal.service";
+import { PilotJournalService } from "../pilot/thread/journal.service";
 
 interface PromotionsQuery extends PaginationQuery {
   status?: PromotionStatus;

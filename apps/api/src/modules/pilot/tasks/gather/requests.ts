@@ -1,12 +1,12 @@
 import type { CreatePilotRequestInput, PilotConfig, PilotTask } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { publishRequest } from "../requests/request.service";
-import { parseRequest } from "../requests/request-row";
-import { applyTask } from "./build";
-import { gatherInbox, jobAlertsPayload } from "./gather-inbox";
-import { findApprovedJob } from "./gather-jobs";
-import { researchPayload } from "./gather-research";
-import { makeTask, REQUEST_PRIORITY } from "./task-defs";
+import { publishRequest } from "../../requests/request.service";
+import { parseRequest } from "../../requests/request-row";
+import { applyTask } from "../build";
+import { makeTask, REQUEST_PRIORITY } from "../task-defs";
+import { gatherInbox, jobAlertsPayload } from "./inbox";
+import { findApprovedJob } from "./jobs";
+import { researchPayload } from "./research";
 
 /** Requests waiting at once; more just wait a cycle. */
 const REQUEST_BATCH = 20;

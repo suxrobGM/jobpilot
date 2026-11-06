@@ -1,7 +1,7 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "./run-history";
+import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "../../runs/run-history";
 
 /** With apply room left, an idle search reruns early, and setup refills, at most this often. */
 const IDLE_RERUN_MS = 6 * HOUR_MS;
