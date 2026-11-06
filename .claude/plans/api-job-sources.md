@@ -16,7 +16,7 @@ User decisions:
 
 1. Demand-driven only. Runs happen on campaign creation/resume and during pilot agenda refresh.
    No cron poller in v1.
-2. API sources are `JobBoard` rows with `kind = "api"`, shown in the existing /boards UI with an
+2. API sources are `JobBoard` rows with `kind = "api"`, shown in the existing Settings → Job boards UI with an
    "API" chip. No separate Sources page.
 3. Work happens on a new branch, and public docs get updated.
 
@@ -226,7 +226,7 @@ User decisions:
    `db:generate`, `db:seed` (expect 12 boards).
 3. Swagger in dev: `GET /api/job-sources`, `POST /api/job-sources/runs`, `kind` on
    `/api/job-boards`.
-4. Manual E2E (`bun run dev`): adopt FreeHire on /boards (API chip, no credential fields);
+4. Manual E2E (`bun run dev`): adopt FreeHire on /settings/boards (API chip, no credential fields);
    create an auto-apply campaign on freehire.me ("react developer"); watch rows stream in as
    pending then approved/skipped with scores; confirm freehire listings appear in the public
    /jobs index.

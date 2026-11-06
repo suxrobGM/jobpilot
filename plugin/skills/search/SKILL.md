@@ -28,7 +28,7 @@ Search a single board (picked by the user when launching the campaign), or the o
    ```
 
    Pick the entry whose `domain` is `<domain>`. If none matches, abort with: "Board `<domain>` is
-   not configured. Add it on /boards or run again with a different `--board`." When a `--campaign`
+   not configured. Add it under Settings → Job boards or run again with a different `--board`." When a `--campaign`
    id was given, first command it to `failed` with `POST /api/campaigns/<id>/status
    {"status":"failed"}`.
 

@@ -84,7 +84,7 @@ export function BoardsContent(): ReactElement {
         emptyTitle={
           isAnyFilterActive
             ? "No boards match the current filters."
-            : "No boards yet. Add one to let campaigns search it."
+            : "No boards yet. Add one for the pilot to search."
         }
       />
     </SectionCard>

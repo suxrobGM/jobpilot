@@ -1,14 +1,12 @@
 import {
   AdminPanelSettings,
   BugReport,
-  BusinessCenter,
   Description,
   Forum,
   Handshake,
   Inbox,
   Insights,
   Lightbulb,
-  Public,
   Settings,
   SmartToy,
   type SvgIconComponent,
@@ -64,8 +62,6 @@ const navGroups: NavGroup[] = [
         // Document detail routes live outside /documents.
         matchHrefs: ["/resumes", "/cover-letters"],
       },
-      { label: "Boards", href: "/boards", icon: BusinessCenter },
-      { label: "Portfolio", href: "/portfolio", icon: Public },
     ],
   },
 ];

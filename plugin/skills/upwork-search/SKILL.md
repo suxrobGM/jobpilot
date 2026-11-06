@@ -26,7 +26,7 @@ sends it with the `upwork-submit` skill.
      `source:"search"` create requires `config.resumeId` - default to the profile's
      `primaryResumeId`).
 4. Resolve the board: `jobpilot-api GET /api/job-boards` and find the row whose `domain` is
-   `upwork.com`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign`
+   `upwork.com`. No row → abort: "Upwork is not configured. Add it under Settings → Job boards." If a `--campaign`
    was given, first command it to `failed` with `POST /api/campaigns/<id>/status
    {"status":"failed"}`.
 

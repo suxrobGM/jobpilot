@@ -5,6 +5,7 @@ import { type Tab, TabStrip } from "@/components/ui/navigation";
 const TABS: Tab[] = [
   { label: "Resumes", href: "/documents/resumes" },
   { label: "Cover Letters", href: "/documents/cover-letters" },
+  { label: "Portfolio", href: "/documents/portfolio" },
 ];
 
 interface DocumentsLayoutProps {
@@ -18,7 +19,7 @@ export default function DocumentsLayout(props: DocumentsLayoutProps): ReactEleme
       <PageHeader
         eyebrow="Library"
         title="Documents"
-        description="Base resumes, AI-tailored variants, and generated cover letters."
+        description="Base resumes, tailored variants, cover letters, and your public portfolio."
       />
       <TabStrip tabs={TABS} ariaLabel="Document types" />
       {children}

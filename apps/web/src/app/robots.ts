@@ -15,7 +15,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/admin",
           "/pilot",
-          "/portfolio",
           "/pipeline",
           "/applications",
           "/analytics",
@@ -24,7 +23,6 @@ export default function robots(): MetadataRoute.Robots {
           "/documents",
           "/resumes",
           "/cover-letters",
-          "/boards",
           "/upwork",
           "/settings",
           "/onboarding",

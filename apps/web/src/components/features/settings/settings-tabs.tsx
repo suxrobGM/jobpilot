@@ -6,6 +6,7 @@ const TABS: Tab[] = [
   { label: "Email", href: "/settings/email" },
   { label: "Notifications", href: "/settings/notifications" },
   { label: "Credentials", href: "/settings/credentials" },
+  { label: "Job boards", href: "/settings/boards" },
   { label: "Security", href: "/settings/security" },
   { label: "Pilot", href: "/settings/pilot" },
   { label: "Diagnostics", href: "/settings/diagnostics" },
