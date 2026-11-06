@@ -231,6 +231,16 @@ Landed with Phase 4: `resume-campaign` deleted, `apply` takes one job, `campaign
 
 ## Phase 6: Code layout and test trim (no behavior change)
 
+Done: `modules/pilot/` regrouped into `thread/`, `questions/`, `runs/` (run and step routes in one
+`run.controller.ts`), `feeds/`, `tasks/gather/`; promotion is `modules/promotion/`. Task labels and
+agents live in contracts (`pilot/task-types.ts`); `TASK_SUBJECT_TYPES` is read off the schema, so
+`TASK_DEFS` no longer repeats subject types. Web: `features/settings/{pilot,diagnostics}`; the
+journal row and cache stay in `features/pilot/journal/` (the home uses them). Host: the Phase 2
+pass left no overlap (`StuckDetector` reads output, `CycleRunner` runs the ladder); the unread
+`consecutiveTimeouts` status field went. Tests: read, not cut. The three fixture files serve
+different seams (pure inputs, Prisma fake, change tx) and merging them breaks the file-size
+rule; no test duplicates another.
+
 - `modules/pilot/` regroups: `state/` (pilot controller/service/stats), `thread/` (thread,
   journal), `tasks/` (task list, build, defs, maintenance, digest, `gather/`), `runs/` (run
   service, steps), `questions/` (questions, saved answers), `changes/`, `requests/`,
