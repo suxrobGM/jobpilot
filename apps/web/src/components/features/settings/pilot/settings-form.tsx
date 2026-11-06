@@ -14,7 +14,6 @@ import { useAppForm } from "@/components/ui/form/tanstack";
 import { type SectionAnchor, SectionCard, SectionLayout } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
-import { BoardsSection } from "./boards-section";
 import { CheckIntervalSection } from "./check-interval-section";
 import { settingsFormSchema, toFormValues, toSettings } from "./form-schema";
 import { JobAlertsSetting } from "./job-alerts-setting";
@@ -27,7 +26,6 @@ const ANCHORS: SectionAnchor[] = [
   { id: "job-alerts", label: "Job alerts" },
   { id: "research", label: "Research" },
   { id: "networking", label: "Networking" },
-  { id: "boards", label: "Job boards" },
   { id: "platforms", label: "Platforms" },
 ];
 
@@ -87,7 +85,7 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
       }}
     >
       <SectionCard
-        title="Pilot settings"
+        title="How the pilot works"
         description="Optional - the defaults work for most people."
       >
         <Stack spacing={3}>
@@ -107,9 +105,6 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
           </Box>
           <Box data-section-id="networking">
             <NetworkingSection form={form} />
-          </Box>
-          <Box data-section-id="boards">
-            <BoardsSection form={form} />
           </Box>
           <Box data-section-id="platforms">
             <PlatformsSection form={form} />

@@ -28,7 +28,7 @@ export const PROVIDER_LABELS: Record<CaptchaProvider, string> = {
 
 const PROVIDER_ITEMS = CAPTCHA_PROVIDERS.map((p) => ({ value: p, label: PROVIDER_LABELS[p] }));
 
-/** Board logins are added per board under Settings → Pilot. */
+/** Board logins are added per board, from the Job boards card. */
 const KINDS = ["default", "service"] as const;
 type Kind = (typeof KINDS)[number];
 

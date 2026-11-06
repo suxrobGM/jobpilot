@@ -22,7 +22,7 @@ interface BoardLoginDialogProps {
   onClose: () => void;
 }
 
-/** Adds or replaces one board's login; the default login and captcha keys stay in Credentials. */
+/** Adds or replaces one board's login; the default login and captcha keys have their own card. */
 export function BoardLoginDialog(props: BoardLoginDialogProps): ReactElement {
   const { board, login, onClose } = props;
   const save = useApiMutation(

@@ -1,4 +1,5 @@
-export { CredentialsSection } from "./credentials/credentials-section";
+export { BoardsSection } from "./boards/boards-section";
+export { CredentialsSection } from "./boards/credentials-section";
 export { DiagnosticsView } from "./diagnostics/diagnostics-view";
 export { ConnectCard } from "./email/connect-card";
 export { MailboxReauthAlert } from "./email/mailbox-reauth-alert";

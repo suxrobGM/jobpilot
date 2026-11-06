@@ -67,8 +67,8 @@ export function CredentialsSection(): ReactElement {
 
   return (
     <SectionCard
-      title="Login credentials"
-      description="The login the pilot tries on boards without their own, and captcha-service API keys (2Captcha / CapSolver). Board logins live under Settings → Pilot. Secrets are encrypted at rest."
+      title="Default login and captcha"
+      description="The login the pilot tries on boards without their own, and captcha-service API keys (2Captcha / CapSolver). Secrets are encrypted at rest."
       actions={
         <Button
           size="small"
