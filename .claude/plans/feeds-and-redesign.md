@@ -107,24 +107,21 @@ rows; Needs you matches the Pipeline's Needs you count.
 
 ## Phase 2: Retention so nothing piles up (API + host)
 
-1. Rules in `maintenance/retention.ts` + `cleanup.ts` for every window listed under Choices:
-   changes (dismiss stale proposals, delete decided), requests, messages, jobs (stale Found →
-   skipped with `SERVER_SKIP_REASONS.stale`, blank text, delete), irrelevant emails (delete),
-   listings (hide, delete).
-2. Questions: `expiresAt` is required at create (14 days unless the caller sets one). Migration
-   sets `expires_at = now() + 14 days` on open questions without one, then `NOT NULL`.
-3. Irrelevant email bodies: blank `body` and `links` when a message is classified irrelevant.
-4. No `cycle` journal entries:
-   - `POST /api/pilot/idle-checks` becomes `POST /api/pilot/cycles {sleepSeconds, status}`;
-     every cycle reports there. It updates `lastCycleAt`, `nextWakeAt`, `cycleCount`.
-   - Host: `PilotApi` posts cycles there and stops posting `cycle` journal entries.
-   - Drop the `cycle` journal kind (migration deletes the rows, recreates the enum).
-   - Diagnostics' cycle timeline groups by run instead.
-5. Coverage test: every Prisma model is listed as swept, bounded per user, or kept on purpose;
-   a new model fails the test until it's classified.
-
-**Done when**: every table that grows with use has a rule or a stated reason; `dotnet test`
-passes.
+1. `maintenance/retention.ts` holds one list of rules (name, window in days, sweep), replacing
+   `cleanup.ts` and its per-rule where-builders. New rules: stale proposals dismissed (14d),
+   decided changes (90d), finished requests (30d), messages (90d), Found jobs → skipped as stale
+   (21d), dropped jobs' description and brief blanked (30d), dropped jobs deleted (180d) unless an
+   application or proposal points at them, irrelevant emails deleted (30d), empty completed
+   campaigns (7d), listings unseen for 120 days (admins' `hidden` status stays theirs).
+2. Questions: `expiresAt` is required (14 days unless the caller sets one). The migration gives
+   open questions without one two weeks from now.
+3. Irrelevant email bodies are **not** blanked at classification: job-alert emails can be
+   classified irrelevant and are still imported for a week.
+4. No `cycle` journal entries: the host reports every cycle to `POST /api/pilot/cycles
+   {sleepSeconds}` (was `/idle-checks`); the `cycle` kind is dropped; Diagnostics groups the
+   journal by run.
+5. The retention test maps every Prisma model to its rules, `bounded` or `userData`; a new model
+   fails typecheck until it's listed.
 
 ## Phase 3: Pilot model cleanup (API + web + plugin)
 
@@ -235,6 +232,10 @@ Check each overlap at the start of the phase by reading the files; delete before
 - Web: `features/pilot/{settings,job-alerts}` → `features/settings/pilot/`;
   `features/pilot/{diagnostics,journal}` → `features/settings/diagnostics/`. `features/pilot/`
   keeps the home: `home/`, `thread/`, `attention/`, `changes/`, `steps/`.
+- Host `apps/terminal/Pilot/` (2,100 lines, 14 files): `PilotSession` (255) mixes run start,
+  cycle reports, steps, usage and interrupts; `CycleRunner` (280) and `StuckDetector` (167) both
+  hold stuck-run logic; `PilotStore` (212) and `PilotLoop` (202). Split by concern, merge what
+  overlaps, delete what pairing and requests made unused. Read each file at the start of the phase.
 - Test trim, by the rule under Execution. API tests are 8,500 lines in 84 files: pilot 3,017
   plus 645 of fakes (`tasks/fakes.ts`, `tasks/builders.ts`, `changes/fakes.ts`), feeds/jobs
   about 900 plus 165. Merge the fakes into one per module. Terminal tests are 3,200 lines
