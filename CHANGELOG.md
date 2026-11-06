@@ -8,18 +8,25 @@ Update the plugin and terminal host with this release. Older hosts stop running 
 
 ### Added
 
-- The Pilot page is a conversation: a thread of the pilot's work, questions, changes and replies, a message box to ask or tell it anything, and a status line with Watch, Interrupt and Pause/Resume.
+- The Pilot page is a conversation: a thread of the pilot's work, questions, changes and replies split by day, a message box to ask or tell it anything, and a status line whose one main button starts the agent, turns on autopilot, or pauses it.
 - Autopilot: on, the pilot picks its own work; off, it runs only what you ask for. Buttons across the app ask the pilot for work, and those requests run next from any device.
 - Goals & rules: deal-breakers, named searches you can pause or delete, and standing answers. Every edit is a change with Undo for 7 days; the pilot only suggests changes to your goals, rules and answers.
 - Heads up notices for missing email, unread mail, no replies, near-miss scores and an unused daily limit, each with one button to act on it.
 - Live steps: the agent drawer's Steps tab and the status line show what the running task is doing, readable on a phone. Steps never include typed values or page text.
 - Pasting a job link offers to add it to your pipeline without waiting for the pilot.
+- Pipeline: tick several jobs to approve, skip or retry them at once. Found lists the best matches first.
+- Paused searches show why on the Pilot page, with Resume.
 
 ### Changed
 
 - The Pipeline replaces the workspace and campaign pages: Found, To apply, Applied, Needs you, Skipped and Failed, with jobs you already have never added twice.
 - The agent dock is now an on-demand drawer, and the host pairs with the pilot automatically. Typing in the terminal holds new pilot work for 3 minutes; Hand back ends the wait.
-- Job boards moved to Settings → Job boards, and Portfolio to Documents → Portfolio.
+- The sidebar expands to show labels and collapses to icons. Upwork and Networking appear once you use them; Feedback and Admin moved into the account menu.
+- Job boards and their logins moved to Settings → Pilot, where you also set the order the pilot searches them. Credentials keeps the default login and captcha keys. Portfolio moved to Documents → Portfolio.
+- Searches, job alerts, research, pasted links and your own skill runs are all feeds. Deleting a search keeps its jobs' history, and duplicate copies of the same job were merged.
+- Jobs from `search`, `auto-apply` and `apply` go to one feed the pilot never applies from on its own. `resume-campaign` and the per-run `--campaign`/`--feed` flags are gone; `auto-apply approved` and `auto-apply retry-failed` work on that feed.
+- The minimum match score, preferring cap-exempt employers, and the default start date moved from your profile into the pilot's rules and saved answers.
+- Unanswered questions expire after 14 days, and old skipped jobs, irrelevant mail and finished runs are cleaned up on a schedule.
 - Settings gained Pilot and Diagnostics tabs; the run history and token costs live under Diagnostics.
 - The docs were rewritten for the new Pilot, and "Campaigns & skills" is now "Skills".
 

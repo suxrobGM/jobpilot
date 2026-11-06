@@ -264,6 +264,8 @@ rule; no test duplicates another.
 
 ## Phase 7: Shell and sidebar
 
+Done: `components/layout/sidebar.tsx` (220/56px, `use-sidebar-collapsed.ts`), channel gating in `use-nav-groups.ts`, Feedback and Admin in the account menu, nav-group eyebrows dropped.
+
 ```
 ┌──────────────────────┬─────────────────────────────────────────────────────────┐
 │ J  JobPilot       «  │  Pipeline                                               │
@@ -294,6 +296,8 @@ rule; no test duplicates another.
 - Page headers drop the eyebrow (nav group names). Mobile bottom nav keeps its four tabs.
 
 ## Phase 8: Pilot home
+
+Done: one primary status action, `home/get-started.tsx` line + Finish dialog, day separators and a greeting with prompt chips (composer text lifted to `PilotHome`), Resume on paused searches, `search.tune` names searches.
 
 ```
  ● Idle · next check 10:22 · 3/30 applied today                    [Watch] [Pause]
@@ -329,6 +333,8 @@ rule; no test duplicates another.
 
 ## Phase 9: Pipeline
 
+Done: Found sorted by score (nulls last) with "Scoring…", Status column only on multi-status tabs, Feed column and filter, `POST /api/pipeline/jobs/bulk` (approve/skip/retry through `JobService`). Ordering uses up/down buttons, not drag: no DnD dependency.
+
 ```
  Pipeline                                                         [+ Add job links]
  Found 140 · To apply 0 · Applied 303 · Needs you 2 · Skipped 1027 · Failed 22
@@ -347,6 +353,8 @@ rule; no test duplicates another.
 
 ## Phase 10: Goals & rules and Settings
 
+Done: Goals & rules already matched. Settings → Pilot → Job boards lists every board with rotation checkbox, up/down order, login status and Add/Edit login; `/settings/boards` deleted; Credentials holds the default login and captcha keys. Profile had no rule fields left after Phase 3.
+
 - **Goals & rules** (`/pilot/goals`): goals; searches (name, applied/week, pause/resume/delete,
   query and reason on expand); rules (cap, min score, deal-breakers, prefer cap-exempt); standing
   answers (start date included). Every edit is a change with Undo.
@@ -357,6 +365,8 @@ rule; no test duplicates another.
   - Profile loses work-preference fields that are rules.
 
 ## Phase 11: Docs and wording
+
+Done: docs for the status line, Get started, Pipeline bulk and Found order, board logins, and the skills; CHANGELOG Unreleased. No "campaign" left outside migrations, CHANGELOG and plans.
 
 - Docs (`app/(public)/docs/**`): feeds, Goals & rules, the sidebar, Settings → Pilot.
 - `git grep -i campaign` over web, plugin and docs comes back empty outside migrations and
