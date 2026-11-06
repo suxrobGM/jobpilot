@@ -19,7 +19,10 @@ interface SettingsGroup {
 const GROUPS: SettingsGroup[] = [
   {
     label: "You",
-    links: [{ label: "Profile", href: "/settings/profile" }],
+    links: [
+      { label: "Profile", href: "/settings/profile" },
+      { label: "Application answers", href: "/settings/answers" },
+    ],
   },
   {
     label: "Pilot",

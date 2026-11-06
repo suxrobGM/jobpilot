@@ -5,5 +5,5 @@ import { ProfileSettingsForm } from "@/components/features/settings";
 export const metadata: Metadata = { title: "Profile" };
 
 export default function ProfileSettingsPage(): ReactElement {
-  return <ProfileSettingsForm />;
+  return <ProfileSettingsForm page="profile" />;
 }

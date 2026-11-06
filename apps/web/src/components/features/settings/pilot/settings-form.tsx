@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { PilotState, UpdatePilotSettingsInput } from "@jobpilot/contracts/pilot";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
@@ -11,12 +11,7 @@ import { useApiMutation } from "@/api/use-api-mutation";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import {
-  type SectionAnchor,
-  SectionCard,
-  SectionLayout,
-  StickyFooter,
-} from "@/components/ui/layout";
+import { type SectionAnchor, SectionCard, SectionLayout } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
 import { BoardsSection } from "./boards-section";
@@ -81,7 +76,6 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
 
   // isDefaultValue tracks the (re-baselined) defaults; isDirty latches once touched.
   const pristine = useSelector(form.store, (s) => s.isDefaultValue);
-  const showSaveBar = !pristine || save.isPending;
   useUnsavedChangesGuard(!pristine && !save.isPending);
 
   return (
@@ -123,20 +117,9 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
         </Stack>
       </SectionCard>
 
-      {showSaveBar && (
-        <StickyFooter>
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{ justifyContent: "flex-end", alignItems: "center" }}
-          >
-            <Typography variant="captionMuted">Unsaved changes</Typography>
-            <form.AppForm>
-              <form.SubmitButton>Save settings</form.SubmitButton>
-            </form.AppForm>
-          </Stack>
-        </StickyFooter>
-      )}
+      <form.AppForm>
+        <form.UnsavedChangesBar />
+      </form.AppForm>
     </Box>
   );
 }

@@ -7,7 +7,7 @@ import {
   type SalaryPreferenceInput,
   USER_DEFAULT_VALUES,
 } from "@jobpilot/contracts/user";
-import { Stack } from "@mui/material";
+import { Grid } from "@mui/material";
 import { FieldRowList, FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 
@@ -65,34 +65,40 @@ export const SalarySection = withForm({
                         />
                       )}
                     </form.AppField>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                      <form.AppField name={`salaryPreferences[${i}].minAmount`}>
-                        {(sub) => (
-                          <sub.Currency
-                            label="Minimum"
-                            allowDecimals
-                            symbol={CURRENCY_SYMBOLS[prefs[i].currency]}
-                          />
-                        )}
-                      </form.AppField>
-                      <form.AppField name={`salaryPreferences[${i}].maxAmount`}>
-                        {(sub) => (
-                          <sub.Currency
-                            label="Maximum"
-                            allowDecimals
-                            symbol={CURRENCY_SYMBOLS[prefs[i].currency]}
-                          />
-                        )}
-                      </form.AppField>
-                    </Stack>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                      <form.AppField name={`salaryPreferences[${i}].period`}>
-                        {(sub) => <sub.Select label="Period" items={PERIODS} />}
-                      </form.AppField>
-                      <form.AppField name={`salaryPreferences[${i}].currency`}>
-                        {(sub) => <sub.Select label="Currency" items={CURRENCIES} />}
-                      </form.AppField>
-                    </Stack>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <form.AppField name={`salaryPreferences[${i}].minAmount`}>
+                          {(sub) => (
+                            <sub.Currency
+                              label="Minimum"
+                              allowDecimals
+                              symbol={CURRENCY_SYMBOLS[prefs[i].currency]}
+                            />
+                          )}
+                        </form.AppField>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <form.AppField name={`salaryPreferences[${i}].maxAmount`}>
+                          {(sub) => (
+                            <sub.Currency
+                              label="Maximum"
+                              allowDecimals
+                              symbol={CURRENCY_SYMBOLS[prefs[i].currency]}
+                            />
+                          )}
+                        </form.AppField>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <form.AppField name={`salaryPreferences[${i}].period`}>
+                          {(sub) => <sub.Select label="Period" items={PERIODS} />}
+                        </form.AppField>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <form.AppField name={`salaryPreferences[${i}].currency`}>
+                          {(sub) => <sub.Select label="Currency" items={CURRENCIES} />}
+                        </form.AppField>
+                      </Grid>
+                    </Grid>
                   </>
                 )}
               </FieldRowList>

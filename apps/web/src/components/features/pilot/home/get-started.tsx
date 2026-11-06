@@ -69,7 +69,7 @@ export function GetStarted(props: GetStartedProps): ReactNode {
     {
       key: "profile",
       short: "Add your address",
-      label: "Add your address and work authorization. Application forms ask for both.",
+      label: "Add your address. Application forms ask for it.",
       done: Boolean(profile.user?.street && profile.user.city),
       action: linkAction("/settings/profile", "Fill in"),
     },
