@@ -34,7 +34,7 @@ export const pilotChangesController = new Elysia({
     detail: {
       summary: "Make or propose a change",
       description:
-        "Applies the actions in one transaction and stores their inverse for Undo, or with propose: true stores them for the user to apply or dismiss. A pilot or notice change to goals, rules or answers must be a proposal.",
+        "Applies the actions in one transaction and stores their inverse for Undo, or with propose: true stores them for the user to apply or dismiss. A pilot change to goals, rules or answers must be a proposal.",
     },
   })
   .post("/:id/apply", ({ user, params }) => changes.applyProposed(user.id, params.id), {

@@ -114,10 +114,16 @@ export class PilotService {
     if (on && (await this.readGoals(userId)).trim() === "") {
       throw conflict("Write the pilot's goals before turning on autopilot.");
     }
+    const saved = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { autopilotSince: true },
+    });
+    // Turning it on again keeps the original start.
+    const autopilotSince = on ? (saved?.autopilotSince ?? new Date()) : null;
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
-      create: { userId, autopilot: on },
-      update: { autopilot: on, ...TASK_LIST_SNAPSHOT_RESET },
+      create: { userId, autopilot: on, autopilotSince },
+      update: { autopilot: on, autopilotSince, ...TASK_LIST_SNAPSHOT_RESET },
     });
     return this.publishState(row);
   }

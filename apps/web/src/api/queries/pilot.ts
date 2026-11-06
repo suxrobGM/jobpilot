@@ -49,6 +49,11 @@ export const pilotQueries = {
       queryKey: [...PILOT, "searches"],
       queryFn: () => unwrap(api.pilot.searches.get()),
     }),
+  notices: () =>
+    queryOptions({
+      queryKey: [...PILOT, "notices"],
+      queryFn: () => unwrap(api.pilot.notices.get()),
+    }),
   savedAnswers: () =>
     queryOptions({
       queryKey: [...PILOT, "savedAnswers"],

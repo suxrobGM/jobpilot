@@ -17,6 +17,7 @@ const RECONNECT_KEYS = [
   pilotQueries.promotionsAll,
   pilotQueries.changesAll,
   pilotQueries.searches().queryKey,
+  pilotQueries.notices().queryKey,
 ];
 
 /** The app's one pilot subscription, in the shell so the nav badge and every pilot view share it. */
@@ -34,7 +35,12 @@ export function PilotLive(): ReactNode {
     on: {
       "state.changed": RUN_KEYS,
       "run.started": () => invalidate(RUN_KEYS),
-      "run.finished": () => invalidate([...RUN_KEYS, pilotQueries.searches().queryKey]),
+      "run.finished": () =>
+        invalidate([
+          ...RUN_KEYS,
+          pilotQueries.searches().queryKey,
+          pilotQueries.notices().queryKey,
+        ]),
       // Written straight into the cache rather than refetched.
       "journal.appended": (event) => {
         const entry = prependJournalEntry(queryClient, event.entry);

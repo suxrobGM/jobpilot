@@ -102,8 +102,17 @@ describe("PilotService.setAutopilot", () => {
   });
 
   it("turns on once goals are written", async () => {
-    const state = await stateService("ship senior frontend roles").svc.setAutopilot("p1", true);
+    const { svc, upserts } = stateService("ship senior frontend roles");
+    const state = await svc.setAutopilot("p1", true);
     expect(state.autopilot).toBe(true);
+    expect(upserts[0].update.autopilotSince).toBeInstanceOf(Date);
+  });
+
+  // `cap.unused` counts a week from the start; turning off clears it.
+  it("clears the start time when turned off", async () => {
+    const { svc, upserts } = stateService("goals");
+    await svc.setAutopilot("p1", false);
+    expect(upserts[0].update.autopilotSince).toBeNull();
   });
 });
 

@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { Composer } from "./composer";
+import { HeadsUp } from "./side/heads-up";
 import { NeedsYou } from "./side/needs-you";
 import { RulesSummary } from "./side/rules-summary";
 import { SearchesSummary } from "./side/searches-summary";
@@ -25,6 +26,7 @@ function SideColumn(props: SideColumnProps): ReactElement {
     <Stack spacing={3}>
       <Stack spacing={3} divider={<Divider />}>
         <NeedsYou />
+        <HeadsUp />
         <SearchesSummary />
         <RulesSummary state={state} />
       </Stack>
@@ -65,7 +67,7 @@ export function PilotHome(): ReactElement {
           sx={{ display: { md: "none" } }}
           onClick={() => setSheetOpen(true)}
         >
-          Needs you, searches and rules
+          Needs you, heads up, searches and rules
         </Button>
         <Thread header={<GetStartedCard state={state} />} />
         <Composer state={state} />

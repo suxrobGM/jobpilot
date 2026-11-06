@@ -47,8 +47,12 @@ export class ChangeService {
 
   async create(userId: string, input: CreatePilotChangeInput) {
     const { summary, actions, source, runId } = input;
-    const autonomous = source === "pilot" || source === "notice";
-    if (autonomous && !input.propose && actions.some((a) => USER_OWNED_ACTIONS.includes(a.type))) {
+    // A notice's change is the user's click on it; only the pilot acting alone must propose.
+    if (
+      source === "pilot" &&
+      !input.propose &&
+      actions.some((a) => USER_OWNED_ACTIONS.includes(a.type))
+    ) {
       throw forbidden("The pilot can only propose changes to goals, rules and answers.");
     }
     if (input.propose) {
