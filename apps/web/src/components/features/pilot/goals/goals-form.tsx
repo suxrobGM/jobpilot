@@ -20,8 +20,6 @@ const GOALS_CHANGED_REASON = "Goals changed before this was applied to.";
 interface PendingGoals {
   goals: string;
   impact: GoalsImpact;
-  searchIds: string[];
-  approved: { feedId: string; key: string }[];
 }
 
 interface GoalsFormProps {
@@ -61,9 +59,10 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
       }
       setPending({
         goals: value.goals,
-        impact: { searchNames: searches.map((s) => s.name), approvedJobs: approved.length },
-        searchIds: searches.map((s) => s.id),
-        approved: approved.map((job) => ({ feedId: job.feedId, key: job.key })),
+        impact: {
+          searches: searches.map(({ id, name }) => ({ id, name })),
+          approved: approved.map(({ feedId, key }) => ({ feedId, key })),
+        },
       });
     },
   });
@@ -73,11 +72,18 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
     const actions: PilotChangeAction[] = [];
     if (retire.rebuildSearches) {
       actions.push(
-        ...pending.searchIds.map((searchId) => ({ type: "search.delete" as const, searchId })),
+        ...pending.impact.searches.map((search) => ({
+          type: "search.delete" as const,
+          searchId: search.id,
+        })),
       );
     }
     if (retire.dropApprovedJobs) {
-      actions.push({ type: "jobs.skip", refs: pending.approved, reason: GOALS_CHANGED_REASON });
+      actions.push({
+        type: "jobs.skip",
+        refs: pending.impact.approved,
+        reason: GOALS_CHANGED_REASON,
+      });
     }
     void commit(pending.goals, actions);
   };

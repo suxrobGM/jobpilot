@@ -2,7 +2,7 @@ import {
   type CreatePilotRequestInput,
   createPilotRequestSchema,
   type PilotRequest,
-  type RequestableTaskType,
+  taskTypeLabel,
 } from "@jobpilot/contracts/pilot";
 import type {
   PilotRequest as PilotRequestModel,
@@ -55,24 +55,6 @@ export function requestSubject(input: CreatePilotRequestInput, requestId: string
   }
 }
 
-const REQUEST_TITLES: Record<RequestableTaskType, string> = {
-  "job.apply": "Apply to a job",
-  "job.rescanSkipped": "Rescan skipped jobs",
-  "job.retryFailed": "Retry failed jobs",
-  "inbox.review": "Review the inbox",
-  "upwork.syncInbox": "Refresh the Upwork inbox",
-  "search.discover": "Run a search now",
-  "inbox.jobAlerts": "Import job alert emails",
-  "research.explore": "Research jobs beyond your boards",
-  "resume.extract": "Read a resume",
-  "resume.tailor": "Tailor a resume",
-  "networking.find": "Find contacts",
-  "networking.rewrite": "Rewrite outreach drafts",
-  "upwork.profile": "Work on the Upwork profile",
-  "upwork.proposal": "Write an Upwork proposal",
-  "upwork.submit": "Submit an Upwork proposal",
-};
-
 /** The stored row read back as the request it was created from. */
 export function parseRequest(row: Pick<PilotRequestModel, "taskType" | "payload">) {
   return createPilotRequestSchema.parse({ taskType: row.taskType, payload: row.payload });
@@ -83,7 +65,7 @@ export function toPilotRequest(row: PilotRequestModel): PilotRequest {
   return {
     id: row.id,
     taskType,
-    title: REQUEST_TITLES[taskType],
+    title: taskTypeLabel(taskType),
     status: row.status,
     source: row.source,
     runId: row.runId,

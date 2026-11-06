@@ -38,7 +38,6 @@ export const createPilotRequestSchema = z.discriminatedUnion("taskType", [
 ]);
 
 export type CreatePilotRequestInput = z.infer<typeof createPilotRequestSchema>;
-export type RequestableTaskType = CreatePilotRequestInput["taskType"];
 
 /** Request bodies arrive from the web and from chat; `source` says which. */
 export const createPilotRequestBodySchema = z.intersection(

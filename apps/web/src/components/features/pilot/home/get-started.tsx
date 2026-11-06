@@ -17,6 +17,7 @@ import { credentialQueries, emailQueries, resumeQueries, userQueries } from "@/a
 import { LinkButton } from "@/components/ui/buttons";
 import { ChecklistRow } from "@/components/ui/display";
 import { useTerminalHealth } from "@/hooks/use-terminal-health";
+import { plural } from "@/utils/format";
 import { hasGoals } from "../pilot-status";
 
 interface Step {
@@ -119,7 +120,7 @@ export function GetStarted(props: GetStartedProps): ReactNode {
       <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
         <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }}>
           <Typography component="span" variant="body2Strong">
-            {`${left.length} ${left.length === 1 ? "step" : "steps"} left: `}
+            {`${plural(left.length, "step")} left: `}
           </Typography>
           {left.map((step) => step.short).join(" · ")}
         </Typography>

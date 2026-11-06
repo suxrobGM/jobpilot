@@ -4,10 +4,9 @@ import type { ReactElement } from "react";
 import { PauseCircleOutlined } from "@mui/icons-material";
 import { Button, Stack, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import type { FeedDto } from "@/api/types";
-import { useApiMutation } from "@/api/use-api-mutation";
+import { useMakeChange } from "../../changes/use-changes";
 import { SideSection } from "./side-section";
 
 interface SearchRowProps {
@@ -16,13 +15,7 @@ interface SearchRowProps {
 
 function SearchRow(props: SearchRowProps): ReactElement {
   const { search } = props;
-  const resume = useApiMutation(
-    () => api.feeds({ id: search.id }).patch({ paused: false, actor: "user" }),
-    {
-      invalidate: [pilotQueries.all],
-      successMessage: `Resumed ${search.name}.`,
-    },
-  );
+  const resume = useMakeChange();
 
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center", minHeight: 28 }}>
@@ -39,7 +32,16 @@ function SearchRow(props: SearchRowProps): ReactElement {
           <Tooltip title={search.pausedReason ?? "Paused"}>
             <PauseCircleOutlined fontSize="sm" sx={{ color: "text.secondary" }} />
           </Tooltip>
-          <Button size="small" loading={resume.isPending} onClick={() => resume.mutate()}>
+          <Button
+            size="small"
+            loading={resume.isPending}
+            onClick={() =>
+              resume.mutate({
+                summary: `Resumed ${search.name}`,
+                actions: [{ type: "search.resume", searchId: search.id }],
+              })
+            }
+          >
             Resume
           </Button>
         </>

@@ -1,7 +1,11 @@
-import { AUTO_APPLY_FEED_KINDS, feedConfigSchema } from "@jobpilot/contracts/feed";
+import { feedConfigSchema } from "@jobpilot/contracts/feed";
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
-import { parseJobRef, revertApplyingJobs } from "@/modules/feed/jobs/apply-guard";
+import {
+  LIVE_AUTO_APPLY_FEED,
+  parseJobRef,
+  revertApplyingJobs,
+} from "@/modules/feed/jobs/apply-guard";
 import type { JobService } from "@/modules/feed/jobs/job.service";
 import { finishRequests } from "../requests/request-row";
 import { GATHER_CAP, parseJobSubject } from "../runs/run-history";
@@ -144,7 +148,7 @@ export async function promoteScoredPendingJobs(
       status: "pending",
       matchScore: { not: null },
       userId,
-      feed: { pausedAt: null, archivedAt: null, kind: { in: [...AUTO_APPLY_FEED_KINDS] } },
+      feed: LIVE_AUTO_APPLY_FEED,
     },
     take: GATHER_CAP,
     select: {

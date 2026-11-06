@@ -1,11 +1,10 @@
 import { ErrorCodes } from "@jobpilot/contracts/errors";
-import {
-  type AddJobInput,
-  AUTO_APPLY_FEED_KINDS,
-  type JobResultInput,
-  type PatchJobInput,
-  type RescanJobInput,
-  type RetryJobInput,
+import type {
+  AddJobInput,
+  JobResultInput,
+  PatchJobInput,
+  RescanJobInput,
+  RetryJobInput,
 } from "@jobpilot/contracts/feed";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
@@ -17,7 +16,7 @@ import { type JobStatus, type Prisma, PrismaClient } from "@/generated/prisma/cl
 import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { ensureFeedOwned } from "../feed.utils";
-import { assertNotDuplicateApply, guardApply } from "./apply-guard";
+import { assertNotDuplicateApply, guardApply, LIVE_AUTO_APPLY_FEED } from "./apply-guard";
 import { publishJob } from "./job-events";
 import { isTerminalJob, writeJobResult } from "./job-result";
 import { JOB_INCLUDE, type JobRow, toJob } from "./job-row";
@@ -211,7 +210,7 @@ export class JobService {
             matchScore,
             key: { in: group.map((c) => c.key) },
             userId,
-            feed: { pausedAt: null, archivedAt: null, kind: { in: [...AUTO_APPLY_FEED_KINDS] } },
+            feed: LIVE_AUTO_APPLY_FEED,
           },
           data: approved
             ? { status: "approved" }

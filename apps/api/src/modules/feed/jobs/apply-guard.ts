@@ -1,4 +1,5 @@
 import { ErrorCodes } from "@jobpilot/contracts/errors";
+import { AUTO_APPLY_FEED_KINDS } from "@jobpilot/contracts/feed";
 import { z } from "zod/v4";
 import { conflict, HttpError } from "@/common/errors";
 import type { Job, Prisma, PrismaClient } from "@/generated/prisma/client";
@@ -11,6 +12,13 @@ import {
 import { findFuzzyDuplicate } from "@/modules/scoring/applied-duplicates";
 import { publishJob } from "./job-events";
 import { JOB_INCLUDE, type JobRow } from "./job-row";
+
+/** A live feed the pilot scores and applies from on its own. */
+export const LIVE_AUTO_APPLY_FEED = {
+  pausedAt: null,
+  archivedAt: null,
+  kind: { in: [...AUTO_APPLY_FEED_KINDS] },
+} satisfies Prisma.FeedWhereInput;
 
 type GuardReader = DuplicateReader & Pick<Prisma.TransactionClient, "job">;
 

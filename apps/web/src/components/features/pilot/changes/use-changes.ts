@@ -8,7 +8,7 @@ import { useApiMutation } from "@/api/use-api-mutation";
 /** Body shape the web sends; source and propose take their defaults. */
 type ChangeBody = Pick<CreatePilotChangeInput, "summary" | "actions">;
 
-const INVALIDATE = [
+export const CHANGE_INVALIDATE = [
   pilotQueries.state().queryKey,
   pilotQueries.changesAll,
   pilotQueries.searches().queryKey,
@@ -22,7 +22,7 @@ export function useMakeChange(onSuccess?: () => void) {
   return useApiMutation(
     (body: ChangeBody) => api.pilot.changes.post({ ...body, source: "user", propose: false }),
     {
-      invalidate: INVALIDATE,
+      invalidate: CHANGE_INVALIDATE,
       successMessage: "Saved. You can undo it from the Pilot page.",
       onSuccess,
     },
@@ -46,6 +46,9 @@ export function useDecideChange(id: string) {
       }
       return decision === "dismiss" ? change.dismiss.post() : change.undo.post();
     },
-    { invalidate: INVALIDATE, successMessage: (_data, decision) => DECISION_MESSAGES[decision] },
+    {
+      invalidate: CHANGE_INVALIDATE,
+      successMessage: (_data, decision) => DECISION_MESSAGES[decision],
+    },
   );
 }

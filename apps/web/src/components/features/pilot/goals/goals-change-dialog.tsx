@@ -17,8 +17,8 @@ import { plural } from "@/utils/format";
 
 /** What the old goals left running, read when the user saves new ones. */
 export interface GoalsImpact {
-  searchNames: string[];
-  approvedJobs: number;
+  searches: { id: string; name: string }[];
+  approved: { feedId: string; key: string }[];
 }
 
 export interface GoalsRetirement {
@@ -38,8 +38,8 @@ export function GoalsChangeDialog(props: GoalsChangeDialogProps): ReactElement {
   const { impact, saving, onConfirm, onCancel } = props;
   const [rebuildSearches, setRebuildSearches] = useState(true);
   const [dropApprovedJobs, setDropApprovedJobs] = useState(true);
-  const searchCount = impact?.searchNames.length ?? 0;
-  const approvedJobs = impact?.approvedJobs ?? 0;
+  const searchCount = impact?.searches.length ?? 0;
+  const approvedJobs = impact?.approved.length ?? 0;
 
   return (
     <Dialog open={impact !== null} onClose={onCancel} maxWidth="sm" fullWidth>
@@ -62,7 +62,7 @@ export function GoalsChangeDialog(props: GoalsChangeDialogProps): ReactElement {
                 label={`Rebuild ${plural(searchCount, "search", "searches")} from the new goals`}
               />
               <Typography variant="captionMuted" sx={{ paddingInlineStart: 4 }}>
-                {impact?.searchNames.join(" · ")}
+                {impact?.searches.map((search) => search.name).join(" · ")}
               </Typography>
             </Stack>
           )}

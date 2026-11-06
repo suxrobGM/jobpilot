@@ -15,9 +15,7 @@ import { useMakeChange } from "../changes/use-changes";
 /** The empty-run streak that puts a search on the API backoff ladder's top (48h) rung. */
 const BACKOFF_THRESHOLD = 3;
 
-type ListedSearch = FeedDto;
-
-function yieldStats(search: ListedSearch): string {
+function yieldStats(search: FeedDto): string {
   const parts = [`${search.appliedThisWeek} applied this week`];
   if (search.lastRunAt) {
     parts.push(`last run ${formatRelativeTime(search.lastRunAt)} ago`);
@@ -34,7 +32,7 @@ function yieldStats(search: ListedSearch): string {
 }
 
 interface SearchRowProps {
-  search: ListedSearch;
+  search: FeedDto;
 }
 
 function SearchRow(props: SearchRowProps): ReactElement {

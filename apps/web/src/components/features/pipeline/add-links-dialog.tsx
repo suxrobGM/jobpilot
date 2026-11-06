@@ -3,16 +3,9 @@
 import { type ReactElement, useState } from "react";
 import { MAX_LINKS } from "@jobpilot/contracts/feed";
 import { Button, TextField } from "@mui/material";
-import { api } from "@/api/client";
-import { pipelineQueries } from "@/api/queries";
-import { useApiMutation } from "@/api/use-api-mutation";
 import { FormDialogShell } from "@/components/ui/form";
 import { plural } from "@/utils/format";
-
-/** Whitespace- or comma-separated links; anything that isn't one is dropped. */
-function parseLinks(text: string): string[] {
-  return text.split(/[\s,]+/).filter((part) => URL.canParse(part) && /^https?:/.test(part));
-}
+import { parseLinks, useAddLinks } from "./use-add-links";
 
 interface AddLinksDialogProps {
   open: boolean;
@@ -24,17 +17,9 @@ export function AddLinksDialog(props: AddLinksDialogProps): ReactElement {
   const [text, setText] = useState("");
   const links = parseLinks(text);
 
-  const add = useApiMutation(() => api.pipeline.links.post({ urls: links }), {
-    invalidate: [pipelineQueries.all],
-    successMessage: ({ added, duplicates }) => {
-      const already =
-        duplicates.length > 0 ? ` · ${duplicates.length} already in your pipeline` : "";
-      return `Added ${plural(added, "link")}${already}. The pilot scores them next.`;
-    },
-    onSuccess: () => {
-      setText("");
-      onClose();
-    },
+  const add = useAddLinks(() => {
+    setText("");
+    onClose();
   });
 
   const tooMany = links.length > MAX_LINKS;
@@ -44,7 +29,7 @@ export function AddLinksDialog(props: AddLinksDialogProps): ReactElement {
       title="Add job links"
       maxWidth="sm"
       onClose={onClose}
-      onSubmit={() => add.mutate()}
+      onSubmit={() => add.mutate(links)}
       submit={
         <Button
           type="submit"

@@ -6,18 +6,13 @@ import { Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import { api } from "@/api/client";
-import { pilotQueries, pipelineQueries } from "@/api/queries";
+import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { LinkButton } from "@/components/ui/buttons";
+import { CHANGE_INVALIDATE } from "../../changes/use-changes";
 import { SideSection } from "./side-section";
 
-const INVALIDATE = [
-  pilotQueries.notices().queryKey,
-  pilotQueries.state().queryKey,
-  pilotQueries.changesAll,
-  pilotQueries.threadAll,
-  pipelineQueries.all,
-];
+const INVALIDATE = [pilotQueries.notices().queryKey, ...CHANGE_INVALIDATE];
 
 type ActedNotice = Exclude<PilotNotice["action"], { kind: "link" }>;
 

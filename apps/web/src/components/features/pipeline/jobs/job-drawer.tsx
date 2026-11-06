@@ -93,6 +93,9 @@ function JobActions(props: JobActionsProps): ReactNode {
     );
   }
 
+  const applyNow = () =>
+    request.mutate({ taskType: "job.apply", payload: { feedId: job.feedId, jobKey: job.key } });
+
   switch (job.status) {
     case "pending":
       return (
@@ -104,15 +107,7 @@ function JobActions(props: JobActionsProps): ReactNode {
           >
             Approve
           </Button>
-          <Button
-            loading={request.isPending}
-            onClick={() =>
-              request.mutate({
-                taskType: "job.apply",
-                payload: { feedId: job.feedId, jobKey: job.key },
-              })
-            }
-          >
+          <Button loading={request.isPending} onClick={applyNow}>
             Apply now
           </Button>
         </Stack>
@@ -120,16 +115,7 @@ function JobActions(props: JobActionsProps): ReactNode {
     case "approved":
       return (
         <Stack direction="row" spacing={1}>
-          <Button
-            variant="contained"
-            loading={request.isPending}
-            onClick={() =>
-              request.mutate({
-                taskType: "job.apply",
-                payload: { feedId: job.feedId, jobKey: job.key },
-              })
-            }
-          >
+          <Button variant="contained" loading={request.isPending} onClick={applyNow}>
             Apply now
           </Button>
           <Button loading={setStatus.isPending} onClick={() => setStatus.mutate("pending")}>

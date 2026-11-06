@@ -5,16 +5,10 @@ import type { PilotState } from "@jobpilot/contracts/pilot";
 import { AddLink, ArrowUpward } from "@mui/icons-material";
 import { Chip, IconButton, InputBase, Paper, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { pilotQueries, pipelineQueries } from "@/api/queries";
+import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { plural } from "@/utils/format";
-
-const LINK_PATTERN = /https?:\/\/\S+/g;
-
-/** Posting links in the text, deduped; the chip adds them without a model. */
-function findLinks(text: string): string[] {
-  return [...new Set(text.match(LINK_PATTERN) ?? [])].filter((link) => URL.canParse(link));
-}
+import { parseLinks, useAddLinks } from "../../pipeline/use-add-links";
 
 interface ComposerProps {
   state: PilotState;
@@ -26,22 +20,15 @@ interface ComposerProps {
 /** Talk to the pilot; its reply runs in the user's own agent session ahead of other work. */
 export function Composer(props: ComposerProps): ReactElement {
   const { state, text, onTextChange: setText } = props;
-  const links = findLinks(text);
+  const links = parseLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
 
   const send = useApiMutation((body: string) => api.pilot.messages.post({ body }), {
     invalidate: [pilotQueries.threadAll],
     onSuccess: () => setText(""),
   });
-  const addLinks = useApiMutation((urls: string[]) => api.pipeline.links.post({ urls }), {
-    invalidate: [pipelineQueries.all],
-    successMessage: ({ added, duplicates }) => {
-      const already =
-        duplicates.length > 0 ? ` · ${duplicates.length} already in your pipeline` : "";
-      return `Added ${plural(added, "link")} to your pipeline${already}.`;
-    },
-    onSuccess: () => setText(""),
-  });
+  // The chip adds the links without a model.
+  const addLinks = useAddLinks(() => setText(""));
 
   const submit = (): void => {
     const body = text.trim();
