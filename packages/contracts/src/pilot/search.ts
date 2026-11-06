@@ -1,21 +1,6 @@
 import { z } from "zod/v4";
 import { boardRefSchema } from "../job-board";
 
-// Shown to the user as plain text.
-const reasonSchema = z.string().max(500).default("");
-
-export const createPilotSearchSchema = z.object({
-  /** The plain name the user sees; the query when left out. */
-  name: z.string().trim().min(1).max(120).optional(),
-  query: z.string().min(1),
-  /** The board's domain, resolved to a catalog row. */
-  board: z.string().trim().min(1).optional(),
-  resumeId: z.uuid().optional(),
-  reason: reasonSchema,
-});
-
-export const updatePilotSearchSchema = createPilotSearchSchema.partial();
-
 export const reportPilotSearchRunSchema = z.object({
   jobsScanned: z.number().int().min(0),
   newJobs: z.number().int().min(0),
@@ -44,7 +29,5 @@ export const pilotSearchListSchema = z.array(
   pilotSearchSchema.extend({ appliedThisWeek: z.number().int(), paused: z.boolean() }),
 );
 
-export type CreatePilotSearchInput = z.infer<typeof createPilotSearchSchema>;
-export type UpdatePilotSearchInput = z.infer<typeof updatePilotSearchSchema>;
 export type ReportPilotSearchRunInput = z.infer<typeof reportPilotSearchRunSchema>;
 export type PilotSearch = z.infer<typeof pilotSearchSchema>;

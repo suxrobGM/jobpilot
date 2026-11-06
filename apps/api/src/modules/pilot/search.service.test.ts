@@ -1,6 +1,5 @@
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { makeBoards } from "@/modules/job-board/job-board.fake";
 import { PilotSearchService, scheduleNextRun } from "./search.service";
 import { describe, expect, it } from "bun:test";
 
@@ -34,29 +33,14 @@ describe("scheduleNextRun", () => {
   }
 });
 
-interface SearchRows {
-  existing?: Record<string, unknown> | null;
-  clash?: { id: string } | null;
-}
-
-function makeService(over: SearchRows = {}) {
-  const rec = {
-    creates: [] as Record<string, unknown>[],
-    updates: [] as Record<string, unknown>[],
-    taskListResets: 0,
-  };
+function makeService(existing: Record<string, unknown> | null) {
+  const rec = { updates: [] as Record<string, unknown>[], taskListResets: 0 };
   const db = {
     pilotSearch: {
-      // A `query` in the where marks the uniqueness probe; otherwise it is the ownership load.
-      findFirst: async (a: { where: { query?: string } }) =>
-        a.where.query === undefined ? (over.existing ?? null) : (over.clash ?? null),
-      create: async (a: { data: Record<string, unknown> }) => {
-        rec.creates.push(a.data);
-        return { id: "new", ...a.data };
-      },
+      findFirst: async () => existing,
       update: async (a: { data: Record<string, unknown> }) => {
         rec.updates.push(a.data);
-        return { id: "s1", ...over.existing, ...a.data };
+        return { id: "s1", ...existing, ...a.data };
       },
     },
     pilotState: {
@@ -66,56 +50,20 @@ function makeService(over: SearchRows = {}) {
       },
     },
   };
-  return { svc: new PilotSearchService(db as unknown as PrismaClient, makeBoards()), rec };
+  return { svc: new PilotSearchService(db as unknown as PrismaClient), rec };
 }
 
-describe("PilotSearchService", () => {
-  const existing = { id: "s1", query: "react", boardId: null, emptyRuns: 0 };
-
-  it("creates a search and clears the cached task list", async () => {
-    const { svc, rec } = makeService();
-    await svc.create("p1", { query: "react", reason: "core stack" });
-    expect(rec.creates[0]).toMatchObject({ userId: "p1", query: "react", boardId: null });
-    expect(rec.taskListResets).toBe(1);
-  });
-
-  it("rejects a duplicate query and board, on create and on edit", async () => {
-    const created = makeService({ clash: { id: "dupe" } });
-    await expect(created.svc.create("p1", { query: "react", reason: "" })).rejects.toMatchObject({
-      status: 409,
-    });
-    const edited = makeService({ existing, clash: { id: "dupe" } });
-    await expect(edited.svc.update("p1", "s1", { query: "golang" })).rejects.toMatchObject({
-      status: 409,
-    });
-  });
-
-  it("restarts the schedule for a new query, but not for a new reason", async () => {
-    const requeried = makeService({ existing });
-    await requeried.svc.update("p1", "s1", { query: "golang" });
-    expect(requeried.rec.updates[0]).toMatchObject({
-      query: "golang",
-      emptyRuns: 0,
-      nextRunAt: expect.any(Date),
-      lastJobsScanned: null,
-      lastNewJobs: null,
-    });
-
-    const reworded = makeService({ existing });
-    await reworded.svc.update("p1", "s1", { reason: "still my top pick" });
-    expect(reworded.rec.updates[0]).toEqual({ reason: "still my top pick" });
-  });
+describe("PilotSearchService.reportRun", () => {
+  const report = { jobsScanned: 30, newJobs: 5, reachedEnd: false };
 
   it("404s an unknown search", async () => {
-    const { svc } = makeService({ existing: null });
-    await expect(svc.update("p1", "missing", { reason: "x" })).rejects.toMatchObject({
-      status: 404,
-    });
+    const { svc } = makeService(null);
+    await expect(svc.reportRun("p1", "missing", report)).rejects.toMatchObject({ status: 404 });
   });
 
   it("applies a run report to the schedule and clears the cached task list", async () => {
-    const { svc, rec } = makeService({ existing });
-    await svc.reportRun("p1", "s1", { jobsScanned: 30, newJobs: 5, reachedEnd: false });
+    const { svc, rec } = makeService({ id: "s1", emptyRuns: 0 });
+    await svc.reportRun("p1", "s1", report);
     expect(rec.updates[0]).toMatchObject({ emptyRuns: 0, lastJobsScanned: 30, lastNewJobs: 5 });
     expect(rec.taskListResets).toBe(1);
   });

@@ -1,13 +1,9 @@
-import type {
-  CreatePilotSearchInput,
-  ReportPilotSearchRunInput,
-  UpdatePilotSearchInput,
-} from "@jobpilot/contracts/pilot";
+import type { ReportPilotSearchRunInput } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
 import { HOUR_MS } from "@/common/date/buckets";
-import { conflict, findOwned } from "@/common/errors";
+import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { BOARD_REF_SELECT, JobBoardService } from "@/modules/job-board/job-board.service";
+import { BOARD_REF_SELECT } from "@/modules/job-board/job-board.service";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 /** A run with this many new jobs is "good": re-run it soon while the board is yielding. */
@@ -41,30 +37,10 @@ const SEARCH_INCLUDE = { board: { select: BOARD_REF_SELECT } } satisfies Prisma.
 /** The pilot's self-managed discovery searches. */
 @injectable()
 export class PilotSearchService {
-  constructor(
-    private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly boards = inject(JobBoardService),
-  ) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private clearTaskList(userId: string) {
     return this.prisma.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET });
-  }
-
-  /**
-   * A DB unique would treat two NULL boards as distinct, and a COALESCE index reads as schema drift
-   * to Prisma. The pilot is the only writer, so losing a race costs a duplicate, not corruption.
-   */
-  private async assertUnique(
-    userId: string,
-    query: string,
-    boardId: string | null,
-    exceptId: string | null = null,
-  ) {
-    const clash = await this.prisma.pilotSearch.findFirst({
-      where: { userId, query, boardId, ...(exceptId ? { id: { not: exceptId } } : {}) },
-      select: { id: true },
-    });
-    if (clash) throw conflict("A search with this query and board already exists.");
   }
 
   private findOwnedSearch(userId: string, id: string) {
@@ -72,7 +48,7 @@ export class PilotSearchService {
       (where) =>
         this.prisma.pilotSearch.findFirst({
           where,
-          select: { query: true, boardId: true, emptyRuns: true },
+          select: { emptyRuns: true },
         }),
       { id, userId },
       "Search",
@@ -111,58 +87,6 @@ export class PilotSearchService {
       appliedThisWeek: counts.get(search.id) ?? 0,
       paused: pausedIds.has(search.id),
     }));
-  }
-
-  async create(userId: string, input: CreatePilotSearchInput) {
-    const boardId = await this.boards.resolveId(input.board ?? null);
-    await this.assertUnique(userId, input.query, boardId);
-    const row = await this.prisma.pilotSearch.create({
-      data: {
-        userId,
-        name: input.name ?? input.query,
-        query: input.query,
-        boardId,
-        resumeId: input.resumeId ?? null,
-        reason: input.reason,
-      },
-      include: SEARCH_INCLUDE,
-    });
-    await this.clearTaskList(userId);
-    return row;
-  }
-
-  async update(userId: string, id: string, input: UpdatePilotSearchInput) {
-    const existing = await this.findOwnedSearch(userId, id);
-    const query = input.query ?? existing.query;
-    const boardId =
-      input.board === undefined ? existing.boardId : await this.boards.resolveId(input.board);
-    // A different query or board is a different search, so its schedule starts over.
-    const isNewSearch = query !== existing.query || boardId !== existing.boardId;
-    if (isNewSearch) await this.assertUnique(userId, query, boardId, id);
-
-    const row = await this.prisma.pilotSearch.update({
-      where: { id },
-      include: SEARCH_INCLUDE,
-      data: {
-        name: input.name,
-        query: input.query,
-        ...(input.board !== undefined && { boardId }),
-        resumeId: input.resumeId,
-        reason: input.reason,
-        ...(isNewSearch
-          ? { emptyRuns: 0, nextRunAt: new Date(), lastJobsScanned: null, lastNewJobs: null }
-          : {}),
-      },
-    });
-    await this.clearTaskList(userId);
-    return row;
-  }
-
-  async remove(userId: string, id: string) {
-    await this.findOwnedSearch(userId, id);
-    await this.prisma.pilotSearch.delete({ where: { id } });
-    await this.clearTaskList(userId);
-    return { deleted: id };
   }
 
   async reportRun(userId: string, id: string, input: ReportPilotSearchRunInput) {
