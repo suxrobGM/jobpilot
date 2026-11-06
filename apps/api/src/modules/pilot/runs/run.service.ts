@@ -9,7 +9,7 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
-import { conflict, findOwned, notFound } from "@/common/errors";
+import { badRequest, conflict, findOwned, notFound } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import {
@@ -295,10 +295,12 @@ export class RunService {
       detail: body.detail,
     };
     // A chat reply's answer becomes the pilot's message in the conversation.
-    const reply =
-      existing.taskType === "chat.reply" && typeof body.detail?.reply === "string"
-        ? body.detail.reply
-        : null;
+    const isChat = existing.taskType === "chat.reply";
+    const reply = isChat && typeof body.detail?.reply === "string" ? body.detail.reply : null;
+    // Closing without it would leave the user's message unanswered with no error.
+    if (isChat && body.outcome === "done" && reply === null) {
+      throw badRequest("A done chat.reply result needs its answer in detail.reply.");
+    }
     const run = await this.close(userId, existing, body.outcome, [action], reply);
     // After the journal line, so a run.finished listener already sees the result.
     publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });
