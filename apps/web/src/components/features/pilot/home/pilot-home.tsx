@@ -7,13 +7,13 @@ import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { Composer } from "./composer";
+import { GetStarted } from "./get-started";
 import { HeadsUp } from "./side/heads-up";
 import { NeedsYou } from "./side/needs-you";
 import { RulesSummary } from "./side/rules-summary";
 import { SearchesSummary } from "./side/searches-summary";
 import { StealthCodeBanner } from "./side/stealth-code-banner";
 import { StatusLine } from "./status-line";
-import { GetStartedCard } from "./thread/get-started-card";
 import { Thread } from "./thread/thread";
 
 interface SideColumnProps {
@@ -39,6 +39,7 @@ function SideColumn(props: SideColumnProps): ReactElement {
 export function PilotHome(): ReactElement {
   const stateQuery = useQuery(pilotQueries.state());
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [draft, setDraft] = useState("");
   const state = stateQuery.data;
 
   if (stateQuery.isLoading) {
@@ -69,8 +70,9 @@ export function PilotHome(): ReactElement {
         >
           Needs you, heads up, searches and rules
         </Button>
-        <Thread header={<GetStartedCard state={state} />} />
-        <Composer state={state} />
+        <GetStarted state={state} />
+        <Thread onPrompt={setDraft} />
+        <Composer state={state} text={draft} onTextChange={setDraft} />
       </Stack>
       <Box
         sx={{ display: { xs: "none", md: "block" }, width: 300, flexShrink: 0, overflowY: "auto" }}

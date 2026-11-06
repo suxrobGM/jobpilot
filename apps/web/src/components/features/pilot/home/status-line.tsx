@@ -67,6 +67,40 @@ export function StatusLine(props: StatusLineProps): ReactElement {
     }
   };
 
+  // One main action by state: start the agent, then turn on autopilot, then pause it.
+  const primaryAction = (): ReactElement => {
+    if (mode === "offline") {
+      return (
+        <Button size="small" variant="contained" onClick={openDrawer}>
+          Start agent
+        </Button>
+      );
+    }
+    if (state.autopilot) {
+      return (
+        <Button
+          size="small"
+          variant="outlined"
+          disabled={autopilot.isPending}
+          onClick={() => void pause()}
+        >
+          Pause
+        </Button>
+      );
+    }
+    return (
+      <TooltipButton
+        title={hasGoals(state) ? "" : "Write your goals before turning on autopilot."}
+        size="small"
+        variant="contained"
+        disabled={autopilot.isPending || !hasGoals(state)}
+        onClick={() => autopilot.mutate(true)}
+      >
+        Turn on autopilot
+      </TooltipButton>
+    );
+  };
+
   return (
     <Paper variant="outlined" sx={{ px: 2, py: 1.5 }}>
       <Stack
@@ -84,11 +118,6 @@ export function StatusLine(props: StatusLineProps): ReactElement {
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
-          {mode === "offline" && (
-            <Button size="small" onClick={openDrawer}>
-              Start agent
-            </Button>
-          )}
           {/* Steps stream through the API, so a run can be watched from a phone too. */}
           {(mode !== "offline" || run) && (
             <Button size="small" onClick={watchSteps}>
@@ -115,26 +144,7 @@ export function StatusLine(props: StatusLineProps): ReactElement {
               </Button>
             </>
           )}
-          {state.autopilot ? (
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={autopilot.isPending}
-              onClick={() => void pause()}
-            >
-              Pause
-            </Button>
-          ) : (
-            <TooltipButton
-              title={hasGoals(state) ? "" : "Write your goals before turning on autopilot."}
-              size="small"
-              variant="contained"
-              disabled={autopilot.isPending || !hasGoals(state)}
-              onClick={() => autopilot.mutate(true)}
-            >
-              Resume
-            </TooltipButton>
-          )}
+          {primaryAction()}
         </Stack>
       </Stack>
       {run && latestStep && (

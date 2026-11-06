@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import type { ReactElement } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { AddLink, ArrowUpward } from "@mui/icons-material";
 import { Chip, IconButton, InputBase, Paper, Stack, Typography } from "@mui/material";
@@ -18,12 +18,14 @@ function findLinks(text: string): string[] {
 
 interface ComposerProps {
   state: PilotState;
+  /** Owned by the home, so a suggested prompt can fill it. */
+  text: string;
+  onTextChange: (text: string) => void;
 }
 
 /** Talk to the pilot; its reply runs in the user's own agent session ahead of other work. */
 export function Composer(props: ComposerProps): ReactElement {
-  const { state } = props;
-  const [text, setText] = useState("");
+  const { state, text, onTextChange: setText } = props;
   const links = findLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
 

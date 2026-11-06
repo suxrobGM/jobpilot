@@ -1,5 +1,13 @@
 import { newTokens, type TokenUsage } from "@jobpilot/contracts/pilot";
-import { format, formatDistanceStrict, formatDistanceToNowStrict, isSameDay } from "date-fns";
+import {
+  format,
+  formatDistanceStrict,
+  formatDistanceToNowStrict,
+  isSameDay,
+  isThisYear,
+  isToday,
+  isYesterday,
+} from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 
 const COMPACT_UNIT: Record<string, string> = {
@@ -138,4 +146,15 @@ export function humanizeIsoInText(text: string): string {
     }
     return isSameDay(date, new Date()) ? format(date, "h:mm a") : format(date, "MMM d, h:mm a");
   });
+}
+
+/** "Today", "Yesterday", or the date, for day separators. */
+export function formatDayLabel(date: Date): string {
+  if (isToday(date)) {
+    return "Today";
+  }
+  if (isYesterday(date)) {
+    return "Yesterday";
+  }
+  return format(date, isThisYear(date) ? "EEEE, MMM d" : "MMM d, yyyy");
 }

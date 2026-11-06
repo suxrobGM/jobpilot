@@ -1,23 +1,66 @@
 "use client";
 
-import { type ReactElement, type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
-import { Box, Button, CircularProgress, Stack } from "@mui/material";
+import { Fragment, type ReactElement, useEffect, useLayoutEffect, useRef } from "react";
+import { Box, Button, Chip, CircularProgress, Divider, Stack, Typography } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import { EmptyState, QuerySection } from "@/components/ui/feedback";
+import { QuerySection } from "@/components/ui/feedback";
+import { formatDayLabel } from "@/utils/format";
 import { ThreadItem } from "./thread-item";
 
 /** Within this distance of the bottom, new items keep the view pinned to the newest. */
 const STICK_TO_BOTTOM_PX = 120;
 
+const SUGGESTED_PROMPTS = [
+  "What did you apply to this week?",
+  "Look for remote ML engineer roles too",
+  "Skip jobs that need a security clearance",
+];
+
+interface GreetingProps {
+  onPrompt: (text: string) => void;
+}
+
+function Greeting(props: GreetingProps): ReactElement {
+  const { onPrompt } = props;
+  return (
+    <Stack spacing={1.5} sx={{ alignItems: "center", py: 6, textAlign: "center" }}>
+      <Typography variant="h4" component="p">
+        Hi. What should I work on?
+      </Typography>
+      <Typography variant="body2Muted">
+        Ask about your search, change a rule, or send me job links. What I do shows up here.
+      </Typography>
+      <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
+        {SUGGESTED_PROMPTS.map((prompt) => (
+          <Chip key={prompt} label={prompt} variant="outlined" onClick={() => onPrompt(prompt)} />
+        ))}
+      </Stack>
+    </Stack>
+  );
+}
+
+interface DaySeparatorProps {
+  label: string;
+}
+
+function DaySeparator(props: DaySeparatorProps): ReactElement {
+  const { label } = props;
+  return (
+    <Divider>
+      <Typography variant="captionMuted">{label}</Typography>
+    </Divider>
+  );
+}
+
 interface ThreadProps {
-  /** Pinned above the oldest item, e.g. the Get started card. */
-  header?: ReactNode;
+  /** Fills the composer with a suggested prompt. */
+  onPrompt: (text: string) => void;
 }
 
 /** Newest at the bottom; scrolling to the top loads earlier items. */
 export function Thread(props: ThreadProps): ReactElement {
-  const { header } = props;
+  const { onPrompt } = props;
   const query = useInfiniteQuery(pilotQueries.thread());
   const scrollRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -77,7 +120,6 @@ export function Thread(props: ThreadProps): ReactElement {
       sx={{ flex: 1, minHeight: 0, overflowY: "auto", pr: 0.5 }}
     >
       <Stack spacing={1.5}>
-        {header}
         <Box ref={topRef} sx={{ display: "flex", justifyContent: "center" }}>
           {isFetchingNextPage && <CircularProgress size={20} />}
           {hasNextPage && !isFetchingNextPage && (
@@ -90,14 +132,19 @@ export function Thread(props: ThreadProps): ReactElement {
           query={query}
           errorTitle="Couldn't load the pilot's activity."
           isEmpty={items.length === 0}
-          empty={
-            <EmptyState variant="inline" title="Nothing yet. What the pilot does shows up here." />
-          }
+          empty={<Greeting onPrompt={onPrompt} />}
         >
           <Stack spacing={1.5}>
-            {items.map((item) => (
-              <ThreadItem key={`${item.type}:${item.id}`} item={item} />
-            ))}
+            {items.map((item, index) => {
+              const day = formatDayLabel(item.at);
+              const newDay = index === 0 || formatDayLabel(items[index - 1].at) !== day;
+              return (
+                <Fragment key={`${item.type}:${item.id}`}>
+                  {newDay && <DaySeparator label={day} />}
+                  <ThreadItem item={item} />
+                </Fragment>
+              );
+            })}
           </Stack>
         </QuerySection>
       </Stack>

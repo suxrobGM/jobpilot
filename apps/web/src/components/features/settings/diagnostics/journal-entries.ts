@@ -1,5 +1,6 @@
 import type { PilotJournalEntry, PilotJournalRun } from "@jobpilot/contracts/pilot";
-import { format, isThisYear, isToday, isYesterday } from "date-fns";
+import { format } from "date-fns";
+import { formatDayLabel } from "@/utils/format";
 
 /** Streamed actions predate the host's usage report, so every row takes its run's newest copy. */
 export function withLatestRuns(entries: PilotJournalEntry[]): PilotJournalEntry[] {
@@ -21,16 +22,6 @@ interface JournalDay {
   entries: PilotJournalEntry[];
 }
 
-function dayLabel(date: Date): string {
-  if (isToday(date)) {
-    return "Today";
-  }
-  if (isYesterday(date)) {
-    return "Yesterday";
-  }
-  return format(date, isThisYear(date) ? "EEEE, MMM d" : "MMM d, yyyy");
-}
-
 /** Entries arrive newest first, so each day's rows are contiguous. */
 export function groupByDay(entries: PilotJournalEntry[]): JournalDay[] {
   const days: JournalDay[] = [];
@@ -42,7 +33,7 @@ export function groupByDay(entries: PilotJournalEntry[]): JournalDay[] {
       last.entries.push(entry);
       continue;
     }
-    days.push({ key, label: dayLabel(date), entries: [entry] });
+    days.push({ key, label: formatDayLabel(date), entries: [entry] });
   }
   return days;
 }
