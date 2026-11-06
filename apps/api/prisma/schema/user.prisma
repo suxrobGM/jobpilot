@@ -23,6 +23,9 @@ model User {
   primaryResumeId String? @unique @map("primary_resume_id") @db.Uuid
   primaryResume   Resume? @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
 
+  // Standing user-authored guidance for the agent (e.g. "3 years of experience").
+  agentNotes String @default("") @map("agent_notes")
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 

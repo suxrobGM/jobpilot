@@ -7,6 +7,7 @@ import { PORTFOLIO_SETTINGS_SELECT, PROFILE_SELECT, withProfile } from "./user.m
 const USER_SELECT = {
   id: true,
   primaryResumeId: true,
+  agentNotes: true,
   profile: { select: PROFILE_SELECT },
 } satisfies Prisma.UserSelect;
 

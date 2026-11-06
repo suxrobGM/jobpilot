@@ -56,6 +56,7 @@ const userViewSchema = z.object({
   eeoVeteranStatus: z.string().nullable(),
   eeoDisabilityStatus: z.string().nullable(),
   primaryResumeId: z.uuid().nullable(),
+  agentNotes: z.string(),
   references: z.array(userReferenceSchema),
   salaryPreferences: z.array(userSalaryPreferenceSchema),
   updatedAt: z.date(),
