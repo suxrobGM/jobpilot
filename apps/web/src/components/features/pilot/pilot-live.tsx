@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
 import { pilotQueries, pipelineQueries } from "@/api/queries";
-import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
+import { invalidateSoon, useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { refetchThread } from "./home/thread/thread-cache";
 import { prependJournalEntry, refetchJournal } from "./journal/journal-cache";
 import { appendRunSteps } from "./steps/steps-cache";
@@ -26,7 +26,7 @@ export function PilotLive(): ReactNode {
 
   const invalidate = (keys: readonly (readonly unknown[])[]): void => {
     for (const queryKey of keys) {
-      void queryClient.invalidateQueries({ queryKey });
+      invalidateSoon(queryClient, queryKey);
     }
     refetchThread(queryClient);
   };
@@ -65,7 +65,7 @@ export function PilotLive(): ReactNode {
       refetchJournal(queryClient);
       refetchThread(queryClient);
       for (const queryKey of RECONNECT_KEYS) {
-        void queryClient.invalidateQueries({ queryKey });
+        invalidateSoon(queryClient, queryKey);
       }
     },
   });
