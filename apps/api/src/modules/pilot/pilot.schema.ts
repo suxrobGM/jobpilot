@@ -1,4 +1,4 @@
-import { campaignJobStatusSchema } from "@jobpilot/contracts/campaign";
+import { jobStatusSchema } from "@jobpilot/contracts/feed";
 import {
   PILOT_RUN_OUTCOMES,
   pilotJournalEntrySchema,
@@ -44,7 +44,7 @@ export const researchStatusSchema = z.object({
       summary: z.string().nullable(),
     })
     .nullable(),
-  campaignId: z.uuid().nullable(),
+  feedId: z.uuid().nullable(),
 });
 
 const withinDaysSchema = z.number().int().min(1).max(90);
@@ -76,13 +76,13 @@ export const similarJobsSchema = z.object({
   matches: z.array(
     z.object({
       index: z.number().int(),
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       key: z.string(),
       title: z.string(),
       company: z.string(),
       location: z.string().nullable(),
       url: z.string(),
-      status: campaignJobStatusSchema,
+      status: jobStatusSchema,
     }),
   ),
 });

@@ -24,13 +24,13 @@ export function requestSubject(input: CreatePilotRequestInput, requestId: string
       return {
         subjectType: "job",
         subjectId: jobSubjectId({
-          campaignId: input.payload.campaignId,
+          feedId: input.payload.feedId,
           key: input.payload.jobKey,
         }),
       };
     case "job.rescanSkipped":
     case "job.retryFailed":
-      return { subjectType: "campaign", subjectId: input.payload.campaignId };
+      return { subjectType: "feed", subjectId: input.payload.feedId };
     case "inbox.review":
       return { subjectType: "inbox", subjectId: "inbox" };
     case "upwork.syncInbox":
@@ -40,7 +40,7 @@ export function requestSubject(input: CreatePilotRequestInput, requestId: string
     case "research.explore":
       return { subjectType: "pilot", subjectId: "research" };
     case "search.discover":
-      return { subjectType: "campaign", subjectId: input.payload.searchId };
+      return { subjectType: "feed", subjectId: input.payload.searchId };
     case "resume.extract":
       return { subjectType: "resume", subjectId: input.payload.resumeId };
     case "resume.tailor":

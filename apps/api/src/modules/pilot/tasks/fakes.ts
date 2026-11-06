@@ -1,7 +1,7 @@
 import type { TaskType } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
+import type { JobService } from "@/modules/feed/jobs/job.service";
 import { makePush, type SentPush } from "@/modules/web-push/web-push.fake";
 import type { PilotJournalService } from "../journal.service";
 import { TaskListService } from "./task-list.service";
@@ -20,7 +20,6 @@ type LatestRun = Omit<RunRow, "subjectId" | "startedAt"> & { startedAt?: Date };
 
 interface Recorder {
   promoteScoredJobs: unknown[][];
-  campaignUpdates: { where: Row; data: Row }[];
   journals: Row[];
   pushes: SentPush[];
   inboxSyncs: { userId: string; staleMs: number }[];
@@ -44,13 +43,11 @@ export interface Over {
   primaryResumeId?: string | null;
   profile?: { requiresSponsorship: boolean } | null;
   pendingRequests?: Record<string, unknown>[];
-  dueSearchCampaigns?: { id: string; pilotSearchId: string; status: string }[];
-  scorePendingCampaigns?: Row[];
+  scorePendingFeeds?: Row[];
   scoredPendingJobs?: Row[];
-  pausedCampaigns?: Row[];
-  campaignQuestions?: { subjectId: string; status: string; answeredAt: Date | null }[];
-  finalizeCampaigns?: Row[];
-  queuedCampaigns?: Row[];
+  pausedSearches?: Row[];
+  feedQuestions?: { subjectId: string; status: string; answeredAt: Date | null }[];
+  queuedFeeds?: Row[];
   boardDiagnoseJobs?: Row[];
   platformPosts?: { platform: string; createdAt: Date }[];
   interviewReplyApps?: Row[];
@@ -59,9 +56,9 @@ export interface Over {
   upworkAccount?: { lastSyncedAt: Date | null } | null;
   upworkProfiles?: number;
   upworkUnread?: number;
-  quietCampaigns?: Row[];
+  quietFeeds?: Row[];
   quietJobCounts?: Row[];
-  skipReasonRows?: { campaignId: string; skipReason: string | null; _count: { _all: number } }[];
+  skipReasonRows?: { feedId: string; skipReason: string | null; _count: { _all: number } }[];
   existingDigests?: number;
   digestApps?: number;
   jobsFailed?: number;
@@ -85,7 +82,7 @@ function fakePilotQuestion(over: Over) {
   return {
     count: async () => 0,
     findMany: async (a: { where: { status?: unknown; subjectType?: string } }) => {
-      if (a.where.subjectType === "campaign") return over.campaignQuestions ?? [];
+      if (a.where.subjectType === "feed") return over.feedQuestions ?? [];
       if (a.where.subjectType === "email") return over.interviewQuestions ?? [];
       if (a.where.status === "answered") return over.answered ?? [];
       return [];
@@ -94,7 +91,7 @@ function fakePilotQuestion(over: Over) {
   };
 }
 
-function fakeCampaignJob(over: Over) {
+function fakeJob(over: Over) {
   return {
     // Routed by the one filter each read sets: applied = warm-intro pool, matchScore = promote
     // sweep, status `in` = board health, and the rest is the approved gather.
@@ -117,23 +114,24 @@ function fakeCampaignJob(over: Over) {
   };
 }
 
-function fakeCampaign(over: Over, rec: Recorder) {
+function fakeFeed(over: Over) {
   return {
-    // Routed by a field only that read sets; finalize also sets `pilotSearchId`, so it goes first.
-    findMany: async (a: { where: { status?: string; source?: string } }) => {
-      if (a.where.status === "paused") return over.pausedCampaigns ?? [];
-      if ("OR" in a.where) return over.finalizeCampaigns ?? [];
-      if ("pilotSearchId" in a.where) return over.dueSearchCampaigns ?? [];
-      if (a.where.source === "apply") return over.queuedCampaigns ?? [];
-      if ("jobs" in a.where) return over.scorePendingCampaigns ?? [];
-      return over.quietCampaigns ?? [];
+    // Routed by the field only that read sets.
+    findMany: async (a: { where: { kind?: unknown; pausedAt?: unknown; jobs?: unknown } }) => {
+      const { kind, pausedAt } = a.where;
+      if (pausedAt != null) return over.pausedSearches ?? [];
+      if (kind === "search") return over.pilotSearches ?? [];
+      if (typeof kind === "object" && kind !== null && "in" in kind) {
+        return over.scorePendingFeeds ?? [];
+      }
+      if ("jobs" in a.where) return over.queuedFeeds ?? [];
+      return over.quietFeeds ?? [];
     },
-    count: async (a: { where: { feed?: string } }) =>
-      (over.pausedFeeds ?? []).filter((feed) => feed === a.where.feed).length,
-    updateManyAndReturn: async (a: { where: Row; data: Row }) => {
-      rec.campaignUpdates.push(a);
-      return over.finalizeCampaigns ?? [];
-    },
+    // A paused-feed check filters on `pausedAt`; the rest count searches.
+    count: async (a: { where: { kind?: string; pausedAt?: unknown } }) =>
+      a.where.pausedAt != null
+        ? (over.pausedFeeds ?? []).filter((kind) => kind === a.where.kind).length
+        : (over.pilotSearches ?? []).length,
   };
 }
 
@@ -141,7 +139,6 @@ function fakeCampaign(over: Over, rec: Recorder) {
 function makeTaskListDb(over: Over = {}) {
   const rec: Recorder = {
     promoteScoredJobs: [],
-    campaignUpdates: [],
     journals: [],
     pushes: [],
     inboxSyncs: [],
@@ -162,16 +159,12 @@ function makeTaskListDb(over: Over = {}) {
     },
     pilotRequest: { findMany: async () => over.pendingRequests ?? [] },
     pilotMessage: { findFirst: async () => null },
-    pilotSearch: {
-      findMany: async () => over.pilotSearches ?? [],
-      count: async () => (over.pilotSearches ?? []).length,
-    },
     pilotRun: fakePilotRun(over),
     profile: { findUnique: async () => over.profile ?? null },
     user: { findUnique: async () => ({ primaryResumeId: over.primaryResumeId ?? null }) },
     resume: { findMany: async () => [] },
     pilotQuestion: fakePilotQuestion(over),
-    campaignJob: fakeCampaignJob(over),
+    job: fakeJob(over),
     application: {
       count: async (a: { where: Row }) =>
         over.digestApps != null && a.where.appliedAt ? over.digestApps : (over.appliedToday ?? 0),
@@ -179,7 +172,7 @@ function makeTaskListDb(over: Over = {}) {
       findMany: async (a: { where: Row }) =>
         "events" in a.where ? (over.interviewPrepApps ?? []) : (over.interviewReplyApps ?? []),
     },
-    campaign: fakeCampaign(over, rec),
+    feed: fakeFeed(over),
     upworkAccount: { findUnique: async () => over.upworkAccount ?? null },
     upworkProfile: { count: async () => over.upworkProfiles ?? 0 },
     upworkInboxItem: { count: async () => over.upworkUnread ?? 0 },
@@ -226,11 +219,11 @@ function makeTaskListDb(over: Over = {}) {
 
 export function makeTaskListDeps(over: Over = {}) {
   const { prisma, rec } = makeTaskListDb(over);
-  const campaignJobs = {
+  const jobs = {
     promoteScoredJobs: async (...args: unknown[]) => {
       rec.promoteScoredJobs.push(args);
     },
-  } as unknown as CampaignJobService;
+  } as unknown as JobService;
   const journal = {
     appendJournal: async (_userId: string, body: { entries: Row[] }) => {
       rec.journals.push(...body.entries);
@@ -242,12 +235,12 @@ export function makeTaskListDeps(over: Over = {}) {
       rec.inboxSyncs.push({ userId, staleMs });
     },
   } as unknown as EmailSyncService;
-  return { prisma, campaignJobs, journal, push: makePush(rec.pushes), emailSync, rec };
+  return { prisma, jobs, journal, push: makePush(rec.pushes), emailSync, rec };
 }
 
 export const serviceWithRec = (over: Over = {}) => {
-  const { prisma, campaignJobs, journal, push, emailSync, rec } = makeTaskListDeps(over);
-  return { svc: new TaskListService(prisma, campaignJobs, journal, push, emailSync), rec };
+  const { prisma, jobs, journal, push, emailSync, rec } = makeTaskListDeps(over);
+  return { svc: new TaskListService(prisma, jobs, journal, push, emailSync), rec };
 };
 
 export const service = (over: Over = {}) => serviceWithRec(over).svc;
@@ -264,7 +257,7 @@ export const pilotSearchRow = (over: Row = {}) => ({
 });
 
 export const approvedJob = (over: Row = {}) => ({
-  campaignId: "c1",
+  feedId: "c1",
   key: "jobkey",
   title: "Engineer",
   url: "https://x/1",
@@ -272,6 +265,6 @@ export const approvedJob = (over: Row = {}) => ({
   brief: null,
   company: "Acme",
   matchScore: 80,
-  campaign: { config: {} },
+  feed: { config: {} },
   ...over,
 });

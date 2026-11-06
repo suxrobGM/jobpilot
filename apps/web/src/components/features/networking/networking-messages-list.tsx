@@ -34,16 +34,14 @@ export function NetworkingMessagesList(): ReactElement {
   const messages = query.data?.items ?? [];
   const openMessage = messages.find((m) => m.id === openId) ?? null;
   const selected = resolveSelectedRows(selection, messages).flatMap((m) =>
-    m.campaignId && !isTerminalNetworkingStatus(m.status)
-      ? [{ id: m.id, campaignId: m.campaignId }]
-      : [],
+    m.feedId && !isTerminalNetworkingStatus(m.status) ? [{ id: m.id, feedId: m.feedId }] : [],
   );
 
   const approveSelected = useApiMutation(
     async () => {
       for (const message of selected) {
         const res = await api
-          .campaigns({ id: message.campaignId })
+          .feeds({ id: message.feedId })
           .networking.messages({ messageId: message.id })
           .patch({ status: "approved" });
         if (res.error) {
@@ -118,9 +116,9 @@ export function NetworkingMessagesList(): ReactElement {
           onPageSizeChange={pagination.setPageSize}
         />
       )}
-      {openMessage?.campaignId && (
+      {openMessage?.feedId && (
         <NetworkingMessageDialog
-          campaignId={openMessage.campaignId}
+          feedId={openMessage.feedId}
           message={openMessage}
           onClose={() => setOpenId(null)}
         />

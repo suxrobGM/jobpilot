@@ -32,7 +32,7 @@ export const applicationController = new Elysia({
     detail: {
       summary: "List applications",
       description:
-        "Returns one page of the user's applied jobs (newest first) as `{ items, pagination }`, optionally filtered by status, board, source, campaign (`none` for single applies), or a search term matched against title, company, and URL.",
+        "Returns one page of the user's applied jobs (newest first) as `{ items, pagination }`, optionally filtered by status, board, source, feed (`none` for single applies), or a search term matched against title, company, and URL.",
     },
   })
   .get("/summary", ({ user, query }) => svc.summary(user.id, query), {

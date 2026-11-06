@@ -1,11 +1,7 @@
 import type { ApplicationSource, ApplicationStatus } from "@jobpilot/contracts/application";
-import type {
-  CampaignJobStatus,
-  CampaignSource,
-  CampaignStatus,
-} from "@jobpilot/contracts/campaign";
 import type { CoverLetterSource } from "@jobpilot/contracts/cover-letter";
 import type { Classification } from "@jobpilot/contracts/email";
+import type { JobStatus } from "@jobpilot/contracts/feed";
 import type { JobListingStatus } from "@jobpilot/contracts/job-listing";
 import type {
   CONTACT_LINKEDIN_CONNECTIONS,
@@ -39,8 +35,8 @@ const application: Styles<ApplicationStatus> = {
   withdrawn: { label: "Withdrawn", color: "default" },
 };
 
-/** Campaign, application and cover-letter sources share one vocabulary. */
-const source: Styles<CampaignSource | ApplicationSource | CoverLetterSource> = {
+/** Application and cover-letter sources share one vocabulary. */
+const source: Styles<ApplicationSource | CoverLetterSource> = {
   search: { label: "Search", color: "default" },
   auto_apply: { label: "Auto-apply", color: "success" },
   apply: { label: "Single apply", color: "info" },
@@ -48,14 +44,7 @@ const source: Styles<CampaignSource | ApplicationSource | CoverLetterSource> = {
   networking: { label: "Networking", color: "default" },
 };
 
-const campaign: Styles<CampaignStatus> = {
-  in_progress: { label: "In progress", color: "info" },
-  paused: { label: "Paused", color: "default" },
-  completed: { label: "Completed", color: "success" },
-  failed: { label: "Failed", color: "error" },
-};
-
-const campaignJob: Styles<CampaignJobStatus> = {
+const job: Styles<JobStatus> = {
   queued: { label: "Queued", color: "default" },
   pending: { label: "Pending", color: "default" },
   approved: { label: "Approved", color: "info" },
@@ -151,8 +140,7 @@ const role: Styles<Role> = {
 const STATUS_STYLES = {
   application,
   source,
-  campaign,
-  campaignJob,
+  job,
   networking,
   connection,
   promotion,

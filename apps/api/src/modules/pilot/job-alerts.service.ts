@@ -40,13 +40,13 @@ export class JobAlertsService {
     ]);
     const settings = config.jobAlerts;
 
-    const [pendingEmails, campaign] = await Promise.all([
+    const [pendingEmails, feed] = await Promise.all([
       this.prisma.emailMessage.count({ where: pendingJobAlertsWhere(userId, settings, now) }),
-      // The run's result names the campaign it opened.
-      lastRun?.subjectType === "campaign"
-        ? this.prisma.campaign.findFirst({
+      // The run's result names the feed it opened.
+      lastRun?.subjectType === "feed"
+        ? this.prisma.feed.findFirst({
             where: { id: lastRun.subjectId, userId },
-            select: { id: true, query: true },
+            select: { id: true, name: true },
           })
         : null,
     ]);
@@ -61,7 +61,7 @@ export class JobAlertsService {
             startedAt: lastRun.startedAt,
             finishedAt: lastRun.finishedAt,
             outcome: lastRun.outcome,
-            campaign,
+            feed,
           }
         : null,
     };

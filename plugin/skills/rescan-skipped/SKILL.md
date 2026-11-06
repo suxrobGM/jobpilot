@@ -1,19 +1,19 @@
 ---
 name: rescan-skipped
-description: Re-score a campaign's skipped jobs and promote the eligible ones to `approved` for later applying. Recovers jobs wrongly dropped for location, a sparse JD, 1099, or seniority. Does not apply.
-argument-hint: "<campaign-id> [--jobs key1,key2,…]"
+description: Re-score a feed's skipped jobs and promote the eligible ones to `approved` for later applying. Recovers jobs wrongly dropped for location, a sparse JD, 1099, or seniority. Does not apply.
+argument-hint: "<feed-id> [--jobs key1,key2,…]"
 ---
 
 # Rescan Skipped - Recover Wrongly-Dropped Jobs
 
-Re-score a campaign's `skipped` jobs and set eligible ones to `approved`. **Never apply and never
-change the campaign's status** - apply the promoted jobs afterward via the `apply` skill (`apply
-campaign <campaign-id>`) or the campaign page.
+Re-score a feed's `skipped` jobs and set eligible ones to `approved`. **Never apply and never
+change the feed's status** - apply the promoted jobs afterward via the `apply` skill (`apply
+feed <feed-id>`) or the feed page.
 
 ## Setup
 
-Follow `../_shared/setup.md`. Fetch the campaign: `jobpilot-api GET /api/campaigns/<campaign-id>`.
-Threshold = the campaign's `config.minScore`, else `GET /api/pilot` → `config.minScore`, else 60.
+Follow `../_shared/setup.md`. Fetch the feed: `jobpilot-api GET /api/feeds/<feed-id>`.
+Threshold = the feed's `config.minScore`, else `GET /api/pilot` → `config.minScore`, else 60.
 
 ## Step 1: Select Targets
 
@@ -22,13 +22,13 @@ Targets are **every** `status:"skipped"` job; with `--jobs key1,key2,…`, restr
 - **Always leave (permanent) - only these:** `skipReason` starting `Already applied`, `CAPTCHA`,
   `Payment required`, or `No visa sponsorship (JD:`, or one stating a JD-cited citizenship/clearance
   requirement.
-- **Whole-campaign mode (no `--jobs`):** also leave deliberate user choices - `Removed by user`,
-  `Not selected by user`, `User cancelled…`, `Max applications limit reached`, `Campaign paused by
+- **Whole-feed mode (no `--jobs`):** also leave deliberate user choices - `Removed by user`,
+  `Not selected by user`, `User cancelled…`, `Max applications limit reached`, `Feed paused by
   user`.
 - **`--jobs` mode:** reconsider every named target except the permanent ones.
 
 Count the full target list up front and process every one. **Below-threshold, zero-score, and
-no-`skipReason` jobs are all targets** - the stored score came from the campaign that wrongly
+no-`skipReason` jobs are all targets** - the stored score came from the feed that wrongly
 skipped them, so it's never a reason to skip the re-score. Don't cherry-pick the jobs already
 at/above threshold.
 
@@ -52,7 +52,7 @@ at/above threshold.
      string>","description":"<posting text or empty>"}` to `$JOBPILOT_TEMP/rescan-<key>.json`, then:
 
 ```bash
-jobpilot-api POST /api/campaigns/<campaign-id>/jobs/<key>/rescan --data @"$JOBPILOT_TEMP/rescan-<key>.json"
+jobpilot-api POST /api/feeds/<feed-id>/jobs/<key>/rescan --data @"$JOBPILOT_TEMP/rescan-<key>.json"
 ```
 
 - Below threshold after a fair read → POST `/rescan` with `decision:"skipped"`, the new
@@ -66,5 +66,5 @@ Process every target before finishing - `promoted + left-skipped + permanent` mu
 count. If any are unprocessed, keep going; don't report a partial pass as complete.
 
 Print a short table (promoted vs left `skipped`, with reasons) plus the reconciliation (e.g. "228
-skipped → 226 targets; 19 promoted, 207 left skipped"). Then point the user to `apply campaign
-<campaign-id>` (or the campaign page's Apply selected). Don't apply; don't change campaign status.
+skipped → 226 targets; 19 promoted, 207 left skipped"). Then point the user to `apply feed
+<feed-id>` (or the feed page's Apply selected). Don't apply; don't change feed status.

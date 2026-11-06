@@ -10,7 +10,7 @@ Payload `{messageId}`: the user wrote to you. No browser unless the question nee
    ```
 
    Answer the newest user messages since your last reply, all of them in one reply. Answer from API
-   data (`GET /api/pilot/searches`, `/api/pipeline/jobs`, `/api/pipeline/counts`,
+   data (`GET /api/feeds?kind=search`, `/api/pipeline/jobs`, `/api/pipeline/counts`,
    `/api/applications`), never from memory or guesses. Say when you don't know.
 
 2. Act on what the user asked, and only that:
@@ -39,8 +39,8 @@ Payload `{messageId}`: the user wrote to you. No browser unless the question nee
      jobpilot-api POST /api/pilot/requests --data '{"taskType":"networking.find","payload":{"criteria":"recruiters at Waymo"},"source":"chat"}'
      ```
 
-     Types: `job.apply {campaignId, jobKey}`, `job.rescanSkipped {campaignId, jobKeys?}`,
-     `job.retryFailed {campaignId}`, `inbox.review {}`, `upwork.syncInbox {}`, `search.discover
+     Types: `job.apply {feedId, jobKey}`, `job.rescanSkipped {feedId, jobKeys?}`,
+     `job.retryFailed {feedId}`, `inbox.review {}`, `upwork.syncInbox {}`, `search.discover
      {searchId}`, `resume.extract {resumeId}`, `resume.tailor {jobDescription}`, `networking.find
      {criteria}`, `upwork.profile {mode}`.
 

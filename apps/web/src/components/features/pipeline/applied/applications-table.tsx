@@ -9,12 +9,12 @@ import { applicationHref } from "@/utils/routes";
 
 interface ApplicationsTableProps {
   rows: ApplicationDto[];
-  /** Maps a campaignId to its query, for attribution. */
-  campaignLabel: Map<string, string>;
+  /** Maps a feedId to its query, for attribution. */
+  feedLabel: Map<string, string>;
 }
 
 export function ApplicationsTable(props: ApplicationsTableProps): ReactElement {
-  const { rows, campaignLabel } = props;
+  const { rows, feedLabel } = props;
 
   const columns: SimpleColumn<ApplicationDto>[] = [
     { key: "role", header: "Role", render: (a) => a.title },
@@ -29,7 +29,7 @@ export function ApplicationsTable(props: ApplicationsTableProps): ReactElement {
       header: "Source",
       render: (a) => (
         <Typography variant="captionMuted">
-          {a.campaignId ? (campaignLabel.get(a.campaignId) ?? a.source) : "Single apply"}
+          {a.feedId ? (feedLabel.get(a.feedId) ?? a.source) : "Single apply"}
         </Typography>
       ),
     },

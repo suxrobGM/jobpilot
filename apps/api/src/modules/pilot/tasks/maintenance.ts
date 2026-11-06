@@ -1,10 +1,8 @@
-import { CAMPAIGN_JOB_ACTIVE_STATUSES, campaignConfigSchema } from "@jobpilot/contracts/campaign";
+import { AUTO_APPLY_FEED_KINDS, feedConfigSchema } from "@jobpilot/contracts/feed";
 import { DAY_MS } from "@/common/date/buckets";
-import type { CampaignFeed, Prisma, PrismaClient } from "@/generated/prisma/client";
-import { PROMOTABLE_SOURCES, publishCampaignStatus } from "@/modules/campaign/campaign.utils";
-import { parseJobRef, revertApplyingJobs } from "@/modules/campaign/jobs/apply-guard";
-import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import type { PilotJournalService } from "../journal.service";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { parseJobRef, revertApplyingJobs } from "@/modules/feed/jobs/apply-guard";
+import type { JobService } from "@/modules/feed/jobs/job.service";
 import { finishRequests } from "../requests/request-row";
 import { SERVER_SKIP_REASONS } from "../skip-reasons";
 import { GATHER_CAP, parseJobSubject } from "./run-history";
@@ -13,8 +11,6 @@ import { GATHER_CAP, parseJobSubject } from "./run-history";
 const STALE_APPLYING_MS = 30 * 60 * 1000;
 /** A week-long pause would otherwise wake to dead postings ranked above everything else. */
 const APPROVED_JOB_STALE_MS = 7 * DAY_MS;
-/** Recent job activity means someone may be mid-session on the campaign. */
-const FINALIZE_IDLE_MS = 10 * 60 * 1000;
 const MAX_OPEN_APPLY_RUNS = 20;
 
 function staleApplyingBefore(now: Date): Date {
@@ -47,7 +43,7 @@ async function expireRuns(tx: Prisma.TransactionClient, userId: string, now: Dat
     take: MAX_OPEN_APPLY_RUNS,
     select: { payload: true },
   });
-  await tx.campaignJob.updateMany({
+  await tx.job.updateMany({
     where: {
       status: "applying",
       userId,
@@ -70,7 +66,7 @@ export async function expireAbandonedRuns(prisma: PrismaClient, now: Date): Prom
       take: GATHER_CAP,
       select: { userId: true },
     }),
-    prisma.campaign.findMany({
+    prisma.feed.findMany({
       where: {
         jobs: {
           some: {
@@ -96,12 +92,12 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
   await prisma.$transaction(async (tx) => {
     await expireRuns(tx, userId, now);
 
-    // Pilot campaigns only: a user's own queue is theirs to clear.
-    await tx.campaignJob.updateMany({
+    // Pilot feeds only: a user's own queue is theirs to clear.
+    await tx.job.updateMany({
       where: {
         status: "approved",
         userId,
-        campaign: { createdBy: "pilot" },
+        feed: { createdBy: "pilot" },
         createdAt: { lt: new Date(now.getTime() - APPROVED_JOB_STALE_MS) },
       },
       data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.wentStale },
@@ -125,7 +121,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
     );
     if (parkedJobs.length === 0) return;
 
-    await tx.campaignJob.updateMany({
+    await tx.job.updateMany({
       where: {
         status: "needs_user",
         userId,
@@ -139,89 +135,34 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
 /** Settles scored pending jobs now instead of waiting for the next discovery run. */
 export async function promoteScoredPendingJobs(
   prisma: PrismaClient,
-  campaignJobs: CampaignJobService,
+  jobService: JobService,
   userId: string,
   fallbackMinScore: number,
 ): Promise<void> {
-  const rows = await prisma.campaignJob.findMany({
+  const rows = await prisma.job.findMany({
     where: {
       status: "pending",
       matchScore: { not: null },
       userId,
-      campaign: { status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
+      feed: { pausedAt: null, archivedAt: null, kind: { in: [...AUTO_APPLY_FEED_KINDS] } },
     },
     take: GATHER_CAP,
     select: {
-      campaignId: true,
+      feedId: true,
       key: true,
       matchScore: true,
-      campaign: { select: { config: true, source: true } },
+      feed: { select: { config: true } },
     },
   });
 
-  for (const [campaignId, jobs] of Map.groupBy(rows, (row) => row.campaignId)) {
-    const { config, source } = jobs[0].campaign;
-    const threshold = campaignConfigSchema.parse(config).minScore ?? fallbackMinScore;
+  for (const [feedId, jobs] of Map.groupBy(rows, (row) => row.feedId)) {
+    const { config } = jobs[0].feed;
+    const threshold = feedConfigSchema.parse(config).minScore ?? fallbackMinScore;
     const candidates = jobs.map((job) => ({
       key: job.key,
       matchScore: job.matchScore ?? 0,
       threshold,
     }));
-    await campaignJobs.promoteScoredJobs(userId, campaignId, source, candidates);
+    await jobService.promoteScoredJobs(userId, feedId, candidates);
   }
-}
-
-/** Server-side because as a task it starved forever. Standing campaigns of live feeds stay open. */
-export async function finalizeIdleCampaigns(
-  prisma: PrismaClient,
-  journal: PilotJournalService,
-  userId: string,
-  now: Date,
-  liveFeeds: CampaignFeed[],
-): Promise<void> {
-  const idle = await prisma.campaign.findMany({
-    where: {
-      userId,
-      status: "in_progress",
-      pilotSearchId: null,
-      // Not `NOT { feed: { in } }`: that is NULL in SQL for feedless rows.
-      AND: [{ OR: [{ feed: null }, { feed: { notIn: liveFeeds } }] }],
-      jobs: { none: { updatedAt: { gt: new Date(now.getTime() - FINALIZE_IDLE_MS) } } },
-      OR: [
-        {
-          source: { not: "networking" },
-          jobs: { none: { status: { in: [...CAMPAIGN_JOB_ACTIVE_STATUSES] } } },
-        },
-        {
-          source: "networking",
-          networkingMessages: { none: { status: { in: ["draft", "approved"] } } },
-        },
-      ],
-    },
-    select: { id: true },
-  });
-  if (idle.length === 0) return;
-
-  // Guarded on status, so a concurrent transition wins over the sweep.
-  const completed = await prisma.campaign.updateManyAndReturn({
-    where: { id: { in: idle.map((campaign) => campaign.id) }, userId, status: "in_progress" },
-    data: {
-      status: "completed",
-      statusChangedBy: "pilot",
-      statusReason: "No active work remaining.",
-      completedAt: now,
-    },
-    select: { id: true, query: true, source: true },
-  });
-  if (completed.length === 0) return;
-
-  for (const campaign of completed) publishCampaignStatus(userId, campaign, "completed");
-  await journal.appendJournal(userId, {
-    entries: completed.map((campaign) => ({
-      kind: "action" as const,
-      subjectType: "campaign",
-      subjectId: campaign.id,
-      summary: `Finished the search '${campaign.query}' - nothing left to do.`,
-    })),
-  });
 }

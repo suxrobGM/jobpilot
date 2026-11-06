@@ -23,9 +23,9 @@ export const pilotJobLookupController = new Elysia({
     beforeHandle: rateLimit(RATE_LIMITS.pilotMutation),
     response: existingJobsSchema,
     detail: {
-      summary: "Find postings already in a campaign",
+      summary: "Find postings already in a feed",
       description:
-        "Returns the given URLs, as sent, whose normalized form is already a job in one of the user's campaigns from the last `withinDays` days (default 7). Read-only.",
+        "Returns the given URLs, as sent, whose normalized form is already a job in one of the user's feeds from the last `withinDays` days (default 7). Read-only.",
     },
   })
   .post("/jobs/similar", ({ user, body }) => lookup.findSimilar(user.id, body), {
@@ -33,7 +33,7 @@ export const pilotJobLookupController = new Elysia({
     beforeHandle: rateLimit(RATE_LIMITS.pilotMutation),
     response: similarJobsSchema,
     detail: {
-      summary: "Find campaign jobs similar to given postings",
-      description: `For each posting (title, company), returns the closest fuzzy match among the user's campaign jobs from the last \`withinDays\` days (default ${APPLIED_DUPLICATE_WINDOW_DAYS}), skipped rows included. The same title at one employer can be a different role, so a match is a hint for the caller to judge. Read-only.`,
+      summary: "Find feed jobs similar to given postings",
+      description: `For each posting (title, company), returns the closest fuzzy match among the user's feed jobs from the last \`withinDays\` days (default ${APPLIED_DUPLICATE_WINDOW_DAYS}), skipped rows included. The same title at one employer can be a different role, so a match is a hint for the caller to judge. Read-only.`,
     },
   });

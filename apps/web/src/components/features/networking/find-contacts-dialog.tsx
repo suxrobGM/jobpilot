@@ -10,7 +10,7 @@ interface FindContactsDialogProps {
   onClose: () => void;
 }
 
-/** Outreach that belongs to no job runs on the standing networking campaign. */
+/** Outreach that belongs to no job runs on the standing networking feed. */
 export function FindContactsDialog(props: FindContactsDialogProps): ReactElement {
   const { open, onClose } = props;
   const [criteria, setCriteria] = useState("");

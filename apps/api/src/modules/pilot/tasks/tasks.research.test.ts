@@ -68,7 +68,7 @@ describe("TaskListService research.explore", () => {
     });
   });
 
-  it("stays out while the research campaign is paused", async () => {
+  it("stays out while the research feed is paused", async () => {
     const taskList = await service({
       goals: goals,
       primaryResumeId: resumeId,

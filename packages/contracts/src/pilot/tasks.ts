@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { jobBriefSchema } from "../campaign";
+import { jobBriefSchema } from "../feed";
 import { networkingModeSchema } from "../networking";
 import { storedDate } from "../utils/json";
 
@@ -8,7 +8,7 @@ const outgoingMode = networkingModeSchema.shape;
 
 export const PILOT_SUBJECT_TYPES = [
   "job",
-  "campaign",
+  "feed",
   "question",
   "networking",
   "inbox",
@@ -63,7 +63,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "job.apply",
     "job",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       jobKey: z.string(),
       jobTitle: z.string(),
       url: z.string(),
@@ -76,23 +76,22 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
   ),
   taskVariant(
     "search.discover",
-    "campaign",
+    "feed",
     z.object({
       searchId: z.uuid(),
       query: z.string(),
       board: optionalString,
       resumeId: z.uuid().optional(),
       minScore: z.number(),
-      campaignId: z.uuid().optional(),
       newJobsTarget: z.number().int(),
       maxPages: z.number().int(),
     }),
   ),
   taskVariant(
-    "campaign.scorePending",
-    "campaign",
+    "feed.score",
+    "feed",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       query: z.string(),
       board: nullableString,
       resumeId: z.uuid().optional(),
@@ -102,13 +101,13 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     }),
   ),
   taskVariant(
-    "campaign.reviewPaused",
-    "campaign",
+    "search.review",
+    "feed",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       query: z.string(),
       board: nullableString,
-      // The campaign's last update, which approximates when it was paused.
+      // The feed's last update, which approximates when it was paused.
       pausedAt: storedDate,
     }),
   ),
@@ -132,7 +131,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "networking.send",
     "networking",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       messageId: z.uuid(),
       contactId: z.uuid(),
       contactName: z.string(),
@@ -145,7 +144,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "networking.followup",
     "networking",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       messageId: z.uuid(),
       contactId: z.uuid(),
       contactName: z.string(),
@@ -160,7 +159,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "networking.warmIntro",
     "networking",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       jobKey: z.string(),
       company: nullableString,
       jobTitle: z.string(),
@@ -213,9 +212,9 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
   ),
   taskVariant(
     "queue.score",
-    "campaign",
+    "feed",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       resumeId: z.uuid().optional(),
       minScore: z.number(),
       queuedCount: z.number().int(),
@@ -239,14 +238,14 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       board: z.string(),
       consecutiveFailures: z.number().int(),
       recentFailReasons: z.array(z.string()),
-      testJob: z.object({ campaignId: z.uuid(), jobKey: z.string(), url: z.string() }).nullable(),
+      testJob: z.object({ feedId: z.uuid(), jobKey: z.string(), url: z.string() }).nullable(),
     }),
   ),
   taskVariant(
-    "campaign.tune",
-    "campaign",
+    "search.tune",
+    "feed",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       query: z.string(),
       config: z.object({ minScore: z.number().nullable(), board: nullableString }),
       counts: z.object({
@@ -260,18 +259,18 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
   ),
   taskVariant(
     "job.rescanSkipped",
-    "campaign",
+    "feed",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       skippedCount: z.number().int(),
-      // Set when the user picked jobs; otherwise every skipped job of the campaign.
+      // Set when the user picked jobs; otherwise every skipped job of the feed.
       jobKeys: z.array(z.string()).optional(),
     }),
   ),
   taskVariant(
     "job.retryFailed",
-    "campaign",
-    z.object({ campaignId: z.uuid(), failedCount: z.number().int() }),
+    "feed",
+    z.object({ feedId: z.uuid(), failedCount: z.number().int() }),
   ),
   taskVariant(
     "search.setup",

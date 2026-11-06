@@ -56,7 +56,7 @@ export const JOB_ALERT_EXCLUDED_MAILBOXES = [
 
 const hourSchema = z.number().int().min(0).max(23);
 
-/** When the pilot imports job-alert emails into a campaign. Off until the user turns it on. */
+/** When the pilot imports job-alert emails into a feed. Off until the user turns it on. */
 export const pilotJobAlertsSchema = z.object({
   enabled: z.boolean().default(false),
   /** Hours of the day, in `timeZone`. Deduped and sorted so every reader lists them in order. */
@@ -83,8 +83,8 @@ const jobAlertsLastRunSchema = z.object({
   finishedAt: z.date().nullable(),
   // Null while the run is still in flight.
   outcome: z.enum(PILOT_RUN_OUTCOMES).nullable(),
-  // The campaign the run opened, once it has.
-  campaign: z.object({ id: z.uuid(), query: z.string() }).nullable(),
+  // The feed the run opened, once it has.
+  feed: z.object({ id: z.uuid(), name: z.string() }).nullable(),
 });
 
 export const jobAlertsStatusSchema = z.object({

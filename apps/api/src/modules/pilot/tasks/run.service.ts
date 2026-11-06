@@ -23,8 +23,8 @@ import {
   parseJobRef,
   revertApplyingJobs,
   startApplying,
-} from "@/modules/campaign/jobs/apply-guard";
-import { publishJob } from "@/modules/campaign/jobs/job-events";
+} from "@/modules/feed/jobs/apply-guard";
+import { publishJob } from "@/modules/feed/jobs/job-events";
 import { PilotJournalService } from "../journal.service";
 import { writeJournalEntries } from "../journal-entries";
 import { publishRequest } from "../requests/request.service";
@@ -68,17 +68,17 @@ async function assertStillStartable(
       });
       gone = "Networking message is no longer ready to send.";
       break;
-    case "campaign.reviewPaused":
-      remaining = await tx.campaign.count({
+    case "search.review":
+      remaining = await tx.feed.count({
         where: { id: subjectId, ...reviewPausedWhere(userId) },
       });
-      gone = "Campaign is no longer paused.";
+      gone = "Feed is no longer paused.";
       break;
-    case "campaign.scorePending":
-      remaining = await tx.campaign.count({
+    case "feed.score":
+      remaining = await tx.feed.count({
         where: { id: subjectId, ...scorePendingWhere(userId) },
       });
-      gone = "Campaign has no jobs left to score.";
+      gone = "Feed has no jobs left to score.";
       break;
     default:
       return;
@@ -151,7 +151,7 @@ export class RunService {
     await assertStillStartable(tx, userId, task, now);
     const startedJob =
       task.taskType === "job.apply"
-        ? await startApplying(tx, userId, task.payload.campaignId, task.payload.jobKey)
+        ? await startApplying(tx, userId, task.payload.feedId, task.payload.jobKey)
         : null;
 
     const run = await tx.pilotRun.create({

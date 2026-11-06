@@ -2,21 +2,20 @@ import { type PilotConfig, pilotConfigSchema, type TaskList } from "@jobpilot/co
 import { inject, injectable } from "@needle-di/core";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
-import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
+import { JobService } from "@/modules/feed/jobs/job.service";
 import { WebPushService } from "@/modules/web-push/web-push.service";
-import { liveFeeds } from "../feeds";
 import { PilotJournalService } from "../journal.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { allowedToday } from "./allowed-today";
 import { buildTaskList, isPipelineQuiet, type TaskListInput } from "./build";
 import { writeDigestIfDue } from "./digest";
 import {
-  gatherCampaignReviews,
-  gatherPausedCampaigns,
+  gatherFeedReviews,
+  gatherPausedFeeds,
   gatherQueueScores,
   gatherScorePending,
-} from "./gather-campaigns";
+} from "./gather-feeds";
 import {
   gatherAnsweredQuestions,
   gatherInbox,
@@ -40,7 +39,7 @@ import {
 import { gatherChat, gatherRequests } from "./gather-requests";
 import { gatherResearch } from "./gather-research";
 import { gatherDueSearches, gatherSetup } from "./gather-searches";
-import { finalizeIdleCampaigns, promoteScoredPendingJobs, runExpiry } from "./maintenance";
+import { promoteScoredPendingJobs, runExpiry } from "./maintenance";
 import { parseTaskListSnapshot } from "./snapshot";
 
 const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
@@ -61,8 +60,8 @@ const NO_DUE_SEARCHES: Pick<Gathered, "dueQueries" | "nextSearchRunAt"> = {
   dueQueries: [],
   nextSearchRunAt: null,
 };
-const NO_REVIEWS: Pick<Gathered, "campaignTunes" | "rescanSkipped" | "retryFailed"> = {
-  campaignTunes: [],
+const NO_REVIEWS: Pick<Gathered, "feedTunes" | "rescanSkipped" | "retryFailed"> = {
+  feedTunes: [],
   rescanSkipped: [],
   retryFailed: [],
 };
@@ -82,7 +81,7 @@ async function allNamed<T extends Record<string, unknown>>(
 export class TaskListService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly campaignJobs = inject(CampaignJobService),
+    private readonly jobs = inject(JobService),
     private readonly journal = inject(PilotJournalService),
     private readonly push = inject(WebPushService),
     private readonly emailSync = inject(EmailSyncService),
@@ -115,12 +114,11 @@ export class TaskListService {
     const config = pilotConfigSchema.parse(state.config);
 
     // Mail first so inbox.review sees it; promotion before finalize so fresh approvals keep a
-    // campaign open.
+    // feed open.
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
     await runExpiry(this.prisma, userId, now);
-    await promoteScoredPendingJobs(this.prisma, this.campaignJobs, userId, config.minScore);
+    await promoteScoredPendingJobs(this.prisma, this.jobs, userId, config.minScore);
     const goals = state.goals.trim();
-    await finalizeIdleCampaigns(this.prisma, this.journal, userId, now, liveFeeds(config, goals));
 
     const gathered = await this.gather(userId, { config, goals }, now);
     const [requests, chat] = await Promise.all([
@@ -162,13 +160,13 @@ export class TaskListService {
       activeRuns: prisma.pilotRun.count({
         where: { userId, finishedAt: null, expiresAt: { gt: now } },
       }),
-      searchCount: prisma.pilotSearch.count({ where: { userId } }),
+      searchCount: prisma.feed.count({ where: { userId, kind: "search", archivedAt: null } }),
       appliedToday: countAppliedToday(prisma, userId, now),
       networkingSentToday: countSentToday(prisma, userId, now),
       answeredQuestions: gatherAnsweredQuestions(prisma, userId),
       approvedJobs: gatherApprovedJobs(prisma, userId),
       queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
-      pausedCampaigns: gatherPausedCampaigns(prisma, userId, now),
+      pausedFeeds: gatherPausedFeeds(prisma, userId, now),
       boardDiagnoses: gatherBoardDiagnoses(prisma, userId, now),
       inbox: gatherInbox(prisma, userId),
       jobAlerts: gatherJobAlerts(prisma, userId, config, now),
@@ -204,7 +202,7 @@ export class TaskListService {
     // Blank goals need no task: emptyReason "awaitingSetup" already says so.
     const canSetUp = quiet && goals !== "" && (searchCount === 0 || canApplyMore);
     const [reviews, setup, research] = await Promise.all([
-      quiet ? gatherCampaignReviews(prisma, userId, now) : NO_REVIEWS,
+      quiet ? gatherFeedReviews(prisma, userId, now) : NO_REVIEWS,
       canSetUp ? gatherSetup(prisma, userId, { goals, minScore: config.minScore }, now) : null,
       goals !== "" && quiet
         ? gatherResearch(prisma, userId, { goals, config, searchCount }, now)

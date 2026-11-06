@@ -4,8 +4,8 @@ import { type ReactElement, type ReactNode, useState } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { campaignQueries } from "@/api/queries";
-import type { CampaignJobReasonDto } from "@/api/types";
+import { feedQueries } from "@/api/queries";
+import type { JobReasonDto } from "@/api/types";
 import { SectionCard } from "@/components/ui/layout";
 
 interface ReasonCount {
@@ -15,8 +15,8 @@ interface ReasonCount {
 
 /** The server groups raw strings, but "(35 < 50)" and "(40 < 50)" are one cause, so strip the tail. */
 function groupReasons(
-  rows: ReadonlyArray<CampaignJobReasonDto>,
-  kind: CampaignJobReasonDto["kind"],
+  rows: ReadonlyArray<JobReasonDto>,
+  kind: JobReasonDto["kind"],
 ): ReasonCount[] {
   const counts = new Map<string, number>();
 
@@ -69,15 +69,15 @@ function ReasonList(props: ReasonListProps): ReactElement {
 }
 
 interface ReasonBreakdownProps {
-  campaignId: string;
+  feedId: string;
 }
 
 /** Groups one search's skip and fail reasons by frequency, so the user sees why jobs dropped out. */
 export function ReasonBreakdown(props: ReasonBreakdownProps): ReactNode {
-  const { campaignId } = props;
+  const { feedId } = props;
   const [open, setOpen] = useState(true);
 
-  const rows = useQuery(campaignQueries.reasons(campaignId)).data ?? [];
+  const rows = useQuery(feedQueries.reasons(feedId)).data ?? [];
   const skipped = groupReasons(rows, "skipped");
   const failed = groupReasons(rows, "failed");
   const total = (reasons: ReasonCount[]) => reasons.reduce((sum, r) => sum + r.count, 0);

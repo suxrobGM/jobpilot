@@ -43,11 +43,11 @@ export const pilotQueries = {
       queryKey: [...PILOT, "cost"],
       queryFn: () => unwrap(api.pilot.stats.cost.get()),
     }),
-  /** Read-only view of the pilot's self-managed discovery searches. */
+  /** The pilot's searches, with what each applied to this week. */
   searches: () =>
     queryOptions({
       queryKey: [...PILOT, "searches"],
-      queryFn: () => unwrap(api.pilot.searches.get()),
+      queryFn: () => unwrap(api.feeds.get({ query: { kind: "search" } })),
     }),
   /** A run's live steps so far; `run.steps` events append to it. */
   runSteps: (runId: string) =>

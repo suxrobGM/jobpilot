@@ -1,0 +1,74 @@
+// Where a feed's jobs come from. The pilot applies on its own only from search, job_alerts,
+// research and links; manual, upwork and networking wait for the user.
+enum FeedKind {
+  search
+  job_alerts
+  research
+  // Job links the user adds from the Pipeline.
+  links
+  // Skills the user types in the terminal.
+  manual
+  upwork
+  // Outreach that belongs to no job: Networking → Find contacts.
+  networking
+
+  @@map("feed_kind")
+}
+
+// Self-reported: every actor calls with the user's own token.
+enum Actor {
+  user
+  agent
+  pilot
+
+  @@map("actor")
+}
+
+model Feed {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind         FeedKind
+  // The plain name the user sees.
+  name         String
+  // Searches and Upwork only; the pilot may rewrite a search's query, so match on `id`.
+  query        String?
+  boardId      String?   @map("board_id") @db.Uuid
+  board        JobBoard? @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  resumeId     String?   @map("resume_id") @db.Uuid
+  resume       Resume?   @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
+  reason       String    @default("")
+  // Per-feed overrides, such as the `minScore` a search tune sets.
+  config       Json      @default("{}")
+  pausedAt     DateTime? @map("paused_at") @db.Timestamptz(3)
+  pausedBy     Actor?    @map("paused_by")
+  pausedReason String?   @map("paused_reason")
+  // A deleted search: out of lists and gathering, while its jobs keep their history.
+  archivedAt   DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdBy    Actor     @default(user) @map("created_by")
+
+  // A search's discovery schedule.
+  lastRunAt       DateTime? @map("last_run_at") @db.Timestamptz(3)
+  lastJobsScanned Int?      @map("last_jobs_scanned")
+  lastNewJobs     Int?      @map("last_new_jobs")
+  // Consecutive runs with no new jobs; 3 or more backs the search off.
+  emptyRuns       Int       @default(0) @map("empty_runs")
+  nextRunAt       DateTime  @default(now()) @map("next_run_at") @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  jobs               Job[]
+  applications       Application[]
+  networkingMessages NetworkingMessage[]
+
+  // One feed per user for every kind but `search`: a partial unique index in the migration.
+  @@index([userId, kind])
+  @@index([userId, nextRunAt])
+  // The pilot activity probe takes MAX(updatedAt) per user every two minutes.
+  @@index([userId, updatedAt])
+  @@index([boardId])
+  @@index([resumeId])
+  @@map("feeds")
+}

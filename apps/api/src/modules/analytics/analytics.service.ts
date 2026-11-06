@@ -37,7 +37,7 @@ export class AnalyticsService {
       networkingTimelineRows,
       contactSourceRows,
     ] = await Promise.all([
-      this.prisma.campaignJob.count({ where: { status: "queued", userId } }),
+      this.prisma.job.count({ where: { status: "queued", userId } }),
       this.prisma.application.count({
         where: { userId, status: "applied", appliedAt: { gte: weekStart } },
       }),
@@ -68,7 +68,7 @@ export class AnalyticsService {
         select: { appliedAt: true },
       }),
       this.boards.topBoards({ userId }),
-      this.prisma.campaignJob.groupBy({
+      this.prisma.job.groupBy({
         by: ["failReason"],
         where: { failReason: { not: null }, userId },
         _count: { _all: true },

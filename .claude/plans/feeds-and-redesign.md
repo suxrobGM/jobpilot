@@ -50,6 +50,10 @@ production copy with 527 users, newest rows from 2026-11-05):
 4. One branch (`feat/pilot-assistant`), no PRs, `verify` + `commit` per phase. **No release
    skill**: the user releases.
 
+5. (2026-11-06, before Phase 4) Jobs from skills the user types go to one `manual` feed the pilot
+   never auto-applies from. Per-run commands (`resume-campaign`, `/auto-apply resume`,
+   `retry-failed <campaign-id>`, `--campaign <id>`) are dropped.
+
 Choices made in this plan (veto before the phase that needs them):
 
 - Feed kinds: `search`, `job_alerts`, `research`, `links`, `manual`, `upwork`, `networking`. One
@@ -200,6 +204,10 @@ every skill that creates or completes a campaign, so both land together.
 ## Phase 5: Plugin (4,900 lines: 22 skills, 30 pilot task files, 5 agents)
 
 Check each overlap at the start of the phase by reading the files; delete before rewriting.
+
+Landed with Phase 4: `resume-campaign` deleted, `apply` takes one job, `campaign-flow.md` became
+`feed-flow.md`, and every skill writes to its kind's feed. Searches that are deleted are archived
+(`feeds.archived_at`) so their jobs keep their history.
 
 1. Delete `resume-campaign`: pausing and resuming is a search change now.
 2. `apply` takes one job (URL or pasted page) only. Its no-argument mode, scoring and applying a

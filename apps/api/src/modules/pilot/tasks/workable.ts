@@ -1,36 +1,35 @@
+import { AUTO_APPLY_FEED_KINDS } from "@jobpilot/contracts/feed";
 import { Prisma } from "@/generated/prisma/client";
 
 // One definition of "still workable" per task type, shared by its gather and the run-start
 // re-check: two copies drift, and a looser re-check starts a run on a row the gather would drop.
-// `job.apply`'s lives beside `startApplying` in campaign/jobs/apply-guard.ts.
+// `job.apply`'s lives beside `startApplying` in feed/jobs/apply-guard.ts.
 
 /** Pending rows a worker must open: never scored, or scored off a results row without a brief. */
 export const NEEDS_WORKER_VISIT = {
   status: "pending",
   OR: [{ matchScore: null }, { brief: { equals: Prisma.DbNull } }],
-} satisfies Prisma.CampaignJobWhereInput;
+} satisfies Prisma.JobWhereInput;
 
-export function scorePendingWhere(userId: string): Prisma.CampaignWhereInput {
+export function scorePendingWhere(userId: string): Prisma.FeedWhereInput {
   return {
     userId,
-    status: "in_progress",
-    source: "auto_apply",
+    pausedAt: null,
+    archivedAt: null,
+    kind: { in: [...AUTO_APPLY_FEED_KINDS] },
     jobs: { some: NEEDS_WORKER_VISIT },
   };
 }
 
-/** A standing campaign the user paused is their way of pausing its feed, so it isn't asked about. */
-export function reviewPausedWhere(userId: string): Prisma.CampaignWhereInput {
+/** A search the user paused is their call, so only one the pilot or agent paused is asked about. */
+export function reviewPausedWhere(userId: string): Prisma.FeedWhereInput {
   return {
     userId,
-    status: "paused",
-    source: "auto_apply",
-    // Not `NOT { statusChangedBy: "user" }`: that is NULL in SQL for rows with no actor.
-    OR: [
-      { feed: null, pilotSearchId: null },
-      { statusChangedBy: null },
-      { statusChangedBy: { in: ["agent", "pilot"] } },
-    ],
+    kind: "search",
+    archivedAt: null,
+    pausedAt: { not: null },
+    // Not `NOT { pausedBy: "user" }`: that is NULL in SQL for rows with no actor.
+    OR: [{ pausedBy: null }, { pausedBy: { in: ["agent", "pilot"] } }],
   };
 }
 
@@ -38,7 +37,7 @@ export function reviewPausedWhere(userId: string): Prisma.CampaignWhereInput {
 export function networkingSendWhere(userId: string): Prisma.NetworkingMessageWhereInput {
   return {
     userId,
-    campaignId: { not: null },
+    feedId: { not: null },
     channel: "email",
     status: "approved",
     contact: { email: { not: null } },

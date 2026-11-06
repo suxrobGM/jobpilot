@@ -43,7 +43,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   dueQueries: [],
   scorePending: [],
   queueScores: [],
-  pausedCampaigns: [],
+  pausedFeeds: [],
   boardDiagnoses: [],
   inbox: { messageIds: [], count: 0 },
   jobAlerts: null,
@@ -54,7 +54,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   followups: [],
   approvedPromotions: [],
   duePlatforms: [],
-  campaignTunes: [],
+  feedTunes: [],
   rescanSkipped: [],
   retryFailed: [],
   setup: null,
@@ -63,7 +63,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
 });
 
 export const job = (key: string, matchScore: number | null, over: Partial<TaskJob> = {}) => ({
-  campaignId: "c1",
+  feedId: "c1",
   key,
   title: `Job ${key}`,
   url: `https://x/${key}`,
@@ -96,7 +96,7 @@ export const question = (id: string): TaskPayload<"question.answered"> => ({
 });
 
 export const send = (messageId: string): TaskPayload<"networking.send"> => ({
-  campaignId: "c1",
+  feedId: "c1",
   messageId,
   contactId: `ct-${messageId}`,
   contactName: "Dana Recruiter",
@@ -106,7 +106,7 @@ export const send = (messageId: string): TaskPayload<"networking.send"> => ({
 });
 
 export const followup = (messageId: string): Followup => ({
-  campaignId: "c1",
+  feedId: "c1",
   messageId,
   contactId: `ct-${messageId}`,
   contactName: "Dana Recruiter",
@@ -149,22 +149,22 @@ export const dueQuery = (query: string, board?: string) => ({
   board,
 });
 
-export const pausedCampaign = (campaignId: string): TaskPayload<"campaign.reviewPaused"> => ({
-  campaignId,
+export const pausedFeed = (feedId: string): TaskPayload<"search.review"> => ({
+  feedId,
   query: "react",
   board: null,
   pausedAt: new Date("2026-07-14T12:00:00.000Z"),
 });
 
-export const queueScore = (campaignId: string): TaskPayload<"queue.score"> => ({
-  campaignId,
+export const queueScore = (feedId: string): TaskPayload<"queue.score"> => ({
+  feedId,
   minScore: 60,
   queuedCount: 1,
   entries: [{ key: "q1", url: "https://x/1" }],
 });
 
-export const scorePending = (campaignId: string): TaskPayload<"campaign.scorePending"> => ({
-  campaignId,
+export const scorePending = (feedId: string): TaskPayload<"feed.score"> => ({
+  feedId,
   query: "react",
   board: null,
   minScore: 60,
@@ -172,8 +172,8 @@ export const scorePending = (campaignId: string): TaskPayload<"campaign.scorePen
   entries: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
 });
 
-export const tune = (campaignId: string): TaskPayload<"campaign.tune"> => ({
-  campaignId,
+export const tune = (feedId: string): TaskPayload<"search.tune"> => ({
+  feedId,
   query: "react",
   config: { minScore: 70, board: "linkedin" },
   counts: { totalFound: 40, qualified: 4, applied: 1, skipped: 36 },

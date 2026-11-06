@@ -1,7 +1,7 @@
 import type { TaskList } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
+import type { JobService } from "@/modules/feed/jobs/job.service";
 import type { WebPushService } from "@/modules/web-push/web-push.service";
 import type { PilotJournalService } from "../journal.service";
 import { TaskListService } from "./task-list.service";
@@ -40,7 +40,7 @@ function service(row: Record<string, unknown> | null) {
   return {
     taskList: new TaskListService(
       prisma,
-      {} as CampaignJobService,
+      {} as JobService,
       {} as PilotJournalService,
       {} as WebPushService,
       {} as EmailSyncService,

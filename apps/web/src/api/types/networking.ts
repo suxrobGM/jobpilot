@@ -4,5 +4,5 @@ import type { api } from "@/api/client";
 export type ContactDto = Data<typeof api.contacts.get>["items"][number];
 
 export type NetworkingMessageDto = Data<
-  ReturnType<typeof api.campaigns>["networking"]["messages"]["get"]
+  ReturnType<typeof api.feeds>["networking"]["messages"]["get"]
 >["items"][number];

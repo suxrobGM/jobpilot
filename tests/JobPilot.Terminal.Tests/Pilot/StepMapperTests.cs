@@ -51,7 +51,7 @@ public sealed class StepMapperTests
 
     [Theory]
     [InlineData("jobpilot-api POST /api/pilot/runs/r1/result -d '{\"outcome\":\"done\"}'", "Posted the result")]
-    [InlineData("\"$CLAUDE_PLUGIN_ROOT/bin/jobpilot-api\" PATCH /api/campaigns/$CID/jobs/$KEY --data @job.json", "Updated a job")]
+    [InlineData("\"$CLAUDE_PLUGIN_ROOT/bin/jobpilot-api\" PATCH /api/feeds/$CID/jobs/$KEY --data @job.json", "Updated a job")]
     [InlineData("jobpilot-api GET '/api/credentials/resolve?domain=acme.com'", "Looked up a saved login")]
     [InlineData("jobpilot-api GET /api/user/profile", "Read from JobPilot")]
     public void ApiCalls_GetTheirRouteLabel(string command, string label) =>

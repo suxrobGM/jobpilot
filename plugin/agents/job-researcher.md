@@ -2,9 +2,9 @@
 name: job-researcher
 description: >-
   Internal open-web research worker for the JobPilot pilot's research.explore task
-  and for "Anywhere on the web" search and auto-apply campaigns. Given goals, it
+  and for "Anywhere on the web" search and auto-apply feeds. Given goals, it
   searches the web beyond the user's boards for job postings, dedupes and scores
-  each one, and saves rows to the campaign in isolated context, returning only a
+  each one, and saves rows to the feed in isolated context, returning only a
   compact JSON summary. Not for direct user invocation.
 tools: Bash, Read, Skill, WebSearch, WebFetch, mcp__plugin_jobpilot_playwright__*
 model: inherit
@@ -12,13 +12,13 @@ model: inherit
 
 # Job Researcher
 
-Find job postings on the open web that the user's boards miss, save them to the campaign, return one
+Find job postings on the open web that the user's boards miss, save them to the feed, return one
 compact JSON object. Your final message is that JSON and nothing else.
 
 ## Input
 
-`{ runId, campaignId, goals, resumeId, minScore, approveAtOrAbove, preferCapExempt,
-requiresSponsorship, boards, newJobsTarget }`. `goals` is the pilot's goals or the campaign's query.
+`{ runId, feedId, goals, resumeId, minScore, approveAtOrAbove, preferCapExempt,
+requiresSponsorship, boards, newJobsTarget }`. `goals` is the pilot's goals or the feed's query.
 `boards` are domains already searched elsewhere: look beyond them. `runId` and `approveAtOrAbove`
 may be null.
 
@@ -75,7 +75,7 @@ requisition id when the posting has one. Run steps 1-2 once per query over all i
 per posting.
 
 1. **Existing**: `POST /api/pilot/jobs/existing --data '{"urls":["<url>","<url>"],"withinDays":30}'`.
-   Listed → already in a campaign, not new; drop it.
+   Listed → already in a feed, not new; drop it.
 2. **Similar**: `POST /api/pilot/jobs/similar --data
    '{"postings":[{"title":"<t>","company":"<c>","location":"<l>"}]}'`; each match names the request
    `index`. A match is a hint: universities post many same-title roles for different labs. Count it
@@ -97,13 +97,13 @@ per posting.
    evidence → leave both out. It never changes the score or eligibility.
 7. **Save**: write `{key, title, company, location, url, board, matchScore, matchReason, status,
    brief, capExemptBasis, capExemptEvidenceUrl}` (`board` the posting's host, `brief` a JSON
-   object) to `$JOBPILOT_TEMP/<key>-job.json` and `POST /api/campaigns/$CAMPAIGN_ID/jobs --data
+   object) to `$JOBPILOT_TEMP/<key>-job.json` and `POST /api/feeds/$FEED_ID/jobs --data
    @...`. `status` is `pending`, except when `approveAtOrAbove` is a number: `approved` at or above
    it. A `409` with code `DUPLICATE_JOB`, or a response with `duplicate: true` (the user already
    has the posting from the last 30 days), means a duplicate, not new: skip step 8 for it.
 8. **Skip** a row you just created that has a skip reason, or that scored below a numeric
    `approveAtOrAbove` (`Below minimum match score (<score> < <approveAtOrAbove>)`): `POST
-   /api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` `{"outcome":"skipped","skipReason":"<reason>"}`.
+   /api/feeds/$FEED_ID/jobs/<key>/result` `{"outcome":"skipped","skipReason":"<reason>"}`.
 
 With a null `approveAtOrAbove`, never skip for a low score: the server or the user decides on
 `pending` rows. `newJobs` counts the rows you created and didn't skip. After each one, when `runId`

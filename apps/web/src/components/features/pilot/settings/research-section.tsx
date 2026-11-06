@@ -51,9 +51,9 @@ export function ResearchSection(): ReactElement {
             >
               Research now
             </Button>
-            {status.campaignId && (
-              <LinkButton size="small" href={pipelineHref(status.campaignId)}>
-                Research campaign
+            {status.feedId && (
+              <LinkButton size="small" href={pipelineHref(status.feedId)}>
+                Research feed
               </LinkButton>
             )}
           </Stack>

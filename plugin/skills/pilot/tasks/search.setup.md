@@ -2,7 +2,7 @@
 
 Payload `{goals, minScore}`: goals are set, and either no searches exist or every search is waiting
 while the apply cap has room. No browser, no worker, no searching. Load the profile and primary
-resume per `../../_shared/setup.md`, then `GET /api/pilot/searches`.
+resume per `../../_shared/setup.md`, then `GET /api/feeds?kind=search`.
 
 - **None exist**: derive 1-3 searches from the goals.
 - **Refill**: the existing searches are spent. Delete any backing off (`emptyRuns` >= 3), then add

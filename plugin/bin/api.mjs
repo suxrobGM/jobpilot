@@ -7,7 +7,7 @@ const USAGE = `usage: jobpilot-api <METHOD> <path> [--query key=value]... [--dat
 
   jobpilot-api GET /api/user
   jobpilot-api GET /api/applications --query search=Acme --query limit=100
-  jobpilot-api POST /api/campaigns --data @body.json
+  jobpilot-api POST /api/feeds --data @body.json
   jobpilot-api GET /api/resumes/3/pdf --out resume-3.pdf`;
 
 const REQUEST_TIMEOUT_MS = 120_000;

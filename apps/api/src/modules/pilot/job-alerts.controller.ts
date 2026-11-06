@@ -18,7 +18,7 @@ export const pilotJobAlertsController = new Elysia({
     detail: {
       summary: "Get the job-alert import status",
       description:
-        "Returns the import schedule, how many unimported job-alert emails are waiting, the next scheduled run, and the most recent run with the campaign it opened.",
+        "Returns the import schedule, how many unimported job-alert emails are waiting, the next scheduled run, and the most recent run with the feed it opened.",
     },
   })
   .put("/job-alerts", ({ user, body }) => jobAlerts.updateSettings(user.id, body), {

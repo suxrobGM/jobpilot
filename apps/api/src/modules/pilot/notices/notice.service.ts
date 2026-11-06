@@ -113,7 +113,7 @@ export class NoticeService {
           receivedAt: { gte: outcomesSince },
         },
       }),
-      this.prisma.campaignJob.count({
+      this.prisma.job.count({
         where: {
           userId,
           createdAt: { gte: ago(NEAR_MISS_WINDOW_MS) },
@@ -121,7 +121,7 @@ export class NoticeService {
         },
       }),
       this.prisma.application.count({ where: { userId, appliedAt: { gte: ago(CAP_WINDOW_MS) } } }),
-      this.prisma.campaignJob.count({ where: { userId, status: "approved" } }),
+      this.prisma.job.count({ where: { userId, status: "approved" } }),
     ]);
     let email: NoticeFacts["email"] = "connected";
     if (!account) {

@@ -6,12 +6,7 @@ import { AddLink } from "@mui/icons-material";
 import { Button, Stack, Tab, Tabs } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import {
-  applicationQueries,
-  campaignQueries,
-  jobBoardQueries,
-  pipelineQueries,
-} from "@/api/queries";
+import { applicationQueries, feedQueries, jobBoardQueries, pipelineQueries } from "@/api/queries";
 import { FilterBar, SearchField, SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
@@ -26,35 +21,35 @@ import { PIPELINE_TAB_KEYS, PIPELINE_TABS, type PipelineTab } from "./pipeline-t
 export function PipelineView(): ReactElement {
   const params = useSearchParams();
   const view: PipelineTab = enumParam(PIPELINE_TAB_KEYS, params.get("view")) ?? "found";
-  const campaignId = params.get("campaign");
+  const feedId = params.get("feed");
   const board = params.get("board");
   const pagination = usePaginationParams();
   const search = useUrlSearch("q", pagination);
   const [addingLinks, setAddingLinks] = useState(false);
 
   const filters: PipelineFilters = {
-    ...(campaignId && { campaignId }),
+    ...(feedId && { feedId }),
     ...(board && { board }),
     ...(search.applied && { search: search.applied }),
   };
   const counts = useQuery(pipelineQueries.counts(filters)).data;
   const applied = useQuery(applicationQueries.summary(filters)).data?.total;
-  const campaigns = useQuery(campaignQueries.list()).data?.items ?? [];
+  const feeds = useQuery(feedQueries.list()).data ?? [];
   const boards = useQuery(jobBoardQueries.list()).data ?? [];
 
-  const jobCampaigns = campaigns.filter((campaign) => campaign.source !== "networking");
-  const campaignLabel = new Map(jobCampaigns.map((c) => [c.id, c.query]));
-  const campaignOptions: SelectFieldOption[] = jobCampaigns.map((c) => ({
-    value: c.id,
-    label: c.query,
+  const jobFeeds = feeds.filter((feed) => feed.kind !== "networking");
+  const feedLabel = new Map(jobFeeds.map((feed) => [feed.id, feed.name]));
+  const feedOptions: SelectFieldOption[] = jobFeeds.map((feed) => ({
+    value: feed.id,
+    label: feed.name,
   }));
   const boardOptions: SelectFieldOption[] = boards.map((b) => ({ value: b.name, label: b.name }));
   const tabCount = (key: PipelineTab) => (key === "applied" ? applied : counts?.[key]);
 
-  const hasFilters = campaignId !== null || board !== null || search.applied !== "";
+  const hasFilters = feedId !== null || board !== null || search.applied !== "";
   const clear = (): void => {
     search.setDraft("");
-    pagination.setFilters({ q: null, board: null, campaign: null, group: null });
+    pagination.setFilters({ q: null, board: null, feed: null, group: null });
   };
 
   return (
@@ -100,10 +95,10 @@ export function PipelineView(): ReactElement {
             />
             <SelectField
               label="From"
-              value={campaignId}
+              value={feedId}
               emptyLabel="All searches and feeds"
-              options={campaignOptions}
-              onChange={(next) => pagination.setFilters({ campaign: next })}
+              options={feedOptions}
+              onChange={(next) => pagination.setFilters({ feed: next })}
             />
             <SelectField
               label="Board"
@@ -114,7 +109,7 @@ export function PipelineView(): ReactElement {
             />
           </FilterBar>
           {view === "applied" ? (
-            <AppliedView filters={filters} campaignLabel={campaignLabel} pagination={pagination} />
+            <AppliedView filters={filters} feedLabel={feedLabel} pagination={pagination} />
           ) : (
             <JobsView view={view} filters={filters} pagination={pagination} />
           )}

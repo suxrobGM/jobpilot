@@ -27,8 +27,8 @@ export async function setGoals(
   });
   // Searches picked for the old goals all come due now.
   if (goals !== action.goals) {
-    await ctx.tx.pilotSearch.updateMany({
-      where: { userId: ctx.userId },
+    await ctx.tx.feed.updateMany({
+      where: { userId: ctx.userId, kind: "search", archivedAt: null },
       data: { emptyRuns: 0, nextRunAt: ctx.now },
     });
   }

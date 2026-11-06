@@ -25,7 +25,7 @@ export function SearchesSummary(): ReactElement {
                 {search.name}
               </Typography>
               <Typography variant="body2Muted">
-                {search.paused ? "paused" : search.appliedThisWeek}
+                {search.pausedAt ? "paused" : search.appliedThisWeek}
               </Typography>
             </Stack>
           ))}

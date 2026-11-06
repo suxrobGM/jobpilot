@@ -33,23 +33,23 @@ async function requestTask(
   const { prisma, userId, requestId, config } = ctx;
   switch (input.taskType) {
     case "job.apply": {
-      const { campaignId, jobKey } = input.payload;
-      const job = await findApprovedJob(prisma, userId, campaignId, jobKey);
+      const { feedId, jobKey } = input.payload;
+      const job = await findApprovedJob(prisma, userId, feedId, jobKey);
       return job && applyTask(job, false);
     }
     case "job.rescanSkipped": {
-      const { campaignId, jobKeys } = input.payload;
+      const { feedId, jobKeys } = input.payload;
       const skippedCount =
         jobKeys?.length ??
-        (await prisma.campaignJob.count({ where: { userId, campaignId, status: "skipped" } }));
-      return makeTask("job.rescanSkipped", { campaignId, skippedCount, jobKeys });
+        (await prisma.job.count({ where: { userId, feedId, status: "skipped" } }));
+      return makeTask("job.rescanSkipped", { feedId, skippedCount, jobKeys });
     }
     case "job.retryFailed": {
-      const { campaignId } = input.payload;
-      const failedCount = await prisma.campaignJob.count({
-        where: { userId, campaignId, status: "failed" },
+      const { feedId } = input.payload;
+      const failedCount = await prisma.job.count({
+        where: { userId, feedId, status: "failed" },
       });
-      return failedCount > 0 ? makeTask("job.retryFailed", { campaignId, failedCount }) : null;
+      return failedCount > 0 ? makeTask("job.retryFailed", { feedId, failedCount }) : null;
     }
     case "inbox.review": {
       const { messageIds } = input.payload;
@@ -61,27 +61,16 @@ async function requestTask(
     case "upwork.syncInbox":
       return makeTask("upwork.syncInbox", { lastSyncedAt: null, unreadCount: 0 });
     case "search.discover": {
-      const search = await prisma.pilotSearch.findFirst({
-        where: { id: input.payload.searchId, userId },
-        select: {
-          id: true,
-          query: true,
-          resumeId: true,
-          board: { select: { domain: true } },
-          campaigns: {
-            where: { status: { in: ["in_progress", "paused"] } },
-            select: { id: true },
-            take: 1,
-          },
-        },
+      const search = await prisma.feed.findFirst({
+        where: { id: input.payload.searchId, userId, kind: "search", archivedAt: null },
+        select: { id: true, query: true, resumeId: true, board: { select: { domain: true } } },
       });
       if (!search) return null;
       return makeTask("search.discover", {
         searchId: search.id,
-        query: search.query,
+        query: search.query ?? "",
         board: search.board?.domain,
         resumeId: search.resumeId ?? undefined,
-        campaignId: search.campaigns[0]?.id,
         minScore: config.minScore,
         newJobsTarget: SEARCH_NEW_JOBS_TARGET,
         maxPages: SEARCH_MAX_PAGES,

@@ -27,7 +27,7 @@ export interface PaginationParams {
   setPageSize: (pageSize: number) => void;
   /** Not a filter write plus `setPage(1)`: both start from one URL snapshot, so one undoes the other. */
   setFilters: (updates: Record<string, string | null>) => void;
-  /** Drops straight into a query factory: `campaignQueries.list(query)`. */
+  /** Drops straight into a query factory: `feedQueries.list(query)`. */
   query: PaginationQuery;
 }
 

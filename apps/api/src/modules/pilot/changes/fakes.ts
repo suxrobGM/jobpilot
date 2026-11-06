@@ -8,17 +8,13 @@ interface FakeSearch {
   boardId: string | null;
   resumeId: string | null;
   reason: string;
-}
-
-interface FakeCampaign {
-  id: string;
-  pilotSearchId: string | null;
-  status: string;
+  pausedAt: Date | null;
+  archivedAt: Date | null;
 }
 
 interface FakeJob {
   id: string;
-  campaignId: string;
+  feedId: string;
   key: string;
   status: string;
   skipReason: string | null;
@@ -28,7 +24,6 @@ export interface FakeState {
   goals: string;
   config: Record<string, unknown>;
   searches: FakeSearch[];
-  campaigns: FakeCampaign[];
   jobs: FakeJob[];
   answers: Map<string, string>;
 }
@@ -46,6 +41,7 @@ function fakeTx(state: FakeState): ChangeTx {
   let nextId = 0;
   const findSearch = (where: Where) =>
     state.searches.find((s) => {
+      if (s.archivedAt !== null) return false;
       const notId = (where.id as { not?: string } | undefined)?.not;
       if (typeof where.id === "string" && s.id !== where.id) return false;
       if (notId && s.id === notId) return false;
@@ -54,15 +50,11 @@ function fakeTx(state: FakeState): ChangeTx {
       return true;
     }) ?? null;
   const jobMatches = (job: FakeJob, where: Where) => {
-    const refs = where.OR as { campaignId: string; key: string }[] | undefined;
+    const refs = where.OR as { feedId: string; key: string }[] | undefined;
     const ids = (where.id as { in: string[] } | undefined)?.in;
-    if (refs && !refs.some((r) => r.campaignId === job.campaignId && r.key === job.key))
-      return false;
+    if (refs && !refs.some((r) => r.feedId === job.feedId && r.key === job.key)) return false;
     if (ids && !ids.includes(job.id)) return false;
-    if (
-      typeof where.key === "string" &&
-      (job.key !== where.key || job.campaignId !== where.campaignId)
-    )
+    if (typeof where.key === "string" && (job.key !== where.key || job.feedId !== where.feedId))
       return false;
     return statusMatches(job.status, where.status);
   };
@@ -76,7 +68,8 @@ function fakeTx(state: FakeState): ChangeTx {
         return {};
       },
     },
-    pilotSearch: {
+    // Search feeds only: every change action reads and writes searches.
+    feed: {
       findFirst: async ({ where }: { where: Where }) => {
         const search = findSearch(where);
         return (
@@ -86,8 +79,8 @@ function fakeTx(state: FakeState): ChangeTx {
           }
         );
       },
-      create: async ({ data }: { data: Omit<FakeSearch, "id"> }) => {
-        const search = { ...data, id: `search-${++nextId}` };
+      create: async ({ data }: { data: Omit<FakeSearch, "id" | "pausedAt" | "archivedAt"> }) => {
+        const search = { ...data, id: `search-${++nextId}`, pausedAt: null, archivedAt: null };
         state.searches.push(search);
         return search;
       },
@@ -100,24 +93,9 @@ function fakeTx(state: FakeState): ChangeTx {
         return search;
       },
       updateMany: async () => ({ count: state.searches.length }),
-      delete: async ({ where }: { where: { id: string } }) => {
-        state.searches = state.searches.filter((s) => s.id !== where.id);
-        // The real foreign key is ON DELETE SET NULL.
-        for (const c of state.campaigns) if (c.pilotSearchId === where.id) c.pilotSearchId = null;
-        return {};
-      },
-      count: async () => state.searches.length,
+      count: async () => state.searches.filter((s) => s.archivedAt === null).length,
     },
-    campaign: {
-      updateManyAndReturn: async ({ where, data }: { where: Where; data: { status: string } }) => {
-        const moved = state.campaigns.filter(
-          (c) => c.pilotSearchId === where.pilotSearchId && statusMatches(c.status, where.status),
-        );
-        for (const c of moved) c.status = data.status;
-        return moved.map((c) => ({ id: c.id, source: "auto_apply" }));
-      },
-    },
-    campaignJob: {
+    job: {
       findMany: async ({ where }: { where: Where }) =>
         state.jobs.filter((j) => jobMatches(j, where)).map((job) => ({ ...job })),
       updateMany: async ({ where, data }: { where: Where; data: Partial<FakeJob> }) => {

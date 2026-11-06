@@ -46,8 +46,7 @@ Add a route with the `add-api-route` skill. The rules:
 ## Pagination
 
 Paginate lists that grow with use (applications, inbox, contacts, cover letters, proposals,
-campaigns, campaign jobs). Small bounded lists (resumes, credentials, boards, tokens) stay
-`z.array()`.
+jobs). Small bounded lists (resumes, credentials, boards, tokens, feeds) stay `z.array()`.
 
 1. Query: `paginationQuerySchema.extend({ …filters })`. `csvArray(item)` for `?x=a,b`.
 2. Response: `paginatedSchema(item)`.

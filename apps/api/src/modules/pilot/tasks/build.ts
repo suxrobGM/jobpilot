@@ -49,9 +49,9 @@ export interface TaskListInput {
   approvedJobs: TaskJob[];
   warmIntroCandidates: TaskJob[];
   dueQueries: DueSearch[];
-  scorePending: TaskPayload<"campaign.scorePending">[];
+  scorePending: TaskPayload<"feed.score">[];
   queueScores: TaskPayload<"queue.score">[];
-  pausedCampaigns: TaskPayload<"campaign.reviewPaused">[];
+  pausedFeeds: TaskPayload<"search.review">[];
   boardDiagnoses: TaskPayload<"board.diagnose">[];
   inbox: TaskPayload<"inbox.review">;
   jobAlerts: TaskPayload<"inbox.jobAlerts"> | null;
@@ -62,7 +62,7 @@ export interface TaskListInput {
   followups: Followup[];
   approvedPromotions: TaskPayload<"promotion.post">[];
   duePlatforms: TaskPayload<"promotion.draft">[];
-  campaignTunes: TaskPayload<"campaign.tune">[];
+  feedTunes: TaskPayload<"search.tune">[];
   rescanSkipped: TaskPayload<"job.rescanSkipped">[];
   retryFailed: TaskPayload<"job.retryFailed">[];
   setup: TaskPayload<"search.setup"> | null;
@@ -74,7 +74,7 @@ type PipelineWork = Pick<
   "approvedJobs" | "dueQueries" | "scorePending" | "queueScores" | "jobAlerts"
 >;
 
-/** Setup and campaign reviews wait until no apply, discovery, import or scoring work is queued. */
+/** Setup and feed reviews wait until no apply, discovery, import or scoring work is queued. */
 export function isPipelineQuiet(work: PipelineWork): boolean {
   const { approvedJobs, dueQueries, scorePending, queueScores, jobAlerts } = work;
   const queued = approvedJobs.length + dueQueries.length + scorePending.length + queueScores.length;
@@ -85,7 +85,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 
 export function applyTask(job: TaskJob, preferCapExempt: boolean): PilotTask {
   const payload = {
-    campaignId: job.campaignId,
+    feedId: job.feedId,
     jobKey: job.key,
     jobTitle: job.title,
     url: job.url,
@@ -102,7 +102,7 @@ export function applyTask(job: TaskJob, preferCapExempt: boolean): PilotTask {
 /** An empty contact list still earns the task: finding a first contact is the point. */
 function warmIntroPayload(job: TaskJob, mode: NetworkingMode): TaskPayload<"networking.warmIntro"> {
   return {
-    campaignId: job.campaignId,
+    feedId: job.feedId,
     jobKey: job.key,
     company: job.company,
     jobTitle: job.title,
@@ -153,7 +153,7 @@ function autonomousTasks(input: TaskListInput): PilotTask[] {
   const tasks: PilotTask[] = [
     ...makeTasks("question.answered", input.answeredQuestions),
     ...makeTasks("board.diagnose", input.boardDiagnoses),
-    ...makeTasks("campaign.reviewPaused", input.pausedCampaigns),
+    ...makeTasks("search.review", input.pausedFeeds),
     ...makeTasks("interview.reply", input.interviewReplies),
     ...makeTasks("interview.prep", input.interviewPreps),
     ...makeTasks("queue.score", input.queueScores),
@@ -205,7 +205,7 @@ function autonomousTasks(input: TaskListInput): PilotTask[] {
       maxPages: SEARCH_MAX_PAGES,
     }));
     tasks.push(
-      ...makeTasks("campaign.scorePending", input.scorePending),
+      ...makeTasks("feed.score", input.scorePending),
       ...makeTasks("search.discover", discoveries),
     );
   }
@@ -213,7 +213,7 @@ function autonomousTasks(input: TaskListInput): PilotTask[] {
   if (quiet) {
     if (input.setup) tasks.push(makeTask("search.setup", input.setup));
     tasks.push(
-      ...makeTasks("campaign.tune", input.campaignTunes),
+      ...makeTasks("search.tune", input.feedTunes),
       ...makeTasks("job.rescanSkipped", input.rescanSkipped),
       ...makeTasks("job.retryFailed", input.retryFailed),
     );

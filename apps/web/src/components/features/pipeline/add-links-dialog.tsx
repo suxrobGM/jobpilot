@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { MAX_APPLY_URLS } from "@jobpilot/contracts/campaign";
+import { MAX_LINKS } from "@jobpilot/contracts/feed";
 import { Button, TextField } from "@mui/material";
 import { api } from "@/api/client";
 import { pipelineQueries } from "@/api/queries";
@@ -37,7 +37,7 @@ export function AddLinksDialog(props: AddLinksDialogProps): ReactElement {
     },
   });
 
-  const tooMany = links.length > MAX_APPLY_URLS;
+  const tooMany = links.length > MAX_LINKS;
   return (
     <FormDialogShell
       open={open}
@@ -68,7 +68,7 @@ export function AddLinksDialog(props: AddLinksDialogProps): ReactElement {
         error={tooMany}
         helperText={
           tooMany
-            ? `At most ${MAX_APPLY_URLS} links at a time.`
+            ? `At most ${MAX_LINKS} links at a time.`
             : "The pilot opens each one, scores it against your resume, and applies to the ones that fit."
         }
       />

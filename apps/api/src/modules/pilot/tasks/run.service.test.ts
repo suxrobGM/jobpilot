@@ -9,19 +9,19 @@ import { describe, expect, it } from "bun:test";
 const USER_ID = "5f0d4d0e-4f27-4a0a-9f4e-2b1c6f1f7f01";
 const RUN_ID = "4c965efd-b586-49ea-825b-1af715760116";
 const VERSION = "31b0c512-b767-4dd7-9ee8-913e46d544c6";
-const CAMPAIGN_ID = "0b6f3c2a-8d1e-4f5a-9c7b-3e2d1a0f9b8c";
-const PAUSED_CAMPAIGN_ID = "7a1e9d4c-2b3f-4e6a-8d5c-9f0e1b2a3c4d";
+const FEED_ID = "0b6f3c2a-8d1e-4f5a-9c7b-3e2d1a0f9b8c";
+const PAUSED_FEED_ID = "7a1e9d4c-2b3f-4e6a-8d5c-9f0e1b2a3c4d";
 const now = new Date();
 
 const applyTask: PilotTask = {
-  id: `job.apply:${CAMPAIGN_ID}:j1`,
+  id: `job.apply:${FEED_ID}:j1`,
   taskType: "job.apply",
   priority: 100,
   title: "Engineer",
   subjectType: "job",
-  subjectId: `${CAMPAIGN_ID}:j1`,
+  subjectId: `${FEED_ID}:j1`,
   payload: {
-    campaignId: CAMPAIGN_ID,
+    feedId: FEED_ID,
     jobKey: "j1",
     jobTitle: "Engineer",
     url: "https://example.test/job",
@@ -32,13 +32,13 @@ const applyTask: PilotTask = {
 };
 
 const pausedTask: PilotTask = {
-  id: `campaign.reviewPaused:${PAUSED_CAMPAIGN_ID}`,
-  taskType: "campaign.reviewPaused",
+  id: `search.review:${PAUSED_FEED_ID}`,
+  taskType: "search.review",
   priority: 910,
   title: "Review a paused search: react",
-  subjectType: "campaign",
-  subjectId: PAUSED_CAMPAIGN_ID,
-  payload: { campaignId: PAUSED_CAMPAIGN_ID, query: "react", board: null, pausedAt: now },
+  subjectType: "feed",
+  subjectId: PAUSED_FEED_ID,
+  payload: { feedId: PAUSED_FEED_ID, query: "react", board: null, pausedAt: now },
 };
 
 const snapshot: TaskList = {
@@ -75,10 +75,10 @@ function makeRunService(db: unknown, journal = fakeJournal().journal) {
 interface RunSetup {
   currentVersion?: string;
   openRun?: { id: string } | null;
-  campaignStillPaused?: boolean;
+  feedStillPaused?: boolean;
 }
 
-function runDb({ currentVersion = VERSION, openRun = null, campaignStillPaused = true }: RunSetup) {
+function runDb({ currentVersion = VERSION, openRun = null, feedStillPaused = true }: RunSetup) {
   const creates: Record<string, unknown>[] = [];
   const db = {
     pilotState: {
@@ -101,9 +101,9 @@ function runDb({ currentVersion = VERSION, openRun = null, campaignStillPaused =
         };
       },
     },
-    campaign: { count: async () => (campaignStillPaused ? 1 : 0) },
+    feed: { count: async () => (feedStillPaused ? 1 : 0) },
     // What `startApplying` reads and writes; no duplicate matches.
-    campaignJob: {
+    job: {
       findFirst: async () => ({
         url: "https://example.test/job",
         title: "Engineer",
@@ -111,7 +111,7 @@ function runDb({ currentVersion = VERSION, openRun = null, campaignStillPaused =
       }),
       findMany: async () => [],
       updateManyAndReturn: async () => [
-        { campaignId: CAMPAIGN_ID, key: "j1", status: "applying", brief: null },
+        { feedId: FEED_ID, key: "j1", status: "applying", brief: null },
       ],
     },
     application: { findUnique: async () => null, findMany: async () => [] },
@@ -138,7 +138,7 @@ function closeDb(row: ReturnType<typeof runRow>) {
       findFirst: async () => row,
       updateManyAndReturn: async (a: { data: Record<string, unknown> }) => [{ ...row, ...a.data }],
     },
-    campaignJob: {
+    job: {
       updateMany: async (a: unknown) => {
         jobReverts.push(a);
         return { count: 1 };
@@ -170,8 +170,8 @@ describe("RunService.start", () => {
   it("starts a task off the supplied snapshot and stores its payload", async () => {
     const { service, creates } = runDb({});
     const run = await service.start(USER_ID, VERSION, applyTask.id);
-    expect(creates[0]).toMatchObject({ taskType: "job.apply", subjectId: `${CAMPAIGN_ID}:j1` });
-    expect(run.payload).toMatchObject({ campaignId: CAMPAIGN_ID, jobKey: "j1" });
+    expect(creates[0]).toMatchObject({ taskType: "job.apply", subjectId: `${FEED_ID}:j1` });
+    expect(run.payload).toMatchObject({ feedId: FEED_ID, jobKey: "j1" });
   });
 
   it("publishes run.started", async () => {
@@ -181,7 +181,7 @@ describe("RunService.start", () => {
     expect(event).toEqual({
       type: "run.started",
       runId: RUN_ID,
-      taskType: "campaign.reviewPaused",
+      taskType: "search.review",
     });
   });
 
@@ -189,7 +189,7 @@ describe("RunService.start", () => {
     const refusals: [RunSetup, string, string][] = [
       [{ currentVersion: "d6579e89-e9af-4f83-a04e-7d2cfad07cf3" }, applyTask.id, "stale"],
       [{ openRun: { id: "held" } }, applyTask.id, "already started"],
-      [{ campaignStillPaused: false }, pausedTask.id, "no longer paused"],
+      [{ feedStillPaused: false }, pausedTask.id, "no longer paused"],
     ];
     for (const [setup, taskId, message] of refusals) {
       const { service, creates } = runDb(setup);
@@ -241,7 +241,7 @@ describe("RunService.cancel", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           status: "applying",
-          OR: [{ campaignId: CAMPAIGN_ID, key: "j1" }],
+          OR: [{ feedId: FEED_ID, key: "j1" }],
         }),
         data: { status: "approved" },
       }),
@@ -281,7 +281,7 @@ describe("RunService.postResult", () => {
         kind: "action",
         summary: result.summary,
         subjectType: "job",
-        subjectId: `${CAMPAIGN_ID}:j1`,
+        subjectId: `${FEED_ID}:j1`,
       }),
     ]);
     expect(event).toEqual({ type: "run.finished", runId: RUN_ID, outcome: "done" });

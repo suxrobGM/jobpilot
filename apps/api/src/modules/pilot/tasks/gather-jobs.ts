@@ -1,12 +1,8 @@
-import {
-  campaignConfigSchema,
-  type JobBriefData,
-  jobBriefSchema,
-} from "@jobpilot/contracts/campaign";
+import { type JobBriefData, jobBriefSchema } from "@jobpilot/contracts/feed";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { CapExemptBasis, Prisma, PrismaClient } from "@/generated/prisma/client";
-import { applyableJobWhere } from "@/modules/campaign/jobs/apply-guard";
+import { applyableJobWhere } from "@/modules/feed/jobs/apply-guard";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "./run-history";
 
@@ -25,7 +21,7 @@ type WarmContact = NonNullable<TaskPayload<"job.apply">["warmContacts"]>[number]
 
 /** An approved or recently applied job, carrying what both apply and warm-intro tasks need. */
 export interface TaskJob {
-  campaignId: string;
+  feedId: string;
   key: string;
   title: string;
   url: string;
@@ -39,7 +35,7 @@ export interface TaskJob {
 }
 
 const TASK_JOB_SELECT = {
-  campaignId: true,
+  feedId: true,
   key: true,
   title: true,
   url: true,
@@ -48,24 +44,24 @@ const TASK_JOB_SELECT = {
   matchScore: true,
   company: true,
   capExemptBasis: true,
-  campaign: { select: { config: true } },
-} satisfies Prisma.CampaignJobSelect;
+  feed: { select: { resumeId: true } },
+} satisfies Prisma.JobSelect;
 
-type TaskJobRow = Prisma.CampaignJobGetPayload<{ select: typeof TASK_JOB_SELECT }>;
+type TaskJobRow = Prisma.JobGetPayload<{ select: typeof TASK_JOB_SELECT }>;
 
 function toTaskJob(row: TaskJobRow): TaskJob {
-  const { campaign, board, ...job } = row;
+  const { feed, board, ...job } = row;
   return {
     ...job,
     board: board?.domain ?? null,
     brief: storedBriefSchema.parse(job.brief),
-    resumeId: campaignConfigSchema.parse(campaign.config).resumeId,
+    resumeId: feed.resumeId ?? undefined,
   };
 }
 
-/** Approved jobs of in-progress campaigns, best match first. */
+/** Approved jobs of live feeds, best match first. */
 export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): Promise<TaskJob[]> {
-  const rows = await prisma.campaignJob.findMany({
+  const rows = await prisma.job.findMany({
     where: applyableJobWhere(userId),
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
@@ -74,15 +70,15 @@ export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): 
   return rows.map(toTaskJob);
 }
 
-/** One approved job the user asked to apply to, whatever its campaign's state. */
+/** One approved job the user asked to apply to, whatever its feed's state. */
 export async function findApprovedJob(
   prisma: PrismaClient,
   userId: string,
-  campaignId: string,
+  feedId: string,
   key: string,
 ): Promise<TaskJob | null> {
-  const row = await prisma.campaignJob.findFirst({
-    where: { userId, campaignId, key, status: "approved" },
+  const row = await prisma.job.findFirst({
+    where: { userId, feedId, key, status: "approved" },
     select: TASK_JOB_SELECT,
   });
   return row && toTaskJob(row);
@@ -98,7 +94,7 @@ export async function gatherWarmIntroCandidates(
   now: Date,
   approvedJobs: TaskJob[],
 ): Promise<TaskJob[]> {
-  const applied = await prisma.campaignJob.findMany({
+  const applied = await prisma.job.findMany({
     where: {
       status: "applied",
       appliedAt: { gte: new Date(now.getTime() - WARM_INTRO_APPLIED_WINDOW_MS) },
@@ -108,7 +104,7 @@ export async function gatherWarmIntroCandidates(
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
     select: {
-      campaignId: true,
+      feedId: true,
       key: true,
       title: true,
       url: true,
@@ -164,18 +160,18 @@ export async function gatherBoardDiagnoses(
   userId: string,
   now: Date,
 ): Promise<TaskPayload<"board.diagnose">[]> {
-  const rows = await prisma.campaignJob.findMany({
+  const rows = await prisma.job.findMany({
     where: { status: { in: ["applied", "failed"] }, boardId: { not: null }, userId },
     orderBy: { createdAt: "desc" },
     take: BOARD_HEALTH_SCAN,
     select: {
-      campaignId: true,
+      feedId: true,
       key: true,
       url: true,
       board: { select: { id: true, domain: true } },
       status: true,
       failReason: true,
-      campaign: { select: { status: true } },
+      feed: { select: { pausedAt: true, archivedAt: true } },
     },
   });
 
@@ -187,8 +183,8 @@ export async function gatherBoardDiagnoses(
     const failed = firstSuccess === -1 ? jobs : jobs.slice(0, firstSuccess);
     if (failed.length < BOARD_HEALTH_MIN_FAILURES) continue;
 
-    // The agent retries the test job into the apply queue, which only reads in-progress campaigns.
-    const probe = failed.find((job) => job.campaign.status === "in_progress");
+    // The agent retries the test job into the apply queue, which only reads live feeds.
+    const probe = failed.find((job) => job.feed.pausedAt === null && job.feed.archivedAt === null);
     unhealthy.push({
       boardId: board.id,
       board: board.domain,
@@ -196,7 +192,7 @@ export async function gatherBoardDiagnoses(
       recentFailReasons: failed
         .flatMap((job) => (job.failReason ? [job.failReason] : []))
         .slice(0, FAIL_REASON_CAP),
-      testJob: probe ? { campaignId: probe.campaignId, jobKey: probe.key, url: probe.url } : null,
+      testJob: probe ? { feedId: probe.feedId, jobKey: probe.key, url: probe.url } : null,
     });
   }
   const due = await withoutRecentRuns(

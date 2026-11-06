@@ -5,17 +5,10 @@ import {
   APPLICATION_STATUSES,
 } from "@jobpilot/contracts/application";
 import { AUTH_TOKEN_KINDS, OAUTH_PROVIDERS } from "@jobpilot/contracts/auth";
-import {
-  ACTORS,
-  CAMPAIGN_FEEDS,
-  CAMPAIGN_JOB_STATUSES,
-  CAMPAIGN_SOURCES,
-  CAMPAIGN_STATUSES,
-  CAP_EXEMPT_BASES,
-} from "@jobpilot/contracts/campaign";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
 import { CAPTCHA_PROVIDERS, CREDENTIAL_KINDS } from "@jobpilot/contracts/credential";
 import { CLASSIFICATIONS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
+import { ACTORS, CAP_EXEMPT_BASES, FEED_KINDS, JOB_STATUSES } from "@jobpilot/contracts/feed";
 import { JOB_LISTING_STATUSES } from "@jobpilot/contracts/job-listing";
 import {
   CONTACT_DISCOVERY_SOURCES,
@@ -62,10 +55,8 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   AuthTokenKind: AUTH_TOKEN_KINDS,
   Availability: AVAILABILITY,
   Actor: ACTORS,
-  CampaignFeed: CAMPAIGN_FEEDS,
-  CampaignJobStatus: CAMPAIGN_JOB_STATUSES,
-  CampaignSource: CAMPAIGN_SOURCES,
-  CampaignStatus: CAMPAIGN_STATUSES,
+  FeedKind: FEED_KINDS,
+  JobStatus: JOB_STATUSES,
   CapExemptBasis: CAP_EXEMPT_BASES,
   ContactDiscoverySource: CONTACT_DISCOVERY_SOURCES,
   ContactEmailSource: CONTACT_EMAIL_SOURCES,

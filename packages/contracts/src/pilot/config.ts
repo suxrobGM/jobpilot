@@ -7,7 +7,7 @@ import {
 } from "../networking";
 import { pilotJobAlertsSchema } from "./job-alerts";
 
-/** The campaign modes plus "off". LinkedIn drops "auto": nothing auto-sends there. */
+/** The feed modes plus "off". LinkedIn drops "auto": nothing auto-sends there. */
 export const PILOT_EMAIL_AUTONOMY = ["off", ...NETWORKING_AUTONOMY] as const;
 export const PILOT_LINKEDIN_AUTONOMY = ["off", "draft", "review"] as const;
 

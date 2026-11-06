@@ -10,7 +10,7 @@ const jobListingSourceSchema = z.object({
   lastSeenAt: z.date(),
 });
 
-/** The privacy contract: no userId, campaignId, matchScore or appliedAt may ever appear here. */
+/** The privacy contract: no userId, feedId, matchScore or appliedAt may ever appear here. */
 const jobListingSummarySchema = z.object({
   id: z.uuid(),
   slug: z.string(),

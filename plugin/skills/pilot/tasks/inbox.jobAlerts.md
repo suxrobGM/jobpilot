@@ -2,7 +2,7 @@
 
 Payload `{messageIds[], count, minScore, senderDomains[]}`: unimported job-alert emails (LinkedIn,
 Ladders, We Work Remotely, ...) offered at the user's scheduled times or right after **Run now**.
-Turn **exactly** those `messageIds` into ranked jobs in the standing "Job alerts" campaign. Don't apply: the server
+Turn **exactly** those `messageIds` into ranked jobs in the standing "Job alerts" feed. Don't apply: the server
 promotes rows scoring at or above `minScore` on the next task list, and `job.apply` works them
 highest score first.
 
@@ -60,7 +60,7 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    Dedupe across all messages, keeping the richest listing text for each posting.
 
 3. **Skip what is already in the pipeline.** Alert emails repeat postings for days. Send every
-   canonical URL (at most 500) in one call; `.existing` lists those already in one of your campaigns
+   canonical URL (at most 500) in one call; `.existing` lists those already in one of your feeds
    from the last 7 days, exactly as sent. Drop them.
 
    ```bash
@@ -77,7 +77,7 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    jobpilot-api POST /api/pilot/jobs/similar --data '{"postings":[{"title":"<t>","company":"<c>","location":"<l>"}]}'
    ```
 
-   Then run the applied-check (`../../_shared/campaign-flow.md`) on what is left.
+   Then run the applied-check (`../../_shared/feed-flow.md`) on what is left.
 
 4. **Rank** each remaining posting **in place** from its listing text - no navigation, no worker.
    Build a brief per `../../_shared/job-brief.md` from what the email states. Alert emails rarely
@@ -92,27 +92,26 @@ the procedure. A message that is not a job alert (a connection request, a newsle
      `matchReason` ("Title-only: individual-contributor data role, goals target engineering
      leadership.").
    - **Title only, and it could fit** → **no** score. It stays `pending` for
-     `campaign.scorePending`, which opens the posting. When unsure, leave it unscored: a wrong low
+     `feed.score`, which opens the posting. When unsure, leave it unscored: a wrong low
      score buries a job nobody looks at again.
 
    Order unscored rows first, then scored rows highest first.
 
-5. **Campaign.** Only when a posting survived step 3. This returns the open "Job alerts" campaign,
-   or creates it; read `.id` as `CID`:
+5. **Feed.** Only when a posting survived step 3. This returns the "Job alerts" feed, creating
+   it the first time; read `.id` as `CID`:
 
    ```bash
-   jobpilot-api POST /api/campaigns \
-     --data '{"query":"Job alerts","source":"auto_apply","createdBy":"pilot","feed":"job_alerts","config":{"resumeId":"<RESUME_ID>","minScore":<minScore>}}'
+   jobpilot-api POST /api/feeds --data '{"kind":"job_alerts"}'
    ```
 
    Per posting in ranked order, write `{key, title, company, location, url, board, matchScore,
    matchReason, status:"pending", brief}` to `$JOBPILOT_TEMP/<key>-job.json` and `POST
-   /api/campaigns/$CID/jobs --data @...`. `board` is the posting's domain, `matchReason` names the
+   /api/feeds/$CID/jobs --data @...`. `board` is the posting's domain, `matchReason` names the
    alert it came from, `brief` is a JSON **string**, `matchScore` is omitted when unscored.
    `company` is required: when the alert names none, send `Unknown (<board domain>)`. Key rows
    `alert-<board-slug>-<posting-id-or-slug>`, shell-safe.
 
-   Then skip, per `../../_shared/campaign-flow.md` ("Terminal result writes"), each row already
+   Then skip, per `../../_shared/feed-flow.md` ("Terminal result writes"), each row already
    applied (`Already applied (<kind>)`) or ineligible per `../../_shared/eligibility.md`. Rows below
    `minScore` stay `pending`: the server records their skip.
 
@@ -126,7 +125,7 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    A run that fails before this call skips it: the server re-offers the emails, and step 3 keeps the
    retry from duplicating rows.
 
-Result: `subjectType:"campaign"`, `subjectId:$CID` when rows were written; otherwise keep the
+Result: `subjectType:"feed"`, `subjectId:$CID` when rows were written; otherwise keep the
 run's subject.
 
 Summary: "Imported 6 alert emails - 31 postings, 22 new (3 duplicates across boards); 9 scored

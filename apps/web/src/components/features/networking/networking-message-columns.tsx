@@ -3,7 +3,7 @@ import type { GridColDef } from "@mui/x-data-grid";
 import type { NetworkingMessageDto } from "@/api/types";
 import { ExternalLink, StatusChip } from "@/components/ui/display";
 
-/** Shared by a campaign's board and the cross-campaign list, so a draft reads the same in both. */
+/** Shared by a feed's board and the cross-feed list, so a draft reads the same in both. */
 export const networkingMessageColumns: GridColDef<NetworkingMessageDto>[] = [
   {
     field: "status",
@@ -58,7 +58,7 @@ export const networkingMessageColumns: GridColDef<NetworkingMessageDto>[] = [
   },
 ];
 
-/** The trailing "Open" cell, shared by the board and the cross-campaign list. */
+/** The trailing "Open" cell, shared by the board and the cross-feed list. */
 export function openActionColumn(onOpen: (id: string) => void): GridColDef<NetworkingMessageDto> {
   return {
     field: "actions",

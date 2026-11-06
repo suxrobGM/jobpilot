@@ -21,13 +21,13 @@ export function JobsView(props: JobsViewProps): ReactElement {
   const jobs = useQuery(pipelineQueries.jobs({ ...pagination.query, view, ...filters }));
   const [openId, setOpenId] = useState<string | null>(null);
   const rows = jobs.data?.items ?? [];
-  // The reason roll-up is per campaign, so it shows once a search or feed is picked.
+  // The reason roll-up is per feed, so it shows once a search or feed is picked.
   const dropped = view === "skipped" || view === "failed";
-  const reasonsFor = dropped ? (filters.campaignId ?? null) : null;
+  const reasonsFor = dropped ? (filters.feedId ?? null) : null;
 
   return (
     <Stack spacing={2}>
-      {reasonsFor && <ReasonBreakdown campaignId={reasonsFor} />}
+      {reasonsFor && <ReasonBreakdown feedId={reasonsFor} />}
       <PipelineJobsTable
         view={view}
         rows={rows}

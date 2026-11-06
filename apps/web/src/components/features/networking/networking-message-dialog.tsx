@@ -5,31 +5,29 @@ import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { campaignQueries, emailQueries, networkingQueries } from "@/api/queries";
+import { emailQueries, feedQueries, networkingQueries } from "@/api/queries";
 import type { NetworkingMessageDto } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { FormDialogShell } from "@/components/ui/form";
 
 interface NetworkingMessageDialogProps {
-  campaignId: string;
+  feedId: string;
   message: NetworkingMessageDto;
   onClose: () => void;
 }
 
 /** Owns every write against one draft, so a caller only decides which draft is open. */
 export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): ReactElement {
-  const { campaignId, message, onClose } = props;
+  const { feedId, message, onClose } = props;
   const rewrite = useCreateRequest();
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
   const canSend = useQuery(emailQueries.account()).data?.canSend ?? false;
-  const messageApi = api
-    .campaigns({ id: campaignId })
-    .networking.messages({ messageId: message.id });
+  const messageApi = api.feeds({ id: feedId }).networking.messages({ messageId: message.id });
 
-  const invalidate = [networkingQueries.all, campaignQueries.all];
+  const invalidate = [networkingQueries.all, feedQueries.all];
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";
   const terminal = isTerminalNetworkingStatus(message.status);

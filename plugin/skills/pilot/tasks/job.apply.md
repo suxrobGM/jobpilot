@@ -1,10 +1,10 @@
 # `job.apply`
 
-Delegate one `job-applier` run with the payload's `campaignId`, `jobKey`, `url`, `board`, `brief`
+Delegate one `job-applier` run with the payload's `feedId`, `jobKey`, `url`, `board`, `brief`
 and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
 
-- `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` in the shapes of
-  `../../_shared/campaign-flow.md` ("Terminal result writes"), passing the worker's
+- `applied` / `failed` / `skipped` → `POST /api/feeds/$CID/jobs/$KEY/result` in the shapes of
+  `../../_shared/feed-flow.md` ("Terminal result writes"), passing the worker's
   `resumeId`/`resumeVariantId` through.
 - `needs_user` with `category:"payment"` → `failed`, `failReason:"Payment required"`.
 - Any other `needs_user` → ask, then park the job. Copy the worker's `kind`, `question`, `options`
@@ -15,17 +15,17 @@ and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
 {
   "kind": "<worker kind>",
   "subjectType": "job",
-  "subjectId": "<campaignId>:<jobKey>",
+  "subjectId": "<feedId>:<jobKey>",
   "prompt": "<worker question>",
   "options": ["<worker options>"],
   "savedAnswerKey": "<worker savedAnswerKey>",
-  "link": "<JOBPILOT_WEB>/pipeline?campaign=<campaignId>"
+  "link": "<JOBPILOT_WEB>/pipeline?feed=<feedId>"
 }
 ```
 
 ```bash
 jobpilot-api POST /api/pilot/questions --data @"$JOBPILOT_TEMP/question.json"
-jobpilot-api PATCH /api/campaigns/$CID/jobs/$KEY --data '{"status":"needs_user"}'
+jobpilot-api PATCH /api/feeds/$CID/jobs/$KEY --data '{"status":"needs_user"}'
 ```
 
 A `two_factor` question expires after about 5 minutes and the server skips the parked job; do

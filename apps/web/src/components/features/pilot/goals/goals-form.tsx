@@ -21,7 +21,7 @@ interface PendingGoals {
   goals: string;
   impact: GoalsImpact;
   searchIds: string[];
-  approved: { campaignId: string; key: string }[];
+  approved: { feedId: string; key: string }[];
 }
 
 interface GoalsFormProps {
@@ -63,7 +63,7 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
         goals: value.goals,
         impact: { searchNames: searches.map((s) => s.name), approvedJobs: approved.length },
         searchIds: searches.map((s) => s.id),
-        approved: approved.map((job) => ({ campaignId: job.campaignId, key: job.key })),
+        approved: approved.map((job) => ({ feedId: job.feedId, key: job.key })),
       });
     },
   });

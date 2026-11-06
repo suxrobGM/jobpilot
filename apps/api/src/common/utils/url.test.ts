@@ -79,7 +79,7 @@ describe("normalizeJobUrl: listing-index cases", () => {
   });
 
   it("collapses two links to the same posting onto one string", () => {
-    const a = normalizeJobUrl("https://boards.example.com/acme/jobs/42?utm_campaign=spring");
+    const a = normalizeJobUrl("https://boards.example.com/acme/jobs/42?utm_feed=spring");
     const b = normalizeJobUrl("http://boards.example.com/acme/jobs/42/#content");
     expect(a).toBe(b);
   });

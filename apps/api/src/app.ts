@@ -11,8 +11,6 @@ import { applicationController } from "@/modules/application/application.control
 import { authController } from "@/modules/auth/auth.controller";
 import { authProvidersController } from "@/modules/auth/providers.controller";
 import { securityController } from "@/modules/auth/security.controller";
-import { campaignController } from "@/modules/campaign/campaign.controller";
-import { campaignJobController } from "@/modules/campaign/jobs/job.controller";
 import { captchaController } from "@/modules/captcha/captcha.controller";
 import { contactController } from "@/modules/contact/contact.controller";
 import { coverLetterController } from "@/modules/cover-letter/cover-letter.controller";
@@ -20,6 +18,8 @@ import { credentialController } from "@/modules/credential/credential.controller
 import { emailAccountController } from "@/modules/email/account/account.controller";
 import { emailMessagesController } from "@/modules/email/messages.controller";
 import { emailOAuthController } from "@/modules/email/oauth.controller";
+import { feedController } from "@/modules/feed/feed.controller";
+import { jobController } from "@/modules/feed/jobs/job.controller";
 import { healthController } from "@/modules/health/health.controller";
 import { adminBoardController } from "@/modules/job-board/admin-board.controller";
 import { jobBoardController } from "@/modules/job-board/job-board.controller";
@@ -40,7 +40,6 @@ import { promotionController } from "@/modules/pilot/promotion.controller";
 import { pilotQuestionsController } from "@/modules/pilot/question.controller";
 import { pilotRequestsController } from "@/modules/pilot/requests/request.controller";
 import { pilotResearchController } from "@/modules/pilot/research.controller";
-import { pilotSearchController } from "@/modules/pilot/search.controller";
 import { pilotStepsController } from "@/modules/pilot/steps/step.controller";
 import { expiryJob } from "@/modules/pilot/tasks/expiry.job";
 import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
@@ -92,11 +91,10 @@ const app = new Elysia()
       .use(applicationController)
       .use(scoringController)
       .use(upworkController)
-      .use(campaignController)
-      .use(campaignJobController)
+      .use(feedController)
+      .use(jobController)
       .use(networkingController)
       .use(pilotController)
-      .use(pilotSearchController)
       .use(pilotTasksController)
       .use(pilotJobAlertsController)
       .use(pilotJobLookupController)

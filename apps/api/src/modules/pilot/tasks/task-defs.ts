@@ -88,18 +88,18 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
     title: (p) => `Board failing: ${p.board} (${p.consecutiveFailures})`,
     perList: 1,
   },
-  // Above any apply, or a list full of applies would starve a stranded campaign out of the top 10.
-  "campaign.reviewPaused": {
+  // Above any apply, or a list full of applies would starve a stranded feed out of the top 10.
+  "search.review": {
     priority: 910,
-    subjectType: "campaign",
-    subjectId: (p) => p.campaignId,
+    subjectType: "feed",
+    subjectId: (p) => p.feedId,
     title: (p) => `Review a paused search: ${p.query}`,
     perList: 1,
   },
   "job.apply": {
     priority: 800,
     subjectType: "job",
-    subjectId: (p) => jobSubjectId({ campaignId: p.campaignId, key: p.jobKey }),
+    subjectId: (p) => jobSubjectId({ feedId: p.feedId, key: p.jobKey }),
     title: (p) => p.jobTitle,
   },
   "interview.prep": {
@@ -111,8 +111,8 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   },
   "queue.score": {
     priority: 720,
-    subjectType: "campaign",
-    subjectId: (p) => p.campaignId,
+    subjectType: "feed",
+    subjectId: (p) => p.feedId,
     title: (p) => `Score ${p.queuedCount} pasted link(s)`,
   },
   "networking.send": {
@@ -142,7 +142,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   "networking.warmIntro": {
     priority: 550,
     subjectType: "networking",
-    subjectId: (p) => jobSubjectId({ campaignId: p.campaignId, key: p.jobKey }),
+    subjectId: (p) => jobSubjectId({ feedId: p.feedId, key: p.jobKey }),
     title: (p) => `Warm intro: ${p.jobTitle}`,
     perList: 1,
   },
@@ -153,10 +153,10 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
     title: () => "Set up searches from your goals",
   },
   // Finish scoring what was found before discovering more.
-  "campaign.scorePending": {
+  "feed.score": {
     priority: 510,
-    subjectType: "campaign",
-    subjectId: (p) => p.campaignId,
+    subjectType: "feed",
+    subjectId: (p) => p.feedId,
     title: (p) => `Score discovered jobs: ${p.query}`,
   },
   // Alert links are pre-filtered by the board, so import them before discovering more.
@@ -168,7 +168,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   },
   "search.discover": {
     priority: 500,
-    subjectType: "campaign",
+    subjectType: "feed",
     subjectId: (p) => p.searchId,
     title: (p) => `Discover: ${p.query}`,
   },
@@ -185,10 +185,10 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
     title: (p) => `Follow up: ${p.contactName}`,
     perList: 2,
   },
-  "campaign.tune": {
+  "search.tune": {
     priority: 350,
-    subjectType: "campaign",
-    subjectId: (p) => p.campaignId,
+    subjectType: "feed",
+    subjectId: (p) => p.feedId,
     title: (p) => `Tune a search: ${p.query}`,
     perList: 1,
   },
@@ -201,15 +201,15 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   },
   "job.rescanSkipped": {
     priority: 250,
-    subjectType: "campaign",
-    subjectId: (p) => p.campaignId,
+    subjectType: "feed",
+    subjectId: (p) => p.feedId,
     title: (p) => `Rescan ${p.skippedCount} skipped job(s)`,
     perList: 1,
   },
   "job.retryFailed": {
     priority: 240,
-    subjectType: "campaign",
-    subjectId: (p) => p.campaignId,
+    subjectType: "feed",
+    subjectId: (p) => p.feedId,
     title: (p) => `Retry ${p.failedCount} failed job(s)`,
     perList: 1,
   },

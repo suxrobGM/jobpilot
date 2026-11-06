@@ -3,7 +3,7 @@ import { applyActions } from "./apply-action";
 import { type FakeState, fakeContext } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
-const CAMPAIGN = "11111111-1111-4111-8111-111111111111";
+const FEED = "11111111-1111-4111-8111-111111111111";
 const SEARCH = "22222222-2222-4222-8222-222222222222";
 
 function initialState(): FakeState {
@@ -19,23 +19,31 @@ function initialState(): FakeState {
         boardId: "board-1",
         resumeId: null,
         reason: "Matches the goals",
+        pausedAt: null,
+        archivedAt: null,
       },
     ],
-    campaigns: [{ id: "c-running", pilotSearchId: SEARCH, status: "in_progress" }],
     jobs: [
-      { id: "j1", campaignId: CAMPAIGN, key: "k1", status: "approved", skipReason: null },
-      { id: "j2", campaignId: CAMPAIGN, key: "k2", status: "pending", skipReason: null },
+      { id: "j1", feedId: FEED, key: "k1", status: "approved", skipReason: null },
+      { id: "j2", feedId: FEED, key: "k2", status: "pending", skipReason: null },
     ],
     answers: new Map([["visa_sponsorship", "no"]]),
   };
 }
 
-/** What a change may touch; search ids are left out because undoing a delete makes a new row. */
+/** What a change may touch: live searches without ids, since undoing a delete makes a new one. */
 function snapshot(state: FakeState) {
+  const live = state.searches.filter((search) => search.archivedAt === null);
   return {
     goals: state.goals,
     config: state.config,
-    searches: state.searches.map(({ id: _, ...search }) => search),
+    searches: live.map(({ name, query, boardId, resumeId, reason }) => ({
+      name,
+      query,
+      boardId,
+      resumeId,
+      reason,
+    })),
     jobs: state.jobs.map((job) => ({ ...job })),
     answers: [...state.answers],
   };
@@ -61,8 +69,8 @@ const CASES: [string, PilotChangeAction][] = [
     {
       type: "jobs.skip",
       refs: [
-        { campaignId: CAMPAIGN, key: "k1" },
-        { campaignId: CAMPAIGN, key: "k2" },
+        { feedId: FEED, key: "k1" },
+        { feedId: FEED, key: "k2" },
       ],
       reason: "Goals changed",
     },
@@ -81,13 +89,13 @@ describe("change actions", () => {
     });
   }
 
-  it("search.pause pauses the standing campaign, and undo resumes it", async () => {
+  it("search.pause pauses the search, and undo resumes it", async () => {
     const state = initialState();
     const undo = await applyActions(fakeContext(state), [
       { type: "search.pause", searchId: SEARCH },
     ]);
-    expect(state.campaigns[0]?.status).toBe("paused");
+    expect(state.searches[0]?.pausedAt).toBeInstanceOf(Date);
     await applyActions(fakeContext(state), undo);
-    expect(state.campaigns[0]?.status).toBe("in_progress");
+    expect(state.searches[0]?.pausedAt).toBeNull();
   });
 });

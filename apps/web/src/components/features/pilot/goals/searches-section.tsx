@@ -1,11 +1,11 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { PilotSearch } from "@jobpilot/contracts/pilot";
 import { Delete, ExpandLess, ExpandMore, Pause, PlayArrow } from "@mui/icons-material";
 import { Box, Chip, Collapse, Divider, IconButton, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
+import type { FeedDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -15,7 +15,7 @@ import { useMakeChange } from "../changes/use-changes";
 /** The empty-run streak that puts a search on the API backoff ladder's top (48h) rung. */
 const BACKOFF_THRESHOLD = 3;
 
-type ListedSearch = PilotSearch & { appliedThisWeek: number; paused: boolean };
+type ListedSearch = FeedDto;
 
 function yieldStats(search: ListedSearch): string {
   const parts = [`${search.appliedThisWeek} applied this week`];
@@ -27,7 +27,7 @@ function yieldStats(search: ListedSearch): string {
   } else {
     parts.push("not run yet");
   }
-  if (!search.paused && new Date(search.nextRunAt).getTime() > Date.now()) {
+  if (search.pausedAt === null && new Date(search.nextRunAt).getTime() > Date.now()) {
     parts.push(`next check in ${formatTimeUntil(search.nextRunAt)}`);
   }
   return parts.join(" · ");
@@ -43,10 +43,11 @@ function SearchRow(props: SearchRowProps): ReactElement {
   const [open, setOpen] = useState(false);
   const change = useMakeChange();
   const backingOff = search.emptyRuns >= BACKOFF_THRESHOLD;
+  const paused = search.pausedAt !== null;
 
   const togglePause = (): void => {
-    const type = search.paused ? "search.resume" : "search.pause";
-    const verb = search.paused ? "Resumed" : "Paused";
+    const type = paused ? "search.resume" : "search.pause";
+    const verb = paused ? "Resumed" : "Paused";
     change.mutate({ summary: `${verb} ${search.name}`, actions: [{ type, searchId: search.id }] });
   };
 
@@ -78,15 +79,15 @@ function SearchRow(props: SearchRowProps): ReactElement {
         <Typography variant="body2Strong" noWrap sx={{ flex: 1, minWidth: 0 }}>
           {search.name}
         </Typography>
-        {search.paused && <Chip label="Paused" />}
-        {!search.paused && backingOff && <Chip color="warning" label="Coming up dry" />}
+        {paused && <Chip label="Paused" />}
+        {!paused && backingOff && <Chip color="warning" label="Coming up dry" />}
         <TooltipIconButton
-          title={search.paused ? "Resume" : "Pause"}
+          title={paused ? "Resume" : "Pause"}
           size="small"
           disabled={change.isPending}
           onClick={togglePause}
         >
-          {search.paused ? <PlayArrow fontSize="sm" /> : <Pause fontSize="sm" />}
+          {paused ? <PlayArrow fontSize="sm" /> : <Pause fontSize="sm" />}
         </TooltipIconButton>
         <TooltipIconButton
           title="Delete"

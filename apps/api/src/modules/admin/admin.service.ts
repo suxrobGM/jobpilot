@@ -37,8 +37,8 @@ export class AdminService {
       verifiedUsers,
       adminUsers,
       activeProfiles,
-      totalCampaigns,
-      activeCampaigns,
+      totalFeeds,
+      activeFeeds,
       applicationsThisWeek,
       totalBoards,
       totalBoardLinks,
@@ -53,12 +53,12 @@ export class AdminService {
         where: {
           OR: [
             { applications: { some: { appliedAt: { gte: timelineStart } } } },
-            { campaigns: { some: { updatedAt: { gte: timelineStart } } } },
+            { feeds: { some: { updatedAt: { gte: timelineStart } } } },
           ],
         },
       }),
-      this.prisma.campaign.count(),
-      this.prisma.campaign.count({ where: { status: "in_progress" } }),
+      this.prisma.feed.count(),
+      this.prisma.feed.count({ where: { pausedAt: null, archivedAt: null } }),
       this.prisma.application.count({ where: { appliedAt: { gte: weekStart } } }),
       this.prisma.jobBoard.count(),
       this.prisma.userJobBoard.count(),
@@ -80,8 +80,8 @@ export class AdminService {
         active: activeProfiles,
       },
       content: {
-        campaigns: totalCampaigns,
-        activeCampaigns,
+        feeds: totalFeeds,
+        activeFeeds,
         // `status` is non-nullable, so the groupBy already covers every application row.
         applications: statusRows.reduce((total, row) => total + row._count._all, 0),
         applicationsThisWeek,
@@ -173,14 +173,14 @@ export class AdminService {
   private async project(actor: AuthUser, rows: AdminUserRow[]) {
     const userIds = rows.map((row) => row.id);
 
-    const [applicationRows, campaignRows, tokenRows] = await Promise.all([
+    const [applicationRows, feedRows, tokenRows] = await Promise.all([
       this.prisma.application.groupBy({
         by: ["userId"],
         where: { userId: { in: userIds } },
         _count: { _all: true },
         _max: { appliedAt: true },
       }),
-      this.prisma.campaign.groupBy({
+      this.prisma.feed.groupBy({
         by: ["userId"],
         where: { userId: { in: userIds } },
         _max: { updatedAt: true },
@@ -194,16 +194,14 @@ export class AdminService {
     ]);
 
     const byApplication = new Map(applicationRows.map((row) => [row.userId, row]));
-    const byCampaign = new Map(campaignRows.map((row) => [row.userId, row._max.updatedAt]));
+    const byFeed = new Map(feedRows.map((row) => [row.userId, row._max.updatedAt]));
     const byToken = new Map(tokenRows.map((row) => [row.userId, row._max.lastUsedAt]));
 
     return rows.map((row) => {
       const application = byApplication.get(row.id);
-      const stamps = [
-        application?._max.appliedAt,
-        byCampaign.get(row.id),
-        byToken.get(row.id),
-      ].filter((date): date is Date => Boolean(date));
+      const stamps = [application?._max.appliedAt, byFeed.get(row.id), byToken.get(row.id)].filter(
+        (date): date is Date => Boolean(date),
+      );
       const name = `${row.profile?.firstName ?? ""} ${row.profile?.lastName ?? ""}`.trim();
 
       return {

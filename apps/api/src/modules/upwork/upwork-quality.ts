@@ -4,7 +4,7 @@ import type { UpworkClient, UpworkQualityResult } from "@jobpilot/contracts/upwo
  * Heuristic Upwork client/job quality score - deterministic, no LLM (mirrors `scoreFit` in
  * ./fit.ts). Each component returns 0..1 and a signal we could not read scores neutral, so a
  * partial read never looks bad. A `skip` verdict carries the exact `skipReason` the
- * `upwork-search` skill records on the campaign Job.
+ * `upwork-search` skill records on the feed Job.
  */
 
 // Soft floor: below this the posting is skipped even without a hard-rule hit.

@@ -26,7 +26,7 @@ export const pipelineController = new Elysia({
     detail: {
       summary: "List pipeline jobs",
       description:
-        "One page of the user's jobs across searches and feeds in one view (found, toApply, needsYou, skipped, failed). A posting in several campaigns shows once, as its most advanced copy. Networking campaigns are left out; Upwork jobs stay in for their proposal action.",
+        "One page of the user's jobs across searches and feeds in one view (found, toApply, needsYou, skipped, failed). A posting in several feeds shows once, as its most advanced copy. Networking feeds are left out; Upwork jobs stay in for their proposal action.",
     },
   })
   .get("/counts", ({ user, query }) => pipeline.counts(user.id, query), {

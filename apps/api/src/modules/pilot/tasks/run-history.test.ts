@@ -30,7 +30,7 @@ describe("ranRecently", () => {
 
 describe("parseJobSubject", () => {
   it("splits on the first colon, so job keys may contain colons", () => {
-    expect(parseJobSubject("c1:a:b")).toEqual({ campaignId: "c1", key: "a:b" });
+    expect(parseJobSubject("c1:a:b")).toEqual({ feedId: "c1", key: "a:b" });
   });
 
   it("rejects a subject missing either half", () => {

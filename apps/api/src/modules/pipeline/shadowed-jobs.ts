@@ -1,7 +1,7 @@
-import type { CampaignJob, CampaignJobStatus } from "@/generated/prisma/client";
+import type { Job, JobStatus } from "@/generated/prisma/client";
 
-/** Furthest along first: the row the Pipeline shows when one posting sits in several campaigns. */
-const PROGRESS: CampaignJobStatus[] = [
+/** Furthest along first: the row the Pipeline shows when one posting sits in several feeds. */
+const PROGRESS: JobStatus[] = [
   "applied",
   "applying",
   "needs_user",
@@ -12,7 +12,7 @@ const PROGRESS: CampaignJobStatus[] = [
   "skipped",
 ];
 
-type PostingRow = Pick<CampaignJob, "id" | "url" | "status" | "updatedAt">;
+type PostingRow = Pick<Job, "id" | "url" | "status" | "updatedAt">;
 
 function isAhead(a: PostingRow, b: PostingRow): boolean {
   const rank = PROGRESS.indexOf(a.status) - PROGRESS.indexOf(b.status);

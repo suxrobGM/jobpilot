@@ -28,7 +28,7 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null, savedC
     searchResets: 0,
     searchDeletes: 0,
     setupRunDeletes: 0,
-    campaignsCompleted: 0,
+    feedsCompleted: 0,
     jobsDropped: 0,
   };
   const runQueries: unknown[] = [];
@@ -53,11 +53,11 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null, savedC
         return openRun;
       },
     },
-    campaign: {
-      findMany: async () => [{ campaignId: "c1", source: "auto_apply" }],
-      updateMany: count("campaignsCompleted"),
+    feed: {
+      findMany: async () => [{ feedId: "c1", source: "auto_apply" }],
+      updateMany: count("feedsCompleted"),
     },
-    campaignJob: { updateMany: count("jobsDropped") },
+    job: { updateMany: count("jobsDropped") },
     application: { count: async () => 0 },
     networkingMessage: { count: async () => 0 },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
@@ -125,8 +125,8 @@ describe("PilotService.getActivity", () => {
     const db = {
       pilotRun: { findMany: async () => [] },
       pilotJournalEntry: { aggregate: async () => noMax },
-      campaign: { aggregate: async () => noMax },
-      campaignJob: { aggregate: async () => noMax },
+      feed: { aggregate: async () => noMax },
+      job: { aggregate: async () => noMax },
       pilotState: { findUnique: async () => state },
     };
     return new PilotService(db as unknown as PrismaClient);

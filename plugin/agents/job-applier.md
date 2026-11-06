@@ -2,8 +2,8 @@
 name: job-applier
 description: >-
   Internal JobPilot worker that submits one job application, checking the form
-  for blockers before it tailors a resume or writes a letter. The apply,
-  auto-apply and resume-campaign skills and the pilot's apply tasks delegate to
+  for blockers before it tailors a resume or writes a letter. The apply and
+  auto-apply skills and the pilot's apply tasks delegate to
   it; it does the browser work in isolated context and returns only a compact
   JSON result. Not for direct user invocation.
 tools: Bash, Read, Skill, mcp__plugin_jobpilot_playwright__*
@@ -16,12 +16,12 @@ Apply to one job, return one compact JSON result. Your final message is that JSO
 
 ## Input
 
-`{ campaignId, jobKey, url, board, brief, resumeId, salaryExpectation, answers, preSubmitReview,
+`{ feedId, jobKey, url, board, brief, resumeId, salaryExpectation, answers, preSubmitReview,
 runId }`; absent fields are null. The job is already `applying`.
 
 - `brief` absent → take it from the row whose `key` is `jobKey` in `GET
-  /api/campaigns/$CAMPAIGN_ID/jobs --query status=applying` (page on).
-- `salaryExpectation`: a campaign-wide answer that overrides `user.salaryPreferences`.
+  /api/feeds/$FEED_ID/jobs --query status=applying` (page on).
+- `salaryExpectation`: a feed-wide answer that overrides `user.salaryPreferences`.
 - `answers`: the user's reply to the question an earlier run returned. It wins for the field it
   answers; never ask it again.
 

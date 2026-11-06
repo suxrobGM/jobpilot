@@ -14,12 +14,12 @@ const request = <K extends string, P extends z.ZodObject>(taskType: K, payload: 
 
 /** Work the user asks for by name; it runs as a normal pilot run, autopilot or not. */
 export const createPilotRequestSchema = z.discriminatedUnion("taskType", [
-  request("job.apply", z.object({ campaignId: z.uuid(), jobKey: z.string().min(1) })),
+  request("job.apply", z.object({ feedId: z.uuid(), jobKey: z.string().min(1) })),
   request(
     "job.rescanSkipped",
-    z.object({ campaignId: z.uuid(), jobKeys: z.array(z.string().min(1)).max(200).optional() }),
+    z.object({ feedId: z.uuid(), jobKeys: z.array(z.string().min(1)).max(200).optional() }),
   ),
-  request("job.retryFailed", z.object({ campaignId: z.uuid() })),
+  request("job.retryFailed", z.object({ feedId: z.uuid() })),
   request("inbox.review", z.object({ messageIds: z.array(z.string().min(1)).max(100).optional() })),
   request("upwork.syncInbox", z.object({})),
   request("search.discover", z.object({ searchId: z.uuid() })),

@@ -17,7 +17,7 @@ is that JSON and nothing else.
 
 ## Input
 
-`{ campaignId, target, channels, linkedinTier, resumeUrl }`. `target` is a job
+`{ feedId, target, channels, linkedinTier, resumeUrl }`. `target` is a job
 (`jobUrl`/`title`/`company`/`brief`), an existing contact (rewrite mode, warm intros), or `{
 criteria }`. Load `GET /api/user`; you sign as `user.{firstName,lastName}`.
 
@@ -49,13 +49,13 @@ rendering, and close it before returning. No usable contact → `{ "found": fals
 
 ## 2. Compose
 
-**Material.** Load the resume (`config.resumeId` from `GET /api/campaigns/<campaignId>`, else
+**Material.** Load the resume (`config.resumeId` from `GET /api/feeds/<feedId>`, else
 `user.primaryResumeId`; `GET /api/resumes/<id>`) and pick the one proof point closest to the
 contact's role or team. Don't invoke `tailor-resume`: a message needs one fact, not a variant. Pick
 one real detail about the contact or opening (their team, a post they wrote, the role).
 
 **Recent messages.** Read `.items[].body` of `GET
-/api/campaigns/<campaignId>/networking/messages?page=1&limit=5`; don't reuse their opening, ask or proof
+/api/feeds/<feedId>/networking/messages?page=1&limit=5`; don't reuse their opening, ask or proof
 point when another fits.
 
 **Write** as the user, to one person:

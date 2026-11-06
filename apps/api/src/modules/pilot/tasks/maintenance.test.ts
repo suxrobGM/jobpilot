@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import type { JobService } from "@/modules/feed/jobs/job.service";
 import { expireAbandonedRuns, promoteScoredPendingJobs, runExpiry } from "./maintenance";
 import { describe, expect, it } from "bun:test";
 
@@ -40,7 +40,7 @@ function expiryDb(options: {
         return { count: 1 };
       },
     },
-    campaignJob: {
+    job: {
       updateMany: async (a: Write) => {
         writes.jobs.push(a);
         return { count: 1 };
@@ -59,9 +59,7 @@ function expiryDb(options: {
 describe("runExpiry", () => {
   it("expires a lapsed run and returns its applying job to approved, in one transaction", async () => {
     const db = expiryDb({
-      expiredRuns: [
-        { id: "l1", taskType: "job.apply", payload: { campaignId: "c1", jobKey: "j1" } },
-      ],
+      expiredRuns: [{ id: "l1", taskType: "job.apply", payload: { feedId: "c1", jobKey: "j1" } }],
     });
     await db.run();
     expect(db.transactions()).toBe(1);
@@ -69,7 +67,7 @@ describe("runExpiry", () => {
     // The agent never finished, so whatever it was asked for failed.
     expect(db.writes.requests[0]).toMatchObject({ data: { status: "failed" } });
     expect(db.writes.jobs[0]).toMatchObject({
-      where: { status: "applying", OR: [{ campaignId: "c1", key: "j1" }] },
+      where: { status: "applying", OR: [{ feedId: "c1", key: "j1" }] },
       data: { status: "approved" },
     });
   });
@@ -81,27 +79,27 @@ describe("runExpiry", () => {
     await db.run();
     expect(db.writes.questions[0]).toMatchObject({ data: { status: "expired" } });
     expect(db.jobWrite("needs_user")).toMatchObject({
-      where: { OR: [{ campaignId: "c1", key: "j1" }] },
+      where: { OR: [{ feedId: "c1", key: "j1" }] },
       data: { status: "skipped" },
     });
   });
 
   it("reverts stranded applies, sparing ones an open run still covers", async () => {
-    const db = expiryDb({ openApplyRuns: [{ payload: { campaignId: "c1", jobKey: "held" } }] });
+    const db = expiryDb({ openApplyRuns: [{ payload: { feedId: "c1", jobKey: "held" } }] });
     await db.run();
     expect(db.jobWrite("applying")).toMatchObject({
-      where: { NOT: [{ campaignId: "c1", key: "held" }], updatedAt: { lt: expect.any(Date) } },
+      where: { NOT: [{ feedId: "c1", key: "held" }], updatedAt: { lt: expect.any(Date) } },
       data: { status: "approved" },
     });
   });
 
-  it("skips stale approved jobs in pilot campaigns only", async () => {
+  it("skips stale approved jobs in pilot feeds only", async () => {
     const db = expiryDb({});
     await db.run();
     expect(db.jobWrite("approved")).toMatchObject({
       where: {
         userId: "u1",
-        campaign: { createdBy: "pilot" },
+        feed: { createdBy: "pilot" },
         createdAt: { lt: expect.any(Date) },
       },
       data: { status: "skipped", skipReason: "Posting went stale before the pilot applied." },
@@ -111,33 +109,33 @@ describe("runExpiry", () => {
 
 describe("promoteScoredPendingJobs", () => {
   const scored = (matchScore: number, config: Record<string, unknown> = {}) => ({
-    campaignId: "c1",
+    feedId: "c1",
     key: "jobkey",
     matchScore,
-    campaign: { config, source: "auto_apply" },
+    feed: { config },
   });
 
   const promote = async (rows: Record<string, unknown>[]) => {
     const calls: unknown[][] = [];
-    const prisma = { campaignJob: { findMany: async () => rows } } as unknown as PrismaClient;
-    const campaignJobs = {
+    const prisma = { job: { findMany: async () => rows } } as unknown as PrismaClient;
+    const jobs = {
       promoteScoredJobs: async (...args: unknown[]) => {
         calls.push(args);
       },
-    } as unknown as CampaignJobService;
-    await promoteScoredPendingJobs(prisma, campaignJobs, "p1", 60);
+    } as unknown as JobService;
+    await promoteScoredPendingJobs(prisma, jobs, "p1", 60);
     return calls;
   };
 
-  it("settles each campaign's jobs against the pilot's fallback threshold", async () => {
+  it("settles each feed's jobs against the pilot's fallback threshold", async () => {
     expect(await promote([scored(75)])).toEqual([
-      ["p1", "c1", "auto_apply", [{ key: "jobkey", matchScore: 75, threshold: 60 }]],
+      ["p1", "c1", [{ key: "jobkey", matchScore: 75, threshold: 60 }]],
     ]);
   });
 
-  it("prefers the campaign's own minScore", async () => {
+  it("prefers the feed's own minScore", async () => {
     const [call] = await promote([scored(75, { minScore: 80 })]);
-    expect(call[3]).toEqual([{ key: "jobkey", matchScore: 75, threshold: 80 }]);
+    expect(call[2]).toEqual([{ key: "jobkey", matchScore: 75, threshold: 80 }]);
   });
 });
 
@@ -151,11 +149,11 @@ describe("expireAbandonedRuns", () => {
           return [];
         },
       },
-      campaignJob: { updateMany: async () => ({ count: 0 }) },
+      job: { updateMany: async () => ({ count: 0 }) },
     };
     const db = {
       pilotRun: { findMany: async () => [{ userId: "u1" }, { userId: "u2" }] },
-      campaign: { findMany: async () => [{ userId: "u2" }, { userId: "u3" }] },
+      feed: { findMany: async () => [{ userId: "u2" }, { userId: "u3" }] },
       $transaction: async (work: (t: unknown) => Promise<unknown>) => work(tx),
     };
     const users = await expireAbandonedRuns(db as unknown as PrismaClient, new Date());

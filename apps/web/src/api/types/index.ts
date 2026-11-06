@@ -11,10 +11,10 @@ export type {
   AuthUserDto,
   LogoutResponse,
 } from "./auth";
-export type { CampaignJobReasonDto, PipelineJobDto } from "./campaign";
 export type { CoverLetterListItem } from "./cover-letter";
 export type { CredentialDto } from "./credential";
 export type { EmailMessageDto, OAuthClientStatus } from "./email";
+export type { FeedDto, JobReasonDto, PipelineJobDto } from "./feed";
 export type { JobBoardDto } from "./job-board";
 export type { AdminJobListingDto, JobListingDto, JobListingSummaryDto } from "./job-listing";
 export type { ContactDto, NetworkingMessageDto } from "./networking";

@@ -16,7 +16,7 @@ export class UserService {
   constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /**
-   * Gate for outward-facing actions (creating campaigns, composing networking messages):
+   * Gate for outward-facing actions (creating feeds, composing networking messages):
    * email verification is otherwise non-blocking, so this is the only enforcement.
    */
   async requireVerifiedEmail(userId: string): Promise<void> {

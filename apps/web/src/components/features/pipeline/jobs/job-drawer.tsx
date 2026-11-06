@@ -57,7 +57,7 @@ function JobActions(props: JobActionsProps): ReactNode {
   const { job } = props;
   const request = useCreateRequest();
   const router = useRouter();
-  const endpoint = api.campaigns({ id: job.campaignId }).jobs({ key: job.key });
+  const endpoint = api.feeds({ id: job.feedId }).jobs({ key: job.key });
   const invalidate = [pipelineQueries.all];
 
   const setStatus = useApiMutation((status: "approved" | "pending") => endpoint.patch({ status }), {
@@ -109,7 +109,7 @@ function JobActions(props: JobActionsProps): ReactNode {
             onClick={() =>
               request.mutate({
                 taskType: "job.apply",
-                payload: { campaignId: job.campaignId, jobKey: job.key },
+                payload: { feedId: job.feedId, jobKey: job.key },
               })
             }
           >
@@ -126,7 +126,7 @@ function JobActions(props: JobActionsProps): ReactNode {
             onClick={() =>
               request.mutate({
                 taskType: "job.apply",
-                payload: { campaignId: job.campaignId, jobKey: job.key },
+                payload: { feedId: job.feedId, jobKey: job.key },
               })
             }
           >
@@ -149,7 +149,7 @@ function JobActions(props: JobActionsProps): ReactNode {
           variant="contained"
           loading={request.isPending}
           onClick={() =>
-            request.mutate({ taskType: "job.retryFailed", payload: { campaignId: job.campaignId } })
+            request.mutate({ taskType: "job.retryFailed", payload: { feedId: job.feedId } })
           }
         >
           Retry
@@ -163,7 +163,7 @@ function JobActions(props: JobActionsProps): ReactNode {
           onClick={() =>
             request.mutate({
               taskType: "job.rescanSkipped",
-              payload: { campaignId: job.campaignId, jobKeys: [job.key] },
+              payload: { feedId: job.feedId, jobKeys: [job.key] },
             })
           }
         >
@@ -202,7 +202,7 @@ export function JobDrawer(props: JobDrawerProps): ReactElement {
             </IconButton>
           </Stack>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <StatusChip domain="campaignJob" value={job.status} />
+            <StatusChip domain="job" value={job.status} />
             <Link
               href={job.url}
               target="_blank"
@@ -226,7 +226,7 @@ export function JobDrawer(props: JobDrawerProps): ReactElement {
           )}
           {job.retryNotes && <Field label="Retry notes">{job.retryNotes}</Field>}
           {job.salary && <Field label="Salary">{job.salary}</Field>}
-          <Field label="From">{job.campaign.query}</Field>
+          <Field label="From">{job.feed.name}</Field>
           {brief.length > 0 && (
             <>
               <Divider />

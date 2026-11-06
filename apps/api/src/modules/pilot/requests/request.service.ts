@@ -29,7 +29,7 @@ export class RequestService {
   /** Queues the work; the host wakes on `request.created` and runs it next, autopilot or not. */
   async create(userId: string, input: CreatePilotRequestInput, source: PilotRequestSource) {
     if (input.taskType === "job.apply") {
-      await this.approveJob(userId, input.payload.campaignId, input.payload.jobKey);
+      await this.approveJob(userId, input.payload.feedId, input.payload.jobKey);
     }
     const id = crypto.randomUUID();
     const row = await this.prisma.$transaction(async (tx) => {
@@ -50,17 +50,17 @@ export class RequestService {
   }
 
   /** Applying is for approved jobs; a found one the user picks is approved on the way. */
-  private async approveJob(userId: string, campaignId: string, key: string) {
-    const job = await this.prisma.campaignJob.findFirst({
-      where: { userId, campaignId, key },
+  private async approveJob(userId: string, feedId: string, key: string) {
+    const job = await this.prisma.job.findFirst({
+      where: { userId, feedId, key },
       select: { status: true },
     });
     if (!job || !["pending", "approved"].includes(job.status)) {
       throw conflict("This job can't be applied to from where it is now.");
     }
     if (job.status === "pending") {
-      await this.prisma.campaignJob.updateMany({
-        where: { userId, campaignId, key, status: "pending" },
+      await this.prisma.job.updateMany({
+        where: { userId, feedId, key, status: "pending" },
         data: { status: "approved" },
       });
     }

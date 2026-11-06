@@ -89,7 +89,7 @@ export const emailMessagesController = new Elysia({
       detail: {
         summary: "Mark job-alert emails imported",
         description:
-          "Stamps `importedAt` on the given job-alert emails once the pilot has pulled their job links into a campaign, so the next scheduled import skips them. Returns `{ imported }`, the number of rows newly stamped.",
+          "Stamps `importedAt` on the given job-alert emails once the pilot has pulled their job links into a feed, so the next scheduled import skips them. Returns `{ imported }`, the number of rows newly stamped.",
       },
     },
   )

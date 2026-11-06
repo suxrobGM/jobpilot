@@ -161,7 +161,7 @@ generation step:
   a skill. Skills refer to each other by name and to shared docs by relative
   path (`../_shared/<doc>.md`), so the same text works for both providers.
 - `agents/*.md`: worker subagents (`job-scorer`, `job-applier`,
-  `job-searcher`, `job-researcher`, `networking-worker`). Campaign skills hand
+  `job-searcher`, `job-researcher`, `networking-worker`). Job skills hand
   them one item at a time so heavy browser output stays out of the main session. Each worker
   includes the rules it needs instead of reading shared docs, and uses the
   session's model. Claude finds them on its own; the host writes Codex copies
@@ -225,17 +225,15 @@ sequenceDiagram
     S->>API: GET /health, /user, /credentials/resolve, /applications/duplicates
     S->>B: navigate, login, fill, submit
     T->>API: POST /pilot/runs/[id]/steps (from the CLI's OTLP logs)
-    S->>API: PATCH /campaigns/[id]/jobs/[jobKey], POST /pilot/runs/[id]/result
+    S->>API: PATCH /feeds/[id]/jobs/[jobKey], POST /pilot/runs/[id]/result
     API-->>W: SSE run.steps, run.finished → query invalidation → refetch
 ```
 
 ### Live updates
 
-Skills write through `/api/campaigns/*`. The web opens
-`EventSource /api/campaigns/[id]/events` and, on each event, invalidates the
-TanStack Query cache so the page refetches the real state from PostgreSQL.
-Five more channels (`workspace`, `inbox`, `resume`, `upwork`, `pilot`) work
-the same way. The pilot channel also carries the host's control events
+Skills write through `/api/feeds/*`. The web opens one `EventSource` per channel
+(`workspace`, `inbox`, `resume`, `upwork`, `pilot`) and, on each event, invalidates
+the TanStack Query cache so the page refetches the real state from PostgreSQL. The pilot channel also carries the host's control events
 (`run.interrupt`, `run.steer`) and live `run.steps`. They're defined in `packages/contracts/src/sse/channels/`.
 
 ### Skills
@@ -250,8 +248,8 @@ load config:
    `GET /api/resumes/[id]/pdf`
 
 The other shared docs cover browser behavior that many skills need:
-`auth.md`, `form-filling.md`, and `browser-tips.md`. `campaign-flow.md` holds
-the campaign steps every apply skill shares (the applied check, result writes,
+`auth.md`, `form-filling.md`, and `browser-tips.md`. `feed-flow.md` holds
+the steps every job skill shares (the applied check, result writes,
 worker input, and rules). Skills that write text call the `humanizer` skill by
 name in **embedded mode**, so only the final text comes back.
 

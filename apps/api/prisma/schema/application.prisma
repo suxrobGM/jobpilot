@@ -1,4 +1,4 @@
-// CampaignSource plus `manual`.
+// How the application was made.
 enum ApplicationSource {
   apply
   auto_apply
@@ -22,7 +22,7 @@ enum ApplicationEventKind {
 enum ApplicationEventSource {
   manual
   email
-  campaign
+  feed
 
   @@map("application_event_source")
 }
@@ -56,11 +56,11 @@ model Application {
   matchScore  Int?    @map("match_score")
   matchReason String? @map("match_reason")
 
-  campaignId String?      @map("campaign_id") @db.Uuid
-  campaign   Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  // Always a job of `campaignId`.
-  jobId      String?      @map("job_id") @db.Uuid
-  job        CampaignJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  feedId String? @map("feed_id") @db.Uuid
+  feed   Feed?   @relation(fields: [feedId], references: [id], onDelete: SetNull)
+  // Always a job of `feedId`.
+  jobId  String? @map("job_id") @db.Uuid
+  job    Job?    @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   // The resume and variant actually submitted; `tailoredVariants` were written for this application.
   resumeId        String?        @map("resume_id") @db.Uuid
@@ -79,7 +79,7 @@ model Application {
   // The duplicate scan; also serves userId lookups.
   @@index([userId, appliedAt])
   @@index([appliedAt])
-  @@index([campaignId])
+  @@index([feedId])
   @@index([jobId])
   // Back the SetNull FKs.
   @@index([resumeId])

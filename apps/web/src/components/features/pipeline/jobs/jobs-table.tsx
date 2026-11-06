@@ -47,12 +47,12 @@ export function PipelineJobsTable(props: PipelineJobsTableProps): ReactElement {
       valueGetter: (_v, row) => row.matchScore ?? "",
     },
     {
-      field: "campaign",
+      field: "feed",
       headerName: "From",
       flex: 1,
       minWidth: 150,
       sortable: false,
-      renderCell: (p) => <Typography variant="captionMuted">{p.row.campaign.query}</Typography>,
+      renderCell: (p) => <Typography variant="captionMuted">{p.row.feed.name}</Typography>,
     },
     ...(REASON_VIEWS.includes(view)
       ? [
@@ -71,7 +71,7 @@ export function PipelineJobsTable(props: PipelineJobsTableProps): ReactElement {
       headerName: "Status",
       width: 120,
       sortable: false,
-      renderCell: (p) => <StatusChip domain="campaignJob" value={p.row.status} />,
+      renderCell: (p) => <StatusChip domain="job" value={p.row.status} />,
     },
     {
       field: "updatedAt",

@@ -158,14 +158,14 @@ export class PilotService {
   /** Newest server-side activity, so the terminal can tell a slow live cycle from a stuck one. */
   async getActivity(userId: string) {
     const { prisma } = this;
-    const [runs, journal, campaign, job, state] = await Promise.all([
+    const [runs, journal, feed, job, state] = await Promise.all([
       prisma.pilotRun.findMany({
         where: { userId, finishedAt: null },
         select: { startedAt: true, heartbeatAt: true, expiresAt: true },
       }),
       prisma.pilotJournalEntry.aggregate({ where: { userId }, _max: { createdAt: true } }),
-      prisma.campaign.aggregate({ where: { userId }, _max: { updatedAt: true } }),
-      prisma.campaignJob.aggregate({ where: { userId }, _max: { updatedAt: true } }),
+      prisma.feed.aggregate({ where: { userId }, _max: { updatedAt: true } }),
+      prisma.job.aggregate({ where: { userId }, _max: { updatedAt: true } }),
       prisma.pilotState.findUnique({
         where: { userId },
         select: { lastCycleAt: true, nextWakeAt: true },
@@ -175,7 +175,7 @@ export class PilotService {
     const times = [
       ...runs.flatMap((run) => [run.startedAt, run.heartbeatAt]),
       journal._max.createdAt,
-      campaign._max.updatedAt,
+      feed._max.updatedAt,
       job._max.updatedAt,
     ].filter((time) => time != null);
     const now = new Date();

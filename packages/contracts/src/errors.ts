@@ -17,7 +17,7 @@ export const ErrorCodes = {
   ALREADY_APPLIED: "ALREADY_APPLIED",
   /** Another worker is applying to the same posting right now. */
   APPLY_IN_FLIGHT: "APPLY_IN_FLIGHT",
-  /** The campaign already holds a job with this key. */
+  /** The feed already holds a job with this key. */
   DUPLICATE_JOB: "DUPLICATE_JOB",
   /** A pilot guard refused: stale task list, stopped pilot, task gone, or run already finished. */
   PILOT_CONFLICT: "PILOT_CONFLICT",

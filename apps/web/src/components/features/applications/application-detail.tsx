@@ -103,9 +103,9 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
                 {app.matchScore !== null ? `${app.matchScore}/100` : ""}
               </LabelValue>
               <LabelValue label="Applied at">{formatAbsoluteTime(app.appliedAt)}</LabelValue>
-              {app.campaignId && (
+              {app.feedId && (
                 <LabelValue label="Found by">
-                  <Link href={pipelineHref(app.campaignId)}>Open in Pipeline</Link>
+                  <Link href={pipelineHref(app.feedId)}>Open in Pipeline</Link>
                 </LabelValue>
               )}
             </Stack>

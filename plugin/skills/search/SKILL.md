@@ -1,13 +1,14 @@
 ---
 name: search
-description: Search a chosen job board via Playwright, rank results by fit against the user's resume, and save them to the campaign so the user can review.
-argument-hint: "<job_title_keywords_location> (--board <domain> | --anywhere) [--max-jobs N] [--campaign <campaign-id>]"
+description: Search a chosen job board via Playwright, rank results by fit against the user's resume, and save them to the user's manual feed for review.
+argument-hint: "<job_title_keywords_location> (--board <domain> | --anywhere) [--max-jobs N]"
 ---
 
 # Job Search
 
-Search a single board (picked by the user when launching the campaign), or the open web with
-`--anywhere`, and rank results by qualification fit against the resume.
+Search a single board, or the open web with `--anywhere`, and rank results by qualification fit
+against the resume. Results wait in the Pipeline's Found tab for the user to approve; the pilot
+never applies to them on its own.
 
 ## Setup
 
@@ -17,30 +18,29 @@ Search a single board (picked by the user when launching the campaign), or the o
      `--anywhere` searches the open web instead of a board: see **Anywhere on the web**.
    - `--max-jobs <N>` - optional cap on results to rank. Absent = unlimited (rank until the board is
      exhausted).
-   - `--campaign <campaign-id>` - campaign to save results to (Phase 5). The web UI passes it; if
-     absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else
-     create one (a `source:"search"` create requires `config.resumeId` - default to the profile's
-     `primaryResumeId`).
-3. Resolve the board:
+3. Results go to the user's manual feed; read `.id` as `<feed-id>`:
+
+   ```bash
+   jobpilot-api POST /api/feeds --data '{"kind":"manual"}'
+   ```
+4. Resolve the board:
 
    ```bash
    jobpilot-api GET /api/job-boards
    ```
 
    Pick the entry whose `domain` is `<domain>`. If none matches, abort with: "Board `<domain>` is
-   not configured. Add it under Settings → Job boards or run again with a different `--board`." When a `--campaign`
-   id was given, first command it to `failed` with `POST /api/campaigns/<id>/status
-   {"status":"failed"}`.
+   not configured. Add it under Settings → Job boards or run again with a different `--board`."
 
 ## Anywhere on the web
 
-With `--anywhere`, skip step 3 of Setup and Phases 2-5. Delegate one `job-researcher` run with
-`{runId:null, campaignId:<campaign-id>, goals:<query>, resumeId:<config.resumeId>, minScore:0,
+With `--anywhere`, skip step 4 of Setup and Phases 2-5. Delegate one `job-researcher` run with
+`{runId:null, feedId:<feed-id>, goals:<query>, resumeId:<user.primaryResumeId>, minScore:0,
 approveAtOrAbove:null, preferCapExempt:<GET /api/pilot → config.preferCapExempt>,
 requiresSponsorship:user.requiresSponsorship, boards:<every domain from GET /api/job-boards>,
 newJobsTarget:<--max-jobs, else 20>}`. Without subagent support, follow
 `$JOBPILOT_SKILLS_ROOT/../agents/job-researcher.md` inline. The agent saves its own rows as
-`pending`. Then close the campaign as in Phase 5 and hand off (Phase 6) from its output: list
+`pending`. Then hand off (Phase 6) from its output: list
 `best`, and add the `capExempt` count and any `boardsSuggested` under the table.
 
 ## Phase 1: Parse Query
@@ -63,20 +63,20 @@ salary). If vague, ask before searching.
    - **A brief description is needed for the ranked table and the preview lacks one** → delegate
      that row to the `job-scorer` subagent with `mode:"score"` and `minMatchScore:0` (so nothing is
      auto-skipped - search keeps every result for review). It opens the posting, scores, and saves
-     the campaign job in isolated context. Such rows are already saved - exclude them from the Phase 5
+     the feed job in isolated context. Such rows are already saved - exclude them from the Phase 5
      bulk save.
 
 ## Phase 3: Exclude Previously Applied
 
-Run the applied-check (`../_shared/campaign-flow.md`) per result. If `.applied`, tag with
+Run the applied-check (`../_shared/feed-flow.md`) per result. If `.applied`, tag with
 "Previously Applied" (note `.match.kind`). In Phase 5, create these rows as `pending`, then
 record `skipped` through `/jobs/<key>/result`; do not offer them for apply.
 
 ## Phase 4: Fit Review
 
-Score each non-applied result server-side, like every other campaign skill. Build the brief
+Score each non-applied result server-side, like every other feed skill. Build the brief
 (`../_shared/job-brief.md`) and write `{"brief": <brief>, "minScore": 0, "resumeId":
-"<config.resumeId>"}` to `$JOBPILOT_TEMP/fit.json` (drop `resumeId` when the campaign has none; the
+"<user.primaryResumeId>"}` to `$JOBPILOT_TEMP/fit.json` (drop `resumeId` when there is none; the
 server uses the primary):
 
 ```bash
@@ -87,9 +87,9 @@ Use `.score` when `.verdict` is `trust`; on `deliberate`, adjust it from
 `strongMatches`/`partialMatches`/`gaps`. `minScore: 0` because search keeps every result for the
 user to review.
 
-## Phase 5: Save Results to the Campaign
+## Phase 5: Save Results to the Feed
 
-Save every result as a campaign job on `<campaign-id>` so it appears on the campaigns detail page. **Don't
+Save every result as a feed job on `<feed-id>` so it appears on the feeds detail page. **Don't
 offer apply/search-again commands** - the user applies from there. Use a stable, shell-safe `key`
 per result (slug of `company-title` + rank, no spaces).
 
@@ -98,22 +98,18 @@ company, location, url, board:"<domain>", matchScore, matchReason:"<one-line ver
 status:"pending", brief}` (`brief` as a JSON object) to `$JOBPILOT_TEMP/job-<key>.json`, then:
 
 ```bash
-jobpilot-api POST /api/campaigns/<campaign-id>/jobs --data @"$JOBPILOT_TEMP/job-<key>.json"
+jobpilot-api POST /api/feeds/<feed-id>/jobs --data @"$JOBPILOT_TEMP/job-<key>.json"
 ```
 
 Previously-applied results (Phase 3) → create as `pending`, then POST `/jobs/<key>/result` with
-`{outcome:"skipped",skipReason:"Already applied (<kind>)"}`. Then close the campaign:
-
-```bash
-jobpilot-api POST /api/campaigns/<campaign-id>/status --data '{"status":"completed"}'
-```
+`{outcome:"skipped",skipReason:"Already applied (<kind>)"}`.
 
 ## Phase 6: Hand Off
 
-Print a compact ranked table, then link to the campaign - nothing else:
+Print a compact ranked table, then link to the feed - nothing else:
 
 ```
-## Saved <N> jobs · "[query]" - review and apply at $JOBPILOT_WEB/pipeline?campaign=<campaign-id>
+## Saved <N> jobs · "[query]" - review and apply at $JOBPILOT_WEB/pipeline?feed=<feed-id>
 
 | # | Score | Title | Company | Location |
 |---|-------|-------|---------|----------|
@@ -121,9 +117,9 @@ Print a compact ranked table, then link to the campaign - nothing else:
 
 ## Rules
 
-The shared campaign rules (`../_shared/campaign-flow.md`) apply throughout. On top of them:
+The shared feed rules (`../_shared/feed-flow.md`) apply throughout. On top of them:
 
-1. **Exactly one board per campaign** - the skill targets only the `--board` given, or, with
+1. **Exactly one board per feed** - the skill targets only the `--board` given, or, with
    `--anywhere`, no board at all.
 2. **Handle rate limiting** - if blocked, note it and continue.
 3. **Deduplicate** within the board.

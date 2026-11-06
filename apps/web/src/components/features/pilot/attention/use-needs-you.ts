@@ -25,11 +25,11 @@ export function useNeedsYou(): Pending[] {
   const proposals = useQuery(pilotQueries.changes("proposed")).data ?? [];
   const parked = useQuery(pipelineQueries.jobs(NEEDS_YOU_JOBS)).data?.items ?? [];
 
-  // A job question's subject is `<campaignId>:<jobKey>`.
+  // A job question's subject is `<feedId>:<jobKey>`.
   const asked = new Set(
     questions.flatMap((question) => (question.subjectType === "job" ? [question.subjectId] : [])),
   );
-  const jobs = parked.filter((job) => !asked.has(`${job.campaignId}:${job.key}`));
+  const jobs = parked.filter((job) => !asked.has(`${job.feedId}:${job.key}`));
 
   return [
     ...questions.map((question) => ({ type: "question" as const, id: question.id, question })),

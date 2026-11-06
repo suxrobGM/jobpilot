@@ -5,7 +5,7 @@ import {
   applicationSourceSchema,
   statusSchema,
 } from "@jobpilot/contracts/application";
-import { campaignJobSchema } from "@jobpilot/contracts/campaign";
+import { jobSchema } from "@jobpilot/contracts/feed";
 import { boardRefSchema } from "@jobpilot/contracts/job-board";
 import { paginatedSchema, paginationQuerySchema, queryText } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
@@ -46,7 +46,7 @@ const applicationSchema = z.object({
   status: statusSchema,
   matchScore: z.number().int().nullable(),
   matchReason: z.string().nullable(),
-  campaignId: z.string().nullable(),
+  feedId: z.string().nullable(),
 });
 
 export const applicationListSchema = paginatedSchema(applicationSchema);
@@ -112,8 +112,8 @@ const applicationContactSchema = contactSchema.pick({
   linkedinUrl: true,
 });
 
-/** The campaign job this application came from, for its posting text. */
-const applicationJobSchema = campaignJobSchema.pick({
+/** The feed job this application came from, for its posting text. */
+const applicationJobSchema = jobSchema.pick({
   description: true,
   salary: true,
   employmentType: true,

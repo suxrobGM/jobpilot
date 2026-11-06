@@ -15,7 +15,6 @@ export const pilotResearchController = new Elysia({
     response: researchStatusSchema,
     detail: {
       summary: "Get the research status",
-      description:
-        "Returns the last research run with its summary and the standing research campaign.",
+      description: "Returns the last research run with its summary and the standing research feed.",
     },
   });

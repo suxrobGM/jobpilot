@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { CAMPAIGN_JOB_STATUSES } from "../campaign";
+import { JOB_STATUSES } from "../feed";
 import { savedAnswerKeySchema } from "./answers";
 
 export const PILOT_CHANGE_SOURCES = ["user", "chat", "pilot", "notice"] as const;
@@ -8,7 +8,7 @@ const pilotChangeStatusSchema = z.enum(PILOT_CHANGE_STATUSES);
 
 const dealBreakersSchema = z.array(z.string().trim().min(1).max(200)).max(30);
 const searchNameSchema = z.string().trim().min(1).max(120);
-const jobRefSchema = z.object({ campaignId: z.uuid(), key: z.string().min(1) });
+const jobRefSchema = z.object({ feedId: z.uuid(), key: z.string().min(1) });
 
 /** One edit; every action has an inverse, so an applied change can be undone. */
 export const pilotChangeActionSchema = z.discriminatedUnion("type", [
@@ -52,7 +52,7 @@ export const pilotChangeActionSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("jobs.restore"),
-    refs: z.array(jobRefSchema.extend({ status: z.enum(CAMPAIGN_JOB_STATUSES) })).max(500),
+    refs: z.array(jobRefSchema.extend({ status: z.enum(JOB_STATUSES) })).max(500),
   }),
 ]);
 

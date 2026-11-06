@@ -15,7 +15,7 @@ export const workspaceController = new Elysia({
       detail: {
         summary: "Stream workspace events",
         description:
-          "Opens a Server-Sent Events stream that pushes live cross-campaign workspace updates for the user, returning a raw streaming Response that stays open until the client disconnects.",
+          "Opens a Server-Sent Events stream that pushes live cross-feed workspace updates for the user, returning a raw streaming Response that stays open until the client disconnects.",
       },
     },
   );

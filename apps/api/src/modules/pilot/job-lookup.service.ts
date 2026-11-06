@@ -12,10 +12,10 @@ const MAX_CANDIDATES = 2000;
 export class JobLookupService {
   constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
-  /** The given URLs already in one of the user's campaigns from the window, compared normalized. */
+  /** The given URLs already in one of the user's feeds from the window, compared normalized. */
   async findExisting(userId: string, body: ExistingJobsBody) {
     const normalized = body.urls.map(normalizeJobUrl);
-    const rows = await this.prisma.campaignJob.findMany({
+    const rows = await this.prisma.job.findMany({
       where: {
         url: { in: [...new Set(normalized)] },
         createdAt: { gte: new Date(Date.now() - body.withinDays * DAY_MS) },
@@ -28,14 +28,14 @@ export class JobLookupService {
     return { existing: body.urls.filter((_, i) => found.has(normalized[i])) };
   }
 
-  /** Each posting's likeliest copy in any campaign, skipped rows included. */
+  /** Each posting's likeliest copy in any feed, skipped rows included. */
   async findSimilar(userId: string, body: SimilarJobsBody) {
-    const rows = await this.prisma.campaignJob.findMany({
+    const rows = await this.prisma.job.findMany({
       where: { userId, createdAt: { gte: new Date(Date.now() - body.withinDays * DAY_MS) } },
       orderBy: { createdAt: "desc" },
       take: MAX_CANDIDATES,
       select: {
-        campaignId: true,
+        feedId: true,
         key: true,
         title: true,
         company: true,

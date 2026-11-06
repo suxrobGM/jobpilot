@@ -65,17 +65,17 @@ describe("TaskListService interviews", () => {
     expect(hasTaskType(noEmail, "interview.reply")).toBe(false);
   });
 
-  it("preps with the campaign's resume, or none without a campaign", async () => {
+  it("preps with the feed's resume, or none without a feed", async () => {
     const resumeId = "3f0e1a9c-2b4d-4c8e-9f1a-5b6c7d8e9f0a";
     const app = { id: "app1", company: "Acme", title: "Engineer", url: "https://x/1" };
     const taskList = await service({
-      interviewPrepApps: [{ ...app, campaign: { config: { resumeId } } }],
+      interviewPrepApps: [{ ...app, feed: { resumeId } }],
     }).refresh("p1");
     const task = findTask(taskList, "interview.prep");
     expect(task?.payload).toMatchObject({ applicationId: "app1", resumeId });
 
     const orphan = await service({
-      interviewPrepApps: [{ ...app, campaign: null }],
+      interviewPrepApps: [{ ...app, feed: null }],
     }).refresh("p1");
     expect(findTask(orphan, "interview.prep")?.payload).toMatchObject({
       resumeId: null,
@@ -144,7 +144,7 @@ describe("TaskListService job-alert import", () => {
     });
   });
 
-  it("offers nothing while the alerts campaign is paused", async () => {
+  it("offers nothing while the alerts feed is paused", async () => {
     const taskList = await service({
       config: { jobAlerts: { enabled: true, runHours: [0] } },
       pausedFeeds: ["job_alerts"],

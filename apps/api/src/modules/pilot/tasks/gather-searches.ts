@@ -1,7 +1,6 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { OPEN_CAMPAIGN_STATUSES } from "@/modules/campaign/campaign.utils";
 import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "./run-history";
 
 /** With apply room left, an idle search reruns early, and setup refills, at most this often. */
@@ -11,12 +10,12 @@ const SEARCH_RUN_COOLDOWN_MS = 2 * HOUR_MS;
 
 export type DueSearch = Pick<
   TaskPayload<"search.discover">,
-  "searchId" | "query" | "board" | "resumeId" | "campaignId"
+  "searchId" | "query" | "board" | "resumeId"
 >;
 
 /**
  * Searches whose `nextRunAt` has come due. When none are and the apply cap still has room, the most
- * overdue idle search runs anyway.
+ * overdue idle search runs anyway. A paused search never runs.
  */
 export async function gatherDueSearches(
   prisma: PrismaClient,
@@ -24,8 +23,8 @@ export async function gatherDueSearches(
   now: Date,
   canApplyMore: boolean,
 ): Promise<{ dueQueries: DueSearch[]; nextSearchRunAt: Date | null }> {
-  const searches = await prisma.pilotSearch.findMany({
-    where: { userId },
+  const searches = await prisma.feed.findMany({
+    where: { userId, kind: "search", pausedAt: null, archivedAt: null },
     orderBy: { nextRunAt: "asc" },
     take: GATHER_CAP,
     select: {
@@ -39,24 +38,13 @@ export async function gatherDueSearches(
   });
   if (searches.length === 0) return { dueQueries: [], nextSearchRunAt: null };
 
-  const ids = searches.map((search) => search.id);
-  const [latest, campaigns] = await Promise.all([
-    latestRunBySubject(prisma, userId, "search.discover", ids),
-    // Keyed by search id, not query, so a rewritten query still reuses its campaign.
-    prisma.campaign.findMany({
-      where: {
-        userId,
-        status: { in: OPEN_CAMPAIGN_STATUSES },
-        source: "auto_apply",
-        pilotSearchId: { in: ids },
-      },
-      select: { id: true, pilotSearchId: true, status: true },
-    }),
-  ]);
-
-  const campaignBySearch = new Map(campaigns.map((c) => [c.pilotSearchId, c]));
+  const latest = await latestRunBySubject(
+    prisma,
+    userId,
+    "search.discover",
+    searches.map((search) => search.id),
+  );
   const startable = searches.filter((search) => {
-    if (campaignBySearch.get(search.id)?.status === "paused") return false;
     const last = latest.get(search.id);
     // A run report or a query rewrite moves `nextRunAt` past the run, and the cadence takes over.
     const rescheduled = last?.finishedAt != null && search.nextRunAt > last.startedAt;
@@ -73,10 +61,9 @@ export async function gatherDueSearches(
   return {
     dueQueries: due.map((search) => ({
       searchId: search.id,
-      query: search.query,
+      query: search.query ?? "",
       board: search.board?.domain,
       resumeId: search.resumeId ?? undefined,
-      campaignId: campaignBySearch.get(search.id)?.id,
     })),
     nextSearchRunAt: searches[0].nextRunAt,
   };

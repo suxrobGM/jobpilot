@@ -47,13 +47,13 @@ function headline(item: WorkItem): string {
   return [dayFormat.format(item.endedAt), span, ...work].join(" · ");
 }
 
-/** Job subjects are "<campaignId>:<jobKey>"; other subjects have no page of their own yet. */
+/** Job subjects are "<feedId>:<jobKey>"; other subjects have no page of their own yet. */
 function subjectHref(run: PilotThreadRun) {
   if (run.subjectType !== "job" || !run.subjectId) {
     return null;
   }
-  const [campaignId] = run.subjectId.split(":");
-  return campaignId ? pipelineHref(campaignId) : null;
+  const [feedId] = run.subjectId.split(":");
+  return feedId ? pipelineHref(feedId) : null;
 }
 
 interface RunLineProps {

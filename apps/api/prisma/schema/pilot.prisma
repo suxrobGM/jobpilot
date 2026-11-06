@@ -79,10 +79,10 @@ enum PilotJournalKind {
 }
 
 // What a run, question or journal entry is about. `subjectId` stays text: it holds ids and keys
-// like `inbox` or `<campaignId>:<jobKey>`.
+// like `inbox` or `<feedId>:<jobKey>`.
 enum PilotSubjectType {
   job
-  campaign
+  feed
   question
   networking
   inbox
@@ -135,37 +135,6 @@ model PilotState {
   updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("pilot_states")
-}
-
-model PilotSearch {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  userId       String    @map("user_id") @db.Uuid
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // The plain name the user sees; the query is shown on expand.
-  name         String
-  query        String
-  boardId      String?   @map("board_id") @db.Uuid
-  board        JobBoard? @relation(fields: [boardId], references: [id], onDelete: SetNull)
-  resumeId     String?   @map("resume_id") @db.Uuid
-  resume       Resume?   @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
-  reason       String    @default("")
-  lastRunAt    DateTime? @map("last_run_at") @db.Timestamptz(3)
-  lastJobsScanned Int?  @map("last_jobs_scanned")
-  lastNewJobs  Int?      @map("last_new_jobs")
-  // Consecutive runs with no new jobs; 3 or more backs the search off.
-  emptyRuns    Int       @default(0) @map("empty_runs")
-  nextRunAt    DateTime  @default(now()) @map("next_run_at") @db.Timestamptz(3)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  // A run opens a new campaign once the previous one completes.
-  campaigns Campaign[]
-
-  @@index([userId, nextRunAt])
-  @@index([boardId])
-  @@index([resumeId])
-  @@map("pilot_searches")
 }
 
 model PilotRun {

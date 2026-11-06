@@ -70,22 +70,6 @@ describe("TaskListService search.discover", () => {
     }).refresh("p1");
     expect(findDiscover(unreported)).toBeUndefined();
   });
-
-  it("reuses the search's open campaign, whatever its query is now", async () => {
-    const taskList = await service({
-      pilotSearches: [dueRow({ id: "s1", query: "senior react" })],
-      dueSearchCampaigns: [{ id: "c-open", pilotSearchId: "s1", status: "in_progress" }],
-    }).refresh("p1");
-    expect(findDiscover(taskList)?.payload).toMatchObject({ campaignId: "c-open" });
-  });
-
-  it("holds a search back while its campaign is paused", async () => {
-    const taskList = await service({
-      pilotSearches: [dueRow({ id: "s1" })],
-      dueSearchCampaigns: [{ id: "c-open", pilotSearchId: "s1", status: "paused" }],
-    }).refresh("p1");
-    expect(findDiscover(taskList)).toBeUndefined();
-  });
 });
 
 describe("TaskListService search.setup", () => {

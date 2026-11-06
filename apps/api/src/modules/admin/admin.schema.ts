@@ -37,8 +37,8 @@ export const adminStatsSchema = z.object({
     active: z.number().int(),
   }),
   content: z.object({
-    campaigns: z.number().int(),
-    activeCampaigns: z.number().int(),
+    feeds: z.number().int(),
+    activeFeeds: z.number().int(),
     applications: z.number().int(),
     applicationsThisWeek: z.number().int(),
     boards: z.number().int(),

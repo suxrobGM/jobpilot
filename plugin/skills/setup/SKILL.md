@@ -15,7 +15,7 @@ JOBPILOT_WEB="${JOBPILOT_WEB:-https://jobpilot.suxrobgm.net}"
 
 If `JOBPILOT_API_TOKEN` is set, this session is already running inside the agent terminal - nothing to install. Confirm and stop:
 
-> You're connected to JobPilot. Run the `search` skill to find jobs, `auto-apply` to run a campaign, or manage everything at $JOBPILOT_WEB.
+> You're connected to JobPilot. Run the `search` skill to find jobs, `auto-apply` to run a feed, or manage everything at $JOBPILOT_WEB.
 
 ## 2. Probe the host
 
@@ -85,7 +85,7 @@ Only when the host was already running (step 2):
 
 The agent launches and signs in from the dashboard - never from this session:
 
-> JobPilot is ready. Open $JOBPILOT_WEB, sign in, and launch the agent from the dashboard - it connects to your local terminal automatically. From there, `search` for jobs or `auto-apply` to run a campaign.
+> JobPilot is ready. Open $JOBPILOT_WEB, sign in, and launch the agent from the dashboard - it connects to your local terminal automatically. From there, `search` for jobs or `auto-apply` to run a feed.
 
 ## What JobPilot does
 

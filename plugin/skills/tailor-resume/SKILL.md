@@ -43,7 +43,7 @@ From the brief (`title`, `requirements[]`, `responsibilities[]`, `skills[]`, `ye
 
 ## Step 2: Pick the Base
 
-**Campaign choice wins.** If `--base <resumeId>` was passed (the campaign's selected resume) and
+**Feed choice wins.** If `--base <resumeId>` was passed (the feed's selected resume) and
 that resume has `hasData` or a `sourceFilename`, use it as `BASE_ID` (skip scoring). Else **primary
 wins**: if `primaryResumeId` is set and that resume has `hasData` or a `sourceFilename`,
 use it as `BASE_ID` (skip scoring; Step 3 extracts content if missing). Otherwise score each

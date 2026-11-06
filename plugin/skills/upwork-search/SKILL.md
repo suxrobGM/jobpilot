@@ -1,15 +1,15 @@
 ---
 name: upwork-search
-description: Search Upwork through the official Upwork MCP, smart-filter out low-quality clients, rank survivors by fit, and save them to the campaign as recommendations. Never submits a proposal.
-argument-hint: "<job_keywords> --board upwork.com [--max-jobs N] [--campaign <campaign-id>]"
+description: Search Upwork through the official Upwork MCP, smart-filter out low-quality clients, rank survivors by fit, and save them to the user's Upwork feed as recommendations. Never submits a proposal.
+argument-hint: "<job_keywords> --board upwork.com [--max-jobs N]"
 ---
 
 # Upwork Job Search & Recommend
 
 Find Upwork jobs the user can win - qualify on fit **and** client quality, drop the junk, and save
-the keepers to the campaign for review. **Recommend only: never submit a proposal here.** The user
-drafts a proposal (the `upwork-proposal` skill, launched per job from the campaign page) and
-sends it with the `upwork-submit` skill.
+the keepers to the user's Upwork feed for review. **Recommend only: never submit a proposal here.**
+The user drafts a proposal (the `upwork-proposal` skill) and sends it with the `upwork-submit`
+skill.
 
 ## Setup
 
@@ -21,14 +21,13 @@ sends it with the `upwork-submit` skill.
    - `--board upwork.com` - required.
    - `--max-jobs <N>` - cap on results to evaluate. Absent = 30. Pages are 10 at most, so the cap
      sets how many cursor round trips you make.
-   - `--campaign <id>` - campaign to save to. The UI passes it; if absent, match the latest
-     `source:"search"`, `status:"in_progress"` campaign on the query, else create one (a
-     `source:"search"` create requires `config.resumeId` - default to the profile's
-     `primaryResumeId`).
-4. Resolve the board: `jobpilot-api GET /api/job-boards` and find the row whose `domain` is
-   `upwork.com`. No row → abort: "Upwork is not configured. Add it under Settings → Job boards." If a `--campaign`
-   was given, first command it to `failed` with `POST /api/campaigns/<id>/status
-   {"status":"failed"}`.
+4. Keepers go to the user's Upwork feed; read `.id` as `<feed-id>`:
+
+   ```bash
+   jobpilot-api POST /api/feeds --data '{"kind":"upwork"}'
+   ```
+5. Resolve the board: `jobpilot-api GET /api/job-boards` and find the row whose `domain` is
+   `upwork.com`. No row → abort: "Upwork is not configured. Add it under Settings → Job boards."
 
 ## Phase 1: Parse Query
 
@@ -65,7 +64,7 @@ Drop any row whose `applied` or `is_applied` is true - the user already applied 
 
 ### 3.1 Dedupe
 
-Run the applied-check (`../_shared/campaign-flow.md`) with the client name as the company.
+Run the applied-check (`../_shared/feed-flow.md`) with the client name as the company.
 `.applied` → record the default already-applied skip, then skip the rest.
 
 ### 3.2 Client quality (smart filter)
@@ -122,7 +121,7 @@ is **not** a skip - judge on skills fit (`../_shared/eligibility.md`).
 
 ### 3.5 Save the recommendation
 
-Stash the client signals, the quality score and the connects cost into the brief so the campaign
+Stash the client signals, the quality score and the connects cost into the brief so the feed
 card can show them and `rescan-skipped` can re-evaluate. Save the description into `description`
 so "Draft proposal" can seed the proposal later.
 
@@ -139,23 +138,19 @@ The full brief is the fit brief plus `clientStats` (`CLIENT`), `qualityScore`
 ```
 
 ```bash
-jobpilot-api POST "/api/campaigns/<campaign-id>/jobs" --data @"$JOBPILOT_TEMP/job.json"
+jobpilot-api POST "/api/feeds/<feed-id>/jobs" --data @"$JOBPILOT_TEMP/job.json"
 ```
 
 Use the row's `url`, which the MCP returns ready to link.
 
-## Phase 4: Close & Hand Off
+## Phase 4: Hand Off
 
-```bash
-jobpilot-api POST "/api/campaigns/<campaign-id>/status" --data '{"status":"completed"}'
-```
-
-Print a compact ranked table and link to `$JOBPILOT_WEB/pipeline?campaign=<campaign-id>` - nothing else.
+Print a compact ranked table and link to `$JOBPILOT_WEB/pipeline?feed=<feed-id>` - nothing else.
 The user reviews, hits **Draft proposal** on the ones they want, and submits from JobPilot.
 
 ## Rules
 
-The shared campaign rules (`../_shared/campaign-flow.md`) apply throughout. On top of them:
+The shared feed rules (`../_shared/feed-flow.md`) apply throughout. On top of them:
 
 1. **Recommend only.** Never call `manage_proposals` here. Drafting and submitting are separate,
    user-triggered steps, and both spend the user's Connects.

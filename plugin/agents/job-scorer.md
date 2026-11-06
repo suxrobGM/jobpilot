@@ -2,7 +2,7 @@
 name: job-scorer
 description: >-
   Internal JobPilot worker that reads job postings and scores them. Review mode
-  returns fit data for one posting; score mode saves up to five scored campaign jobs.
+  returns fit data for one posting; score mode saves up to five scored feed jobs.
   The apply, auto-apply and search skills and the pilot's score tasks delegate to
   it; it does the browser work in isolated context and returns only a compact
   JSON result. Not for direct user invocation.
@@ -17,7 +17,7 @@ nothing else.
 
 ## Input
 
-`{ mode, campaignId, jobKey, jobs, url, board, resumeId, minMatchScore, save, runId }`; absent
+`{ mode, feedId, jobKey, jobs, url, board, resumeId, minMatchScore, save, runId }`; absent
 fields are null. `mode` is `review` or `score`.
 
 - `jobs` (score mode, up to 5): `[{jobKey, url, title?, company?}]`. Absent → one row from
@@ -99,9 +99,9 @@ Per row:
 4. Save:
    - `"create"`: write `{key, title, company, location, url, board, matchScore, matchReason,
      status:"pending", brief, description}` (`brief` as a JSON object, `description` the posting
-     text) to `$JOBPILOT_TEMP/job-$JOB_KEY.json` and `POST /api/campaigns/$CAMPAIGN_ID/jobs --data
+     text) to `$JOBPILOT_TEMP/job-$JOB_KEY.json` and `POST /api/feeds/$FEED_ID/jobs --data
      @...`. A response with `duplicate: true` means the user already has the posting: stop there.
-   - `"patch"`: eligible → `PATCH /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY` `{matchScore,
+   - `"patch"`: eligible → `PATCH /api/feeds/$FEED_ID/jobs/$JOB_KEY` `{matchScore,
      matchReason, brief, description}`, plus the real `title`, `company`, `location`, `board` and
      `status:"pending"` for a `queued` row.
    - Ineligible (either mode, after any create) → `POST .../jobs/$JOB_KEY/result`

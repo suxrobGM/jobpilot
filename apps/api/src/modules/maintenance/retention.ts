@@ -1,7 +1,7 @@
 import { UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
 import { DAY_MS } from "@/common/date/buckets";
 import {
-  type CampaignJobStatus,
+  type JobStatus,
   type PilotSubjectType,
   Prisma,
   type PrismaClient,
@@ -17,9 +17,9 @@ interface RetentionRule {
 }
 
 /** Answered questions on these subjects are the only thing that stops the same review re-opening. */
-const QUESTION_TOMBSTONE_SUBJECTS: PilotSubjectType[] = ["email", "campaign"];
-const FOUND: CampaignJobStatus[] = ["queued", "pending"];
-const DROPPED: CampaignJobStatus[] = ["skipped", "failed"];
+const QUESTION_TOMBSTONE_SUBJECTS: PilotSubjectType[] = ["email", "feed"];
+const FOUND: JobStatus[] = ["queued", "pending"];
+const DROPPED: JobStatus[] = ["skipped", "failed"];
 
 /** Applied in order, once a day. */
 export const RETENTION_RULES = [
@@ -169,7 +169,7 @@ export const RETENTION_RULES = [
     name: "staleFoundJobs",
     days: 21,
     apply: (db, before) =>
-      db.campaignJob.updateMany({
+      db.job.updateMany({
         where: { status: { in: FOUND }, createdAt: { lt: before }, upworkProposals: { none: {} } },
         data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.wentStale },
       }),
@@ -179,7 +179,7 @@ export const RETENTION_RULES = [
     name: "droppedJobTexts",
     days: 30,
     apply: (db, before) =>
-      db.campaignJob.updateMany({
+      db.job.updateMany({
         where: {
           status: { in: DROPPED },
           updatedAt: { lt: before },
@@ -192,7 +192,7 @@ export const RETENTION_RULES = [
     name: "droppedJobs",
     days: 180,
     apply: (db, before) =>
-      db.campaignJob.deleteMany({
+      db.job.deleteMany({
         where: {
           status: { in: DROPPED },
           createdAt: { lt: before },
@@ -201,15 +201,14 @@ export const RETENTION_RULES = [
         },
       }),
   },
-  // After the job rules, which can empty a campaign.
+  // After the job rules, which can empty an archived search.
   {
-    name: "emptyCampaigns",
+    name: "emptyArchivedSearches",
     days: 7,
     apply: (db, before) =>
-      db.campaign.deleteMany({
+      db.feed.deleteMany({
         where: {
-          status: { in: ["completed", "failed"] },
-          updatedAt: { lt: before },
+          archivedAt: { lt: before },
           jobs: { none: {} },
           applications: { none: {} },
           networkingMessages: { none: {} },

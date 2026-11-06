@@ -3,7 +3,7 @@ import { JobLookupService } from "./job-lookup.service";
 import { describe, expect, it } from "bun:test";
 
 const stored = {
-  campaignId: "c1",
+  feedId: "c1",
   key: "k1",
   title: "Research Assistant, Vision Lab",
   company: "University of Michigan",
@@ -12,7 +12,7 @@ const stored = {
   status: "skipped" as const,
 };
 
-const db = { campaignJob: { findMany: async () => [stored] } };
+const db = { job: { findMany: async () => [stored] } };
 
 describe("JobLookupService.findSimilar", () => {
   it("matches a mirror of a stored posting, skipped ones included, by request index", async () => {
@@ -32,7 +32,7 @@ describe("JobLookupService.findExisting", () => {
   it("returns the URLs as sent whose normalized form is already stored", async () => {
     const urlsQueried: string[][] = [];
     const urlDb = {
-      campaignJob: {
+      job: {
         findMany: async (args: { where: { url: { in: string[] } } }) => {
           urlsQueried.push(args.where.url.in);
           return args.where.url.in

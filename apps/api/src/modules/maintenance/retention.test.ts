@@ -15,8 +15,8 @@ const RETENTION_BY_MODEL = {
   VerificationToken: ["verificationTokens"],
   OAuthAccount: "bounded",
   AuthToken: ["authTokens"],
-  CampaignJob: ["staleFoundJobs", "droppedJobTexts", "droppedJobs"],
-  Campaign: ["emptyCampaigns"],
+  Job: ["staleFoundJobs", "droppedJobTexts", "droppedJobs"],
+  Feed: ["emptyArchivedSearches"],
   CoverLetter: "userData",
   Credential: "bounded",
   EmailAccount: "bounded",
@@ -29,7 +29,6 @@ const RETENTION_BY_MODEL = {
   Contact: "userData",
   NetworkingMessage: "userData",
   PilotState: "bounded",
-  PilotSearch: "bounded",
   PilotRun: ["runs", "discoveryRuns"],
   PilotQuestion: ["questions"],
   PilotJournalEntry: ["journalEntries", "digests"],
@@ -90,7 +89,7 @@ describe("retention", () => {
     // Proposals have no decidedAt.
     expect(where.decidedChanges).toContain('"decidedAt"');
     expect(where.questions).not.toContain('"open"');
-    expect(where.questions).toContain('"notIn":["email","campaign"]');
+    expect(where.questions).toContain('"notIn":["email","feed"]');
     for (const kept of ["draft", "approved", "posted"]) {
       expect(where.promotionPosts).not.toContain(`"${kept}"`);
     }

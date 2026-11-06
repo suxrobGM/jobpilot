@@ -1,6 +1,6 @@
 # `networking.warmIntro`
 
-Payload `{campaignId, jobKey, company, jobTitle, jobUrl, contacts, channel, autonomy}`. Delegate one
+Payload `{feedId, jobKey, company, jobTitle, jobUrl, contacts, channel, autonomy}`. Delegate one
 `networking-worker` run on the given `channel`:
 
 - `contacts` set → compose for the best one only: pass it as `target`, with the job for grounding.

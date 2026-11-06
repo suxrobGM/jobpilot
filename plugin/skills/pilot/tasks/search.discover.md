@@ -1,23 +1,16 @@
 # `search.discover`
 
-Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`.
+Payload `{searchId, query, board?, resumeId?, minScore, newJobsTarget, maxPages}`. A search is
+its own feed: its jobs go to `searchId`.
 
-1. **Campaign.** Use `campaignId` when set. Otherwise this returns the search's open campaign, or
-   creates it; read `.id` as `CID`:
-
-   ```bash
-   jobpilot-api POST /api/campaigns \
-     --data '{"query":"<query>","source":"auto_apply","createdBy":"pilot","pilotSearchId":"<searchId>","board":"<board>","config":{"resumeId":"<resumeId>","minScore":<minScore>}}'
-   ```
-
-2. **Search.** Delegate one `job-searcher` run with `{runId:$RUN_ID, campaignId:CID, query, board,
+1. **Search.** Delegate one `job-searcher` run with `{runId:$RUN_ID, feedId:searchId, query, board,
    resumeId, minScore, newJobsTarget, maxPages}`. Without subagent support, or if the delegation
    fails, follow `$JOBPILOT_SKILLS_ROOT/../agents/job-searcher.md` inline.
 
-3. **Report** its counts (a `404` means the search was deleted meanwhile: say so in the summary):
+2. **Report** its counts (a `404` means the search was deleted meanwhile: say so in the summary):
 
    ```bash
-   jobpilot-api POST /api/pilot/searches/$SEARCH_ID/runs \
+   jobpilot-api POST /api/feeds/$SEARCH_ID/runs \
      --data '{"jobsScanned":<jobsScanned>,"newJobs":<newJobs>,"reachedEnd":<reachedEnd>}'
    ```
 

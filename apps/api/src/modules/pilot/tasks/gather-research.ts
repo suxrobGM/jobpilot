@@ -88,7 +88,9 @@ export async function gatherResearch(
 ): Promise<ResearchTask | null> {
   const [lastRun, backingOffCount, paused] = await Promise.all([
     latestRun(prisma, userId, "research.explore"),
-    prisma.pilotSearch.count({ where: { userId, emptyRuns: { gte: BACKING_OFF_RUNS } } }),
+    prisma.feed.count({
+      where: { userId, kind: "search", archivedAt: null, emptyRuns: { gte: BACKING_OFF_RUNS } },
+    }),
     isFeedPaused(prisma, userId, "research"),
   ]);
   if (paused) return null;

@@ -34,7 +34,7 @@ function makeDb(
     id: "m1",
     userId: "p1",
     contactId: "ct1",
-    campaignId: "c1",
+    feedId: "c1",
     linkedinKind: null,
     subject: "Hi",
     body: "hello",
@@ -53,7 +53,7 @@ function makeDb(
       findFirst: async () => ({
         ...current,
         contact,
-        campaign: { source: "networking" },
+        feed: { source: "networking" },
       }),
       updateMany: async ({ data }: { data: Record<string, unknown> }) => {
         networkingWrites.push(data);
@@ -75,7 +75,7 @@ function makeDb(
       groupBy: async () => [],
       findMany: async () => [],
     },
-    campaign: { update: async () => ({}) },
+    feed: { update: async () => ({}) },
     pilotJournalEntry: {
       createMany: async ({ data }: { data: Record<string, unknown>[] }) => {
         journals.push(...data);

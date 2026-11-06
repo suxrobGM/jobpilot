@@ -1,4 +1,3 @@
-import { campaignConfigSchema } from "@jobpilot/contracts/campaign";
 import {
   JOB_ALERT_EXCLUDED_MAILBOXES,
   jobAlertSenderDomains,
@@ -139,7 +138,7 @@ export async function gatherInterviewPreps(
       company: true,
       title: true,
       url: true,
-      campaign: { select: { config: true } },
+      feed: { select: { resumeId: true } },
     },
   });
   return apps.map((app) => ({
@@ -147,9 +146,7 @@ export async function gatherInterviewPreps(
     company: app.company,
     jobTitle: app.title,
     jobUrl: app.url,
-    resumeId: app.campaign
-      ? (campaignConfigSchema.parse(app.campaign.config).resumeId ?? null)
-      : null,
+    resumeId: app.feed?.resumeId ?? null,
   }));
 }
 

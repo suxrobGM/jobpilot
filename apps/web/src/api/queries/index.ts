@@ -19,9 +19,9 @@ export {
 export {
   analyticsQueries,
   applicationQueries,
-  campaignQueries,
   coverLetterQueries,
   emailQueries,
+  feedQueries,
   networkingQueries,
   pipelineQueries,
 } from "./work";

@@ -130,7 +130,7 @@ public sealed class CodexProviderTests : IDisposable
             name: job-scorer
             description: >-
               Scores one posting
-              for a campaign.
+              for a feed.
             tools: Bash, Read
             model: inherit
             ---
@@ -142,7 +142,7 @@ public sealed class CodexProviderTests : IDisposable
 
         Assert.Equal(
             "name = 'job-scorer'\n"
-            + "description = 'Scores one posting for a campaign.'\n"
+            + "description = 'Scores one posting for a feed.'\n"
             + "developer_instructions = '''\n# Job Scorer\n\nSay \"hi\".'''\n",
             CodexProvider.AgentToml(markdown));
         Assert.Null(CodexProvider.AgentToml("# No frontmatter"));

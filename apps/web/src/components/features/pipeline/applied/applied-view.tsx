@@ -17,14 +17,14 @@ const FUNNEL_KEYS = FUNNEL_GROUPS.map((group) => group.key);
 
 interface AppliedViewProps {
   filters: PipelineFilters;
-  /** Maps a campaignId to its name, for attribution. */
-  campaignLabel: Map<string, string>;
+  /** Maps a feedId to its name, for attribution. */
+  feedLabel: Map<string, string>;
   pagination: PaginationParams;
 }
 
 /** Applications with the outcome strip: applied → screening → interviewing → offer. */
 export function AppliedView(props: AppliedViewProps): ReactElement {
-  const { filters, campaignLabel, pagination } = props;
+  const { filters, feedLabel, pagination } = props;
   const group = enumParam<FunnelKey>(FUNNEL_KEYS, useSearchParams().get("group"));
 
   const apps = useQuery(
@@ -53,7 +53,7 @@ export function AppliedView(props: AppliedViewProps): ReactElement {
         isEmpty={false}
         empty={null}
       >
-        <ApplicationsTable rows={apps.data?.items ?? []} campaignLabel={campaignLabel} />
+        <ApplicationsTable rows={apps.data?.items ?? []} feedLabel={feedLabel} />
       </QuerySection>
       {apps.data && (
         <PaginationFooter

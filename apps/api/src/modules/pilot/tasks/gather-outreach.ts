@@ -7,7 +7,7 @@ import { networkingSendWhere, promotionPostWhere } from "./workable";
 /** The build step adds the channel and mode, which come from config rather than the row. */
 export type Followup = Omit<TaskPayload<"networking.followup">, "channel" | "autonomy">;
 
-// The where-clauses below guarantee a campaign and a contact email; the flatMaps convince the types.
+// The where-clauses below guarantee a feed and a contact email; the flatMaps convince the types.
 
 /** Sendable drafts, oldest first. */
 export async function gatherApprovedNetworking(
@@ -20,19 +20,19 @@ export async function gatherApprovedNetworking(
     take: GATHER_CAP,
     select: {
       id: true,
-      campaignId: true,
+      feedId: true,
       contactId: true,
       subject: true,
       body: true,
       contact: { select: { name: true, email: true } },
     },
   });
-  return rows.flatMap(({ id, campaignId, contact, ...message }) =>
-    campaignId && contact.email
+  return rows.flatMap(({ id, feedId, contact, ...message }) =>
+    feedId && contact.email
       ? [
           {
             ...message,
-            campaignId,
+            feedId,
             messageId: id,
             contactName: contact.name,
             contactEmail: contact.email,
@@ -52,7 +52,7 @@ export async function gatherFollowups(
   const rows = await prisma.networkingMessage.findMany({
     where: {
       userId,
-      campaignId: { not: null },
+      feedId: { not: null },
       channel: "email",
       repliedAt: null,
       sentAt: { not: null, lt: new Date(now.getTime() - config.networking.followupDays * DAY_MS) },
@@ -61,7 +61,7 @@ export async function gatherFollowups(
     take: GATHER_CAP,
     select: {
       id: true,
-      campaignId: true,
+      feedId: true,
       contactId: true,
       subject: true,
       sentAt: true,
@@ -78,12 +78,12 @@ export async function gatherFollowups(
   });
   const newestByContact = new Map(newest.map((row) => [row.contactId, row._max.createdAt]));
 
-  return rows.flatMap(({ id, campaignId, contactId, subject, sentAt, createdAt, contact }) => {
+  return rows.flatMap(({ id, feedId, contactId, subject, sentAt, createdAt, contact }) => {
     const isNewest = newestByContact.get(contactId)?.getTime() === createdAt.getTime();
-    if (!isNewest || !campaignId || !sentAt || !contact.email) return [];
+    if (!isNewest || !feedId || !sentAt || !contact.email) return [];
     return [
       {
-        campaignId,
+        feedId,
         messageId: id,
         contactId,
         contactName: contact.name,
