@@ -2,6 +2,7 @@ import {
   type CreatePilotRequestInput,
   createPilotRequestSchema,
   type PilotRequest,
+  TASK_SUBJECT_TYPES,
   taskTypeLabel,
 } from "@jobpilot/contracts/pilot";
 import type {
@@ -17,42 +18,43 @@ interface RequestSubject {
   subjectId: string;
 }
 
-/** The subject the request's task will carry, so the run that starts on it can be matched back. */
-export function requestSubject(input: CreatePilotRequestInput, requestId: string): RequestSubject {
+/** Matches the subject id `TASK_DEFS` gives the task built from this request. */
+function requestSubjectId(input: CreatePilotRequestInput, requestId: string): string {
   switch (input.taskType) {
     case "job.apply":
-      return {
-        subjectType: "job",
-        subjectId: jobSubjectId({
-          feedId: input.payload.feedId,
-          key: input.payload.jobKey,
-        }),
-      };
+      return jobSubjectId({ feedId: input.payload.feedId, key: input.payload.jobKey });
     case "job.rescanSkipped":
     case "job.retryFailed":
-      return { subjectType: "feed", subjectId: input.payload.feedId };
+      return input.payload.feedId;
     case "inbox.review":
-      return { subjectType: "inbox", subjectId: "inbox" };
     case "upwork.syncInbox":
-      return { subjectType: "upwork", subjectId: "inbox" };
+      return "inbox";
     case "inbox.jobAlerts":
-      return { subjectType: "inbox", subjectId: "jobAlerts" };
+      return "jobAlerts";
     case "research.explore":
-      return { subjectType: "pilot", subjectId: "research" };
+      return "research";
     case "search.discover":
-      return { subjectType: "feed", subjectId: input.payload.searchId };
+      return input.payload.searchId;
     case "resume.extract":
-      return { subjectType: "resume", subjectId: input.payload.resumeId };
+      return input.payload.resumeId;
     case "resume.tailor":
     case "networking.find":
     case "networking.rewrite":
-      return { subjectType: "request", subjectId: requestId };
+      return requestId;
     case "upwork.profile":
-      return { subjectType: "upwork", subjectId: "profile" };
+      return "profile";
     case "upwork.proposal":
     case "upwork.submit":
-      return { subjectType: "upwork", subjectId: input.payload.proposalId };
+      return input.payload.proposalId;
   }
+}
+
+/** The subject the request's task will carry, so the run that starts on it can be matched back. */
+export function requestSubject(input: CreatePilotRequestInput, requestId: string): RequestSubject {
+  return {
+    subjectType: TASK_SUBJECT_TYPES[input.taskType],
+    subjectId: requestSubjectId(input, requestId),
+  };
 }
 
 /** The stored row read back as the request it was created from. */
