@@ -99,7 +99,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
     priority: 910,
     subjectType: "campaign",
     subjectId: (p) => p.campaignId,
-    title: (p) => `Review paused campaign: ${p.query}`,
+    title: (p) => `Review a paused search: ${p.query}`,
     perList: 1,
   },
   "job.apply": {
@@ -195,7 +195,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
     priority: 350,
     subjectType: "campaign",
     subjectId: (p) => p.campaignId,
-    title: (p) => `Tune campaign: ${p.query}`,
+    title: (p) => `Tune a search: ${p.query}`,
     perList: 1,
   },
   "promotion.draft": {

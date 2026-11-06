@@ -62,7 +62,7 @@ export function ContactsTable(props: ContactsTableProps): ReactElement {
       hideFooter
       errorTitle={errorTitle}
       onRetry={onRetry}
-      emptyMessage="No contacts yet - run a networking campaign to discover some."
+      emptyMessage="No contacts yet - use Find contacts, or turn on networking in the pilot settings."
     />
   );
 }

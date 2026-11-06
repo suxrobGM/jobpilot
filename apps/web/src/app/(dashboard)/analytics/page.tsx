@@ -11,7 +11,7 @@ export default function AnalyticsPage(): ReactElement {
       <PageHeader
         eyebrow="Workspace"
         title="Analytics"
-        description="Roll-up stats across your applications, campaigns, and networking."
+        description="Roll-up stats across your applications, searches, and networking."
       />
       <AnalyticsView />
     </PageShell>

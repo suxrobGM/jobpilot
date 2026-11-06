@@ -35,7 +35,7 @@ const pausedTask: PilotTask = {
   id: `campaign.reviewPaused:${PAUSED_CAMPAIGN_ID}`,
   taskType: "campaign.reviewPaused",
   priority: 910,
-  title: "Review paused campaign: react",
+  title: "Review a paused search: react",
   subjectType: "campaign",
   subjectId: PAUSED_CAMPAIGN_ID,
   payload: { campaignId: PAUSED_CAMPAIGN_ID, query: "react", board: null, pausedAt: now },

@@ -6,7 +6,7 @@ import { EmptyState } from "./empty-state";
 import { QueryError } from "./query-error";
 
 interface DetailLoadFailureProps {
-  /** Lowercase, as in "Couldn't load this campaign." */
+  /** Lowercase, as in "Couldn't load this resume." */
   noun: string;
   error: unknown;
   onRetry: () => void;

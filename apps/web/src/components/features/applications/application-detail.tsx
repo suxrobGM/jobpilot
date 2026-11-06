@@ -104,7 +104,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               </LabelValue>
               <LabelValue label="Applied at">{formatAbsoluteTime(app.appliedAt)}</LabelValue>
               {app.campaignId && (
-                <LabelValue label="Campaign">
+                <LabelValue label="Found by">
                   <Link href={pipelineHref(app.campaignId)}>Open in Pipeline</Link>
                 </LabelValue>
               )}

@@ -45,7 +45,8 @@ jobpilot-api POST /api/pilot/runs/$RUN_ID/result --data @"$JOBPILOT_TEMP/result.
 
 - `outcome`: `"failed"` only when the task itself errored. A job the task recorded as applied,
   skipped or parked is `"done"`.
-- `summary`: one specific line, shaped like the task file's **Summary**.
+- `summary`: one specific line, shaped like the task file's **Summary**. Users see summaries,
+  questions and chat replies: say "search" or "pipeline", never "campaign".
 - `detail`: only when the task file gives one.
 - `subjectType` / `subjectId`: only when they differ from the run's.
 

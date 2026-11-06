@@ -59,7 +59,7 @@ export function AnalyticsView(): ReactElement {
             eyebrow="Diagnostics"
             title="Top failure reasons"
             entries={stats.topRejectReasons.map((r) => ({ label: r.reason, count: r.count }))}
-            emptyMessage="No failed campaign jobs recorded."
+            emptyMessage="No failed applications recorded."
           />
         </Grid>
       </Grid>

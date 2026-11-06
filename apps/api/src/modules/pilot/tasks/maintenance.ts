@@ -221,7 +221,7 @@ export async function finalizeIdleCampaigns(
       kind: "action" as const,
       subjectType: "campaign",
       subjectId: campaign.id,
-      summary: `Completed campaign '${campaign.query}' - no active work remaining.`,
+      summary: `Finished the search '${campaign.query}' - nothing left to do.`,
     })),
   });
 }

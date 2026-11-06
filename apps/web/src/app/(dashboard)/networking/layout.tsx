@@ -18,7 +18,7 @@ export default function NetworkingLayout(props: NetworkingLayoutProps): ReactEle
       <PageHeader
         eyebrow="Networking"
         title="Outreach"
-        description="Hiring managers and recruiters found across your campaigns, and every message drafted to them."
+        description="Hiring managers and recruiters the pilot found, and every message drafted to them."
       />
       <TabStrip tabs={TABS} ariaLabel="Networking views" />
       {children}

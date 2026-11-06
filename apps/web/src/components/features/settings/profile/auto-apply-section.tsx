@@ -11,7 +11,7 @@ export const AutoApplySection = withForm({
     return (
       <FormSection
         title="Auto-apply"
-        description="Defaults used by the auto-apply and apply skills."
+        description="Defaults for the auto-apply and apply skills when you run them yourself."
       >
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <form.AppField name="autoApply.minMatchScore">
@@ -20,7 +20,7 @@ export const AutoApplySection = withForm({
           <form.AppField name="autoApply.maxApplicationsPerCampaign">
             {(field) => (
               <field.TextField
-                label="Max applications per campaign"
+                label="Max applications per run"
                 type="number"
                 helperText="Leave empty for unlimited"
               />

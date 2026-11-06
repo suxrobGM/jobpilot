@@ -13,7 +13,7 @@ Payload `{questionId, questionKind, subjectType, subjectId, prompt, answer}`. Ro
   /api/networking/messages --query status=draft` `.items` (it carries `campaignId`). `"Send"`: send
   and record as `./networking.send.md` does. `"Skip"`: record `/result` `{"outcome":"skipped"}`.
 - **`campaign`** (a `campaign.reviewPaused` answer, `subjectId` = campaign id) → `"Resume"`: `POST
-  /api/campaigns/$SID/status {"status":"in_progress","actor":"pilot"}`. `"Complete campaign"`: the
+  /api/campaigns/$SID/status {"status":"in_progress","actor":"pilot"}`. `"Stop this search"`: the
   same with `"completed"`. `"Keep paused"`: nothing. Free text: read it as one of the three.
 
 Summary: what you did with the answer ("Sent the Acme interview reply - Tuesday 10am.").
