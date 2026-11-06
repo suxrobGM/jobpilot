@@ -45,5 +45,6 @@ export function toProfileFormValues(data: UserAggregateResponse): UserUpdateInpu
     eeoVeteranStatus: p.eeoVeteranStatus ?? "",
     eeoDisabilityStatus: p.eeoDisabilityStatus ?? "",
     primaryResumeId: p.primaryResumeId,
+    agentNotes: p.agentNotes,
   };
 }
