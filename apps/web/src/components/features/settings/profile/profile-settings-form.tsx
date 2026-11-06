@@ -24,6 +24,35 @@ import { WorkAuthSection } from "./work-auth-section";
 /** Who you are, or what the pilot answers on application forms. Both save the whole profile. */
 type ProfilePage = "profile" | "answers";
 
+const PROFILE_FIELDS = {
+  firstName: true,
+  lastName: true,
+  contactEmail: true,
+  phone: true,
+  website: true,
+  linkedin: true,
+  github: true,
+  street: true,
+  aptUnit: true,
+  city: true,
+  state: true,
+  zipCode: true,
+  country: true,
+} as const;
+
+const PAGE_TITLES: Record<ProfilePage, string> = {
+  profile: "Profile",
+  answers: "Application answers",
+};
+
+/** Both pages save the whole profile, so an invalid field can sit on the page not shown. */
+function invalidPages(value: UserUpdateInput): Set<ProfilePage> {
+  const issues = userUpdateSchema.safeParse(value).error?.issues ?? [];
+  return new Set(
+    issues.map((issue) => (String(issue.path[0]) in PROFILE_FIELDS ? "profile" : "answers")),
+  );
+}
+
 const ANSWER_ANCHORS: SectionAnchor[] = [
   { id: "work-auth", label: "Work authorization" },
   { id: "salary", label: "Salary" },
@@ -67,7 +96,16 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
   const form = useAppForm({
     defaultValues: initialData,
     validators: { onSubmit: userUpdateSchema },
-    onSubmitInvalid: () => toast.error("Fix the highlighted fields"),
+    onSubmitInvalid: ({ value }) => {
+      const pages = invalidPages(value);
+      const elsewhere = !pages.has(page) && pages.size > 0;
+      const other = page === "profile" ? "answers" : "profile";
+      toast.error(
+        elsewhere
+          ? `Fix the fields on the ${PAGE_TITLES[other]} page first`
+          : "Fix the highlighted fields",
+      );
+    },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },
