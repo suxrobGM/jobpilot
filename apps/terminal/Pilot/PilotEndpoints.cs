@@ -27,9 +27,6 @@ public sealed record PilotStatus
 
     /// <summary><c>ok</c>, <c>empty</c>, or <c>error</c>.</summary>
     public string? LastCycleStatus { get; init; }
-
-    /// <summary>Restarts of a stuck session in a row; reset by a finished cycle.</summary>
-    public required int ConsecutiveTimeouts { get; init; }
 }
 
 public static class PilotEndpoints

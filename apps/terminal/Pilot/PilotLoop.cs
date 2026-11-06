@@ -64,7 +64,6 @@ public sealed class PilotLoop : BackgroundService
             HeldUntil = runner.HeldUntil(DateTimeOffset.UtcNow),
             LastCycleAt = runner.LastCycleAt,
             LastCycleStatus = runner.LastCycleStatus?.ToString().ToLowerInvariant(),
-            ConsecutiveTimeouts = runner.ConsecutiveRestarts,
         };
     }
 

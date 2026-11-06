@@ -48,7 +48,7 @@ public class AppJsonContextTests
                 HostVersion = "2.0.8",
                 CanRelaunch = true,
                 CanUpdate = false,
-                Pilot = new PilotStatus { Paired = false, Conducting = false, ConsecutiveTimeouts = 0 },
+                Pilot = new PilotStatus { Paired = false, Conducting = false },
             },
             AppJsonContext.Default.StatusResponse);
 

@@ -24,7 +24,6 @@ export interface PilotHealth {
   heldUntil?: string | null;
   lastCycleAt?: string | null;
   lastCycleStatus?: PilotCycleStatus | null;
-  consecutiveTimeouts: number;
 }
 
 export interface SessionStatus {
