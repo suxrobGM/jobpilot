@@ -49,7 +49,41 @@ type Gathered = Omit<
 interface GatherContext {
   config: PilotConfig;
   goals: string;
+  autopilot: boolean;
 }
+
+type Counts = Pick<
+  Gathered,
+  | "openQuestions"
+  | "activeRuns"
+  | "appliedToday"
+  | "networkingSentToday"
+  | "answeredQuestions"
+  | "approvedJobs"
+>;
+
+/** Everything only autonomous work reads, empty while autopilot is off. */
+const NO_AUTONOMOUS_WORK: Omit<Gathered, keyof Counts | "preferCapExempt" | "awaitingSetup"> = {
+  warmIntroCandidates: [],
+  dueQueries: [],
+  nextSearchRunAt: null,
+  scorePending: [],
+  queueScores: [],
+  pausedFeeds: [],
+  boardDiagnoses: [],
+  inbox: { messageIds: [], count: 0 },
+  jobAlerts: null,
+  interviewReplies: [],
+  interviewPreps: [],
+  upworkSync: null,
+  approvedNetworking: [],
+  followups: [],
+  feedTunes: [],
+  rescanSkipped: [],
+  retryFailed: [],
+  setup: null,
+  research: null,
+};
 
 const NO_DUE_SEARCHES: Pick<Gathered, "dueQueries" | "nextSearchRunAt"> = {
   dueQueries: [],
@@ -112,10 +146,12 @@ export class TaskListService {
     // feed open.
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
     await runExpiry(this.prisma, userId, now);
-    await promoteScoredPendingJobs(this.prisma, this.jobs, userId, config.minScore);
+    if (state.autopilot) {
+      await promoteScoredPendingJobs(this.prisma, this.jobs, userId, config.minScore);
+    }
     const goals = state.goals.trim();
 
-    const gathered = await this.gather(userId, { config, goals }, now);
+    const gathered = await this.gather(userId, { config, goals, autopilot: state.autopilot }, now);
     const [requests, chat] = await Promise.all([
       gatherRequests(this.prisma, userId, { config, goals }, now),
       gatherChat(this.prisma, userId),
@@ -148,9 +184,9 @@ export class TaskListService {
   }
 
   private async gather(userId: string, context: GatherContext, now: Date): Promise<Gathered> {
-    const { config, goals } = context;
+    const { config, goals, autopilot } = context;
     const { prisma } = this;
-    const { searchCount, ...base } = await allNamed({
+    const counts = allNamed({
       openQuestions: prisma.pilotQuestion.count({ where: { userId, status: "open" } }),
       activeRuns: prisma.pilotRun.count({
         where: { userId, finishedAt: null, expiresAt: { gt: now } },
@@ -160,15 +196,30 @@ export class TaskListService {
       networkingSentToday: countSentToday(prisma, userId, now),
       answeredQuestions: gatherAnsweredQuestions(prisma, userId),
       approvedJobs: gatherApprovedJobs(prisma, userId),
-      queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
-      pausedFeeds: gatherPausedFeeds(prisma, userId, now),
-      boardDiagnoses: gatherBoardDiagnoses(prisma, userId, now),
-      inbox: gatherInbox(prisma, userId),
-      jobAlerts: gatherJobAlerts(prisma, userId, config, now),
-      interviewReplies: gatherInterviewReplies(prisma, userId),
-      interviewPreps: gatherInterviewPreps(prisma, userId),
-      upworkSync: gatherUpworkSync(prisma, userId, now),
     });
+    if (!autopilot) {
+      const { searchCount, ...idle } = await counts;
+      return {
+        ...NO_AUTONOMOUS_WORK,
+        ...idle,
+        preferCapExempt: config.preferCapExempt,
+        awaitingSetup: searchCount === 0 || goals === "",
+      };
+    }
+    const [{ searchCount, ...countsRest }, work] = await Promise.all([
+      counts,
+      allNamed({
+        queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
+        pausedFeeds: gatherPausedFeeds(prisma, userId, now),
+        boardDiagnoses: gatherBoardDiagnoses(prisma, userId, now),
+        inbox: gatherInbox(prisma, userId),
+        jobAlerts: gatherJobAlerts(prisma, userId, config, now),
+        interviewReplies: gatherInterviewReplies(prisma, userId),
+        interviewPreps: gatherInterviewPreps(prisma, userId),
+        upworkSync: gatherUpworkSync(prisma, userId, now),
+      }),
+    ]);
+    const base = { ...countsRest, ...work };
 
     // Work today's config or counts rule out skips its reads entirely.
     const { emailAutonomy, outreach, appliesLeft, sendsLeft } = allowedToday(config, base);
