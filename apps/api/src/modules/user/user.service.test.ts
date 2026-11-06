@@ -1,5 +1,5 @@
-import type { PrismaClient } from "@/generated/prisma/client";
 import type { UserWithAutoApplyInput } from "@jobpilot/contracts/user";
+import type { PrismaClient } from "@/generated/prisma/client";
 import { userAggregateSchema } from "./user.schema";
 import { UserService } from "./user.service";
 import { describe, expect, it } from "bun:test";
@@ -56,7 +56,12 @@ describe("get agentNotes", () => {
       user: {
         findFirst: async (a: { select: Record<string, unknown> }) => {
           select = a.select;
-          return { id: "u1", primaryResumeId: null, preferredLocations: "[]", updatedAt: new Date() };
+          return {
+            id: "u1",
+            primaryResumeId: null,
+            preferredLocations: "[]",
+            updatedAt: new Date(),
+          };
         },
       },
       autoApplySettings: { findUnique: async () => null },

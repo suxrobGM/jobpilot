@@ -30,12 +30,12 @@ describe("agentNotes", () => {
   });
 
   it("caps at 2000 characters on the trimmed value", () => {
-    expect(
-      userWithAutoApplySchema.safeParse(body({ agentNotes: "x".repeat(2000) })).success,
-    ).toBe(true);
-    expect(
-      userWithAutoApplySchema.safeParse(body({ agentNotes: "x".repeat(2001) })).success,
-    ).toBe(false);
+    expect(userWithAutoApplySchema.safeParse(body({ agentNotes: "x".repeat(2000) })).success).toBe(
+      true,
+    );
+    expect(userWithAutoApplySchema.safeParse(body({ agentNotes: "x".repeat(2001) })).success).toBe(
+      false,
+    );
     expect(
       userWithAutoApplySchema.safeParse(body({ agentNotes: `  ${"x".repeat(1999)} ` })).success,
     ).toBe(true);
