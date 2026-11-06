@@ -6,6 +6,7 @@ import {
   type PipelineJobsQuery,
   type PipelineJobView,
 } from "@jobpilot/contracts/pipeline";
+import { UPWORK_DOMAIN } from "@jobpilot/contracts/upwork";
 import { inject, injectable } from "@needle-di/core";
 import { HttpError } from "@/common/errors";
 import { normalizeJobUrl } from "@/common/utils/url";
@@ -20,9 +21,6 @@ import { shadowedJobIds } from "./shadowed-jobs";
 
 /** Outreach lives in Networking → Messages, so its feeds stay out of the Pipeline. */
 const JOB_FEEDS = { kind: { not: "networking" } } satisfies Prisma.FeedWhereInput;
-
-/** Upwork jobs get proposals, not applications; they show only when the Upwork board is picked. */
-const UPWORK = "upwork.com";
 
 const RECENT_ORDER: Prisma.JobOrderByWithRelationInput[] = [{ updatedAt: "desc" }, { id: "desc" }];
 
@@ -64,9 +62,10 @@ export class PipelineService {
 
   private async where(userId: string, filters: PipelineFilters): Promise<Prisma.JobWhereInput> {
     const { feedId, board, search } = filters;
+    // Upwork jobs show only when the Upwork board is picked.
     const boardWhere: Prisma.JobWhereInput = board
       ? { board: boardFilter(board) }
-      : { NOT: { board: boardFilter(UPWORK) } };
+      : { NOT: { board: boardFilter(UPWORK_DOMAIN) } };
     return {
       userId,
       feed: JOB_FEEDS,

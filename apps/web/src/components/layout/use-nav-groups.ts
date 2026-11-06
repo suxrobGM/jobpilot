@@ -1,11 +1,10 @@
 "use client";
 
+import { UPWORK_DOMAIN } from "@jobpilot/contracts/upwork";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { feedQueries, jobBoardQueries, pilotQueries } from "@/api/queries";
 import { isNavEntryActive, NAV_GROUPS, type NavGroup, type NavItem } from "./shell-config";
-
-const UPWORK_DOMAIN = "upwork.com";
 
 /** The nav with each channel shown only once the user works it, or while its page is open. */
 export function useNavGroups(): NavGroup[] {

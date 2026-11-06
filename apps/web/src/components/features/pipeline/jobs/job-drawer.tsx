@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
+import { UPWORK_DOMAIN } from "@jobpilot/contracts/upwork";
 import { Close, OpenInNew } from "@mui/icons-material";
 import { Box, Button, Divider, Drawer, IconButton, Link, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
@@ -14,8 +15,6 @@ import { StatusChip } from "@/components/ui/display";
 import { proposalHref } from "@/utils/routes";
 
 /** Upwork is recommend-only: its jobs get a proposal, never an application. */
-const UPWORK_DOMAIN = "upwork.com";
-
 /** "mustHaves" → "Must haves". */
 function humanizeKey(key: string): string {
   const spaced = key.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
