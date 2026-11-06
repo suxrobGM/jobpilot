@@ -20,7 +20,6 @@ import { toPilotChange } from "./changes/change-row";
 import { toJournalEntry } from "./journal-entries";
 import { toPilotQuestion } from "./question.service";
 import { toPilotRequest } from "./requests/request-row";
-import { taskTitle } from "./tasks/task-defs";
 
 /** Cycle entries are the loop's bookkeeping; questions arrive as their own rows. */
 const THREAD_KINDS: PilotJournalKind[] = ["action", "digest", "system", "correction"];
@@ -33,14 +32,7 @@ const SIDE_ROWS_CAP = 100;
 
 type ThreadRunRow = Pick<
   PilotRunModel,
-  | "id"
-  | "taskType"
-  | "subjectType"
-  | "subjectId"
-  | "payload"
-  | "outcome"
-  | "startedAt"
-  | "finishedAt"
+  "id" | "taskType" | "subjectType" | "subjectId" | "title" | "outcome" | "startedAt" | "finishedAt"
 >;
 
 interface ThreadSources {
@@ -67,7 +59,7 @@ function toRunLine(run: ThreadRunRow, entries: PilotJournalEntryModel[]): TimedR
     line: {
       runId: run.id,
       taskType: run.taskType,
-      title: taskTitle(run),
+      title: run.title,
       summary: result.summary,
       outcome: run.outcome,
       subjectType: result.subjectType ?? run.subjectType,
@@ -192,7 +184,7 @@ export class PilotThreadService {
               taskType: true,
               subjectType: true,
               subjectId: true,
-              payload: true,
+              title: true,
               outcome: true,
               startedAt: true,
               finishedAt: true,

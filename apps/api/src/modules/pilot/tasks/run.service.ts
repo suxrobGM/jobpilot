@@ -158,6 +158,7 @@ export class RunService {
       data: {
         userId,
         taskType: task.taskType,
+        title: task.title,
         subjectType: task.subjectType,
         subjectId: task.subjectId,
         payload: toInputJson(task.payload),

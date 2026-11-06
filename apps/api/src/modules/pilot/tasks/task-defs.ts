@@ -1,10 +1,4 @@
-import {
-  type PilotTask,
-  type TaskPayload,
-  type TaskSubjectType,
-  type TaskType,
-  taskFieldsSchema,
-} from "@jobpilot/contracts/pilot";
+import type { PilotTask, TaskPayload, TaskSubjectType, TaskType } from "@jobpilot/contracts/pilot";
 import { jobSubjectId } from "./run-history";
 
 const CHAT_PRIORITY = 1100;
@@ -245,12 +239,4 @@ export function makeTasks<K extends TaskType>(
 ): PilotTask[] {
   const cap = TASK_DEFS[taskType].perList ?? payloads.length;
   return payloads.slice(0, cap).map((payload) => makeTask(taskType, payload));
-}
-
-/** A stored run or task's title; parsing ties its payload to its task type. */
-export function taskTitle(fields: unknown): string {
-  const parsed = taskFieldsSchema.parse(fields);
-  // Same gap as makeTask: TS can't correlate the parsed union's taskType with its payload.
-  const def = TASK_DEFS[parsed.taskType] as TaskDef<TaskType>;
-  return def.title(parsed.payload);
 }

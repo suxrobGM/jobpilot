@@ -176,6 +176,8 @@ model PilotRun {
   userId           String           @map("user_id") @db.Uuid
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskType         String           @map("task_type")
+  // The task's title when the run started, so old runs never need their payload parsed.
+  title            String
   subjectType      PilotSubjectType @map("subject_type")
   subjectId        String           @map("subject_id")
   payload          Json             @default("{}")

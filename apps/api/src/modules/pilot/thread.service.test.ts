@@ -30,7 +30,7 @@ function run(id: string, startMin: number, endMin: number) {
     taskType: "upwork.syncInbox",
     subjectType: "upwork",
     subjectId: "inbox",
-    payload: { lastSyncedAt: null, unreadCount: 0 },
+    title: "Pull the Upwork inbox",
     outcome: "done",
     startedAt: at(startMin),
     finishedAt: at(endMin),

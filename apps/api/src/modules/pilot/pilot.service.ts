@@ -13,7 +13,6 @@ import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/pr
 import { costByTaskType, countAppliedToday, countSentToday } from "./pilot.stats";
 import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
-import { taskTitle } from "./tasks/task-defs";
 
 /** Pilot state, instructions, and the stats and liveness reads. */
 @injectable()
@@ -29,22 +28,9 @@ export class PilotService {
       this.prisma.pilotRun.findFirst({
         where: { userId: row.userId, finishedAt: null, expiresAt: { gt: now } },
         orderBy: { startedAt: "desc" },
-        select: {
-          id: true,
-          taskType: true,
-          subjectType: true,
-          subjectId: true,
-          payload: true,
-          startedAt: true,
-        },
+        select: { id: true, taskType: true, title: true, startedAt: true },
       }),
     ]);
-    const currentRun = openRun && {
-      id: openRun.id,
-      taskType: openRun.taskType,
-      title: taskTitle(openRun),
-      startedAt: openRun.startedAt,
-    };
     return {
       userId: row.userId,
       autopilot: row.autopilot,
@@ -57,7 +43,7 @@ export class PilotService {
       appliedToday,
       networkingSentToday,
       capReached: allowedToday(config, { appliedToday, networkingSentToday }).appliesLeft === 0,
-      currentRun,
+      currentRun: openRun,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

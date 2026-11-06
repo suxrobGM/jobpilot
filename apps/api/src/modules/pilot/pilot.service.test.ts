@@ -19,9 +19,7 @@ const stateRow = (over: Record<string, unknown>) => ({
 interface OpenRun {
   id: string;
   taskType: string;
-  subjectType: string;
-  subjectId: string;
-  payload: unknown;
+  title: string;
   startedAt: Date;
 }
 
@@ -73,18 +71,11 @@ describe("PilotService.getState", () => {
     const run = {
       id: "r1",
       taskType: "upwork.syncInbox",
-      subjectType: "upwork",
-      subjectId: "inbox",
-      payload: { lastSyncedAt: null, unreadCount: 0 },
+      title: "Pull the Upwork inbox",
       startedAt,
     };
     const { svc, runQueries } = stateService("", run);
-    expect((await svc.getState("p1")).currentRun).toEqual({
-      id: "r1",
-      taskType: "upwork.syncInbox",
-      title: "Pull the Upwork inbox",
-      startedAt,
-    });
+    expect((await svc.getState("p1")).currentRun).toEqual(run);
     expect(runQueries[0]).toMatchObject({
       where: { userId: "p1", finishedAt: null, expiresAt: { gt: expect.any(Date) } },
       orderBy: { startedAt: "desc" },
