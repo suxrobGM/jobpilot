@@ -54,6 +54,11 @@ export const pipelineQueries = {
       queryKey: [...PIPELINE, "counts", filters],
       queryFn: () => unwrap(api.pipeline.counts.get({ query: filters })),
     }),
+  needsYou: () =>
+    queryOptions({
+      queryKey: [...PIPELINE, "needsYou"],
+      queryFn: () => unwrap(api.pipeline["needs-you"].get()),
+    }),
 };
 
 export const feedQueries = {

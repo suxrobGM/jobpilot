@@ -1,6 +1,7 @@
 import {
   addedPipelineLinksSchema,
   addPipelineLinksSchema,
+  needsYouJobRefsSchema,
   pipelineBulkResultSchema,
   pipelineBulkSchema,
   pipelineCountsQuerySchema,
@@ -37,6 +38,14 @@ export const pipelineController = new Elysia({
     detail: {
       summary: "Count pipeline jobs per view",
       description: "Job counts for every view, under the same filters and dedupe as the list.",
+    },
+  })
+  .get("/needs-you", ({ user }) => pipeline.needsYouRefs(user.id), {
+    response: needsYouJobRefsSchema,
+    detail: {
+      summary: "List Needs you job refs",
+      description:
+        "Feed id and key of every job waiting on the user, under the list's dedupe. Lighter than the jobs list, for badges.",
     },
   })
   .post("/links", ({ user, body }) => pipeline.addLinks(user.id, body.urls), {

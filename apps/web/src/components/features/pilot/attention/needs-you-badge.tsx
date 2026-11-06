@@ -2,7 +2,7 @@
 
 import type { PropsWithChildren, ReactElement, ReactNode } from "react";
 import { Badge, Typography } from "@mui/material";
-import { useNeedsYou } from "./use-needs-you";
+import { useNeedsYouCount } from "./use-needs-you";
 
 interface NeedsYouBadgeProps extends PropsWithChildren {
   /** A dot where a number has no room, like the collapsed sidebar. */
@@ -11,7 +11,7 @@ interface NeedsYouBadgeProps extends PropsWithChildren {
 
 export function NeedsYouBadge(props: NeedsYouBadgeProps): ReactElement {
   const { variant = "standard", children } = props;
-  const count = useNeedsYou().length;
+  const count = useNeedsYouCount();
   return (
     <Badge badgeContent={count} variant={variant} invisible={count === 0}>
       {children}
@@ -21,7 +21,7 @@ export function NeedsYouBadge(props: NeedsYouBadgeProps): ReactElement {
 
 /** The count at the end of an expanded nav row. */
 export function NeedsYouCount(): ReactNode {
-  const count = useNeedsYou().length;
+  const count = useNeedsYouCount();
   if (count === 0) {
     return null;
   }

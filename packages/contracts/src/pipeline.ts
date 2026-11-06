@@ -35,6 +35,7 @@ const pipelineJobSchema = jobSchema.extend({
 
 export const pipelineJobListSchema = paginatedSchema(pipelineJobSchema);
 export const pipelineCountsSchema = z.record(pipelineJobViewSchema, z.number().int());
+export const needsYouJobRefsSchema = z.array(z.object({ feedId: z.uuid(), key: z.string() }));
 
 export const addPipelineLinksSchema = z.object({
   urls: z.array(z.url()).min(1).max(MAX_LINKS),

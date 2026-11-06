@@ -1,4 +1,4 @@
-import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
+import { MAX_PAGE_SIZE, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import {
   PIPELINE_VIEW_STATUSES,
   type PipelineBulkInput,
@@ -98,6 +98,16 @@ export class PipelineService {
       this.prisma.job.count({ where }),
     ]);
     return paginate(rows.map(toJob), query, total);
+  }
+
+  /** Needs you as refs only, for the always-mounted nav badge. */
+  async needsYouRefs(userId: string) {
+    return this.prisma.job.findMany({
+      where: { ...(await this.where(userId, {})), status: { in: PIPELINE_VIEW_STATUSES.needsYou } },
+      orderBy: RECENT_ORDER,
+      take: MAX_PAGE_SIZE,
+      select: { feedId: true, key: true },
+    });
   }
 
   /** Runs each row through the job service, so every transition guard and event still applies. */
