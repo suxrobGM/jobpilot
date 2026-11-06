@@ -1,23 +1,40 @@
 "use client";
 
+import { MAX_PAGE_SIZE } from "@jobpilot/contracts/pagination";
 import type { PilotChange, PilotQuestion, Promotion } from "@jobpilot/contracts/pilot";
 import { useQuery } from "@tanstack/react-query";
-import { pilotQueries } from "@/api/queries";
+import { pilotQueries, pipelineQueries } from "@/api/queries";
+import type { PipelineJobDto } from "@/api/types";
 import { useOpenQuestions } from "./use-open-questions";
 
 export type Pending =
   | { type: "question"; id: string; question: PilotQuestion }
   | { type: "draft"; id: string; promotion: Promotion }
-  | { type: "change"; id: string; change: PilotChange };
+  | { type: "change"; id: string; change: PilotChange }
+  | { type: "job"; id: string; job: PipelineJobDto };
 
-/** Everything waiting on the user: open questions, drafts to approve, and proposed changes. */
+const NEEDS_YOU_JOBS = { view: "needsYou", page: 1, limit: MAX_PAGE_SIZE } as const;
+
+/**
+ * Everything waiting on the user: open questions, drafts to approve, proposed changes, and jobs
+ * parked for the user with no open question about them.
+ */
 export function useNeedsYou(): Pending[] {
   const { questions } = useOpenQuestions();
   const drafts = useQuery(pilotQueries.promotions("draft")).data?.items ?? [];
   const proposals = useQuery(pilotQueries.changes("proposed")).data ?? [];
+  const parked = useQuery(pipelineQueries.jobs(NEEDS_YOU_JOBS)).data?.items ?? [];
+
+  // A job question's subject is `<campaignId>:<jobKey>`.
+  const asked = new Set(
+    questions.flatMap((question) => (question.subjectType === "job" ? [question.subjectId] : [])),
+  );
+  const jobs = parked.filter((job) => !asked.has(`${job.campaignId}:${job.key}`));
+
   return [
     ...questions.map((question) => ({ type: "question" as const, id: question.id, question })),
     ...drafts.map((promotion) => ({ type: "draft" as const, id: promotion.id, promotion })),
     ...proposals.map((change) => ({ type: "change" as const, id: change.id, change })),
+    ...jobs.map((job) => ({ type: "job" as const, id: job.id, job })),
   ];
 }
