@@ -33,7 +33,6 @@ public static partial class StepMapper
         ("POST", ApiPath("captcha/solve"), "Solved a captcha"),
         ("POST", ApiPath("applications/*/events"), "Logged an application update"),
         ("POST", ApiPath("pilot/questions"), "Asked you a question"),
-        ("POST", ApiPath("pilot/promotions"), "Drafted a post"),
         ("POST", ApiPath("pilot/changes"), "Made a change"),
         ("POST", ApiPath("pilot/requests"), "Queued work"),
         ("POST", ApiPath("pilot/messages"), "Replied to you"),

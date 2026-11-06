@@ -7,7 +7,6 @@ import type {
   PilotRequest,
   PilotState,
   PilotStep,
-  Promotion,
   TaskType,
 } from "../../pilot";
 import { defineChannel } from "../channel";
@@ -17,8 +16,6 @@ export type PilotEvent =
   | { type: "question.created"; question: PilotQuestion }
   | { type: "question.answered"; question: PilotQuestion }
   | { type: "state.changed"; state: PilotState }
-  | { type: "promotion.created"; promotion: Promotion }
-  | { type: "promotion.updated"; promotion: Promotion }
   | { type: "change.updated"; change: PilotChange }
   | { type: "message.created"; message: PilotMessage }
   | { type: "request.created"; request: PilotRequest }

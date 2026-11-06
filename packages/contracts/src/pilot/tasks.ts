@@ -12,7 +12,6 @@ export const PILOT_SUBJECT_TYPES = [
   "question",
   "networking",
   "inbox",
-  "promotion",
   "application",
   "email",
   "board",
@@ -168,22 +167,6 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       // Empty when nobody at the company is known yet; the worker discovers one.
       contacts: z.array(warmContactSchema).default([]),
       ...outgoingMode,
-    }),
-  ),
-  taskVariant(
-    "promotion.draft",
-    "promotion",
-    z.object({ platform: z.string(), target: optionalString }),
-  ),
-  taskVariant(
-    "promotion.post",
-    "promotion",
-    z.object({
-      promotionId: z.uuid(),
-      platform: z.string(),
-      target: nullableString,
-      title: nullableString,
-      body: z.string(),
     }),
   ),
   taskVariant(

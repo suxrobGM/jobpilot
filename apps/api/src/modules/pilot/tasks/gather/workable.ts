@@ -1,5 +1,5 @@
-import { AUTO_APPLY_FEED_KINDS } from "@jobpilot/contracts/feed";
 import { Prisma } from "@/generated/prisma/client";
+import { LIVE_AUTO_APPLY_FEED } from "@/modules/feed/jobs/apply-guard";
 
 // One definition of "still workable" per task type, shared by its gather and the run-start
 // re-check: two copies drift, and a looser re-check starts a run on a row the gather would drop.
@@ -14,9 +14,7 @@ export const NEEDS_WORKER_VISIT = {
 export function scorePendingWhere(userId: string): Prisma.FeedWhereInput {
   return {
     userId,
-    pausedAt: null,
-    archivedAt: null,
-    kind: { in: [...AUTO_APPLY_FEED_KINDS] },
+    ...LIVE_AUTO_APPLY_FEED,
     jobs: { some: NEEDS_WORKER_VISIT },
   };
 }
@@ -41,14 +39,5 @@ export function networkingSendWhere(userId: string): Prisma.NetworkingMessageWhe
     channel: "email",
     status: "approved",
     contact: { email: { not: null } },
-  };
-}
-
-/** Approved posts whose schedule, if any, has arrived. */
-export function promotionPostWhere(userId: string, now: Date): Prisma.PromotionPostWhereInput {
-  return {
-    userId,
-    status: "approved",
-    OR: [{ scheduledFor: null }, { scheduledFor: { lte: now } }],
   };
 }

@@ -87,17 +87,6 @@ export const RETENTION_RULES = [
         where: { OR: [{ expiresAt: { lt: before } }, { revokedAt: { lt: before } }] },
       }),
   },
-  {
-    name: "promotionPosts",
-    days: 30,
-    apply: (db, before) =>
-      db.promotionPost.deleteMany({
-        where: {
-          status: { in: ["declined", "skipped", "expired", "failed"] },
-          updatedAt: { lt: before },
-        },
-      }),
-  },
   // Blanked, not deleted: the inbox and re-sync dedupe need the row. Unscanned mail keeps its body.
   {
     name: "emailBodies",

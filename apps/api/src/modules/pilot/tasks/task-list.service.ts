@@ -30,12 +30,7 @@ import {
   gatherBoardDiagnoses,
   gatherWarmIntroCandidates,
 } from "./gather/jobs";
-import {
-  gatherApprovedNetworking,
-  gatherApprovedPromotions,
-  gatherDuePlatforms,
-  gatherFollowups,
-} from "./gather/outreach";
+import { gatherApprovedNetworking, gatherFollowups } from "./gather/outreach";
 import { gatherChat, gatherRequests } from "./gather/requests";
 import { gatherResearch } from "./gather/research";
 import { gatherDueSearches, gatherSetup } from "./gather/searches";
@@ -173,8 +168,6 @@ export class TaskListService {
       interviewReplies: gatherInterviewReplies(prisma, userId),
       interviewPreps: gatherInterviewPreps(prisma, userId),
       upworkSync: gatherUpworkSync(prisma, userId, now),
-      approvedPromotions: gatherApprovedPromotions(prisma, userId, now),
-      duePlatforms: gatherDuePlatforms(prisma, userId, config, now),
     });
 
     // Work today's config or counts rule out skips its reads entirely.

@@ -3,7 +3,6 @@ import { cursorPageSchema, cursorQuerySchema } from "../pagination";
 import { pilotChangeSchema } from "./change";
 import { pilotJournalEntrySchema } from "./journal";
 import { pilotMessageSchema } from "./message";
-import { promotionSchema } from "./promotion";
 import { pilotQuestionSchema } from "./question";
 import { pilotRequestSchema } from "./request";
 import { PILOT_RUN_OUTCOMES } from "./run";
@@ -35,12 +34,6 @@ const pilotThreadItemSchema = z.discriminatedUnion("type", [
     id: z.string(),
     at: z.date(),
     question: pilotQuestionSchema,
-  }),
-  z.object({
-    type: z.literal("promotion"),
-    id: z.string(),
-    at: z.date(),
-    promotion: promotionSchema,
   }),
   z.object({
     type: z.literal("digest"),

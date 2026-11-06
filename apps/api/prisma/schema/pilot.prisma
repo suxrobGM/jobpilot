@@ -86,7 +86,6 @@ enum PilotSubjectType {
   question
   networking
   inbox
-  promotion
   application
   email
   board
@@ -99,40 +98,28 @@ enum PilotSubjectType {
   @@map("pilot_subject_type")
 }
 
-enum PromotionStatus {
-  draft
-  approved
-  declined
-  posted
-  failed
-  skipped
-  expired
-
-  @@map("promotion_status")
-}
-
 model PilotState {
-  userId                String    @id @map("user_id") @db.Uuid
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String    @id @map("user_id") @db.Uuid
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Autonomous work runs only while on; requests, chat and answered questions always run.
-  autopilot             Boolean   @default(false)
+  autopilot         Boolean   @default(false)
   // Set when autopilot turns on; `cap.unused` waits for a week of it.
-  autopilotSince        DateTime? @map("autopilot_since") @db.Timestamptz(3)
-  goals                 String    @default("")
+  autopilotSince    DateTime? @map("autopilot_since") @db.Timestamptz(3)
+  goals             String    @default("")
   // Rules and settings; `pilotConfigSchema` parses it.
-  config                Json      @default("{}")
-  goalsUpdatedAt        DateTime? @map("goals_updated_at") @db.Timestamptz(3)
-  taskListVersion       String?   @map("task_list_version")
-  taskListExpiresAt     DateTime? @map("task_list_expires_at") @db.Timestamptz(3)
-  taskListSnapshot      Json?     @map("task_list_snapshot")
-  lastCycleAt           DateTime? @map("last_cycle_at") @db.Timestamptz(3)
+  config            Json      @default("{}")
+  goalsUpdatedAt    DateTime? @map("goals_updated_at") @db.Timestamptz(3)
+  taskListVersion   String?   @map("task_list_version")
+  taskListExpiresAt DateTime? @map("task_list_expires_at") @db.Timestamptz(3)
+  taskListSnapshot  Json?     @map("task_list_snapshot")
+  lastCycleAt       DateTime? @map("last_cycle_at") @db.Timestamptz(3)
   // When the host plans its next task list check; idle checks write here, not to the journal.
-  nextWakeAt            DateTime? @map("next_wake_at") @db.Timestamptz(3)
-  cycleCount            Int       @default(0) @map("cycle_count")
+  nextWakeAt        DateTime? @map("next_wake_at") @db.Timestamptz(3)
+  cycleCount        Int       @default(0) @map("cycle_count")
   // Notice key to the ISO time it may show again.
-  dismissedNotices      Json      @default("{}") @map("dismissed_notices")
-  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  dismissedNotices  Json      @default("{}") @map("dismissed_notices")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("pilot_states")
 }
@@ -214,27 +201,9 @@ model PilotJournalEntry {
   @@map("pilot_journal_entries")
 }
 
-model PromotionPost {
-  id           String          @id @default(uuid(7)) @db.Uuid
-  userId       String          @map("user_id") @db.Uuid
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform     String
-  target       String?
-  title        String?
-  body         String
-  status       PromotionStatus @default(draft)
-  postedUrl    String?         @map("posted_url")
-  scheduledFor DateTime?       @map("scheduled_for") @db.Timestamptz(3)
-  postedAt     DateTime?       @map("posted_at") @db.Timestamptz(3)
-  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  @@index([userId, status])
-  @@index([updatedAt]) // Retention sweep.
-  @@map("promotion_posts")
-}
-
-/** An edit to goals, rules, searches, answers or jobs, applied with an inverse or proposed. */
+/**
+ * An edit to goals, rules, searches, answers or jobs, applied with an inverse or proposed.
+ */
 model PilotChange {
   id        String            @id @default(uuid(7)) @db.Uuid
   userId    String            @map("user_id") @db.Uuid
@@ -256,7 +225,9 @@ model PilotChange {
   @@map("pilot_changes")
 }
 
-/** The conversation with the pilot: the user's messages and its replies. */
+/**
+ * The conversation with the pilot: the user's messages and its replies.
+ */
 model PilotMessage {
   id        String             @id @default(uuid(7)) @db.Uuid
   userId    String             @map("user_id") @db.Uuid
@@ -273,7 +244,9 @@ model PilotMessage {
   @@map("pilot_messages")
 }
 
-/** Work the user asked for by name; it follows the run that picks it up. */
+/**
+ * Work the user asked for by name; it follows the run that picks it up.
+ */
 model PilotRequest {
   id          String             @id @default(uuid(7)) @db.Uuid
   userId      String             @map("user_id") @db.Uuid

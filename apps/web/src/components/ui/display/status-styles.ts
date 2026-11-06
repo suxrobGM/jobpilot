@@ -7,7 +7,7 @@ import type {
   CONTACT_LINKEDIN_CONNECTIONS,
   NetworkingMessageStatus,
 } from "@jobpilot/contracts/networking";
-import type { PilotQuestion, PromotionStatus } from "@jobpilot/contracts/pilot";
+import type { PilotQuestion } from "@jobpilot/contracts/pilot";
 import type { Role } from "@jobpilot/contracts/role";
 import type {
   UpworkInboxKind,
@@ -69,16 +69,6 @@ const connection: Styles<(typeof CONTACT_LINKEDIN_CONNECTIONS)[number]> = {
   none: { label: "Not connected", color: "default" },
   pending: { label: "Pending", color: "info" },
   connected: { label: "Connected", color: "success" },
-};
-
-const promotion: Styles<PromotionStatus> = {
-  draft: { label: "Draft", color: "warning" },
-  approved: { label: "Approved", color: "info" },
-  declined: { label: "Declined", color: "default" },
-  posted: { label: "Posted", color: "success" },
-  failed: { label: "Failed", color: "error" },
-  skipped: { label: "Skipped", color: "default" },
-  expired: { label: "Expired", color: "default" },
 };
 
 const classification: Styles<Classification> = {
@@ -143,7 +133,6 @@ const STATUS_STYLES = {
   job,
   networking,
   connection,
-  promotion,
   classification,
   upworkProposal,
   upworkOutcome,

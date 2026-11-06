@@ -35,8 +35,6 @@ const TASK_TYPES: Record<TaskType, TaskTypeInfo> = {
   "networking.send": { label: "Send networking message", agent: "session" },
   "networking.followup": { label: "Follow up on networking message", agent: "session" },
   "networking.warmIntro": { label: "Ask for a warm intro", agent: "networking-worker" },
-  "promotion.draft": { label: "Draft promotion post", agent: "session" },
-  "promotion.post": { label: "Publish promotion post", agent: "session" },
   "interview.reply": { label: "Reply about an interview", agent: "session" },
   "interview.prep": { label: "Prepare interview notes", agent: "session" },
   "queue.score": { label: "Score pasted links", agent: "job-scorer" },

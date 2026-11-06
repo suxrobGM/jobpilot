@@ -5,7 +5,6 @@ export * from "./job-alerts";
 export * from "./journal";
 export * from "./message";
 export * from "./notice";
-export * from "./promotion";
 export * from "./question";
 export * from "./request";
 export * from "./run";

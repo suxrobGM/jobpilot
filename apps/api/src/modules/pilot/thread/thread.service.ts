@@ -8,7 +8,6 @@ import type {
   PilotThreadItem,
   PilotThreadPage,
   PilotThreadRun,
-  Promotion,
 } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
 import {
@@ -39,7 +38,6 @@ interface ThreadSources {
   entries: PilotJournalEntryModel[];
   runs: ThreadRunRow[];
   questions: PilotQuestion[];
-  promotions: Promotion[];
   changes: PilotChange[];
   messages: PilotMessage[];
   requests: PilotRequest[];
@@ -50,9 +48,9 @@ interface TimedRun {
   startedAt: Date;
 }
 
-/** The run's line: its newest action entry is the result summary `postResult` journals. */
+/** The run's line, from entries oldest first: its newest action entry is the result summary `postResult` journals. */
 function toRunLine(run: ThreadRunRow, entries: PilotJournalEntryModel[]): TimedRun {
-  const newest = entries.reduce((a, b) => (b.createdAt > a.createdAt ? b : a));
+  const newest = entries[entries.length - 1];
   const result = entries.filter((entry) => entry.kind === "action").at(-1) ?? newest;
   return {
     startedAt: run.startedAt,
@@ -106,18 +104,13 @@ export function buildThread(sources: ThreadSources): PilotThreadItem[] {
 
   for (const row of sources.entries) {
     const run = row.runId ? runsById.get(row.runId) : undefined;
-    if (row.kind === "digest") {
-      items.push({
-        type: "digest",
-        id: row.id,
-        at: row.createdAt,
-        entry: toJournalEntry(row, new Map()),
-      });
-    } else if (run) {
-      entriesByRun.set(run, [...(entriesByRun.get(run) ?? []), row]);
+    if (run && row.kind !== "digest") {
+      const entries = entriesByRun.get(run);
+      if (entries) entries.push(row);
+      else entriesByRun.set(run, [row]);
     } else {
       items.push({
-        type: "note",
+        type: row.kind === "digest" ? "digest" : "note",
         id: row.id,
         at: row.createdAt,
         entry: toJournalEntry(row, new Map()),
@@ -142,9 +135,6 @@ export function buildThread(sources: ThreadSources): PilotThreadItem[] {
   for (const change of sources.changes) {
     items.push({ type: "change", id: change.id, at: change.createdAt, change });
   }
-  for (const promotion of sources.promotions) {
-    items.push({ type: "promotion", id: promotion.id, at: promotion.createdAt, promotion });
-  }
   return items.sort((a, b) => b.at.getTime() - a.at.getTime());
 }
 
@@ -157,24 +147,34 @@ export class PilotThreadService {
     cursor: string | undefined,
     limit: number,
   ): Promise<PilotThreadPage> {
-    const rows = await this.prisma.pilotJournalEntry.findMany({
-      where: { userId, kind: { in: THREAD_KINDS } },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: limit + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    });
+    const [rows, cursorRow] = await Promise.all([
+      this.prisma.pilotJournalEntry.findMany({
+        where: { userId, kind: { in: THREAD_KINDS } },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: limit + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      cursor
+        ? this.prisma.pilotJournalEntry.findFirst({
+            where: { id: cursor, userId },
+            select: { createdAt: true },
+          })
+        : null,
+    ]);
     const { items: entries, nextCursor } = cursorPage(rows, limit);
 
     // The page's span: older than the previous page's last entry, back to this page's oldest.
-    const upper = cursor
-      ? (await this.prisma.pilotJournalEntry.findFirst({ where: { id: cursor, userId } }))
-          ?.createdAt
-      : undefined;
+    const upper = cursorRow?.createdAt;
     const lower = nextCursor ? entries.at(-1)?.createdAt : undefined;
     const createdAt = { lt: upper, gte: lower };
+    const sideRows = {
+      where: { userId, createdAt },
+      orderBy: { createdAt: "desc" as const },
+      take: SIDE_ROWS_CAP,
+    };
     const runIds = [...new Set(entries.flatMap((entry) => (entry.runId ? [entry.runId] : [])))];
 
-    const [runs, questions, promotions, changes, messages, requests] = await Promise.all([
+    const [runs, questions, changes, messages, requests] = await Promise.all([
       runIds.length === 0
         ? []
         : this.prisma.pilotRun.findMany({
@@ -190,38 +190,16 @@ export class PilotThreadService {
               finishedAt: true,
             },
           }),
-      this.prisma.pilotQuestion.findMany({
-        where: { userId, createdAt },
-        orderBy: { createdAt: "desc" },
-        take: SIDE_ROWS_CAP,
-      }),
-      this.prisma.promotionPost.findMany({
-        where: { userId, createdAt },
-        orderBy: { createdAt: "desc" },
-        take: SIDE_ROWS_CAP,
-      }),
-      this.prisma.pilotChange.findMany({
-        where: { userId, createdAt },
-        orderBy: { createdAt: "desc" },
-        take: SIDE_ROWS_CAP,
-      }),
-      this.prisma.pilotMessage.findMany({
-        where: { userId, createdAt },
-        orderBy: { createdAt: "desc" },
-        take: SIDE_ROWS_CAP,
-      }),
-      this.prisma.pilotRequest.findMany({
-        where: { userId, createdAt },
-        orderBy: { createdAt: "desc" },
-        take: SIDE_ROWS_CAP,
-      }),
+      this.prisma.pilotQuestion.findMany(sideRows),
+      this.prisma.pilotChange.findMany(sideRows),
+      this.prisma.pilotMessage.findMany(sideRows),
+      this.prisma.pilotRequest.findMany(sideRows),
     ]);
 
     const items = buildThread({
       entries,
       runs,
       questions: questions.map(toPilotQuestion),
-      promotions,
       changes: changes.map((row) => toPilotChange(row)),
       messages,
       requests: requests.map(toPilotRequest),

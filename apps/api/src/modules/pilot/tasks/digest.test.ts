@@ -22,7 +22,6 @@ describe("TaskListService morning digest", () => {
         jobsSkipped: 2,
         networkingSent: 4,
         networkingReplies: 1,
-        promotionsPosted: 1,
       },
       MORNING,
       5,
@@ -39,7 +38,6 @@ describe("TaskListService morning digest", () => {
       openQuestions: 5,
       networkingSent: 4,
       networkingReplies: 1,
-      promotionsPosted: 1,
     });
     expect(rec.pushes[0]?.payload).toMatchObject({
       title: "Your Pilot's morning digest",

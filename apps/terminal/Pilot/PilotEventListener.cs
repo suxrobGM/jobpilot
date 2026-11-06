@@ -6,10 +6,7 @@ using Microsoft.Extensions.Hosting;
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>The event type is in the JSON, not the SSE event name.</summary>
-internal sealed record PilotEvent(
-    string? Type, PilotEventPromotion? Promotion, string? RunId = null, string? Outcome = null, string? Text = null);
-
-internal sealed record PilotEventPromotion(string? Status);
+internal sealed record PilotEvent(string? Type, string? RunId = null, string? Outcome = null, string? Text = null);
 
 /// <summary>What the listener hands on: a wake, a finished run, and the user's interrupt or steer of a run.</summary>
 public sealed record PilotEventHandlers(
@@ -32,7 +29,6 @@ public sealed class PilotEventListener(
     internal static bool ShouldWake(PilotEvent e) => e.Type switch
     {
         "question.answered" or "state.changed" or "message.created" or "request.created" => true,
-        "promotion.updated" => e.Promotion?.Status == "approved",
         _ => false,
     };
 

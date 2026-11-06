@@ -49,7 +49,6 @@ export interface Over {
   feedQuestions?: { subjectId: string; status: string; answeredAt: Date | null }[];
   queuedFeeds?: Row[];
   boardDiagnoseJobs?: Row[];
-  platformPosts?: { platform: string; createdAt: Date }[];
   interviewReplyApps?: Row[];
   interviewPrepApps?: Row[];
   interviewQuestions?: { subjectId: string }[];
@@ -65,7 +64,6 @@ export interface Over {
   jobsSkipped?: number;
   networkingSent?: number;
   networkingReplies?: number;
-  promotionsPosted?: number;
 }
 
 function fakePilotRun(over: Over) {
@@ -181,15 +179,6 @@ function makeTaskListDb(over: Over = {}) {
       groupBy: async () => [],
       count: async (a: { where: Row }) =>
         "repliedAt" in a.where ? (over.networkingReplies ?? 0) : (over.networkingSent ?? 0),
-    },
-    promotionPost: {
-      findMany: async () => [],
-      groupBy: async () =>
-        (over.platformPosts ?? []).map((post) => ({
-          platform: post.platform,
-          _max: { createdAt: post.createdAt },
-        })),
-      count: async () => over.promotionsPosted ?? 0,
     },
     // Only the job-alert gather filters on `importedAt`; the inbox gather sees no mail.
     emailMessage: {

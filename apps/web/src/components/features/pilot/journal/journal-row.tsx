@@ -43,7 +43,6 @@ export function DigestCounts(props: DigestCountsProps): ReactElement {
     `${detailCount(detail, "applicationsCreated")} applied`,
     `${detailCount(detail, "jobsFailed") + detailCount(detail, "jobsSkipped")} not applied`,
     `${detailCount(detail, "networkingSent")} networking (${detailCount(detail, "networkingReplies")} replies)`,
-    `${detailCount(detail, "promotionsPosted")} posts`,
     `${detailCount(detail, "openQuestions")} open`,
   ];
   return <Typography variant="captionMuted">{parts.join(" · ")}</Typography>;

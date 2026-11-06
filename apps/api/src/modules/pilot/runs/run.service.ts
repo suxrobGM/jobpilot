@@ -29,7 +29,6 @@ import { publishRequest } from "../requests/request.service";
 import { finishRequests } from "../requests/request-row";
 import {
   networkingSendWhere,
-  promotionPostWhere,
   reviewPausedWhere,
   scorePendingWhere,
 } from "../tasks/gather/workable";
@@ -50,18 +49,11 @@ async function assertStillStartable(
   tx: Prisma.TransactionClient,
   userId: string,
   task: PilotTask,
-  now: Date,
 ): Promise<void> {
   const { subjectId } = task;
   let remaining: number;
   let gone: string;
   switch (task.taskType) {
-    case "promotion.post":
-      remaining = await tx.promotionPost.count({
-        where: { id: subjectId, ...promotionPostWhere(userId, now) },
-      });
-      gone = "Promotion post is no longer ready to post.";
-      break;
     case "networking.send":
       remaining = await tx.networkingMessage.count({
         where: { id: subjectId, ...networkingSendWhere(userId) },
@@ -148,7 +140,7 @@ export class RunService {
     });
     if (open) throw conflict("This task is already started.", ErrorCodes.PILOT_CONFLICT);
 
-    await assertStillStartable(tx, userId, task, now);
+    await assertStillStartable(tx, userId, task);
     const startedJob =
       task.taskType === "job.apply"
         ? await startApplying(tx, userId, task.payload.feedId, task.payload.jobKey)

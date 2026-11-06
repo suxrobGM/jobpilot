@@ -86,7 +86,7 @@ preferCapExempt). Resumes = `resumes` or `GET
 /api/resumes`.
 
 **Growing lists are paginated** - `applied`, `feeds` (+ `/jobs`, `/networking`),
-`email/messages`, `contacts`, `cover-letters`, `upwork/proposals`, `pilot/promotions`. They answer
+`email/messages`, `contacts`, `cover-letters`, `upwork/proposals`. They answer
 `{items, pagination:{page,limit,total,totalPages}}` and take `?page=&limit=` (1-based, max 100):
 read `.items`, page on while `page < totalPages`. Short lists are bare arrays - `resumes`,
 `credentials`, `job-boards`, `pilot/questions`.

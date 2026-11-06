@@ -119,11 +119,6 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
     subjectId: () => "inbox",
     title: (p) => (p.lastSyncedAt ? "Refresh the Upwork inbox" : "Pull the Upwork inbox"),
   },
-  "promotion.post": {
-    priority: 600,
-    subjectId: (p) => p.promotionId,
-    title: (p) => `Post to ${p.platform}`,
-  },
   "networking.warmIntro": {
     priority: 550,
     subjectId: (p) => jobSubjectId({ feedId: p.feedId, key: p.jobKey }),
@@ -167,12 +162,6 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
     priority: 350,
     subjectId: (p) => p.feedId,
     title: (p) => `Tune a search: ${p.query}`,
-    perList: 1,
-  },
-  "promotion.draft": {
-    priority: 300,
-    subjectId: (p) => `platform:${p.platform}`,
-    title: (p) => `Draft post: ${p.platform}`,
     perList: 1,
   },
   "job.rescanSkipped": {

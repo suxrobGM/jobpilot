@@ -17,13 +17,6 @@ export const settingsFormSchema = z.object({
     dailyCap: z.number().int().min(0),
     followupDays: z.number().int().min(0),
   }),
-  promotionPlatforms: z.array(
-    z.object({
-      platform: z.string().min(1, "Required"),
-      target: z.string(),
-      postEveryDays: z.number().min(1),
-    }),
-  ),
 });
 
 export type SettingsFormValues = z.infer<typeof settingsFormSchema>;
@@ -32,21 +25,12 @@ export type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 export const SETTINGS_FORM_DEFAULTS: SettingsFormValues = {
   checkIntervalMinutes: 30,
   networking: pilotNetworkingSchema.parse({}),
-  promotionPlatforms: [],
 };
 
 export function toSettings(value: SettingsFormValues): UpdatePilotSettingsInput {
   return {
     checkIntervalMinutes: value.checkIntervalMinutes,
     networking: value.networking,
-    promotion: {
-      platforms: value.promotionPlatforms.map((p) => ({
-        platform: p.platform.trim(),
-        target: p.target.trim() || undefined,
-        postEveryDays: p.postEveryDays,
-      })),
-      autonomy: "review",
-    },
   };
 }
 
@@ -55,10 +39,5 @@ export function toFormValues(state: PilotState): SettingsFormValues {
   return {
     checkIntervalMinutes: c.checkIntervalMinutes,
     networking: { ...c.networking },
-    promotionPlatforms: c.promotion.platforms.map((p) => ({
-      platform: p.platform,
-      target: p.target ?? "",
-      postEveryDays: p.postEveryDays,
-    })),
   };
 }

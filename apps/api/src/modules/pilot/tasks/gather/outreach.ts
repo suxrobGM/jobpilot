@@ -2,7 +2,7 @@ import type { PilotConfig, TaskPayload } from "@jobpilot/contracts/pilot";
 import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP } from "../../runs/run-history";
-import { networkingSendWhere, promotionPostWhere } from "./workable";
+import { networkingSendWhere } from "./workable";
 
 /** The build step adds the channel and mode, which come from config rather than the row. */
 export type Followup = Omit<TaskPayload<"networking.followup">, "channel" | "autonomy">;
@@ -94,46 +94,4 @@ export async function gatherFollowups(
       },
     ];
   });
-}
-
-export async function gatherApprovedPromotions(
-  prisma: PrismaClient,
-  userId: string,
-  now: Date,
-): Promise<TaskPayload<"promotion.post">[]> {
-  const rows = await prisma.promotionPost.findMany({
-    where: promotionPostWhere(userId, now),
-    orderBy: { createdAt: "asc" },
-    select: { id: true, platform: true, target: true, title: true, body: true },
-  });
-  return rows.map(({ id, ...post }) => ({ ...post, promotionId: id }));
-}
-
-/** Platforms whose newest non-declined post is older than their cadence, or which have none yet. */
-export async function gatherDuePlatforms(
-  prisma: PrismaClient,
-  userId: string,
-  config: PilotConfig,
-  now: Date,
-): Promise<TaskPayload<"promotion.draft">[]> {
-  const { platforms } = config.promotion;
-  if (platforms.length === 0) return [];
-
-  const posts = await prisma.promotionPost.groupBy({
-    by: ["platform"],
-    where: {
-      userId,
-      status: { not: "declined" },
-      platform: { in: platforms.map((p) => p.platform) },
-    },
-    _max: { createdAt: true },
-  });
-  const newestByPlatform = new Map(posts.map((post) => [post.platform, post._max.createdAt]));
-
-  return platforms
-    .filter(({ platform, postEveryDays }) => {
-      const newest = newestByPlatform.get(platform);
-      return !newest || now.getTime() - newest.getTime() >= postEveryDays * DAY_MS;
-    })
-    .map(({ platform, target }) => ({ platform, target }));
 }

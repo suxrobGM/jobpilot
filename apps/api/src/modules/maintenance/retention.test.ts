@@ -32,7 +32,6 @@ const RETENTION_BY_MODEL = {
   PilotRun: ["runs", "discoveryRuns"],
   PilotQuestion: ["questions"],
   PilotJournalEntry: ["journalEntries", "digests"],
-  PromotionPost: ["promotionPosts"],
   PilotChange: ["staleProposals", "decidedChanges"],
   PilotMessage: ["messages"],
   PilotRequest: ["requests"],
@@ -90,9 +89,6 @@ describe("retention", () => {
     expect(where.decidedChanges).toContain('"decidedAt"');
     expect(where.questions).not.toContain('"open"');
     expect(where.questions).toContain('"notIn":["email","feed"]');
-    for (const kept of ["draft", "approved", "posted"]) {
-      expect(where.promotionPosts).not.toContain(`"${kept}"`);
-    }
     expect(where.emailBodies).toContain('"scannedAt":{"not":null}');
     for (const live of ["applied", "screening", "interviewing", "offer"]) {
       expect(where.applicationEvents).not.toContain(`"${live}"`);

@@ -52,8 +52,6 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   upworkSync: null,
   approvedNetworking: [],
   followups: [],
-  approvedPromotions: [],
-  duePlatforms: [],
   feedTunes: [],
   rescanSkipped: [],
   retryFailed: [],

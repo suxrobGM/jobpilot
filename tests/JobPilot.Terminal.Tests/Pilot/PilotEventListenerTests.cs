@@ -12,8 +12,6 @@ public sealed class PilotEventListenerTests
     [Theory]
     [InlineData("""{"type":"question.answered","question":{}}""", true)]
     [InlineData("""{"type":"state.changed","state":{}}""", true)]
-    [InlineData("""{"type":"promotion.updated","promotion":{"status":"approved"}}""", true)]
-    [InlineData("""{"type":"promotion.updated","promotion":{"status":"draft"}}""", false)]
     [InlineData("""{"type":"journal.appended","entry":{}}""", false)]
     [InlineData("""{"type":"question.created","question":{}}""", false)]
     [InlineData("""{"type":"message.created","message":{}}""", true)]

@@ -19,18 +19,6 @@ export const pilotNetworkingSchema = z.object({
   followupDays: z.number().int().min(0).default(5),
 });
 
-const pilotPromotionPlatformSchema = z.object({
-  platform: z.string().min(1),
-  target: z.string().optional(),
-  postEveryDays: z.number().int().min(1).default(30),
-});
-
-/** Review-only: auto-posting is deliberately not offered. */
-const pilotPromotionConfigSchema = z.object({
-  platforms: z.array(pilotPromotionPlatformSchema).default([]),
-  autonomy: z.literal("review").default("review"),
-});
-
 /** What the pilot may apply to; edited through changes. */
 const pilotRulesSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
@@ -47,7 +35,6 @@ const pilotSettingsSchema = z.object({
   checkIntervalMinutes: z.number().int().min(5).default(30),
   // `prefault`, not `default`: a missing key is parsed as `{}` so every nested field defaults too.
   networking: pilotNetworkingSchema.prefault({}),
-  promotion: pilotPromotionConfigSchema.prefault({}),
   jobAlerts: pilotJobAlertsSchema.prefault({}),
 });
 
@@ -63,7 +50,6 @@ export const updatePilotSettingsSchema = z
     boards: settings.boards.unwrap(),
     checkIntervalMinutes: settings.checkIntervalMinutes.unwrap(),
     networking: settings.networking.unwrap(),
-    promotion: settings.promotion.unwrap(),
   })
   .partial();
 
@@ -89,7 +75,7 @@ export const pilotStateSchema = z.object({
 });
 
 export type PilotConfig = z.infer<typeof pilotConfigSchema>;
-export const setAutopilotSchema = z.object({ on: z.boolean() });
+export const setAutopilotSchema = z.object({ enabled: z.boolean() });
 
 export type UpdatePilotSettingsInput = z.infer<typeof updatePilotSettingsSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;

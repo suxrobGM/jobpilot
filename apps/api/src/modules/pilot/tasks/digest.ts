@@ -37,31 +37,23 @@ export async function writeDigestIfDue(
       if (written > 0) return;
 
       const since = new Date(now.getTime() - DAY_MS);
-      const [
-        applicationsCreated,
-        jobsFailed,
-        jobsSkipped,
-        networkingSent,
-        networkingReplies,
-        promotionsPosted,
-      ] = await Promise.all([
-        tx.application.count({ where: { userId, appliedAt: { gte: since } } }),
-        tx.job.count({
-          where: { status: "failed", userId, createdAt: { gte: since } },
-        }),
-        tx.job.count({
-          where: { status: "skipped", userId, createdAt: { gte: since } },
-        }),
-        tx.networkingMessage.count({ where: { userId, sentAt: { gte: since } } }),
-        tx.networkingMessage.count({ where: { userId, repliedAt: { gte: since } } }),
-        tx.promotionPost.count({ where: { userId, status: "posted", postedAt: { gte: since } } }),
-      ]);
+      const [applicationsCreated, jobsFailed, jobsSkipped, networkingSent, networkingReplies] =
+        await Promise.all([
+          tx.application.count({ where: { userId, appliedAt: { gte: since } } }),
+          tx.job.count({
+            where: { status: "failed", userId, createdAt: { gte: since } },
+          }),
+          tx.job.count({
+            where: { status: "skipped", userId, createdAt: { gte: since } },
+          }),
+          tx.networkingMessage.count({ where: { userId, sentAt: { gte: since } } }),
+          tx.networkingMessage.count({ where: { userId, repliedAt: { gte: since } } }),
+        ]);
 
       const summary = `Last 24h: ${[
         plural(applicationsCreated, "application", "applications"),
         `${jobsFailed + jobsSkipped} not applied`,
         `${networkingSent} networking sent (${plural(networkingReplies, "reply", "replies")})`,
-        `${plural(promotionsPosted, "post", "posts")} published`,
         plural(openQuestions, "open question", "open questions"),
       ].join(", ")}.`;
       const detail = {
@@ -71,7 +63,6 @@ export async function writeDigestIfDue(
         openQuestions,
         networkingSent,
         networkingReplies,
-        promotionsPosted,
       };
       await journal.appendJournal(userId, { entries: [{ kind: "digest", summary, detail }] });
       void push.sendToUser(userId, {

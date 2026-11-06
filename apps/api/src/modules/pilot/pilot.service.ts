@@ -35,7 +35,7 @@ export class PilotService {
       userId: row.userId,
       autopilot: row.autopilot,
       goals: row.goals,
-      config: config,
+      config,
       goalsUpdatedAt: row.goalsUpdatedAt,
       lastCycleAt: row.lastCycleAt,
       nextWakeAt: row.nextWakeAt,
@@ -56,14 +56,6 @@ export class PilotService {
     return state;
   }
 
-  private async readGoals(userId: string): Promise<string> {
-    const row = await this.prisma.pilotState.findUnique({
-      where: { userId },
-      select: { goals: true },
-    });
-    return row?.goals ?? "";
-  }
-
   /** Every profile has exactly one state row, created with defaults on first read. */
   async getState(userId: string) {
     const row = await this.prisma.pilotState.upsert({
@@ -74,41 +66,41 @@ export class PilotService {
     return this.toState(row);
   }
 
-  /** Settings outside goals and rules; the pilot reads them live, so nothing else moves. */
+  /** Settings outside goals and rules; a change rebuilds the task list. */
   async updateSettings(userId: string, body: UpdatePilotSettingsInput) {
     const saved = await this.prisma.pilotState.findUnique({
       where: { userId },
       select: { config: true },
     });
     const config = pilotConfigSchema.parse(saved?.config ?? {});
-    const instructions = {
+    const data = {
       config: toInputJson({ ...config, ...body }),
       goalsUpdatedAt: new Date(),
       ...TASK_LIST_SNAPSHOT_RESET,
     };
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
-      create: { userId, ...instructions },
-      update: instructions,
+      create: { userId, ...data },
+      update: data,
     });
     return this.publishState(row);
   }
 
   /** Autopilot gates only autonomous work; it needs goals to have anything to work toward. */
-  async setAutopilot(userId: string, on: boolean) {
-    if (on && (await this.readGoals(userId)).trim() === "") {
-      throw conflict("Write the pilot's goals before turning on autopilot.");
-    }
+  async setAutopilot(userId: string, enabled: boolean) {
     const saved = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { autopilotSince: true },
+      select: { goals: true, autopilotSince: true },
     });
+    if (enabled && (saved?.goals ?? "").trim() === "") {
+      throw conflict("Write the pilot's goals before turning on autopilot.");
+    }
     // Turning it on again keeps the original start.
-    const autopilotSince = on ? (saved?.autopilotSince ?? new Date()) : null;
+    const autopilotSince = enabled ? (saved?.autopilotSince ?? new Date()) : null;
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
-      create: { userId, autopilot: on, autopilotSince },
-      update: { autopilot: on, autopilotSince, ...TASK_LIST_SNAPSHOT_RESET },
+      create: { userId, autopilot: enabled, autopilotSince },
+      update: { autopilot: enabled, autopilotSince, ...TASK_LIST_SNAPSHOT_RESET },
     });
     return this.publishState(row);
   }

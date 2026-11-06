@@ -18,7 +18,6 @@ import { CheckIntervalSection } from "./check-interval-section";
 import { settingsFormSchema, toFormValues, toSettings } from "./form-schema";
 import { JobAlertsSetting } from "./job-alerts-setting";
 import { NetworkingSection } from "./networking-section";
-import { PlatformsSection } from "./platforms-section";
 import { ResearchSection } from "./research-section";
 
 const ANCHORS: SectionAnchor[] = [
@@ -26,7 +25,6 @@ const ANCHORS: SectionAnchor[] = [
   { id: "job-alerts", label: "Job alerts" },
   { id: "research", label: "Research" },
   { id: "networking", label: "Networking" },
-  { id: "platforms", label: "Platforms" },
 ];
 
 export function PilotSettingsForm(): ReactElement {
@@ -105,9 +103,6 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
           </Box>
           <Box data-section-id="networking">
             <NetworkingSection form={form} />
-          </Box>
-          <Box data-section-id="platforms">
-            <PlatformsSection form={form} />
           </Box>
         </Stack>
       </SectionCard>

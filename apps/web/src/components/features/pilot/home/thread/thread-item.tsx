@@ -2,7 +2,6 @@
 
 import type { ReactElement } from "react";
 import type { PilotThreadItem } from "@jobpilot/contracts/pilot";
-import { PromotionDraftCard, PromotionSummary } from "../../attention/promotion-card";
 import { QuestionCard } from "../../attention/question-card";
 import { ChangeCard } from "../../changes/change-card";
 import { AskedRow } from "./asked-row";
@@ -26,12 +25,6 @@ export function ThreadItem(props: ThreadItemProps): ReactElement {
         <QuestionCard question={item.question} />
       ) : (
         <AskedRow question={item.question} />
-      );
-    case "promotion":
-      return item.promotion.status === "draft" ? (
-        <PromotionDraftCard promotion={item.promotion} />
-      ) : (
-        <PromotionSummary promotion={item.promotion} />
       );
     case "message":
       return <MessageBubble message={item.message} />;

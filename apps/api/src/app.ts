@@ -45,7 +45,6 @@ import { pilotJournalController } from "@/modules/pilot/thread/journal.controlle
 import { pilotThreadController } from "@/modules/pilot/thread/thread.controller";
 import { pipelineController } from "@/modules/pipeline/pipeline.controller";
 import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
-import { promotionController } from "@/modules/promotion/promotion.controller";
 import { publicResumeController, resumeController } from "@/modules/resume/resume.controller";
 import { resumeVariantController } from "@/modules/resume/variants/variant.controller";
 import { scoringController } from "@/modules/scoring/scoring.controller";
@@ -109,7 +108,6 @@ const app = new Elysia()
       .use(pipelineController)
       .use(pilotQuestionsController)
       .use(profileAnswersController)
-      .use(promotionController)
       .use(webPushController)
       .use(workspaceController)
       .use(emailAccountController)

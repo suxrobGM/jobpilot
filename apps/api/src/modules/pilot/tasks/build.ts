@@ -60,8 +60,6 @@ export interface TaskListInput {
   upworkSync: TaskPayload<"upwork.syncInbox"> | null;
   approvedNetworking: TaskPayload<"networking.send">[];
   followups: Followup[];
-  approvedPromotions: TaskPayload<"promotion.post">[];
-  duePlatforms: TaskPayload<"promotion.draft">[];
   feedTunes: TaskPayload<"search.tune">[];
   rescanSkipped: TaskPayload<"job.rescanSkipped">[];
   retryFailed: TaskPayload<"job.retryFailed">[];
@@ -114,11 +112,7 @@ function warmIntroPayload(job: TaskJob, mode: NetworkingMode): TaskPayload<"netw
 
 /** The user's own asks: they run with autopilot off. */
 function userDrivenTasks(input: TaskListInput): PilotTask[] {
-  const tasks = [
-    ...input.requests,
-    ...makeTasks("question.answered", input.answeredQuestions),
-    ...makeTasks("promotion.post", input.approvedPromotions),
-  ];
+  const tasks = [...input.requests, ...makeTasks("question.answered", input.answeredQuestions)];
   if (input.chat) tasks.push(input.chat);
   return tasks;
 }
@@ -157,8 +151,6 @@ function autonomousTasks(input: TaskListInput): PilotTask[] {
     ...makeTasks("interview.reply", input.interviewReplies),
     ...makeTasks("interview.prep", input.interviewPreps),
     ...makeTasks("queue.score", input.queueScores),
-    ...makeTasks("promotion.post", input.approvedPromotions),
-    ...makeTasks("promotion.draft", input.duePlatforms),
   ];
   if (!capReached) {
     tasks.push(...input.approvedJobs.map((job) => applyTask(job, input.preferCapExempt)));

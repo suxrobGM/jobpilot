@@ -42,7 +42,6 @@ function thread(entries: PilotJournalEntry[], runs: ReturnType<typeof run>[]) {
     entries,
     runs,
     questions: [],
-    promotions: [],
     changes: [],
     messages: [],
     requests: [],

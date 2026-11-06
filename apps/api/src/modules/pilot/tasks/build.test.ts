@@ -60,24 +60,18 @@ describe("buildTaskList ranking", () => {
     const taskList = buildTaskList(
       base({
         approvedNetworking: [send("m1")],
-        approvedPromotions: [
-          { promotionId: "p1", platform: "hn", target: null, title: null, body: "b" },
-        ],
         warmIntroCandidates: [hotJob("j1", 90)],
         scorePending: [scorePending("c1")],
         dueQueries: [dueQuery("golang")],
         followups: [followup("f1")],
-        duePlatforms: [{ platform: "reddit" }],
       }),
     );
     expect(taskTypes(taskList)).toEqual([
       "networking.send",
-      "promotion.post",
       "networking.warmIntro",
       "feed.score",
       "search.discover",
       "networking.followup",
-      "promotion.draft",
     ]);
   });
 
@@ -171,13 +165,11 @@ describe("buildTaskList gating", () => {
       base({
         warmIntroCandidates: [hotJob("j1", 90), hotJob("j2", 88)],
         followups: [followup("f1"), followup("f2"), followup("f3")],
-        duePlatforms: [{ platform: "hn" }, { platform: "reddit" }],
         feedTunes: [tune("c1"), tune("c2")],
       }),
     );
     expect(countTasks(quiet, "networking.warmIntro")).toBe(1);
     expect(countTasks(quiet, "networking.followup")).toBe(2);
-    expect(countTasks(quiet, "promotion.draft")).toBe(1);
     expect(countTasks(quiet, "search.tune")).toBe(1);
   });
 });

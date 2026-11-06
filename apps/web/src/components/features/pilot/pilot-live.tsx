@@ -15,7 +15,6 @@ const RUN_KEYS = [STATE_KEY, pilotQueries.jobAlerts().queryKey, pilotQueries.res
 const RECONNECT_KEYS = [
   STATE_KEY,
   pilotQueries.questionsAll,
-  pilotQueries.promotionsAll,
   pilotQueries.changesAll,
   pilotQueries.searches().queryKey,
   pilotQueries.notices().queryKey,
@@ -49,8 +48,6 @@ export function PilotLive(): ReactNode {
       },
       "question.created": () => invalidate([pilotQueries.questionsAll]),
       "question.answered": () => invalidate([pilotQueries.questionsAll]),
-      "promotion.created": () => invalidate([pilotQueries.promotionsAll]),
-      "promotion.updated": () => invalidate([pilotQueries.promotionsAll]),
       "run.steps": (event) => appendRunSteps(queryClient, event.runId, event.steps),
       "message.created": () => refetchThread(queryClient),
       "request.created": () => refetchThread(queryClient),

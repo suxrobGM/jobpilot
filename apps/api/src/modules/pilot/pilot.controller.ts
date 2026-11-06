@@ -37,10 +37,10 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Update pilot settings",
       description:
-        "Patches boards, check interval, networking and promotion. Goals and rules change through /pilot/changes; job alerts through their own route.",
+        "Patches boards, check interval and networking. Goals and rules change through /pilot/changes; job alerts through their own route.",
     },
   })
-  .put("/autopilot", ({ user, body }) => pilot.setAutopilot(user.id, body.on), {
+  .put("/autopilot", ({ user, body }) => pilot.setAutopilot(user.id, body.enabled), {
     body: setAutopilotSchema,
     beforeHandle: limitMutation,
     response: pilotStateSchema,

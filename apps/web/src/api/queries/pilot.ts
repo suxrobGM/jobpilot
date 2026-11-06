@@ -1,21 +1,14 @@
-import { DEFAULT_CURSOR_PAGE_SIZE, type PaginationQuery } from "@jobpilot/contracts/pagination";
-import type {
-  PilotChange,
-  PilotJournalKind,
-  PilotQuestionStatus,
-  PromotionStatus,
-} from "@jobpilot/contracts/pilot";
+import { DEFAULT_CURSOR_PAGE_SIZE } from "@jobpilot/contracts/pagination";
+import type { PilotChange, PilotJournalKind, PilotQuestionStatus } from "@jobpilot/contracts/pilot";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { unwrap } from "@/api/error";
-import { FULL_PAGE } from "./shared";
 
 const PILOT = ["pilot"] as const;
 const JOURNAL = [...PILOT, "journal"] as const;
 const THREAD = [...PILOT, "thread"] as const;
 const CHANGES = [...PILOT, "changes"] as const;
 const QUESTIONS = [...PILOT, "questions"] as const;
-const PROMOTIONS = [...PILOT, "promotions"] as const;
 const PUSH = [...PILOT, "push"] as const;
 
 function requestJournalPage(kinds: PilotJournalKind[], cursor: string | null) {
@@ -34,7 +27,6 @@ export const pilotQueries = {
   threadAll: THREAD,
   changesAll: CHANGES,
   questionsAll: QUESTIONS,
-  promotionsAll: PROMOTIONS,
   pushAll: PUSH,
   state: () =>
     queryOptions({ queryKey: [...PILOT, "state"], queryFn: () => unwrap(api.pilot.get()) }),
@@ -115,12 +107,6 @@ export const pilotQueries = {
     queryOptions({
       queryKey: [...QUESTIONS, { status: status ?? "all" }],
       queryFn: () => unwrap(api.pilot.questions.get({ query: status ? { status } : {} })),
-    }),
-  promotions: (status?: PromotionStatus, page: PaginationQuery = FULL_PAGE) =>
-    queryOptions({
-      queryKey: [...PROMOTIONS, { status: status ?? "all", ...page }],
-      queryFn: () =>
-        unwrap(api.pilot.promotions.get({ query: { ...page, ...(status && { status }) } })),
     }),
   vapidKey: () =>
     queryOptions({
