@@ -154,50 +154,48 @@ not the profile's `autoApply`.
 
 ## Phase 4: Feeds replace searches and campaigns (API + web + plugin + host)
 
-**Schema** (one migration, dry-run twice)
+Ships with Phase 5's skill changes: the route renames and the end of per-run campaigns break
+every skill that creates or completes a campaign, so both land together.
 
-- `feeds`: id, user_id, kind (`feed_kind` enum), name, query (null for non-search kinds),
-  board_id, resume_id, reason, auto_apply, config jsonb, paused_at, paused_by (`actor`),
-  paused_reason, last_run_at, last_jobs_scanned, last_new_jobs, empty_runs, next_run_at,
-  created_by, created_at, updated_at. Partial unique index: one feed per (user_id, kind) where
-  kind <> 'search'; unique (user_id, query, board_id) for searches.
-- `campaign_jobs` → `jobs`, `campaign_id` → `feed_id`; unique (feed_id, key).
-- `applications.campaign_id`, `networking_messages.campaign_id` → `feed_id` (null allowed).
-- Data:
-  - Each `pilot_searches` row becomes a `search` feed (same id); its standing campaign's status
-    becomes `paused_*`.
-  - Standing feed campaigns become their feed (`job_alerts`, `research`, `links`,
-    `networking`).
-  - Other campaigns map by source: `search` on the Upwork board → `upwork`; `networking` →
-    `networking`; everything else → `manual`.
-  - Jobs that collide on (feed_id, key) keep the most advanced status; applications and
-    proposals move to the kept row.
-  - Drop `campaigns`, `pilot_searches`, `campaign_source`, `campaign_status`, `campaign_feed`.
-- Rename task types in `pilot_runs.task_type` and `pilot_requests.task_type`; rewrite payload
-  keys (`campaignId` → `feedId`, `searchId` → `feedId`); reset `task_list_snapshot`; parse every
-  run afterwards.
+**Model**
 
-**API**
+- `Feed` (`feeds`): id, user_id, kind (`feed_kind`: search, job_alerts, research, links, manual,
+  upwork, networking), name, query (search and upwork), board_id, resume_id, reason, config jsonb
+  (`minScore` override from `search.tune`), paused_at, paused_by (`actor`), paused_reason,
+  last_run_at, last_jobs_scanned, last_new_jobs, empty_runs, next_run_at, created_by, created_at,
+  updated_at. One feed per (user, kind) except `search` (partial unique index).
+- Whether the pilot applies on its own follows the kind: search, job_alerts, research and links
+  auto-promote scored jobs; manual (jobs from skills the user types), upwork (proposals) and
+  networking don't. No `autoApply` column, no `CampaignSource`, no `PROMOTABLE_SOURCES`.
+- No completion. A feed is active or paused; `finalizeIdleCampaigns`, `completedAt`, the
+  `completed`/`failed` statuses and per-run lifecycles go. `campaign.reviewPaused` → `search.review`
+  of a search the pilot or agent paused.
+- `Job` (`jobs`, was `campaign_jobs`): `feed_id`; unique (feed_id, key).
+- `applications.campaign_id`, `networking_messages.campaign_id` → `feed_id`.
 
-- `modules/feeds/` (feed controller/service, `jobs/`), replacing `modules/campaign/` and the
-  pilot search service. Routes: `GET/POST /api/feeds`, `PATCH /api/feeds/:id`,
-  `POST /api/feeds/:id/runs`, `GET/POST /api/feeds/:id/jobs`, `PATCH /api/jobs/:id`, plus the
-  job result and lookup routes under `/api/jobs`. Creating a non-search feed returns the user's
-  existing one.
-- Change actions `search.*` keep their names and operate on search feeds.
-- `pipeline.service.ts` filters by feed and drops the shadowed-job dedupe if the merge removed
-  every repeat.
+**Migration** (dry-run on the copy; check counts before and after)
 
-**Plugin**: every `/api/campaigns` call, `--campaign` flag and `campaignId` field; task files
-renamed (`feed.score.md`, `search.review.md`, `search.tune.md`); skills write to their
-kind's feed (`POST /api/feeds {kind}` returns the existing one). `plugin/bin/api.mjs` helpers.
+1. Search feeds: one per `pilot_searches` row, same id; config and pause from its open campaign.
+2. Standing feeds: the open `feed` campaign per (user, feed) keeps its id.
+3. Everything else by source and board: networking → networking; board upwork → upwork; the rest
+   → manual. Missing feeds are created per user.
+4. Jobs move to their campaign's feed. Collisions on (feed_id, key) keep the most advanced status;
+   applications and proposals re-point to the kept row first.
+5. Task types: `campaign.scorePending` + `queue.score` → `feed.score`, `campaign.reviewPaused` →
+   `search.review`, `campaign.tune` → `search.tune`; payload keys `campaignId`/`searchId` →
+   `feedId` in `pilot_runs` and `pilot_requests`; run subjects `campaign` → `feed`; reset
+   `task_list_snapshot`; parse every run after.
+6. Drop `campaigns`, `pilot_searches` and their enums.
 
-**Web**: `campaignQueries` → `feedQueries`; Pipeline **From** → **Feed** with feed names; Upwork
-reads its `upwork` feed; Networking reads its `networking` feed.
+**API**: `modules/feeds/` replaces `modules/campaign/` and `pilot/search.*`: `GET /api/feeds`,
+`POST /api/feeds {kind, …}` (returns the user's existing feed for single kinds),
+`PATCH /api/feeds/:id`, `POST /api/feeds/:id/runs`, `GET|POST /api/feeds/:id/jobs`, and
+`PATCH /api/jobs/:id`, `POST /api/jobs/:id/{result,retry,rescan}`. Pause and resume are the
+`search.pause`/`search.resume` changes; other kinds pause through `PATCH`.
 
-**Host**: the one campaign reference in `apps/terminal`.
+**Web**: `feedQueries`; Pipeline filter and column by feed name; Upwork reads the upwork feed.
 
-**Memory**: update the vocabulary memory (campaign → feed, CampaignJob → job).
+**Host**: the one campaign reference.
 
 ## Phase 5: Plugin (4,900 lines: 22 skills, 30 pilot task files, 5 agents)
 
