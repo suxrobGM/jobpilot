@@ -98,7 +98,7 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    Order unscored rows first, then scored rows highest first.
 
 5. **Feed.** Only when a posting survived step 3. This returns the "Job alerts" feed, creating
-   it the first time; read `.id` as `CID`:
+   it the first time; read `.id` as `FEED_ID`:
 
    ```bash
    jobpilot-api POST /api/feeds --data '{"kind":"job_alerts"}'
@@ -106,7 +106,7 @@ the procedure. A message that is not a job alert (a connection request, a newsle
 
    Per posting in ranked order, write `{key, title, company, location, url, board, matchScore,
    matchReason, status:"pending", brief}` to `$JOBPILOT_TEMP/<key>-job.json` and `POST
-   /api/feeds/$CID/jobs --data @...`. `board` is the posting's domain, `matchReason` names the
+   /api/feeds/$FEED_ID/jobs --data @...`. `board` is the posting's domain, `matchReason` names the
    alert it came from, `brief` is a JSON **string**, `matchScore` is omitted when unscored.
    `company` is required: when the alert names none, send `Unknown (<board domain>)`. Key rows
    `alert-<board-slug>-<posting-id-or-slug>`, shell-safe.
@@ -125,7 +125,7 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    A run that fails before this call skips it: the server re-offers the emails, and step 3 keeps the
    retry from duplicating rows.
 
-Result: `subjectType:"feed"`, `subjectId:$CID` when rows were written; otherwise keep the
+Result: `subjectType:"feed"`, `subjectId:$FEED_ID` when rows were written; otherwise keep the
 run's subject.
 
 Summary: "Imported 6 alert emails - 31 postings, 22 new (3 duplicates across boards); 9 scored

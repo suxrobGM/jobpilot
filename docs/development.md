@@ -248,9 +248,10 @@ load config:
    `GET /api/resumes/[id]/pdf`
 
 The other shared docs cover browser behavior that many skills need:
-`auth.md`, `form-filling.md`, and `browser-tips.md`. `feed-flow.md` holds
-the steps every job skill shares (the applied check, result writes,
-worker input, and rules). Skills that write text call the `humanizer` skill by
+`auth.md` and `browser-tips.md`. `feed-flow.md` holds the steps every job
+skill shares (searching through the pilot's agents, the applied check, result
+writes, worker input, and rules). `apps/api/src/plugin-links.test.ts` fails when
+a skill calls an API route or links a web page that doesn't exist. Skills that write text call the `humanizer` skill by
 name in **embedded mode**, so only the final text comes back.
 
 The resume skills form a chain, and each has one rule:

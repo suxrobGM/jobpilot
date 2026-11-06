@@ -6,7 +6,7 @@ thing the first message lacked: another proof point from the resume, a link to r
 narrower ask. No "just following up", "circling back", "bumping this", or guilt about their inbox.
 Plain ASCII, then the `humanizer` skill in embedded mode.
 
-Save it as a new draft on `channel` for `contactId` via `POST /api/feeds/$CID/networking/messages` (the
+Save it as a new draft on `channel` for `contactId` via `POST /api/feeds/$FEED_ID/networking/messages` (the
 body the `networking` skill saves); keep the returned `id` as `DRAFT_ID`. Then gate on `autonomy`:
 
 - `"auto"` → send and record it as `./networking.send.md` does, with `DRAFT_ID` as the message id.

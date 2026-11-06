@@ -1,8 +1,8 @@
 ---
 name: job-searcher
 description: >-
-  Internal board-search worker for the JobPilot pilot's search.discover task.
-  Given one query and one board, it searches, paginates, dedupes and scores each
+  Internal board-search worker for the JobPilot pilot's search.discover task
+  and the search and auto-apply skills. Given one query and one board, it searches, paginates, dedupes and scores each
   row in place, and saves pending rows to the feed in isolated context,
   returning only a compact JSON summary. Not for direct user invocation.
 tools: Bash, Read, Skill, mcp__plugin_jobpilot_playwright__*
@@ -17,7 +17,7 @@ message is that JSON and nothing else.
 ## Input
 
 `{ runId, feedId, query, board, resumeId, minScore, newJobsTarget, maxPages }`; `board` is a
-domain, absent fields are null.
+domain, absent fields are null. A null `newJobsTarget` or `maxPages` sets no limit.
 
 ## Ground rules
 
@@ -65,7 +65,7 @@ row, and handle each new row (step 3). Then load more:
 - Track rows by URL. A repeated batch means the scroll missed: retry the right container. The end is
   2 attempts in a row with no new rows.
 
-After each page, `jobpilot-api POST /api/pilot/runs/$RUN_ID/heartbeat`. Stop at `newJobs >=
+After each page, when `runId` is set, `jobpilot-api POST /api/pilot/runs/$RUN_ID/heartbeat`. Stop at `newJobs >=
 newJobsTarget`, after `maxPages` pages, or at the end (`reachedEnd: true` only then).
 
 ## 3. Each row

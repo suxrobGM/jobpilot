@@ -1,9 +1,12 @@
 # `job.apply`
 
+Payload `{feedId, jobKey, jobTitle, url, board, brief, resumeId?, matchScore, warmContacts?}`.
+`FEED_ID` is `feedId`, `KEY` is `jobKey`.
+
 Delegate one `job-applier` run with the payload's `feedId`, `jobKey`, `url`, `board`, `brief`
 and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
 
-- `applied` / `failed` / `skipped` → `POST /api/feeds/$CID/jobs/$KEY/result` in the shapes of
+- `applied` / `failed` / `skipped` → `POST /api/feeds/$FEED_ID/jobs/$KEY/result` in the shapes of
   `../../_shared/feed-flow.md` ("Terminal result writes"), passing the worker's
   `resumeId`/`resumeVariantId` through.
 - `needs_user` with `category:"payment"` → `failed`, `failReason:"Payment required"`.
@@ -25,7 +28,7 @@ and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
 
 ```bash
 jobpilot-api POST /api/pilot/questions --data @"$JOBPILOT_TEMP/question.json"
-jobpilot-api PATCH /api/feeds/$CID/jobs/$KEY --data '{"status":"needs_user"}'
+jobpilot-api PATCH /api/feeds/$FEED_ID/jobs/$KEY --data '{"status":"needs_user"}'
 ```
 
 A `two_factor` question expires after about 5 minutes and the server skips the parked job; do

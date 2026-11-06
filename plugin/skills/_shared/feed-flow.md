@@ -4,6 +4,26 @@ The blocks every feed skill shares (`apply`, `auto-apply`, `search`,
 `upwork-search`, `networking`, and the pilot's feed items). Load profile, resume, and
 credentials per `./setup.md` first; each skill states only its deltas from what's here.
 
+## Searching
+
+`search` and `auto-apply` use the pilot's agents, so a typed search finds and scores jobs the
+same way the pilot does. The caller sets `FEED_ID`, `MIN_SCORE` and `NEW_JOBS`. Without subagent
+support, follow `$JOBPILOT_SKILLS_ROOT/../agents/<agent>.md` inline.
+
+- **`--board <domain>`**: `GET /api/job-boards` must list `<domain>`, else stop with "Board
+  `<domain>` is not configured. Add it under Settings → Job boards or run again with a different
+  `--board`." Delegate one `job-searcher` run with `{runId:null, feedId:$FEED_ID, query,
+  board:<domain>, resumeId:user.primaryResumeId, minScore:$MIN_SCORE, newJobsTarget:$NEW_JOBS,
+  maxPages:null}`.
+- **`--anywhere`**: delegate one `job-researcher` run with `{runId:null, feedId:$FEED_ID,
+  goals:<query>, resumeId:user.primaryResumeId, minScore:$MIN_SCORE, approveAtOrAbove:null,
+  preferCapExempt:<GET /api/pilot → config.preferCapExempt>,
+  requiresSponsorship:user.requiresSponsorship, boards:<every domain from GET /api/job-boards>,
+  newJobsTarget:$NEW_JOBS}`.
+
+The agent dedupes against past applications, scores each job, saves it as `pending`, and returns
+a JSON summary (`newJobs`, `best`, `skipped`, `error`).
+
 ## Applied-check (dedupe before opening a tab)
 
 ```bash
@@ -24,9 +44,9 @@ Move to the next item; never retry the transition or re-write the result.
 
 ## Terminal result writes
 
-Non-terminal transitions go through `PATCH /api/feeds/$CID/jobs/<key>` (`pending` → `approved` →
+Non-terminal transitions go through `PATCH /api/feeds/$FEED_ID/jobs/<key>` (`pending` → `approved` →
 `applying`). A terminal outcome goes through ONE call - `POST
-/api/feeds/$CID/jobs/<key>/result` - which atomically updates the Job and creates the
+/api/feeds/$FEED_ID/jobs/<key>/result` - which atomically updates the Job and creates the
 Application + initial event on `applied`. Payload shapes (`appliedAt` is the current UTC time, ISO
 8601):
 
@@ -46,7 +66,7 @@ the candidate actually submitted; without it the application's Documents card ha
 ## job-applier input
 
 ```json
-{ "feedId": "<CID>", "jobKey": "<key>", "url": "<job-url>",
+{ "feedId": "<FEED_ID>", "jobKey": "<key>", "url": "<job-url>",
   "board": "<domain>", "brief": <BRIEF>, "resumeId": "<RESUME_ID>",
   "salaryExpectation": <remembered-or-null>, "preSubmitReview": <bool> }
 ```

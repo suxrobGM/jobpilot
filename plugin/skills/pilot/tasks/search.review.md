@@ -1,13 +1,13 @@
 # `search.review`
 
 Payload `{feedId, query, board, pausedAt}`: a search the pilot or agent paused. No browser, no
-worker. `GET /api/feeds/$CID` and classify the pause from `pausedReason` (else `/job-reasons`):
+worker. `GET /api/feeds/$FEED_ID` and classify the pause from `pausedReason` (else `/job-reasons`):
 missing resume, verification wall, or unknown.
 
 - Missing resume, and the file is restorable per `../../_shared/setup.md` → resume it:
 
 ```bash
-jobpilot-api PATCH /api/feeds/$CID --data '{"paused":false,"actor":"pilot"}'
+jobpilot-api PATCH /api/feeds/$FEED_ID --data '{"paused":false,"actor":"pilot"}'
 ```
 
 - Anything else → ask. Write `$JOBPILOT_TEMP/question.json` and `POST

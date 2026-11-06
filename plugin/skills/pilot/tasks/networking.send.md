@@ -5,7 +5,7 @@ Send it as the `networking` skill's Phase 4 does (`POST /api/email/outbound {to,
 record:
 
 ```bash
-jobpilot-api POST /api/feeds/$CID/networking/messages/$MSGID/result \
+jobpilot-api POST /api/feeds/$FEED_ID/networking/messages/$MSGID/result \
   --data '{"outcome":"sent","providerId":"<send providerId>","threadId":"<send threadId>"}'
 ```
 

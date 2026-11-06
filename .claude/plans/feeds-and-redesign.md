@@ -203,6 +203,11 @@ every skill that creates or completes a campaign, so both land together.
 
 ## Phase 5: Plugin (4,900 lines: 22 skills, 30 pilot task files, 5 agents)
 
+Done: `search` and `auto-apply` delegate to `job-searcher` / `job-researcher` / `job-applier`
+through `feed-flow.md` → Searching (auto-apply modes are `approved` and `retry-failed` on the
+manual feed); `form-filling.md` had no readers and went; task files all carry a Payload line;
+`CID` → `FEED_ID`; `apps/api/src/plugin-links.test.ts` checks every API call and web link.
+
 Check each overlap at the start of the phase by reading the files; delete before rewriting.
 
 Landed with Phase 4: `resume-campaign` deleted, `apply` takes one job, `campaign-flow.md` became

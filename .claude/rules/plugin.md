@@ -46,6 +46,10 @@ owns per-job variants, guarded in `apps/api/src/modules/resume/tailoring/structu
   the application in one call. Skills the user types write to their kind's feed
   (`POST /api/feeds {kind}` returns it).
 - Browser: `browser_snapshot` (with `ref` on large pages), not screenshots.
+- Every `<METHOD> /api/...` path and `$JOBPILOT_WEB/...` link must exist:
+  `apps/api/src/plugin-links.test.ts` checks them against the controllers and web pages.
+- `search` and `auto-apply` delegate to the pilot's agents (`feed-flow.md` → Searching). Keep one
+  copy of each procedure in `agents/`, never a second one in a skill.
 
 ## Humanizer
 
