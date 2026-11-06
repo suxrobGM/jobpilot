@@ -7,9 +7,11 @@ import {
   Inbox,
   Insights,
   Lightbulb,
+  Public,
   Settings,
   SmartToy,
   type SvgIconComponent,
+  TravelExplore,
   ViewKanban,
 } from "@mui/icons-material";
 import type { Route } from "next";
@@ -49,6 +51,8 @@ export const NAV_GROUPS: NavGroup[] = [
         // Document detail routes live outside /documents.
         matchHrefs: ["/resumes", "/cover-letters"],
       },
+      { label: "Portfolio", href: "/portfolio", icon: Public },
+      { label: "Job boards", href: "/boards", icon: TravelExplore },
     ],
   },
   {

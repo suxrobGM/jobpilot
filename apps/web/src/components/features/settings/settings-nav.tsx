@@ -28,7 +28,6 @@ const GROUPS: SettingsGroup[] = [
     label: "Pilot",
     links: [
       { label: "Behavior", href: "/settings/pilot" },
-      { label: "Job boards & logins", href: "/settings/boards" },
       { label: "Notifications", href: "/settings/notifications" },
     ],
   },

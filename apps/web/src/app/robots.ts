@@ -23,6 +23,8 @@ export default function robots(): MetadataRoute.Robots {
           "/documents",
           "/resumes",
           "/cover-letters",
+          "/portfolio",
+          "/boards",
           "/upwork",
           "/settings",
           "/onboarding",

@@ -94,7 +94,7 @@ export function GetStarted(props: GetStartedProps): ReactNode {
       short: "Save board logins",
       label: "Save your job-board logins so the pilot can sign in before it applies.",
       done: credentials.length > 0,
-      action: linkAction("/settings/boards", "Add"),
+      action: linkAction("/boards", "Add"),
     },
     {
       key: "agent",

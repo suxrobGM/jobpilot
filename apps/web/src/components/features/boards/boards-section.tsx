@@ -8,11 +8,11 @@ import { api } from "@/api/client";
 import { credentialQueries, jobBoardQueries, pilotQueries } from "@/api/queries";
 import type { CredentialDto, JobBoardDto } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
-import { AddBoardButton } from "@/components/features/boards/add-board-button";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { ItemList } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
+import { AddBoardButton } from "./add-board-button";
 import { BoardLoginDialog } from "./board-login-dialog";
 
 function loginLabel(login: CredentialDto | null, hasDefault: boolean): string {

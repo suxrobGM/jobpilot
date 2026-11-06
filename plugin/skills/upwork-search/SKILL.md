@@ -27,7 +27,7 @@ skill.
    jobpilot-api POST /api/feeds --data '{"kind":"upwork"}'
    ```
 5. Resolve the board: `jobpilot-api GET /api/job-boards` and find the row whose `domain` is
-   `upwork.com`. No row → abort: "Upwork is not configured. Add it under Settings → Job boards & logins."
+   `upwork.com`. No row → abort: "Upwork is not configured. Add it on the Job boards page."
 
 ## Phase 1: Parse Query
 
