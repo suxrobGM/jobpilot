@@ -3,7 +3,7 @@
 import type { AnyChannel, ChannelEvent, Jsonified } from "@jobpilot/contracts/sse";
 import { hashKey, type QueryClient, type QueryKey, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { coalesce } from "@/utils/coalesce";
+import { runOncePerBurst } from "@/utils/burst";
 import {
   type SseConnectionStatus,
   type SseHandlers,
@@ -25,9 +25,9 @@ interface UseLiveInvalidationOptions<TEvent extends { type: string }> {
   enabled?: boolean;
 }
 
-/** One write can publish an event per row, so the refetches they trigger fold into one. */
+/** One write can publish an event per row, so the refetches they trigger run once. */
 export function invalidateSoon(queryClient: QueryClient, queryKey: QueryKey): void {
-  coalesce(hashKey(queryKey), () => void queryClient.invalidateQueries({ queryKey }));
+  runOncePerBurst(hashKey(queryKey), () => void queryClient.invalidateQueries({ queryKey }));
 }
 
 /** Keeps the query cache in step with a live channel. */
