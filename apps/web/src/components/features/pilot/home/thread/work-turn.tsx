@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import type { PilotThreadRun } from "@jobpilot/contracts/pilot";
 import { taskTypeLabel } from "@jobpilot/contracts/pilot";
 import type { SvgIconComponent } from "@mui/icons-material";
@@ -11,7 +11,7 @@ import {
   RemoveCircleOutlined,
   SendOutlined,
 } from "@mui/icons-material";
-import { Link, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Divider, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { humanizeIsoInText } from "@/utils/format";
 import { pipelineHref } from "@/utils/routes";
@@ -62,7 +62,7 @@ function RunRow(props: RunRowProps): ReactElement {
   const name = run.job ? `${run.job.title} · ${run.job.company}` : taskTypeLabel(run.taskType);
   const note = isApplied(run) ? "Applied" : humanizeIsoInText(run.summary);
   return (
-    <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minHeight: 32 }}>
+    <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minHeight: 40, px: 2 }}>
       <Icon fontSize="sm" color={look.color} />
       <Typography variant="body2" noWrap title={run.summary} sx={{ flex: 1, minWidth: 0 }}>
         {href ? (
@@ -85,28 +85,65 @@ interface WorkTurnProps {
   item: WorkItem;
 }
 
-/** A sitting of work in the pilot's words, with its results underneath. */
+/** Past this many results, the rest wait behind "Show more". */
+const SHOWN_RESULTS = 4;
+
+interface WorkTurnProps {
+  item: WorkItem;
+}
+
+/** A sitting of work in the pilot's words, with its results in a card underneath. */
 export function WorkTurn(props: WorkTurnProps): ReactElement {
   const { item } = props;
+  const [expanded, setExpanded] = useState(false);
   const runs = shownRuns(item);
   const tally = item.searchTally;
   // A lone non-job run with no searches is fully said by the summary sentence.
   const lone = runs.length === 1 && runs[0].job === null && tally === null;
   const showResults = runs.length > 0 && !lone;
+  const hidden = expanded ? 0 : Math.max(0, runs.length - SHOWN_RESULTS);
+  const visible = hidden > 0 ? runs.slice(0, SHOWN_RESULTS) : runs;
   return (
     <PilotTurn at={formatClockSpan(item.startedAt, item.endedAt)}>
-      <Typography variant="body2">{workSummary(item)}</Typography>
+      <Typography variant="body1">{workSummary(item)}</Typography>
       {showResults && (
-        <Paper variant="outlined" sx={{ px: 2, py: 1 }}>
-          {runs.map((run) => (
-            <RunRow key={run.runId} run={run} />
-          ))}
+        <Box
+          sx={(theme) => ({
+            border: 1,
+            borderColor: "line.border",
+            borderRadius: theme.radii.lg,
+            backgroundColor: theme.palette.surfaces.card,
+            overflow: "hidden",
+          })}
+        >
+          <Stack divider={<Divider />}>
+            {visible.map((run) => (
+              <RunRow key={run.runId} run={run} />
+            ))}
+          </Stack>
+          {hidden > 0 && (
+            <Box sx={{ borderTop: 1, borderColor: "divider", px: 1 }}>
+              <Button size="small" color="inherit" onClick={() => setExpanded(true)}>
+                {`Show ${hidden} more`}
+              </Button>
+            </Box>
+          )}
           {tally && (
-            <Typography variant="captionMuted" component="p" sx={{ pl: 3.5, py: 0.5 }}>
+            <Typography
+              variant="captionMuted"
+              component="p"
+              sx={(theme) => ({
+                px: 2,
+                py: 1,
+                borderTop: 1,
+                borderColor: "divider",
+                backgroundColor: theme.palette.surfaces.panel,
+              })}
+            >
               {tallyLine(tally)}
             </Typography>
           )}
-        </Paper>
+        </Box>
       )}
     </PilotTurn>
   );

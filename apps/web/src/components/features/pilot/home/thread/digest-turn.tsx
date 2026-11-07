@@ -19,7 +19,7 @@ export function DigestTurn(props: DigestTurnProps): ReactElement {
   if (isQuiet(entry)) {
     return (
       <PilotTurn at={entry.createdAt}>
-        <Typography variant="body2Muted">
+        <Typography variant="body1Muted">
           Quiet day. Nothing new since yesterday morning.
         </Typography>
       </PilotTurn>
@@ -27,7 +27,7 @@ export function DigestTurn(props: DigestTurnProps): ReactElement {
   }
   return (
     <PilotTurn at={entry.createdAt}>
-      <Typography variant="body2">{humanizeIsoInText(entry.summary)}</Typography>
+      <Typography variant="body1">{humanizeIsoInText(entry.summary)}</Typography>
     </PilotTurn>
   );
 }

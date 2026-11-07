@@ -89,6 +89,10 @@ Mockup: `.tmp/design-lab/lists.html`. Every record list (Pipeline tabs, Outreach
 - DataGrid goes (`@mui/x-data-grid`, `DataTable`, its theme override). Admin keeps `SimpleTable`.
 - The Diagnostics journal moves from cursor "Load more" to offset pages with the same footer. Only page 1 takes live prepends.
 
+## Phase 5c: Pilot conversation
+
+Mockup: `.tmp/design-lab/pilot.html`. Three columns centered as one block: Needs you (340px), the conversation (760px reading width), and the overview (300px, from xl up; below that it sits under the queue). Pilot turns get an avatar, "Pilot" and the time; the user's messages are bubbles. Each stretch of work is a card with up to four results, "Show N more" and the search tally. Three or more quiet rows in a row (past daily summaries, notes, settled questions) fold into one line. The composer is a raised card with Job links and Rules buttons, the Enter hint and a filled send button.
+
 ## Phase 6: Sweep
 
 Check every remaining screen against the new tokens and shell at both widths: Pipeline, Analytics, Documents, Portfolio, Job boards, Settings, Upwork, Networking, Onboarding, the agent drawer, dialogs, auth, admin, and the public/marketing pages (fonts and radii only). Fix overflow and spacing.

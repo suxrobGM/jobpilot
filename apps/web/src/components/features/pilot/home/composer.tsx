@@ -2,13 +2,16 @@
 
 import { type ReactElement, useState } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { AddLink, ArrowUpward } from "@mui/icons-material";
-import { Chip, IconButton, InputBase, Paper, Stack, Typography } from "@mui/material";
+import { AddLink, ArrowUpward, Tune } from "@mui/icons-material";
+import { Box, Button, Chip, IconButton, InputBase, Stack, Typography } from "@mui/material";
+import { lighten } from "@mui/material/styles";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { plural } from "@/utils/format";
+import { AddLinksDialog } from "../../pipeline/add-links-dialog";
 import { parseLinks, useAddLinks } from "../../pipeline/use-add-links";
+import { RulesDialog } from "./side/rules-dialog";
 
 const SUGGESTED_PROMPTS = [
   "What did you apply to this week?",
@@ -24,8 +27,10 @@ interface ComposerProps {
 export function Composer(props: ComposerProps): ReactElement {
   const { state } = props;
   const [text, setText] = useState("");
+  const [dialog, setDialog] = useState<"links" | "rules" | null>(null);
   const links = parseLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
+  const empty = text.trim() === "";
 
   const send = useApiMutation((body: string) => api.pilot.messages.post({ body }), {
     invalidate: [pilotQueries.threadAll],
@@ -35,19 +40,28 @@ export function Composer(props: ComposerProps): ReactElement {
   const addLinks = useAddLinks(() => setText(""));
 
   const submit = (): void => {
-    const body = text.trim();
-    if (body !== "" && !send.isPending) {
-      send.mutate(body);
+    if (!empty && !send.isPending) {
+      send.mutate(text.trim());
     }
   };
 
   return (
-    <Stack spacing={0.75}>
+    <Stack spacing={1.25} sx={{ pt: 1.5 }}>
       {replying && <Typography variant="captionMuted">Pilot is replying…</Typography>}
       {text === "" && (
-        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+        // Phones scroll the prompts sideways instead of stacking three rows over the box.
+        <Stack
+          direction="row"
+          sx={{ flexWrap: { xs: "nowrap", sm: "wrap" }, overflowX: "auto", gap: 0.75 }}
+        >
           {SUGGESTED_PROMPTS.map((prompt) => (
-            <Chip key={prompt} label={prompt} variant="outlined" onClick={() => setText(prompt)} />
+            <Chip
+              key={prompt}
+              label={prompt}
+              variant="outlined"
+              onClick={() => setText(prompt)}
+              sx={(theme) => ({ borderRadius: theme.radii.pill })}
+            />
           ))}
         </Stack>
       )}
@@ -61,12 +75,23 @@ export function Composer(props: ComposerProps): ReactElement {
           />
         </Stack>
       )}
-      <Paper variant="outlined" sx={{ display: "flex", alignItems: "flex-end", px: 2, py: 1 }}>
+      <Box
+        sx={(theme) => ({
+          border: 1,
+          borderColor: "line.borderHi",
+          borderRadius: theme.radii.lg * 1.5,
+          backgroundColor: theme.palette.surfaces.card,
+          boxShadow: theme.shadows_custom.md,
+          transition: theme.motion.fast,
+          "&:focus-within": { borderColor: "accent.primary" },
+        })}
+      >
         <InputBase
           multiline
+          minRows={1}
           maxRows={8}
           fullWidth
-          placeholder="Message your pilot…"
+          placeholder="Ask the pilot, change a rule, or paste job links…"
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {
@@ -77,16 +102,54 @@ export function Composer(props: ComposerProps): ReactElement {
             }
           }}
           inputProps={{ "aria-label": "Message the pilot", maxLength: 4000 }}
+          sx={{ px: 2, pt: 1.75, pb: 0.5, typography: "body1" }}
         />
-        <IconButton
-          aria-label="Send"
-          color="primary"
-          disabled={text.trim() === "" || send.isPending}
-          onClick={submit}
-        >
-          <ArrowUpward fontSize="sm" />
-        </IconButton>
-      </Paper>
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", px: 1, pb: 1 }}>
+          <Button
+            size="small"
+            color="inherit"
+            startIcon={<AddLink fontSize="sm" />}
+            onClick={() => setDialog("links")}
+          >
+            Job links
+          </Button>
+          <Button
+            size="small"
+            color="inherit"
+            startIcon={<Tune fontSize="sm" />}
+            onClick={() => setDialog("rules")}
+          >
+            Rules
+          </Button>
+          <Typography
+            variant="captionMuted"
+            sx={{ flex: 1, textAlign: "right", pr: 1, display: { xs: "none", sm: "block" } }}
+          >
+            Enter to send · Shift+Enter for a new line
+          </Typography>
+          <IconButton
+            aria-label="Send"
+            disabled={empty || send.isPending}
+            onClick={submit}
+            sx={(theme) => ({
+              ml: { xs: "auto", sm: 0 },
+              borderRadius: theme.radii.lg,
+              color: "primary.contrastText",
+              backgroundColor: "primary.main",
+              // The same lift as a contained button's hover.
+              "&:hover": { backgroundColor: lighten(theme.palette.primary.main, 0.14) },
+              "&.Mui-disabled": {
+                color: "text.disabled",
+                backgroundColor: theme.palette.surfaces.elevated,
+              },
+            })}
+          >
+            <ArrowUpward fontSize="sm" />
+          </IconButton>
+        </Stack>
+      </Box>
+      <AddLinksDialog open={dialog === "links"} onClose={() => setDialog(null)} />
+      <RulesDialog state={state} open={dialog === "rules"} onClose={() => setDialog(null)} />
     </Stack>
   );
 }

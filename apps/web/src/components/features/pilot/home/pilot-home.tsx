@@ -2,7 +2,7 @@
 
 import { type ReactElement, type ReactNode, useState } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { Box, Stack, Tab, Tabs } from "@mui/material";
+import { Box, Stack, Tab, Tabs, useMediaQuery } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import type { PipelineJobDto } from "@/api/types";
@@ -17,6 +17,9 @@ import { PilotOverview } from "./side/pilot-overview";
 import { THREAD_WIDTH, Thread } from "./thread/thread";
 
 type PhoneTab = "chat" | "needsYou" | "overview";
+
+/** The thread's reading width plus the column's gutters and scrollbar. */
+const CONVERSATION_WIDTH = THREAD_WIDTH + 96;
 
 interface ConversationProps {
   state: PilotState;
@@ -47,6 +50,8 @@ function ScrollPane(props: ScrollPaneProps): ReactElement {
 export function PilotHome(): ReactElement {
   const stateQuery = useQuery(pilotQueries.state());
   const isDesktop = useAgentAvailable();
+  // Wide enough for a third column, so the overview leaves the queue for its own.
+  const wide = useMediaQuery((theme) => theme.breakpoints.up("xl"));
   const [tab, setTab] = useState<PhoneTab>("chat");
   const [openJob, setOpenJob] = useState<PipelineJobDto | null>(null);
   const parkedJobs = useNeedsYou().flatMap((item) => (item.type === "job" ? [item.job] : []));
@@ -92,8 +97,8 @@ export function PilotHome(): ReactElement {
   return (
     <Stack
       direction="row"
-      // Basis 0 fills what the top bar leaves; the thread scrolls inside, so the queue and composer stay put.
-      sx={{ flex: "1 1 0", minHeight: 0 }}
+      // Basis 0 fills what the top bar leaves; the columns center as one block on wide screens.
+      sx={{ flex: "1 1 0", minHeight: 0, justifyContent: "center" }}
     >
       <PilotHeader state={state} />
       {isDesktop && (
@@ -101,21 +106,32 @@ export function PilotHome(): ReactElement {
           component="aside"
           aria-label="Needs you"
           spacing={4}
-          sx={(theme) => ({
-            width: 400,
+          sx={{
+            width: 340,
             flexShrink: 0,
             overflowY: "auto",
-            p: 2,
+            p: 2.5,
             borderRight: 1,
+            // Once the columns float centered, the queue needs its outer edge too.
+            borderLeft: { xl: 1 },
             borderColor: "divider",
-            backgroundColor: theme.palette.surfaces.panel,
-          })}
+          }}
         >
           {queue}
-          {overview}
+          {!wide && overview}
         </Stack>
       )}
-      <Stack sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 3 }, pt: { xs: 1, md: 2 }, pb: 2 }}>
+      <Stack
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          // Capped only beside both side columns; narrower, it fills and centers the thread itself.
+          maxWidth: { xl: CONVERSATION_WIDTH },
+          px: { xs: 1.5, sm: 3 },
+          pt: { xs: 1, md: 2 },
+          pb: 2,
+        }}
+      >
         {!isDesktop && !openJob && (
           <Tabs
             value={tab}
@@ -133,6 +149,22 @@ export function PilotHome(): ReactElement {
         )}
         {renderMain()}
       </Stack>
+      {isDesktop && wide && (
+        <Box
+          component="aside"
+          aria-label="Overview"
+          sx={{
+            width: 300,
+            flexShrink: 0,
+            overflowY: "auto",
+            p: 2.5,
+            borderInline: 1,
+            borderColor: "divider",
+          }}
+        >
+          {overview}
+        </Box>
+      )}
     </Stack>
   );
 }

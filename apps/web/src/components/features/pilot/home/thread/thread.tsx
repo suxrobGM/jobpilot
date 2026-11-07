@@ -1,14 +1,14 @@
 "use client";
 
 import {
-  Fragment,
   type ReactElement,
   type RefObject,
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
 } from "react";
-import type { PilotState, PilotThreadItem } from "@jobpilot/contracts/pilot";
+import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Box, Button, CircularProgress, Divider, Stack, Typography } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
@@ -16,10 +16,12 @@ import { QuerySection } from "@/components/ui/feedback";
 import { formatDayLabel } from "@/utils/format";
 import { LiveTurn } from "../now/live-turn";
 import { SetupTurn } from "../now/setup-turn";
+import { ThreadFold } from "./thread-fold";
+import { collapseRepeats, foldQuietRuns, rowKey, type ThreadRow } from "./thread-folds";
 import { ThreadItem } from "./thread-item";
 
-/** The reading column of the thread, composer included; it starts beside the queue, not centered. */
-export const THREAD_WIDTH = 1000;
+/** The reading column of the thread, composer included. */
+export const THREAD_WIDTH = 760;
 
 /** Within this distance of the bottom, new items keep the view pinned to the newest. */
 const STICK_TO_BOTTOM_PX = 120;
@@ -51,28 +53,39 @@ function DaySeparator(props: DaySeparatorProps): ReactElement {
   );
 }
 
-interface ThreadRow {
-  item: PilotThreadItem;
-  repeats: number;
-}
-
-/** Restart reports and other identical notes in a row read as noise; keep the latest, counted. */
-function collapseRepeats(items: PilotThreadItem[]): ThreadRow[] {
-  const rows: ThreadRow[] = [];
-  for (const item of items) {
-    const last = rows.at(-1);
-    const sameNote =
-      last?.item.type === "note" &&
-      item.type === "note" &&
-      last.item.entry.summary === item.entry.summary &&
-      formatDayLabel(last.item.at) === formatDayLabel(item.at);
-    if (last && sameNote) {
-      rows[rows.length - 1] = { item, repeats: last.repeats + 1 };
+/** Rows with a day line wherever the day changes; quiet stretches fold until opened. */
+function renderRows(
+  rows: ThreadRow[],
+  openFolds: string[],
+  onOpenFold: (key: string) => void,
+): ReactElement[] {
+  const out: ReactElement[] = [];
+  let lastDay: string | null = null;
+  const pushRow = (row: ThreadRow): void => {
+    const day = formatDayLabel(row.item.at);
+    if (day !== lastDay) {
+      out.push(<DaySeparator key={`day:${rowKey(row.item)}`} label={day} />);
+      lastDay = day;
+    }
+    out.push(<ThreadItem key={rowKey(row.item)} item={row.item} repeats={row.repeats} />);
+  };
+  for (const segment of foldQuietRuns(rows)) {
+    if (segment.type === "row") {
+      pushRow(segment.row);
+    } else if (openFolds.includes(segment.key)) {
+      segment.rows.forEach(pushRow);
     } else {
-      rows.push({ item, repeats: 1 });
+      out.push(
+        <ThreadFold
+          key={`fold:${segment.key}`}
+          rows={segment.rows}
+          onOpen={() => onOpenFold(segment.key)}
+        />,
+      );
+      lastDay = formatDayLabel(segment.rows[segment.rows.length - 1].item.at);
     }
   }
-  return rows;
+  return out;
 }
 
 /** Our own jump fires a scroll event after the tail may have grown; that event isn't the user. */
@@ -86,10 +99,6 @@ interface PrependAnchor {
   firstKey: string | null;
   /** Seen in flight, so a render before the fetch starts can't read as "finished". */
   started: boolean;
-}
-
-function rowKey(item: PilotThreadItem): string {
-  return `${item.type}:${item.id}`;
 }
 
 interface ThreadProps {
@@ -110,6 +119,7 @@ export function Thread(props: ThreadProps): ReactElement {
 
   const items = (query.data?.pages ?? []).flatMap((page) => page.items).reverse();
   const rows = collapseRepeats(items);
+  const [openFolds, setOpenFolds] = useState<string[]>([]);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
 
   const firstKey = rows[0] ? rowKey(rows[0].item) : null;
@@ -207,16 +217,7 @@ export function Thread(props: ThreadProps): ReactElement {
           empty={<Greeting />}
         >
           <Stack spacing={3}>
-            {rows.map(({ item, repeats }, index) => {
-              const day = formatDayLabel(item.at);
-              const newDay = index === 0 || formatDayLabel(rows[index - 1].item.at) !== day;
-              return (
-                <Fragment key={rowKey(item)}>
-                  {newDay && <DaySeparator label={day} />}
-                  <ThreadItem item={item} repeats={repeats} />
-                </Fragment>
-              );
-            })}
+            {renderRows(rows, openFolds, (key) => setOpenFolds([...openFolds, key]))}
           </Stack>
         </QuerySection>
         <SetupTurn state={state} />

@@ -3,6 +3,7 @@ import type { PilotRequest } from "@jobpilot/contracts/pilot";
 import { PlaylistAddCheck } from "@mui/icons-material";
 import { Stack, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
+import { TURN_INDENT } from "./pilot-turn";
 
 const STATUS_LABELS: Record<PilotRequest["status"], string> = {
   pending: "queued",
@@ -20,7 +21,11 @@ interface RequestRowProps {
 export function RequestRow(props: RequestRowProps): ReactElement {
   const { request } = props;
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: "center", px: 1 }}>
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{ alignItems: "center", pl: { xs: 0, sm: TURN_INDENT } }}
+    >
       <PlaylistAddCheck fontSize="sm" color="action" />
       <Typography variant="captionMuted" sx={{ flex: 1, minWidth: 0 }}>
         {`You asked: ${request.title} · ${STATUS_LABELS[request.status]}`}

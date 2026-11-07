@@ -2,8 +2,8 @@
 
 import { type ReactElement, useState } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { Button, Dialog, DialogContent, DialogTitle, Typography } from "@mui/material";
-import { RulesForm } from "../../goals/rules-form";
+import { Button, Typography } from "@mui/material";
+import { RulesDialog } from "./rules-dialog";
 import { SideSection } from "./side-section";
 
 interface RulesSummaryProps {
@@ -28,12 +28,7 @@ export function RulesSummary(props: RulesSummaryProps): ReactElement {
       {dealBreakers.length > 0 && (
         <Typography variant="body2Muted">{`Skip: ${dealBreakers.join(", ")}`}</Typography>
       )}
-      <Dialog open={editing} onClose={() => setEditing(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Rules</DialogTitle>
-        <DialogContent>
-          <RulesForm state={state} onSaved={() => setEditing(false)} />
-        </DialogContent>
-      </Dialog>
+      <RulesDialog state={state} open={editing} onClose={() => setEditing(false)} />
     </SideSection>
   );
 }
