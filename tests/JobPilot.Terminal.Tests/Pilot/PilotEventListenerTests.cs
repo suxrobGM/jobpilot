@@ -1,5 +1,4 @@
 using System.Net;
-using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Pilot.Pairing;
@@ -112,7 +111,7 @@ public sealed class PilotEventListenerTests
         private Harness(HttpStatusCode status)
         {
             Handler = new FakeSseHandler { Status = status };
-            Store = new PairingStore(new HostInstall(temp.Paths), NullLogger<PairingStore>.Instance);
+            Store = temp.PairingStore();
             var api = new PilotApi(new HttpClient(Handler), Store, NullLogger<PilotApi>.Instance);
             listener = new PilotEventListener(Store, api, Pilot, WakeSignal, NullLogger<PilotEventListener>.Instance);
         }

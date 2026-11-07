@@ -13,6 +13,8 @@ public abstract class Provider
 
     public static readonly Provider[] All = [Claude, Codex];
 
+    public static readonly ProviderInfo[] Infos = [.. All.Select(p => p.Info)];
+
     public abstract string Id { get; }
 
     public abstract string DisplayName { get; }

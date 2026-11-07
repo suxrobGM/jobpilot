@@ -32,7 +32,7 @@ public sealed class UsageMeter
 
     public void Read(JsonElement export)
     {
-        foreach (var attributes in OtlpLogs.Records(export))
+        foreach (var attributes in Records(export))
         {
             var name = Text(attributes, "event.name");
             if (name == "api_request")

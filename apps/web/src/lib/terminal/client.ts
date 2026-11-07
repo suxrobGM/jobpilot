@@ -19,7 +19,6 @@ export interface PilotHealth {
   paired: boolean;
   /** The account the host is paired to; a different one means it needs pairing again. */
   userId?: string | null;
-  conducting: boolean;
   /** Set while the user's typing in the terminal holds new runs back. */
   heldUntil?: string | null;
   lastCycleAt?: string | null;

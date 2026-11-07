@@ -109,7 +109,7 @@ public sealed class HostUpdater(GitHubReleases releases, ReleaseInstaller instal
     {
         try
         {
-            File.Delete(exePath + ".old");
+            File.Delete(ReleaseInstaller.OldExecutable(exePath));
         }
         catch (Exception ex)
         {

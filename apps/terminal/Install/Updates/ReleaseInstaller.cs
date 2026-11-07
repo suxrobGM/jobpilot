@@ -10,6 +10,9 @@ namespace JobPilot.Terminal.Install.Updates;
 /// </summary>
 public sealed class ReleaseInstaller(HttpClient http)
 {
+    /// <summary>Where the running executable is moved aside; startup deletes it.</summary>
+    internal static string OldExecutable(string exePath) => exePath + ".old";
+
     /// <summary>
     /// Downloads and validates the release, moves the running executable aside, and copies the release over the
     /// install. The executable is restored if copying fails; other files heal on the next update.
@@ -28,7 +31,7 @@ public sealed class ReleaseInstaller(HttpClient http)
                 throw new InvalidOperationException("Downloaded host failed validation; keeping the current binary.");
             }
 
-            var oldExe = exePath + ".old";
+            var oldExe = OldExecutable(exePath);
             File.Delete(oldExe);
             File.Move(exePath, oldExe);
             try

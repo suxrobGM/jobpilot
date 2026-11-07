@@ -27,7 +27,6 @@ public sealed class PilotLoop : BackgroundService
 
     // With no reachable API a cycle is pure burn, so the loop backs off instead.
     private ExponentialBackoff apiBackoff = new(TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10));
-    private volatile bool working;
 
     public PilotLoop(PairingStore store, IPilotAgent agent, IPilotApi api, TimeProvider time, WakeSignal wakeSignal, ILogger<PilotLoop> logger)
     {
@@ -62,7 +61,6 @@ public sealed class PilotLoop : BackgroundService
         {
             Paired = pairing is not null,
             UserId = pairing?.UserId,
-            Conducting = working && runner.Conducting,
             HeldUntil = runner.HeldUntil(time.GetUtcNow()),
             LastCycleAt = runner.LastCycleAt,
             LastCycleStatus = runner.LastCycleStatus?.ToString().ToLowerInvariant(),
@@ -100,8 +98,6 @@ public sealed class PilotLoop : BackgroundService
                 cycle = cycleCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
             }
 
-            working = false;
-
             // Read only after publishing the token: an unpair then either cancels this token or shows up in this read.
             var pairing = store.Current;
             try
@@ -112,7 +108,7 @@ public sealed class PilotLoop : BackgroundService
                     continue;
                 }
 
-                await RunOnceAsync(pairing, cycle.Token, stoppingToken);
+                await RunOnceAsync(pairing, cycle.Token);
             }
             catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
             {
@@ -129,7 +125,6 @@ public sealed class PilotLoop : BackgroundService
             catch (Exception ex)
             {
                 logger.LogError(ex, "Pilot cycle failed; backing off before retrying.");
-                working = false;
                 try
                 {
                     await Task.Delay(ErrorBackoff, time, stoppingToken);
@@ -142,7 +137,7 @@ public sealed class PilotLoop : BackgroundService
         }
     }
 
-    private async Task RunOnceAsync(PilotPairing pairing, CancellationToken ct, CancellationToken stoppingToken)
+    private async Task RunOnceAsync(PilotPairing pairing, CancellationToken ct)
     {
         // One probe checks the API is reachable before the cycle spends a refresh.
         var activity = await api.GetActivityAsync(ct);
@@ -157,7 +152,6 @@ public sealed class PilotLoop : BackgroundService
         // This cycle reads the current pairing, which covers any wake that came before it.
         wakeSignal.TryTake();
 
-        working = true;
         var sleep = await runner.RunAsync(pairing, ct);
         if (sleep is { } duration && duration > TimeSpan.Zero)
         {

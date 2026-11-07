@@ -12,7 +12,7 @@ public class ProviderTests
     [InlineData("   ", "claude")]
     [InlineData("  Claude  ", "claude")]
     [InlineData("CoDeX", "codex")]
-    public void Find_IsCaseInsensitive_AndDefaultsToClaude(string? id, string expected)
+    public void Parse_IsCaseInsensitive_AndDefaultsToClaude(string? id, string expected)
     {
         Assert.Equal(expected, Provider.Parse(id).Id);
     }
@@ -20,7 +20,7 @@ public class ProviderTests
     [Theory]
     [InlineData("gemini")]
     [InlineData("claude-code")]
-    public void Find_Throws_ForAnUnknownProvider(string id)
+    public void Parse_Throws_ForAnUnknownProvider(string id)
     {
         Assert.Throws<ArgumentException>(() => Provider.Parse(id));
     }

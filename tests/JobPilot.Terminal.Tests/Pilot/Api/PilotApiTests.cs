@@ -1,5 +1,4 @@
 using System.Net;
-using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Tests.Support;
@@ -19,7 +18,7 @@ public sealed class PilotApiTests : IDisposable
     private PilotApi Api(
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond, PilotPairing? pairing = null)
     {
-        var store = new PairingStore(new HostInstall(temp.Paths), NullLogger<PairingStore>.Instance);
+        var store = temp.PairingStore();
         store.Save(pairing ?? NewPairing());
         return new(new HttpClient(new StubHandler(respond)), store, NullLogger<PilotApi>.Instance);
     }
@@ -72,7 +71,7 @@ public sealed class PilotApiTests : IDisposable
 
         var taskList = await api.RefreshTasksAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal([new PilotTask("t1", "Apply to Acme")], taskList!.Tasks);
+        Assert.Equal([new PilotTask("t1")], taskList!.Tasks);
         Assert.Equal("v1", taskList.Version);
         Assert.Equal(15, taskList.SleepSeconds);
     }

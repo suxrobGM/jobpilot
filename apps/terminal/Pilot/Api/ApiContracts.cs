@@ -10,7 +10,7 @@ public sealed record CompletedCycle(DateTimeOffset CompletedAt, int? SleepSecond
 /// <summary>The fields of POST /api/pilot/tasks/refresh the host reads.</summary>
 public sealed record PilotTaskList(PilotTask[] Tasks, string Version, int SleepSeconds);
 
-public sealed record PilotTask(string Id, string Title);
+public sealed record PilotTask(string Id);
 
 public sealed record PilotRun(string Id, DateTimeOffset? FinishedAt, string? Outcome);
 

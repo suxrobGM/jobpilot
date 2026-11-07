@@ -19,11 +19,8 @@ public sealed class PilotEventListener(
     private static readonly TimeSpan InitialBackoff = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan MaxBackoff = TimeSpan.FromMinutes(5);
 
-    internal static bool ShouldWake(PilotEvent e) => e.Type switch
-    {
-        "question.answered" or "state.changed" or "message.created" or "request.created" or "job.approved" => true,
-        _ => false,
-    };
+    internal static bool ShouldWake(PilotEvent e) =>
+        e.Type is "question.answered" or "state.changed" or "message.created" or "request.created" or "job.approved";
 
     internal static PilotEvent? Parse(string data)
     {

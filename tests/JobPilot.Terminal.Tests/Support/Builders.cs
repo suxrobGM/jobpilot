@@ -15,7 +15,7 @@ internal static class Builders
     public static PilotPairing NewPairing(string apiUrl = "https://api", string apiToken = "tok") => new()
     {
         Provider = Provider.Claude,
-        Api = new ApiConnection(apiUrl, "https://web", apiToken),
+        Api = Api with { Url = apiUrl, Token = apiToken },
         UserId = "user-1",
     };
 
@@ -31,7 +31,7 @@ internal static class Builders
     public static CompletedCycle Completed(int? sleep) => new(DateTimeOffset.UtcNow, sleep);
 
     public static PilotTaskList TaskList(int tasks = 0, int sleep = 1800) =>
-        new([.. Enumerable.Range(1, tasks).Select(i => new PilotTask($"t{i}", $"Task {i}"))], "v1", sleep);
+        new([.. Enumerable.Range(1, tasks).Select(i => new PilotTask($"t{i}"))], "v1", sleep);
 
     // An interval at least as long as every wait makes each wait a single "wait" action.
     public static CycleRunner Runner(FakePilot pilot) => new(pilot, pilot, pilot.Time, TimeSpan.FromMinutes(20));

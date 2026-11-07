@@ -1,4 +1,3 @@
-using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Providers;
@@ -23,7 +22,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
 
     private (PairingStore, PilotLoop) BuildHost()
     {
-        var hostStore = new PairingStore(new HostInstall(temp.Paths), NullLogger<PairingStore>.Instance);
+        var hostStore = temp.PairingStore();
         return (hostStore, new PilotLoop(hostStore, pilot, pilot, pilot.Time, new WakeSignal(), NullLogger<PilotLoop>.Instance));
     }
 
@@ -64,11 +63,10 @@ public sealed class PilotLoopTests : IAsyncLifetime
 
         store.Save(NewPairing());
         await TestWait.Until(() => CyclesSent == 1);
-        Assert.True(loop.GetStatus().Conducting);
         Assert.Equal("user-1", loop.GetStatus().UserId);
 
         store.Clear();
-        await TestWait.Until(() => !loop.GetStatus().Conducting);
+        await TestWait.Until(() => pilot.Actions.Contains("abort-turn"));
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, CyclesSent);

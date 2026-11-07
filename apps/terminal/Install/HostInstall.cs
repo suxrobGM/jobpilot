@@ -18,11 +18,10 @@ public sealed class HostInstall
         CanUpdate = Paths is not null && IsPublishedHost;
     }
 
-    internal HostInstall(InstallPaths? paths, string? pathsError = null, bool canUpdate = false)
+    internal HostInstall(InstallPaths? paths, string? pathsError = null)
     {
         Paths = paths;
         PathsError = pathsError;
-        CanUpdate = canUpdate;
     }
 
     public static string HostVersion { get; } = typeof(HostInstall).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";

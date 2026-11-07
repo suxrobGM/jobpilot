@@ -17,9 +17,6 @@ public sealed record PilotStatus
     /// <summary>The account the host is paired to.</summary>
     public string? UserId { get; init; }
 
-    /// <summary>Whether the loop is driving a session right now.</summary>
-    public required bool Conducting { get; init; }
-
     /// <summary>Set while the user's own typing holds new runs back.</summary>
     public DateTimeOffset? HeldUntil { get; init; }
 

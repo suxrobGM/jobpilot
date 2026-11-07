@@ -63,7 +63,6 @@ export function pilotMode(
   if (isHostOffline(health)) {
     return "offline";
   }
-  // Only an open run is work: `conducting` stays true between runs, so it would hide held and idle.
   if (state.currentRun) {
     return "working";
   }

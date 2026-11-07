@@ -187,16 +187,20 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
             if (++ConsecutiveExits >= BackoffThreshold)
             {
                 ConsecutiveExits = 0;
-                await api.WriteJournalAsync(JournalLines.ExitBackoff, ct);
-                await Task.Delay(BackoffDelay, time, ct);
+                await BackOffAsync(JournalLines.ExitBackoff, ct);
             }
         }
         else if (++ConsecutiveRestarts >= BackoffThreshold)
         {
             ConsecutiveRestarts = 0;
-            await api.WriteJournalAsync(JournalLines.Backoff, ct);
-            await Task.Delay(BackoffDelay, time, ct);
+            await BackOffAsync(JournalLines.Backoff, ct);
         }
+    }
+
+    private async Task BackOffAsync(string journalLine, CancellationToken ct)
+    {
+        await api.WriteJournalAsync(journalLine, ct);
+        await Task.Delay(BackoffDelay, time, ct);
     }
 
     /// <summary>Checks the server after each slice, since the run's event can be missed; fresh activity extends the wait.</summary>

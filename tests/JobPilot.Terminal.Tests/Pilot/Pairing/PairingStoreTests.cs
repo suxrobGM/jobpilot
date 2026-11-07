@@ -1,4 +1,3 @@
-using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
@@ -11,16 +10,12 @@ namespace JobPilot.Terminal.Tests.Pilot.Pairing;
 public sealed class PairingStoreTests : IDisposable
 {
     private readonly TempDir temp = new();
-    private readonly string path;
 
-    public PairingStoreTests()
-    {
-        path = Path.Combine(temp.Root, "pilot.json");
-    }
+    private string PilotJson => Path.Combine(temp.Root, "pilot.json");
 
     public void Dispose() => temp.Dispose();
 
-    private PairingStore NewStore() => new(new HostInstall(temp.Paths), NullLogger<PairingStore>.Instance);
+    private PairingStore NewStore() => temp.PairingStore();
 
     private static PilotPairing SavedPairing(string userId = "user-1") => new()
     {
@@ -54,7 +49,7 @@ public sealed class PairingStoreTests : IDisposable
         store.Clear();
 
         Assert.Null(store.Current);
-        Assert.False(File.Exists(path));
+        Assert.False(File.Exists(PilotJson));
         Assert.Null(NewStore().Current);
         Assert.Equal(2, changes);
     }
@@ -62,9 +57,8 @@ public sealed class PairingStoreTests : IDisposable
     [Fact]
     public void Load_ReadsAFileFromBeforePairing_IgnoringItsRunningFlag()
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(
-            path,
+        temp.File(
+            "pilot.json",
             """{"provider":"claude","token":"t","protected":false,"apiUrl":"https://a","webUrl":"https://w","running":false}""");
 
         var loaded = NewStore().Current;
@@ -78,8 +72,7 @@ public sealed class PairingStoreTests : IDisposable
     [InlineData("""{"provider":"gemini","token":"t","protected":false,"apiUrl":"https://a","webUrl":"https://w","running":true}""")]
     public void Load_TreatsACorruptFileOrUnknownProviderAsNothingSaved(string json)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, json);
+        temp.File("pilot.json", json);
 
         Assert.Null(NewStore().Current);
     }
@@ -94,7 +87,7 @@ public sealed class PairingStoreTests : IDisposable
 
         NewStore().Save(SavedPairing());
 
-        Assert.DoesNotContain("secret-token", File.ReadAllText(path));
+        Assert.DoesNotContain("secret-token", File.ReadAllText(PilotJson));
     }
 
     [Fact]
@@ -107,7 +100,7 @@ public sealed class PairingStoreTests : IDisposable
 
         NewStore().Save(SavedPairing());
 
-        var mode = File.GetUnixFileMode(path);
+        var mode = File.GetUnixFileMode(PilotJson);
         Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, mode);
     }
 
