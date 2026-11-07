@@ -48,7 +48,7 @@ Applies everywhere at once; no layout changes.
 ## Phase 2: Shell
 
 - **`Sidebar` is a fixed 84px rail with labels (user, 2026-11-06, replacing the earlier expandable sidebar).** Each entry is an icon over a short caption label, active entries get an accent tint, and the needs-you count sits on the Pilot icon. The Channels group is set off by a divider. Agent, Settings and the account avatar sit at the bottom. No collapse toggle.
-- **Pilot thread** is left-aligned beside the queue, up to 1000px wide.
+- **Pilot thread** is centered beside the queue, up to 1000px wide.
 - **New `TopBar` in `AppShell`.** A 64px strip with the page title, the agent status pill (with Start agent when offline), and a slot for page actions. `PageHeader` sends its title and actions into the bar. Its description stays in the page content.
 - **Mobile.** The bottom `MobileNav` stays, restyled to the new tokens. The top bar shrinks to the title, an agent status dot and an actions overflow menu. `PageHeader` actions render in the page content below `sm`.
 - Remove the `py` padding from the dashboard layout's top; the bar provides the spacing.
@@ -84,7 +84,7 @@ Mockup: `.tmp/design-lab/lists.html`. Every record list (Pipeline tabs, Outreach
 - `ListRow`: checkbox, a 36px lead square (score, initials, icon), a bold title with tags, one muted details line, columns shown only on wide screens, actions on hover, status badge, time, and a ⋯ menu. The title is a stretched link or button, so inner controls stay clickable. On phones it wraps to title, details, then badge and time.
 - Toolbar: `FilterBar` in one row, a compact `SearchField`, `SelectField` with the label inside the box ("Feed **All** ▾"), and `FilterToggle` with counts. The total count sits on the right.
 - Page tabs go into a third top-bar slot (`PageHeader tabs`), flush under the title. The main page buttons go in the top bar. Description lines are dropped.
-- `PageShell` content is left-aligned with the top bar title.
+- `PageShell` content is centered (the user reversed an earlier left-align).
 - On Applied, the four funnel tiles become the status `FilterToggle`.
 - DataGrid goes (`@mui/x-data-grid`, `DataTable`, its theme override). Admin keeps `SimpleTable`.
 - The Diagnostics journal moves from cursor "Load more" to offset pages with the same footer. Only page 1 takes live prepends.
