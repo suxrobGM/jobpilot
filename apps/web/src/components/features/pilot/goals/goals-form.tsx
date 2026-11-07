@@ -1,12 +1,11 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { MAX_PAGE_SIZE } from "@jobpilot/contracts/pagination";
 import type { PilotChangeAction, PilotState } from "@jobpilot/contracts/pilot";
 import { Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod/v4";
-import { pilotQueries, pipelineQueries } from "@/api/queries";
+import { pilotQueries } from "@/api/queries";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useMakeChange } from "../changes/use-changes";
 import { GoalsChangeDialog, type GoalsImpact, type GoalsRetirement } from "./goals-change-dialog";
@@ -46,14 +45,10 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
     onSubmit: async ({ value }) => {
       if (value.goals === state.goals) return;
       // Read on save, not on mount, so the dialog sees what the old goals left running now.
-      const [searches, inProgress] = await Promise.all([
-        queryClient.fetchQuery(pilotQueries.searches()),
-        queryClient.fetchQuery(
-          pipelineQueries.jobs({ view: "inProgress", page: 1, limit: MAX_PAGE_SIZE }),
-        ),
+      const [searches, { count: approvedJobs }] = await Promise.all([
+        queryClient.query(pilotQueries.searches()),
+        queryClient.query({ ...pilotQueries.approvedJobCount(), staleTime: 0 }),
       ]);
-      // Only the count; the change itself picks every approved job on the server.
-      const approvedJobs = inProgress.items.filter((job) => job.status === "approved").length;
       if (searches.length === 0 && approvedJobs === 0) {
         await commit(value.goals, []);
         return;

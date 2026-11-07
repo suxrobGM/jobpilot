@@ -35,6 +35,12 @@ export const pilotQueries = {
       queryKey: [...PILOT, "cost"],
       queryFn: () => unwrap(api.pilot.stats.cost.get()),
     }),
+  /** What a `jobs.skipApproved` change would skip now. */
+  approvedJobCount: () =>
+    queryOptions({
+      queryKey: [...CHANGES, "approvedJobs"],
+      queryFn: () => unwrap(api.pilot.changes["approved-jobs"].get()),
+    }),
   /** The pilot's searches, with what each applied to this week. */
   searches: () =>
     queryOptions({

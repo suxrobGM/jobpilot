@@ -9,6 +9,7 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
+import { approvedJobCountSchema } from "./change.schema";
 import { ChangeService } from "./change.service";
 
 const changes = container.get(ChangeService);
@@ -25,6 +26,14 @@ export const pilotChangesController = new Elysia({
     detail: {
       summary: "List changes",
       description: "The user's newest 100 changes to goals, rules, searches, answers and jobs.",
+    },
+  })
+  .get("/approved-jobs", ({ user }) => changes.approvedJobCount(user.id), {
+    response: approvedJobCountSchema,
+    detail: {
+      summary: "Count approved jobs a goals change would drop",
+      description:
+        "Approved jobs in auto-apply feeds, the ones a jobs.skipApproved action skips, capped at what one change skips.",
     },
   })
   .post("/", ({ user, body }) => changes.create(user.id, body), {

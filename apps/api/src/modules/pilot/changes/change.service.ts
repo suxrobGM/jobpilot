@@ -15,6 +15,7 @@ import { dropTaskList } from "../tasks/snapshot";
 import type { ActionContext } from "./action-context";
 import { applyActions } from "./apply-action";
 import { canUndo, storedActionsSchema, toPilotChange } from "./change-row";
+import { countSkippableApproved } from "./job-actions";
 
 /** The pilot changes its own searches but only suggests edits to what the user decided. */
 const USER_OWNED_ACTIONS: PilotChangeAction["type"][] = [
@@ -43,6 +44,10 @@ export class ChangeService {
     });
     const now = Date.now();
     return rows.map((row) => toPilotChange(row, now));
+  }
+
+  async approvedJobCount(userId: string) {
+    return { count: await countSkippableApproved(this.prisma, userId) };
   }
 
   async create(userId: string, input: CreatePilotChangeInput) {
