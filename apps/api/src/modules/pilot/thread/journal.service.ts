@@ -1,4 +1,4 @@
-import { cursorPage } from "@jobpilot/contracts/pagination";
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import {
   type CreatePilotJournalInput,
   type PilotJournalKind,
@@ -71,22 +71,23 @@ export class PilotJournalService {
     return items;
   }
 
-  async list(
-    userId: string,
-    cursor: string | undefined,
-    limit: number,
-    kinds?: PilotJournalKind[],
-  ) {
-    const rows = await this.prisma.pilotJournalEntry.findMany({
-      where: { userId, kind: kinds?.length ? { in: kinds } : undefined },
-      // Batch appends share one createdAt, so id breaks the tie or cursor pages skip rows.
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: limit + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    });
-    const { items, nextCursor } = cursorPage(rows, limit);
-    const runs = await loadRuns(this.prisma, userId, items);
-    return { items: items.map((row) => toJournalEntry(row, runs)), nextCursor };
+  async list(userId: string, query: PaginationQuery, kinds?: PilotJournalKind[]) {
+    const where = { userId, kind: kinds?.length ? { in: kinds } : undefined };
+    const [rows, total] = await Promise.all([
+      this.prisma.pilotJournalEntry.findMany({
+        where,
+        // Batch appends share one createdAt, so id keeps their order stable across pages.
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        ...pageSlice(query),
+      }),
+      this.prisma.pilotJournalEntry.count({ where }),
+    ]);
+    const runs = await loadRuns(this.prisma, userId, rows);
+    return paginate(
+      rows.map((row) => toJournalEntry(row, runs)),
+      query,
+      total,
+    );
   }
 
   /** Oldest first, read in batches so the journal is never all in memory. */

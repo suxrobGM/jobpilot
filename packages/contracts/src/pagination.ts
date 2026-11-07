@@ -5,11 +5,9 @@ import { z } from "zod/v4";
  *
  * Two access modes, and they are not interchangeable:
  * - **offset** (`page`/`limit`) - every browsable list.
- * - **cursor** (`cursor`/`nextCursor`) - append-only live feeds only. Offset drifts on a feed
- *   that grows at the head: the pilot journal prepends entries while the orchestrator runs, so
- *   by the time page 2 is asked for at offset 50, N new rows have shifted everything down - N
- *   rows are served twice and N are never served. It is also the only per-user table that grows
- *   without bound, so offset would add a `count()` to every page load.
+ * - **cursor** (`cursor`/`nextCursor`) - append-only live feeds read by scrolling (the Pilot
+ *   thread). Offset drifts on a feed that grows at the head: rows prepended between two page
+ *   requests shift everything down, so some are served twice and some never.
  */
 
 export const DEFAULT_PAGE_SIZE = 25;

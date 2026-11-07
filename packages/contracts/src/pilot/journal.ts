@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { csvArray, cursorPageSchema, cursorQuerySchema } from "../pagination";
+import { csvArray, paginatedSchema, paginationQuerySchema } from "../pagination";
 import { journalDetailSchema, tokenUsageSchema } from "./run";
 import { pilotSubjectTypeSchema } from "./tasks";
 
@@ -45,12 +45,12 @@ export const pilotJournalEntrySchema = z.object({
   run: pilotJournalRunSchema.nullable(),
 });
 
-/** Cursor-paged, not offset: the feed grows at the head while the orchestrator runs. */
-export const pilotJournalQuerySchema = cursorQuerySchema.extend({
+/** Offset-paged for a numbered pager; live entries shift later pages, which only page 1 shows. */
+export const pilotJournalQuerySchema = paginationQuerySchema.extend({
   kinds: csvArray(pilotJournalKindSchema).optional(),
 });
 
-export const pilotJournalPageSchema = cursorPageSchema(pilotJournalEntrySchema);
+export const pilotJournalPageSchema = paginatedSchema(pilotJournalEntrySchema);
 
 export type PilotJournalKind = z.infer<typeof pilotJournalKindSchema>;
 export type CreatePilotJournalInput = z.infer<typeof createPilotJournalSchema>;

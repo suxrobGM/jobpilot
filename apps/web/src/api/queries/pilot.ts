@@ -1,4 +1,4 @@
-import { DEFAULT_CURSOR_PAGE_SIZE } from "@jobpilot/contracts/pagination";
+import { DEFAULT_CURSOR_PAGE_SIZE, type PaginationQuery } from "@jobpilot/contracts/pagination";
 import type { PilotChange, PilotJournalKind, PilotQuestionStatus } from "@jobpilot/contracts/pilot";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import { api } from "@/api/client";
@@ -10,16 +10,6 @@ const THREAD = [...PILOT, "thread"] as const;
 const CHANGES = [...PILOT, "changes"] as const;
 const QUESTIONS = [...PILOT, "questions"] as const;
 const PUSH = [...PILOT, "push"] as const;
-
-function requestJournalPage(kinds: PilotJournalKind[], cursor: string | null) {
-  return api.pilot.journal.get({
-    query: {
-      limit: DEFAULT_CURSOR_PAGE_SIZE,
-      ...(cursor ? { cursor } : {}),
-      ...(kinds.length > 0 ? { kinds } : {}),
-    },
-  });
-}
 
 export const pilotQueries = {
   all: PILOT,
@@ -82,13 +72,16 @@ export const pilotQueries = {
       retry: false,
     }),
   // Sorted so the same filter set toggled in a different order shares one cache entry.
-  journalFeed: (kinds: PilotJournalKind[]) => {
+  journalPage: (kinds: PilotJournalKind[], page: PaginationQuery) => {
     const filter = [...kinds].sort();
-    return infiniteQueryOptions({
-      queryKey: [...JOURNAL, { kinds: filter }],
-      queryFn: ({ pageParam }) => unwrap(requestJournalPage(filter, pageParam)),
-      initialPageParam: null as string | null,
-      getNextPageParam: (page) => page.nextCursor,
+    return queryOptions({
+      queryKey: [...JOURNAL, { kinds: filter, ...page }],
+      queryFn: () =>
+        unwrap(
+          api.pilot.journal.get({
+            query: { ...page, ...(filter.length > 0 ? { kinds: filter } : {}) },
+          }),
+        ),
     });
   },
   changes: (status?: PilotChange["status"]) =>

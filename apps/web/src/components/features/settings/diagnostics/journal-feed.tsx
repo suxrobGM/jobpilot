@@ -5,7 +5,6 @@ import type { PilotJournalKind } from "@jobpilot/contracts/pilot";
 import { DeleteSweep, Download, MoreVert } from "@mui/icons-material";
 import {
   Box,
-  Button,
   Chip,
   Divider,
   IconButton,
@@ -14,17 +13,18 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipIconButton } from "@/components/ui/buttons";
+import { PaginationFooter } from "@/components/ui/data";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { DropdownMenu } from "@/components/ui/navigation";
+import { usePaginationParams } from "@/hooks/use-pagination";
 import { useConfirm } from "@/providers/confirm-provider";
-import { dedupeById } from "@/utils/array";
 import { useJournalLiveStatus } from "../../pilot/journal/journal-cache";
 import { JournalRow, KIND_META, KIND_ORDER } from "../../pilot/journal/journal-row";
 import { groupByDay, withLatestRuns } from "./journal-entries";
@@ -34,11 +34,12 @@ import { RunTimeline } from "./run-timeline";
 /** A top-level anchor download carries the same-site auth cookie, so no fetch is needed. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
 
-/** Kind filters run server-side, so paging under a filter stays on one stream. */
+/** Kind filters run server-side, so the pager counts only the matching entries. */
 export function JournalFeed(): ReactElement {
   const confirm = useConfirm();
   const [selectedKinds, setSelectedKinds] = useState<PilotJournalKind[]>([]);
-  const feed = useInfiniteQuery(pilotQueries.journalFeed(selectedKinds));
+  const pagination = usePaginationParams({ prefix: "journal" });
+  const feed = useQuery(pilotQueries.journalPage(selectedKinds, pagination.query));
   const status = useJournalLiveStatus();
   const [view, setView] = useState<"flat" | "run">("flat");
 
@@ -65,10 +66,10 @@ export function JournalFeed(): ReactElement {
     setSelectedKinds((prev) =>
       prev.includes(kind) ? prev.filter((k) => k !== kind) : [...prev, kind],
     );
+    pagination.setPage(1);
   };
 
-  // Live prepends keep the first page's tail, which the next page repeats.
-  const entries = withLatestRuns(dedupeById(feed.data?.pages.flatMap((page) => page.items) ?? []));
+  const entries = withLatestRuns(feed.data?.items ?? []);
 
   const emptyMessage =
     selectedKinds.length > 0 ? "No entries match the selected filters." : "No journal entries yet.";
@@ -163,16 +164,12 @@ export function JournalFeed(): ReactElement {
             </Stack>
           )}
         </QuerySection>
-        {feed.hasNextPage && (
-          <Box>
-            <Button
-              variant="text"
-              loading={feed.isFetchingNextPage}
-              onClick={() => void feed.fetchNextPage()}
-            >
-              Load more
-            </Button>
-          </Box>
+        {feed.data && (
+          <PaginationFooter
+            pagination={feed.data.pagination}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
         )}
       </Stack>
     </SectionCard>
