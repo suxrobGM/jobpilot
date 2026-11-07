@@ -41,6 +41,8 @@ export function TopBar(props: TopBarProps): ReactElement {
       sx={(theme) => ({
         position: "sticky",
         top: 0,
+        // main is a flex column; an explicit minHeight would otherwise let the bar shrink over a wrapped actions row.
+        flexShrink: 0,
         zIndex: theme.zIndex.appBar,
         flexWrap: "wrap",
         alignItems: "center",
