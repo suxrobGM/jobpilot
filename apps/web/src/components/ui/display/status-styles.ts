@@ -49,10 +49,12 @@ const job: Styles<JobStatus> = {
   pending: { label: "Pending", color: "default" },
   approved: { label: "Approved", color: "info" },
   applying: { label: "Applying", color: "primary" },
-  needs_user: { label: "Needs you", color: "warning" },
+  // The orange of the nav badge and the Needs you queue: the same "waiting on you".
+  needs_user: { label: "Needs you", color: "primary" },
   applied: { label: "Applied", color: "success" },
   failed: { label: "Failed", color: "error" },
-  skipped: { label: "Skipped", color: "warning" },
+  // A normal outcome, not a warning.
+  skipped: { label: "Skipped", color: "default" },
 };
 
 const networking: Styles<NetworkingMessageStatus> = {

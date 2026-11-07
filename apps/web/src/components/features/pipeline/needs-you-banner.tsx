@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Alert } from "@mui/material";
+import { PendingActions } from "@mui/icons-material";
+import { Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pipelineQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
@@ -15,17 +16,28 @@ export function NeedsYouBanner(): ReactNode {
     return null;
   }
   return (
-    <Alert
-      severity="warning"
-      variant="outlined"
-      sx={{ alignItems: "center" }}
-      action={
-        <LinkButton href="/pilot" color="warning" size="small" variant="contained">
-          Answer in Pilot
-        </LinkButton>
-      }
+    // A card with the accent edge, as the queue marks what waits on you; amber read as an alarm.
+    <Stack
+      direction="row"
+      spacing={1.5}
+      sx={(theme) => ({
+        alignItems: "center",
+        px: 2,
+        py: 1.25,
+        border: 1,
+        borderColor: "line.border",
+        borderRadius: theme.radii.lg,
+        backgroundColor: theme.palette.surfaces.card,
+        boxShadow: `inset 2px 0 0 ${theme.palette.accent.primary}`,
+      })}
     >
-      {`${plural(count, "application")} waiting on an answer from you.`}
-    </Alert>
+      <PendingActions fontSize="md" sx={{ color: "accent.primary" }} />
+      <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }}>
+        {`${plural(count, "application")} waiting on an answer from you.`}
+      </Typography>
+      <LinkButton href="/pilot" size="small" variant="contained">
+        Answer in Pilot
+      </LinkButton>
+    </Stack>
   );
 }

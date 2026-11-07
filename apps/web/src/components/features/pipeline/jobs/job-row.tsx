@@ -49,7 +49,7 @@ export function JobRow(props: JobRowProps): ReactElement {
       meta={metaLine(job, showFeed)}
       note={
         reason && (
-          <Typography variant="caption" color="warning" noWrap component="div">
+          <Typography variant="captionMuted" noWrap component="div">
             {reason}
           </Typography>
         )
