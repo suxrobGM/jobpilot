@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import type { PipelineJobDto } from "@/api/types";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
-import { PAGE_WIDTH_ATTR } from "@/components/ui/layout/page-shell";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { useNeedsYou, useNeedsYouCount } from "../attention/use-needs-you";
 import { Composer } from "./composer";
@@ -95,19 +94,9 @@ export function PilotHome(): ReactElement {
   return (
     <Stack
       direction="row"
-      {...{ [PAGE_WIDTH_ATTR]: "xl" }}
-      // Basis 0 fills what the top bar leaves; on wide screens the columns center as one block,
-      // as wide as the top bar's row so the title and Autopilot line up with its edges.
-      sx={(theme) => ({
-        flex: "1 1 0",
-        minHeight: 0,
-        width: "100%",
-        [theme.breakpoints.up("xl")]: {
-          maxWidth: theme.breakpoints.values.xl,
-          mx: "auto",
-          borderInline: `1px solid ${theme.palette.divider}`,
-        },
-      })}
+      // Basis 0 fills what the top bar leaves. A workspace, not a page: the side panels pin to the
+      // screen edges under the full-width top bar, and the thread centers in the middle column.
+      sx={{ flex: "1 1 0", minHeight: 0 }}
     >
       <PilotHeader state={state} />
       {isDesktop && (
