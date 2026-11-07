@@ -1,12 +1,12 @@
 import type { ReactElement } from "react";
 import { Paper, Stack, Typography } from "@mui/material";
-import { PanelFrame } from "./panel-frame";
+import { AppWindow } from "./app-window";
 
 const CLIENT_MARKERS = ["$40k+ spent", "92% hire rate", "4.9 rating", "payment verified"];
 
 export function UpworkPanel(): ReactElement {
   return (
-    <PanelFrame label="upwork">
+    <AppWindow page="upwork" title="Proposals">
       <Stack spacing={1.5}>
         <Paper variant="inset" sx={{ padding: 1.5 }}>
           <Stack spacing={1}>
@@ -41,6 +41,6 @@ export function UpworkPanel(): ReactElement {
           </Typography>
         </Stack>
       </Stack>
-    </PanelFrame>
+    </AppWindow>
   );
 }

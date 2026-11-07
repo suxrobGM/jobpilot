@@ -5,6 +5,7 @@ import { Box, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { TOP_BAR_HEIGHT } from "@/components/layout/shell-config";
 
 interface SettingsLink {
   label: string;
@@ -56,8 +57,9 @@ export function SettingsNav(): ReactElement {
         flexShrink: 0,
         width: { xs: "100%", md: 200 },
         position: { md: "sticky" },
-        top: { md: theme.spacing(3) },
+        top: { md: `calc(${TOP_BAR_HEIGHT.desktop}px + ${theme.spacing(3)})` },
         overflowX: { xs: "auto", md: "visible" },
+        scrollbarWidth: "none",
       })}
     >
       <Stack direction={{ xs: "row", md: "column" }} spacing={{ xs: 0.5, md: 2.5 }}>

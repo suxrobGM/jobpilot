@@ -15,12 +15,13 @@ interface SectionCardProps extends PropsWithChildren {
 
 export function SectionCard(props: SectionCardProps): ReactElement {
   const { title, eyebrow, description, actions, fullHeight, children } = props;
+  // The eyebrow sits outside the title's text, or it inherits the display face's width.
   const heading = eyebrow ? (
     <>
       <Typography variant="overlineMuted" sx={{ display: "block", mb: 0.75 }}>
         {eyebrow}
       </Typography>
-      {title}
+      <Typography variant="h4">{title}</Typography>
     </>
   ) : (
     title
@@ -28,7 +29,12 @@ export function SectionCard(props: SectionCardProps): ReactElement {
   return (
     <Card sx={fullHeight ? { height: "100%" } : undefined}>
       {(title || actions) && (
-        <CardHeader title={heading} subheader={description} action={actions} />
+        <CardHeader
+          title={heading}
+          subheader={description}
+          action={actions}
+          disableTypography={Boolean(eyebrow)}
+        />
       )}
       <CardContent>{children}</CardContent>
     </Card>

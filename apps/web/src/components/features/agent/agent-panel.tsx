@@ -70,7 +70,12 @@ export function AgentPanel(): ReactElement {
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="h6">Agent</Typography>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.25 }}>
-              <Typography variant="captionMuted" noWrap>
+              {/* The labels are lowercase for the rail's "Agent · ready"; alone they start a sentence. */}
+              <Typography
+                variant="captionMuted"
+                noWrap
+                sx={{ display: "block", "&::first-letter": { textTransform: "uppercase" } }}
+              >
                 {restarting ? `${pending}…` : activity.label}
               </Typography>
               {status?.hostVersion && (

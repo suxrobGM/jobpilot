@@ -2,7 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import { Delete, Launch } from "@mui/icons-material";
-import { Button, Link, Stack } from "@mui/material";
+import { Box, Button, Link, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
@@ -101,7 +101,13 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
               <StatusChip domain="application" value={app.status} />
             </Stack>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ flexWrap: "wrap" }}>
+            <Box
+              sx={{
+                display: "grid",
+                gap: 2,
+                gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+              }}
+            >
               <LabelValue label="Board">{app.board?.name ?? ""}</LabelValue>
               <LabelValue label="Source">{statusLabel("source", app.source)}</LabelValue>
               <LabelValue label="Location">{app.location ?? ""}</LabelValue>
@@ -114,7 +120,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
                   <Link href={pipelineHref(app.feedId)}>Open in Pipeline</Link>
                 </LabelValue>
               )}
-            </Stack>
+            </Box>
             {app.matchReason && <LabelValue label="Match reason">{app.matchReason}</LabelValue>}
           </Stack>
         </SectionCard>

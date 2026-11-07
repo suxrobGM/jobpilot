@@ -1,77 +1,70 @@
 import type { ReactElement } from "react";
-import { Box, Chip, type ChipProps, Paper, Stack, Typography } from "@mui/material";
-import { PanelFrame } from "./panel-frame";
+import type { ApplicationStatus } from "@jobpilot/contracts/application";
+import { Box } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { StatusChip } from "@/components/ui/display";
+import { AppWindow } from "./app-window";
+import { MockList, MockTabs } from "./mock-list";
 
-const FUNNEL = [
-  { label: "Applied", count: 47, dot: "stages.applying" },
-  { label: "Screening", count: 4, dot: "warning.main" },
-  { label: "Interviewing", count: 2, dot: "primary.main" },
-  { label: "Offer", count: 2, dot: "success.main" },
+const TABS = [
+  { label: "Review", count: 12 },
+  { label: "Applied", count: 47 },
+  { label: "Interviewing", count: 2 },
 ];
 
 interface MockApplication {
   company: string;
   role: string;
-  status: string;
-  color: ChipProps["color"];
+  score: number;
+  status: ApplicationStatus;
 }
 
 const APPLICATIONS: MockApplication[] = [
-  { company: "Stripe", role: "Senior Frontend Engineer", status: "Applied", color: "secondary" },
-  { company: "Vercel", role: "Design Engineer", status: "Interviewing", color: "primary" },
-  { company: "Supabase", role: "Senior TypeScript Engineer", status: "Offer", color: "success" },
+  { company: "Vercel", role: "Design Engineer", score: 91, status: "interviewing" },
+  { company: "Supabase", role: "Senior TypeScript Engineer", score: 88, status: "offer" },
+  { company: "Stripe", role: "Senior Frontend Engineer", score: 84, status: "screening" },
+  { company: "Linear", role: "Product Engineer", score: 79, status: "applied" },
 ];
+
+interface ScoreProps {
+  score: number;
+}
+
+/** The app's score square, at or above the bar. */
+function Score(props: ScoreProps): ReactElement {
+  const { score } = props;
+  return (
+    <Box
+      sx={(theme) => ({
+        width: 32,
+        height: 32,
+        flexShrink: 0,
+        display: "grid",
+        placeItems: "center",
+        borderRadius: theme.radii.md,
+        typography: "body2Strong",
+        color: "success.main",
+        backgroundColor: alpha(theme.palette.success.main, 0.12),
+      })}
+    >
+      {score}
+    </Box>
+  );
+}
 
 export function PipelinePanel(): ReactElement {
   return (
-    <PanelFrame label="pipeline · applied">
-      <Stack spacing={1.5}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1 }}>
-          {FUNNEL.map((group) => (
-            <Paper key={group.label} variant="inset" sx={{ padding: 1 }}>
-              <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
-                <Box
-                  sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: group.dot }}
-                />
-                <Typography variant="statLabel" noWrap>
-                  {group.label}
-                </Typography>
-              </Stack>
-              <Typography variant="statValue" component="p" sx={{ mt: 0.5 }}>
-                {group.count}
-              </Typography>
-            </Paper>
-          ))}
-        </Box>
-        <Stack spacing={1}>
-          {APPLICATIONS.map((app) => (
-            <Paper
-              key={app.company}
-              variant="inset"
-              sx={{
-                padding: 1.25,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 1,
-              }}
-            >
-              <Box sx={{ minWidth: 0 }}>
-                <Typography variant="body2Strong" noWrap>
-                  {app.company}
-                </Typography>
-                <Typography variant="captionMuted" noWrap sx={{ display: "block" }}>
-                  {app.role}
-                </Typography>
-              </Box>
-              <Chip variant="outlined" color={app.color} label={app.status} />
-            </Paper>
-          ))}
-        </Stack>
-        <Typography variant="monoCaption" color="textDisabled">
-          6 statuses · applied → offer
-        </Typography>
-      </Stack>
-    </PanelFrame>
+    <AppWindow page="pipeline" title="Pipeline">
+      <MockTabs tabs={TABS} active="Applied" />
+      <MockList
+        rows={APPLICATIONS.map((app) => ({
+          id: app.company,
+          lead: <Score score={app.score} />,
+          title: app.role,
+          meta: `${app.company} · Remote`,
+          end: <StatusChip domain="application" value={app.status} />,
+        }))}
+      />
+    </AppWindow>
   );
 }

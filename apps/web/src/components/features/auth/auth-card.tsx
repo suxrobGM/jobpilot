@@ -27,9 +27,7 @@ export function AuthCard(props: AuthCardProps): ReactElement {
             <Typography variant="h1" sx={{ fontSize: "2rem", letterSpacing: "-0.035em" }}>
               JobPilot
             </Typography>
-            <Typography variant="body2Muted">
-              Your autonomous copilot for the whole job search
-            </Typography>
+            <Typography variant="body2Muted">An AI agent that applies to jobs for you</Typography>
           </Stack>
           <Card>
             <CardContent sx={{ p: 4 }}>

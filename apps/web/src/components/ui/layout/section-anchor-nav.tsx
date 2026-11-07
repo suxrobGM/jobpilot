@@ -2,6 +2,7 @@
 
 import { type ReactElement, useEffect, useState } from "react";
 import { Box, ButtonBase, Paper, Stack, Typography } from "@mui/material";
+import { TOP_BAR_HEIGHT } from "@/components/layout/shell-config";
 
 export interface SectionAnchor {
   id: string;
@@ -70,7 +71,8 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
       sx={(theme) => ({
         display: { xs: "none", lg: "block" },
         position: "sticky",
-        top: theme.spacing(3),
+        // Below the sticky top bar, which shares this scroller.
+        top: `calc(${TOP_BAR_HEIGHT.desktop}px + ${theme.spacing(3)})`,
         alignSelf: "flex-start",
         width: 200,
         flexShrink: 0,

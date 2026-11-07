@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import { editorial, radii } from "@/theme";
-import { PanelFrame } from "./panel-frame";
+import { AppWindow } from "./app-window";
 
 const VARIANTS = [
   { name: "Base resume", target: "your source of truth", score: null },
@@ -53,7 +53,7 @@ function PagePreview(): ReactElement {
 
 export function ResumePanel(): ReactElement {
   return (
-    <PanelFrame label="resume studio">
+    <AppWindow page="documents" title="Resumes">
       <Stack direction="row" spacing={2}>
         <Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
           {VARIANTS.map((variant) => (
@@ -81,6 +81,6 @@ export function ResumePanel(): ReactElement {
         </Stack>
         <PagePreview />
       </Stack>
-    </PanelFrame>
+    </AppWindow>
   );
 }
