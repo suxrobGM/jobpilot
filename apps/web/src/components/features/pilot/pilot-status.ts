@@ -63,8 +63,8 @@ export function pilotMode(
   if (isHostOffline(health)) {
     return "offline";
   }
-  // An open run is work too: a request runs with the conductor between cycles.
-  if (pilot?.conducting || state.currentRun) {
+  // Only an open run is work: `conducting` stays true between runs, so it would hide held and idle.
+  if (state.currentRun) {
     return "working";
   }
   if (health === "reachable" && !pilot?.paired) {
