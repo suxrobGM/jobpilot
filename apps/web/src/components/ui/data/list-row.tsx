@@ -80,15 +80,15 @@ interface ListRowProps extends RowTitleProps {
   actions?: ReactNode;
   status?: ReactNode;
   time?: ReactNode;
-  /** A trailing ⋯ menu. */
-  menu?: ReactNode;
+  /** Always-visible controls in the row's last column, such as edit and delete. */
+  end?: ReactNode;
   dimmed?: boolean;
 }
 
 /** One record in a `ListCard`; on phones it wraps to title, details, then status and time. */
 export function ListRow(props: ListRowProps): ReactElement {
   const { href, onOpen, title, selection, lead, tags, meta, note, columns } = props;
-  const { actions, status, time, menu, dimmed } = props;
+  const { actions, status, time, end, dimmed } = props;
   const opens = Boolean(href || onOpen);
 
   return (
@@ -191,7 +191,11 @@ export function ListRow(props: ListRowProps): ReactElement {
           {time}
         </Box>
       )}
-      {menu}
+      {end && (
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", flexShrink: 0 }}>
+          {end}
+        </Stack>
+      )}
     </Stack>
   );
 }

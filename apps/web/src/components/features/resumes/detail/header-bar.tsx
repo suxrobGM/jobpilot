@@ -11,7 +11,7 @@ import type { ResumeDto } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { PageHeader } from "@/components/ui/layout";
-import { useConfirm } from "@/providers/confirm-provider";
+import { useDeleteResume } from "../use-delete-resume";
 import { useSetPrimaryResume } from "../use-set-primary-resume";
 
 interface ResumeHeaderProps {
@@ -22,26 +22,8 @@ interface ResumeHeaderProps {
 export function ResumeHeader(props: ResumeHeaderProps): ReactElement {
   const { resume } = props;
   const router = useRouter();
-  const confirm = useConfirm();
   const setPrimary = useSetPrimaryResume();
-
-  const remove = useApiMutation(() => api.resumes({ id: resume.id }).delete(), {
-    successMessage: "Resume deleted",
-    invalidate: invalidations.resume,
-    onSuccess: () => router.push("/documents/resumes"),
-  });
-
-  const handleDelete = async () => {
-    const confirmed = await confirm({
-      title: "Delete resume?",
-      description: `Remove "${resume.label}" and all its variants? This cannot be undone.`,
-      confirmLabel: "Delete",
-      destructive: true,
-    });
-    if (confirmed) {
-      remove.mutate();
-    }
-  };
+  const remove = useDeleteResume(() => router.push("/documents/resumes"));
 
   return (
     <PageHeader
@@ -66,7 +48,11 @@ export function ResumeHeader(props: ResumeHeaderProps): ReactElement {
           <TooltipIconButton title="Open PDF" href={resumePdfUrl(resume.id, resume.updatedAt)}>
             <PictureAsPdf fontSize="md" />
           </TooltipIconButton>
-          <TooltipIconButton title="Delete resume" onClick={handleDelete}>
+          <TooltipIconButton
+            title="Delete resume"
+            disabled={remove.isPending}
+            onClick={() => void remove.request(resume)}
+          >
             <Delete fontSize="md" />
           </TooltipIconButton>
         </Stack>

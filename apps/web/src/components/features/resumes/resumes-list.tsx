@@ -2,7 +2,14 @@
 
 import { type ReactElement, useState } from "react";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
-import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
+import {
+  Add,
+  DeleteOutlined,
+  Description,
+  PictureAsPdf,
+  Star,
+  StarBorder,
+} from "@mui/icons-material";
 import { Button, Chip } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -23,6 +30,7 @@ import { useToast } from "@/providers/toast-provider";
 import { plural } from "@/utils/format";
 import { resumeHref } from "@/utils/routes";
 import { NewResumeDialog } from "./new-resume-dialog";
+import { useDeleteResume } from "./use-delete-resume";
 import { useSetPrimaryResume } from "./use-set-primary-resume";
 
 export function ResumesList(): ReactElement {
@@ -48,6 +56,7 @@ export function ResumesList(): ReactElement {
   });
 
   const setPrimary = useSetPrimaryResume();
+  const remove = useDeleteResume();
 
   const rows = list.data ?? [];
 
@@ -108,7 +117,8 @@ export function ResumesList(): ReactElement {
                   {resume.variantCount > 0 ? plural(resume.variantCount, "variant") : "No variants"}
                 </ListCell>
               }
-              actions={
+              time={<RelativeTime value={resume.updatedAt} />}
+              end={
                 <>
                   <TooltipIconButton
                     title={resume.isPrimary ? "Primary resume" : "Make primary"}
@@ -125,9 +135,16 @@ export function ResumesList(): ReactElement {
                   >
                     <PictureAsPdf fontSize="sm" />
                   </TooltipIconButton>
+                  <TooltipIconButton
+                    title="Delete resume"
+                    size="small"
+                    disabled={remove.isPending}
+                    onClick={() => void remove.request(resume)}
+                  >
+                    <DeleteOutlined fontSize="sm" />
+                  </TooltipIconButton>
                 </>
               }
-              time={<RelativeTime value={resume.updatedAt} />}
             />
           ))}
         </ListCard>
