@@ -97,6 +97,8 @@ Mockup: `.tmp/design-lab/pilot.html`. A workspace, not a page: Needs you (340px)
 
 Check every remaining screen against the new tokens and shell at both widths: Pipeline, Analytics, Documents, Portfolio, Job boards, Settings, Upwork, Networking, Onboarding, the agent drawer, dialogs, auth, admin, and the public/marketing pages (fonts and radii only). Fix overflow and spacing.
 
+Done 2026-11-07. Page descriptions dropped where a card already explains (Analytics, Portfolio, Job boards, Settings, Goals, Upwork profile). Page-level actions moved to the top bar (Analytics rank/share, Add board, View public page). Portfolio is settings beside a live preview. Pilot settings are one card per section. Card titles share the h4 face with form sections. Detail pages have back links and skeletons inside the page frame. Sticky side navs sit below the top bar. Landing tour panels are small copies of the app (rail, top bar, list rows, Pilot turns); leaderboard rows sit in a ListCard. Admin keeps its desktop tables.
+
 ## Phase 7: ⌘K jump (new feature)
 
 A command palette for routes, pipeline jobs and settings sections, opened from the TopBar box or ⌘K / Ctrl+K. It's a search icon on mobile.
