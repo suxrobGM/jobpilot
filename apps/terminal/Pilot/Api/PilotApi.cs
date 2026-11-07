@@ -108,9 +108,9 @@ public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi
     }
 
     private static HttpRequestMessage Request(PilotSettings settings, HttpMethod method, string path, HttpContent? content) =>
-        new(method, settings.Api.ApiUrl.TrimEnd('/') + path)
+        new(method, settings.Api.Url + path)
         {
             Content = content,
-            Headers = { Authorization = new AuthenticationHeaderValue("Bearer", settings.Api.ApiToken) },
+            Headers = { Authorization = new AuthenticationHeaderValue("Bearer", settings.Api.Token) },
         };
 }

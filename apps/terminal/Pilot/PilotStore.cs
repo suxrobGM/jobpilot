@@ -69,11 +69,11 @@ public sealed class PilotStore
 
     private void Persist(PilotSettings settings)
     {
-        var (token, isProtected) = TokenProtection.Protect(settings.Api.ApiToken);
+        var (token, isProtected) = TokenProtection.Protect(settings.Api.Token);
         var file = new PilotSettingsFile
         {
             Provider = settings.Provider.Id,
-            ApiUrl = settings.Api.ApiUrl,
+            ApiUrl = settings.Api.Url,
             WebUrl = settings.Api.WebUrl,
             UserId = settings.UserId,
             Token = token,

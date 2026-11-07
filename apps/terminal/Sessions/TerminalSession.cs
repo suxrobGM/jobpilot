@@ -106,8 +106,8 @@ public sealed class TerminalSession : IDisposable
                 ["JOBPILOT_SKILLS_ROOT"] = paths.SkillsDir,
                 ["JOBPILOT_WORKSPACE_ROOT"] = paths.WorkingDir,
                 ["JOBPILOT_TEMP"] = scratchDir,
-                ["JOBPILOT_API"] = api.ApiUrl,
-                ["JOBPILOT_API_TOKEN"] = api.ApiToken,
+                ["JOBPILOT_API"] = api.Url,
+                ["JOBPILOT_API_TOKEN"] = api.Token,
                 ["JOBPILOT_WEB"] = api.WebUrl,
             };
 

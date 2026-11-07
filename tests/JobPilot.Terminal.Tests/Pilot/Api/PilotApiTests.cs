@@ -38,7 +38,7 @@ public sealed class PilotApiTests : IDisposable
                 seen = request;
                 return Respond(HttpStatusCode.OK, ActivityJson);
             },
-            Settings(apiUrl: "https://api.example.test/"));
+            Settings(apiUrl: "https://api.example.test"));
 
         var activity = await api.GetActivityAsync(TestContext.Current.CancellationToken);
 

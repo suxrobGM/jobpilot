@@ -1,7 +1,7 @@
 namespace JobPilot.Terminal.Sessions;
 
 /// <summary>The JobPilot API and web a session's skills call, as the signed-in user.</summary>
-public sealed record ApiConnection(string ApiUrl, string WebUrl, string ApiToken)
+public sealed record ApiConnection(string Url, string WebUrl, string Token)
 {
     /// <summary>Why these request values cannot make a connection, or null when they can.</summary>
     public static string? Invalid(string? apiToken, string? apiUrl, string? webUrl)
