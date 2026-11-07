@@ -5,7 +5,6 @@ import { InboxContent } from "@/components/features/inbox/inbox-content";
 
 export const metadata: Metadata = { title: "Inbox" };
 
-/** Full-bleed, no PageShell: the message list runs edge to edge beside the open message. */
 export default function InboxPage(): ReactElement {
   return (
     <>

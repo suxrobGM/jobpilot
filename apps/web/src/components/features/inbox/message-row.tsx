@@ -1,45 +1,46 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Avatar, ButtonBase, Stack, Typography } from "@mui/material";
+import { WorkOutlined } from "@mui/icons-material";
+import { Avatar, Box, Stack, Typography } from "@mui/material";
+import type { Route } from "next";
+import NextLink from "next/link";
 import type { EmailMessageDto } from "@/api/types";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 
 interface MessageRowProps {
   message: EmailMessageDto;
-  selected: boolean;
-  onOpen: () => void;
+  href: Route;
 }
 
 export function MessageRow(props: MessageRowProps): ReactElement {
-  const { message, selected, onOpen } = props;
+  const { message, href } = props;
   const sender = message.fromName || message.fromAddress;
+  const matched = message.application;
 
   return (
-    <ButtonBase
-      onClick={onOpen}
-      aria-current={selected || undefined}
+    <Box
+      component={NextLink}
+      href={href}
       sx={(theme) => ({
         display: "flex",
-        width: "100%",
         gap: 1.5,
         alignItems: "flex-start",
-        textAlign: "left",
-        px: 2,
+        px: { xs: 1.5, sm: 2 },
         py: 1.5,
-        borderLeft: 2,
-        borderColor: selected ? "accent.primary" : "transparent",
-        backgroundColor: selected ? theme.palette.surfaces.card : "transparent",
+        color: "inherit",
+        textDecoration: "none",
+        borderRadius: theme.radii.lg,
         transition: theme.motion.fast,
         "&:hover": { backgroundColor: theme.palette.surfaces.card },
-        "&.Mui-focusVisible": { boxShadow: theme.shadows_custom.focus },
+        "&:focus-visible": { outline: "none", boxShadow: theme.shadows_custom.focus },
       })}
     >
       <Avatar
         variant="rounded"
         sx={(theme) => ({
-          width: 34,
-          height: 34,
+          width: 36,
+          height: 36,
           ...theme.typography.body2Strong,
           bgcolor: theme.palette.surfaces.elevated,
           color: "text.secondary",
@@ -52,13 +53,24 @@ export function MessageRow(props: MessageRowProps): ReactElement {
           <Typography variant="body2Strong" noWrap>
             {sender}
           </Typography>
-          <Typography variant="captionMuted" noWrap>
+          <Typography variant="captionMuted" noWrap sx={{ display: { xs: "none", sm: "block" } }}>
             {message.fromDomain}
           </Typography>
         </Stack>
-        <Typography variant="body2Muted" noWrap>
+        <Typography variant="body2" noWrap>
           {message.subject}
         </Typography>
+        <Typography variant="body2Muted" noWrap>
+          {message.snippet}
+        </Typography>
+        {matched && (
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", pt: 0.25 }}>
+            <WorkOutlined fontSize="sm" sx={{ color: "text.secondary" }} />
+            <Typography variant="captionMuted" noWrap>
+              {`${matched.title} · ${matched.company}`}
+            </Typography>
+          </Stack>
+        )}
       </Stack>
       <Stack spacing={0.75} sx={{ alignItems: "flex-end", flexShrink: 0 }}>
         <RelativeTime value={message.receivedAt} />
@@ -66,6 +78,6 @@ export function MessageRow(props: MessageRowProps): ReactElement {
           <StatusChip domain="classification" value={message.classification} />
         )}
       </Stack>
-    </ButtonBase>
+    </Box>
   );
 }

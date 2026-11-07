@@ -10,6 +10,17 @@ export function applicationHref(applicationId: string): Route {
   return `/applications/${encodeURIComponent(applicationId)}` as Route;
 }
 
+/** The inbox list; `listQuery` is its `?filter=&page=` string, kept so Back lands on the same view. */
+export function inboxHref(listQuery: string): Route {
+  return (listQuery ? `/inbox?${listQuery}` : "/inbox") as Route;
+}
+
+/** One message, carrying the list query it was opened from for Back and next/previous. */
+export function messageHref(messageId: string, listQuery: string): Route {
+  const path = `/inbox/${encodeURIComponent(messageId)}`;
+  return (listQuery ? `${path}?${listQuery}` : path) as Route;
+}
+
 export function resumeHref(resumeId: string): Route {
   return `/resumes/${encodeURIComponent(resumeId)}` as Route;
 }

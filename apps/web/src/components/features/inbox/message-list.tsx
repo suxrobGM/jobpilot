@@ -1,68 +1,49 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { Classification } from "@jobpilot/contracts/email";
 import { FilterAlt } from "@mui/icons-material";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import type { EmailMessageDto } from "@/api/types";
-import { statusLabel } from "@/components/ui/display";
+import { messageHref } from "@/utils/routes";
 import { MessageRow } from "./message-row";
 
-/** Mail that moves an application first; irrelevant mail folds behind one row at the end. */
-const GROUP_ORDER: (Classification | null)[] = [
-  "interviewing",
-  "offer",
-  "rejected",
-  "verification",
-  null,
-];
+function isIrrelevant(message: EmailMessageDto): boolean {
+  return message.classification === "irrelevant";
+}
 
-function groupLabel(classification: Classification | null): string {
-  return classification ? statusLabel("classification", classification) : "Not scanned yet";
+/** The list's reading order, newest first with irrelevant mail last: next/previous follow it too. */
+export function listOrder(messages: EmailMessageDto[]): EmailMessageDto[] {
+  return [
+    ...messages.filter((message) => !isIrrelevant(message)),
+    ...messages.filter(isIrrelevant),
+  ];
 }
 
 interface MessageListProps {
   messages: EmailMessageDto[];
-  selectedId: string | null;
-  onOpen: (message: EmailMessageDto) => void;
+  /** The list's `?filter=&page=`, carried into each message for Back and next/previous. */
+  listQuery: string;
 }
 
-/** This page of mail grouped by class, so the few messages that matter aren't lost in the noise. */
+/** This page of mail, newest first; irrelevant mail folds behind one row so the rest stands out. */
 export function MessageList(props: MessageListProps): ReactElement {
-  const { messages, selectedId, onOpen } = props;
+  const { messages, listQuery } = props;
   const [showFiltered, setShowFiltered] = useState(false);
-  const irrelevant = messages.filter((message) => message.classification === "irrelevant");
+  const relevant = messages.filter((message) => !isIrrelevant(message));
+  const irrelevant = messages.filter(isIrrelevant);
 
   const renderRows = (rows: EmailMessageDto[]): ReactElement[] =>
     rows.map((message) => (
-      <MessageRow
-        key={message.id}
-        message={message}
-        selected={message.id === selectedId}
-        onOpen={() => onOpen(message)}
-      />
+      <MessageRow key={message.id} message={message} href={messageHref(message.id, listQuery)} />
     ));
 
   return (
     <Stack>
-      {GROUP_ORDER.map((classification) => {
-        const rows = messages.filter((message) => message.classification === classification);
-        if (rows.length === 0) {
-          return null;
-        }
-        return (
-          <Stack key={classification ?? "unscanned"}>
-            <Typography variant="overlineMuted" sx={{ px: 2, pt: 2, pb: 0.75 }}>
-              {`${groupLabel(classification)} · ${rows.length}`}
-            </Typography>
-            {renderRows(rows)}
-          </Stack>
-        );
-      })}
+      {renderRows(relevant)}
       {irrelevant.length > 0 && (
         <Paper
           variant="outlined"
-          sx={{ m: 2, px: 2, py: 1.5, borderStyle: "dashed", bgcolor: "transparent" }}
+          sx={{ my: 2, px: 2, py: 1.5, borderStyle: "dashed", bgcolor: "transparent" }}
         >
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
             <FilterAlt fontSize="md" sx={{ color: "text.secondary" }} />
