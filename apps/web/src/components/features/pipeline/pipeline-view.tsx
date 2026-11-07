@@ -39,7 +39,7 @@ const FUNNEL = [
 /** Every job the pilot touched, across searches and feeds, one tab per stage. */
 export function PipelineView(): ReactElement {
   const params = useSearchParams();
-  const view: PipelineTab = enumParam(PIPELINE_TAB_KEYS, params.get("view")) ?? "review";
+  const chosenView = enumParam(PIPELINE_TAB_KEYS, params.get("view"));
   const feedId = params.get("feed");
   const board = params.get("board");
   const status = enumParam(FUNNEL, params.get("status"));
@@ -66,6 +66,9 @@ export function PipelineView(): ReactElement {
     count: summary?.byStatus[key] ?? 0,
   }));
   const tabCount = (key: PipelineTab) => (key === "applied" ? summary?.total : counts?.views[key]);
+  // A link to one search names no tab; open where its jobs are, not on an empty To review.
+  const firstFilled = PIPELINE_TAB_KEYS.find((key) => (tabCount(key) ?? 0) > 0);
+  const view: PipelineTab = chosenView ?? (feedId && firstFilled ? firstFilled : "review");
   // Applications aren't counted per feed, so Applied lists every feed without numbers.
   const feedCounts =
     view !== "applied" && counts
@@ -98,7 +101,11 @@ export function PipelineView(): ReactElement {
             value={view}
             variant="scrollable"
             onChange={(_, next: PipelineTab) =>
-              pagination.setFilters({ view: next === "review" ? null : next, status: null })
+              // Under a search filter a bare URL picks a tab itself, so To review must be explicit.
+              pagination.setFilters({
+                view: next === "review" && !feedId ? null : next,
+                status: null,
+              })
             }
             sx={{ borderBottom: 0 }}
           >
