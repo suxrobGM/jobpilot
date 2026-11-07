@@ -13,7 +13,7 @@ const SOURCE_LABELS: Record<PilotChange["source"], string> = {
   user: "You",
   chat: "From chat",
   pilot: "Pilot",
-  notice: "Heads up",
+  notice: "Pilot noticed",
 };
 
 const CLOSED_LABELS: Partial<Record<PilotChange["status"], string>> = {

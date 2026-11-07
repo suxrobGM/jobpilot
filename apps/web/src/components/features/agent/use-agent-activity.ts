@@ -35,7 +35,7 @@ interface AgentActivity {
 export function useAgentActivity(): AgentActivity {
   const { health, status } = useTerminalHealth();
   const { data: state } = useQuery(pilotQueries.state());
-  // The same rule as the pilot's status line, so the two never disagree on working.
+  // The same rule as the pilot header, so the two never disagree on working.
   const working =
     health === "reachable" &&
     state &&

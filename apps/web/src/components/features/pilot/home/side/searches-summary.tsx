@@ -1,11 +1,12 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import { PauseCircleOutlined } from "@mui/icons-material";
 import { Button, Stack, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import type { FeedDto } from "@/api/types";
+import { plural } from "@/utils/format";
 import { useMakeChange } from "../../changes/use-changes";
 import { SideSection } from "./side-section";
 
@@ -15,36 +16,21 @@ interface SearchRowProps {
 
 function SearchRow(props: SearchRowProps): ReactElement {
   const { search } = props;
-  const resume = useMakeChange();
-
+  const paused = search.pausedAt !== null;
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center", minHeight: 28 }}>
       <Typography
         variant="body2"
         noWrap
         title={search.query ?? undefined}
-        sx={{ flex: 1, minWidth: 0, color: search.pausedAt ? "text.secondary" : "text.primary" }}
+        sx={{ flex: 1, minWidth: 0, color: paused ? "text.secondary" : "text.primary" }}
       >
         {search.name}
       </Typography>
-      {search.pausedAt ? (
-        <>
-          <Tooltip title={search.pausedReason ?? "Paused"}>
-            <PauseCircleOutlined fontSize="sm" sx={{ color: "text.secondary" }} />
-          </Tooltip>
-          <Button
-            size="small"
-            loading={resume.isPending}
-            onClick={() =>
-              resume.mutate({
-                summary: `Resumed ${search.name}`,
-                actions: [{ type: "search.resume", searchId: search.id }],
-              })
-            }
-          >
-            Resume
-          </Button>
-        </>
+      {paused ? (
+        <Tooltip title={search.pausedReason ?? "Paused"}>
+          <PauseCircleOutlined fontSize="sm" sx={{ color: "text.secondary" }} />
+        </Tooltip>
       ) : (
         <Typography variant="body2Muted">{search.appliedThisWeek}</Typography>
       )}
@@ -52,22 +38,46 @@ function SearchRow(props: SearchRowProps): ReactElement {
   );
 }
 
+/** Active searches with this week's applications; paused ones fold behind one line. */
 export function SearchesSummary(): ReactElement {
   const searches = useQuery(pilotQueries.searches()).data ?? [];
+  const [showPaused, setShowPaused] = useState(false);
+  const resume = useMakeChange();
+  const active = searches.filter((search) => search.pausedAt === null);
+  const paused = searches.filter((search) => search.pausedAt !== null);
+
+  const resumeAll = (): void => {
+    resume.mutate({
+      summary: `Resumed ${plural(paused.length, "search", "searches")}`,
+      actions: paused.map((search) => ({ type: "search.resume", searchId: search.id })),
+    });
+  };
+
   return (
     <SideSection
       title="Searches"
       action={<Typography variant="captionMuted">applied / week</Typography>}
     >
-      {searches.length === 0 ? (
-        <Typography variant="body2Muted">
-          None yet. The pilot builds these from your goals.
-        </Typography>
-      ) : (
-        <Stack spacing={0.25}>
-          {searches.map((search) => (
-            <SearchRow key={search.id} search={search} />
-          ))}
+      {searches.length === 0 && (
+        <Typography variant="body2Muted">None yet. I build these from your goals.</Typography>
+      )}
+      <Stack spacing={0.25}>
+        {active.map((search) => (
+          <SearchRow key={search.id} search={search} />
+        ))}
+        {showPaused && paused.map((search) => <SearchRow key={search.id} search={search} />)}
+      </Stack>
+      {paused.length > 0 && (
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Typography variant="captionMuted" sx={{ flex: 1 }}>
+            {`${paused.length} paused`}
+          </Typography>
+          <Button size="small" color="inherit" onClick={() => setShowPaused(!showPaused)}>
+            {showPaused ? "Hide" : "Show"}
+          </Button>
+          <Button size="small" loading={resume.isPending} onClick={resumeAll}>
+            Resume all
+          </Button>
         </Stack>
       )}
     </SideSection>

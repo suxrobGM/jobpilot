@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { AddLink, ArrowUpward } from "@mui/icons-material";
 import { Chip, IconButton, InputBase, Paper, Stack, Typography } from "@mui/material";
@@ -10,16 +10,20 @@ import { useApiMutation } from "@/api/use-api-mutation";
 import { plural } from "@/utils/format";
 import { parseLinks, useAddLinks } from "../../pipeline/use-add-links";
 
+const SUGGESTED_PROMPTS = [
+  "What did you apply to this week?",
+  "Look for remote ML engineer roles too",
+  "Skip jobs that need a security clearance",
+];
+
 interface ComposerProps {
   state: PilotState;
-  /** Owned by the home, so a suggested prompt can fill it. */
-  text: string;
-  onTextChange: (text: string) => void;
 }
 
 /** Talk to the pilot; its reply runs in the user's own agent session ahead of other work. */
 export function Composer(props: ComposerProps): ReactElement {
-  const { state, text, onTextChange: setText } = props;
+  const { state } = props;
+  const [text, setText] = useState("");
   const links = parseLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
 
@@ -40,6 +44,13 @@ export function Composer(props: ComposerProps): ReactElement {
   return (
     <Stack spacing={0.75}>
       {replying && <Typography variant="captionMuted">Pilot is replying…</Typography>}
+      {text === "" && (
+        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+          {SUGGESTED_PROMPTS.map((prompt) => (
+            <Chip key={prompt} label={prompt} variant="outlined" onClick={() => setText(prompt)} />
+          ))}
+        </Stack>
+      )}
       {links.length > 0 && (
         <Stack direction="row">
           <Chip
@@ -55,7 +66,7 @@ export function Composer(props: ComposerProps): ReactElement {
           multiline
           maxRows={8}
           fullWidth
-          placeholder="Ask or tell your pilot…"
+          placeholder="Message your pilot…"
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {

@@ -2,38 +2,34 @@
 
 import type { ReactElement } from "react";
 import type { PilotThreadItem } from "@jobpilot/contracts/pilot";
-import { QuestionCard } from "../../attention/question-card";
-import { ChangeCard } from "../../changes/change-card";
 import { AskedRow } from "./asked-row";
-import { DigestCard } from "./digest-card";
-import { MessageBubble } from "./message-bubble";
+import { ChangeRow } from "./change-row";
+import { DigestTurn } from "./digest-turn";
+import { MessageTurn } from "./message-turn";
 import { NoteRow } from "./note-row";
 import { RequestRow } from "./request-row";
-import { WorkCard } from "./work-card";
+import { WorkTurn } from "./work-turn";
 
 interface ThreadItemProps {
   item: PilotThreadItem;
 }
 
+/** Open questions and proposals stay one line here; their cards wait at the bottom of the thread. */
 export function ThreadItem(props: ThreadItemProps): ReactElement {
   const { item } = props;
   switch (item.type) {
     case "work":
-      return <WorkCard item={item} />;
+      return <WorkTurn item={item} />;
     case "question":
-      return item.question.status === "open" ? (
-        <QuestionCard question={item.question} />
-      ) : (
-        <AskedRow question={item.question} />
-      );
+      return <AskedRow question={item.question} />;
     case "message":
-      return <MessageBubble message={item.message} />;
+      return <MessageTurn message={item.message} />;
     case "request":
       return <RequestRow request={item.request} />;
     case "change":
-      return <ChangeCard change={item.change} />;
+      return <ChangeRow change={item.change} />;
     case "digest":
-      return <DigestCard entry={item.entry} />;
+      return <DigestTurn entry={item.entry} />;
     case "note":
       return <NoteRow entry={item.entry} />;
   }

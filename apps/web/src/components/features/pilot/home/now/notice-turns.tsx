@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type { PilotNotice } from "@jobpilot/contracts/pilot";
 import { Button, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { LinkButton } from "@/components/ui/buttons";
 import { CHANGE_INVALIDATE } from "../../changes/use-changes";
-import { SideSection } from "./side-section";
+import { PilotTurn } from "../thread/pilot-turn";
 
 const INVALIDATE = [pilotQueries.notices().queryKey, ...CHANGE_INVALIDATE];
 
@@ -38,11 +38,11 @@ const ACTED_MESSAGES: Record<ActedNotice["kind"], string> = {
   change: "Changed. You can undo it from the thread.",
 };
 
-interface NoticeRowProps {
+interface NoticeTurnProps {
   notice: PilotNotice;
 }
 
-function NoticeRow(props: NoticeRowProps): ReactElement {
+function NoticeTurn(props: NoticeTurnProps): ReactElement {
   const { notice } = props;
   const { action } = notice;
   const dismiss = () => api.pilot.notices({ key: notice.key }).dismiss.post();
@@ -58,16 +58,23 @@ function NoticeRow(props: NoticeRowProps): ReactElement {
   );
 
   return (
-    <Stack spacing={0.5}>
-      <Typography variant="body2Strong">{notice.title}</Typography>
-      <Typography variant="body2Muted">{notice.body}</Typography>
+    <PilotTurn>
+      <Typography variant="body2">
+        <Typography component="span" variant="body2Strong">{`${notice.title}. `}</Typography>
+        {notice.body}
+      </Typography>
       <Stack direction="row" spacing={1}>
         {action.kind === "link" ? (
-          <LinkButton href={action.href as Route} size="small">
+          <LinkButton href={action.href as Route} size="small" variant="outlined">
             {action.label}
           </LinkButton>
         ) : (
-          <Button size="small" loading={act.isPending} onClick={() => act.mutate(action)}>
+          <Button
+            size="small"
+            variant="outlined"
+            loading={act.isPending}
+            onClick={() => act.mutate(action)}
+          >
             {action.label}
           </Button>
         )}
@@ -80,24 +87,12 @@ function NoticeRow(props: NoticeRowProps): ReactElement {
           Dismiss
         </Button>
       </Stack>
-    </Stack>
+    </PilotTurn>
   );
 }
 
-/** Patterns the pilot spotted in your data. */
-export function HeadsUp(): ReactElement {
+/** Patterns the pilot spotted in your data, said near the bottom of the thread. */
+export function NoticeTurns(): ReactNode {
   const { data: notices = [] } = useQuery(pilotQueries.notices());
-  return (
-    <SideSection title="Heads up">
-      {notices.length === 0 ? (
-        <Typography variant="body2Muted">Nothing to flag.</Typography>
-      ) : (
-        <Stack spacing={2}>
-          {notices.map((notice) => (
-            <NoticeRow key={notice.key} notice={notice} />
-          ))}
-        </Stack>
-      )}
-    </SideSection>
-  );
+  return notices.map((notice) => <NoticeTurn key={notice.key} notice={notice} />);
 }

@@ -21,27 +21,27 @@ and it can send that question to your phone.
 **Pilot** is the first page in the sidebar. It reads like a conversation with
 an assistant who reports back as it works.
 
-- **The status line** at the top says what the Pilot is doing right now, how
-  long it has been at it, and how many applications it sent today against
-  your daily limit. Its one main button follows what's next: **Start agent**
-  while the agent is offline, **Turn on autopilot** while it's off, and
-  **Pause** while it runs. **Watch** opens the live steps, and **Interrupt**
-  stops the current task.
-- **The thread** fills the middle, newest at the bottom. Work the Pilot did
-  close together is grouped into one card ("Applied to 3 jobs · ran 2
-  searches"), with a line per task linked to the job or message it was about.
-  Questions, posts waiting for approval, changes, your messages and its
-  replies, and the morning summary all appear here in order, split by day.
-  An empty thread suggests a few things to ask.
-- **The message box** at the bottom is how you talk to it.
-- **The right column** holds **Needs you** (questions, drafts and suggested
-  changes waiting on you), **Heads up** (patterns worth a look), your
-  **Searches** with how many applications each sent this week (a paused one
-  shows why, with **Resume**), and your **Rules**. On a phone these sit behind the **Needs you** button.
-
-Until setup is done, one line above the thread lists the steps left: a
-resume, profile basics, your goals, email, board logins, the agent, and
-autopilot. **Finish** opens the full checklist.
+- **The header** names the Pilot and shows whether it's up, how many
+  applications it sent today against your daily limit, and the **Autopilot**
+  switch.
+- **The thread** fills the middle, newest at the bottom, split by day. The
+  Pilot speaks in plain text; your messages sit in bubbles. Work it did close
+  together reads as one message ("Applied to Acme (82) and Globex (74).") with
+  the results underneath: a line per job it applied to or task it ran, linked
+  to the job, and one line totalling its searches ("Searched 5 times · 97 new
+  jobs · 5 of 27 scored cleared your bar · best Acme (80)"). Your messages, its
+  replies, changes with **Undo**, and the morning summary appear in order.
+- **At the bottom of the thread**, below the newest item, the Pilot says what
+  still needs doing: any setup step it's missing, notices worth a look, and
+  everything waiting on you, answered right there. The last line is what it's
+  doing now, with the buttons for it: **Start agent** while the agent is
+  offline, or **Watch**, **Tell this task** and **Stop** while a task runs.
+- **The message box** under the thread is how you talk to it. While it's
+  empty, a few suggested prompts sit above it.
+- **The side column** shows **This week** (applications sent, interviews, and a
+  bar per day), your **Searches** with how many applications each sent this
+  week (paused ones fold into one line with **Show** and **Resume all**), and
+  your **Rules**. On a phone these sit behind a button above the thread.
 
 ## Autopilot
 
@@ -62,10 +62,10 @@ something, it makes the change and shows it to you with **Undo**.
 
 - **Paste a job link** and a chip appears: **Add to your pipeline**. That adds
   the job straight away, without waiting for the Pilot.
-- **Tell this task** (on the status line, while something is running) types
+- **Tell this task** (on the last line of the thread, while something is running) types
   your words into the task in progress, for example "use my other resume for
   this one". It doesn't stop the task.
-- **Interrupt** stops the task in progress. The Pilot moves on to the next
+- **Stop** stops the task in progress. The Pilot moves on to the next
   one.
 
 Buttons around the app, like **Apply** on a job, **Sync** in Upwork, or
@@ -136,10 +136,10 @@ If you get job alert emails from boards like LinkedIn or Indeed, the Pilot
 can read them on a schedule and add the jobs to your pipeline. **Run now**
 imports them on the next run.
 
-## Heads up
+## Notices
 
-The **Heads up** section points out patterns in your own data, each with one
-button to act on it:
+Near the bottom of the thread, the Pilot points out patterns in your own data,
+each with one button to act on it and **Dismiss**:
 
 - your email isn't connected, or needs reconnecting;
 - mail the Pilot hasn't read for more than two days;
@@ -164,8 +164,8 @@ Jobs you already have are never added twice.
 
 ## Watching it work
 
-The agent button at the bottom of the sidebar, or **Watch** on the status
-line, opens the **agent drawer**:
+The agent button at the bottom of the sidebar, or **Watch** on the last line
+of the thread, opens the **agent drawer**:
 
 - **Steps** shows the task in progress as short, readable lines: "Opened
   boards.greenhouse.io/acme/jobs/42", "Filled 6 fields", "Clicked Submit
@@ -176,7 +176,7 @@ line, opens the **agent drawer**:
 
 You can type in the terminal too. When you do, the Pilot holds off starting
 new tasks for 3 minutes so it doesn't interrupt you. **Hand back** on the
-status line ends that wait early.
+last line of the thread ends that wait early.
 
 ## How it works
 
@@ -222,13 +222,14 @@ you don't need to keep a browser tab open.
 | Drafts emails, follow-ups, interview replies, prep notes, and posts | Changing your goals, rules, or standing answers |
 | Adds, renames, and pauses its own searches | Adding a board it suggests |
 
-Everything in the right-hand column waits under **Needs you**. The Pilot
-never sends, posts, or changes an application's status without your say.
+Everything in the right-hand column waits at the bottom of the thread until
+you decide. The Pilot never sends, posts, or changes an application's status
+without your say.
 
 ## Questions and notifications
 
-When the Pilot needs your decision, it asks a **question** in the thread,
-and it also appears under **Needs you**. Anything that depends on the answer
+When the Pilot needs your decision, it asks a **question** at the bottom of
+the thread, where you answer it. Anything that depends on the answer
 waits until you reply. To get a push notification when a question comes in,
 even with JobPilot closed, turn on notifications under **Settings →
 Notifications**. You do this once per device.
@@ -242,7 +243,7 @@ agent reads them from your inbox.
 
 Once a day, after 07:00 UTC, the Pilot posts a summary of the past 24 hours
 in the thread: applications sent, replies read, messages sent, and questions
-waiting for you. **Settings → Diagnostics** has the full history of runs, what
+waiting for you. A day with nothing to report shows as one quiet line. **Settings → Diagnostics** has the full history of runs, what
 each one cost in tokens, and an export.
 
 ## Interviews
@@ -258,11 +259,11 @@ application.
 - **The agent is offline.** Start it from the agent drawer: one click on
   Windows, or one of the commands it shows on macOS and Linux. The Pilot picks
   up again by itself once the agent is back.
-- **It isn't starting anything.** Check the status line. "Autopilot off"
-  means it only runs what you ask for. "Waiting while you use the terminal"
+- **It isn't starting anything.** Read the last line of the thread. "Autopilot
+  is off" means it only runs what you ask for. "You're using the terminal"
   clears 3 minutes after you stop typing, or at once with **Hand back**.
 - **A task keeps getting stuck.** Open **Steps** or **Terminal** in the agent
-  drawer to see where, then **Interrupt** it or tell it what to do with
+  drawer to see where, then **Stop** it or tell it what to do with
   **Tell this task**.
 - **One board keeps failing.** The Pilot checks that board once and reports
   what it found. Usually it's an expired login, and it signs back in on the

@@ -37,7 +37,7 @@ interface DigestCountsProps {
   detail: JournalDetail;
 }
 
-export function DigestCounts(props: DigestCountsProps): ReactElement {
+function DigestCounts(props: DigestCountsProps): ReactElement {
   const { detail } = props;
   const parts = [
     `${detailCount(detail, "applicationsCreated")} applied`,

@@ -1,28 +1,33 @@
 "use client";
 
-import { Fragment, type ReactElement, useEffect, useLayoutEffect, useRef } from "react";
-import { Box, Button, Chip, CircularProgress, Divider, Stack, Typography } from "@mui/material";
+import {
+  Fragment,
+  type ReactElement,
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from "react";
+import type { PilotState } from "@jobpilot/contracts/pilot";
+import { Box, Button, CircularProgress, Divider, Stack, Typography } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { QuerySection } from "@/components/ui/feedback";
 import { formatDayLabel } from "@/utils/format";
+import { LiveTurn } from "../now/live-turn";
+import { NoticeTurns } from "../now/notice-turns";
+import { SetupTurn } from "../now/setup-turn";
+import { WaitingOnYou } from "../now/waiting-on-you";
 import { ThreadItem } from "./thread-item";
+
+/** The reading column of the thread, composer included. */
+export const THREAD_WIDTH = 760;
 
 /** Within this distance of the bottom, new items keep the view pinned to the newest. */
 const STICK_TO_BOTTOM_PX = 120;
 
-const SUGGESTED_PROMPTS = [
-  "What did you apply to this week?",
-  "Look for remote ML engineer roles too",
-  "Skip jobs that need a security clearance",
-];
-
-interface GreetingProps {
-  onPrompt: (text: string) => void;
-}
-
-function Greeting(props: GreetingProps): ReactElement {
-  const { onPrompt } = props;
+/** Shown until the pilot has done anything; the composer carries the suggested prompts. */
+function Greeting(): ReactElement {
   return (
     <Stack spacing={1.5} sx={{ alignItems: "center", py: 6, textAlign: "center" }}>
       <Typography variant="h4" component="p">
@@ -31,11 +36,6 @@ function Greeting(props: GreetingProps): ReactElement {
       <Typography variant="body2Muted">
         Ask about your search, change a rule, or send me job links. What I do shows up here.
       </Typography>
-      <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
-        {SUGGESTED_PROMPTS.map((prompt) => (
-          <Chip key={prompt} label={prompt} variant="outlined" onClick={() => onPrompt(prompt)} />
-        ))}
-      </Stack>
     </Stack>
   );
 }
@@ -53,20 +53,27 @@ function DaySeparator(props: DaySeparatorProps): ReactElement {
   );
 }
 
-interface ThreadProps {
-  /** Fills the composer with a suggested prompt. */
-  onPrompt: (text: string) => void;
+/** Our own jump fires a scroll event after the tail may have grown; that event isn't the user. */
+function scrollToBottom(box: HTMLDivElement, selfScrolled: RefObject<boolean>): void {
+  selfScrolled.current = true;
+  box.scrollTop = box.scrollHeight;
 }
 
-/** Newest at the bottom; scrolling to the top loads earlier items. */
+interface ThreadProps {
+  state: PilotState;
+}
+
+/** Newest at the bottom, then what waits on the user and what the pilot is doing now. */
 export function Thread(props: ThreadProps): ReactElement {
-  const { onPrompt } = props;
+  const { state } = props;
   const query = useInfiniteQuery(pilotQueries.thread());
   const scrollRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   // Height before an earlier page was prepended, so the view stays on what the user was reading.
   const heightBeforePrepend = useRef<number | null>(null);
   const pinned = useRef(true);
+  const selfScrolled = useRef(false);
 
   const items = (query.data?.pages ?? []).flatMap((page) => page.items).reverse();
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
@@ -89,9 +96,25 @@ export function Thread(props: ThreadProps): ReactElement {
       box.scrollTop += box.scrollHeight - heightBeforePrepend.current;
       heightBeforePrepend.current = null;
     } else if (pinned.current) {
-      box.scrollTop = box.scrollHeight;
+      scrollToBottom(box, selfScrolled);
     }
   });
+
+  // The turns at the bottom load on their own, after the thread has scrolled down.
+  useEffect(() => {
+    const box = scrollRef.current;
+    const content = contentRef.current;
+    if (!box || !content) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      if (pinned.current && heightBeforePrepend.current === null) {
+        scrollToBottom(box, selfScrolled);
+      }
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const top = topRef.current;
@@ -115,11 +138,15 @@ export function Thread(props: ThreadProps): ReactElement {
       ref={scrollRef}
       onScroll={(event) => {
         const box = event.currentTarget;
+        if (selfScrolled.current) {
+          selfScrolled.current = false;
+          return;
+        }
         pinned.current = box.scrollHeight - box.scrollTop - box.clientHeight < STICK_TO_BOTTOM_PX;
       }}
       sx={{ flex: 1, minHeight: 0, overflowY: "auto", pr: 0.5 }}
     >
-      <Stack spacing={1.5}>
+      <Stack ref={contentRef} spacing={3} sx={{ maxWidth: THREAD_WIDTH, mx: "auto", py: 1 }}>
         <Box ref={topRef} sx={{ display: "flex", justifyContent: "center" }}>
           {isFetchingNextPage && <CircularProgress size={20} />}
           {hasNextPage && !isFetchingNextPage && (
@@ -132,9 +159,9 @@ export function Thread(props: ThreadProps): ReactElement {
           query={query}
           errorTitle="Couldn't load the pilot's activity."
           isEmpty={items.length === 0}
-          empty={<Greeting onPrompt={onPrompt} />}
+          empty={<Greeting />}
         >
-          <Stack spacing={1.5}>
+          <Stack spacing={3}>
             {items.map((item, index) => {
               const day = formatDayLabel(item.at);
               const newDay = index === 0 || formatDayLabel(items[index - 1].at) !== day;
@@ -147,6 +174,10 @@ export function Thread(props: ThreadProps): ReactElement {
             })}
           </Stack>
         </QuerySection>
+        <SetupTurn state={state} />
+        <NoticeTurns />
+        <WaitingOnYou />
+        <LiveTurn state={state} />
       </Stack>
     </Box>
   );
