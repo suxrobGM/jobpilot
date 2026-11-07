@@ -4,24 +4,18 @@ import type { ReactElement } from "react";
 import { PauseCircleOutlined } from "@mui/icons-material";
 import { Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
 import type { PipelineJobDto } from "@/api/types";
+import { parkedJobHref } from "@/utils/routes";
 
 interface ParkedJobCardProps {
   job: PipelineJobDto;
-  selected: boolean;
-  onOpen: () => void;
 }
 
-/** A job the pilot stopped on; opening it shows the job beside the conversation. */
+/** A job the pilot stopped on; it opens on its own page. */
 export function ParkedJobCard(props: ParkedJobCardProps): ReactElement {
-  const { job, selected, onOpen } = props;
+  const { job } = props;
   return (
-    <Card
-      variant="interactive"
-      sx={(theme) =>
-        selected ? { borderColor: "accent.primary", boxShadow: theme.shadows_custom.focus } : {}
-      }
-    >
-      <CardActionArea aria-current={selected || undefined} onClick={onOpen}>
+    <Card variant="interactive">
+      <CardActionArea href={parkedJobHref(job.id)}>
         <CardContent>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
             <PauseCircleOutlined fontSize="lg" sx={{ color: "warning.main", mt: 0.25 }} />

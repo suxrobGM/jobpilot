@@ -6,6 +6,10 @@ export function pipelineHref(feedId: string): Route {
   return `/pipeline?feed=${encodeURIComponent(feedId)}` as Route;
 }
 
+export function parkedJobHref(jobId: string): Route {
+  return `/pilot/jobs/${encodeURIComponent(jobId)}` as Route;
+}
+
 export function applicationHref(applicationId: string): Route {
   return `/applications/${encodeURIComponent(applicationId)}` as Route;
 }

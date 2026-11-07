@@ -27,6 +27,9 @@ function briefValue(value: unknown): string {
   if (value !== null && typeof value === "object") {
     return JSON.stringify(value);
   }
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
   return String(value ?? "");
 }
 
@@ -169,21 +172,30 @@ interface JobDetailProps {
   job: PipelineJobDto;
   /** Sits beside the title: a close button in the drawer, nothing inline. */
   action?: ReactNode;
+  /** Off where the page's top bar already carries the title. */
+  titled?: boolean;
 }
+
+/** Brief keys the header and fields above already show. */
+const SHOWN_ABOVE = new Set(["title", "company", "location", "salary"]);
 
 /** One job: its brief, why it scored what it did, why it stopped, and what to do next. */
 export function JobDetail(props: JobDetailProps): ReactElement {
-  const { job, action } = props;
-  const brief = Object.entries(job.brief ?? {}).filter(([, value]) => briefValue(value) !== "");
+  const { job, action, titled = true } = props;
+  const brief = Object.entries(job.brief ?? {}).filter(
+    ([key, value]) => !SHOWN_ABOVE.has(key) && briefValue(value) !== "",
+  );
   const reason = job.failReason ?? job.skipReason ?? null;
 
   return (
     <Stack spacing={2}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="h3" component="h2">
-            {job.title}
-          </Typography>
+          {titled && (
+            <Typography variant="h3" component="h2">
+              {job.title}
+            </Typography>
+          )}
           <Typography variant="body2Muted">
             {[job.company, job.location, job.board?.name].filter(Boolean).join(" · ")}
           </Typography>

@@ -4,21 +4,14 @@ import type { ReactElement, ReactNode } from "react";
 import { Chip, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import type { PipelineJobDto } from "@/api/types";
 import { QuestionCard } from "../../attention/question-card";
 import { type Pending, useNeedsYou } from "../../attention/use-needs-you";
 import { ChangeCard } from "../../changes/change-card";
 import { NoticeCard } from "./notice-card";
 import { ParkedJobCard } from "./parked-job-card";
 
-interface NeedsYouListProps {
-  selectedJobId: string | null;
-  onOpenJob: (job: PipelineJobDto) => void;
-}
-
-/** Everything waiting on the user, answered in place; parked jobs open beside the conversation. */
-export function NeedsYouList(props: NeedsYouListProps): ReactElement {
-  const { selectedJobId, onOpenJob } = props;
+/** Everything waiting on the user, answered in place; parked jobs open on their own page. */
+export function NeedsYouList(): ReactElement {
   const { data: notices = [] } = useQuery(pilotQueries.notices());
   const items = useNeedsYou();
   const total = notices.length + items.length;
@@ -30,14 +23,7 @@ export function NeedsYouList(props: NeedsYouListProps): ReactElement {
       case "change":
         return <ChangeCard key={item.id} change={item.change} />;
       case "job":
-        return (
-          <ParkedJobCard
-            key={item.id}
-            job={item.job}
-            selected={item.job.id === selectedJobId}
-            onOpen={() => onOpenJob(item.job)}
-          />
-        );
+        return <ParkedJobCard key={item.id} job={item.job} />;
     }
   };
 

@@ -5,12 +5,10 @@ import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Box, Stack, Tab, Tabs, useMediaQuery } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import type { PipelineJobDto } from "@/api/types";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { useAgentAvailable } from "@/providers/agent-provider";
-import { useNeedsYou, useNeedsYouCount } from "../attention/use-needs-you";
+import { useNeedsYouCount } from "../attention/use-needs-you";
 import { Composer } from "./composer";
-import { JobPane } from "./job-pane";
 import { NeedsYouList } from "./needs-you/needs-you-list";
 import { PilotHeader } from "./pilot-header";
 import { PilotOverview } from "./side/pilot-overview";
@@ -43,15 +41,13 @@ function ScrollPane(props: ScrollPaneProps): ReactElement {
   return <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", py: 1 }}>{children}</Box>;
 }
 
-/** The "Needs you" queue beside the conversation; a parked job opens in the conversation's place. */
+/** The "Needs you" queue beside the conversation. */
 export function PilotHome(): ReactElement {
   const stateQuery = useQuery(pilotQueries.state());
   const isDesktop = useAgentAvailable();
   // Wide enough for a third column, so the overview leaves the queue for its own.
   const wide = useMediaQuery((theme) => theme.breakpoints.up("xl"));
   const [tab, setTab] = useState<PhoneTab>("chat");
-  const [openJob, setOpenJob] = useState<PipelineJobDto | null>(null);
-  const parkedJobs = useNeedsYou().flatMap((item) => (item.type === "job" ? [item.job] : []));
   const needsYouTotal = useNeedsYouCount();
   const state = stateQuery.data;
 
@@ -70,21 +66,10 @@ export function PilotHome(): ReactElement {
     );
   }
 
-  const step = (direction: 1 | -1): void => {
-    const at = parkedJobs.findIndex((job) => job.id === openJob?.id);
-    const next = parkedJobs[at + direction];
-    if (next) {
-      setOpenJob(next);
-    }
-  };
-
-  const queue = <NeedsYouList selectedJobId={openJob?.id ?? null} onOpenJob={setOpenJob} />;
+  const queue = <NeedsYouList />;
   const overview = <PilotOverview state={state} />;
 
   const renderMain = (): ReactNode => {
-    if (openJob) {
-      return <JobPane job={openJob} onBack={() => setOpenJob(null)} onStep={step} />;
-    }
     if (isDesktop || tab === "chat") {
       return <Conversation state={state} />;
     }
@@ -126,7 +111,7 @@ export function PilotHome(): ReactElement {
           pb: 2,
         }}
       >
-        {!isDesktop && !openJob && (
+        {!isDesktop && (
           <Tabs
             value={tab}
             onChange={(_, value: PhoneTab) => setTab(value)}

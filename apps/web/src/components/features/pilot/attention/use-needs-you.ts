@@ -50,3 +50,15 @@ export function useNeedsYouCount(): number {
   const { questions, jobs } = useUnasked(parked);
   return notices.length + questions.length + proposals.length + jobs.length;
 }
+
+interface ParkedJob {
+  job: PipelineJobDto | null;
+  isPending: boolean;
+}
+
+/** One parked job by id; null once it stops waiting (applied, dismissed) or never was. */
+export function useParkedJob(jobId: string): ParkedJob {
+  const parked = useQuery(pipelineQueries.jobs(NEEDS_YOU_JOBS));
+  const job = parked.data?.items.find((item) => item.id === jobId) ?? null;
+  return { job, isPending: parked.isPending };
+}
