@@ -7,15 +7,9 @@ import { AddLink } from "@mui/icons-material";
 import { Button, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { applicationQueries, feedQueries, jobBoardQueries, pipelineQueries } from "@/api/queries";
+import { applicationQueries, jobBoardQueries, pipelineQueries } from "@/api/queries";
 import { CountLabel, statusLabel } from "@/components/ui/display";
-import {
-  FilterBar,
-  FilterToggle,
-  SearchField,
-  SelectField,
-  type SelectFieldOption,
-} from "@/components/ui/form";
+import { FilterBar, FilterToggle, SearchField, SelectField } from "@/components/ui/form";
 import { PageHeader } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useUrlSearch } from "@/hooks/use-url-search";
@@ -54,12 +48,9 @@ export function PipelineView(): ReactElement {
   };
   const counts = useQuery(pipelineQueries.counts(filters)).data;
   const summary = useQuery(applicationQueries.summary(filters)).data;
-  const feeds = useQuery(feedQueries.list()).data ?? [];
   const boards = useQuery(jobBoardQueries.list()).data ?? [];
 
-  const jobFeeds = feeds.filter((feed) => feed.kind !== "networking");
-  const feedLabel = new Map(jobFeeds.map((feed) => [feed.id, feed.name]));
-  const boardOptions: SelectFieldOption[] = boards.map((b) => ({ value: b.name, label: b.name }));
+  const boardOptions = boards.map((b) => ({ value: b.name, label: b.name }));
   const statusOptions = FUNNEL.map((key) => ({
     value: key,
     label: statusLabel("application", key),
@@ -67,8 +58,8 @@ export function PipelineView(): ReactElement {
   }));
   const tabCount = (key: PipelineTab) => (key === "applied" ? summary?.total : counts?.views[key]);
   // A link to one search names no tab; open where its jobs are, not on an empty To review.
-  const firstFilled = PIPELINE_TAB_KEYS.find((key) => (tabCount(key) ?? 0) > 0);
-  const view: PipelineTab = chosenView ?? (feedId && firstFilled ? firstFilled : "review");
+  const landing = feedId ? PIPELINE_TAB_KEYS.find((key) => (tabCount(key) ?? 0) > 0) : undefined;
+  const view = chosenView ?? landing ?? "review";
   // Applications aren't counted per feed, so Applied lists every feed without numbers.
   const feedCounts =
     view !== "applied" && counts
@@ -137,7 +128,6 @@ export function PipelineView(): ReactElement {
           onChange={search.setDraft}
         />
         <FeedSelect
-          feeds={jobFeeds}
           value={feedId}
           counts={feedCounts}
           total={shown ?? null}
@@ -160,20 +150,9 @@ export function PipelineView(): ReactElement {
         )}
       </FilterBar>
       {view === "applied" ? (
-        <AppliedView
-          filters={filters}
-          status={status}
-          feedLabel={feedLabel}
-          pagination={pagination}
-        />
+        <AppliedView filters={filters} status={status} pagination={pagination} />
       ) : (
-        <JobsView
-          key={view}
-          view={view}
-          filters={filters}
-          stale={counts?.stale ?? 0}
-          pagination={pagination}
-        />
+        <JobsView key={view} view={view} filters={filters} pagination={pagination} />
       )}
       <AddLinksDialog open={addingLinks} onClose={() => setAddingLinks(false)} />
     </Stack>

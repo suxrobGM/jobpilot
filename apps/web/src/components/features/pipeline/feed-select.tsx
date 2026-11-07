@@ -10,6 +10,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { feedQueries } from "@/api/queries";
 import type { FeedDto } from "@/api/types";
 
 interface FeedGroup {
@@ -52,7 +54,6 @@ function CountedLabel(props: CountedLabelProps): ReactElement {
 }
 
 interface FeedSelectProps {
-  feeds: FeedDto[];
   value: string | null;
   onChange: (feedId: string | null) => void;
   /** Jobs per feed in the open tab; null where the tab has no per-feed counts. */
@@ -62,7 +63,10 @@ interface FeedSelectProps {
 
 /** Searches apart from standing sources, each with its count; feeds with nothing here are hidden. */
 export function FeedSelect(props: FeedSelectProps): ReactElement {
-  const { feeds, value, onChange, counts, total } = props;
+  const { value, onChange, counts, total } = props;
+  const feeds = (useQuery(feedQueries.list()).data ?? []).filter(
+    (feed) => feed.kind !== "networking",
+  );
   const countOf = (feed: FeedDto) => counts?.get(feed.id) ?? 0;
   const shown = feeds.filter((feed) => counts === null || countOf(feed) > 0 || feed.id === value);
   const groups: FeedGroup[] = [

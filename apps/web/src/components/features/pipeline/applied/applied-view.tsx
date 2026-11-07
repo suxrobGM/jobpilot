@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import type { PipelineFilters } from "@jobpilot/contracts/pipeline";
 import { useQuery } from "@tanstack/react-query";
-import { applicationQueries } from "@/api/queries";
+import { applicationQueries, feedQueries } from "@/api/queries";
 import type { ApplicationDto } from "@/api/types";
 import { ListCard, ListHeader, ListLead, ListRow, PaginationFooter } from "@/components/ui/data";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
@@ -16,19 +16,20 @@ import { applicationHref } from "@/utils/routes";
 interface AppliedViewProps {
   filters: PipelineFilters;
   status: ApplicationStatus | null;
-  /** Maps a feedId to its name, for attribution. */
-  feedLabel: Map<string, string>;
   pagination: PaginationParams;
 }
 
 export function AppliedView(props: AppliedViewProps): ReactElement {
-  const { filters, status, feedLabel, pagination } = props;
+  const { filters, status, pagination } = props;
   const apps = useQuery(
     applicationQueries.list({ ...pagination.query, ...filters, ...(status && { status }) }),
   );
+  const feeds = useQuery(feedQueries.list()).data ?? [];
   const rows = apps.data?.items ?? [];
   const source = (app: ApplicationDto): string =>
-    app.feedId ? (feedLabel.get(app.feedId) ?? app.source) : "Single apply";
+    app.feedId
+      ? (feeds.find((feed) => feed.id === app.feedId)?.name ?? app.source)
+      : "Single apply";
 
   return (
     <QuerySection

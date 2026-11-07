@@ -45,13 +45,11 @@ const EMPTY_TITLES: Record<PipelineJobView, string> = {
 interface JobsViewProps {
   view: PipelineJobView;
   filters: PipelineFilters;
-  /** To review jobs found over a month ago, across every page. */
-  stale: number;
   pagination: PaginationParams;
 }
 
 export function JobsView(props: JobsViewProps): ReactElement {
-  const { view, filters, stale, pagination } = props;
+  const { view, filters, pagination } = props;
   const jobs = useQuery(pipelineQueries.jobs({ ...pagination.query, view, ...filters }));
   const [openId, setOpenId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
@@ -84,7 +82,7 @@ export function JobsView(props: JobsViewProps): ReactElement {
   return (
     <Stack spacing={2}>
       {reasonsFor && <ReasonBreakdown feedId={reasonsFor} />}
-      {view === "review" && <StaleNotice count={stale} filters={filters} />}
+      {view === "review" && <StaleNotice filters={filters} />}
       <QuerySection
         query={jobs}
         errorTitle="Couldn't load these jobs."
