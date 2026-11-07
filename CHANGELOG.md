@@ -27,12 +27,17 @@ Update the plugin and terminal host with this release. Older hosts stop running 
 - Jobs from `search`, `auto-apply` and `apply` go to one feed the pilot never applies from on its own. `resume-campaign` and the per-run `--campaign`/`--feed` flags are gone; `auto-apply approved` and `auto-apply retry-failed` work on that feed.
 - The minimum match score, preferring cap-exempt employers, and the default start date moved from your profile into the pilot's rules and saved answers.
 - Unanswered questions expire after 14 days, and old skipped jobs, irrelevant mail and finished runs are cleaned up on a schedule.
+- Campaign questions still open, and answers the pilot never acted on, close as "No longer needed" instead of replaying decisions about campaigns that are now feeds.
 - Settings gained Pilot and Diagnostics tabs; the run history and token costs live under Diagnostics.
 - The docs were rewritten for the new Pilot, and "Campaigns & skills" is now "Skills".
 
 ### Fixed
 
 - The terminal host builds on the patched .NET 10.0.14 compiler and runtime (CVE-2026-111497).
+- Approving a job in the Pipeline starts it applying right away instead of after the next check.
+- Running a saved search with no board of its own uses your first job board instead of failing.
+- Browsing the app no longer holds the pilot as if you were typing in the terminal.
+- The Pilot status line says the pilot is idle, held or off between runs instead of "Working."
 
 ## v2.3.5 - 2026-11-05
 
