@@ -2,7 +2,6 @@ import { type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { ResumeDetail } from "@/components/features/resumes";
 import { DetailSkeleton } from "@/components/ui/feedback";
-import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Resume" };
 
@@ -10,17 +9,12 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+/** Full-bleed, no PageShell: the editor and the PDF preview each take a full-height column. */
 export default function ResumeDetailPage(props: PageProps): ReactElement {
   return (
-    <PageShell maxWidth="xl">
-      <PageHeader
-        title="Edit resume"
-        description="Structured fields render to PDF on the right. Variants tailored from this base appear below."
-      />
-      <Suspense fallback={<DetailSkeleton heights={[560]} />}>
-        <Resume params={props.params} />
-      </Suspense>
-    </PageShell>
+    <Suspense fallback={<DetailSkeleton heights={[560]} />}>
+      <Resume params={props.params} />
+    </Suspense>
   );
 }
 

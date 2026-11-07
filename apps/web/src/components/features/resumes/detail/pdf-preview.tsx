@@ -2,42 +2,42 @@
 
 import type { ReactElement } from "react";
 import { OpenInNew } from "@mui/icons-material";
-import { Button, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import { resumePdfUrl } from "@/api/resume-urls";
-import { SectionCard } from "@/components/ui/layout";
 
 interface ResumePdfPreviewProps {
   resumeId: string;
   updatedAt: string | Date;
 }
 
+/** The saved PDF at full height: the output is what the editor is for, so it gets the room. */
 export function ResumePdfPreview(props: ResumePdfPreviewProps): ReactElement {
   const { resumeId, updatedAt } = props;
   const src = resumePdfUrl(resumeId, updatedAt);
   return (
-    <SectionCard
-      title="PDF preview"
-      actions={
-        <Button size="small" endIcon={<OpenInNew fontSize="sm" />} href={src}>
+    <Stack sx={{ flex: 1, minHeight: 0 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ alignItems: "center", px: 2, py: 1, borderBottom: 1, borderColor: "divider" }}
+      >
+        <Typography variant="body2Strong" sx={{ flex: 1 }}>
+          PDF preview
+        </Typography>
+        <Typography variant="captionMuted" sx={{ display: { xs: "none", sm: "block" } }}>
+          Updates on save
+        </Typography>
+        <Button size="small" color="inherit" endIcon={<OpenInNew fontSize="sm" />} href={src}>
           Open
         </Button>
-      }
-    >
-      <Stack spacing={1}>
-        <Paper
-          component="iframe"
-          variant="panel"
-          src={src}
-          sx={{
-            width: "100%",
-            aspectRatio: "8.5/11",
-            bgcolor: "background.default",
-          }}
-        />
-        <Typography variant="captionMuted">
-          Reflects the most recently saved structure. Save the editor to refresh.
-        </Typography>
       </Stack>
-    </SectionCard>
+      <Box
+        component="iframe"
+        title="Resume PDF preview"
+        // Chromium's viewer flags: no thumbnail pane, page fit to the column's width.
+        src={`${src}#navpanes=0&view=FitH`}
+        sx={{ flex: 1, minHeight: 480, width: "100%", border: 0, bgcolor: "background.default" }}
+      />
+    </Stack>
   );
 }

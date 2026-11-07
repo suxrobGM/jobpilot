@@ -71,10 +71,10 @@ Applies everywhere at once; no layout changes.
 
 ## Phase 5: Resume editor
 
-- **Layout.** Two equal columns: section cards on the left and a full-height sticky preview with its own toolbar on the right.
-- **Cleanup.** Remove the section index nav. Collapsed cards show a short preview. Empty sections become "+ Add" buttons.
-- **Variants.** Tailored variants become tabs next to the resume name.
-- **Mobile.** An Edit/Preview switch.
+- **Layout.** Full-height columns: the editor on the left, and the saved PDF on the right (from `lg` up, with no thumbnail pane, fit to width). Below `lg` the preview becomes a tab.
+- **Top bar.** Resume name, Primary, Open PDF, Delete. Renaming is a field at the top of the Edit tab.
+- **Tabs.** Edit · (Preview) · Variants (n) · Source PDF. Variants are a page tab, not a tab per variant: a resume can have dozens of tailored variants, with search and prune.
+- **Sections.** The section index nav is removed. Empty optional sections (Publications, Awards, Certifications, Custom) become "+ Add" buttons that open the section in place.
 
 ## Phase 6: Sweep
 
