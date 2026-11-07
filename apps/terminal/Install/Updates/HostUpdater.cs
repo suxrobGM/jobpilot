@@ -1,6 +1,4 @@
-using JobPilot.Terminal.Install;
-
-namespace JobPilot.Terminal.Updates;
+namespace JobPilot.Terminal.Install.Updates;
 
 /// <summary>
 /// Replaces the installed host with the newest GitHub release: at startup before binding, or on request from the

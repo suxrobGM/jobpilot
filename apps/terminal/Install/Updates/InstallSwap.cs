@@ -1,9 +1,8 @@
 using System.Formats.Tar;
 using System.IO.Compression;
 using JobPilot.Terminal.Common;
-using JobPilot.Terminal.Install;
 
-namespace JobPilot.Terminal.Updates;
+namespace JobPilot.Terminal.Install.Updates;
 
 /// <summary>
 /// Copies a downloaded release over the install. Owns the executable and plugin/ only: the rest of

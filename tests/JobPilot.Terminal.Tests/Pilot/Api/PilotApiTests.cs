@@ -1,7 +1,6 @@
 using System.Net;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
-using JobPilot.Terminal.Pilot.Telemetry;
 using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;

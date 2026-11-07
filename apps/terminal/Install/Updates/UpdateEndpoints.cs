@@ -1,6 +1,6 @@
 using JobPilot.Terminal.Hosting;
 
-namespace JobPilot.Terminal.Updates;
+namespace JobPilot.Terminal.Install.Updates;
 
 public sealed record UpdateResult
 {

@@ -1,15 +1,13 @@
 using System.Text.Json.Serialization;
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install.Updates;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
-using JobPilot.Terminal.Pilot.Telemetry;
 using JobPilot.Terminal.Providers.Codex;
 using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Sessions.Relay;
-using JobPilot.Terminal.Updates;
 using Microsoft.AspNetCore.Mvc;
 
-namespace JobPilot.Terminal;
+namespace JobPilot.Terminal.Hosting;
 
 /// <summary>
 /// Native AOT JSON metadata. JIT reflection can hide missing registrations, so every directly serialized

@@ -6,14 +6,19 @@ it launches the provider with the user's JobPilot API environment and relays raw
 ## Layout
 
 Each folder is one feature and holds its endpoints, request and response records, and logic.
+Namespaces match folders.
 
 | Folder | What it does |
 | --- | --- |
-| `Hosting/` | DI and middleware, `/healthz` and `/shutdown`, the install layout, the origin allowlist, the `jobpilot://` scheme. |
-| `Providers/` | What to launch. `Provider` is the registry; `ClaudeProvider` and `CodexProvider` hold each CLI's arguments and quirks. |
-| `Sessions/` | The live session. `TerminalSession` owns it, `PtyProcess` wraps one spawned process, `TerminalRelay` bridges WebSockets. |
+| `Hosting/` | DI and middleware, `/healthz` and `/shutdown`, the origin allowlist, the AOT JSON context. |
+| `Install/` | The install layout and the `jobpilot://` scheme. |
+| `Install/Updates/` | `HostUpdater` installs a newer GitHub release; `HostHandoff` passes the port to the relaunched host. |
+| `Providers/` | What to launch. `Provider` is the registry; `ClaudeProvider` and `Codex/` hold each CLI's arguments and quirks. |
+| `Sessions/` | The live session. `TerminalSession` owns it. `Pty/` wraps one spawned process, `Relay/` bridges WebSockets. |
 | `Pilot/` | The autonomous loop: `PilotLoop` runs cycles, `CycleRunner` runs one, `PilotSession` drives the terminal for it. |
-| `Updates/` | `HostUpdater` installs a newer GitHub release; `HostHandoff` passes the port to the relaunched host. |
+| `Pilot/Api/` | Calls to the JobPilot API, its wire records, and the event stream. |
+| `Pilot/Telemetry/` | `/v1/logs`: token usage and readable steps from the CLI's OTLP log export. |
+| `Pilot/Stuck/` | Spots a stuck agent from its terminal output. |
 
 ## Runtime flows
 

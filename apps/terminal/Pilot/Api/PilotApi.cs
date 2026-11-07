@@ -1,28 +1,8 @@
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization.Metadata;
-using JobPilot.Terminal.Pilot.Telemetry;
+using JobPilot.Terminal.Hosting;
 
 namespace JobPilot.Terminal.Pilot.Api;
-
-/// <summary>GET /api/pilot/activity.</summary>
-public sealed record PilotActivity(DateTimeOffset? LastActivityAt, CompletedCycle? LastCycle);
-
-public sealed record CompletedCycle(DateTimeOffset CompletedAt, int? SleepSeconds);
-
-/// <summary>The fields of POST /api/pilot/tasks/refresh the host reads.</summary>
-public sealed record PilotTaskList(PilotTask[] Tasks, string Version, int SleepSeconds);
-
-public sealed record PilotTask(string Id, string Title);
-
-public sealed record PilotRun(string Id, DateTimeOffset? FinishedAt, string? Outcome);
-
-internal sealed record StartRunRequest(string TaskId, string TaskListVersion);
-
-internal sealed record CycleRequest(int SleepSeconds);
-
-internal sealed record JournalRequest(JournalEntry[] Entries);
-
-internal sealed record JournalEntry(string Kind, string Summary);
 
 /// <summary>
 /// Calls for the paired account. Probes and reports throw only on the caller's cancellation, so a briefly unreachable

@@ -1,11 +1,8 @@
 using System.Text.Json;
+using JobPilot.Terminal.Pilot.Api;
 using static JobPilot.Terminal.Pilot.Telemetry.OtlpLogs;
 
 namespace JobPilot.Terminal.Pilot.Telemetry;
-
-/// <summary>POST /api/pilot/runs/:id/usage: one run's token usage.</summary>
-public sealed record PilotUsage(
-    string Model, long InputTokens, long OutputTokens, long CacheReadTokens, long CacheWriteTokens);
 
 /// <summary>Sums the per-request usage both provider CLIs export to the host's OTLP/HTTP JSON logs endpoint.</summary>
 public sealed class UsageMeter

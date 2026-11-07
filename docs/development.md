@@ -187,7 +187,7 @@ describes the JobPilot API under `autoMode.environment`.
 
 Codex has no `--settings` flag, and it only loads a project
 `.codex/config.toml` for trusted projects. So
-[CodexProvider](../apps/terminal/Providers/CodexProvider.cs) turns
+[CodexConfig](../apps/terminal/Providers/Codex/CodexConfig.cs) turns
 `settings/codex.json` into `-c` arguments. If the file is missing, it logs a
 warning and starts anyway.
 

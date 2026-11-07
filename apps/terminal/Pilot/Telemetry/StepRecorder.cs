@@ -3,11 +3,6 @@ using JobPilot.Terminal.Pilot.Api;
 
 namespace JobPilot.Terminal.Pilot.Telemetry;
 
-/// <summary>POST /api/pilot/runs/:id/steps: one readable step.</summary>
-public sealed record PilotStep(DateTimeOffset At, string Label);
-
-internal sealed record PostStepsRequest(PilotStep[] Steps);
-
 /// <summary>Collects the run's tool calls from the CLI's log export and posts them as steps every 2 seconds.</summary>
 public sealed class StepRecorder(PilotApi api) : BackgroundService
 {

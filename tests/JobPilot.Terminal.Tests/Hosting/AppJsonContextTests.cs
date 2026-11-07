@@ -6,7 +6,7 @@ using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Sessions.Relay;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Hosting;
 
 public class AppJsonContextTests
 {

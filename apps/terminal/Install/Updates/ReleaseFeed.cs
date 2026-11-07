@@ -1,9 +1,9 @@
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
-using JobPilot.Terminal.Install;
+using JobPilot.Terminal.Hosting;
 
-namespace JobPilot.Terminal.Updates;
+namespace JobPilot.Terminal.Install.Updates;
 
 public sealed record GitHubRelease(
     [property: JsonPropertyName("tag_name")] string? TagName,

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Pilot.Telemetry;
 using Xunit;
 

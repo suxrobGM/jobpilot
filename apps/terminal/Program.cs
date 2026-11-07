@@ -1,8 +1,9 @@
 using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Install;
+using JobPilot.Terminal.Install.Updates;
 using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Pilot.Telemetry;
 using JobPilot.Terminal.Sessions;
-using JobPilot.Terminal.Updates;
 using Microsoft.Extensions.Logging.Abstractions;
 
 // Pty.Net's macOS forkpty path requires CoreCLR's W^X remapping to be off; harmless under NativeAOT.
@@ -47,5 +48,6 @@ app.UseTerminalPipeline();
 app.MapHostEndpoints();
 app.MapSessionEndpoints();
 app.MapPilotEndpoints();
+app.MapOtlpEndpoints();
 app.MapUpdateEndpoints();
 app.RunWithPortDiagnostics();

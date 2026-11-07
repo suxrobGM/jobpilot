@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 
-namespace JobPilot.Terminal.Updates;
+namespace JobPilot.Terminal.Install.Updates;
 
 /// <summary>Hands the listening port from an updated host to the one it launched.</summary>
 public static class HostHandoff

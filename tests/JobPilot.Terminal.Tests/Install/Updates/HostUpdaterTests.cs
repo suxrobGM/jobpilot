@@ -1,9 +1,9 @@
 using JobPilot.Terminal.Common;
+using JobPilot.Terminal.Install.Updates;
 using JobPilot.Terminal.Tests.Support;
-using JobPilot.Terminal.Updates;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests.Updates;
+namespace JobPilot.Terminal.Tests.Install.Updates;
 
 public class HostUpdaterTests
 {

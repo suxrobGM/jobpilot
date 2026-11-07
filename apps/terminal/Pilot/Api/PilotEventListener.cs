@@ -1,11 +1,9 @@
 using System.Net.ServerSentEvents;
 using System.Text.Json;
 using JobPilot.Terminal.Common;
+using JobPilot.Terminal.Hosting;
 
 namespace JobPilot.Terminal.Pilot.Api;
-
-/// <summary>The event type is in the JSON, not the SSE event name.</summary>
-internal sealed record PilotEvent(string? Type, string? RunId = null, string? Outcome = null, string? Text = null);
 
 /// <summary>What the listener hands on: a wake, a finished run, and the user's interrupt or steer of a run.</summary>
 public sealed record PilotEventHandlers(
