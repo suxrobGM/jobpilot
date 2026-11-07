@@ -1,55 +1,61 @@
+"use client";
+
 import type { ReactElement, ReactNode } from "react";
+import { ArrowBack } from "@mui/icons-material";
 import { Box, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import { BackLink } from "@/components/ui/buttons";
+import { createPortal } from "react-dom";
+import { TooltipIconButton } from "@/components/ui/buttons";
+import { useTopBarSlots } from "./top-bar-slots";
 
 interface PageHeaderProps {
   eyebrow?: string;
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
-  /** When set, renders a back link above the eyebrow. */
+  /** When set, renders a back button before the title. */
   backHref?: Route;
   backLabel?: string;
 }
 
+/** Title, back button and actions go to the top bar; the description stays at the top of the page. */
 export function PageHeader(props: PageHeaderProps): ReactElement {
   const { eyebrow, title, description, actions, backHref, backLabel = "Back" } = props;
-  return (
-    <Stack sx={{ mb: 3 }}>
+  const slots = useTopBarSlots();
+
+  const heading = (
+    <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
       {backHref && (
-        <BackLink href={backHref} sx={{ mb: 0.5 }}>
-          {backLabel}
-        </BackLink>
+        <TooltipIconButton title={backLabel} href={backHref} size="small" edge="start">
+          <ArrowBack fontSize="md" />
+        </TooltipIconButton>
       )}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={{ xs: 1.5, sm: 0 }}
-        sx={{
-          alignItems: { xs: "stretch", sm: "flex-end" },
-          justifyContent: "space-between",
-        }}
-      >
-        <Box>
-          {eyebrow && <Typography variant="overlineMuted">{eyebrow}</Typography>}
-          <Typography variant="h2" component="h1" sx={{ mt: eyebrow ? 0.5 : 0 }}>
-            {title}
+      <Stack sx={{ minWidth: 0 }}>
+        {eyebrow && (
+          <Typography variant="captionMuted" noWrap>
+            {eyebrow}
           </Typography>
-          {description &&
-            (typeof description === "string" ? (
-              <Typography variant="body1Muted" sx={{ mt: 0.5 }}>
-                {description}
-              </Typography>
-            ) : (
-              <Box sx={{ mt: 0.5 }}>{description}</Box>
-            ))}
-        </Box>
-        {actions && (
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
-            {actions}
-          </Stack>
         )}
+        <Typography variant="h3" component="h1" noWrap>
+          {title}
+        </Typography>
       </Stack>
     </Stack>
+  );
+
+  return (
+    <>
+      {slots.title && createPortal(heading, slots.title)}
+      {slots.actions && actions && createPortal(actions, slots.actions)}
+      {description && (
+        <Box sx={{ mb: 1 }}>
+          {typeof description === "string" ? (
+            <Typography variant="body1Muted">{description}</Typography>
+          ) : (
+            description
+          )}
+        </Box>
+      )}
+    </>
   );
 }

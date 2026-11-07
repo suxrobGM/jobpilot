@@ -31,7 +31,7 @@ export function Sidebar(): ReactElement {
         width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
         flexShrink: 0,
         height: "100%",
-        padding: 1,
+        padding: 1.5,
         gap: 1,
         borderRight: 1,
         borderColor: "divider",

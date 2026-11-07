@@ -24,11 +24,11 @@ export function AgentButton(props: AgentButtonProps): ReactElement {
         aria-pressed={drawerOpen}
         onClick={drawerOpen ? closeDrawer : openDrawer}
         sx={(theme) => ({
-          justifyContent: "flex-start",
+          justifyContent: collapsed ? "center" : "flex-start",
           gap: 1.5,
-          height: 36,
-          paddingInline: 0.75,
-          borderRadius: theme.radii.sm,
+          height: theme.controlHeights.md,
+          paddingInline: collapsed ? 0 : 1.25,
+          borderRadius: theme.radii.lg,
           backgroundColor: drawerOpen ? theme.palette.surfaces.elevated : "transparent",
           "&:hover": { backgroundColor: theme.palette.surfaces.card },
           "&.Mui-focusVisible": { boxShadow: theme.shadows_custom.focus },

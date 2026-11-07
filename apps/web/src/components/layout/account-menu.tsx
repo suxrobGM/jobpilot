@@ -63,23 +63,22 @@ export function AccountMenu(props: AccountMenuProps): ReactNode {
           aria-expanded={open}
           onClick={handleOpen}
           sx={(theme) => ({
-            justifyContent: "flex-start",
+            justifyContent: collapsed ? "center" : "flex-start",
             gap: 1.5,
-            height: 40,
-            paddingInline: 0.5,
-            borderRadius: theme.radii.sm,
+            height: 44,
+            paddingInline: collapsed ? 0 : 0.75,
+            borderRadius: theme.radii.lg,
             "&:hover": { backgroundColor: theme.palette.surfaces.card },
             "&.Mui-focusVisible": { boxShadow: theme.shadows_custom.focus },
           })}
         >
           <Avatar
             sx={(theme) => ({
-              width: 28,
-              height: 28,
+              width: 32,
+              height: 32,
               ...theme.typography.caption,
-              bgcolor: theme.palette.accent.primary,
-              color: "primary.contrastText",
-              border: `1px solid ${theme.palette.line.borderHi}`,
+              bgcolor: theme.tints.selected,
+              color: "accent.primary",
             })}
           >
             {initials(user)}

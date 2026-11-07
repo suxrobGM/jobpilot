@@ -47,7 +47,7 @@ Applies everywhere at once; no layout changes.
 
 ## Phase 2: Shell
 
-- **`Sidebar` becomes `Rail`.** A 64px icon-only rail with tooltips, a badge dot, an active tile tinted with the accent, the agent/terminal button and settings near the bottom, and the account avatar at the foot. Delete the collapse toggle and `use-sidebar-collapsed.ts`; nothing to migrate, it's a localStorage flag.
+- **`Sidebar` stays expandable (user, 2026-11-06).** Collapsed, it is the mockup's 64px icon rail: 42px tiles, tooltips, a badge dot, an active tile tinted with the accent. Expanded, it keeps labels in the same tile style. The collapse toggle and `use-sidebar-collapsed.ts` stay. The agent/terminal button and settings sit near the bottom, with the account avatar at the foot.
 - **New `TopBar` in `AppShell`.** A 64px strip with the page title, the agent status pill (with Start agent when offline), and a slot for page actions. `PageHeader` sends its title and actions into the bar. Its description stays in the page content.
 - **Mobile.** The bottom `MobileNav` stays, restyled to the new tokens. The top bar shrinks to the title, an agent status dot and an actions overflow menu. `PageHeader` actions render in the page content below `sm`.
 - Remove the `py` padding from the dashboard layout's top; the bar provides the spacing.
