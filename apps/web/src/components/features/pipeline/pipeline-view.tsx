@@ -1,10 +1,8 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { ApplicationStatus } from "@jobpilot/contracts/application";
-import type { PipelineFilters } from "@jobpilot/contracts/pipeline";
 import { AddLink } from "@mui/icons-material";
-import { Button, Stack, Tab, Tabs, Typography } from "@mui/material";
+import { Button, LinearProgress, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { applicationQueries, jobBoardQueries, pipelineQueries } from "@/api/queries";
@@ -20,15 +18,8 @@ import { AppliedView } from "./applied/applied-view";
 import { FeedSelect } from "./feed-select";
 import { JobsView } from "./jobs/jobs-view";
 import { NeedsYouBanner } from "./needs-you-banner";
+import { FUNNEL, useFunnelStatus, usePipelineFilters } from "./pipeline-filters";
 import { PIPELINE_TAB_KEYS, PIPELINE_TABS, type PipelineTab } from "./pipeline-tabs";
-
-// The funnel: rejected and withdrawn applications only show under All.
-const FUNNEL = [
-  "applied",
-  "screening",
-  "interviewing",
-  "offer",
-] as const satisfies ApplicationStatus[];
 
 /** Every job the pilot touched, across searches and feeds, one tab per stage. */
 export function PipelineView(): ReactElement {
@@ -36,17 +27,13 @@ export function PipelineView(): ReactElement {
   const chosenView = enumParam(PIPELINE_TAB_KEYS, params.get("view"));
   const feedId = params.get("feed");
   const board = params.get("board");
-  const status = enumParam(FUNNEL, params.get("status"));
+  const status = useFunnelStatus();
   const pagination = usePaginationParams();
   const search = useUrlSearch("q", pagination);
   const [addingLinks, setAddingLinks] = useState(false);
-
-  const filters: PipelineFilters = {
-    ...(feedId && { feedId }),
-    ...(board && { board }),
-    ...(search.applied && { search: search.applied }),
-  };
-  const counts = useQuery(pipelineQueries.counts(filters)).data;
+  const filters = usePipelineFilters();
+  const countsQuery = useQuery(pipelineQueries.counts(filters));
+  const counts = countsQuery.data;
   const summary = useQuery(applicationQueries.summary(filters)).data;
   const boards = useQuery(jobBoardQueries.list()).data ?? [];
 
@@ -58,8 +45,10 @@ export function PipelineView(): ReactElement {
   }));
   const tabCount = (key: PipelineTab) => (key === "applied" ? summary?.total : counts?.views[key]);
   // A link to one search names no tab; open where its jobs are, not on an empty To review.
-  const landing = feedId ? PIPELINE_TAB_KEYS.find((key) => (tabCount(key) ?? 0) > 0) : undefined;
+  const landing = feedId ? PIPELINE_TAB_KEYS.find((key) => (tabCount(key) ?? 0) > 0) : null;
   const view = chosenView ?? landing ?? "review";
+  // Mounting a tab before the counts pick one fetches it, then remounts another.
+  const picking = feedId !== null && chosenView === null && countsQuery.isPending;
   // Applications aren't counted per feed, so Applied lists every feed without numbers.
   const feedCounts =
     view !== "applied" && counts
@@ -98,7 +87,6 @@ export function PipelineView(): ReactElement {
                 status: null,
               })
             }
-            sx={{ borderBottom: 0 }}
           >
             {PIPELINE_TABS.map((tab) => (
               <Tab
@@ -149,11 +137,9 @@ export function PipelineView(): ReactElement {
           />
         )}
       </FilterBar>
-      {view === "applied" ? (
-        <AppliedView filters={filters} status={status} pagination={pagination} />
-      ) : (
-        <JobsView key={view} view={view} filters={filters} pagination={pagination} />
-      )}
+      {picking && <LinearProgress />}
+      {!picking && view === "applied" && <AppliedView />}
+      {!picking && view !== "applied" && <JobsView key={view} view={view} />}
       <AddLinksDialog open={addingLinks} onClose={() => setAddingLinks(false)} />
     </Stack>
   );

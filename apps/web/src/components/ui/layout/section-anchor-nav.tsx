@@ -2,7 +2,8 @@
 
 import { type ReactElement, useEffect, useState } from "react";
 import { Box, ButtonBase, Paper, Stack, Typography } from "@mui/material";
-import { TOP_BAR_HEIGHT } from "@/components/layout/shell-config";
+import { sideNavLink } from "../navigation/side-nav-link";
+import { belowTopBar } from "./top-bar-slots";
 
 export interface SectionAnchor {
   id: string;
@@ -72,7 +73,7 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
         display: { xs: "none", lg: "block" },
         position: "sticky",
         // Below the sticky top bar, which shares this scroller.
-        top: `calc(${TOP_BAR_HEIGHT.desktop}px + ${theme.spacing(3)})`,
+        top: belowTopBar(theme.spacing(3)),
         alignSelf: "flex-start",
         width: 200,
         flexShrink: 0,
@@ -91,12 +92,7 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
                 textAlign: "left",
                 paddingInline: theme.spacing(1.25),
                 paddingBlock: theme.spacing(0.75),
-                borderRadius: theme.radii.sm,
-                color: active ? "text.primary" : "text.secondary",
-                backgroundColor: active ? theme.palette.surfaces.elevated : "transparent",
-                transition: theme.motion.fast,
-                "&:hover": { color: "text.primary" },
-                "&:focus-visible": { outline: theme.shadows_custom.focus, outlineOffset: 2 },
+                ...sideNavLink(theme, active),
               })}
             >
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>

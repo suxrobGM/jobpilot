@@ -9,11 +9,11 @@ import { api } from "@/api/client";
 import { userQueries } from "@/api/queries";
 import type { PortfolioSettingsDto } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
-import { TOP_BAR_HEIGHT } from "@/components/layout/shell-config";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { PageActions, SectionCard } from "@/components/ui/layout";
+import { belowTopBar } from "@/components/ui/layout/top-bar-slots";
 import { toPortfolioFormValues } from "./portfolio-form-values";
 import { PortfolioView } from "./portfolio-view";
 import { PortfolioVisibilityFields } from "./portfolio-visibility-fields";
@@ -83,7 +83,7 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
       <Box
         sx={(theme) => ({
           position: { lg: "sticky" },
-          top: `calc(${TOP_BAR_HEIGHT.desktop}px + ${theme.spacing(3)})`,
+          top: belowTopBar(theme.spacing(3)),
         })}
       >
         <SectionCard

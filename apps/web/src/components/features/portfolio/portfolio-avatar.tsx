@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Avatar } from "@mui/material";
 import type { PortfolioDto } from "@/api/types";
-import { initials } from "./initials";
+import { initials } from "@/utils/format";
 
 interface PortfolioAvatarProps {
   name: string;

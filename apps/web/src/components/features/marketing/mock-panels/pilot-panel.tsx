@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { ArrowUpward, SmartToy } from "@mui/icons-material";
-import { Box, Divider, Stack, Typography } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+import { Box, Button, Card, Divider, Stack, Typography } from "@mui/material";
 import { AppWindow } from "./app-window";
 
 const WORK = [
@@ -28,7 +27,7 @@ function Turn(props: TurnProps): ReactElement {
           placeItems: "center",
           borderRadius: theme.radii.md,
           color: "accent.primary",
-          backgroundColor: alpha(theme.palette.accent.primary, 0.14),
+          backgroundColor: theme.tints.selected,
         })}
       >
         <SmartToy fontSize="xs" />
@@ -49,14 +48,7 @@ export function PilotPanel(): ReactElement {
     <AppWindow page="pilot" title="Pilot">
       <Stack spacing={1.75}>
         <Turn at="9:10–9:52">
-          <Box
-            sx={(theme) => ({
-              border: 1,
-              borderColor: "line.border",
-              borderRadius: theme.radii.lg,
-              backgroundColor: "surfaces.card",
-            })}
-          >
+          <Card>
             {WORK.map((item, index) => (
               <Box key={item.line}>
                 {index > 0 && <Divider />}
@@ -72,7 +64,7 @@ export function PilotPanel(): ReactElement {
                 </Stack>
               </Box>
             ))}
-          </Box>
+          </Card>
         </Turn>
         <Box
           sx={(theme) => ({
@@ -99,36 +91,25 @@ export function PilotPanel(): ReactElement {
             </Typography>
           </Stack>
         </Turn>
-        <Stack
+        <Card
+          variant="field"
+          component={Stack}
           direction="row"
-          sx={(theme) => ({
-            alignItems: "center",
-            pl: 1.5,
-            pr: 0.75,
-            py: 0.75,
-            border: 1,
-            borderColor: "line.borderHi",
-            borderRadius: theme.radii.lg * 1.5,
-            backgroundColor: "surfaces.card",
-          })}
+          sx={{ alignItems: "center", pl: 1.5, pr: 0.75, py: 0.75 }}
         >
           <Typography variant="body2" color="textDisabled" sx={{ flex: 1 }} noWrap>
             Ask the pilot, change a rule, or paste job links…
           </Typography>
-          <Box
-            sx={(theme) => ({
-              width: 26,
-              height: 26,
-              display: "grid",
-              placeItems: "center",
-              borderRadius: theme.radii.md,
-              color: "common.white",
-              backgroundColor: "accent.action",
-            })}
+          <Button
+            variant="contained"
+            size="small"
+            tabIndex={-1}
+            aria-hidden
+            sx={{ minWidth: 0, px: 1 }}
           >
             <ArrowUpward fontSize="xs" />
-          </Box>
-        </Stack>
+          </Button>
+        </Card>
       </Stack>
     </AppWindow>
   );

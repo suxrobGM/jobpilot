@@ -4,6 +4,7 @@ import { type ReactElement, useState } from "react";
 import { ExpandMore } from "@mui/icons-material";
 import { ButtonBase, Collapse, Link, Paper, Stack, Typography } from "@mui/material";
 import { usePathname } from "next/navigation";
+import { sideNavLink } from "@/components/ui/navigation";
 import { DOCS_LINKS } from "./docs-nav";
 
 const PANEL_ID = "docs-mobile-nav-panel";
@@ -39,15 +40,14 @@ export function DocsMobileNav(): ReactElement {
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         aria-controls={controlledPanelId}
-        sx={(t) => ({
+        sx={{
           width: "100%",
           justifyContent: "space-between",
           gap: 1.5,
           paddingBlock: 1.25,
           paddingInline: 1.75,
           textAlign: "left",
-          "&:focus-visible": { outline: t.shadows_custom.focus, outlineOffset: -2 },
-        })}
+        }}
       >
         <Stack spacing={0.25} sx={{ minWidth: 0 }}>
           <Typography variant="overlineMuted">Docs</Typography>
@@ -84,10 +84,7 @@ export function DocsMobileNav(): ReactElement {
                   ...(active ? t.typography.body1Strong : t.typography.body1),
                   paddingBlock: 1,
                   paddingInline: 1.75,
-                  color: active ? "text.primary" : "text.secondary",
-                  backgroundColor: active ? "surfaces.elevated" : "transparent",
-                  transition: `color ${t.motion.fast}`,
-                  "&:hover": { color: "text.primary" },
+                  ...sideNavLink(t, active),
                 })}
               >
                 {link.label}

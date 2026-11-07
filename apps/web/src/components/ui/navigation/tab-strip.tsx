@@ -1,7 +1,9 @@
+"use client";
+
 import type { ReactElement } from "react";
-import { Box } from "@mui/material";
+import { Tab as MuiTab, Tabs } from "@mui/material";
 import type { Route } from "next";
-import { TabLink } from "./tab-link";
+import { usePathname } from "next/navigation";
 
 export interface Tab {
   label: string;
@@ -13,20 +15,16 @@ interface TabStripProps {
   ariaLabel: string;
 }
 
-/** Route tabs for `PageHeader tabs`; only the active-link highlight is client-side. */
 export function TabStrip(props: TabStripProps): ReactElement {
   const { tabs, ariaLabel } = props;
+  const pathname = usePathname();
+  const active = tabs.some((tab) => tab.href === pathname) ? pathname : false;
 
   return (
-    <Box
-      component="nav"
-      aria-label={ariaLabel}
-      // overflow-x:auto computes overflow-y to auto too; sub-pixel rounding then adds a scrollbar.
-      sx={{ display: "flex", overflowX: "auto", overflowY: "hidden" }}
-    >
+    <Tabs value={active} variant="scrollable" aria-label={ariaLabel}>
       {tabs.map((tab) => (
-        <TabLink key={tab.href} href={tab.href} label={tab.label} />
+        <MuiTab key={tab.href} value={tab.href} label={tab.label} href={tab.href} />
       ))}
-    </Box>
+    </Tabs>
   );
 }

@@ -5,7 +5,7 @@ import type { PipelineBulkInput, PipelineJobView } from "@jobpilot/contracts/pip
 import { Check, Close, Schedule } from "@mui/icons-material";
 import { IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import type { PipelineJobDto } from "@/api/types";
-import { ListRow } from "@/components/ui/data";
+import { ListRow, type RowSelection } from "@/components/ui/data";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { CapExemptChip } from "./cap-exempt-chip";
 import { ScoreBadge } from "./score-badge";
@@ -27,14 +27,13 @@ interface JobRowProps {
   view: PipelineJobView;
   showFeed: boolean;
   /** Null when the view has no bulk action, so no checkbox. */
-  selected: boolean | null;
-  onToggle: () => void;
+  selection: RowSelection | null;
   onOpen: () => void;
   onAct: (action: BulkAction) => void;
 }
 
 export function JobRow(props: JobRowProps): ReactElement {
-  const { job, view, showFeed, selected, onToggle, onOpen, onAct } = props;
+  const { job, view, showFeed, selection, onOpen, onAct } = props;
   const review = view === "review";
   const stale = review && job.stale;
   const reason = review ? null : (job.failReason ?? job.skipReason);
@@ -42,7 +41,7 @@ export function JobRow(props: JobRowProps): ReactElement {
   return (
     <ListRow
       onOpen={onOpen}
-      selection={selected === null ? null : { selected, onToggle, label: job.title }}
+      selection={selection}
       lead={<ScoreBadge job={job} />}
       title={job.title}
       tags={<CapExemptChip job={job} />}

@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { Description, Handshake, Inbox, SmartToy, ViewKanban } from "@mui/icons-material";
 import { Box, Card, Stack, Typography } from "@mui/material";
-import { alpha } from "@mui/material/styles";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 
 const TRAFFIC_LIGHTS = ["error.main", "warning.main", "success.main"] as const;
@@ -79,9 +78,7 @@ export function AppWindow(props: AppWindowProps): ReactElement {
                   placeItems: "center",
                   borderRadius: theme.radii.md,
                   color: active ? "accent.primary" : "text.secondary",
-                  backgroundColor: active
-                    ? alpha(theme.palette.accent.primary, 0.14)
-                    : "transparent",
+                  backgroundColor: active ? theme.tints.selected : "transparent",
                 })}
               >
                 <Icon fontSize="sm" />

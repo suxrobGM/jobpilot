@@ -38,8 +38,8 @@ export function ParkedJobPage(props: ParkedJobPageProps): ReactElement {
   }
   return (
     <>
-      <PageHeader eyebrow={job.company} title={job.title} backHref="/pilot" backLabel="Pilot" />
-      <JobDetail job={job} titled={false} />
+      <PageHeader title={job.title} backHref="/pilot" backLabel="Pilot" />
+      <JobDetail job={job} parked />
     </>
   );
 }

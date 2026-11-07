@@ -1,13 +1,12 @@
 "use client";
 
-import type { ReactElement, Ref } from "react";
+import { type ReactElement, type Ref, useEffect, useRef } from "react";
 import { Box, Stack, Typography } from "@mui/material";
-import type { CSSObject, Theme } from "@mui/material/styles";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 import { AgentPill } from "@/components/features/agent/agent-pill";
-import { PAGE_WIDTH_ATTR, PAGE_WIDTHS } from "@/components/ui/layout/page-shell";
+import { type PageWidth, TOP_BAR_HEIGHT_VAR } from "@/components/ui/layout/top-bar-slots";
 import {
   ADMIN_NAV_ITEM,
   APP_TITLE,
@@ -17,19 +16,22 @@ import {
   TOP_BAR_HEIGHT,
 } from "./shell-config";
 
-/**
- * The bar's row takes the PageShell's width and gutters, so the title and tabs start where the
- * content does and the buttons end with it; full-bleed pages (no PageShell) keep the full bar.
- */
-function matchPageWidth(theme: Theme): CSSObject {
-  const rules: CSSObject = {};
-  for (const width of PAGE_WIDTHS) {
-    // Next keeps a page it left mounted with an inline display:none; skip that one.
-    rules[`main:has([${PAGE_WIDTH_ATTR}="${width}"]:not([style*="none"])) &`] = {
-      maxWidth: theme.breakpoints.values[width],
-    };
-  }
-  return rules;
+/** Tabs and wrapped actions change the height that sticky content clears. */
+function useHeightVar() {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const bar = ref.current;
+    const scroller = bar?.parentElement;
+    if (!bar || !scroller) {
+      return;
+    }
+    const observer = new ResizeObserver(() =>
+      scroller.style.setProperty(TOP_BAR_HEIGHT_VAR, `${bar.offsetHeight}px`),
+    );
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, []);
+  return ref;
 }
 
 const NAV_ITEMS = [
@@ -41,6 +43,8 @@ const NAV_ITEMS = [
 interface TopBarProps {
   /** Without the rail (phones), the bar carries the logo home link and the agent's status. */
   showMark: boolean;
+  /** Null on full-bleed pages. */
+  pageWidth: PageWidth | null;
   titleRef: Ref<HTMLElement>;
   actionsRef: Ref<HTMLElement>;
   tabsRef: Ref<HTMLElement>;
@@ -48,12 +52,14 @@ interface TopBarProps {
 
 /** Page title, page actions and page tabs; a page's `PageHeader` fills the slots. */
 export function TopBar(props: TopBarProps): ReactElement {
-  const { showMark, titleRef, actionsRef, tabsRef } = props;
+  const { showMark, pageWidth, titleRef, actionsRef, tabsRef } = props;
   const pathname = usePathname();
+  const heightRef = useHeightVar();
   const section = NAV_ITEMS.find((item) => isNavEntryActive(pathname, item));
 
   return (
     <Box
+      ref={heightRef}
       component="header"
       sx={(theme) => ({
         position: "sticky",
@@ -77,7 +83,7 @@ export function TopBar(props: TopBarProps): ReactElement {
           paddingInline: { xs: 1.5, sm: 3 },
           paddingBlock: 1,
           marginInline: "auto",
-          ...matchPageWidth(theme),
+          maxWidth: pageWidth ? theme.breakpoints.values[pageWidth] : "none",
         })}
       >
         {showMark && (
@@ -123,7 +129,13 @@ export function TopBar(props: TopBarProps): ReactElement {
         {/* Tabs take the last row; the negative margin sets their underline on the bar's border. */}
         <Box
           ref={tabsRef}
-          sx={{ width: "100%", minWidth: 0, mb: -1, "&:empty": { display: "none" } }}
+          sx={{
+            width: "100%",
+            minWidth: 0,
+            mb: -1,
+            "&:empty": { display: "none" },
+            "& .MuiTabs-root": { borderBottom: 0 },
+          }}
         />
       </Stack>
     </Box>

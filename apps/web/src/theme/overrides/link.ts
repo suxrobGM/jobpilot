@@ -19,4 +19,9 @@ export const linkOverrides: Components<Theme>["MuiLink"] = {
 /** Same, for everything built on ButtonBase (Button, CardActionArea, IconButton, Tab). */
 export const buttonBaseOverrides: Components<Theme>["MuiButtonBase"] = {
   defaultProps: { LinkComponent: AppLink },
+  styleOverrides: {
+    root: ({ theme }) => ({
+      "&.Mui-focusVisible": { outline: "none", boxShadow: theme.shadows_custom.focus },
+    }),
+  },
 };

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { PendingActions } from "@mui/icons-material";
-import { Stack, Typography } from "@mui/material";
+import { Card, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pipelineQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
@@ -17,18 +17,11 @@ export function NeedsYouBanner(): ReactNode {
   }
   return (
     // A plain card with an orange icon; amber read as an alarm.
-    <Stack
+    <Card
+      component={Stack}
       direction="row"
       spacing={1.5}
-      sx={(theme) => ({
-        alignItems: "center",
-        px: 2,
-        py: 1.25,
-        border: 1,
-        borderColor: "line.border",
-        borderRadius: theme.radii.lg,
-        backgroundColor: theme.palette.surfaces.card,
-      })}
+      sx={{ alignItems: "center", px: 2, py: 1.25 }}
     >
       <PendingActions fontSize="md" sx={{ color: "accent.primary" }} />
       <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }}>
@@ -37,6 +30,6 @@ export function NeedsYouBanner(): ReactNode {
       <LinkButton href="/pilot" size="small" variant="contained">
         Answer in Pilot
       </LinkButton>
-    </Stack>
+    </Card>
   );
 }

@@ -40,6 +40,15 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
       }),
     },
     {
+      props: { variant: "field" },
+      style: ({ theme }) => ({
+        borderColor: theme.palette.line.borderHi,
+        borderRadius: theme.radii.lg * 1.5,
+        boxShadow: theme.shadows_custom.md,
+        "&:focus-within": { borderColor: theme.palette.accent.primary },
+      }),
+    },
+    {
       props: { variant: "showcase" },
       style: ({ theme }) => ({
         borderRadius: theme.radii.lg,

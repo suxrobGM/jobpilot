@@ -1,67 +1,49 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { ApplicationStatus } from "@jobpilot/contracts/application";
-import type { PipelineFilters } from "@jobpilot/contracts/pipeline";
 import { useQuery } from "@tanstack/react-query";
 import { applicationQueries, feedQueries } from "@/api/queries";
 import type { ApplicationDto } from "@/api/types";
-import { ListCard, ListHeader, ListLead, ListRow, PaginationFooter } from "@/components/ui/data";
+import { ListHeader, ListLead, ListRow, PagedList } from "@/components/ui/data";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
-import { EmptyState, QuerySection } from "@/components/ui/feedback";
-import type { PaginationParams } from "@/hooks/use-pagination";
+import { EmptyState } from "@/components/ui/feedback";
+import { usePaginationParams } from "@/hooks/use-pagination";
 import { initials } from "@/utils/format";
 import { applicationHref } from "@/utils/routes";
+import { useFunnelStatus, usePipelineFilters } from "../pipeline-filters";
 
-interface AppliedViewProps {
-  filters: PipelineFilters;
-  status: ApplicationStatus | null;
-  pagination: PaginationParams;
-}
-
-export function AppliedView(props: AppliedViewProps): ReactElement {
-  const { filters, status, pagination } = props;
+export function AppliedView(): ReactElement {
+  const filters = usePipelineFilters();
+  const status = useFunnelStatus();
+  const pagination = usePaginationParams();
   const apps = useQuery(
     applicationQueries.list({ ...pagination.query, ...filters, ...(status && { status }) }),
   );
-  const feeds = useQuery(feedQueries.list()).data ?? [];
+  const feedNames = new Map((useQuery(feedQueries.list()).data ?? []).map((f) => [f.id, f.name]));
   const rows = apps.data?.items ?? [];
   const source = (app: ApplicationDto): string =>
-    app.feedId
-      ? (feeds.find((feed) => feed.id === app.feedId)?.name ?? app.source)
-      : "Single apply";
+    app.feedId ? (feedNames.get(app.feedId) ?? app.source) : "Single apply";
 
   return (
-    <QuerySection
+    <PagedList
       query={apps}
-      errorTitle="Couldn't load your applications."
+      pager={pagination}
       isEmpty={rows.length === 0}
+      errorTitle="Couldn't load your applications."
       empty={<EmptyState variant="inline" title="No applications match the filters." />}
+      header={<ListHeader>Recently applied</ListHeader>}
     >
-      <ListCard
-        header={<ListHeader>Recently applied</ListHeader>}
-        footer={
-          apps.data && (
-            <PaginationFooter
-              pagination={apps.data.pagination}
-              onPageChange={pagination.setPage}
-              onPageSizeChange={pagination.setPageSize}
-            />
-          )
-        }
-      >
-        {rows.map((app) => (
-          <ListRow
-            key={app.id}
-            href={applicationHref(app.id)}
-            lead={<ListLead>{initials(app.company)}</ListLead>}
-            title={app.title}
-            meta={`${app.company} · via ${source(app)}`}
-            status={<StatusChip domain="application" value={app.status} />}
-            time={<RelativeTime value={app.appliedAt} />}
-          />
-        ))}
-      </ListCard>
-    </QuerySection>
+      {rows.map((app) => (
+        <ListRow
+          key={app.id}
+          href={applicationHref(app.id)}
+          lead={<ListLead>{initials(app.company)}</ListLead>}
+          title={app.title}
+          meta={`${app.company} · via ${source(app)}`}
+          status={<StatusChip domain="application" value={app.status} />}
+          time={<RelativeTime value={app.appliedAt} />}
+        />
+      ))}
+    </PagedList>
   );
 }

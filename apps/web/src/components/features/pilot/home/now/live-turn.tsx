@@ -11,6 +11,7 @@ import { useAgentDrawer } from "@/providers/agent-provider";
 import { idleCaption, type PilotMode } from "../../pilot-status";
 import { useRunSteps } from "../../steps/use-run-steps";
 import { useNextWake } from "../../use-next-wake";
+import { usePilotState } from "../../use-pilot-state";
 import { usePilotStatus } from "../../use-pilot-status";
 import { SteerDialog } from "../steer-dialog";
 import { PilotTurn } from "../thread/pilot-turn";
@@ -89,13 +90,9 @@ const MODE_LINES: Record<SaidMode, string> = {
   starting: "Starting up.",
 };
 
-interface LiveTurnProps {
-  state: PilotState;
-}
-
 /** The newest line of the thread: what the pilot is doing right now, with the controls for it. */
-export function LiveTurn(props: LiveTurnProps): ReactElement {
-  const { state } = props;
+export function LiveTurn(): ReactElement {
+  const state = usePilotState();
   const { openDrawer, watchSteps } = useAgentDrawer();
   const { pilot, mode } = usePilotStatus(state);
   const nextWakeAt = useNextWake(state);

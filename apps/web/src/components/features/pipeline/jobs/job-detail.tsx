@@ -3,8 +3,8 @@
 import type { ReactElement, ReactNode } from "react";
 import { UPWORK_DOMAIN } from "@jobpilot/contracts/upwork";
 import { OpenInNew } from "@mui/icons-material";
-import { Box, Button, Divider, Link, Stack, Typography } from "@mui/material";
-import { usePathname, useRouter } from "next/navigation";
+import { Box, Button, Divider, Stack, Typography } from "@mui/material";
+import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { pipelineQueries } from "@/api/queries";
 import type { PipelineJobDto } from "@/api/types";
@@ -12,13 +12,8 @@ import { useApiMutation } from "@/api/use-api-mutation";
 import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { LinkButton } from "@/components/ui/buttons";
 import { StatusChip } from "@/components/ui/display";
+import { humanizeKey } from "@/utils/format";
 import { proposalHref } from "@/utils/routes";
-
-/** "mustHaves" → "Must haves". */
-function humanizeKey(key: string): string {
-  const spaced = key.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
-}
 
 function briefValue(value: unknown): string {
   if (Array.isArray(value)) {
@@ -52,13 +47,13 @@ function Field(props: FieldProps): ReactElement {
 
 interface JobActionsProps {
   job: PipelineJobDto;
+  parked: boolean;
 }
 
 function JobActions(props: JobActionsProps): ReactNode {
-  const { job } = props;
+  const { job, parked } = props;
   const request = useCreateRequest();
   const router = useRouter();
-  const onPilot = usePathname().startsWith("/pilot");
   const endpoint = api.feeds({ id: job.feedId }).jobs({ key: job.key });
   const invalidate = [pipelineQueries.all];
 
@@ -126,8 +121,7 @@ function JobActions(props: JobActionsProps): ReactNode {
         </Stack>
       );
     case "needs_user":
-      // Pilot shows the job beside its question, so the next step there is applying.
-      return onPilot ? (
+      return parked ? (
         <Button variant="contained" loading={request.isPending} onClick={applyNow}>
           Apply now
         </Button>
@@ -170,10 +164,8 @@ function JobActions(props: JobActionsProps): ReactNode {
 
 interface JobDetailProps {
   job: PipelineJobDto;
-  /** Sits beside the title: a close button in the drawer, nothing inline. */
-  action?: ReactNode;
-  /** Off where the page's top bar already carries the title. */
-  titled?: boolean;
+  /** On the parked-job page, where answering means applying. */
+  parked?: boolean;
 }
 
 /** Brief keys the header and fields above already show. */
@@ -181,7 +173,7 @@ const SHOWN_ABOVE = new Set(["title", "company", "location", "salary"]);
 
 /** One job: its brief, why it scored what it did, why it stopped, and what to do next. */
 export function JobDetail(props: JobDetailProps): ReactElement {
-  const { job, action, titled = true } = props;
+  const { job, parked = false } = props;
   const brief = Object.entries(job.brief ?? {}).filter(
     ([key, value]) => !SHOWN_ABOVE.has(key) && briefValue(value) !== "",
   );
@@ -189,34 +181,23 @@ export function JobDetail(props: JobDetailProps): ReactElement {
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          {titled && (
-            <Typography variant="h3" component="h2">
-              {job.title}
-            </Typography>
-          )}
-          <Typography variant="body2Muted">
-            {[job.company, job.location, job.board?.name].filter(Boolean).join(" · ")}
-          </Typography>
-        </Box>
-        {action}
-      </Stack>
+      <Typography variant="body2Muted">
+        {[job.company, job.location, job.board?.name].filter(Boolean).join(" · ")}
+      </Typography>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
         <StatusChip domain="job" value={job.status} />
-        <Link
+        <Button
           href={job.url}
           target="_blank"
           rel="noopener"
-          variant="body2"
-          sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+          size="small"
+          endIcon={<OpenInNew fontSize="sm" />}
         >
           Open posting
-          <OpenInNew fontSize="sm" />
-        </Link>
+        </Button>
       </Stack>
       <Box>
-        <JobActions job={job} />
+        <JobActions job={job} parked={parked} />
       </Box>
       <Divider />
       {job.matchScore !== null && (

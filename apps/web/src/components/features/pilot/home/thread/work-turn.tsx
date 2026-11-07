@@ -11,7 +11,7 @@ import {
   RemoveCircleOutlined,
   SendOutlined,
 } from "@mui/icons-material";
-import { Box, Button, Divider, Link, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, Divider, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { humanizeIsoInText } from "@/utils/format";
 import { pipelineHref } from "@/utils/routes";
@@ -81,10 +81,6 @@ function RunRow(props: RunRowProps): ReactElement {
   );
 }
 
-interface WorkTurnProps {
-  item: WorkItem;
-}
-
 /** Past this many results, the rest wait behind "Show more". */
 const SHOWN_RESULTS = 4;
 
@@ -107,15 +103,7 @@ export function WorkTurn(props: WorkTurnProps): ReactElement {
     <PilotTurn at={formatClockSpan(item.startedAt, item.endedAt)}>
       <Typography variant="body1">{workSummary(item)}</Typography>
       {showResults && (
-        <Box
-          sx={(theme) => ({
-            border: 1,
-            borderColor: "line.border",
-            borderRadius: theme.radii.lg,
-            backgroundColor: theme.palette.surfaces.card,
-            overflow: "hidden",
-          })}
-        >
+        <Card sx={{ overflow: "hidden" }}>
           <Stack divider={<Divider />}>
             {visible.map((run) => (
               <RunRow key={run.runId} run={run} />
@@ -143,7 +131,7 @@ export function WorkTurn(props: WorkTurnProps): ReactElement {
               {tallyLine(tally)}
             </Typography>
           )}
-        </Box>
+        </Card>
       )}
     </PilotTurn>
   );

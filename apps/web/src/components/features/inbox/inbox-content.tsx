@@ -1,23 +1,21 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
-import { REVIEW_STATUSES, type ReviewStatus } from "@jobpilot/contracts/email";
+import type { ReactElement } from "react";
+import type { ReviewStatus } from "@jobpilot/contracts/email";
 import { inboxChannel } from "@jobpilot/contracts/sse";
-import { Box, LinearProgress, Stack, Typography } from "@mui/material";
+import { Box, LinearProgress } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
 import { emailQueries } from "@/api/queries";
 import { MailboxReauthAlert } from "@/components/features/settings";
 import { LinkButton } from "@/components/ui/buttons";
-import { PaginationFooter } from "@/components/ui/data";
-import { EmptyState, QueryError } from "@/components/ui/feedback";
+import { PagedList } from "@/components/ui/data";
+import { EmptyState } from "@/components/ui/feedback";
 import { FilterToggle, type SelectFieldOption } from "@/components/ui/form";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
-import { usePaginationParams } from "@/hooks/use-pagination";
-import { enumParam } from "@/utils/search-params";
 import { InboxActions } from "./inbox-actions";
 import { MessageList } from "./message-list";
+import { useInboxMessages } from "./use-inbox-messages";
 
 const FILTERS: SelectFieldOption<ReviewStatus>[] = [
   { value: "pending", label: "To review" },
@@ -28,19 +26,10 @@ const FILTERS: SelectFieldOption<ReviewStatus>[] = [
 
 /** Mail grouped by what it means for your applications; a message opens on its own page. */
 export function InboxContent(): ReactElement {
-  // In the URL, so a refresh, a shared link, or Back from a message keeps the view.
-  const searchParams = useSearchParams();
-  const filter = enumParam(REVIEW_STATUSES, searchParams.get("filter"));
-
   const account = useQuery(emailQueries.account());
   const status = account.data;
   const connected = status?.connected === true;
-
-  const pagination = usePaginationParams();
-  const messages = useQuery({
-    ...emailQueries.messages(filter, pagination.query),
-    enabled: connected,
-  });
+  const { query: messages, filter, pagination, listQuery } = useInboxMessages(connected);
 
   useLiveInvalidation(inboxChannel, null, {
     enabled: connected,
@@ -74,32 +63,6 @@ export function InboxContent(): ReactElement {
 
   const rows = messages.data?.items ?? [];
 
-  const renderList = (): ReactNode => {
-    if (messages.isError) {
-      return (
-        <QueryError title="Couldn't load your inbox." onRetry={() => void messages.refetch()} />
-      );
-    }
-    if (messages.isSuccess && rows.length === 0) {
-      return <Typography variant="body2Muted">No messages here yet.</Typography>;
-    }
-    return (
-      <MessageList
-        messages={rows}
-        listQuery={searchParams.toString()}
-        footer={
-          messages.data && (
-            <PaginationFooter
-              pagination={messages.data.pagination}
-              onPageChange={pagination.setPage}
-              onPageSizeChange={pagination.setPageSize}
-            />
-          )
-        }
-      />
-    );
-  };
-
   return (
     <PageShell maxWidth="lg">
       <PageHeader title="Inbox" actions={<InboxActions />} />
@@ -120,10 +83,15 @@ export function InboxContent(): ReactElement {
           onChange={(next) => pagination.setFilters({ filter: next })}
         />
       </Box>
-      <Stack>
-        {messages.isFetching && <LinearProgress />}
-        {renderList()}
-      </Stack>
+      <PagedList
+        query={messages}
+        pager={pagination}
+        errorTitle="Couldn't load your inbox."
+        isEmpty={rows.length === 0}
+        empty={<EmptyState variant="inline" title="No messages here yet." />}
+      >
+        <MessageList messages={rows} listQuery={listQuery} />
+      </PagedList>
     </PageShell>
   );
 }

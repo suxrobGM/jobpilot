@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Box, Button, CircularProgress, Divider, Stack, Typography } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
@@ -101,13 +100,8 @@ interface PrependAnchor {
   started: boolean;
 }
 
-interface ThreadProps {
-  state: PilotState;
-}
-
 /** Newest at the bottom, then what the pilot is doing now; what waits on the user is in the queue. */
-export function Thread(props: ThreadProps): ReactElement {
-  const { state } = props;
+export function Thread(): ReactElement {
   const query = useInfiniteQuery(pilotQueries.thread());
   const scrollRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -220,8 +214,8 @@ export function Thread(props: ThreadProps): ReactElement {
             {renderRows(rows, openFolds, (key) => setOpenFolds([...openFolds, key]))}
           </Stack>
         </QuerySection>
-        <SetupTurn state={state} />
-        <LiveTurn state={state} />
+        <SetupTurn />
+        <LiveTurn />
       </Stack>
     </Box>
   );

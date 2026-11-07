@@ -26,7 +26,6 @@ export function ThreadFold(props: ThreadFoldProps): ReactElement {
         typography: "body2",
         transition: theme.motion.fast,
         "&:hover": { color: "text.primary", backgroundColor: theme.palette.surfaces.card },
-        "&.Mui-focusVisible": { boxShadow: theme.shadows_custom.focus },
       })}
     >
       <UnfoldMore fontSize="sm" />

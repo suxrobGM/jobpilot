@@ -83,6 +83,12 @@ declare module "@mui/material/SvgIcon" {
   }
 }
 
+declare module "@mui/material/Badge" {
+  interface BadgePropsVariantOverrides {
+    inline: true;
+  }
+}
+
 declare module "@mui/material/Paper" {
   interface PaperPropsVariantOverrides {
     interactive: true;
@@ -94,5 +100,6 @@ declare module "@mui/material/Paper" {
     /** A cell inside a `panel`. */
     inset: true;
     showcase: true;
+    field: true;
   }
 }

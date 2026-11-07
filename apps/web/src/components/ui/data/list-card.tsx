@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { Box, Checkbox, Stack, Typography } from "@mui/material";
+import { Box, Card, Checkbox, Stack, Typography } from "@mui/material";
 
 interface ListCardProps {
   header?: ReactNode;
@@ -14,15 +14,7 @@ interface ListCardProps {
 export function ListCard(props: ListCardProps): ReactElement {
   const { header, footer, children } = props;
   return (
-    <Box
-      sx={(theme) => ({
-        border: 1,
-        borderColor: "line.border",
-        borderRadius: theme.radii.lg,
-        backgroundColor: theme.palette.surfaces.card,
-        overflow: "hidden",
-      })}
-    >
+    <Card sx={{ overflow: "hidden" }}>
       {header}
       {children}
       {footer && (
@@ -30,11 +22,11 @@ export function ListCard(props: ListCardProps): ReactElement {
           {footer}
         </Box>
       )}
-    </Box>
+    </Card>
   );
 }
 
-interface ListSelection {
+export interface ListSelection {
   count: number;
   total: number;
   onToggleAll: () => void;

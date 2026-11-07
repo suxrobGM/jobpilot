@@ -2,21 +2,16 @@
 
 import type { ReactElement } from "react";
 import { ButtonBase, Typography } from "@mui/material";
-import { useAgentDrawer } from "@/providers/agent-provider";
 import { AgentOrb } from "./agent-orb";
-import { useAgentActivity } from "./use-agent-activity";
+import { useAgentToggle } from "./use-agent-toggle";
 
 /** The phone top bar's agent status (the rail has its own on desktop), and the way into its drawer. */
 export function AgentPill(): ReactElement {
-  const { drawerOpen, openDrawer, closeDrawer } = useAgentDrawer();
-  const { orb, label } = useAgentActivity();
-  const text = orb === "working" ? label : `Agent ${label}`;
+  const { orb, text, open, buttonProps } = useAgentToggle();
 
   return (
     <ButtonBase
-      aria-label={drawerOpen ? "Close agent" : `Open agent: ${text}`}
-      aria-pressed={drawerOpen}
-      onClick={drawerOpen ? closeDrawer : openDrawer}
+      {...buttonProps}
       sx={(theme) => ({
         gap: 1,
         minWidth: 0,
@@ -24,10 +19,9 @@ export function AgentPill(): ReactElement {
         paddingInline: { xs: 0.75, sm: 1.25 },
         borderRadius: theme.radii.md,
         border: `1px solid ${theme.palette.line.borderHi}`,
-        backgroundColor: drawerOpen ? theme.palette.surfaces.elevated : "transparent",
+        backgroundColor: open ? theme.palette.surfaces.elevated : "transparent",
         transition: theme.motion.fast,
         "&:hover": { backgroundColor: theme.palette.surfaces.card },
-        "&.Mui-focusVisible": { boxShadow: theme.shadows_custom.focus },
       })}
     >
       <AgentOrb state={orb} size="sm" />

@@ -1,20 +1,16 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Box, FormControlLabel, Stack, Switch, Tooltip, Typography } from "@mui/material";
 import { PageHeader } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { hasGoals } from "../pilot-status";
 import { useAutopilot } from "../use-autopilot";
-
-interface PilotHeaderProps {
-  state: PilotState;
-}
+import { usePilotState } from "../use-pilot-state";
 
 /** Today's progress against the cap and the autopilot switch, in the top bar. */
-export function PilotHeader(props: PilotHeaderProps): ReactElement {
-  const { state } = props;
+export function PilotHeader(): ReactElement {
+  const state = usePilotState();
   const confirm = useConfirm();
   const autopilot = useAutopilot();
   const goalsMissing = !hasGoals(state);

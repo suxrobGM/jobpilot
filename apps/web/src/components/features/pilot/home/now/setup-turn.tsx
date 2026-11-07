@@ -1,7 +1,6 @@
 "use client";
 
 import { type ReactElement, type ReactNode, useState } from "react";
-import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Button, Dialog, DialogContent, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
@@ -11,6 +10,7 @@ import { ChecklistRow } from "@/components/ui/display";
 import { DialogHeader } from "@/components/ui/feedback";
 import { plural } from "@/utils/format";
 import { hasGoals } from "../../pilot-status";
+import { usePilotState } from "../../use-pilot-state";
 import { PilotTurn } from "../thread/pilot-turn";
 
 interface Step {
@@ -35,16 +35,12 @@ function StepLink(props: StepLinkProps): ReactElement {
   );
 }
 
-interface SetupTurnProps {
-  state: PilotState;
-}
-
 /**
  * What the pilot still needs before it can apply on its own. The mailbox is a notice, and the
  * agent and autopilot belong to the live line, so neither repeats here.
  */
-export function SetupTurn(props: SetupTurnProps): ReactNode {
-  const { state } = props;
+export function SetupTurn(): ReactNode {
+  const state = usePilotState();
   const [open, setOpen] = useState(false);
   const profile = useQuery(userQueries.detail()).data;
   const resumes = useQuery(resumeQueries.list()).data;

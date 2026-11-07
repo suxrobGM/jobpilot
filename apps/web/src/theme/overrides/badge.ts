@@ -16,4 +16,10 @@ export const badgeOverrides: Components<Theme>["MuiBadge"] = {
       fontSize: "0.625rem",
     }),
   },
+  variants: [
+    {
+      props: { variant: "inline" },
+      style: { "& .MuiBadge-badge": { position: "static", transform: "none" } },
+    },
+  ],
 };

@@ -1,18 +1,12 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
-import type { Pagination as PageMeta } from "@jobpilot/contracts/pagination";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Stack, Typography } from "@mui/material";
-import { ListCard, PaginationFooter } from "@/components/ui/data";
-import { QuerySection, type QueryState } from "@/components/ui/feedback";
+import { PagedList } from "@/components/ui/data";
 import { FilterBar } from "@/components/ui/form";
 import type { PaginationParams } from "@/hooks/use-pagination";
 
 export const UPWORK_PAGE_SIZE = 10;
-
-interface PagedQuery extends QueryState {
-  data: { pagination: PageMeta } | undefined;
-}
 
 interface UpworkListFrameProps {
   filters: ReactNode;
@@ -21,7 +15,7 @@ interface UpworkListFrameProps {
   /** e.g. "12 proposals", at the toolbar's right end. */
   countLabel: string;
   actions?: ReactNode;
-  query: PagedQuery;
+  query: ComponentProps<typeof PagedList>["query"];
   pager: PaginationParams;
   errorTitle: string;
   empty: ReactNode;
@@ -43,7 +37,6 @@ export function UpworkListFrame(props: UpworkListFrameProps): ReactElement {
     empty,
     children,
   } = props;
-  const pagination = query.data?.pagination;
 
   return (
     <Stack spacing={2}>
@@ -60,26 +53,15 @@ export function UpworkListFrame(props: UpworkListFrameProps): ReactElement {
         {filters}
       </FilterBar>
 
-      <QuerySection
+      <PagedList
         query={query}
+        pager={pager}
         errorTitle={errorTitle}
         isEmpty={children.length === 0}
         empty={empty}
       >
-        <ListCard
-          footer={
-            pagination && (
-              <PaginationFooter
-                pagination={pagination}
-                onPageChange={pager.setPage}
-                onPageSizeChange={pager.setPageSize}
-              />
-            )
-          }
-        >
-          {children}
-        </ListCard>
-      </QuerySection>
+        {children}
+      </PagedList>
     </Stack>
   );
 }

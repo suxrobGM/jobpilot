@@ -11,13 +11,8 @@ import { RelativeTime } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { FormDialogShell, FormSection } from "@/components/ui/form";
 import { useConfirm } from "@/providers/confirm-provider";
+import { humanizeKey } from "@/utils/format";
 import { useMakeChange } from "../changes/use-changes";
-
-/** `start_date` → "Start date". */
-function answerLabel(key: string): string {
-  const words = key.replaceAll("_", " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
 
 /** Answers the pilot reuses on every application; each edit is a change with Undo. */
 export function AnswersSection(): ReactElement {
@@ -32,13 +27,13 @@ export function AnswersSection(): ReactElement {
   const handleDelete = async (answer: SavedAnswerDto): Promise<void> => {
     const confirmed = await confirm({
       title: "Delete saved answer?",
-      description: `You'll be asked about "${answerLabel(answer.key)}" again the next time a form needs it.`,
+      description: `You'll be asked about "${humanizeKey(answer.key)}" again the next time a form needs it.`,
       confirmLabel: "Delete",
       destructive: true,
     });
     if (confirmed) {
       remove.mutate({
-        summary: `Forgot the answer to "${answerLabel(answer.key)}"`,
+        summary: `Forgot the answer to "${humanizeKey(answer.key)}"`,
         actions: [{ type: "answer.delete", key: answer.key }],
       });
     }
@@ -80,7 +75,7 @@ export function AnswersSection(): ReactElement {
           saving={save.isPending}
           onSave={(value) =>
             save.mutate({
-              summary: `Saved the answer to "${answerLabel(editing.key)}"`,
+              summary: `Saved the answer to "${humanizeKey(editing.key)}"`,
               actions: [{ type: "answer.set", key: editing.key, value }],
             })
           }
@@ -99,7 +94,7 @@ interface AnswerRowProps {
 
 function AnswerRow(props: AnswerRowProps): ReactElement {
   const { answer, onEdit, onDelete } = props;
-  const label = answerLabel(answer.key);
+  const label = humanizeKey(answer.key);
 
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
@@ -154,7 +149,7 @@ function EditAnswerDialog(props: EditAnswerDialogProps): ReactElement {
       }
     >
       <TextField
-        label={answerLabel(answer.key)}
+        label={humanizeKey(answer.key)}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         autoFocus

@@ -1,16 +1,15 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { PilotState } from "@jobpilot/contracts/pilot";
 import { AddLink, ArrowUpward, Tune } from "@mui/icons-material";
-import { Box, Button, Chip, IconButton, InputBase, Stack, Typography } from "@mui/material";
-import { darken } from "@mui/material/styles";
+import { Button, Card, Chip, InputBase, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { plural } from "@/utils/format";
 import { AddLinksDialog } from "../../pipeline/add-links-dialog";
 import { parseLinks, useAddLinks } from "../../pipeline/use-add-links";
+import { usePilotState } from "../use-pilot-state";
 import { RulesDialog } from "./side/rules-dialog";
 
 const SUGGESTED_PROMPTS = [
@@ -19,13 +18,9 @@ const SUGGESTED_PROMPTS = [
   "Skip jobs that need a security clearance",
 ];
 
-interface ComposerProps {
-  state: PilotState;
-}
-
 /** Talk to the pilot; its reply runs in the user's own agent session ahead of other work. */
-export function Composer(props: ComposerProps): ReactElement {
-  const { state } = props;
+export function Composer(): ReactElement {
+  const state = usePilotState();
   const [text, setText] = useState("");
   const [dialog, setDialog] = useState<"links" | "rules" | null>(null);
   const links = parseLinks(text);
@@ -75,17 +70,7 @@ export function Composer(props: ComposerProps): ReactElement {
           />
         </Stack>
       )}
-      <Box
-        sx={(theme) => ({
-          border: 1,
-          borderColor: "line.borderHi",
-          borderRadius: theme.radii.lg * 1.5,
-          backgroundColor: theme.palette.surfaces.card,
-          boxShadow: theme.shadows_custom.md,
-          transition: theme.motion.fast,
-          "&:focus-within": { borderColor: "accent.primary" },
-        })}
-      >
+      <Card variant="field">
         <InputBase
           multiline
           minRows={1}
@@ -127,29 +112,20 @@ export function Composer(props: ComposerProps): ReactElement {
           >
             Enter to send · Shift+Enter for a new line
           </Typography>
-          <IconButton
+          <Button
+            variant="contained"
+            size="small"
             aria-label="Send"
             disabled={empty || send.isPending}
             onClick={submit}
-            sx={(theme) => ({
-              ml: { xs: "auto", sm: 0 },
-              borderRadius: theme.radii.lg,
-              // The same fill as a contained button.
-              color: theme.palette.common.white,
-              backgroundColor: theme.palette.accent.action,
-              "&:hover": { backgroundColor: darken(theme.palette.accent.action, 0.12) },
-              "&.Mui-disabled": {
-                color: "text.disabled",
-                backgroundColor: theme.palette.surfaces.elevated,
-              },
-            })}
+            sx={{ ml: { xs: "auto", sm: 0 }, minWidth: 0, px: 1 }}
           >
             <ArrowUpward fontSize="sm" />
-          </IconButton>
+          </Button>
         </Stack>
-      </Box>
+      </Card>
       <AddLinksDialog open={dialog === "links"} onClose={() => setDialog(null)} />
-      <RulesDialog state={state} open={dialog === "rules"} onClose={() => setDialog(null)} />
+      <RulesDialog open={dialog === "rules"} onClose={() => setDialog(null)} />
     </Stack>
   );
 }

@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { Box, Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
+import { sideNavLink } from "@/components/ui/navigation";
 import { DocsMobileNav } from "./docs-mobile-nav";
 import { DOCS_LINKS } from "./docs-nav";
 
@@ -26,10 +27,7 @@ function SidebarLink(props: SidebarLinkProps): ReactElement {
         ...(active ? theme.typography.body1Strong : theme.typography.body1),
         paddingBlock: 0.75,
         paddingInline: 1.5,
-        borderRadius: theme.radii.sm,
-        color: active ? "text.primary" : "text.secondary",
-        backgroundColor: active ? theme.palette.surfaces.elevated : "transparent",
-        "&:hover": { color: "text.primary" },
+        ...sideNavLink(theme, active),
       })}
     >
       {label}

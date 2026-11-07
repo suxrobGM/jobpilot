@@ -19,7 +19,7 @@ const titleSx = {
   "&::after": { content: '""', position: "absolute", inset: 0 },
 } as const;
 
-interface RowSelection {
+export interface RowSelection {
   selected: boolean;
   onToggle: () => void;
   /** Names the record for the checkbox's screen-reader label. */

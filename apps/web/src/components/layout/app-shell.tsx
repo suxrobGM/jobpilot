@@ -1,14 +1,13 @@
 "use client";
 
 import { type PropsWithChildren, type ReactElement, useState } from "react";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery } from "@mui/material";
 import { AgentDrawer } from "@/components/features/agent/agent-drawer";
 import { PilotPairing } from "@/components/features/agent/pilot-pairing";
 import { VerifyEmailBanner } from "@/components/features/auth";
 import { PilotLive } from "@/components/features/pilot/pilot-live";
 import { PipelineLive } from "@/components/features/pipeline";
-import { TopBarSlotsContext } from "@/components/ui/layout/top-bar-slots";
-import { useAgentAvailable } from "@/providers/agent-provider";
+import { type PageWidth, TopBarSlotsContext } from "@/components/ui/layout/top-bar-slots";
 import { MobileNav } from "./mobile-nav";
 import { MOBILE_NAV_HEIGHT } from "./shell-config";
 import { Sidebar } from "./sidebar";
@@ -17,10 +16,11 @@ import { TopBar } from "./top-bar";
 export function AppShell(props: PropsWithChildren): ReactElement {
   const { children } = props;
   // Below md a bottom bar replaces the sidebar; the drawer still opens there for the agent's status.
-  const isDesktop = useAgentAvailable();
+  const isDesktop = useMediaQuery((theme) => theme.breakpoints.up("md"));
   const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null);
   const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
   const [tabsSlot, setTabsSlot] = useState<HTMLElement | null>(null);
+  const [pageWidth, setPageWidth] = useState<PageWidth | null>(null);
 
   return (
     <Box
@@ -46,6 +46,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
       >
         <TopBar
           showMark={!isDesktop}
+          pageWidth={pageWidth}
           titleRef={setTitleSlot}
           actionsRef={setActionsSlot}
           tabsRef={setTabsSlot}
@@ -54,7 +55,9 @@ export function AppShell(props: PropsWithChildren): ReactElement {
         <PilotLive />
         <PipelineLive />
         <PilotPairing />
-        <TopBarSlotsContext value={{ title: titleSlot, actions: actionsSlot, tabs: tabsSlot }}>
+        <TopBarSlotsContext
+          value={{ title: titleSlot, actions: actionsSlot, tabs: tabsSlot, setPageWidth }}
+        >
           {children}
         </TopBarSlotsContext>
       </Box>

@@ -5,7 +5,8 @@ import { Box, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { TOP_BAR_HEIGHT } from "@/components/layout/shell-config";
+import { belowTopBar } from "@/components/ui/layout/top-bar-slots";
+import { sideNavLink } from "@/components/ui/navigation";
 
 interface SettingsLink {
   label: string;
@@ -57,7 +58,7 @@ export function SettingsNav(): ReactElement {
         flexShrink: 0,
         width: { xs: "100%", md: 200 },
         position: { md: "sticky" },
-        top: { md: `calc(${TOP_BAR_HEIGHT.desktop}px + ${theme.spacing(3)})` },
+        top: { md: belowTopBar(theme.spacing(3)) },
         overflowX: { xs: "auto", md: "visible" },
         scrollbarWidth: "none",
       })}
@@ -105,18 +106,9 @@ function SettingsNavLink(props: SettingsNavLinkProps): ReactElement {
         flexShrink: 0,
         height: 34,
         paddingInline: 1,
-        borderRadius: theme.radii.sm,
         whiteSpace: "nowrap",
         typography: "body2",
-        color: active ? "text.primary" : "text.secondary",
-        backgroundColor: active ? theme.palette.surfaces.elevated : "transparent",
-        textDecoration: "none",
-        transition: theme.motion.fast,
-        "&:hover": {
-          color: "text.primary",
-          backgroundColor: active ? theme.palette.surfaces.elevated : theme.palette.surfaces.card,
-        },
-        "&:focus-visible": { outline: "none", boxShadow: theme.shadows_custom.focus },
+        ...sideNavLink(theme, active),
       })}
     >
       {link.label}

@@ -1,11 +1,11 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { Chip, Stack, Typography } from "@mui/material";
+import { Badge, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { QuestionCard } from "../../attention/question-card";
-import { type Pending, useNeedsYou } from "../../attention/use-needs-you";
+import { type Pending, useNeedsYou, useNeedsYouCount } from "../../attention/use-needs-you";
 import { ChangeCard } from "../../changes/change-card";
 import { NoticeCard } from "./notice-card";
 import { ParkedJobCard } from "./parked-job-card";
@@ -14,7 +14,7 @@ import { ParkedJobCard } from "./parked-job-card";
 export function NeedsYouList(): ReactElement {
   const { data: notices = [] } = useQuery(pilotQueries.notices());
   const items = useNeedsYou();
-  const total = notices.length + items.length;
+  const total = useNeedsYouCount();
 
   const render = (item: Pending): ReactNode => {
     switch (item.type) {
@@ -32,16 +32,8 @@ export function NeedsYouList(): ReactElement {
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", px: 0.5 }}>
         <Typography variant="overline">Needs you</Typography>
         {total > 0 && (
-          // Sized like the rail's badge, so the two counts read as one thing.
-          <Chip
-            label={total}
-            color="primary"
-            sx={{
-              height: 16,
-              minWidth: 16,
-              "& .MuiChip-label": { px: 0.5, typography: "caption" },
-            }}
-          />
+          // Matches the rail badge.
+          <Badge badgeContent={total} variant="inline" />
         )}
       </Stack>
       {total === 0 && (

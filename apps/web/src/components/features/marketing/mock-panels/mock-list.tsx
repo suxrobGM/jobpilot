@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Card, Stack, Typography } from "@mui/material";
 
 interface MockTab {
   label: string;
@@ -46,6 +46,7 @@ export function MockTabs(props: MockTabsProps): ReactElement {
 }
 
 interface MockRowProps {
+  id: string;
   lead: ReactNode;
   title: string;
   meta: string;
@@ -71,25 +72,17 @@ function MockRow(props: MockRowProps): ReactElement {
 }
 
 interface MockListProps {
-  rows: (MockRowProps & { id: string })[];
+  rows: MockRowProps[];
 }
 
 /** Rows in a bordered card, as every list in the app is laid out. */
 export function MockList(props: MockListProps): ReactElement {
   const { rows } = props;
   return (
-    <Box
-      sx={(theme) => ({
-        border: 1,
-        borderColor: "line.border",
-        borderRadius: theme.radii.lg,
-        backgroundColor: "surfaces.card",
-        "& > * + *": { borderTop: 1, borderColor: "line.divider" },
-      })}
-    >
+    <Card sx={{ "& > * + *": { borderTop: 1, borderColor: "line.divider" } }}>
       {rows.map((row) => (
         <MockRow key={row.id} {...row} />
       ))}
-    </Box>
+    </Card>
   );
 }

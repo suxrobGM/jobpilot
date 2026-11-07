@@ -61,7 +61,6 @@ export function AccountMenu(): ReactNode {
             padding: 0.5,
             borderRadius: theme.radii.pill,
             "&:hover": { backgroundColor: theme.palette.surfaces.card },
-            "&.Mui-focusVisible": { boxShadow: theme.shadows_custom.focus },
           })}
         >
           <Avatar

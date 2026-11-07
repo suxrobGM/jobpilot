@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { SmartToy } from "@mui/icons-material";
 import { Box, Stack, Typography } from "@mui/material";
-import { alpha } from "@mui/material/styles";
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
 
@@ -30,7 +29,7 @@ export function PilotTurn(props: PilotTurnProps): ReactElement {
           placeItems: "center",
           borderRadius: theme.radii.lg,
           color: "accent.primary",
-          backgroundColor: alpha(theme.palette.accent.primary, 0.14),
+          backgroundColor: theme.tints.selected,
         })}
       >
         <SmartToy fontSize="sm" />
