@@ -20,6 +20,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
   const isDesktop = useAgentAvailable();
   const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null);
   const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
+  const [tabsSlot, setTabsSlot] = useState<HTMLElement | null>(null);
 
   return (
     <Box
@@ -43,12 +44,17 @@ export function AppShell(props: PropsWithChildren): ReactElement {
           pb: isDesktop ? 0 : `${MOBILE_NAV_HEIGHT}px`,
         }}
       >
-        <TopBar showMark={!isDesktop} titleRef={setTitleSlot} actionsRef={setActionsSlot} />
+        <TopBar
+          showMark={!isDesktop}
+          titleRef={setTitleSlot}
+          actionsRef={setActionsSlot}
+          tabsRef={setTabsSlot}
+        />
         <VerifyEmailBanner />
         <PilotLive />
         <PipelineLive />
         <PilotPairing />
-        <TopBarSlotsContext value={{ title: titleSlot, actions: actionsSlot }}>
+        <TopBarSlotsContext value={{ title: titleSlot, actions: actionsSlot, tabs: tabsSlot }}>
           {children}
         </TopBarSlotsContext>
       </Box>

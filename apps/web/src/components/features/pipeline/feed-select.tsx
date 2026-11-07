@@ -1,7 +1,15 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, ListSubheader, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  InputAdornment,
+  ListSubheader,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import type { FeedDto } from "@/api/types";
 
 interface FeedGroup {
@@ -82,16 +90,21 @@ export function FeedSelect(props: FeedSelectProps): ReactElement {
     <TextField
       size="small"
       select
-      label="Feed"
       value={value ?? ""}
       onChange={(event) => onChange(event.target.value || null)}
-      sx={{ minWidth: 200, maxWidth: 320 }}
+      sx={{ maxWidth: 320 }}
       slotProps={{
-        inputLabel: { shrink: true },
+        input: {
+          startAdornment: (
+            <InputAdornment position="start" sx={{ color: "text.secondary" }}>
+              Feed
+            </InputAdornment>
+          ),
+        },
         select: {
           displayEmpty: true,
-          renderValue: (selected) =>
-            feeds.find((feed) => feed.id === selected)?.name ?? "All feeds",
+          SelectDisplayProps: { "aria-label": "Feed" },
+          renderValue: (selected) => feeds.find((feed) => feed.id === selected)?.name ?? "All",
           MenuProps: { slotProps: { paper: { sx: { minWidth: 360, maxWidth: 480 } } } },
         },
       }}

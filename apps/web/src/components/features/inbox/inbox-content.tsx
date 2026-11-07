@@ -83,16 +83,26 @@ export function InboxContent(): ReactElement {
     if (messages.isSuccess && rows.length === 0) {
       return <Typography variant="body2Muted">No messages here yet.</Typography>;
     }
-    return <MessageList messages={rows} listQuery={searchParams.toString()} />;
+    return (
+      <MessageList
+        messages={rows}
+        listQuery={searchParams.toString()}
+        footer={
+          messages.data && (
+            <PaginationFooter
+              pagination={messages.data.pagination}
+              onPageChange={pagination.setPage}
+              onPageSizeChange={pagination.setPageSize}
+            />
+          )
+        }
+      />
+    );
   };
 
   return (
-    <PageShell maxWidth="md">
-      <PageHeader
-        title="Inbox"
-        description="Replies, rejections, and offers from the boards you applied to. Approving one updates the matching application's status."
-        actions={<InboxActions />}
-      />
+    <PageShell maxWidth="lg">
+      <PageHeader title="Inbox" actions={<InboxActions />} />
       {status.needsReauth && (
         <MailboxReauthAlert
           action={
@@ -113,12 +123,6 @@ export function InboxContent(): ReactElement {
       <Stack>
         {messages.isFetching && <LinearProgress />}
         {renderList()}
-        {messages.data && (
-          <PaginationFooter
-            pagination={messages.data.pagination}
-            onPageChange={pagination.setPage}
-          />
-        )}
       </Stack>
     </PageShell>
   );

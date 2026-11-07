@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
+import { FindContactsButton } from "@/components/features/networking";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 import { type Tab, TabStrip } from "@/components/ui/navigation";
 
@@ -17,9 +18,9 @@ export default function NetworkingLayout(props: NetworkingLayoutProps): ReactEle
     <PageShell maxWidth="lg">
       <PageHeader
         title="Outreach"
-        description="Hiring managers and recruiters the pilot found, and every message drafted to them."
+        actions={<FindContactsButton />}
+        tabs={<TabStrip tabs={TABS} ariaLabel="Networking views" />}
       />
-      <TabStrip tabs={TABS} ariaLabel="Networking views" />
       {children}
     </PageShell>
   );

@@ -2,24 +2,32 @@
 
 import { type ReactElement, useState } from "react";
 import { isTerminalNetworkingStatus } from "@jobpilot/contracts/networking";
-import { PersonSearch } from "@mui/icons-material";
-import { Box, Button, Stack, Typography } from "@mui/material";
-import type { GridRowSelectionModel } from "@mui/x-data-grid";
+import { Button } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/api/client";
 import { networkingQueries } from "@/api/queries";
+import type { NetworkingMessageDto } from "@/api/types";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
-import { PaginationFooter } from "@/components/ui/data";
-import { DataTable } from "@/components/ui/data/data-table";
+import { ListCard, ListHeader, ListLead, ListRow, PaginationFooter } from "@/components/ui/data";
+import { StatusChip } from "@/components/ui/display";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { usePaginationParams } from "@/hooks/use-pagination";
-import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
-import { FindContactsDialog } from "./find-contacts-dialog";
-import { networkingMessageColumns, openActionColumn } from "./networking-message-columns";
+import { initials } from "@/utils/format";
 import { NetworkingMessageDialog } from "./networking-message-dialog";
 
-const EMPTY_MESSAGE = "No outreach yet. The pilot drafts intros as it applies.";
+function channelLabel(message: NetworkingMessageDto): string {
+  if (message.channel !== "linkedin") {
+    return "Email";
+  }
+  return message.linkedinKind ? `LinkedIn · ${message.linkedinKind}` : "LinkedIn";
+}
+
+function metaLine(message: NetworkingMessageDto): string {
+  const { contact } = message;
+  return [`To ${contact.name}`, contact.company, channelLabel(message)].filter(Boolean).join(" · ");
+}
 
 /** Every outreach draft, one server page at a time, with bulk approve and rewrite. */
 export function NetworkingMessagesList(): ReactElement {
@@ -27,19 +35,21 @@ export function NetworkingMessagesList(): ReactElement {
   const pagination = usePaginationParams();
   // The pilot's approval question deep-links straight to one draft.
   const [openId, setOpenId] = useState(useSearchParams().get("message"));
-  const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
-  const [finding, setFinding] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
   const query = useQuery(networkingQueries.messages(pagination.query));
 
   const messages = query.data?.items ?? [];
   const openMessage = messages.find((m) => m.id === openId) ?? null;
-  const selected = resolveSelectedRows(selection, messages).flatMap((m) =>
+  // A row that left the page after a refetch drops out of the selection.
+  const pickedRows = messages.filter((m) => picked.includes(m.id));
+  const actionable = pickedRows.flatMap((m) =>
     m.feedId && !isTerminalNetworkingStatus(m.status) ? [{ id: m.id, feedId: m.feedId }] : [],
   );
+  const allPicked = messages.length > 0 && pickedRows.length === messages.length;
 
   const approveSelected = useApiMutation(
     async () => {
-      for (const message of selected) {
+      for (const message of actionable) {
         const res = await api
           .feeds({ id: message.feedId })
           .networking.messages({ messageId: message.id })
@@ -48,74 +58,102 @@ export function NetworkingMessagesList(): ReactElement {
           return { data: null, error: res.error };
         }
       }
-      return { data: selected.length, error: null };
+      return { data: actionable.length, error: null };
     },
     {
       invalidate: [networkingQueries.all],
       successMessage: "Approved the selected drafts.",
-      onSuccess: () => setSelection(EMPTY_SELECTION),
+      onSuccess: () => setPicked([]),
     },
   );
 
   const rewriteSelected = (): void => {
     request.mutate({
       taskType: "networking.rewrite",
-      payload: { messageIds: selected.map((m) => m.id) },
+      payload: { messageIds: actionable.map((m) => m.id) },
     });
-    setSelection(EMPTY_SELECTION);
+    setPicked([]);
+  };
+
+  const toggle = (id: string): void =>
+    setPicked(picked.includes(id) ? picked.filter((other) => other !== id) : [...picked, id]);
+
+  const selection = {
+    count: pickedRows.length,
+    total: messages.length,
+    onToggleAll: () => setPicked(allPicked ? [] : messages.map((m) => m.id)),
   };
 
   return (
-    <Stack spacing={2}>
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-        {selected.length > 0 && (
-          <>
-            <Typography variant="body2Muted">{selected.length} selected</Typography>
-            <Button size="small" variant="outlined" onClick={rewriteSelected}>
-              Rewrite selected
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              loading={approveSelected.isPending}
-              onClick={() => approveSelected.mutate()}
+    <>
+      <QuerySection
+        query={query}
+        errorTitle="Couldn't load outreach messages."
+        isEmpty={messages.length === 0}
+        empty={
+          <EmptyState
+            variant="inline"
+            title="No outreach yet."
+            description="The pilot drafts intros as it applies."
+          />
+        }
+      >
+        <ListCard
+          header={
+            <ListHeader
+              selection={selection}
+              bulkActions={
+                <>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={actionable.length === 0}
+                    loading={approveSelected.isPending}
+                    onClick={() => approveSelected.mutate()}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={actionable.length === 0}
+                    onClick={rewriteSelected}
+                  >
+                    Rewrite
+                  </Button>
+                </>
+              }
             >
-              Approve selected
-            </Button>
-          </>
-        )}
-        <Box sx={{ ml: "auto" }}>
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<PersonSearch fontSize="sm" />}
-            onClick={() => setFinding(true)}
-          >
-            Find contacts
-          </Button>
-        </Box>
-      </Stack>
-      <DataTable
-        rows={messages}
-        columns={[...networkingMessageColumns, openActionColumn(setOpenId)]}
-        loading={query.isPending}
-        getRowId={(row) => row.id}
-        checkboxSelection
-        rowSelectionModel={selection}
-        onRowSelectionModelChange={setSelection}
-        autoHeight
-        hideFooter
-        emptyMessage={EMPTY_MESSAGE}
-        errorTitle={query.isError ? "Couldn't load outreach messages." : undefined}
-        onRetry={() => void query.refetch()}
-      />
-      {query.data && (
-        <PaginationFooter
-          pagination={query.data.pagination}
-          onPageChange={pagination.setPage}
-          onPageSizeChange={pagination.setPageSize}
-        />
-      )}
+              Latest first
+            </ListHeader>
+          }
+          footer={
+            query.data && (
+              <PaginationFooter
+                pagination={query.data.pagination}
+                onPageChange={pagination.setPage}
+                onPageSizeChange={pagination.setPageSize}
+              />
+            )
+          }
+        >
+          {messages.map((message) => (
+            <ListRow
+              key={message.id}
+              onOpen={() => setOpenId(message.id)}
+              selection={{
+                selected: picked.includes(message.id),
+                onToggle: () => toggle(message.id),
+                label: message.contact.name,
+              }}
+              lead={<ListLead>{initials(message.contact.name)}</ListLead>}
+              title={message.subject ?? message.body.slice(0, 120)}
+              meta={metaLine(message)}
+              status={<StatusChip domain="networking" value={message.status} />}
+            />
+          ))}
+        </ListCard>
+      </QuerySection>
       {openMessage?.feedId && (
         <NetworkingMessageDialog
           feedId={openMessage.feedId}
@@ -123,7 +161,6 @@ export function NetworkingMessagesList(): ReactElement {
           onClose={() => setOpenId(null)}
         />
       )}
-      <FindContactsDialog open={finding} onClose={() => setFinding(false)} />
-    </Stack>
+    </>
   );
 }

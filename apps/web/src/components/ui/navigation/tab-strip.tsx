@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
-import { Box, Stack } from "@mui/material";
+import { Box } from "@mui/material";
 import type { Route } from "next";
-import { theme } from "@/theme/theme";
 import { TabLink } from "./tab-link";
 
 export interface Tab {
@@ -14,7 +13,7 @@ interface TabStripProps {
   ariaLabel: string;
 }
 
-/** Server-rendered section tab strip; only the active-link highlight is client-side. */
+/** Route tabs for `PageHeader tabs`; only the active-link highlight is client-side. */
 export function TabStrip(props: TabStripProps): ReactElement {
   const { tabs, ariaLabel } = props;
 
@@ -22,20 +21,12 @@ export function TabStrip(props: TabStripProps): ReactElement {
     <Box
       component="nav"
       aria-label={ariaLabel}
-      sx={{
-        mb: 3,
-        overflowX: "auto",
-        // overflow-x:auto computes overflow-y to auto too; sub-pixel rounding then adds a scrollbar.
-        overflowY: "hidden",
-        // Inset shadow, not a border: paints inside the padding box so the active tab covers it.
-        boxShadow: `inset 0 -1px 0 ${theme.palette.divider}`,
-      }}
+      // overflow-x:auto computes overflow-y to auto too; sub-pixel rounding then adds a scrollbar.
+      sx={{ display: "flex", overflowX: "auto", overflowY: "hidden" }}
     >
-      <Stack direction="row" spacing={1}>
-        {tabs.map((tab) => (
-          <TabLink key={tab.href} href={tab.href} label={tab.label} />
-        ))}
-      </Stack>
+      {tabs.map((tab) => (
+        <TabLink key={tab.href} href={tab.href} label={tab.label} />
+      ))}
     </Box>
   );
 }

@@ -6,12 +6,12 @@ import type {
   PipelineFilters,
   PipelineJobView,
 } from "@jobpilot/contracts/pipeline";
-import { Box, Button, Checkbox, Stack, Typography } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { pipelineQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
-import { PaginationFooter } from "@/components/ui/data";
+import { ListCard, ListHeader, PaginationFooter } from "@/components/ui/data";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import type { PaginationParams } from "@/hooks/use-pagination";
 import { plural } from "@/utils/format";
@@ -73,6 +73,11 @@ export function JobsView(props: JobsViewProps): ReactElement {
     onSuccess: () => setSelected([]),
   });
 
+  const selection = {
+    count: picked.length,
+    total: rows.length,
+    onToggleAll: () => setSelected(allPicked ? [] : rows.map((job) => job.id)),
+  };
   const toggle = (id: string) =>
     setSelected(picked.includes(id) ? picked.filter((other) => other !== id) : [...picked, id]);
 
@@ -86,51 +91,35 @@ export function JobsView(props: JobsViewProps): ReactElement {
         isEmpty={rows.length === 0}
         empty={<EmptyState variant="inline" title={EMPTY_TITLES[view]} />}
       >
-        <Box sx={{ border: 1, borderColor: "divider", borderRadius: 1 }}>
-          {actions.length > 0 && (
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{
-                px: 2,
-                py: 1,
-                minHeight: 48,
-                alignItems: "center",
-                borderBottom: 1,
-                borderColor: "divider",
-                bgcolor: "surfaces.elevated",
-              }}
+        <ListCard
+          header={
+            <ListHeader
+              selection={actions.length > 0 ? selection : null}
+              bulkActions={actions.map((action) => (
+                <Button
+                  key={action}
+                  size="small"
+                  variant={action === "skip" ? "outlined" : "contained"}
+                  disabled={bulk.isPending}
+                  onClick={() => bulk.mutate({ action, ids: picked })}
+                >
+                  {BULK_LABELS[action]}
+                </Button>
+              ))}
             >
-              <Checkbox
-                size="small"
-                checked={allPicked}
-                indeterminate={picked.length > 0 && !allPicked}
-                onChange={() => setSelected(allPicked ? [] : rows.map((job) => job.id))}
-                slotProps={{ input: { "aria-label": "Select all on this page" } }}
-                sx={{ p: 0, mr: 1 }}
+              {sortHint}
+            </ListHeader>
+          }
+          footer={
+            jobs.data && (
+              <PaginationFooter
+                pagination={jobs.data.pagination}
+                onPageChange={pagination.setPage}
+                onPageSizeChange={pagination.setPageSize}
               />
-              {picked.length === 0 ? (
-                <Typography variant="captionMuted">{sortHint}</Typography>
-              ) : (
-                <>
-                  <Typography variant="body2Strong" sx={{ mr: 1 }}>
-                    {`${picked.length} selected`}
-                  </Typography>
-                  {actions.map((action) => (
-                    <Button
-                      key={action}
-                      size="small"
-                      variant={action === "skip" ? "outlined" : "contained"}
-                      disabled={bulk.isPending}
-                      onClick={() => bulk.mutate({ action, ids: picked })}
-                    >
-                      {BULK_LABELS[action]}
-                    </Button>
-                  ))}
-                </>
-              )}
-            </Stack>
-          )}
+            )
+          }
+        >
           {rows.map((job) => (
             <JobRow
               key={job.id}
@@ -143,15 +132,8 @@ export function JobsView(props: JobsViewProps): ReactElement {
               onAct={(action) => bulk.mutate({ action, ids: [job.id] })}
             />
           ))}
-        </Box>
+        </ListCard>
       </QuerySection>
-      {jobs.data && (
-        <PaginationFooter
-          pagination={jobs.data.pagination}
-          onPageChange={pagination.setPage}
-          onPageSizeChange={pagination.setPageSize}
-        />
-      )}
       <JobDrawer
         job={rows.find((job) => job.id === openId) ?? null}
         onClose={() => setOpenId(null)}

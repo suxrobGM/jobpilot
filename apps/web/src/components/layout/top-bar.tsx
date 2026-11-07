@@ -26,11 +26,12 @@ interface TopBarProps {
   showMark: boolean;
   titleRef: Ref<HTMLElement>;
   actionsRef: Ref<HTMLElement>;
+  tabsRef: Ref<HTMLElement>;
 }
 
-/** Page title, agent status and page actions; a page's `PageHeader` fills the slots. */
+/** Page title, agent status, page actions and page tabs; a page's `PageHeader` fills the slots. */
 export function TopBar(props: TopBarProps): ReactElement {
-  const { showMark, titleRef, actionsRef } = props;
+  const { showMark, titleRef, actionsRef, tabsRef } = props;
   const pathname = usePathname();
   const section = NAV_ITEMS.find((item) => isNavEntryActive(pathname, item));
 
@@ -95,6 +96,11 @@ export function TopBar(props: TopBarProps): ReactElement {
           overflowX: { xs: "auto", sm: "visible" },
           "&:empty": { display: "none" },
         }}
+      />
+      {/* Tabs take the last row; the negative margin sets their underline on the bar's border. */}
+      <Box
+        ref={tabsRef}
+        sx={{ width: "100%", minWidth: 0, mb: -1, "&:empty": { display: "none" } }}
       />
     </Stack>
   );

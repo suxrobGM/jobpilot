@@ -76,6 +76,19 @@ Applies everywhere at once; no layout changes.
 - **Tabs.** Edit · (Preview) · Variants (n) · Source PDF. Variants are a page tab, not a tab per variant: a resume can have dozens of tailored variants, with search and prune.
 - **Sections.** The section index nav is removed. Empty optional sections (Publications, Awards, Certifications, Custom) become "+ Add" buttons that open the section in place.
 
+## Phase 5b: One list pattern
+
+Mockup: `.tmp/design-lab/lists.html`. Every record list (Pipeline tabs, Outreach contacts and messages, Documents resumes and cover letters, Upwork proposals and inbox, Inbox) uses one set of parts in `components/ui/data/`:
+
+- `ListCard` holds a `ListHeader` (select-all plus the sort hint, which becomes a bulk bar once rows are picked), the rows, and the `PaginationFooter` ("1–25 of 303 · 25 per page ▾ · pager").
+- `ListRow`: checkbox, a 36px lead square (score, initials, icon), a bold title with tags, one muted details line, columns shown only on wide screens, actions on hover, status badge, time, and a ⋯ menu. The title is a stretched link or button, so inner controls stay clickable. On phones it wraps to title, details, then badge and time.
+- Toolbar: `FilterBar` in one row, a compact `SearchField`, `SelectField` with the label inside the box ("Feed **All** ▾"), and `FilterToggle` with counts. The total count sits on the right.
+- Page tabs go into a third top-bar slot (`PageHeader tabs`), flush under the title. The main page buttons go in the top bar. Description lines are dropped.
+- `PageShell` content is left-aligned with the top bar title.
+- On Applied, the four funnel tiles become the status `FilterToggle`.
+- DataGrid goes (`@mui/x-data-grid`, `DataTable`, its theme override). Admin keeps `SimpleTable`.
+- The Diagnostics journal moves from cursor "Load more" to offset pages with the same footer. Only page 1 takes live prepends.
+
 ## Phase 6: Sweep
 
 Check every remaining screen against the new tokens and shell at both widths: Pipeline, Analytics, Documents, Portfolio, Job boards, Settings, Upwork, Networking, Onboarding, the agent drawer, dialogs, auth, admin, and the public/marketing pages (fonts and radii only). Fix overflow and spacing.

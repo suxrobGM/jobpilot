@@ -60,8 +60,10 @@ server-side.
 - `usePaginationParams()` owns URL-backed page state. Spread its `query` into
   `*Queries.list(...)`. Rows are in `data.items`. `prefix` for a second pager on one route.
   `navigate: true` on an RSC page.
-- Controls: `<PaginationFooter pagination={data.pagination}>`, or `gridPagination(...)` on a
-  `<DataTable>`, or `<PaginationControls>` from an RSC page. Sizes from `PAGE_SIZE_OPTIONS`.
+- Controls: `<PaginationFooter pagination={data.pagination}>` in a `ListCard` footer, or
+  `<PaginationControls>` from an RSC page. Sizes from `PAGE_SIZE_OPTIONS`.
+- Record lists are `ListCard` + `ListHeader` + `ListRow` from `@/components/ui/data`, with a
+  `FilterBar` toolbar above. No DataGrid. `SimpleTable` is for desktop-only admin views.
 - A filter change resets the page. Use `setFilters({ … })`, which resets in the same URL update.
   A separate `setPage(1)` reads the old snapshot and undoes itself.
 - `/jobs` is the exception: `JobPager` renders real `<a href>` links for crawlers.

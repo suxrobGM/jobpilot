@@ -11,13 +11,12 @@ export type {
   AuthUserDto,
   LogoutResponse,
 } from "./auth";
-export type { CoverLetterListItem } from "./cover-letter";
 export type { CredentialDto } from "./credential";
 export type { EmailMessageDto, OAuthClientStatus } from "./email";
 export type { FeedDto, JobReasonDto, PipelineJobDto } from "./feed";
 export type { JobBoardDto } from "./job-board";
 export type { AdminJobListingDto, JobListingDto, JobListingSummaryDto } from "./job-listing";
-export type { ContactDto, NetworkingMessageDto } from "./networking";
+export type { NetworkingMessageDto } from "./networking";
 export type { ResearchStatusDto, SavedAnswerDto } from "./pilot";
 export type {
   LeaderboardDto,

@@ -3,28 +3,20 @@
 import { type ReactElement, useState } from "react";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  IconButton,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Button, Chip } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { invalidations, resumeQueries } from "@/api/queries";
 import { resumePdfUrl } from "@/api/resume-urls";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
+import { TooltipIconButton } from "@/components/ui/buttons";
+import { ListCard, ListCell, ListHeader, ListLead, ListRow } from "@/components/ui/data";
 import { RelativeTime } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { FileUpload } from "@/components/ui/form";
+import { PageActions } from "@/components/ui/layout";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useToast } from "@/providers/toast-provider";
@@ -60,35 +52,21 @@ export function ResumesList(): ReactElement {
   const rows = list.data ?? [];
 
   return (
-    <Stack spacing={2}>
-      <Stack
-        component={Paper}
-        variant="panel"
-        direction="row"
-        spacing={1.5}
-        sx={{ alignItems: "center", p: 2, borderStyle: "dashed" }}
-      >
+    <>
+      <PageActions>
+        <Button variant="outlined" startIcon={<Add />} onClick={() => setDialogOpen(true)}>
+          Start blank
+        </Button>
         <FileUpload
           accept="application/pdf"
           maxBytes={MAX_RESUME_BYTES}
           loading={upload.isPending}
           label="Upload PDF"
-          buttonProps={{ variant: "contained" }}
+          buttonProps={{ variant: "contained", size: "medium" }}
           onFile={(f) => upload.mutate(f)}
           onError={(msg) => toast.error(msg)}
         />
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<Add />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Start blank
-        </Button>
-        <Typography variant="captionMuted" sx={{ ml: "auto" }}>
-          {plural(rows.length, "resume")}
-        </Typography>
-      </Stack>
+      </PageActions>
 
       <QuerySection
         query={list}
@@ -101,48 +79,61 @@ export function ResumesList(): ReactElement {
           />
         }
       >
-        <Stack spacing={1}>
-          {rows.map((r) => (
-            <Card key={r.id} sx={{ backgroundColor: r.isPrimary ? "action.selected" : undefined }}>
-              <CardContent>
-                <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-                  <Description fontSize="lg" sx={{ color: "text.secondary" }} />
-                  <Box
-                    component={Link}
-                    href={resumeHref(r.id)}
-                    sx={{ flex: 1, minWidth: 0, textDecoration: "none", color: "inherit" }}
+        <ListCard
+          header={
+            <ListHeader>
+              Base resumes; the pilot tailors a variant of one for each application
+            </ListHeader>
+          }
+        >
+          {rows.map((resume) => (
+            <ListRow
+              key={resume.id}
+              href={resumeHref(resume.id)}
+              lead={
+                <ListLead>
+                  <Description fontSize="md" />
+                </ListLead>
+              }
+              title={resume.label}
+              tags={
+                <>
+                  {resume.isPrimary && <Chip label="Primary" color="primary" />}
+                  {!resume.hasData && <Chip label="No structure" variant="outlined" />}
+                </>
+              }
+              meta={resume.sourceFilename ?? "No source PDF"}
+              columns={
+                <ListCell width={110}>
+                  {resume.variantCount > 0 ? plural(resume.variantCount, "variant") : "No variants"}
+                </ListCell>
+              }
+              actions={
+                <>
+                  <TooltipIconButton
+                    title={resume.isPrimary ? "Primary resume" : "Make primary"}
+                    size="small"
+                    disabled={resume.isPrimary || setPrimary.isPending}
+                    onClick={() => setPrimary.mutate(resume.id)}
                   >
-                    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                      <Typography variant="body1Strong">{r.label}</Typography>
-                      {r.isPrimary && <Chip label="Primary" color="primary" />}
-                      {!r.hasData && <Chip label="No structure" variant="outlined" />}
-                      {r.variantCount > 0 && (
-                        <Chip label={plural(r.variantCount, "variant")} variant="outlined" />
-                      )}
-                    </Stack>
-                    <Typography variant="captionMuted">
-                      {r.sourceFilename ?? "no source PDF"} · updated{" "}
-                      <RelativeTime value={r.updatedAt} />
-                    </Typography>
-                  </Box>
-                  <IconButton
-                    onClick={() => setPrimary.mutate(r.id)}
-                    aria-label={r.isPrimary ? "Primary resume" : "Set as primary"}
-                    disabled={setPrimary.isPending}
+                    {resume.isPrimary ? <Star fontSize="sm" /> : <StarBorder fontSize="sm" />}
+                  </TooltipIconButton>
+                  <TooltipIconButton
+                    title="Open PDF"
+                    size="small"
+                    href={resumePdfUrl(resume.id, resume.updatedAt)}
                   >
-                    {r.isPrimary ? <Star fontSize="md" /> : <StarBorder fontSize="md" />}
-                  </IconButton>
-                  <IconButton href={resumePdfUrl(r.id, r.updatedAt)} aria-label="Open PDF">
-                    <PictureAsPdf fontSize="md" />
-                  </IconButton>
-                </Stack>
-              </CardContent>
-            </Card>
+                    <PictureAsPdf fontSize="sm" />
+                  </TooltipIconButton>
+                </>
+              }
+              time={<RelativeTime value={resume.updatedAt} />}
+            />
           ))}
-        </Stack>
+        </ListCard>
       </QuerySection>
 
       <NewResumeDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
-    </Stack>
+    </>
   );
 }

@@ -25,23 +25,31 @@ export function ScoreBadge(props: ScoreBadgeProps): ReactElement {
     <Tooltip title={scoreHint(score, job.minScore)}>
       <Box
         sx={(theme) => ({
-          minWidth: 36,
-          px: 0.75,
-          py: 0.25,
+          width: 36,
+          height: 36,
+          display: "grid",
+          placeItems: "center",
           flexShrink: 0,
-          borderRadius: 1,
+          // Above the row's stretched open-link, so the hint still shows on hover.
+          position: "relative",
+          zIndex: 1,
+          borderRadius: theme.radii.md,
           border: 1,
-          textAlign: "center",
           typography: "body2Strong",
           fontVariantNumeric: "tabular-nums",
           color: "text.secondary",
-          borderColor: "divider",
+          borderColor: "transparent",
+          backgroundColor: theme.palette.surfaces.elevated,
           ...(strong && {
             color: "success.main",
-            borderColor: alpha(theme.palette.success.main, 0.4),
-            bgcolor: alpha(theme.palette.success.main, 0.1),
+            backgroundColor: alpha(theme.palette.success.main, 0.12),
           }),
-          ...(score === null && { color: "text.disabled", borderStyle: "dashed" }),
+          ...(score === null && {
+            color: "text.disabled",
+            borderColor: "line.borderHi",
+            borderStyle: "dashed",
+            backgroundColor: "transparent",
+          }),
         })}
       >
         {score ?? "—"}

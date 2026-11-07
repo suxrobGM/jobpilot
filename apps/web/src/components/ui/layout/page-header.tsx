@@ -13,14 +13,16 @@ interface PageHeaderProps {
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
+  /** Page tabs, set flush under the title in the top bar. */
+  tabs?: ReactNode;
   /** When set, renders a back button before the title. */
   backHref?: Route;
   backLabel?: string;
 }
 
-/** Title, back button and actions go to the top bar; the description stays at the top of the page. */
+/** Title, back button, actions and tabs go to the top bar; the description stays on the page. */
 export function PageHeader(props: PageHeaderProps): ReactElement {
-  const { eyebrow, title, description, actions, backHref, backLabel = "Back" } = props;
+  const { eyebrow, title, description, actions, tabs, backHref, backLabel = "Back" } = props;
   const slots = useTopBarSlots();
 
   const heading = (
@@ -47,6 +49,7 @@ export function PageHeader(props: PageHeaderProps): ReactElement {
     <>
       {slots.title && createPortal(heading, slots.title)}
       {slots.actions && actions && createPortal(actions, slots.actions)}
+      {slots.tabs && tabs && createPortal(tabs, slots.tabs)}
       {description && (
         <Box sx={{ mb: 1 }}>
           {typeof description === "string" ? (

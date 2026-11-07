@@ -158,3 +158,15 @@ export function formatDayLabel(date: Date): string {
   }
   return format(date, isThisYear(date) ? "EEEE, MMM d" : "MMM d, yyyy");
 }
+
+/** "Zheyuan Zhang" -> "ZZ", for a row's leading square. */
+export function initials(name: string): string {
+  const letters = name
+    .trim()
+    .split(/\s+/)
+    .filter((word) => /^\p{L}/u.test(word))
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
+  return letters || "?";
+}

@@ -1,67 +1,66 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import type { PipelineFilters } from "@jobpilot/contracts/pipeline";
-import { Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
 import { applicationQueries } from "@/api/queries";
-import { PaginationFooter } from "@/components/ui/data";
-import { QuerySection } from "@/components/ui/feedback";
+import type { ApplicationDto } from "@/api/types";
+import { ListCard, ListHeader, ListLead, ListRow, PaginationFooter } from "@/components/ui/data";
+import { RelativeTime, StatusChip } from "@/components/ui/display";
+import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import type { PaginationParams } from "@/hooks/use-pagination";
-import { enumParam } from "@/utils/search-params";
-import { ApplicationsTable } from "./applications-table";
-import { FUNNEL_GROUPS, FunnelBar, type FunnelKey } from "./funnel-bar";
-
-const FUNNEL_KEYS = FUNNEL_GROUPS.map((group) => group.key);
+import { initials } from "@/utils/format";
+import { applicationHref } from "@/utils/routes";
 
 interface AppliedViewProps {
   filters: PipelineFilters;
+  status: ApplicationStatus | null;
   /** Maps a feedId to its name, for attribution. */
   feedLabel: Map<string, string>;
   pagination: PaginationParams;
 }
 
-/** Applications with the outcome strip: applied → screening → interviewing → offer. */
 export function AppliedView(props: AppliedViewProps): ReactElement {
-  const { filters, feedLabel, pagination } = props;
-  const group = enumParam<FunnelKey>(FUNNEL_KEYS, useSearchParams().get("group"));
-
+  const { filters, status, feedLabel, pagination } = props;
   const apps = useQuery(
-    applicationQueries.list({ ...pagination.query, ...filters, ...(group && { status: group }) }),
+    applicationQueries.list({ ...pagination.query, ...filters, ...(status && { status }) }),
   );
-  // Status is left out so every tile keeps its size while one is picked.
-  const summary = useQuery(applicationQueries.summary(filters));
-  const count = (key: FunnelKey) => summary.data?.byStatus[key] ?? 0;
-  const counts: Record<FunnelKey, number> = {
-    applied: count("applied"),
-    screening: count("screening"),
-    interviewing: count("interviewing"),
-    offer: count("offer"),
-  };
+  const rows = apps.data?.items ?? [];
+  const source = (app: ApplicationDto): string =>
+    app.feedId ? (feedLabel.get(app.feedId) ?? app.source) : "Single apply";
 
   return (
-    <Stack spacing={2}>
-      <FunnelBar
-        counts={counts}
-        selected={group}
-        onSelect={(next) => pagination.setFilters({ group: next })}
-      />
-      <QuerySection
-        query={apps}
-        errorTitle="Couldn't load your applications."
-        isEmpty={false}
-        empty={null}
+    <QuerySection
+      query={apps}
+      errorTitle="Couldn't load your applications."
+      isEmpty={rows.length === 0}
+      empty={<EmptyState variant="inline" title="No applications match the filters." />}
+    >
+      <ListCard
+        header={<ListHeader>Recently applied</ListHeader>}
+        footer={
+          apps.data && (
+            <PaginationFooter
+              pagination={apps.data.pagination}
+              onPageChange={pagination.setPage}
+              onPageSizeChange={pagination.setPageSize}
+            />
+          )
+        }
       >
-        <ApplicationsTable rows={apps.data?.items ?? []} feedLabel={feedLabel} />
-      </QuerySection>
-      {apps.data && (
-        <PaginationFooter
-          pagination={apps.data.pagination}
-          onPageChange={pagination.setPage}
-          onPageSizeChange={pagination.setPageSize}
-        />
-      )}
-    </Stack>
+        {rows.map((app) => (
+          <ListRow
+            key={app.id}
+            href={applicationHref(app.id)}
+            lead={<ListLead>{initials(app.company)}</ListLead>}
+            title={app.title}
+            meta={`${app.company} · via ${source(app)}`}
+            status={<StatusChip domain="application" value={app.status} />}
+            time={<RelativeTime value={app.appliedAt} />}
+          />
+        ))}
+      </ListCard>
+    </QuerySection>
   );
 }

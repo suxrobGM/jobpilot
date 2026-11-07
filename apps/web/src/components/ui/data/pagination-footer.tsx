@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { PAGE_SIZE_OPTIONS, type Pagination as PageMeta } from "@jobpilot/contracts/pagination";
-import { MenuItem, Pagination, Stack, TextField, Typography } from "@mui/material";
+import { MenuItem, Pagination, Select, Stack, Typography } from "@mui/material";
 
 interface PaginationFooterProps {
   /** The `pagination` block of a paginated API response. */
@@ -12,7 +12,7 @@ interface PaginationFooterProps {
   onPageSizeChange?: (pageSize: number) => void;
 }
 
-/** The summary shows even on a single page: the total is still the number a user wants. */
+/** "1–25 of 303 · 25 per page" and the pager; the summary shows even on a single page. */
 export function PaginationFooter(props: PaginationFooterProps): ReactNode {
   const { pagination, onPageChange, onPageSizeChange } = props;
   const { page, limit, total, totalPages } = pagination;
@@ -32,27 +32,32 @@ export function PaginationFooter(props: PaginationFooterProps): ReactNode {
     <Stack
       direction="row"
       spacing={2}
-      sx={{ mt: 2, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}
+      sx={{ minHeight: 32, alignItems: "center", justifyContent: "space-between" }}
     >
       <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-        <Typography variant="captionMuted">
-          Showing {first}–{last} of {total}
+        <Typography variant="captionMuted" noWrap>
+          {`${first}–${last} of ${total}`}
         </Typography>
         {onPageSizeChange && (
-          <TextField
-            select
-            size="small"
-            label="Rows"
+          <Select
+            variant="standard"
+            disableUnderline
             value={limit}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            sx={{ minWidth: 96 }}
+            renderValue={(size) => `${size} per page`}
+            inputProps={{ "aria-label": "Rows per page" }}
+            sx={{
+              typography: "caption",
+              color: "text.secondary",
+              display: { xs: "none", sm: "inline-flex" },
+            }}
           >
             {sizes.map((size) => (
               <MenuItem key={size} value={size}>
                 {size}
               </MenuItem>
             ))}
-          </TextField>
+          </Select>
         )}
       </Stack>
       {totalPages > 1 && (
@@ -60,6 +65,7 @@ export function PaginationFooter(props: PaginationFooterProps): ReactNode {
           size="small"
           count={totalPages}
           page={page}
+          siblingCount={0}
           onChange={(_, next) => onPageChange(next)}
         />
       )}

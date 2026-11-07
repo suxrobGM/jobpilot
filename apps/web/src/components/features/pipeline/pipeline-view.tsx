@@ -1,16 +1,25 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
+import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import type { PipelineFilters } from "@jobpilot/contracts/pipeline";
 import { AddLink } from "@mui/icons-material";
-import { Button, Stack, Tab, Tabs } from "@mui/material";
+import { Button, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { applicationQueries, feedQueries, jobBoardQueries, pipelineQueries } from "@/api/queries";
-import { FilterBar, SearchField, SelectField, type SelectFieldOption } from "@/components/ui/form";
-import { SectionCard } from "@/components/ui/layout";
+import { CountLabel, statusLabel } from "@/components/ui/display";
+import {
+  FilterBar,
+  FilterToggle,
+  SearchField,
+  SelectField,
+  type SelectFieldOption,
+} from "@/components/ui/form";
+import { PageHeader } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useUrlSearch } from "@/hooks/use-url-search";
+import { plural } from "@/utils/format";
 import { enumParam } from "@/utils/search-params";
 import { AddLinksDialog } from "./add-links-dialog";
 import { AppliedView } from "./applied/applied-view";
@@ -19,12 +28,21 @@ import { JobsView } from "./jobs/jobs-view";
 import { NeedsYouBanner } from "./needs-you-banner";
 import { PIPELINE_TAB_KEYS, PIPELINE_TABS, type PipelineTab } from "./pipeline-tabs";
 
+// The funnel: rejected and withdrawn applications only show under All.
+const FUNNEL = [
+  "applied",
+  "screening",
+  "interviewing",
+  "offer",
+] as const satisfies ApplicationStatus[];
+
 /** Every job the pilot touched, across searches and feeds, one tab per stage. */
 export function PipelineView(): ReactElement {
   const params = useSearchParams();
   const view: PipelineTab = enumParam(PIPELINE_TAB_KEYS, params.get("view")) ?? "review";
   const feedId = params.get("feed");
   const board = params.get("board");
+  const status = enumParam(FUNNEL, params.get("status"));
   const pagination = usePaginationParams();
   const search = useUrlSearch("q", pagination);
   const [addingLinks, setAddingLinks] = useState(false);
@@ -35,96 +53,121 @@ export function PipelineView(): ReactElement {
     ...(search.applied && { search: search.applied }),
   };
   const counts = useQuery(pipelineQueries.counts(filters)).data;
-  const applied = useQuery(applicationQueries.summary(filters)).data?.total;
+  const summary = useQuery(applicationQueries.summary(filters)).data;
   const feeds = useQuery(feedQueries.list()).data ?? [];
   const boards = useQuery(jobBoardQueries.list()).data ?? [];
 
   const jobFeeds = feeds.filter((feed) => feed.kind !== "networking");
   const feedLabel = new Map(jobFeeds.map((feed) => [feed.id, feed.name]));
   const boardOptions: SelectFieldOption[] = boards.map((b) => ({ value: b.name, label: b.name }));
-  const tabCount = (key: PipelineTab) => (key === "applied" ? applied : counts?.views[key]);
+  const statusOptions = FUNNEL.map((key) => ({
+    value: key,
+    label: statusLabel("application", key),
+    count: summary?.byStatus[key] ?? 0,
+  }));
+  const tabCount = (key: PipelineTab) => (key === "applied" ? summary?.total : counts?.views[key]);
   // Applications aren't counted per feed, so Applied lists every feed without numbers.
   const feedCounts =
     view !== "applied" && counts
       ? new Map(counts.feeds.map((feed) => [feed.feedId, feed.views[view]]))
       : null;
-  const hasFilters = Object.keys(filters).length > 0;
+  const shown = tabCount(view);
+  const noun = view === "applied" ? "application" : "job";
+  const hasFilters = Object.keys(filters).length > 0 || status !== null;
 
   const clear = (): void => {
     search.setDraft("");
-    pagination.setFilters({ q: null, board: null, feed: null, group: null });
+    pagination.setFilters({ q: null, board: null, feed: null, status: null });
   };
 
   return (
     <Stack spacing={2}>
+      <PageHeader
+        title="Pipeline"
+        actions={
+          <Button
+            variant="outlined"
+            startIcon={<AddLink fontSize="sm" />}
+            onClick={() => setAddingLinks(true)}
+          >
+            Add job links
+          </Button>
+        }
+        tabs={
+          <Tabs
+            value={view}
+            variant="scrollable"
+            onChange={(_, next: PipelineTab) =>
+              pagination.setFilters({ view: next === "review" ? null : next, status: null })
+            }
+            sx={{ borderBottom: 0 }}
+          >
+            {PIPELINE_TABS.map((tab) => (
+              <Tab
+                key={tab.key}
+                value={tab.key}
+                label={<CountLabel label={tab.label} count={tabCount(tab.key)} />}
+              />
+            ))}
+          </Tabs>
+        }
+      />
       <NeedsYouBanner />
-      <Tabs
-        value={view}
-        variant="scrollable"
-        allowScrollButtonsMobile
-        onChange={(_, next: PipelineTab) =>
-          pagination.setFilters({ view: next === "review" ? null : next, group: null })
+      <FilterBar
+        hasFilters={hasFilters}
+        onClear={clear}
+        end={
+          shown !== undefined && (
+            <Typography variant="captionMuted" sx={{ display: { xs: "none", md: "block" } }}>
+              {plural(shown, noun)}
+            </Typography>
+          )
         }
       >
-        {PIPELINE_TABS.map((tab) => {
-          const count = tabCount(tab.key);
-          return (
-            <Tab
-              key={tab.key}
-              value={tab.key}
-              label={count === undefined ? tab.label : `${tab.label} · ${count}`}
-            />
-          );
-        })}
-      </Tabs>
-      <SectionCard>
-        <Stack spacing={2}>
-          <FilterBar
-            hasFilters={hasFilters}
-            onClear={clear}
-            end={
-              <Button
-                variant="outlined"
-                startIcon={<AddLink fontSize="sm" />}
-                onClick={() => setAddingLinks(true)}
-              >
-                Add job links
-              </Button>
-            }
-          >
-            <SearchField
-              placeholder="Search role, company, URL"
-              value={search.draft}
-              onChange={search.setDraft}
-            />
-            <FeedSelect
-              feeds={jobFeeds}
-              value={feedId}
-              counts={feedCounts}
-              total={tabCount(view) ?? null}
-              onChange={(next) => pagination.setFilters({ feed: next })}
-            />
-            <SelectField
-              label="Board"
-              value={board}
-              emptyLabel="All boards"
-              options={boardOptions}
-              onChange={(next) => pagination.setFilters({ board: next })}
-            />
-          </FilterBar>
-          {view === "applied" ? (
-            <AppliedView filters={filters} feedLabel={feedLabel} pagination={pagination} />
-          ) : (
-            <JobsView
-              key={view}
-              view={view}
-              filters={filters}
-              stale={counts?.stale ?? 0}
-              pagination={pagination}
-            />
-          )}
-        </Stack>
-      </SectionCard>
+        <SearchField
+          placeholder="Search role, company, URL"
+          value={search.draft}
+          onChange={search.setDraft}
+        />
+        <FeedSelect
+          feeds={jobFeeds}
+          value={feedId}
+          counts={feedCounts}
+          total={shown ?? null}
+          onChange={(next) => pagination.setFilters({ feed: next })}
+        />
+        <SelectField
+          label="Board"
+          value={board}
+          options={boardOptions}
+          onChange={(next) => pagination.setFilters({ board: next })}
+        />
+        {view === "applied" && (
+          <FilterToggle
+            label="Status"
+            value={status}
+            options={statusOptions}
+            allCount={summary?.total}
+            onChange={(next) => pagination.setFilters({ status: next })}
+          />
+        )}
+      </FilterBar>
+      {view === "applied" ? (
+        <AppliedView
+          filters={filters}
+          status={status}
+          feedLabel={feedLabel}
+          pagination={pagination}
+        />
+      ) : (
+        <JobsView
+          key={view}
+          view={view}
+          filters={filters}
+          stale={counts?.stale ?? 0}
+          pagination={pagination}
+        />
+      )}
       <AddLinksDialog open={addingLinks} onClose={() => setAddingLinks(false)} />
     </Stack>
   );

@@ -3,17 +3,16 @@
 import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
 import { UPWORK_PROPOSAL_STATUSES } from "@jobpilot/contracts/upwork";
-import { ChevronRight } from "@mui/icons-material";
-import { Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { upworkProposalQueries } from "@/api/queries";
+import { ListLead, ListRow } from "@/components/ui/data";
 import { RelativeTime, StatusChip, statusOptions } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/feedback";
 import { FilterToggle } from "@/components/ui/form";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { usePaginationParams } from "@/hooks/use-pagination";
-import { plural } from "@/utils/format";
+import { initials, plural } from "@/utils/format";
 import { proposalHref } from "@/utils/routes";
 import { enumParam } from "@/utils/search-params";
 import { UPWORK_PAGE_SIZE, UpworkListFrame } from "../upwork-list-frame";
@@ -63,29 +62,18 @@ export function ProposalsList(): ReactElement {
         />
       }
     >
-      {(proposals.data?.items ?? []).map((p) => (
-        <Card key={p.id} variant="interactive">
-          <CardActionArea href={proposalHref(p.id)} sx={{ padding: 1.5 }}>
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-                  <StatusChip domain="upworkProposal" value={p.status} />
-                  {p.clientName && <Chip label={p.clientName} variant="outlined" />}
-                </Stack>
-                <Typography variant="body2Strong" noWrap>
-                  {p.jobTitle}
-                </Typography>
-                <Stack direction="row" spacing={0.5}>
-                  <RelativeTime prefix="Updated" value={p.updatedAt} />
-                  {!p.proposalText && (
-                    <Typography variant="captionMuted">· not generated yet</Typography>
-                  )}
-                </Stack>
-              </Stack>
-              <ChevronRight fontSize="md" />
-            </Stack>
-          </CardActionArea>
-        </Card>
+      {(proposals.data?.items ?? []).map((proposal) => (
+        <ListRow
+          key={proposal.id}
+          href={proposalHref(proposal.id)}
+          lead={<ListLead>{initials(proposal.clientName || proposal.jobTitle)}</ListLead>}
+          title={proposal.jobTitle}
+          meta={[proposal.clientName, !proposal.proposalText && "not generated yet"]
+            .filter(Boolean)
+            .join(" · ")}
+          status={<StatusChip domain="upworkProposal" value={proposal.status} />}
+          time={<RelativeTime value={proposal.updatedAt} />}
+        />
       ))}
     </UpworkListFrame>
   );
