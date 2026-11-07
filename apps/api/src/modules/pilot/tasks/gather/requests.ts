@@ -2,7 +2,7 @@ import type { CreatePilotRequestInput, PilotConfig, PilotTask } from "@jobpilot/
 import type { PrismaClient } from "@/generated/prisma/client";
 import { publishRequest } from "../../requests/request.service";
 import { parseRequest } from "../../requests/request-row";
-import { applyTask, SEARCH_MAX_PAGES } from "../build";
+import { applyTask, discoveryBoard, SEARCH_MAX_PAGES } from "../build";
 import { makeTask, REQUEST_PRIORITY } from "../task-defs";
 import { gatherInbox } from "./inbox";
 import { findJobAlerts } from "./job-alerts";
@@ -13,12 +13,13 @@ import { researchPayload } from "./research";
 const REQUEST_BATCH = 20;
 const SEARCH_NEW_JOBS_TARGET = 10;
 
-interface PilotGoals {
+interface RequestPilot {
   config: PilotConfig;
   goals: string;
+  cycleCount: number;
 }
 
-interface RequestContext extends PilotGoals {
+interface RequestContext extends RequestPilot {
   prisma: PrismaClient;
   userId: string;
   requestId: string;
@@ -69,8 +70,7 @@ async function requestTask(
       return makeTask("search.discover", {
         searchId: search.id,
         query: search.query ?? "",
-        // Most searches have no board of their own; the scheduled path rotates config.boards.
-        board: search.board?.domain ?? config.boards[0],
+        board: discoveryBoard(config.boards, ctx.cycleCount, search.board?.domain),
         resumeId: search.resumeId ?? undefined,
         minScore: config.minScore,
         newJobsTarget: SEARCH_NEW_JOBS_TARGET,
@@ -118,7 +118,7 @@ async function requestTask(
 export async function gatherRequests(
   prisma: PrismaClient,
   userId: string,
-  pilot: PilotGoals,
+  pilot: RequestPilot,
   now: Date,
 ): Promise<PilotTask[]> {
   const rows = await prisma.pilotRequest.findMany({

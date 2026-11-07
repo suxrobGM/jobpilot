@@ -61,7 +61,7 @@ export class TaskListService {
       autopilot
         ? gatherAutonomousWork(this.prisma, userId, { config, goals, counts: countsRead, now })
         : NO_AUTONOMOUS_WORK,
-      gatherRequests(this.prisma, userId, { config, goals }, now),
+      gatherRequests(this.prisma, userId, { config, goals, cycleCount }, now),
       gatherChat(this.prisma, userId),
     ]);
     const deps = { prisma: this.prisma, journal: this.journal, push: this.push };

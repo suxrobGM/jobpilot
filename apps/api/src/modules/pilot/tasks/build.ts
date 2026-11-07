@@ -195,12 +195,16 @@ function outreachTasks(input: TaskListInput, allowed: AllowedToday): PilotTask[]
   return tasks;
 }
 
+/** The configured boards win, one step per cycle, so discovery works all of them. */
+export function discoveryBoard(boards: string[], cycleCount: number, ownBoard: string | undefined) {
+  return boards.length > 0 ? boards[cycleCount % boards.length] : ownBoard;
+}
+
 function discoveryTasks(input: TaskListInput, newJobsTarget: number): PilotTask[] {
   const { boards, minScore } = input.config;
-  const rotatedBoard = boards.length > 0 ? boards[input.cycleCount % boards.length] : undefined;
   const discoveries = input.dueQueries.map((search) => ({
     ...search,
-    board: rotatedBoard ?? search.board,
+    board: discoveryBoard(boards, input.cycleCount, search.board),
     minScore,
     newJobsTarget,
     maxPages: SEARCH_MAX_PAGES,
