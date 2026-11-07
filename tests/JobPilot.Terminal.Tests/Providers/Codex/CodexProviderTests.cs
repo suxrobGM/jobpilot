@@ -1,4 +1,3 @@
-using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Tests.Support;
 using Xunit;
@@ -20,7 +19,7 @@ public sealed class CodexProviderTests : IDisposable
         temp.File(Path.Combine("plugin", "skills", "_shared", "setup.md"), "shared");
         temp.File(Path.Combine("plugin", "agents", "job-scorer.md"), "---\nname: job-scorer\ndescription: Scores.\n---\nBody");
         temp.File(Path.Combine(".codex", "agents", "job-worker.toml"), "stale");
-        var paths = new InstallPaths { WorkingDir = temp.Root, PluginDir = Path.Combine(temp.Root, "plugin") };
+        var paths = temp.Paths;
         var mirrored = Path.Combine(temp.Root, ".agents", "skills");
 
         Provider.Codex.PrepareWorkspace(paths);

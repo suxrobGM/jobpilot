@@ -1,3 +1,4 @@
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
@@ -19,7 +20,7 @@ public sealed class PilotStoreTests : IDisposable
 
     public void Dispose() => temp.Dispose();
 
-    private PilotStore NewStore() => new(path, NullLogger<PilotStore>.Instance);
+    private PilotStore NewStore() => new(new HostInstall(temp.Paths), NullLogger<PilotStore>.Instance);
 
     private static PilotSettings SavedSettings(string userId = "user-1") => new()
     {

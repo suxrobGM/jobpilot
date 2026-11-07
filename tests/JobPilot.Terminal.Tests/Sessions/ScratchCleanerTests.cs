@@ -13,7 +13,7 @@ public sealed class ScratchCleanerTests : IDisposable
     private readonly ScratchCleaner cleaner = new(new HostInstall(paths: null), NullLogger<ScratchCleaner>.Instance);
 
     public ScratchCleanerTests() =>
-        paths = new InstallPaths { WorkingDir = temp.Root, PluginDir = Path.Combine(temp.Root, "plugin") };
+        paths = temp.Paths;
 
     public void Dispose()
     {

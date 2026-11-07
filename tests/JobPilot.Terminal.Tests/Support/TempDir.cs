@@ -1,3 +1,5 @@
+using JobPilot.Terminal.Install;
+
 namespace JobPilot.Terminal.Tests.Support;
 
 /// <summary>Disposable test directory.</summary>
@@ -10,6 +12,9 @@ internal sealed class TempDir : IDisposable
     }
 
     public string Root { get; }
+
+    /// <summary>An install rooted here, with its plugin tree under plugin/.</summary>
+    public InstallPaths Paths => new() { WorkingDir = Root, PluginDir = Path.Combine(Root, "plugin") };
 
     public string File(string relativePath, string content = "{}")
     {

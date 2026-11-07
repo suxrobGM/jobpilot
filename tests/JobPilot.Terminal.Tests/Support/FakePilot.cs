@@ -4,7 +4,8 @@ using JobPilot.Terminal.Providers;
 
 namespace JobPilot.Terminal.Tests.Support;
 
-internal sealed class FakePilotSession : IPilotSession
+/// <summary>Both of the loop's seams in one script, so a test reads the terminal, API and clock calls in order.</summary>
+internal sealed class FakePilot : IPilotSession, IPilotApi
 {
     // The loop records from a background thread while the test asserts, so the logs are read as snapshots.
     private readonly Lock sync = new();
@@ -12,15 +13,26 @@ internal sealed class FakePilotSession : IPilotSession
     private readonly List<string> reports = [];
     private readonly List<string> cycles = [];
     private readonly List<string> cancelledRuns = [];
+    private readonly List<string> usageReports = [];
+    private string? handedOverRun;
+    private string? endedRun;
+
+    public FakePilot() => Time = new FakeTime(this);
+
+    /// <summary>Delays log as "sleep:N" in <see cref="Actions"/> and finish at once, unless <see cref="BlockSleep"/>.</summary>
+    public TimeProvider Time { get; }
 
     public List<string> Actions => Snapshot(actions);
 
     public List<string> Reports => Snapshot(reports);
 
-    /// <summary>The recorded cycles, as "runId/sleep", or "idle/sleep" for a cycle without a run.</summary>
+    /// <summary>The recorded cycles, as "runId/sleep" after a run ended, or "idle/sleep" for a cycle without one.</summary>
     public List<string> Cycles => Snapshot(cycles);
 
     public List<string> CancelledRuns => Snapshot(cancelledRuns);
+
+    /// <summary>Posted usage, as "runId/model".</summary>
+    public List<string> UsageReports => Snapshot(usageReports);
 
     /// <summary>When the user last typed; null means never, so no hold.</summary>
     public DateTimeOffset? LastUserInputAt { get; set; }
@@ -32,6 +44,9 @@ internal sealed class FakePilotSession : IPilotSession
     public PilotRun? Run { get; set; }
 
     public PilotTaskList? TaskList { get; set; } = Builders.TaskList(tasks: 1, sleep: 30);
+
+    /// <summary>What ending a run measured; null means nothing.</summary>
+    public PilotUsage? Usage { get; set; }
 
     /// <summary>Results of successive waits; an empty queue times out.</summary>
     public Queue<WaitResult> Signals { get; } = new();
@@ -59,6 +74,11 @@ internal sealed class FakePilotSession : IPilotSession
     public Task SendCycleAsync(PilotSettings settings, string runId, CancellationToken ct)
     {
         Record("cycle");
+        lock (sync)
+        {
+            handedOverRun = runId;
+        }
+
         return Task.CompletedTask;
     }
 
@@ -92,13 +112,29 @@ internal sealed class FakePilotSession : IPilotSession
 
     public void Interrupt() => Record("interrupt");
 
-    public async Task DelayAsync(TimeSpan duration, CancellationToken ct)
+    public Task<PilotUsage?> EndRunAsync(CancellationToken ct)
     {
-        Record($"sleep:{(int)duration.TotalSeconds}");
-        if (BlockSleep && duration > TimeSpan.FromMinutes(1))
+        lock (sync)
         {
-            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            endedRun = handedOverRun;
+            handedOverRun = null;
         }
+
+        return Task.FromResult(Usage);
+    }
+
+    public void OnRunFinished(string runId, string outcome) => Record($"finished:{runId}:{outcome}");
+
+    public Task InterruptRunAsync(string runId, CancellationToken ct)
+    {
+        Record($"interrupt:{runId}");
+        return Task.CompletedTask;
+    }
+
+    public Task SteerRunAsync(string runId, string text, CancellationToken ct)
+    {
+        Record($"steer:{runId}:{text}");
+        return Task.CompletedTask;
     }
 
     public Task<PilotActivity?> GetActivityAsync(CancellationToken ct)
@@ -121,8 +157,8 @@ internal sealed class FakePilotSession : IPilotSession
 
     public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) => Task.FromResult(TaskList);
 
-    public Task<string?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct) =>
-        Task.FromResult(StartedRunId);
+    public Task<PilotRun?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct) =>
+        Task.FromResult(StartedRunId is { } id ? new PilotRun(id, null, null) : null);
 
     public Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct) => Task.FromResult(Run);
 
@@ -136,11 +172,27 @@ internal sealed class FakePilotSession : IPilotSession
         return Task.CompletedTask;
     }
 
-    public Task RecordCycleAsync(string? runId, int sleepSeconds, CancellationToken ct)
+    public Task ReportUsageAsync(string runId, PilotUsage usage, CancellationToken ct)
     {
         lock (sync)
         {
-            cycles.Add($"{runId ?? "idle"}/{sleepSeconds}");
+            usageReports.Add($"{runId}/{usage.Model}");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task PostStepsAsync(string runId, PilotStep[] steps, CancellationToken ct) => Task.CompletedTask;
+
+    public Task<HttpResponseMessage?> OpenEventsAsync(PilotSettings settings, CancellationToken ct) =>
+        Task.FromResult<HttpResponseMessage?>(null);
+
+    public Task RecordCycleAsync(int sleepSeconds, CancellationToken ct)
+    {
+        lock (sync)
+        {
+            cycles.Add($"{endedRun ?? "idle"}/{sleepSeconds}");
+            endedRun = null;
         }
 
         return Task.CompletedTask;
@@ -159,6 +211,34 @@ internal sealed class FakePilotSession : IPilotSession
         lock (sync)
         {
             return [.. list];
+        }
+    }
+
+    // Reads real time, so the builders' fresh and stale stamps keep their meaning.
+    private sealed class FakeTime(FakePilot pilot) : TimeProvider
+    {
+        private static readonly TimeSpan MaxUnblockedSleep = TimeSpan.FromMinutes(1);
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            pilot.Record($"sleep:{(int)dueTime.TotalSeconds}");
+            if (!pilot.BlockSleep || dueTime <= MaxUnblockedSleep)
+            {
+                ThreadPool.QueueUserWorkItem(_ => callback(state));
+            }
+
+            return new IdleTimer();
+        }
+
+        private sealed class IdleTimer : ITimer
+        {
+            public bool Change(TimeSpan dueTime, TimeSpan period) => true;
+
+            public void Dispose()
+            {
+            }
+
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
         }
     }
 }

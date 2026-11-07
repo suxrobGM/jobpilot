@@ -8,7 +8,7 @@ namespace JobPilot.Terminal.Pilot.Api;
 /// Calls for the paired account. Probes and reports throw only on the caller's cancellation, so a briefly unreachable
 /// API cannot take the loop down, and while unpaired they send nothing and return null.
 /// </summary>
-public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi> logger)
+public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi> logger) : IPilotApi
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
@@ -18,7 +18,6 @@ public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi
     public Task<PilotActivity?> GetActivityAsync(CancellationToken ct) =>
         SendAsync(HttpMethod.Get, "/api/pilot/activity", null, AppJsonContext.Default.PilotActivity, ct);
 
-    /// <summary>Null when the refresh fails, including the 409 of a stopped pilot.</summary>
     public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) =>
         SendAsync(HttpMethod.Post, "/api/pilot/tasks/refresh", null, AppJsonContext.Default.PilotTaskList, ct, RefreshTimeout);
 
@@ -28,7 +27,6 @@ public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi
         return PostAsync("/api/pilot/journal", JsonContent.Create(body, AppJsonContext.Default.JournalRequest), ct);
     }
 
-    /// <summary>Recorded on the pilot state; the activity probe reads it back as the cycle's completion.</summary>
     public Task RecordCycleAsync(int sleepSeconds, CancellationToken ct) =>
         PostAsync("/api/pilot/cycles", JsonContent.Create(new CycleRequest(sleepSeconds), AppJsonContext.Default.CycleRequest), ct);
 
@@ -43,7 +41,6 @@ public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi
     public Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct) =>
         SendAsync(HttpMethod.Get, $"/api/pilot/runs/{runId}", null, AppJsonContext.Default.PilotRun, ct);
 
-    /// <summary>Closes the run as cancelled, which returns an applying job to the approved queue.</summary>
     public Task CancelRunAsync(string runId, CancellationToken ct) =>
         PostAsync($"/api/pilot/runs/{runId}/cancel", null, ct);
 
@@ -53,10 +50,6 @@ public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi
     public Task PostStepsAsync(string runId, PilotStep[] steps, CancellationToken ct) =>
         PostAsync($"/api/pilot/runs/{runId}/steps", JsonContent.Create(new PostStepsRequest(steps), AppJsonContext.Default.PostStepsRequest), ct);
 
-    /// <summary>
-    /// Opens the stream with the given settings, so it never outlives the credentials it opened with. Null when the
-    /// server rejects the stream; unlike the calls above, transport failures throw.
-    /// </summary>
     public async Task<HttpResponseMessage?> OpenEventsAsync(PilotSettings settings, CancellationToken ct)
     {
         using var request = Request(settings, HttpMethod.Get, "/api/pilot/events", null);

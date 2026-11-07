@@ -13,9 +13,10 @@ public sealed class PilotStore
     private readonly Lock sync = new();
     private PilotSettings? current;
 
-    public PilotStore(string filePath, ILogger<PilotStore> logger)
+    public PilotStore(HostInstall install, ILogger<PilotStore> logger)
     {
-        this.filePath = filePath;
+        // The install root survives updates (only plugin/ is pruned).
+        filePath = Path.Combine(install.Paths?.WorkingDir ?? AppContext.BaseDirectory, "pilot.json");
         this.logger = logger;
         current = Load();
     }
@@ -34,10 +35,6 @@ public sealed class PilotStore
             }
         }
     }
-
-    /// <summary>The install root survives updates (only plugin/ is pruned).</summary>
-    public static string ResolvePath(HostInstall install) =>
-        Path.Combine(install.Paths?.WorkingDir ?? AppContext.BaseDirectory, "pilot.json");
 
     public void Save(PilotSettings settings)
     {

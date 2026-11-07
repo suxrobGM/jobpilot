@@ -24,7 +24,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     private readonly TerminalSession terminal;
     private readonly PilotStore store;
-    private readonly PilotApi api;
+    private readonly IPilotApi api;
     private readonly UsageMeter usage;
     private readonly StepRecorder steps;
     private readonly ILogger<PilotSession> logger;
@@ -36,7 +36,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     private volatile string? currentRunId;
 
-    public PilotSession(TerminalSession terminal, PilotStore store, PilotApi api, UsageMeter usage, StepRecorder steps, ILogger<PilotSession> logger)
+    public PilotSession(TerminalSession terminal, PilotStore store, IPilotApi api, UsageMeter usage, StepRecorder steps, ILogger<PilotSession> logger)
     {
         this.terminal = terminal;
         this.store = store;
@@ -58,7 +58,6 @@ public sealed class PilotSession : IPilotSession, IDisposable
         return line.Length > MaxSteerLength ? line[..MaxSteerLength] : line;
     }
 
-    /// <summary>Stops the run in flight: aborts the turn, tells the agent why, and cancels the run.</summary>
     public async Task InterruptRunAsync(string runId, CancellationToken ct)
     {
         if (runId != currentRunId || store.Current is not { } settings)
@@ -71,7 +70,6 @@ public sealed class PilotSession : IPilotSession, IDisposable
         await api.CancelRunAsync(runId, ct);
     }
 
-    /// <summary>Types the user's words into the run in flight, without stopping it.</summary>
     public async Task SteerRunAsync(string runId, string text, CancellationToken ct)
     {
         if (runId != currentRunId || store.Current is not { } settings || SanitizeSteer(text) is not { Length: > 0 } line)
@@ -169,36 +167,13 @@ public sealed class PilotSession : IPilotSession, IDisposable
         }
     }
 
-    public Task DelayAsync(TimeSpan duration, CancellationToken ct) => Task.Delay(duration, ct);
-
-    public Task<PilotActivity?> GetActivityAsync(CancellationToken ct) => api.GetActivityAsync(ct);
-
-    public Task ReportAsync(string summary, CancellationToken ct) => api.ReportAsync(summary, ct);
-
-    public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) => api.RefreshTasksAsync(ct);
-
-    public async Task<string?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct) =>
-        (await api.StartRunAsync(taskId, taskListVersion, ct))?.Id;
-
-    public Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct) => api.GetRunAsync(runId, ct);
-
-    public Task CancelRunAsync(string runId, CancellationToken ct) => api.CancelRunAsync(runId, ct);
-
-    public async Task RecordCycleAsync(string? runId, int sleepSeconds, CancellationToken ct)
+    public async Task<PilotUsage?> EndRunAsync(CancellationToken ct)
     {
-        if (runId is not null)
-        {
-            // The run is over, so interrupts, steers and the stuck heuristic stop applying to it.
-            currentRunId = null;
-            steps.Stop();
-            await Task.Delay(UsageFlush, ct);
-            if (usage.Take() is { } measured)
-            {
-                await api.ReportUsageAsync(runId, measured, ct);
-            }
-        }
-
-        await api.RecordCycleAsync(sleepSeconds, ct);
+        // The run is over, so interrupts, steers and the stuck heuristic stop applying to it.
+        currentRunId = null;
+        steps.Stop();
+        await Task.Delay(UsageFlush, ct);
+        return usage.Take();
     }
 
     public void Dispose() => terminal.Output -= OnOutput;

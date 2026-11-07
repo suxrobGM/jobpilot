@@ -13,7 +13,7 @@ public class CycleRunnerStuckTests
     [Fact]
     public async Task Run_CancelsTheRun_WhenTheSessionExitsMidWait()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude };
+        var session = new FakePilot { RunningProvider = Provider.Claude };
         session.Signals.Enqueue(WaitResult.Exited);
         var runner = Runner(session);
 
@@ -29,7 +29,7 @@ public class CycleRunnerStuckTests
     [Fact]
     public async Task Run_BacksOff_OnlyAfterThreeExitsInARow()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude };
+        var session = new FakePilot { RunningProvider = Provider.Claude };
         var runner = Runner(session);
 
         async Task Exit()
@@ -58,7 +58,7 @@ public class CycleRunnerStuckTests
     [InlineData(WaitOutcome.Stuck)]
     public async Task Run_ChecksInThenSkipsThenRestarts_AndCancelsTheRun_WhenItStaysStuck(WaitOutcome outcome)
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude };
+        var session = new FakePilot { RunningProvider = Provider.Claude };
         for (var i = 0; i < 3; i++)
         {
             session.Signals.Enqueue(new WaitResult(outcome));
@@ -79,7 +79,7 @@ public class CycleRunnerStuckTests
     [Fact]
     public async Task Run_Recovers_WhenACheckInOrSkipUnsticksTheAgent()
     {
-        var checkedIn = new FakePilotSession { RunningProvider = Provider.Claude };
+        var checkedIn = new FakePilot { RunningProvider = Provider.Claude };
         checkedIn.Signals.Enqueue(WaitResult.Timeout);
         checkedIn.Signals.Enqueue(WaitResult.Finished("done"));
 
@@ -87,7 +87,7 @@ public class CycleRunnerStuckTests
         Assert.Equal(["cycle", "wait", "check-in", "wait"], checkedIn.Actions);
         Assert.Equal([CycleReports.CheckIn], checkedIn.Reports);
 
-        var skipped = new FakePilotSession { RunningProvider = Provider.Claude };
+        var skipped = new FakePilot { RunningProvider = Provider.Claude };
         skipped.Signals.Enqueue(WaitResult.Stuck);
         skipped.Signals.Enqueue(WaitResult.Stuck);
         skipped.Signals.Enqueue(WaitResult.Finished("failed"));
@@ -101,7 +101,7 @@ public class CycleRunnerStuckTests
     [Fact]
     public async Task Run_BacksOffOnce_OnTheThirdRestartInARow_AndAPostedResultResetsTheCount()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude };
+        var session = new FakePilot { RunningProvider = Provider.Claude };
         var runner = Runner(session);
 
         await RunAsync(runner);
@@ -125,7 +125,7 @@ public class CycleRunnerStuckTests
     [Fact]
     public async Task Run_DoesNotCountStuckSignalsAsTime_WhileTheServerSeesActivity()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude, DefaultActivity = Activity(Fresh) };
+        var session = new FakePilot { RunningProvider = Provider.Claude, DefaultActivity = Activity(Fresh) };
         for (var i = 0; i < 40; i++)
         {
             session.Signals.Enqueue(WaitResult.Stuck);
@@ -144,7 +144,7 @@ public class CycleRunnerStuckTests
     [Fact]
     public async Task Run_ExtendsWhileActive_ThenClimbsTheLadderPastTheCycleCap()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude, DefaultActivity = Activity(Fresh) };
+        var session = new FakePilot { RunningProvider = Provider.Claude, DefaultActivity = Activity(Fresh) };
 
         var sleep = await RunAsync(Runner(session));
 
@@ -157,7 +157,7 @@ public class CycleRunnerStuckTests
     [Fact]
     public async Task Run_KeepsWaitingBeforeSkip_WhenActivityResumesAfterTheCheckIn()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude };
+        var session = new FakePilot { RunningProvider = Provider.Claude };
         session.Signals.Enqueue(WaitResult.Stuck);
         session.Signals.Enqueue(WaitResult.Stuck);
         session.Signals.Enqueue(WaitResult.Finished("done"));

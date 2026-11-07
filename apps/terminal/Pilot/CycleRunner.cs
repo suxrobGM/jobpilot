@@ -1,8 +1,10 @@
+using JobPilot.Terminal.Pilot.Api;
+
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>Runs one cycle. It returns the inter-cycle sleep instead of sleeping, so a wake can cut it short.</summary>
 /// <param name="checkInterval">Tests pass one at least as long as every wait, so each wait is a single slice.</param>
-internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval = null)
+internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProvider time, TimeSpan? checkInterval = null)
 {
     // Server-side activity newer than this means the run is working, not stuck.
     public static readonly TimeSpan ActiveWindow = TimeSpan.FromMinutes(5);
@@ -53,14 +55,14 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         if (running is not null && running != settings.Provider)
         {
             Conducting = false;
-            await session.DelayAsync(MismatchPoll, ct);
+            await Task.Delay(MismatchPoll, time, ct);
             return null;
         }
 
         Conducting = true;
 
         // Only a cycle with work wakes the model.
-        var taskList = await session.RefreshTasksAsync(ct);
+        var taskList = await api.RefreshTasksAsync(ct);
         if (taskList is null)
         {
             return RefreshRetry;
@@ -73,12 +75,12 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         }
 
         // A run starts with /clear, which would wipe what the user is doing in the terminal.
-        var now = DateTimeOffset.UtcNow;
+        var now = time.GetUtcNow();
         if (HeldUntil(now) is { } until)
         {
             if (!holdReported)
             {
-                await session.ReportAsync(CycleReports.Hold, ct);
+                await api.ReportAsync(CycleReports.Hold, ct);
                 holdReported = true;
             }
 
@@ -87,7 +89,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
         holdReported = false;
         var task = taskList.Tasks[0];
-        var runId = await session.StartRunAsync(task.Id, taskList.Version, ct);
+        var runId = (await api.StartRunAsync(task.Id, taskList.Version, ct))?.Id;
         if (runId is null)
         {
             // A lost race or the duplicate-apply guard; the next refresh moves past it.
@@ -97,7 +99,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         if (running is null)
         {
             session.Start(settings);
-            await session.DelayAsync(StartupGrace, ct);
+            await Task.Delay(StartupGrace, time, ct);
         }
 
         totalWaited = TimeSpan.Zero;
@@ -111,8 +113,8 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
     private async Task<TimeSpan?> FinishEmptyAsync(int sleep, CancellationToken ct)
     {
-        await session.RecordCycleAsync(null, sleep, ct);
-        LastCycleAt = DateTimeOffset.UtcNow;
+        await api.RecordCycleAsync(sleep, ct);
+        LastCycleAt = time.GetUtcNow();
         LastCycleStatus = CycleStatus.Empty;
         return TimeSpan.FromSeconds(sleep);
     }
@@ -123,13 +125,18 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         var posted = result.Outcome is WaitOutcome.Finished;
         if (!posted)
         {
-            await session.CancelRunAsync(runId, ct);
+            await api.CancelRunAsync(runId, ct);
         }
 
-        await session.RecordCycleAsync(runId, sleep, ct);
+        if (await session.EndRunAsync(ct) is { } usage)
+        {
+            await api.ReportUsageAsync(runId, usage, ct);
+        }
+
+        await api.RecordCycleAsync(sleep, ct);
         var ok = posted && result.RunOutcome == "done";
 
-        LastCycleAt = DateTimeOffset.UtcNow;
+        LastCycleAt = time.GetUtcNow();
         LastCycleStatus = ok ? CycleStatus.Ok : CycleStatus.Error;
         return posted ? TimeSpan.FromSeconds(sleep) : null;
     }
@@ -148,14 +155,14 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
                 return result;
             }
 
-            await session.ReportAsync(report, ct);
+            await api.ReportAsync(report, ct);
             await session.SendDirectiveAsync(settings, directive, ct);
             result = await WaitAsync(runId, CheckInGrace, ct);
         }
 
         if (!result.Ended)
         {
-            await session.ReportAsync(CycleReports.Restart, ct);
+            await api.ReportAsync(CycleReports.Restart, ct);
             session.Stop();
         }
 
@@ -175,15 +182,15 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
             if (++ConsecutiveExits >= BackoffThreshold)
             {
                 ConsecutiveExits = 0;
-                await session.ReportAsync(CycleReports.ExitBackoff, ct);
-                await session.DelayAsync(BackoffDelay, ct);
+                await api.ReportAsync(CycleReports.ExitBackoff, ct);
+                await Task.Delay(BackoffDelay, time, ct);
             }
         }
         else if (++ConsecutiveRestarts >= BackoffThreshold)
         {
             ConsecutiveRestarts = 0;
-            await session.ReportAsync(CycleReports.Backoff, ct);
-            await session.DelayAsync(BackoffDelay, ct);
+            await api.ReportAsync(CycleReports.Backoff, ct);
+            await Task.Delay(BackoffDelay, time, ct);
         }
     }
 
@@ -209,13 +216,13 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
                 quiet += slice;
             }
 
-            if (await session.GetRunAsync(runId, ct) is { FinishedAt: not null } run)
+            if (await api.GetRunAsync(runId, ct) is { FinishedAt: not null } run)
             {
                 return WaitResult.Finished(run.Outcome ?? "failed");
             }
 
-            var activity = await session.GetActivityAsync(ct);
-            if (activity?.LastActivityAt is { } at && DateTimeOffset.UtcNow - at < ActiveWindow)
+            var activity = await api.GetActivityAsync(ct);
+            if (activity?.LastActivityAt is { } at && time.GetUtcNow() - at < ActiveWindow)
             {
                 if (totalWaited >= MaxCycleWait)
                 {
@@ -224,7 +231,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
                 if (totalWaited >= ResultTimeout && !extensionReported)
                 {
-                    await session.ReportAsync(CycleReports.Extend, ct);
+                    await api.ReportAsync(CycleReports.Extend, ct);
                     extensionReported = true;
                 }
 

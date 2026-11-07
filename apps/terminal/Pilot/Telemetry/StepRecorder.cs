@@ -4,7 +4,7 @@ using JobPilot.Terminal.Pilot.Api;
 namespace JobPilot.Terminal.Pilot.Telemetry;
 
 /// <summary>Collects the run's tool calls from the CLI's log export and posts them as steps every 2 seconds.</summary>
-public sealed class StepRecorder(PilotApi api) : BackgroundService
+public sealed class StepRecorder(IPilotApi api) : BackgroundService
 {
     private const int MaxBatch = 100;
     private static readonly TimeSpan FlushEvery = TimeSpan.FromSeconds(2);

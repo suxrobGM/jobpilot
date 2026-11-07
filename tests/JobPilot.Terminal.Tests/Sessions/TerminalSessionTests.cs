@@ -23,7 +23,7 @@ public sealed class TerminalSessionTests : IDisposable
     public TerminalSessionTests()
     {
         temp.WriteValidPluginTree();
-        var paths = new InstallPaths { WorkingDir = temp.Root, PluginDir = Path.Combine(temp.Root, "plugin") };
+        var paths = temp.Paths;
         session = Create(new HostInstall(paths));
     }
 

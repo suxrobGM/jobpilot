@@ -1,3 +1,4 @@
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Tests.Support;
@@ -10,7 +11,7 @@ namespace JobPilot.Terminal.Tests.Pilot;
 public sealed class PilotLoopTests : IAsyncLifetime
 {
     private readonly TempDir temp = new();
-    private readonly FakePilotSession session = new() { BlockWhenUnscripted = true, DefaultActivity = Activity() };
+    private readonly FakePilot session = new() { BlockWhenUnscripted = true, DefaultActivity = Activity() };
     private PilotStore store;
     private PilotLoop loop;
 
@@ -21,8 +22,8 @@ public sealed class PilotLoopTests : IAsyncLifetime
 
     private (PilotStore, PilotLoop) BuildHost()
     {
-        var hostStore = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
-        return (hostStore, new PilotLoop(hostStore, session, NullLogger<PilotLoop>.Instance));
+        var hostStore = new PilotStore(new HostInstall(temp.Paths), NullLogger<PilotStore>.Instance);
+        return (hostStore, new PilotLoop(hostStore, session, session, session.Time, new PilotWakes(), NullLogger<PilotLoop>.Instance));
     }
 
     /// <summary>Saves the settings as an earlier run would have, then builds the host from disk.</summary>

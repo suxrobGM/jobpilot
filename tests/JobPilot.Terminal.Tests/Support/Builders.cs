@@ -32,7 +32,7 @@ internal static class Builders
         new([.. Enumerable.Range(1, tasks).Select(i => new PilotTask($"t{i}", $"Task {i}"))], "v1", sleep);
 
     // An interval at least as long as every wait makes each wait a single "wait" action.
-    public static CycleRunner Runner(FakePilotSession session) => new(session, TimeSpan.FromMinutes(20));
+    public static CycleRunner Runner(FakePilot pilot) => new(pilot, pilot, pilot.Time, TimeSpan.FromMinutes(20));
 
     public static Task<TimeSpan?> RunAsync(CycleRunner runner) =>
         runner.RunAsync(Settings(), TestContext.Current.CancellationToken);

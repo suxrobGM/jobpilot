@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
 using System.Net;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Tests.Support;
@@ -41,7 +41,8 @@ public sealed class PilotEventListenerTests
         h.Push("event: ping\n\n");
         h.Push("data: {\"type\":\"question.answered\",\"question\":{}}\n\n");
 
-        await TestWait.Until(() => h.Wakes == 1);
+        var woken = false;
+        await TestWait.Until(() => woken |= h.Wakes.TryTake());
         Assert.Equal("Bearer tok", h.Handler.LastRequest?.Headers.Authorization?.ToString());
         Assert.Contains("text/event-stream", h.Handler.LastRequest?.Headers.Accept.ToString());
     }
@@ -53,9 +54,9 @@ public sealed class PilotEventListenerTests
 
         h.Push("data: {\"type\":\"run.finished\",\"runId\":\"run-1\",\"outcome\":\"done\"}\n\n");
 
-        await TestWait.Until(() => !h.FinishedRuns.IsEmpty);
-        Assert.Equal(["run-1:done"], h.FinishedRuns);
-        Assert.Equal(0, h.Wakes);
+        await TestWait.Until(() => h.Pilot.Actions.Count == 1);
+        Assert.Equal(["finished:run-1:done"], h.Pilot.Actions);
+        Assert.False(h.Wakes.TryTake());
     }
 
     [Fact]
@@ -76,8 +77,8 @@ public sealed class PilotEventListenerTests
         h.Push("data: {\"type\":\"run.interrupt\",\"runId\":\"run-1\"}\n\n");
         h.Push("data: {\"type\":\"run.steer\",\"runId\":\"run-1\",\"text\":\"skip cover letters\"}\n\n");
 
-        await TestWait.Until(() => h.RunCommands.Count == 2);
-        Assert.Equal(["interrupt:run-1", "steer:run-1:skip cover letters"], h.RunCommands);
+        await TestWait.Until(() => h.Pilot.Actions.Count == 2);
+        Assert.Equal(["interrupt:run-1", "steer:run-1:skip cover letters"], h.Pilot.Actions);
     }
 
     [Fact]
@@ -106,38 +107,22 @@ public sealed class PilotEventListenerTests
     {
         private readonly TempDir temp = new();
         private readonly PilotEventListener listener;
-        private int wakes;
 
         private Harness(HttpStatusCode status)
         {
             Handler = new FakeSseHandler { Status = status };
-            Store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
+            Store = new PilotStore(new HostInstall(temp.Paths), NullLogger<PilotStore>.Instance);
             var api = new PilotApi(new HttpClient(Handler), Store, NullLogger<PilotApi>.Instance);
-            var handlers = new PilotEventHandlers(
-                () => Interlocked.Increment(ref wakes),
-                (runId, outcome) => FinishedRuns.Enqueue($"{runId}:{outcome}"),
-                (runId, _) =>
-                {
-                    RunCommands.Enqueue($"interrupt:{runId}");
-                    return Task.CompletedTask;
-                },
-                (runId, text, _) =>
-                {
-                    RunCommands.Enqueue($"steer:{runId}:{text}");
-                    return Task.CompletedTask;
-                });
-            listener = new PilotEventListener(Store, api, handlers, NullLogger<PilotEventListener>.Instance);
+            listener = new PilotEventListener(Store, api, Pilot, Wakes, NullLogger<PilotEventListener>.Instance);
         }
 
         public FakeSseHandler Handler { get; }
 
-        public ConcurrentQueue<string> FinishedRuns { get; } = new();
+        public FakePilot Pilot { get; } = new();
 
-        public ConcurrentQueue<string> RunCommands { get; } = new();
+        public PilotWakes Wakes { get; } = new();
 
         public PilotStore Store { get; }
-
-        public int Wakes => Volatile.Read(ref wakes);
 
         public static async Task<Harness> StartAsync(HttpStatusCode status = HttpStatusCode.OK)
         {

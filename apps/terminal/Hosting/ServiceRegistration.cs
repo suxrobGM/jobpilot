@@ -32,21 +32,14 @@ public static class ServiceRegistration
         services.AddSingleton<TerminalSession>();
         services.AddSingleton<TerminalRelay>();
 
-        services.AddSingleton(sp => new PilotStore(
-            PilotStore.ResolvePath(sp.GetRequiredService<HostInstall>()),
-            sp.GetRequiredService<ILogger<PilotStore>>()));
-        services.AddSingleton<PilotApi>();
+        services.AddSingleton<PilotStore>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IPilotApi, PilotApi>();
         services.AddSingleton<UsageMeter>();
         services.AddHostedSingleton<StepRecorder>();
-        services.AddSingleton<PilotSession>();
-        services.AddSingleton<IPilotSession>(sp => sp.GetRequiredService<PilotSession>());
+        services.AddSingleton<IPilotSession, PilotSession>();
+        services.AddSingleton<PilotWakes>();
         services.AddHostedSingleton<PilotLoop>();
-        services.AddSingleton(sp =>
-        {
-            var session = sp.GetRequiredService<PilotSession>();
-            var loop = sp.GetRequiredService<PilotLoop>();
-            return new PilotEventHandlers(loop.Wake, session.OnRunFinished, session.InterruptRunAsync, session.SteerRunAsync);
-        });
         services.AddHostedService<PilotEventListener>();
 
         services.AddSingleton<ReleaseFeed>();

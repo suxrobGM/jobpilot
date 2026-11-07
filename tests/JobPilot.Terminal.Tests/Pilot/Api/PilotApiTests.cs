@@ -1,4 +1,5 @@
 using System.Net;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Tests.Support;
@@ -18,7 +19,7 @@ public sealed class PilotApiTests : IDisposable
     private PilotApi Api(
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond, PilotSettings? settings = null)
     {
-        var store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
+        var store = new PilotStore(new HostInstall(temp.Paths), NullLogger<PilotStore>.Instance);
         store.Save(settings ?? Settings());
         return new(new HttpClient(new StubHandler(respond)), store, NullLogger<PilotApi>.Instance);
     }

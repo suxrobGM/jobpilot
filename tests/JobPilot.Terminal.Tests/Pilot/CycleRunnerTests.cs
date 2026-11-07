@@ -12,7 +12,7 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_StartsTheSession_HandsOverTheRun_AndRecordsItsResult()
     {
-        var session = new FakePilotSession();
+        var session = new FakePilot();
         session.Signals.Enqueue(WaitResult.Finished("done"));
         var runner = Runner(session);
 
@@ -27,9 +27,23 @@ public class CycleRunnerTests
     }
 
     [Fact]
+    public async Task Run_PostsTheRunsMeasuredUsage_OnlyWhenThereIsSome()
+    {
+        var measured = new FakePilot { Usage = new PilotUsage("claude-sonnet", 10, 5, 0, 0) };
+        measured.Signals.Enqueue(WaitResult.Finished("done"));
+        await RunAsync(Runner(measured));
+        Assert.Equal(["run-1/claude-sonnet"], measured.UsageReports);
+
+        var unmeasured = new FakePilot();
+        unmeasured.Signals.Enqueue(WaitResult.Finished("done"));
+        await RunAsync(Runner(unmeasured));
+        Assert.Empty(unmeasured.UsageReports);
+    }
+
+    [Fact]
     public async Task Run_HoldsNewRuns_WhileTheUserTypes_AndSaysSoOnce()
     {
-        var session = new FakePilotSession { LastUserInputAt = DateTimeOffset.UtcNow };
+        var session = new FakePilot { LastUserInputAt = DateTimeOffset.UtcNow };
         var runner = Runner(session);
 
         var first = await RunAsync(runner);
@@ -45,7 +59,7 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_StartsTheRun_OnceTheHoldHasPassed()
     {
-        var session = new FakePilotSession { LastUserInputAt = DateTimeOffset.UtcNow - CycleRunner.HoldWindow };
+        var session = new FakePilot { LastUserInputAt = DateTimeOffset.UtcNow - CycleRunner.HoldWindow };
         session.Signals.Enqueue(WaitResult.Finished("done"));
         var runner = Runner(session);
 
@@ -58,7 +72,7 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_RecordsAFailedResultAsAnErrorCycle()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude };
+        var session = new FakePilot { RunningProvider = Provider.Claude };
         session.Signals.Enqueue(WaitResult.Finished("failed"));
         var runner = Runner(session);
 
@@ -70,7 +84,7 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_RecordsAnIdleCheck_WithoutWakingTheAgent()
     {
-        var session = new FakePilotSession { TaskList = TaskList(sleep: 1800) };
+        var session = new FakePilot { TaskList = TaskList(sleep: 1800) };
         var runner = Runner(session);
 
         var sleep = await RunAsync(runner);
@@ -84,7 +98,7 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_LeavesTheAgentAlone_WhenTheRefreshFailsOrTheStartIsRefused()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude, TaskList = null };
+        var session = new FakePilot { RunningProvider = Provider.Claude, TaskList = null };
         Assert.Equal(TimeSpan.FromMinutes(1), await RunAsync(Runner(session)));
 
         session.TaskList = TaskList(tasks: 1);
@@ -98,7 +112,7 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_ClampsTheSleep_AndReusesARunningSession()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude };
+        var session = new FakePilot { RunningProvider = Provider.Claude };
         var runner = Runner(session);
 
         session.TaskList = TaskList(tasks: 1, sleep: 5);
@@ -114,7 +128,7 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_Pauses_WhenTheUserRunsTheOtherProvider()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Codex };
+        var session = new FakePilot { RunningProvider = Provider.Codex };
         var runner = Runner(session);
 
         var sleep = await RunAsync(runner);
@@ -127,7 +141,7 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_Finishes_WhenThePolledRunHasFinished_EvenWithoutItsEvent()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude };
+        var session = new FakePilot { RunningProvider = Provider.Claude };
         session.Run = new PilotRun("run-1", DateTimeOffset.UtcNow, "done");
 
         var sleep = await RunAsync(Runner(session));

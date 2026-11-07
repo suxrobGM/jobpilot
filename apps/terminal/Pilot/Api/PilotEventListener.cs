@@ -5,19 +5,12 @@ using JobPilot.Terminal.Hosting;
 
 namespace JobPilot.Terminal.Pilot.Api;
 
-/// <summary>What the listener hands on: a wake, a finished run, and the user's interrupt or steer of a run.</summary>
-public sealed record PilotEventHandlers(
-    Action Wake,
-    Action<string, string> RunFinished,
-    Func<string, CancellationToken, Task> Interrupt,
-    Func<string, string, CancellationToken, Task> Steer);
-
 /// <summary>
 /// Holds the pilot event stream open while the host is paired. It wakes the loop on work the user asked for, passes
 /// each finished run to the session waiting on it, and relays interrupts and steers of the run in flight.
 /// </summary>
 public sealed class PilotEventListener(
-    PilotStore store, PilotApi api, PilotEventHandlers handlers, ILogger<PilotEventListener> logger)
+    PilotStore store, IPilotApi api, IPilotSession session, PilotWakes wakes, ILogger<PilotEventListener> logger)
     : BackgroundService
 {
     private static readonly TimeSpan InitialBackoff = TimeSpan.FromSeconds(5);
@@ -125,19 +118,19 @@ public sealed class PilotEventListener(
         switch (e)
         {
             case { Type: "run.finished", RunId: { } runId }:
-                handlers.RunFinished(runId, e.Outcome ?? "failed");
+                session.OnRunFinished(runId, e.Outcome ?? "failed");
                 break;
             case { Type: "run.interrupt", RunId: { } runId }:
-                await handlers.Interrupt(runId, ct);
+                await session.InterruptRunAsync(runId, ct);
                 break;
             case { Type: "run.steer", RunId: { } runId, Text: { } text }:
-                await handlers.Steer(runId, text, ct);
+                await session.SteerRunAsync(runId, text, ct);
                 break;
         }
 
         if (ShouldWake(e))
         {
-            handlers.Wake();
+            wakes.Signal();
         }
     }
 }
