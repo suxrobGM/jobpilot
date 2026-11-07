@@ -46,14 +46,14 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
     onSubmit: async ({ value }) => {
       if (value.goals === state.goals) return;
       // Read on save, not on mount, so the dialog sees what the old goals left running now.
-      const [searches, toApply] = await Promise.all([
+      const [searches, inProgress] = await Promise.all([
         queryClient.fetchQuery(pilotQueries.searches()),
         queryClient.fetchQuery(
-          pipelineQueries.jobs({ view: "toApply", page: 1, limit: MAX_PAGE_SIZE }),
+          pipelineQueries.jobs({ view: "inProgress", page: 1, limit: MAX_PAGE_SIZE }),
         ),
       ]);
       // Only the count; the change itself picks every approved job on the server.
-      const approvedJobs = toApply.items.filter((job) => job.status === "approved").length;
+      const approvedJobs = inProgress.items.filter((job) => job.status === "approved").length;
       if (searches.length === 0 && approvedJobs === 0) {
         await commit(value.goals, []);
         return;

@@ -15,12 +15,13 @@ import { enumParam } from "@/utils/search-params";
 import { AddLinksDialog } from "./add-links-dialog";
 import { AppliedView } from "./applied/applied-view";
 import { JobsView } from "./jobs/jobs-view";
+import { NeedsYouBanner } from "./needs-you-banner";
 import { PIPELINE_TAB_KEYS, PIPELINE_TABS, type PipelineTab } from "./pipeline-tabs";
 
 /** Every job the pilot touched, across searches and feeds, one tab per stage. */
 export function PipelineView(): ReactElement {
   const params = useSearchParams();
-  const view: PipelineTab = enumParam(PIPELINE_TAB_KEYS, params.get("view")) ?? "found";
+  const view: PipelineTab = enumParam(PIPELINE_TAB_KEYS, params.get("view")) ?? "review";
   const feedId = params.get("feed");
   const board = params.get("board");
   const pagination = usePaginationParams();
@@ -54,12 +55,13 @@ export function PipelineView(): ReactElement {
 
   return (
     <Stack spacing={2}>
+      <NeedsYouBanner count={counts?.needsYou ?? 0} />
       <Tabs
         value={view}
         variant="scrollable"
         allowScrollButtonsMobile
         onChange={(_, next: PipelineTab) =>
-          pagination.setFilters({ view: next === "found" ? null : next, group: null })
+          pagination.setFilters({ view: next === "review" ? null : next, group: null })
         }
       >
         {PIPELINE_TABS.map((tab) => {

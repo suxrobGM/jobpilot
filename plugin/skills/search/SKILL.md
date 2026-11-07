@@ -7,7 +7,7 @@ argument-hint: "<query> (--board <domain> | --anywhere) [--max-jobs N]"
 # Job Search
 
 Search one board, or the open web with `--anywhere`, and save the scored results to the user's
-manual feed. They wait in the Pipeline's Found tab for the user to approve; the pilot never applies
+manual feed. They wait in the Pipeline's To review tab for the user to approve; the pilot never applies
 to them on its own.
 
 ## Setup

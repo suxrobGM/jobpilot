@@ -1,4 +1,6 @@
+import { feedConfigSchema } from "@jobpilot/contracts/feed";
 import { MAX_PAGE_SIZE, pageSlice, paginate } from "@jobpilot/contracts/pagination";
+import { pilotConfigSchema } from "@jobpilot/contracts/pilot";
 import {
   PIPELINE_VIEW_STATUSES,
   type PipelineBulkInput,
@@ -23,8 +25,8 @@ const JOB_FEEDS = { kind: { not: "networking" } } satisfies Prisma.FeedWhereInpu
 
 const RECENT_ORDER: Prisma.JobOrderByWithRelationInput[] = [{ updatedAt: "desc" }, { id: "desc" }];
 
-/** Found reads best first; rows still waiting for a score go last. */
-const FOUND_ORDER: Prisma.JobOrderByWithRelationInput[] = [
+/** To review reads best first; rows still waiting for a score go last. */
+const REVIEW_ORDER: Prisma.JobOrderByWithRelationInput[] = [
   { matchScore: { sort: "desc", nulls: "last" } },
   ...RECENT_ORDER,
 ];
@@ -33,7 +35,7 @@ const BULK_SKIP_REASON = "Skipped by you";
 
 const PIPELINE_INCLUDE = {
   ...JOB_INCLUDE,
-  feed: { select: { id: true, name: true } },
+  feed: { select: { id: true, name: true, config: true } },
 } satisfies Prisma.JobInclude;
 
 @injectable()
@@ -86,16 +88,23 @@ export class PipelineService {
       ...(await this.jobWhere(userId, query)),
       status: { in: PIPELINE_VIEW_STATUSES[query.view] },
     };
-    const [rows, total] = await Promise.all([
+    const [rows, total, state] = await Promise.all([
       this.prisma.job.findMany({
         where,
         include: PIPELINE_INCLUDE,
-        orderBy: query.view === "found" ? FOUND_ORDER : RECENT_ORDER,
+        orderBy: query.view === "review" ? REVIEW_ORDER : RECENT_ORDER,
         ...pageSlice(query),
       }),
       this.prisma.job.count({ where }),
+      this.prisma.pilotState.findUnique({ where: { userId }, select: { config: true } }),
     ]);
-    return paginate(rows.map(toJob), query, total);
+    const { minScore } = pilotConfigSchema.parse(state?.config ?? {});
+    const items = rows.map(({ feed, ...row }) => ({
+      ...toJob(row),
+      feed: { id: feed.id, name: feed.name },
+      minScore: feedConfigSchema.parse(feed.config).minScore ?? minScore,
+    }));
+    return paginate(items, query, total);
   }
 
   /** Needs you as refs only, for the always-mounted nav badge. */
@@ -153,11 +162,10 @@ export class PipelineService {
     const count = (view: PipelineJobView) =>
       PIPELINE_VIEW_STATUSES[view].reduce((sum, status) => sum + (byStatus.get(status) ?? 0), 0);
     return {
-      found: count("found"),
-      toApply: count("toApply"),
+      review: count("review"),
+      inProgress: count("inProgress"),
+      setAside: count("setAside"),
       needsYou: count("needsYou"),
-      skipped: count("skipped"),
-      failed: count("failed"),
     } satisfies Record<PipelineJobView, number>;
   }
 

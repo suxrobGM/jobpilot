@@ -2,17 +2,19 @@ import { z } from "zod/v4";
 import { type JobStatus, jobSchema, MAX_LINKS } from "./feed";
 import { MAX_PAGE_SIZE, paginatedSchema, paginationQuerySchema } from "./pagination";
 
-/** Applied lists applications, so it isn't a job view. */
-export const PIPELINE_JOB_VIEWS = ["found", "toApply", "needsYou", "skipped", "failed"] as const;
+/**
+ * Review, In progress and Set aside are the Pipeline's tabs; Needs you feeds the banner and nav badge.
+ * Applied lists applications, so it isn't a job view.
+ */
+const PIPELINE_JOB_VIEWS = ["review", "inProgress", "setAside", "needsYou"] as const;
 const pipelineJobViewSchema = z.enum(PIPELINE_JOB_VIEWS);
 export type PipelineJobView = z.infer<typeof pipelineJobViewSchema>;
 
 export const PIPELINE_VIEW_STATUSES: Record<PipelineJobView, JobStatus[]> = {
-  found: ["queued", "pending"],
-  toApply: ["approved", "applying"],
+  review: ["queued", "pending"],
+  inProgress: ["approved", "applying", "needs_user"],
+  setAside: ["skipped", "failed"],
   needsYou: ["needs_user"],
-  skipped: ["skipped"],
-  failed: ["failed"],
 };
 
 const pipelineFiltersSchema = z.object({
@@ -29,8 +31,10 @@ export type PipelineJobsQuery = z.infer<typeof pipelineJobsQuerySchema>;
 export const pipelineCountsQuerySchema = pipelineFiltersSchema;
 export type PipelineFilters = z.infer<typeof pipelineFiltersSchema>;
 
+/** `minScore` is the bar this job's feed applies: its own override, else the pilot's. */
 const pipelineJobSchema = jobSchema.extend({
   feed: z.object({ id: z.uuid(), name: z.string() }),
+  minScore: z.number().int(),
 });
 
 export const pipelineJobListSchema = paginatedSchema(pipelineJobSchema);
@@ -48,8 +52,8 @@ export const addedPipelineLinksSchema = z.object({
   duplicates: z.array(z.string()),
 });
 
-/** Approve and skip act on Found and To apply rows; retry on Failed ones. */
-export const PIPELINE_BULK_ACTIONS = ["approve", "skip", "retry"] as const;
+/** Approve acts on To review rows, skip on those and approved ones, retry on failed ones. */
+const PIPELINE_BULK_ACTIONS = ["approve", "skip", "retry"] as const;
 
 export const pipelineBulkSchema = z.object({
   action: z.enum(PIPELINE_BULK_ACTIONS),

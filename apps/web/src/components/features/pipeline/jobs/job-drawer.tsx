@@ -118,7 +118,7 @@ function JobActions(props: JobActionsProps): ReactNode {
             Apply now
           </Button>
           <Button loading={setStatus.isPending} onClick={() => setStatus.mutate("pending")}>
-            Move back to Found
+            Move back to To review
           </Button>
         </Stack>
       );

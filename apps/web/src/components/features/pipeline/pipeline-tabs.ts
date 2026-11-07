@@ -1,14 +1,12 @@
-import { PIPELINE_JOB_VIEWS, type PipelineJobView } from "@jobpilot/contracts/pipeline";
+import type { PipelineJobView } from "@jobpilot/contracts/pipeline";
 
-export type PipelineTab = PipelineJobView | "applied";
+export type PipelineTab = Exclude<PipelineJobView, "needsYou"> | "applied";
 
 export const PIPELINE_TABS: { key: PipelineTab; label: string }[] = [
-  { key: "found", label: "Found" },
-  { key: "toApply", label: "To apply" },
+  { key: "review", label: "To review" },
+  { key: "inProgress", label: "In progress" },
   { key: "applied", label: "Applied" },
-  { key: "needsYou", label: "Needs you" },
-  { key: "skipped", label: "Skipped" },
-  { key: "failed", label: "Failed" },
+  { key: "setAside", label: "Set aside" },
 ];
 
-export const PIPELINE_TAB_KEYS: readonly PipelineTab[] = [...PIPELINE_JOB_VIEWS, "applied"];
+export const PIPELINE_TAB_KEYS: readonly PipelineTab[] = PIPELINE_TABS.map((tab) => tab.key);
