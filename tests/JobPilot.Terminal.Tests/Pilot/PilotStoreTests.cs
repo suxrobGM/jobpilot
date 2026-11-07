@@ -1,5 +1,6 @@
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -23,9 +24,7 @@ public sealed class PilotStoreTests : IDisposable
     private static PilotSettings SavedSettings(string userId = "user-1") => new()
     {
         Provider = Provider.Codex,
-        ApiToken = "secret-token",
-        ApiUrl = "https://api.example",
-        WebUrl = "https://web.example",
+        Api = new ApiConnection("https://api.example", "https://web.example", "secret-token"),
         UserId = userId,
     };
 
@@ -38,9 +37,7 @@ public sealed class PilotStoreTests : IDisposable
 
         Assert.NotNull(reloaded);
         Assert.Same(Provider.Codex, reloaded!.Provider);
-        Assert.Equal("secret-token", reloaded.ApiToken);
-        Assert.Equal("https://api.example", reloaded.ApiUrl);
-        Assert.Equal("https://web.example", reloaded.WebUrl);
+        Assert.Equal(new ApiConnection("https://api.example", "https://web.example", "secret-token"), reloaded.Api);
         Assert.Equal("user-1", reloaded.UserId);
     }
 

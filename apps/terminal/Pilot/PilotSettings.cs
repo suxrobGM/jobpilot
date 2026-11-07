@@ -1,13 +1,12 @@
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Sessions;
 
 namespace JobPilot.Terminal.Pilot;
 
 public sealed record PilotSettings
 {
     public required Provider Provider { get; init; }
-    public required string ApiToken { get; init; }
-    public required string ApiUrl { get; init; }
-    public required string WebUrl { get; init; }
+    public required ApiConnection Api { get; init; }
 
     /// <summary>The account the host is paired to, so the web can tell a stale pairing from its own.</summary>
     public string? UserId { get; init; }
@@ -23,4 +22,3 @@ internal sealed record PilotSettingsFile
     public required string Token { get; init; }
     public required bool Protected { get; init; }
 }
-

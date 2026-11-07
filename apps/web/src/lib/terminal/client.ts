@@ -97,11 +97,11 @@ interface StartOptions {
   rows: number;
   provider: TerminalProviderId;
   /** Per-user agent PAT, injected into the PTY as JOBPILOT_API_TOKEN. */
-  apiToken?: string;
+  apiToken: string;
   /** Web app origin (this browser's location), injected into the PTY as JOBPILOT_WEB for user-facing links. */
-  webUrl?: string;
+  webUrl: string;
   /** Backend base URL the web talks to, injected into the PTY as JOBPILOT_API so the agent hits the same (possibly remote) API. */
-  apiUrl?: string;
+  apiUrl: string;
 }
 
 export function startSession(options: StartOptions): Promise<SessionStatus> {

@@ -19,7 +19,13 @@ public static class SessionEndpoints
                 return Problems.BadRequest($"cols and rows must each be between {Viewport.MinSize} and {Viewport.MaxSize}.");
             }
 
-            session.Start(Provider.Find(request.Provider), request.Cols, request.Rows, request.ApiToken, request.ApiUrl, request.WebUrl);
+            if (ApiConnection.Invalid(request.ApiToken, request.ApiUrl, request.WebUrl) is { } problem)
+            {
+                return Problems.BadRequest(problem);
+            }
+
+            var api = new ApiConnection(request.ApiUrl!, request.WebUrl!, request.ApiToken!);
+            session.Start(Provider.Find(request.Provider), request.Cols, request.Rows, api);
             return TypedResults.Ok(status.Get());
         });
 

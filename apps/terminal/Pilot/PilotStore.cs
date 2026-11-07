@@ -2,6 +2,7 @@ using System.Text.Json;
 using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Sessions;
 
 namespace JobPilot.Terminal.Pilot;
 
@@ -68,12 +69,12 @@ public sealed class PilotStore
 
     private void Persist(PilotSettings settings)
     {
-        var (token, isProtected) = TokenProtection.Protect(settings.ApiToken);
+        var (token, isProtected) = TokenProtection.Protect(settings.Api.ApiToken);
         var file = new PilotSettingsFile
         {
             Provider = settings.Provider.Id,
-            ApiUrl = settings.ApiUrl,
-            WebUrl = settings.WebUrl,
+            ApiUrl = settings.Api.ApiUrl,
+            WebUrl = settings.Api.WebUrl,
             UserId = settings.UserId,
             Token = token,
             Protected = isProtected,
@@ -139,9 +140,7 @@ public sealed class PilotStore
             return new PilotSettings
             {
                 Provider = Provider.Find(file.Provider),
-                ApiToken = token,
-                ApiUrl = file.ApiUrl,
-                WebUrl = file.WebUrl,
+                Api = new ApiConnection(file.ApiUrl, file.WebUrl, token),
                 UserId = file.UserId,
             };
         }

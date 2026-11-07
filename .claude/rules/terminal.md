@@ -8,8 +8,8 @@ paths:
 
 `JobPilot.Terminal` is a .NET 10 minimal API that hosts one provider PTY on the user's machine.
 Endpoints: `/ws`, `/sessions/start`, `/pilot/pair`, `/pilot/unpair`, `/pilot/handback`,
-`/update`, `/shutdown`, `/healthz`. `/sessions/start` takes the user's `apiToken` and sets it
-in the PTY as `JOBPILOT_API_TOKEN`. The host env var is a local-dev fallback only.
+`/update`, `/shutdown`, `/healthz`. `/sessions/start` requires `apiToken`, `apiUrl` and `webUrl` and sets them
+in the PTY as `JOBPILOT_API_TOKEN`, `JOBPILOT_API` and `JOBPILOT_WEB`; there is no env fallback.
 
 - A C# change needs a rebuild and restart. Invoke the `restart-terminal` skill.
 - Run `dotnet test` after every change. It asserts exact defaults,

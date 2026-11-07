@@ -67,13 +67,7 @@ public sealed class TerminalSession : IDisposable
 
     /// <summary>Starts a provider unless it is already running, replacing any other one.</summary>
     /// <exception cref="PtyStartException">The process could not be spawned.</exception>
-    public void Start(
-        Provider provider,
-        int cols,
-        int rows,
-        string? apiToken = null,
-        string? apiUrl = null,
-        string? webUrl = null)
+    public void Start(Provider provider, int cols, int rows, ApiConnection api)
     {
         lock (sync)
         {
@@ -112,9 +106,9 @@ public sealed class TerminalSession : IDisposable
                 ["JOBPILOT_SKILLS_ROOT"] = paths.SkillsDir,
                 ["JOBPILOT_WORKSPACE_ROOT"] = paths.WorkingDir,
                 ["JOBPILOT_TEMP"] = scratchDir,
-                ["JOBPILOT_API"] = RequestOrEnv(apiUrl, "JOBPILOT_API", "http://localhost:4101"),
-                ["JOBPILOT_API_TOKEN"] = RequestOrEnv(apiToken, "JOBPILOT_API_TOKEN", ""),
-                ["JOBPILOT_WEB"] = RequestOrEnv(webUrl, "JOBPILOT_WEB", "http://localhost:4100"),
+                ["JOBPILOT_API"] = api.ApiUrl,
+                ["JOBPILOT_API_TOKEN"] = api.ApiToken,
+                ["JOBPILOT_WEB"] = api.WebUrl,
             };
 
             Starting?.Invoke();
@@ -231,7 +225,4 @@ public sealed class TerminalSession : IDisposable
 
         Exited?.Invoke(new SessionExit(providerName, exitCode));
     }
-
-    private static string RequestOrEnv(string? value, string envKey, string fallback) =>
-        !string.IsNullOrEmpty(value) ? value : Environment.GetEnvironmentVariable(envKey) ?? fallback;
 }

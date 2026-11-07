@@ -83,7 +83,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
     }
 
     public void Start(PilotSettings settings) =>
-        terminal.Start(settings.Provider, Cols, Rows, settings.ApiToken, settings.ApiUrl, settings.WebUrl);
+        terminal.Start(settings.Provider, Cols, Rows, settings.Api);
 
     public async Task SendCycleAsync(PilotSettings settings, string runId, CancellationToken ct)
     {

@@ -54,7 +54,7 @@ public sealed class TerminalSessionTests : IDisposable
         return connection;
     }
 
-    private void Start(Provider? provider = null) => session.Start(provider ?? Provider.Claude, 80, 24);
+    private void Start(Provider? provider = null) => session.Start(provider ?? Provider.Claude, 80, 24, Builders.Api);
 
     [Fact]
     public void Start_RunsTheRequestedProvider_AndPreparesItsWorkspace()
@@ -92,7 +92,7 @@ public sealed class TerminalSessionTests : IDisposable
     [Fact]
     public void Start_GivesTheAgentItsEnvironment()
     {
-        session.Start(Provider.Claude, 80, 24, apiToken: "tok", apiUrl: "https://api", webUrl: "https://web");
+        session.Start(Provider.Claude, 80, 24, Builders.Api);
 
         var env = lastOptions!.Environment;
         Assert.Equal(Path.Combine(temp.Root, "plugin", "skills"), env["JOBPILOT_SKILLS_ROOT"]);
@@ -118,7 +118,7 @@ public sealed class TerminalSessionTests : IDisposable
     {
         using var broken = Create(new HostInstall(paths: null, pathsError: "no plugin tree"));
 
-        var ex = Assert.Throws<InvalidOperationException>(() => broken.Start(Provider.Claude, 80, 24));
+        var ex = Assert.Throws<InvalidOperationException>(() => broken.Start(Provider.Claude, 80, 24, Builders.Api));
         Assert.Contains("no plugin tree", ex.Message);
     }
 

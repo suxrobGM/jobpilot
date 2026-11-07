@@ -1,6 +1,7 @@
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Sessions.Pty;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -12,11 +13,11 @@ internal static class Builders
     public static PilotSettings Settings(string apiUrl = "https://api", string apiToken = "tok") => new()
     {
         Provider = Provider.Claude,
-        ApiToken = apiToken,
-        ApiUrl = apiUrl,
-        WebUrl = "https://web",
+        Api = new ApiConnection(apiUrl, "https://web", apiToken),
         UserId = "user-1",
     };
+
+    public static ApiConnection Api => new("https://api", "https://web", "tok");
 
     public static DateTimeOffset Fresh => DateTimeOffset.UtcNow;
 
