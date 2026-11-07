@@ -109,8 +109,8 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
             await Task.Delay(StartupGrace, time, ct);
         }
 
-        await agent.SendCycleAsync(pairing, runId, ct);
-        var result = await WaitForResultAsync(pairing, runId, ct);
+        await agent.SendCycleAsync(pairing.Provider, runId, ct);
+        var result = await WaitForResultAsync(runId, ct);
         await TrackStreaksAsync(result, ct);
         return await RecordRunAsync(runId, sleep, result, ct);
     }
@@ -146,7 +146,7 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
     }
 
     /// <summary>Waits for the result; a stuck run climbs check-in, skip, then restart.</summary>
-    private async Task<WaitResult> WaitForResultAsync(PilotPairing pairing, string runId, CancellationToken ct)
+    private async Task<WaitResult> WaitForResultAsync(string runId, CancellationToken ct)
     {
         var wait = new RunWait();
         var result = await WaitAsync(runId, wait, ResultTimeout, ct);
@@ -161,7 +161,7 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
             }
 
             await api.WriteJournalAsync(report, ct);
-            await agent.SendDirectiveAsync(pairing, directive, ct);
+            await agent.SendDirectiveAsync(directive, ct);
             result = await WaitAsync(runId, wait, CheckInGrace, ct);
         }
 

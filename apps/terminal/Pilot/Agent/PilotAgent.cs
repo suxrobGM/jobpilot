@@ -34,7 +34,8 @@ public sealed class PilotAgent : IPilotAgent, IDisposable
     // the PTY thread and the event listener both write, and a directive re-queues outcomes.
     private readonly Channel<string?> signals = Channel.CreateUnbounded<string?>(new UnboundedChannelOptions { SingleReader = true });
 
-    private volatile string? currentRunId;
+    // One reference, so a reader never sees a run id paired with another run's provider.
+    private volatile HandedRun? run;
 
     public PilotAgent(TerminalSession terminal, PairingStore store, IPilotApi api, UsageMeter usage, StepRecorder steps, ILogger<PilotAgent> logger)
     {
@@ -60,63 +61,66 @@ public sealed class PilotAgent : IPilotAgent, IDisposable
 
     public async Task StopRunAsync(string runId, CancellationToken ct)
     {
-        if (runId != currentRunId || store.Current is not { } pairing)
+        if (run is not { } handed || handed.Id != runId || store.Current is null)
         {
             return;
         }
 
         AbortTurn();
-        await SendAsync(StopLine, pairing.Provider, ct);
+        await SendAsync(StopLine, handed.Provider, ct);
         await api.CancelRunAsync(runId, ct);
     }
 
     public async Task SteerRunAsync(string runId, string text, CancellationToken ct)
     {
-        if (runId != currentRunId || store.Current is not { } pairing || SanitizeSteer(text) is not { Length: > 0 } line)
+        var line = SanitizeSteer(text);
+        if (run is not { } handed || handed.Id != runId || store.Current is null || line.Length == 0)
         {
             return;
         }
 
-        await SendAsync(line, pairing.Provider, ct);
+        await SendAsync(line, handed.Provider, ct);
     }
 
     public void Start(PilotPairing pairing) =>
         terminal.Start(pairing.Provider, Cols, Rows, pairing.Api);
 
-    public async Task SendCycleAsync(PilotPairing pairing, string runId, CancellationToken ct)
+    public async Task SendCycleAsync(Provider provider, string runId, CancellationToken ct)
     {
         // Cycles keep their state in the API. Clearing first prevents mid-cycle auto-compaction and keeps
         // untrusted page content from lingering into the next cycle.
-        await SendAsync(ClearCommand, pairing.Provider, ct);
+        await SendAsync(ClearCommand, provider, ct);
         await Task.Delay(ClearSettle, ct);
 
         while (signals.Reader.TryRead(out _))
         {
         }
 
-        currentRunId = runId;
+        run = new HandedRun(runId, provider);
         stuck.Reset();
         usage.Start();
         steps.Start(runId);
-        await SendAsync($"{pairing.Provider.SkillCommand(PilotSkill)} {runId}", pairing.Provider, ct);
+        await SendAsync($"{provider.SkillCommand(PilotSkill)} {runId}", provider, ct);
     }
 
-    public Task SendDirectiveAsync(PilotPairing pairing, Directive directive, CancellationToken ct)
+    public Task SendDirectiveAsync(Directive directive, CancellationToken ct)
     {
+        var handed = run ?? throw new InvalidOperationException("A directive needs a handed-over run.");
+
         // A directive keeps the stuck run's context: no /clear, and a finish that raced in must survive.
         stuck.Reset();
         DropStuckSignals();
-        var result = $"jobpilot-api POST /api/pilot/runs/{currentRunId}/result";
+        var result = $"jobpilot-api POST /api/pilot/runs/{handed.Id}/result";
         var text = directive == Directive.CheckIn
             ? $"Checking in: you appear stuck. Finish now and post your result with {result} (outcome \"failed\" if you cannot finish)."
             : $"Stop the current action. Post a failed result now with {result}, saying where it stopped.";
-        return SendAsync(text, pairing.Provider, ct);
+        return SendAsync(text, handed.Provider, ct);
     }
 
     /// <summary>Only the handed-over run counts.</summary>
     public void OnRunFinished(string runId, string outcome)
     {
-        if (runId == currentRunId)
+        if (runId == run?.Id)
         {
             signals.Writer.TryWrite(outcome);
         }
@@ -170,7 +174,7 @@ public sealed class PilotAgent : IPilotAgent, IDisposable
     public async Task<PilotUsage?> EndRunAsync(CancellationToken ct)
     {
         // The run is over, so interrupts, steers and the stuck heuristic stop applying to it.
-        currentRunId = null;
+        run = null;
         steps.Stop();
         await Task.Delay(UsageFlush, ct);
         return usage.Take();
@@ -190,7 +194,7 @@ public sealed class PilotAgent : IPilotAgent, IDisposable
     private void OnOutput(byte[] data)
     {
         // Only a run in flight can be stuck; output between runs is the user's own session.
-        if (currentRunId is null)
+        if (run is null)
         {
             return;
         }
@@ -220,3 +224,6 @@ public sealed class PilotAgent : IPilotAgent, IDisposable
         }
     }
 }
+
+/// <summary>The run the agent was handed and the provider whose session got it.</summary>
+internal sealed record HandedRun(string Id, Provider Provider);

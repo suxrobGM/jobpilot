@@ -23,9 +23,10 @@ public interface IPilotAgent
     void Start(PilotPairing pairing);
 
     /// <summary>Clears the agent's context and hands it the run.</summary>
-    Task SendCycleAsync(PilotPairing pairing, string runId, CancellationToken ct);
+    Task SendCycleAsync(Provider provider, string runId, CancellationToken ct);
 
-    Task SendDirectiveAsync(PilotPairing pairing, Directive directive, CancellationToken ct);
+    /// <summary>Sent to the handed-over run, on its own provider.</summary>
+    Task SendDirectiveAsync(Directive directive, CancellationToken ct);
 
     Task<WaitResult> WaitForSignalAsync(TimeSpan timeout, CancellationToken ct);
 

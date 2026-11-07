@@ -73,7 +73,7 @@ internal sealed class FakePilot : IPilotAgent, IPilotApi
         RunningProvider = pairing.Provider;
     }
 
-    public Task SendCycleAsync(PilotPairing pairing, string runId, CancellationToken ct)
+    public Task SendCycleAsync(Provider provider, string runId, CancellationToken ct)
     {
         Record("cycle");
         lock (sync)
@@ -84,7 +84,7 @@ internal sealed class FakePilot : IPilotAgent, IPilotApi
         return Task.CompletedTask;
     }
 
-    public Task SendDirectiveAsync(PilotPairing pairing, Directive directive, CancellationToken ct)
+    public Task SendDirectiveAsync(Directive directive, CancellationToken ct)
     {
         Record(directive == Directive.CheckIn ? "check-in" : "skip");
         return Task.CompletedTask;
