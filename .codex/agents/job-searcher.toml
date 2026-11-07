@@ -76,7 +76,8 @@ Count it in `jobsScanned`. Its key is a shell-safe slug of `company-title`.
 3. **Score**: `POST /api/fit-scores` with `{brief, minScore, resumeId}` (drop a null `resumeId`).
    `verdict:"trust"` → use `score`; `"deliberate"` → adjust from
    `strongMatches`/`partialMatches`/`gaps`. A row too thin to score confidently gets no
-   `matchScore`. `eligibilityBlocked.kind` → skip reason: `sponsorship` → `No visa sponsorship (JD:
+   `matchScore` at all, never a placeholder like 10: an unscored row gets the score pass that reads
+   the posting, and a guessed score buries it. `eligibilityBlocked.kind` → skip reason: `sponsorship` → `No visa sponsorship (JD:
    "<evidence>")`, `citizenship` → `US citizenship required`, `clearance` → `Active security
    clearance required`. A posting that clearly hits one of the user's deal-breakers (`GET
    /api/pilot` → `config.dealBreakers`, read once) → `Deal-breaker: <rule>`.
