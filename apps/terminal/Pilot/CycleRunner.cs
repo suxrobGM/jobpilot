@@ -1,19 +1,9 @@
 namespace JobPilot.Terminal.Pilot;
 
-public enum CycleStatus
-{
-    Ok,
-    Empty,
-    Error,
-}
-
 /// <summary>Runs one cycle. It returns the inter-cycle sleep instead of sleeping, so a wake can cut it short.</summary>
 /// <param name="checkInterval">Tests pass one at least as long as every wait, so each wait is a single slice.</param>
 internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval = null)
 {
-    public const int MinSleepSeconds = 15;
-    public const int MaxSleepSeconds = 21600;
-
     // Server-side activity newer than this means the run is working, not stuck.
     public static readonly TimeSpan ActiveWindow = TimeSpan.FromMinutes(5);
 
@@ -55,24 +45,6 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     public DateTimeOffset? HeldUntil(DateTimeOffset now) =>
         session.LastUserInputAt is { } at && at + HoldWindow > now ? at + HoldWindow : null;
 
-    /// <summary>The rest of the last inter-cycle break, so a host restart does not skip it.</summary>
-    public static TimeSpan OwedBreak(PilotActivity? activity, DateTimeOffset now)
-    {
-        if (activity?.LastCycle is not { } last)
-        {
-            return TimeSpan.Zero;
-        }
-
-        var planned = TimeSpan.FromSeconds(ClampSleep(last.SleepSeconds ?? MinSleepSeconds));
-        var remaining = planned - (now - last.CompletedAt);
-        if (remaining <= TimeSpan.Zero)
-        {
-            return TimeSpan.Zero;
-        }
-
-        return remaining > planned ? planned : remaining;
-    }
-
     /// <summary>Returns the sleep before the next cycle, or null to go again right away.</summary>
     public async Task<TimeSpan?> RunAsync(PilotSettings settings, CancellationToken ct)
     {
@@ -94,7 +66,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
             return RefreshRetry;
         }
 
-        var sleep = ClampSleep(taskList.SleepSeconds);
+        var sleep = CycleSleep.Clamp(taskList.SleepSeconds);
         if (taskList.Tasks.Length == 0)
         {
             return await FinishEmptyAsync(sleep, ct);
@@ -106,7 +78,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         {
             if (!holdReported)
             {
-                await session.ReportAsync(Reports.Hold, ct);
+                await session.ReportAsync(CycleReports.Hold, ct);
                 holdReported = true;
             }
 
@@ -119,7 +91,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         if (runId is null)
         {
             // A lost race or the duplicate-apply guard; the next refresh moves past it.
-            return TimeSpan.FromSeconds(MinSleepSeconds);
+            return TimeSpan.FromSeconds(CycleSleep.MinSeconds);
         }
 
         if (running is null)
@@ -168,7 +140,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         var result = await WaitAsync(runId, ResultTimeout, ct);
 
         // No server check between rungs: every unfinished wait has just checked whether the run finished.
-        (Directive Directive, string Report)[] rungs = [(Directive.CheckIn, Reports.CheckIn), (Directive.Skip, Reports.Skip)];
+        (Directive Directive, string Report)[] rungs = [(Directive.CheckIn, CycleReports.CheckIn), (Directive.Skip, CycleReports.Skip)];
         foreach (var (directive, report) in rungs)
         {
             if (result.Ended)
@@ -183,7 +155,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
         if (!result.Ended)
         {
-            await session.ReportAsync(Reports.Restart, ct);
+            await session.ReportAsync(CycleReports.Restart, ct);
             session.Stop();
         }
 
@@ -203,13 +175,13 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
             if (++ConsecutiveExits >= BackoffThreshold)
             {
                 ConsecutiveExits = 0;
-                await session.ReportAsync(Reports.ExitBackoff, ct);
+                await session.ReportAsync(CycleReports.ExitBackoff, ct);
                 await session.DelayAsync(BackoffDelay, ct);
             }
         }
         else if (++ConsecutiveRestarts >= BackoffThreshold)
         {
-            await session.ReportAsync(Reports.Backoff, ct);
+            await session.ReportAsync(CycleReports.Backoff, ct);
             await session.DelayAsync(BackoffDelay, ct);
         }
     }
@@ -251,7 +223,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
                 if (totalWaited >= ResultTimeout && !extensionReported)
                 {
-                    await session.ReportAsync(Reports.Extend, ct);
+                    await session.ReportAsync(CycleReports.Extend, ct);
                     extensionReported = true;
                 }
 
@@ -262,19 +234,5 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
                 return result;
             }
         }
-    }
-
-    private static int ClampSleep(int seconds) => Math.Clamp(seconds, MinSleepSeconds, MaxSleepSeconds);
-
-    /// <summary>Journal entries the user's phone hears about, so keep the wording stable.</summary>
-    internal static class Reports
-    {
-        public const string CheckIn = "Pilot orchestrator: the current run looks stuck - sent the agent a check-in reminder.";
-        public const string Skip = "Pilot orchestrator: still stuck after the check-in - told the agent to set the task aside as failed and move on.";
-        public const string Restart = "Pilot orchestrator: the agent stopped responding - restarted its session and cancelled the run.";
-        public const string Backoff = "Pilot orchestrator: 3 runs in a row got stuck - taking a 30-minute break before trying again.";
-        public const string ExitBackoff = "Pilot orchestrator: the provider CLI keeps exiting right after startup - check its install and sign-in - taking a 30-minute break.";
-        public const string Hold = "Waiting while you use the terminal.";
-        public const string Extend = "Pilot orchestrator: this run is taking longer than usual but is still making progress - giving it more time.";
     }
 }

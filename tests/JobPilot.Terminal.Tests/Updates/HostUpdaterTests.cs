@@ -15,23 +15,23 @@ public class HostUpdaterTests
     [InlineData("v2.0.9", "v2.0.9")]
     [InlineData("v2.1.0,v3.0.0,v2.9.9", "v3.0.0")]
     [InlineData("plugin-9.9.9,9.9.9,vNext,v,v2.1.0", "v2.1.0")]
-    public void FindNewerRelease_PicksTheHighestVTaggedVersion(string tags, string expected)
+    public void FindNewer_PicksTheHighestVTaggedVersion(string tags, string expected)
     {
-        Assert.Equal(expected, HostUpdater.FindNewerRelease(Releases(tags), Current)?.Release.TagName);
+        Assert.Equal(expected, ReleaseFeed.FindNewer(Releases(tags), Current)?.Release.TagName);
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("v1.0.0,v2.0.8")]
-    public void FindNewerRelease_IsNull_WhenNothingIsNewer(string tags)
+    public void FindNewer_IsNull_WhenNothingIsNewer(string tags)
     {
-        Assert.Null(HostUpdater.FindNewerRelease(Releases(tags), Current));
+        Assert.Null(ReleaseFeed.FindNewer(Releases(tags), Current));
     }
 
     [Fact]
-    public void FindNewerRelease_SkipsAReleaseWithNoTag()
+    public void FindNewer_SkipsAReleaseWithNoTag()
     {
-        Assert.Equal("v2.1.0", HostUpdater.FindNewerRelease([new(null, null), new("v2.1.0", null)], Current)?.Release.TagName);
+        Assert.Equal("v2.1.0", ReleaseFeed.FindNewer([new(null, null), new("v2.1.0", null)], Current)?.Release.TagName);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class HostUpdaterTests
         temp.File(Path.Combine("staging", "plugin", "skills", "kept", "SKILL.md"), "new");
 
         FileTree.Copy(staging, install);
-        HostUpdater.PruneRemovedPluginFiles(staging, install);
+        InstallSwap.PruneRemovedPluginFiles(staging, install);
 
         Assert.Equal("new", File.ReadAllText(Path.Combine(install, "plugin", "skills", "kept", "SKILL.md")));
         Assert.False(Directory.Exists(Path.Combine(install, "plugin", "skills", "removed")));
@@ -59,9 +59,9 @@ public class HostUpdaterTests
         using var temp = new TempDir();
 
         temp.File("jobpilot", "binary");
-        Assert.False(HostUpdater.IsValidHost(temp.Root, "jobpilot"));
+        Assert.False(InstallSwap.IsValidHost(temp.Root, "jobpilot"));
 
         temp.WriteValidPluginTree();
-        Assert.True(HostUpdater.IsValidHost(temp.Root, "jobpilot"));
+        Assert.True(InstallSwap.IsValidHost(temp.Root, "jobpilot"));
     }
 }

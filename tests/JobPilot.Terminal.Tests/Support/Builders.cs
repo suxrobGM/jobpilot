@@ -2,6 +2,7 @@ using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
@@ -27,6 +28,12 @@ internal static class Builders
 
     public static PilotTaskList TaskList(int tasks = 0, int sleep = 1800) =>
         new([.. Enumerable.Range(1, tasks).Select(i => new PilotTask($"t{i}", $"Task {i}"))], "v1", sleep);
+
+    // An interval at least as long as every wait makes each wait a single "wait" action.
+    public static CycleRunner Runner(FakePilotSession session) => new(session, TimeSpan.FromMinutes(20));
+
+    public static Task<TimeSpan?> RunAsync(CycleRunner runner) =>
+        runner.RunAsync(Settings(), TestContext.Current.CancellationToken);
 
     /// <summary>A started process over the given fake connection.</summary>
     public static PtyProcess StartedPty(FakePtyConnection connection)

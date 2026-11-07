@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -6,15 +5,11 @@ using System.Threading.Channels;
 
 namespace JobPilot.Terminal.Sessions;
 
-/// <summary>A browser control message on <c>/ws</c>: <c>input</c> (base64 bytes) or <c>resize</c>.</summary>
-public sealed record BrowserMessage(string? Type, string? Data, int? Cols, int? Rows);
-
 /// <summary>Relays session output to every browser WebSocket and browser input back to the session.</summary>
 public sealed class TerminalRelay : IDisposable
 {
     // Disconnect clients that fall this far behind rather than dropping bytes and corrupting the screen.
     private const int OutboxCapacity = 1024;
-    private const int ReceiveBufferSize = 8192;
     private const int MaxMessageBytes = 1024 * 1024;
     private const int ReplayCapacityBytes = 512 * 1024;
 
@@ -61,7 +56,7 @@ public sealed class TerminalRelay : IDisposable
         var sender = SendLoopAsync(socket, outbox, connectionEnded.Token);
         try
         {
-            await ReceiveLoopAsync(socket, ct);
+            await WebSocketTextReader.ReadAsync(socket, MaxMessageBytes, Dispatch, logger, ct);
         }
         finally
         {
@@ -184,62 +179,6 @@ public sealed class TerminalRelay : IDisposable
         }
     }
 
-    private async Task ReceiveLoopAsync(WebSocket socket, CancellationToken ct)
-    {
-        var buffer = new byte[ReceiveBufferSize];
-        var message = new ArrayBufferWriter<byte>(ReceiveBufferSize);
-
-        try
-        {
-            while (socket.State == WebSocketState.Open && !ct.IsCancellationRequested)
-            {
-                var result = await socket.ReceiveAsync(buffer, ct);
-                if (result.MessageType == WebSocketMessageType.Close)
-                {
-                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "client closed", ct);
-                    return;
-                }
-
-                if (result.MessageType != WebSocketMessageType.Text)
-                {
-                    continue;
-                }
-
-                if (message.WrittenCount + result.Count > MaxMessageBytes)
-                {
-                    logger.LogWarning("Closing a WebSocket client that sent a message over {Limit} bytes.", MaxMessageBytes);
-                    await socket.CloseAsync(WebSocketCloseStatus.MessageTooBig, "message too large", ct);
-                    return;
-                }
-
-                message.Write(buffer.AsSpan(0, result.Count));
-                if (!result.EndOfMessage)
-                {
-                    continue;
-                }
-
-                Dispatch(message.WrittenSpan);
-
-                // Do not hold an oversized paste buffer for the connection's lifetime.
-                if (message.Capacity > ReceiveBufferSize)
-                {
-                    message = new ArrayBufferWriter<byte>(ReceiveBufferSize);
-                }
-                else
-                {
-                    message.ResetWrittenCount();
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-        catch (WebSocketException ex)
-        {
-            logger.LogDebug(ex, "WebSocket closed.");
-        }
-    }
-
     private void Dispatch(ReadOnlySpan<byte> utf8Json)
     {
         BrowserMessage? message;
@@ -258,7 +197,11 @@ public sealed class TerminalRelay : IDisposable
             case "input":
                 if (DecodeInput(message.Data) is { } bytes)
                 {
-                    session.MarkUserInput();
+                    if (!BrowserMessage.IsFocusReport(bytes))
+                    {
+                        session.MarkUserInput();
+                    }
+
                     session.Write(bytes);
                 }
 
@@ -293,32 +236,6 @@ public sealed class TerminalRelay : IDisposable
         {
             logger.LogWarning(ex, "Ignoring WebSocket input that is not valid base64.");
             return null;
-        }
-    }
-
-    /// <summary>Byte-bounded FIFO of recent output, replayed to a new client so a reload restores the screen.</summary>
-    private sealed class ReplayBuffer(int capacityBytes)
-    {
-        private readonly Queue<byte[]> chunks = new();
-        private int bytes;
-
-        public IReadOnlyCollection<byte[]> Chunks => chunks;
-
-        public void Append(byte[] data)
-        {
-            while (bytes + data.Length > capacityBytes && chunks.Count > 0)
-            {
-                bytes -= chunks.Dequeue().Length;
-            }
-
-            chunks.Enqueue(data);
-            bytes += data.Length;
-        }
-
-        public void Clear()
-        {
-            chunks.Clear();
-            bytes = 0;
         }
     }
 }

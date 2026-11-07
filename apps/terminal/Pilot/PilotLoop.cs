@@ -170,7 +170,7 @@ public sealed class PilotLoop : BackgroundService
         }
 
         await session.DelayAsync(StartupResumeDelay, stoppingToken);
-        var owed = CycleRunner.OwedBreak(await session.GetActivityAsync(stoppingToken), DateTimeOffset.UtcNow);
+        var owed = CycleSleep.OwedBreak(await session.GetActivityAsync(stoppingToken), DateTimeOffset.UtcNow);
         if (owed <= TimeSpan.Zero)
         {
             await session.ReportAsync(ResumeReport, stoppingToken);

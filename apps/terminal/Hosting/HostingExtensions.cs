@@ -48,6 +48,8 @@ public static class HostingExtensions
         });
         services.AddHostedService<PilotEventListener>();
 
+        services.AddSingleton<ReleaseFeed>();
+        services.AddSingleton<InstallSwap>();
         services.AddSingleton<HostUpdater>();
 
         services.ConfigureHttpJsonOptions(c => c.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
