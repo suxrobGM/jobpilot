@@ -1,3 +1,4 @@
+import { dialogTitleClasses } from "@mui/material";
 import { alpha, type Components, type Theme } from "@mui/material/styles";
 
 export const dialogOverrides: Components<Theme>["MuiDialog"] = {
@@ -15,7 +16,14 @@ export const dialogTitleOverrides: Components<Theme>["MuiDialogTitle"] = {
 };
 
 export const dialogContentOverrides: Components<Theme>["MuiDialogContent"] = {
-  styleOverrides: { root: { paddingBlock: 8 } },
+  styleOverrides: {
+    root: {
+      paddingBlock: 8,
+      // MUI zeroes the top padding after a title; the content scrolls, so that clipped the
+      // floating labels of the first row of fields.
+      [`.${dialogTitleClasses.root} + &`]: { paddingTop: 12 },
+    },
+  },
 };
 
 export const dialogActionsOverrides: Components<Theme>["MuiDialogActions"] = {
