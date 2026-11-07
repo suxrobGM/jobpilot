@@ -10,7 +10,6 @@ import { userQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { QueryError } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { type SectionAnchor, SectionLayout } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
 import { AddressSection } from "./address-section";
@@ -52,13 +51,6 @@ function invalidPages(value: UserUpdateInput): Set<ProfilePage> {
     issues.map((issue) => (String(issue.path[0]) in PROFILE_FIELDS ? "profile" : "answers")),
   );
 }
-
-const ANSWER_ANCHORS: SectionAnchor[] = [
-  { id: "work-auth", label: "Work authorization" },
-  { id: "salary", label: "Salary" },
-  { id: "references", label: "References" },
-  { id: "eeo", label: "Equal opportunity" },
-];
 
 interface ProfileSettingsFormProps {
   page: ProfilePage;
@@ -133,22 +125,20 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
         </Stack>
       )}
       {page === "answers" && (
-        <SectionLayout anchors={ANSWER_ANCHORS} railSide="end">
-          <Stack spacing={2}>
-            <SettingsCard sectionId="work-auth">
-              <WorkAuthSection form={form} />
-            </SettingsCard>
-            <SettingsCard sectionId="salary">
-              <SalarySection form={form} />
-            </SettingsCard>
-            <SettingsCard sectionId="references">
-              <ReferencesSection form={form} />
-            </SettingsCard>
-            <SettingsCard sectionId="eeo">
-              <EeoSection form={form} />
-            </SettingsCard>
-          </Stack>
-        </SectionLayout>
+        <Stack spacing={2}>
+          <SettingsCard>
+            <WorkAuthSection form={form} />
+          </SettingsCard>
+          <SettingsCard>
+            <SalarySection form={form} />
+          </SettingsCard>
+          <SettingsCard>
+            <ReferencesSection form={form} />
+          </SettingsCard>
+          <SettingsCard>
+            <EeoSection form={form} />
+          </SettingsCard>
+        </Stack>
       )}
       <form.AppForm>
         <form.UnsavedChangesBar />
@@ -158,15 +148,14 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
 }
 
 interface SettingsCardProps {
-  sectionId?: string;
   children: ReactElement;
 }
 
 /** The sections carry their own headings, since onboarding shows them without a card. */
 function SettingsCard(props: SettingsCardProps): ReactElement {
-  const { sectionId, children } = props;
+  const { children } = props;
   return (
-    <Card data-section-id={sectionId}>
+    <Card>
       <CardContent>{children}</CardContent>
     </Card>
   );

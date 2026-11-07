@@ -11,7 +11,7 @@ import { useApiMutation } from "@/api/use-api-mutation";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { type SectionAnchor, SectionCard, SectionLayout } from "@/components/ui/layout";
+import { SectionCard } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
 import { CheckIntervalSection } from "./check-interval-section";
@@ -19,13 +19,6 @@ import { settingsFormSchema, toFormValues, toSettings } from "./form-schema";
 import { JobAlertsSetting } from "./job-alerts-setting";
 import { NetworkingSection } from "./networking-section";
 import { ResearchSection } from "./research-section";
-
-const ANCHORS: SectionAnchor[] = [
-  { id: "schedule", label: "Schedule" },
-  { id: "job-alerts", label: "Job alerts" },
-  { id: "research", label: "Research" },
-  { id: "networking", label: "Networking" },
-];
 
 export function PilotSettingsForm(): ReactElement {
   const stateQuery = useQuery(pilotQueries.state());
@@ -39,11 +32,7 @@ export function PilotSettingsForm(): ReactElement {
     );
   }
   // The form takes its defaults once, so it mounts only after the state has loaded.
-  return (
-    <SectionLayout anchors={ANCHORS} railSide="end">
-      <SettingsEditor state={stateQuery.data} />
-    </SectionLayout>
-  );
+  return <SettingsEditor state={stateQuery.data} />;
 }
 
 interface SettingsEditorProps {
@@ -87,23 +76,15 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
         description="Optional - the defaults work for most people."
       >
         <Stack spacing={3}>
-          <Box data-section-id="schedule">
-            <CheckIntervalSection form={form} />
-          </Box>
-          <Box data-section-id="job-alerts">
-            <JobAlertsSetting />
-          </Box>
-          <Box data-section-id="research">
-            <FormSection
-              title="Research"
-              description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
-            >
-              <ResearchSection />
-            </FormSection>
-          </Box>
-          <Box data-section-id="networking">
-            <NetworkingSection form={form} />
-          </Box>
+          <CheckIntervalSection form={form} />
+          <JobAlertsSetting />
+          <FormSection
+            title="Research"
+            description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
+          >
+            <ResearchSection />
+          </FormSection>
+          <NetworkingSection form={form} />
         </Stack>
       </SectionCard>
 
