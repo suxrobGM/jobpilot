@@ -167,9 +167,10 @@ export function Thread(props: ThreadProps): ReactElement {
         }
         pinned.current = box.scrollHeight - box.scrollTop - box.clientHeight < STICK_TO_BOTTOM_PX;
       }}
-      sx={{ flex: 1, minHeight: 0, overflowY: "auto", pr: 0.5 }}
+      // Both edges, so the scrollbar doesn't pull the centered thread off the composer below it.
+      sx={{ flex: 1, minHeight: 0, overflowY: "auto", scrollbarGutter: "stable both-edges" }}
     >
-      <Stack ref={contentRef} spacing={3} sx={{ maxWidth: THREAD_WIDTH, py: 1 }}>
+      <Stack ref={contentRef} spacing={3} sx={{ maxWidth: THREAD_WIDTH, mx: "auto", py: 1 }}>
         <Box ref={topRef} sx={{ display: "flex", justifyContent: "center" }}>
           {isFetchingNextPage && <CircularProgress size={20} />}
           {hasNextPage && !isFetchingNextPage && (
