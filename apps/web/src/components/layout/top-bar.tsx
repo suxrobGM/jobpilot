@@ -22,14 +22,14 @@ const NAV_ITEMS = [
 ];
 
 interface TopBarProps {
-  /** Without the sidebar, the bar carries the logo home link. */
+  /** Without the rail (phones), the bar carries the logo home link and the agent's status. */
   showMark: boolean;
   titleRef: Ref<HTMLElement>;
   actionsRef: Ref<HTMLElement>;
   tabsRef: Ref<HTMLElement>;
 }
 
-/** Page title, agent status, page actions and page tabs; a page's `PageHeader` fills the slots. */
+/** Page title, page actions and page tabs; a page's `PageHeader` fills the slots. */
 export function TopBar(props: TopBarProps): ReactElement {
   const { showMark, titleRef, actionsRef, tabsRef } = props;
   const pathname = usePathname();
@@ -82,7 +82,7 @@ export function TopBar(props: TopBarProps): ReactElement {
           {section?.label ?? APP_TITLE}
         </Typography>
       </Stack>
-      <AgentPill />
+      {showMark && <AgentPill />}
       <Box
         ref={actionsRef}
         sx={{

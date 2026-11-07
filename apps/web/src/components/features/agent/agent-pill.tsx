@@ -6,7 +6,7 @@ import { useAgentDrawer } from "@/providers/agent-provider";
 import { AgentOrb } from "./agent-orb";
 import { useAgentActivity } from "./use-agent-activity";
 
-/** The top bar's agent status: what it's doing at a glance, and the way into its drawer. */
+/** The phone top bar's agent status (the rail has its own on desktop), and the way into its drawer. */
 export function AgentPill(): ReactElement {
   const { drawerOpen, openDrawer, closeDrawer } = useAgentDrawer();
   const { orb, label } = useAgentActivity();
