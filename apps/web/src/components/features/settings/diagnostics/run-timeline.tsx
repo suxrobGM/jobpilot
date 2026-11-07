@@ -1,20 +1,19 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
-import type { PilotJournalEntry, PilotJournalKind } from "@jobpilot/contracts/pilot";
+import type { ReactElement } from "react";
+import type { PilotJournalEntry } from "@jobpilot/contracts/pilot";
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Box,
-  Chip,
   Divider,
   Stack,
   Typography,
 } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
-import { formatSpanBetween } from "@/utils/format";
-import { JournalRow, KIND_META, KIND_ORDER, RunMeta } from "../../pilot/journal/journal-row";
+import { formatSpanBetween, plural } from "@/utils/format";
+import { JournalRow, RunMeta } from "../../pilot/journal/journal-row";
 
 interface RunBlock {
   type: "run";
@@ -50,31 +49,6 @@ interface RunEntriesProps {
   entries: PilotJournalEntry[];
 }
 
-function KindSummary(props: RunEntriesProps): ReactNode {
-  const { entries } = props;
-  const counts = new Map<PilotJournalKind, number>();
-  for (const entry of entries) {
-    counts.set(entry.kind, (counts.get(entry.kind) ?? 0) + 1);
-  }
-  const kinds = KIND_ORDER.filter((kind) => counts.has(kind));
-  if (kinds.length === 0) {
-    return null;
-  }
-
-  return (
-    <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.75, mt: 1 }}>
-      {kinds.map((kind) => (
-        <Chip
-          key={kind}
-          variant="outlined"
-          color={KIND_META[kind].color}
-          label={`${KIND_META[kind].label} ${counts.get(kind)}`}
-        />
-      ))}
-    </Stack>
-  );
-}
-
 interface RunCardProps extends RunEntriesProps {
   defaultOpen: boolean;
 }
@@ -97,8 +71,10 @@ function RunCard(props: RunCardProps): ReactElement {
             {started && <RelativeTime value={started} />}
             {duration && <Typography variant="captionMuted">· {duration}</Typography>}
             {run && <RunMeta run={run} />}
+            <Typography variant="captionMuted">
+              · {plural(entries.length, "entry", "entries")}
+            </Typography>
           </Stack>
-          <KindSummary entries={entries} />
         </Box>
       </AccordionSummary>
       <AccordionDetails>
@@ -120,8 +96,10 @@ export function RunTimeline(props: RunEntriesProps): ReactElement {
   return (
     <Stack spacing={1.5}>
       {blocks.map((block) => {
-        if (block.type === "entry") {
-          return <JournalRow key={block.entry.id} entry={block.entry} />;
+        // A one-entry run is just that entry; its row already carries the run's agent and tokens.
+        if (block.type === "entry" || block.entries.length === 1) {
+          const entry = block.type === "entry" ? block.entry : block.entries[0];
+          return <JournalRow key={entry.id} entry={entry} />;
         }
         const defaultOpen = !firstRunSeen;
         firstRunSeen = true;
