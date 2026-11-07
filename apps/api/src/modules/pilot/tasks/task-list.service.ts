@@ -51,14 +51,15 @@ export class TaskListService {
     const goals = state.goals.trim();
 
     await this.maintain(userId, config, autopilot, now);
-    const countsRead = gatherCounts(this.prisma, userId, now);
+    const ctx = { prisma: this.prisma, userId, now };
+    const countsRead = gatherCounts(ctx);
     const [{ searchCount, ...counts }, work, requests, chat] = await Promise.all([
       countsRead,
       autopilot
-        ? gatherAutonomousWork(this.prisma, userId, { config, goals, counts: countsRead, now })
+        ? gatherAutonomousWork(ctx, { config, goals, counts: countsRead })
         : NO_AUTONOMOUS_WORK,
-      gatherRequests(this.prisma, userId, { config, goals, cycleCount }, now),
-      gatherChat(this.prisma, userId),
+      gatherRequests(ctx, { config, goals, cycleCount }),
+      gatherChat(ctx),
     ]);
     void this.digest.writeIfDue(userId, now, counts.openQuestions);
 

@@ -1,5 +1,6 @@
 import { HOUR_MS } from "@/common/date/buckets";
-import type { PilotRun, PilotRunOutcome, PrismaClient } from "@/generated/prisma/client";
+import type { PilotRun, PilotRunOutcome } from "@/generated/prisma/client";
+import type { GatherContext } from "../tasks/gather/gather-context";
 
 /** Row cap for the unbounded gather and expiry scans. */
 export const GATHER_CAP = 200;
@@ -18,7 +19,7 @@ type RunHistory = Pick<PilotRun, "startedAt" | "finishedAt" | "outcome">;
 
 const HISTORY_SELECT = { startedAt: true, finishedAt: true, outcome: true } as const;
 
-export function latestRun(prisma: PrismaClient, userId: string, taskType: string) {
+export function latestRun({ prisma, userId }: GatherContext, taskType: string) {
   return prisma.pilotRun.findFirst({
     where: { userId, taskType },
     orderBy: { startedAt: "desc" },
@@ -27,11 +28,11 @@ export function latestRun(prisma: PrismaClient, userId: string, taskType: string
 }
 
 export async function latestRunBySubject(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   taskType: string,
   subjectIds: string[],
 ): Promise<Map<string, RunHistory>> {
+  const { prisma, userId } = ctx;
   const runs = await prisma.pilotRun.findMany({
     where: { userId, taskType, subjectId: { in: subjectIds } },
     orderBy: { startedAt: "desc" },
@@ -64,29 +65,26 @@ export function ranRecently(
 }
 
 interface RecentRunFilter {
-  userId: string;
   taskType: string;
-  now: Date;
   cooldownMs: number;
 }
 
 export async function withoutRecentRuns<T>(
-  prisma: PrismaClient,
-  { userId, taskType, now, cooldownMs }: RecentRunFilter,
+  ctx: GatherContext,
+  { taskType, cooldownMs }: RecentRunFilter,
   rows: T[],
   toSubjectId: (row: T) => string,
 ): Promise<T[]> {
   if (rows.length === 0) {
     return [];
   }
-  const latest = await latestRunBySubject(prisma, userId, taskType, rows.map(toSubjectId));
-  return rows.filter((row) => !ranRecently(latest.get(toSubjectId(row)), now, cooldownMs));
+  const latest = await latestRunBySubject(ctx, taskType, rows.map(toSubjectId));
+  return rows.filter((row) => !ranRecently(latest.get(toSubjectId(row)), ctx.now, cooldownMs));
 }
 
 /** Rows no open or decided run has taken yet: once-only work, where a crash hands it back. */
 export async function withoutConsumingRuns<T>(
-  prisma: PrismaClient,
-  userId: string,
+  { prisma, userId }: GatherContext,
   taskType: string,
   rows: T[],
   toSubjectId: (row: T) => string,

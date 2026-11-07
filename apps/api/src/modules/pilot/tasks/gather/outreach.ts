@@ -1,7 +1,7 @@
 import type { PilotConfig, TaskPayload } from "@jobpilot/contracts/pilot";
 import { DAY_MS } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP } from "../../runs/run-history";
+import type { GatherContext } from "./gather-context";
 import { networkingSendWhere } from "./workable";
 
 /** The build step adds the channel and mode, which come from config rather than the row. */
@@ -11,9 +11,9 @@ export type Followup = Omit<TaskPayload<"networking.followup">, "channel" | "aut
 
 /** Sendable drafts, oldest first. */
 export async function gatherApprovedNetworking(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
 ): Promise<TaskPayload<"networking.send">[]> {
+  const { prisma, userId } = ctx;
   const rows = await prisma.networkingMessage.findMany({
     where: networkingSendWhere(userId),
     orderBy: { createdAt: "asc" },
@@ -44,11 +44,10 @@ export async function gatherApprovedNetworking(
 
 /** Sent emails past the followup window with no reply and no later message to the same contact. */
 export async function gatherFollowups(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   config: PilotConfig,
-  now: Date,
 ): Promise<Followup[]> {
+  const { prisma, userId, now } = ctx;
   const rows = await prisma.networkingMessage.findMany({
     where: {
       userId,

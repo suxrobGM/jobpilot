@@ -1,8 +1,8 @@
 import type { CreatePilotRequestInput, PilotConfig, PilotTask } from "@jobpilot/contracts/pilot";
-import type { PrismaClient } from "@/generated/prisma/client";
 import { parseRequest, publishRequest } from "../../requests/request-row";
 import { applyTask, discoveryBoard, SEARCH_MAX_PAGES } from "../build";
 import { makeTask, REQUEST_PRIORITY } from "../task-defs";
+import type { GatherContext } from "./gather-context";
 import { gatherInbox } from "./inbox";
 import { findJobAlerts } from "./job-alerts";
 import { findApprovedJob } from "./jobs";
@@ -18,11 +18,8 @@ interface RequestPilot {
   cycleCount: number;
 }
 
-interface RequestContext extends RequestPilot {
-  prisma: PrismaClient;
-  userId: string;
+interface RequestContext extends GatherContext, RequestPilot {
   requestId: string;
-  now: Date;
 }
 
 /** The task a request asks for, or null when its subject is gone and it can't run. */
@@ -34,7 +31,7 @@ async function requestTask(
   switch (input.taskType) {
     case "job.apply": {
       const { feedId, jobKey } = input.payload;
-      const job = await findApprovedJob(prisma, userId, feedId, jobKey);
+      const job = await findApprovedJob(ctx, feedId, jobKey);
       return job && applyTask(job, false);
     }
     case "job.rescanSkipped": {
@@ -53,9 +50,7 @@ async function requestTask(
     }
     case "inbox.review": {
       const { messageIds } = input.payload;
-      const inbox = messageIds
-        ? { messageIds, count: messageIds.length }
-        : await gatherInbox(prisma, userId);
+      const inbox = messageIds ? { messageIds, count: messageIds.length } : await gatherInbox(ctx);
       return inbox.count > 0 ? makeTask("inbox.review", inbox) : null;
     }
     case "upwork.syncInbox":
@@ -80,14 +75,14 @@ async function requestTask(
     }
     // Asked for by name, so they run off-schedule and past a paused feed.
     case "inbox.jobAlerts": {
-      const alerts = await findJobAlerts(prisma, userId, config, ctx.now);
+      const alerts = await findJobAlerts(ctx, config);
       return alerts && makeTask("inbox.jobAlerts", alerts);
     }
     case "research.explore": {
       if (ctx.goals === "") {
         return null;
       }
-      const research = await researchPayload(prisma, userId, {
+      const research = await researchPayload(ctx, {
         goals: ctx.goals,
         config,
         trigger: "requested",
@@ -119,11 +114,10 @@ async function requestTask(
  * fails here, since no run will ever pick it up.
  */
 export async function gatherRequests(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   pilot: RequestPilot,
-  now: Date,
 ): Promise<PilotTask[]> {
+  const { prisma, userId, now } = ctx;
   const rows = await prisma.pilotRequest.findMany({
     where: { userId, status: "pending" },
     orderBy: { createdAt: "asc" },
@@ -131,10 +125,7 @@ export async function gatherRequests(
   });
   const tasks: PilotTask[] = [];
   for (const row of rows) {
-    const task = await requestTask(
-      { ...pilot, prisma, userId, requestId: row.id, now },
-      parseRequest(row),
-    );
+    const task = await requestTask({ ...ctx, ...pilot, requestId: row.id }, parseRequest(row));
     if (task) {
       // Fractions keep the oldest first without crossing into chat's priority.
       tasks.push({ ...task, priority: REQUEST_PRIORITY - tasks.length / 1000 });
@@ -152,7 +143,8 @@ export async function gatherRequests(
 }
 
 /** One reply to the newest user message that has none after it, so a burst gets one answer. */
-export async function gatherChat(prisma: PrismaClient, userId: string): Promise<PilotTask | null> {
+export async function gatherChat(ctx: GatherContext): Promise<PilotTask | null> {
+  const { prisma, userId } = ctx;
   const newest = await prisma.pilotMessage.findFirst({
     where: { userId },
     orderBy: { createdAt: "desc" },

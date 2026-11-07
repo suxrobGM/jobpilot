@@ -1,7 +1,7 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "../../runs/run-history";
+import type { GatherContext } from "./gather-context";
 
 /** With apply room left, an idle search reruns early, and setup refills, at most this often. */
 const IDLE_RERUN_MS = 6 * HOUR_MS;
@@ -18,11 +18,10 @@ export type DueSearch = Pick<
  * overdue idle search runs anyway. A paused search never runs.
  */
 export async function gatherDueSearches(
-  prisma: PrismaClient,
-  userId: string,
-  now: Date,
+  ctx: GatherContext,
   canApplyMore: boolean,
 ): Promise<{ dueQueries: DueSearch[]; nextSearchRunAt: Date | null }> {
+  const { prisma, userId, now } = ctx;
   const searches = await prisma.feed.findMany({
     where: { userId, kind: "search", pausedAt: null, archivedAt: null },
     orderBy: { nextRunAt: "asc" },
@@ -41,8 +40,7 @@ export async function gatherDueSearches(
   }
 
   const latest = await latestRunBySubject(
-    prisma,
-    userId,
+    ctx,
     "search.discover",
     searches.map((search) => search.id),
   );
@@ -73,11 +71,10 @@ export async function gatherDueSearches(
 
 /** The setup task, unless a recent attempt says to wait: a failing agent would loop on it. */
 export async function gatherSetup(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   payload: TaskPayload<"search.setup">,
-  now: Date,
 ): Promise<TaskPayload<"search.setup"> | null> {
-  const last = await latestRun(prisma, userId, "search.setup");
+  const { now } = ctx;
+  const last = await latestRun(ctx, "search.setup");
   return ranRecently(last, now, IDLE_RERUN_MS) ? null : payload;
 }

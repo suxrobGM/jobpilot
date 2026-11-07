@@ -1,11 +1,11 @@
 import type { PilotConfig } from "@jobpilot/contracts/pilot";
 import { allNamed } from "@/common/utils";
-import type { PrismaClient } from "@/generated/prisma/client";
 import { allowedToday } from "../allowed-today";
 import { type AutonomousWork, isPipelineQuiet } from "../build";
 import type { GatheredCounts } from "./counts";
 import { type FeedReviews, gatherFeedReviews } from "./feed-reviews";
 import { gatherPausedFeeds, gatherQueueScores, gatherScorePending } from "./feeds";
+import type { GatherContext } from "./gather-context";
 import { gatherInbox, gatherUpworkSync } from "./inbox";
 import { gatherInterviewPreps, gatherInterviewReplies } from "./interviews";
 import { gatherJobAlerts } from "./job-alerts";
@@ -36,32 +36,30 @@ export const NO_AUTONOMOUS_WORK: AutonomousWork = {
   research: null,
 };
 
-interface AutonomousContext {
+interface AutonomousPilot {
   config: PilotConfig;
   goals: string;
   /** Still in flight, so the signals wave overlaps it. */
   counts: Promise<GatheredCounts>;
-  now: Date;
 }
 
 /** Three waves; each skips the reads that today's config, counts or queue already rule out. */
 export async function gatherAutonomousWork(
-  prisma: PrismaClient,
-  userId: string,
-  ctx: AutonomousContext,
+  ctx: GatherContext,
+  pilot: AutonomousPilot,
 ): Promise<AutonomousWork> {
-  const { config, goals, now } = ctx;
+  const { config, goals } = pilot;
   const [{ searchCount, ...counts }, signals] = await Promise.all([
-    ctx.counts,
+    pilot.counts,
     allNamed({
-      queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
-      pausedFeeds: gatherPausedFeeds(prisma, userId, now),
-      boardDiagnoses: gatherBoardDiagnoses(prisma, userId, now),
-      inbox: gatherInbox(prisma, userId),
-      jobAlerts: gatherJobAlerts(prisma, userId, config, now),
-      interviewReplies: gatherInterviewReplies(prisma, userId),
-      interviewPreps: gatherInterviewPreps(prisma, userId),
-      upworkSync: gatherUpworkSync(prisma, userId, now),
+      queueScores: gatherQueueScores(ctx, config.minScore),
+      pausedFeeds: gatherPausedFeeds(ctx),
+      boardDiagnoses: gatherBoardDiagnoses(ctx),
+      inbox: gatherInbox(ctx),
+      jobAlerts: gatherJobAlerts(ctx, config),
+      interviewReplies: gatherInterviewReplies(ctx),
+      interviewPreps: gatherInterviewPreps(ctx),
+      upworkSync: gatherUpworkSync(ctx),
     }),
   ]);
 
@@ -71,18 +69,14 @@ export async function gatherAutonomousWork(
   // Scoring and discovery only matter once nothing approved is left to apply to.
   const nothingApproved = counts.approvedJobs.length === 0;
   const queue = await allNamed({
-    approvedNetworking: emailOn ? gatherApprovedNetworking(prisma, userId) : [],
-    followups: emailOn ? gatherFollowups(prisma, userId, config, now) : [],
-    warmIntroCandidates: introsOn
-      ? gatherWarmIntroCandidates(prisma, userId, now, counts.approvedJobs)
-      : [],
-    searches: nothingApproved
-      ? gatherDueSearches(prisma, userId, now, appliesLeft > 0)
-      : NO_DUE_SEARCHES,
-    scorePending: nothingApproved ? gatherScorePending(prisma, userId, config.minScore, now) : [],
+    approvedNetworking: emailOn ? gatherApprovedNetworking(ctx) : [],
+    followups: emailOn ? gatherFollowups(ctx, config) : [],
+    warmIntroCandidates: introsOn ? gatherWarmIntroCandidates(ctx, counts.approvedJobs) : [],
+    searches: nothingApproved ? gatherDueSearches(ctx, appliesLeft > 0) : NO_DUE_SEARCHES,
+    scorePending: nothingApproved ? gatherScorePending(ctx, config.minScore) : [],
   });
   // A job can sit in both lists; the Set keeps one contacts pass per job.
-  await attachWarmContacts(prisma, userId, [
+  await attachWarmContacts(ctx, [
     ...new Set([...counts.approvedJobs, ...queue.warmIntroCandidates]),
   ]);
 
@@ -92,12 +86,9 @@ export async function gatherAutonomousWork(
   const hasGoals = goals !== "";
   const canSetUp = quiet && hasGoals && (searchCount === 0 || appliesLeft > 0);
   const idle = await allNamed({
-    reviews: quiet ? gatherFeedReviews(prisma, userId, now) : NO_REVIEWS,
-    setup: canSetUp ? gatherSetup(prisma, userId, { goals, minScore: config.minScore }, now) : null,
-    research:
-      quiet && hasGoals
-        ? gatherResearch(prisma, userId, { goals, config, searchCount }, now)
-        : null,
+    reviews: quiet ? gatherFeedReviews(ctx) : NO_REVIEWS,
+    setup: canSetUp ? gatherSetup(ctx, { goals, minScore: config.minScore }) : null,
+    research: quiet && hasGoals ? gatherResearch(ctx, { goals, config, searchCount }) : null,
   });
 
   return {

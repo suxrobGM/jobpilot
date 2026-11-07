@@ -6,9 +6,10 @@ import {
   type TaskPayload,
 } from "@jobpilot/contracts/pilot";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
-import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { latestRun, ranRecently } from "../../runs/run-history";
 import { isFeedPaused } from "./feed-paused";
+import type { GatherContext } from "./gather-context";
 
 const JOB_ALERTS_BATCH = 40;
 /** Older alerts point at filled postings; shorter lost mail from a few days of app downtime. */
@@ -62,31 +63,29 @@ export function pendingJobAlertsWhere(
 
 /** The scheduled import, when it's due and its feed isn't paused. */
 export async function gatherJobAlerts(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   config: PilotConfig,
-  now: Date,
 ): Promise<TaskPayload<"inbox.jobAlerts"> | null> {
+  const { now } = ctx;
   if (!config.jobAlerts.enabled) {
     return null;
   }
-  const lastRun = await latestRun(prisma, userId, "inbox.jobAlerts");
+  const lastRun = await latestRun(ctx, "inbox.jobAlerts");
   if (!jobAlertsDue(config.jobAlerts, lastRun, now)) {
     return null;
   }
-  if (await isFeedPaused(prisma, userId, "job_alerts")) {
+  if (await isFeedPaused(ctx, "job_alerts")) {
     return null;
   }
-  return findJobAlerts(prisma, userId, config, now);
+  return findJobAlerts(ctx, config);
 }
 
 /** The unimported alert emails, or null when there are none. */
 export async function findJobAlerts(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   config: PilotConfig,
-  now: Date,
 ): Promise<TaskPayload<"inbox.jobAlerts"> | null> {
+  const { prisma, userId, now } = ctx;
   const settings = config.jobAlerts;
   const where = pendingJobAlertsWhere(userId, settings, now);
   const [rows, count] = await Promise.all([

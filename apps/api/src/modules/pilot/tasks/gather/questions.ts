@@ -1,12 +1,12 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
-import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP, withoutConsumingRuns } from "../../runs/run-history";
+import type { GatherContext } from "./gather-context";
 
 /** Answered questions no open or finished run has consumed yet. */
 export async function gatherAnsweredQuestions(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
 ): Promise<TaskPayload<"question.answered">[]> {
+  const { prisma, userId } = ctx;
   const answered = await prisma.pilotQuestion.findMany({
     where: { userId, status: "answered" },
     orderBy: { answeredAt: "desc" },
@@ -21,8 +21,7 @@ export async function gatherAnsweredQuestions(
     },
   });
   const open = await withoutConsumingRuns(
-    prisma,
-    userId,
+    ctx,
     "question.answered",
     answered,
     (question) => question.id,

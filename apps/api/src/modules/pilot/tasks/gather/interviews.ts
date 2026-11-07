@@ -1,14 +1,14 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { GatherContext } from "./gather-context";
 
 /**
  * Interviewing applications whose latest interview email has no reply question yet. An open
  * question is a draft in flight; an answered one was already approved.
  */
 export async function gatherInterviewReplies(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
 ): Promise<TaskPayload<"interview.reply">[]> {
+  const { prisma, userId } = ctx;
   const apps = await prisma.application.findMany({
     where: { userId, status: "interviewing" },
     select: {
@@ -58,9 +58,9 @@ export async function gatherInterviewReplies(
 
 /** Interviewing applications without a prep sheet yet. */
 export async function gatherInterviewPreps(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
 ): Promise<TaskPayload<"interview.prep">[]> {
+  const { prisma, userId } = ctx;
   const apps = await prisma.application.findMany({
     where: {
       userId,

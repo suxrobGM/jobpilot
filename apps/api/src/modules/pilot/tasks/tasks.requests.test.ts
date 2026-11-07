@@ -47,16 +47,18 @@ describe("buildTaskList and autopilot", () => {
 });
 
 describe("gatherChat", () => {
-  const db = (newest: { id: string; author: "user" | "pilot" } | null) =>
-    ({ pilotMessage: { findFirst: async () => newest } }) as unknown as PrismaClient;
+  const chat = (newest: { id: string; author: "user" | "pilot" } | null) => {
+    const prisma = { pilotMessage: { findFirst: async () => newest } } as unknown as PrismaClient;
+    return gatherChat({ prisma, userId: "u1", now: new Date() });
+  };
 
   it("answers the newest user message once, however many came before it", async () => {
-    const task = await gatherChat(db({ id: MESSAGE_ID, author: "user" }), "u1");
+    const task = await chat({ id: MESSAGE_ID, author: "user" });
     expect(task).toMatchObject({ taskType: "chat.reply", payload: { messageId: MESSAGE_ID } });
   });
 
   it("waits when the pilot spoke last", async () => {
-    expect(await gatherChat(db({ id: MESSAGE_ID, author: "pilot" }), "u1")).toBeNull();
-    expect(await gatherChat(db(null), "u1")).toBeNull();
+    expect(await chat({ id: MESSAGE_ID, author: "pilot" })).toBeNull();
+    expect(await chat(null)).toBeNull();
   });
 });

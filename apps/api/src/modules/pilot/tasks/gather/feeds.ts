@@ -1,13 +1,14 @@
 import { feedConfigSchema } from "@jobpilot/contracts/feed";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
-import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import {
   GATHER_CAP,
   latestRunBySubject,
   ranRecently,
   withoutRecentRuns,
 } from "../../runs/run-history";
+import type { GatherContext } from "./gather-context";
 import { NEEDS_WORKER_VISIT, reviewPausedWhere, scorePendingWhere } from "./workable";
 
 const BATCH_SIZE = 5;
@@ -21,11 +22,10 @@ const QUEUED = { status: "queued" } satisfies Prisma.JobWhereInput;
 
 /** Auto-apply feeds holding rows that still need a score or a brief. */
 export async function gatherScorePending(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   fallbackMinScore: number,
-  now: Date,
 ): Promise<TaskPayload<"feed.score">[]> {
+  const { prisma, userId } = ctx;
   const feeds = await prisma.feed.findMany({
     where: scorePendingWhere(userId),
     take: GATHER_CAP,
@@ -46,8 +46,8 @@ export async function gatherScorePending(
     },
   });
   const startable = await withoutRecentRuns(
-    prisma,
-    { userId, taskType: "feed.score", now, cooldownMs: BATCH_COOLDOWN_MS },
+    ctx,
+    { taskType: "feed.score", cooldownMs: BATCH_COOLDOWN_MS },
     feeds,
     (feed) => feed.id,
   );
@@ -67,11 +67,10 @@ export async function gatherScorePending(
 
 /** Feeds holding pasted links nothing has visited yet. */
 export async function gatherQueueScores(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   fallbackMinScore: number,
-  now: Date,
 ): Promise<TaskPayload<"queue.score">[]> {
+  const { prisma, userId } = ctx;
   const feeds = await prisma.feed.findMany({
     where: { userId, pausedAt: null, archivedAt: null, jobs: { some: QUEUED } },
     take: GATHER_CAP,
@@ -89,8 +88,8 @@ export async function gatherQueueScores(
     },
   });
   const startable = await withoutRecentRuns(
-    prisma,
-    { userId, taskType: "queue.score", now, cooldownMs: BATCH_COOLDOWN_MS },
+    ctx,
+    { taskType: "queue.score", cooldownMs: BATCH_COOLDOWN_MS },
     feeds,
     (feed) => feed.id,
   );
@@ -108,10 +107,9 @@ export async function gatherQueueScores(
 
 /** Searches the pilot or agent paused, longest paused first, that nobody has decided on yet. */
 export async function gatherPausedFeeds(
-  prisma: PrismaClient,
-  userId: string,
-  now: Date,
+  ctx: GatherContext,
 ): Promise<TaskPayload<"search.review">[]> {
+  const { prisma, userId, now } = ctx;
   const feeds = await prisma.feed.findMany({
     where: reviewPausedWhere(userId),
     orderBy: { pausedAt: "asc" },
@@ -134,7 +132,7 @@ export async function gatherPausedFeeds(
       take: PAUSED_CANDIDATES,
       select: { subjectId: true, status: true, answeredAt: true },
     }),
-    latestRunBySubject(prisma, userId, "search.review", ids),
+    latestRunBySubject(ctx, "search.review", ids),
   ]);
   const questionsByFeed = Map.groupBy(questions, (question) => question.subjectId);
 

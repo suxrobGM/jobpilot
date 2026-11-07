@@ -3,6 +3,7 @@ import type { TaskPayload, TaskType } from "@jobpilot/contracts/pilot";
 import { DAY_MS } from "@/common/date/buckets";
 import type { JobStatus, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { withoutRecentRuns } from "../../runs/run-history";
+import type { GatherContext } from "./gather-context";
 
 const TUNE_MIN_JOBS = 20;
 const TUNE_MAX_QUALIFIED_RATIO = 0.2;
@@ -99,11 +100,8 @@ async function attachTopSkipReasons(
 }
 
 /** Tunes for searches, rescans and retries for any job feed; each holds its feed back a week. */
-export async function gatherFeedReviews(
-  prisma: PrismaClient,
-  userId: string,
-  now: Date,
-): Promise<FeedReviews> {
+export async function gatherFeedReviews(ctx: GatherContext): Promise<FeedReviews> {
+  const { prisma, userId } = ctx;
   const feeds = await prisma.feed.findMany({
     where: { userId, pausedAt: null, archivedAt: null, kind: { notIn: ["networking", "upwork"] } },
     select: REVIEW_FEED_SELECT,
@@ -115,17 +113,12 @@ export async function gatherFeedReviews(
   });
   const candidates = reviewCandidates(feeds, counts);
 
-  const cooldown = (taskType: TaskType) => ({
-    userId,
-    taskType,
-    now,
-    cooldownMs: REVIEW_REPEAT_MS,
-  });
+  const cooldown = (taskType: TaskType) => ({ taskType, cooldownMs: REVIEW_REPEAT_MS });
   const byFeed = (row: Pick<TaskPayload<"search.tune">, "feedId">) => row.feedId;
   const [feedTunes, rescanSkipped, retryFailed] = await Promise.all([
-    withoutRecentRuns(prisma, cooldown("search.tune"), candidates.feedTunes, byFeed),
-    withoutRecentRuns(prisma, cooldown("job.rescanSkipped"), candidates.rescanSkipped, byFeed),
-    withoutRecentRuns(prisma, cooldown("job.retryFailed"), candidates.retryFailed, byFeed),
+    withoutRecentRuns(ctx, cooldown("search.tune"), candidates.feedTunes, byFeed),
+    withoutRecentRuns(ctx, cooldown("job.rescanSkipped"), candidates.rescanSkipped, byFeed),
+    withoutRecentRuns(ctx, cooldown("job.retryFailed"), candidates.retryFailed, byFeed),
   ]);
   await attachTopSkipReasons(prisma, feedTunes);
   return { feedTunes, rescanSkipped, retryFailed };

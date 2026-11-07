@@ -1,8 +1,8 @@
 import type { PilotConfig, TaskPayload } from "@jobpilot/contracts/pilot";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
 import { latestRun, ranRecently } from "../../runs/run-history";
 import { isFeedPaused } from "./feed-paused";
+import type { GatherContext } from "./gather-context";
 
 const PERIODIC_MS = 7 * DAY_MS;
 const DRY_COOLDOWN_MS = 24 * HOUR_MS;
@@ -39,7 +39,8 @@ export function researchTrigger(input: TriggerInput): ResearchTrigger | null {
 }
 
 /** The primary resume, or the only one; research can't score against an ambiguous choice. */
-async function researchResumeId(prisma: PrismaClient, userId: string): Promise<string | null> {
+async function researchResumeId(ctx: GatherContext): Promise<string | null> {
+  const { prisma, userId } = ctx;
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { primaryResumeId: true },
@@ -63,12 +64,12 @@ interface ResearchInput {
 
 /** Null without a resume to score against. */
 export async function researchPayload(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   input: ResearchInput,
 ): Promise<ResearchTask | null> {
+  const { prisma, userId } = ctx;
   const [resumeId, profile] = await Promise.all([
-    researchResumeId(prisma, userId),
+    researchResumeId(ctx),
     prisma.profile.findUnique({ where: { userId }, select: { requiresSponsorship: true } }),
   ]);
   if (!resumeId) {
@@ -85,7 +86,7 @@ export async function researchPayload(
   };
 }
 
-interface ResearchContext {
+interface ResearchPilot {
   goals: string;
   config: PilotConfig;
   searchCount: number;
@@ -93,24 +94,28 @@ interface ResearchContext {
 
 /** Research the pilot starts on its own: first, when searches run dry, then weekly. */
 export async function gatherResearch(
-  prisma: PrismaClient,
-  userId: string,
-  ctx: ResearchContext,
-  now: Date,
+  ctx: GatherContext,
+  pilot: ResearchPilot,
 ): Promise<ResearchTask | null> {
+  const { prisma, userId, now } = ctx;
   const [lastRun, backingOffCount, paused] = await Promise.all([
-    latestRun(prisma, userId, "research.explore"),
+    latestRun(ctx, "research.explore"),
     prisma.feed.count({
       where: { userId, kind: "search", archivedAt: null, emptyRuns: { gte: BACKING_OFF_RUNS } },
     }),
-    isFeedPaused(prisma, userId, "research"),
+    isFeedPaused(ctx, "research"),
   ]);
   if (paused) {
     return null;
   }
-  const trigger = researchTrigger({ searchCount: ctx.searchCount, backingOffCount, lastRun, now });
+  const trigger = researchTrigger({
+    searchCount: pilot.searchCount,
+    backingOffCount,
+    lastRun,
+    now,
+  });
   if (!trigger) {
     return null;
   }
-  return researchPayload(prisma, userId, { goals: ctx.goals, config: ctx.config, trigger });
+  return researchPayload(ctx, { goals: pilot.goals, config: pilot.config, trigger });
 }

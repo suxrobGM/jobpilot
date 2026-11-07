@@ -1,12 +1,13 @@
 import type { JobBriefData } from "@jobpilot/contracts/feed";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
-import type { CapExemptBasis, Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { CapExemptBasis, Prisma } from "@/generated/prisma/client";
 import { applyableJobWhere } from "@/modules/feed/jobs/applying";
 import { toJob } from "@/modules/feed/jobs/job-row";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { jobSubjectId } from "../../job-subject";
 import { GATHER_CAP, withoutRecentRuns } from "../../runs/run-history";
+import type { GatherContext } from "./gather-context";
 
 const WARM_INTRO_MIN_SCORE = 80;
 /** "I just applied" outreach still lands this long after the apply. */
@@ -59,7 +60,8 @@ function toTaskJob(row: TaskJobRow): TaskJob {
 }
 
 /** Approved jobs of live feeds, best match first. */
-export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): Promise<TaskJob[]> {
+export async function gatherApprovedJobs(ctx: GatherContext): Promise<TaskJob[]> {
+  const { prisma, userId } = ctx;
   const rows = await prisma.job.findMany({
     where: applyableJobWhere(userId),
     orderBy: { matchScore: "desc" },
@@ -71,11 +73,11 @@ export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): 
 
 /** One approved job the user asked to apply to, whatever its feed's state. */
 export async function findApprovedJob(
-  prisma: PrismaClient,
-  userId: string,
+  ctx: GatherContext,
   feedId: string,
   key: string,
 ): Promise<TaskJob | null> {
+  const { prisma, userId } = ctx;
   const row = await prisma.job.findFirst({
     where: { userId, feedId, key, status: "approved" },
     select: TASK_JOB_SELECT,
@@ -88,11 +90,10 @@ export async function findApprovedJob(
  * half the pool would drain before an intro ever fires.
  */
 export async function gatherWarmIntroCandidates(
-  prisma: PrismaClient,
-  userId: string,
-  now: Date,
+  ctx: GatherContext,
   approvedJobs: TaskJob[],
 ): Promise<TaskJob[]> {
+  const { prisma, userId, now } = ctx;
   const applied = await prisma.job.findMany({
     where: {
       status: "applied",
@@ -116,8 +117,8 @@ export async function gatherWarmIntroCandidates(
     ...applied.map((job) => ({ ...job, board: null, brief: null, capExemptBasis: null })),
   ];
   const startable = await withoutRecentRuns(
-    prisma,
-    { userId, taskType: "networking.warmIntro", now, cooldownMs: WARM_INTRO_APPLIED_WINDOW_MS },
+    ctx,
+    { taskType: "networking.warmIntro", cooldownMs: WARM_INTRO_APPLIED_WINDOW_MS },
     candidates,
     jobSubjectId,
   );
@@ -125,11 +126,8 @@ export async function gatherWarmIntroCandidates(
 }
 
 /** Names same-company contacts on each job, at any score: one read covers every job. */
-export async function attachWarmContacts(
-  prisma: PrismaClient,
-  userId: string,
-  jobs: TaskJob[],
-): Promise<void> {
+export async function attachWarmContacts(ctx: GatherContext, jobs: TaskJob[]): Promise<void> {
+  const { prisma, userId } = ctx;
   const withCompany = jobs.filter((job) => job.company);
   if (withCompany.length === 0) {
     return;
@@ -161,10 +159,9 @@ export async function attachWarmContacts(
 
 /** Boards whose latest apply outcomes are a failure streak, longest streak first. */
 export async function gatherBoardDiagnoses(
-  prisma: PrismaClient,
-  userId: string,
-  now: Date,
+  ctx: GatherContext,
 ): Promise<TaskPayload<"board.diagnose">[]> {
+  const { prisma, userId } = ctx;
   const rows = await prisma.job.findMany({
     where: { status: { in: ["applied", "failed"] }, boardId: { not: null }, userId },
     orderBy: { createdAt: "desc" },
@@ -205,8 +202,8 @@ export async function gatherBoardDiagnoses(
     });
   }
   const due = await withoutRecentRuns(
-    prisma,
-    { userId, taskType: "board.diagnose", now, cooldownMs: BOARD_DIAGNOSE_COOLDOWN_MS },
+    ctx,
+    { taskType: "board.diagnose", cooldownMs: BOARD_DIAGNOSE_COOLDOWN_MS },
     unhealthy,
     (diagnosis) => diagnosis.boardId,
   );
