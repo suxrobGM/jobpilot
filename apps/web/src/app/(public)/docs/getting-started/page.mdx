@@ -7,29 +7,29 @@ export const metadata = buildDocsMetadata("getting-started", {
 
 # Getting started
 
-JobPilot comes in two parts. The dashboard is a website where your profile,
-resumes, and applications live. The agent runs on your computer and does the
-searching and applying. Plan on about ten minutes to set both up.
+JobPilot has two parts. The website holds your profile, resumes, and
+applications. The agent runs on your computer and does the searching and
+applying. Setup takes about ten minutes.
 
 ## What you need
 
 - A [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex)
   subscription. The agent runs on it, so you don't need an API key.
-- A computer running Windows, macOS, or Linux.
-- [Node.js](https://nodejs.org) 22 or newer. The agent uses it to control the
-  browser and talk to JobPilot.
+- Windows, macOS, or Linux.
+- [Node.js](https://nodejs.org) 22 or newer.
 
 ## 1. Install the plugin
 
-The [install page](/install) has the commands for both providers with copy
-buttons. In Claude Code, run:
+The [install page](/install) has these commands with copy buttons.
+
+In Claude Code:
 
 ```text
 /plugin marketplace add https://github.com/suxrobGM/claude-plugins
 /plugin install jobpilot@sukhrob-claude-plugins
 ```
 
-For Codex, run these in a terminal:
+For Codex, in a terminal:
 
 ```text
 codex plugin marketplace add suxrobGM/codex-plugins
@@ -38,94 +38,75 @@ codex plugin add jobpilot@sukhrob-codex-plugins
 
 ## 2. Run setup
 
-Open a new session and run setup. In Claude Code that's `/jobpilot:setup`; in
-Codex it's `$setup`.
+In a new session, run `/jobpilot:setup` in Claude Code or `$setup` in Codex.
 
-```text
-/jobpilot:setup
-$setup
-```
+Setup installs the terminal host, a small program that runs the agent, then
+starts it and opens JobPilot in your browser. Running setup again updates the
+host.
 
-Setup installs a small program called the terminal host, starts the agent, and
-opens the dashboard in your browser. You can run it again later. If the host is
-already installed, setup updates it to the newest version.
+The agent button at the bottom of the left rail opens the **agent drawer**.
+That's where you watch the agent work and switch between Claude Code and
+Codex.
 
-After this, the agent shows up in the agent drawer, which the agent button at the
-bottom of the sidebar opens. You can watch it work there and switch between Claude
-Code and Codex. If the host ever stops working, the [install page](/install)
-has a one-line command that reinstalls it.
+To start the agent again later:
 
-The next time you want to start the agent, it depends on your system:
+- **Windows:** press **Start agent** in the agent drawer. The button appears
+  after the agent's first run.
+- **macOS and Linux:** run setup again, or type `jobpilot` in a terminal.
 
-- **Windows:** press **Start agent** in the agent drawer. The button works after the
-  agent has run at least once, because that first run registers a
-  `jobpilot://` link with Windows.
-- **macOS and Linux:** there's no button. Either run setup again in Claude
-  Code or Codex, or type `jobpilot` in a terminal.
+The agent checks for updates each time it starts.
 
-Each time it starts, the agent checks for a new release and updates itself
-first.
-
-> Claude Code starts on the latest Sonnet model and Codex on GPT 6 Luna. You
-> can pick a bigger model, but it will use up your weekly limit much faster
-> and won't send any more applications. The [FAQ](/docs/faq) explains why.
+> Claude Code starts on the latest Sonnet model and Codex on GPT 6 Luna.
+> Bigger models use up your weekly limit much faster without sending more
+> applications. The [FAQ](/docs/faq) explains why.
 
 ## 3. Create your account
 
-Go to [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net), sign up, and
-confirm your email. Onboarding then has three steps.
+[Sign up](/register) and confirm your email. Onboarding has three steps:
 
-1. **Resume.** Upload your resume as a PDF. The agent reads it and fills in
-   your work history, education, skills, and contact details. You can watch
-   this in the agent drawer; it takes a minute or two. If the agent isn't running
-   (say you're on your phone), the file is saved and you can fill in the
-   details yourself.
-2. **Personal.** Your name, email, phone, links, and city are copied from the
-   resume into any profile field you left blank. Anything you already typed
-   stays as it is. Look it over, fix what's wrong, and press
-   **Save & continue**. Application forms are filled from this profile, while
-   job scoring and tailoring use the resume.
-3. **Connect agent.** This checks that the terminal host from step 2 is
-   running. If it isn't, the install commands are shown again. Press
+1. **Resume.** Upload a PDF. The agent reads it into your profile: work
+   history, education, skills, contact details. It takes a minute or two. If
+   the agent isn't running, the file is saved and you can fill in the details
+   yourself.
+2. **Personal.** Details from the resume fill any profile field you left
+   blank. Check them and press **Save & continue**.
+3. **Connect agent.** Checks that the agent from step 2 is running. Press
    **Finish** to open the Pilot.
 
-You can change all of this later under **Settings → Profile**. Work
-authorization, salary, references, and equal-opportunity answers are under
+Application forms are filled from your profile. Scoring and tailoring use your
+resume. Keep the address the same in both; the resume page warns you when
+they differ.
+
+Change your profile later under **Settings → Profile**. Work authorization,
+salary, references, and equal-opportunity answers are under
 **Settings → Application answers**.
 
-While you're going through onboarding, the agent also writes an improved
-version of your resume, with a tighter summary and stronger bullet points. You'll
-find it on the resume page under **Resumes**, as a card showing how many
-changes it suggests. Press **Review** to compare the old and new text side by
-side, then **Apply rewrite** or **Discard**. Your original PDF is kept as it
-is, so **Re-extract from PDF** always gets the original text back.
-
-> Make sure the address on your profile matches the one on your resume.
-> Recruiters see the resume, but application forms and cover letters use your
-> profile. The resume page warns you when the two don't match.
+The agent also suggests an improved version of your resume. Open it from the
+card on your resume under **Resumes**, press **Review** to compare, then
+**Apply rewrite** or **Discard**. Your original PDF is kept, so
+**Re-extract from PDF** always brings the original text back.
 
 ## 4. Set up the Pilot
 
-From now on you work from the website. Setup is the only command you have to
-type.
+The **Pilot** page tells you what it still needs before it can work alone,
+one step at a time:
 
-The **Pilot** page opens with a **Get started** card listing what's left.
+1. **Goals.** Describe the job you want, for example "ML engineer, new grad,
+   Pittsburgh or remote, visa sponsorship". The Pilot builds its searches
+   from this.
+2. **Address.** Application forms ask for it.
+3. **Board logins.** Save them on the **Job boards** page so the agent can
+   sign in. See [Credentials](/docs/credentials).
 
-1. **Write your goals.** Describe the job you want in your own words, for
-   example "ML engineer, new grad, Pittsburgh or remote, visa sponsorship".
-   The Pilot builds its searches from them. Set your daily limit and minimum
-   score under **Rules** on the same page.
-2. **Connect your email.** Optional, but the Pilot needs it to read replies,
-   interview invites and sign-in codes. See [Email setup](/docs/email-setup).
-3. **Keep the agent running.** The Pilot connects to the agent on your
-   computer by itself whenever you have JobPilot open; there's nothing to
-   start or pair.
-4. **Turn on autopilot.** The Pilot starts finding, scoring and applying to
-   jobs within your rules. Want to see how it scores first? Leave autopilot
-   off and ask in the message box: "find ML engineer jobs in Pittsburgh but
-   don't apply yet".
+Then:
 
-Every job it finds lands in your **Pipeline**, and every application in its
-**Applied** tab, where you can follow it from applied to offer. Press
-**Watch** on the last line of the Pilot's thread to see what it's doing step by step. Read
-[The Pilot](/docs/pilot) next.
+- Press **Rules** under the message box to set your daily limit and minimum
+  match score.
+- [Connect Gmail](/docs/email-setup) so the Pilot can read replies and
+  sign-in codes. Optional, but recommended.
+- Turn on **Autopilot** in the top bar.
+
+To see how it scores before it applies anywhere, leave autopilot off and ask
+in the message box: "find ML engineer jobs in Pittsburgh but don't apply yet".
+
+Jobs it finds land in **Pipeline**. Read [The Pilot](/docs/pilot) next.

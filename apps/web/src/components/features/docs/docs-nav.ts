@@ -16,23 +16,22 @@ export const DOCS_NAV: DocsNavEntry[] = [
   {
     title: "The Pilot",
     href: "/docs/pilot",
-    description: "Your assistant for the job search: chat, autopilot, goals and rules.",
+    description: "Autopilot, talking to the Pilot, goals and rules, and what it asks you about.",
   },
   {
     title: "Skills",
     href: "/docs/skills",
-    description:
-      "What each button asks the Pilot to do, the skills you can run yourself, and application statuses.",
+    description: "What each button does, running skills yourself, and application statuses.",
   },
   {
     title: "Email setup",
     href: "/docs/email-setup",
-    description: "Connect Gmail so JobPilot can track replies and send emails.",
+    description: "Connect Gmail so JobPilot can match replies and send emails.",
   },
   {
     title: "Credentials",
     href: "/docs/credentials",
-    description: "Job board logins, captcha keys, and how JobPilot keeps them safe.",
+    description: "Board logins, captcha keys, and how they're stored.",
   },
   {
     title: "FAQ",

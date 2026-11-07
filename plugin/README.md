@@ -12,7 +12,7 @@ the agent reads and updates them through the JobPilot API.
 ## Install
 
 Install the plugin from your provider's marketplace (the commands are in the
-[main README](../README.md#install-the-plugin)), then run setup. Setup
+[main README](../README.md#get-started)), then run setup. Setup
 installs the terminal host on your computer, starts it, and opens the
 dashboard. After that, you start the agent and watch it from the dashboard.
 
@@ -22,7 +22,7 @@ the full set of skills and keeps them updated.
 ## Skills
 
 The main skills are `search`, `auto-apply`, `apply`, `networking`, and
-`cover-letter`. The [main README](../README.md#skills) lists all of them.
+`cover-letter`. The [skills guide](https://jobpilot.suxrobgm.net/docs/skills) lists all of them.
 
 ## What's in this folder
 

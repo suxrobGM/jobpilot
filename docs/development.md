@@ -18,7 +18,7 @@ The repo doesn't start a database for you. Before running `db:setup`, set
 you can reach. That can be one you run yourself, or the remote database
 through the SSH tunnel described below.
 
-Then open `http://localhost:4100` and open the Terminal panel.
+Then open `http://localhost:4100` and open the agent drawer.
 
 ### Remote database over SSH
 
@@ -59,9 +59,9 @@ private address instead.
 
 | Layer              | Choice                                         |
 | ------------------ | ---------------------------------------------- |
-| Runtime            | Bun 1.3                                        |
+| Runtime            | Bun 1.4                                        |
 | Web                | Next.js 16 (App Router, RSC, typed routes)     |
-| UI                 | MUI 9 + MUI X DataGrid                         |
+| UI                 | MUI 9                                          |
 | Forms              | TanStack Form 1 + Zod v4                       |
 | Server state       | TanStack Query 5                               |
 | API                | Elysia + Eden Treaty (end-to-end types)        |
