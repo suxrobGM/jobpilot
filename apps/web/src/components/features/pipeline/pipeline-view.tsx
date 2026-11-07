@@ -14,6 +14,7 @@ import { useUrlSearch } from "@/hooks/use-url-search";
 import { enumParam } from "@/utils/search-params";
 import { AddLinksDialog } from "./add-links-dialog";
 import { AppliedView } from "./applied/applied-view";
+import { FeedSelect } from "./feed-select";
 import { JobsView } from "./jobs/jobs-view";
 import { NeedsYouBanner } from "./needs-you-banner";
 import { PIPELINE_TAB_KEYS, PIPELINE_TABS, type PipelineTab } from "./pipeline-tabs";
@@ -40,12 +41,13 @@ export function PipelineView(): ReactElement {
 
   const jobFeeds = feeds.filter((feed) => feed.kind !== "networking");
   const feedLabel = new Map(jobFeeds.map((feed) => [feed.id, feed.name]));
-  const feedOptions: SelectFieldOption[] = jobFeeds.map((feed) => ({
-    value: feed.id,
-    label: feed.name,
-  }));
   const boardOptions: SelectFieldOption[] = boards.map((b) => ({ value: b.name, label: b.name }));
   const tabCount = (key: PipelineTab) => (key === "applied" ? applied : counts?.views[key]);
+  // Applications aren't counted per feed, so Applied lists every feed without numbers.
+  const feedCounts =
+    view === "applied" || !counts
+      ? null
+      : new Map(counts.feeds.map((feed) => [feed.feedId, feed.views[view]]));
 
   const hasFilters = feedId !== null || board !== null || search.applied !== "";
   const clear = (): void => {
@@ -95,11 +97,11 @@ export function PipelineView(): ReactElement {
               value={search.draft}
               onChange={search.setDraft}
             />
-            <SelectField
-              label="Feed"
+            <FeedSelect
+              feeds={jobFeeds}
               value={feedId}
-              emptyLabel="All feeds"
-              options={feedOptions}
+              counts={feedCounts}
+              total={tabCount(view) ?? null}
               onChange={(next) => pagination.setFilters({ feed: next })}
             />
             <SelectField

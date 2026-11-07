@@ -1,4 +1,4 @@
-import { feedConfigSchema } from "@jobpilot/contracts/feed";
+import { feedConfigSchema, type JobStatus } from "@jobpilot/contracts/feed";
 import { MAX_PAGE_SIZE, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { pilotConfigSchema } from "@jobpilot/contracts/pilot";
 import {
@@ -51,6 +51,17 @@ const PIPELINE_INCLUDE = {
 interface JobRef {
   feedId: string;
   key: string;
+}
+
+function viewCounts(byStatus: Map<JobStatus, number>): Record<PipelineJobView, number> {
+  const count = (view: PipelineJobView) =>
+    PIPELINE_VIEW_STATUSES[view].reduce((sum, status) => sum + (byStatus.get(status) ?? 0), 0);
+  return {
+    review: count("review"),
+    inProgress: count("inProgress"),
+    setAside: count("setAside"),
+    needsYou: count("needsYou"),
+  };
 }
 
 /** A row whose transition the job service refuses is counted out, not fatal. */
@@ -193,21 +204,31 @@ export class PipelineService {
   }
 
   async counts(userId: string, filters: PipelineFilters, now = new Date()) {
-    const where = await this.jobWhere(userId, filters);
+    const allFeeds = await this.jobWhere(userId, { ...filters, feedId: undefined });
+    const where = filters.feedId ? { ...allFeeds, feedId: filters.feedId } : allFeeds;
     const [groups, stale] = await Promise.all([
-      this.prisma.job.groupBy({ by: ["status"], where, _count: { _all: true } }),
+      this.prisma.job.groupBy({
+        by: ["feedId", "status"],
+        where: allFeeds,
+        _count: { _all: true },
+      }),
       this.prisma.job.count({ where: { ...where, ...staleWhere(now) } }),
     ]);
-    const byStatus = new Map(groups.map((group) => [group.status, group._count._all]));
-    const count = (view: PipelineJobView) =>
-      PIPELINE_VIEW_STATUSES[view].reduce((sum, status) => sum + (byStatus.get(status) ?? 0), 0);
-    const views = {
-      review: count("review"),
-      inProgress: count("inProgress"),
-      setAside: count("setAside"),
-      needsYou: count("needsYou"),
-    } satisfies Record<PipelineJobView, number>;
-    return { views, stale };
+    const byFeed = new Map<string, Map<JobStatus, number>>();
+    const total = new Map<JobStatus, number>();
+    for (const group of groups) {
+      const statuses = byFeed.get(group.feedId) ?? new Map<JobStatus, number>();
+      statuses.set(group.status, group._count._all);
+      byFeed.set(group.feedId, statuses);
+      if (!filters.feedId || filters.feedId === group.feedId) {
+        total.set(group.status, (total.get(group.status) ?? 0) + group._count._all);
+      }
+    }
+    const feeds = [...byFeed].map(([feedId, statuses]) => ({
+      feedId,
+      views: viewCounts(statuses),
+    }));
+    return { views: viewCounts(total), feeds, stale };
   }
 
   /** Queues links on the standing links feed; `queue.score` picks them up like any pasted link. */

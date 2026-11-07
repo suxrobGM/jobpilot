@@ -24,7 +24,7 @@ jobpilot-api POST /api/pilot/changes --data @"$JOBPILOT_TEMP/change.json"
   ] }
 ```
 
-`name` is a short plain label the user reads; `query` is what you'd type into a board ("senior
+`name` is a short plain label the user reads (2-5 words, never the query or its `-exclusions`); `query` is what you'd type into a board ("senior
 typescript remote", not "good jobs"); `reason` is one user-facing sentence. Never pin a board:
 boards rotate one per cycle.
 

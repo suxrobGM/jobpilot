@@ -33,3 +33,28 @@ describe("PipelineService.bulk", () => {
     expect(patched).toEqual(["ok"]);
   });
 });
+
+describe("PipelineService.counts", () => {
+  const groups = [
+    { feedId: "a", status: "pending", _count: { _all: 3 } },
+    { feedId: "a", status: "failed", _count: { _all: 1 } },
+    { feedId: "b", status: "pending", _count: { _all: 2 } },
+  ];
+  const countsPrisma = {
+    job: {
+      // The url groupBy is the dedupe pass; no repeats here.
+      groupBy: async (args: { by: string[] }) => (args.by.includes("url") ? [] : groups),
+      count: async () => 0,
+    },
+  } as unknown as PrismaClient;
+  const service = new PipelineService(countsPrisma, {} as FeedService, {} as JobService);
+
+  it("totals only the picked feed but still lists every feed for the menu", async () => {
+    const result = await service.counts("u1", { feedId: "a" });
+    expect(result.views).toMatchObject({ review: 3, setAside: 1 });
+    expect(result.feeds.map((feed) => [feed.feedId, feed.views.review])).toEqual([
+      ["a", 3],
+      ["b", 2],
+    ]);
+  });
+});

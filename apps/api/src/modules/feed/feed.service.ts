@@ -28,7 +28,7 @@ const SINGLE_FEEDS: Record<SingleKind, { name: string; createdBy: Actor }> = {
   job_alerts: { name: "Job alerts", createdBy: "pilot" },
   research: { name: "Research", createdBy: "pilot" },
   links: { name: "Links you added", createdBy: "user" },
-  manual: { name: "Your own runs", createdBy: "user" },
+  manual: { name: "Started in terminal", createdBy: "user" },
   upwork: { name: "Upwork", createdBy: "user" },
   networking: { name: "Networking", createdBy: "user" },
 };

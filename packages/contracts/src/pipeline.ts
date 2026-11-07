@@ -41,8 +41,12 @@ const pipelineJobSchema = jobSchema.extend({
 });
 
 export const pipelineJobListSchema = paginatedSchema(pipelineJobSchema);
+const viewCountsSchema = z.record(pipelineJobViewSchema, z.number().int());
+
 export const pipelineCountsSchema = z.object({
-  views: z.record(pipelineJobViewSchema, z.number().int()),
+  views: viewCountsSchema,
+  /** Per feed, ignoring the feed filter, so the feed menu can list every one. */
+  feeds: z.array(z.object({ feedId: z.uuid(), views: viewCountsSchema })),
   /** To review jobs found over `PIPELINE_STALE_DAYS` ago. */
   stale: z.number().int(),
 });
