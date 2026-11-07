@@ -45,6 +45,24 @@ export function PilotTurn(props: PilotTurnProps): ReactElement {
   );
 }
 
+interface TurnLineProps {
+  children: ReactNode;
+}
+
+/** A row that belongs to the turns above it, so it skips the avatar. */
+export function TurnLine(props: TurnLineProps): ReactElement {
+  const { children } = props;
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{ alignItems: "center", pl: { xs: 0, sm: TURN_INDENT } }}
+    >
+      {children}
+    </Stack>
+  );
+}
+
 export function formatClockSpan(start: Date, end: Date): string {
   const from = timeFormat.format(start);
   const to = timeFormat.format(end);

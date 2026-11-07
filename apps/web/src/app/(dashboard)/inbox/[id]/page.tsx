@@ -12,15 +12,11 @@ interface PageProps {
 
 export default function MessagePage(props: PageProps): ReactElement {
   return (
-    <Suspense
-      fallback={
-        <PageShell maxWidth="md">
-          <DetailSkeleton />
-        </PageShell>
-      }
-    >
-      <Message params={props.params} />
-    </Suspense>
+    <PageShell maxWidth="md">
+      <Suspense fallback={<DetailSkeleton />}>
+        <Message params={props.params} />
+      </Suspense>
+    </PageShell>
   );
 }
 

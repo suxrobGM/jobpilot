@@ -13,7 +13,7 @@ import { useCreateRequest } from "@/components/features/pilot/requests/use-creat
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { RelativeTime, StatusChip } from "@/components/ui/display";
 import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
-import { PageHeader, PageShell, StickyFooter } from "@/components/ui/layout";
+import { PageHeader, StickyFooter } from "@/components/ui/layout";
 import { inboxHref, messageHref } from "@/utils/routes";
 import { ApplicationMatchField } from "./application-match-field";
 import { splitIrrelevant, useInboxMessages } from "./use-inbox-messages";
@@ -70,7 +70,7 @@ export function MessageDetail(props: MessageDetailProps): ReactElement {
     request.mutate({ taskType: "inbox.review", payload: { messageIds: [messageId] } });
 
   return (
-    <PageShell maxWidth="md">
+    <>
       <PageHeader
         title={message?.subject ?? "Message"}
         eyebrow={
@@ -194,6 +194,6 @@ export function MessageDetail(props: MessageDetailProps): ReactElement {
         </>
       )}
       {messageQuery.isPending && <DetailSkeleton heights={[160, 240]} />}
-    </PageShell>
+    </>
   );
 }

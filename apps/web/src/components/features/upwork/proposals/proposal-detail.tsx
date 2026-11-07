@@ -13,7 +13,7 @@ import { useCreateRequest } from "@/components/features/pilot/requests/use-creat
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LabelValue } from "@/components/ui/display";
 import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
-import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
+import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useCopy } from "@/hooks/use-copy";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -55,23 +55,17 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   });
 
   if (detail.isPending) {
-    return (
-      <PageShell maxWidth="md">
-        <DetailSkeleton />
-      </PageShell>
-    );
+    return <DetailSkeleton />;
   }
 
   const proposal = detail.data;
   if (!proposal) {
     return (
-      <PageShell maxWidth="md">
-        <DetailLoadFailure
-          noun="proposal"
-          error={detail.error}
-          onRetry={() => void detail.refetch()}
-        />
-      </PageShell>
+      <DetailLoadFailure
+        noun="proposal"
+        error={detail.error}
+        onRetry={() => void detail.refetch()}
+      />
     );
   }
 
@@ -88,7 +82,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   };
 
   return (
-    <PageShell maxWidth="md">
+    <>
       <PageHeader
         eyebrow={proposal.clientName ?? "Upwork"}
         title={proposal.jobTitle}
@@ -191,6 +185,6 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
       )}
 
       <ProposalNotes id={id} notes={proposal.notes} />
-    </PageShell>
+    </>
   );
 }

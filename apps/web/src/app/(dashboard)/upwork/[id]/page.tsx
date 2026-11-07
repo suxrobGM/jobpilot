@@ -12,15 +12,11 @@ interface PageProps {
 
 export default function ProposalDetailPage(props: PageProps): ReactElement {
   return (
-    <Suspense
-      fallback={
-        <PageShell maxWidth="md">
-          <DetailSkeleton />
-        </PageShell>
-      }
-    >
-      <Proposal params={props.params} />
-    </Suspense>
+    <PageShell maxWidth="md">
+      <Suspense fallback={<DetailSkeleton />}>
+        <Proposal params={props.params} />
+      </Suspense>
+    </PageShell>
   );
 }
 

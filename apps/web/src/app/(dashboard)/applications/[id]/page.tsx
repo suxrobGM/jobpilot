@@ -12,15 +12,11 @@ interface PageProps {
 
 export default function ApplicationDetailPage(props: PageProps): ReactElement {
   return (
-    <Suspense
-      fallback={
-        <PageShell maxWidth="lg">
-          <DetailSkeleton />
-        </PageShell>
-      }
-    >
-      <Application params={props.params} />
-    </Suspense>
+    <PageShell maxWidth="lg">
+      <Suspense fallback={<DetailSkeleton />}>
+        <Application params={props.params} />
+      </Suspense>
+    </PageShell>
   );
 }
 

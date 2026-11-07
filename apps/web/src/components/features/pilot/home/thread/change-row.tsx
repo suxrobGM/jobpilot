@@ -3,9 +3,9 @@
 import type { ReactElement } from "react";
 import type { PilotChange } from "@jobpilot/contracts/pilot";
 import { CheckCircleOutlined, LightbulbOutlined, UndoOutlined } from "@mui/icons-material";
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Typography } from "@mui/material";
 import { useDecideChange } from "../../changes/use-changes";
-import { TURN_INDENT } from "./pilot-turn";
+import { TurnLine } from "./pilot-turn";
 
 const STATUS_NOTES: Record<PilotChange["status"], string> = {
   proposed: "Suggested · waiting for you",
@@ -25,11 +25,7 @@ export function ChangeRow(props: ChangeRowProps): ReactElement {
   const proposed = change.status === "proposed";
   const Icon = proposed ? LightbulbOutlined : CheckCircleOutlined;
   return (
-    <Stack
-      direction="row"
-      spacing={1}
-      sx={{ alignItems: "center", pl: { xs: 0, sm: TURN_INDENT } }}
-    >
+    <TurnLine>
       <Icon fontSize="sm" color={change.status === "applied" ? "success" : "disabled"} />
       <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }}>
         {change.summary}
@@ -48,6 +44,6 @@ export function ChangeRow(props: ChangeRowProps): ReactElement {
           Undo
         </Button>
       )}
-    </Stack>
+    </TurnLine>
   );
 }
