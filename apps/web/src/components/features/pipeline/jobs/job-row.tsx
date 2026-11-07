@@ -1,11 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import {
-  PIPELINE_STALE_DAYS,
-  type PipelineBulkInput,
-  type PipelineJobView,
-} from "@jobpilot/contracts/pipeline";
+import type { PipelineBulkInput, PipelineJobView } from "@jobpilot/contracts/pipeline";
 import { Check, Close, Schedule } from "@mui/icons-material";
 import { Box, ButtonBase, Checkbox, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import type { PipelineJobDto } from "@/api/types";
@@ -15,16 +11,15 @@ import { ScoreBadge } from "./score-badge";
 
 type BulkAction = PipelineBulkInput["action"];
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function isStale(job: PipelineJobDto): boolean {
-  return Date.now() - job.createdAt.getTime() > PIPELINE_STALE_DAYS * DAY_MS;
-}
-
 function metaLine(job: PipelineJobDto, showFeed: boolean): string {
   const parts = [job.company, job.location, job.salary, showFeed && `via ${job.feed.name}`];
   return parts.filter(Boolean).join(" · ");
 }
+
+const QUICK_ACTIONS = [
+  { action: "skip", label: "Skip", Icon: Close, color: "default" },
+  { action: "approve", label: "Approve", Icon: Check, color: "success" },
+] as const;
 
 interface QuickActionsProps {
   onAct: (action: BulkAction) => void;
@@ -38,31 +33,21 @@ function QuickActions(props: QuickActionsProps): ReactElement {
       className="quick-actions"
       sx={{ opacity: 0.35, transition: "opacity 120ms", flexShrink: 0 }}
     >
-      <Tooltip title="Skip">
-        <IconButton
-          size="small"
-          aria-label="Skip"
-          onClick={(event) => {
-            event.stopPropagation();
-            onAct("skip");
-          }}
-        >
-          <Close fontSize="sm" />
-        </IconButton>
-      </Tooltip>
-      <Tooltip title="Approve">
-        <IconButton
-          size="small"
-          color="success"
-          aria-label="Approve"
-          onClick={(event) => {
-            event.stopPropagation();
-            onAct("approve");
-          }}
-        >
-          <Check fontSize="sm" />
-        </IconButton>
-      </Tooltip>
+      {QUICK_ACTIONS.map(({ action, label, Icon, color }) => (
+        <Tooltip key={action} title={label}>
+          <IconButton
+            size="small"
+            color={color}
+            aria-label={label}
+            onClick={(event) => {
+              event.stopPropagation();
+              onAct(action);
+            }}
+          >
+            <Icon fontSize="sm" />
+          </IconButton>
+        </Tooltip>
+      ))}
     </Stack>
   );
 }
@@ -78,11 +63,10 @@ interface JobRowProps {
   onAct: (action: BulkAction) => void;
 }
 
-/** Two lines: what the job is, then the facts that decide it; why it stopped, when it did. */
 export function JobRow(props: JobRowProps): ReactElement {
   const { job, view, showFeed, selected, onToggle, onOpen, onAct } = props;
   const review = view === "review";
-  const stale = review && isStale(job);
+  const stale = review && job.stale;
   const reason = review ? null : (job.failReason ?? job.skipReason);
 
   return (

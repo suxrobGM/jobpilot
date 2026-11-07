@@ -11,11 +11,13 @@ import {
 } from "@jobpilot/contracts/pipeline";
 import { UPWORK_DOMAIN } from "@jobpilot/contracts/upwork";
 import { inject, injectable } from "@needle-di/core";
+import { DAY_MS } from "@/common/date/buckets";
 import { HttpError } from "@/common/errors";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { FeedService } from "@/modules/feed/feed.service";
 import { JobService } from "@/modules/feed/jobs/job.service";
+import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import { JOB_INCLUDE, queuedJobRows, toJob } from "@/modules/feed/jobs/job-row";
 import { findRecentPostings } from "@/modules/feed/jobs/recent-postings";
 import { boardFilter } from "@/modules/job-board/board-host";
@@ -34,24 +36,20 @@ const REVIEW_ORDER: Prisma.JobOrderByWithRelationInput[] = [
 
 const BULK_SKIP_REASON = "Skipped by you";
 const STALE_SKIP_REASON = "Skipped by you: posting over a month old";
-const DAY_MS = 24 * 60 * 60 * 1000;
+const REVIEW_STATUSES: JobStatus[] = PIPELINE_VIEW_STATUSES.review;
+
+function staleCutoff(now: Date): Date {
+  return new Date(now.getTime() - PIPELINE_STALE_DAYS * DAY_MS);
+}
 
 function staleWhere(now: Date): Prisma.JobWhereInput {
-  return {
-    status: { in: PIPELINE_VIEW_STATUSES.review },
-    createdAt: { lt: new Date(now.getTime() - PIPELINE_STALE_DAYS * DAY_MS) },
-  };
+  return { status: { in: REVIEW_STATUSES }, createdAt: { lt: staleCutoff(now) } };
 }
 
 const PIPELINE_INCLUDE = {
   ...JOB_INCLUDE,
   feed: { select: { id: true, name: true, config: true } },
 } satisfies Prisma.JobInclude;
-
-interface JobRef {
-  feedId: string;
-  key: string;
-}
 
 function viewCounts(byStatus: Map<JobStatus, number>): Record<PipelineJobView, number> {
   const count = (view: PipelineJobView) =>
@@ -62,23 +60,6 @@ function viewCounts(byStatus: Map<JobStatus, number>): Record<PipelineJobView, n
     notApplied: count("notApplied"),
     needsYou: count("needsYou"),
   };
-}
-
-/** A row whose transition the job service refuses is counted out, not fatal. */
-async function applyToRows(
-  rows: JobRef[],
-  apply: (row: JobRef) => Promise<unknown>,
-): Promise<number> {
-  let updated = 0;
-  for (const row of rows) {
-    try {
-      await apply(row);
-      updated += 1;
-    } catch (error) {
-      if (!(error instanceof HttpError)) throw error;
-    }
-  }
-  return updated;
 }
 
 @injectable()
@@ -126,7 +107,7 @@ export class PipelineService {
     };
   }
 
-  async list(userId: string, query: PipelineJobsQuery) {
+  async list(userId: string, query: PipelineJobsQuery, now = new Date()) {
     const where = {
       ...(await this.jobWhere(userId, query)),
       status: { in: PIPELINE_VIEW_STATUSES[query.view] },
@@ -142,10 +123,12 @@ export class PipelineService {
       this.prisma.pilotState.findUnique({ where: { userId }, select: { config: true } }),
     ]);
     const { minScore } = pilotConfigSchema.parse(state?.config ?? {});
+    const cutoff = staleCutoff(now);
     const items = rows.map(({ feed, ...row }) => ({
       ...toJob(row),
       feed: { id: feed.id, name: feed.name },
       minScore: feedConfigSchema.parse(feed.config).minScore ?? minScore,
+      stale: REVIEW_STATUSES.includes(row.status) && row.createdAt < cutoff,
     }));
     return paginate(items, query, total);
   }
@@ -169,24 +152,33 @@ export class PipelineService {
       where: { userId, id: { in: input.ids } },
       select: { feedId: true, key: true },
     });
-    const updated = await applyToRows(rows, (row) =>
-      this.applyBulkAction(userId, row.feedId, row.key, input.action),
-    );
+    let updated = 0;
+    for (const row of rows) {
+      try {
+        await this.applyBulkAction(userId, row.feedId, row.key, input.action);
+        updated += 1;
+      } catch (error) {
+        // A row whose transition the job service refuses is counted out, not fatal.
+        if (!(error instanceof HttpError)) throw error;
+      }
+    }
     return { updated, refused: input.ids.length - updated };
   }
 
   async skipStale(userId: string, filters: PipelineFilters, now = new Date()) {
     const rows = await this.prisma.job.findMany({
       where: { ...(await this.jobWhere(userId, filters)), ...staleWhere(now) },
-      select: { feedId: true, key: true },
+      select: { id: true, feedId: true, key: true },
     });
-    const updated = await applyToRows(rows, (row) =>
-      this.jobs.recordResult(userId, row.feedId, row.key, {
-        outcome: "skipped",
-        skipReason: STALE_SKIP_REASON,
-      }),
-    );
-    return { updated, refused: rows.length - updated };
+    // One write for every page; the status guard refuses rows the pilot picked up meanwhile.
+    const { count } = await this.prisma.job.updateMany({
+      where: { id: { in: rows.map((row) => row.id) }, status: { in: REVIEW_STATUSES } },
+      data: { status: "skipped", skipReason: STALE_SKIP_REASON },
+    });
+    for (const row of rows) {
+      publishJobUpdated(userId, { ...row, status: "skipped" });
+    }
+    return { updated: count, refused: rows.length - count };
   }
 
   private applyBulkAction(
@@ -216,19 +208,20 @@ export class PipelineService {
     ]);
     const byFeed = new Map<string, Map<JobStatus, number>>();
     const total = new Map<JobStatus, number>();
-    for (const group of groups) {
-      const statuses = byFeed.get(group.feedId) ?? new Map<JobStatus, number>();
-      statuses.set(group.status, group._count._all);
-      byFeed.set(group.feedId, statuses);
-      if (!filters.feedId || filters.feedId === group.feedId) {
-        total.set(group.status, (total.get(group.status) ?? 0) + group._count._all);
-      }
+    for (const { feedId, status, _count } of groups) {
+      const statuses = byFeed.get(feedId) ?? new Map<JobStatus, number>();
+      statuses.set(status, _count._all);
+      byFeed.set(feedId, statuses);
+      total.set(status, (total.get(status) ?? 0) + _count._all);
     }
+    const picked = filters.feedId
+      ? (byFeed.get(filters.feedId) ?? new Map<JobStatus, number>())
+      : total;
     const feeds = [...byFeed].map(([feedId, statuses]) => ({
       feedId,
       views: viewCounts(statuses),
     }));
-    return { views: viewCounts(total), feeds, stale };
+    return { views: viewCounts(picked), feeds, stale };
   }
 
   /** Queues links on the standing links feed; `queue.score` picks them up like any pasted link. */

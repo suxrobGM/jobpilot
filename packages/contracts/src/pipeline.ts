@@ -2,10 +2,7 @@ import { z } from "zod/v4";
 import { type JobStatus, jobSchema, MAX_LINKS } from "./feed";
 import { MAX_PAGE_SIZE, paginatedSchema, paginationQuerySchema } from "./pagination";
 
-/**
- * Review, In progress and Not applied are the Pipeline's tabs; Needs you feeds the banner and nav badge.
- * Applied lists applications, so it isn't a job view.
- */
+/** Needs you feeds the banner and nav badge; Applied lists applications, so it isn't a job view. */
 const PIPELINE_JOB_VIEWS = ["review", "inProgress", "notApplied", "needsYou"] as const;
 const pipelineJobViewSchema = z.enum(PIPELINE_JOB_VIEWS);
 export type PipelineJobView = z.infer<typeof pipelineJobViewSchema>;
@@ -20,7 +17,7 @@ export const PIPELINE_VIEW_STATUSES: Record<PipelineJobView, JobStatus[]> = {
 /** A To review job found longer ago than this may have a closed posting. */
 export const PIPELINE_STALE_DAYS = 30;
 
-const pipelineFiltersSchema = z.object({
+export const pipelineFiltersSchema = z.object({
   feedId: z.uuid().optional(),
   board: z.string().trim().min(1).optional(),
   search: z.string().trim().min(1).optional(),
@@ -31,13 +28,16 @@ export const pipelineJobsQuerySchema = paginationQuerySchema
   .extend(pipelineFiltersSchema.shape);
 export type PipelineJobsQuery = z.infer<typeof pipelineJobsQuerySchema>;
 
-export const pipelineCountsQuerySchema = pipelineFiltersSchema;
 export type PipelineFilters = z.infer<typeof pipelineFiltersSchema>;
 
-/** `minScore` is the bar this job's feed applies: its own override, else the pilot's. */
+/**
+ * `minScore` is the bar this job's feed applies: its own override, else the pilot's.
+ * `stale` marks a To review job found over `PIPELINE_STALE_DAYS` ago.
+ */
 const pipelineJobSchema = jobSchema.extend({
   feed: z.object({ id: z.uuid(), name: z.string() }),
   minScore: z.number().int(),
+  stale: z.boolean(),
 });
 
 export const pipelineJobListSchema = paginatedSchema(pipelineJobSchema);
@@ -71,9 +71,6 @@ export const pipelineBulkSchema = z.object({
   ids: z.array(z.uuid()).min(1).max(MAX_PAGE_SIZE),
 });
 export type PipelineBulkInput = z.infer<typeof pipelineBulkSchema>;
-
-/** Skips every stale To review job under the filters, past any page. */
-export const pipelineSkipStaleSchema = pipelineFiltersSchema;
 
 /** `refused` counts rows whose status no longer allowed the action. */
 export const pipelineBulkResultSchema = z.object({

@@ -42,7 +42,6 @@ describe("PipelineService.counts", () => {
   ];
   const countsPrisma = {
     job: {
-      // The url groupBy is the dedupe pass; no repeats here.
       groupBy: async (args: { by: string[] }) => (args.by.includes("url") ? [] : groups),
       count: async () => 0,
     },

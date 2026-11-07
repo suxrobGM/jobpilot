@@ -4,11 +4,10 @@ import {
   needsYouJobRefsSchema,
   pipelineBulkResultSchema,
   pipelineBulkSchema,
-  pipelineCountsQuerySchema,
   pipelineCountsSchema,
+  pipelineFiltersSchema,
   pipelineJobListSchema,
   pipelineJobsQuerySchema,
-  pipelineSkipStaleSchema,
 } from "@jobpilot/contracts/pipeline";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
@@ -34,7 +33,7 @@ export const pipelineController = new Elysia({
     },
   })
   .get("/counts", ({ user, query }) => pipeline.counts(user.id, query), {
-    query: pipelineCountsQuerySchema,
+    query: pipelineFiltersSchema,
     response: pipelineCountsSchema,
     detail: {
       summary: "Count pipeline jobs per view",
@@ -71,12 +70,12 @@ export const pipelineController = new Elysia({
     },
   })
   .post("/jobs/skip-stale", ({ user, body }) => pipeline.skipStale(user.id, body), {
-    body: pipelineSkipStaleSchema,
+    body: pipelineFiltersSchema,
     beforeHandle: limitMutation,
     response: pipelineBulkResultSchema,
     detail: {
       summary: "Skip stale jobs",
       description:
-        "Skips every To review job found over a month ago under the filters, across all pages, through the normal transitions.",
+        "Skips every To review job found over a month ago under the filters, across all pages. Rows the pilot picked up meanwhile are counted in refused.",
     },
   });
