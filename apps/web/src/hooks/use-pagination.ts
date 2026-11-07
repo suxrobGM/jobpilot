@@ -71,8 +71,6 @@ interface GridPaginationModel {
   pageSize: number;
 }
 
-export type GridPaginationProps = ReturnType<typeof gridPagination>;
-
 /** The grid keeps its own footer but pages server-side off the same URL params. */
 export function gridPagination(params: PaginationParams, meta: PageMeta | undefined) {
   return {

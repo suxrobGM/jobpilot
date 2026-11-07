@@ -1,19 +1,12 @@
 "use client";
 
-import { type ReactElement, useEffect } from "react";
+import type { ReactElement } from "react";
 import { ArrowBack } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import type { PipelineJobDto } from "@/api/types";
 import { JobDetail } from "@/components/features/pipeline/jobs/job-detail";
+import { usePageKeys } from "@/hooks/use-page-keys";
 import { THREAD_WIDTH } from "./thread/thread";
-
-/** Typing in a field keeps its letters; only page-level keys move through the queue. */
-function isTypingTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-  return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
-}
 
 interface JobPaneProps {
   job: PipelineJobDto;
@@ -26,22 +19,7 @@ interface JobPaneProps {
 export function JobPane(props: JobPaneProps): ReactElement {
   const { job, onBack, onStep } = props;
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent): void => {
-      if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) {
-        return;
-      }
-      if (event.key === "Escape") {
-        onBack();
-      } else if (event.key === "j") {
-        onStep(1);
-      } else if (event.key === "k") {
-        onStep(-1);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  });
+  usePageKeys({ Escape: onBack, j: () => onStep(1), k: () => onStep(-1) });
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
