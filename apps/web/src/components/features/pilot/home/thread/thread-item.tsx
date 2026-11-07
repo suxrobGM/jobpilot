@@ -12,11 +12,13 @@ import { WorkTurn } from "./work-turn";
 
 interface ThreadItemProps {
   item: PilotThreadItem;
+  /** Identical notes in a row collapse into one; see `collapseRepeats` in the thread. */
+  repeats: number;
 }
 
-/** Open questions and proposals stay one line here; their cards wait at the bottom of the thread. */
+/** Open questions and proposals stay one line here; their cards wait in the Needs you queue. */
 export function ThreadItem(props: ThreadItemProps): ReactElement {
-  const { item } = props;
+  const { item, repeats } = props;
   switch (item.type) {
     case "work":
       return <WorkTurn item={item} />;
@@ -31,6 +33,6 @@ export function ThreadItem(props: ThreadItemProps): ReactElement {
     case "digest":
       return <DigestTurn entry={item.entry} />;
     case "note":
-      return <NoteRow entry={item.entry} />;
+      return <NoteRow entry={item.entry} repeats={repeats} />;
   }
 }

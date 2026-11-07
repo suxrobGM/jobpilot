@@ -1,87 +1,138 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { Box, Button, Divider, Drawer, Stack } from "@mui/material";
+import { Box, Stack, Tab, Tabs } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
+import type { PipelineJobDto } from "@/api/types";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
+import { useAgentAvailable } from "@/providers/agent-provider";
+import { useNeedsYou, useNeedsYouCount } from "../attention/use-needs-you";
 import { Composer } from "./composer";
+import { JobPane } from "./job-pane";
+import { NeedsYouList } from "./needs-you/needs-you-list";
 import { PilotHeader } from "./pilot-header";
-import { RulesSummary } from "./side/rules-summary";
-import { SearchesSummary } from "./side/searches-summary";
-import { StealthCodeBanner } from "./side/stealth-code-banner";
-import { WeekSummary } from "./side/week-summary";
+import { PilotOverview } from "./side/pilot-overview";
 import { THREAD_WIDTH, Thread } from "./thread/thread";
 
-interface SideColumnProps {
+type PhoneTab = "chat" | "needsYou" | "overview";
+
+interface ConversationProps {
   state: PilotState;
 }
 
-function SideColumn(props: SideColumnProps): ReactElement {
+function Conversation(props: ConversationProps): ReactElement {
   const { state } = props;
   return (
-    <Stack spacing={3}>
-      <Stack spacing={3} divider={<Divider />}>
-        <WeekSummary />
-        <SearchesSummary />
-        <RulesSummary state={state} />
-      </Stack>
-      <StealthCodeBanner />
-    </Stack>
+    <>
+      <Thread state={state} />
+      <Box sx={{ maxWidth: THREAD_WIDTH, width: "100%", mx: "auto" }}>
+        <Composer state={state} />
+      </Box>
+    </>
   );
 }
 
-/** A conversation with the pilot: what it did and needs in its own words, and how the week is going. */
+interface ScrollPaneProps {
+  children: ReactNode;
+}
+
+function ScrollPane(props: ScrollPaneProps): ReactElement {
+  const { children } = props;
+  return <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", py: 1 }}>{children}</Box>;
+}
+
+/** The "Needs you" queue beside the conversation; a parked job opens in the conversation's place. */
 export function PilotHome(): ReactElement {
   const stateQuery = useQuery(pilotQueries.state());
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const isDesktop = useAgentAvailable();
+  const [tab, setTab] = useState<PhoneTab>("chat");
+  const [openJob, setOpenJob] = useState<PipelineJobDto | null>(null);
+  const parkedJobs = useNeedsYou().flatMap((item) => (item.type === "job" ? [item.job] : []));
+  const needsYouTotal = useNeedsYouCount();
   const state = stateQuery.data;
 
   if (stateQuery.isLoading) {
-    return <DetailSkeleton heights={[56, 480]} />;
+    return (
+      <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
+        <DetailSkeleton heights={[56, 480]} />
+      </Box>
+    );
   }
   if (!state) {
     return (
-      <QueryError title="Couldn't load the pilot." onRetry={() => void stateQuery.refetch()} />
+      <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
+        <QueryError title="Couldn't load the pilot." onRetry={() => void stateQuery.refetch()} />
+      </Box>
     );
   }
+
+  const step = (direction: 1 | -1): void => {
+    const at = parkedJobs.findIndex((job) => job.id === openJob?.id);
+    const next = parkedJobs[at + direction];
+    if (next) {
+      setOpenJob(next);
+    }
+  };
+
+  const queue = <NeedsYouList selectedJobId={openJob?.id ?? null} onOpenJob={setOpenJob} />;
+  const overview = <PilotOverview state={state} />;
+
+  const renderMain = (): ReactNode => {
+    if (openJob) {
+      return <JobPane job={openJob} onBack={() => setOpenJob(null)} onStep={step} />;
+    }
+    if (isDesktop || tab === "chat") {
+      return <Conversation state={state} />;
+    }
+    return <ScrollPane>{tab === "needsYou" ? queue : overview}</ScrollPane>;
+  };
 
   return (
     <Stack
       direction="row"
-      spacing={3}
-      sx={(theme) => ({
-        // The thread scrolls inside the page, so the header, composer and side column stay put.
-        height: { md: `calc(100dvh - ${theme.spacing(12)})` },
-        minHeight: theme.spacing(60),
-      })}
+      // Basis 0 fills what the top bar leaves; the thread scrolls inside, so the queue and composer stay put.
+      sx={{ flex: "1 1 0", minHeight: 0 }}
     >
-      <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
-        <PilotHeader state={state} />
-        <Button
-          variant="outlined"
-          sx={{ display: { md: "none" } }}
-          onClick={() => setSheetOpen(true)}
+      <PilotHeader state={state} />
+      {isDesktop && (
+        <Stack
+          component="aside"
+          aria-label="Needs you"
+          spacing={4}
+          sx={(theme) => ({
+            width: 400,
+            flexShrink: 0,
+            overflowY: "auto",
+            p: 2,
+            borderRight: 1,
+            borderColor: "divider",
+            backgroundColor: theme.palette.surfaces.panel,
+          })}
         >
-          This week, searches and rules
-        </Button>
-        <Divider />
-        <Thread state={state} />
-        <Box sx={{ maxWidth: THREAD_WIDTH, width: "100%", mx: "auto" }}>
-          <Composer state={state} />
-        </Box>
+          {queue}
+          {overview}
+        </Stack>
+      )}
+      <Stack sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 3 }, pt: { xs: 1, md: 2 }, pb: 2 }}>
+        {!isDesktop && !openJob && (
+          <Tabs
+            value={tab}
+            onChange={(_, value: PhoneTab) => setTab(value)}
+            variant="fullWidth"
+            sx={{ mb: 1 }}
+          >
+            <Tab value="chat" label="Chat" />
+            <Tab
+              value="needsYou"
+              label={needsYouTotal > 0 ? `Needs you (${needsYouTotal})` : "Needs you"}
+            />
+            <Tab value="overview" label="Overview" />
+          </Tabs>
+        )}
+        {renderMain()}
       </Stack>
-      <Box
-        sx={{ display: { xs: "none", md: "block" }, width: 280, flexShrink: 0, overflowY: "auto" }}
-      >
-        <SideColumn state={state} />
-      </Box>
-      <Drawer anchor="bottom" open={sheetOpen} onClose={() => setSheetOpen(false)}>
-        <Box sx={{ p: 2 }}>
-          <SideColumn state={state} />
-        </Box>
-      </Drawer>
     </Stack>
   );
 }

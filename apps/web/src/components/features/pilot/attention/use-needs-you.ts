@@ -42,10 +42,11 @@ export function useNeedsYou(): Pending[] {
   ];
 }
 
-/** The same total as `useNeedsYou`, from job refs instead of full rows. */
+/** Notices plus `useNeedsYou`'s items, from job refs instead of full rows: the badge and queue total. */
 export function useNeedsYouCount(): number {
+  const notices = useQuery(pilotQueries.notices()).data ?? [];
   const proposals = useQuery(pilotQueries.changes("proposed")).data ?? [];
   const parked = useQuery(pipelineQueries.needsYou()).data ?? [];
   const { questions, jobs } = useUnasked(parked);
-  return questions.length + proposals.length + jobs.length;
+  return notices.length + questions.length + proposals.length + jobs.length;
 }

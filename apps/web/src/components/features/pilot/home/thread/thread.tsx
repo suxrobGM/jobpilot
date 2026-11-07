@@ -8,16 +8,14 @@ import {
   useLayoutEffect,
   useRef,
 } from "react";
-import type { PilotState } from "@jobpilot/contracts/pilot";
+import type { PilotState, PilotThreadItem } from "@jobpilot/contracts/pilot";
 import { Box, Button, CircularProgress, Divider, Stack, Typography } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { QuerySection } from "@/components/ui/feedback";
 import { formatDayLabel } from "@/utils/format";
 import { LiveTurn } from "../now/live-turn";
-import { NoticeTurns } from "../now/notice-turns";
 import { SetupTurn } from "../now/setup-turn";
-import { WaitingOnYou } from "../now/waiting-on-you";
 import { ThreadItem } from "./thread-item";
 
 /** The reading column of the thread, composer included. */
@@ -53,6 +51,30 @@ function DaySeparator(props: DaySeparatorProps): ReactElement {
   );
 }
 
+interface ThreadRow {
+  item: PilotThreadItem;
+  repeats: number;
+}
+
+/** Restart reports and other identical notes in a row read as noise; keep the latest, counted. */
+function collapseRepeats(items: PilotThreadItem[]): ThreadRow[] {
+  const rows: ThreadRow[] = [];
+  for (const item of items) {
+    const last = rows.at(-1);
+    const sameNote =
+      last?.item.type === "note" &&
+      item.type === "note" &&
+      last.item.entry.summary === item.entry.summary &&
+      formatDayLabel(last.item.at) === formatDayLabel(item.at);
+    if (last && sameNote) {
+      rows[rows.length - 1] = { item, repeats: last.repeats + 1 };
+    } else {
+      rows.push({ item, repeats: 1 });
+    }
+  }
+  return rows;
+}
+
 /** Our own jump fires a scroll event after the tail may have grown; that event isn't the user. */
 function scrollToBottom(box: HTMLDivElement, selfScrolled: RefObject<boolean>): void {
   selfScrolled.current = true;
@@ -63,7 +85,7 @@ interface ThreadProps {
   state: PilotState;
 }
 
-/** Newest at the bottom, then what waits on the user and what the pilot is doing now. */
+/** Newest at the bottom, then what the pilot is doing now; what waits on the user is in the queue. */
 export function Thread(props: ThreadProps): ReactElement {
   const { state } = props;
   const query = useInfiniteQuery(pilotQueries.thread());
@@ -76,6 +98,7 @@ export function Thread(props: ThreadProps): ReactElement {
   const selfScrolled = useRef(false);
 
   const items = (query.data?.pages ?? []).flatMap((page) => page.items).reverse();
+  const rows = collapseRepeats(items);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
 
   const loadEarlier = (): void => {
@@ -162,21 +185,19 @@ export function Thread(props: ThreadProps): ReactElement {
           empty={<Greeting />}
         >
           <Stack spacing={3}>
-            {items.map((item, index) => {
+            {rows.map(({ item, repeats }, index) => {
               const day = formatDayLabel(item.at);
-              const newDay = index === 0 || formatDayLabel(items[index - 1].at) !== day;
+              const newDay = index === 0 || formatDayLabel(rows[index - 1].item.at) !== day;
               return (
                 <Fragment key={`${item.type}:${item.id}`}>
                   {newDay && <DaySeparator label={day} />}
-                  <ThreadItem item={item} />
+                  <ThreadItem item={item} repeats={repeats} />
                 </Fragment>
               );
             })}
           </Stack>
         </QuerySection>
         <SetupTurn state={state} />
-        <NoticeTurns />
-        <WaitingOnYou />
         <LiveTurn state={state} />
       </Stack>
     </Box>

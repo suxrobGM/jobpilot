@@ -1,16 +1,14 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import type { PilotNotice } from "@jobpilot/contracts/pilot";
-import { Button, Stack, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { Button, Card, CardContent, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { LinkButton } from "@/components/ui/buttons";
 import { CHANGE_INVALIDATE } from "../../changes/use-changes";
-import { PilotTurn } from "../thread/pilot-turn";
 
 const INVALIDATE = [pilotQueries.notices().queryKey, ...CHANGE_INVALIDATE];
 
@@ -38,11 +36,12 @@ const ACTED_MESSAGES: Record<ActedNotice["kind"], string> = {
   change: "Changed. You can undo it from the thread.",
 };
 
-interface NoticeTurnProps {
+interface NoticeCardProps {
   notice: PilotNotice;
 }
 
-function NoticeTurn(props: NoticeTurnProps): ReactElement {
+/** Something the pilot spotted that needs a decision: one action, or dismiss. */
+export function NoticeCard(props: NoticeCardProps): ReactElement {
   const { notice } = props;
   const { action } = notice;
   const dismiss = () => api.pilot.notices({ key: notice.key }).dismiss.post();
@@ -58,41 +57,39 @@ function NoticeTurn(props: NoticeTurnProps): ReactElement {
   );
 
   return (
-    <PilotTurn>
-      <Typography variant="body2">
-        <Typography component="span" variant="body2Strong">{`${notice.title}. `}</Typography>
-        {notice.body}
-      </Typography>
-      <Stack direction="row" spacing={1}>
-        {action.kind === "link" ? (
-          <LinkButton href={action.href as Route} size="small" variant="outlined">
-            {action.label}
-          </LinkButton>
-        ) : (
-          <Button
-            size="small"
-            variant="outlined"
-            loading={act.isPending}
-            onClick={() => act.mutate(action)}
-          >
-            {action.label}
-          </Button>
-        )}
-        <Button
-          size="small"
-          color="inherit"
-          disabled={dismissNotice.isPending}
-          onClick={() => dismissNotice.mutate()}
-        >
-          Dismiss
-        </Button>
-      </Stack>
-    </PilotTurn>
+    <Card variant="accent">
+      <CardContent>
+        <Stack spacing={1.5}>
+          <Stack spacing={0.5}>
+            <Typography variant="body1Strong">{notice.title}</Typography>
+            <Typography variant="body2Muted">{notice.body}</Typography>
+          </Stack>
+          <Stack direction="row" spacing={1}>
+            {action.kind === "link" ? (
+              <LinkButton href={action.href as Route} size="small" variant="contained">
+                {action.label}
+              </LinkButton>
+            ) : (
+              <Button
+                size="small"
+                variant="contained"
+                loading={act.isPending}
+                onClick={() => act.mutate(action)}
+              >
+                {action.label}
+              </Button>
+            )}
+            <Button
+              size="small"
+              color="inherit"
+              disabled={dismissNotice.isPending}
+              onClick={() => dismissNotice.mutate()}
+            >
+              Dismiss
+            </Button>
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
   );
-}
-
-/** Patterns the pilot spotted in your data, said near the bottom of the thread. */
-export function NoticeTurns(): ReactNode {
-  const { data: notices = [] } = useQuery(pilotQueries.notices());
-  return notices.map((notice) => <NoticeTurn key={notice.key} notice={notice} />);
 }

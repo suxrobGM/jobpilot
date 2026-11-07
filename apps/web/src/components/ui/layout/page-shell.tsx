@@ -8,9 +8,8 @@ interface PageShellProps {
 
 export function PageShell(props: PageShellProps): ReactElement {
   const { maxWidth = "lg", children } = props;
-  // Container is a global flex column (containerOverrides); gap 2 is the standard page rhythm.
   return (
-    <Container maxWidth={maxWidth} sx={{ gap: 2 }}>
+    <Container maxWidth={maxWidth} sx={{ gap: 2, py: { xs: 2, sm: 3 } }}>
       {children}
     </Container>
   );

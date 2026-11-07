@@ -33,6 +33,9 @@ export function AppShell(props: PropsWithChildren): ReactElement {
       <Box
         component="main"
         sx={{
+          // A column, so a full-height page (Pilot) can take what the top bar leaves.
+          display: "flex",
+          flexDirection: "column",
           flex: 1,
           minWidth: 0,
           height: "100%",
