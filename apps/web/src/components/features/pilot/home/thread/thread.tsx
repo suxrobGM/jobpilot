@@ -81,6 +81,17 @@ function scrollToBottom(box: HTMLDivElement, selfScrolled: RefObject<boolean>): 
   box.scrollTop = box.scrollHeight;
 }
 
+interface PrependAnchor {
+  height: number;
+  firstKey: string | null;
+  /** Seen in flight, so a render before the fetch starts can't read as "finished". */
+  started: boolean;
+}
+
+function rowKey(item: PilotThreadItem): string {
+  return `${item.type}:${item.id}`;
+}
+
 interface ThreadProps {
   state: PilotState;
 }
@@ -92,8 +103,8 @@ export function Thread(props: ThreadProps): ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  // Height before an earlier page was prepended, so the view stays on what the user was reading.
-  const heightBeforePrepend = useRef<number | null>(null);
+  // Set while an earlier page loads, so the view stays on what the user was reading.
+  const prepend = useRef<PrependAnchor | null>(null);
   const pinned = useRef(true);
   const selfScrolled = useRef(false);
 
@@ -101,12 +112,14 @@ export function Thread(props: ThreadProps): ReactElement {
   const rows = collapseRepeats(items);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
 
+  const firstKey = rows[0] ? rowKey(rows[0].item) : null;
+
   const loadEarlier = (): void => {
     const box = scrollRef.current;
-    if (!box || isFetchingNextPage) {
+    if (!box || isFetchingNextPage || prepend.current) {
       return;
     }
-    heightBeforePrepend.current = box.scrollHeight;
+    prepend.current = { height: box.scrollHeight, firstKey, started: false };
     void fetchNextPage();
   };
 
@@ -115,10 +128,18 @@ export function Thread(props: ThreadProps): ReactElement {
     if (!box || items.length === 0) {
       return;
     }
-    if (heightBeforePrepend.current !== null) {
-      box.scrollTop += box.scrollHeight - heightBeforePrepend.current;
-      heightBeforePrepend.current = null;
-    } else if (pinned.current) {
+    const anchor = prepend.current;
+    if (anchor && isFetchingNextPage) {
+      anchor.started = true;
+    }
+    // Only once the earlier rows are in: the spinner's own re-render must not use up the anchor.
+    if (anchor && anchor.firstKey !== firstKey) {
+      box.scrollTop += box.scrollHeight - anchor.height;
+      prepend.current = null;
+    } else if (anchor?.started && !isFetchingNextPage) {
+      // The fetch finished without adding rows, so there is nothing to restore.
+      prepend.current = null;
+    } else if (!anchor && pinned.current) {
       scrollToBottom(box, selfScrolled);
     }
   });
@@ -131,7 +152,7 @@ export function Thread(props: ThreadProps): ReactElement {
       return;
     }
     const observer = new ResizeObserver(() => {
-      if (pinned.current && heightBeforePrepend.current === null) {
+      if (pinned.current && !prepend.current) {
         scrollToBottom(box, selfScrolled);
       }
     });
@@ -190,7 +211,7 @@ export function Thread(props: ThreadProps): ReactElement {
               const day = formatDayLabel(item.at);
               const newDay = index === 0 || formatDayLabel(rows[index - 1].item.at) !== day;
               return (
-                <Fragment key={`${item.type}:${item.id}`}>
+                <Fragment key={rowKey(item)}>
                   {newDay && <DaySeparator label={day} />}
                   <ThreadItem item={item} repeats={repeats} />
                 </Fragment>
