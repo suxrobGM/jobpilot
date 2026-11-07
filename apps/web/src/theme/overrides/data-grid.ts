@@ -14,7 +14,7 @@ export const dataGridOverrides: Components<Theme>["MuiDataGrid"] = {
     root: ({ theme }) => ({
       width: "100%",
       border: `1px solid ${theme.palette.line.divider}`,
-      borderRadius: theme.radii.md,
+      borderRadius: theme.radii.lg,
       backgroundColor: theme.palette.surfaces.card,
       "& .MuiDataGrid-columnHeaders": {
         backgroundColor: theme.palette.surfaces.elevated,

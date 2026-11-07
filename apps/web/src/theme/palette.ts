@@ -2,8 +2,10 @@
 // large surfaces stay carbon, never brown.
 export const surfaces = {
   base: "#0B0B0A",
-  card: "#151413",
-  elevated: "#201E1B",
+  // Side columns (queue, list panes): one step up from base, below cards.
+  panel: "#121110",
+  card: "#1A1917",
+  elevated: "#23211E",
   hover: "#2B2925",
 } as const;
 

@@ -4,7 +4,7 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
   defaultProps: { elevation: 0 },
   styleOverrides: {
     root: ({ theme }) => ({
-      borderRadius: theme.radii.md,
+      borderRadius: theme.radii.lg,
       border: `1px solid ${theme.palette.line.border}`,
       backgroundColor: theme.palette.surfaces.card,
       boxShadow: theme.shadows_custom.highlight,

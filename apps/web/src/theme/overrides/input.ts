@@ -9,7 +9,7 @@ export const outlinedInputOverrides: Components<Theme>["MuiOutlinedInput"] = {
     // Pinned to the shared control height so a text field and the button beside it are the same box.
     sizeSmall: ({ theme }) => ({ minHeight: theme.controlHeights.md }),
     root: ({ theme }) => ({
-      borderRadius: theme.radii.sm,
+      borderRadius: theme.radii.md,
       backgroundColor: theme.palette.surfaces.base,
       transition: theme.motion.fast,
       "& fieldset": { borderColor: theme.palette.line.border },

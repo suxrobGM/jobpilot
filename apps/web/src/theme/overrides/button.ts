@@ -1,4 +1,4 @@
-import type { Components, Theme } from "@mui/material/styles";
+import { type Components, lighten, type Theme } from "@mui/material/styles";
 import { controlBox, controlBoxSmall, outlinedControl } from "./control-box";
 
 export const buttonOverrides: Components<Theme>["MuiButton"] = {
@@ -6,18 +6,15 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
   styleOverrides: {
     root: ({ theme }) => ({ position: "relative", ...controlBox(theme) }),
     sizeSmall: ({ theme }) => controlBoxSmall(theme),
+    // Flat: lighten on hover, no lift or glow.
     contained: ({ theme }) => ({
       backgroundColor: theme.palette.accent.primary,
       color: (theme.vars ?? theme).palette.primary.contrastText,
-      boxShadow: theme.shadows_custom.button,
+      fontWeight: 600,
+      boxShadow: "none",
       "&:hover": {
-        backgroundColor: theme.palette.accent.dark,
-        transform: "translateY(-1px)",
-        boxShadow: theme.shadows_custom.buttonHover,
-      },
-      "&:active": {
-        transform: "translateY(0)",
-        boxShadow: theme.shadows_custom.buttonActive,
+        backgroundColor: lighten(theme.palette.accent.primary, 0.14),
+        boxShadow: "none",
       },
     }),
     outlined: ({ theme }) => ({

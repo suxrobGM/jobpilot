@@ -79,7 +79,7 @@ export const paperOverrides: Components<Theme>["MuiPaper"] = {
       props: { variant: "panel" },
       style: ({ theme }) => ({
         border: `1px solid ${theme.palette.line.border}`,
-        borderRadius: theme.radii.md,
+        borderRadius: theme.radii.lg,
       }),
     },
     {

@@ -35,11 +35,11 @@ const docsHeading = {
 } as const;
 
 // The Muted and Strong variants are these plus one property, so the scale has one source.
-const body1 = { fontFamily: fontFamilies.body, fontSize: "0.8125rem", lineHeight: 1.55 } as const;
-const body2 = { fontFamily: fontFamilies.body, fontSize: "0.75rem", lineHeight: 1.5 } as const;
+const body1 = { fontFamily: fontFamilies.body, fontSize: "0.9375rem", lineHeight: 1.55 } as const;
+const body2 = { fontFamily: fontFamilies.body, fontSize: "0.875rem", lineHeight: 1.5 } as const;
 const caption = {
   fontFamily: fontFamilies.body,
-  fontSize: "0.6875rem",
+  fontSize: "0.75rem",
   letterSpacing: "0",
 } as const;
 const overline = {
@@ -105,7 +105,7 @@ export const typography: TypographyVariantsOptions = {
     fontFamily: fontFamilies.body,
     textTransform: "none",
     fontWeight: 500,
-    fontSize: "0.8125rem",
+    fontSize: "0.875rem",
     letterSpacing: 0,
   },
   caption,
