@@ -38,6 +38,7 @@ Update the plugin and terminal host with this release. Older hosts stop running 
 - Running a saved search with no board of its own uses your first job board instead of failing.
 - Browsing the app no longer holds the pilot as if you were typing in the terminal.
 - The Pilot status line says the pilot is idle, held or off between runs instead of "Working."
+- After its 30-minute break for 3 stuck runs in a row, the pilot no longer takes another break after every later stuck run.
 
 ## v2.3.5 - 2026-11-05
 

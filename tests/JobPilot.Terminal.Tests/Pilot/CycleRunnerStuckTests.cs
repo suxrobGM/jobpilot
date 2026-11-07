@@ -99,7 +99,7 @@ public class CycleRunnerStuckTests
     }
 
     [Fact]
-    public async Task Run_BacksOff_OnTheThirdRestartInARow_AndAPostedResultResetsTheCount()
+    public async Task Run_BacksOffOnce_OnTheThirdRestartInARow_AndAPostedResultResetsTheCount()
     {
         var session = new FakePilotSession { RunningProvider = Provider.Claude };
         var runner = Runner(session);
@@ -114,9 +114,11 @@ public class CycleRunnerStuckTests
         Assert.DoesNotContain(CycleReports.Backoff, session.Reports);
 
         await RunAsync(runner);
-
-        Assert.Equal(3, runner.ConsecutiveRestarts);
+        Assert.Equal(0, runner.ConsecutiveRestarts);
         Assert.Equal("sleep:1800", session.Actions[^1]);
+
+        // The break re-arms the streak, so the next stuck run is not another 30 minutes.
+        await RunAsync(runner);
         Assert.Single(session.Reports, r => r == CycleReports.Backoff);
     }
 

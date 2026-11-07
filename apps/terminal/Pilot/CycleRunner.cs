@@ -181,6 +181,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         }
         else if (++ConsecutiveRestarts >= BackoffThreshold)
         {
+            ConsecutiveRestarts = 0;
             await session.ReportAsync(CycleReports.Backoff, ct);
             await session.DelayAsync(BackoffDelay, ct);
         }
