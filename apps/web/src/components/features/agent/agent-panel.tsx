@@ -1,22 +1,13 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Close, RestartAlt, StopCircle } from "@mui/icons-material";
-import {
-  Box,
-  IconButton,
-  MenuItem,
-  Select,
-  type SelectChangeEvent,
-  Stack,
-  Tab,
-  Tabs,
-  Typography,
-} from "@mui/material";
+import { Check, Close, ExpandMore, RestartAlt, StopCircle } from "@mui/icons-material";
+import { Box, Button, IconButton, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { RunSteps } from "@/components/features/pilot/steps/run-steps";
 import { TOP_BAR_HEIGHT } from "@/components/layout/shell-config";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner } from "@/components/ui/feedback";
+import { DropdownMenu } from "@/components/ui/navigation";
 import { BROWSER_BLOCKED_MESSAGE } from "@/hooks/use-terminal-health";
 import { readAgentStorage } from "@/lib/terminal/agent-storage";
 import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal/client";
@@ -48,10 +39,6 @@ export function AgentPanel(): ReactElement {
   const providerLabel = providerDisplayName(provider);
   const restarting = pending !== null && unreachable;
 
-  const handleProviderChange = (event: SelectChangeEvent<string>): void => {
-    void switchProvider(event.target.value === "codex" ? "codex" : "claude");
-  };
-
   return (
     <Stack sx={{ width: "100%", height: "100%", minHeight: 0 }}>
       <Stack
@@ -66,36 +53,88 @@ export function AgentPanel(): ReactElement {
         })}
       >
         <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
-          <AgentOrb state={restarting ? "connecting" : activity.orb} size="xxl" />
-          <Stack sx={{ minWidth: 0 }}>
-            <Typography variant="h6">Agent</Typography>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.25 }}>
-              {/* The labels are lowercase for the rail's "Agent · ready"; alone they start a sentence. */}
-              <Typography
-                variant="captionMuted"
-                noWrap
-                sx={{ display: "block", "&::first-letter": { textTransform: "uppercase" } }}
-              >
-                {restarting ? `${pending}…` : activity.label}
-              </Typography>
-              {status?.hostVersion && (
-                <Typography variant="captionMuted">· v{status.hostVersion}</Typography>
-              )}
-            </Stack>
-          </Stack>
+          <AgentOrb state={restarting ? "connecting" : activity.orb} size="xl" />
+          <Typography variant="h4" component="h2">
+            Agent
+          </Typography>
+          {/* The labels are lowercase for the rail's "Agent · ready"; alone they start a sentence. */}
+          <Typography
+            variant="captionMuted"
+            noWrap
+            sx={{
+              display: "block",
+              minWidth: 0,
+              "&::first-letter": { textTransform: "uppercase" },
+            }}
+          >
+            {restarting ? `${pending}…` : activity.label}
+            {status?.hostVersion && ` · v${status.hostVersion}`}
+          </Typography>
         </Stack>
         <IconButton size="small" onClick={closeDrawer} aria-label="Close agent">
           <Close fontSize="md" />
         </IconButton>
       </Stack>
-      <Tabs
-        value={drawerTab}
-        onChange={(_event, tab: AgentDrawerTab) => setDrawerTab(tab)}
-        sx={{ borderBottom: 1, borderColor: "divider", minHeight: 0 }}
+      {/* The terminal's controls share the tab row, so the terminal keeps the height. */}
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{ alignItems: "center", pr: 1, borderBottom: 1, borderColor: "divider" }}
       >
-        <Tab value="steps" label="Steps" />
-        <Tab value="terminal" label="Terminal" />
-      </Tabs>
+        <Tabs
+          value={drawerTab}
+          onChange={(_event, tab: AgentDrawerTab) => setDrawerTab(tab)}
+          sx={{ flex: 1, minHeight: 0 }}
+        >
+          <Tab value="steps" label="Steps" />
+          <Tab value="terminal" label="Terminal" />
+        </Tabs>
+        {drawerTab === "terminal" && health === "reachable" && (
+          <>
+            <DropdownMenu
+              minWidth={160}
+              trigger={({ onOpen }) => (
+                <Button
+                  size="small"
+                  color="inherit"
+                  endIcon={<ExpandMore fontSize="sm" />}
+                  onClick={onOpen}
+                  aria-label={`Agent app: ${providerLabel}`}
+                >
+                  {providerLabel}
+                </Button>
+              )}
+              items={PROVIDERS.map((id) => ({
+                kind: "item" as const,
+                key: id,
+                label: providerDisplayName(id),
+                trailing: id === provider ? <Check fontSize="sm" /> : null,
+                onClick: () => void switchProvider(id),
+              }))}
+            />
+            <TooltipIconButton
+              title={`Restart ${providerLabel}`}
+              size="small"
+              onClick={() => void restart()}
+              aria-label="Restart"
+            >
+              <RestartAlt fontSize="sm" />
+            </TooltipIconButton>
+            <TooltipIconButton
+              title="Stop agent (closes the terminal app)"
+              size="small"
+              onClick={() => {
+                beginPending("stopping");
+                // A stop that left the host up has no "went down" edge to clear the card.
+                void stop().then((down) => !down && beginPending(null));
+              }}
+              aria-label="Stop"
+            >
+              <StopCircle fontSize="sm" />
+            </TooltipIconButton>
+          </>
+        )}
+      </Stack>
       {drawerTab === "steps" && <RunSteps />}
 
       {/* Hidden rather than unmounted, so switching tabs keeps the terminal's connection. */}
@@ -145,51 +184,6 @@ export function AgentPanel(): ReactElement {
                 onUpdating={() => beginPending("updating")}
               />
             )}
-            <Stack
-              direction="row"
-              spacing={0.75}
-              sx={(theme) => ({
-                alignItems: "center",
-                paddingInline: theme.spacing(1.5),
-                paddingBlock: theme.spacing(0.75),
-                borderBottom: 1,
-                borderColor: "divider",
-              })}
-            >
-              <Select
-                size="small"
-                value={provider}
-                onChange={handleProviderChange}
-                inputProps={{ "aria-label": "Agent app" }}
-                sx={{ minWidth: 120, mr: "auto", typography: "body2" }}
-              >
-                {PROVIDERS.map((id) => (
-                  <MenuItem key={id} value={id}>
-                    {providerDisplayName(id)}
-                  </MenuItem>
-                ))}
-              </Select>
-              <TooltipIconButton
-                title={`Restart ${providerLabel}`}
-                size="small"
-                onClick={() => void restart()}
-                aria-label="Restart"
-              >
-                <RestartAlt fontSize="sm" />
-              </TooltipIconButton>
-              <TooltipIconButton
-                title="Stop agent (closes the terminal app)"
-                size="small"
-                onClick={() => {
-                  beginPending("stopping");
-                  // A stop that left the host up has no "went down" edge to clear the card.
-                  void stop().then((down) => !down && beginPending(null));
-                }}
-                aria-label="Stop"
-              >
-                <StopCircle fontSize="sm" />
-              </TooltipIconButton>
-            </Stack>
             <TerminalPanel key={`${provider}-${terminalRevision}`} provider={provider} />
           </>
         )}
