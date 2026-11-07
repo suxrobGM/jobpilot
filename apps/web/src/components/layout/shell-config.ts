@@ -43,14 +43,15 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Pilot", href: "/pilot", icon: SmartToy, badge: "needsYou", primary: true },
       { label: "Pipeline", href: "/pipeline", icon: ViewKanban, primary: true },
       { label: "Inbox", href: "/inbox", icon: Inbox, primary: true },
-      { label: "Analytics", href: "/analytics", icon: Insights, primary: true },
       {
-        label: "Documents",
-        href: "/documents",
+        label: "Resumes",
+        href: "/resumes",
         icon: Description,
-        // Document detail routes live outside /documents.
-        matchHrefs: ["/resumes", "/cover-letters"],
+        primary: true,
+        // Cover letters are the second tab, on their own route.
+        matchHrefs: ["/cover-letters"],
       },
+      { label: "Analytics", href: "/analytics", icon: Insights },
       { label: "Portfolio", href: "/portfolio", icon: Public },
       { label: "Job boards", href: "/boards", icon: TravelExplore },
     ],

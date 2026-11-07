@@ -60,7 +60,7 @@ export function SetupTurn(props: SetupTurnProps): ReactNode {
       key: "resume",
       label: "Upload a resume. I score jobs against it and apply with it.",
       done: resumes.length > 0,
-      href: "/documents/resumes",
+      href: "/resumes",
       action: "Upload",
     },
     {

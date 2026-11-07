@@ -20,7 +20,6 @@ export default function robots(): MetadataRoute.Robots {
           "/analytics",
           "/inbox",
           "/networking",
-          "/documents",
           "/resumes",
           "/cover-letters",
           "/portfolio",

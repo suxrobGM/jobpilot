@@ -61,7 +61,7 @@ use it as `BASE_ID` (skip scoring; Step 3 extracts content if missing). Otherwis
 Highest wins. Tie-break: primary → most recent → lowest id. If no candidate has `hasData` AND no
 `sourceFilename`, stop:
 
-> No usable base resume. Upload a PDF at <$JOBPILOT_WEB/documents/resumes>, or fill a resume's editor manually, then re-run.
+> No usable base resume. Upload a PDF at <$JOBPILOT_WEB/resumes>, or fill a resume's editor manually, then re-run.
 
 Let `BASE_ID` be the chosen id.
 

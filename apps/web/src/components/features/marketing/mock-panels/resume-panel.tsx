@@ -53,7 +53,7 @@ function PagePreview(): ReactElement {
 
 export function ResumePanel(): ReactElement {
   return (
-    <AppWindow page="documents" title="Resumes">
+    <AppWindow page="resumes" title="Resumes">
       <Stack direction="row" spacing={2}>
         <Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
           {VARIANTS.map((variant) => (

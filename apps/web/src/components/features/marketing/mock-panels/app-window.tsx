@@ -10,7 +10,7 @@ const RAIL = [
   { page: "pilot", icon: SmartToy },
   { page: "pipeline", icon: ViewKanban },
   { page: "inbox", icon: Inbox },
-  { page: "documents", icon: Description },
+  { page: "resumes", icon: Description },
   { page: "upwork", icon: Handshake },
 ] as const;
 

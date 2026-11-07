@@ -23,13 +23,13 @@ export function ResumeHeader(props: ResumeHeaderProps): ReactElement {
   const { resume } = props;
   const router = useRouter();
   const setPrimary = useSetPrimaryResume();
-  const remove = useDeleteResume(() => router.push("/documents/resumes"));
+  const remove = useDeleteResume(() => router.push("/resumes"));
 
   return (
     <PageHeader
       eyebrow="Resume"
       title={resume.label}
-      backHref="/documents/resumes"
+      backHref="/resumes"
       backLabel="Resumes"
       actions={
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
