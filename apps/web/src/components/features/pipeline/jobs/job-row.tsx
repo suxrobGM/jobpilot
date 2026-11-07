@@ -1,7 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { PipelineBulkInput, PipelineJobView } from "@jobpilot/contracts/pipeline";
+import {
+  PIPELINE_STALE_DAYS,
+  type PipelineBulkInput,
+  type PipelineJobView,
+} from "@jobpilot/contracts/pipeline";
 import { Check, Close, Schedule } from "@mui/icons-material";
 import { Box, ButtonBase, Checkbox, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import type { PipelineJobDto } from "@/api/types";
@@ -11,11 +15,10 @@ import { ScoreBadge } from "./score-badge";
 
 type BulkAction = PipelineBulkInput["action"];
 
-const STALE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function isStale(job: PipelineJobDto): boolean {
-  return Date.now() - job.createdAt.getTime() > STALE_DAYS * DAY_MS;
+  return Date.now() - job.createdAt.getTime() > PIPELINE_STALE_DAYS * DAY_MS;
 }
 
 function metaLine(job: PipelineJobDto, showFeed: boolean): string {

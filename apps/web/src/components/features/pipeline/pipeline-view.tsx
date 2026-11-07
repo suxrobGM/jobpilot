@@ -45,7 +45,7 @@ export function PipelineView(): ReactElement {
     label: feed.name,
   }));
   const boardOptions: SelectFieldOption[] = boards.map((b) => ({ value: b.name, label: b.name }));
-  const tabCount = (key: PipelineTab) => (key === "applied" ? applied : counts?.[key]);
+  const tabCount = (key: PipelineTab) => (key === "applied" ? applied : counts?.views[key]);
 
   const hasFilters = feedId !== null || board !== null || search.applied !== "";
   const clear = (): void => {
@@ -55,7 +55,7 @@ export function PipelineView(): ReactElement {
 
   return (
     <Stack spacing={2}>
-      <NeedsYouBanner count={counts?.needsYou ?? 0} />
+      <NeedsYouBanner count={counts?.views.needsYou ?? 0} />
       <Tabs
         value={view}
         variant="scrollable"
@@ -113,7 +113,13 @@ export function PipelineView(): ReactElement {
           {view === "applied" ? (
             <AppliedView filters={filters} feedLabel={feedLabel} pagination={pagination} />
           ) : (
-            <JobsView key={view} view={view} filters={filters} pagination={pagination} />
+            <JobsView
+              key={view}
+              view={view}
+              filters={filters}
+              stale={counts?.stale ?? 0}
+              pagination={pagination}
+            />
           )}
         </Stack>
       </SectionCard>

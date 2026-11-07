@@ -2,6 +2,7 @@ import { feedConfigSchema } from "@jobpilot/contracts/feed";
 import { MAX_PAGE_SIZE, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { pilotConfigSchema } from "@jobpilot/contracts/pilot";
 import {
+  PIPELINE_STALE_DAYS,
   PIPELINE_VIEW_STATUSES,
   type PipelineBulkInput,
   type PipelineFilters,
@@ -32,11 +33,42 @@ const REVIEW_ORDER: Prisma.JobOrderByWithRelationInput[] = [
 ];
 
 const BULK_SKIP_REASON = "Skipped by you";
+const STALE_SKIP_REASON = "Skipped by you: posting over a month old";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function staleWhere(now: Date): Prisma.JobWhereInput {
+  return {
+    status: { in: PIPELINE_VIEW_STATUSES.review },
+    createdAt: { lt: new Date(now.getTime() - PIPELINE_STALE_DAYS * DAY_MS) },
+  };
+}
 
 const PIPELINE_INCLUDE = {
   ...JOB_INCLUDE,
   feed: { select: { id: true, name: true, config: true } },
 } satisfies Prisma.JobInclude;
+
+interface JobRef {
+  feedId: string;
+  key: string;
+}
+
+/** A row whose transition the job service refuses is counted out, not fatal. */
+async function applyToRows(
+  rows: JobRef[],
+  apply: (row: JobRef) => Promise<unknown>,
+): Promise<number> {
+  let updated = 0;
+  for (const row of rows) {
+    try {
+      await apply(row);
+      updated += 1;
+    } catch (error) {
+      if (!(error instanceof HttpError)) throw error;
+    }
+  }
+  return updated;
+}
 
 @injectable()
 export class PipelineService {
@@ -126,16 +158,24 @@ export class PipelineService {
       where: { userId, id: { in: input.ids } },
       select: { feedId: true, key: true },
     });
-    let updated = 0;
-    for (const row of rows) {
-      try {
-        await this.applyBulkAction(userId, row.feedId, row.key, input.action);
-        updated += 1;
-      } catch (error) {
-        if (!(error instanceof HttpError)) throw error;
-      }
-    }
+    const updated = await applyToRows(rows, (row) =>
+      this.applyBulkAction(userId, row.feedId, row.key, input.action),
+    );
     return { updated, refused: input.ids.length - updated };
+  }
+
+  async skipStale(userId: string, filters: PipelineFilters, now = new Date()) {
+    const rows = await this.prisma.job.findMany({
+      where: { ...(await this.jobWhere(userId, filters)), ...staleWhere(now) },
+      select: { feedId: true, key: true },
+    });
+    const updated = await applyToRows(rows, (row) =>
+      this.jobs.recordResult(userId, row.feedId, row.key, {
+        outcome: "skipped",
+        skipReason: STALE_SKIP_REASON,
+      }),
+    );
+    return { updated, refused: rows.length - updated };
   }
 
   private applyBulkAction(
@@ -152,21 +192,22 @@ export class PipelineService {
     });
   }
 
-  async counts(userId: string, filters: PipelineFilters) {
-    const groups = await this.prisma.job.groupBy({
-      by: ["status"],
-      where: await this.jobWhere(userId, filters),
-      _count: { _all: true },
-    });
+  async counts(userId: string, filters: PipelineFilters, now = new Date()) {
+    const where = await this.jobWhere(userId, filters);
+    const [groups, stale] = await Promise.all([
+      this.prisma.job.groupBy({ by: ["status"], where, _count: { _all: true } }),
+      this.prisma.job.count({ where: { ...where, ...staleWhere(now) } }),
+    ]);
     const byStatus = new Map(groups.map((group) => [group.status, group._count._all]));
     const count = (view: PipelineJobView) =>
       PIPELINE_VIEW_STATUSES[view].reduce((sum, status) => sum + (byStatus.get(status) ?? 0), 0);
-    return {
+    const views = {
       review: count("review"),
       inProgress: count("inProgress"),
       setAside: count("setAside"),
       needsYou: count("needsYou"),
     } satisfies Record<PipelineJobView, number>;
+    return { views, stale };
   }
 
   /** Queues links on the standing links feed; `queue.score` picks them up like any pasted link. */

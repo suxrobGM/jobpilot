@@ -8,6 +8,7 @@ import {
   pipelineCountsSchema,
   pipelineJobListSchema,
   pipelineJobsQuerySchema,
+  pipelineSkipStaleSchema,
 } from "@jobpilot/contracts/pipeline";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
@@ -29,7 +30,7 @@ export const pipelineController = new Elysia({
     detail: {
       summary: "List pipeline jobs",
       description:
-        "One page of the user's jobs across searches and feeds in one view (found, toApply, needsYou, skipped, failed). A posting in several feeds shows once, as its most advanced copy. Networking feeds are left out; Upwork jobs stay in for their proposal action.",
+        "One page of the user's jobs across searches and feeds in one view (review, inProgress, setAside, needsYou). A posting in several feeds shows once, as its most advanced copy. Networking feeds are left out; Upwork jobs stay in for their proposal action.",
     },
   })
   .get("/counts", ({ user, query }) => pipeline.counts(user.id, query), {
@@ -37,7 +38,8 @@ export const pipelineController = new Elysia({
     response: pipelineCountsSchema,
     detail: {
       summary: "Count pipeline jobs per view",
-      description: "Job counts for every view, under the same filters and dedupe as the list.",
+      description:
+        "Job counts for every view, plus To review jobs found over a month ago, under the same filters and dedupe as the list.",
     },
   })
   .get("/needs-you", ({ user }) => pipeline.needsYouRefs(user.id), {
@@ -66,5 +68,15 @@ export const pipelineController = new Elysia({
       summary: "Approve, skip or retry jobs",
       description:
         "Applies one action to up to a page of jobs through the normal transitions. Rows whose status no longer allows it are counted in refused.",
+    },
+  })
+  .post("/jobs/skip-stale", ({ user, body }) => pipeline.skipStale(user.id, body), {
+    body: pipelineSkipStaleSchema,
+    beforeHandle: limitMutation,
+    response: pipelineBulkResultSchema,
+    detail: {
+      summary: "Skip stale jobs",
+      description:
+        "Skips every To review job found over a month ago under the filters, across all pages, through the normal transitions.",
     },
   });

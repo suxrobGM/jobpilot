@@ -17,6 +17,9 @@ export const PIPELINE_VIEW_STATUSES: Record<PipelineJobView, JobStatus[]> = {
   needsYou: ["needs_user"],
 };
 
+/** A To review job found longer ago than this may have a closed posting. */
+export const PIPELINE_STALE_DAYS = 30;
+
 const pipelineFiltersSchema = z.object({
   feedId: z.uuid().optional(),
   board: z.string().trim().min(1).optional(),
@@ -38,7 +41,11 @@ const pipelineJobSchema = jobSchema.extend({
 });
 
 export const pipelineJobListSchema = paginatedSchema(pipelineJobSchema);
-export const pipelineCountsSchema = z.record(pipelineJobViewSchema, z.number().int());
+export const pipelineCountsSchema = z.object({
+  views: z.record(pipelineJobViewSchema, z.number().int()),
+  /** To review jobs found over `PIPELINE_STALE_DAYS` ago. */
+  stale: z.number().int(),
+});
 export const needsYouJobRefsSchema = z.array(z.object({ feedId: z.uuid(), key: z.string() }));
 
 export const addPipelineLinksSchema = z.object({
@@ -60,6 +67,9 @@ export const pipelineBulkSchema = z.object({
   ids: z.array(z.uuid()).min(1).max(MAX_PAGE_SIZE),
 });
 export type PipelineBulkInput = z.infer<typeof pipelineBulkSchema>;
+
+/** Skips every stale To review job under the filters, past any page. */
+export const pipelineSkipStaleSchema = pipelineFiltersSchema;
 
 /** `refused` counts rows whose status no longer allowed the action. */
 export const pipelineBulkResultSchema = z.object({
