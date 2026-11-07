@@ -47,6 +47,13 @@ export const resumeUpdatedSchema = z.object({
   version: z.number().int(),
 });
 
+export const resumeUploadSchema = z.object({
+  file: z.file(),
+  label: z.string().optional(),
+});
+
+export const sourceUploadSchema = resumeUploadSchema.pick({ file: true });
+
 export const sourceUploadedSchema = z.object({
   id: z.uuid(),
   sourceFilename: z.string(),

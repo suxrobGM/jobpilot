@@ -2,7 +2,6 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { resumeChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
-import { badRequest } from "@/common/errors";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
@@ -12,27 +11,14 @@ import {
   resumeDetailSchema,
   resumeListSchema,
   resumeUpdatedSchema,
+  resumeUploadSchema,
   sourceUploadedSchema,
+  sourceUploadSchema,
   updateResumeSchema,
 } from "./resume.schema";
 import { ResumeService } from "./resume.service";
 
 const svc = container.get(ResumeService);
-
-interface Upload {
-  file: File;
-  label?: string;
-}
-
-async function readUpload(request: Request): Promise<Upload> {
-  const form = await request.formData();
-  const file = form.get("file");
-  if (!(file instanceof File)) {
-    throw badRequest("file field is required");
-  }
-  const label = form.get("label");
-  return { file, label: typeof label === "string" ? label : undefined };
-}
 
 export const resumeController = new Elysia({
   prefix: "/resumes",
@@ -56,21 +42,15 @@ export const resumeController = new Elysia({
         "Creates a new master resume from a structured JSON body and optional content, returning the new resume's id.",
     },
   })
-  .post(
-    "/upload",
-    async ({ user, request }) => {
-      const { file, label } = await readUpload(request);
-      return svc.createFromUpload(user.id, file, label);
+  .post("/upload", ({ user, body }) => svc.createFromUpload(user.id, body.file, body.label), {
+    body: resumeUploadSchema,
+    response: idResponseSchema,
+    detail: {
+      summary: "Create resume from upload",
+      description:
+        "Creates a master resume from a multipart-uploaded source file (and optional label), storing the file on disk and returning the new resume's id.",
     },
-    {
-      response: idResponseSchema,
-      detail: {
-        summary: "Create resume from upload",
-        description:
-          "Creates a master resume from a multipart-uploaded source file (and optional label), storing the file on disk and returning the new resume's id.",
-      },
-    },
-  )
+  })
   .get("/:id", ({ user, params }) => svc.get(user.id, params.id), {
     params: idParam,
     response: resumeDetailSchema,
@@ -131,12 +111,10 @@ export const resumeController = new Elysia({
   })
   .post(
     "/:id/source",
-    async ({ user, params, request }) => {
-      const { file } = await readUpload(request);
-      return svc.uploadSource(user.id, params.id, file);
-    },
+    ({ user, params, body }) => svc.uploadSource(user.id, params.id, body.file),
     {
       params: idParam,
+      body: sourceUploadSchema,
       response: sourceUploadedSchema,
       detail: {
         summary: "Replace resume source file",
