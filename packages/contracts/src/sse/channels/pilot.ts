@@ -20,6 +20,7 @@ export type PilotEvent =
   | { type: "message.created"; message: PilotMessage }
   | { type: "request.created"; request: PilotRequest }
   | { type: "request.updated"; request: PilotRequest }
+  | { type: "job.approved"; feedId: string; key: string }
   | { type: "run.interrupt"; runId: string }
   | { type: "run.steer"; runId: string; text: string }
   | { type: "run.steps"; runId: string; steps: PilotStep[] }

@@ -18,7 +18,7 @@ import { JobListingPublisher } from "@/modules/job-listing/publishing/job-listin
 import { ensureFeedOwned } from "../feed-ownership";
 import { assertNotDuplicateApply, guardApply } from "./apply-guard";
 import { LIVE_AUTO_APPLY_FEED } from "./applying";
-import { publishJobAdded, publishJobUpdated } from "./job-events";
+import { publishJobAdded, publishJobApproved, publishJobUpdated } from "./job-events";
 import { isTerminalJob, writeJobResult } from "./job-result";
 import { JOB_INCLUDE, type JobRow, toJob } from "./job-row";
 import { recentPostingsWhere } from "./recent-postings";
@@ -156,6 +156,7 @@ export class JobService {
 
     this.listings.publishInBackground(job);
     publishJobUpdated(userId, job);
+    if (moveTo === "approved") publishJobApproved(userId, job);
     return toJob(job);
   }
 

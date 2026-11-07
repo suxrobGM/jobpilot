@@ -16,6 +16,7 @@ public sealed class PilotEventListenerTests
     [InlineData("""{"type":"question.created","question":{}}""", false)]
     [InlineData("""{"type":"message.created","message":{}}""", true)]
     [InlineData("""{"type":"request.created","request":{}}""", true)]
+    [InlineData("""{"type":"job.approved","feedId":"f","key":"k"}""", true)]
     [InlineData("""{"type":"change.updated","change":{}}""", false)]
     public void ShouldWake_OnlyOnEventsThatUnblockTheNextCycle(string data, bool expected)
     {

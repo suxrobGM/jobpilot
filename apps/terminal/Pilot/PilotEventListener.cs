@@ -27,7 +27,7 @@ public sealed class PilotEventListener(
 
     internal static bool ShouldWake(PilotEvent e) => e.Type switch
     {
-        "question.answered" or "state.changed" or "message.created" or "request.created" => true,
+        "question.answered" or "state.changed" or "message.created" or "request.created" or "job.approved" => true,
         _ => false,
     };
 
