@@ -145,7 +145,9 @@ describe("expireAbandonedRuns", () => {
     const tx = {
       pilotRun: {
         findMany: async (a: { where: { userId: string; taskType?: string } }) => {
-          if (!a.where.taskType) swept.push(a.where.userId);
+          if (!a.where.taskType) {
+            swept.push(a.where.userId);
+          }
           return [];
         },
       },

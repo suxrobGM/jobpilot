@@ -37,13 +37,19 @@ export async function gatherUpworkSync(
     prisma.upworkAccount.findUnique({ where: { userId }, select: { lastSyncedAt: true } }),
     prisma.upworkProfile.count({ where: { userId } }),
   ]);
-  if (!account && profileCount === 0) return null;
+  if (!account && profileCount === 0) {
+    return null;
+  }
 
   const lastSyncedAt = account?.lastSyncedAt ?? null;
   const fresh = lastSyncedAt && now.getTime() - lastSyncedAt.getTime() < UPWORK_SYNC_STALE_MS;
-  if (fresh) return null;
+  if (fresh) {
+    return null;
+  }
   const lastRun = await latestRun(prisma, userId, "upwork.syncInbox");
-  if (ranRecently(lastRun, now, UPWORK_SYNC_STALE_MS)) return null;
+  if (ranRecently(lastRun, now, UPWORK_SYNC_STALE_MS)) {
+    return null;
+  }
 
   const unreadCount = await prisma.upworkInboxItem.count({ where: { userId, status: "unread" } });
   return { lastSyncedAt, unreadCount };

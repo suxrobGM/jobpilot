@@ -21,12 +21,20 @@ interface TriggerInput {
 
 export function researchTrigger(input: TriggerInput): ResearchTrigger | null {
   const { lastRun, now } = input;
-  if (lastRun && !lastRun.finishedAt) return null;
-  if (!lastRun) return "initial";
+  if (lastRun && !lastRun.finishedAt) {
+    return null;
+  }
+  if (!lastRun) {
+    return "initial";
+  }
   // Zero searches is never dry: `search.setup` comes first then.
   const dry = input.searchCount > 0 && input.backingOffCount * 2 > input.searchCount;
-  if (dry && !ranRecently(lastRun, now, DRY_COOLDOWN_MS)) return "dry";
-  if (!ranRecently(lastRun, now, PERIODIC_MS)) return "periodic";
+  if (dry && !ranRecently(lastRun, now, DRY_COOLDOWN_MS)) {
+    return "dry";
+  }
+  if (!ranRecently(lastRun, now, PERIODIC_MS)) {
+    return "periodic";
+  }
   return null;
 }
 
@@ -36,7 +44,9 @@ async function researchResumeId(prisma: PrismaClient, userId: string): Promise<s
     where: { id: userId },
     select: { primaryResumeId: true },
   });
-  if (user?.primaryResumeId) return user.primaryResumeId;
+  if (user?.primaryResumeId) {
+    return user.primaryResumeId;
+  }
   const resumes = await prisma.resume.findMany({
     where: { userId },
     take: 2,
@@ -61,7 +71,9 @@ export async function researchPayload(
     researchResumeId(prisma, userId),
     prisma.profile.findUnique({ where: { userId }, select: { requiresSponsorship: true } }),
   ]);
-  if (!resumeId) return null;
+  if (!resumeId) {
+    return null;
+  }
   return {
     goals: input.goals,
     resumeId,
@@ -93,8 +105,12 @@ export async function gatherResearch(
     }),
     isFeedPaused(prisma, userId, "research"),
   ]);
-  if (paused) return null;
+  if (paused) {
+    return null;
+  }
   const trigger = researchTrigger({ searchCount: ctx.searchCount, backingOffCount, lastRun, now });
-  if (!trigger) return null;
+  if (!trigger) {
+    return null;
+  }
   return researchPayload(prisma, userId, { goals: ctx.goals, config: ctx.config, trigger });
 }

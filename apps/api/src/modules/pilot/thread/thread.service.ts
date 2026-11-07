@@ -55,8 +55,11 @@ export function buildThread(sources: ThreadSources): PilotThreadItem[] {
     const run = row.runId ? runsById.get(row.runId) : undefined;
     if (run && row.kind !== "digest") {
       const entries = entriesByRun.get(run);
-      if (entries) entries.push(row);
-      else entriesByRun.set(run, [row]);
+      if (entries) {
+        entries.push(row);
+      } else {
+        entriesByRun.set(run, [row]);
+      }
     } else {
       items.push({
         type: row.kind === "digest" ? "digest" : "note",

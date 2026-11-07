@@ -24,7 +24,9 @@ export function shadowedJobIds(rows: PostingRow[]): string[] {
   const best = new Map<string, PostingRow>();
   for (const row of rows) {
     const current = best.get(row.url);
-    if (!current || isAhead(row, current)) best.set(row.url, row);
+    if (!current || isAhead(row, current)) {
+      best.set(row.url, row);
+    }
   }
   return rows.filter((row) => best.get(row.url) !== row).map((row) => row.id);
 }

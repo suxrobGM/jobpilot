@@ -191,7 +191,9 @@ export class GmailClient {
 
         for (const h of res.data.history ?? []) {
           for (const ma of h.messagesAdded ?? []) {
-            if (ma.message?.id) messageIds.push(ma.message.id);
+            if (ma.message?.id) {
+              messageIds.push(ma.message.id);
+            }
           }
         }
       } catch {

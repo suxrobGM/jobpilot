@@ -59,7 +59,9 @@ function writeWav(file, [L, R], gain = 1) {
 }
 function peakNormalize([L, R], target = 0.9) {
   let p = 0;
-  for (let i = 0; i < L.length; i++) p = Math.max(p, Math.abs(L[i]), Math.abs(R[i]));
+  for (let i = 0; i < L.length; i++) {
+    p = Math.max(p, Math.abs(L[i]), Math.abs(R[i]));
+  }
   const g = p > 0 ? target / p : 1;
   for (let i = 0; i < L.length; i++) {
     L[i] *= g;
@@ -83,7 +85,9 @@ function add(dst, src, at, gain = 1, pan = 0) {
   const gl = gain * Math.cos(((pan + 1) * Math.PI) / 4);
   const gr = gain * Math.sin(((pan + 1) * Math.PI) / 4);
   for (let i = 0; i < src[0].length && o + i < dst[0].length; i++) {
-    if (o + i < 0) continue;
+    if (o + i < 0) {
+      continue;
+    }
     dst[0][o + i] += src[0][i] * gl * Math.SQRT2;
     dst[1][o + i] += src[1][i] * gr * Math.SQRT2;
   }
@@ -162,8 +166,11 @@ function clap(gain = 0.5) {
   for (let i = 0; i < s[0].length; i++) {
     const t = i / SR;
     let env = Math.exp(-t * 18);
-    for (const o of [0, 0.011, 0.022])
-      if (t >= o && t < o + 0.008) env += 0.8 * Math.exp(-(t - o) * 300);
+    for (const o of [0, 0.011, 0.022]) {
+      if (t >= o && t < o + 0.008) {
+        env += 0.8 * Math.exp(-(t - o) * 300);
+      }
+    }
     const v = f(rnd(), 1500, 1.4, "bp") * env * gain * 2;
     s[0][i] = v + rnd() * 0.002;
     s[1][i] = v;
@@ -225,8 +232,9 @@ function sine(note, dur, { gain = 0.3, attack = 0.002, decay = 3, partials = [[1
   for (let i = 0; i < s[0].length; i++) {
     const t = i / SR;
     let v = 0;
-    for (const [m, a] of partials)
+    for (const [m, a] of partials) {
       v += Math.sin(TAU * f * m * t) * a * Math.exp(-t * decay * m ** 0.5);
+    }
     v *= (t < attack ? t / attack : 1) * gain;
     s[0][i] = v;
     s[1][i] = v;
@@ -335,7 +343,7 @@ add(
   pad([45, 52, 57], S.reveal * BAR, { gain: 0.12, cutoff: 500, attack: 1.5, release: 1 }),
   0,
 );
-for (let b = 0; b < S.reveal * 8; b++)
+for (let b = 0; b < S.reveal * 8; b++) {
   add(
     music,
     tick(b % 4 === 0 ? 0.3 : 0.16, b % 4 === 0 ? 2600 : 3400),
@@ -343,6 +351,7 @@ for (let b = 0; b < S.reveal * 8; b++)
     1,
     b % 2 ? 0.3 : -0.3,
   );
+}
 add(music, riser(BAR, 0.35), at(S.reveal - 1));
 add(drums, impact(0.9), at(S.reveal));
 
@@ -376,8 +385,12 @@ for (let bar = S.start; bar < S.close; bar++) {
       add(drums, kick(0.8), at(bar, beat));
       kicks.push(at(bar, beat));
       add(drums, hat(false, 0.22), at(bar, beat + 0.5), 1, 0.25);
-      if (grooveB) add(drums, hat(false, 0.1), at(bar, beat + 0.25), 1, -0.3);
-      if (grooveB && beat === 3) add(drums, hat(true, 0.12), at(bar, beat + 0.5), 1, 0.1);
+      if (grooveB) {
+        add(drums, hat(false, 0.1), at(bar, beat + 0.25), 1, -0.3);
+      }
+      if (grooveB && beat === 3) {
+        add(drums, hat(true, 0.12), at(bar, beat + 0.5), 1, 0.1);
+      }
     }
     if (grooveB) {
       add(drums, clap(0.4), at(bar, 1));
@@ -479,8 +492,9 @@ for (const [n, s] of Object.entries(fx)) {
 }
 // Typing bed: irregular soft ticks, 4s, for terminal shots.
 const typing = buf(4);
-for (let t = 0; t < 3.9; t += 0.045 + Math.abs(rnd()) * 0.11)
+for (let t = 0; t < 3.9; t += 0.045 + Math.abs(rnd()) * 0.11) {
   add(typing, tick(0.18 + Math.abs(rnd()) * 0.1, 1800 + Math.abs(rnd()) * 2400), t, 1, rnd() * 0.4);
+}
 peakNormalize(typing, 0.6);
 writeWav("sfx-typing.wav", typing);
 console.log(`rendered music.wav and sfx-*.wav into ${OUT}`);

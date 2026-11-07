@@ -69,7 +69,9 @@ export class ScoringService {
         where: { id: resumeId, userId },
         select: { content: true },
       });
-      if (override) return override.content;
+      if (override) {
+        return override.content;
+      }
     }
 
     const user = await this.prisma.user.findUnique({

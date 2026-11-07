@@ -91,7 +91,9 @@ export async function finishRequests(
   outcome: PilotRunOutcome,
   now: Date,
 ): Promise<PilotRequestModel[]> {
-  if (runIds.length === 0) return [];
+  if (runIds.length === 0) {
+    return [];
+  }
   return tx.pilotRequest.updateManyAndReturn({
     where: { runId: { in: runIds }, status: "running" },
     data: { status: REQUEST_OUTCOMES[outcome], finishedAt: now },

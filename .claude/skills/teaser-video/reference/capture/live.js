@@ -36,7 +36,9 @@ const cam = await open({ path: PAGE_PATH, ready: READY });
 const { browser, page } = cam;
 let frames = 0;
 const stopWeb = await roll(page, path.join(dir, "web.mkv"), cam, () => {
-  if (frames === 0) log("web first frame");
+  if (frames === 0) {
+    log("web first frame");
+  }
   frames++;
 });
 log("web recording");
@@ -75,9 +77,13 @@ function startWindowCapture(hwnd) {
 const watchWindow = setInterval(async () => {
   const found = await findAgentWindow();
   const hwnd = found ? found.split("|")[1] : null;
-  if (current && current.proc.exitCode !== null) current = null;
+  if (current && current.proc.exitCode !== null) {
+    current = null;
+  }
   if (hwnd && (!current || current.hwnd !== hwnd)) {
-    if (current) current.proc.stdin.write("q");
+    if (current) {
+      current.proc.stdin.write("q");
+    }
     log(`agent window: ${found}`);
     current = startWindowCapture(hwnd);
   }
@@ -86,7 +92,9 @@ const watchWindow = setInterval(async () => {
 let lastStatus = "";
 const watchHost = setInterval(async () => {
   try {
-    if (!HEALTH_URL) return;
+    if (!HEALTH_URL) {
+      return;
+    }
     const s = JSON.stringify(await (await fetch(HEALTH_URL)).json());
     if (s !== lastStatus) {
       log(`host ${s}`);
@@ -105,16 +113,22 @@ if (flag("--start")) {
 }
 
 const deadline = Date.now() + MINUTES * 60_000;
-while (Date.now() < deadline && !fs.existsSync(STOP)) await new Promise((r) => setTimeout(r, 1000));
+while (Date.now() < deadline && !fs.existsSync(STOP)) {
+  await new Promise((r) => setTimeout(r, 1000));
+}
 
 log("stopping");
 clearInterval(watchWindow);
 clearInterval(watchHost);
-if (current) current.proc.stdin.write("q");
+if (current) {
+  current.proc.stdin.write("q");
+}
 await stopWeb();
 await new Promise((r) => setTimeout(r, 3000));
 // gfxcapture only reads "q" between frames; an idle window never yields one.
-if (current && current.proc.exitCode === null) current.proc.kill();
+if (current && current.proc.exitCode === null) {
+  current.proc.kill();
+}
 await browser.close();
 log(`done frames=${frames} agentTakes=${windowTakes.length}`);
 events.end();

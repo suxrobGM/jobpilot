@@ -31,8 +31,12 @@ export interface FakeState {
 type Where = Record<string, unknown>;
 
 function statusMatches(status: string, filter: unknown): boolean {
-  if (filter === undefined) return true;
-  if (typeof filter === "string") return status === filter;
+  if (filter === undefined) {
+    return true;
+  }
+  if (typeof filter === "string") {
+    return status === filter;
+  }
   return (filter as { in: string[] }).in.includes(status);
 }
 
@@ -41,21 +45,36 @@ function fakeTx(state: FakeState): ChangeTx {
   let nextId = 0;
   const findSearch = (where: Where) =>
     state.searches.find((s) => {
-      if (s.archivedAt !== null) return false;
+      if (s.archivedAt !== null) {
+        return false;
+      }
       const notId = (where.id as { not?: string } | undefined)?.not;
-      if (typeof where.id === "string" && s.id !== where.id) return false;
-      if (notId && s.id === notId) return false;
-      if (where.query !== undefined && s.query !== where.query) return false;
-      if (where.boardId !== undefined && s.boardId !== where.boardId) return false;
+      if (typeof where.id === "string" && s.id !== where.id) {
+        return false;
+      }
+      if (notId && s.id === notId) {
+        return false;
+      }
+      if (where.query !== undefined && s.query !== where.query) {
+        return false;
+      }
+      if (where.boardId !== undefined && s.boardId !== where.boardId) {
+        return false;
+      }
       return true;
     }) ?? null;
   const jobMatches = (job: FakeJob, where: Where) => {
     const refs = where.OR as { feedId: string; key: string }[] | undefined;
     const ids = (where.id as { in: string[] } | undefined)?.in;
-    if (refs && !refs.some((r) => r.feedId === job.feedId && r.key === job.key)) return false;
-    if (ids && !ids.includes(job.id)) return false;
-    if (typeof where.key === "string" && (job.key !== where.key || job.feedId !== where.feedId))
+    if (refs && !refs.some((r) => r.feedId === job.feedId && r.key === job.key)) {
       return false;
+    }
+    if (ids && !ids.includes(job.id)) {
+      return false;
+    }
+    if (typeof where.key === "string" && (job.key !== where.key || job.feedId !== where.feedId)) {
+      return false;
+    }
     return statusMatches(job.status, where.status);
   };
 
@@ -63,8 +82,12 @@ function fakeTx(state: FakeState): ChangeTx {
     pilotState: {
       upsert: async () => ({ goals: state.goals, config: state.config }),
       update: async ({ data }: { data: { goals?: string; config?: Record<string, unknown> } }) => {
-        if (data.goals !== undefined) state.goals = data.goals;
-        if (data.config !== undefined) state.config = data.config;
+        if (data.goals !== undefined) {
+          state.goals = data.goals;
+        }
+        if (data.config !== undefined) {
+          state.config = data.config;
+        }
         return {};
       },
     },
@@ -87,8 +110,9 @@ function fakeTx(state: FakeState): ChangeTx {
       update: async ({ where, data }: { where: { id: string }; data: Partial<FakeSearch> }) => {
         const search = state.searches.find((s) => s.id === where.id);
         for (const [key, value] of Object.entries(data)) {
-          if (value !== undefined && key in (search ?? {}))
+          if (value !== undefined && key in (search ?? {})) {
             Object.assign(search ?? {}, { [key]: value });
+          }
         }
         return search;
       },
@@ -100,7 +124,9 @@ function fakeTx(state: FakeState): ChangeTx {
         state.jobs.filter((j) => jobMatches(j, where)).map((job) => ({ ...job })),
       updateMany: async ({ where, data }: { where: Where; data: Partial<FakeJob> }) => {
         const hits = state.jobs.filter((j) => jobMatches(j, where));
-        for (const job of hits) Object.assign(job, data);
+        for (const job of hits) {
+          Object.assign(job, data);
+        }
         return { count: hits.length };
       },
     },

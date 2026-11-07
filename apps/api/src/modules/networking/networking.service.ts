@@ -58,13 +58,17 @@ export class NetworkingService {
           where: { id: contactId, userId },
           select: { id: true },
         });
-        if (!owned) throw notFound("Contact not found");
+        if (!owned) {
+          throw notFound("Contact not found");
+        }
       } else if (body.contact) {
         contactId = (
           await tx.contact.create({ data: { userId, ...createContactPayload(body.contact) } })
         ).id;
       }
-      if (!contactId) throw unprocessable("A contact is required.");
+      if (!contactId) {
+        throw unprocessable("A contact is required.");
+      }
       return tx.networkingMessage.create({
         data: {
           userId,
@@ -104,7 +108,9 @@ export class NetworkingService {
           where: { id: messageId, status: existing.status },
           data: { status: body.status },
         });
-        if (changed.count === 0) throw conflict("Networking message changed concurrently.");
+        if (changed.count === 0) {
+          throw conflict("Networking message changed concurrently.");
+        }
       }
       const message = await tx.networkingMessage.update({
         where: { id: messageId },

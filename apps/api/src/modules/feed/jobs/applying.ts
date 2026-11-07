@@ -33,7 +33,9 @@ export async function startApplying(
     where,
     select: { url: true, title: true, company: true },
   });
-  if (!target) throw conflict("Job is no longer approved.");
+  if (!target) {
+    throw conflict("Job is no longer approved.");
+  }
   await assertNotDuplicateApply(tx, userId, { ...target, ...job });
 
   // An empty result is the lost race.
@@ -42,7 +44,9 @@ export async function startApplying(
     data: { status: "applying" },
     include: JOB_INCLUDE,
   });
-  if (!started) throw conflict("Job is no longer approved.");
+  if (!started) {
+    throw conflict("Job is no longer approved.");
+  }
   return started;
 }
 
@@ -52,7 +56,9 @@ export async function revertApplyingJobs(
   userId: string,
   jobs: JobRef[],
 ): Promise<void> {
-  if (jobs.length === 0) return;
+  if (jobs.length === 0) {
+    return;
+  }
   await tx.job.updateMany({
     where: { status: "applying", userId, OR: jobs },
     data: { status: "approved" },

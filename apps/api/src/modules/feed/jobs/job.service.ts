@@ -66,16 +66,22 @@ async function moveStatus(
   job: JobRow,
   to: JobStatus,
 ): Promise<void> {
-  if (to === "applying") await assertNotDuplicateApply(tx, userId, job);
+  if (to === "applying") {
+    await assertNotDuplicateApply(tx, userId, job);
+  }
   const { count } = await tx.job.updateMany({
     where: { feedId: job.feedId, key: job.key, status: job.status },
     data: { status: to, ...(to === "approved" && OUTCOME_CLEARED) },
   });
-  if (count === 0) throw conflict("Job status changed concurrently.");
+  if (count === 0) {
+    throw conflict("Job status changed concurrently.");
+  }
 }
 
 function settledData(matchScore: number, threshold: number): Prisma.JobUpdateManyMutationInput {
-  if (matchScore >= threshold) return { status: "approved" };
+  if (matchScore >= threshold) {
+    return { status: "approved" };
+  }
   return {
     status: "skipped",
     skipReason: `Below minimum match score (${matchScore} < ${threshold})`,
@@ -100,7 +106,9 @@ export class JobService {
       orderBy: { createdAt: "desc" },
       include: JOB_INCLUDE,
     });
-    if (existing) return { ...toJob(existing), duplicate: true };
+    if (existing) {
+      return { ...toJob(existing), duplicate: true };
+    }
 
     const { board, ...fields } = body;
     const boardId = await this.boards.resolveId(board ?? null);
@@ -145,7 +153,9 @@ export class JobService {
     const boardField = await this.boardChange(existing, board);
     const job = await guardApply(this.prisma, userId, () =>
       this.prisma.$transaction(async (tx) => {
-        if (moveTo) await moveStatus(tx, userId, existing, moveTo);
+        if (moveTo) {
+          await moveStatus(tx, userId, existing, moveTo);
+        }
         return tx.job.update({
           where: { feedId_key: { feedId, key } },
           data: { ...fields, brief: toNullableInputJson(fields.brief), ...boardField },
@@ -156,7 +166,9 @@ export class JobService {
 
     this.listings.publishInBackground(job);
     publishJobUpdated(userId, job);
-    if (moveTo === "approved") publishJobApproved(userId, job);
+    if (moveTo === "approved") {
+      publishJobApproved(userId, job);
+    }
     return toJob(job);
   }
 
@@ -169,7 +181,9 @@ export class JobService {
       data: { status: "approved", ...OUTCOME_CLEARED, retryNotes: body.retryNotes },
       rejection: (status) => `Only failed jobs can be retried; job is ${status}.`,
     });
-    if (changed) publishJobApproved(userId, job);
+    if (changed) {
+      publishJobApproved(userId, job);
+    }
     return toJob(job);
   }
 
@@ -225,7 +239,9 @@ export class JobService {
       }
       return moved;
     });
-    for (const job of settled) publishJobUpdated(userId, job);
+    for (const job of settled) {
+      publishJobUpdated(userId, job);
+    }
   }
 
   async recordResult(userId: string, feedId: string, key: string, data: JobResultInput) {
@@ -249,7 +265,9 @@ export class JobService {
 
   /** An absent or unchanged `board` leaves the column alone; null clears it. */
   private async boardChange(existing: JobRow, board: PatchJobInput["board"]) {
-    if (board === undefined || board === existing.board?.domain) return {};
+    if (board === undefined || board === existing.board?.domain) {
+      return {};
+    }
     return { boardId: await this.boards.resolveId(board) };
   }
 
@@ -277,7 +295,9 @@ export class JobService {
       include: JOB_INCLUDE,
     });
     if (changed.count === 0) {
-      if (job.status === transition.to) return { job, changed: false };
+      if (job.status === transition.to) {
+        return { job, changed: false };
+      }
       throw conflict(`Job changed concurrently to ${job.status}.`);
     }
 

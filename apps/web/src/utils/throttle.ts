@@ -5,7 +5,9 @@ const pending = new Set<string>();
 
 /** Runs `run` at most once per `WINDOW_MS` for `id`, at the window's end. */
 export function throttle(id: string, run: () => void): void {
-  if (pending.has(id)) return;
+  if (pending.has(id)) {
+    return;
+  }
   pending.add(id);
   setTimeout(() => {
     pending.delete(id);

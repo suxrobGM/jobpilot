@@ -63,22 +63,36 @@ export class UpworkService {
   async upsertProfile(userId: string, input: UpdateUpworkProfileInput) {
     const fields: UpworkProfileFields = {};
 
-    if (input.currentTitle != null) fields.currentTitle = input.currentTitle;
-    if (input.currentOverview != null) fields.currentOverview = input.currentOverview;
-    if (input.currentHourlyRate != null) fields.currentHourlyRate = input.currentHourlyRate;
+    if (input.currentTitle != null) {
+      fields.currentTitle = input.currentTitle;
+    }
+    if (input.currentOverview != null) {
+      fields.currentOverview = input.currentOverview;
+    }
+    if (input.currentHourlyRate != null) {
+      fields.currentHourlyRate = input.currentHourlyRate;
+    }
     if (input.currentPortfolio != null) {
       fields.currentPortfolio = toInputJson(input.currentPortfolio);
     }
-    if (input.currentSkills != null) fields.currentSkills = input.currentSkills;
-    if (input.suggestedTitle != null) fields.suggestedTitle = input.suggestedTitle;
-    if (input.suggestedOverview != null) fields.suggestedOverview = input.suggestedOverview;
+    if (input.currentSkills != null) {
+      fields.currentSkills = input.currentSkills;
+    }
+    if (input.suggestedTitle != null) {
+      fields.suggestedTitle = input.suggestedTitle;
+    }
+    if (input.suggestedOverview != null) {
+      fields.suggestedOverview = input.suggestedOverview;
+    }
     if (input.suggestedHourlyRate != null) {
       fields.suggestedHourlyRate = input.suggestedHourlyRate;
     }
     if (input.suggestedPortfolio != null) {
       fields.suggestedPortfolio = toInputJson(input.suggestedPortfolio);
     }
-    if (input.suggestedSkills != null) fields.suggestedSkills = input.suggestedSkills;
+    if (input.suggestedSkills != null) {
+      fields.suggestedSkills = input.suggestedSkills;
+    }
     if (input.status != null) {
       fields.status = input.status;
       fields.appliedAt = input.status === "applied" ? new Date() : null;

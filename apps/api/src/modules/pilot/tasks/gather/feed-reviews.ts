@@ -77,7 +77,9 @@ async function attachTopSkipReasons(
   prisma: PrismaClient,
   tunes: TaskPayload<"search.tune">[],
 ): Promise<void> {
-  if (tunes.length === 0) return;
+  if (tunes.length === 0) {
+    return;
+  }
   const reasons = await prisma.job.groupBy({
     by: ["feedId", "skipReason"],
     where: {

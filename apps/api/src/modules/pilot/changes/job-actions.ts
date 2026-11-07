@@ -33,7 +33,9 @@ async function skipWhere(
       data: { status: "skipped", skipReason: reason },
     });
     ctx.afterCommit.push(() => {
-      for (const job of jobs) publishJobUpdated(ctx.userId, { ...job, status: "skipped" });
+      for (const job of jobs) {
+        publishJobUpdated(ctx.userId, { ...job, status: "skipped" });
+      }
     });
   }
   return {
@@ -68,11 +70,17 @@ export async function restoreJobs(
       where: { userId: ctx.userId, feedId: ref.feedId, key: ref.key, status: "skipped" },
       data: { status: ref.status, skipReason: null },
     });
-    if (count > 0) restored.push(ref);
+    if (count > 0) {
+      restored.push(ref);
+    }
   }
-  if (restored.length === 0) return { type: "jobs.restore", refs: [] };
+  if (restored.length === 0) {
+    return { type: "jobs.restore", refs: [] };
+  }
   ctx.afterCommit.push(() => {
-    for (const ref of restored) publishJobUpdated(ctx.userId, ref);
+    for (const ref of restored) {
+      publishJobUpdated(ctx.userId, ref);
+    }
   });
   const refs = restored.map((ref) => ({ feedId: ref.feedId, key: ref.key }));
   return { type: "jobs.skip", refs, reason: RESTORED_REASON };

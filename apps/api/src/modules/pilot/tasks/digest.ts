@@ -57,18 +57,24 @@ export async function writeDigestIfDue(
   now: Date,
   openQuestions: number,
 ): Promise<void> {
-  if (minutesOfDay(now) < DIGEST_HOUR_UTC * 60) return;
+  if (minutesOfDay(now) < DIGEST_HOUR_UTC * 60) {
+    return;
+  }
   const todaysDigest = { userId, kind: "digest" as const, createdAt: { gte: startOfDay(now) } };
   try {
     // Unlocked first: every refresh after the digest hour would otherwise open a locking transaction.
     const alreadyWritten = await prisma.pilotJournalEntry.count({ where: todaysDigest });
-    if (alreadyWritten > 0) return;
+    if (alreadyWritten > 0) {
+      return;
+    }
     await prisma.$transaction(async (tx) => {
       // No unique constraint backs once-per-day, so this lock is the only duplicate guard.
       // $executeRaw because the pg adapter can't deserialize the lock's void column.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}), hashtext('pilot-digest'))`;
       const written = await tx.pilotJournalEntry.count({ where: todaysDigest });
-      if (written > 0) return;
+      if (written > 0) {
+        return;
+      }
 
       const detail = { ...(await countLastDay(tx, userId, now)), openQuestions };
       const summary = digestSummary(detail);

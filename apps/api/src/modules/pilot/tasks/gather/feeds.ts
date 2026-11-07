@@ -118,7 +118,9 @@ export async function gatherPausedFeeds(
     take: PAUSED_CANDIDATES,
     select: { id: true, query: true, pausedAt: true, board: { select: { domain: true } } },
   });
-  if (feeds.length === 0) return [];
+  if (feeds.length === 0) {
+    return [];
+  }
 
   const ids = feeds.map((feed) => feed.id);
   const [questions, latest] = await Promise.all([

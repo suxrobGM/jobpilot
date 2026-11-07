@@ -95,7 +95,9 @@ async function expireQuestions(tx: Prisma.TransactionClient, userId: string, now
     take: GATHER_CAP,
     select: { id: true, subjectType: true, subjectId: true },
   });
-  if (expired.length === 0) return;
+  if (expired.length === 0) {
+    return;
+  }
 
   await tx.pilotQuestion.updateMany({
     where: { id: { in: expired.map((question) => question.id) }, status: "open" },
@@ -106,7 +108,9 @@ async function expireQuestions(tx: Prisma.TransactionClient, userId: string, now
       ? [parseJobSubject(question.subjectId)]
       : [],
   );
-  if (parkedJobs.length === 0) return;
+  if (parkedJobs.length === 0) {
+    return;
+  }
 
   await tx.job.updateMany({
     where: { status: "needs_user", userId, OR: parkedJobs },

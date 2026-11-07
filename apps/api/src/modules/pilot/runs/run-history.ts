@@ -40,7 +40,9 @@ export async function latestRunBySubject(
   });
   const latest = new Map<string, RunHistory>();
   for (const { subjectId, ...run } of runs) {
-    if (!latest.has(subjectId)) latest.set(subjectId, run);
+    if (!latest.has(subjectId)) {
+      latest.set(subjectId, run);
+    }
   }
   return latest;
 }
@@ -51,8 +53,12 @@ export function ranRecently(
   now: Date,
   cooldownMs: number,
 ): boolean {
-  if (!last) return false;
-  if (!last.finishedAt) return true;
+  if (!last) {
+    return false;
+  }
+  if (!last.finishedAt) {
+    return true;
+  }
   const cooldown = isCrash(last.outcome) ? Math.min(cooldownMs, CRASH_RETRY_MS) : cooldownMs;
   return now.getTime() - last.finishedAt.getTime() < cooldown;
 }
@@ -70,7 +76,9 @@ export async function withoutRecentRuns<T>(
   rows: T[],
   toSubjectId: (row: T) => string,
 ): Promise<T[]> {
-  if (rows.length === 0) return [];
+  if (rows.length === 0) {
+    return [];
+  }
   const latest = await latestRunBySubject(prisma, userId, taskType, rows.map(toSubjectId));
   return rows.filter((row) => !ranRecently(latest.get(toSubjectId(row)), now, cooldownMs));
 }
@@ -83,7 +91,9 @@ export async function withoutConsumingRuns<T>(
   rows: T[],
   toSubjectId: (row: T) => string,
 ): Promise<T[]> {
-  if (rows.length === 0) return [];
+  if (rows.length === 0) {
+    return [];
+  }
   const runs = await prisma.pilotRun.findMany({
     where: {
       userId,

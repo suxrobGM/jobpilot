@@ -11,11 +11,17 @@ export interface Cam {
 }
 
 function camAt(cams: Cam[], f: number): Omit<Cam, "f"> {
-  if (f <= cams[0].f) return cams[0];
+  if (f <= cams[0].f) {
+    return cams[0];
+  }
   const last = cams[cams.length - 1];
-  if (f >= last.f) return last;
+  if (f >= last.f) {
+    return last;
+  }
   let i = 0;
-  while (cams[i + 1].f < f) i++;
+  while (cams[i + 1].f < f) {
+    i++;
+  }
   const a = cams[i];
   const b = cams[i + 1];
   const t = ease((f - a.f) / (b.f - a.f));

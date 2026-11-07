@@ -93,7 +93,9 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
 
 describe("contracts enums match the Prisma schema", () => {
   for (const [name, prismaEnum] of Object.entries(prismaEnums)) {
-    if ((API_ONLY as readonly string[]).includes(name)) continue;
+    if ((API_ONLY as readonly string[]).includes(name)) {
+      continue;
+    }
     it(name, () => {
       const contract = CONTRACTS[name as PrismaEnumName];
       expect([...contract].sort()).toEqual(Object.values(prismaEnum).sort());

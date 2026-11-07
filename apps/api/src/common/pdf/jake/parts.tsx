@@ -10,9 +10,15 @@ import { styles } from "./styles";
 export function dateRange(start: string | undefined, end: string | undefined): string {
   const s = (start ?? "").trim();
   const e = (end ?? "").trim();
-  if (!s && !e) return "";
-  if (s && !e) return `${s} – Present`;
-  if (!s && e) return e;
+  if (!s && !e) {
+    return "";
+  }
+  if (s && !e) {
+    return `${s} – Present`;
+  }
+  if (!s && e) {
+    return e;
+  }
   return `${s} – ${e}`;
 }
 
@@ -55,7 +61,9 @@ export function TitledEntry(props: {
 
 /** The right-hand slot of a `TitledEntry` header, rendered only when there is something to show. */
 export function EntryRight(props: { children?: string }): ReactNode {
-  if (!props.children) return null;
+  if (!props.children) {
+    return null;
+  }
   return <Text style={styles.entryRight}>{props.children}</Text>;
 }
 
@@ -63,16 +71,24 @@ export function ContactBar(props: { basics: ResumeBasics }): ReactNode {
   const { basics } = props;
   const parts: { kind: "text" | "link"; value: string; href?: string }[] = [];
 
-  if (basics.location) parts.push({ kind: "text", value: basics.location });
-  if (basics.phone) parts.push({ kind: "text", value: basics.phone });
+  if (basics.location) {
+    parts.push({ kind: "text", value: basics.location });
+  }
+  if (basics.phone) {
+    parts.push({ kind: "text", value: basics.phone });
+  }
   if (basics.email) {
     parts.push({ kind: "link", value: basics.email, href: `mailto:${basics.email}` });
   }
   for (const url of [basics.linkedin, basics.github, basics.website]) {
-    if (url) parts.push({ kind: "link", value: displayUrl(url), href: absoluteHref(url) });
+    if (url) {
+      parts.push({ kind: "link", value: displayUrl(url), href: absoluteHref(url) });
+    }
   }
 
-  if (parts.length === 0) return null;
+  if (parts.length === 0) {
+    return null;
+  }
 
   return (
     <View style={styles.contactRow}>
@@ -93,7 +109,9 @@ export function ContactBar(props: { basics: ResumeBasics }): ReactNode {
 }
 
 export function Bullets(props: { items: string[] }): ReactNode {
-  if (props.items.length === 0) return null;
+  if (props.items.length === 0) {
+    return null;
+  }
 
   return (
     <View style={styles.bulletList}>

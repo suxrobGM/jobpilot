@@ -83,7 +83,9 @@ export async function deleteAnswer(
   action: ActionOf<"answer.delete">,
 ): Promise<PilotChangeAction> {
   const old = await findAnswer(ctx, action.key);
-  if (!old) throw notFound("Answer not found");
+  if (!old) {
+    throw notFound("Answer not found");
+  }
   await ctx.tx.profileAnswer.delete({
     where: { userId_key: { userId: ctx.userId, key: action.key } },
   });

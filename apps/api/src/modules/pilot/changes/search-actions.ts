@@ -23,7 +23,9 @@ async function findSearch(ctx: ActionContext, searchId: string) {
       board: { select: { domain: true } },
     },
   });
-  if (!search) throw notFound("Search not found");
+  if (!search) {
+    throw notFound("Search not found");
+  }
   return search;
 }
 
@@ -43,7 +45,9 @@ async function assertUnique(
     },
     select: { id: true },
   });
-  if (clash) throw conflict("A search with this query and board already exists.");
+  if (clash) {
+    throw conflict("A search with this query and board already exists.");
+  }
 }
 
 export async function createSearch(
@@ -75,7 +79,9 @@ export async function updateSearch(
   const query = action.query ?? old.query ?? "";
   // A different query is a different search, so its schedule starts over.
   const newQuery = query !== old.query;
-  if (newQuery) await assertUnique(ctx, query, old.boardId, old.id);
+  if (newQuery) {
+    await assertUnique(ctx, query, old.boardId, old.id);
+  }
   await ctx.tx.feed.update({
     where: { id: old.id },
     data: {

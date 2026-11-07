@@ -21,20 +21,32 @@ export function extractNumbers(text: string): Set<string> {
   const out = new Set<string>();
   for (const match of text.matchAll(/\d[\d.,]*(?:%|\+)?[kmbx]?/gi)) {
     const full = normalizeNumber(match[0]);
-    if (!full) continue;
+    if (!full) {
+      continue;
+    }
     out.add(full);
     const core = full.replace(/[%+kmbx]+$/i, "");
-    if (core) out.add(core);
+    if (core) {
+      out.add(core);
+    }
   }
   return out;
 }
 
 /** A token that looks like a technology or proper noun rather than ordinary prose. */
 function isTechLike(token: string): boolean {
-  if (/\d/.test(token) && /[a-z]/i.test(token)) return true; // s3, ec2, oauth2
-  if (/[a-z][A-Z]/.test(token)) return true; // GraphQL, PostgreSQL, TypeScript
-  if (/^[A-Z]{2,6}$/.test(token)) return true; // AWS, GCP, SQL, REST, HIPAA
-  if (/[.+#]/.test(token) && /[a-z]/i.test(token)) return true; // .NET, Node.js, C++, C#
+  if (/\d/.test(token) && /[a-z]/i.test(token)) {
+    return true; // s3, ec2, oauth2
+  }
+  if (/[a-z][A-Z]/.test(token)) {
+    return true; // GraphQL, PostgreSQL, TypeScript
+  }
+  if (/^[A-Z]{2,6}$/.test(token)) {
+    return true; // AWS, GCP, SQL, REST, HIPAA
+  }
+  if (/[.+#]/.test(token) && /[a-z]/i.test(token)) {
+    return true; // .NET, Node.js, C++, C#
+  }
   return false;
 }
 
@@ -44,9 +56,13 @@ function techTokens(text: string): string[] {
   for (const rawToken of text.split(/[\s,;:()/]+/)) {
     // A sentence period is punctuation; a dotted name like Node.js keeps its inner dot.
     const token = rawToken.replace(/^[^A-Za-z0-9.+#]+|[^A-Za-z0-9+#]+$/g, "");
-    if (!token || !isTechLike(token)) continue;
+    if (!token || !isTechLike(token)) {
+      continue;
+    }
     const key = token.toLowerCase();
-    if (seen.has(key)) continue;
+    if (seen.has(key)) {
+      continue;
+    }
     seen.add(key);
     out.push(token);
   }

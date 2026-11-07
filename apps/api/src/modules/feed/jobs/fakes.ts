@@ -62,7 +62,9 @@ export function setup() {
         data: Record<string, unknown>;
       }) => {
         if (where.status && typeof where.status === "object" && "notIn" in where.status) {
-          if (["applied", "failed", "skipped"].includes(job.status)) return { count: 0 };
+          if (["applied", "failed", "skipped"].includes(job.status)) {
+            return { count: 0 };
+          }
         } else if (typeof where.status === "string" && job.status !== where.status) {
           return { count: 0 };
         }
@@ -77,7 +79,9 @@ export function setup() {
         data: Record<string, unknown>;
       }) => {
         const allowed = typeof where.status === "string" ? [where.status] : where.status?.in;
-        if (allowed && !allowed.includes(job.status)) return [];
+        if (allowed && !allowed.includes(job.status)) {
+          return [];
+        }
         job = { ...job, ...withoutUndefined(data) } as typeof job;
         return [job];
       },

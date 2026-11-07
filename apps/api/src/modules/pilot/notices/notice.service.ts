@@ -27,7 +27,9 @@ interface FactsInput {
 }
 
 function emailStatus(account: Pick<EmailAccount, "refreshFailedAt"> | null): NoticeFacts["email"] {
-  if (!account) return "missing";
+  if (!account) {
+    return "missing";
+  }
   return account.refreshFailedAt ? "reconnect" : "connected";
 }
 

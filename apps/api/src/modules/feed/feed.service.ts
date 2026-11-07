@@ -89,7 +89,9 @@ export class FeedService {
       where: { userId, kind },
       include: FEED_INCLUDE,
     });
-    if (existing) return toFeed(existing);
+    if (existing) {
+      return toFeed(existing);
+    }
     try {
       const created = await this.prisma.feed.create({
         data: { userId, kind, ...SINGLE_FEEDS[kind] },
@@ -97,7 +99,9 @@ export class FeedService {
       });
       return toFeed(created);
     } catch (error) {
-      if (!isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) throw error;
+      if (!isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) {
+        throw error;
+      }
       return toFeed(
         await this.prisma.feed.findFirstOrThrow({ where: { userId, kind }, include: FEED_INCLUDE }),
       );

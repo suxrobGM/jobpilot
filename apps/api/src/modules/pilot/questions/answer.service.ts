@@ -27,7 +27,9 @@ export class ProfileAnswerService {
 
   async remove(userId: string, key: string) {
     const { count } = await this.prisma.profileAnswer.deleteMany({ where: { userId, key } });
-    if (count === 0) throw notFound("Answer not found");
+    if (count === 0) {
+      throw notFound("Answer not found");
+    }
     return { ok: true as const };
   }
 }

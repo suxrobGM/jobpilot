@@ -39,7 +39,9 @@ export async function gatherInterviewReplies(
         ]
       : [],
   );
-  if (replies.length === 0) return [];
+  if (replies.length === 0) {
+    return [];
+  }
 
   const questions = await prisma.pilotQuestion.findMany({
     where: {

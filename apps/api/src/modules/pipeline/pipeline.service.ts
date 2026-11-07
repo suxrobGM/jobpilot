@@ -77,7 +77,9 @@ export class PipelineService {
       where: { userId, feed: JOB_FEEDS },
       having: { url: { _count: { gt: 1 } } },
     });
-    if (repeated.length === 0) return [];
+    if (repeated.length === 0) {
+      return [];
+    }
     const rows = await this.prisma.job.findMany({
       where: { userId, feed: JOB_FEEDS, url: { in: repeated.map((row) => row.url) } },
       select: { id: true, url: true, status: true, updatedAt: true },
@@ -159,7 +161,9 @@ export class PipelineService {
         updated += 1;
       } catch (error) {
         // A row whose transition the job service refuses is counted out, not fatal.
-        if (!(error instanceof HttpError)) throw error;
+        if (!(error instanceof HttpError)) {
+          throw error;
+        }
       }
     }
     return { updated, refused: input.ids.length - updated };
@@ -187,8 +191,12 @@ export class PipelineService {
     key: string,
     action: PipelineBulkInput["action"],
   ) {
-    if (action === "approve") return this.jobs.update(userId, feedId, key, { status: "approved" });
-    if (action === "retry") return this.jobs.retry(userId, feedId, key, {});
+    if (action === "approve") {
+      return this.jobs.update(userId, feedId, key, { status: "approved" });
+    }
+    if (action === "retry") {
+      return this.jobs.retry(userId, feedId, key, {});
+    }
     return this.jobs.recordResult(userId, feedId, key, {
       outcome: "skipped",
       skipReason: BULK_SKIP_REASON,

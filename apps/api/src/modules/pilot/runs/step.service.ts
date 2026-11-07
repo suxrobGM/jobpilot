@@ -27,7 +27,9 @@ export class StepService {
 
   async append(userId: string, runId: string, input: StepInput[]) {
     const run = await this.findRun(userId, runId);
-    if (run.finishedAt) throw conflict("Run is already finished.", ErrorCodes.PILOT_CONFLICT);
+    if (run.finishedAt) {
+      throw conflict("Run is already finished.", ErrorCodes.PILOT_CONFLICT);
+    }
 
     const earlier = this.byRun.get(runId) ?? [];
     const next = (earlier.at(-1)?.id ?? 0) + 1;

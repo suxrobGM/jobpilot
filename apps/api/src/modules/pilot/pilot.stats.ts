@@ -24,7 +24,9 @@ export function countSentToday(
 
 function median(sorted: number[]): number {
   const mid = Math.floor(sorted.length / 2);
-  if (sorted.length % 2 === 1) return sorted[mid];
+  if (sorted.length % 2 === 1) {
+    return sorted[mid];
+  }
   return Math.round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 

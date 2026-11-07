@@ -69,7 +69,9 @@ export async function gatherFollowups(
       contact: { select: { name: true, email: true } },
     },
   });
-  if (rows.length === 0) return [];
+  if (rows.length === 0) {
+    return [];
+  }
 
   const newest = await prisma.networkingMessage.groupBy({
     by: ["contactId"],
@@ -80,7 +82,9 @@ export async function gatherFollowups(
 
   return rows.flatMap(({ id, feedId, contactId, subject, sentAt, createdAt, contact }) => {
     const isNewest = newestByContact.get(contactId)?.getTime() === createdAt.getTime();
-    if (!isNewest || !feedId || !sentAt || !contact.email) return [];
+    if (!isNewest || !feedId || !sentAt || !contact.email) {
+      return [];
+    }
     return [
       {
         feedId,

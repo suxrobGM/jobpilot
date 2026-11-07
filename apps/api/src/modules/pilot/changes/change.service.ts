@@ -139,7 +139,9 @@ export class ChangeService {
       return record(tx, undo, now);
     });
 
-    for (const publishLater of afterCommit) publishLater();
+    for (const publishLater of afterCommit) {
+      publishLater();
+    }
     if (actions.some((a) => STATE_ACTIONS.includes(a.type))) {
       await this.pilot.publishCurrentState(userId);
     }

@@ -35,14 +35,18 @@ async function resolveSubmittedResume(
       where: { id: data.resumeVariantId, resume: { userId } },
       select: { id: true, resumeId: true },
     });
-    if (variant) return { resumeId: variant.resumeId, resumeVariantId: variant.id };
+    if (variant) {
+      return { resumeId: variant.resumeId, resumeVariantId: variant.id };
+    }
   }
   if (data.resumeId) {
     const resume = await prisma.resume.findFirst({
       where: { id: data.resumeId, userId },
       select: { id: true },
     });
-    if (resume) return { resumeId: resume.id, resumeVariantId: null };
+    if (resume) {
+      return { resumeId: resume.id, resumeVariantId: null };
+    }
   }
   return NO_RESUME;
 }

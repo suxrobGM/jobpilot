@@ -120,7 +120,9 @@ function dedupeById(tasks: PilotTask[]): PilotTask[] {
   const best = new Map<string, PilotTask>();
   for (const task of tasks) {
     const current = best.get(task.id);
-    if (!current || task.priority > current.priority) best.set(task.id, task);
+    if (!current || task.priority > current.priority) {
+      best.set(task.id, task);
+    }
   }
   return [...best.values()];
 }
@@ -130,8 +132,12 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
   const allowed = allowedToday(input.config, input);
   // The user's own asks run with autopilot off too.
   const tasks = [...input.requests, ...makeTasks("question.answered", input.answeredQuestions)];
-  if (input.chat) tasks.push(input.chat);
-  if (input.autopilot) tasks.push(...autonomousTasks(input, allowed));
+  if (input.chat) {
+    tasks.push(input.chat);
+  }
+  if (input.autopilot) {
+    tasks.push(...autonomousTasks(input, allowed));
+  }
   return finishTaskList(input, dedupeById(tasks), allowed.appliesLeft === 0);
 }
 
@@ -148,22 +154,32 @@ function autonomousTasks(input: TaskListInput, allowed: AllowedToday): PilotTask
     const { preferCapExempt } = input.config;
     tasks.push(...input.approvedJobs.map((job) => applyTask(job, preferCapExempt)));
   }
-  if (input.inbox.count > 0) tasks.push(makeTask("inbox.review", input.inbox));
+  if (input.inbox.count > 0) {
+    tasks.push(makeTask("inbox.review", input.inbox));
+  }
   // Ungated by the apply cap: importing only queues rows for later applies.
-  if (input.jobAlerts) tasks.push(makeTask("inbox.jobAlerts", input.jobAlerts));
-  if (input.upworkSync) tasks.push(makeTask("upwork.syncInbox", input.upworkSync));
+  if (input.jobAlerts) {
+    tasks.push(makeTask("inbox.jobAlerts", input.jobAlerts));
+  }
+  if (input.upworkSync) {
+    tasks.push(makeTask("upwork.syncInbox", input.upworkSync));
+  }
   tasks.push(...outreachTasks(input, allowed));
 
   const newJobsTarget = clamp(allowed.appliesLeft, NEW_JOBS_TARGET_MIN, NEW_JOBS_TARGET_MAX);
   // Scoring and discovery only matter once nothing approved is left to apply to.
-  if (input.approvedJobs.length === 0) tasks.push(...discoveryTasks(input, newJobsTarget));
+  if (input.approvedJobs.length === 0) {
+    tasks.push(...discoveryTasks(input, newJobsTarget));
+  }
 
   if (isPipelineQuiet(input)) {
     // A requested research run comes in through `requests`, past this gate.
     if (input.research) {
       tasks.push(makeTask("research.explore", { ...input.research, newJobsTarget }));
     }
-    if (input.setup) tasks.push(makeTask("search.setup", input.setup));
+    if (input.setup) {
+      tasks.push(makeTask("search.setup", input.setup));
+    }
     tasks.push(
       ...makeTasks("search.tune", input.feedTunes),
       ...makeTasks("job.rescanSkipped", input.rescanSkipped),
@@ -274,9 +290,17 @@ function emptyReason(
   awaitingSetup: boolean,
   autopilot: boolean,
 ): TaskListContent["emptyReason"] {
-  if (taskCount > 0) return null;
-  if (!autopilot) return "autopilotOff";
-  if (capReached) return "capReached";
-  if (awaitingSetup) return "awaitingSetup";
+  if (taskCount > 0) {
+    return null;
+  }
+  if (!autopilot) {
+    return "autopilotOff";
+  }
+  if (capReached) {
+    return "capReached";
+  }
+  if (awaitingSetup) {
+    return "awaitingSetup";
+  }
   return "clear";
 }

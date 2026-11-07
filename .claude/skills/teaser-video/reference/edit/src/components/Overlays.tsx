@@ -82,7 +82,9 @@ export function FlyingChip(props: ChipProps): ReactElement | null {
   const { from, to, at, dur = 42, label = "Applied" } = props;
   const f = useCurrentFrame() - at;
   const { fps } = useVideoConfig();
-  if (f < 0 || f > dur + 16) return null;
+  if (f < 0 || f > dur + 16) {
+    return null;
+  }
   const pop = spring({ frame: f, fps, config: { damping: 11, stiffness: 220 } });
   const t = interpolate(f, [10, dur], [0, 1], { ...clamp, easing: ease });
   // Quadratic arc, lifting above the straight line.

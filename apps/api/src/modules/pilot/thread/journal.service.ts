@@ -23,7 +23,9 @@ async function loadRuns(
   rows: PilotJournalEntry[],
 ): Promise<RunsById> {
   const runIds = [...new Set(rows.flatMap((row) => (row.runId ? [row.runId] : [])))];
-  if (runIds.length === 0) return new Map();
+  if (runIds.length === 0) {
+    return new Map();
+  }
   const runs = await prisma.pilotRun.findMany({
     where: { userId, id: { in: runIds } },
     select: {

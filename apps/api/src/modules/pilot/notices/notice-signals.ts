@@ -29,7 +29,9 @@ export interface NoticeFacts {
 }
 
 function emailNotice(email: NoticeFacts["email"]): PilotNotice | null {
-  if (email === "connected") return null;
+  if (email === "connected") {
+    return null;
+  }
   const reconnect = email === "reconnect";
   return {
     key: "email.missing",
@@ -40,7 +42,9 @@ function emailNotice(email: NoticeFacts["email"]): PilotNotice | null {
 }
 
 function inboxNotice(staleMail: number): PilotNotice | null {
-  if (staleMail === 0) return null;
+  if (staleMail === 0) {
+    return null;
+  }
   return {
     key: "inbox.unread",
     title: `${staleMail} ${staleMail === 1 ? "email" : "emails"} the pilot hasn't read yet`,
@@ -55,7 +59,9 @@ function inboxNotice(staleMail: number): PilotNotice | null {
 
 function outcomesNotice(facts: NoticeFacts): PilotNotice | null {
   const quiet = facts.progressed === 0 && facts.recruiterReplies === 0;
-  if (facts.recentApplications < OUTCOMES_MIN_APPLICATIONS || !quiet) return null;
+  if (facts.recentApplications < OUTCOMES_MIN_APPLICATIONS || !quiet) {
+    return null;
+  }
   return {
     key: "outcomes.none",
     title: "No replies from your recent applications",
@@ -70,7 +76,9 @@ function outcomesNotice(facts: NoticeFacts): PilotNotice | null {
 
 function nearMissNotice(facts: NoticeFacts): PilotNotice | null {
   const lower = Math.max(0, facts.minScore - NEAR_MISS_BAND);
-  if (facts.nearMisses < NEAR_MISS_MIN_JOBS || lower === facts.minScore) return null;
+  if (facts.nearMisses < NEAR_MISS_MIN_JOBS || lower === facts.minScore) {
+    return null;
+  }
   return {
     key: "score.nearMiss",
     title: `${facts.nearMisses} jobs just missed your score`,
@@ -89,7 +97,9 @@ function capNotice(facts: NoticeFacts, now: Date): PilotNotice | null {
   const longEnough = since !== null && now.getTime() - since.getTime() >= CAP_WINDOW_MS;
   const perDay = facts.appliedLastWeek / 7;
   const underused = facts.dailyApplyCap > 0 && perDay < facts.dailyApplyCap * CAP_USED_SHARE;
-  if (!longEnough || !underused || facts.approvedWaiting > 0) return null;
+  if (!longEnough || !underused || facts.approvedWaiting > 0) {
+    return null;
+  }
   return {
     key: "cap.unused",
     title: "The pilot is running out of jobs",

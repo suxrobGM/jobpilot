@@ -66,7 +66,9 @@ async function requestTask(
         where: { id: input.payload.searchId, userId, kind: "search", archivedAt: null },
         select: { id: true, query: true, resumeId: true, board: { select: { domain: true } } },
       });
-      if (!search) return null;
+      if (!search) {
+        return null;
+      }
       return makeTask("search.discover", {
         searchId: search.id,
         query: search.query ?? "",
@@ -83,7 +85,9 @@ async function requestTask(
       return alerts && makeTask("inbox.jobAlerts", alerts);
     }
     case "research.explore": {
-      if (ctx.goals === "") return null;
+      if (ctx.goals === "") {
+        return null;
+      }
       const research = await researchPayload(prisma, userId, {
         goals: ctx.goals,
         config,
@@ -141,7 +145,9 @@ export async function gatherRequests(
       where: { id: row.id, status: "pending" },
       data: { status: "failed", finishedAt: now },
     });
-    if (failed) publishRequest(userId, failed, "request.updated");
+    if (failed) {
+      publishRequest(userId, failed, "request.updated");
+    }
   }
   return tasks;
 }
@@ -153,6 +159,8 @@ export async function gatherChat(prisma: PrismaClient, userId: string): Promise<
     orderBy: { createdAt: "desc" },
     select: { id: true, author: true },
   });
-  if (newest?.author !== "user") return null;
+  if (newest?.author !== "user") {
+    return null;
+  }
   return makeTask("chat.reply", { messageId: newest.id });
 }

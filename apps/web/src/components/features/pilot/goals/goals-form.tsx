@@ -43,7 +43,9 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
     defaultValues: { goals: state.goals },
     validators: { onSubmit: goalsSchema },
     onSubmit: async ({ value }) => {
-      if (value.goals === state.goals) return;
+      if (value.goals === state.goals) {
+        return;
+      }
       // Read on save, not on mount, so the dialog sees what the old goals left running now.
       const [searches, { count: approvedJobs }] = await Promise.all([
         queryClient.query(pilotQueries.searches()),
@@ -64,7 +66,9 @@ export function GoalsForm(props: GoalsFormProps): ReactElement {
   });
 
   const confirm = (retire: GoalsRetirement): void => {
-    if (!pending) return;
+    if (!pending) {
+      return;
+    }
     const actions: PilotChangeAction[] = [];
     if (retire.rebuildSearches) {
       actions.push(

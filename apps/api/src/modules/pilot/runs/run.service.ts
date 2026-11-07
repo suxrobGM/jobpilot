@@ -68,9 +68,13 @@ const START_CHECKS: Partial<Record<TaskType, StartCheck>> = {
 
 async function assertStillStartable(tx: Prisma.TransactionClient, userId: string, task: PilotTask) {
   const check = START_CHECKS[task.taskType];
-  if (!check) return;
+  if (!check) {
+    return;
+  }
   const remaining = await check.remaining(tx, userId, task.subjectId);
-  if (remaining === 0) throw conflict(check.gone, ErrorCodes.PILOT_CONFLICT);
+  if (remaining === 0) {
+    throw conflict(check.gone, ErrorCodes.PILOT_CONFLICT);
+  }
 }
 
 /** The task as the live snapshot lists it. The no-op write locks the state row, serializing starts. */
@@ -93,7 +97,9 @@ async function lockSnapshotTask(
   }
   const { tasks } = taskListSchema.parse(locked.taskListSnapshot);
   const task = tasks.find((entry) => entry.id === taskId);
-  if (!task) throw conflict("Task is no longer available.", ErrorCodes.PILOT_CONFLICT);
+  if (!task) {
+    throw conflict("Task is no longer available.", ErrorCodes.PILOT_CONFLICT);
+  }
   return task;
 }
 
@@ -119,8 +125,12 @@ export class RunService {
         this.startInTransaction(tx, userId, taskListVersion, taskId),
       ),
     );
-    if (startedJob) publishJobUpdated(userId, startedJob);
-    for (const request of requests) publishRequest(userId, request, "request.updated");
+    if (startedJob) {
+      publishJobUpdated(userId, startedJob);
+    }
+    for (const request of requests) {
+      publishRequest(userId, request, "request.updated");
+    }
     const started = toPilotRun(run);
     publish(
       pilotChannel,
@@ -147,7 +157,9 @@ export class RunService {
       where: { ...subject, finishedAt: null },
       select: { id: true },
     });
-    if (open) throw conflict("This task is already started.", ErrorCodes.PILOT_CONFLICT);
+    if (open) {
+      throw conflict("This task is already started.", ErrorCodes.PILOT_CONFLICT);
+    }
 
     await assertStillStartable(tx, userId, task);
     const startedJob =
@@ -182,7 +194,9 @@ export class RunService {
       { id, userId },
       "Run",
     );
-    if (run.finishedAt) throw alreadyFinished();
+    if (run.finishedAt) {
+      throw alreadyFinished();
+    }
 
     const now = Date.now();
     const ceiling = run.startedAt.getTime() + MAX_RUN_LIFETIME_MS;
@@ -193,7 +207,9 @@ export class RunService {
         expiresAt: new Date(Math.min(now + RUN_TTL_MS, ceiling)),
       },
     });
-    if (!updated) throw alreadyFinished();
+    if (!updated) {
+      throw alreadyFinished();
+    }
     return toPilotRun(updated);
   }
 
@@ -202,14 +218,18 @@ export class RunService {
       where: { id, userId },
       data: body,
     });
-    if (!updated) throw notFound("Run not found");
+    if (!updated) {
+      throw notFound("Run not found");
+    }
     return toPilotRun(updated);
   }
 
   /** The host gave up on the run. A repeat call returns it unchanged. */
   async cancel(userId: string, id: string) {
     const existing = await this.findRun(userId, id);
-    if (existing.finishedAt) return toPilotRun(existing);
+    if (existing.finishedAt) {
+      return toPilotRun(existing);
+    }
     const run = await this.close(userId, existing, "cancelled");
     publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: "cancelled" });
     return run;
@@ -232,7 +252,9 @@ export class RunService {
   /** The host's cycle entry for this run carries its id as `runId`, so the two group together. */
   async recordResult(userId: string, id: string, body: PilotRunResultInput) {
     const existing = await this.findRun(userId, id);
-    if (existing.finishedAt) return toPilotRun(existing);
+    if (existing.finishedAt) {
+      return toPilotRun(existing);
+    }
 
     const action: JournalEntryInput = {
       kind: "action",
@@ -256,7 +278,9 @@ export class RunService {
 
   private async findOpenRun(userId: string, id: string) {
     const run = await this.findRun(userId, id);
-    if (run.finishedAt) throw alreadyFinished();
+    if (run.finishedAt) {
+      throw alreadyFinished();
+    }
     return run;
   }
 
@@ -282,7 +306,9 @@ export class RunService {
           where: { id: runId, userId, finishedAt: null },
           data: { finishedAt: now, outcome },
         });
-        if (!row) throw conflict("Run was finished concurrently.", ErrorCodes.PILOT_CONFLICT);
+        if (!row) {
+          throw conflict("Run was finished concurrently.", ErrorCodes.PILOT_CONFLICT);
+        }
         return {
           finished: row,
           journaled:
@@ -297,8 +323,12 @@ export class RunService {
       },
     );
     await this.journal.publishAppended(userId, journaled);
-    for (const request of requests) publishRequest(userId, request, "request.updated");
-    if (message) publish(pilotChannel, { userId }, { type: "message.created", message });
+    for (const request of requests) {
+      publishRequest(userId, request, "request.updated");
+    }
+    if (message) {
+      publish(pilotChannel, { userId }, { type: "message.created", message });
+    }
     return toPilotRun(finished);
   }
 }

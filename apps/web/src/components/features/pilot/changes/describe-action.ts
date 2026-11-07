@@ -10,8 +10,12 @@ function searchName(names: SearchNames, id: string): string {
 
 function describeRules(action: Extract<PilotChangeAction, { type: "rules.set" }>): string {
   const parts: string[] = [];
-  if (action.dailyApplyCap !== undefined) parts.push(`${action.dailyApplyCap} a day`);
-  if (action.minScore !== undefined) parts.push(`score ${action.minScore}+`);
+  if (action.dailyApplyCap !== undefined) {
+    parts.push(`${action.dailyApplyCap} a day`);
+  }
+  if (action.minScore !== undefined) {
+    parts.push(`score ${action.minScore}+`);
+  }
   if (action.dealBreakers !== undefined) {
     parts.push(
       action.dealBreakers.length > 0

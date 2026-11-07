@@ -172,7 +172,9 @@ export class UserService {
       where: { id: userId },
       select: PORTFOLIO_SETTINGS_SELECT,
     });
-    if (!user) throw notFound("User not found");
+    if (!user) {
+      throw notFound("User not found");
+    }
     return withProfile(user);
   }
 

@@ -94,7 +94,9 @@ const CHANNEL_PREFERENCE = ["email", "linkedin"] as const satisfies readonly Net
 export function networkingMode(config: PilotConfig): NetworkingMode | null {
   for (const channel of CHANNEL_PREFERENCE) {
     const autonomy = channelAutonomy(config, channel);
-    if (autonomy) return { channel, autonomy };
+    if (autonomy) {
+      return { channel, autonomy };
+    }
   }
   return null;
 }

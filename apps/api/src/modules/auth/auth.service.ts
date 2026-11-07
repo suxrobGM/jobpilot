@@ -84,7 +84,9 @@ export class AuthService {
         where: { username: candidate },
         select: { id: true },
       });
-      if (!taken) return candidate;
+      if (!taken) {
+        return candidate;
+      }
     }
     return `pilot-${crypto.randomUUID().slice(0, 8)}`;
   }

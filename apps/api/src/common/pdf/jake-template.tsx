@@ -24,7 +24,9 @@ function ListSection<T>(props: {
   Entry: (p: { entry: T }) => ReactElement;
 }): ReactNode {
   const { Entry } = props;
-  if (props.items.length === 0) return null;
+  if (props.items.length === 0) {
+    return null;
+  }
   return (
     <Section title={props.title}>
       {props.items.map((entry, i) => (

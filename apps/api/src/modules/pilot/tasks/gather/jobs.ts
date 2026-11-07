@@ -131,7 +131,9 @@ export async function attachWarmContacts(
   jobs: TaskJob[],
 ): Promise<void> {
   const withCompany = jobs.filter((job) => job.company);
-  if (withCompany.length === 0) return;
+  if (withCompany.length === 0) {
+    return;
+  }
 
   const rows = await prisma.contact.findMany({
     where: { userId, email: { not: null }, company: { not: null } },
@@ -145,11 +147,15 @@ export async function attachWarmContacts(
 
   for (const job of withCompany) {
     const target = normalizeCompanyName(job.company ?? "");
-    if (!target) continue;
+    if (!target) {
+      continue;
+    }
     const matches = contacts
       .filter(({ company }) => company.includes(target) || target.includes(company))
       .map(({ contact }) => contact);
-    if (matches.length > 0) job.warmContacts = matches;
+    if (matches.length > 0) {
+      job.warmContacts = matches;
+    }
   }
 }
 
@@ -177,10 +183,14 @@ export async function gatherBoardDiagnoses(
   const unhealthy: TaskPayload<"board.diagnose">[] = [];
   for (const jobs of Map.groupBy(rows, (row) => row.board?.id).values()) {
     const { board } = jobs[0];
-    if (!board) continue;
+    if (!board) {
+      continue;
+    }
     const firstSuccess = jobs.findIndex((job) => job.status !== "failed");
     const failed = firstSuccess === -1 ? jobs : jobs.slice(0, firstSuccess);
-    if (failed.length < BOARD_HEALTH_MIN_FAILURES) continue;
+    if (failed.length < BOARD_HEALTH_MIN_FAILURES) {
+      continue;
+    }
 
     // The agent retries the test job into the apply queue, which only reads live feeds.
     const probe = failed.find((job) => job.feed.pausedAt === null && job.feed.archivedAt === null);

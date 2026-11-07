@@ -36,7 +36,9 @@ export async function gatherDueSearches(
       lastRunAt: true,
     },
   });
-  if (searches.length === 0) return { dueQueries: [], nextSearchRunAt: null };
+  if (searches.length === 0) {
+    return { dueQueries: [], nextSearchRunAt: null };
+  }
 
   const latest = await latestRunBySubject(
     prisma,

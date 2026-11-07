@@ -69,7 +69,9 @@ export function ProjectEntry(props: { entry: ResumeProject }): ReactElement {
 }
 
 export function SkillsList(props: { groups: ResumeSkillGroup[] }): ReactNode {
-  if (props.groups.length === 0) return null;
+  if (props.groups.length === 0) {
+    return null;
+  }
   return (
     <View style={{ marginTop: 4 }}>
       {props.groups.map((g, i) => (

@@ -19,12 +19,22 @@ type LatestRun = Awaited<ReturnType<typeof latestRun>>;
 
 /** One successful run per scheduled time; failures retry hourly. */
 export function jobAlertsDue(settings: JobAlertsSettings, lastRun: LatestRun, now: Date): boolean {
-  if (lastRun && !lastRun.finishedAt) return false;
-  if (!settings.enabled) return false;
+  if (lastRun && !lastRun.finishedAt) {
+    return false;
+  }
+  if (!settings.enabled) {
+    return false;
+  }
   const lastScheduledRun = latestDailyRun(settings.runHours, settings.timeZone, now);
-  if (!lastScheduledRun) return false;
-  if (!lastRun) return true;
-  if (lastRun.outcome === "done") return lastRun.startedAt < lastScheduledRun;
+  if (!lastScheduledRun) {
+    return false;
+  }
+  if (!lastRun) {
+    return true;
+  }
+  if (lastRun.outcome === "done") {
+    return lastRun.startedAt < lastScheduledRun;
+  }
   return !ranRecently(lastRun, now, HOUR_MS);
 }
 
@@ -57,10 +67,16 @@ export async function gatherJobAlerts(
   config: PilotConfig,
   now: Date,
 ): Promise<TaskPayload<"inbox.jobAlerts"> | null> {
-  if (!config.jobAlerts.enabled) return null;
+  if (!config.jobAlerts.enabled) {
+    return null;
+  }
   const lastRun = await latestRun(prisma, userId, "inbox.jobAlerts");
-  if (!jobAlertsDue(config.jobAlerts, lastRun, now)) return null;
-  if (await isFeedPaused(prisma, userId, "job_alerts")) return null;
+  if (!jobAlertsDue(config.jobAlerts, lastRun, now)) {
+    return null;
+  }
+  if (await isFeedPaused(prisma, userId, "job_alerts")) {
+    return null;
+  }
   return findJobAlerts(prisma, userId, config, now);
 }
 
@@ -82,7 +98,9 @@ export async function findJobAlerts(
     }),
     prisma.emailMessage.count({ where }),
   ]);
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return {
     messageIds: rows.map((row) => row.id),
     count,

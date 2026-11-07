@@ -80,9 +80,15 @@ function fakePilotQuestion(over: Over) {
   return {
     count: async () => 0,
     findMany: async (a: { where: { status?: unknown; subjectType?: string } }) => {
-      if (a.where.subjectType === "feed") return over.feedQuestions ?? [];
-      if (a.where.subjectType === "email") return over.interviewQuestions ?? [];
-      if (a.where.status === "answered") return over.answered ?? [];
+      if (a.where.subjectType === "feed") {
+        return over.feedQuestions ?? [];
+      }
+      if (a.where.subjectType === "email") {
+        return over.interviewQuestions ?? [];
+      }
+      if (a.where.status === "answered") {
+        return over.answered ?? [];
+      }
       return [];
     },
     updateMany: async () => ({ count: 0 }),
@@ -94,19 +100,31 @@ function fakeJob(over: Over) {
     // Routed by the one filter each read sets: applied = warm-intro pool, matchScore = promote
     // sweep, status `in` = board health, and the rest is the approved gather.
     findMany: async (a: { where: { status?: unknown } }) => {
-      if (a.where.status === "applied") return over.recentAppliedJobs ?? [];
-      if ("matchScore" in a.where) return over.scoredPendingJobs ?? [];
-      if (typeof a.where.status === "object") return over.boardDiagnoseJobs ?? [];
+      if (a.where.status === "applied") {
+        return over.recentAppliedJobs ?? [];
+      }
+      if ("matchScore" in a.where) {
+        return over.scoredPendingJobs ?? [];
+      }
+      if (typeof a.where.status === "object") {
+        return over.boardDiagnoseJobs ?? [];
+      }
       return over.approvedJobs ?? [];
     },
     updateMany: async () => ({ count: 1 }),
     groupBy: async (a: { by: string[] }) => {
-      if (a.by.includes("skipReason")) return over.skipReasonRows ?? [];
+      if (a.by.includes("skipReason")) {
+        return over.skipReasonRows ?? [];
+      }
       return over.quietJobCounts ?? [];
     },
     count: async (a: { where: { status?: string } }) => {
-      if (a.where.status === "failed") return over.jobsFailed ?? 0;
-      if (a.where.status === "skipped") return over.jobsSkipped ?? 0;
+      if (a.where.status === "failed") {
+        return over.jobsFailed ?? 0;
+      }
+      if (a.where.status === "skipped") {
+        return over.jobsSkipped ?? 0;
+      }
       return 0;
     },
   };
@@ -117,12 +135,18 @@ function fakeFeed(over: Over) {
     // Routed by the field only that read sets.
     findMany: async (a: { where: { kind?: unknown; pausedAt?: unknown; jobs?: unknown } }) => {
       const { kind, pausedAt } = a.where;
-      if (pausedAt != null) return over.pausedSearches ?? [];
-      if (kind === "search") return over.pilotSearches ?? [];
+      if (pausedAt != null) {
+        return over.pausedSearches ?? [];
+      }
+      if (kind === "search") {
+        return over.pilotSearches ?? [];
+      }
       if (typeof kind === "object" && kind !== null && "in" in kind) {
         return over.scorePendingFeeds ?? [];
       }
-      if ("jobs" in a.where) return over.queuedFeeds ?? [];
+      if ("jobs" in a.where) {
+        return over.queuedFeeds ?? [];
+      }
       return over.quietFeeds ?? [];
     },
     // A paused-feed check filters on `pausedAt`; the rest count searches.

@@ -38,7 +38,9 @@ function makeService(over: Row = {}) {
       },
       findFirst: async () => question,
       updateManyAndReturn: async (a: { where: { status: string }; data: Row }) => {
-        if (question.status !== a.where.status) return [];
+        if (question.status !== a.where.status) {
+          return [];
+        }
         Object.assign(question, a.data);
         return [question];
       },
@@ -80,7 +82,9 @@ describe("PilotQuestionService.create", () => {
     const { svc, rec } = makeService();
     await svc.create("p1", { kind: "two_factor", prompt: "Enter the code", options: [] });
     const expiresAt = rec.created?.expiresAt;
-    if (!(expiresAt instanceof Date)) throw new Error("expected an expiry");
+    if (!(expiresAt instanceof Date)) {
+      throw new Error("expected an expiry");
+    }
     const minutes = (expiresAt.getTime() - Date.now()) / 60_000;
     expect(minutes).toBeGreaterThan(4);
     expect(minutes).toBeLessThanOrEqual(5);

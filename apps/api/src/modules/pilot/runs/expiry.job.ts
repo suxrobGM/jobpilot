@@ -17,7 +17,9 @@ export const expiryJob = cron({
 
     expireAbandonedRuns(container.get(PrismaClient), new Date())
       .then((users) => {
-        if (users > 0) logger.info({ users }, "Expired abandoned pilot runs");
+        if (users > 0) {
+          logger.info({ users }, "Expired abandoned pilot runs");
+        }
       })
       .catch((err) => logger.error({ err }, "Pilot run expiry failed"));
   },

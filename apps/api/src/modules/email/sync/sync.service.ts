@@ -139,7 +139,9 @@ export class EmailSyncService {
           data: { status: "replied", repliedAt: m.receivedAt },
         });
         linked += byThread.count;
-        if (byThread.count > 0) continue;
+        if (byThread.count > 0) {
+          continue;
+        }
       }
 
       if (m.fromAddress) {

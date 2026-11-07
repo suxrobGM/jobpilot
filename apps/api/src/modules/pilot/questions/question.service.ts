@@ -23,7 +23,9 @@ const QUESTION_TTL_MS = 14 * DAY_MS;
 const SAVED_ANSWER_KINDS: PilotQuestionModel["kind"][] = ["question", "choice"];
 
 function questionExpiry(body: CreatePilotQuestionInput): Date {
-  if (body.expiresAt) return new Date(body.expiresAt);
+  if (body.expiresAt) {
+    return new Date(body.expiresAt);
+  }
   const ttl = body.kind === "two_factor" ? TWO_FACTOR_TTL_MS : QUESTION_TTL_MS;
   return new Date(Date.now() + ttl);
 }

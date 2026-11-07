@@ -40,7 +40,8 @@
       "style": {
         // `noUncheckedIndexedAccess` forces `!` on Elysia's cookie jar and other Record
         // lookups; Biome's `?.` autofix would silently drop the call.
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "useBlockStatements": "error"
       }
     }
   },

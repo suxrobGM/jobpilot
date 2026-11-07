@@ -106,7 +106,9 @@ export async function guardApply<T>(
   try {
     return await move();
   } catch (error) {
-    if (!(error instanceof AlreadyAppliedError)) throw error;
+    if (!(error instanceof AlreadyAppliedError)) {
+      throw error;
+    }
 
     const { feedId, key } = error.job;
     const [skipped] = await prisma.job.updateManyAndReturn({

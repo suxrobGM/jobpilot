@@ -57,8 +57,12 @@ export function expandSynonyms(term: string): string[] {
   const compact = normalizeKeyword(term);
   const spaced = normalizeMatchPhrase(term);
   const variants = new Set<string>(groupVariantsByCompactForm.get(compact));
-  if (compact) variants.add(compact);
-  if (spaced) variants.add(spaced);
+  if (compact) {
+    variants.add(compact);
+  }
+  if (spaced) {
+    variants.add(spaced);
+  }
 
   const result = [...variants];
   expandCache.set(term, result);

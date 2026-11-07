@@ -41,7 +41,9 @@ export class EmailService {
     }
     if (since) {
       const date = new Date(since);
-      if (!Number.isNaN(date.getTime())) where.receivedAt = { gte: date };
+      if (!Number.isNaN(date.getTime())) {
+        where.receivedAt = { gte: date };
+      }
     }
     if (verificationDomain) {
       where.verificationDomain = verificationDomain;

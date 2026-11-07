@@ -17,12 +17,16 @@ function segments(path: string): string[] {
     .filter(Boolean);
   const last = parts.at(-1);
   // A path quoted inside prose like `<every domain from GET /api/job-boards>`.
-  if (last?.endsWith(">") && !last.includes("<")) parts[parts.length - 1] = last.slice(0, -1);
+  if (last?.endsWith(">") && !last.includes("<")) {
+    parts[parts.length - 1] = last.slice(0, -1);
+  }
   return parts;
 }
 
 function matches(pattern: string[], path: string[]): boolean {
-  if (pattern.length !== path.length) return false;
+  if (pattern.length !== path.length) {
+    return false;
+  }
   return pattern.every((part, i) => {
     const used = path[i];
     return part.startsWith(":") || PLACEHOLDER.test(used) || part === used;
@@ -36,8 +40,11 @@ function apiRoutes(): string[][] {
     const source = readFileSync(join(import.meta.dir, file), "utf8");
     let prefix = "";
     for (const [, declared, method, path] of source.matchAll(ROUTE)) {
-      if (declared !== undefined) prefix = declared;
-      else routes.push([method.toUpperCase(), "api", ...segments(prefix + path)]);
+      if (declared !== undefined) {
+        prefix = declared;
+      } else {
+        routes.push([method.toUpperCase(), "api", ...segments(prefix + path)]);
+      }
     }
   }
   return routes;
@@ -65,7 +72,9 @@ describe("plugin links", () => {
     const missing: string[] = [];
     for (const { file, text } of pluginFiles()) {
       for (const [, method, path] of text.matchAll(API_CALL)) {
-        if (path.includes("...")) continue;
+        if (path.includes("...")) {
+          continue;
+        }
         const used = segments(path);
         if (!routes.some(([m, ...p]) => m === method && matches(p, used))) {
           missing.push(`${file}: ${method} ${path}`);
@@ -80,7 +89,9 @@ describe("plugin links", () => {
     const missing: string[] = [];
     for (const { file, text } of pluginFiles()) {
       for (const [, path] of text.matchAll(WEB_LINK)) {
-        if (!pages.some((p) => matches(p, segments(path)))) missing.push(`${file}: ${path}`);
+        if (!pages.some((p) => matches(p, segments(path)))) {
+          missing.push(`${file}: ${path}`);
+        }
       }
     }
     expect(missing).toEqual([]);
