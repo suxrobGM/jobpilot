@@ -45,7 +45,18 @@ export function NeedsYouList(props: NeedsYouListProps): ReactElement {
     <Stack spacing={1.25}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", px: 0.5 }}>
         <Typography variant="overline">Needs you</Typography>
-        {total > 0 && <Chip label={total} color="primary" size="small" />}
+        {total > 0 && (
+          // Sized like the rail's badge, so the two counts read as one thing.
+          <Chip
+            label={total}
+            color="primary"
+            sx={{
+              height: 16,
+              minWidth: 16,
+              "& .MuiChip-label": { px: 0.5, typography: "caption" },
+            }}
+          />
+        )}
       </Stack>
       {total === 0 && (
         <Typography variant="body2Muted" sx={{ px: 0.5 }}>

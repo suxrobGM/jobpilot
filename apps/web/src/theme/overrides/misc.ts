@@ -35,6 +35,16 @@ export const chipOverrides: Components<Theme>["MuiChip"] = {
       height: 24,
     }),
   },
+  variants: [
+    {
+      // The same fill as the main button and the nav badges: one orange for "this one".
+      props: { variant: "filled", color: "primary" },
+      style: ({ theme }) => ({
+        backgroundColor: theme.palette.accent.action,
+        color: theme.palette.common.white,
+      }),
+    },
+  ],
 };
 
 /** A flex column so pages space the header and cards with `gap`. */
