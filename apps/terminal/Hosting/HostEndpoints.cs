@@ -1,5 +1,3 @@
-using JobPilot.Terminal.Sessions;
-
 namespace JobPilot.Terminal.Hosting;
 
 /// <summary>Acknowledges /shutdown; the process exits shortly after this response flushes.</summary>
@@ -11,10 +9,9 @@ public static class HostEndpoints
     {
         app.MapGet("/healthz", (HostStatus status) => TypedResults.Ok(status.Get()));
 
-        app.MapPost("/shutdown", (TerminalSession session, IHostApplicationLifetime lifetime) =>
+        // Stopping the host stops the session; pilot.json survives, so the next start stays paired and resumes.
+        app.MapPost("/shutdown", (IHostApplicationLifetime lifetime) =>
         {
-            // pilot.json survives, so the next start stays paired and resumes the pilot.
-            session.Stop();
             lifetime.StopAfterResponse();
             return TypedResults.Ok(new ShutdownResult(Ok: true));
         });

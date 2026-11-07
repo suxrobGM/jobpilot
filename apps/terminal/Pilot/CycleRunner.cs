@@ -36,8 +36,6 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
     // How often a wait asks the server whether the run finished, in case its event was missed.
     private readonly TimeSpan checkInterval = checkInterval ?? TimeSpan.FromMinutes(2);
 
-    private TimeSpan totalWaited;
-    private bool extensionReported;
     private bool holdReported;
 
     public int ConsecutiveRestarts { get; private set; }
@@ -111,9 +109,6 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
             await Task.Delay(StartupGrace, time, ct);
         }
 
-        totalWaited = TimeSpan.Zero;
-        extensionReported = false;
-
         await agent.SendCycleAsync(pairing, runId, ct);
         var result = await WaitForResultAsync(pairing, runId, ct);
         await TrackStreaksAsync(result, ct);
@@ -153,7 +148,8 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
     /// <summary>Waits for the result; a stuck run climbs check-in, skip, then restart.</summary>
     private async Task<WaitResult> WaitForResultAsync(PilotPairing pairing, string runId, CancellationToken ct)
     {
-        var result = await WaitAsync(runId, ResultTimeout, ct);
+        var wait = new RunWait();
+        var result = await WaitAsync(runId, wait, ResultTimeout, ct);
 
         // No server check between rungs: every unfinished wait has just checked whether the run finished.
         (Directive Directive, string Report)[] rungs = [(Directive.CheckIn, JournalLines.CheckIn), (Directive.Skip, JournalLines.Skip)];
@@ -166,7 +162,7 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
 
             await api.WriteJournalAsync(report, ct);
             await agent.SendDirectiveAsync(pairing, directive, ct);
-            result = await WaitAsync(runId, CheckInGrace, ct);
+            result = await WaitAsync(runId, wait, CheckInGrace, ct);
         }
 
         if (!result.IsFinal)
@@ -204,7 +200,7 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
     }
 
     /// <summary>Checks the server after each slice, since the run's event can be missed; fresh activity extends the wait.</summary>
-    private async Task<WaitResult> WaitAsync(string runId, TimeSpan quietBudget, CancellationToken ct)
+    private async Task<WaitResult> WaitAsync(string runId, RunWait wait, TimeSpan quietBudget, CancellationToken ct)
     {
         var slice = checkInterval < quietBudget ? checkInterval : quietBudget;
         var quiet = TimeSpan.Zero;
@@ -221,7 +217,7 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
             // the whole cycle budget in seconds.
             if (result.Kind is WaitKind.Timeout)
             {
-                totalWaited += slice;
+                wait.Waited += slice;
                 quiet += slice;
             }
 
@@ -233,15 +229,15 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
             var activity = await api.GetActivityAsync(ct);
             if (activity?.LastActivityAt is { } at && time.GetUtcNow() - at < RecentActivityWindow)
             {
-                if (totalWaited >= MaxCycleWait)
+                if (wait.Waited >= MaxCycleWait)
                 {
                     return result;
                 }
 
-                if (totalWaited >= ResultTimeout && !extensionReported)
+                if (wait.Waited >= ResultTimeout && !wait.ExtensionReported)
                 {
                     await api.WriteJournalAsync(JournalLines.Extend, ct);
-                    extensionReported = true;
+                    wait.ExtensionReported = true;
                 }
 
                 quiet = TimeSpan.Zero;
@@ -251,5 +247,13 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
                 return result;
             }
         }
+    }
+
+    /// <summary>Shared by every wait of one run, so the cycle cap and the extension report count all of them.</summary>
+    private sealed class RunWait
+    {
+        public TimeSpan Waited { get; set; }
+
+        public bool ExtensionReported { get; set; }
     }
 }
