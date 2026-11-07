@@ -1,5 +1,7 @@
+import type { PilotThreadJob } from "@jobpilot/contracts/pilot";
 import type { PilotJournalEntry, PilotRun } from "@/generated/prisma/client";
 import { buildThread } from "./thread.service";
+import type { DiscoveredJob } from "./thread-work";
 import { describe, expect, it } from "bun:test";
 
 const T0 = new Date("2026-11-05T09:00:00Z").getTime();
@@ -24,7 +26,7 @@ function entry(
   };
 }
 
-function run(id: string, startMin: number, endMin: number) {
+function run(id: string, startMin: number, endMin: number, over: Partial<PilotRun> = {}) {
   return {
     id,
     taskType: "upwork.syncInbox",
@@ -34,13 +36,26 @@ function run(id: string, startMin: number, endMin: number) {
     outcome: "done",
     startedAt: at(startMin),
     finishedAt: at(endMin),
+    payload: {},
+    ...over,
   } satisfies Partial<PilotRun>;
 }
 
-function thread(entries: PilotJournalEntry[], runs: ReturnType<typeof run>[]) {
+interface ThreadExtras {
+  jobs?: Map<string, PilotThreadJob>;
+  discovered?: DiscoveredJob[];
+}
+
+function thread(
+  entries: PilotJournalEntry[],
+  runs: ReturnType<typeof run>[],
+  extras: ThreadExtras = {},
+) {
   return buildThread({
     entries,
     runs,
+    jobs: extras.jobs ?? new Map(),
+    discovered: extras.discovered ?? [],
     questions: [],
     changes: [],
     messages: [],
@@ -93,5 +108,51 @@ describe("buildThread", () => {
       ["note", "n1"],
       ["digest", "d1"],
     ]);
+  });
+
+  it("totals a sitting's searches and scores and names each applied job", () => {
+    const feed = "019a0000-0000-7000-8000-000000000001";
+    const jobs = new Map<string, PilotThreadJob>([
+      [`${feed}:a`, { title: "ML Engineer", company: "Acme", score: 82 }],
+      [`${feed}:b`, { title: "AI Engineer", company: "Globex", score: 55 }],
+      [`${feed}:c`, { title: "Data Engineer", company: "Initech", score: null }],
+    ]);
+    const items = thread(
+      [
+        entry("s", 5, { runId: "search" }),
+        entry("sc", 10, { runId: "score" }),
+        entry("ap", 15, { runId: "apply", subjectType: "job", subjectId: `${feed}:a` }),
+      ],
+      [
+        run("search", 0, 5, { taskType: "search.discover", subjectType: "feed", subjectId: feed }),
+        run("score", 6, 10, {
+          taskType: "feed.score",
+          subjectType: "feed",
+          subjectId: feed,
+          payload: { minScore: 60, entries: [{ key: "a" }, { key: "b" }, { key: "c" }] },
+        }),
+        run("apply", 11, 15, { taskType: "job.apply" }),
+      ],
+      {
+        jobs,
+        // The last one was created after the search run ended, so it isn't counted.
+        discovered: [at(2), at(4), at(30)].map((createdAt) => ({ feedId: feed, createdAt })),
+      },
+    );
+    const work = items.find((item) => item.type === "work");
+    expect(work).toMatchObject({
+      searchTally: {
+        searches: 1,
+        newJobs: 2,
+        scored: 2,
+        passed: 1,
+        best: { company: "Acme", score: 82 },
+      },
+    });
+    expect(work?.type === "work" && work.runs.at(-1)?.job).toEqual({
+      title: "ML Engineer",
+      company: "Acme",
+      score: 82,
+    });
   });
 });

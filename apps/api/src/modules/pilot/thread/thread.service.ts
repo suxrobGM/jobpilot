@@ -7,93 +7,42 @@ import type {
   PilotRequest,
   PilotThreadItem,
   PilotThreadPage,
-  PilotThreadRun,
 } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
 import {
   type PilotJournalEntry as PilotJournalEntryModel,
-  type PilotRun as PilotRunModel,
   PrismaClient,
 } from "@/generated/prisma/client";
+import type { JobRef } from "@/modules/feed/jobs/applying";
 import { toPilotChange } from "../changes/change-row";
+import { jobSubjectId } from "../job-subject";
 import { toPilotQuestion } from "../questions/question-row";
 import { toPilotRequest } from "../requests/request-row";
 import { toJournalEntry } from "./journal-entries";
+import {
+  type DiscoveredJob,
+  foldWork,
+  type ThreadJobs,
+  type ThreadRunRow,
+  threadJobRefs,
+  toRunLine,
+} from "./thread-work";
 
 /** Cycle entries are the loop's bookkeeping; questions arrive as their own rows. */
 const THREAD_KINDS: PilotJournalKind[] = ["action", "digest", "system", "correction"];
 
-/** Runs closer together than this read as one sitting of work. */
-const WORK_GAP_MS = 20 * 60 * 1000;
-
 /** Questions, drafts and changes per page; bounds the oldest page, which has no lower time bound. */
 const SIDE_ROWS_CAP = 100;
-
-type ThreadRunRow = Pick<
-  PilotRunModel,
-  "id" | "taskType" | "subjectType" | "subjectId" | "title" | "outcome" | "startedAt" | "finishedAt"
->;
 
 interface ThreadSources {
   entries: PilotJournalEntryModel[];
   runs: ThreadRunRow[];
+  jobs: ThreadJobs;
+  discovered: DiscoveredJob[];
   questions: PilotQuestion[];
   changes: PilotChange[];
   messages: PilotMessage[];
   requests: PilotRequest[];
-}
-
-interface TimedRun {
-  line: PilotThreadRun;
-  startedAt: Date;
-}
-
-/** The run's line, from entries oldest first: its newest action entry is the result summary `recordResult` journals. */
-function toRunLine(run: ThreadRunRow, entries: PilotJournalEntryModel[]): TimedRun {
-  const newest = entries[entries.length - 1];
-  const result = entries.filter((entry) => entry.kind === "action").at(-1) ?? newest;
-  return {
-    startedAt: run.startedAt,
-    line: {
-      runId: run.id,
-      taskType: run.taskType,
-      title: run.title,
-      summary: result.summary,
-      outcome: run.outcome,
-      subjectType: result.subjectType ?? run.subjectType,
-      subjectId: result.subjectId ?? run.subjectId,
-      finishedAt: run.finishedAt ?? newest.createdAt,
-    },
-  };
-}
-
-function foldWork(runs: TimedRun[]): PilotThreadItem[] {
-  const sorted = [...runs].sort(
-    (a, b) => a.line.finishedAt.getTime() - b.line.finishedAt.getTime(),
-  );
-  const blocks: TimedRun[][] = [];
-  for (const run of sorted) {
-    const block = blocks.at(-1);
-    const last = block?.at(-1);
-    const gap = last ? run.line.finishedAt.getTime() - last.line.finishedAt.getTime() : null;
-    if (block && gap !== null && gap < WORK_GAP_MS) {
-      block.push(run);
-    } else {
-      blocks.push([run]);
-    }
-  }
-  return blocks.map((block) => {
-    const startedAt = new Date(Math.min(...block.map((run) => run.startedAt.getTime())));
-    const endedAt = block[block.length - 1].line.finishedAt;
-    return {
-      type: "work",
-      id: block[0].line.runId,
-      at: endedAt,
-      startedAt,
-      endedAt,
-      runs: block.map((run) => run.line),
-    };
-  });
 }
 
 /** Merges one page of journal entries with the questions and drafts from the same span, newest first. */
@@ -120,9 +69,9 @@ export function buildThread(sources: ThreadSources): PilotThreadItem[] {
 
   const runs = [...entriesByRun].map(([run, entries]) => {
     const ordered = [...entries].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-    return toRunLine(run, ordered);
+    return toRunLine(run, ordered, sources.jobs);
   });
-  items.push(...foldWork(runs));
+  items.push(...foldWork(runs, sources.jobs, sources.discovered));
   for (const question of sources.questions) {
     items.push({ type: "question", id: question.id, at: question.createdAt, question });
   }
@@ -188,6 +137,7 @@ export class PilotThreadService {
               outcome: true,
               startedAt: true,
               finishedAt: true,
+              payload: true,
             },
           }),
       this.prisma.pilotQuestion.findMany(sideRows),
@@ -196,14 +146,55 @@ export class PilotThreadService {
       this.prisma.pilotRequest.findMany(sideRows),
     ]);
 
+    const [jobs, discovered] = await Promise.all([
+      this.loadJobs(userId, threadJobRefs(runs, entries)),
+      this.loadDiscovered(userId, runs),
+    ]);
     const items = buildThread({
       entries,
       runs,
+      jobs,
+      discovered,
       questions: questions.map(toPilotQuestion),
       changes: changes.map((row) => toPilotChange(row)),
       messages,
       requests: requests.map(toPilotRequest),
     });
     return { items, nextCursor };
+  }
+
+  private async loadJobs(userId: string, refs: JobRef[]): Promise<ThreadJobs> {
+    if (refs.length === 0) {
+      return new Map();
+    }
+    const rows = await this.prisma.job.findMany({
+      where: { userId, OR: refs.map((ref) => ({ feedId: ref.feedId, key: ref.key })) },
+      select: { feedId: true, key: true, title: true, company: true, matchScore: true },
+    });
+    return new Map(
+      rows.map((row) => [
+        jobSubjectId(row),
+        { title: row.title, company: row.company, score: row.matchScore },
+      ]),
+    );
+  }
+
+  /** Jobs created by the page's search runs, over the span those runs cover. */
+  private async loadDiscovered(userId: string, runs: ThreadRunRow[]): Promise<DiscoveredJob[]> {
+    const searches = runs.filter((run) => run.taskType === "search.discover" && run.finishedAt);
+    if (searches.length === 0) {
+      return [];
+    }
+    const feedIds = [...new Set(searches.flatMap((run) => (run.subjectId ? [run.subjectId] : [])))];
+    const from = Math.min(...searches.map((run) => run.startedAt.getTime()));
+    const to = Math.max(...searches.map((run) => run.finishedAt?.getTime() ?? from));
+    return this.prisma.job.findMany({
+      where: {
+        userId,
+        feedId: { in: feedIds },
+        createdAt: { gte: new Date(from), lte: new Date(to) },
+      },
+      select: { feedId: true, createdAt: true },
+    });
   }
 }
