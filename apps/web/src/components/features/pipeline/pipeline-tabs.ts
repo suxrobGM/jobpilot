@@ -6,7 +6,7 @@ export const PIPELINE_TABS: { key: PipelineTab; label: string }[] = [
   { key: "review", label: "To review" },
   { key: "inProgress", label: "In progress" },
   { key: "applied", label: "Applied" },
-  { key: "setAside", label: "Set aside" },
+  { key: "notApplied", label: "Not applied" },
 ];
 
 export const PIPELINE_TAB_KEYS: readonly PipelineTab[] = PIPELINE_TABS.map((tab) => tab.key);

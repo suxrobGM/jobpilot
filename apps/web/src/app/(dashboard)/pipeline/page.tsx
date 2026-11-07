@@ -10,7 +10,7 @@ export default function PipelinePage(): ReactElement {
     <PageShell maxWidth="xl">
       <PageHeader
         title="Pipeline"
-        description="Every job the pilot found, scored, applied to or set aside, across all your searches and feeds."
+        description="Every job the pilot found and scored, applied to or not, across all your searches and feeds."
       />
       <PipelineView />
     </PageShell>

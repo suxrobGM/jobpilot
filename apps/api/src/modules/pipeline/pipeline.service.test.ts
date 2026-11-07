@@ -51,7 +51,7 @@ describe("PipelineService.counts", () => {
 
   it("totals only the picked feed but still lists every feed for the menu", async () => {
     const result = await service.counts("u1", { feedId: "a" });
-    expect(result.views).toMatchObject({ review: 3, setAside: 1 });
+    expect(result.views).toMatchObject({ review: 3, notApplied: 1 });
     expect(result.feeds.map((feed) => [feed.feedId, feed.views.review])).toEqual([
       ["a", 3],
       ["b", 2],

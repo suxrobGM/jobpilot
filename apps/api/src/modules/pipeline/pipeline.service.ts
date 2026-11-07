@@ -59,7 +59,7 @@ function viewCounts(byStatus: Map<JobStatus, number>): Record<PipelineJobView, n
   return {
     review: count("review"),
     inProgress: count("inProgress"),
-    setAside: count("setAside"),
+    notApplied: count("notApplied"),
     needsYou: count("needsYou"),
   };
 }

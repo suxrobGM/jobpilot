@@ -3,17 +3,17 @@ import { type JobStatus, jobSchema, MAX_LINKS } from "./feed";
 import { MAX_PAGE_SIZE, paginatedSchema, paginationQuerySchema } from "./pagination";
 
 /**
- * Review, In progress and Set aside are the Pipeline's tabs; Needs you feeds the banner and nav badge.
+ * Review, In progress and Not applied are the Pipeline's tabs; Needs you feeds the banner and nav badge.
  * Applied lists applications, so it isn't a job view.
  */
-const PIPELINE_JOB_VIEWS = ["review", "inProgress", "setAside", "needsYou"] as const;
+const PIPELINE_JOB_VIEWS = ["review", "inProgress", "notApplied", "needsYou"] as const;
 const pipelineJobViewSchema = z.enum(PIPELINE_JOB_VIEWS);
 export type PipelineJobView = z.infer<typeof pipelineJobViewSchema>;
 
 export const PIPELINE_VIEW_STATUSES: Record<PipelineJobView, JobStatus[]> = {
   review: ["queued", "pending"],
   inProgress: ["approved", "applying", "needs_user"],
-  setAside: ["skipped", "failed"],
+  notApplied: ["skipped", "failed"],
   needsYou: ["needs_user"],
 };
 
