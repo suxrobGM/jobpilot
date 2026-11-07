@@ -52,7 +52,7 @@ interface RunMetaProps {
   run: PilotJournalRun;
 }
 
-export function RunMeta(props: RunMetaProps): ReactElement {
+function RunMeta(props: RunMetaProps): ReactElement {
   const { run } = props;
   const agent = AGENT_LABELS[taskTypeAgent(run.taskType)];
   const tokens = run.tokens === null ? "" : ` · ${formatTokenSplit(run.tokens)}`;

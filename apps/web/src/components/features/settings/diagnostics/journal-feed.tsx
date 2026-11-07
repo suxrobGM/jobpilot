@@ -3,16 +3,7 @@
 import { type ReactElement, useState } from "react";
 import type { PilotJournalKind } from "@jobpilot/contracts/pilot";
 import { DeleteSweep, Download, MoreVert } from "@mui/icons-material";
-import {
-  Box,
-  Chip,
-  Divider,
-  IconButton,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from "@mui/material";
+import { Box, Chip, Divider, IconButton, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
@@ -29,7 +20,6 @@ import { useJournalLiveStatus } from "../../pilot/journal/journal-cache";
 import { JournalRow, KIND_META, KIND_ORDER } from "../../pilot/journal/journal-row";
 import { groupByDay, withLatestRuns } from "./journal-entries";
 import { LiveStatusChip } from "./live-status-chip";
-import { RunTimeline } from "./run-timeline";
 
 /** A top-level anchor download carries the same-site auth cookie, so no fetch is needed. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
@@ -41,7 +31,6 @@ export function JournalFeed(): ReactElement {
   const pagination = usePaginationParams({ prefix: "journal" });
   const feed = useQuery(pilotQueries.journalPage(selectedKinds, pagination.query));
   const status = useJournalLiveStatus();
-  const [view, setView] = useState<"flat" | "run">("flat");
 
   const reset = useApiMutation(() => api.pilot.runs.delete(), {
     successMessage: "Pilot reset",
@@ -109,35 +98,19 @@ export function JournalFeed(): ReactElement {
       }
     >
       <Stack spacing={2}>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1.5}
-          sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}
-        >
-          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
-            {KIND_ORDER.map((kind) => {
-              const selected = selectedKinds.includes(kind);
-              return (
-                <Chip
-                  key={kind}
-                  label={KIND_META[kind].label}
-                  color={selected ? KIND_META[kind].color : "default"}
-                  variant={selected ? "filled" : "outlined"}
-                  onClick={() => toggleKind(kind)}
-                />
-              );
-            })}
-          </Stack>
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            value={view}
-            onChange={(_e, next) => next && setView(next)}
-            aria-label="Journal view"
-          >
-            <ToggleButton value="flat">By day</ToggleButton>
-            <ToggleButton value="run">By run</ToggleButton>
-          </ToggleButtonGroup>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
+          {KIND_ORDER.map((kind) => {
+            const selected = selectedKinds.includes(kind);
+            return (
+              <Chip
+                key={kind}
+                label={KIND_META[kind].label}
+                color={selected ? KIND_META[kind].color : "default"}
+                variant={selected ? "filled" : "outlined"}
+                onClick={() => toggleKind(kind)}
+              />
+            );
+          })}
         </Stack>
         <QuerySection
           query={feed}
@@ -145,24 +118,20 @@ export function JournalFeed(): ReactElement {
           isEmpty={entries.length === 0}
           empty={<EmptyState variant="inline" title={emptyMessage} />}
         >
-          {view === "run" ? (
-            <RunTimeline entries={entries} />
-          ) : (
-            <Stack spacing={3}>
-              {groupByDay(entries).map((day) => (
-                <Box key={day.key}>
-                  <Typography variant="overlineMuted" sx={{ display: "block", mb: 1.5 }}>
-                    {day.label}
-                  </Typography>
-                  <Stack spacing={1.5} divider={<Divider />}>
-                    {day.entries.map((entry) => (
-                      <JournalRow key={entry.id} entry={entry} />
-                    ))}
-                  </Stack>
-                </Box>
-              ))}
-            </Stack>
-          )}
+          <Stack spacing={3}>
+            {groupByDay(entries).map((day) => (
+              <Box key={day.key}>
+                <Typography variant="overlineMuted" sx={{ display: "block", mb: 1.5 }}>
+                  {day.label}
+                </Typography>
+                <Stack spacing={1.5} divider={<Divider />}>
+                  {day.entries.map((entry) => (
+                    <JournalRow key={entry.id} entry={entry} />
+                  ))}
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
         </QuerySection>
         {feed.data && (
           <PaginationFooter
