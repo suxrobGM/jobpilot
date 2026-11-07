@@ -1,13 +1,9 @@
 import { UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
 import { DAY_MS } from "@/common/date/buckets";
-import {
-  type JobStatus,
-  type PilotSubjectType,
-  Prisma,
-  type PrismaClient,
-} from "@/generated/prisma/client";
+import { type JobStatus, Prisma, type PrismaClient } from "@/generated/prisma/client";
 import { SERVER_SKIP_REASONS } from "@/modules/pilot/skip-reasons";
 import { notProtectedVariant } from "@/modules/resume/variants/variant.schema";
+import { deleteSpentTombstones, QUESTION_TOMBSTONE_SUBJECTS } from "./question-tombstones";
 
 interface RetentionRule {
   name: string;
@@ -16,8 +12,6 @@ interface RetentionRule {
   apply: (db: PrismaClient, before: Date) => Promise<{ count: number }>;
 }
 
-/** Answered questions on these subjects are the only thing that stops the same review re-opening. */
-const QUESTION_TOMBSTONE_SUBJECTS: PilotSubjectType[] = ["email", "feed"];
 const FOUND: JobStatus[] = ["queued", "pending"];
 const DROPPED: JobStatus[] = ["skipped", "failed"];
 
@@ -70,6 +64,8 @@ export const RETENTION_RULES = [
         },
       }),
   },
+  // The answers `questions` keeps, once their review can no longer re-open.
+  { name: "spentTombstones", days: 30, apply: deleteSpentTombstones },
   // Grace past expiry or use before a token row goes.
   {
     name: "verificationTokens",

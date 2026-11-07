@@ -30,7 +30,7 @@ const RETENTION_BY_MODEL = {
   NetworkingMessage: "userData",
   PilotState: "bounded",
   PilotRun: ["runs", "discoveryRuns"],
-  PilotQuestion: ["questions"],
+  PilotQuestion: ["questions", "spentTombstones"],
   PilotJournalEntry: ["journalEntries", "digests"],
   PilotChange: ["staleProposals", "decidedChanges"],
   PilotMessage: ["messages"],
@@ -57,7 +57,10 @@ async function whereByRule(): Promise<Record<RetentionRuleName, string>> {
     wheres[current] = JSON.stringify(args.where);
     return { count: 0 };
   };
-  const db = new Proxy({}, { get: () => ({ deleteMany: record, updateMany: record }) });
+  const db = new Proxy(
+    {},
+    { get: () => ({ deleteMany: record, updateMany: record, findMany: none }) },
+  );
   for (const rule of RETENTION_RULES) {
     current = rule.name;
     await rule.apply(db as PrismaClient, new Date());
@@ -71,7 +74,10 @@ function days(name: RetentionRuleName): number {
 
 describe("retention", () => {
   it("runs exactly the rules the models list", async () => {
-    const db = new Proxy({}, { get: () => ({ deleteMany: zero, updateMany: zero }) });
+    const db = new Proxy(
+      {},
+      { get: () => ({ deleteMany: zero, updateMany: zero, findMany: none }) },
+    );
     const counts = await applyRetention(db as PrismaClient, new Date());
     const listed = Object.values(RETENTION_BY_MODEL).flatMap((retention) =>
       typeof retention === "string" ? [] : retention,
@@ -111,4 +117,8 @@ describe("retention", () => {
 
 async function zero() {
   return { count: 0 };
+}
+
+async function none() {
+  return [];
 }
