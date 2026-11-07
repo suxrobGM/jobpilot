@@ -110,7 +110,6 @@ function SettingsNavLink(props: SettingsNavLinkProps): ReactElement {
         typography: "body2",
         color: active ? "text.primary" : "text.secondary",
         backgroundColor: active ? theme.palette.surfaces.elevated : "transparent",
-        boxShadow: active ? `inset 2px 0 0 ${theme.palette.accent.primary}` : "none",
         textDecoration: "none",
         transition: theme.motion.fast,
         "&:hover": {

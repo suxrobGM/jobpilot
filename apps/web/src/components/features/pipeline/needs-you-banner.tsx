@@ -16,7 +16,7 @@ export function NeedsYouBanner(): ReactNode {
     return null;
   }
   return (
-    // A card with the accent edge, as the queue marks what waits on you; amber read as an alarm.
+    // A plain card with an orange icon; amber read as an alarm.
     <Stack
       direction="row"
       spacing={1.5}
@@ -28,7 +28,6 @@ export function NeedsYouBanner(): ReactNode {
         borderColor: "line.border",
         borderRadius: theme.radii.lg,
         backgroundColor: theme.palette.surfaces.card,
-        boxShadow: `inset 2px 0 0 ${theme.palette.accent.primary}`,
       })}
     >
       <PendingActions fontSize="md" sx={{ color: "accent.primary" }} />

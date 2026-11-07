@@ -84,10 +84,8 @@ export function DocsMobileNav(): ReactElement {
                   ...(active ? t.typography.body1Strong : t.typography.body1),
                   paddingBlock: 1,
                   paddingInline: 1.75,
-                  borderLeft: 2,
-                  borderLeftColor: active ? "accent.primary" : "transparent",
                   color: active ? "text.primary" : "text.secondary",
-                  backgroundColor: active ? "surfaces.base" : "transparent",
+                  backgroundColor: active ? "surfaces.elevated" : "transparent",
                   transition: `color ${t.motion.fast}`,
                   "&:hover": { color: "text.primary" },
                 })}

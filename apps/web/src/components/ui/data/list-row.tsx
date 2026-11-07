@@ -107,10 +107,8 @@ export function ListRow(props: ListRowProps): ReactElement {
         borderColor: "divider",
         transition: theme.motion.fast,
         "&:last-of-type": { borderBottom: 0 },
-        // An accent edge, not a tint: orange over the dark card reads brown.
-        ...(selection?.selected && {
-          boxShadow: `inset 2px 0 0 ${theme.palette.accent.primary}`,
-        }),
+        // A neutral lift, not an orange tint: orange over the dark card reads brown.
+        ...(selection?.selected && { backgroundColor: theme.palette.surfaces.elevated }),
         ...(opens && {
           cursor: "pointer",
           "&:hover": { backgroundColor: theme.palette.surfaces.elevated },

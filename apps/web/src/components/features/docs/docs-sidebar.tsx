@@ -26,9 +26,9 @@ function SidebarLink(props: SidebarLinkProps): ReactElement {
         ...(active ? theme.typography.body1Strong : theme.typography.body1),
         paddingBlock: 0.75,
         paddingInline: 1.5,
+        borderRadius: theme.radii.sm,
         color: active ? "text.primary" : "text.secondary",
-        borderLeft: 2,
-        borderLeftColor: active ? "accent.primary" : "line.divider",
+        backgroundColor: active ? theme.palette.surfaces.elevated : "transparent",
         "&:hover": { color: "text.primary" },
       })}
     >

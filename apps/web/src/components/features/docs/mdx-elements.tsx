@@ -106,7 +106,7 @@ export function DocsBlockquote(props: ComponentProps<"blockquote">): ReactElemen
         margin: 0,
         marginBottom: 2,
         paddingLeft: 2,
-        borderLeft: `3px solid ${theme.palette.accent.primary}`,
+        borderLeft: `2px solid ${theme.palette.line.borderHi}`,
         color: "text.secondary",
         "& p": { mb: 1 },
       })}

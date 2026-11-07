@@ -91,11 +91,10 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
                 textAlign: "left",
                 paddingInline: theme.spacing(1.25),
                 paddingBlock: theme.spacing(0.75),
-                borderLeft: `2px solid ${
-                  active ? theme.palette.accent.primary : theme.palette.line.divider
-                }`,
+                borderRadius: theme.radii.sm,
                 color: active ? "text.primary" : "text.secondary",
-                transition: `color ${theme.motion.fast}, border-color ${theme.motion.fast}`,
+                backgroundColor: active ? theme.palette.surfaces.elevated : "transparent",
+                transition: theme.motion.fast,
                 "&:hover": { color: "text.primary" },
                 "&:focus-visible": { outline: theme.shadows_custom.focus, outlineOffset: 2 },
               })}
