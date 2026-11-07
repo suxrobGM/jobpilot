@@ -18,8 +18,8 @@ import { LiveTurn } from "../now/live-turn";
 import { SetupTurn } from "../now/setup-turn";
 import { ThreadItem } from "./thread-item";
 
-/** The reading column of the thread, composer included. */
-export const THREAD_WIDTH = 760;
+/** The reading column of the thread, composer included; it starts beside the queue, not centered. */
+export const THREAD_WIDTH = 1000;
 
 /** Within this distance of the bottom, new items keep the view pinned to the newest. */
 const STICK_TO_BOTTOM_PX = 120;
@@ -169,7 +169,7 @@ export function Thread(props: ThreadProps): ReactElement {
       }}
       sx={{ flex: 1, minHeight: 0, overflowY: "auto", pr: 0.5 }}
     >
-      <Stack ref={contentRef} spacing={3} sx={{ maxWidth: THREAD_WIDTH, mx: "auto", py: 1 }}>
+      <Stack ref={contentRef} spacing={3} sx={{ maxWidth: THREAD_WIDTH, py: 1 }}>
         <Box ref={topRef} sx={{ display: "flex", justifyContent: "center" }}>
           {isFetchingNextPage && <CircularProgress size={20} />}
           {hasNextPage && !isFetchingNextPage && (

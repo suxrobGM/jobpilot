@@ -1,7 +1,7 @@
 "use client";
 
 import { type MouseEvent, type ReactNode, useState } from "react";
-import { MoreHoriz, Security } from "@mui/icons-material";
+import { Security } from "@mui/icons-material";
 import {
   Avatar,
   ButtonBase,
@@ -11,7 +11,6 @@ import {
   Menu,
   MenuItem,
   Tooltip,
-  Typography,
 } from "@mui/material";
 import NextLink from "next/link";
 import type { AuthUserDto } from "@/api/types";
@@ -33,13 +32,8 @@ function displayName(u: AuthUserDto): string {
   return name || u.email || "Your profile";
 }
 
-interface AccountMenuProps {
-  collapsed: boolean;
-}
-
 /** One profile per user, so identity, feedback, admin and sign-out rather than a switcher. */
-export function AccountMenu(props: AccountMenuProps): ReactNode {
-  const { collapsed } = props;
+export function AccountMenu(): ReactNode {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
 
@@ -55,7 +49,7 @@ export function AccountMenu(props: AccountMenuProps): ReactNode {
 
   return (
     <>
-      <Tooltip title={collapsed ? name : ""} placement="right">
+      <Tooltip title={name} placement="right">
         <ButtonBase
           aria-label={`Account: ${name}`}
           aria-haspopup="menu"
@@ -63,11 +57,9 @@ export function AccountMenu(props: AccountMenuProps): ReactNode {
           aria-expanded={open}
           onClick={handleOpen}
           sx={(theme) => ({
-            justifyContent: collapsed ? "center" : "flex-start",
-            gap: 1.5,
-            height: 44,
-            paddingInline: collapsed ? 0 : 0.75,
-            borderRadius: theme.radii.lg,
+            alignSelf: "center",
+            padding: 0.5,
+            borderRadius: theme.radii.pill,
             "&:hover": { backgroundColor: theme.palette.surfaces.card },
             "&.Mui-focusVisible": { boxShadow: theme.shadows_custom.focus },
           })}
@@ -83,14 +75,6 @@ export function AccountMenu(props: AccountMenuProps): ReactNode {
           >
             {initials(user)}
           </Avatar>
-          {!collapsed && (
-            <>
-              <Typography variant="body2" noWrap sx={{ flex: 1, textAlign: "left" }}>
-                {name}
-              </Typography>
-              <MoreHoriz fontSize="md" sx={{ color: "text.secondary" }} />
-            </>
-          )}
         </ButtonBase>
       </Tooltip>
       <Menu

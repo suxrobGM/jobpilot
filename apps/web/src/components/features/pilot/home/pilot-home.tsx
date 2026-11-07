@@ -27,7 +27,7 @@ function Conversation(props: ConversationProps): ReactElement {
   return (
     <>
       <Thread state={state} />
-      <Box sx={{ maxWidth: THREAD_WIDTH, width: "100%", mx: "auto" }}>
+      <Box sx={{ maxWidth: THREAD_WIDTH, width: "100%" }}>
         <Composer state={state} />
       </Box>
     </>

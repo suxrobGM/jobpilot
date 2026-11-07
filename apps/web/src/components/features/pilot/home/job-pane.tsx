@@ -23,7 +23,7 @@ export function JobPane(props: JobPaneProps): ReactElement {
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
-      <Stack spacing={2} sx={{ maxWidth: THREAD_WIDTH, mx: "auto", py: 1 }}>
+      <Stack spacing={2} sx={{ maxWidth: THREAD_WIDTH, py: 1 }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
           <Button color="inherit" startIcon={<ArrowBack fontSize="md" />} onClick={onBack}>
             Back

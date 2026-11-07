@@ -82,8 +82,8 @@ export const feedbackLinks: ExternalNavLink[] = [
 ];
 
 export const APP_TITLE = "JobPilot";
-export const SIDEBAR_WIDTH = 232;
-export const SIDEBAR_COLLAPSED_WIDTH = 64;
+// Fits "Networking", the longest one-word label, at caption size.
+export const RAIL_WIDTH = 84;
 export const MOBILE_NAV_HEIGHT = 56;
 export const TOP_BAR_HEIGHT = { mobile: 56, desktop: 64 } as const;
 
