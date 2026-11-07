@@ -4,7 +4,7 @@ import { type ReactElement, useState } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { AddLink, ArrowUpward, Tune } from "@mui/icons-material";
 import { Box, Button, Chip, IconButton, InputBase, Stack, Typography } from "@mui/material";
-import { lighten } from "@mui/material/styles";
+import { darken } from "@mui/material/styles";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
@@ -134,10 +134,10 @@ export function Composer(props: ComposerProps): ReactElement {
             sx={(theme) => ({
               ml: { xs: "auto", sm: 0 },
               borderRadius: theme.radii.lg,
-              // The same light fill as a contained button.
-              color: theme.palette.surfaces.base,
-              backgroundColor: theme.palette.text.primary,
-              "&:hover": { backgroundColor: lighten(theme.palette.text.primary, 0.6) },
+              // The same fill as a contained button.
+              color: theme.palette.common.white,
+              backgroundColor: theme.palette.accent.action,
+              "&:hover": { backgroundColor: darken(theme.palette.accent.action, 0.12) },
               "&.Mui-disabled": {
                 color: "text.disabled",
                 backgroundColor: theme.palette.surfaces.elevated,

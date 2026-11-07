@@ -122,8 +122,8 @@ export function PilotPanel(): ReactElement {
               display: "grid",
               placeItems: "center",
               borderRadius: theme.radii.md,
-              color: "surfaces.base",
-              backgroundColor: "text.primary",
+              color: "common.white",
+              backgroundColor: "accent.action",
             })}
           >
             <ArrowUpward fontSize="xs" />

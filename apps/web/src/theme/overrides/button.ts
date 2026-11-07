@@ -1,4 +1,4 @@
-import { type Components, lighten, type Theme } from "@mui/material/styles";
+import { type Components, darken, type Theme } from "@mui/material/styles";
 import { controlBox, controlBoxSmall, outlinedControl } from "./control-box";
 
 export const buttonOverrides: Components<Theme>["MuiButton"] = {
@@ -29,12 +29,12 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
   },
   variants: [
     {
-      // The main action is a light fill; orange stays for accents, where it reads as the brand.
+      // Darkens on hover: lightening would drop white text below a readable contrast.
       props: { variant: "contained", color: "primary" },
       style: ({ theme }) => ({
-        backgroundColor: theme.palette.text.primary,
-        color: theme.palette.surfaces.base,
-        "&:hover": { backgroundColor: lighten(theme.palette.text.primary, 0.6) },
+        backgroundColor: theme.palette.accent.action,
+        color: theme.palette.common.white,
+        "&:hover": { backgroundColor: darken(theme.palette.accent.action, 0.12) },
       }),
     },
   ],

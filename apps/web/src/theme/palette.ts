@@ -15,6 +15,8 @@ export const accent = {
   primary: "#FF6A3D",
   secondary: "#3B82F6",
   dark: "#D9532A",
+  // Filled buttons: deep enough for white text (4.7:1), which flame can't carry (2.9:1).
+  action: "#C94A22",
 } as const;
 
 /** Text on a filled accent: near-black, tinted toward the fill so it doesn't read as a hole. */
