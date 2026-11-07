@@ -3,15 +3,7 @@ import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { badRequest, findOwned, notFound } from "@/common/errors";
 import { renderResumePdf } from "@/common/pdf/render";
-import {
-  deleteAllResumeArtifacts,
-  deleteResumeFile,
-  generatedResumePath,
-  resumePath,
-  saveResumeSource,
-  serveCachedPdf,
-  streamFile,
-} from "@/common/storage/storage";
+import { ResumeStorage, streamFile } from "@/common/storage/resume.storage";
 import { PrismaClient, type Resume } from "@/generated/prisma/client";
 import { findProfileMismatches } from "./consistency";
 import { readContent, toStoredContent } from "./content";
@@ -31,7 +23,10 @@ interface SavedSource {
 
 @injectable()
 export class ResumeService {
-  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly storage = inject(ResumeStorage),
+  ) {}
 
   /** Unpaginated: an account holds a handful of master resumes, and selects read the whole list. */
   async list(userId: string) {
@@ -163,7 +158,7 @@ export class ResumeService {
 
     // `User.primaryResume` is `onDelete: SetNull`, so the pointer clears with the row.
     await this.prisma.resume.delete({ where: { id } });
-    await deleteAllResumeArtifacts({
+    await this.storage.deleteAllResumeArtifacts({
       resumeId: id,
       sourceFilename: resume.sourceFilename,
       variantIds: resume.variants.map((v) => v.id),
@@ -193,8 +188,8 @@ export class ResumeService {
   private async streamPdf(resume: Resume): Promise<Response> {
     const { content } = resume;
     if (content !== null) {
-      return serveCachedPdf(
-        generatedResumePath(resume.id, resume.updatedAt.getTime()),
+      return this.storage.serveCachedPdf(
+        this.storage.generatedResumePath(resume.id, resume.updatedAt.getTime()),
         () => renderResumePdf(readContent(content)),
         resume.label,
       );
@@ -212,7 +207,7 @@ export class ResumeService {
     }
     try {
       return await streamFile(
-        resumePath(resume.sourceFilename),
+        this.storage.resumePath(resume.sourceFilename),
         resume.sourceMimeType ?? "application/pdf",
         resume.sourceFilename,
       );
@@ -229,7 +224,7 @@ export class ResumeService {
     });
     // Only once the row points at the new file, so a failed write never leaves it dangling.
     if (resume.sourceFilename) {
-      await deleteResumeFile(resume.sourceFilename);
+      await this.storage.deleteResumeFile(resume.sourceFilename);
     }
     return { id, sourceFilename: source.sourceFilename };
   }
@@ -241,7 +236,7 @@ export class ResumeService {
       data: { sourceFilename: null, sourceMimeType: null, sourceSizeBytes: null },
     });
     if (resume.sourceFilename) {
-      await deleteResumeFile(resume.sourceFilename);
+      await this.storage.deleteResumeFile(resume.sourceFilename);
     }
     return { id };
   }
@@ -254,7 +249,7 @@ export class ResumeService {
     if (file.size > MAX_RESUME_BYTES) {
       throw badRequest("Resume must be 5 MB or less");
     }
-    const sourceFilename = await saveResumeSource(file);
+    const sourceFilename = await this.storage.saveResumeSource(file);
     try {
       return await write({
         sourceFilename,
@@ -262,7 +257,7 @@ export class ResumeService {
         sourceSizeBytes: file.size,
       });
     } catch (error) {
-      await deleteResumeFile(sourceFilename);
+      await this.storage.deleteResumeFile(sourceFilename);
       throw error;
     }
   }

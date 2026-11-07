@@ -1,6 +1,8 @@
+import path from "node:path";
 import { Container } from "@needle-di/core";
 import { db } from "@/common/database/prisma.client";
 import { ConsoleMailer, MAILER, ResendMailer } from "@/common/mail";
+import { STORAGE_ROOT } from "@/common/storage/resume.storage";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 import { VAPID_CONFIG } from "@/modules/web-push/web-push.service";
@@ -23,4 +25,5 @@ container.bindAll(
   // Resend when an API key is configured, otherwise a mailer that logs magic links for local dev.
   { provide: MAILER, useClass: env.RESEND_API_KEY ? ResendMailer : ConsoleMailer },
   { provide: VAPID_CONFIG, useValue: vapid },
+  { provide: STORAGE_ROOT, useValue: path.resolve(env.STORAGE_ROOT) },
 );

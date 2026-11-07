@@ -1,7 +1,7 @@
 import type { PortfolioSettingsPatch, UserUpdateInput } from "@jobpilot/contracts/user";
 import { inject, injectable } from "@needle-di/core";
 import { conflict, emailNotVerified, findOwned, notFound } from "@/common/errors";
-import { resumePath } from "@/common/storage/storage";
+import { ResumeStorage } from "@/common/storage/resume.storage";
 import { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { PORTFOLIO_SETTINGS_SELECT, PROFILE_SELECT, withProfile } from "./user.mapper";
 
@@ -13,7 +13,10 @@ const USER_SELECT = {
 
 @injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly storage = inject(ResumeStorage),
+  ) {}
 
   /**
    * Gate for outward-facing actions (creating feeds, composing networking messages):
@@ -101,7 +104,7 @@ export class UserService {
     return {
       user: { ...user, references, salaryPreferences },
       primaryResumeSourceAbsolutePath: primarySource?.sourceFilename
-        ? resumePath(primarySource.sourceFilename)
+        ? this.storage.resumePath(primarySource.sourceFilename)
         : null,
       resumes,
     };
