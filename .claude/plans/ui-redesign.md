@@ -64,10 +64,9 @@ Applies everywhere at once; no layout changes.
 
 ## Phase 4: Inbox
 
-- **Desktop.** A list column (reconnect alert, tabs To review / Applied / Denied / All, rows grouped by class) and a detail pane: "Pilot's read" with class, confidence, matched application and status change; the email body; and an action bar with Approve (A), Different application, Deny (D) and Rescan.
-- **Collapsed noise.** Irrelevant mail collapses into one "N filtered out" row.
+- **List page.** A full-width list, newest first. Rows show sender, subject, snippet, the matched application and a type badge. Irrelevant mail folds into one "N filtered out" row. Filters: All, To review, Auto, Approved, Denied. (User, 2026-11-06: no split pane, no grouping by type, since the badge already shows it.)
+- **Message page.** Each message opens at `/inbox/[id]`, carrying the list's `?filter=&page=` so Back and next/previous match the list. It shows "Pilot's read" (type, confidence, reasoning, the status approving would set, and the matched application), the body, and a sticky Approve/Deny footer. Keys: J/K, A, D, Esc. After approving or denying it moves to the next message.
 - **Replaces** `InboxTable` and `MessageReviewDialog`.
-- **Mobile.** The list, then full-screen detail with a back button.
 
 ## Phase 5: Resume editor
 
