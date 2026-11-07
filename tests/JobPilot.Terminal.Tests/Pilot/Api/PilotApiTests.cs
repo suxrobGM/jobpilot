@@ -1,7 +1,7 @@
 using System.Net;
 using JobPilot.Terminal.Install;
-using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -20,7 +20,7 @@ public sealed class PilotApiTests : IDisposable
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond, PilotPairing? pairing = null)
     {
         var store = new PairingStore(new HostInstall(temp.Paths), NullLogger<PairingStore>.Instance);
-        store.Save(pairing ?? Pairing());
+        store.Save(pairing ?? NewPairing());
         return new(new HttpClient(new StubHandler(respond)), store, NullLogger<PilotApi>.Instance);
     }
 
@@ -39,7 +39,7 @@ public sealed class PilotApiTests : IDisposable
                 seen = request;
                 return Respond(HttpStatusCode.OK, ActivityJson);
             },
-            Pairing(apiUrl: "https://api.example.test"));
+            NewPairing(apiUrl: "https://api.example.test"));
 
         var activity = await api.GetActivityAsync(TestContext.Current.CancellationToken);
 

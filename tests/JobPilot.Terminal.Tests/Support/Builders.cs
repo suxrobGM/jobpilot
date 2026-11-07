@@ -1,8 +1,9 @@
-using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
+using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
-using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Sessions.Pty;
+using JobPilot.Terminal.Sessions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -10,7 +11,7 @@ namespace JobPilot.Terminal.Tests.Support;
 
 internal static class Builders
 {
-    public static PilotPairing Pairing(string apiUrl = "https://api", string apiToken = "tok") => new()
+    public static PilotPairing NewPairing(string apiUrl = "https://api", string apiToken = "tok") => new()
     {
         Provider = Provider.Claude,
         Api = new ApiConnection(apiUrl, "https://web", apiToken),
@@ -35,7 +36,7 @@ internal static class Builders
     public static CycleRunner Runner(FakePilot pilot) => new(pilot, pilot, pilot.Time, TimeSpan.FromMinutes(20));
 
     public static Task<TimeSpan?> RunAsync(CycleRunner runner) =>
-        runner.RunAsync(Pairing(), TestContext.Current.CancellationToken);
+        runner.RunAsync(NewPairing(), TestContext.Current.CancellationToken);
 
     /// <summary>A started process over the given fake connection.</summary>
     public static PtyProcess StartedPty(FakePtyConnection connection)

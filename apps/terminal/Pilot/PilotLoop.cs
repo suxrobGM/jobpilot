@@ -1,5 +1,7 @@
 using JobPilot.Terminal.Common;
+using JobPilot.Terminal.Pilot.Agent;
 using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
 
 namespace JobPilot.Terminal.Pilot;
 

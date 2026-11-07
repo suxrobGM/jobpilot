@@ -1,4 +1,5 @@
 using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
 using Microsoft.AspNetCore.Http.HttpResults;

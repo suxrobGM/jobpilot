@@ -1,7 +1,7 @@
-using JobPilot.Terminal.Pilot.Stuck;
+using JobPilot.Terminal.Pilot.Agent;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests.Pilot.Stuck;
+namespace JobPilot.Terminal.Tests.Pilot.Agent;
 
 public class AnsiTests
 {

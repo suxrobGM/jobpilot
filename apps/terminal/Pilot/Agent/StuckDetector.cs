@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace JobPilot.Terminal.Pilot.Stuck;
+namespace JobPilot.Terminal.Pilot.Agent;
 
 public enum StuckReason
 {

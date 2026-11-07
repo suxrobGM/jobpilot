@@ -1,12 +1,12 @@
 using JobPilot.Terminal.Install;
-using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests.Pilot;
+namespace JobPilot.Terminal.Tests.Pilot.Pairing;
 
 public sealed class PairingStoreTests : IDisposable
 {

@@ -1,7 +1,7 @@
-using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Pilot.Agent;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests.Pilot;
+namespace JobPilot.Terminal.Tests.Pilot.Agent;
 
 public class PilotAgentTests
 {

@@ -1,11 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
-using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Install.Updates;
-using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Install;
+using JobPilot.Terminal.Pilot.Agent;
 using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Pilot.Telemetry;
-using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Sessions.Relay;
+using JobPilot.Terminal.Sessions;
 
 namespace JobPilot.Terminal.Hosting;
 

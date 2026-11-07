@@ -1,13 +1,14 @@
 using System.Net;
 using JobPilot.Terminal.Install;
-using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
+using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using static JobPilot.Terminal.Tests.Support.Builders;
 
-namespace JobPilot.Terminal.Tests.Pilot.Api;
+namespace JobPilot.Terminal.Tests.Pilot;
 
 public sealed class PilotEventListenerTests
 {
@@ -86,7 +87,7 @@ public sealed class PilotEventListenerTests
     {
         await using var h = await Harness.StartAsync();
 
-        h.Store.Save(Pairing(apiUrl: "https://next-api", apiToken: "next-token"));
+        h.Store.Save(NewPairing(apiUrl: "https://next-api", apiToken: "next-token"));
 
         await TestWait.Until(() => h.Handler.Calls == 2);
         Assert.Equal("https://next-api/api/pilot/events", h.Handler.LastRequest?.RequestUri?.ToString());
@@ -127,7 +128,7 @@ public sealed class PilotEventListenerTests
         public static async Task<Harness> StartAsync(HttpStatusCode status = HttpStatusCode.OK)
         {
             var harness = new Harness(status);
-            harness.Store.Save(Pairing());
+            harness.Store.Save(NewPairing());
             await harness.listener.StartAsync(CancellationToken.None);
             await TestWait.Until(() => harness.Handler.Calls > 0);
             return harness;

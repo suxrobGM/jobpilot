@@ -1,4 +1,5 @@
 using JobPilot.Terminal.Install;
+using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Tests.Support;
@@ -61,7 +62,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
     {
         await loop.StartAsync(CancellationToken.None);
 
-        store.Save(Pairing());
+        store.Save(NewPairing());
         await TestWait.Until(() => CyclesSent == 1);
         Assert.True(loop.GetStatus().Conducting);
         Assert.Equal("user-1", loop.GetStatus().UserId);
@@ -83,7 +84,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
         pilot.TaskList = TaskList(sleep: 1800);
         await loop.StartAsync(CancellationToken.None);
 
-        store.Save(Pairing());
+        store.Save(NewPairing());
 
         await TestWait.Until(() => pilot.Actions.Contains("sleep:1800"));
         Assert.Equal(0, CyclesSent);
@@ -95,7 +96,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
     public async Task Wake_MidCycle_NeitherRestartsNorInterruptsTheTurn()
     {
         await loop.StartAsync(CancellationToken.None);
-        store.Save(Pairing());
+        store.Save(NewPairing());
         await TestWait.Until(() => pilot.Actions.Contains("wait"));
 
         loop.Wake(); // e.g. a question was answered mid-cycle
@@ -112,7 +113,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
         pilot.TaskList = TaskList(tasks: 1, sleep: 3600);
         pilot.Signals.Enqueue(WaitResult.Finished("done"));
         await loop.StartAsync(CancellationToken.None);
-        store.Save(Pairing());
+        store.Save(NewPairing());
         await TestWait.Until(() => pilot.Actions.Contains("sleep:3600"));
 
         loop.Wake();
@@ -126,7 +127,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
     {
         pilot.RunningProvider = Provider.Codex;
         await loop.StartAsync(CancellationToken.None);
-        store.Save(Pairing());
+        store.Save(NewPairing());
         await TestWait.Until(() => pilot.Actions.Contains("sleep:5"));
 
         store.Clear();
@@ -138,7 +139,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
     [Fact]
     public async Task Resume_StartsACycleRightAway_WhenNoBreakIsOwed()
     {
-        SavedBeforeRestart(Pairing());
+        SavedBeforeRestart(NewPairing());
 
         await loop.StartAsync(CancellationToken.None);
 
@@ -150,7 +151,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
     public async Task Resume_WaitsOutAnOwedBreak_BeforeTheFirstCycle()
     {
         pilot.DefaultActivity = Activity(DateTimeOffset.UtcNow, Completed(3600));
-        SavedBeforeRestart(Pairing());
+        SavedBeforeRestart(NewPairing());
 
         await loop.StartAsync(CancellationToken.None);
 
@@ -166,7 +167,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
         pilot.BlockSleep = true;
         pilot.DefaultActivity = null;
         await loop.StartAsync(CancellationToken.None);
-        store.Save(Pairing());
+        store.Save(NewPairing());
 
         await TestWait.Until(() => pilot.Actions.Any(a => a.StartsWith("sleep:", StringComparison.Ordinal)));
         Assert.Equal(0, CyclesSent);

@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization.Metadata;
 using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Pilot.Pairing;
 
 namespace JobPilot.Terminal.Pilot.Api;
 

@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace JobPilot.Terminal.Pilot;
+namespace JobPilot.Terminal.Pilot.Pairing;
 
 /// <summary>Wraps the pilot token with DPAPI on Windows; elsewhere pilot.json is 0600 plaintext.</summary>
 internal static class TokenProtection

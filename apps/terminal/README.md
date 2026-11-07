@@ -15,10 +15,11 @@ Namespaces match folders.
 | `Install/Updates/` | `HostUpdater` installs a newer GitHub release; `HostRelaunch` passes the port to the relaunched host. |
 | `Providers/` | What to launch. `Provider` is the registry; `ClaudeProvider` and `Codex/` hold each CLI's arguments and quirks. |
 | `Sessions/` | The live session. `TerminalSession` owns it. `Pty/` wraps one spawned process, `Relay/` bridges WebSockets. |
-| `Pilot/` | The autonomous loop: `PilotLoop` runs cycles, `CycleRunner` runs one, `PilotAgent` drives the agent for it. |
-| `Pilot/Api/` | Calls to the JobPilot API, its wire records, and the event stream. |
+| `Pilot/` | The autonomous loop: `PilotLoop` runs cycles, `CycleRunner` runs one, `PilotEventListener` routes the API's events. |
+| `Pilot/Pairing/` | The paired account in `pilot.json`: `PairingStore` saves and loads it, `TokenProtection` wraps its token. |
+| `Pilot/Agent/` | `PilotAgent` drives the agent's terminal for a run; `StuckDetector` spots a stuck agent from its output. |
+| `Pilot/Api/` | Calls to the JobPilot API and its wire records. |
 | `Pilot/Telemetry/` | `/v1/logs`: token usage and readable steps from the CLI's OTLP log export. |
-| `Pilot/Stuck/` | Spots a stuck agent from its terminal output. |
 
 ## Runtime flows
 

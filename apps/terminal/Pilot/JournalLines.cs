@@ -1,12 +1,5 @@
 namespace JobPilot.Terminal.Pilot;
 
-public enum CycleStatus
-{
-    Ok,
-    Empty,
-    Error,
-}
-
 /// <summary>Journal entries the user's phone hears about, so keep the wording stable.</summary>
 internal static class JournalLines
 {

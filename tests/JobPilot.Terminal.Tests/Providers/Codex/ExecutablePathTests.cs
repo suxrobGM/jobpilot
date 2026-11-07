@@ -1,8 +1,8 @@
-using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Providers.Codex;
 using JobPilot.Terminal.Tests.Support;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests.Providers;
+namespace JobPilot.Terminal.Tests.Providers.Codex;
 
 public class ExecutablePathTests
 {

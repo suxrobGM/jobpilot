@@ -4,7 +4,7 @@ using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
 
-namespace JobPilot.Terminal.Pilot;
+namespace JobPilot.Terminal.Pilot.Pairing;
 
 public sealed class PairingStore
 {

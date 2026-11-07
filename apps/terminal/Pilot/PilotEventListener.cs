@@ -2,8 +2,11 @@ using System.Net.ServerSentEvents;
 using System.Text.Json;
 using JobPilot.Terminal.Common;
 using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Pilot.Agent;
+using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
 
-namespace JobPilot.Terminal.Pilot.Api;
+namespace JobPilot.Terminal.Pilot;
 
 /// <summary>
 /// Holds the pilot event stream open while the host is paired. It wakes the loop on work the user asked for, passes

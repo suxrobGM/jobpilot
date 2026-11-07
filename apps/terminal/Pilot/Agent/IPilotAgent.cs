@@ -1,7 +1,15 @@
 using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Providers;
 
-namespace JobPilot.Terminal.Pilot;
+namespace JobPilot.Terminal.Pilot.Agent;
+
+/// <summary>CheckIn asks the agent to post its result; Skip makes it post a failed one.</summary>
+public enum Directive
+{
+    CheckIn,
+    Skip,
+}
 
 /// <summary>The loop's seam to the agent's terminal, so tests can script a whole cycle.</summary>
 public interface IPilotAgent

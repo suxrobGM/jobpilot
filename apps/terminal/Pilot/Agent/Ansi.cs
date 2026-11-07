@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace JobPilot.Terminal.Pilot.Stuck;
+namespace JobPilot.Terminal.Pilot.Agent;
 
 internal static class Ansi
 {

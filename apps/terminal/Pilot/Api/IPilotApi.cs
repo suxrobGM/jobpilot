@@ -1,3 +1,5 @@
+using JobPilot.Terminal.Pilot.Pairing;
+
 namespace JobPilot.Terminal.Pilot.Api;
 
 /// <summary>The API calls the host makes. They return null on failure and throw only on the caller's cancellation.</summary>

@@ -20,10 +20,3 @@ public readonly record struct WaitResult(WaitKind Kind, string? RunOutcome = nul
     /// <summary>The run has its result or lost its agent, so no directive can help.</summary>
     public bool IsFinal => Kind is WaitKind.Finished or WaitKind.SessionExited;
 }
-
-/// <summary>CheckIn asks the agent to post its result; Skip makes it post a failed one.</summary>
-public enum Directive
-{
-    CheckIn,
-    Skip,
-}

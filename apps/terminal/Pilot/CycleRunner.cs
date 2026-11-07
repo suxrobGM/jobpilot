@@ -1,6 +1,15 @@
+using JobPilot.Terminal.Pilot.Agent;
 using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
 
 namespace JobPilot.Terminal.Pilot;
+
+public enum CycleStatus
+{
+    Ok,
+    Empty,
+    Error,
+}
 
 /// <summary>Runs one cycle. It returns the inter-cycle sleep instead of sleeping, so a wake can cut it short.</summary>
 /// <param name="checkInterval">Tests pass one at least as long as every wait, so each wait is a single slice.</param>

@@ -1,11 +1,11 @@
 using System.Threading.Channels;
 using JobPilot.Terminal.Pilot.Api;
-using JobPilot.Terminal.Pilot.Stuck;
+using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Pilot.Telemetry;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
 
-namespace JobPilot.Terminal.Pilot;
+namespace JobPilot.Terminal.Pilot.Agent;
 
 public sealed class PilotAgent : IPilotAgent, IDisposable
 {
