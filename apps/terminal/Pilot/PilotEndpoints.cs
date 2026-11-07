@@ -10,7 +10,7 @@ public sealed record PilotPairRequest(string? Provider, string? ApiToken, string
 /// <summary>The pilot part of /healthz.</summary>
 public sealed record PilotStatus
 {
-    /// <summary>Whether pilot settings are saved; the loop runs whenever they are.</summary>
+    /// <summary>Whether a pairing is saved; the loop runs whenever one is.</summary>
     public required bool Paired { get; init; }
 
     /// <summary>The account the host is paired to.</summary>
@@ -33,15 +33,15 @@ public static class PilotEndpoints
     public static void MapPilotEndpoints(this WebApplication app)
     {
         app.MapPost("/pilot/pair", Results<Ok<StatusResponse>, ProblemHttpResult> (
-            PilotPairRequest request, PilotStore store, HostStatus status) =>
+            PilotPairRequest request, PairingStore store, HostStatus status) =>
         {
-            var provider = Provider.Find(request.Provider);
+            var provider = Provider.Parse(request.Provider);
             if (ApiConnection.Invalid(request.ApiToken, request.ApiUrl, request.WebUrl) is { } problem)
             {
                 return Problems.BadRequest(problem);
             }
 
-            store.Save(new PilotSettings
+            store.Save(new PilotPairing
             {
                 Provider = provider,
                 Api = new ApiConnection(request.ApiUrl!, request.WebUrl!, request.ApiToken!),
@@ -50,7 +50,7 @@ public static class PilotEndpoints
             return TypedResults.Ok(status.Get());
         });
 
-        app.MapPost("/pilot/unpair", (PilotStore store, HostStatus status) =>
+        app.MapPost("/pilot/unpair", (PairingStore store, HostStatus status) =>
         {
             store.Clear();
             return TypedResults.Ok(status.Get());
@@ -59,7 +59,7 @@ public static class PilotEndpoints
         // Ends the hold the user's typing put on new runs.
         app.MapPost("/pilot/handback", (TerminalSession terminal, HostStatus status) =>
         {
-            terminal.ClearUserInput();
+            terminal.ResetLastUserInput();
             return TypedResults.Ok(status.Get());
         });
     }

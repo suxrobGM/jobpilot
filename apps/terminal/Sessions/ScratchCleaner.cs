@@ -17,7 +17,7 @@ public sealed class ScratchCleaner(HostInstall install, ILogger<ScratchCleaner> 
         [".log", ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".md", ".json", ".yml", ".yaml"];
 
     /// <summary>Removes every Playwright scratch file plus aged .temp files.</summary>
-    public void CleanSessionStart(InstallPaths paths)
+    public void CleanForNewSession(InstallPaths paths)
     {
         CleanPlaywright(paths, maxAge: null);
         CleanTemp(paths);

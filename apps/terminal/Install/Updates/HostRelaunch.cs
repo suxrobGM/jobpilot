@@ -4,7 +4,7 @@ using System.Globalization;
 namespace JobPilot.Terminal.Install.Updates;
 
 /// <summary>Hands the listening port from an updated host to the one it launched.</summary>
-public static class HostHandoff
+public static class HostRelaunch
 {
     /// <summary>Carries the previous host's process id to the relaunched one.</summary>
     private const string AwaitPidVar = "JOBPILOT_AWAIT_PID";

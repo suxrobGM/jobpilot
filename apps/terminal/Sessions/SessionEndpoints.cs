@@ -14,9 +14,9 @@ public static class SessionEndpoints
         app.MapPost("/sessions/start", Results<Ok<StatusResponse>, ProblemHttpResult> (
             StartSessionRequest request, TerminalSession session, HostStatus status) =>
         {
-            if (!Viewport.IsValid(request.Cols, request.Rows))
+            if (!TerminalSize.IsValid(request.Cols, request.Rows))
             {
-                return Problems.BadRequest($"cols and rows must each be between {Viewport.MinSize} and {Viewport.MaxSize}.");
+                return Problems.BadRequest($"cols and rows must each be between {TerminalSize.MinSize} and {TerminalSize.MaxSize}.");
             }
 
             if (ApiConnection.Invalid(request.ApiToken, request.ApiUrl, request.WebUrl) is { } problem)
@@ -25,7 +25,7 @@ public static class SessionEndpoints
             }
 
             var api = new ApiConnection(request.ApiUrl!, request.WebUrl!, request.ApiToken!);
-            session.Start(Provider.Find(request.Provider), request.Cols, request.Rows, api);
+            session.Start(Provider.Parse(request.Provider), request.Cols, request.Rows, api);
             return TypedResults.Ok(status.Get());
         });
 

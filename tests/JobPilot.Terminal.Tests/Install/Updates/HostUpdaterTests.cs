@@ -18,7 +18,7 @@ public class HostUpdaterTests
     [InlineData("plugin-9.9.9,9.9.9,vNext,v,v2.1.0", "v2.1.0")]
     public void FindNewer_PicksTheHighestVTaggedVersion(string tags, string expected)
     {
-        Assert.Equal(expected, ReleaseFeed.FindNewer(Releases(tags), Current)?.Release.TagName);
+        Assert.Equal(expected, GitHubReleases.FindNewer(Releases(tags), Current)?.Release.TagName);
     }
 
     [Theory]
@@ -26,13 +26,13 @@ public class HostUpdaterTests
     [InlineData("v1.0.0,v2.0.8")]
     public void FindNewer_IsNull_WhenNothingIsNewer(string tags)
     {
-        Assert.Null(ReleaseFeed.FindNewer(Releases(tags), Current));
+        Assert.Null(GitHubReleases.FindNewer(Releases(tags), Current));
     }
 
     [Fact]
     public void FindNewer_SkipsAReleaseWithNoTag()
     {
-        Assert.Equal("v2.1.0", ReleaseFeed.FindNewer([new(null, null), new("v2.1.0", null)], Current)?.Release.TagName);
+        Assert.Equal("v2.1.0", GitHubReleases.FindNewer([new(null, null), new("v2.1.0", null)], Current)?.Release.TagName);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class HostUpdaterTests
         temp.File(Path.Combine("staging", "plugin", "skills", "kept", "SKILL.md"), "new");
 
         FileTree.Copy(staging, install);
-        InstallSwap.PruneRemovedPluginFiles(staging, install);
+        ReleaseInstaller.PruneRemovedPluginFiles(staging, install);
 
         Assert.Equal("new", File.ReadAllText(Path.Combine(install, "plugin", "skills", "kept", "SKILL.md")));
         Assert.False(Directory.Exists(Path.Combine(install, "plugin", "skills", "removed")));
@@ -60,9 +60,9 @@ public class HostUpdaterTests
         using var temp = new TempDir();
 
         temp.File("jobpilot", "binary");
-        Assert.False(InstallSwap.IsValidHost(temp.Root, "jobpilot"));
+        Assert.False(ReleaseInstaller.IsValidHost(temp.Root, "jobpilot"));
 
         temp.WriteValidPluginTree();
-        Assert.True(InstallSwap.IsValidHost(temp.Root, "jobpilot"));
+        Assert.True(ReleaseInstaller.IsValidHost(temp.Root, "jobpilot"));
     }
 }

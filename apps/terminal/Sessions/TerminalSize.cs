@@ -1,7 +1,7 @@
 namespace JobPilot.Terminal.Sessions;
 
 /// <summary>Terminal sizes the host accepts from a browser.</summary>
-public static class Viewport
+public static class TerminalSize
 {
     public const int MinSize = 1;
     public const int MaxSize = 2000;

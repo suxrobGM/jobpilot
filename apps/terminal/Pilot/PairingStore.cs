@@ -6,14 +6,14 @@ using JobPilot.Terminal.Sessions;
 
 namespace JobPilot.Terminal.Pilot;
 
-public sealed class PilotStore
+public sealed class PairingStore
 {
     private readonly string filePath;
-    private readonly ILogger<PilotStore> logger;
+    private readonly ILogger<PairingStore> logger;
     private readonly Lock sync = new();
-    private PilotSettings? current;
+    private PilotPairing? current;
 
-    public PilotStore(HostInstall install, ILogger<PilotStore> logger)
+    public PairingStore(HostInstall install, ILogger<PairingStore> logger)
     {
         // The install root survives updates (only plugin/ is pruned).
         filePath = Path.Combine(install.Paths?.WorkingDir ?? AppContext.BaseDirectory, "pilot.json");
@@ -25,7 +25,7 @@ public sealed class PilotStore
     public event Action? Changed;
 
     /// <summary>Null when nothing is saved or pilot.json is unreadable.</summary>
-    public PilotSettings? Current
+    public PilotPairing? Current
     {
         get
         {
@@ -36,12 +36,12 @@ public sealed class PilotStore
         }
     }
 
-    public void Save(PilotSettings settings)
+    public void Save(PilotPairing pairing)
     {
         lock (sync)
         {
-            Persist(settings);
-            current = settings;
+            Persist(pairing);
+            current = pairing;
         }
 
         Changed?.Invoke();
@@ -64,15 +64,15 @@ public sealed class PilotStore
         Changed?.Invoke();
     }
 
-    private void Persist(PilotSettings settings)
+    private void Persist(PilotPairing pairing)
     {
-        var (token, isProtected) = TokenProtection.Protect(settings.Api.Token);
-        var file = new PilotSettingsFile
+        var (token, isProtected) = TokenProtection.Protect(pairing.Api.Token);
+        var file = new PairingFile
         {
-            Provider = settings.Provider.Id,
-            ApiUrl = settings.Api.Url,
-            WebUrl = settings.Api.WebUrl,
-            UserId = settings.UserId,
+            Provider = pairing.Provider.Id,
+            ApiUrl = pairing.Api.Url,
+            WebUrl = pairing.Api.WebUrl,
+            UserId = pairing.UserId,
             Token = token,
             Protected = isProtected,
         };
@@ -92,7 +92,7 @@ public sealed class PilotStore
 
             using (var stream = new FileStream(tempPath, options))
             {
-                JsonSerializer.Serialize(stream, file, AppJsonContext.Default.PilotSettingsFile);
+                JsonSerializer.Serialize(stream, file, AppJsonContext.Default.PairingFile);
                 stream.Flush(flushToDisk: true);
             }
 
@@ -106,14 +106,14 @@ public sealed class PilotStore
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                logger.LogDebug(ex, "Could not remove temporary pilot settings file {File}.", tempPath);
+                logger.LogDebug(ex, "Could not remove temporary pairing file {File}.", tempPath);
             }
 
             throw;
         }
     }
 
-    private PilotSettings? Load()
+    private PilotPairing? Load()
     {
         if (!File.Exists(filePath))
         {
@@ -122,7 +122,7 @@ public sealed class PilotStore
 
         try
         {
-            var file = JsonSerializer.Deserialize(File.ReadAllText(filePath), AppJsonContext.Default.PilotSettingsFile);
+            var file = JsonSerializer.Deserialize(File.ReadAllText(filePath), AppJsonContext.Default.PairingFile);
             if (file is null)
             {
                 return null;
@@ -134,9 +134,9 @@ public sealed class PilotStore
                 return null;
             }
 
-            return new PilotSettings
+            return new PilotPairing
             {
-                Provider = Provider.Find(file.Provider),
+                Provider = Provider.Parse(file.Provider),
                 Api = new ApiConnection(file.ApiUrl, file.WebUrl, token),
                 UserId = file.UserId,
             };

@@ -8,13 +8,13 @@ namespace JobPilot.Terminal.Install.Updates;
 /// Copies a downloaded release over the install. Owns the executable and plugin/ only: the rest of
 /// the install root may be user state.
 /// </summary>
-public sealed class InstallSwap(HttpClient http)
+public sealed class ReleaseInstaller(HttpClient http)
 {
     /// <summary>
     /// Downloads and validates the release, moves the running executable aside, and copies the release over the
     /// install. The executable is restored if copying fails; other files heal on the next update.
     /// </summary>
-    public async Task RunAsync(string url, string exePath, CancellationToken ct)
+    public async Task InstallAsync(string url, string exePath, CancellationToken ct)
     {
         var installDir = Path.GetDirectoryName(exePath)!;
         var staging = Path.TrimEndingDirectorySeparator(installDir) + ".new";

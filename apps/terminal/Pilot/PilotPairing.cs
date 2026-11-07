@@ -3,7 +3,7 @@ using JobPilot.Terminal.Sessions;
 
 namespace JobPilot.Terminal.Pilot;
 
-public sealed record PilotSettings
+public sealed record PilotPairing
 {
     public required Provider Provider { get; init; }
     public required ApiConnection Api { get; init; }
@@ -13,7 +13,7 @@ public sealed record PilotSettings
 }
 
 /// <summary>Shape of pilot.json. The token is DPAPI-wrapped on Windows and 0600 plaintext elsewhere.</summary>
-internal sealed record PilotSettingsFile
+internal sealed record PairingFile
 {
     public required string Provider { get; init; }
     public required string ApiUrl { get; init; }

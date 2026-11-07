@@ -14,7 +14,7 @@ internal sealed class CodexProvider : Provider
 
     public override string DisplayName => "Codex";
 
-    public override string Command => "codex";
+    public override string Executable => "codex";
 
     // The PTY already sets the cwd; repeating it through -C makes Windows paths cross a second argument parser.
     public override string[] BuildArgs(string pluginDir, ILogger logger) =>

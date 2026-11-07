@@ -209,7 +209,7 @@ public sealed class TerminalRelay : IDisposable
                 break;
 
             case "resize":
-                if (message.Cols is { } cols && message.Rows is { } rows && Viewport.IsValid(cols, rows))
+                if (message.Cols is { } cols && message.Rows is { } rows && TerminalSize.IsValid(cols, rows))
                 {
                     session.Resize(cols, rows);
                 }

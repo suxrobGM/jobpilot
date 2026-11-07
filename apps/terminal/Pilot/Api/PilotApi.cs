@@ -8,7 +8,7 @@ namespace JobPilot.Terminal.Pilot.Api;
 /// Calls for the paired account. Probes and reports throw only on the caller's cancellation, so a briefly unreachable
 /// API cannot take the loop down, and while unpaired they send nothing and return null.
 /// </summary>
-public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi> logger) : IPilotApi
+public sealed class PilotApi(HttpClient http, PairingStore store, ILogger<PilotApi> logger) : IPilotApi
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
@@ -21,7 +21,7 @@ public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi
     public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) =>
         SendAsync(HttpMethod.Post, "/api/pilot/tasks/refresh", null, AppJsonContext.Default.PilotTaskList, ct, RefreshTimeout);
 
-    public Task ReportAsync(string summary, CancellationToken ct)
+    public Task WriteJournalAsync(string summary, CancellationToken ct)
     {
         var body = new JournalRequest([new JournalEntry("system", summary)]);
         return PostAsync("/api/pilot/journal", JsonContent.Create(body, AppJsonContext.Default.JournalRequest), ct);
@@ -50,9 +50,9 @@ public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi
     public Task PostStepsAsync(string runId, PilotStep[] steps, CancellationToken ct) =>
         PostAsync($"/api/pilot/runs/{runId}/steps", JsonContent.Create(new PostStepsRequest(steps), AppJsonContext.Default.PostStepsRequest), ct);
 
-    public async Task<HttpResponseMessage?> OpenEventsAsync(PilotSettings settings, CancellationToken ct)
+    public async Task<HttpResponseMessage?> OpenEventsAsync(PilotPairing pairing, CancellationToken ct)
     {
-        using var request = Request(settings, HttpMethod.Get, "/api/pilot/events", null);
+        using var request = Request(pairing, HttpMethod.Get, "/api/pilot/events", null);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
         var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
         if (response.IsSuccessStatusCode)
@@ -73,12 +73,12 @@ public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi
         HttpMethod method, string path, HttpContent? content, JsonTypeInfo<T>? read, CancellationToken ct, TimeSpan? timeoutAfter = null)
         where T : class
     {
-        if (store.Current is not { } settings)
+        if (store.Current is not { } pairing)
         {
             return null;
         }
 
-        using var request = Request(settings, method, path, content);
+        using var request = Request(pairing, method, path, content);
         var route = $"{method} {path}";
         try
         {
@@ -100,10 +100,10 @@ public sealed class PilotApi(HttpClient http, PilotStore store, ILogger<PilotApi
         }
     }
 
-    private static HttpRequestMessage Request(PilotSettings settings, HttpMethod method, string path, HttpContent? content) =>
-        new(method, settings.Api.Url + path)
+    private static HttpRequestMessage Request(PilotPairing pairing, HttpMethod method, string path, HttpContent? content) =>
+        new(method, pairing.Api.Url + path)
         {
             Content = content,
-            Headers = { Authorization = new AuthenticationHeaderValue("Bearer", settings.Api.Token) },
+            Headers = { Authorization = new AuthenticationHeaderValue("Bearer", pairing.Api.Token) },
         };
 }

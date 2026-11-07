@@ -13,66 +13,66 @@ public class CycleRunnerStuckTests
     [Fact]
     public async Task Run_CancelsTheRun_WhenTheSessionExitsMidWait()
     {
-        var session = new FakePilot { RunningProvider = Provider.Claude };
-        session.Signals.Enqueue(WaitResult.Exited);
-        var runner = Runner(session);
+        var pilot = new FakePilot { RunningProvider = Provider.Claude };
+        pilot.Signals.Enqueue(WaitResult.Exited);
+        var runner = Runner(pilot);
 
         var sleep = await RunAsync(runner);
 
         Assert.Null(sleep);
-        Assert.Equal(["cycle", "wait"], session.Actions);
-        Assert.Equal(["run-1"], session.CancelledRuns);
-        Assert.Equal(["run-1/30"], session.Cycles);
+        Assert.Equal(["cycle", "wait"], pilot.Actions);
+        Assert.Equal(["run-1"], pilot.CancelledRuns);
+        Assert.Equal(["run-1/30"], pilot.Cycles);
         Assert.Equal(0, runner.ConsecutiveRestarts);
     }
 
     [Fact]
     public async Task Run_BacksOff_OnlyAfterThreeExitsInARow()
     {
-        var session = new FakePilot { RunningProvider = Provider.Claude };
-        var runner = Runner(session);
+        var pilot = new FakePilot { RunningProvider = Provider.Claude };
+        var runner = Runner(pilot);
 
         async Task Exit()
         {
-            session.Signals.Enqueue(WaitResult.Exited);
+            pilot.Signals.Enqueue(WaitResult.Exited);
             await RunAsync(runner);
         }
 
         await Exit();
         await Exit();
-        session.Signals.Enqueue(WaitResult.Finished("done")); // a posted result breaks the streak
+        pilot.Signals.Enqueue(WaitResult.Finished("done")); // a posted result breaks the streak
         await RunAsync(runner);
         await Exit();
         await Exit();
-        Assert.DoesNotContain(CycleReports.ExitBackoff, session.Reports);
+        Assert.DoesNotContain(JournalLines.ExitBackoff, pilot.Reports);
 
         await Exit();
 
-        Assert.Equal([CycleReports.ExitBackoff], session.Reports);
-        Assert.Equal("sleep:1800", session.Actions[^1]);
+        Assert.Equal([JournalLines.ExitBackoff], pilot.Reports);
+        Assert.Equal("sleep:1800", pilot.Actions[^1]);
         Assert.Equal(0, runner.ConsecutiveExits);
     }
 
     [Theory]
-    [InlineData(WaitOutcome.Timeout)]
-    [InlineData(WaitOutcome.Stuck)]
-    public async Task Run_ChecksInThenSkipsThenRestarts_AndCancelsTheRun_WhenItStaysStuck(WaitOutcome outcome)
+    [InlineData(WaitKind.Timeout)]
+    [InlineData(WaitKind.Stuck)]
+    public async Task Run_ChecksInThenSkipsThenRestarts_AndCancelsTheRun_WhenItStaysStuck(WaitKind outcome)
     {
-        var session = new FakePilot { RunningProvider = Provider.Claude };
+        var pilot = new FakePilot { RunningProvider = Provider.Claude };
         for (var i = 0; i < 3; i++)
         {
-            session.Signals.Enqueue(new WaitResult(outcome));
+            pilot.Signals.Enqueue(new WaitResult(outcome));
         }
 
-        var runner = Runner(session);
+        var runner = Runner(pilot);
 
         var sleep = await RunAsync(runner);
 
         Assert.Null(sleep);
-        Assert.Equal(FullLadder, session.Actions);
-        Assert.Equal([CycleReports.CheckIn, CycleReports.Skip, CycleReports.Restart], session.Reports);
-        Assert.Equal(["run-1"], session.CancelledRuns);
-        Assert.Single(session.Cycles);
+        Assert.Equal(FullLadder, pilot.Actions);
+        Assert.Equal([JournalLines.CheckIn, JournalLines.Skip, JournalLines.Restart], pilot.Reports);
+        Assert.Equal(["run-1"], pilot.CancelledRuns);
+        Assert.Single(pilot.Cycles);
         Assert.Equal(1, runner.ConsecutiveRestarts);
     }
 
@@ -85,7 +85,7 @@ public class CycleRunnerStuckTests
 
         Assert.Equal(TimeSpan.FromSeconds(30), await RunAsync(Runner(checkedIn)));
         Assert.Equal(["cycle", "wait", "check-in", "wait"], checkedIn.Actions);
-        Assert.Equal([CycleReports.CheckIn], checkedIn.Reports);
+        Assert.Equal([JournalLines.CheckIn], checkedIn.Reports);
 
         var skipped = new FakePilot { RunningProvider = Provider.Claude };
         skipped.Signals.Enqueue(WaitResult.Stuck);
@@ -94,79 +94,79 @@ public class CycleRunnerStuckTests
 
         Assert.Equal(TimeSpan.FromSeconds(30), await RunAsync(Runner(skipped)));
         Assert.Equal(["cycle", "wait", "check-in", "wait", "skip", "wait"], skipped.Actions);
-        Assert.Equal([CycleReports.CheckIn, CycleReports.Skip], skipped.Reports);
+        Assert.Equal([JournalLines.CheckIn, JournalLines.Skip], skipped.Reports);
         Assert.Empty(skipped.CancelledRuns);
     }
 
     [Fact]
     public async Task Run_BacksOffOnce_OnTheThirdRestartInARow_AndAPostedResultResetsTheCount()
     {
-        var session = new FakePilot { RunningProvider = Provider.Claude };
-        var runner = Runner(session);
+        var pilot = new FakePilot { RunningProvider = Provider.Claude };
+        var runner = Runner(pilot);
 
         await RunAsync(runner);
-        session.Signals.Enqueue(WaitResult.Finished("done"));
+        pilot.Signals.Enqueue(WaitResult.Finished("done"));
         await RunAsync(runner);
         Assert.Equal(0, runner.ConsecutiveRestarts);
 
         await RunAsync(runner);
         await RunAsync(runner);
-        Assert.DoesNotContain(CycleReports.Backoff, session.Reports);
+        Assert.DoesNotContain(JournalLines.Backoff, pilot.Reports);
 
         await RunAsync(runner);
         Assert.Equal(0, runner.ConsecutiveRestarts);
-        Assert.Equal("sleep:1800", session.Actions[^1]);
+        Assert.Equal("sleep:1800", pilot.Actions[^1]);
 
         // The break re-arms the streak, so the next stuck run is not another 30 minutes.
         await RunAsync(runner);
-        Assert.Single(session.Reports, r => r == CycleReports.Backoff);
+        Assert.Single(pilot.Reports, r => r == JournalLines.Backoff);
     }
 
     [Fact]
     public async Task Run_DoesNotCountStuckSignalsAsTime_WhileTheServerSeesActivity()
     {
-        var session = new FakePilot { RunningProvider = Provider.Claude, DefaultActivity = Activity(Fresh) };
+        var pilot = new FakePilot { RunningProvider = Provider.Claude, DefaultActivity = Activity(Fresh) };
         for (var i = 0; i < 40; i++)
         {
-            session.Signals.Enqueue(WaitResult.Stuck);
+            pilot.Signals.Enqueue(WaitResult.Stuck);
         }
 
-        session.Signals.Enqueue(WaitResult.Finished("done"));
+        pilot.Signals.Enqueue(WaitResult.Finished("done"));
 
-        var sleep = await RunAsync(Runner(session));
+        var sleep = await RunAsync(Runner(pilot));
 
         // A noisy burst on a live run must never reach the cycle cap, nor announce an extension.
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
-        Assert.DoesNotContain("check-in", session.Actions);
-        Assert.Empty(session.Reports);
+        Assert.DoesNotContain("check-in", pilot.Actions);
+        Assert.Empty(pilot.Reports);
     }
 
     [Fact]
     public async Task Run_ExtendsWhileActive_ThenClimbsTheLadderPastTheCycleCap()
     {
-        var session = new FakePilot { RunningProvider = Provider.Claude, DefaultActivity = Activity(Fresh) };
+        var pilot = new FakePilot { RunningProvider = Provider.Claude, DefaultActivity = Activity(Fresh) };
 
-        var sleep = await RunAsync(Runner(session));
+        var sleep = await RunAsync(Runner(pilot));
 
         // Two extensions (20 -> 40 -> 60 minutes), then the cap hands over to the ladder.
         Assert.Null(sleep);
-        Assert.Equal(["cycle", "wait", "wait", "wait", "check-in", "wait", "skip", "wait", "stop"], session.Actions);
-        Assert.Single(session.Reports, r => r == CycleReports.Extend);
+        Assert.Equal(["cycle", "wait", "wait", "wait", "check-in", "wait", "skip", "wait", "stop"], pilot.Actions);
+        Assert.Single(pilot.Reports, r => r == JournalLines.Extend);
     }
 
     [Fact]
     public async Task Run_KeepsWaitingBeforeSkip_WhenActivityResumesAfterTheCheckIn()
     {
-        var session = new FakePilot { RunningProvider = Provider.Claude };
-        session.Signals.Enqueue(WaitResult.Stuck);
-        session.Signals.Enqueue(WaitResult.Stuck);
-        session.Signals.Enqueue(WaitResult.Finished("done"));
-        session.Activities.Enqueue(Activity(Stale)); // after the first stuck
-        session.Activities.Enqueue(Activity(Fresh)); // after the second stuck: active again
+        var pilot = new FakePilot { RunningProvider = Provider.Claude };
+        pilot.Signals.Enqueue(WaitResult.Stuck);
+        pilot.Signals.Enqueue(WaitResult.Stuck);
+        pilot.Signals.Enqueue(WaitResult.Finished("done"));
+        pilot.Activities.Enqueue(Activity(Stale)); // after the first stuck
+        pilot.Activities.Enqueue(Activity(Fresh)); // after the second stuck: active again
 
-        var sleep = await RunAsync(Runner(session));
+        var sleep = await RunAsync(Runner(pilot));
 
-        Assert.Equal(["cycle", "wait", "check-in", "wait", "wait"], session.Actions);
+        Assert.Equal(["cycle", "wait", "check-in", "wait", "wait"], pilot.Actions);
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
     }
 }

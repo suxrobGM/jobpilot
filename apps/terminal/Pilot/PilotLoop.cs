@@ -6,21 +6,19 @@ namespace JobPilot.Terminal.Pilot;
 /// <summary>Runs cycles whenever the host is paired and parks while it is not.</summary>
 public sealed class PilotLoop : BackgroundService
 {
-    public const string ResumeReport = "Pilot resumed after the app restarted.";
-
     private static readonly TimeSpan ErrorBackoff = TimeSpan.FromSeconds(30);
 
     // Lets Kestrel finish binding before a restarted host resumes its first cycle.
     private static readonly TimeSpan StartupResumeDelay = TimeSpan.FromSeconds(10);
 
-    private readonly PilotStore store;
-    private readonly IPilotSession session;
+    private readonly PairingStore store;
+    private readonly IPilotAgent agent;
     private readonly IPilotApi api;
     private readonly TimeProvider time;
     private readonly ILogger<PilotLoop> logger;
     private readonly CycleRunner runner;
 
-    private readonly PilotWakes wakes;
+    private readonly WakeSignal wakeSignal;
 
     private readonly Lock sync = new();
     private CancellationTokenSource? cycleCts;
@@ -29,22 +27,22 @@ public sealed class PilotLoop : BackgroundService
     private ExponentialBackoff apiBackoff = new(TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10));
     private volatile bool working;
 
-    public PilotLoop(PilotStore store, IPilotSession session, IPilotApi api, TimeProvider time, PilotWakes wakes, ILogger<PilotLoop> logger)
+    public PilotLoop(PairingStore store, IPilotAgent agent, IPilotApi api, TimeProvider time, WakeSignal wakeSignal, ILogger<PilotLoop> logger)
     {
         this.store = store;
-        this.session = session;
+        this.agent = agent;
         this.api = api;
         this.time = time;
-        this.wakes = wakes;
+        this.wakeSignal = wakeSignal;
         this.logger = logger;
-        runner = new CycleRunner(session, api, time);
+        runner = new CycleRunner(agent, api, time);
         store.Changed += Wake;
     }
 
     /// <summary>Ends an inter-cycle sleep early. If the host was unpaired, also aborts the live cycle.</summary>
     public void Wake()
     {
-        wakes.Signal();
+        wakeSignal.Signal();
         lock (sync)
         {
             // A wake that leaves the host paired must never interrupt the agent mid-turn.
@@ -57,11 +55,11 @@ public sealed class PilotLoop : BackgroundService
 
     public PilotStatus GetStatus()
     {
-        var settings = store.Current;
+        var pairing = store.Current;
         return new PilotStatus
         {
-            Paired = settings is not null,
-            UserId = settings?.UserId,
+            Paired = pairing is not null,
+            UserId = pairing?.UserId,
             Conducting = working && runner.Conducting,
             HeldUntil = runner.HeldUntil(time.GetUtcNow()),
             LastCycleAt = runner.LastCycleAt,
@@ -103,23 +101,23 @@ public sealed class PilotLoop : BackgroundService
             working = false;
 
             // Read only after publishing the token: an unpair then either cancels this token or shows up in this read.
-            var settings = store.Current;
+            var pairing = store.Current;
             try
             {
-                if (settings is null)
+                if (pairing is null)
                 {
-                    await wakes.TakeAsync(stoppingToken);
+                    await wakeSignal.TakeAsync(stoppingToken);
                     continue;
                 }
 
-                await RunOnceAsync(settings, cycle.Token, stoppingToken);
+                await RunOnceAsync(pairing, cycle.Token, stoppingToken);
             }
             catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
             {
                 // An unpair aborts the agent's turn, unless it is the user's own session on the other provider.
                 if (runner.Conducting && store.Current is null)
                 {
-                    session.Interrupt();
+                    agent.AbortTurn();
                 }
             }
             catch (OperationCanceledException)
@@ -142,7 +140,7 @@ public sealed class PilotLoop : BackgroundService
         }
     }
 
-    private async Task RunOnceAsync(PilotSettings settings, CancellationToken ct, CancellationToken stoppingToken)
+    private async Task RunOnceAsync(PilotPairing pairing, CancellationToken ct, CancellationToken stoppingToken)
     {
         // One probe checks the API is reachable before the cycle spends a refresh.
         var activity = await api.GetActivityAsync(ct);
@@ -154,11 +152,11 @@ public sealed class PilotLoop : BackgroundService
 
         apiBackoff.Reset();
 
-        // This cycle reads the current settings, which covers any wake that came before it.
-        wakes.TryTake();
+        // This cycle reads the current pairing, which covers any wake that came before it.
+        wakeSignal.TryTake();
 
         working = true;
-        var sleep = await runner.RunAsync(settings, ct);
+        var sleep = await runner.RunAsync(pairing, ct);
         if (sleep is { } duration && duration > TimeSpan.Zero)
         {
             await SleepOrWakeAsync(duration, ct);
@@ -173,14 +171,14 @@ public sealed class PilotLoop : BackgroundService
         }
 
         await Task.Delay(StartupResumeDelay, time, stoppingToken);
-        var owed = CycleSleep.OwedBreak(await api.GetActivityAsync(stoppingToken), time.GetUtcNow());
+        var owed = CycleSleep.RemainingSleep(await api.GetActivityAsync(stoppingToken), time.GetUtcNow());
         if (owed <= TimeSpan.Zero)
         {
-            await api.ReportAsync(ResumeReport, stoppingToken);
+            await api.WriteJournalAsync(JournalLines.Resume, stoppingToken);
             return;
         }
 
-        await api.ReportAsync($"{ResumeReport} Waiting out the planned break until {time.GetUtcNow() + owed:u} first.", stoppingToken);
+        await api.WriteJournalAsync($"{JournalLines.Resume} Waiting out the planned break until {time.GetUtcNow() + owed:u} first.", stoppingToken);
         await SleepOrWakeAsync(owed, stoppingToken);
     }
 
@@ -188,13 +186,13 @@ public sealed class PilotLoop : BackgroundService
     private async Task SleepOrWakeAsync(TimeSpan duration, CancellationToken ct)
     {
         // A wake during the cycle had no sleep to end, so its pending wake ends this one before it starts.
-        if (wakes.TryTake())
+        if (wakeSignal.TryTake())
         {
             return;
         }
 
         using var sleepCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var woken = wakes.WaitAsync(sleepCts.Token);
+        var woken = wakeSignal.WaitAsync(sleepCts.Token);
         var slept = Task.Delay(duration, time, sleepCts.Token);
         await Task.WhenAny(woken, slept);
         await sleepCts.CancelAsync();

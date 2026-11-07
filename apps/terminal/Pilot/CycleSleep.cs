@@ -11,7 +11,7 @@ internal static class CycleSleep
     public static int Clamp(int seconds) => Math.Clamp(seconds, MinSeconds, MaxSeconds);
 
     /// <summary>The rest of the last inter-cycle break, so a host restart does not skip it.</summary>
-    public static TimeSpan OwedBreak(PilotActivity? activity, DateTimeOffset now)
+    public static TimeSpan RemainingSleep(PilotActivity? activity, DateTimeOffset now)
     {
         if (activity?.LastCycle is not { } last)
         {

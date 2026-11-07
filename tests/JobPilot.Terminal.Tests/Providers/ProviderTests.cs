@@ -14,7 +14,7 @@ public class ProviderTests
     [InlineData("CoDeX", "codex")]
     public void Find_IsCaseInsensitive_AndDefaultsToClaude(string? id, string expected)
     {
-        Assert.Equal(expected, Provider.Find(id).Id);
+        Assert.Equal(expected, Provider.Parse(id).Id);
     }
 
     [Theory]
@@ -22,7 +22,7 @@ public class ProviderTests
     [InlineData("claude-code")]
     public void Find_Throws_ForAnUnknownProvider(string id)
     {
-        Assert.Throws<ArgumentException>(() => Provider.Find(id));
+        Assert.Throws<ArgumentException>(() => Provider.Parse(id));
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class ProviderTests
     [InlineData("codex", "$pilot")]
     public void SkillCommand_UsesTheProvidersInvocationSyntax(string id, string expected)
     {
-        Assert.Equal(expected, Provider.Find(id).SkillCommand("pilot"));
+        Assert.Equal(expected, Provider.Parse(id).SkillCommand("pilot"));
     }
 
     [Theory]
@@ -71,6 +71,6 @@ public class ProviderTests
     [InlineData("codex", "Checking in", 1)]
     public void SubmitKeyPresses_AcceptsCodexAutocompleteFirst(string id, string command, int expected)
     {
-        Assert.Equal(expected, Provider.Find(id).SubmitKeyPresses(command));
+        Assert.Equal(expected, Provider.Parse(id).SubmitKeyPresses(command));
     }
 }

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests.Pilot.Telemetry;
 
-public sealed class StepMapperTests
+public sealed class StepLabelsTests
 {
     // Attribute values as both CLIs send them: OTLP stringValue, with JSON arguments inside a string.
     private static Dictionary<string, JsonElement> Record(params (string Key, string Text)[] attributes) =>
@@ -20,12 +20,12 @@ public sealed class StepMapperTests
             attributes.Add(("tool_parameters", parameters));
         }
 
-        return StepMapper.FromRecord(Record([.. attributes])) is { } call ? StepMapper.Label(call) : null;
+        return StepLabels.ToolCallIn(Record([.. attributes])) is { } call ? StepLabels.Label(call) : null;
     }
 
     private static string? Codex(string tool, string arguments) =>
-        StepMapper.FromRecord(Record(("event.name", "codex.tool_result"), ("tool_name", tool), ("arguments", arguments))) is { } call
-            ? StepMapper.Label(call)
+        StepLabels.ToolCallIn(Record(("event.name", "codex.tool_result"), ("tool_name", tool), ("arguments", arguments))) is { } call
+            ? StepLabels.Label(call)
             : null;
 
     private static string? Bash(string command) => Claude("Bash", JsonSerializer.Serialize(new Dictionary<string, string> { ["command"] = command }));
@@ -79,5 +79,5 @@ public sealed class StepMapperTests
 
     [Fact]
     public void CodexCodeModeWrapper_IsSkipped_BecauseItsCallsReportOnTheirOwn() =>
-        Assert.Null(StepMapper.FromRecord(Record(("event.name", "codex.tool_result"), ("tool_name", "exec"), ("arguments", "text(1)"))));
+        Assert.Null(StepLabels.ToolCallIn(Record(("event.name", "codex.tool_result"), ("tool_name", "exec"), ("arguments", "text(1)"))));
 }

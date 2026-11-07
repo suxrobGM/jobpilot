@@ -8,21 +8,21 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests.Pilot;
 
-public sealed class PilotStoreTests : IDisposable
+public sealed class PairingStoreTests : IDisposable
 {
     private readonly TempDir temp = new();
     private readonly string path;
 
-    public PilotStoreTests()
+    public PairingStoreTests()
     {
         path = Path.Combine(temp.Root, "pilot.json");
     }
 
     public void Dispose() => temp.Dispose();
 
-    private PilotStore NewStore() => new(new HostInstall(temp.Paths), NullLogger<PilotStore>.Instance);
+    private PairingStore NewStore() => new(new HostInstall(temp.Paths), NullLogger<PairingStore>.Instance);
 
-    private static PilotSettings SavedSettings(string userId = "user-1") => new()
+    private static PilotPairing SavedPairing(string userId = "user-1") => new()
     {
         Provider = Provider.Codex,
         Api = new ApiConnection("https://api.example", "https://web.example", "secret-token"),
@@ -32,7 +32,7 @@ public sealed class PilotStoreTests : IDisposable
     [Fact]
     public void Save_RoundTripsThroughAFreshStore()
     {
-        NewStore().Save(SavedSettings());
+        NewStore().Save(SavedPairing());
 
         var reloaded = NewStore().Current;
 
@@ -50,7 +50,7 @@ public sealed class PilotStoreTests : IDisposable
         store.Changed += () => changes++;
 
         store.Clear(); // nothing saved yet
-        store.Save(SavedSettings());
+        store.Save(SavedPairing());
         store.Clear();
 
         Assert.Null(store.Current);
@@ -92,7 +92,7 @@ public sealed class PilotStoreTests : IDisposable
             return;
         }
 
-        NewStore().Save(SavedSettings());
+        NewStore().Save(SavedPairing());
 
         Assert.DoesNotContain("secret-token", File.ReadAllText(path));
     }
@@ -105,7 +105,7 @@ public sealed class PilotStoreTests : IDisposable
             return;
         }
 
-        NewStore().Save(SavedSettings());
+        NewStore().Save(SavedPairing());
 
         var mode = File.GetUnixFileMode(path);
         Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, mode);
@@ -115,9 +115,9 @@ public sealed class PilotStoreTests : IDisposable
     public void Save_ReplacesTheFile_WithoutLeavingTemporaryFiles()
     {
         var store = NewStore();
-        store.Save(SavedSettings());
+        store.Save(SavedPairing());
 
-        store.Save(SavedSettings(userId: "user-2"));
+        store.Save(SavedPairing(userId: "user-2"));
 
         Assert.Equal("user-2", NewStore().Current!.UserId);
         Assert.Empty(Directory.EnumerateFiles(temp.Root, ".pilot.json.*.tmp"));

@@ -1,6 +1,6 @@
 namespace JobPilot.Terminal.Pilot;
 
-public enum WaitOutcome
+public enum WaitKind
 {
     Finished,
     Timeout,
@@ -8,17 +8,17 @@ public enum WaitOutcome
     Stuck,
 }
 
-/// <summary><see cref="RunOutcome"/> is set only for <see cref="WaitOutcome.Finished"/>.</summary>
-public readonly record struct WaitResult(WaitOutcome Outcome, string? RunOutcome = null)
+/// <summary><see cref="RunOutcome"/> is set only for <see cref="WaitKind.Finished"/>.</summary>
+public readonly record struct WaitResult(WaitKind Kind, string? RunOutcome = null)
 {
-    public static readonly WaitResult Timeout = new(WaitOutcome.Timeout);
-    public static readonly WaitResult Exited = new(WaitOutcome.SessionExited);
-    public static readonly WaitResult Stuck = new(WaitOutcome.Stuck);
+    public static readonly WaitResult Timeout = new(WaitKind.Timeout);
+    public static readonly WaitResult Exited = new(WaitKind.SessionExited);
+    public static readonly WaitResult Stuck = new(WaitKind.Stuck);
 
-    public static WaitResult Finished(string runOutcome) => new(WaitOutcome.Finished, runOutcome);
+    public static WaitResult Finished(string runOutcome) => new(WaitKind.Finished, runOutcome);
 
     /// <summary>The run has its result or lost its agent, so no directive can help.</summary>
-    public bool Ended => Outcome is WaitOutcome.Finished or WaitOutcome.SessionExited;
+    public bool IsFinal => Kind is WaitKind.Finished or WaitKind.SessionExited;
 }
 
 /// <summary>CheckIn asks the agent to post its result; Skip makes it post a failed one.</summary>

@@ -5,7 +5,7 @@ using JobPilot.Terminal.Providers;
 namespace JobPilot.Terminal.Tests.Support;
 
 /// <summary>Both of the loop's seams in one script, so a test reads the terminal, API and clock calls in order.</summary>
-internal sealed class FakePilot : IPilotSession, IPilotApi
+internal sealed class FakePilot : IPilotAgent, IPilotApi
 {
     // The loop records from a background thread while the test asserts, so the logs are read as snapshots.
     private readonly Lock sync = new();
@@ -65,13 +65,13 @@ internal sealed class FakePilot : IPilotSession, IPilotApi
 
     public Provider? RunningProvider { get; set; }
 
-    public void Start(PilotSettings settings)
+    public void Start(PilotPairing pairing)
     {
         Record("start");
-        RunningProvider = settings.Provider;
+        RunningProvider = pairing.Provider;
     }
 
-    public Task SendCycleAsync(PilotSettings settings, string runId, CancellationToken ct)
+    public Task SendCycleAsync(PilotPairing pairing, string runId, CancellationToken ct)
     {
         Record("cycle");
         lock (sync)
@@ -82,7 +82,7 @@ internal sealed class FakePilot : IPilotSession, IPilotApi
         return Task.CompletedTask;
     }
 
-    public Task SendDirectiveAsync(PilotSettings settings, Directive directive, CancellationToken ct)
+    public Task SendDirectiveAsync(PilotPairing pairing, Directive directive, CancellationToken ct)
     {
         Record(directive == Directive.CheckIn ? "check-in" : "skip");
         return Task.CompletedTask;
@@ -110,7 +110,7 @@ internal sealed class FakePilot : IPilotSession, IPilotApi
         RunningProvider = null;
     }
 
-    public void Interrupt() => Record("interrupt");
+    public void AbortTurn() => Record("abort-turn");
 
     public Task<PilotUsage?> EndRunAsync(CancellationToken ct)
     {
@@ -125,9 +125,9 @@ internal sealed class FakePilot : IPilotSession, IPilotApi
 
     public void OnRunFinished(string runId, string outcome) => Record($"finished:{runId}:{outcome}");
 
-    public Task InterruptRunAsync(string runId, CancellationToken ct)
+    public Task StopRunAsync(string runId, CancellationToken ct)
     {
-        Record($"interrupt:{runId}");
+        Record($"stop:{runId}");
         return Task.CompletedTask;
     }
 
@@ -145,7 +145,7 @@ internal sealed class FakePilot : IPilotSession, IPilotApi
         }
     }
 
-    public Task ReportAsync(string summary, CancellationToken ct)
+    public Task WriteJournalAsync(string summary, CancellationToken ct)
     {
         lock (sync)
         {
@@ -184,7 +184,7 @@ internal sealed class FakePilot : IPilotSession, IPilotApi
 
     public Task PostStepsAsync(string runId, PilotStep[] steps, CancellationToken ct) => Task.CompletedTask;
 
-    public Task<HttpResponseMessage?> OpenEventsAsync(PilotSettings settings, CancellationToken ct) =>
+    public Task<HttpResponseMessage?> OpenEventsAsync(PilotPairing pairing, CancellationToken ct) =>
         Task.FromResult<HttpResponseMessage?>(null);
 
     public Task RecordCycleAsync(int sleepSeconds, CancellationToken ct)

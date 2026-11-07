@@ -32,18 +32,18 @@ public static class ServiceRegistration
         services.AddSingleton<TerminalSession>();
         services.AddSingleton<TerminalRelay>();
 
-        services.AddSingleton<PilotStore>();
+        services.AddSingleton<PairingStore>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPilotApi, PilotApi>();
         services.AddSingleton<UsageMeter>();
         services.AddHostedSingleton<StepRecorder>();
-        services.AddSingleton<IPilotSession, PilotSession>();
-        services.AddSingleton<PilotWakes>();
+        services.AddSingleton<IPilotAgent, PilotAgent>();
+        services.AddSingleton<WakeSignal>();
         services.AddHostedSingleton<PilotLoop>();
         services.AddHostedService<PilotEventListener>();
 
-        services.AddSingleton<ReleaseFeed>();
-        services.AddSingleton<InstallSwap>();
+        services.AddSingleton<GitHubReleases>();
+        services.AddSingleton<ReleaseInstaller>();
         services.AddSingleton<HostUpdater>();
 
         services.ConfigureHttpJsonOptions(c => c.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
@@ -51,7 +51,7 @@ public static class ServiceRegistration
         // Production otherwise answers a binding failure with an empty 400, and the web expects ProblemDetails.
         services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = true);
 
-        // Must stay below HostHandoff.MaxWait, or an update's relaunched host times out and fails to bind.
+        // Must stay below HostRelaunch.MaxWait, or an update's relaunched host times out and fails to bind.
         services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSeconds(5));
 
         return services;

@@ -42,7 +42,7 @@ public sealed class PilotEventListenerTests
         h.Push("data: {\"type\":\"question.answered\",\"question\":{}}\n\n");
 
         var woken = false;
-        await TestWait.Until(() => woken |= h.Wakes.TryTake());
+        await TestWait.Until(() => woken |= h.WakeSignal.TryTake());
         Assert.Equal("Bearer tok", h.Handler.LastRequest?.Headers.Authorization?.ToString());
         Assert.Contains("text/event-stream", h.Handler.LastRequest?.Headers.Accept.ToString());
     }
@@ -56,7 +56,7 @@ public sealed class PilotEventListenerTests
 
         await TestWait.Until(() => h.Pilot.Actions.Count == 1);
         Assert.Equal(["finished:run-1:done"], h.Pilot.Actions);
-        Assert.False(h.Wakes.TryTake());
+        Assert.False(h.WakeSignal.TryTake());
     }
 
     [Fact]
@@ -78,15 +78,15 @@ public sealed class PilotEventListenerTests
         h.Push("data: {\"type\":\"run.steer\",\"runId\":\"run-1\",\"text\":\"skip cover letters\"}\n\n");
 
         await TestWait.Until(() => h.Pilot.Actions.Count == 2);
-        Assert.Equal(["interrupt:run-1", "steer:run-1:skip cover letters"], h.Pilot.Actions);
+        Assert.Equal(["stop:run-1", "steer:run-1:skip cover letters"], h.Pilot.Actions);
     }
 
     [Fact]
-    public async Task Listener_ReconnectsAtOnce_WithNewSettings()
+    public async Task Listener_ReconnectsAtOnce_WithANewPairing()
     {
         await using var h = await Harness.StartAsync();
 
-        h.Store.Save(Settings(apiUrl: "https://next-api", apiToken: "next-token"));
+        h.Store.Save(Pairing(apiUrl: "https://next-api", apiToken: "next-token"));
 
         await TestWait.Until(() => h.Handler.Calls == 2);
         Assert.Equal("https://next-api/api/pilot/events", h.Handler.LastRequest?.RequestUri?.ToString());
@@ -111,23 +111,23 @@ public sealed class PilotEventListenerTests
         private Harness(HttpStatusCode status)
         {
             Handler = new FakeSseHandler { Status = status };
-            Store = new PilotStore(new HostInstall(temp.Paths), NullLogger<PilotStore>.Instance);
+            Store = new PairingStore(new HostInstall(temp.Paths), NullLogger<PairingStore>.Instance);
             var api = new PilotApi(new HttpClient(Handler), Store, NullLogger<PilotApi>.Instance);
-            listener = new PilotEventListener(Store, api, Pilot, Wakes, NullLogger<PilotEventListener>.Instance);
+            listener = new PilotEventListener(Store, api, Pilot, WakeSignal, NullLogger<PilotEventListener>.Instance);
         }
 
         public FakeSseHandler Handler { get; }
 
         public FakePilot Pilot { get; } = new();
 
-        public PilotWakes Wakes { get; } = new();
+        public WakeSignal WakeSignal { get; } = new();
 
-        public PilotStore Store { get; }
+        public PairingStore Store { get; }
 
         public static async Task<Harness> StartAsync(HttpStatusCode status = HttpStatusCode.OK)
         {
             var harness = new Harness(status);
-            harness.Store.Save(Settings());
+            harness.Store.Save(Pairing());
             await harness.listener.StartAsync(CancellationToken.None);
             await TestWait.Until(() => harness.Handler.Calls > 0);
             return harness;

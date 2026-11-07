@@ -37,7 +37,7 @@ public sealed class StepRecorder(IPilotApi api) : BackgroundService
     {
         foreach (var attributes in OtlpLogs.Records(export))
         {
-            if (StepMapper.FromRecord(attributes) is not { } call || StepMapper.Label(call) is not { } label)
+            if (StepLabels.ToolCallIn(attributes) is not { } call || StepLabels.Label(call) is not { } label)
             {
                 continue;
             }

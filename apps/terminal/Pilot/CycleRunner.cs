@@ -4,16 +4,16 @@ namespace JobPilot.Terminal.Pilot;
 
 /// <summary>Runs one cycle. It returns the inter-cycle sleep instead of sleeping, so a wake can cut it short.</summary>
 /// <param name="checkInterval">Tests pass one at least as long as every wait, so each wait is a single slice.</param>
-internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProvider time, TimeSpan? checkInterval = null)
+internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider time, TimeSpan? checkInterval = null)
 {
     // Server-side activity newer than this means the run is working, not stuck.
-    public static readonly TimeSpan ActiveWindow = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan RecentActivityWindow = TimeSpan.FromMinutes(5);
 
     private static readonly TimeSpan ResultTimeout = TimeSpan.FromMinutes(20);
     private static readonly TimeSpan CheckInGrace = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan BackoffDelay = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan StartupGrace = TimeSpan.FromSeconds(15);
-    private static readonly TimeSpan MismatchPoll = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan OtherProviderPoll = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RefreshRetry = TimeSpan.FromMinutes(1);
 
     // The user's typing holds new runs this long, so an always-on loop never clears their session.
@@ -45,17 +45,17 @@ internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProv
 
     /// <summary>When the user's typing stops holding new runs back, or null when it isn't.</summary>
     public DateTimeOffset? HeldUntil(DateTimeOffset now) =>
-        session.LastUserInputAt is { } at && at + HoldWindow > now ? at + HoldWindow : null;
+        agent.LastUserInputAt is { } at && at + HoldWindow > now ? at + HoldWindow : null;
 
     /// <summary>Returns the sleep before the next cycle, or null to go again right away.</summary>
-    public async Task<TimeSpan?> RunAsync(PilotSettings settings, CancellationToken ct)
+    public async Task<TimeSpan?> RunAsync(PilotPairing pairing, CancellationToken ct)
     {
         // Never fight a user who launched the other provider by hand: pause instead of killing their session.
-        var running = session.RunningProvider;
-        if (running is not null && running != settings.Provider)
+        var running = agent.RunningProvider;
+        if (running is not null && running != pairing.Provider)
         {
             Conducting = false;
-            await Task.Delay(MismatchPoll, time, ct);
+            await Task.Delay(OtherProviderPoll, time, ct);
             return null;
         }
 
@@ -80,7 +80,7 @@ internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProv
         {
             if (!holdReported)
             {
-                await api.ReportAsync(CycleReports.Hold, ct);
+                await api.WriteJournalAsync(JournalLines.Hold, ct);
                 holdReported = true;
             }
 
@@ -98,15 +98,15 @@ internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProv
 
         if (running is null)
         {
-            session.Start(settings);
+            agent.Start(pairing);
             await Task.Delay(StartupGrace, time, ct);
         }
 
         totalWaited = TimeSpan.Zero;
         extensionReported = false;
 
-        await session.SendCycleAsync(settings, runId, ct);
-        var result = await WaitForResultAsync(settings, runId, ct);
+        await agent.SendCycleAsync(pairing, runId, ct);
+        var result = await WaitForResultAsync(pairing, runId, ct);
         await TrackStreaksAsync(result, ct);
         return await RecordRunAsync(runId, sleep, result, ct);
     }
@@ -122,13 +122,13 @@ internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProv
     /// <summary>A run the agent never finished is cancelled here, so it does not hold its task.</summary>
     private async Task<TimeSpan?> RecordRunAsync(string runId, int sleep, WaitResult result, CancellationToken ct)
     {
-        var posted = result.Outcome is WaitOutcome.Finished;
+        var posted = result.Kind is WaitKind.Finished;
         if (!posted)
         {
             await api.CancelRunAsync(runId, ct);
         }
 
-        if (await session.EndRunAsync(ct) is { } usage)
+        if (await agent.EndRunAsync(ct) is { } usage)
         {
             await api.ReportUsageAsync(runId, usage, ct);
         }
@@ -142,28 +142,28 @@ internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProv
     }
 
     /// <summary>Waits for the result; a stuck run climbs check-in, skip, then restart.</summary>
-    private async Task<WaitResult> WaitForResultAsync(PilotSettings settings, string runId, CancellationToken ct)
+    private async Task<WaitResult> WaitForResultAsync(PilotPairing pairing, string runId, CancellationToken ct)
     {
         var result = await WaitAsync(runId, ResultTimeout, ct);
 
         // No server check between rungs: every unfinished wait has just checked whether the run finished.
-        (Directive Directive, string Report)[] rungs = [(Directive.CheckIn, CycleReports.CheckIn), (Directive.Skip, CycleReports.Skip)];
+        (Directive Directive, string Report)[] rungs = [(Directive.CheckIn, JournalLines.CheckIn), (Directive.Skip, JournalLines.Skip)];
         foreach (var (directive, report) in rungs)
         {
-            if (result.Ended)
+            if (result.IsFinal)
             {
                 return result;
             }
 
-            await api.ReportAsync(report, ct);
-            await session.SendDirectiveAsync(settings, directive, ct);
+            await api.WriteJournalAsync(report, ct);
+            await agent.SendDirectiveAsync(pairing, directive, ct);
             result = await WaitAsync(runId, CheckInGrace, ct);
         }
 
-        if (!result.Ended)
+        if (!result.IsFinal)
         {
-            await api.ReportAsync(CycleReports.Restart, ct);
-            session.Stop();
+            await api.WriteJournalAsync(JournalLines.Restart, ct);
+            agent.Stop();
         }
 
         return result;
@@ -172,24 +172,24 @@ internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProv
     /// <summary>Backs off after a streak of restarts or exits, so a broken install or sign-in cannot hot-loop.</summary>
     private async Task TrackStreaksAsync(WaitResult result, CancellationToken ct)
     {
-        if (result.Outcome is WaitOutcome.Finished)
+        if (result.Kind is WaitKind.Finished)
         {
             ConsecutiveRestarts = 0;
             ConsecutiveExits = 0;
         }
-        else if (result.Outcome is WaitOutcome.SessionExited)
+        else if (result.Kind is WaitKind.SessionExited)
         {
             if (++ConsecutiveExits >= BackoffThreshold)
             {
                 ConsecutiveExits = 0;
-                await api.ReportAsync(CycleReports.ExitBackoff, ct);
+                await api.WriteJournalAsync(JournalLines.ExitBackoff, ct);
                 await Task.Delay(BackoffDelay, time, ct);
             }
         }
         else if (++ConsecutiveRestarts >= BackoffThreshold)
         {
             ConsecutiveRestarts = 0;
-            await api.ReportAsync(CycleReports.Backoff, ct);
+            await api.WriteJournalAsync(JournalLines.Backoff, ct);
             await Task.Delay(BackoffDelay, time, ct);
         }
     }
@@ -202,15 +202,15 @@ internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProv
 
         while (true)
         {
-            var result = await session.WaitForSignalAsync(slice, ct);
-            if (result.Ended)
+            var result = await agent.WaitForSignalAsync(slice, ct);
+            if (result.IsFinal)
             {
                 return result;
             }
 
             // A stuck signal returns the moment it fires; counting it as elapsed would let one noisy burst spend
             // the whole cycle budget in seconds.
-            if (result.Outcome is WaitOutcome.Timeout)
+            if (result.Kind is WaitKind.Timeout)
             {
                 totalWaited += slice;
                 quiet += slice;
@@ -222,7 +222,7 @@ internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProv
             }
 
             var activity = await api.GetActivityAsync(ct);
-            if (activity?.LastActivityAt is { } at && time.GetUtcNow() - at < ActiveWindow)
+            if (activity?.LastActivityAt is { } at && time.GetUtcNow() - at < RecentActivityWindow)
             {
                 if (totalWaited >= MaxCycleWait)
                 {
@@ -231,13 +231,13 @@ internal sealed class CycleRunner(IPilotSession session, IPilotApi api, TimeProv
 
                 if (totalWaited >= ResultTimeout && !extensionReported)
                 {
-                    await api.ReportAsync(CycleReports.Extend, ct);
+                    await api.WriteJournalAsync(JournalLines.Extend, ct);
                     extensionReported = true;
                 }
 
                 quiet = TimeSpan.Zero;
             }
-            else if (quiet >= quietBudget || result.Outcome is WaitOutcome.Stuck)
+            else if (quiet >= quietBudget || result.Kind is WaitKind.Stuck)
             {
                 return result;
             }

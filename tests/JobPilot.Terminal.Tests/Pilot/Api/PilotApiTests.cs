@@ -17,10 +17,10 @@ public sealed class PilotApiTests : IDisposable
     private readonly TempDir temp = new();
 
     private PilotApi Api(
-        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond, PilotSettings? settings = null)
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond, PilotPairing? pairing = null)
     {
-        var store = new PilotStore(new HostInstall(temp.Paths), NullLogger<PilotStore>.Instance);
-        store.Save(settings ?? Settings());
+        var store = new PairingStore(new HostInstall(temp.Paths), NullLogger<PairingStore>.Instance);
+        store.Save(pairing ?? Pairing());
         return new(new HttpClient(new StubHandler(respond)), store, NullLogger<PilotApi>.Instance);
     }
 
@@ -39,7 +39,7 @@ public sealed class PilotApiTests : IDisposable
                 seen = request;
                 return Respond(HttpStatusCode.OK, ActivityJson);
             },
-            Settings(apiUrl: "https://api.example.test"));
+            Pairing(apiUrl: "https://api.example.test"));
 
         var activity = await api.GetActivityAsync(TestContext.Current.CancellationToken);
 
@@ -93,7 +93,7 @@ public sealed class PilotApiTests : IDisposable
         var ct = TestContext.Current.CancellationToken;
 
         await api.RefreshTasksAsync(ct);
-        await api.ReportAsync("hello world", ct);
+        await api.WriteJournalAsync("hello world", ct);
         await api.RecordCycleAsync(1800, ct);
         Assert.Equal(new PilotRun("run-1", null, null), await api.StartRunAsync("t1", "v1", ct));
         Assert.NotNull(await api.GetRunAsync("run-1", ct));
@@ -125,7 +125,7 @@ public sealed class PilotApiTests : IDisposable
         cts.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.GetActivityAsync(cts.Token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.ReportAsync("stop", cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.WriteJournalAsync("stop", cts.Token));
     }
 
     private sealed class StubHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond)

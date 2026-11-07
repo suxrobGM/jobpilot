@@ -3,7 +3,7 @@ using System.Threading.Channels;
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>Ends the loop's inter-cycle sleep early. Capacity one coalesces a burst of wakes into one.</summary>
-public sealed class PilotWakes
+public sealed class WakeSignal
 {
     private readonly Channel<bool> channel = Channel.CreateBounded<bool>(
         new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite, SingleReader = true });

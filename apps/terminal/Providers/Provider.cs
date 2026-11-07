@@ -11,22 +11,20 @@ public abstract class Provider
     public static readonly Provider Claude = new ClaudeProvider();
     public static readonly Provider Codex = new CodexProvider();
 
-    private static readonly Provider[] Known = [Claude, Codex];
-
-    public static readonly ProviderInfo[] All = [.. Known.Select(p => p.Info)];
+    public static readonly Provider[] All = [Claude, Codex];
 
     public abstract string Id { get; }
 
     public abstract string DisplayName { get; }
 
     /// <summary>Executable to spawn.</summary>
-    public abstract string Command { get; }
+    public abstract string Executable { get; }
 
     public ProviderInfo Info => new(Id, DisplayName);
 
     /// <summary>Resolves an id case-insensitively; a blank id means Claude.</summary>
     /// <exception cref="ArgumentException">The id is not a known provider.</exception>
-    public static Provider Find(string? id)
+    public static Provider Parse(string? id)
     {
         var trimmed = id?.Trim();
         if (string.IsNullOrEmpty(trimmed))
@@ -34,7 +32,7 @@ public abstract class Provider
             return Claude;
         }
 
-        return Known.FirstOrDefault(p => p.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+        return All.FirstOrDefault(p => p.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
             ?? throw new ArgumentException($"Unsupported terminal provider '{id}'.");
     }
 

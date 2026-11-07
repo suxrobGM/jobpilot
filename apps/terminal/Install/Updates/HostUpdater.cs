@@ -4,7 +4,7 @@ namespace JobPilot.Terminal.Install.Updates;
 /// Replaces the installed host with the newest GitHub release: at startup before binding, or on request from the
 /// dashboard.
 /// </summary>
-public sealed class HostUpdater(ReleaseFeed releases, InstallSwap swap, HostInstall install, ILogger<HostUpdater> logger)
+public sealed class HostUpdater(GitHubReleases releases, ReleaseInstaller installer, HostInstall install, ILogger<HostUpdater> logger)
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(20);
 
@@ -13,7 +13,7 @@ public sealed class HostUpdater(ReleaseFeed releases, InstallSwap swap, HostInst
     /// <summary>Runs before the host binds. Returns true when a replacement was launched and this process should exit.</summary>
     public async Task<bool> UpdateAtStartupAsync()
     {
-        if (HostHandoff.IsUpdateRelaunch)
+        if (HostRelaunch.IsUpdateRelaunch)
         {
             return false;
         }
@@ -79,13 +79,13 @@ public sealed class HostUpdater(ReleaseFeed releases, InstallSwap swap, HostInst
 
         var published = await releases.FetchAsync(ct);
         var current = Version.Parse(HostInstall.HostVersion);
-        if (ReleaseFeed.FindNewer(published, current) is not { } newer)
+        if (GitHubReleases.FindNewer(published, current) is not { } newer)
         {
             logger.LogInformation("Host is up to date (v{Current}).", HostInstall.HostVersion);
             return NotUpdating(UpdateResult.ReasonUpToDate);
         }
 
-        var assetName = ReleaseFeed.AssetName();
+        var assetName = GitHubReleases.AssetName();
         var asset = newer.Release.Assets?.FirstOrDefault(a => a.Name == assetName);
         if (asset?.DownloadUrl is not { } downloadUrl)
         {
@@ -94,8 +94,8 @@ public sealed class HostUpdater(ReleaseFeed releases, InstallSwap swap, HostInst
         }
 
         logger.LogInformation("Updating host v{Current} -> v{Next}.", HostInstall.HostVersion, newer.Version);
-        await swap.RunAsync(downloadUrl, exePath, ct);
-        HostHandoff.Relaunch(exePath);
+        await installer.InstallAsync(downloadUrl, exePath, ct);
+        HostRelaunch.Relaunch(exePath);
 
         return new UpdateResult
         {

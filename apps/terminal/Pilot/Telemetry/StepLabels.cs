@@ -9,12 +9,12 @@ public sealed record ToolCall(string Name, JsonElement? Arguments);
 /// Turns a tool call into a short readable step. Labels only: never typed values, page text, query
 /// strings or whole commands, because the steps leave the machine for the web.
 /// </summary>
-public static class StepMapper
+public static class StepLabels
 {
     private const int MaxTarget = 60;
 
     /// <summary>The tool call in a log record, or null for any other event.</summary>
-    public static ToolCall? FromRecord(Dictionary<string, JsonElement> attributes)
+    public static ToolCall? ToolCallIn(Dictionary<string, JsonElement> attributes)
     {
         var name = OtlpLogs.Text(attributes, "event.name");
         if (name is "tool_result" or "claude_code.tool_result")

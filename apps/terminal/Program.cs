@@ -42,7 +42,7 @@ if (await app.Services.GetRequiredService<HostUpdater>().UpdateAtStartupAsync())
     return;
 }
 
-await HostHandoff.WaitForPreviousHostAsync(app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Handoff"));
+await HostRelaunch.WaitForPreviousHostAsync(app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Relaunch"));
 
 app.UseTerminalPipeline();
 app.MapHostEndpoints();

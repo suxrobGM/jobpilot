@@ -14,7 +14,7 @@ public sealed record GitHubAsset(
     [property: JsonPropertyName("browser_download_url")] string? DownloadUrl);
 
 /// <summary>The host's GitHub releases: which one is newer and which asset fits this machine.</summary>
-public sealed class ReleaseFeed(HttpClient http)
+public sealed class GitHubReleases(HttpClient http)
 {
     private const string ReleasesUrl = "https://api.github.com/repos/suxrobGM/jobpilot/releases?per_page=30";
     private const string TagPrefix = "v";

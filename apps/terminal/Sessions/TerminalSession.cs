@@ -88,13 +88,13 @@ public sealed class TerminalSession : IDisposable
                 current = null;
             }
 
-            scratch.CleanSessionStart(paths);
+            scratch.CleanForNewSession(paths);
             var args = provider.BuildArgs(paths.PluginDir, logger);
             logger.LogInformation(
-                "Starting {Provider}: cwd={Cwd} command={Command} args={Args} cols={Cols} rows={Rows}",
+                "Starting {Provider}: cwd={Cwd} executable={Executable} args={Args} cols={Cols} rows={Rows}",
                 provider.DisplayName,
                 paths.WorkingDir,
-                provider.Command,
+                provider.Executable,
                 string.Join(" ", args),
                 cols,
                 rows);
@@ -114,7 +114,7 @@ public sealed class TerminalSession : IDisposable
             Starting?.Invoke();
 
             var process = new PtyProcess(
-                PtyProcess.BuildOptions(provider.Command, args, paths.WorkingDir, cols, rows, paths.BinDir, env), spawn, logger);
+                PtyProcess.BuildOptions(provider.Executable, args, paths.WorkingDir, cols, rows, paths.BinDir, env), spawn, logger);
             process.Output += data => Output?.Invoke(data);
             process.Exited += exitCode => OnExited(process, exitCode);
             try
@@ -183,7 +183,7 @@ public sealed class TerminalSession : IDisposable
 
     public void MarkUserInput() => LastUserInputAt = DateTimeOffset.UtcNow;
 
-    public void ClearUserInput() => LastUserInputAt = null;
+    public void ResetLastUserInput() => LastUserInputAt = null;
 
     public void Resize(int cols, int rows) => current?.Resize(cols, rows);
 

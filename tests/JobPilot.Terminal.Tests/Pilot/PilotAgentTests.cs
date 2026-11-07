@@ -3,7 +3,7 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests.Pilot;
 
-public class PilotSessionTests
+public class PilotAgentTests
 {
     [Theory]
     [InlineData("skip cover letters", "skip cover letters")]
@@ -11,12 +11,12 @@ public class PilotSessionTests
     [InlineData("\u001b[2Jclear\u0003", "[2Jclear")]
     public void SanitizeSteer_KeepsOneLineOfPlainText(string text, string expected)
     {
-        Assert.Equal(expected, PilotSession.SanitizeSteer(text));
+        Assert.Equal(expected, PilotAgent.SanitizeSteer(text));
     }
 
     [Fact]
     public void SanitizeSteer_CapsTheLength()
     {
-        Assert.Equal(1000, PilotSession.SanitizeSteer(new string('a', 5000)).Length);
+        Assert.Equal(1000, PilotAgent.SanitizeSteer(new string('a', 5000)).Length);
     }
 }

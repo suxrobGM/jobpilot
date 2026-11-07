@@ -7,7 +7,7 @@ using JobPilot.Terminal.Sessions;
 
 namespace JobPilot.Terminal.Pilot;
 
-public sealed class PilotSession : IPilotSession, IDisposable
+public sealed class PilotAgent : IPilotAgent, IDisposable
 {
     private const string PilotSkill = "pilot";
     private const string ClearCommand = "/clear";
@@ -23,11 +23,11 @@ public sealed class PilotSession : IPilotSession, IDisposable
     private static readonly TimeSpan UsageFlush = TimeSpan.FromSeconds(3);
 
     private readonly TerminalSession terminal;
-    private readonly PilotStore store;
+    private readonly PairingStore store;
     private readonly IPilotApi api;
     private readonly UsageMeter usage;
     private readonly StepRecorder steps;
-    private readonly ILogger<PilotSession> logger;
+    private readonly ILogger<PilotAgent> logger;
     private readonly StuckDetector stuck = new();
 
     // A finished run's outcome, or null for a stuck signal, so a wait sees whichever comes first. Not single-writer:
@@ -36,7 +36,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     private volatile string? currentRunId;
 
-    public PilotSession(TerminalSession terminal, PilotStore store, IPilotApi api, UsageMeter usage, StepRecorder steps, ILogger<PilotSession> logger)
+    public PilotAgent(TerminalSession terminal, PairingStore store, IPilotApi api, UsageMeter usage, StepRecorder steps, ILogger<PilotAgent> logger)
     {
         this.terminal = terminal;
         this.store = store;
@@ -58,36 +58,36 @@ public sealed class PilotSession : IPilotSession, IDisposable
         return line.Length > MaxSteerLength ? line[..MaxSteerLength] : line;
     }
 
-    public async Task InterruptRunAsync(string runId, CancellationToken ct)
+    public async Task StopRunAsync(string runId, CancellationToken ct)
     {
-        if (runId != currentRunId || store.Current is not { } settings)
+        if (runId != currentRunId || store.Current is not { } pairing)
         {
             return;
         }
 
-        Interrupt();
-        await SendAsync(StopLine, settings.Provider, ct);
+        AbortTurn();
+        await SendAsync(StopLine, pairing.Provider, ct);
         await api.CancelRunAsync(runId, ct);
     }
 
     public async Task SteerRunAsync(string runId, string text, CancellationToken ct)
     {
-        if (runId != currentRunId || store.Current is not { } settings || SanitizeSteer(text) is not { Length: > 0 } line)
+        if (runId != currentRunId || store.Current is not { } pairing || SanitizeSteer(text) is not { Length: > 0 } line)
         {
             return;
         }
 
-        await SendAsync(line, settings.Provider, ct);
+        await SendAsync(line, pairing.Provider, ct);
     }
 
-    public void Start(PilotSettings settings) =>
-        terminal.Start(settings.Provider, Cols, Rows, settings.Api);
+    public void Start(PilotPairing pairing) =>
+        terminal.Start(pairing.Provider, Cols, Rows, pairing.Api);
 
-    public async Task SendCycleAsync(PilotSettings settings, string runId, CancellationToken ct)
+    public async Task SendCycleAsync(PilotPairing pairing, string runId, CancellationToken ct)
     {
         // Cycles keep their state in the API. Clearing first prevents mid-cycle auto-compaction and keeps
         // untrusted page content from lingering into the next cycle.
-        await SendAsync(ClearCommand, settings.Provider, ct);
+        await SendAsync(ClearCommand, pairing.Provider, ct);
         await Task.Delay(ClearSettle, ct);
 
         while (signals.Reader.TryRead(out _))
@@ -98,10 +98,10 @@ public sealed class PilotSession : IPilotSession, IDisposable
         stuck.Reset();
         usage.Start();
         steps.Start(runId);
-        await SendAsync($"{settings.Provider.SkillCommand(PilotSkill)} {runId}", settings.Provider, ct);
+        await SendAsync($"{pairing.Provider.SkillCommand(PilotSkill)} {runId}", pairing.Provider, ct);
     }
 
-    public Task SendDirectiveAsync(PilotSettings settings, Directive directive, CancellationToken ct)
+    public Task SendDirectiveAsync(PilotPairing pairing, Directive directive, CancellationToken ct)
     {
         // A directive keeps the stuck run's context: no /clear, and a finish that raced in must survive.
         stuck.Reset();
@@ -110,7 +110,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
         var text = directive == Directive.CheckIn
             ? $"Checking in: you appear stuck. Finish now and post your result with {result} (outcome \"failed\" if you cannot finish)."
             : $"Stop the current action. Post a failed result now with {result}, saying where it stopped.";
-        return SendAsync(text, settings.Provider, ct);
+        return SendAsync(text, pairing.Provider, ct);
     }
 
     /// <summary>Only the handed-over run counts.</summary>
@@ -159,7 +159,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
     public void Stop() => terminal.Stop();
 
     // Esc interrupts both provider TUIs and is harmless at an idle prompt.
-    public void Interrupt()
+    public void AbortTurn()
     {
         if (terminal.IsRunning)
         {

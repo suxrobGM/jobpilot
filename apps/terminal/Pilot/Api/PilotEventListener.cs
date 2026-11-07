@@ -7,10 +7,10 @@ namespace JobPilot.Terminal.Pilot.Api;
 
 /// <summary>
 /// Holds the pilot event stream open while the host is paired. It wakes the loop on work the user asked for, passes
-/// each finished run to the session waiting on it, and relays interrupts and steers of the run in flight.
+/// each finished run to the cycle waiting on it, and relays interrupts and steers of the run in flight.
 /// </summary>
 public sealed class PilotEventListener(
-    PilotStore store, IPilotApi api, IPilotSession session, PilotWakes wakes, ILogger<PilotEventListener> logger)
+    PairingStore store, IPilotApi api, IPilotAgent agent, WakeSignal wakeSignal, ILogger<PilotEventListener> logger)
     : BackgroundService
 {
     private static readonly TimeSpan InitialBackoff = TimeSpan.FromSeconds(5);
@@ -45,20 +45,20 @@ public sealed class PilotEventListener(
         var backoff = new ExponentialBackoff(InitialBackoff, MaxBackoff);
         while (!stoppingToken.IsCancellationRequested)
         {
-            // Any settings change cancels this pass, so the stream never outlives the credentials it opened with.
+            // Any pairing change cancels this pass, so the stream never outlives the credentials it opened with.
             using var changed = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
             void OnChanged() => changed.Cancel();
             store.Changed += OnChanged;
             try
             {
                 // Read after subscribing, so a change in between still cancels this pass.
-                if (store.Current is not { } settings)
+                if (store.Current is not { } pairing)
                 {
                     await Task.Delay(Timeout.Infinite, changed.Token);
                     continue;
                 }
 
-                var connected = await StreamAsync(settings, changed.Token);
+                var connected = await StreamAsync(pairing, changed.Token);
                 if (connected)
                 {
                     backoff.Reset();
@@ -82,12 +82,12 @@ public sealed class PilotEventListener(
     }
 
     /// <summary>Pumps events until the stream ends. Returns whether the server accepted the connection.</summary>
-    private async Task<bool> StreamAsync(PilotSettings settings, CancellationToken ct)
+    private async Task<bool> StreamAsync(PilotPairing pairing, CancellationToken ct)
     {
         var connected = false;
         try
         {
-            using var response = await api.OpenEventsAsync(settings, ct);
+            using var response = await api.OpenEventsAsync(pairing, ct);
             if (response is null)
             {
                 return false;
@@ -118,19 +118,19 @@ public sealed class PilotEventListener(
         switch (e)
         {
             case { Type: "run.finished", RunId: { } runId }:
-                session.OnRunFinished(runId, e.Outcome ?? "failed");
+                agent.OnRunFinished(runId, e.Outcome ?? "failed");
                 break;
             case { Type: "run.interrupt", RunId: { } runId }:
-                await session.InterruptRunAsync(runId, ct);
+                await agent.StopRunAsync(runId, ct);
                 break;
             case { Type: "run.steer", RunId: { } runId, Text: { } text }:
-                await session.SteerRunAsync(runId, text, ct);
+                await agent.SteerRunAsync(runId, text, ct);
                 break;
         }
 
         if (ShouldWake(e))
         {
-            wakes.Signal();
+            wakeSignal.Signal();
         }
     }
 }
