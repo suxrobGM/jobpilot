@@ -6,13 +6,14 @@ import { taskTypeAgent, taskTypeLabel } from "@jobpilot/contracts/pilot";
 import { Box, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
 import type { PilotHealth } from "@/lib/terminal/client";
-import { formatRelativeTime, humanizeIsoInText } from "@/utils/format";
+import { formatRelativeTime, formatTimeUntil, humanizeIsoInText } from "@/utils/format";
 import { useLatestJournalPage } from "../../pilot/journal/journal-cache";
 import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../../pilot/pilot-status";
 import { useNextWake } from "../../pilot/use-next-wake";
 import { usePilotStatus } from "../../pilot/use-pilot-status";
 import { AgentList } from "./agent-list";
 import { type Stage, StageArrow, StageCard } from "./stage-card";
+import { RefreshTaskListButton, TaskQueue } from "./task-queue";
 import { useTaskList } from "./use-task-list";
 
 const HOST: Stage = { title: "Host", role: "Checks for work", tone: "blue" };
@@ -46,7 +47,11 @@ function serverCaption(taskList: TaskList | null | undefined): string {
   if (next) {
     return `Up next · ${truncate(next.title)}`;
   }
-  return EMPTY_REASON_CAPTIONS[taskList?.emptyReason ?? "clear"];
+  const reason = taskList?.emptyReason ?? "clear";
+  if (reason === "capReached" && taskList) {
+    return `Daily cap reached · resets in ${formatTimeUntil(taskList.budget.resetsAt)}`;
+  }
+  return EMPTY_REASON_CAPTIONS[reason];
 }
 
 interface OrchestrationPanelProps {
@@ -79,7 +84,11 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
     : "Idle";
 
   return (
-    <SectionCard title="Orchestration" description="How the pilot works a cycle, live.">
+    <SectionCard
+      title="Orchestration"
+      description="How the pilot works a cycle, live."
+      actions={<RefreshTaskListButton busy={taskList.isFetching} />}
+    >
       <Box
         sx={{
           display: "flex",
@@ -105,6 +114,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
           dimmed={dimmed}
         />
       </Box>
+      <TaskQueue taskList={taskList.data} />
       <Box sx={{ mt: 2 }}>
         <AgentList activeAgent={activeAgent} dimmed={dimmed} />
       </Box>

@@ -8,7 +8,6 @@ import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { CycleCost } from "./cycle-cost";
 import { JournalFeed } from "./journal-feed";
 import { OrchestrationPanel } from "./orchestration-panel";
-import { TaskListPreview } from "./task-list-preview";
 
 /** How the pilot works under the hood: the loop, its agents, token cost, and the raw journal. */
 export function DiagnosticsView(): ReactElement {
@@ -25,7 +24,6 @@ export function DiagnosticsView(): ReactElement {
   return (
     <Stack spacing={3}>
       <OrchestrationPanel state={state} />
-      <TaskListPreview />
       <CycleCost />
       <JournalFeed />
     </Stack>
