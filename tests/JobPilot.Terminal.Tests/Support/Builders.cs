@@ -1,10 +1,11 @@
 using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Providers;
-using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Sessions.Pty;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Support;
 
 internal static class Builders
 {

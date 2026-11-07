@@ -1,7 +1,8 @@
 using JobPilot.Terminal.Common;
+using JobPilot.Terminal.Tests.Support;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Common;
 
 public class FileTreeTests
 {

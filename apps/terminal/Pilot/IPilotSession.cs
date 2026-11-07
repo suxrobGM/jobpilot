@@ -1,3 +1,4 @@
+using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Providers;
 
 namespace JobPilot.Terminal.Pilot;

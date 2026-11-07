@@ -1,3 +1,5 @@
+using JobPilot.Terminal.Pilot.Api;
+
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>How long the loop sleeps between cycles.</summary>

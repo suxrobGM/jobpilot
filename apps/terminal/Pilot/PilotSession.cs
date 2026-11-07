@@ -1,4 +1,7 @@
 using System.Threading.Channels;
+using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Stuck;
+using JobPilot.Terminal.Pilot.Telemetry;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
 

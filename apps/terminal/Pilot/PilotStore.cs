@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Providers;
 
 namespace JobPilot.Terminal.Pilot;

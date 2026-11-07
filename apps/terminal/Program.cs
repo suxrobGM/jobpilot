@@ -1,4 +1,5 @@
 using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Sessions;
 using JobPilot.Terminal.Updates;

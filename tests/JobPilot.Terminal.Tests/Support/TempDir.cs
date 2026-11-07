@@ -1,4 +1,4 @@
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Support;
 
 /// <summary>Disposable test directory.</summary>
 internal sealed class TempDir : IDisposable

@@ -1,5 +1,6 @@
 using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Sessions.Relay;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace JobPilot.Terminal.Sessions;

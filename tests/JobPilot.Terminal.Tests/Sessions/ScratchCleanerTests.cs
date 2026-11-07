@@ -1,9 +1,10 @@
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Sessions;
 
 public sealed class ScratchCleanerTests : IDisposable
 {

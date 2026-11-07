@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
 
 namespace JobPilot.Terminal.Updates;
 

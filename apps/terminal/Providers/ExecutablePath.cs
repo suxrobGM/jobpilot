@@ -1,4 +1,4 @@
-using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Sessions.Pty;
 
 namespace JobPilot.Terminal.Providers;
 

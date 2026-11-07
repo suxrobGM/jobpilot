@@ -1,4 +1,5 @@
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
+using JobPilot.Terminal.Providers.Codex;
 
 namespace JobPilot.Terminal.Providers;
 

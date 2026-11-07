@@ -1,11 +1,14 @@
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Sessions.Pty;
+using JobPilot.Terminal.Sessions.Relay;
+using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Pty.Net;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Sessions;
 
 public sealed class TerminalSessionTests : IDisposable
 {

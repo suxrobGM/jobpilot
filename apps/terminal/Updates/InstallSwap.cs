@@ -1,7 +1,7 @@
 using System.Formats.Tar;
 using System.IO.Compression;
 using JobPilot.Terminal.Common;
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
 
 namespace JobPilot.Terminal.Updates;
 

@@ -1,7 +1,7 @@
 using System.Reflection;
 using Pty.Net;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Support;
 
 /// <summary>
 /// Controllable Pty.Net connection double. Mirrors the Unix implementation's failure modes: Kill and

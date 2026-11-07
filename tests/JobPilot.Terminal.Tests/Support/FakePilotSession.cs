@@ -1,7 +1,8 @@
 using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Providers;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Support;
 
 internal sealed class FakePilotSession : IPilotSession
 {

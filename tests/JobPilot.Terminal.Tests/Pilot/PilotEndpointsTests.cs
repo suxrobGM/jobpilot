@@ -1,7 +1,7 @@
 using JobPilot.Terminal.Pilot;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Pilot;
 
 public class PilotEndpointsTests
 {

@@ -1,6 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Telemetry;
 using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Sessions.Relay;
 using JobPilot.Terminal.Updates;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Diagnostics;

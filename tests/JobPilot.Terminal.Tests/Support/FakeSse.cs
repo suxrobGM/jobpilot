@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Channels;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Support;
 
 /// <summary>An HttpMessageHandler that serves one controllable SSE stream and records the request.</summary>
 internal sealed class FakeSseHandler : HttpMessageHandler

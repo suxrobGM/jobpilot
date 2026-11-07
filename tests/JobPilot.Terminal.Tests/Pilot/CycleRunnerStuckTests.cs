@@ -1,9 +1,10 @@
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Tests.Support;
 using Xunit;
-using static JobPilot.Terminal.Tests.Builders;
+using static JobPilot.Terminal.Tests.Support.Builders;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Pilot;
 
 public class CycleRunnerStuckTests
 {

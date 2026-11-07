@@ -1,9 +1,10 @@
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Pilot;
 
 public sealed class PilotStoreTests : IDisposable
 {

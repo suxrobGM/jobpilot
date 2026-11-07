@@ -1,8 +1,9 @@
 using System.Text.Json;
 using JobPilot.Terminal.Hosting;
-using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Sessions.Relay;
 using Xunit;
 
 namespace JobPilot.Terminal.Tests;

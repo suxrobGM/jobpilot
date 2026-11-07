@@ -1,8 +1,11 @@
 using System.Text.Json.Serialization;
 using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Pilot;
-using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Telemetry;
+using JobPilot.Terminal.Providers.Codex;
 using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Sessions.Relay;
 using JobPilot.Terminal.Updates;
 using Microsoft.AspNetCore.Mvc;
 
