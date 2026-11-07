@@ -45,11 +45,11 @@ export function PipelineView(): ReactElement {
   const tabCount = (key: PipelineTab) => (key === "applied" ? applied : counts?.views[key]);
   // Applications aren't counted per feed, so Applied lists every feed without numbers.
   const feedCounts =
-    view === "applied" || !counts
-      ? null
-      : new Map(counts.feeds.map((feed) => [feed.feedId, feed.views[view]]));
+    view !== "applied" && counts
+      ? new Map(counts.feeds.map((feed) => [feed.feedId, feed.views[view]]))
+      : null;
+  const hasFilters = Object.keys(filters).length > 0;
 
-  const hasFilters = feedId !== null || board !== null || search.applied !== "";
   const clear = (): void => {
     search.setDraft("");
     pagination.setFilters({ q: null, board: null, feed: null, group: null });
@@ -57,7 +57,7 @@ export function PipelineView(): ReactElement {
 
   return (
     <Stack spacing={2}>
-      <NeedsYouBanner count={counts?.views.needsYou ?? 0} />
+      <NeedsYouBanner />
       <Tabs
         value={view}
         variant="scrollable"
