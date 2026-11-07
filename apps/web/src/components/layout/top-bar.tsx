@@ -24,7 +24,8 @@ import {
 function matchPageWidth(theme: Theme): CSSObject {
   const rules: CSSObject = {};
   for (const width of PAGE_WIDTHS) {
-    rules[`main:has([${PAGE_WIDTH_ATTR}="${width}"]) &`] = {
+    // Next keeps a page it left mounted with an inline display:none; skip that one.
+    rules[`main:has([${PAGE_WIDTH_ATTR}="${width}"]:not([style*="none"])) &`] = {
       maxWidth: theme.breakpoints.values[width],
     };
   }
