@@ -2,7 +2,8 @@
 
 import type { ReactElement } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { Dialog, DialogContent } from "@mui/material";
+import { DialogHeader } from "@/components/ui/feedback";
 import { RulesForm } from "../../goals/rules-form";
 
 interface RulesDialogProps {
@@ -16,7 +17,7 @@ export function RulesDialog(props: RulesDialogProps): ReactElement {
   const { state, open, onClose } = props;
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Rules</DialogTitle>
+      <DialogHeader title="Rules" onClose={onClose} />
       <DialogContent>
         <RulesForm state={state} onSaved={onClose} />
       </DialogContent>

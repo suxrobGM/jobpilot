@@ -8,11 +8,11 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle,
   FormControlLabel,
   Stack,
   Typography,
 } from "@mui/material";
+import { DialogHeader } from "@/components/ui/feedback";
 import { plural } from "@/utils/format";
 
 /** What the old goals left running, read when the user saves new ones. */
@@ -43,7 +43,7 @@ export function GoalsChangeDialog(props: GoalsChangeDialogProps): ReactElement {
 
   return (
     <Dialog open={impact !== null} onClose={onCancel} maxWidth="sm" fullWidth>
-      <DialogTitle>Your goals changed</DialogTitle>
+      <DialogHeader title="Your goals changed" onClose={onCancel} />
       <DialogContent>
         <Stack spacing={2}>
           <DialogContentText>

@@ -2,12 +2,13 @@
 
 import { type ReactElement, type ReactNode, useState } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { Button, Dialog, DialogContent, DialogTitle, Stack, Typography } from "@mui/material";
+import { Button, Dialog, DialogContent, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import { credentialQueries, resumeQueries, userQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { ChecklistRow } from "@/components/ui/display";
+import { DialogHeader } from "@/components/ui/feedback";
 import { plural } from "@/utils/format";
 import { hasGoals } from "../../pilot-status";
 import { PilotTurn } from "../thread/pilot-turn";
@@ -102,7 +103,10 @@ export function SetupTurn(props: SetupTurnProps): ReactNode {
         )}
       </Stack>
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{`Get started · ${steps.length - left.length}/${steps.length}`}</DialogTitle>
+        <DialogHeader
+          title={`Get started · ${steps.length - left.length}/${steps.length}`}
+          onClose={() => setOpen(false)}
+        />
         <DialogContent>
           <Stack spacing={1}>
             {steps.map((step) => (
