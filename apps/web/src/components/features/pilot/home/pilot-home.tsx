@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import type { PipelineJobDto } from "@/api/types";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
+import { PAGE_WIDTH_ATTR } from "@/components/ui/layout/page-shell";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { useNeedsYou, useNeedsYouCount } from "../attention/use-needs-you";
 import { Composer } from "./composer";
@@ -17,9 +18,6 @@ import { PilotOverview } from "./side/pilot-overview";
 import { THREAD_WIDTH, Thread } from "./thread/thread";
 
 type PhoneTab = "chat" | "needsYou" | "overview";
-
-/** The thread's reading width plus the column's gutters and scrollbar. */
-const CONVERSATION_WIDTH = THREAD_WIDTH + 96;
 
 interface ConversationProps {
   state: PilotState;
@@ -97,8 +95,19 @@ export function PilotHome(): ReactElement {
   return (
     <Stack
       direction="row"
-      // Basis 0 fills what the top bar leaves; the columns center as one block on wide screens.
-      sx={{ flex: "1 1 0", minHeight: 0, justifyContent: "center" }}
+      {...{ [PAGE_WIDTH_ATTR]: "xl" }}
+      // Basis 0 fills what the top bar leaves; on wide screens the columns center as one block,
+      // as wide as the top bar's row so the title and Autopilot line up with its edges.
+      sx={(theme) => ({
+        flex: "1 1 0",
+        minHeight: 0,
+        width: "100%",
+        [theme.breakpoints.up("xl")]: {
+          maxWidth: theme.breakpoints.values.xl,
+          mx: "auto",
+          borderInline: `1px solid ${theme.palette.divider}`,
+        },
+      })}
     >
       <PilotHeader state={state} />
       {isDesktop && (
@@ -112,8 +121,6 @@ export function PilotHome(): ReactElement {
             overflowY: "auto",
             p: 2.5,
             borderRight: 1,
-            // Once the columns float centered, the queue needs its outer edge too.
-            borderLeft: { xl: 1 },
             borderColor: "divider",
           }}
         >
@@ -125,8 +132,6 @@ export function PilotHome(): ReactElement {
         sx={{
           flex: 1,
           minWidth: 0,
-          // Capped only beside both side columns; narrower, it fills and centers the thread itself.
-          maxWidth: { xl: CONVERSATION_WIDTH },
           px: { xs: 1.5, sm: 3 },
           pt: { xs: 1, md: 2 },
           pb: 2,
@@ -158,7 +163,7 @@ export function PilotHome(): ReactElement {
             flexShrink: 0,
             overflowY: "auto",
             p: 2.5,
-            borderInline: 1,
+            borderLeft: 1,
             borderColor: "divider",
           }}
         >
