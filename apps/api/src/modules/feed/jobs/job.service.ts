@@ -162,13 +162,14 @@ export class JobService {
 
   /** The only way out of `failed`. */
   async retry(userId: string, feedId: string, key: string, body: RetryJobInput) {
-    const { job } = await this.transition(userId, feedId, key, {
+    const { job, changed } = await this.transition(userId, feedId, key, {
       from: "failed",
       to: "approved",
       idempotentAt: "approved",
       data: { status: "approved", ...OUTCOME_CLEARED, retryNotes: body.retryNotes },
       rejection: (status) => `Only failed jobs can be retried; job is ${status}.`,
     });
+    if (changed) publishJobApproved(userId, job);
     return toJob(job);
   }
 
