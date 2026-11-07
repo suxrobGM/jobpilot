@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import { deleteSpentTombstones } from "./question-tombstones";
+import { deleteStaleAnswers } from "./kept-answers";
 import { describe, expect, it } from "bun:test";
 
 const PAUSED_AT = new Date("2026-10-01T00:00:00Z");
@@ -36,10 +36,10 @@ function fakeDb() {
   return { db: db as unknown as PrismaClient, deleted };
 }
 
-describe("deleteSpentTombstones", () => {
+describe("deleteStaleAnswers", () => {
   it("keeps only answers that still hold a review back", async () => {
     const { db, deleted } = fakeDb();
-    const result = await deleteSpentTombstones(db, new Date());
+    const result = await deleteStaleAnswers(db, new Date());
     expect(deleted.sort()).toEqual(["closed", "malformed", "older-pause", "resumed"]);
     expect(result.count).toBe(4);
   });

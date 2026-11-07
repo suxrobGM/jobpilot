@@ -30,7 +30,7 @@ const RETENTION_BY_MODEL = {
   NetworkingMessage: "userData",
   PilotState: "bounded",
   PilotRun: ["runs", "discoveryRuns"],
-  PilotQuestion: ["questions", "spentTombstones"],
+  PilotQuestion: ["questions", "staleAnswers"],
   PilotJournalEntry: ["journalEntries", "digests"],
   PilotChange: ["staleProposals", "decidedChanges"],
   PilotMessage: ["messages"],

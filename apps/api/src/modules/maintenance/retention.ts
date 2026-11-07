@@ -3,7 +3,7 @@ import { DAY_MS } from "@/common/date/buckets";
 import { type JobStatus, Prisma, type PrismaClient } from "@/generated/prisma/client";
 import { SERVER_SKIP_REASONS } from "@/modules/pilot/skip-reasons";
 import { notProtectedVariant } from "@/modules/resume/variants/variant.schema";
-import { deleteSpentTombstones, QUESTION_TOMBSTONE_SUBJECTS } from "./question-tombstones";
+import { deleteStaleAnswers, KEPT_ANSWER_SUBJECTS } from "./kept-answers";
 
 interface RetentionRule {
   name: string;
@@ -58,14 +58,14 @@ export const RETENTION_RULES = [
           createdAt: { lt: before },
           OR: [
             { status: { in: ["expired", "cancelled"] } },
-            { status: "answered", subjectType: { notIn: QUESTION_TOMBSTONE_SUBJECTS } },
+            { status: "answered", subjectType: { notIn: KEPT_ANSWER_SUBJECTS } },
             { status: "answered", subjectType: null },
           ],
         },
       }),
   },
   // The answers `questions` keeps, once their review can no longer re-open.
-  { name: "spentTombstones", days: 30, apply: deleteSpentTombstones },
+  { name: "staleAnswers", days: 30, apply: deleteStaleAnswers },
   // Grace past expiry or use before a token row goes.
   {
     name: "verificationTokens",
