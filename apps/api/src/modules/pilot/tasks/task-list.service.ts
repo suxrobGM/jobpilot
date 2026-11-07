@@ -8,15 +8,12 @@ import { inject, injectable } from "@needle-di/core";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
-import { JobService } from "@/modules/feed/jobs/job.service";
-import { WebPushService } from "@/modules/web-push/web-push.service";
-import { PilotJournalService } from "../thread/journal.service";
 import { buildTaskList } from "./build";
-import { writeDigestIfDue } from "./digest";
+import { DigestService } from "./digest.service";
 import { gatherAutonomousWork, NO_AUTONOMOUS_WORK } from "./gather/autonomous";
 import { gatherCounts } from "./gather/counts";
 import { gatherChat, gatherRequests } from "./gather/requests";
-import { expireStaleWork, settleScoredJobs } from "./maintenance";
+import { PilotMaintenanceService } from "./maintenance.service";
 
 const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
 /** The default check interval: idle cycles always pull mail, busy 15s cycles don't. */
@@ -26,9 +23,8 @@ export const INBOX_SYNC_STALE_MS = 30 * 60 * 1000;
 export class TaskListService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly jobs = inject(JobService),
-    private readonly journal = inject(PilotJournalService),
-    private readonly push = inject(WebPushService),
+    private readonly maintenance = inject(PilotMaintenanceService),
+    private readonly digest = inject(DigestService),
     private readonly emailSync = inject(EmailSyncService),
   ) {}
 
@@ -64,8 +60,7 @@ export class TaskListService {
       gatherRequests(this.prisma, userId, { config, goals, cycleCount }, now),
       gatherChat(this.prisma, userId),
     ]);
-    const deps = { prisma: this.prisma, journal: this.journal, push: this.push };
-    void writeDigestIfDue(deps, userId, now, counts.openQuestions);
+    void this.digest.writeIfDue(userId, now, counts.openQuestions);
 
     const content = buildTaskList({
       ...counts,
@@ -97,9 +92,9 @@ export class TaskListService {
   /** Mail first so inbox.review sees it; settling before the gather so fresh approvals keep a feed open. */
   private async maintain(userId: string, config: PilotConfig, autopilot: boolean, now: Date) {
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
-    await expireStaleWork(this.prisma, userId, now);
+    await this.maintenance.expireStaleWork(userId, now);
     if (autopilot) {
-      await settleScoredJobs(this.prisma, this.jobs, userId, config.minScore);
+      await this.maintenance.settleScoredJobs(userId, config.minScore);
     }
   }
 }

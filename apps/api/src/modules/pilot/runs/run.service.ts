@@ -24,8 +24,7 @@ import { guardApply } from "@/modules/feed/jobs/apply-guard";
 import { revertApplyingJobs, startApplying } from "@/modules/feed/jobs/applying";
 import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import { parseJobRef, toJobRef } from "../job-subject";
-import { publishRequest } from "../requests/request.service";
-import { finishRequests } from "../requests/request-row";
+import { finishRequests, publishRequest } from "../requests/request-row";
 import {
   networkingSendWhere,
   reviewPausedWhere,

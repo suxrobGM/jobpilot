@@ -4,6 +4,8 @@ import type { EmailSyncService } from "@/modules/email/sync/sync.service";
 import type { JobService } from "@/modules/feed/jobs/job.service";
 import { makePush, type SentPush } from "@/modules/web-push/web-push.fake";
 import type { PilotJournalService } from "../thread/journal.service";
+import { DigestService } from "./digest.service";
+import { PilotMaintenanceService } from "./maintenance.service";
 import { TaskListService } from "./task-list.service";
 
 type Row = Record<string, unknown>;
@@ -253,7 +255,9 @@ export function makeTaskListDeps(over: Over = {}) {
 
 export const serviceWithRec = (over: Over = {}) => {
   const { prisma, jobs, journal, push, emailSync, rec } = makeTaskListDeps(over);
-  return { svc: new TaskListService(prisma, jobs, journal, push, emailSync), rec };
+  const maintenance = new PilotMaintenanceService(prisma, jobs);
+  const digest = new DigestService(prisma, journal, push);
+  return { svc: new TaskListService(prisma, maintenance, digest, emailSync), rec };
 };
 
 export const service = (over: Over = {}) => serviceWithRec(over).svc;

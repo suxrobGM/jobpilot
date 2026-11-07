@@ -1,7 +1,6 @@
 import type { CreatePilotRequestInput, PilotConfig, PilotTask } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { publishRequest } from "../../requests/request.service";
-import { parseRequest } from "../../requests/request-row";
+import { parseRequest, publishRequest } from "../../requests/request-row";
 import { applyTask, discoveryBoard, SEARCH_MAX_PAGES } from "../build";
 import { makeTask, REQUEST_PRIORITY } from "../task-defs";
 import { gatherInbox } from "./inbox";

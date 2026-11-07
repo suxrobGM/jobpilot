@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { JobService } from "@/modules/feed/jobs/job.service";
-import { expireAbandonedRuns, expireStaleWork, settleScoredJobs } from "./maintenance";
+import { PilotMaintenanceService } from "./maintenance.service";
 import { describe, expect, it } from "bun:test";
 
 type Write = { where: Record<string, unknown>; data: Record<string, unknown> };
@@ -51,7 +51,8 @@ function expiryDb(options: {
       return work(db);
     },
   };
-  const run = () => expireStaleWork(db as unknown as PrismaClient, "u1", new Date());
+  const maintenance = new PilotMaintenanceService(db as unknown as PrismaClient, {} as JobService);
+  const run = () => maintenance.expireStaleWork("u1", new Date());
   const jobWrite = (status: string) => writes.jobs.find((w) => w.where.status === status);
   return { run, writes, jobWrite, transactions: () => transactions };
 }
@@ -123,7 +124,7 @@ describe("settleScoredJobs", () => {
         calls.push(args);
       },
     } as unknown as JobService;
-    await settleScoredJobs(prisma, jobs, "p1", 60);
+    await new PilotMaintenanceService(prisma, jobs).settleScoredJobs("p1", 60);
     return calls;
   };
 
@@ -158,7 +159,11 @@ describe("expireAbandonedRuns", () => {
       feed: { findMany: async () => [{ userId: "u2" }, { userId: "u3" }] },
       $transaction: async (work: (t: unknown) => Promise<unknown>) => work(tx),
     };
-    const users = await expireAbandonedRuns(db as unknown as PrismaClient, new Date());
+    const maintenance = new PilotMaintenanceService(
+      db as unknown as PrismaClient,
+      {} as JobService,
+    );
+    const users = await maintenance.expireAbandonedRuns(new Date());
     expect(users).toBe(3);
     expect(swept).toEqual(["u1", "u2", "u3"]);
   });

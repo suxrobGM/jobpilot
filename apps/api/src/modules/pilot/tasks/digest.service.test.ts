@@ -1,4 +1,4 @@
-import { writeDigestIfDue } from "./digest";
+import { DigestService } from "./digest.service";
 import { makeTaskListDeps, type Over } from "./fakes";
 import { describe, expect, it, spyOn } from "bun:test";
 
@@ -7,12 +7,12 @@ const MORNING = new Date("2026-07-15T08:00:00.000Z"); // past 07:00 UTC
 const run = (over: Over, now: Date, openQuestions: number) => {
   const { prisma, journal, push, rec } = makeTaskListDeps(over);
   return {
-    write: () => writeDigestIfDue({ prisma, journal, push }, "p1", now, openQuestions),
+    write: () => new DigestService(prisma, journal, push).writeIfDue("p1", now, openQuestions),
     rec,
   };
 };
 
-describe("TaskListService morning digest", () => {
+describe("DigestService", () => {
   it("writes one digest entry with counts and fires the digest push", async () => {
     const { write, rec } = run(
       {
@@ -73,7 +73,7 @@ describe("TaskListService morning digest", () => {
     ).pilotJournalEntry.count = async () => {
       throw new Error("db down");
     };
-    await writeDigestIfDue({ prisma, journal, push }, "p1", MORNING, 0);
+    await new DigestService(prisma, journal, push).writeIfDue("p1", MORNING, 0);
     expect(rec.journals).toHaveLength(0);
     expect(rec.pushes).toHaveLength(0);
     expect(errorSpy).toHaveBeenCalled();

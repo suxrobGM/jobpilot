@@ -2,8 +2,7 @@ import { cron } from "@elysiajs/cron";
 import { container } from "@/common/di/container";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
-import { PrismaClient } from "@/generated/prisma/client";
-import { expireAbandonedRuns } from "../tasks/maintenance";
+import { PilotMaintenanceService } from "../tasks/maintenance.service";
 
 /** Every 10 minutes: task-list refreshes only expire a running pilot's runs, not a stopped one's. */
 export const expiryJob = cron({
@@ -15,7 +14,9 @@ export const expiryJob = cron({
       return;
     }
 
-    expireAbandonedRuns(container.get(PrismaClient), new Date())
+    container
+      .get(PilotMaintenanceService)
+      .expireAbandonedRuns(new Date())
       .then((users) => {
         if (users > 0) {
           logger.info({ users }, "Expired abandoned pilot runs");

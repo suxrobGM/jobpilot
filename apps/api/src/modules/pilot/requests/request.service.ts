@@ -1,26 +1,10 @@
-import type { CreatePilotRequestInput, PilotRequest } from "@jobpilot/contracts/pilot";
-import { pilotChannel } from "@jobpilot/contracts/sse";
+import type { CreatePilotRequestInput } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
 import { conflict } from "@/common/errors";
 import { toInputJson } from "@/common/json";
-import { publish } from "@/common/sse";
-import {
-  type PilotRequest as PilotRequestModel,
-  type PilotRequestSource,
-  PrismaClient,
-} from "@/generated/prisma/client";
+import { type PilotRequestSource, PrismaClient } from "@/generated/prisma/client";
 import { dropTaskList } from "../tasks/snapshot";
-import { requestSubject, toPilotRequest } from "./request-row";
-
-export function publishRequest(
-  userId: string,
-  row: PilotRequestModel,
-  type: "request.created" | "request.updated",
-): PilotRequest {
-  const request = toPilotRequest(row);
-  publish(pilotChannel, { userId }, { type, request });
-  return request;
-}
+import { publishRequest, requestSubject } from "./request-row";
 
 @injectable()
 export class RequestService {

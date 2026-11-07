@@ -5,6 +5,8 @@ import {
   TASK_SUBJECT_TYPES,
   taskTypeLabel,
 } from "@jobpilot/contracts/pilot";
+import { pilotChannel } from "@jobpilot/contracts/sse";
+import { publish } from "@/common/sse";
 import type {
   PilotRequest as PilotRequestModel,
   PilotRunOutcome,
@@ -74,6 +76,16 @@ export function toPilotRequest(row: PilotRequestModel): PilotRequest {
     createdAt: row.createdAt,
     finishedAt: row.finishedAt,
   };
+}
+
+export function publishRequest(
+  userId: string,
+  row: PilotRequestModel,
+  type: "request.created" | "request.updated",
+): PilotRequest {
+  const request = toPilotRequest(row);
+  publish(pilotChannel, { userId }, { type, request });
+  return request;
 }
 
 /** An expired run failed its request: the agent never finished. */

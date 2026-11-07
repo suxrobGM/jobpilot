@@ -1,9 +1,8 @@
 import type { TaskList } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
-import type { JobService } from "@/modules/feed/jobs/job.service";
-import type { WebPushService } from "@/modules/web-push/web-push.service";
-import type { PilotJournalService } from "../thread/journal.service";
+import type { DigestService } from "./digest.service";
+import type { PilotMaintenanceService } from "./maintenance.service";
 import { TaskListService } from "./task-list.service";
 import { describe, expect, it } from "bun:test";
 
@@ -40,9 +39,8 @@ function service(row: Record<string, unknown> | null) {
   return {
     taskList: new TaskListService(
       prisma,
-      {} as JobService,
-      {} as PilotJournalService,
-      {} as WebPushService,
+      {} as PilotMaintenanceService,
+      {} as DigestService,
       {} as EmailSyncService,
     ),
     reads: () => reads,
