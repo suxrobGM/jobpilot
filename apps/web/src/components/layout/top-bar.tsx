@@ -7,7 +7,6 @@ import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 import { AgentPill } from "@/components/features/agent/agent-pill";
-import { JumpButton } from "@/components/features/jump/jump-button";
 import { PAGE_WIDTH_ATTR, PAGE_WIDTHS } from "@/components/ui/layout/page-shell";
 import {
   ADMIN_NAV_ITEM,
@@ -107,16 +106,13 @@ export function TopBar(props: TopBarProps): ReactElement {
           </Typography>
         </Stack>
         {showMark && <AgentPill />}
-        {/* Leads the right-hand group, so page actions sit after it whether or not there are any. */}
-        <Box sx={{ ml: "auto", display: "flex" }}>
-          <JumpButton />
-        </Box>
         <Box
           ref={actionsRef}
           sx={{
             display: "flex",
             alignItems: "center",
             gap: 1,
+            ml: { sm: "auto" },
             // Phones: actions take their own scrollable row under the title.
             width: { xs: "100%", sm: "auto" },
             minWidth: 0,

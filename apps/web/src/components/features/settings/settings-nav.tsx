@@ -17,8 +17,7 @@ interface SettingsGroup {
   links: SettingsLink[];
 }
 
-/** Also the settings section of the jump menu. */
-export const SETTINGS_GROUPS: SettingsGroup[] = [
+const GROUPS: SettingsGroup[] = [
   {
     label: "You",
     links: [
@@ -64,7 +63,7 @@ export function SettingsNav(): ReactElement {
       })}
     >
       <Stack direction={{ xs: "row", md: "column" }} spacing={{ xs: 0.5, md: 2.5 }}>
-        {SETTINGS_GROUPS.map((group) => (
+        {GROUPS.map((group) => (
           <Stack
             key={group.label}
             role="group"

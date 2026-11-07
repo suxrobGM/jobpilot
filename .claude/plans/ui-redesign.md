@@ -103,4 +103,4 @@ Done 2026-11-07. Page descriptions dropped where a card already explains (Analyt
 
 A command palette for routes, pipeline jobs and settings sections, opened from the TopBar box or ⌘K / Ctrl+K. It's a search icon on mobile.
 
-Done 2026-11-07. `components/features/jump/`: the top bar's "Jump to… Ctrl K" box (an icon below md) opens it. Pages come from the rail (channel-gated), their tabs and sub-pages, and the settings sections; two typed characters also search applications and To review jobs (5 each). Jobs open the pipeline filtered to that title, since the job drawer has no URL.
+Dropped 2026-11-07: built, then removed. The user found it redundant next to the rail.
