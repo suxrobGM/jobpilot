@@ -69,7 +69,8 @@ async function requestTask(
       return makeTask("search.discover", {
         searchId: search.id,
         query: search.query ?? "",
-        board: search.board?.domain,
+        // Most searches have no board of their own; the scheduled path rotates config.boards.
+        board: search.board?.domain ?? config.boards[0],
         resumeId: search.resumeId ?? undefined,
         minScore: config.minScore,
         newJobsTarget: SEARCH_NEW_JOBS_TARGET,
