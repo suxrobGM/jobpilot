@@ -1,25 +1,43 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace JobPilot.Terminal.Sessions;
 
 /// <summary>The JobPilot API and web a session's skills call, as the signed-in user.</summary>
 public sealed record ApiConnection(string Url, string WebUrl, string Token)
 {
-    /// <summary>Why these request values cannot make a connection, or null when they can.</summary>
-    public static string? Invalid(string? apiToken, string? apiUrl, string? webUrl)
+    /// <summary>Builds a connection from request values, or says why they cannot make one.</summary>
+    public static bool TryParse(
+        string? token,
+        string? url,
+        string? webUrl,
+        [NotNullWhen(true)] out ApiConnection? connection,
+        [NotNullWhen(false)] out string? problem)
     {
-        if (string.IsNullOrWhiteSpace(apiToken))
+        connection = null;
+        if (string.IsNullOrWhiteSpace(token))
         {
-            return "apiToken must be a non-empty string.";
+            problem = "apiToken must be a non-empty string.";
+            return false;
         }
 
-        if (!IsHttpUrl(apiUrl))
+        if (!IsHttpUrl(url))
         {
-            return "apiUrl must be an absolute HTTP(S) URL.";
+            problem = "apiUrl must be an absolute HTTP(S) URL.";
+            return false;
         }
 
-        return IsHttpUrl(webUrl) ? null : "webUrl must be an absolute HTTP(S) URL.";
+        if (!IsHttpUrl(webUrl))
+        {
+            problem = "webUrl must be an absolute HTTP(S) URL.";
+            return false;
+        }
+
+        connection = new ApiConnection(url, webUrl, token);
+        problem = null;
+        return true;
     }
 
-    private static bool IsHttpUrl(string? value) =>
+    private static bool IsHttpUrl([NotNullWhen(true)] string? value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var uri)
         && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 }

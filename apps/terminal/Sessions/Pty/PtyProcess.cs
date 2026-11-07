@@ -126,54 +126,6 @@ public sealed class PtyProcess : IDisposable
     public static IPtyConnection SpawnWithPtyNet(PtyOptions options) =>
         Task.Run(() => PtyProvider.SpawnAsync(options, CancellationToken.None)).GetAwaiter().GetResult();
 
-    public static PtyOptions BuildOptions(
-        string command,
-        string[] args,
-        string workingDirectory,
-        int cols,
-        int rows,
-        string? binDir,
-        IReadOnlyDictionary<string, string> environment)
-    {
-        // macOS ships en_US.UTF-8, not C.UTF-8; without a UTF-8 locale spawned tools mangle non-ASCII.
-        var utf8Locale = OperatingSystem.IsMacOS() ? "en_US.UTF-8" : "C.UTF-8";
-        var env = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["TERM"] = "xterm-256color",
-            ["LANG"] = utf8Locale,
-            ["LC_ALL"] = utf8Locale,
-            ["PYTHONUTF8"] = "1",
-        };
-
-        // Pty.Net merges this over the host's own env, so a stripped host PATH is repaired here.
-        foreach (var (key, value) in PtyEnvironment.BuildOverrides())
-        {
-            env[key] = value;
-        }
-
-        if (binDir is not null)
-        {
-            var inherited = env.GetValueOrDefault("PATH") ?? Environment.GetEnvironmentVariable("PATH");
-            env["PATH"] = string.IsNullOrEmpty(inherited) ? binDir : binDir + Path.PathSeparator + inherited;
-        }
-
-        foreach (var (key, value) in environment)
-        {
-            env[key] = value;
-        }
-
-        return new PtyOptions
-        {
-            App = command,
-            CommandLine = args,
-            Cwd = workingDirectory,
-            Cols = cols,
-            Rows = rows,
-            ForceWinPty = false,
-            Environment = env,
-        };
-    }
-
     private void ReadLoop(IPtyConnection active)
     {
         var buffer = new byte[4096];

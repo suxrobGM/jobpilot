@@ -24,8 +24,8 @@ Namespaces match folders.
 ## Runtime flows
 
 - **Session.** `/sessions/start` calls `TerminalSession.Start`, which prepares the provider's
-  workspace (Codex mirrors the bundled skills into `.agents/skills`), builds the `JOBPILOT_*`
-  environment, and spawns a new `PtyProcess`. `TerminalRelay` broadcasts output to every WebSocket
+  workspace (Codex mirrors the bundled skills into `.agents/skills`), builds the child environment
+  (`SessionEnvironment`: locale, repaired PATH, `JOBPILOT_*`), and spawns a new `PtyProcess`. `TerminalRelay` broadcasts output to every WebSocket
   and keeps a 512 KB replay for reconnects.
 - **Pilot.** `/pilot/pair` saves the `PilotPairing` to `pilot.json` and `/pilot/unpair` deletes it;
   every change wakes `PilotLoop`, which runs cycles whenever the host is paired. Autopilot is a

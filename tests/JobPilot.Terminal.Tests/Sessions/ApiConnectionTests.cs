@@ -12,17 +12,18 @@ public class ApiConnectionTests
     [InlineData("", false)]
     [InlineData("/api", false)]
     [InlineData("ftp://example.test", false)]
-    public void Invalid_AcceptsOnlyAbsoluteHttpUrls(string? url, bool valid)
+    public void TryParse_AcceptsOnlyAbsoluteHttpUrls(string? url, bool valid)
     {
-        Assert.Equal(valid, ApiConnection.Invalid("token", url, "https://web.example.test") is null);
-        Assert.Equal(valid, ApiConnection.Invalid("token", "https://api.example.test", url) is null);
+        Assert.Equal(valid, ApiConnection.TryParse("token", url, "https://web.example.test", out _, out _));
+        Assert.Equal(valid, ApiConnection.TryParse("token", "https://api.example.test", url, out _, out _));
     }
 
     [Theory]
     [InlineData(null)]
     [InlineData(" ")]
-    public void Invalid_RejectsABlankToken(string? token)
+    public void TryParse_RejectsABlankToken(string? token)
     {
-        Assert.Equal("apiToken must be a non-empty string.", ApiConnection.Invalid(token, "https://api", "https://web"));
+        Assert.False(ApiConnection.TryParse(token, "https://api", "https://web", out _, out var problem));
+        Assert.Equal("apiToken must be a non-empty string.", problem);
     }
 }

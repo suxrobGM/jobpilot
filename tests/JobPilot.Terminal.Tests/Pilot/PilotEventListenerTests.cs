@@ -1,8 +1,8 @@
 using System.Net;
 using JobPilot.Terminal.Install;
+using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Pilot.Pairing;
-using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;

@@ -55,8 +55,7 @@ public sealed class PtyProcessTests
     [Fact]
     public void Start_ShowsTheFailure_AndThrows_WhenTheProcessCannotSpawn()
     {
-        var options = PtyProcess.BuildOptions("claude", [], ".", 80, 24, binDir: null, new Dictionary<string, string>());
-        var pty = new PtyProcess(options, _ => throw new FileNotFoundException("not on PATH"), NullLogger.Instance);
+        var pty = new PtyProcess(SpawnOptions, _ => throw new FileNotFoundException("not on PATH"), NullLogger.Instance);
         var output = new List<byte[]>();
         pty.Output += output.Add;
 

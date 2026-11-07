@@ -99,22 +99,20 @@ public sealed class TerminalSession : IDisposable
                 cols,
                 rows);
 
-            // Skills write scratch files here; a shell-local TEMP would not survive between tool calls.
-            var scratchDir = Directory.CreateDirectory(paths.ScratchDir).FullName;
-            var env = new Dictionary<string, string>(StringComparer.Ordinal)
+            var options = new PtyOptions
             {
-                ["JOBPILOT_SKILLS_ROOT"] = paths.SkillsDir,
-                ["JOBPILOT_WORKSPACE_ROOT"] = paths.WorkingDir,
-                ["JOBPILOT_TEMP"] = scratchDir,
-                ["JOBPILOT_API"] = api.Url,
-                ["JOBPILOT_API_TOKEN"] = api.Token,
-                ["JOBPILOT_WEB"] = api.WebUrl,
+                App = provider.Executable,
+                CommandLine = args,
+                Cwd = paths.WorkingDir,
+                Cols = cols,
+                Rows = rows,
+                ForceWinPty = false,
+                Environment = SessionEnvironment.Build(paths, api),
             };
 
             Starting?.Invoke();
 
-            var process = new PtyProcess(
-                PtyProcess.BuildOptions(provider.Executable, args, paths.WorkingDir, cols, rows, paths.BinDir, env), spawn, logger);
+            var process = new PtyProcess(options, spawn, logger);
             process.Output += data => Output?.Invoke(data);
             process.Exited += exitCode => OnExited(process, exitCode);
             try

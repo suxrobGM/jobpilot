@@ -37,7 +37,7 @@ public static class PilotEndpoints
             PilotPairRequest request, PairingStore store, HostStatus status) =>
         {
             var provider = Provider.Parse(request.Provider);
-            if (ApiConnection.Invalid(request.ApiToken, request.ApiUrl, request.WebUrl) is { } problem)
+            if (!ApiConnection.TryParse(request.ApiToken, request.ApiUrl, request.WebUrl, out var api, out var problem))
             {
                 return Problems.BadRequest(problem);
             }
@@ -45,7 +45,7 @@ public static class PilotEndpoints
             store.Save(new PilotPairing
             {
                 Provider = provider,
-                Api = new ApiConnection(request.ApiUrl!, request.WebUrl!, request.ApiToken!),
+                Api = api,
                 UserId = request.UserId,
             });
             return TypedResults.Ok(status.Get());

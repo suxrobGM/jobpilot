@@ -19,12 +19,11 @@ public static class SessionEndpoints
                 return Problems.BadRequest($"cols and rows must each be between {TerminalSize.MinSize} and {TerminalSize.MaxSize}.");
             }
 
-            if (ApiConnection.Invalid(request.ApiToken, request.ApiUrl, request.WebUrl) is { } problem)
+            if (!ApiConnection.TryParse(request.ApiToken, request.ApiUrl, request.WebUrl, out var api, out var problem))
             {
                 return Problems.BadRequest(problem);
             }
 
-            var api = new ApiConnection(request.ApiUrl!, request.WebUrl!, request.ApiToken!);
             session.Start(Provider.Parse(request.Provider), request.Cols, request.Rows, api);
             return TypedResults.Ok(status.Get());
         });

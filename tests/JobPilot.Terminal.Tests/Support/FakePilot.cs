@@ -1,7 +1,7 @@
+using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Agent;
 using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Pilot.Pairing;
-using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
 
 namespace JobPilot.Terminal.Tests.Support;

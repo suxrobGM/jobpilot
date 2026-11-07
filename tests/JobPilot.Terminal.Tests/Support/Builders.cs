@@ -1,10 +1,11 @@
+using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Pilot.Pairing;
-using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
-using JobPilot.Terminal.Sessions.Pty;
 using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Sessions.Pty;
 using Microsoft.Extensions.Logging.Abstractions;
+using Pty.Net;
 using Xunit;
 
 namespace JobPilot.Terminal.Tests.Support;
@@ -38,11 +39,12 @@ internal static class Builders
     public static Task<TimeSpan?> RunAsync(CycleRunner runner) =>
         runner.RunAsync(NewPairing(), TestContext.Current.CancellationToken);
 
+    public static PtyOptions SpawnOptions => new() { App = "claude", CommandLine = [], Cwd = ".", Cols = 80, Rows = 24 };
+
     /// <summary>A started process over the given fake connection.</summary>
     public static PtyProcess StartedPty(FakePtyConnection connection)
     {
-        var options = PtyProcess.BuildOptions("claude", [], ".", 80, 24, binDir: null, new Dictionary<string, string>());
-        var process = new PtyProcess(options, _ => connection, NullLogger.Instance);
+        var process = new PtyProcess(SpawnOptions, _ => connection, NullLogger.Instance);
         process.Start();
         return process;
     }
