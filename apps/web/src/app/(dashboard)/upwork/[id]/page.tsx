@@ -2,6 +2,7 @@ import { type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { ProposalDetail } from "@/components/features/upwork";
 import { DetailSkeleton } from "@/components/ui/feedback";
+import { PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = { title: "Proposal" };
 
@@ -11,7 +12,13 @@ interface PageProps {
 
 export default function ProposalDetailPage(props: PageProps): ReactElement {
   return (
-    <Suspense fallback={<DetailSkeleton />}>
+    <Suspense
+      fallback={
+        <PageShell maxWidth="md">
+          <DetailSkeleton />
+        </PageShell>
+      }
+    >
       <Proposal params={props.params} />
     </Suspense>
   );

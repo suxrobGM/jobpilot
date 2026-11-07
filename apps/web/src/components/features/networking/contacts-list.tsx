@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { CONTACT_DISCOVERY_SOURCES } from "@jobpilot/contracts/networking";
 import { LinkedIn, MailOutlined } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
 import { networkingQueries } from "@/api/queries";
@@ -18,14 +17,7 @@ import { StatusChip } from "@/components/ui/display";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { initials } from "@/utils/format";
-
-const FOUND_VIA: Record<(typeof CONTACT_DISCOVERY_SOURCES)[number], string> = {
-  google: "Google",
-  company_site: "Company site",
-  web: "Web",
-  linkedin: "LinkedIn",
-  manual: "Added by you",
-};
+import { FOUND_VIA } from "./found-via";
 
 export function ContactsList(): ReactElement {
   const pagination = usePaginationParams();

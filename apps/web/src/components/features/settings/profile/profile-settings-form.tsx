@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { type UserUpdateInput, userUpdateSchema } from "@jobpilot/contracts/user";
-import { Box, Card, CardContent, LinearProgress, Stack } from "@mui/material";
+import { Box, LinearProgress, Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
@@ -12,6 +12,7 @@ import { QueryError } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
+import { SettingsCard } from "../settings-card";
 import { AddressSection } from "./address-section";
 import { EeoSection } from "./eeo-section";
 import { PersonalSection } from "./personal-section";
@@ -144,19 +145,5 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
         <form.UnsavedChangesBar />
       </form.AppForm>
     </Box>
-  );
-}
-
-interface SettingsCardProps {
-  children: ReactElement;
-}
-
-/** The sections carry their own headings, since onboarding shows them without a card. */
-function SettingsCard(props: SettingsCardProps): ReactElement {
-  const { children } = props;
-  return (
-    <Card>
-      <CardContent>{children}</CardContent>
-    </Card>
   );
 }

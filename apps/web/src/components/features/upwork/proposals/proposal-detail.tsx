@@ -55,7 +55,11 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   });
 
   if (detail.isPending) {
-    return <DetailSkeleton />;
+    return (
+      <PageShell maxWidth="md">
+        <DetailSkeleton />
+      </PageShell>
+    );
   }
 
   const proposal = detail.data;

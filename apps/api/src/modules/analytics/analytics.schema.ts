@@ -1,4 +1,5 @@
 import { statusSchema } from "@jobpilot/contracts/application";
+import { CONTACT_DISCOVERY_SOURCES } from "@jobpilot/contracts/networking";
 import { z } from "zod/v4";
 
 /** `date` is UTC midnight of the bucketed day. */
@@ -56,7 +57,7 @@ export const analyticsStatsSchema = z.object({
     perDaySent: z.array(perDayPointSchema),
     topContactSources: z.array(
       z.object({
-        source: z.string(),
+        source: z.enum(CONTACT_DISCOVERY_SOURCES),
         count: z.number().int(),
       }),
     ),

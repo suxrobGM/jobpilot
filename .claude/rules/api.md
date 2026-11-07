@@ -54,7 +54,7 @@ jobs). Small bounded lists (resumes, credentials, boards, tokens, feeds) stay `z
 
 Never hand-write `skip` / `take`. Filter and sort in SQL. Counts beside a filter come from a
 `groupBy`, not the page. Cursor paging (`cursorPageSchema`, `cursorPage`) is only for
-append-only feeds. The pilot journal is the sole user.
+append-only feeds. The Pilot thread is the sole user.
 
 ## Enums
 

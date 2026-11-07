@@ -29,8 +29,20 @@ export function RankedBarList(props: RankedBarListProps): ReactElement {
         <Stack spacing={1.25}>
           {entries.map((entry) => (
             <Stack key={entry.label} spacing={0.5}>
-              <Stack direction="row" sx={{ justifyContent: "space-between" }}>
-                <Typography variant="body1">{entry.label}</Typography>
+              <Stack direction="row" spacing={2} sx={{ justifyContent: "space-between" }}>
+                {/* Failure reasons can run a paragraph; the full text is on hover. */}
+                <Typography
+                  variant="body1"
+                  title={entry.label}
+                  sx={{
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {entry.label}
+                </Typography>
                 <Typography variant="captionMuted">{entry.count}</Typography>
               </Stack>
               <LinearProgress

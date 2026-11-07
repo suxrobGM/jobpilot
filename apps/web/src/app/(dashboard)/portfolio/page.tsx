@@ -7,8 +7,8 @@ export const metadata: Metadata = { title: "Portfolio" };
 
 export default function PortfolioPage(): ReactElement {
   return (
-    <PageShell maxWidth="lg">
-      <PageHeader title="Portfolio" description="Your public portfolio page and what it shows." />
+    <PageShell maxWidth="xl">
+      <PageHeader title="Portfolio" />
       <PortfolioSettings />
     </PageShell>
   );

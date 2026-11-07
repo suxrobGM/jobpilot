@@ -12,7 +12,6 @@ import { TooltipIconButton } from "@/components/ui/buttons";
 import { ItemList } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
-import { AddBoardButton } from "./add-board-button";
 import { BoardLoginDialog } from "./board-login-dialog";
 
 function loginLabel(login: CredentialDto | null, hasDefault: boolean): string {
@@ -82,9 +81,8 @@ export function BoardsSection(): ReactElement {
 
   return (
     <SectionCard
-      title="Job boards"
+      title="Search order"
       description="Checked boards are searched in this order, one per cycle. With none checked, each search keeps its own board."
-      actions={<AddBoardButton />}
     >
       {boards.length === 0 && (
         <Typography variant="body2Muted">

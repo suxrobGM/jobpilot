@@ -14,6 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { RunSteps } from "@/components/features/pilot/steps/run-steps";
+import { TOP_BAR_HEIGHT } from "@/components/layout/shell-config";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { BROWSER_BLOCKED_MESSAGE } from "@/hooks/use-terminal-health";
@@ -58,7 +59,8 @@ export function AgentPanel(): ReactElement {
         sx={(theme) => ({
           alignItems: "center",
           paddingInline: theme.spacing(1.75),
-          paddingBlock: theme.spacing(1.25),
+          // Level with the top bar beside it.
+          minHeight: TOP_BAR_HEIGHT.desktop,
           borderBottom: 1,
           borderColor: "divider",
         })}
@@ -68,11 +70,11 @@ export function AgentPanel(): ReactElement {
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="h6">Agent</Typography>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.25 }}>
-              <Typography variant="overlineMuted" noWrap>
+              <Typography variant="captionMuted" noWrap>
                 {restarting ? `${pending}…` : activity.label}
               </Typography>
               {status?.hostVersion && (
-                <Typography variant="overlineMuted">· v{status.hostVersion}</Typography>
+                <Typography variant="captionMuted">· v{status.hostVersion}</Typography>
               )}
             </Stack>
           </Stack>
@@ -149,14 +151,12 @@ export function AgentPanel(): ReactElement {
                 borderColor: "divider",
               })}
             >
-              <Typography variant="captionMuted" sx={{ flex: 1 }}>
-                {providerLabel}
-              </Typography>
               <Select
                 size="small"
                 value={provider}
                 onChange={handleProviderChange}
-                sx={{ minWidth: 120, typography: "body2" }}
+                inputProps={{ "aria-label": "Agent app" }}
+                sx={{ minWidth: 120, mr: "auto", typography: "body2" }}
               >
                 {PROVIDERS.map((id) => (
                   <MenuItem key={id} value={id}>

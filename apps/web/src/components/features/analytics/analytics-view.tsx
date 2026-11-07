@@ -4,10 +4,10 @@ import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsQueries } from "@/api/queries";
-import { PortfolioRankChip } from "@/components/features/portfolio/portfolio-rank-chip";
 import { RankedBarList } from "@/components/ui/data";
 import { TimelineChart } from "@/components/ui/data/timeline-chart";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
+import { FOUND_VIA } from "../networking/found-via";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
@@ -27,7 +27,6 @@ export function AnalyticsView(): ReactElement {
 
   return (
     <Stack spacing={3}>
-      <PortfolioRankChip />
       <Typography variant="overlineMuted">Applications</Typography>
       <AnalyticsStatTiles stats={stats} />
 
@@ -83,7 +82,7 @@ export function AnalyticsView(): ReactElement {
             eyebrow="Distribution"
             title="Contact sources"
             entries={stats.networking.topContactSources.map((s) => ({
-              label: s.source,
+              label: FOUND_VIA[s.source],
               count: s.count,
             }))}
             emptyMessage="No contacts discovered yet."

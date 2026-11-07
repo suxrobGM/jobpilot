@@ -132,7 +132,7 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
         {shown === "preview" ? (
           preview
         ) : (
-          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: { xs: 1.5, sm: 3 }, pt: 2 }}>
+          <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", px: { xs: 1.5, sm: 3 }, pt: 3 }}>
             <Box sx={{ maxWidth: EDITOR_WIDTH, mx: "auto" }}>{renderTab()}</Box>
           </Box>
         )}

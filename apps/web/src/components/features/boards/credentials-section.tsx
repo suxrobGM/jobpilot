@@ -73,7 +73,7 @@ export function CredentialsSection(): ReactElement {
         <Button
           size="small"
           startIcon={<Add />}
-          variant="contained"
+          variant="outlined"
           onClick={() => setDialogOpen(true)}
         >
           Add credential

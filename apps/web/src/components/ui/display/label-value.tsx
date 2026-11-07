@@ -15,7 +15,9 @@ export function LabelValue(props: LabelValueProps): ReactElement {
 
   return (
     <Box>
-      <Typography variant="overlineMuted">{label}</Typography>
+      <Typography variant="overlineMuted" sx={{ display: "block" }}>
+        {label}
+      </Typography>
       {value}
     </Box>
   );

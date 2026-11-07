@@ -144,12 +144,9 @@ export class AnalyticsService {
     const replyRatePct =
       networkingSent > 0 ? Math.round((networkingReplied / networkingSent) * 100) : 0;
 
-    const topContactSources = contactSourceRows
-      .filter((r) => r.discoverySource)
-      .map((r) => ({
-        source: r.discoverySource as string,
-        count: r._count._all,
-      }));
+    const topContactSources = contactSourceRows.flatMap((r) =>
+      r.discoverySource ? [{ source: r.discoverySource, count: r._count._all }] : [],
+    );
 
     const perDaySent = bucketPerDay(
       networkingTimelineRows.map((r) => r.sentAt as Date),

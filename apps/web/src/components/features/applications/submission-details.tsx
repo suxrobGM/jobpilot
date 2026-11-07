@@ -106,12 +106,14 @@ function JobDescriptionCard(props: SubmissionDetailsProps): ReactElement {
     <SectionCard title="Job description">
       {job?.description ? (
         <Stack spacing={1.5}>
-          <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
-            {job.salary && <Typography variant="body2Muted">{job.salary}</Typography>}
-            {job.employmentType && (
-              <Typography variant="body2Muted">{job.employmentType}</Typography>
-            )}
-          </Stack>
+          {(job.salary || job.employmentType) && (
+            <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
+              {job.salary && <Typography variant="body2Muted">{job.salary}</Typography>}
+              {job.employmentType && (
+                <Typography variant="body2Muted">{job.employmentType}</Typography>
+              )}
+            </Stack>
+          )}
           <Accordion>
             <AccordionSummary>Read the posting</AccordionSummary>
             <AccordionDetails>

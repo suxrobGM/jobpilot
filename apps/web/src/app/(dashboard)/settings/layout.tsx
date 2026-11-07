@@ -11,10 +11,7 @@ export default function SettingsLayout(props: SettingsLayoutProps): ReactElement
   const { children } = props;
   return (
     <PageShell maxWidth="lg">
-      <PageHeader
-        title="Settings"
-        description="Your profile, how the pilot works, and your account."
-      />
+      <PageHeader title="Settings" />
       <Box
         sx={{
           display: "flex",

@@ -52,7 +52,11 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   };
 
   if (detail.isPending) {
-    return <DetailSkeleton />;
+    return (
+      <PageShell maxWidth="lg">
+        <DetailSkeleton />
+      </PageShell>
+    );
   }
 
   const app = detail.data;
@@ -75,6 +79,8 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
         <PageHeader
           eyebrow={app.company}
           title={app.title}
+          backHref="/pipeline?view=applied"
+          backLabel="Applied"
           actions={
             <>
               <Button variant="outlined" startIcon={<Launch fontSize="md" />} href={app.url}>

@@ -11,9 +11,9 @@ import { useApiMutation } from "@/api/use-api-mutation";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { SectionCard } from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
+import { SettingsCard } from "../settings-card";
 import { CheckIntervalSection } from "./check-interval-section";
 import { settingsFormSchema, toFormValues, toSettings } from "./form-schema";
 import { JobAlertsSetting } from "./job-alerts-setting";
@@ -71,22 +71,25 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
         form.handleSubmit();
       }}
     >
-      <SectionCard
-        title="How the pilot works"
-        description="Optional - the defaults work for most people."
-      >
-        <Stack spacing={3}>
+      <Stack spacing={2}>
+        <SettingsCard>
           <CheckIntervalSection form={form} />
+        </SettingsCard>
+        <SettingsCard>
           <JobAlertsSetting />
+        </SettingsCard>
+        <SettingsCard>
           <FormSection
             title="Research"
             description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
           >
             <ResearchSection />
           </FormSection>
+        </SettingsCard>
+        <SettingsCard>
           <NetworkingSection form={form} />
-        </Stack>
-      </SectionCard>
+        </SettingsCard>
+      </Stack>
 
       <form.AppForm>
         <form.UnsavedChangesBar />

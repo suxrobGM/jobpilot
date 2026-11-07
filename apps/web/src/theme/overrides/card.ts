@@ -53,6 +53,8 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
 
 // Tighter below sm: cards nest, and two levels at the desktop 20px eat a fifth of a phone's width.
 export const cardHeaderOverrides: Components<Theme>["MuiCardHeader"] = {
+  // The same face as a form section's title, so settings and cards read as one family.
+  defaultProps: { slotProps: { title: { variant: "h4" } } },
   styleOverrides: {
     root: ({ theme }) => ({
       paddingInline: 14,
@@ -60,7 +62,6 @@ export const cardHeaderOverrides: Components<Theme>["MuiCardHeader"] = {
       paddingBottom: 8,
       [theme.breakpoints.up("sm")]: { paddingInline: 20, paddingTop: 16 },
     }),
-    title: { fontSize: "1.0625rem", fontWeight: 600, lineHeight: 1.3 },
     subheader: { fontSize: "0.8125rem", marginTop: 2 },
   },
 };
