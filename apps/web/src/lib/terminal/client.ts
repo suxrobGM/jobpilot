@@ -117,7 +117,7 @@ export function shutdownHost(): Promise<void> {
   return send<void>("POST", "/shutdown");
 }
 
-interface PilotPairOptions {
+interface PairPilotOptions {
   provider: TerminalProviderId;
   /** Per-user agent PAT the pilot loop authenticates with. */
   apiToken: string;
@@ -130,13 +130,13 @@ interface PilotPairOptions {
 }
 
 /** Pairs the host with this account; its loop runs whenever it is paired. */
-export function pilotPair(options: PilotPairOptions): Promise<SessionStatus> {
-  return send<SessionStatus>("POST", "/pilot/pair", options);
+export function pairPilot(options: PairPilotOptions): Promise<SessionStatus> {
+  return send<SessionStatus>("PUT", "/pilot/pairing", options);
 }
 
 /** Ends the hold the user's typing put on new pilot runs. */
-export function pilotHandback(): Promise<SessionStatus> {
-  return send<SessionStatus>("POST", "/pilot/handback");
+export function endPilotHold(): Promise<SessionStatus> {
+  return send<SessionStatus>("DELETE", "/pilot/hold");
 }
 
 /** Ask the running host to self-update and relaunch; on `updating: true` poll health to see it return on the new version. */

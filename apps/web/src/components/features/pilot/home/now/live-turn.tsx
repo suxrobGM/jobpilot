@@ -6,7 +6,7 @@ import { Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { PulseDot } from "@/components/ui/feedback";
-import { pilotHandback } from "@/lib/terminal/client";
+import { endPilotHold } from "@/lib/terminal/client";
 import { useAgentDrawer } from "@/providers/agent-provider";
 import { idleCaption, type PilotMode } from "../../pilot-status";
 import { useRunSteps } from "../../steps/use-run-steps";
@@ -96,7 +96,7 @@ export function LiveTurn(): ReactElement {
   const { openDrawer, watchSteps } = useAgentDrawer();
   const { pilot, mode } = usePilotStatus(state);
   const nextWakeAt = useNextWake(state);
-  const handBack = useApiMutation(async () => ({ data: await pilotHandback(), error: null }), {
+  const endHold = useApiMutation(async () => ({ data: await endPilotHold(), error: null }), {
     successMessage: "Handed the terminal back to the pilot.",
   });
   const run = state.currentRun;
@@ -123,7 +123,7 @@ export function LiveTurn(): ReactElement {
           <SaidLine
             text={MODE_LINES.held}
             action={
-              <Button size="small" loading={handBack.isPending} onClick={() => handBack.mutate()}>
+              <Button size="small" loading={endHold.isPending} onClick={() => endHold.mutate()}>
                 Hand back
               </Button>
             }

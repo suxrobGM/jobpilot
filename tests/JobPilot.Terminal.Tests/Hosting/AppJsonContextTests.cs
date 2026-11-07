@@ -30,10 +30,10 @@ public class AppJsonContextTests
             AppJsonContext.Default.StartSessionRequest);
         var pilot = JsonSerializer.Deserialize(
             """{"provider":"claude","apiToken":"tok","apiUrl":"https://api","webUrl":"https://web","userId":"u1"}""",
-            AppJsonContext.Default.PilotPairRequest);
+            AppJsonContext.Default.PairingRequest);
 
         Assert.Equal(new StartSessionRequest(120, 40, "codex", "tok", "https://api", "https://web"), start);
-        Assert.Equal(new PilotPairRequest("claude", "tok", "https://api", "https://web", "u1"), pilot);
+        Assert.Equal(new PairingRequest("claude", "tok", "https://api", "https://web", "u1"), pilot);
     }
 
     [Fact]

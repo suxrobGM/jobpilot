@@ -19,7 +19,7 @@ namespace JobPilot.Terminal.Hosting;
 [JsonSerializable(typeof(CodexSettingsFile))]
 [JsonSerializable(typeof(PluginMcpFile))]
 [JsonSerializable(typeof(string))]
-[JsonSerializable(typeof(PilotPairRequest))]
+[JsonSerializable(typeof(PairingRequest))]
 [JsonSerializable(typeof(BrowserMessage))]
 [JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(PairingFile))]

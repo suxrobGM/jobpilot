@@ -5,13 +5,13 @@ import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useSession } from "@/hooks/use-auth";
 import { useTerminalHealth } from "@/hooks/use-terminal-health";
-import { pilotPair, type TerminalProviderId } from "@/lib/terminal/client";
+import { pairPilot, type TerminalProviderId } from "@/lib/terminal/client";
 import { useAgentDrawer } from "@/providers/agent-provider";
 
 async function pair(userId: string, provider: TerminalProviderId): Promise<void> {
   const { data } = await api.auth.tokens.terminal.post();
   if (data) {
-    await pilotPair({
+    await pairPilot({
       provider,
       apiToken: data.token,
       apiUrl: API_BASE_URL,

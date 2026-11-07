@@ -124,7 +124,7 @@ one provider PTY (ConPTY via Quick.PtyNet). It streams that PTY to the web's
 xterm.js over a WebSocket.
 
 Endpoints: `POST /sessions/start`, `DELETE /sessions/current`,
-`POST /pilot/pair`, `POST /pilot/unpair`, `POST /pilot/handback`,
+`PUT /pilot/pairing`, `DELETE /pilot/pairing`, `DELETE /pilot/hold`,
 `POST /v1/logs` (the CLI's OTLP log export, read for token usage and live
 steps), `GET /healthz`, `GET /ws`.
 

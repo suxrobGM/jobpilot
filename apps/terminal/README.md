@@ -27,7 +27,7 @@ Namespaces match folders.
   workspace (Codex mirrors the bundled skills into `.agents/skills`), builds the child environment
   (`SessionEnvironment`: locale, repaired PATH, `JOBPILOT_*`), and spawns a new `PtyProcess`. `TerminalRelay` broadcasts output to every WebSocket
   and keeps a 512 KB replay for reconnects.
-- **Pilot.** `/pilot/pair` saves the `PilotPairing` to `pilot.json` and `/pilot/unpair` deletes it;
+- **Pilot.** `PUT /pilot/pairing` saves the `PilotPairing` to `pilot.json` and `DELETE` removes it;
   every change wakes `PilotLoop`, which runs cycles whenever the host is paired. Autopilot is a
   server flag: with it off the task list holds only what the user asked for. Each cycle starts with
   one `/api/pilot/activity` probe, so an unreachable API backs off instead of spending a refresh.
@@ -35,7 +35,7 @@ Namespaces match folders.
   state (no journal entry) and sleeps, so an idle pilot never wakes the model. With tasks it starts
   a run for the top one, unless the user typed into the terminal in the last 3 minutes: then it
   journals one waiting line, reports `heldUntil` in `/healthz`, and sleeps until the hold ends
-  (`/pilot/handback` ends it early). Otherwise it starts the run, types `/clear` and the pilot skill with the run id, and waits for the run
+  (`DELETE /pilot/hold` ends it early). Otherwise it starts the run, types `/clear` and the pilot skill with the run id, and waits for the run
   to finish: the `run.finished` event the agent's result publishes, or a poll of the run. A stuck
   run climbs check-in, skip, then restart, and a run with no result is cancelled by the host. The
   host then posts the run's token usage, which `UsageMeter` sums from the CLI's OTLP logs on

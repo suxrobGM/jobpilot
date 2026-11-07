@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace JobPilot.Terminal.Pilot;
 
-public sealed record PilotPairRequest(string? Provider, string? ApiToken, string? ApiUrl, string? WebUrl, string? UserId);
+public sealed record PairingRequest(string? Provider, string? ApiToken, string? ApiUrl, string? WebUrl, string? UserId);
 
 /// <summary>The pilot part of /healthz.</summary>
 public sealed record PilotStatus
@@ -33,8 +33,8 @@ public static class PilotEndpoints
 {
     public static void MapPilotEndpoints(this WebApplication app)
     {
-        app.MapPost("/pilot/pair", Results<Ok<StatusResponse>, ProblemHttpResult> (
-            PilotPairRequest request, PairingStore store, HostStatus status) =>
+        app.MapPut("/pilot/pairing", Results<Ok<StatusResponse>, ProblemHttpResult> (
+            PairingRequest request, PairingStore store, HostStatus status) =>
         {
             var provider = Provider.Parse(request.Provider);
             if (!ApiConnection.TryParse(request.ApiToken, request.ApiUrl, request.WebUrl, out var api, out var problem))
@@ -51,14 +51,14 @@ public static class PilotEndpoints
             return TypedResults.Ok(status.Get());
         });
 
-        app.MapPost("/pilot/unpair", (PairingStore store, HostStatus status) =>
+        app.MapDelete("/pilot/pairing", (PairingStore store, HostStatus status) =>
         {
             store.Clear();
             return TypedResults.Ok(status.Get());
         });
 
         // Ends the hold the user's typing put on new runs.
-        app.MapPost("/pilot/handback", (TerminalSession terminal, HostStatus status) =>
+        app.MapDelete("/pilot/hold", (TerminalSession terminal, HostStatus status) =>
         {
             terminal.ResetLastUserInput();
             return TypedResults.Ok(status.Get());
