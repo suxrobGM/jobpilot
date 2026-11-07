@@ -134,10 +134,10 @@ export function Composer(props: ComposerProps): ReactElement {
             sx={(theme) => ({
               ml: { xs: "auto", sm: 0 },
               borderRadius: theme.radii.lg,
-              color: "primary.contrastText",
-              backgroundColor: "primary.main",
-              // The same lift as a contained button's hover.
-              "&:hover": { backgroundColor: lighten(theme.palette.primary.main, 0.14) },
+              // The same light fill as a contained button.
+              color: theme.palette.surfaces.base,
+              backgroundColor: theme.palette.text.primary,
+              "&:hover": { backgroundColor: lighten(theme.palette.text.primary, 0.6) },
               "&.Mui-disabled": {
                 color: "text.disabled",
                 backgroundColor: theme.palette.surfaces.elevated,
