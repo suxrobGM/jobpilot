@@ -60,13 +60,14 @@ async function requestTask(
         where: { id: input.payload.searchId, userId, kind: "search", archivedAt: null },
         select: { id: true, query: true, resumeId: true, board: { select: { domain: true } } },
       });
-      if (!search) {
+      const board = discoveryBoard(config.boards, ctx.cycleCount, search?.board?.domain);
+      if (!search || !board) {
         return null;
       }
       return makeTask("search.discover", {
         searchId: search.id,
         query: search.query ?? "",
-        board: discoveryBoard(config.boards, ctx.cycleCount, search.board?.domain),
+        board,
         resumeId: search.resumeId ?? undefined,
         minScore: config.minScore,
         newJobsTarget: SEARCH_NEW_JOBS_TARGET,

@@ -82,7 +82,7 @@ export function BoardsSection(): ReactElement {
   return (
     <SectionCard
       title="Search order"
-      description="Checked boards are searched in this order, one per cycle. With none checked, each search keeps its own board."
+      description="The pilot searches checked boards in this order, one per cycle. A search pinned to a board stays on it."
     >
       {boards.length === 0 && (
         <Typography variant="body2Muted">

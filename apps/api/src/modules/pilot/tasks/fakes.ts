@@ -266,7 +266,7 @@ export const service = (over: Over = {}) => serviceWithRec(over).svc;
 export const pilotSearchRow = (over: Row = {}) => ({
   id: "s1",
   query: "react",
-  board: null,
+  board: { domain: "linkedin.com" },
   resumeId: null,
   lastRunAt: null,
   nextRunAt: new Date(0),

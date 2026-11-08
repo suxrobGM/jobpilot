@@ -4,6 +4,7 @@ import { pilotChangeActionSchema } from "./change";
 import { createPilotRequestSchema } from "./request";
 
 const PILOT_NOTICE_KEYS = [
+  "boards.none",
   "email.missing",
   "inbox.unread",
   "outcomes.none",

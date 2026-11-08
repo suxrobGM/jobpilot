@@ -74,6 +74,13 @@ export function SetupTurn(): ReactNode {
       action: "Write goals",
     },
     {
+      key: "boards",
+      label: "Check the job boards I should search.",
+      done: state.config.boards.length > 0,
+      href: "/boards",
+      action: "Pick boards",
+    },
+    {
       key: "credentials",
       label: "Save your job-board logins so I can sign in before I apply.",
       done: credentials.length > 0,

@@ -256,7 +256,7 @@ describe("buildTaskList networking", () => {
 
 describe("buildTaskList discovery", () => {
   it("rotates an unpinned search across the configured boards, and keeps a pinned one", () => {
-    const boardAt = (cycleCount: number, ownBoard: string | undefined) =>
+    const boardAt = (cycleCount: number, ownBoard: string | null) =>
       buildTaskList(
         base({
           config: cfg({ boards: ["hiring.cafe", "linkedin.com", "indeed.com"] }),
@@ -265,13 +265,23 @@ describe("buildTaskList discovery", () => {
         }),
       ).tasks[0].payload;
 
-    expect([0, 1, 2, 3].map((cycle) => boardAt(cycle, undefined))).toMatchObject([
+    expect([0, 1, 2, 3].map((cycle) => boardAt(cycle, null))).toMatchObject([
       { board: "hiring.cafe" },
       { board: "linkedin.com" },
       { board: "indeed.com" },
       { board: "hiring.cafe" },
     ]);
     expect(boardAt(1, "wellfound")).toMatchObject({ board: "wellfound", maxPages: 5 });
+  });
+
+  it("skips an unpinned search while no board is checked, but runs a pinned one", () => {
+    const taskList = buildTaskList(
+      base({
+        config: cfg({ boards: [] }),
+        dueQueries: [dueQuery("golang", null), dueQuery("rust", "wellfound")],
+      }),
+    );
+    expect(taskList.tasks.map((task) => task.payload)).toMatchObject([{ board: "wellfound" }]);
   });
 });
 

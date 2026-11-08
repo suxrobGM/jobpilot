@@ -221,13 +221,14 @@ export function discoveryBoard(boards: string[], cycleCount: number, ownBoard: s
 
 function discoveryTasks(input: TaskListInput, newJobsTarget: number): PilotTask[] {
   const { boards, minScore } = input.config;
-  const discoveries = input.dueQueries.map((search) => ({
-    ...search,
-    board: discoveryBoard(boards, input.cycleCount, search.board),
-    minScore,
-    newJobsTarget,
-    maxPages: SEARCH_MAX_PAGES,
-  }));
+  const discoveries = input.dueQueries.flatMap((search) => {
+    const board = discoveryBoard(boards, input.cycleCount, search.board);
+    // The searcher can't run without a board; the "boards.none" notice asks the user for one.
+    if (!board) {
+      return [];
+    }
+    return [{ ...search, board, minScore, newJobsTarget, maxPages: SEARCH_MAX_PAGES }];
+  });
   return [
     ...makeTasks("feed.score", input.scorePending),
     ...makeTasks("search.discover", discoveries),

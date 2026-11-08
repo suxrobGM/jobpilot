@@ -7,6 +7,7 @@ const now = new Date("2026-11-06T12:00:00Z");
 /** A healthy user: nothing to flag. */
 function facts(overrides: Partial<NoticeFacts> = {}): NoticeFacts {
   return {
+    boardlessSearches: 0,
     email: "connected",
     staleMail: 0,
     recentApplications: 30,
@@ -27,6 +28,10 @@ const keys = (input: NoticeFacts) => buildNotices(input, now).map((notice) => no
 describe("buildNotices", () => {
   it("shows nothing for a healthy user", () => {
     expect(keys(facts())).toEqual([]);
+  });
+
+  it("flags searches that can't run for want of a board", () => {
+    expect(keys(facts({ boardlessSearches: 2 }))).toEqual(["boards.none"]);
   });
 
   it("flags missing or broken email, and holds back the inbox and outcomes signals", () => {

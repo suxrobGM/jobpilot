@@ -12,6 +12,8 @@ const NEAR_MISS_MIN_JOBS = 10;
 const CAP_USED_SHARE = 0.25;
 
 export interface NoticeFacts {
+  /** Active searches with no board of their own while no board is checked: they can't run. */
+  boardlessSearches: number;
   email: "connected" | "reconnect" | "missing";
   /** Unclassified mail older than two days. */
   staleMail: number;
@@ -26,6 +28,19 @@ export interface NoticeFacts {
   autopilotSince: Date | null;
   appliedLastWeek: number;
   approvedWaiting: number;
+}
+
+function boardsNotice(boardlessSearches: number): PilotNotice | null {
+  if (boardlessSearches === 0) {
+    return null;
+  }
+  const searches = boardlessSearches === 1 ? "1 search" : `${boardlessSearches} searches`;
+  return {
+    key: "boards.none",
+    title: "No boards to search",
+    body: `${searches} can't run until you check at least one board for the pilot to search.`,
+    action: { kind: "link", label: "Pick boards", href: "/boards" },
+  };
 }
 
 function emailNotice(email: NoticeFacts["email"]): PilotNotice | null {
@@ -114,6 +129,7 @@ export function buildNotices(facts: NoticeFacts, now: Date): PilotNotice[] {
   const inbox = email ? null : inboxNotice(facts.staleMail);
   // Outcomes come from the inbox, so they wait until it's connected and read.
   const outcomes = email || inbox ? null : outcomesNotice(facts);
-  const notices = [email, inbox, outcomes, nearMissNotice(facts), capNotice(facts, now)];
+  const boards = boardsNotice(facts.boardlessSearches);
+  const notices = [boards, email, inbox, outcomes, nearMissNotice(facts), capNotice(facts, now)];
   return notices.filter((notice) => notice !== null);
 }

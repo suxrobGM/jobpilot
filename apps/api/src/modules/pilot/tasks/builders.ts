@@ -140,10 +140,11 @@ export const boardDiagnose = (board: string): TaskPayload<"board.diagnose"> => (
   testJob: null,
 });
 
-export const dueQuery = (query: string, board?: string) => ({
+/** `null` leaves the search unpinned, so it rotates the configured boards. */
+export const dueQuery = (query: string, board: string | null = "linkedin.com") => ({
   searchId: `s-${query}`,
   query,
-  board,
+  board: board ?? undefined,
 });
 
 export const pausedFeed = (feedId: string): TaskPayload<"search.review"> => ({

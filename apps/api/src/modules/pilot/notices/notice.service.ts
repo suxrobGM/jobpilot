@@ -126,6 +126,12 @@ export class NoticeService {
         where: { userId, appliedAt: { gte: ago(CAP_WINDOW_MS) } },
       }),
       approvedWaiting: prisma.job.count({ where: { userId, status: "approved" } }),
+      boardlessSearches:
+        config.boards.length > 0
+          ? 0
+          : prisma.feed.count({
+              where: { userId, kind: "search", boardId: null, pausedAt: null, archivedAt: null },
+            }),
     });
     return {
       ...counts,
