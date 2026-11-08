@@ -89,8 +89,8 @@ export function InstallGuide(): ReactElement {
 
       <InstallStep number={3} title="Create your account">
         <Typography variant="body2Muted">
-          Sign up and upload your resume. The agent connects to your account by itself. Then tell the
-          Pilot what jobs you want.
+          Sign up and upload your resume. The agent connects to your account by itself. Then tell
+          the Pilot what jobs you want.
         </Typography>
         <LinkButton href="/register" variant="contained" size="large" sx={{ alignSelf: "start" }}>
           Create account
