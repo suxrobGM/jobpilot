@@ -4,8 +4,8 @@ description: Film, edit, and deliver a launch-quality teaser of any web app - re
 user-invocable: true
 compatibility: Node 24+, ffmpeg 8+ on PATH (gfxcapture + h264_nvenc on Windows; swap `ENCODER` in cam.js elsewhere), and a Chrome channel for Playwright. npm packages come from reference/capture and reference/edit package.json, installed in a scratch dir, never the project.
 metadata:
-  version: "1.1"
-  updated: "2026-10-04"
+  version: "1.2"
+  updated: "2026-11-08"
   portable: "true"
 ---
 
@@ -31,6 +31,10 @@ export TEASER_LOCAL_STORAGE='{"some:ui-pref":"value"}'   # optional UI state to 
 `npm run still` renders the starter `Teaser.tsx` (no clips needed), proving the
 toolchain works before any filming. Keep every `remotion` / `@remotion/*`
 package on the same version; mismatches fail at render time.
+
+**Updating JobPilot's own teaser?** Start from `reference/jobpilot/RECIPE.md`.
+It overlays the shipped v3 timeline, clock map, music and scenes on this kit,
+so a re-edit is copy + render and a re-film reuses every script.
 
 ## The two hard rules
 
@@ -86,7 +90,19 @@ the success state into the counter) connects them.
   the agent's own Chrome window and records it with `gfxcapture` (works while
   covered by other windows, not while minimized), and logs status changes
   with timestamps so you can find the moments afterwards. Stop it by touching
-  `takes/<name>/STOP`.
+  `takes/<name>/STOP`. The window capture shows only Chrome's front tab, and
+  Playwright MCP can fill a form in a background tab, so plan the proof of the
+  submit around the agent's terminal and the app, not the form itself.
+  `--do scene.js` runs a scene module (`export default async ({ page, log })`)
+  after rolling, for the user's on-camera clicks inside the same take.
+- `scout.js`: screenshots `name=/path` pairs for the storyboard. Set
+  `TEASER_READY` when the first `<main>` is hidden.
+- `tool-calls.mjs`: every Claude Code tool call with its timestamp, from the
+  session transcripts (subagents included) inside named wall-clock windows.
+  Feed it to an on-screen counter so the number is real, not invented.
+- If the agent is Claude Code launched from your own Claude Code session,
+  unset the inherited `CLAUDE*` env first, or it saves no transcript and
+  shows a warning on screen.
 
 Film at **1600x900 CSS with `--force-device-scale-factor=2`** (3200x1800
 frames). Without the flag, headless screencast silently returns 1x frames even
@@ -123,6 +139,11 @@ and `clamp` in `src/theme.ts`):
   `FlyingChip` (the result travelling between scenes), `CountUp`, `Callout`.
 - `Background.tsx`, `Logo.tsx`, `FormStack.tsx`: stage, logo sting, a sample
   hook graphic.
+- `Hud.tsx`: two live counters (agent vs user) that pop when they change.
+  Drive them from `tool-calls.mjs` through a frame → wall-clock map
+  (`reference/jobpilot/edit/src/clock.ts` is a worked one).
+- `Pulses.tsx`: a spark per real tool call, from the terminal pane into the
+  browser pane, so split screens read as cause and effect.
 - `Sound.tsx`: music bed + SFX cues by frame.
 
 Rules that made the difference:

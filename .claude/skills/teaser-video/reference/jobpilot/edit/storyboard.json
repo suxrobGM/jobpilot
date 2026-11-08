@@ -1,0 +1,15 @@
+{
+  "bpm": 120,
+  "sections": [
+    { "name": "hook", "bars": 2 },
+    { "name": "reveal", "bars": 1 },
+    { "name": "start", "bars": 3 },
+    { "name": "handoff", "bars": 2 },
+    { "name": "hero", "bars": 6 },
+    { "name": "pause", "bars": 2 },
+    { "name": "submit", "bars": 4 },
+    { "name": "payoff", "bars": 2 },
+    { "name": "trust", "bars": 2 },
+    { "name": "close", "bars": 2 }
+  ]
+}
