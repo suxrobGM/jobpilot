@@ -21,7 +21,7 @@ const RETENTION_BY_MODEL = {
   Credential: "bounded",
   EmailAccount: "bounded",
   EmailOAuthClient: "bounded",
-  EmailMessage: ["emailBodies", "irrelevantEmails"],
+  EmailMessage: ["emailBodies", "irrelevantEmails", "unscannedEmails"],
   JobBoard: "bounded",
   UserJobBoard: "bounded",
   JobListing: ["unseenListings"],
@@ -96,6 +96,7 @@ describe("retention", () => {
     expect(where.questions).not.toContain('"open"');
     expect(where.questions).toContain('"notIn":["email","feed"]');
     expect(where.emailBodies).toContain('"scannedAt":{"not":null}');
+    expect(where.unscannedEmails).toContain('"applicationId":null');
     for (const live of ["applied", "screening", "interviewing", "offer"]) {
       expect(where.applicationEvents).not.toContain(`"${live}"`);
     }

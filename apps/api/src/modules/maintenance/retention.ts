@@ -102,6 +102,15 @@ export const RETENTION_RULES = [
         where: { classification: "irrelevant", receivedAt: { lt: before }, applicationId: null },
       }),
   },
+  // A backlog the scan never reached is stale by now; past the sync window, so it never re-imports.
+  {
+    name: "unscannedEmails",
+    days: 30,
+    apply: (db, before) =>
+      db.emailMessage.deleteMany({
+        where: { scannedAt: null, receivedAt: { lt: before }, applicationId: null },
+      }),
+  },
   // A live application renders these as its timeline.
   {
     name: "applicationEvents",
