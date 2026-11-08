@@ -1,11 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Box, Stack } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { pilotQueries } from "@/api/queries";
-import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { type SectionAnchor, SectionCard, SectionLayout } from "@/components/ui/layout";
+import { PilotStateLoader } from "../state/pilot-state-loader";
 import { AnswersSection } from "./answers-section";
 import { RulesForm } from "./rules-form";
 import { SearchesSection } from "./searches-section";
@@ -18,17 +17,19 @@ const ANCHORS: SectionAnchor[] = [
 
 /** What the pilot looks for and the limits it keeps; every save is a change with Undo. */
 export function SearchesAndRules(): ReactElement {
-  const stateQuery = useQuery(pilotQueries.state());
-  const state = stateQuery.data;
-  if (stateQuery.isLoading) {
-    return <DetailSkeleton heights={[240, 200, 200]} />;
-  }
-  if (!state) {
-    return (
-      <QueryError title="Couldn't load the pilot." onRetry={() => void stateQuery.refetch()} />
-    );
-  }
+  return (
+    <PilotStateLoader heights={[240, 200, 200]}>
+      {(state) => <SearchesAndRulesBody state={state} />}
+    </PilotStateLoader>
+  );
+}
 
+interface SearchesAndRulesBodyProps {
+  state: PilotState;
+}
+
+function SearchesAndRulesBody(props: SearchesAndRulesBodyProps): ReactElement {
+  const { state } = props;
   const { dailyApplyCap, minScore, dealBreakers, preferCapExempt } = state.config;
   // Keyed on the values, so a change from chat or Undo refreshes the form.
   const rulesKey = [dailyApplyCap, minScore, preferCapExempt, ...dealBreakers].join("|");

@@ -4,32 +4,25 @@ import type { ReactElement } from "react";
 import type { PilotState, UpdatePilotSettingsInput } from "@jobpilot/contracts/pilot";
 import { Box, Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
-import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
-import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
+import { PilotStateLoader } from "../../pilot/state/pilot-state-loader";
 import { SettingsCard } from "../settings-card";
 import { settingsFormSchema, toFormValues, toSettings } from "./form-schema";
 import { NetworkingSection } from "./networking-section";
 import { ScheduleSection } from "./schedule-section";
 
 export function PilotSettingsForm(): ReactElement {
-  const stateQuery = useQuery(pilotQueries.state());
-
-  if (stateQuery.isLoading) {
-    return <DetailSkeleton heights={[480]} />;
-  }
-  if (!stateQuery.data) {
-    return (
-      <QueryError title="Couldn't load the pilot." onRetry={() => void stateQuery.refetch()} />
-    );
-  }
   // The form takes its defaults once, so it mounts only after the state has loaded.
-  return <SettingsEditor state={stateQuery.data} />;
+  return (
+    <PilotStateLoader heights={[480]}>
+      {(state) => <SettingsEditor state={state} />}
+    </PilotStateLoader>
+  );
 }
 
 interface SettingsEditorProps {
