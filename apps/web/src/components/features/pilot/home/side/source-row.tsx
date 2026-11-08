@@ -4,13 +4,15 @@ import { Stack, Typography } from "@mui/material";
 interface SourceRowProps {
   label: string;
   detail: string;
-  action: ReactNode;
+  /** What the source is, on hover. */
+  hint?: string;
+  action?: ReactNode;
 }
 
 export function SourceRow(props: SourceRowProps): ReactElement {
-  const { label, detail, action } = props;
+  const { label, detail, hint, action } = props;
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: "center", minHeight: 30 }}>
+    <Stack direction="row" spacing={1} title={hint} sx={{ alignItems: "center", minHeight: 30 }}>
       <Typography variant="body2" sx={{ flexShrink: 0 }}>
         {label}
       </Typography>

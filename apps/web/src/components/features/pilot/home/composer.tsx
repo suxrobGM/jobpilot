@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { AddLink, ArrowUpward, Tune } from "@mui/icons-material";
+import { AddLink, ArrowUpward } from "@mui/icons-material";
 import { Button, Card, Chip, InputBase, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
@@ -10,7 +10,7 @@ import { plural } from "@/utils/format";
 import { AddLinksDialog } from "../../pipeline/add-links-dialog";
 import { parseLinks, useAddLinks } from "../../pipeline/use-add-links";
 import { usePilotState } from "../use-pilot-state";
-import { RulesDialog } from "./side/rules-dialog";
+import { FindMoreJobsButton } from "./find-more-jobs-button";
 
 const SUGGESTED_PROMPTS = [
   "What did you apply to this week?",
@@ -22,7 +22,7 @@ const SUGGESTED_PROMPTS = [
 export function Composer(): ReactElement {
   const state = usePilotState();
   const [text, setText] = useState("");
-  const [dialog, setDialog] = useState<"links" | "rules" | null>(null);
+  const [addingLinks, setAddingLinks] = useState(false);
   const links = parseLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
   const empty = text.trim() === "";
@@ -94,18 +94,11 @@ export function Composer(): ReactElement {
             size="small"
             color="inherit"
             startIcon={<AddLink fontSize="sm" />}
-            onClick={() => setDialog("links")}
+            onClick={() => setAddingLinks(true)}
           >
             Job links
           </Button>
-          <Button
-            size="small"
-            color="inherit"
-            startIcon={<Tune fontSize="sm" />}
-            onClick={() => setDialog("rules")}
-          >
-            Rules
-          </Button>
+          <FindMoreJobsButton />
           <Typography
             variant="captionMuted"
             sx={{ flex: 1, textAlign: "right", pr: 1, display: { xs: "none", sm: "block" } }}
@@ -124,8 +117,7 @@ export function Composer(): ReactElement {
           </Button>
         </Stack>
       </Card>
-      <AddLinksDialog open={dialog === "links"} onClose={() => setDialog(null)} />
-      <RulesDialog open={dialog === "rules"} onClose={() => setDialog(null)} />
+      <AddLinksDialog open={addingLinks} onClose={() => setAddingLinks(false)} />
     </Stack>
   );
 }
