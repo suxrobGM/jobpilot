@@ -60,6 +60,7 @@ const CASES: [string, PilotChangeAction][] = [
     "search.update",
     { type: "search.update", searchId: SEARCH, name: "ML roles", query: "ml engineer" },
   ],
+  ["search.update (unpin)", { type: "search.update", searchId: SEARCH, board: null }],
   ["search.delete", { type: "search.delete", searchId: SEARCH }],
   ["answer.set (existing)", { type: "answer.set", key: "visa_sponsorship", value: "yes" }],
   ["answer.set (new)", { type: "answer.set", key: "salary", value: "$120k" }],

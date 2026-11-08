@@ -71,24 +71,34 @@ export async function createSearch(
   return { type: "search.delete", searchId: created.id };
 }
 
+/** Undefined keeps the current board; null unpins. */
+function boardIdFor(ctx: ActionContext, board: string | null | undefined, current: string | null) {
+  if (board === undefined) {
+    return current;
+  }
+  return board ? (ctx.boardIds.get(board) ?? null) : null;
+}
+
 export async function updateSearch(
   ctx: ActionContext,
   action: ActionOf<"search.update">,
 ): Promise<PilotChangeAction> {
   const old = await findSearch(ctx, action.searchId);
   const query = action.query ?? old.query ?? "";
-  // A different query is a different search, so its schedule starts over.
-  const newQuery = query !== old.query;
-  if (newQuery) {
-    await assertUnique(ctx, query, old.boardId, old.id);
+  const boardId = boardIdFor(ctx, action.board, old.boardId);
+  // A different query or board is a different search, so its schedule starts over.
+  const changed = query !== old.query || boardId !== old.boardId;
+  if (changed) {
+    await assertUnique(ctx, query, boardId, old.id);
   }
   await ctx.tx.feed.update({
     where: { id: old.id },
     data: {
       name: action.name,
       query: action.query,
+      boardId,
       reason: action.reason,
-      ...(newQuery && {
+      ...(changed && {
         emptyRuns: 0,
         nextRunAt: ctx.now,
         lastJobsScanned: null,
@@ -101,6 +111,7 @@ export async function updateSearch(
     searchId: old.id,
     ...(action.name !== undefined && { name: old.name }),
     ...(action.query !== undefined && { query: old.query ?? "" }),
+    ...(action.board !== undefined && { board: old.board?.domain ?? null }),
     ...(action.reason !== undefined && { reason: old.reason }),
   };
 }

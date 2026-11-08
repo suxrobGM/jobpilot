@@ -4,16 +4,25 @@ import { type ReactElement, useState } from "react";
 import { Delete, ExpandLess, ExpandMore, Pause, PlayArrow } from "@mui/icons-material";
 import { Box, Chip, Collapse, Divider, IconButton, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { pilotQueries } from "@/api/queries";
+import { jobBoardQueries, pilotQueries } from "@/api/queries";
 import type { FeedDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 import { useMakeChange } from "../changes/use-changes";
+import { SearchBoardSelect } from "./search-board-select";
 
 /** The empty-run streak that puts a search on the API backoff ladder's top (48h) rung. */
 const BACKOFF_THRESHOLD = 3;
+
+/** Where the next run goes: the pinned board, or the checked boards in turn. */
+function boardLabel(search: FeedDto, rotation: string[]): string {
+  if (search.board) {
+    return `Pinned to ${search.board.name}`;
+  }
+  return rotation.length > 0 ? `Rotates ${rotation.join(", ")}` : "No board checked";
+}
 
 function yieldStats(search: FeedDto): string {
   const parts = [`${search.appliedThisWeek} applied this week`];
@@ -33,10 +42,11 @@ function yieldStats(search: FeedDto): string {
 
 interface SearchRowProps {
   search: FeedDto;
+  rotation: string[];
 }
 
 function SearchRow(props: SearchRowProps): ReactElement {
-  const { search } = props;
+  const { search, rotation } = props;
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const change = useMakeChange();
@@ -97,15 +107,13 @@ function SearchRow(props: SearchRowProps): ReactElement {
         </TooltipIconButton>
       </Stack>
       <Typography variant="captionMuted" sx={{ display: "block", pl: 5 }}>
-        {yieldStats(search)}
+        {`${boardLabel(search, rotation)} · ${yieldStats(search)}`}
       </Typography>
       <Collapse in={open} unmountOnExit>
-        <Stack spacing={0.5} sx={{ pl: 5, pt: 1 }}>
-          <Typography variant="body2">
-            Query: {search.query}
-            {search.board && ` · ${search.board.name}`}
-          </Typography>
+        <Stack spacing={1} sx={{ pl: 5, pt: 1 }}>
+          <Typography variant="body2">Query: {search.query}</Typography>
           {search.reason && <Typography variant="captionMuted">{search.reason}</Typography>}
+          <SearchBoardSelect search={search} />
         </Stack>
       </Collapse>
     </Box>
@@ -115,6 +123,11 @@ function SearchRow(props: SearchRowProps): ReactElement {
 export function SearchesSection(): ReactElement {
   const query = useQuery(pilotQueries.searches());
   const searches = query.data ?? [];
+  const boards = useQuery(jobBoardQueries.list()).data ?? [];
+  const checked = useQuery(pilotQueries.state()).data?.config.boards ?? [];
+  const rotation = checked.map(
+    (domain) => boards.find((board) => board.domain === domain)?.name ?? domain,
+  );
 
   return (
     <QuerySection
@@ -127,7 +140,7 @@ export function SearchesSection(): ReactElement {
     >
       <Stack spacing={1.5} divider={<Divider />}>
         {searches.map((search) => (
-          <SearchRow key={search.id} search={search} />
+          <SearchRow key={search.id} search={search} rotation={rotation} />
         ))}
       </Stack>
     </QuerySection>

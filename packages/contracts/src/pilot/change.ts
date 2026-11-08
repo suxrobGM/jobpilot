@@ -34,6 +34,8 @@ export const pilotChangeActionSchema = z.discriminatedUnion("type", [
     searchId: z.uuid(),
     name: searchNameSchema.optional(),
     query: z.string().trim().min(1).optional(),
+    /** Pins the search to this board's domain; null returns it to the rotation. */
+    board: z.string().trim().min(1).nullable().optional(),
     reason: z.string().max(500).optional(),
   }),
   z.object({ type: z.literal("search.pause"), searchId: z.uuid() }),

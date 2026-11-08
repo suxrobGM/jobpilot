@@ -123,7 +123,7 @@ export class ChangeService {
     ) => Promise<PilotChangeModel>,
   ) {
     const domains = actions.flatMap((a) =>
-      a.type === "search.create" && a.board ? [a.board] : [],
+      (a.type === "search.create" || a.type === "search.update") && a.board ? [a.board] : [],
     );
     const boardIds = new Map<string, string | null>();
     for (const domain of new Set(domains)) {
