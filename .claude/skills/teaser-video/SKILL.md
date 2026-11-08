@@ -165,7 +165,10 @@ Rules that made the difference:
 `audio/synth.mjs` renders the music bed and SFX from oscillators and noise, so
 everything is license-free by construction. Structure follows the storyboard
 bars: ticking intro, riser into an impact on the reveal, groove under the
-product, adds an arp for the payoff, breakdown for trust, final impact. Mix
+product, adds an arp for the payoff, breakdown for trust, final impact.
+Two optional `storyboard.json` keys steer it without editing the synth:
+`grooveB` (the section where the arp and claps start, default `payoff`) and
+`hits` (sections that open on an impact). Mix
 with separate drum/tonal stems, kick sidechain, and a limiter, then check
 `ebur128` loudness (aim around -14 LUFS) and the waveform. You can't listen
 to it, so say so and invite the user to swap in a track (cuts sit on the bar

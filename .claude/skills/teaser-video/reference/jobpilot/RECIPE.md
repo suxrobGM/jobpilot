@@ -54,8 +54,9 @@ Where to change things:
   x2). Named spots (composer, terminal, Apply now, rules card) and clip sizes live in
   `src/shots.ts`, with the user's two clicks (`SENT`, `CLICKED`).
 - Sound effects: `src/cues.ts`.
-- Music: `audio/synth.mjs`. The user rejected a silent drop-out for "Your call"; keep it
-  continuous, with only an impact on the Apply-now click.
+- Music: the kit's `audio/synth.mjs`, steered by `storyboard.json` (`grooveB` and `hits`, both
+  `submit` here). The user rejected a silent drop-out for "Your call"; keep it continuous, with
+  only an impact on the Apply-now click.
 - Poster: `src/Poster.tsx`, the chat at ask-web 14.4s. It is a 60fps one-frame
   `Composition`: in `<Still>`, `Footage` reads `startFrom` at the wrong fps.
 

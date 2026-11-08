@@ -324,6 +324,9 @@ for (const { name, bars } of storyboard.sections) {
   BARS += bars;
 }
 const LENGTH = BARS * BAR + 3;
+// Optional storyboard keys: where groove B (arp, claps) starts, and sections that open on a hit.
+const GROOVE_B = S[storyboard.grooveB ?? "payoff"];
+const HITS = storyboard.hits ?? [];
 const music = buf(LENGTH);
 const drums = buf(LENGTH);
 const kicks = [];
@@ -369,7 +372,7 @@ add(
 for (let bar = S.start; bar < S.close; bar++) {
   const c = (bar - S.start) % 4;
   const inBreak = bar >= S.trust;
-  const grooveB = bar >= S.payoff && !inBreak;
+  const grooveB = bar >= GROOVE_B && !inBreak;
   add(
     music,
     pad(chords[c], BAR, {
@@ -413,7 +416,7 @@ for (let bar = S.start; bar < S.close; bar++) {
       );
     }
   }
-  if (bar >= S.payoff) {
+  if (bar >= GROOVE_B) {
     const arp = [0, 2, 3, 1, 2, 3, 1, 2];
     for (let s = 0; s < 8; s++) {
       const n = chords[c][arp[s]] + 12;
@@ -433,6 +436,9 @@ for (let bar = S.start; bar < S.close; bar++) {
       );
     }
   }
+}
+for (const name of HITS) {
+  add(drums, impact(0.85), at(S[name]));
 }
 add(music, riser(BAR, 0.4, { from: 200, to: 11000 }), at(S.close - 1));
 add(drums, impact(1), at(S.close));

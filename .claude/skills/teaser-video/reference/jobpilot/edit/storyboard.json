@@ -1,5 +1,7 @@
 {
   "bpm": 120,
+  "grooveB": "submit",
+  "hits": ["submit"],
   "sections": [
     { "name": "hook", "bars": 2 },
     { "name": "reveal", "bars": 1 },
