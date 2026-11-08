@@ -25,6 +25,8 @@ internal static class SessionEnvironment
 
         var inherited = env.GetValueOrDefault("PATH") ?? Environment.GetEnvironmentVariable("PATH");
         env["PATH"] = string.IsNullOrEmpty(inherited) ? paths.BinDir : paths.BinDir + Path.PathSeparator + inherited;
+        // Git Bash rebuilds PATH from an inherited ORIGINAL_PATH, dropping BinDir; empty unsets it.
+        env["ORIGINAL_PATH"] = "";
 
         env["JOBPILOT_SKILLS_ROOT"] = paths.SkillsDir;
         env["JOBPILOT_WORKSPACE_ROOT"] = paths.WorkingDir;
