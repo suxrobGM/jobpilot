@@ -1,4 +1,5 @@
 import { createPilotRequestBodySchema, pilotRequestSchema } from "@jobpilot/contracts/pilot";
+import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
@@ -29,4 +30,13 @@ export const pilotRequestsController = new Elysia({
           "Queues a task the user asked for by name. It runs as a normal pilot run ahead of autonomous work, with autopilot on or off.",
       },
     },
-  );
+  )
+  .post("/:id/cancel", ({ user, params }) => requests.cancel(user.id, params.id), {
+    params: idParam,
+    beforeHandle: limitMutation,
+    response: pilotRequestSchema,
+    detail: {
+      summary: "Cancel queued work",
+      description: "Stops a request that hasn't started. A running one finishes with its run.",
+    },
+  });

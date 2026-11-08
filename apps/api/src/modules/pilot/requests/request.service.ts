@@ -33,6 +33,22 @@ export class RequestService {
     return publishRequest(userId, row, "request.created");
   }
 
+  /** Only queued work stops; a running request ends with its run. */
+  async cancel(userId: string, id: string) {
+    const row = await this.prisma.$transaction(async (tx) => {
+      const [cancelled] = await tx.pilotRequest.updateManyAndReturn({
+        where: { id, userId, status: "pending" },
+        data: { status: "cancelled", finishedAt: new Date() },
+      });
+      if (!cancelled) {
+        throw conflict("Only queued work can be cancelled.");
+      }
+      await dropTaskList(tx, userId);
+      return cancelled;
+    });
+    return publishRequest(userId, row, "request.updated");
+  }
+
   /** Applying is for approved jobs; a found one the user picks is approved on the way. */
   private async approveJob(userId: string, feedId: string, key: string) {
     const job = await this.prisma.job.findFirst({
