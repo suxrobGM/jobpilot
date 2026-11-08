@@ -6,7 +6,7 @@ import { Box, Chip, Collapse, Divider, IconButton, Stack, Typography } from "@mu
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import type { FeedDto } from "@/api/types";
-import { TooltipIconButton } from "@/components/ui/buttons";
+import { LinkButton, TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
@@ -107,13 +107,15 @@ function SearchRow(props: SearchRowProps): ReactElement {
           <Delete fontSize="sm" />
         </TooltipIconButton>
       </Stack>
-      <Typography variant="captionMuted" sx={{ display: "block", pl: 5 }}>
-        {`${boardLabel(search, rotation)} · ${yieldStats(search)}`}
-      </Typography>
+      <Stack spacing={0.25} sx={{ pl: 5 }}>
+        {search.reason && <Typography variant="body2">{search.reason}</Typography>}
+        <Typography variant="captionMuted">
+          {`${boardLabel(search, rotation)} · ${yieldStats(search)}`}
+        </Typography>
+      </Stack>
       <Collapse in={open} unmountOnExit>
         <Stack spacing={1} sx={{ pl: 5, pt: 1 }}>
           <Typography variant="body2">Query: {search.query}</Typography>
-          {search.reason && <Typography variant="captionMuted">{search.reason}</Typography>}
           <SearchBoardSelect search={search} />
         </Stack>
       </Collapse>
@@ -132,7 +134,16 @@ export function SearchesSection(): ReactElement {
       errorTitle="Couldn't load the pilot's searches."
       isEmpty={searches.length === 0}
       empty={
-        <EmptyState variant="inline" title="None yet. The pilot builds these from your goals." />
+        <EmptyState
+          variant="inline"
+          title="No searches yet."
+          description="Tell the pilot what jobs you want, or turn on autopilot and it starts from your resume."
+          action={
+            <LinkButton href="/pilot" size="small" variant="outlined">
+              Open chat
+            </LinkButton>
+          }
+        />
       }
     >
       <Stack spacing={1.5} divider={<Divider />}>

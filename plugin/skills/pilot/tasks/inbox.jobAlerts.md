@@ -87,9 +87,9 @@ the procedure. A message that is not a job alert (a connection request, a newsle
    - **Skills or requirements stated** → `POST /api/fit-scores` `{brief, resumeId, minScore}`
      (`brief` a JSON object). `verdict:"trust"` → use `score`; `"deliberate"` → reason from the
      matches and gaps.
-   - **Title only, and it rules the role out** against the pilot goals and the resume (wrong
+   - **Title only, and it rules the role out** against the user's searches and resume (wrong
      function, clearly below the target level) → score it yourself under `minScore` and say so in
-     `matchReason` ("Title-only: individual-contributor data role, goals target engineering
+     `matchReason` ("Title-only: individual-contributor data role, searches target engineering
      leadership.").
    - **Title only, and it could fit** → **no** score. It stays `pending` for
      `feed.score`, which opens the posting. When unsure, leave it unscored: a wrong low

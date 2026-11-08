@@ -68,7 +68,7 @@ export interface TaskListInput extends TaskCounts, AutonomousWork {
   chat: PilotTask | null;
   // Rotates discovery across the configured boards.
   cycleCount: number;
-  // No searches yet, or no goals to derive them from.
+  // No searches yet.
   awaitingSetup: boolean;
 }
 

@@ -15,18 +15,13 @@ import { dropTaskList } from "../tasks/snapshot";
 import type { ActionContext } from "./action-context";
 import { applyActions } from "./apply-action";
 import { canUndo, storedActionsSchema, toPilotChange } from "./change-row";
-import { countSkippableApproved } from "./job-actions";
 
 /** The pilot changes its own searches but only suggests edits to what the user decided. */
 const USER_OWNED_ACTIONS: PilotChangeAction["type"][] = [
-  "goals.set",
   "rules.set",
   "answer.set",
   "answer.delete",
 ];
-
-/** Goals and rules live on the pilot state, so changing them republishes it. */
-const STATE_ACTIONS: PilotChangeAction["type"][] = ["goals.set", "rules.set"];
 
 @injectable()
 export class ChangeService {
@@ -46,16 +41,12 @@ export class ChangeService {
     return rows.map((row) => toPilotChange(row, now));
   }
 
-  async approvedJobCount(userId: string) {
-    return { count: await countSkippableApproved(this.prisma, userId) };
-  }
-
   async create(userId: string, input: CreatePilotChangeInput) {
     const { summary, actions, source, runId, propose } = input;
     // A notice's change is the user's click on it; only the pilot acting alone must propose.
     const touchesUserOwned = actions.some((action) => USER_OWNED_ACTIONS.includes(action.type));
     if (source === "pilot" && !propose && touchesUserOwned) {
-      throw forbidden("The pilot can only propose changes to goals, rules and answers.");
+      throw forbidden("The pilot can only propose changes to rules and answers.");
     }
     const change = { userId, source, summary, actions: toInputJson(actions), runId: runId ?? null };
     if (propose) {
@@ -142,7 +133,8 @@ export class ChangeService {
     for (const publishLater of afterCommit) {
       publishLater();
     }
-    if (actions.some((a) => STATE_ACTIONS.includes(a.type))) {
+    // Rules live on the pilot state, so changing them republishes it.
+    if (actions.some((a) => a.type === "rules.set")) {
       await this.pilot.publishCurrentState(userId);
     }
     return this.publishChange(row);

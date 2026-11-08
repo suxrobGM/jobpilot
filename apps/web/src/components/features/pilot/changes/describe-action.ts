@@ -29,8 +29,6 @@ function describeRules(action: Extract<PilotChangeAction, { type: "rules.set" }>
 /** One plain line per action, as the change card lists them. */
 export function describeAction(action: PilotChangeAction, names: SearchNames): string {
   switch (action.type) {
-    case "goals.set":
-      return "Goals rewritten";
     case "rules.set":
       return describeRules(action);
     case "search.create":
@@ -49,8 +47,6 @@ export function describeAction(action: PilotChangeAction, names: SearchNames): s
       return `Forgot answer: ${action.key.replaceAll("_", " ")}`;
     case "jobs.skip":
       return `Skipped ${plural(action.refs.length, "job")}: ${action.reason}`;
-    case "jobs.skipApproved":
-      return `Skipped approved jobs: ${action.reason}`;
     case "jobs.restore":
       return `Restored ${plural(action.refs.length, "job")}`;
   }

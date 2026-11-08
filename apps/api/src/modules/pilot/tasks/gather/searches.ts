@@ -69,12 +69,25 @@ export async function gatherDueSearches(
   };
 }
 
+interface SetupInput {
+  minScore: number;
+  searchCount: number;
+}
+
 /** The setup task, unless a recent attempt says to wait: a failing agent would loop on it. */
 export async function gatherSetup(
   ctx: GatherContext,
-  payload: TaskPayload<"search.setup">,
+  input: SetupInput,
 ): Promise<TaskPayload<"search.setup"> | null> {
-  const { now } = ctx;
-  const last = await latestRun(ctx, "search.setup");
-  return ranRecently(last, now, IDLE_RERUN_MS) ? null : payload;
+  const { prisma, userId, now } = ctx;
+  const [last, resumeCount] = await Promise.all([
+    latestRun(ctx, "search.setup"),
+    prisma.resume.count({ where: { userId } }),
+  ]);
+  // With no searches the first ones come from the resume.
+  const noStart = input.searchCount === 0 && resumeCount === 0;
+  if (noStart || ranRecently(last, now, IDLE_RERUN_MS)) {
+    return null;
+  }
+  return { minScore: input.minScore };
 }

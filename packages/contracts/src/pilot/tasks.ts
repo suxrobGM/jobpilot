@@ -256,19 +256,11 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "feed",
     z.object({ feedId: z.uuid(), failedCount: z.number().int() }),
   ),
-  taskVariant(
-    "search.setup",
-    "pilot",
-    z.object({
-      goals: z.string(),
-      minScore: z.number(),
-    }),
-  ),
+  taskVariant("search.setup", "pilot", z.object({ minScore: z.number() })),
   taskVariant(
     "research.explore",
     "pilot",
     z.object({
-      goals: z.string(),
       resumeId: z.uuid(),
       minScore: z.number(),
       preferCapExempt: z.boolean(),

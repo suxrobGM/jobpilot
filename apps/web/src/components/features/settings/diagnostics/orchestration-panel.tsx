@@ -23,7 +23,7 @@ const JOURNAL: Stage = { title: "Journal", role: "Records the outcome", tone: "g
 
 const EMPTY_REASON_CAPTIONS: Record<NonNullable<TaskList["emptyReason"]>, string> = {
   capReached: "Daily cap reached",
-  awaitingSetup: "Waiting for your goals",
+  awaitingSetup: "No searches yet",
   autopilotOff: "Autopilot off",
   clear: "Nothing to do",
 };

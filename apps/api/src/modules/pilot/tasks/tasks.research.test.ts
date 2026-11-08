@@ -46,12 +46,10 @@ describe("researchTrigger", () => {
 });
 
 describe("TaskListService research.explore", () => {
-  const goals = "ML research assistant roles at US universities";
   const resumeId = "0f4b6a52-7c1e-4d8a-9b3f-2e5c6d7a8b90";
 
   it("offers research with the rules and the profile's sponsorship need", async () => {
     const taskList = await service({
-      goals: goals,
       config: { preferCapExempt: true },
       primaryResumeId: resumeId,
       profile: { requiresSponsorship: true },
@@ -60,7 +58,6 @@ describe("TaskListService research.explore", () => {
       ],
     }).refresh("p1");
     expect(findTask(taskList, "research.explore")?.payload).toMatchObject({
-      goals,
       resumeId,
       preferCapExempt: true,
       requiresSponsorship: true,
@@ -70,7 +67,6 @@ describe("TaskListService research.explore", () => {
 
   it("stays out while the research feed is paused", async () => {
     const taskList = await service({
-      goals: goals,
       primaryResumeId: resumeId,
       pausedFeeds: ["research"],
     }).refresh("p1");

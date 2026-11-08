@@ -33,7 +33,7 @@ export function Pilot(): ReactElement {
             <SectionHeading
               eyebrow="How the Pilot works"
               title="Set it up once. It keeps your search going."
-              lead="Like an assistant: you set the goals and the rules, it searches, applies, and follows up, and it asks you when it needs a decision."
+              lead="Like an assistant: you say what you want, it searches, applies, and follows up, and it asks you when it needs a decision."
             />
             <Stack direction="row" sx={{ flexWrap: "wrap", gap: 2, alignItems: "center" }}>
               <LinkButton href="/install" variant="contained">

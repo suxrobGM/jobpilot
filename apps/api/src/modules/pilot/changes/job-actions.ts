@@ -1,6 +1,5 @@
-import { AUTO_APPLY_FEED_KINDS } from "@jobpilot/contracts/feed";
 import type { PilotChangeAction } from "@jobpilot/contracts/pilot";
-import type { JobStatus, Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { JobStatus, Prisma } from "@/generated/prisma/client";
 import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import type { ActionContext, ActionOf } from "./action-context";
 
@@ -11,11 +10,6 @@ const SKIPPABLE: JobStatus[] = ["queued", "pending", "approved", "needs_user"];
 const MAX_SKIPPED = 500;
 
 const RESTORED_REASON = "Restored, then skipped again.";
-
-const APPROVED_AUTO_APPLY: Prisma.JobWhereInput = {
-  status: "approved",
-  feed: { kind: { in: [...AUTO_APPLY_FEED_KINDS] } },
-};
 
 async function skipWhere(
   ctx: ActionContext,
@@ -47,16 +41,6 @@ async function skipWhere(
 export function skipJobs(ctx: ActionContext, action: ActionOf<"jobs.skip">) {
   const refs = action.refs.map((ref) => ({ feedId: ref.feedId, key: ref.key }));
   return skipWhere(ctx, { OR: refs, status: { in: SKIPPABLE } }, action.reason);
-}
-
-export function skipApprovedJobs(ctx: ActionContext, action: ActionOf<"jobs.skipApproved">) {
-  return skipWhere(ctx, APPROVED_AUTO_APPLY, action.reason);
-}
-
-/** How many jobs a `jobs.skipApproved` change would skip right now. */
-export async function countSkippableApproved(prisma: PrismaClient, userId: string) {
-  const count = await prisma.job.count({ where: { ...APPROVED_AUTO_APPLY, userId } });
-  return Math.min(count, MAX_SKIPPED);
 }
 
 export async function restoreJobs(

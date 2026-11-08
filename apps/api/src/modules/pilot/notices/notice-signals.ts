@@ -119,7 +119,7 @@ function capNotice(facts: NoticeFacts, now: Date): PilotNotice | null {
     key: "cap.unused",
     title: "The pilot is running out of jobs",
     body: `About ${Math.round(perDay)} a day this week against your cap of ${facts.dailyApplyCap}.`,
-    action: { kind: "message", label: "Find more", body: "Find more jobs that fit my goals." },
+    action: { kind: "message", label: "Find more", body: "Find more jobs that fit my searches." },
   };
 }
 

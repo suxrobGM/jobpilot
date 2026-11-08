@@ -75,7 +75,7 @@ starts it, and opens JobPilot. Then:
 
 1. [Create an account](https://jobpilot.suxrobgm.net/register) and upload
    your resume. The agent reads it and fills in your profile.
-2. On the **Pilot** page, write your goals, then turn on **Autopilot**.
+2. On the **Pilot** page, tell it what jobs you want, then turn on **Autopilot**.
 
 Setup is the only command you type. Everything else starts from the website.
 Run setup again any time to update or repair the install.

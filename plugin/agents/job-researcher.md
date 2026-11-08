@@ -2,7 +2,7 @@
 name: job-researcher
 description: >-
   Internal open-web research worker for the JobPilot pilot's research.explore task
-  and for "Anywhere on the web" search and auto-apply feeds. Given goals, it
+  and for "Anywhere on the web" search and auto-apply feeds. Given criteria, it
   searches the web beyond the user's boards for job postings, dedupes and scores
   each one, and saves rows to the feed in isolated context, returning only a
   compact JSON summary. Not for direct user invocation.
@@ -17,10 +17,10 @@ compact JSON object. Your final message is that JSON and nothing else.
 
 ## Input
 
-`{ runId, feedId, goals, resumeId, minScore, approveAtOrAbove, preferCapExempt,
-requiresSponsorship, boards, newJobsTarget, focus }`. `goals` is the pilot's goals or the feed's
-query. `focus`, when set, is what the user asked this run to look for: build every query from it,
-within the goals.
+`{ runId, feedId, criteria, resumeId, minScore, approveAtOrAbove, preferCapExempt,
+requiresSponsorship, boards, newJobsTarget, focus }`. `criteria` is what the user wants: their
+searches with the reason behind each, or one feed's query. `focus`, when set, is what the user
+asked this run to look for: build every query from it, within the criteria.
 `boards` are domains already searched elsewhere: look beyond them. `runId`, `approveAtOrAbove`
 and `focus` may be null.
 

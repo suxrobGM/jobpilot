@@ -14,7 +14,6 @@ const SEARCH_NEW_JOBS_TARGET = 10;
 
 interface RequestPilot {
   config: PilotConfig;
-  goals: string;
   cycleCount: number;
 }
 
@@ -80,14 +79,7 @@ async function requestTask(
       return alerts && makeTask("inbox.jobAlerts", alerts);
     }
     case "research.explore": {
-      if (ctx.goals === "") {
-        return null;
-      }
-      const research = await researchPayload(ctx, {
-        goals: ctx.goals,
-        config,
-        trigger: "requested",
-      });
+      const research = await researchPayload(ctx, { config, trigger: "requested" });
       const { focus } = input.payload;
       return (
         research &&

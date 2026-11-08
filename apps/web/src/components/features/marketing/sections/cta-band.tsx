@@ -20,7 +20,7 @@ const SETUP: NumberedStep[] = [
   },
   {
     title: "Turn on the Pilot",
-    body: "Write your goals and rules, then turn on autopilot. Leave it off at first and ask for a search if you'd like to check the matches.",
+    body: "Tell the Pilot what jobs you want, then turn on autopilot. Leave it off at first and ask for a search if you'd like to check the matches.",
     snippet: "Pilot → Turn on autopilot",
   },
 ];

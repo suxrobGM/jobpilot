@@ -75,7 +75,7 @@ export function SearchList(): ReactElement {
   if (searches.length === 0) {
     return (
       <Typography variant="body2Muted">
-        No searches yet. The pilot builds them from your goals.
+        No searches yet. Tell the pilot what jobs you want.
       </Typography>
     );
   }

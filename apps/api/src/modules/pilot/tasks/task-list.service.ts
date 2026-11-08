@@ -43,22 +43,19 @@ export class TaskListService {
       where: { userId },
       create: { userId },
       update: {},
-      select: { autopilot: true, cycleCount: true, config: true, goals: true },
+      select: { autopilot: true, cycleCount: true, config: true },
     });
     const { autopilot, cycleCount } = state;
     const now = new Date();
     const config = pilotConfigSchema.parse(state.config);
-    const goals = state.goals.trim();
 
     await this.maintain(userId, config, autopilot, now);
     const ctx = { prisma: this.prisma, userId, now };
     const countsRead = gatherCounts(ctx);
     const [{ searchCount, ...counts }, work, requests, chat] = await Promise.all([
       countsRead,
-      autopilot
-        ? gatherAutonomousWork(ctx, { config, goals, counts: countsRead })
-        : NO_AUTONOMOUS_WORK,
-      gatherRequests(ctx, { config, goals, cycleCount }),
+      autopilot ? gatherAutonomousWork(ctx, { config, counts: countsRead }) : NO_AUTONOMOUS_WORK,
+      gatherRequests(ctx, { config, cycleCount }),
       gatherChat(ctx),
     ]);
     void this.digest.writeIfDue(userId, now, counts.openQuestions);
@@ -72,7 +69,7 @@ export class TaskListService {
       cycleCount,
       requests,
       chat,
-      awaitingSetup: searchCount === 0 || goals === "",
+      awaitingSetup: searchCount === 0,
     });
     const taskList: TaskList = {
       ...content,

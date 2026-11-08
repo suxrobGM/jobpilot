@@ -16,7 +16,7 @@ support, follow `$JOBPILOT_SKILLS_ROOT/../agents/<agent>.md` inline.
   board:<domain>, resumeId:user.primaryResumeId, minScore:$MIN_SCORE, newJobsTarget:$NEW_JOBS,
   maxPages:null}`.
 - **`--anywhere`**: delegate one `job-researcher` run with `{runId:null, feedId:$FEED_ID,
-  goals:<query>, resumeId:user.primaryResumeId, minScore:$MIN_SCORE, approveAtOrAbove:null,
+  criteria:<query>, resumeId:user.primaryResumeId, minScore:$MIN_SCORE, approveAtOrAbove:null,
   preferCapExempt:<GET /api/pilot → config.preferCapExempt>,
   requiresSponsorship:user.requiresSponsorship, boards:<every domain from GET /api/job-boards>,
   newJobsTarget:$NEW_JOBS}`.

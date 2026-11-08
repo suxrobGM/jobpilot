@@ -5,9 +5,7 @@ import { describe, expect, it } from "bun:test";
 const stateRow = (over: Record<string, unknown>) => ({
   userId: "p1",
   autopilot: false,
-  goals: "",
   config: {},
-  goalsUpdatedAt: new Date(),
   lastCycleAt: null,
   nextWakeAt: null,
   cycleCount: 0,
@@ -25,7 +23,7 @@ interface OpenRun {
   startedAt: Date;
 }
 
-function stateService(savedGoals: string, openRun: OpenRun | null = null, savedConfig = {}) {
+function stateService(openRun: OpenRun | null = null, savedConfig = {}) {
   const rec = {
     searchResets: 0,
     searchDeletes: 0,
@@ -41,10 +39,10 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null, savedC
   };
   const db = {
     pilotState: {
-      findUnique: async () => ({ goals: savedGoals, config: savedConfig }),
+      findUnique: async () => ({ config: savedConfig }),
       upsert: async (a: { update: Record<string, unknown> }) => {
         upserts.push(a);
-        return stateRow({ goals: savedGoals, ...a.update });
+        return stateRow(a.update);
       },
     },
     pilotSearch: { updateMany: count("searchResets"), deleteMany: count("searchDeletes") },
@@ -77,26 +75,19 @@ describe("PilotService.getState", () => {
       title: "Pull the Upwork inbox",
       startedAt,
     };
-    const { svc, runQueries } = stateService("", run);
+    const { svc, runQueries } = stateService(run);
     expect((await svc.getState("p1")).currentRun).toEqual(run);
     expect(runQueries[0]).toMatchObject({
       where: { userId: "p1", finishedAt: null, expiresAt: { gt: expect.any(Date) } },
       orderBy: { startedAt: "desc" },
     });
-    expect((await stateService("").svc.getState("p1")).currentRun).toBeNull();
+    expect((await stateService().svc.getState("p1")).currentRun).toBeNull();
   });
 });
 
 describe("PilotService.setAutopilot", () => {
-  it("refuses to turn on without goals, but always turns off", async () => {
-    await expect(stateService("   ").svc.setAutopilot("p1", true)).rejects.toMatchObject({
-      status: 409,
-    });
-    expect((await stateService("").svc.setAutopilot("p1", false)).autopilot).toBe(false);
-  });
-
-  it("turns on once goals are written", async () => {
-    const { svc, upserts } = stateService("ship senior frontend roles");
+  it("stamps the start time when turned on", async () => {
+    const { svc, upserts } = stateService();
     const state = await svc.setAutopilot("p1", true);
     expect(state.autopilot).toBe(true);
     expect(upserts[0].update.autopilotSince).toBeInstanceOf(Date);
@@ -104,7 +95,7 @@ describe("PilotService.setAutopilot", () => {
 
   // `cap.unused` counts a week from the start; turning off clears it.
   it("clears the start time when turned off", async () => {
-    const { svc, upserts } = stateService("goals");
+    const { svc, upserts } = stateService();
     await svc.setAutopilot("p1", false);
     expect(upserts[0].update.autopilotSince).toBeNull();
   });
@@ -112,7 +103,7 @@ describe("PilotService.setAutopilot", () => {
 
 describe("PilotService.recordCycle", () => {
   it("counts the check as a cycle and plans the next wake", async () => {
-    const { svc } = stateService("goals");
+    const { svc } = stateService();
     const before = Date.now();
     const state = await svc.recordCycle("p1", { sleepSeconds: 1800 });
     expect(state.lastCycleAt).toBeInstanceOf(Date);
@@ -122,7 +113,7 @@ describe("PilotService.recordCycle", () => {
 
 describe("PilotService.updateSettings", () => {
   it("stores the rotation as linked board domains, folding aliases and repeats", async () => {
-    const { svc, upserts } = stateService("goals");
+    const { svc, upserts } = stateService();
     await svc.updateSettings("p1", {
       boards: ["https://hiring.cafe/", "LinkedIn.com", "hiringcafe.com"],
     });
@@ -130,7 +121,7 @@ describe("PilotService.updateSettings", () => {
   });
 
   it("refuses a board the user hasn't linked, since the searcher can't open it", async () => {
-    const { svc, upserts } = stateService("goals");
+    const { svc, upserts } = stateService();
     await expect(
       svc.updateSettings("p1", { boards: ["linkedin.com", "dice.com"] }),
     ).rejects.toThrow("dice.com");

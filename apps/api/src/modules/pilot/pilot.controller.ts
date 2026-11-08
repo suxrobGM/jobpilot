@@ -37,7 +37,7 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Update pilot settings",
       description:
-        "Patches boards, check interval and networking. Goals and rules change through /pilot/changes; job alerts through their own route.",
+        "Patches boards, check interval and networking. Rules change through /pilot/changes; job alerts through their own route.",
     },
   })
   .put("/autopilot", ({ user, body }) => pilot.setAutopilot(user.id, body.enabled), {
@@ -47,7 +47,7 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Turn autopilot on or off",
       description:
-        "With autopilot off, the pilot runs only what the user asks for: requests, chat and answered questions. Turning it on rejects with 409 when the goals are empty.",
+        "With autopilot off, the pilot runs only what the user asks for: requests, chat and answered questions.",
     },
   })
   .delete("/runs", ({ user }) => pilot.reset(user.id), {

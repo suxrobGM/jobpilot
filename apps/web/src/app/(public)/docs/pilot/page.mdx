@@ -2,12 +2,12 @@ import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("pilot", {
   description:
-    "Let JobPilot run your search: set your goals once, talk to it like an assistant, and step in only when it needs you.",
+    "Let JobPilot run your search: tell it what you want, talk to it like an assistant, and step in only when it needs you.",
 });
 
 # The Pilot
 
-The Pilot runs your job search. You give it goals and a few rules. It finds
+The Pilot runs your job search. You tell it what jobs you want. It finds
 and scores jobs, applies, reaches out to people, reads replies, and drafts
 interview replies and prep notes. When it needs a decision, it asks.
 
@@ -25,11 +25,21 @@ It works through the agent on your computer, so you can watch every step.
   bottom: "Applied to Acme (82) and Globex (74)", with a line per job below.
   Your messages, changes with **Undo**, and the morning summary show here too.
   The last line says what it's doing now.
-- **Overview** (right). A chart of the week, your brief (goals and rules), and
-  where the Pilot looks: the boards it rotates, your searches with
-  applications sent from each this week, job alert emails, and web search.
+- **Overview** (right). A chart of the week, where the Pilot looks (the
+  boards it rotates, your searches with applications sent from each this
+  week, job alert emails, and web search), and your rules.
 
 On a phone, these are three tabs: **Chat**, **Needs you**, and **Overview**.
+
+## Getting started
+
+Tell the Pilot what you want in the message box, the way you'd brief a
+recruiter: "Senior frontend roles, remote in the US, at least $150k. Skip
+crypto and agencies." It turns that into a few searches and rules and shows
+the change in the thread with **Undo**. Turn on **Autopilot** and it starts.
+
+If you turn on autopilot first, the Pilot sets up searches from your resume.
+Tell it later if you want something different.
 
 ## Autopilot
 
@@ -55,7 +65,7 @@ once. To search beyond your boards now, ask: "Find more jobs beyond my boards",
 or narrow it, like "find ML roles at university labs in PA". The Pilot says what
 it will search before it starts, and **Cancel** on that line in the thread stops
 it while it's still queued. To change your limits, choose **Edit** next to
-**Brief** in the Overview.
+**Rules** in the Overview.
 
 Buttons elsewhere in the app, like **Apply now** on a job, work the same way:
 the request shows in the thread and runs next, with autopilot on or off.
@@ -67,27 +77,27 @@ While a task runs, its line in the thread has three buttons:
   resume for this one", without stopping it.
 - **Stop** ends the task. The Pilot moves on.
 
-## Goals and rules
+## Searches and rules
 
-You write your goals when you set up the Pilot. Later, tell it what to change
-in the message box, or choose **Edit** next to Brief in the Overview. That page
-also lists your searches and standing answers.
+To change what the Pilot looks for, tell it in the message box: "add
+research engineer roles", "only Boston and remote", "drop the data analyst
+search". To see everything at once, choose **Manage** next to **Sources** in
+the Overview. That page lists your searches, rules, and standing answers.
 
-- **Goals.** What you want, in your own words: role, what matters most, hard
-  limits. For example, "senior TypeScript, remote, at least $150k".
+- **Searches.** What the Pilot looks for. Each shows what it's after in your
+  words, like "Series A-C startups; needs OPT sponsorship". A search that
+  keeps finding new jobs runs more often; one that comes up empty runs less.
+  **Resume all** under **Searches** restarts paused ones.
 - **Rules.** Applications per day, the lowest match score worth applying to,
   and **deal-breakers** that rule a job out, like "security clearance" or
   "unpaid". The server enforces these, so the Pilot can't go past them.
-- **Searches.** The Pilot writes these from your goals. A search that keeps
-  finding new jobs runs more often; one that comes up empty runs less. Ask it
-  to add, pause, or remove one. **Resume all** under **Searches** restarts
-  paused ones.
 - **Standing answers.** When a form asks something that applies to other jobs
   too, like your salary expectation, save your answer and the Pilot reuses it.
 
-The Pilot changes its own searches freely. Changes to your goals, rules, and
-standing answers are only suggested; you approve or dismiss each one under
-**Needs you**. Every change can be undone for 7 days.
+What you ask for in a message is done right away. On its own, the Pilot
+changes only its searches; changes to your rules and standing answers are
+suggested, and you approve or dismiss each one under **Needs you**. Every
+change can be undone for 7 days.
 
 ## Sources
 
@@ -97,13 +107,13 @@ ask the Pilot to find more jobs.
 
 - **Job boards.** The Pilot runs each search on the boards you check, one board
   per cycle, in the order you set. A search pinned to a board stays on that
-  board: open it under **Goals & rules** and choose its **Board**. With no board checked, unpinned searches can't run, and the Pilot asks
+  board: open it under **Searches & rules** and choose its **Board**. With no board checked, unpinned searches can't run, and the Pilot asks
   you to pick one. Set boards, their order, and their logins on the
   **Job boards** page.
 - **Job alert emails.** Reads job alert emails from boards like LinkedIn and
   adds the jobs. Set the schedule under **Settings → Behavior**.
 - **Web search.** Searches the web for postings your boards miss, such as
-  company career pages and university and lab portals. It runs when you first set goals, then
+  company career pages and university and lab portals. It runs once your first searches exist, then
   weekly, and sooner when your searches keep coming up empty. It never logs in,
   signs up, or applies while researching.
 
@@ -132,7 +142,7 @@ H-1B cap-exempt employers** in your rules to apply to those first.
 | Reads sign-in codes sent to your connected email | Screening questions it has no saved answer for |
 | Sends networking emails set to **Auto-send** | Sending a LinkedIn message |
 | Follows up, as your settings allow | Sending an interview reply |
-| Reads replies and suggests a new status | Changing your goals, rules, or standing answers |
+| Reads replies and suggests a new status | Changing your rules or standing answers |
 | Drafts emails, interview replies, and prep notes | Publishing a post |
 | Adds, renames, and pauses its own searches | Adding a board it found |
 

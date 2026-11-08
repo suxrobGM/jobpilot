@@ -21,7 +21,6 @@ interface FakeJob {
 }
 
 export interface FakeState {
-  goals: string;
   config: Record<string, unknown>;
   searches: FakeSearch[];
   jobs: FakeJob[];
@@ -80,11 +79,8 @@ function fakeTx(state: FakeState): ChangeTx {
 
   const tx = {
     pilotState: {
-      upsert: async () => ({ goals: state.goals, config: state.config }),
-      update: async ({ data }: { data: { goals?: string; config?: Record<string, unknown> } }) => {
-        if (data.goals !== undefined) {
-          state.goals = data.goals;
-        }
+      upsert: async () => ({ config: state.config }),
+      update: async ({ data }: { data: { config?: Record<string, unknown> } }) => {
         if (data.config !== undefined) {
           state.config = data.config;
         }

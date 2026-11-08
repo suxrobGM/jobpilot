@@ -8,7 +8,6 @@ const SEARCH = "22222222-2222-4222-8222-222222222222";
 
 function initialState(): FakeState {
   return {
-    goals: "ML engineer, new grad",
     config: pilotConfigSchema.parse({ dealBreakers: ["clearance"] }),
     searches: [
       {
@@ -18,7 +17,7 @@ function initialState(): FakeState {
         query: "machine learning engineer new grad",
         boardId: "board-1",
         resumeId: null,
-        reason: "Matches the goals",
+        reason: "New-grad ML roles",
         pausedAt: null,
         archivedAt: null,
       },
@@ -35,7 +34,6 @@ function initialState(): FakeState {
 function snapshot(state: FakeState) {
   const live = state.searches.filter((search) => search.archivedAt === null);
   return {
-    goals: state.goals,
     config: state.config,
     searches: live.map(({ name, query, boardId, resumeId, reason }) => ({
       name,
@@ -50,7 +48,6 @@ function snapshot(state: FakeState) {
 }
 
 const CASES: [string, PilotChangeAction][] = [
-  ["goals.set", { type: "goals.set", goals: "Research engineer roles in Pittsburgh" }],
   ["rules.set", { type: "rules.set", minScore: 70, dealBreakers: ["clearance", "relocation"] }],
   [
     "search.create",
@@ -73,7 +70,7 @@ const CASES: [string, PilotChangeAction][] = [
         { feedId: FEED, key: "k1" },
         { feedId: FEED, key: "k2" },
       ],
-      reason: "Goals changed",
+      reason: "Out of scope",
     },
   ],
 ];

@@ -54,11 +54,13 @@ A `400` names the bad field: fix it and post again. Then stop.
 
 ## Changes and requests
 
-- **Changes.** Edit goals, rules, searches and standing answers only through `POST
-  /api/pilot/changes` (`source` `"pilot"`, or `"chat"` in a chat reply; `runId` this run). The user
-  can undo every applied change. Your own searches you may change outright; goals, rules and
-  answers only as a proposal (`"propose": true`), which the server enforces. The task file says
-  which.
+- **What the user wants** lives in their searches (`GET /api/feeds?kind=search`: each `query` and
+  the `reason` behind it), the rules (`GET /api/pilot` → `config`: cap, min score, deal-breakers)
+  and the resume. The user steers all three in chat.
+- **Changes.** Edit rules, searches and standing answers only through `POST /api/pilot/changes`
+  (`source` `"pilot"`, or `"chat"` in a chat reply; `runId` this run). The user can undo every
+  applied change. Your own searches you may change outright; rules and answers only as a proposal
+  (`"propose": true`), which the server enforces. The task file says which.
 - **Requests.** Work the user asked for arrives as an ordinary task whose run came from a request.
   Do it like any other run. In a chat reply, queue work with `POST /api/pilot/requests`.
 - **Replies.** A `chat.reply` run puts its answer in `detail.reply`; it becomes your message to the

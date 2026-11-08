@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Divider, Stack } from "@mui/material";
-import { BriefSummary } from "./brief-summary";
+import { RulesSummary } from "./rules-summary";
 import { SourcesSection } from "./sources-section";
 import { StealthCodeBanner } from "./stealth-code-banner";
 import { WeekSummary } from "./week-summary";
@@ -11,8 +11,8 @@ export function PilotOverview(): ReactElement {
     <Stack spacing={3} sx={{ px: 0.5 }}>
       <Stack spacing={3} divider={<Divider />}>
         <WeekSummary />
-        <BriefSummary />
         <SourcesSection />
+        <RulesSummary />
       </Stack>
       <StealthCodeBanner />
     </Stack>

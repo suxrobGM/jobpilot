@@ -3,6 +3,7 @@
 import { type ReactElement, useState } from "react";
 import { AddLink, ArrowUpward } from "@mui/icons-material";
 import { Button, Card, Chip, InputBase, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
@@ -18,11 +19,19 @@ const SUGGESTED_PROMPTS = [
   "Skip jobs that need a security clearance",
 ];
 
+// Before any search exists, the first message is how the user sets the pilot up.
+const SETUP_PROMPTS = [
+  "Set up searches from my resume",
+  "Senior frontend roles, remote in the US. Skip crypto and agencies.",
+];
+
 /** Talk to the pilot; its reply runs in the user's own agent session ahead of other work. */
 export function Composer(): ReactElement {
   const state = usePilotState();
   const [text, setText] = useState("");
   const [addingLinks, setAddingLinks] = useState(false);
+  const settingUp = useQuery(pilotQueries.searches()).data?.length === 0;
+  const prompts = settingUp ? SETUP_PROMPTS : SUGGESTED_PROMPTS;
   const links = parseLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
   const empty = text.trim() === "";
@@ -49,7 +58,7 @@ export function Composer(): ReactElement {
           direction="row"
           sx={{ flexWrap: { xs: "nowrap", sm: "wrap" }, overflowX: "auto", gap: 0.75 }}
         >
-          {SUGGESTED_PROMPTS.map((prompt) => (
+          {prompts.map((prompt) => (
             <Chip
               key={prompt}
               label={prompt}
@@ -76,7 +85,11 @@ export function Composer(): ReactElement {
           minRows={1}
           maxRows={8}
           fullWidth
-          placeholder="Ask the pilot, change a rule, or paste job links…"
+          placeholder={
+            settingUp
+              ? "Tell the pilot what jobs you want…"
+              : "Ask the pilot, change a rule, or paste job links…"
+          }
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {

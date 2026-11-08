@@ -1,10 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, FormControlLabel, Stack, Switch, Tooltip, Typography } from "@mui/material";
+import { FormControlLabel, Stack, Switch, Typography } from "@mui/material";
 import { PageHeader } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
-import { hasGoals } from "../pilot-status";
 import { useAutopilot } from "../use-autopilot";
 import { usePilotState } from "../use-pilot-state";
 
@@ -13,7 +12,6 @@ export function PilotHeader(): ReactElement {
   const state = usePilotState();
   const confirm = useConfirm();
   const autopilot = useAutopilot();
-  const goalsMissing = !hasGoals(state);
 
   const toggle = async (enabled: boolean): Promise<void> => {
     if (enabled) {
@@ -42,23 +40,18 @@ export function PilotHeader(): ReactElement {
             </Typography>
             {" today"}
           </Typography>
-          <Tooltip title={goalsMissing && !state.autopilot ? "Write your goals first." : ""}>
-            {/* A disabled switch emits no pointer events, so the tooltip hovers this box. */}
-            <Box component="span">
-              <FormControlLabel
-                label={<Typography variant="body2Muted">Autopilot</Typography>}
-                disabled={autopilot.isPending || (goalsMissing && !state.autopilot)}
-                sx={{ mr: 0 }}
-                control={
-                  <Switch
-                    size="small"
-                    checked={state.autopilot}
-                    onChange={(_, checked) => void toggle(checked)}
-                  />
-                }
+          <FormControlLabel
+            label={<Typography variant="body2Muted">Autopilot</Typography>}
+            disabled={autopilot.isPending}
+            sx={{ mr: 0 }}
+            control={
+              <Switch
+                size="small"
+                checked={state.autopilot}
+                onChange={(_, checked) => void toggle(checked)}
               />
-            </Box>
-          </Tooltip>
+            }
+          />
         </Stack>
       }
     />

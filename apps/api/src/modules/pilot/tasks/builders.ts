@@ -178,13 +178,9 @@ export const tune = (feedId: string): TaskPayload<"search.tune"> => ({
   topSkipReasons: ["overqualified"],
 });
 
-export const setup: TaskPayload<"search.setup"> = {
-  goals: "Senior TypeScript roles, remote",
-  minScore: 60,
-};
+export const setup: TaskPayload<"search.setup"> = { minScore: 60 };
 
 export const research = (trigger: ResearchTask["trigger"]): ResearchTask => ({
-  goals: "ML research assistant roles at US universities",
   resumeId: "0f4b6a52-7c1e-4d8a-9b3f-2e5c6d7a8b90",
   minScore: 60,
   preferCapExempt: true,

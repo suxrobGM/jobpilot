@@ -73,38 +73,33 @@ describe("TaskListService search.discover", () => {
 });
 
 describe("TaskListService search.setup", () => {
-  const goals = "Senior TS roles, remote";
   const findSetup = (taskList: Parameters<typeof findTask>[0]) =>
     findTask(taskList, "search.setup");
 
-  it("derives searches from the goals when none exist", async () => {
-    const taskList = await service({
-      config: { minScore: 70 },
-      goals: `  ${goals} `,
-    }).refresh("p1");
-    expect(findSetup(taskList)?.payload).toEqual({ goals, minScore: 70 });
+  it("starts from the resume when no search exists", async () => {
+    const taskList = await service({ config: { minScore: 70 }, resumeCount: 1 }).refresh("p1");
+    expect(findSetup(taskList)?.payload).toEqual({ minScore: 70 });
   });
 
   it("refills while the apply cap has room and every search is waiting", async () => {
     const taskList = await service({
-      goals: goals,
       pilotSearches: [futureRow({ lastRunAt: new Date() })],
     }).refresh("p1");
     expect(findSetup(taskList)).toBeDefined();
   });
 
-  it("stays out when goals are blank, the cap is spent, a try is recent, or work is queued", async () => {
-    const blank = await service({ goals: "   " }).refresh("p1");
+  it("stays out with nothing to start from, the cap spent, a try recent, or work queued", async () => {
+    const blank = await service({}).refresh("p1");
     expect(findSetup(blank)).toBeUndefined();
     expect(blank.emptyReason).toBe("awaitingSetup");
 
     const cases = [
       { ...spentCap, pilotSearches: [futureRow({ lastRunAt: new Date() })] },
-      { latestRuns: { "search.setup": { finishedAt: null } } },
+      { resumeCount: 1, latestRuns: { "search.setup": { finishedAt: null } } },
       { approvedJobs: [approvedJob()] },
     ];
     for (const over of cases) {
-      const taskList = await service({ goals: goals, ...over }).refresh("p1");
+      const taskList = await service(over).refresh("p1");
       expect(findSetup(taskList)).toBeUndefined();
     }
   });

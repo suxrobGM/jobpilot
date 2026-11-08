@@ -41,9 +41,9 @@ Setup installs and starts it. You start it again from the agent drawer.
 
 ## What happens when it applies
 
-Say your goals ask for "senior TypeScript, remote":
+Say you tell the Pilot you want "senior TypeScript, remote":
 
-1. The Pilot turns your goals into a few named searches.
+1. The Pilot turns that into a few named searches.
 2. A search runs: the agent opens a job board in the browser, signing in with
    your saved login if needed.
 3. It scores each job against your resume and skips ones that don't fit, hit
@@ -86,8 +86,8 @@ before starting anything new.
 ## Rules it can't break
 
 When the Pilot needs a decision, like a salary question or an interview
-invite, it asks you, and the job waits. It only suggests changes to your
-goals, rules, and saved answers, and every change has Undo.
+invite, it asks you, and the job waits. On its own it only suggests changes
+to your rules and saved answers, and every change has Undo.
 
 The rules that matter most are enforced by the server, not just told to the
 AI: your daily application and networking limits, never sending a LinkedIn

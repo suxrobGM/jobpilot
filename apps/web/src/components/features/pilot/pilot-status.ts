@@ -40,10 +40,6 @@ export const PILOT_MODE_LOOK: Record<PilotMode, PilotModeLook> = {
   unknown: { tone: "green", label: "Running", pulsing: false, dimmed: false },
 };
 
-export function hasGoals(state: Pick<PilotState, "goals">): boolean {
-  return state.goals.trim() !== "";
-}
-
 function isHostOffline(health: TerminalHealth | null): boolean {
   return health === "offline" || health === "uninstalled" || health === "blocked";
 }

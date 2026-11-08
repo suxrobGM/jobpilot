@@ -4,26 +4,25 @@ import { type ReactElement, type ReactNode, useState } from "react";
 import { Button, Dialog, DialogContent, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
-import { credentialQueries, resumeQueries, userQueries } from "@/api/queries";
+import { credentialQueries, pilotQueries, resumeQueries, userQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { ChecklistRow } from "@/components/ui/display";
 import { DialogHeader } from "@/components/ui/feedback";
 import { plural } from "@/utils/format";
-import { hasGoals } from "../../pilot-status";
 import { usePilotState } from "../../use-pilot-state";
 import { PilotTurn } from "../thread/pilot-turn";
+
+interface StepLinkProps {
+  href: Route;
+  action: string;
+}
 
 interface Step {
   key: string;
   label: string;
   done: boolean;
-  href: Route;
-  action: string;
-}
-
-interface StepLinkProps {
-  href: Route;
-  action: string;
+  /** Null when the step happens right here, in the composer. */
+  link: StepLinkProps | null;
 }
 
 function StepLink(props: StepLinkProps): ReactElement {
@@ -45,9 +44,10 @@ export function SetupTurn(): ReactNode {
   const profile = useQuery(userQueries.detail()).data;
   const resumes = useQuery(resumeQueries.list()).data;
   const credentials = useQuery(credentialQueries.list()).data;
+  const searches = useQuery(pilotQueries.searches()).data;
 
   // Don't flash a step while the queries load.
-  if (!profile || !resumes || !credentials) {
+  if (!profile || !resumes || !credentials || !searches) {
     return null;
   }
 
@@ -56,36 +56,32 @@ export function SetupTurn(): ReactNode {
       key: "resume",
       label: "Upload a resume. I score jobs against it and apply with it.",
       done: resumes.length > 0,
-      href: "/resumes",
-      action: "Upload",
+      link: { href: "/resumes", action: "Upload" },
+    },
+    {
+      key: "searches",
+      label:
+        "Tell me what jobs you want, in a message below. Or turn on autopilot and I'll start from your resume.",
+      done: searches.length > 0,
+      link: null,
     },
     {
       key: "profile",
       label: "Add your address. Application forms ask for it.",
       done: Boolean(profile.user?.street && profile.user.city),
-      href: "/settings/profile",
-      action: "Fill in",
-    },
-    {
-      key: "goals",
-      label: "Tell me what jobs you want. I build my searches from your goals.",
-      done: hasGoals(state),
-      href: "/pilot/goals",
-      action: "Write goals",
+      link: { href: "/settings/profile", action: "Fill in" },
     },
     {
       key: "boards",
       label: "Check the job boards I should search.",
       done: state.config.boards.length > 0,
-      href: "/boards",
-      action: "Pick boards",
+      link: { href: "/boards", action: "Pick boards" },
     },
     {
       key: "credentials",
       label: "Save your job-board logins so I can sign in before I apply.",
       done: credentials.length > 0,
-      href: "/boards",
-      action: "Add",
+      link: { href: "/boards", action: "Add" },
     },
   ];
 
@@ -98,7 +94,7 @@ export function SetupTurn(): ReactNode {
     <PilotTurn>
       <Typography variant="body2">{`Before I can work on my own: ${next.label}`}</Typography>
       <Stack direction="row" spacing={1}>
-        <StepLink href={next.href} action={next.action} />
+        {next.link && <StepLink {...next.link} />}
         {left.length > 1 && (
           <Button size="small" color="inherit" onClick={() => setOpen(true)}>
             {plural(left.length - 1, "more step")}
@@ -117,7 +113,7 @@ export function SetupTurn(): ReactNode {
                 key={step.key}
                 done={step.done}
                 label={step.label}
-                action={<StepLink href={step.href} action={step.action} />}
+                action={step.link && <StepLink {...step.link} />}
               />
             ))}
           </Stack>

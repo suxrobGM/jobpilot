@@ -9,7 +9,6 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
-import { approvedJobCountSchema } from "./change.schema";
 import { ChangeService } from "./change.service";
 
 const changes = container.get(ChangeService);
@@ -25,15 +24,7 @@ export const pilotChangesController = new Elysia({
     response: pilotChangeListSchema,
     detail: {
       summary: "List changes",
-      description: "The user's newest 100 changes to goals, rules, searches, answers and jobs.",
-    },
-  })
-  .get("/approved-jobs", ({ user }) => changes.approvedJobCount(user.id), {
-    response: approvedJobCountSchema,
-    detail: {
-      summary: "Count approved jobs a goals change would drop",
-      description:
-        "Approved jobs in auto-apply feeds, the ones a jobs.skipApproved action skips, capped at what one change skips.",
+      description: "The user's newest 100 changes to rules, searches, answers and jobs.",
     },
   })
   .post("/", ({ user, body }) => changes.create(user.id, body), {
@@ -43,7 +34,7 @@ export const pilotChangesController = new Elysia({
     detail: {
       summary: "Make or propose a change",
       description:
-        "Applies the actions in one transaction and stores their inverse for Undo, or with propose: true stores them for the user to apply or dismiss. A pilot change to goals, rules or answers must be a proposal.",
+        "Applies the actions in one transaction and stores their inverse for Undo, or with propose: true stores them for the user to apply or dismiss. A pilot change to rules or answers must be a proposal.",
     },
   })
   .post("/:id/apply", ({ user, params }) => changes.applyProposed(user.id, params.id), {

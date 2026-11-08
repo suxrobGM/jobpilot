@@ -57,9 +57,7 @@ export const pilotStateSchema = z.object({
   userId: z.uuid(),
   // Autonomous work runs only while on; requests, chat and answered questions always run.
   autopilot: z.boolean(),
-  goals: z.string(),
   config: pilotConfigSchema,
-  goalsUpdatedAt: z.date().nullable(),
   lastCycleAt: z.date().nullable(),
   nextWakeAt: z.date().nullable(),
   cycleCount: z.number().int(),

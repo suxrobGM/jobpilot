@@ -57,7 +57,6 @@ async function researchResumeId(ctx: GatherContext): Promise<string | null> {
 }
 
 interface ResearchInput {
-  goals: string;
   config: PilotConfig;
   trigger: ResearchTrigger;
 }
@@ -76,7 +75,6 @@ export async function researchPayload(
     return null;
   }
   return {
-    goals: input.goals,
     resumeId,
     minScore: input.config.minScore,
     preferCapExempt: input.config.preferCapExempt,
@@ -87,7 +85,6 @@ export async function researchPayload(
 }
 
 interface ResearchPilot {
-  goals: string;
   config: PilotConfig;
   searchCount: number;
 }
@@ -117,5 +114,5 @@ export async function gatherResearch(
   if (!trigger) {
     return null;
   }
-  return researchPayload(ctx, { goals: pilot.goals, config: pilot.config, trigger });
+  return researchPayload(ctx, { config: pilot.config, trigger });
 }

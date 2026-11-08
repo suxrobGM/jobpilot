@@ -6,7 +6,7 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
-import { conflict, unprocessable } from "@/common/errors";
+import { unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
@@ -39,9 +39,7 @@ export class PilotService {
     return {
       userId: row.userId,
       autopilot: row.autopilot,
-      goals: row.goals,
       config,
-      goalsUpdatedAt: row.goalsUpdatedAt,
       lastCycleAt: row.lastCycleAt,
       nextWakeAt: row.nextWakeAt,
       cycleCount: row.cycleCount,
@@ -71,7 +69,7 @@ export class PilotService {
     return this.toState(row);
   }
 
-  /** Settings outside goals and rules; a change rebuilds the task list. */
+  /** Settings outside the rules; a change rebuilds the task list. */
   async updateSettings(userId: string, body: UpdatePilotSettingsInput) {
     const saved = await this.prisma.pilotState.findUnique({
       where: { userId },
@@ -81,7 +79,6 @@ export class PilotService {
     const boards = body.boards ? await this.linkedRotation(userId, body.boards) : config.boards;
     const data = {
       config: toInputJson({ ...config, ...body, boards }),
-      goalsUpdatedAt: new Date(),
       ...TASK_LIST_SNAPSHOT_RESET,
     };
     const row = await this.prisma.pilotState.upsert({
@@ -107,15 +104,12 @@ export class PilotService {
     return domains;
   }
 
-  /** Autopilot gates only autonomous work; it needs goals to have anything to work toward. */
+  /** Autopilot gates only autonomous work; with no searches yet, it starts from the resume. */
   async setAutopilot(userId: string, enabled: boolean) {
     const saved = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { goals: true, autopilotSince: true },
+      select: { autopilotSince: true },
     });
-    if (enabled && (saved?.goals ?? "").trim() === "") {
-      throw conflict("Write the pilot's goals before turning on autopilot.");
-    }
     // Turning it on again keeps the original start.
     const autopilotSince = enabled ? (saved?.autopilotSince ?? new Date()) : null;
     const row = await this.prisma.pilotState.upsert({

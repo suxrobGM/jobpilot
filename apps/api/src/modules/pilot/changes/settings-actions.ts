@@ -3,50 +3,21 @@ import { notFound } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import type { ActionContext, ActionOf } from "./action-context";
 
-async function readInstructions(ctx: ActionContext) {
-  const row = await ctx.tx.pilotState.upsert({
-    where: { userId: ctx.userId },
-    create: { userId: ctx.userId },
-    update: {},
-    select: { goals: true, config: true },
-  });
-  return {
-    goals: row.goals,
-    config: pilotConfigSchema.parse(row.config),
-  };
-}
-
-export async function setGoals(
-  ctx: ActionContext,
-  action: ActionOf<"goals.set">,
-): Promise<PilotChangeAction> {
-  const { goals } = await readInstructions(ctx);
-  await ctx.tx.pilotState.update({
-    where: { userId: ctx.userId },
-    data: { goals: action.goals, goalsUpdatedAt: ctx.now },
-  });
-  // Searches picked for the old goals all come due now.
-  if (goals !== action.goals) {
-    await ctx.tx.feed.updateMany({
-      where: { userId: ctx.userId, kind: "search", archivedAt: null },
-      data: { emptyRuns: 0, nextRunAt: ctx.now },
-    });
-  }
-  return { type: "goals.set", goals };
-}
-
 export async function setRules(
   ctx: ActionContext,
   action: ActionOf<"rules.set">,
 ): Promise<PilotChangeAction> {
-  const { config } = await readInstructions(ctx);
+  const row = await ctx.tx.pilotState.upsert({
+    where: { userId: ctx.userId },
+    create: { userId: ctx.userId },
+    update: {},
+    select: { config: true },
+  });
+  const config = pilotConfigSchema.parse(row.config);
   const { type: _, ...rules } = action;
   await ctx.tx.pilotState.update({
     where: { userId: ctx.userId },
-    data: {
-      config: toInputJson({ ...config, ...rules }),
-      goalsUpdatedAt: ctx.now,
-    },
+    data: { config: toInputJson({ ...config, ...rules }) },
   });
   return {
     type: "rules.set",

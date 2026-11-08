@@ -128,7 +128,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   "search.setup": {
     priority: 520,
     subjectId: () => "setup",
-    title: () => "Set up searches from your goals",
+    title: () => "Set up searches",
   },
   // Finish scoring what was found before discovering more.
   "feed.score": {

@@ -35,7 +35,7 @@ function BoardChips(): ReactElement {
 /** Where the pilot finds jobs: boards, the searches it runs on them, alert emails, the web. */
 export function SourcesSection(): ReactElement {
   return (
-    <SideSection title="Sources" link={{ label: "Manage", href: "/pilot/goals" }}>
+    <SideSection title="Sources" link={{ label: "Manage", href: "/pilot/searches" }}>
       <Stack spacing={1.5}>
         <BoardChips />
         <SearchList />

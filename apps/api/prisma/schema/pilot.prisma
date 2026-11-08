@@ -105,10 +105,8 @@ model PilotState {
   autopilot         Boolean   @default(false)
   // Set when autopilot turns on; `cap.unused` waits for a week of it.
   autopilotSince    DateTime? @map("autopilot_since") @db.Timestamptz(3)
-  goals             String    @default("")
   // Rules and settings; `pilotConfigSchema` parses it.
   config            Json      @default("{}")
-  goalsUpdatedAt    DateTime? @map("goals_updated_at") @db.Timestamptz(3)
   taskListVersion   String?   @map("task_list_version")
   taskListExpiresAt DateTime? @map("task_list_expires_at") @db.Timestamptz(3)
   taskListSnapshot  Json?     @map("task_list_snapshot")
@@ -202,7 +200,7 @@ model PilotJournalEntry {
 }
 
 /**
- * An edit to goals, rules, searches, answers or jobs, applied with an inverse or proposed.
+ * An edit to rules, searches, answers or jobs, applied with an inverse or proposed.
  */
 model PilotChange {
   id        String            @id @default(uuid(7)) @db.Uuid

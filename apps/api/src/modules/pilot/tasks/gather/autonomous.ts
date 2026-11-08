@@ -38,7 +38,6 @@ export const NO_AUTONOMOUS_WORK: AutonomousWork = {
 
 interface AutonomousPilot {
   config: PilotConfig;
-  goals: string;
   /** Still in flight, so the signals wave overlaps it. */
   counts: Promise<GatheredCounts>;
 }
@@ -48,7 +47,7 @@ export async function gatherAutonomousWork(
   ctx: GatherContext,
   pilot: AutonomousPilot,
 ): Promise<AutonomousWork> {
-  const { config, goals } = pilot;
+  const { config } = pilot;
   const [{ searchCount, ...counts }, signals] = await Promise.all([
     pilot.counts,
     allNamed({
@@ -82,13 +81,13 @@ export async function gatherAutonomousWork(
 
   const { searches, ...queued } = queue;
   const quiet = isPipelineQuiet({ ...counts, ...signals, ...searches, ...queued });
-  // Blank goals need no task: emptyReason "awaitingSetup" already says so.
-  const hasGoals = goals !== "";
-  const canSetUp = quiet && hasGoals && (searchCount === 0 || appliesLeft > 0);
+  const canSetUp = quiet && (searchCount === 0 || appliesLeft > 0);
+  // Research aims where the searches point, so it waits for the first ones.
+  const canResearch = quiet && searchCount > 0;
   const idle = await allNamed({
     reviews: quiet ? gatherFeedReviews(ctx) : NO_REVIEWS,
-    setup: canSetUp ? gatherSetup(ctx, { goals, minScore: config.minScore }) : null,
-    research: quiet && hasGoals ? gatherResearch(ctx, { goals, config, searchCount }) : null,
+    setup: canSetUp ? gatherSetup(ctx, { minScore: config.minScore, searchCount }) : null,
+    research: canResearch ? gatherResearch(ctx, { config, searchCount }) : null,
   });
 
   return {

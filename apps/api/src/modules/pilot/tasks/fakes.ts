@@ -33,7 +33,8 @@ export interface Over {
   /** The latest run per task type, for the once-per-user dampers. */
   latestRuns?: Partial<Record<TaskType, LatestRun | null>>;
   config?: unknown;
-  goals?: string;
+  /** Resumes on file; the first searches come from one. */
+  resumeCount?: number;
   jobAlertEmails?: { id: string }[];
   appliedToday?: number;
   pilotSearches?: Row[];
@@ -177,7 +178,6 @@ function makeTaskListDb(over: Over = {}) {
         autopilot: true,
         cycleCount: 0,
         config: config,
-        goals: over.goals ?? "",
       }),
       update: async () => ({}),
     },
@@ -186,7 +186,7 @@ function makeTaskListDb(over: Over = {}) {
     pilotRun: fakePilotRun(over),
     profile: { findUnique: async () => over.profile ?? null },
     user: { findUnique: async () => ({ primaryResumeId: over.primaryResumeId ?? null }) },
-    resume: { findMany: async () => [] },
+    resume: { findMany: async () => [], count: async () => over.resumeCount ?? 0 },
     pilotQuestion: fakePilotQuestion(over),
     job: fakeJob(over),
     application: {

@@ -1,6 +1,6 @@
 import type { PilotChangeAction } from "@jobpilot/contracts/pilot";
 import type { ActionContext } from "./action-context";
-import { restoreJobs, skipApprovedJobs, skipJobs } from "./job-actions";
+import { restoreJobs, skipJobs } from "./job-actions";
 import {
   createSearch,
   deleteSearch,
@@ -8,13 +8,11 @@ import {
   resumeSearch,
   updateSearch,
 } from "./search-actions";
-import { deleteAnswer, setAnswer, setGoals, setRules } from "./settings-actions";
+import { deleteAnswer, setAnswer, setRules } from "./settings-actions";
 
 /** Applies one action and returns the action that reverses it. */
 function applyAction(ctx: ActionContext, action: PilotChangeAction): Promise<PilotChangeAction> {
   switch (action.type) {
-    case "goals.set":
-      return setGoals(ctx, action);
     case "rules.set":
       return setRules(ctx, action);
     case "search.create":
@@ -33,8 +31,6 @@ function applyAction(ctx: ActionContext, action: PilotChangeAction): Promise<Pil
       return deleteAnswer(ctx, action);
     case "jobs.skip":
       return skipJobs(ctx, action);
-    case "jobs.skipApproved":
-      return skipApprovedJobs(ctx, action);
     case "jobs.restore":
       return restoreJobs(ctx, action);
   }
