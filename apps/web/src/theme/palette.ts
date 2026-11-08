@@ -19,6 +19,9 @@ export const accent = {
   action: "#C94A22",
 } as const;
 
+// Brand-mark eyes: thrust blue lifted so they glow on the near-black visor.
+export const markEye = "#7DB0FF";
+
 /** Text on a filled accent: near-black, tinted toward the fill so it doesn't read as a hole. */
 export const textOnAccent = {
   primary: "#1A0A05",
