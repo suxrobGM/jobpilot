@@ -75,7 +75,6 @@ const userResumeSummarySchema = z.object({
 /** The full current-user aggregate returned by `GET /user`. */
 export const userAggregateSchema = z.object({
   user: userViewSchema,
-  primaryResumeSourceAbsolutePath: z.string().nullable(),
   resumes: z.array(userResumeSummarySchema),
 });
 

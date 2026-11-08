@@ -1,7 +1,6 @@
 import type { PortfolioSettingsPatch, UserUpdateInput } from "@jobpilot/contracts/user";
 import { inject, injectable } from "@needle-di/core";
 import { conflict, emailNotVerified, findOwned, notFound } from "@/common/errors";
-import { ResumeStorage } from "@/common/storage/resume.storage";
 import { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { PORTFOLIO_SETTINGS_SELECT, PROFILE_SELECT, withProfile } from "./user.mapper";
 
@@ -13,10 +12,7 @@ const USER_SELECT = {
 
 @injectable()
 export class UserService {
-  constructor(
-    private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly storage = inject(ResumeStorage),
-  ) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /**
    * Gate for outward-facing actions (creating feeds, composing networking messages):
@@ -41,54 +37,47 @@ export class UserService {
       ),
     );
 
-    const [primarySource, resumeRows, withContent, references, salaryPreferences] =
-      await Promise.all([
-        user.primaryResumeId
-          ? this.prisma.resume.findUnique({
-              where: { id: user.primaryResumeId },
-              select: { sourceFilename: true },
-            })
-          : Promise.resolve(null),
-        this.prisma.resume.findMany({
-          where: { userId },
-          orderBy: { updatedAt: "desc" },
-          select: {
-            id: true,
-            label: true,
-            sourceFilename: true,
-            updatedAt: true,
-            _count: { select: { variants: true } },
-          },
-        }),
-        this.prisma.resume.findMany({
-          where: { userId, content: { not: Prisma.DbNull } },
-          select: { id: true },
-        }),
-        this.prisma.professionalReference.findMany({
-          where: { userId },
-          orderBy: { position: "asc" },
-          select: {
-            id: true,
-            name: true,
-            relationship: true,
-            company: true,
-            email: true,
-            phone: true,
-          },
-        }),
-        this.prisma.salaryPreference.findMany({
-          where: { userId },
-          orderBy: { position: "asc" },
-          select: {
-            id: true,
-            appliesTo: true,
-            minAmount: true,
-            maxAmount: true,
-            currency: true,
-            period: true,
-          },
-        }),
-      ]);
+    const [resumeRows, withContent, references, salaryPreferences] = await Promise.all([
+      this.prisma.resume.findMany({
+        where: { userId },
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          label: true,
+          sourceFilename: true,
+          updatedAt: true,
+          _count: { select: { variants: true } },
+        },
+      }),
+      this.prisma.resume.findMany({
+        where: { userId, content: { not: Prisma.DbNull } },
+        select: { id: true },
+      }),
+      this.prisma.professionalReference.findMany({
+        where: { userId },
+        orderBy: { position: "asc" },
+        select: {
+          id: true,
+          name: true,
+          relationship: true,
+          company: true,
+          email: true,
+          phone: true,
+        },
+      }),
+      this.prisma.salaryPreference.findMany({
+        where: { userId },
+        orderBy: { position: "asc" },
+        select: {
+          id: true,
+          appliesTo: true,
+          minAmount: true,
+          maxAmount: true,
+          currency: true,
+          period: true,
+        },
+      }),
+    ]);
 
     const hasContentIds = new Set(withContent.map((r) => r.id));
     const resumes = resumeRows.map((r) => ({
@@ -103,9 +92,6 @@ export class UserService {
 
     return {
       user: { ...user, references, salaryPreferences },
-      primaryResumeSourceAbsolutePath: primarySource?.sourceFilename
-        ? this.storage.resumePath(primarySource.sourceFilename)
-        : null,
       resumes,
     };
   }

@@ -244,8 +244,8 @@ load config:
 1. `/api/health`
 2. `GET /api/user` (the payload comes back bare, with no `data.` wrapper)
 3. `GET /api/credentials/resolve?domain=…`
-4. Resumes through `primaryResumeSourceAbsolutePath` or
-   `GET /api/resumes/[id]/pdf`
+4. Resumes through `GET /api/resumes/[id]` (content), `/pdf` (rendered), or
+   `/source` (the uploaded file)
 
 The other shared docs cover browser behavior that many skills need:
 `auth.md` and `browser-tips.md`. `feed-flow.md` holds the steps every job
