@@ -78,9 +78,9 @@ export class PilotService {
       select: { config: true },
     });
     const config = pilotConfigSchema.parse(saved?.config ?? {});
-    const boards = body.boards && (await this.linkedRotation(userId, body.boards));
+    const boards = body.boards ? await this.linkedRotation(userId, body.boards) : config.boards;
     const data = {
-      config: toInputJson({ ...config, ...body, ...(boards && { boards }) }),
+      config: toInputJson({ ...config, ...body, boards }),
       goalsUpdatedAt: new Date(),
       ...TASK_LIST_SNAPSHOT_RESET,
     };

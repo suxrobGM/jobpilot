@@ -14,6 +14,7 @@ interface SelectFieldProps<TValue extends string = string> {
   options: ReadonlyArray<SelectFieldOption<TValue>>;
   /** Defaults to "All". */
   emptyLabel?: string;
+  disabled?: boolean;
   onChange: (value: TValue | null) => void;
 }
 
@@ -21,11 +22,12 @@ interface SelectFieldProps<TValue extends string = string> {
 export function SelectField<TValue extends string = string>(
   props: SelectFieldProps<TValue>,
 ): ReactElement {
-  const { label, value, options, emptyLabel = "All", onChange } = props;
+  const { label, value, options, emptyLabel = "All", disabled, onChange } = props;
   return (
     <TextField
       size="small"
       select
+      disabled={disabled}
       value={value ?? ""}
       onChange={(e) => {
         const next = e.target.value;

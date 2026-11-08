@@ -52,30 +52,30 @@ export const NetworkingSection = withForm({
             </Grid>
           )}
           {!bothOff && (
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.AppField name="networking.dailyCap">
-                {(field) => (
-                  <field.TextField
-                    label="Messages per day"
-                    type="number"
-                    slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                  />
-                )}
-              </form.AppField>
-            </Grid>
-          )}
-          {!bothOff && (
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <form.AppField name="networking.followupDays">
-                {(field) => (
-                  <field.TextField
-                    label="Follow up after (days)"
-                    type="number"
-                    slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                  />
-                )}
-              </form.AppField>
-            </Grid>
+            <>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.AppField name="networking.dailyCap">
+                  {(field) => (
+                    <field.TextField
+                      label="Messages per day"
+                      type="number"
+                      slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                    />
+                  )}
+                </form.AppField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <form.AppField name="networking.followupDays">
+                  {(field) => (
+                    <field.TextField
+                      label="Follow up after (days)"
+                      type="number"
+                      slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                    />
+                  )}
+                </form.AppField>
+              </Grid>
+            </>
           )}
         </Grid>
       </FormSection>

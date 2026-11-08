@@ -3,10 +3,8 @@
 import type { ReactElement } from "react";
 import { Edit } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { jobBoardQueries } from "@/api/queries";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { usePilotState } from "../../use-pilot-state";
+import { useRotationNames } from "../../use-rotation-names";
 import { JobAlertsSource } from "./job-alerts-source";
 import { ResearchSource } from "./research-source";
 import { SearchList } from "./search-list";
@@ -14,11 +12,7 @@ import { SideSection } from "./side-section";
 
 /** The checked boards in rotation order. */
 function BoardChips(): ReactElement {
-  const rotation = usePilotState().config.boards;
-  const boards = useQuery(jobBoardQueries.list()).data ?? [];
-  const names = rotation.map(
-    (domain) => boards.find((board) => board.domain === domain)?.name ?? domain,
-  );
+  const names = useRotationNames();
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
       <Stack direction="row" sx={{ flex: 1, flexWrap: "wrap", gap: 0.5, minWidth: 0 }}>

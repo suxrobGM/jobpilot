@@ -48,16 +48,22 @@ export function SearchList(): ReactElement {
   const searches = useQuery(pilotQueries.searches()).data ?? [];
   const [expanded, setExpanded] = useState(false);
   const resume = useMakeChange();
+
   const active = searches
     .filter((search) => search.pausedAt === null)
     .sort((a, b) => b.appliedThisWeek - a.appliedThisWeek);
+
   const paused = searches.filter((search) => search.pausedAt !== null);
-  const hidden = Math.max(0, active.length - SHOWN_SEARCHES);
+  const hidden = active.length - SHOWN_SEARCHES;
   const shown = expanded ? [...active, ...paused] : active.slice(0, SHOWN_SEARCHES);
-  const folded = [
-    ...(hidden > 0 ? [`+${hidden} more`] : []),
-    ...(paused.length > 0 ? [`${paused.length} paused`] : []),
-  ];
+  const folded: string[] = [];
+
+  if (hidden > 0) {
+    folded.push(`+${hidden} more`);
+  }
+  if (paused.length > 0) {
+    folded.push(`${paused.length} paused`);
+  }
 
   const resumeAll = (): void => {
     resume.mutate({

@@ -100,11 +100,12 @@ export async function updateSearch(
   const query = action.query ?? old.query ?? "";
   const boardId = boardIdFor(ctx, action.board, old.boardId);
   // A different query or board is a different search, so its schedule starts over.
-  const changed = query !== old.query || boardId !== old.boardId;
+  const boardChanged = boardId !== old.boardId;
+  const changed = query !== old.query || boardChanged;
   if (changed) {
     await assertUnique(ctx, query, boardId, old.id);
   }
-  if (boardId !== old.boardId) {
+  if (boardChanged) {
     await linkBoard(ctx, boardId);
   }
   await ctx.tx.feed.update({

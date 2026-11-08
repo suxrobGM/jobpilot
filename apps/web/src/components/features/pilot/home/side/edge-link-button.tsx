@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import type { Route } from "next";
 import { LinkButton } from "@/components/ui/buttons";
 
-interface EdgeLinkButtonProps {
+export interface EdgeLinkButtonProps {
   label: string;
   href: Route;
 }

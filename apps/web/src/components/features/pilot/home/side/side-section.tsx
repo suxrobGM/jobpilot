@@ -1,16 +1,10 @@
 import type { ReactElement, ReactNode } from "react";
 import { Stack, Typography } from "@mui/material";
-import type { Route } from "next";
-import { EdgeLinkButton } from "./edge-link-button";
-
-interface SideSectionLink {
-  label: string;
-  href: Route;
-}
+import { EdgeLinkButton, type EdgeLinkButtonProps } from "./edge-link-button";
 
 interface SideSectionProps {
   title: string;
-  link?: SideSectionLink;
+  link?: EdgeLinkButtonProps;
   children: ReactNode;
 }
 
@@ -25,7 +19,7 @@ export function SideSection(props: SideSectionProps): ReactElement {
         <Typography variant="overline" color="textSecondary">
           {title}
         </Typography>
-        {link && <EdgeLinkButton label={link.label} href={link.href} />}
+        {link && <EdgeLinkButton {...link} />}
       </Stack>
       {children}
     </Stack>

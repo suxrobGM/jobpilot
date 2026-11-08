@@ -15,6 +15,7 @@ interface Rule {
 /** The goals the pilot works toward and the rules it keeps, read together; Edit changes both. */
 export function BriefSummary(): ReactElement {
   const state = usePilotState();
+  const goalsSet = hasGoals(state);
   const { dailyApplyCap, minScore, dealBreakers } = state.config;
   const rules: Rule[] = [
     { label: `${dailyApplyCap} a day`, title: "Applications per day" },
@@ -27,7 +28,7 @@ export function BriefSummary(): ReactElement {
 
   return (
     <SideSection title="Brief" link={{ label: "Edit", href: "/pilot/goals" }}>
-      {hasGoals(state) && (
+      {goalsSet && (
         <Typography
           variant="body2"
           title={state.goals}
@@ -42,7 +43,7 @@ export function BriefSummary(): ReactElement {
           {state.goals}
         </Typography>
       )}
-      {!hasGoals(state) && (
+      {!goalsSet && (
         <Typography variant="body2Muted">
           No goals yet. The pilot builds its searches from them.
         </Typography>

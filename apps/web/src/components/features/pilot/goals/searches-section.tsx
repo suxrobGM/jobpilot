@@ -4,13 +4,14 @@ import { type ReactElement, useState } from "react";
 import { Delete, ExpandLess, ExpandMore, Pause, PlayArrow } from "@mui/icons-material";
 import { Box, Chip, Collapse, Divider, IconButton, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { jobBoardQueries, pilotQueries } from "@/api/queries";
+import { pilotQueries } from "@/api/queries";
 import type { FeedDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 import { useMakeChange } from "../changes/use-changes";
+import { useRotationNames } from "../use-rotation-names";
 import { SearchBoardSelect } from "./search-board-select";
 
 /** The empty-run streak that puts a search on the API backoff ladder's top (48h) rung. */
@@ -123,11 +124,7 @@ function SearchRow(props: SearchRowProps): ReactElement {
 export function SearchesSection(): ReactElement {
   const query = useQuery(pilotQueries.searches());
   const searches = query.data ?? [];
-  const boards = useQuery(jobBoardQueries.list()).data ?? [];
-  const checked = useQuery(pilotQueries.state()).data?.config.boards ?? [];
-  const rotation = checked.map(
-    (domain) => boards.find((board) => board.domain === domain)?.name ?? domain,
-  );
+  const rotation = useRotationNames();
 
   return (
     <QuerySection
