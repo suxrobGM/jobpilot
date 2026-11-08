@@ -1,19 +1,19 @@
 # `interview.reply`
 
 Payload `{applicationId, emailMessageId, threadId, from, subject, receivedAt, company, jobTitle}`.
-Read the email (`GET /api/email/messages/$EMAIL_MESSAGE_ID`) and draft a two-to-four-sentence reply
-to what they asked:
+Read the email (`GET /api/email/messages/$EMAIL_MESSAGE_ID`) and draft a two-to-four-sentence
+reply to what they asked:
 
-- Offered times → accept one, or say which work.
-- A scheduling link → say you'll book, or have booked, through it.
-- Asked for availability → two or three concrete weekday slots over the next few business days.
-- Anything else (a take-home, documents, a question) → answer it.
+- Offered times: accept one, or say which work.
+- A scheduling link: say you'll book, or have booked, through it.
+- Asked for availability: two or three concrete weekday slots in the next few business days.
+- Anything else (a take-home, documents, a question): answer it.
 
-Don't restate the role or your background. At most one thank-you; no "I'm thrilled/excited" or "I
-look forward to speaking with you". Plain ASCII, then the `humanizer` skill in embedded mode.
+Don't restate the role or your background. At most one thank-you; no "I'm excited" or "I look
+forward to speaking with you". Plain ASCII, then the `humanizer` skill in embedded mode.
 
-Don't send. Write `$JOBPILOT_TEMP/question.json` and `POST /api/pilot/questions --data @...`; the
-user approves or corrects the slots:
+Don't send. Ask the user to approve: write `$JOBPILOT_TEMP/question.json` and `POST
+/api/pilot/questions --data @...`:
 
 ```json
 {

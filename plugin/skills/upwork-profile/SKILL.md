@@ -4,52 +4,43 @@ description: Read the user's live Upwork profile through the Upwork MCP, generat
 argument-hint: "[apply]"
 ---
 
-# Upwork Profile Enhancement
+# Upwork profile
 
-Two modes. Default (**generate**) drafts suggestions for review; **apply** (argument `apply`)
-writes the approved version to the live Upwork profile. Always gate the live write behind the
-user's approval - never edit the real profile from the generate step.
+Two modes. Default drafts suggestions for review. `apply` writes the approved version to Upwork.
+Never write to Upwork from the draft step.
 
-The MCP writes the title, overview and skills. It cannot write the portfolio or the hourly rate,
-so those two are **advisory**: JobPilot generates and stores them, and the user copies them to
-upwork.com. Say so plainly rather than implying they were applied.
+The MCP can write the title, overview and skills. The portfolio and hourly rate are advisory:
+JobPilot stores them and the user copies them to upwork.com. Say so; never imply they were
+applied.
 
 ## Setup
 
-1. Follow `../_shared/setup.md`, then load the structured resume for `user.primaryResumeId`
-   (`jobpilot-api GET /api/resumes/<id>`). Its `content` has the identity, summary, experience,
-   skills, and **projects** (the portfolio source).
-2. Follow `../_shared/upwork-mcp.md`: confirm the tools are connected and resolve `ORG_UID`.
+Follow `../_shared/setup.md`, then `GET /api/resumes/<user.primaryResumeId>` (its `projects` feed
+the portfolio). Follow `../_shared/upwork-mcp.md` (connection check, `org_uid`).
 
-## Mode: generate (default)
+## Draft (default)
 
-1. **Read the current profile.** `get_profile` action `get` for the title, overview, skills, rate
-   and work history. `get_profile` action `list_highlights` for the portfolio projects and
-   certificates already on the account.
-2. **Generate suggestions** grounded only in resume facts (no fabrication):
-   - **Title** - concise, role plus top stack. Hard limit 70 characters.
-   - **Overview** - written to one client skimming it. Open with what you do for clients, in a
-     sentence, then two or three real projects with a concrete result each, then how to start
-     working together. Short paragraphs, plain words, first person. 1000-2000 characters reads
-     better than filling the 5000 limit. Keep lines from the current overview that already work;
-     they're in the user's own voice. Then invoke the `humanizer` skill on it in embedded mode.
-   - **Skills** - at most 20, and each must be a real Upwork ontology skill name. Unresolvable
-     names are rejected at write time, so prefer the exact wording already on the profile or in
-     the job market over invented labels.
-   - **Portfolio** (advisory) - derive entries from resume `projects`:
-     `{ title, description, url?, skills[] }`. Keep existing good ones; add or improve from the
-     resume. Each description says what the project is and one concrete detail, and they don't
-     all share one shape ("Built X using Y, resulting in Z" five times over). Humanize the
-     descriptions in embedded mode too.
-   - **Hourly rate** (advisory) - only suggest if the resume or profile gives a basis; otherwise
-     leave the current value.
-3. **Save the draft** for review. Write the body to `"$JOBPILOT_TEMP/upwork-profile.json"`:
+1. Read the profile: `get_profile` `get` (title, overview, skills, rate, history) and
+   `list_highlights` (portfolio and certificates).
+2. Write suggestions from resume facts only:
+   - **Title**: role plus top stack, at most 70 characters.
+   - **Overview**: to one client skimming. One sentence on what you do for clients, two or three
+     real projects with a concrete result each, then how to start working together. Short
+     paragraphs, first person, 1000-2000 characters. Keep lines from the current overview that
+     already work.
+   - **Skills**: at most 20, each an exact Upwork skill name; prefer the wording already on the
+     profile. Unknown names are rejected on write.
+   - **Portfolio**: `{ title, description, url?, skills[] }` from resume `projects`. Keep good
+     existing entries. Each description says what the project is plus one concrete detail, and
+     they don't all share one shape.
+   - **Hourly rate**: only with a basis in the resume or profile; else keep the current one.
+
+   Run the `humanizer` skill in embedded mode on the overview and portfolio descriptions.
+3. Save the draft. Write `$JOBPILOT_TEMP/upwork-profile.json`:
 
    ```json
-   { "currentTitle": "<current title>", "currentOverview": "<current overview>",
-     "currentPortfolio": <current portfolio json>, "currentSkills": <current skills json>,
-     "suggestedTitle": "<suggested title>", "suggestedOverview": "<suggested overview>",
-     "suggestedPortfolio": <suggested portfolio json>, "suggestedSkills": <suggested skills json>,
+   { "currentTitle": "", "currentOverview": "", "currentPortfolio": [], "currentSkills": [],
+     "suggestedTitle": "", "suggestedOverview": "", "suggestedPortfolio": [], "suggestedSkills": [],
      "status": "draft" }
    ```
 
@@ -57,38 +48,19 @@ upwork.com. Say so plainly rather than implying they were applied.
    jobpilot-api PUT /api/upwork/profile --data @"$JOBPILOT_TEMP/upwork-profile.json"
    ```
 
-4. Print a short before/after summary and link to `$JOBPILOT_WEB/upwork/profile` - tell the user to
-   review, edit, **Approve**, then run **Apply to Upwork**. Stop here; do not write to Upwork.
+4. Print a short before/after and `$JOBPILOT_WEB/upwork/profile`: the user reviews, edits,
+   approves, then runs **Apply to Upwork**. Stop.
 
-## Mode: apply
+## Apply
 
-1. `jobpilot-api GET /api/upwork/profile` →
-   require `.status == "approved"`. If not, tell the user to review and approve on
-   `/upwork/profile` first, then stop.
-2. Use the `suggested*` fields as the source of truth (the user may have edited them in the UI).
-3. Write each section, one at a time. Every one is a preview then a confirm
-   (`../_shared/upwork-mcp.md`), so present each preview and get an explicit yes before
-   confirming. Only one preview per action type is held at a time, so finish one section before
-   starting the next.
-   - `update_profile` action `update_title` → `confirm_preview` type `profile_update_title`.
-   - `update_profile` action `update_overview` → `confirm_preview` type `profile_update_overview`.
-   - `update_profile` action `set_skills` → `confirm_preview` type `profile_set_skills`. This
-     **replaces** the whole set, so pass the full revised list, not just additions. Names are
-     resolved against Upwork's ontology first; a partial draft lists which were rejected. Relay
-     those to the user instead of guessing substitutes.
-4. On success, mark it applied:
-
-   ```bash
-   jobpilot-api PUT /api/upwork/profile --data '{"status":"applied"}'
-   ```
-
-   Report what was written. Then tell the user the portfolio and hourly rate were **not** applied
-   and are waiting for them on `$JOBPILOT_WEB/upwork/profile` to copy across. If a section fails
-   to save, leave `status` unchanged, report which section, and stop.
-
-## Rules
-
-1. **Approval gate.** Only `apply` writes to Upwork, and only when `status == "approved"`.
-2. **Never claim an advisory field was applied.** The portfolio and hourly rate are always manual.
-3. **No fabrication.** Every claim traces to the resume; no invented metrics, links, or experience.
-4. **Humanize the overview** via the `humanizer` skill in embedded mode. No emoji bullets.
+1. `GET /api/upwork/profile`. `status` not `approved`: tell the user to approve it at
+   `$JOBPILOT_WEB/upwork/profile` first, and stop.
+2. Use the `suggested*` fields; the user may have edited them.
+3. Write one section at a time; each is a preview, the user's explicit yes, then confirm:
+   - `update_profile` `update_title`, confirm type `profile_update_title`;
+   - `update_profile` `update_overview`, confirm type `profile_update_overview`;
+   - `update_profile` `set_skills`, confirm type `profile_set_skills`. It replaces the whole set,
+     so send the full list. Relay any rejected names to the user; don't guess substitutes.
+4. All saved: `PUT /api/upwork/profile --data '{"status":"applied"}'`. Report what was written,
+   and that the portfolio and rate wait at `$JOBPILOT_WEB/upwork/profile` to be copied by hand. A
+   section that fails: leave `status` alone, report which, and stop.

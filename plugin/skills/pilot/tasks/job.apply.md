@@ -1,18 +1,16 @@
 # `job.apply`
 
 Payload `{feedId, jobKey, jobTitle, url, board, brief, resumeId?, matchScore, warmContacts?}`.
-`FEED_ID` is `feedId`, `KEY` is `jobKey`.
 
-Delegate one `job-applier` run with the payload's `feedId`, `jobKey`, `url`, `board`, `brief`
-and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
+Delegate one `job-applier` run with `feedId`, `jobKey`, `url`, `board`, `brief`, `resumeId` and
+`runId:$RUN_ID`. Record its outcome:
 
-- `applied` / `failed` / `skipped` → `POST /api/feeds/$FEED_ID/jobs/$KEY/result` in the shapes of
-  `../../_shared/feed-flow.md` ("Terminal result writes"), passing the worker's
-  `resumeId`/`resumeVariantId` through.
-- `needs_user` with `category:"payment"` → `failed`, `failReason:"Payment required"`.
-- Any other `needs_user` → ask, then park the job. Copy the worker's `kind`, `question`, `options`
-  and `savedAnswerKey` verbatim (`options` defaults to `[]`; omit a null `savedAnswerKey`) into
-  `$JOBPILOT_TEMP/question.json`:
+- `applied`, `failed`, `skipped`: `POST /api/feeds/$FEED_ID/jobs/$JOB_KEY/result` as in
+  `../../_shared/feed-flow.md` ("Job writes"), passing the worker's `resumeId` and
+  `resumeVariantId` through.
+- `needs_user` with `category:"payment"`: `failed`, `Payment required`.
+- Any other `needs_user`: ask, then park the job. Copy the worker's `kind`, `question`, `options`
+  (default `[]`) and `savedAnswerKey` (omit when null) into `$JOBPILOT_TEMP/question.json`:
 
 ```json
 {
@@ -20,7 +18,7 @@ and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
   "subjectType": "job",
   "subjectId": "<feedId>:<jobKey>",
   "prompt": "<worker question>",
-  "options": ["<worker options>"],
+  "options": [],
   "savedAnswerKey": "<worker savedAnswerKey>",
   "link": "<JOBPILOT_WEB>/pipeline?feed=<feedId>"
 }
@@ -28,7 +26,7 @@ and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
 
 ```bash
 jobpilot-api POST /api/pilot/questions --data @"$JOBPILOT_TEMP/question.json"
-jobpilot-api PATCH /api/feeds/$FEED_ID/jobs/$KEY --data '{"status":"needs_user"}'
+jobpilot-api PATCH /api/feeds/$FEED_ID/jobs/$JOB_KEY --data '{"status":"needs_user"}'
 ```
 
 A `two_factor` question expires after about 5 minutes and the server skips the parked job; do

@@ -1,101 +1,84 @@
-# Feed Flow - Shared Mechanics and Rules
+# Feed flow
 
-The blocks every feed skill shares (`apply`, `auto-apply`, `search`,
-`upwork-search`, `networking`, and the pilot's feed items). Load profile, resume, and
-credentials per `./setup.md` first; each skill states only its deltas from what's here.
+Shared by the feed skills (`search`, `auto-apply`, `apply`, `networking`, `upwork-search`) and the
+pilot's tasks. Load the profile per `./setup.md` first.
 
 ## Searching
 
-`search` and `auto-apply` use the pilot's agents, so a typed search finds and scores jobs the
-same way the pilot does. The caller sets `FEED_ID`, `MIN_SCORE` and `NEW_JOBS`. Without subagent
-support, follow `$JOBPILOT_SKILLS_ROOT/../agents/<agent>.md` inline.
+`search` and `auto-apply` use the pilot's agents, so a typed search finds and scores jobs the same
+way the pilot does. The caller sets `FEED_ID`, `MIN_SCORE` and `NEW_JOBS`.
 
-- **`--board <domain>`**: `GET /api/job-boards` must list `<domain>`, else stop with "Board
-  `<domain>` is not configured. Add it on the Job boards page or run again with a different
-  `--board`." Delegate one `job-searcher` run with `{runId:null, feedId:$FEED_ID, query,
-  board:<domain>, resumeId:user.primaryResumeId, minScore:$MIN_SCORE, newJobsTarget:$NEW_JOBS,
-  maxPages:null}`.
-- **`--anywhere`**: delegate one `job-researcher` run with `{runId:null, feedId:$FEED_ID,
+- `--board <domain>`: `GET /api/job-boards` must list it, else stop with "Board `<domain>` is not
+  configured. Add it on the Job boards page or pick another board." Delegate one `job-searcher`
+  run: `{runId:null, feedId:$FEED_ID, query, board:<domain>, resumeId:user.primaryResumeId,
+  minScore:$MIN_SCORE, newJobsTarget:$NEW_JOBS, maxPages:null}`.
+- `--anywhere`: delegate one `job-researcher` run: `{runId:null, feedId:$FEED_ID,
   criteria:<query>, resumeId:user.primaryResumeId, minScore:$MIN_SCORE, approveAtOrAbove:null,
-  preferCapExempt:<GET /api/pilot → config.preferCapExempt>,
-  requiresSponsorship:user.requiresSponsorship, boards:<every domain from GET /api/job-boards>,
-  newJobsTarget:$NEW_JOBS}`.
+  preferCapExempt:<GET /api/pilot config.preferCapExempt>,
+  requiresSponsorship:user.requiresSponsorship, boards:<every domain in GET /api/job-boards>,
+  newJobsTarget:$NEW_JOBS, focus:null}`.
 
-The agent dedupes against past applications, scores each job, saves it as `pending`, and returns
-a JSON summary (`newJobs`, `best`, `skipped`, `error`).
+The agent dedupes, scores, saves each job as `pending`, and returns a JSON summary (`newJobs`,
+`best`, `skipped`, `error`).
 
-## Applied-check (dedupe before opening a tab)
+## Applied check
+
+Before opening a posting:
 
 ```bash
-jobpilot-api GET /api/applications/duplicates --query "url=<job-url>" --query "title=<title>" --query "company=<company>"
+jobpilot-api GET /api/applications/duplicates --query "url=<url>" --query "title=<title>" --query "company=<company>"
 ```
 
-Exact URL match plus fuzzy title+company over a 30-day window; `.match.kind` is `url` or
-`fuzzy` (with a score). Default handling for apply flows on `.applied`: create the Job as
-`pending`, POST its `/result` with `{outcome:"skipped", skipReason:"Already applied (<kind>)"}`,
-and move on without opening a tab. Skills that deviate (e.g. `networking` keeps applied jobs and
-records `.match.application.id` as `applicationId`) say so inline.
+It matches the exact URL, or title and company within 30 days. `.applied` true: create the job as
+`pending`, post its result `{outcome:"skipped", skipReason:"Already applied (<.match.kind>)"}`, and
+move on.
 
-The server enforces the same rule: moving a job into `applying` - the `PATCH` below or the pilot's
-run start - 409s with code `ALREADY_APPLIED` on a duplicate (`APPLY_IN_FLIGHT` when another worker
-holds it; record that job skipped as the message says). `ALREADY_APPLIED` is the
-verdict, not a transient failure, and the server has already written the job's `skipped` result.
-Move to the next item; never retry the transition or re-write the result.
+The server enforces the same rule. Moving a job to `applying` answers `409 ALREADY_APPLIED` on a
+duplicate (the server has already written the skip) or `409 APPLY_IN_FLIGHT` when another worker
+holds it. Either way, move to the next job; never retry.
 
-## Terminal result writes
+## Job writes
 
-Non-terminal transitions go through `PATCH /api/feeds/$FEED_ID/jobs/<key>` (`pending` → `approved` →
-`applying`). A terminal outcome goes through ONE call - `POST
-/api/feeds/$FEED_ID/jobs/<key>/result` - which atomically updates the Job and creates the
-Application + initial event on `applied`. Payload shapes (`appliedAt` is the current UTC time, ISO
-8601):
+- Non-terminal moves (`pending`, `approved`, `applying`): `PATCH /api/feeds/$FEED_ID/jobs/<key>`.
+- Terminal outcomes: `POST /api/feeds/$FEED_ID/jobs/<key>/result`. On `applied` it also creates
+  the application.
 
 ```jsonc
-// applied - resumeId/resumeVariantId name the resume that was uploaded (see below); omit either when empty
-{ "outcome": "applied", "appliedAt": "<now>", "matchScore": <0-100>, "resumeId": "<resumeId>", "resumeVariantId": "<resumeVariantId>" }
-// failed (login failure, unexpected page, validation, crash)
-{ "outcome": "failed", "failReason": "<failReason>", "retryNotes": "<retryNotes>" }
-// skipped (CAPTCHA, user cancelled, cap reached, ...)
-{ "outcome": "skipped", "skipReason": "<skipReason>" }
+{ "outcome": "applied", "appliedAt": "<now, ISO 8601 UTC>", "matchScore": 87, "resumeId": "<id>", "resumeVariantId": "<id>" }
+{ "outcome": "failed", "failReason": "<why>", "retryNotes": "<what to try next time>" }
+{ "outcome": "skipped", "skipReason": "<reason>" }
 ```
 
-**Always send `resumeId` on `applied`**, and `resumeVariantId` too whenever a tailored variant was
-uploaded - including when `tailor-resume` reused an existing one. This is the only record of what
-the candidate actually submitted; without it the application's Documents card has nothing to show.
+Always send the `resumeId` that went into the form, and `resumeVariantId` when a tailored variant
+did (reused or new). It is the only record of what was submitted.
 
-## job-applier input
+## job-applier
+
+Input:
 
 ```json
-{ "feedId": "<FEED_ID>", "jobKey": "<key>", "url": "<job-url>",
-  "board": "<domain>", "brief": <BRIEF>, "resumeId": "<RESUME_ID>",
-  "salaryExpectation": <remembered-or-null>, "preSubmitReview": <bool> }
+{ "feedId": "<FEED_ID>", "jobKey": "<key>", "url": "<url>", "board": "<domain>",
+  "brief": null, "resumeId": "<id>", "salaryExpectation": null, "answers": null,
+  "preSubmitReview": false, "runId": null }
 ```
 
-Omit `brief` and the worker fetches it from the saved Job; it loads the profile and saved answers
-itself. It returns one of `applied` / `failed` / `skipped` / `needs_user` and closes its tabs before
-returning - re-select tab 0, then map the outcome to a terminal write (above). `needs_user` routing:
+A null `brief` makes the worker read it from the saved job. It returns `applied`, `failed`,
+`skipped` or `needs_user`, with its tabs closed. Write `applied`, `failed` and `skipped` as job
+results (above). Route `needs_user` by `category`:
 
-- `category:"salary"` (no profile salary preference matched) - ask the user once, remember the
-  answer for the feed, re-delegate with `salaryExpectation` set.
-- `category:"question"` (a required form question the profile can't answer) - ask the user
-  `question`, re-delegate with the reply as `answers`. File the question with the worker's
-  `savedAnswerKey` when it set one, so the answer is saved and never asked again.
-- `category:"verification"` (2FA) - pause and ask; one-time per board.
-- `category:"payment"` - never pay: POST `/result` `{outcome:"failed", failReason:"Payment
-  required"}`.
+- `salary`: ask once, remember the answer for this run, re-delegate with `salaryExpectation`.
+- `question`: ask `question`, re-delegate with the reply as `answers`.
+- `verification` (2FA): pause and ask.
+- `review`: see the `apply` skill.
+- `payment`: never pay. Result `{outcome:"failed", failReason:"Payment required"}`.
 
 ## Rules
 
-1. **Never skip silently.** Every `skipped` write carries a non-empty `skipReason`. No valid
-   reason → not a skip.
-2. **The Feed is the audit trail.** PATCH non-terminal transitions; POST `/result` for
-   terminal outcomes, so SSE reflects reality.
-3. **Never process payments** - record `failed` with `"Payment required"`.
-4. **CAPTCHA is not a pause**: attempt the `solve-captcha` skill; unsolved → skip the job for a
-   later manual apply. **2FA is**: pause and ask. Logins, registration, and email codes follow
-   `./auth.md`.
-5. **Eligibility** follows `./eligibility.md`.
-6. **Pace** 3-5s between submissions on the same domain.
-7. **Be honest about match scores** - label stretches as stretches.
-8. **One worker at a time** - the browser is shared; never delegate the next job until the
-   current worker returns.
+1. Every `skipped` result has a non-empty `skipReason` from `./eligibility.md`. No valid reason,
+   no skip.
+2. The feed is the audit trail: every state change goes through the API.
+3. Never pay for anything.
+4. A CAPTCHA is not a pause: try the `solve-captcha` skill; unsolved, skip the job with
+   `CAPTCHA - apply manually via the apply skill`. 2FA is a pause. Logins follow `./auth.md`.
+5. Wait 3-5 seconds between submissions on the same site.
+6. Report scores honestly; a stretch is a stretch.

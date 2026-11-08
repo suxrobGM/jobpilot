@@ -4,170 +4,81 @@ description: Parse a resume's uploaded PDF into structured JSON (basics, experie
 argument-hint: "[resume-id] [--force]"
 ---
 
-# Extract Resume - Source PDF → Structured Data
+# Extract resume
 
-Read a resume's uploaded source PDF and produce JSON matching the JobPilot resume schema, then save via the API. Inverse of the editor.
+Read a resume's uploaded PDF, turn it into the JobPilot resume shape, and save it.
 
-## Setup
+## 1. Target
 
-Follow `../_shared/setup.md`. The profile response provides `user.primaryResumeId`, `primaryResumeSourceAbsolutePath`, and `resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
+Follow `../_shared/setup.md`. Then:
 
-## Step 1: Resolve Target
+- `RESUME_ID`: the argument, else `user.primaryResumeId`. Neither: stop with "No primary resume
+  set. Pass an id, or set a primary at $JOBPILOT_WEB/resumes."
+- `--force` anywhere: overwrite existing content.
 
-Parse the argument:
+`GET /api/resumes/$RESUME_ID`. A `404`: say the id doesn't exist and stop.
 
-- Integer → use that resume id.
-- Empty → use `user.primaryResumeId`. If no primary, stop:
-  > No primary resume set. Pass an explicit id, or set a primary at <$JOBPILOT_WEB/resumes>.
-- `--force` (anywhere) → overwrite existing structured data. Otherwise refuse to overwrite (Step 3).
+- `content` set and no `--force`: stop with "Resume <id> (<label>) already has content. Edit it at
+  $JOBPILOT_WEB/resumes/<id>, or run again with `--force` to re-read the PDF."
+- No `sourceFilename`: stop with "Resume <id> (<label>) has no uploaded PDF. Upload one at
+  $JOBPILOT_WEB/resumes/<id>." Not `application/pdf`: ask the user to upload a PDF.
 
-Let `RESUME_ID` be the resolved id, `FORCE` be `true`/`false`.
+## 2. Read
 
 ```bash
-jobpilot-api GET /api/resumes/$RESUME_ID
+jobpilot-api GET /api/resumes/$RESUME_ID/source --out "$JOBPILOT_TEMP/$RESUME_ID-source.pdf"
 ```
 
-If 404, stop and report the id doesn't exist.
-
-## Step 2: Verify Source PDF
-
-`sourceFilename` must be set. If `null`, stop:
-
-> Resume {id} ({label}) has no uploaded source PDF. Upload one at <$JOBPILOT_WEB/resumes/{id}>, then re-run.
-
-Resolve the absolute path:
-
-- Primary resume → prefer `primaryResumeSourceAbsolutePath`.
-- Otherwise → `${JOBPILOT_WORKSPACE_ROOT}/apps/api/storage/resumes/{sourceFilename}`.
-
-If `sourceMimeType !== "application/pdf"`, stop and ask the user to re-upload as PDF.
-
-## Step 3: Refuse to Clobber
-
-If `content` is non-null and `FORCE === false`, stop:
-
-> Resume {id} ({label}) already has structured data (version {n}). Edit at <$JOBPILOT_WEB/resumes/{id}>, or re-run with `--force` to overwrite from the PDF.
-
-If `FORCE`, proceed and overwrite.
-
-## Step 4: Read and Parse
-
-`Read` the PDF at the path from Step 2. Produce a single JSON object matching:
+`Read` the file, every page (use `pages` on long PDFs). Produce:
 
 ```ts
 {
-  basics: {
-    name:     string,           // required
-    headline?: string,          // professional title/headline if present
-    email?:   string,
-    phone?:   string,
-    website?: string,
-    linkedin?: string,
-    github?:  string,
-    location?: string,
-  },
-  summary?: string,             // 1–3 sentences
-  experience: Array<{
-    company:   string,
-    title:     string,
-    location?: string,
-    start:     string,          // free-form, e.g. "Jul 2022"
-    end?:      string,          // omit or "Present" if current
-    bullets:   string[],
-  }>,
-  projects: Array<{
-    name:        string,
-    url?:        string,
-    description?: string,        // one prose line; omit if there's only a tech-stack line
-    bullets:     string[],
-    keywords:    string[],       // the tech-stack line (e.g. "Next.js, Prisma, Docker")
-    start?:      string,         // only if the PDF states it; same format as experience dates
-    end?:        string,         // "Present" if ongoing
-  }>,
-  skills: Array<{
-    group: string,              // e.g. "Languages"
-    items: string[],
-  }>,
-  education: Array<{
-    school:  string,
-    degree:  string,
-    start?:  string,
-    end?:    string,
-    details: string[],
-  }>,
-  publications: Array<{
-    title:    string,
-    authors?: string,           // the citation's author list, verbatim, et al. included
-    venue?:   string,           // journal, conference, or publisher
-    year?:    string,           // free-form: "2024", "In press", "Under review"
-    url?:     string,
-    doi?:     string,
-  }>,
-  awards: Array<{
-    title:        string,
-    issuer?:      string,
-    year?:        string,
-    description?: string,
-  }>,
-  certifications: Array<{
-    name:          string,
-    issuer?:       string,
-    issued?:       string,
-    expires?:      string,
-    credentialId?: string,
-    url?:          string,
-  }>,
-  sections: Array<{            // anything above doesn't model - see the rule below
-    title:   string,           // the PDF's own heading, verbatim ("Grants", "Invited Talks")
-    entries: Array<{
-      heading:     string,     // the entry's first line - a grant name, a talk title
-      subheading?: string,     // funder, host, venue
-      meta?:       string,     // year, amount, or other right-aligned detail
-      bullets:     string[],
-    }>,
-  }>,
+  basics: { name: string, headline?, email?, phone?, website?, linkedin?, github?, location? },
+  summary?: string,
+  experience: { company, title, location?, start, end?, bullets: string[] }[],
+  projects: { name, url?, description?, bullets: string[], keywords: string[], start?, end? }[],
+  skills: { group, items: string[] }[],
+  education: { school, degree, start?, end?, details: string[] }[],
+  publications: { title, authors?, venue?, year?, url?, doi? }[],
+  awards: { title, issuer?, year?, description? }[],
+  certifications: { name, issuer?, issued?, expires?, credentialId?, url? }[],
+  sections: { title, entries: { heading, subheading?, meta?, bullets: string[] }[] }[],
 }
 ```
 
-Hard rules:
+- Copy dates, employers, titles, schools, degrees and contact details verbatim. Keep the PDF's date
+  format; a current role's `end` is `"Present"`.
+- Invent nothing. A missing section is `[]`.
+- Project dates only when the PDF shows them: `tailor-resume` uses them to put projects on the
+  timeline, so a guessed range becomes a false one.
+- A project's tech-stack line goes in `keywords`, never `description`.
+- Skills keep the PDF's groups; a flat list is one group, `"Skills"`.
+- Strip bullet glyphs from bullet text.
+- Never drop a section because it has no field. Grants, talks, patents, teaching, service,
+  memberships, volunteering and languages go in `sections` under the PDF's own heading. An academic
+  CV is mostly these.
+- Publications: one entry per citation, in order. Split `authors`, `title`, `venue` and `year`
+  only where the split is unambiguous; otherwise the whole citation goes in `title`. `authors` is
+  verbatim, "et al." included; `year` is free text ("2024", "In press").
 
-- **Preserve verbatim** dates, employers, titles, schools, degrees, contact info.
-- **Do not invent** roles, bullets, dates, or skills. Missing section → `[]` (or omit optional field).
-- Keep the PDF's date display format. Do not normalize to ISO.
-- Current role → `end: "Present"` (or omit).
-- Project dates: copy when the PDF shows them, omit otherwise - never infer a range. They let
-  `tailor-resume` promote a project onto the timeline, so a guess becomes a fabricated range.
-- Skills: keep the PDF's grouping if present; flat list → single group `"Skills"`.
-- Strip leading bullet glyphs (•, ▪, –) from bullet text; keep the rest unchanged.
-- A project's tech-stack line goes in `keywords` only - never copy it into `description`.
-- For long PDFs, use `Read` with `pages` to ingest all pages - don't silently drop later-page entries.
-- **Never drop a section because there is no field for it.** Anything the shape above doesn't model
-  becomes a `sections[]` entry under the PDF's own heading: grants and funding, invited talks and
-  presentations, patents, teaching, academic service, professional memberships, volunteering,
-  languages. An academic CV is mostly these, and dropping them silently guts the resume.
-- Publications: one entry per citation, in the PDF's order. Split the citation into `authors`,
-  `title`, `venue` and `year` only where the split is unambiguous; when it is not, put the whole
-  citation in `title` rather than guessing where the venue ends.
+## 3. Save
 
-## Step 5: Save
-
-The PUT body must be `{ "content": <resume-object> }` - the API rejects a bare resume payload with 400 "label or content required". Write the file with that wrapper, then send it:
+The body must wrap the resume: `{"content": {...}}`. Write it to `$JOBPILOT_TEMP/resume.json`:
 
 ```bash
 jobpilot-api PUT /api/resumes/$RESUME_ID --data @"$JOBPILOT_TEMP/resume.json"
 ```
 
-Where `resume.json` looks like `{"content": {"basics": {...}, "experience": [...], ...}}`. On 422, read the issue list, fix the field, retry once.
+On `422`, read the issues, fix them, and retry once.
 
-## Step 6: Suggest Improvements
+## 4. Review
 
-**Only on a first extraction** (`content` was `null` in Step 1): invoke the `review-resume` skill for `$RESUME_ID`. This step is faithful to the PDF, so it carries over every weakness in it; that skill proposes a stronger version for the user to accept or discard.
+Only on a first extraction (`content` was null): run the `review-resume` skill for `RESUME_ID`. It
+proposes a stronger version. Skip it with `--force`: the user re-read the PDF to get back what it
+says.
 
-Skip on `--force` - the user re-parsed to recover what the PDF says, and a rewrite proposal fights that.
+## 5. Report
 
-## Step 7: Report
+> Extracted resume <id> (<label>). Review it at $JOBPILOT_WEB/resumes/<id>.
 
-> Extracted resume {id} ({label}) → version {n}.
-> Review at <$JOBPILOT_WEB/resumes/{id}>.
-
-Do not echo the parsed fields - the editor and preview show them.
+Don't echo the parsed fields.

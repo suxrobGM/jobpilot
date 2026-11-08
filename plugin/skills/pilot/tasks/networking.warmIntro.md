@@ -1,14 +1,12 @@
 # `networking.warmIntro`
 
 Payload `{feedId, jobKey, company, jobTitle, jobUrl, contacts, channel, autonomy}`. Delegate one
-`networking-worker` run on the given `channel`:
+`networking-worker` run on `channel`:
 
-- `contacts` set → compose for the best one only: pass it as `target`, with the job for grounding.
-- `contacts` empty (the usual case) → discover and compose: `target:{jobUrl, title:<jobTitle>,
-  company}`.
+- `contacts` set: pass the best one as `target`, with the job for grounding.
+- `contacts` empty (the usual case): `target:{jobUrl, title:jobTitle, company}`.
 
-Save the returned contact and draft as the `networking` skill's "Save the returned draft" does and
-keep the draft's `id`. Then apply the autonomy gate of `./networking.followup.md` to this payload's
-`autonomy`.
+Save the contact and draft as the `networking` skill's **Save drafts** section does and keep the
+draft's `id`. Then apply the autonomy gate from `./networking.followup.md`.
 
 Summary: "Found warm path to Acme: Dana Lee (Eng Manager) - intro drafted."

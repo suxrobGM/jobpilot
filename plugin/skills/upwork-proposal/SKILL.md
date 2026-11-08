@@ -4,77 +4,71 @@ description: Write a short Upwork proposal from a job description and the user's
 argument-hint: "<proposal_id | job_description>"
 ---
 
-# Upwork Proposal
+# Upwork proposal
 
-Clients skim proposals on their phones between other things. If one takes more than about 30 seconds to read, it's gone. Write for that skim: their problem first, one piece of proof, one question.
+Clients skim proposals on their phones; one that takes more than about 30 seconds is gone. Write
+for that: their problem first, one piece of proof, one question.
 
 ## Setup
 
-Follow `../_shared/setup.md`, then load the structured resume for `user.primaryResumeId` (`jobpilot-api GET /api/resumes/<id>`) and write from its `content`. Don't `Read` the source PDF.
+Follow `../_shared/setup.md`, then `GET /api/resumes/<user.primaryResumeId>` and write from its
+`content`.
 
-## Step 1: Resolve the input
+The argument is either:
 
-The argument is a **proposal id** (from the JobPilot UI) or a raw **job description** (manual use).
+- **A proposal id**: `GET /api/upwork/proposals/<id>`. Use its `jobDescription`, with `jobTitle`,
+  `clientName` and `jobUrl` for context.
+- **A job description**: there's no row yet; step 5 creates one.
 
-- **Id** → fetch the draft and use its `jobDescription` as the posting, with `jobTitle` / `clientName` / `jobUrl` for context. Keep the id for Step 6. Drafts from an Upwork search recommendation (`source:"search"`) work the same way.
+## 1. Read the job and recent proposals
 
-  ```bash
-  jobpilot-api GET "/api/upwork/proposals/$ARG"
-  ```
+Note what the client needs built or fixed, the tech, scope and timeline, and any direct questions.
+Pick one detail unique to this posting to show you read it.
 
-- **Anything else** → the argument is the job description. There's no row yet; Step 6 creates one.
+`GET /api/upwork/proposals --query page=1 --query limit=5`; from each `.items[].proposalText`, note
+the first line, the project it used, and the closing question.
 
-## Step 2: Read the job and your recent proposals
+## 2. Pick one case study
 
-From the posting, note what the client needs built or fixed, the tech, scope and timeline hints, and any direct questions they ask. Pick one detail unique to this posting to show you read it.
+The one resume project that matches their problem, not just their stack; keep its link. Prefer a
+different project from the last two proposals when another fits as well.
 
-Then read your last five proposals so this one doesn't come out the same:
+## 3. Write
 
-```bash
-jobpilot-api GET /api/upwork/proposals --query page=1 --query limit=5
-```
+Under 150 words:
 
-From each `.items[].proposalText`, note the first line, the project it used, and the closing question.
+1. **Hook**, line 1, in `**bold**` (Upwork renders it, and it is what gets read): the closest thing
+   you've done to their problem ("I built the Stripe Connect payouts for a two-sided marketplace
+   last year."). Don't paraphrase their posting. Not "Hi", "Dear client", "I'm excited to apply".
+2. **Proof**, one or two lines: what you built, one real result, the link.
+3. **Question**, one line: a specific question about their project (a scope choice, an edge case,
+   a decision they face). It is the call to action; nothing after it. A calendar link instead only
+   if the profile has one.
 
-## Step 3: Pick one case study
+Match their tone. No Top Rated or JSS mentions unless asked. No lists, headers or emoji. Don't
+reuse a recent first line or closing question.
 
-Choose the single project from the resume that matches their problem, not just their stack. Keep its link if it has one. Prefer a different project from the last two proposals when another one fits just as well.
+Screening questions: short and direct. "How many years with React?" gets "4 years, most recently
+on <project>."
 
-## Step 4: Write
+Then run the `humanizer` skill in embedded mode on the proposal and on the answers.
 
-Under 150 words, in this order:
+## 4. Save
 
-1. **Hook (line 1, in `**bold**`).** Why you in one line: the closest thing you've done to their problem ("I built the Stripe Connect payouts for a two-sided marketplace last year."). Upwork renders the bold, so this line is what gets read. Don't paraphrase their posting back to them; they know what they wrote. Not "Hi", "Dear client", "I'm excited to apply", or "I came across your posting".
-2. **Proof (one or two lines).** The case study: what you built, one real result, and the link. Don't narrate your career.
-3. **Question (one line).** One specific question about their project that shows you thought about it (a scope choice, an edge case, a decision they'll face). This is the call to action; don't add "Looking forward to hearing from you" after it. Use a calendar link instead only if the profile has one.
+Write `$JOBPILOT_TEMP/proposal.json`. `screeningAnswers` is `[{ "question", "answer" }]` or `[]`.
 
-Match their tone: a casual posting gets a casual reply. Don't mention Top Rated or JSS unless the posting asks; the profile already shows it. No lists, headers, or emoji in the body. Don't reuse the first line or closing question of a recent proposal.
-
-**Screening questions.** Answer each one short and direct. "How many years with React?" → "4 years, most recently on [project]." A one-line question gets a one- or two-line answer.
-
-## Step 5: Humanize
-
-Invoke the `humanizer` skill in embedded mode on the proposal, then on the screening answers.
-
-## Step 6: Save
-
-Write the body to `"$JOBPILOT_TEMP/proposal.json"` (proposal text breaks inline quoting). `screeningAnswers` is `[{ "question", "answer" }]`, or `[]` when there were none.
-
-- **Launched with an id** → `PATCH` the draft; its status stays `draft`. Body `{ "proposalText", "screeningAnswers" }`:
+- From an id: `{ "proposalText", "screeningAnswers" }`; it stays a draft.
 
   ```bash
-  jobpilot-api PATCH "/api/upwork/proposals/$ARG" --data @"$JOBPILOT_TEMP/proposal.json"
+  jobpilot-api PATCH /api/upwork/proposals/<id> --data @"$JOBPILOT_TEMP/proposal.json"
   ```
 
-- **Launched with a job description** → `POST` a new row. Body `{ "jobTitle", "clientName", "jobUrl", "jobDescription", "proposalText", "screeningAnswers" }`; `jobTitle` is required (derive it from the posting), and include `clientName` / `jobUrl` when the posting gives them:
+- From a description: `{ "jobTitle", "clientName", "jobUrl", "jobDescription", "proposalText",
+  "screeningAnswers" }`. `jobTitle` is required; include `clientName` and `jobUrl` when known.
 
   ```bash
   jobpilot-api POST /api/upwork/proposals --data @"$JOBPILOT_TEMP/proposal.json"
   ```
 
-Then print the proposal, and each screening answer under its question, so the user can paste them into Upwork.
-
-## Rules
-
-1. **No fabrication.** Every project, metric, and link comes from the resume.
-2. **One case study, one question.** Relevance beats volume.
+Print the proposal and each answer under its question, ready to paste. Every project, metric and
+link comes from the resume.

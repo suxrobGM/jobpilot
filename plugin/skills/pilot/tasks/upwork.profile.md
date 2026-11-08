@@ -1,7 +1,6 @@
 # `upwork.profile`
 
-Payload `{mode}`: `review` runs the `upwork-profile` skill to review the profile and save
-suggestions; `apply` runs it with `apply` to write the accepted ones to Upwork
-(`../../upwork-profile/SKILL.md`).
+Payload `{mode}`. Run the `upwork-profile` skill (`../../upwork-profile/SKILL.md`): `review` drafts
+suggestions; `apply` writes the approved ones to Upwork.
 
 Summary: "Reviewed the Upwork profile - 5 suggestions saved."

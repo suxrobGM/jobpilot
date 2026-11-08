@@ -4,39 +4,30 @@ description: Search a chosen job board or the open web, score the results agains
 argument-hint: "<query> (--board <domain> | --anywhere) [--max-jobs N]"
 ---
 
-# Job Search
+# Search
 
-Search one board, or the open web with `--anywhere`, and save the scored results to the user's
-manual feed. They wait in the Pipeline's To review tab for the user to approve; the pilot never applies
-to them on its own.
-
-## Setup
+Search one board, or the open web with `--anywhere`, and save scored results to the user's manual
+feed. They wait in the Pipeline's To review tab; the pilot never applies to them on its own.
 
 1. Follow `../_shared/setup.md`.
-2. Parse and strip the flags; the rest is the query. If it is vague, ask before searching.
-   - `--board <domain>` or `--anywhere`: exactly one is required.
+2. Strip the flags; the rest is the query. Ask first if it is vague.
+   - `--board <domain>` or `--anywhere`: exactly one.
    - `--max-jobs <N>`: new jobs to save, default 20.
-3. The manual feed; read `.id` as `FEED_ID`:
+3. Get the manual feed and read `.id` as `FEED_ID`:
 
    ```bash
    jobpilot-api POST /api/feeds --data '{"kind":"manual"}'
    ```
 
-## Search
+4. Run **Searching** in `../_shared/feed-flow.md` with `MIN_SCORE` 0 and `NEW_JOBS` = max jobs.
+5. Print only this, from the agent's output:
 
-Run **Searching** in `../_shared/feed-flow.md` with `MIN_SCORE` 0 and `NEW_JOBS` = `--max-jobs`.
-Every result stays `pending` for the user.
+   ```text
+   ## Saved <newJobs> jobs for "<query>" - review at $JOBPILOT_WEB/pipeline?feed=<FEED_ID>
 
-## Hand off
+   | Score | Title | Company |
+   |-------|-------|---------|
+   ```
 
-Print the agent's output as a compact table and the link, nothing else:
-
-```
-## Saved <newJobs> jobs · "<query>" - review and apply at $JOBPILOT_WEB/pipeline?feed=<FEED_ID>
-
-| Score | Title | Company |
-|-------|-------|---------|
-```
-
-List `best`, then the `skipped` reasons, the `capExempt` count and any `boardsSuggested`. Name any
-`error`.
+   Rows from `best`, then the `skipped` reasons, the `capExempt` count, any `boardsSuggested`, and
+   any `error`.

@@ -68,7 +68,7 @@ At most one dash clause, one contrast, and one group of three per text.
 - **-ing riders.** "..., ensuring reliability", "..., showcasing my ability to...", "..., contributing to growth." End at the fact, or make it a second sentence with a real subject.
 - **Avoiding "is" and "has".** "Serves as", "stands as", "functions as", "boasts", "features."
 - **Vague association.** "Involved in", "associated with", "exposure to" the thing you actually built or led. Name the role the resume gives. If the resume is vague, stay vague.
-- **Filler.** "In order to" → "to"; "has the ability to" → "can"; "it's worth noting that", "I wanted to reach out", "I'd like to take a moment to" → cut.
+- **Filler.** "In order to" becomes "to"; "has the ability to" becomes "can". Cut "it's worth noting that", "I wanted to reach out", "I'd like to take a moment to".
 
 ### Openings and closings
 
@@ -104,7 +104,7 @@ Repetition across texts (this letter against the user's last five) is the caller
 
 **Cover letter paragraph.** Before:
 
-> I'm excited to apply for the Senior Backend Engineer role at Acme. With 6 years of experience building scalable, reliable, and high-performance systems, I bring a proven track record of delivering results — which aligns perfectly with your team's mission. At Northwind, I spearheaded the migration of the order pipeline from nightly batches to Kafka events, reducing order confirmation time from 40 minutes to under a minute and ensuring seamless scalability.
+> I'm excited to apply for the Senior Backend Engineer role at Acme. With 6 years of experience building scalable, reliable, and high-performance systems, I bring a proven track record of delivering results -- which aligns perfectly with your team's mission. At Northwind, I spearheaded the migration of the order pipeline from nightly batches to Kafka events, reducing order confirmation time from 40 minutes to under a minute and ensuring seamless scalability.
 
 After:
 
@@ -114,7 +114,7 @@ After:
 
 > Subject: Exploring Opportunities at Stripe
 >
-> Hi Dana, I hope this message finds you well! I came across the Senior Backend Engineer opening on your Payments Infrastructure team and was truly impressed by the work you're doing. As a passionate engineer, I built the ledger reconciliation service at Plaid that processes 2M transactions a day — experience that aligns perfectly with your team's goals. I'd love to connect and learn more. Would you be open to a quick chat?
+> Hi Dana, I hope this message finds you well! I came across the Senior Backend Engineer opening on your Payments Infrastructure team and was truly impressed by the work you're doing. As a passionate engineer, I built the ledger reconciliation service at Plaid that processes 2M transactions a day -- experience that aligns perfectly with your team's goals. I'd love to connect and learn more. Would you be open to a quick chat?
 
 After:
 

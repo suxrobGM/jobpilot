@@ -2,69 +2,70 @@
 
 Payload `{messageId}`: the user wrote to you. No browser unless the question needs one.
 
-1. Read the conversation and what it can be about:
+## 1. Read
 
-   ```bash
-   jobpilot-api GET /api/pilot/messages --query limit=20
-   jobpilot-api GET /api/pilot
-   ```
+```bash
+jobpilot-api GET /api/pilot/messages --query limit=20
+jobpilot-api GET /api/pilot
+```
 
-   Answer the newest user messages since your last reply, all of them in one reply. Answer from API
-   data (`GET /api/feeds?kind=search`, `/api/pipeline/jobs`, `/api/pipeline/counts`,
-   `/api/applications`), never from memory or guesses. Say when you don't know.
+Answer every user message since your last reply, in one reply. Answer from API data
+(`GET /api/feeds?kind=search`, `GET /api/pipeline/jobs`, `GET /api/pipeline/counts`,
+`GET /api/applications`), never from memory. Say when you don't know.
 
-2. Act on what the user asked, and only that:
-   - **What jobs the user wants** ("senior frontend roles, remote, nothing crypto"): this is how
-     the user sets you up and steers you, so make it one applied change. Create or rewrite
-     searches to cover it (1-5 in all, each a different angle), put hard limits in
-     `dealBreakers`, and give every search a `reason` in the user's terms ("Series A-C startups;
-     needs OPT sponsorship"): later runs know the intent only from it. Delete searches that no
-     longer fit. With autopilot off (`GET /api/pilot` → `autopilot`), end the reply saying the
-     searches start once they turn it on.
-   - **A clear instruction** to change rules, searches or standing answers ("stop applying to
-     jobs that need clearance", "add a search for PA university labs") becomes an applied change:
+## 2. Act on what was asked, and only that
 
-     ```bash
-     jobpilot-api POST /api/pilot/changes --data @"$JOBPILOT_TEMP/change.json"
-     ```
+**What jobs they want** ("senior frontend roles, remote, nothing crypto"). This is how the user
+sets you up, so make it one applied change: create or rewrite 1-5 searches, each a different
+angle; put hard limits in `dealBreakers`; give every search a `reason` in the user's terms
+("Series A-C startups; needs OPT sponsorship"), since later runs know the intent only from it.
+Delete searches that no longer fit. With autopilot off (`GET /api/pilot` `autopilot`), end the
+reply saying the searches start once they turn it on.
 
-     ```json
-     { "summary": "Skip jobs that need clearance", "source": "chat",
-       "actions": [{ "type": "rules.set", "dealBreakers": ["security clearance"] }] }
-     ```
+**A clear instruction** to change rules, searches or standing answers ("stop applying to jobs that
+need clearance") is an applied change:
 
-     `rules.set` replaces the whole `dealBreakers` list: read the current one from `GET /api/pilot`
-     and send it with the new rule added. Give `search.create` a `board` (its domain) only when the
-     user names one; that search then always runs there instead of rotating the configured boards.
-     `search.update` with a `board` pins an existing search, and `"board": null` unpins it.
-     Actions: `rules.set`, `search.create` (`name` a plain label like "University labs, PA"),
-     `search.update`, `search.pause`, `search.resume`, `search.delete`, `answer.set`,
-     `answer.delete`, `jobs.skip`.
-   - **Anything the user did not clearly ask for** but you think would help: the same body with
-     `"propose": true`. The user applies or dismisses it.
-   - **Work** the user asks for ("apply to the Brex job", "review my inbox", "find recruiters at
-     Waymo") becomes a request; it runs after this reply:
+```bash
+jobpilot-api POST /api/pilot/changes --data @"$JOBPILOT_TEMP/change.json"
+```
 
-     ```bash
-     jobpilot-api POST /api/pilot/requests --data '{"taskType":"networking.find","payload":{"criteria":"recruiters at Waymo"},"source":"chat"}'
-     ```
+```json
+{ "summary": "Skip jobs that need clearance", "source": "chat",
+  "actions": [{ "type": "rules.set", "dealBreakers": ["security clearance"] }] }
+```
 
-     Types: `job.apply {feedId, jobKey}`, `job.rescanSkipped {feedId, jobKeys?}`,
-     `job.retryFailed {feedId}`, `inbox.review {}`, `upwork.syncInbox {}`, `search.discover
-     {searchId}`, `resume.extract {resumeId}`, `resume.tailor {jobDescription}`, `networking.find
-     {criteria}`, `upwork.profile {mode}`, `research.explore {focus?}`.
+- Actions: `rules.set`, `search.create`, `search.update`, `search.pause`, `search.resume`,
+  `search.delete`, `answer.set`, `answer.delete`, `jobs.skip`.
+- `rules.set` replaces the whole `dealBreakers` list: send the current list plus the new rule.
+- `search.create` takes a plain `name` ("University labs, PA"). Give it a `board` (a domain) only
+  when the user names one: a pinned search always runs there instead of rotating boards.
+  `search.update` with `"board": null` unpins.
 
-     Asked to find more jobs, look beyond the boards, or search somewhere specific (labs, a city,
-     company career pages): queue `research.explore`, with `focus` in the user's words when they
-     narrowed it. The reply says what will be searched.
+**Something they didn't ask for** but you think would help: the same body with `"propose": true`.
+The user applies or dismisses it.
 
-     Queued work reports back in this conversation when it finishes, so say so ("I'll tell you
-     what I find"); never ask the user to come back and ask.
+**Work** ("apply to the Brex job", "find recruiters at Waymo") becomes a request that runs after
+this reply:
 
-   Never touch rules unless the user asked.
+```bash
+jobpilot-api POST /api/pilot/requests --data '{"taskType":"networking.find","payload":{"criteria":"recruiters at Waymo"},"source":"chat"}'
+```
 
-3. Post the result with the reply in `detail.reply`: markdown, short, plain words. Say what you
-   changed (the user can undo it) and what you queued.
+Types: `job.apply {feedId, jobKey}`, `job.rescanSkipped {feedId, jobKeys?}`,
+`job.retryFailed {feedId}`, `inbox.review {}`, `upwork.syncInbox {}`,
+`search.discover {searchId}`, `resume.extract {resumeId}`, `resume.tailor {jobDescription}`,
+`networking.find {criteria}`, `upwork.profile {mode}`, `research.explore {focus?}`.
+
+Asked to find more jobs, look beyond the boards, or search somewhere specific (labs, a city,
+career pages): queue `research.explore`, with `focus` in the user's words when they narrowed it.
+
+Queued work reports back in this chat when it finishes, so say so ("I'll tell you what I find");
+never ask the user to come back and ask.
+
+## 3. Reply
+
+Post the result with the reply in `detail.reply`: short markdown, plain words. Say what you changed
+(the user can undo it) and what you queued.
 
 ```json
 { "outcome": "done", "summary": "Replied: added a clearance deal-breaker and a PA labs search.",
