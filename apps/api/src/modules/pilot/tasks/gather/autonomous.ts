@@ -82,12 +82,10 @@ export async function gatherAutonomousWork(
   const { searches, ...queued } = queue;
   const quiet = isPipelineQuiet({ ...counts, ...signals, ...searches, ...queued });
   const canSetUp = quiet && (searchCount === 0 || appliesLeft > 0);
-  // Research aims where the searches point, so it waits for the first ones.
-  const canResearch = quiet && searchCount > 0;
   const idle = await allNamed({
     reviews: quiet ? gatherFeedReviews(ctx) : NO_REVIEWS,
     setup: canSetUp ? gatherSetup(ctx, { minScore: config.minScore, searchCount }) : null,
-    research: canResearch ? gatherResearch(ctx, { config, searchCount }) : null,
+    research: quiet ? gatherResearch(ctx, { config, searchCount }) : null,
   });
 
   return {

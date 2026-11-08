@@ -1,8 +1,8 @@
 import type { ReactElement } from "react";
-import { Box, Link, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { DocsBlockquote, DocsCode, DocsPre, DocsTable } from "@/components/features/docs";
+import { DocsBlockquote, DocsCode, DocsLink, DocsPre, DocsTable } from "@/components/features/docs";
 
 const listSx = { my: 0.5, pl: 3, "&:first-child": { mt: 0 }, "&:last-child": { mb: 0 } };
 
@@ -29,7 +29,7 @@ const COMPONENTS: Components = {
   li: ({ node: _, ...props }) => (
     <Typography variant="body1" component="li" sx={{ my: 0.25 }} {...props} />
   ),
-  a: ({ node: _, ...props }) => <Link {...props} />,
+  a: ({ node: _, ...props }) => <DocsLink {...props} />,
   code: ({ node: _, ...props }) => <DocsCode {...props} />,
   pre: ({ node: _, ...props }) => <DocsPre {...props} />,
   blockquote: ({ node: _, ...props }) => <DocsBlockquote {...props} />,

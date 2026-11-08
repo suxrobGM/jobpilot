@@ -35,15 +35,15 @@ const alreadyFinished = () => conflict("Run is already finished.", ErrorCodes.PI
 
 type JournalEntryInput = CreatePilotJournalInput["entries"][number];
 
-/** The agent's answer, for a chat reply or work the user asked for in chat; done needs one. */
+/** The agent's answer to work asked for in chat; done needs one. */
 function replyFromResult(run: PilotRunModel, body: PilotRunResultInput): string | null {
-  if (run.taskType !== "chat.reply" && !run.askedInChat) {
+  if (!run.askedInChat) {
     return null;
   }
   const reply = typeof body.detail?.reply === "string" ? body.detail.reply : null;
   // Closing without it would leave the user waiting on an answer with no error.
   if (body.outcome === "done" && reply === null) {
-    throw badRequest("A done result for a chat message or chat request needs detail.reply.");
+    throw badRequest("A done result for work asked in chat needs detail.reply.");
   }
   return reply;
 }

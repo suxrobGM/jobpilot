@@ -90,7 +90,7 @@ Where to change things:
 ## Never on screen
 
 - Analytics "Top failure reasons": it quotes a security answer and the email.
-- Goals & rules page: the goals text (visa status) and Standing answers (criminal record,
+- Searches & rules page: search reasons (visa status) and Standing answers (criminal record,
   citizenship). Show the rules card on the Pilot side panel instead.
 - hiring.cafe's login modal (the agent types the email into it). Form fields once filled.
 - Inbox (other people's names). Reviewed safe: terminal UUIDs and paths, collapsed API output.

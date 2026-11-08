@@ -27,8 +27,7 @@ export function researchTrigger(input: TriggerInput): ResearchTrigger | null {
   if (!lastRun) {
     return "initial";
   }
-  // Zero searches is never dry: `search.setup` comes first then.
-  const dry = input.searchCount > 0 && input.backingOffCount * 2 > input.searchCount;
+  const dry = input.backingOffCount * 2 > input.searchCount;
   if (dry && !ranRecently(lastRun, now, DRY_COOLDOWN_MS)) {
     return "dry";
   }
@@ -94,6 +93,10 @@ export async function gatherResearch(
   ctx: GatherContext,
   pilot: ResearchPilot,
 ): Promise<ResearchTask | null> {
+  // Research aims where the searches point, so it waits for the first ones.
+  if (pilot.searchCount === 0) {
+    return null;
+  }
   const { prisma, userId, now } = ctx;
   const [lastRun, backingOffCount, paused] = await Promise.all([
     latestRun(ctx, "research.explore"),

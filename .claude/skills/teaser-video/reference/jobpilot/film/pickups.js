@@ -1,5 +1,5 @@
 // Payoff + trust pickups after the run: the Pilot thread (its side panel holds the rules card)
-// and the Pipeline's Applied tab. Never film Goals & rules: it shows the standing answers.
+// and the Pipeline's Applied tab. Never film Searches & rules: it shows the standing answers.
 //   node pickups.js
 import fs from "node:fs";
 import { click, go, hideCursor, open, roll } from "./cam.js";

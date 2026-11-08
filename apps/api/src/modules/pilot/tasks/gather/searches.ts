@@ -80,12 +80,13 @@ export async function gatherSetup(
   input: SetupInput,
 ): Promise<TaskPayload<"search.setup"> | null> {
   const { prisma, userId, now } = ctx;
+  // With no searches the first ones come from the resume.
+  const needsResume = input.searchCount === 0;
   const [last, resumeCount] = await Promise.all([
     latestRun(ctx, "search.setup"),
-    prisma.resume.count({ where: { userId } }),
+    needsResume ? prisma.resume.count({ where: { userId } }) : null,
   ]);
-  // With no searches the first ones come from the resume.
-  const noStart = input.searchCount === 0 && resumeCount === 0;
+  const noStart = needsResume && resumeCount === 0;
   if (noStart || ranRecently(last, now, IDLE_RERUN_MS)) {
     return null;
   }

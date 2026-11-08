@@ -123,16 +123,18 @@ function runDb({ currentVersion = VERSION, openRun = null, feedStillPaused = tru
 const runRow = (over: Record<string, unknown> = {}) => {
   const { taskType, subjectType, subjectId, payload } = applyTask;
   return {
-    ...{
-      id: RUN_ID,
-      userId: USER_ID,
-      taskType,
-      subjectType,
-      subjectId,
-      payload,
-      title: "Engineer",
-    },
-    ...{ startedAt: now, heartbeatAt: null, expiresAt: now, finishedAt: null, outcome: null },
+    id: RUN_ID,
+    userId: USER_ID,
+    taskType,
+    subjectType,
+    subjectId,
+    payload,
+    title: "Engineer",
+    startedAt: now,
+    heartbeatAt: null,
+    expiresAt: now,
+    finishedAt: null,
+    outcome: null,
     askedInChat: false,
     ...over,
   };

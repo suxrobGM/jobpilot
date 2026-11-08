@@ -39,10 +39,6 @@ describe("researchTrigger", () => {
     expect(trigger({ backingOffCount: 3 })).toBe("dry");
     expect(trigger({ backingOffCount: 3, lastRun: finished(HOUR_MS) })).toBeNull();
   });
-
-  it("never fires dry with zero searches", () => {
-    expect(trigger({ searchCount: 0, backingOffCount: 0 })).toBeNull();
-  });
 });
 
 describe("TaskListService research.explore", () => {

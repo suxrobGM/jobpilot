@@ -107,7 +107,7 @@ export async function startRun(
       title: task.title,
       payload: toInputJson(task.payload),
       expiresAt: new Date(Date.now() + RUN_TTL_MS),
-      askedInChat: chatRequests > 0,
+      askedInChat: task.taskType === "chat.reply" || chatRequests > 0,
     },
   });
   // Any run on a requested subject does the asked-for work, whoever picked it.
