@@ -27,7 +27,7 @@ export function UpworkPanel(): ReactElement {
           <Stack spacing={0.75}>
             <Typography variant="overlineMuted">Proposal draft</Typography>
             <Typography variant="body2Muted">
-              Hi Dana - I've shipped three Next.js dashboards for logistics teams, most recently a
+              Hi Dana, I've shipped three Next.js dashboards for logistics teams, most recently a
               live fleet tracker with 2,000 vehicles. Here is how I'd approach yours...
             </Typography>
           </Stack>

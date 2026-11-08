@@ -13,7 +13,7 @@ const LINES: Line[] = [
   { text: "→ 31 new jobs · scoring against your resume", tone: "step" },
   { text: "✓ Norlake · Senior Frontend Engineer · 92% match", tone: "ok" },
   { text: "→ Tailoring resume · filling the application", tone: "step" },
-  { text: "? Salary expectation - asked you on your phone", tone: "ask" },
+  { text: "? Salary expectation: asked you on your phone", tone: "ask" },
   { text: "✓ You answered · application submitted", tone: "ok" },
   { text: "→ Today: 6 applied · 2 replies · next check in 40m", tone: "muted" },
 ];

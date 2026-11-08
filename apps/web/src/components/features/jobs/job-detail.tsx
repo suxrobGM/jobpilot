@@ -182,7 +182,7 @@ function ApplyCard(): ReactElement {
             Apply with JobPilot
           </Typography>
           <Typography variant="body2Muted">
-            Your own AI agent tailors your resume and fills the form - on your machine, on your
+            Your own AI agent tailors your resume and fills the form, on your machine and your
             Claude or Codex plan.
           </Typography>
           <LinkButton href="/install" variant="outlined" fullWidth>

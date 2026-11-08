@@ -8,7 +8,7 @@ import { SectionHeading } from "../section-heading";
 const STEPS: NumberedStep[] = [
   {
     title: "Say what you want",
-    body: "Describe the jobs you're after in a few sentences, and set a daily limit and any deal-breakers. Change your mind later by just telling it.",
+    body: "Describe the jobs you want in a few sentences, with a daily limit and any deal-breakers. To change course later, tell it.",
   },
   {
     title: "It gets to work",
@@ -16,11 +16,11 @@ const STEPS: NumberedStep[] = [
   },
   {
     title: "Answer from your phone",
-    body: "When it needs you - a salary question, a login code, approval to send a message - you get a notification. Answer it and the job carries on.",
+    body: "A salary question, a login code, or a message to approve comes to you as a notification. Answer it and the job carries on.",
   },
   {
     title: "See what it did",
-    body: "It reports each task as it finishes, you can watch the one in progress step by step, and each morning you get a summary of applications sent and replies received.",
+    body: "It reports each task as it finishes and shows the one in progress step by step. Each morning you get a summary of applications sent and replies received.",
   },
 ];
 
@@ -33,7 +33,7 @@ export function Pilot(): ReactElement {
             <SectionHeading
               eyebrow="How the Pilot works"
               title="Set it up once. It keeps your search going."
-              lead="Like an assistant: you say what you want, it searches, applies, and follows up, and it asks you when it needs a decision."
+              lead="You say what you want. It searches, applies, and follows up, and asks when it needs a decision."
             />
             <Stack direction="row" sx={{ flexWrap: "wrap", gap: 2, alignItems: "center" }}>
               <LinkButton href="/install" variant="contained">

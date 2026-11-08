@@ -31,7 +31,7 @@ const STOPS: TourStop[] = [
     id: "pipeline",
     label: "Pipeline",
     title: "Every job and application in one place.",
-    body: "Each job the agent finds lands in your pipeline with its score. Applications follow on, so you can track each one from applied to offer without a spreadsheet.",
+    body: "Each job the agent finds lands in your pipeline with its score, and each application is tracked from applied to offer. No spreadsheet.",
     panel: <PipelinePanel />,
   },
   {
