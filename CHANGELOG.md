@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.4.1 - 2026-11-08
+
+Update the plugin with this release so the pilot can set up searches from every resume.
+
+### Added
+
+- Ask the pilot to set up searches from your resumes, with autopilot on or off. It groups your resumes by the role each targets and adds searches for roles your current searches don't cover, each scoring jobs against its own resume.
+- A job waiting on you can be skipped from its page.
+
+### Changed
+
+- Clearer FAQ and public copy, covering chat steering and autopilot.
+
 ## v2.4.0 - 2026-11-08
 
 Update the plugin and terminal host with this release. Older hosts stop running the pilot once the API is deployed, because the pilot no longer has a Start/Stop switch; the update banner brings them current.
