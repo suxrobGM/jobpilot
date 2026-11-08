@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { ToggleButton, ToggleButtonGroup, toggleButtonClasses } from "@mui/material";
 import { CountLabel } from "@/components/ui/display/count-label";
 import type { SelectFieldOption } from "./select-field";
 
@@ -38,7 +38,13 @@ export function FilterToggle<TValue extends string>(
           onChange(next === ALL ? null : (next as TValue));
         }
       }}
-      sx={{ flexWrap: "wrap" }}
+      // Wrapping split the joined group into ragged rows on phones; it scrolls sideways instead.
+      sx={{
+        maxWidth: "100%",
+        overflowX: "auto",
+        scrollbarWidth: "none",
+        [`& .${toggleButtonClasses.root}`]: { flexShrink: 0, whiteSpace: "nowrap" },
+      }}
     >
       <ToggleButton value={ALL}>
         <CountLabel label={allLabel} count={allCount} />
