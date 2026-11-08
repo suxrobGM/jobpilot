@@ -17,6 +17,14 @@ export const FAQ_ITEMS = [
     a: "On your computer. The dashboard is a website, but the AI and the browser it applies with run on your machine. You can watch it and stop it at any time.",
   },
   {
+    q: "How do I tell it what jobs I want?",
+    a: "Tell the Pilot in chat, the way you'd brief a recruiter. It sets up searches from that, skips your deal-breakers, and asks when it's unsure. With autopilot on it keeps working by itself; off, it runs only what you ask for.",
+  },
+  {
+    q: "Will it apply or message anyone without asking?",
+    a: "It applies up to your daily limit, which the server enforces. LinkedIn messages, posts, and interview replies always wait for your approval, and every change it makes to your searches and rules can be undone for 7 days.",
+  },
+  {
     q: "Which job boards are supported?",
     a: "Eleven come built in, including LinkedIn, Indeed, Hacker News Who's Hiring, and Upwork. The agent uses a normal browser, so you can add any other job site too.",
   },
