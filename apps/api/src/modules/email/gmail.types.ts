@@ -34,8 +34,6 @@ export interface MailboxSession {
   accessToken: string | null;
   refreshToken: string | null;
   tokenExpiresAt: Date | null;
-  /** Gmail's delta-sync cursor; `null` before the first sync. */
-  historyId: string | null;
 }
 
 /** An inbound message in the shape the `EmailMessage` table stores. */
@@ -79,12 +77,4 @@ export interface SendMessageInput {
 export interface SentMessage {
   providerId: string;
   threadId: string;
-}
-
-export interface SyncResult {
-  /** Messages inspected, new and already known. */
-  fetched: number;
-  newMessages: NormalizedMessage[];
-  /** Cursor for the next delta sync; `null` forces a full re-list. */
-  historyId: string | null;
 }

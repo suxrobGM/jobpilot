@@ -59,7 +59,6 @@ export class MailboxSessionService {
       accessToken,
       refreshToken,
       tokenExpiresAt: account.tokenExpiresAt,
-      historyId: account.historyId,
     };
 
     const expired = session.tokenExpiresAt !== null && session.tokenExpiresAt <= new Date();

@@ -18,7 +18,6 @@ import type {
   OAuthClientConfig,
   SendMessageInput,
   SentMessage,
-  SyncResult,
   TokenSet,
 } from "./gmail.types";
 
@@ -26,12 +25,6 @@ import type {
 type OAuth2Client = InstanceType<typeof google.auth.OAuth2>;
 type Credentials = OAuth2Client["credentials"];
 type Gmail = gmail_v1.Gmail;
-
-/** Message ids to fetch, and the cursor to persist once they are stored. */
-interface MessageIdBatch {
-  ids: string[];
-  historyId: string | null;
-}
 
 interface GaxiosFailure {
   status?: number;
@@ -47,7 +40,10 @@ export const GMAIL_READ_SCOPE = "https://www.googleapis.com/auth/gmail.readonly"
 /** Scopes requested at consent; surfaced in the email settings UI. */
 export const GMAIL_SCOPES = [GMAIL_READ_SCOPE, GMAIL_SEND_SCOPE, "openid", "email"];
 
-const RECENT_MAIL_QUERY = "newer_than:14d -in:chats -category:promotions -category:social";
+// Gmail allows about 50 message reads a second per user; more 429s and drops mail.
+const PARALLEL_FETCHES = 10;
+
+const SYNCED_MAIL_QUERY = "-in:chats -in:sent -category:promotions -category:social";
 
 /**
  * Every user brings their own Google Cloud project, so "Gmail API not enabled" is that user's
@@ -102,62 +98,6 @@ function toTokenSet(credentials: Credentials, fallbackRefreshToken: string | nul
     expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : null,
     scope: credentials.scope ?? null,
   };
-}
-
-/**
- * Message ids added since `startHistoryId`, plus the mailbox's latest cursor. `null` when Gmail
- * 404s an expired cursor, which calls for a full re-list.
- */
-async function historyMessageIds(
-  gmail: Gmail,
-  startHistoryId: string,
-): Promise<MessageIdBatch | null> {
-  const ids: string[] = [];
-  let historyId = startHistoryId;
-  let pageToken: string | null = null;
-  try {
-    // Every page must be read: the response's historyId is already the mailbox's latest.
-    do {
-      // Annotated: pageToken is reassigned from the page, which TS cannot infer circularly.
-      const page: gmail_v1.Schema$ListHistoryResponse = (
-        await gmail.users.history.list({
-          userId: "me",
-          startHistoryId,
-          historyTypes: ["messageAdded"],
-          maxResults: 500,
-          pageToken: pageToken ?? undefined,
-        })
-      ).data;
-
-      historyId = page.historyId ?? historyId;
-      for (const record of page.history ?? []) {
-        for (const added of record.messagesAdded ?? []) {
-          if (added.message?.id) {
-            ids.push(added.message.id);
-          }
-        }
-      }
-      pageToken = page.nextPageToken ?? null;
-    } while (pageToken);
-  } catch (error) {
-    if ((error as GaxiosFailure | null)?.status === 404) {
-      return null;
-    }
-    throw error;
-  }
-  return { ids, historyId };
-}
-
-/** Recent mail, with the cursor read first so mail arriving mid-list is caught next sync. */
-async function recentMessageIds(gmail: Gmail): Promise<MessageIdBatch> {
-  const profile = await gmail.users.getProfile({ userId: "me" });
-  const list = await gmail.users.messages.list({
-    userId: "me",
-    maxResults: 50,
-    q: RECENT_MAIL_QUERY,
-  });
-  const ids = (list.data.messages ?? []).flatMap((m) => (m.id ? [m.id] : []));
-  return { ids, historyId: profile.data.historyId ?? null };
 }
 
 /** `null` when the message can't be read (deleted since, transient failure). */
@@ -231,26 +171,44 @@ export class GmailClient {
     };
   }
 
-  /**
-   * Delta sync from `historyId` when the cursor is still valid, otherwise a recent-mail list.
-   * Returns the new cursor for the caller to persist.
-   */
-  async sync(session: MailboxSession): Promise<SyncResult> {
+  /** Ids of mail received after `since`, every page. */
+  async listMessageIds(session: MailboxSession, since: Date): Promise<string[]> {
+    const gmail = gmailFor(session);
+    const after = Math.floor(since.getTime() / 1000);
+    const ids: string[] = [];
+    let pageToken: string | null = null;
     try {
-      const gmail = gmailFor(session);
-      const delta = session.historyId ? await historyMessageIds(gmail, session.historyId) : null;
-      const { ids, historyId } = delta ?? (await recentMessageIds(gmail));
-
-      const newMessages: NormalizedMessage[] = [];
-      for (const id of ids) {
-        const message = await fetchMessage(gmail, id);
-        if (message) {
-          newMessages.push(message);
+      do {
+        // Annotated: pageToken is reassigned from the page, which TS cannot infer circularly.
+        const page: gmail_v1.Schema$ListMessagesResponse = (
+          await gmail.users.messages.list({
+            userId: "me",
+            q: `after:${after} ${SYNCED_MAIL_QUERY}`,
+            maxResults: 500,
+            pageToken: pageToken ?? undefined,
+          })
+        ).data;
+        for (const message of page.messages ?? []) {
+          if (message.id) {
+            ids.push(message.id);
+          }
         }
-      }
-      return { fetched: ids.length, newMessages, historyId };
+        pageToken = page.nextPageToken ?? null;
+      } while (pageToken);
     } catch (error) {
       rethrowGmailError(error);
     }
+    return ids;
+  }
+
+  async getMessages(session: MailboxSession, ids: string[]): Promise<NormalizedMessage[]> {
+    const gmail = gmailFor(session);
+    const messages: NormalizedMessage[] = [];
+    for (let i = 0; i < ids.length; i += PARALLEL_FETCHES) {
+      const batch = ids.slice(i, i + PARALLEL_FETCHES);
+      const fetched = await Promise.all(batch.map((id) => fetchMessage(gmail, id)));
+      messages.push(...fetched.filter((message) => message !== null));
+    }
+    return messages;
   }
 }

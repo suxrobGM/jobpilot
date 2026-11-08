@@ -89,7 +89,14 @@ export class EmailAccountService {
     const refreshToken =
       (await this.crypto.encryptField(userId, SECRET_CONTEXTS.gmailTokens, tokens.refreshToken)) ??
       null;
+    const existing = await this.prisma.emailAccount.findUnique({
+      where: { userId },
+      select: { email: true },
+    });
+    // Reconnecting the same mailbox resumes from lastSyncAt; a failed sync never advanced it.
+    const syncReset = existing?.email === email ? {} : { lastSyncAt: null, clearedBefore: null };
     const fields = {
+      ...syncReset,
       email,
       accessToken,
       refreshToken,
@@ -97,8 +104,6 @@ export class EmailAccountService {
       scope: tokens.scope ?? null,
       // A reconnect is exactly how a dead grant gets fixed.
       refreshFailedAt: null,
-      // Restart from a recent-mail list; mail missed while the grant was dead is past the old cursor.
-      historyId: null,
     };
 
     await this.prisma.emailAccount.upsert({
