@@ -27,7 +27,8 @@ Payload `{messageId}`: the user wrote to you. No browser unless the question nee
      ```
 
      `rules.set` replaces the whole `dealBreakers` list: read the current one from `GET /api/pilot`
-     and send it with the new rule added. Actions: `goals.set`, `rules.set`, `search.create`
+     and send it with the new rule added. Give `search.create` a `board` (its domain) only when the
+     user names one; that search then always runs there instead of rotating the configured boards. Actions: `goals.set`, `rules.set`, `search.create`
      (`name` a plain label like "University labs, PA"), `search.update`, `search.pause`,
      `search.resume`, `search.delete`, `answer.set`, `answer.delete`, `jobs.skip`.
    - **Anything the user did not clearly ask for** but you think would help: the same body with

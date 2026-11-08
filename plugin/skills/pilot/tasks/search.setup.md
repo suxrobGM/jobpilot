@@ -26,7 +26,7 @@ jobpilot-api POST /api/pilot/changes --data @"$JOBPILOT_TEMP/change.json"
 
 `name` is a short plain label the user reads (2-5 words, never the query or its `-exclusions`); `query` is what you'd type into a board ("senior
 typescript remote", not "good jobs"); `reason` is one user-facing sentence. Never pin a board:
-boards rotate one per cycle.
+an unpinned search rotates the configured boards one per cycle, a pinned one stays on its board.
 
 Summary: "Set up 2 searches from your goals: 'ML engineer, new grad', 'Research engineer'." or
 "Added 'ML engineer, Boston' and retired 'ML engineer, Maine' (3 empty runs)."

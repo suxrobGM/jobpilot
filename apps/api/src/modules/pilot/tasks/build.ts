@@ -211,9 +211,12 @@ function outreachTasks(input: TaskListInput, allowed: AllowedToday): PilotTask[]
   return tasks;
 }
 
-/** The configured boards win, one step per cycle, so discovery works all of them. */
+/** A search pinned to a board stays there; the rest rotate the configured boards per cycle. */
 export function discoveryBoard(boards: string[], cycleCount: number, ownBoard: string | undefined) {
-  return boards.length > 0 ? boards[cycleCount % boards.length] : ownBoard;
+  if (ownBoard || boards.length === 0) {
+    return ownBoard;
+  }
+  return boards[cycleCount % boards.length];
 }
 
 function discoveryTasks(input: TaskListInput, newJobsTarget: number): PilotTask[] {

@@ -255,24 +255,23 @@ describe("buildTaskList networking", () => {
 });
 
 describe("buildTaskList discovery", () => {
-  it("rotates across the configured boards, or keeps the search's own board without any", () => {
-    const boardAt = (cycleCount: number, boards: string[]) =>
+  it("rotates an unpinned search across the configured boards, and keeps a pinned one", () => {
+    const boardAt = (cycleCount: number, ownBoard: string | undefined) =>
       buildTaskList(
         base({
-          config: cfg({ boards }),
+          config: cfg({ boards: ["hiring.cafe", "linkedin.com", "indeed.com"] }),
           cycleCount,
-          dueQueries: [dueQuery("golang", "wellfound")],
+          dueQueries: [dueQuery("golang", ownBoard)],
         }),
       ).tasks[0].payload;
 
-    const rotation = ["hiring.cafe", "linkedin.com", "indeed.com"];
-    expect([0, 1, 2, 3].map((cycle) => boardAt(cycle, rotation))).toMatchObject([
+    expect([0, 1, 2, 3].map((cycle) => boardAt(cycle, undefined))).toMatchObject([
       { board: "hiring.cafe" },
       { board: "linkedin.com" },
       { board: "indeed.com" },
       { board: "hiring.cafe" },
     ]);
-    expect(boardAt(0, [])).toMatchObject({ board: "wellfound", maxPages: 5 });
+    expect(boardAt(1, "wellfound")).toMatchObject({ board: "wellfound", maxPages: 5 });
   });
 });
 
