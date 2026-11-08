@@ -109,14 +109,17 @@ public sealed class PilotLoopTests : IAsyncLifetime
     {
         pilot.BlockSleep = true;
         pilot.TaskList = TaskList(tasks: 1, sleep: 3600);
+        // The pairing's own wake can land mid-cycle and skip the first sleep, so a second run is scripted.
+        pilot.Signals.Enqueue(WaitResult.Finished("done"));
         pilot.Signals.Enqueue(WaitResult.Finished("done"));
         await loop.StartAsync(CancellationToken.None);
         store.Save(NewPairing());
         await TestWait.Until(() => pilot.Actions.Contains("sleep:3600"));
+        var cyclesBeforeWake = CyclesSent;
 
         loop.Wake();
 
-        await TestWait.Until(() => CyclesSent == 2);
+        await TestWait.Until(() => CyclesSent == cyclesBeforeWake + 1);
         Assert.DoesNotContain("abort-turn", pilot.Actions);
     }
 
