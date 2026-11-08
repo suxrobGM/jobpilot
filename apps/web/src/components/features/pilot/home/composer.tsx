@@ -23,16 +23,41 @@ const SUGGESTED_PROMPTS = [
 const FROM_RESUME_PROMPT = "Set up searches from my resume";
 const DESCRIBE_PROMPT = "Senior frontend roles, remote in the US. Skip crypto and agencies.";
 
+interface PromptChipsProps {
+  settingUp: boolean;
+  onPick: (prompt: string) => void;
+}
+
+function PromptChips(props: PromptChipsProps): ReactElement {
+  const { settingUp, onPick } = props;
+  const hasResume = Boolean(useQuery(resumeQueries.list()).data?.length);
+  const setupPrompts = hasResume ? [FROM_RESUME_PROMPT, DESCRIBE_PROMPT] : [DESCRIBE_PROMPT];
+  const prompts = settingUp ? setupPrompts : SUGGESTED_PROMPTS;
+  return (
+    // Phones scroll the prompts sideways instead of stacking three rows over the box.
+    <Stack
+      direction="row"
+      sx={{ flexWrap: { xs: "nowrap", sm: "wrap" }, overflowX: "auto", gap: 0.75 }}
+    >
+      {prompts.map((prompt) => (
+        <Chip
+          key={prompt}
+          label={prompt}
+          variant="outlined"
+          onClick={() => onPick(prompt)}
+          sx={(theme) => ({ borderRadius: theme.radii.pill })}
+        />
+      ))}
+    </Stack>
+  );
+}
+
 /** Talk to the pilot; its reply runs in the user's own agent session ahead of other work. */
 export function Composer(): ReactElement {
   const state = usePilotState();
   const [text, setText] = useState("");
   const [addingLinks, setAddingLinks] = useState(false);
   const settingUp = useQuery(pilotQueries.searches()).data?.length === 0;
-
-  const hasResume = Boolean(useQuery(resumeQueries.list()).data?.length);
-  const setupPrompts = hasResume ? [FROM_RESUME_PROMPT, DESCRIBE_PROMPT] : [DESCRIBE_PROMPT];
-  const prompts = settingUp ? setupPrompts : SUGGESTED_PROMPTS;
   const links = parseLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
   const empty = text.trim() === "";
@@ -53,23 +78,7 @@ export function Composer(): ReactElement {
   return (
     <Stack spacing={1.25} sx={{ pt: 1.5 }}>
       {replying && <Typography variant="captionMuted">Pilot is replying…</Typography>}
-      {text === "" && (
-        // Phones scroll the prompts sideways instead of stacking three rows over the box.
-        <Stack
-          direction="row"
-          sx={{ flexWrap: { xs: "nowrap", sm: "wrap" }, overflowX: "auto", gap: 0.75 }}
-        >
-          {prompts.map((prompt) => (
-            <Chip
-              key={prompt}
-              label={prompt}
-              variant="outlined"
-              onClick={() => setText(prompt)}
-              sx={(theme) => ({ borderRadius: theme.radii.pill })}
-            />
-          ))}
-        </Stack>
-      )}
+      {text === "" && <PromptChips settingUp={settingUp} onPick={setText} />}
       {links.length > 0 && (
         <Stack direction="row">
           <Chip
