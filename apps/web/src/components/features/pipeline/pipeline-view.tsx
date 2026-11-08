@@ -25,16 +25,20 @@ import { PIPELINE_TAB_KEYS, PIPELINE_TABS, type PipelineTab } from "./pipeline-t
 export function PipelineView(): ReactElement {
   const params = useSearchParams();
   const chosenView = enumParam(PIPELINE_TAB_KEYS, params.get("view"));
+
   const feedId = params.get("feed");
   const board = params.get("board");
   const status = useFunnelStatus();
   const pagination = usePaginationParams();
   const search = useUrlSearch("q", pagination);
+
   const [addingLinks, setAddingLinks] = useState(false);
   const filters = usePipelineFilters();
+
   const countsQuery = useQuery(pipelineQueries.counts(filters));
   const counts = countsQuery.data;
-  const summary = useQuery(applicationQueries.summary(filters)).data;
+  const summaryQuery = useQuery(applicationQueries.summary(filters));
+  const summary = summaryQuery.data;
   const boards = useQuery(jobBoardQueries.list()).data ?? [];
 
   const boardOptions = boards.map((b) => ({ value: b.name, label: b.name }));
@@ -44,11 +48,11 @@ export function PipelineView(): ReactElement {
     count: summary?.byStatus[key] ?? 0,
   }));
   const tabCount = (key: PipelineTab) => (key === "applied" ? summary?.total : counts?.views[key]);
-  // A link to one search names no tab; open where its jobs are, not on an empty To review.
-  const landing = feedId ? PIPELINE_TAB_KEYS.find((key) => (tabCount(key) ?? 0) > 0) : null;
+  // A URL that names no tab opens where the jobs are, not on an empty To review.
+  const landing = PIPELINE_TAB_KEYS.find((key) => (tabCount(key) ?? 0) > 0);
   const view = chosenView ?? landing ?? "review";
   // Mounting a tab before the counts pick one fetches it, then remounts another.
-  const picking = feedId !== null && chosenView === null && countsQuery.isPending;
+  const picking = chosenView === null && (countsQuery.isPending || summaryQuery.isPending);
   // Applications aren't counted per feed, so Applied lists every feed without numbers.
   const feedCounts =
     view !== "applied" && counts
@@ -80,13 +84,7 @@ export function PipelineView(): ReactElement {
           <Tabs
             value={view}
             variant="scrollable"
-            onChange={(_, next: PipelineTab) =>
-              // Under a search filter a bare URL picks a tab itself, so To review must be explicit.
-              pagination.setFilters({
-                view: next === "review" && !feedId ? null : next,
-                status: null,
-              })
-            }
+            onChange={(_, next: PipelineTab) => pagination.setFilters({ view: next, status: null })}
           >
             {PIPELINE_TABS.map((tab) => (
               <Tab

@@ -16,6 +16,7 @@ import { usePipelineFilters } from "../pipeline-filters";
 import { JobDrawer } from "./job-drawer";
 import { JobRow } from "./job-row";
 import { ReasonBreakdown } from "./reason-breakdown";
+import { ReviewEmpty } from "./review-empty";
 import { StaleNotice } from "./stale-notice";
 
 type BulkAction = PipelineBulkInput["action"];
@@ -33,8 +34,7 @@ const VIEW_ACTIONS: Record<PipelineJobView, BulkAction[]> = {
   needsYou: ["skip"],
 };
 
-const EMPTY_TITLES: Record<PipelineJobView, string> = {
-  review: "Nothing left to review.",
+const EMPTY_TITLES: Record<Exclude<PipelineJobView, "review">, string> = {
   inProgress: "Nothing in progress.",
   notApplied: "No skipped or failed jobs.",
   needsYou: "Nothing needs you.",
@@ -52,6 +52,7 @@ export function JobsView(props: JobsViewProps): ReactElement {
   const [openId, setOpenId] = useState<string | null>(null);
   const rows = jobs.data?.items ?? [];
   const selection = useRowSelection(rows);
+
   const actions = VIEW_ACTIONS[view];
   const picked = selection.picked.map((job) => job.id);
   const sortHint = view === "review" ? "Best match first" : "Latest first";
@@ -76,7 +77,13 @@ export function JobsView(props: JobsViewProps): ReactElement {
         pager={pagination}
         isEmpty={rows.length === 0}
         errorTitle="Couldn't load these jobs."
-        empty={<EmptyState variant="inline" title={EMPTY_TITLES[view]} />}
+        empty={
+          view === "review" ? (
+            <ReviewEmpty />
+          ) : (
+            <EmptyState variant="inline" title={EMPTY_TITLES[view]} />
+          )
+        }
         header={
           <ListHeader
             selection={actions.length > 0 ? selection.header : null}
