@@ -56,7 +56,10 @@ Payload `{messageId}`: the user wrote to you. No browser unless the question nee
 
      Asked to find more jobs, look beyond the boards, or search somewhere specific (labs, a city,
      company career pages): queue `research.explore`, with `focus` in the user's words when they
-     narrowed it. The reply says what will be searched and that new jobs land in Research.
+     narrowed it. The reply says what will be searched.
+
+     Queued work reports back in this conversation when it finishes, so say so ("I'll tell you
+     what I find"); never ask the user to come back and ask.
 
    Never touch rules unless the user asked.
 

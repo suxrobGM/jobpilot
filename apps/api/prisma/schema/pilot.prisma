@@ -137,6 +137,8 @@ model PilotRun {
   expiresAt        DateTime         @map("expires_at") @db.Timestamptz(3)
   finishedAt       DateTime?        @map("finished_at") @db.Timestamptz(3)
   outcome          PilotRunOutcome?
+  // The run picked up work the user asked for in chat, so it answers there.
+  askedInChat      Boolean          @default(false) @map("asked_in_chat")
   // Null until the host reports the usage of the cycle that started this run.
   model            String?
   inputTokens      Int              @default(0) @map("input_tokens")

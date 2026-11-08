@@ -3,37 +3,27 @@ import {
   type CreatePilotJournalInput,
   type PilotRun,
   type PilotRunResultInput,
-  type PilotTask,
   pilotRunSchema,
   type ReportPilotUsageInput,
-  type TaskType,
-  taskListSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import { badRequest, conflict, findOwned, notFound } from "@/common/errors";
-import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import {
   type PilotRun as PilotRunModel,
   type PilotRunOutcome,
-  type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
 import { guardApply } from "@/modules/feed/jobs/apply-guard";
-import { revertApplyingJobs, startApplying } from "@/modules/feed/jobs/applying";
+import { revertApplyingJobs } from "@/modules/feed/jobs/applying";
 import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
-import { parseJobRef, toJobRef } from "../job-subject";
+import { parseJobRef } from "../job-subject";
 import { finishRequests, publishRequest } from "../requests/request-row";
-import {
-  networkingSendWhere,
-  reviewPausedWhere,
-  scorePendingWhere,
-} from "../tasks/gather/workable";
 import { PilotJournalService } from "../thread/journal.service";
 import { writeJournalEntries } from "../thread/journal-entries";
+import { RUN_TTL_MS, startRun } from "./run-start";
 
-const RUN_TTL_MS = 15 * 60 * 1000;
 /** Counted from `startedAt`, so a stuck driver that keeps heartbeating still expires. */
 const MAX_RUN_LIFETIME_MS = 25 * 60 * 1000;
 
@@ -43,71 +33,25 @@ function toPilotRun(row: PilotRunModel): PilotRun {
 
 const alreadyFinished = () => conflict("Run is already finished.", ErrorCodes.PILOT_CONFLICT);
 
-interface StartCheck {
-  remaining: (tx: Prisma.TransactionClient, userId: string, subjectId: string) => Promise<number>;
-  gone: string;
-}
-
-/** Task types whose row can change after the task list was built, re-checked at run start. */
-const START_CHECKS: Partial<Record<TaskType, StartCheck>> = {
-  "networking.send": {
-    remaining: (tx, userId, id) =>
-      tx.networkingMessage.count({ where: { id, ...networkingSendWhere(userId) } }),
-    gone: "Networking message is no longer ready to send.",
-  },
-  "search.review": {
-    remaining: (tx, userId, id) => tx.feed.count({ where: { id, ...reviewPausedWhere(userId) } }),
-    gone: "Feed is no longer paused.",
-  },
-  "feed.score": {
-    remaining: (tx, userId, id) => tx.feed.count({ where: { id, ...scorePendingWhere(userId) } }),
-    gone: "Feed has no jobs left to score.",
-  },
-};
-
-async function assertStillStartable(tx: Prisma.TransactionClient, userId: string, task: PilotTask) {
-  const check = START_CHECKS[task.taskType];
-  if (!check) {
-    return;
-  }
-  const remaining = await check.remaining(tx, userId, task.subjectId);
-  if (remaining === 0) {
-    throw conflict(check.gone, ErrorCodes.PILOT_CONFLICT);
-  }
-}
-
-/** The task as the live snapshot lists it. The no-op write locks the state row, serializing starts. */
-async function lockSnapshotTask(
-  tx: Prisma.TransactionClient,
-  userId: string,
-  taskListVersion: string,
-  taskId: string,
-): Promise<PilotTask> {
-  const [locked] = await tx.pilotState.updateManyAndReturn({
-    where: { userId, taskListVersion, taskListExpiresAt: { gt: new Date() } },
-    data: { taskListVersion },
-    select: { taskListSnapshot: true },
-  });
-  if (!locked?.taskListSnapshot) {
-    throw conflict(
-      "Task list is stale; refresh it before starting a run.",
-      ErrorCodes.PILOT_CONFLICT,
-    );
-  }
-  const { tasks } = taskListSchema.parse(locked.taskListSnapshot);
-  const task = tasks.find((entry) => entry.id === taskId);
-  if (!task) {
-    throw conflict("Task is no longer available.", ErrorCodes.PILOT_CONFLICT);
-  }
-  return task;
-}
-
 type JournalEntryInput = CreatePilotJournalInput["entries"][number];
+
+/** The agent's answer, for a chat reply or work the user asked for in chat; done needs one. */
+function replyFromResult(run: PilotRunModel, body: PilotRunResultInput): string | null {
+  if (run.taskType !== "chat.reply" && !run.askedInChat) {
+    return null;
+  }
+  const reply = typeof body.detail?.reply === "string" ? body.detail.reply : null;
+  // Closing without it would leave the user waiting on an answer with no error.
+  if (body.outcome === "done" && reply === null) {
+    throw badRequest("A done result for a chat message or chat request needs detail.reply.");
+  }
+  return reply;
+}
 
 interface CloseOptions {
   /** Journaled under the run id in the same transaction, so a result never half-lands. */
   entries?: JournalEntryInput[];
-  /** A chat reply's answer, posted as the pilot's message. */
+  /** Posted as the pilot's message in the conversation. */
   reply?: string | null;
 }
 
@@ -120,9 +64,7 @@ export class RunService {
 
   async start(userId: string, taskListVersion: string, taskId: string) {
     const { run, startedJob, requests } = await guardApply(this.prisma, userId, () =>
-      this.prisma.$transaction((tx) =>
-        this.startInTransaction(tx, userId, taskListVersion, taskId),
-      ),
+      this.prisma.$transaction((tx) => startRun(tx, userId, taskListVersion, taskId)),
     );
     if (startedJob) {
       publishJobUpdated(userId, startedJob);
@@ -137,49 +79,6 @@ export class RunService {
       { type: "run.started", runId: started.id, taskType: started.taskType },
     );
     return started;
-  }
-
-  private async startInTransaction(
-    tx: Prisma.TransactionClient,
-    userId: string,
-    taskListVersion: string,
-    taskId: string,
-  ) {
-    const task = await lockSnapshotTask(tx, userId, taskListVersion, taskId);
-    const subject = {
-      userId,
-      taskType: task.taskType,
-      subjectType: task.subjectType,
-      subjectId: task.subjectId,
-    };
-    const open = await tx.pilotRun.findFirst({
-      where: { ...subject, finishedAt: null },
-      select: { id: true },
-    });
-    if (open) {
-      throw conflict("This task is already started.", ErrorCodes.PILOT_CONFLICT);
-    }
-
-    await assertStillStartable(tx, userId, task);
-    const startedJob =
-      task.taskType === "job.apply"
-        ? await startApplying(tx, userId, toJobRef(task.payload))
-        : null;
-
-    const run = await tx.pilotRun.create({
-      data: {
-        ...subject,
-        title: task.title,
-        payload: toInputJson(task.payload),
-        expiresAt: new Date(Date.now() + RUN_TTL_MS),
-      },
-    });
-    // Any run on a requested subject does the asked-for work, whoever picked it.
-    const requests = await tx.pilotRequest.updateManyAndReturn({
-      where: { ...subject, status: "pending" },
-      data: { status: "running", runId: run.id },
-    });
-    return { run, startedJob, requests };
   }
 
   async get(userId: string, id: string) {
@@ -262,13 +161,7 @@ export class RunService {
       subjectId: body.subjectId ?? existing.subjectId,
       detail: body.detail,
     };
-    // A chat reply's answer becomes the pilot's message in the conversation.
-    const isChat = existing.taskType === "chat.reply";
-    const reply = isChat && typeof body.detail?.reply === "string" ? body.detail.reply : null;
-    // Closing without it would leave the user's message unanswered with no error.
-    if (isChat && body.outcome === "done" && reply === null) {
-      throw badRequest("A done chat.reply result needs its answer in detail.reply.");
-    }
+    const reply = replyFromResult(existing, body);
     const run = await this.close(userId, existing, body.outcome, { entries: [action], reply });
     // After the journal line, so a run.finished listener already sees the result.
     publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });

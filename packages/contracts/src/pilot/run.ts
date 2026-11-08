@@ -77,6 +77,8 @@ const pilotRunBaseSchema = z.object({
   expiresAt: z.date(),
   finishedAt: z.date().nullable(),
   outcome: z.enum(PILOT_RUN_OUTCOMES).nullable(),
+  // The user asked for this work in chat: the result's `detail.reply` answers them there.
+  askedInChat: z.boolean(),
 });
 
 export const pilotRunSchema = z.intersection(pilotRunBaseSchema, taskFieldsSchema);

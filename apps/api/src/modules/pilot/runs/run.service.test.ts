@@ -85,7 +85,7 @@ function runDb({ currentVersion = VERSION, openRun = null, feedStillPaused = tru
       updateManyAndReturn: async (a: { where: { taskListVersion: string } }) =>
         a.where.taskListVersion === currentVersion ? [{ taskListSnapshot: snapshot }] : [],
     },
-    pilotRequest: { updateManyAndReturn: async () => [] },
+    pilotRequest: { count: async () => 0, updateManyAndReturn: async () => [] },
     pilotRun: {
       findFirst: async () => openRun,
       create: async (a: { data: Record<string, unknown> }) => {
@@ -123,8 +123,17 @@ function runDb({ currentVersion = VERSION, openRun = null, feedStillPaused = tru
 const runRow = (over: Record<string, unknown> = {}) => {
   const { taskType, subjectType, subjectId, payload } = applyTask;
   return {
-    ...{ id: RUN_ID, userId: USER_ID, taskType, subjectType, subjectId, payload },
+    ...{
+      id: RUN_ID,
+      userId: USER_ID,
+      taskType,
+      subjectType,
+      subjectId,
+      payload,
+      title: "Engineer",
+    },
     ...{ startedAt: now, heartbeatAt: null, expiresAt: now, finishedAt: null, outcome: null },
+    askedInChat: false,
     ...over,
   };
 };
@@ -133,6 +142,7 @@ const runRow = (over: Record<string, unknown> = {}) => {
 function closeDb(row: ReturnType<typeof runRow>) {
   const jobReverts: unknown[] = [];
   const requestWrites: { where: unknown; data: unknown }[] = [];
+  const messages: string[] = [];
   const db = {
     pilotRun: {
       findFirst: async () => row,
@@ -145,6 +155,12 @@ function closeDb(row: ReturnType<typeof runRow>) {
       },
     },
     pilotJournalEntry: { createMany: async () => ({ count: 1 }) },
+    pilotMessage: {
+      create: async (a: { data: { body: string } }) => {
+        messages.push(a.data.body);
+        return { id: crypto.randomUUID(), ...a.data };
+      },
+    },
     pilotRequest: {
       updateManyAndReturn: async (a: { where: unknown; data: unknown }) => {
         requestWrites.push(a);
@@ -153,7 +169,7 @@ function closeDb(row: ReturnType<typeof runRow>) {
     },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
-  return { db, jobReverts, requestWrites };
+  return { db, jobReverts, requestWrites, messages };
 }
 
 /** Runs `act` and returns its result with the pilot event it published. */
@@ -314,5 +330,18 @@ describe("a request follows the run that picked it up", () => {
     const { db, requestWrites } = closeDb(runRow());
     await makeRunService(db).cancel(USER_ID, RUN_ID);
     expect(requestWrites[0]?.data).toMatchObject({ status: "cancelled" });
+  });
+});
+
+describe("work asked for in chat answers in chat", () => {
+  it("needs the agent's reply to close done, and posts it", async () => {
+    const { db, messages } = closeDb(runRow({ askedInChat: true }));
+    const service = makeRunService(db);
+    await expect(
+      service.recordResult(USER_ID, RUN_ID, { outcome: "done", summary: "Found 10 jobs" }),
+    ).rejects.toMatchObject({ status: 400 });
+    const detail = { reply: "Found 10 jobs; the best fit is Acme." };
+    await service.recordResult(USER_ID, RUN_ID, { outcome: "done", summary: "x", detail });
+    expect(messages).toEqual([detail.reply]);
   });
 });

@@ -47,7 +47,10 @@ jobpilot-api POST /api/pilot/runs/$RUN_ID/result --data @"$JOBPILOT_TEMP/result.
   skipped or parked is `"done"`.
 - `summary`: one specific line, shaped like the task file's **Summary**. Users see summaries,
   questions and chat replies: say "search" or "pipeline", never "feed".
-- `detail`: only when the task file gives one.
+- `detail`: only when the task file gives one, or `reply` below.
+- `detail.reply`: required when the run has `askedInChat: true` (the user asked for this work in
+  chat) and the outcome is `done`. Markdown, short, plain words: what you found or did and what's
+  worth their attention, not run stats. It becomes your message in the conversation.
 - `subjectType` / `subjectId`: only when they differ from the run's.
 
 A `400` names the bad field: fix it and post again. Then stop.
@@ -63,8 +66,6 @@ A `400` names the bad field: fix it and post again. Then stop.
   (`"propose": true`), which the server enforces. The task file says which.
 - **Requests.** Work the user asked for arrives as an ordinary task whose run came from a request.
   Do it like any other run. In a chat reply, queue work with `POST /api/pilot/requests`.
-- **Replies.** A `chat.reply` run puts its answer in `detail.reply`; it becomes your message to the
-  user.
 
 ## Rules
 

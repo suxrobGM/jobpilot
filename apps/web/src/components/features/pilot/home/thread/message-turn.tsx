@@ -1,22 +1,22 @@
 import type { ReactElement } from "react";
 import type { PilotMessage } from "@jobpilot/contracts/pilot";
 import { Box, Typography } from "@mui/material";
+import { MessageMarkdown } from "./message-markdown";
 import { PilotTurn } from "./pilot-turn";
 
 interface MessageTurnProps {
   message: PilotMessage;
 }
 
-/** The user's messages sit right in a bubble; the pilot's read as plain text. Both keep line breaks. */
+/** The user's messages sit right in a bubble as typed; the pilot's render as markdown. */
 export function MessageTurn(props: MessageTurnProps): ReactElement {
   const { message } = props;
-  const body = (
-    <Typography variant="body1" sx={{ whiteSpace: "pre-line", overflowWrap: "anywhere" }}>
-      {message.body}
-    </Typography>
-  );
   if (message.author === "pilot") {
-    return <PilotTurn at={message.createdAt}>{body}</PilotTurn>;
+    return (
+      <PilotTurn at={message.createdAt}>
+        <MessageMarkdown body={message.body} />
+      </PilotTurn>
+    );
   }
   return (
     <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
@@ -32,7 +32,9 @@ export function MessageTurn(props: MessageTurnProps): ReactElement {
           borderRadius: `${theme.radii.lg * 1.5}px ${theme.radii.lg * 1.5}px ${theme.radii.sm}px ${theme.radii.lg * 1.5}px`,
         })}
       >
-        {body}
+        <Typography variant="body1" sx={{ whiteSpace: "pre-line", overflowWrap: "anywhere" }}>
+          {message.body}
+        </Typography>
       </Box>
     </Box>
   );
