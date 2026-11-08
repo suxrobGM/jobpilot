@@ -150,7 +150,7 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
   "research.explore": {
     priority: 450,
     subjectId: () => "research",
-    title: () => "Research jobs beyond your boards",
+    title: (p) => (p.focus ? `Web search: ${p.focus}` : "Web search beyond your boards"),
   },
   "networking.followup": {
     priority: 400,

@@ -43,7 +43,7 @@ const TASK_TYPES: Record<TaskType, TaskTypeInfo> = {
   "job.rescanSkipped": { label: "Rescan skipped jobs", agent: "session" },
   "job.retryFailed": { label: "Retry failed jobs", agent: "session" },
   "search.setup": { label: "Set up goals and saved searches", agent: "session" },
-  "research.explore": { label: "Research jobs", agent: "job-researcher" },
+  "research.explore": { label: "Web search", agent: "job-researcher" },
   "upwork.syncInbox": { label: "Refresh the Upwork inbox", agent: "session" },
   "chat.reply": { label: "Reply to you", agent: "session" },
   "resume.extract": { label: "Read a resume", agent: "session" },

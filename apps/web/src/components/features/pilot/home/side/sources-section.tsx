@@ -38,10 +38,10 @@ function BoardChips(): ReactElement {
   );
 }
 
-/** Where the pilot finds jobs: boards, the searches it runs on them, alert emails, the open web. */
-export function WhereILook(): ReactElement {
+/** Where the pilot finds jobs: boards, the searches it runs on them, alert emails, the web. */
+export function SourcesSection(): ReactElement {
   return (
-    <SideSection title="Where I look" link={{ label: "Manage", href: "/pilot/goals" }}>
+    <SideSection title="Sources" link={{ label: "Manage", href: "/pilot/goals" }}>
       <Stack spacing={1.5}>
         <BoardChips />
         <SearchList />

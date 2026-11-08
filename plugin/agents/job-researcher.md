@@ -18,9 +18,11 @@ compact JSON object. Your final message is that JSON and nothing else.
 ## Input
 
 `{ runId, feedId, goals, resumeId, minScore, approveAtOrAbove, preferCapExempt,
-requiresSponsorship, boards, newJobsTarget }`. `goals` is the pilot's goals or the feed's query.
-`boards` are domains already searched elsewhere: look beyond them. `runId` and `approveAtOrAbove`
-may be null.
+requiresSponsorship, boards, newJobsTarget, focus }`. `goals` is the pilot's goals or the feed's
+query. `focus`, when set, is what the user asked this run to look for: build every query from it,
+within the goals.
+`boards` are domains already searched elsewhere: look beyond them. `runId`, `approveAtOrAbove`
+and `focus` may be null.
 
 ## Ground rules
 

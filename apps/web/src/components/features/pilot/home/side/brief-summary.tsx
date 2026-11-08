@@ -1,11 +1,10 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import type { ReactElement } from "react";
 import { Chip, Stack, Typography } from "@mui/material";
 import { plural } from "@/utils/format";
 import { hasGoals } from "../../pilot-status";
 import { usePilotState } from "../../use-pilot-state";
-import { RulesDialog } from "./rules-dialog";
 import { SideSection } from "./side-section";
 
 interface Rule {
@@ -13,10 +12,9 @@ interface Rule {
   title: string;
 }
 
-/** The goals the pilot works toward and the rules it keeps, read together. */
+/** The goals the pilot works toward and the rules it keeps, read together; Edit changes both. */
 export function BriefSummary(): ReactElement {
   const state = usePilotState();
-  const [editingRules, setEditingRules] = useState(false);
   const { dailyApplyCap, minScore, dealBreakers } = state.config;
   const rules: Rule[] = [
     { label: `${dailyApplyCap} a day`, title: "Applications per day" },
@@ -45,7 +43,9 @@ export function BriefSummary(): ReactElement {
         </Typography>
       )}
       {!hasGoals(state) && (
-        <Typography variant="body2Muted">No goals yet. I build my searches from them.</Typography>
+        <Typography variant="body2Muted">
+          No goals yet. The pilot builds its searches from them.
+        </Typography>
       )}
       <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.5 }}>
         {rules.map((rule) => (
@@ -55,11 +55,9 @@ export function BriefSummary(): ReactElement {
             title={rule.title}
             size="small"
             variant="outlined"
-            onClick={() => setEditingRules(true)}
           />
         ))}
       </Stack>
-      <RulesDialog open={editingRules} onClose={() => setEditingRules(false)} />
     </SideSection>
   );
 }

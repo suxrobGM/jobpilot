@@ -88,9 +88,14 @@ async function requestTask(
         config,
         trigger: "requested",
       });
+      const { focus } = input.payload;
       return (
         research &&
-        makeTask("research.explore", { ...research, newJobsTarget: SEARCH_NEW_JOBS_TARGET })
+        makeTask("research.explore", {
+          ...research,
+          newJobsTarget: SEARCH_NEW_JOBS_TARGET,
+          ...(focus && { focus }),
+        })
       );
     }
     case "resume.extract":

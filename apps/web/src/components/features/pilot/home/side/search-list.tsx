@@ -68,7 +68,9 @@ export function SearchList(): ReactElement {
 
   if (searches.length === 0) {
     return (
-      <Typography variant="body2Muted">No searches yet. I build these from your goals.</Typography>
+      <Typography variant="body2Muted">
+        No searches yet. The pilot builds them from your goals.
+      </Typography>
     );
   }
   return (

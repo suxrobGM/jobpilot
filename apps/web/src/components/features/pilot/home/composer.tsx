@@ -10,11 +10,11 @@ import { plural } from "@/utils/format";
 import { AddLinksDialog } from "../../pipeline/add-links-dialog";
 import { parseLinks, useAddLinks } from "../../pipeline/use-add-links";
 import { usePilotState } from "../use-pilot-state";
-import { FindMoreJobsButton } from "./find-more-jobs-button";
 
+// Each fills the box, so the user can narrow it before sending.
 const SUGGESTED_PROMPTS = [
+  "Find more jobs beyond my boards",
   "What did you apply to this week?",
-  "Look for remote ML engineer roles too",
   "Skip jobs that need a security clearance",
 ];
 
@@ -98,7 +98,6 @@ export function Composer(): ReactElement {
           >
             Job links
           </Button>
-          <FindMoreJobsButton />
           <Typography
             variant="captionMuted"
             sx={{ flex: 1, textAlign: "right", pr: 1, display: { xs: "none", sm: "block" } }}

@@ -64,12 +64,21 @@ export function parseRequest(row: Pick<PilotRequestModel, "taskType" | "payload"
   return createPilotRequestSchema.parse({ taskType: row.taskType, payload: row.payload });
 }
 
+/** The task's label, plus what the user narrowed it to. */
+function requestTitle(input: CreatePilotRequestInput): string {
+  const label = taskTypeLabel(input.taskType);
+  if (input.taskType === "research.explore" && input.payload.focus) {
+    return `${label}: ${input.payload.focus}`;
+  }
+  return label;
+}
+
 export function toPilotRequest(row: PilotRequestModel): PilotRequest {
-  const taskType = parseRequest(row).taskType;
+  const input = parseRequest(row);
   return {
     id: row.id,
-    taskType,
-    title: taskTypeLabel(taskType),
+    taskType: input.taskType,
+    title: requestTitle(input),
     status: row.status,
     source: row.source,
     runId: row.runId,

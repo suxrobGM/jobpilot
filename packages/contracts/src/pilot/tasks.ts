@@ -277,6 +277,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       boards: z.array(z.string()),
       newJobsTarget: z.number().int(),
       trigger: z.enum(["requested", "initial", "dry", "periodic"]),
+      focus: z.string().optional(),
     }),
   ),
   taskVariant("chat.reply", "chat", z.object({ messageId: z.uuid() })),

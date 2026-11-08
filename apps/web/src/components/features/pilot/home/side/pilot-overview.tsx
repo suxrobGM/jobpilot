@@ -1,9 +1,9 @@
 import type { ReactElement } from "react";
 import { Divider, Stack } from "@mui/material";
 import { BriefSummary } from "./brief-summary";
+import { SourcesSection } from "./sources-section";
 import { StealthCodeBanner } from "./stealth-code-banner";
 import { WeekSummary } from "./week-summary";
-import { WhereILook } from "./where-i-look";
 
 /** How the week is going and what the pilot works from: under the queue, or its own phone tab. */
 export function PilotOverview(): ReactElement {
@@ -12,7 +12,7 @@ export function PilotOverview(): ReactElement {
       <Stack spacing={3} divider={<Divider />}>
         <WeekSummary />
         <BriefSummary />
-        <WhereILook />
+        <SourcesSection />
       </Stack>
       <StealthCodeBanner />
     </Stack>
