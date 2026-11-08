@@ -6,11 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { CountLabel } from "@/components/ui/display";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
-import { useNeedsYouCount } from "../attention/use-needs-you";
+import { NeedsYouList } from "../needs-you/needs-you-list";
+import { useNeedsYouCount } from "../needs-you/use-needs-you";
 import { Composer } from "./composer";
-import { NeedsYouList } from "./needs-you/needs-you-list";
+import { PilotOverview } from "./overview/pilot-overview";
 import { PilotHeader } from "./pilot-header";
-import { PilotOverview } from "./side/pilot-overview";
 import { THREAD_WIDTH, Thread } from "./thread/thread";
 
 type PhoneTab = "chat" | "needsYou" | "overview";

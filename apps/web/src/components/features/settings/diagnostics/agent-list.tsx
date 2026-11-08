@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { PulseDot } from "@/components/ui/feedback";
 import { formatNewTokenParts, formatTokens } from "@/utils/format";
-import { PILOT_MODE_LOOK } from "../../pilot/pilot-status";
+import { PILOT_MODE_LOOK } from "../../pilot/state/pilot-mode";
 import { DIM_OPACITY } from "./stage-card";
 
 /** Required record, so a new agent fails typecheck instead of silently missing from the list. */

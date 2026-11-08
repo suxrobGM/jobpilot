@@ -8,13 +8,12 @@ import { useApiMutation } from "@/api/use-api-mutation";
 import { PulseDot } from "@/components/ui/feedback";
 import { endPilotHold } from "@/lib/terminal/client";
 import { useAgentDrawer } from "@/providers/agent-provider";
-import { idleCaption, type PilotMode } from "../../pilot-status";
+import { idleCaption, type PilotMode } from "../../state/pilot-mode";
+import { usePilotState } from "../../state/use-pilot-state";
+import { usePilotStatus } from "../../state/use-pilot-status";
 import { useRunSteps } from "../../steps/use-run-steps";
-import { useNextWake } from "../../use-next-wake";
-import { usePilotState } from "../../use-pilot-state";
-import { usePilotStatus } from "../../use-pilot-status";
-import { SteerDialog } from "../steer-dialog";
 import { PilotTurn } from "../thread/pilot-turn";
+import { SteerDialog } from "./steer-dialog";
 
 type CurrentRun = NonNullable<PilotState["currentRun"]>;
 
@@ -94,8 +93,7 @@ const MODE_LINES: Record<SaidMode, string> = {
 export function LiveTurn(): ReactElement {
   const state = usePilotState();
   const { openDrawer, watchSteps } = useAgentDrawer();
-  const { pilot, mode } = usePilotStatus(state);
-  const nextWakeAt = useNextWake(state);
+  const { pilot, mode, nextWakeAt } = usePilotStatus(state);
   const endHold = useApiMutation(async () => ({ data: await endPilotHold(), error: null }), {
     successMessage: "Handed the terminal back to the pilot.",
   });

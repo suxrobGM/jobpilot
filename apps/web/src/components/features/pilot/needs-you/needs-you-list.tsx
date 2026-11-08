@@ -4,11 +4,11 @@ import type { ReactElement, ReactNode } from "react";
 import { Badge, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import { QuestionCard } from "../../attention/question-card";
-import { type Pending, useNeedsYou, useNeedsYouCount } from "../../attention/use-needs-you";
-import { ChangeCard } from "../../changes/change-card";
+import { ChangeCard } from "../changes/change-card";
 import { NoticeCard } from "./notice-card";
 import { ParkedJobCard } from "./parked-job-card";
+import { QuestionCard } from "./question-card";
+import { type Pending, useNeedsYou, useNeedsYouCount } from "./use-needs-you";
 
 /** Everything waiting on the user, answered in place; parked jobs open on their own page. */
 export function NeedsYouList(): ReactElement {

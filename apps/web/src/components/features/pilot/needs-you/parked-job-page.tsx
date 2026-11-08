@@ -5,7 +5,7 @@ import { JobDetail } from "@/components/features/pipeline/jobs/job-detail";
 import { LinkButton } from "@/components/ui/buttons";
 import { DetailSkeleton, EmptyState } from "@/components/ui/feedback";
 import { PageHeader } from "@/components/ui/layout";
-import { useParkedJob } from "./attention/use-needs-you";
+import { useParkedJob } from "./use-needs-you";
 
 interface ParkedJobPageProps {
   jobId: string;

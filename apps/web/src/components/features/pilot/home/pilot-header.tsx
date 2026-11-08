@@ -2,16 +2,22 @@
 
 import type { ReactElement } from "react";
 import { FormControlLabel, Stack, Switch, Typography } from "@mui/material";
+import { api } from "@/api/client";
+import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/use-api-mutation";
 import { PageHeader } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
-import { useAutopilot } from "../use-autopilot";
-import { usePilotState } from "../use-pilot-state";
+import { usePilotState } from "../state/use-pilot-state";
 
 /** Today's progress against the cap and the autopilot switch, in the top bar. */
 export function PilotHeader(): ReactElement {
   const state = usePilotState();
   const confirm = useConfirm();
-  const autopilot = useAutopilot();
+  // Autopilot gates only the pilot's own work; requests and chat run either way.
+  const autopilot = useApiMutation((enabled: boolean) => api.pilot.autopilot.put({ enabled }), {
+    invalidate: [pilotQueries.state().queryKey],
+    successMessage: (_state, enabled) => (enabled ? "Autopilot on." : "Autopilot paused."),
+  });
 
   const toggle = async (enabled: boolean): Promise<void> => {
     if (enabled) {

@@ -3,8 +3,8 @@
 import type { ReactElement } from "react";
 import { Chip, Stack } from "@mui/material";
 import { plural } from "@/utils/format";
-import { usePilotState } from "../../use-pilot-state";
-import { SideSection } from "./side-section";
+import { usePilotState } from "../../state/use-pilot-state";
+import { OverviewSection } from "./overview-section";
 
 interface Rule {
   label: string;
@@ -27,7 +27,7 @@ export function RulesSummary(): ReactElement {
   }
 
   return (
-    <SideSection title="Rules" link={{ label: "Edit", href: "/pilot/searches" }}>
+    <OverviewSection title="Rules" link={{ label: "Edit", href: "/pilot/searches" }}>
       <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.5 }}>
         {rules.map((rule) => (
           <Chip
@@ -39,6 +39,6 @@ export function RulesSummary(): ReactElement {
           />
         ))}
       </Stack>
-    </SideSection>
+    </OverviewSection>
   );
 }

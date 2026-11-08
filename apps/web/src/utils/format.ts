@@ -103,6 +103,11 @@ export function formatDate(value: string | Date | null | undefined): string {
     : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+/** An hour of the day as a clock time, e.g. `09:00`. */
+export function formatHour(hour: number): string {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
 /** Pinned to UTC: a bucket is UTC midnight, which shows as the previous day west of Greenwich. */
 export function formatDayBucket(value: Date): string {
   if (Number.isNaN(value.getTime())) {

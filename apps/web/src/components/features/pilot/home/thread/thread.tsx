@@ -1,23 +1,14 @@
 "use client";
 
-import {
-  type ReactElement,
-  type RefObject,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import { Box, Button, CircularProgress, Divider, Stack, Typography } from "@mui/material";
+import { type ReactElement, type RefObject, useEffect, useLayoutEffect, useRef } from "react";
+import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { QuerySection } from "@/components/ui/feedback";
-import { formatDayLabel } from "@/utils/format";
 import { LiveTurn } from "../now/live-turn";
 import { SetupTurn } from "../now/setup-turn";
-import { ThreadFold } from "./thread-fold";
-import { collapseRepeats, foldQuietRuns, rowKey, type ThreadRow } from "./thread-folds";
-import { ThreadItem } from "./thread-item";
+import { collapseRepeats, rowKey } from "./thread-folds";
+import { ThreadRows } from "./thread-rows";
 
 /** The reading column of the thread, composer included. */
 export const THREAD_WIDTH = 760;
@@ -37,54 +28,6 @@ function Greeting(): ReactElement {
       </Typography>
     </Stack>
   );
-}
-
-interface DaySeparatorProps {
-  label: string;
-}
-
-function DaySeparator(props: DaySeparatorProps): ReactElement {
-  const { label } = props;
-  return (
-    <Divider>
-      <Typography variant="captionMuted">{label}</Typography>
-    </Divider>
-  );
-}
-
-/** Rows with a day line wherever the day changes; quiet stretches fold until opened. */
-function renderRows(
-  rows: ThreadRow[],
-  openFolds: string[],
-  onOpenFold: (key: string) => void,
-): ReactElement[] {
-  const out: ReactElement[] = [];
-  let lastDay: string | null = null;
-  const pushRow = (row: ThreadRow): void => {
-    const day = formatDayLabel(row.item.at);
-    if (day !== lastDay) {
-      out.push(<DaySeparator key={`day:${rowKey(row.item)}`} label={day} />);
-      lastDay = day;
-    }
-    out.push(<ThreadItem key={rowKey(row.item)} item={row.item} repeats={row.repeats} />);
-  };
-  for (const segment of foldQuietRuns(rows)) {
-    if (segment.type === "row") {
-      pushRow(segment.row);
-    } else if (openFolds.includes(segment.key)) {
-      segment.rows.forEach(pushRow);
-    } else {
-      out.push(
-        <ThreadFold
-          key={`fold:${segment.key}`}
-          rows={segment.rows}
-          onOpen={() => onOpenFold(segment.key)}
-        />,
-      );
-      lastDay = formatDayLabel(segment.rows[segment.rows.length - 1].item.at);
-    }
-  }
-  return out;
 }
 
 /** Our own jump fires a scroll event after the tail may have grown; that event isn't the user. */
@@ -113,7 +56,6 @@ export function Thread(): ReactElement {
 
   const items = (query.data?.pages ?? []).flatMap((page) => page.items).reverse();
   const rows = collapseRepeats(items);
-  const [openFolds, setOpenFolds] = useState<string[]>([]);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
 
   const firstKey = rows[0] ? rowKey(rows[0].item) : null;
@@ -210,9 +152,7 @@ export function Thread(): ReactElement {
           isEmpty={items.length === 0}
           empty={<Greeting />}
         >
-          <Stack spacing={3}>
-            {renderRows(rows, openFolds, (key) => setOpenFolds([...openFolds, key]))}
-          </Stack>
+          <ThreadRows rows={rows} />
         </QuerySection>
         <SetupTurn />
         <LiveTurn />

@@ -6,8 +6,7 @@ import { Schedule } from "@mui/icons-material";
 import { Button, Stack, Switch, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import { formatTimeUntil, plural } from "@/utils/format";
-import { formatHour } from "../../pilot/run-status";
+import { formatHour, formatTimeUntil, plural } from "@/utils/format";
 import { ScheduleDialog } from "./schedule-dialog";
 
 function scheduleSummary(status: JobAlertsStatus): string {

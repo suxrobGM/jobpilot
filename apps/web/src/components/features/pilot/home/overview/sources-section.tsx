@@ -4,11 +4,10 @@ import type { ReactElement } from "react";
 import { Edit } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { useRotationNames } from "../../use-rotation-names";
-import { JobAlertsSource } from "./job-alerts-source";
-import { ResearchSource } from "./research-source";
+import { useRotationNames } from "../../state/use-rotation-names";
+import { OverviewSection } from "./overview-section";
 import { SearchList } from "./search-list";
-import { SideSection } from "./side-section";
+import { JobAlertsSource, ResearchSource } from "./source-rows";
 
 /** The checked boards in rotation order. */
 function BoardChips(): ReactElement {
@@ -35,7 +34,7 @@ function BoardChips(): ReactElement {
 /** Where the pilot finds jobs: boards, the searches it runs on them, alert emails, the web. */
 export function SourcesSection(): ReactElement {
   return (
-    <SideSection title="Sources" link={{ label: "Manage", href: "/pilot/searches" }}>
+    <OverviewSection title="Sources" link={{ label: "Manage", href: "/pilot/searches" }}>
       <Stack spacing={1.5}>
         <BoardChips />
         <SearchList />
@@ -44,6 +43,6 @@ export function SourcesSection(): ReactElement {
           <ResearchSource />
         </Stack>
       </Stack>
-    </SideSection>
+    </OverviewSection>
   );
 }

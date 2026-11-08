@@ -8,9 +8,8 @@ import { SectionCard } from "@/components/ui/layout";
 import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, formatTimeUntil, humanizeIsoInText } from "@/utils/format";
 import { useLatestJournalPage } from "../../pilot/journal/journal-cache";
-import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../../pilot/pilot-status";
-import { useNextWake } from "../../pilot/use-next-wake";
-import { usePilotStatus } from "../../pilot/use-pilot-status";
+import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../../pilot/state/pilot-mode";
+import { usePilotStatus } from "../../pilot/state/use-pilot-status";
 import { AgentList } from "./agent-list";
 import { type Stage, StageArrow, StageCard } from "./stage-card";
 import { RefreshTaskListButton, TaskQueue } from "./task-queue";
@@ -60,8 +59,7 @@ interface OrchestrationPanelProps {
 
 export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement {
   const { state } = props;
-  const { pilot, mode } = usePilotStatus(state);
-  const nextWakeAt = useNextWake(state);
+  const { pilot, mode, nextWakeAt } = usePilotStatus(state);
   const journal = useLatestJournalPage();
   const taskList = useTaskList();
 

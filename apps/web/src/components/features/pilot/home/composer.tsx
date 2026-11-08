@@ -10,7 +10,7 @@ import { useApiMutation } from "@/api/use-api-mutation";
 import { plural } from "@/utils/format";
 import { AddLinksDialog } from "../../pipeline/add-links-dialog";
 import { parseLinks, useAddLinks } from "../../pipeline/use-add-links";
-import { usePilotState } from "../use-pilot-state";
+import { usePilotState } from "../state/use-pilot-state";
 
 // Each fills the box, so the user can narrow it before sending.
 const SUGGESTED_PROMPTS = [

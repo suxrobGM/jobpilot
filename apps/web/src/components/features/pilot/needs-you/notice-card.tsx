@@ -8,7 +8,7 @@ import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { LinkButton } from "@/components/ui/buttons";
-import { CHANGE_INVALIDATE } from "../../changes/use-changes";
+import { CHANGE_INVALIDATE } from "../changes/use-changes";
 
 const INVALIDATE = [pilotQueries.notices().queryKey, ...CHANGE_INVALIDATE];
 

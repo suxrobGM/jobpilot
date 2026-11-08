@@ -5,7 +5,6 @@ import type { PilotChange, PilotQuestion } from "@jobpilot/contracts/pilot";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries, pipelineQueries } from "@/api/queries";
 import type { PipelineJobDto } from "@/api/types";
-import { useOpenQuestions } from "./use-open-questions";
 
 export type Pending =
   | { type: "question"; id: string; question: PilotQuestion }
@@ -21,7 +20,7 @@ const NEEDS_YOU_JOBS = { view: "needsYou", page: 1, limit: MAX_PAGE_SIZE } as co
 
 /** Parked jobs with no open question about them; the question already asks the user. */
 function useUnasked<T extends JobRef>(jobs: T[]): { questions: PilotQuestion[]; jobs: T[] } {
-  const { questions } = useOpenQuestions();
+  const questions = useQuery(pilotQueries.questions("open")).data ?? [];
   // A job question's subject is `<feedId>:<jobKey>`.
   const asked = new Set(
     questions.flatMap((question) => (question.subjectType === "job" ? [question.subjectId] : [])),

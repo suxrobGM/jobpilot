@@ -9,7 +9,7 @@ import { LinkButton } from "@/components/ui/buttons";
 import { ChecklistRow } from "@/components/ui/display";
 import { DialogHeader } from "@/components/ui/feedback";
 import { plural } from "@/utils/format";
-import { usePilotState } from "../../use-pilot-state";
+import { usePilotState } from "../../state/use-pilot-state";
 import { PilotTurn } from "../thread/pilot-turn";
 
 interface StepLinkProps {

@@ -11,7 +11,7 @@ import { EmptyState, QuerySection } from "@/components/ui/feedback";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 import { useMakeChange } from "../changes/use-changes";
-import { useRotationNames } from "../use-rotation-names";
+import { useRotationNames } from "../state/use-rotation-names";
 import { SearchBoardSelect } from "./search-board-select";
 
 /** The empty-run streak that puts a search on the API backoff ladder's top (48h) rung. */

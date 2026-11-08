@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { type TerminalHealth, useTerminalHealth } from "@/hooks/use-terminal-health";
-import { pilotMode } from "../pilot/pilot-status";
+import { pilotMode } from "../pilot/state/pilot-mode";
 import type { AgentOrbState } from "./agent-orb";
 
 const HEALTH_ORB: Record<TerminalHealth, AgentOrbState> = {

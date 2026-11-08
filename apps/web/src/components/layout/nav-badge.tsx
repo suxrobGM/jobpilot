@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { NeedsYouBadge } from "@/components/features/pilot/attention/needs-you-badge";
+import { NeedsYouBadge } from "@/components/features/pilot/needs-you/needs-you-badge";
 import type { NavItem } from "./shell-config";
 
 interface NavBadgeProps extends PropsWithChildren {

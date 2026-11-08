@@ -5,7 +5,7 @@ import { Box, Skeleton, Stack, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsQueries } from "@/api/queries";
 import { formatDayBucket, plural } from "@/utils/format";
-import { SideSection } from "./side-section";
+import { OverviewSection } from "./overview-section";
 
 const WEEK_DAYS = 7;
 
@@ -21,7 +21,7 @@ export function WeekSummary(): ReactElement {
   const week = stats?.thisWeek;
 
   return (
-    <SideSection title="This week">
+    <OverviewSection title="This week">
       {week ? (
         <Typography variant="body1Strong">
           {`${week.submitted} applied · ${plural(week.interviewing, "interview")}`}
@@ -61,6 +61,6 @@ export function WeekSummary(): ReactElement {
           </Typography>
         ))}
       </Stack>
-    </SideSection>
+    </OverviewSection>
   );
 }
