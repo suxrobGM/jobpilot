@@ -3,7 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 
 export type ChangeTx = Pick<
   Prisma.TransactionClient,
-  "pilotState" | "feed" | "job" | "profileAnswer" | "pilotRun"
+  "pilotState" | "feed" | "job" | "profileAnswer" | "pilotRun" | "userJobBoard"
 >;
 
 /** What one action needs: the transaction, the boards resolved before it, and work for after commit. */

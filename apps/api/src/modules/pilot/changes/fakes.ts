@@ -145,6 +145,7 @@ function fakeTx(state: FakeState): ChangeTx {
       },
     },
     pilotRun: { deleteMany: async () => ({ count: 0 }) },
+    userJobBoard: { upsert: async () => ({}) },
   };
   return tx as unknown as ChangeTx;
 }

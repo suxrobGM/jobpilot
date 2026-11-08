@@ -29,6 +29,18 @@ async function findSearch(ctx: ActionContext, searchId: string) {
   return search;
 }
 
+/** The searcher only opens the user's linked boards; undo leaves the link, which is harmless. */
+async function linkBoard(ctx: ActionContext, boardId: string | null) {
+  if (!boardId) {
+    return;
+  }
+  await ctx.tx.userJobBoard.upsert({
+    where: { userId_boardId: { userId: ctx.userId, boardId } },
+    create: { userId: ctx.userId, boardId },
+    update: {},
+  });
+}
+
 async function assertUnique(
   ctx: ActionContext,
   query: string,
@@ -56,6 +68,7 @@ export async function createSearch(
 ): Promise<PilotChangeAction> {
   const boardId = action.board ? (ctx.boardIds.get(action.board) ?? null) : null;
   await assertUnique(ctx, action.query, boardId, null);
+  await linkBoard(ctx, boardId);
   const created = await ctx.tx.feed.create({
     data: {
       userId: ctx.userId,
@@ -90,6 +103,9 @@ export async function updateSearch(
   const changed = query !== old.query || boardId !== old.boardId;
   if (changed) {
     await assertUnique(ctx, query, boardId, old.id);
+  }
+  if (boardId !== old.boardId) {
+    await linkBoard(ctx, boardId);
   }
   await ctx.tx.feed.update({
     where: { id: old.id },

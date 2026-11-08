@@ -16,6 +16,8 @@ const stateRow = (over: Record<string, unknown>) => ({
   ...over,
 });
 
+const LINKED = ["linkedin.com", "hiringcafe.com"];
+
 interface OpenRun {
   id: string;
   taskType: string;
@@ -60,6 +62,7 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null, savedC
     job: { updateMany: count("jobsDropped") },
     application: { count: async () => 0 },
     networkingMessage: { count: async () => 0 },
+    userJobBoard: { findMany: async () => LINKED.map((domain) => ({ board: { domain } })) },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   };
   return { svc: new PilotService(db as unknown as PrismaClient), rec, runQueries, upserts };
@@ -114,6 +117,24 @@ describe("PilotService.recordCycle", () => {
     const state = await svc.recordCycle("p1", { sleepSeconds: 1800 });
     expect(state.lastCycleAt).toBeInstanceOf(Date);
     expect(state.nextWakeAt?.getTime()).toBeGreaterThanOrEqual(before + 1_800_000);
+  });
+});
+
+describe("PilotService.updateSettings", () => {
+  it("stores the rotation as linked board domains, folding aliases and repeats", async () => {
+    const { svc, upserts } = stateService("goals");
+    await svc.updateSettings("p1", {
+      boards: ["https://hiring.cafe/", "LinkedIn.com", "hiringcafe.com"],
+    });
+    expect(upserts[0].update.config).toMatchObject({ boards: ["hiringcafe.com", "linkedin.com"] });
+  });
+
+  it("refuses a board the user hasn't linked, since the searcher can't open it", async () => {
+    const { svc, upserts } = stateService("goals");
+    await expect(
+      svc.updateSettings("p1", { boards: ["linkedin.com", "dice.com"] }),
+    ).rejects.toThrow("dice.com");
+    expect(upserts).toHaveLength(0);
   });
 });
 

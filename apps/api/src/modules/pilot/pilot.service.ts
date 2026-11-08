@@ -6,10 +6,11 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
-import { conflict } from "@/common/errors";
+import { conflict, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
+import { boardDomain } from "@/modules/job-board/board-host";
 import { costByTaskType, countAppliedToday, countSentToday } from "./pilot.stats";
 import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
@@ -77,8 +78,9 @@ export class PilotService {
       select: { config: true },
     });
     const config = pilotConfigSchema.parse(saved?.config ?? {});
+    const boards = body.boards && (await this.linkedRotation(userId, body.boards));
     const data = {
-      config: toInputJson({ ...config, ...body }),
+      config: toInputJson({ ...config, ...body, ...(boards && { boards }) }),
       goalsUpdatedAt: new Date(),
       ...TASK_LIST_SNAPSHOT_RESET,
     };
@@ -88,6 +90,21 @@ export class PilotService {
       update: data,
     });
     return this.publishState(row);
+  }
+
+  /** Rotation entries as stored domains, in order, once. The searcher only opens linked boards. */
+  private async linkedRotation(userId: string, entries: string[]): Promise<string[]> {
+    const domains = [...new Set(entries.map((entry) => boardDomain(entry) ?? entry))];
+    const linked = await this.prisma.userJobBoard.findMany({
+      where: { userId, board: { domain: { in: domains } } },
+      select: { board: { select: { domain: true } } },
+    });
+    const known = new Set(linked.map((link) => link.board.domain));
+    const missing = domains.filter((domain) => !known.has(domain));
+    if (missing.length > 0) {
+      throw unprocessable(`Add ${missing.join(", ")} on the Job boards page before searching it.`);
+    }
+    return domains;
   }
 
   /** Autopilot gates only autonomous work; it needs goals to have anything to work toward. */
