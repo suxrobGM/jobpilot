@@ -97,6 +97,8 @@ export class EmailAccountService {
       scope: tokens.scope ?? null,
       // A reconnect is exactly how a dead grant gets fixed.
       refreshFailedAt: null,
+      // Restart from a recent-mail list; mail missed while the grant was dead is past the old cursor.
+      historyId: null,
     };
 
     await this.prisma.emailAccount.upsert({
