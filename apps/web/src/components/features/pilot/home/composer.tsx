@@ -5,7 +5,7 @@ import { AddLink, ArrowUpward } from "@mui/icons-material";
 import { Button, Card, Chip, InputBase, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { pilotQueries } from "@/api/queries";
+import { pilotQueries, resumeQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { plural } from "@/utils/format";
 import { AddLinksDialog } from "../../pipeline/add-links-dialog";
@@ -20,10 +20,8 @@ const SUGGESTED_PROMPTS = [
 ];
 
 // Before any search exists, the first message is how the user sets the pilot up.
-const SETUP_PROMPTS = [
-  "Set up searches from my resume",
-  "Senior frontend roles, remote in the US. Skip crypto and agencies.",
-];
+const FROM_RESUME_PROMPT = "Set up searches from my resume";
+const DESCRIBE_PROMPT = "Senior frontend roles, remote in the US. Skip crypto and agencies.";
 
 /** Talk to the pilot; its reply runs in the user's own agent session ahead of other work. */
 export function Composer(): ReactElement {
@@ -31,7 +29,10 @@ export function Composer(): ReactElement {
   const [text, setText] = useState("");
   const [addingLinks, setAddingLinks] = useState(false);
   const settingUp = useQuery(pilotQueries.searches()).data?.length === 0;
-  const prompts = settingUp ? SETUP_PROMPTS : SUGGESTED_PROMPTS;
+
+  const hasResume = Boolean(useQuery(resumeQueries.list()).data?.length);
+  const setupPrompts = hasResume ? [FROM_RESUME_PROMPT, DESCRIBE_PROMPT] : [DESCRIBE_PROMPT];
+  const prompts = settingUp ? setupPrompts : SUGGESTED_PROMPTS;
   const links = parseLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
   const empty = text.trim() === "";
