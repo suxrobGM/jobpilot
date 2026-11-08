@@ -7,16 +7,23 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 
-export const settingsFormSchema = z.object({
-  checkIntervalMinutes: z.number().int().min(5),
-  // Mirrors the config block so the section addresses its fields by their real path. Spelled out
-  // rather than reusing pilotNetworkingSchema, whose defaults make every key optional on input.
-  networking: z.object({
+// Mirrors the config block so the section addresses its fields by their real path. Spelled out
+// rather than reusing pilotNetworkingSchema, whose defaults make every key optional on input.
+const networkingFormSchema = z
+  .object({
     email: z.enum(PILOT_EMAIL_AUTONOMY),
     linkedIn: z.enum(PILOT_LINKEDIN_AUTONOMY),
     dailyCap: z.number().int().min(0),
     followupDays: z.number().int().min(0),
-  }),
+  })
+  .refine((value) => value.dailyCap > 0 || (value.email === "off" && value.linkedIn === "off"), {
+    message: "Allow at least one message a day, or turn both channels off.",
+    path: ["dailyCap"],
+  });
+
+export const settingsFormSchema = z.object({
+  checkIntervalMinutes: z.number().int().min(5),
+  networking: networkingFormSchema,
 });
 
 export type SettingsFormValues = z.infer<typeof settingsFormSchema>;

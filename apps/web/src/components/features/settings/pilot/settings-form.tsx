@@ -13,10 +13,9 @@ import { useAppForm } from "@/components/ui/form/tanstack";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
 import { SettingsCard } from "../settings-card";
-import { CheckIntervalSection } from "./check-interval-section";
 import { settingsFormSchema, toFormValues, toSettings } from "./form-schema";
-import { JobAlertsSetting } from "./job-alerts-setting";
 import { NetworkingSection } from "./networking-section";
+import { ScheduleSection } from "./schedule-section";
 
 export function PilotSettingsForm(): ReactElement {
   const stateQuery = useQuery(pilotQueries.state());
@@ -71,10 +70,7 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
     >
       <Stack spacing={2}>
         <SettingsCard>
-          <CheckIntervalSection form={form} />
-        </SettingsCard>
-        <SettingsCard>
-          <JobAlertsSetting />
+          <ScheduleSection form={form} />
         </SettingsCard>
         <SettingsCard>
           <NetworkingSection form={form} />

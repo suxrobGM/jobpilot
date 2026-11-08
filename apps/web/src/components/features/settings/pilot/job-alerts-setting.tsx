@@ -6,7 +6,6 @@ import { Schedule } from "@mui/icons-material";
 import { Button, Stack, Switch, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import { FormSection } from "@/components/ui/form";
 import { formatTimeUntil, plural } from "@/utils/format";
 import { formatHour } from "../../pilot/run-status";
 import { ScheduleDialog } from "./schedule-dialog";
@@ -27,10 +26,14 @@ export function JobAlertsSetting(): ReactElement {
   const status = useQuery(pilotQueries.jobAlerts()).data;
 
   return (
-    <FormSection
-      title="Job alert emails"
-      description="Imports postings from LinkedIn, Ladders, FlexJobs and other alert emails, then scores them against your resume."
-    >
+    <Stack spacing={1}>
+      <Stack spacing={0.25}>
+        <Typography variant="body2Strong">Job alert emails</Typography>
+        <Typography variant="body2Muted">
+          Imports postings from LinkedIn, Ladders, FlexJobs and other alert emails, then scores them
+          against your resume.
+        </Typography>
+      </Stack>
       {status && (
         <Stack spacing={1}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
@@ -54,6 +57,6 @@ export function JobAlertsSetting(): ReactElement {
           <ScheduleDialog open={editing} status={status} onClose={() => setEditing(false)} />
         </Stack>
       )}
-    </FormSection>
+    </Stack>
   );
 }
