@@ -26,7 +26,8 @@ export function AppShell(props: PropsWithChildren): ReactElement {
     <Box
       sx={(theme) => ({
         display: "flex",
-        height: "100vh",
+        // dvh, not vh: phone vh counts the hidden address bar, so the shell overflows and the page scrolls.
+        height: "100dvh",
         backgroundColor: theme.palette.surfaces.base,
       })}
     >

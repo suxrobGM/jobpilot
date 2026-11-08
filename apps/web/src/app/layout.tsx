@@ -73,6 +73,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: surfaces.base,
   colorScheme: "dark",
+  // The keyboard shrinks the layout instead of panning it, so the composer stays above it.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout(props: PropsWithChildren): ReactElement {
