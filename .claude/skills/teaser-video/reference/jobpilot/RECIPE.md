@@ -19,13 +19,14 @@ an overlay on `../edit` and `../capture`; together they rebuild the shipped film
 
 ## Re-edit only (footage unchanged)
 
-Clips live in `.tmp/teaser-v3/edit/public/clips/` (gitignored, local only). If they're gone,
-re-film.
+The clips and the run's tool-call log (`src/data/actions.json`, made by `tool-calls.mjs`) live in
+`.tmp/teaser-v3/edit/` (gitignored, local only). If the clips are gone, re-film.
 
 ```bash
 S=.tmp/teaser-v3-edit
 cp -r .claude/skills/teaser-video/reference/edit "$S" && cp -r .claude/skills/teaser-video/reference/jobpilot/edit/. "$S"
 cp -r .tmp/teaser-v3/edit/public/clips "$S/public/" && cp apps/web/public/icon.svg "$S/public/logo.svg"
+mkdir -p "$S/src/data" && cp .tmp/teaser-v3/edit/src/data/actions.json "$S/src/data/"
 cd "$S" && npm install && npm run synth
 npx remotion render src/index.ts Teaser out/teaser.mp4 --codec=h264 --crf=16 --audio-codec=aac --audio-bitrate=192k --concurrency=4
 npx remotion still src/index.ts Poster out/teaser-poster.png
