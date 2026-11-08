@@ -9,6 +9,10 @@ import { SideSection } from "./side-section";
 
 const WEEK_DAYS = 7;
 
+/** Day buckets are UTC midnights, so the weekday is read in UTC. */
+const dayInitial = (date: Date) =>
+  date.toLocaleDateString(undefined, { weekday: "narrow", timeZone: "UTC" });
+
 /** Whether the pilot is paying off: this week's applications and responses, one bar per day. */
 export function WeekSummary(): ReactElement {
   const stats = useQuery(analyticsQueries.stats()).data;
@@ -40,6 +44,21 @@ export function WeekSummary(): ReactElement {
               }}
             />
           </Tooltip>
+        ))}
+      </Stack>
+      <Stack direction="row" spacing={0.5}>
+        {days.map((day, index) => (
+          <Typography
+            key={day.date.toISOString()}
+            variant="captionMuted"
+            sx={{
+              flex: 1,
+              textAlign: "center",
+              color: index === days.length - 1 ? "text.primary" : "text.secondary",
+            }}
+          >
+            {dayInitial(day.date)}
+          </Typography>
         ))}
       </Stack>
     </SideSection>

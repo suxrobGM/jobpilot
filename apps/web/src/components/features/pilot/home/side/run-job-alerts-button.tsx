@@ -3,15 +3,12 @@
 import type { ReactElement } from "react";
 import type { JobAlertsStatus } from "@jobpilot/contracts/pilot";
 import { PlayArrow } from "@mui/icons-material";
-import { TooltipButton } from "@/components/ui/buttons";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { useCreateRequest } from "../../requests/use-create-request";
 import { isRunning } from "../../run-status";
 
 /** Why a run can't be asked for, or null when it can. */
 function runDisabledReason(status: JobAlertsStatus): string | null {
-  if (!status.mailboxConnected) {
-    return "Connect Gmail in Settings → Email so there is mail to read.";
-  }
   if (isRunning(status)) {
     return "An import is running.";
   }
@@ -31,15 +28,14 @@ export function RunJobAlertsButton(props: RunJobAlertsButtonProps): ReactElement
   const disabledReason = runDisabledReason(status);
 
   return (
-    <TooltipButton
-      title={disabledReason ?? ""}
+    <TooltipIconButton
+      title={disabledReason ?? "Import now"}
       size="small"
-      startIcon={<PlayArrow />}
-      disabled={disabledReason !== null}
-      loading={request.isPending}
+      disabled={disabledReason !== null || request.isPending}
       onClick={() => request.mutate({ taskType: "inbox.jobAlerts", payload: {} })}
+      sx={{ mr: -0.5 }}
     >
-      Run now
-    </TooltipButton>
+      <PlayArrow fontSize="sm" />
+    </TooltipIconButton>
   );
 }

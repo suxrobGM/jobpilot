@@ -13,12 +13,12 @@ export function StealthCodeBanner(): ReactElement {
         spacing={1}
         sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}
       >
-        <Typography variant="body2Muted">
-          Got a technical interview? Stealth Code is an AI assistant for live rounds.
+        <Typography variant="captionMuted">
+          Technical interview coming up? Stealth Code helps in live rounds.
         </Typography>
         <Link
           href={STEALTH_CODE_URL}
-          variant="body2"
+          variant="caption"
           sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
         >
           Download for Windows
