@@ -3,6 +3,7 @@ import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/p
 import { inject, injectable } from "@needle-di/core";
 import { conflict, isPrismaError, PRISMA_ERRORS, unprocessable } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { dropFromRotation } from "@/modules/pilot/rotation";
 import { boardDomain } from "./board-host";
 
 /** Stored in resolver form, so an agent reporting any spelling of it lands on this row. */
@@ -104,11 +105,15 @@ export class AdminBoardService {
 
   /**
    * Cascades to every user's link row - the board disappears from those users' boards - and clears
-   * it on jobs and applications. A board someone stored a login for is refused.
+   * it on jobs and applications and drops it from rotations. A board someone stored a login for is
+   * refused.
    */
   async remove(id: string) {
     try {
-      await this.prisma.jobBoard.delete({ where: { id } });
+      await this.prisma.$transaction(async (tx) => {
+        const board = await tx.jobBoard.delete({ where: { id }, select: { domain: true } });
+        await dropFromRotation(tx, {}, board.domain);
+      });
     } catch (error) {
       if (isPrismaError(error, PRISMA_ERRORS.FOREIGN_KEY_VIOLATION)) {
         throw conflict("Users have saved logins for this board; it cannot be deleted.");

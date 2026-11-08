@@ -41,7 +41,7 @@ export function BoardsSection(): ReactElement {
 
   const remove = useApiMutation((id: string) => api["job-boards"]({ id }).delete(), {
     successMessage: "Board removed",
-    invalidate: [jobBoardQueries.all],
+    invalidate: [jobBoardQueries.all, pilotQueries.state().queryKey],
   });
 
   const handleRemove = async (board: JobBoardDto): Promise<void> => {
@@ -53,9 +53,6 @@ export function BoardsSection(): ReactElement {
     });
     if (!ok) {
       return;
-    }
-    if (rotation.includes(board.domain)) {
-      saveRotation.mutate(rotation.filter((domain) => domain !== board.domain));
     }
     remove.mutate(board.id);
   };
