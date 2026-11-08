@@ -49,6 +49,8 @@ export const pipelineCountsSchema = z.object({
   feeds: z.array(z.object({ feedId: z.uuid(), views: viewCountsSchema })),
   /** To review jobs found over `PIPELINE_STALE_DAYS` ago. */
   stale: z.number().int(),
+  /** Applications under the same filters, for the Applied tab. */
+  applied: z.number().int(),
 });
 export const needsYouJobRefsSchema = z.array(z.object({ feedId: z.uuid(), key: z.string() }));
 

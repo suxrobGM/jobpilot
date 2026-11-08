@@ -68,6 +68,10 @@ export class ApplicationService {
     return { total, byStatus };
   }
 
+  async count(userId: string, filters: AppliedListFilters): Promise<number> {
+    return this.prisma.application.count({ where: this.where(userId, filters) });
+  }
+
   private where(userId: string, filters: AppliedListFilters): Prisma.ApplicationWhereInput {
     const { status, board, source, search, feedId } = filters;
 

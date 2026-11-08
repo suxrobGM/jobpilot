@@ -15,6 +15,7 @@ import { DAY_MS } from "@/common/date/buckets";
 import { HttpError } from "@/common/errors";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { ApplicationService } from "@/modules/application/application.service";
 import { FeedService } from "@/modules/feed/feed.service";
 import { JobService } from "@/modules/feed/jobs/job.service";
 import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
@@ -68,6 +69,7 @@ export class PipelineService {
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly feeds = inject(FeedService),
     private readonly jobs = inject(JobService),
+    private readonly applications = inject(ApplicationService),
   ) {}
 
   /** The rows a further-along copy of the same posting hides; few, since only repeats count. */
@@ -206,13 +208,14 @@ export class PipelineService {
   async counts(userId: string, filters: PipelineFilters, now = new Date()) {
     const allFeeds = await this.jobWhere(userId, { ...filters, feedId: undefined });
     const where = filters.feedId ? { ...allFeeds, feedId: filters.feedId } : allFeeds;
-    const [groups, stale] = await Promise.all([
+    const [groups, stale, applied] = await Promise.all([
       this.prisma.job.groupBy({
         by: ["feedId", "status"],
         where: allFeeds,
         _count: { _all: true },
       }),
       this.prisma.job.count({ where: { ...where, ...staleWhere(now) } }),
+      this.applications.count(userId, filters),
     ]);
     const byFeed = new Map<string, Map<JobStatus, number>>();
     const total = new Map<JobStatus, number>();
@@ -229,7 +232,7 @@ export class PipelineService {
       feedId,
       views: viewCounts(statuses),
     }));
-    return { views: viewCounts(picked), feeds, stale };
+    return { views: viewCounts(picked), feeds, stale, applied };
   }
 
   /** Queues links on the standing links feed; `queue.score` picks them up like any pasted link. */

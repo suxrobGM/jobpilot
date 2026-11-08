@@ -11,8 +11,11 @@ import {
   Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import { feedQueries } from "@/api/queries";
 import type { FeedDto } from "@/api/types";
+import { usePaginationParams } from "@/hooks/use-pagination";
+import { usePipelineTab } from "./pipeline-tabs";
 
 interface FeedGroup {
   label: string;
@@ -53,17 +56,12 @@ function CountedLabel(props: CountedLabelProps): ReactElement {
   );
 }
 
-interface FeedSelectProps {
-  value: string | null;
-  onChange: (feedId: string | null) => void;
-  /** Jobs per feed in the open tab; null where the tab has no per-feed counts. */
-  counts: Map<string, number> | null;
-  total: number | null;
-}
-
 /** Searches apart from standing sources, each with its count; feeds with nothing here are hidden. */
-export function FeedSelect(props: FeedSelectProps): ReactElement {
-  const { value, onChange, counts, total } = props;
+export function FeedSelect(): ReactElement {
+  const value = useSearchParams().get("feed");
+  const pagination = usePaginationParams();
+  const tab = usePipelineTab();
+  const counts = tab.feedCounts;
   const feeds = (useQuery(feedQueries.list()).data ?? []).filter(
     (feed) => feed.kind !== "networking",
   );
@@ -95,7 +93,7 @@ export function FeedSelect(props: FeedSelectProps): ReactElement {
       size="small"
       select
       value={value ?? ""}
-      onChange={(event) => onChange(event.target.value || null)}
+      onChange={(event) => pagination.setFilters({ feed: event.target.value || null })}
       sx={{ maxWidth: 320 }}
       slotProps={{
         input: {
@@ -114,7 +112,7 @@ export function FeedSelect(props: FeedSelectProps): ReactElement {
       }}
     >
       <MenuItem value="">
-        <CountedLabel name="All feeds" hint="" count={total} />
+        <CountedLabel name="All feeds" hint="" count={tab.count(tab.view)} />
       </MenuItem>
       {items}
     </TextField>

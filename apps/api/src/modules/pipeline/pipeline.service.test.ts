@@ -1,5 +1,6 @@
 import { conflict } from "@/common/errors";
 import type { PrismaClient } from "@/generated/prisma/client";
+import type { ApplicationService } from "@/modules/application/application.service";
 import type { FeedService } from "@/modules/feed/feed.service";
 import type { JobService } from "@/modules/feed/jobs/job.service";
 import { PipelineService } from "./pipeline.service";
@@ -14,6 +15,8 @@ const prisma = {
   },
 } as unknown as PrismaClient;
 
+const applications = { count: async () => 0 } as unknown as ApplicationService;
+
 const patched: string[] = [];
 const jobs = {
   update: async (_userId: string, _feedId: string, key: string) => {
@@ -26,7 +29,7 @@ const jobs = {
 
 describe("PipelineService.bulk", () => {
   it("counts rows a transition refused, and ids the user doesn't own, as refused", async () => {
-    const service = new PipelineService(prisma, {} as FeedService, jobs);
+    const service = new PipelineService(prisma, {} as FeedService, jobs, applications);
     const result = await service.bulk("u1", {
       action: "approve",
       ids: [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()],
@@ -48,7 +51,12 @@ describe("PipelineService.counts", () => {
       count: async () => 0,
     },
   } as unknown as PrismaClient;
-  const service = new PipelineService(countsPrisma, {} as FeedService, {} as JobService);
+  const service = new PipelineService(
+    countsPrisma,
+    {} as FeedService,
+    {} as JobService,
+    applications,
+  );
 
   it("totals only the picked feed but still lists every feed for the menu", async () => {
     const result = await service.counts("u1", { feedId: "a" });
