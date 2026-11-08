@@ -4,8 +4,8 @@ import type { ReactElement } from "react";
 import type { JobAlertsStatus } from "@jobpilot/contracts/pilot";
 import { PlayArrow } from "@mui/icons-material";
 import { TooltipButton } from "@/components/ui/buttons";
-import { useCreateRequest } from "../../pilot/requests/use-create-request";
-import { isRunning } from "../../pilot/run-status";
+import { useCreateRequest } from "../../requests/use-create-request";
+import { isRunning } from "../../run-status";
 
 /** Why a run can't be asked for, or null when it can. */
 function runDisabledReason(status: JobAlertsStatus): string | null {
@@ -34,7 +34,6 @@ export function RunJobAlertsButton(props: RunJobAlertsButtonProps): ReactElement
     <TooltipButton
       title={disabledReason ?? ""}
       size="small"
-      variant="contained"
       startIcon={<PlayArrow />}
       disabled={disabledReason !== null}
       loading={request.isPending}

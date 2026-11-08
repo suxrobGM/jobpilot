@@ -9,7 +9,6 @@ import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
-import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
@@ -18,7 +17,6 @@ import { CheckIntervalSection } from "./check-interval-section";
 import { settingsFormSchema, toFormValues, toSettings } from "./form-schema";
 import { JobAlertsSetting } from "./job-alerts-setting";
 import { NetworkingSection } from "./networking-section";
-import { ResearchSection } from "./research-section";
 
 export function PilotSettingsForm(): ReactElement {
   const stateQuery = useQuery(pilotQueries.state());
@@ -77,14 +75,6 @@ function SettingsEditor(props: SettingsEditorProps): ReactElement {
         </SettingsCard>
         <SettingsCard>
           <JobAlertsSetting />
-        </SettingsCard>
-        <SettingsCard>
-          <FormSection
-            title="Research"
-            description="Beyond your boards, the pilot searches the open web for postings that fit your goals - weekly, and sooner when searches run dry."
-          >
-            <ResearchSection />
-          </FormSection>
         </SettingsCard>
         <SettingsCard>
           <NetworkingSection form={form} />

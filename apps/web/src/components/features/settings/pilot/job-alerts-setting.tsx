@@ -9,13 +9,12 @@ import { pilotQueries } from "@/api/queries";
 import { FormSection } from "@/components/ui/form";
 import { formatTimeUntil, plural } from "@/utils/format";
 import { formatHour } from "../../pilot/run-status";
-import { RunJobAlertsButton } from "./run-job-alerts-button";
 import { ScheduleDialog } from "./schedule-dialog";
 
 function scheduleSummary(status: JobAlertsStatus): string {
   const { settings } = status;
   if (!settings.enabled) {
-    return "Off - imports only when you click Run now.";
+    return "Off - imports only when you run it from the Pilot page.";
   }
   const times = settings.runHours.map(formatHour).join(", ");
   const next = status.nextRunAt ? ` · next in ${formatTimeUntil(status.nextRunAt)}` : "";
@@ -46,7 +45,6 @@ export function JobAlertsSetting(): ReactElement {
             <Button size="small" startIcon={<Schedule />} onClick={() => setEditing(true)}>
               Schedule
             </Button>
-            <RunJobAlertsButton status={status} />
           </Stack>
           {status.pendingEmails > 0 && (
             <Typography variant="captionMuted">

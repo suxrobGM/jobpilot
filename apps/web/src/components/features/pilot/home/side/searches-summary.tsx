@@ -6,6 +6,7 @@ import { Button, Stack, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import type { FeedDto } from "@/api/types";
+import { LinkButton } from "@/components/ui/buttons";
 import { plural } from "@/utils/format";
 import { useMakeChange } from "../../changes/use-changes";
 import { SideSection } from "./side-section";
@@ -56,8 +57,17 @@ export function SearchesSummary(): ReactElement {
   return (
     <SideSection
       title="Searches"
-      action={<Typography variant="captionMuted">applied / week</Typography>}
+      action={
+        <LinkButton size="small" href="/pilot/goals">
+          Manage
+        </LinkButton>
+      }
     >
+      {searches.length > 0 && (
+        <Typography variant="captionMuted" sx={{ textAlign: "right" }}>
+          applied / week
+        </Typography>
+      )}
       {searches.length === 0 && (
         <Typography variant="body2Muted">None yet. I build these from your goals.</Typography>
       )}
