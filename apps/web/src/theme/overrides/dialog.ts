@@ -7,6 +7,8 @@ export const dialogOverrides: Components<Theme>["MuiDialog"] = {
       borderRadius: theme.radii.lg,
       boxShadow: theme.shadows_custom.lg,
       backgroundColor: theme.palette.surfaces.card,
+      // Wide content scrolls in DialogContent; a sideways paper scroll clipped the title.
+      overflowX: "hidden",
     }),
   },
 };
