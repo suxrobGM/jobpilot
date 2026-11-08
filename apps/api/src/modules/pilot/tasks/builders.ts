@@ -178,7 +178,7 @@ export const tune = (feedId: string): TaskPayload<"search.tune"> => ({
   topSkipReasons: ["overqualified"],
 });
 
-export const setup: TaskPayload<"search.setup"> = { minScore: 60 };
+export const setup: TaskPayload<"search.setup"> = { minScore: 60, trigger: "auto" };
 
 export const research = (trigger: ResearchTask["trigger"]): ResearchTask => ({
   resumeId: "0f4b6a52-7c1e-4d8a-9b3f-2e5c6d7a8b90",

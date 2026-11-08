@@ -60,6 +60,10 @@ function JobActions(props: JobActionsProps): ReactNode {
   const setStatus = useApiMutation((status: "approved" | "pending") => endpoint.patch({ status }), {
     invalidate,
   });
+  const skip = useApiMutation(
+    () => api.pipeline.jobs.bulk.post({ action: "skip", ids: [job.id] }),
+    { invalidate, successMessage: "Skipped. The pilot won't apply to this job." },
+  );
   const draftProposal = useApiMutation(
     () =>
       api.upwork.proposals.post({
@@ -121,14 +125,21 @@ function JobActions(props: JobActionsProps): ReactNode {
         </Stack>
       );
     case "needs_user":
-      return parked ? (
-        <Button variant="contained" loading={request.isPending} onClick={applyNow}>
-          Apply now
-        </Button>
-      ) : (
-        <LinkButton href="/pilot" variant="contained">
-          Answer in Pilot
-        </LinkButton>
+      return (
+        <Stack direction="row" spacing={1}>
+          {parked ? (
+            <Button variant="contained" loading={request.isPending} onClick={applyNow}>
+              Apply now
+            </Button>
+          ) : (
+            <LinkButton href="/pilot" variant="contained">
+              Answer in Pilot
+            </LinkButton>
+          )}
+          <Button color="inherit" loading={skip.isPending} onClick={() => skip.mutate()}>
+            Skip
+          </Button>
+        </Stack>
       );
     case "failed":
       return (

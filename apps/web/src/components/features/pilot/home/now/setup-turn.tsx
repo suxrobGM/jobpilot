@@ -11,6 +11,7 @@ import { DialogHeader } from "@/components/ui/feedback";
 import { plural } from "@/utils/format";
 import { usePilotState } from "../../state/use-pilot-state";
 import { PilotTurn } from "../thread/pilot-turn";
+import { SetupFromResumeButton } from "./setup-from-resume-button";
 
 interface StepLinkProps {
   href: Route;
@@ -21,8 +22,7 @@ interface Step {
   key: string;
   label: string;
   done: boolean;
-  /** Null when the step happens right here, in the composer. */
-  link: StepLinkProps | null;
+  action: ReactNode;
 }
 
 function StepLink(props: StepLinkProps): ReactElement {
@@ -56,32 +56,31 @@ export function SetupTurn(): ReactNode {
       key: "resume",
       label: "Upload a resume. I score jobs against it and apply with it.",
       done: resumes.length > 0,
-      link: { href: "/resumes", action: "Upload" },
+      action: <StepLink href="/resumes" action="Upload" />,
     },
     {
       key: "searches",
-      label:
-        "Tell me what jobs you want, in a message below. Or turn on autopilot and I'll start from your resume.",
+      label: "Tell me what jobs you want in a message below, or I can start from your resume.",
       done: searches.length > 0,
-      link: null,
+      action: <SetupFromResumeButton resumeCount={resumes.length} />,
     },
     {
       key: "profile",
       label: "Add your address. Application forms ask for it.",
       done: Boolean(profile.user?.street && profile.user.city),
-      link: { href: "/settings/profile", action: "Fill in" },
+      action: <StepLink href="/settings/profile" action="Fill in" />,
     },
     {
       key: "boards",
       label: "Check the job boards I should search.",
       done: state.config.boards.length > 0,
-      link: { href: "/boards", action: "Pick boards" },
+      action: <StepLink href="/boards" action="Pick boards" />,
     },
     {
       key: "credentials",
       label: "Save your job-board logins so I can sign in before I apply.",
       done: credentials.length > 0,
-      link: { href: "/boards", action: "Add" },
+      action: <StepLink href="/boards" action="Add" />,
     },
   ];
 
@@ -94,7 +93,7 @@ export function SetupTurn(): ReactNode {
     <PilotTurn>
       <Typography variant="body2">{`Before I can work on my own: ${next.label}`}</Typography>
       <Stack direction="row" spacing={1}>
-        {next.link && <StepLink {...next.link} />}
+        {next.action}
         {left.length > 1 && (
           <Button size="small" color="inherit" onClick={() => setOpen(true)}>
             {plural(left.length - 1, "more step")}
@@ -113,7 +112,7 @@ export function SetupTurn(): ReactNode {
                 key={step.key}
                 done={step.done}
                 label={step.label}
-                action={step.link && <StepLink {...step.link} />}
+                action={step.action}
               />
             ))}
           </Stack>

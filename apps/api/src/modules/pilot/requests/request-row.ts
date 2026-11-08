@@ -33,6 +33,8 @@ function requestSubjectId(input: CreatePilotRequestInput, requestId: string): st
       return "inbox";
     case "inbox.jobAlerts":
       return "jobAlerts";
+    case "search.setup":
+      return "setup";
     case "research.explore":
       return "research";
     case "search.discover":

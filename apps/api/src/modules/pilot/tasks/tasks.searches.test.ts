@@ -78,7 +78,7 @@ describe("TaskListService search.setup", () => {
 
   it("starts from the resume when no search exists", async () => {
     const taskList = await service({ config: { minScore: 70 }, resumeCount: 1 }).refresh("p1");
-    expect(findSetup(taskList)?.payload).toEqual({ minScore: 70 });
+    expect(findSetup(taskList)?.payload).toEqual({ minScore: 70, trigger: "auto" });
   });
 
   it("refills while the apply cap has room and every search is waiting", async () => {

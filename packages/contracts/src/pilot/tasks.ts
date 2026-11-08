@@ -256,7 +256,12 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "feed",
     z.object({ feedId: z.uuid(), failedCount: z.number().int() }),
   ),
-  taskVariant("search.setup", "pilot", z.object({ minScore: z.number() })),
+  taskVariant(
+    "search.setup",
+    "pilot",
+    // `requested`: the user asked, so build from every resume and keep what's there.
+    z.object({ minScore: z.number(), trigger: z.enum(["requested", "auto"]) }),
+  ),
   taskVariant(
     "research.explore",
     "pilot",

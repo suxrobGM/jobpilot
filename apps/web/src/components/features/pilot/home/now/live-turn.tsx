@@ -14,6 +14,7 @@ import { usePilotStatus } from "../../state/use-pilot-status";
 import { useRunSteps } from "../../steps/use-run-steps";
 import { PilotTurn } from "../thread/pilot-turn";
 import { SteerDialog } from "./steer-dialog";
+import { type Awaiting, useAwaiting } from "./use-awaiting";
 
 type CurrentRun = NonNullable<PilotState["currentRun"]>;
 
@@ -89,6 +90,11 @@ const MODE_LINES: Record<SaidMode, string> = {
   starting: "Starting up.",
 };
 
+const AWAITING_LINES: Record<Awaiting, string> = {
+  reply: "Got your message. I'll reply next.",
+  request: "Got it. I'll start on what you asked next.",
+};
+
 /** The newest line of the thread: what the pilot is doing right now, with the controls for it. */
 export function LiveTurn(): ReactElement {
   const state = usePilotState();
@@ -97,11 +103,17 @@ export function LiveTurn(): ReactElement {
   const endHold = useApiMutation(async () => ({ data: await endPilotHold(), error: null }), {
     successMessage: "Handed the terminal back to the pilot.",
   });
+  const awaiting = useAwaiting();
   const run = state.currentRun;
 
   const line = (): ReactElement => {
     if (run) {
       return <RunningLine run={run} />;
+    }
+    // Under an unanswered ask, a status line reads like the reply; offline and held explain the wait.
+    const ready = mode !== "offline" && mode !== "unpaired" && mode !== "held";
+    if (awaiting && ready) {
+      return <SaidLine text={AWAITING_LINES[awaiting]} />;
     }
     switch (mode) {
       case "offline":

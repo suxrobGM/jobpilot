@@ -73,6 +73,12 @@ async function requestTask(
         maxPages: SEARCH_MAX_PAGES,
       });
     }
+    case "search.setup": {
+      const resumeCount = await prisma.resume.count({ where: { userId } });
+      return resumeCount > 0
+        ? makeTask("search.setup", { minScore: config.minScore, trigger: "requested" })
+        : null;
+    }
     // Asked for by name, so they run off-schedule and past a paused feed.
     case "inbox.jobAlerts": {
       const alerts = await findJobAlerts(ctx, config);

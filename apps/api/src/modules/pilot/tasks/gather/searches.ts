@@ -90,5 +90,5 @@ export async function gatherSetup(
   if (noStart || ranRecently(last, now, IDLE_RERUN_MS)) {
     return null;
   }
-  return { minScore: input.minScore };
+  return { minScore: input.minScore, trigger: "auto" };
 }

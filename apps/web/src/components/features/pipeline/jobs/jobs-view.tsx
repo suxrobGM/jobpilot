@@ -30,7 +30,7 @@ const VIEW_ACTIONS: Record<PipelineJobView, BulkAction[]> = {
   review: ["approve", "skip"],
   inProgress: ["skip"],
   notApplied: ["retry"],
-  needsYou: [],
+  needsYou: ["skip"],
 };
 
 const EMPTY_TITLES: Record<PipelineJobView, string> = {

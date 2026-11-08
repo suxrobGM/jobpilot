@@ -22,6 +22,9 @@ angle; put hard limits in `dealBreakers`; give every search a `reason` in the us
 Delete searches that no longer fit. With autopilot off (`GET /api/pilot` `autopilot`), end the
 reply saying the searches start once they turn it on.
 
+**Searches from their resume** ("set up searches from my resume", no roles named): don't derive
+them here. Queue `search.setup {}`; it reads every resume and runs after this reply.
+
 **A clear instruction** to change rules, searches or standing answers ("stop applying to jobs that
 need clearance") is an applied change:
 
@@ -53,8 +56,9 @@ jobpilot-api POST /api/pilot/requests --data '{"taskType":"networking.find","pay
 
 Types: `job.apply {feedId, jobKey}`, `job.rescanSkipped {feedId, jobKeys?}`,
 `job.retryFailed {feedId}`, `inbox.review {}`, `upwork.syncInbox {}`,
-`search.discover {searchId}`, `resume.extract {resumeId}`, `resume.tailor {jobDescription}`,
-`networking.find {criteria}`, `upwork.profile {mode}`, `research.explore {focus?}`.
+`search.discover {searchId}`, `search.setup {}`, `resume.extract {resumeId}`,
+`resume.tailor {jobDescription}`, `networking.find {criteria}`, `upwork.profile {mode}`,
+`research.explore {focus?}`.
 
 Asked to find more jobs, look beyond the boards, or search somewhere specific (labs, a city,
 career pages): queue `research.explore`, with `focus` in the user's words when they narrowed it.

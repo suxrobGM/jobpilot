@@ -5,7 +5,7 @@ import { AddLink, ArrowUpward } from "@mui/icons-material";
 import { Button, Card, Chip, InputBase, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { pilotQueries, resumeQueries } from "@/api/queries";
+import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { plural } from "@/utils/format";
 import { AddLinksDialog } from "../../pipeline/add-links-dialog";
@@ -20,7 +20,6 @@ const SUGGESTED_PROMPTS = [
 ];
 
 // Before any search exists, the first message is how the user sets the pilot up.
-const FROM_RESUME_PROMPT = "Set up searches from my resume";
 const DESCRIBE_PROMPT = "Senior frontend roles, remote in the US. Skip crypto and agencies.";
 
 interface PromptChipsProps {
@@ -30,9 +29,7 @@ interface PromptChipsProps {
 
 function PromptChips(props: PromptChipsProps): ReactElement {
   const { settingUp, onPick } = props;
-  const hasResume = Boolean(useQuery(resumeQueries.list()).data?.length);
-  const setupPrompts = hasResume ? [FROM_RESUME_PROMPT, DESCRIBE_PROMPT] : [DESCRIBE_PROMPT];
-  const prompts = settingUp ? setupPrompts : SUGGESTED_PROMPTS;
+  const prompts = settingUp ? [DESCRIBE_PROMPT] : SUGGESTED_PROMPTS;
   return (
     // Phones scroll the prompts sideways instead of stacking three rows over the box.
     <Stack
