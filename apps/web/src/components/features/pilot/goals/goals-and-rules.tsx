@@ -13,8 +13,8 @@ import { SearchesSection } from "./searches-section";
 
 const ANCHORS: SectionAnchor[] = [
   { id: "goals", label: "Goals" },
-  { id: "searches", label: "Searches" },
   { id: "rules", label: "Rules" },
+  { id: "searches", label: "Searches" },
   { id: "answers", label: "Standing answers" },
 ];
 
@@ -44,17 +44,17 @@ export function GoalsAndRules(): ReactElement {
             <GoalsForm key={state.goals} state={state} />
           </SectionCard>
         </Box>
+        <Box data-section-id="rules">
+          <SectionCard title="Rules">
+            <RulesForm key={rulesKey} state={state} />
+          </SectionCard>
+        </Box>
         <Box data-section-id="searches">
           <SectionCard
             title="Searches"
             description="The pilot builds and runs these from your goals."
           >
             <SearchesSection />
-          </SectionCard>
-        </Box>
-        <Box data-section-id="rules">
-          <SectionCard title="Rules">
-            <RulesForm key={rulesKey} state={state} />
           </SectionCard>
         </Box>
         <Box data-section-id="answers">
