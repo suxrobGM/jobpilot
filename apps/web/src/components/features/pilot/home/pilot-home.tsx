@@ -98,8 +98,8 @@ export function PilotHome(): ReactElement {
           flex: 1,
           minWidth: 0,
           px: { xs: 1.5, sm: 3 },
-          pt: { xs: 1, md: 2 },
-          pb: 2,
+          pt: { xs: 0, md: 2 },
+          pb: { xs: 1, md: 2 },
         }}
       >
         {!isDesktop && (
@@ -107,7 +107,7 @@ export function PilotHome(): ReactElement {
             value={tab}
             onChange={(_, value: PhoneTab) => setTab(value)}
             variant="fullWidth"
-            sx={{ mb: 1 }}
+            sx={{ minHeight: 40, "& .MuiTab-root": { minHeight: 40, py: 1 } }}
           >
             <Tab value="chat" label="Chat" />
             <Tab

@@ -86,7 +86,7 @@ export const APP_TITLE = "JobPilot";
 // Fits "Networking", the longest one-word label, at caption size.
 export const RAIL_WIDTH = 84;
 export const MOBILE_NAV_HEIGHT = 56;
-export const TOP_BAR_HEIGHT = { mobile: 56, desktop: 64 } as const;
+export const TOP_BAR_HEIGHT = { mobile: 48, desktop: 64 } as const;
 
 function isHrefActive(pathname: string, href: string): boolean {
   const target = href.split("?")[0];

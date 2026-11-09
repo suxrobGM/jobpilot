@@ -11,6 +11,8 @@ import { useTopBarSlots } from "./top-bar-slots";
 interface PageHeaderProps {
   eyebrow?: string;
   title: string;
+  /** A short status line under the title, kept in the bar. */
+  subtitle?: string;
   description?: ReactNode;
   actions?: ReactNode;
   /** Page tabs, set flush under the title in the top bar. */
@@ -22,7 +24,16 @@ interface PageHeaderProps {
 
 /** Title, back button, actions and tabs go to the top bar; the description stays on the page. */
 export function PageHeader(props: PageHeaderProps): ReactElement {
-  const { eyebrow, title, description, actions, tabs, backHref, backLabel = "Back" } = props;
+  const {
+    eyebrow,
+    title,
+    subtitle,
+    description,
+    actions,
+    tabs,
+    backHref,
+    backLabel = "Back",
+  } = props;
   const slots = useTopBarSlots();
 
   const heading = (
@@ -41,6 +52,11 @@ export function PageHeader(props: PageHeaderProps): ReactElement {
         <Typography variant="h3" component="h1" noWrap>
           {title}
         </Typography>
+        {subtitle && (
+          <Typography variant="captionMuted" noWrap>
+            {subtitle}
+          </Typography>
+        )}
       </Stack>
     </Stack>
   );

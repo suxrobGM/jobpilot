@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { FormControlLabel, Stack, Switch, Typography } from "@mui/material";
+import { FormControlLabel, Switch, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
@@ -38,27 +38,20 @@ export function PilotHeader(): ReactElement {
   return (
     <PageHeader
       title="Pilot"
+      subtitle={`${state.appliedToday}/${state.config.dailyApplyCap} applied today`}
       actions={
-        <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-          <Typography variant="body2Muted" noWrap>
-            <Typography component="span" variant="body2Strong" sx={{ color: "text.primary" }}>
-              {`${state.appliedToday}/${state.config.dailyApplyCap}`}
-            </Typography>
-            {" today"}
-          </Typography>
-          <FormControlLabel
-            label={<Typography variant="body2Muted">Autopilot</Typography>}
-            disabled={autopilot.isPending}
-            sx={{ mr: 0 }}
-            control={
-              <Switch
-                size="small"
-                checked={state.autopilot}
-                onChange={(_, checked) => void toggle(checked)}
-              />
-            }
-          />
-        </Stack>
+        <FormControlLabel
+          label={<Typography variant="body2Muted">Autopilot</Typography>}
+          disabled={autopilot.isPending}
+          sx={{ mr: 0 }}
+          control={
+            <Switch
+              size="small"
+              checked={state.autopilot}
+              onChange={(_, checked) => void toggle(checked)}
+            />
+          }
+        />
       }
     />
   );

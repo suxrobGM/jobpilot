@@ -2,9 +2,7 @@
 
 import { type ReactElement, type Ref, useEffect, useRef } from "react";
 import { Box, Stack, Typography } from "@mui/material";
-import NextLink from "next/link";
 import { usePathname } from "next/navigation";
-import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 import { AgentPill } from "@/components/features/agent/agent-pill";
 import { type PageWidth, TOP_BAR_HEIGHT_VAR } from "@/components/ui/layout/top-bar-slots";
 import {
@@ -41,8 +39,8 @@ const NAV_ITEMS = [
 ];
 
 interface TopBarProps {
-  /** Without the rail (phones), the bar carries the logo home link and the agent's status. */
-  showMark: boolean;
+  /** Without the rail (phones), the bar carries the agent's status. */
+  showAgentPill: boolean;
   /** Null on full-bleed pages. */
   pageWidth: PageWidth | null;
   titleRef: Ref<HTMLElement>;
@@ -52,7 +50,7 @@ interface TopBarProps {
 
 /** Page title, page actions and page tabs; a page's `PageHeader` fills the slots. */
 export function TopBar(props: TopBarProps): ReactElement {
-  const { showMark, pageWidth, titleRef, actionsRef, tabsRef } = props;
+  const { showAgentPill, pageWidth, titleRef, actionsRef, tabsRef } = props;
   const pathname = usePathname();
   const heightRef = useHeightVar();
   const section = NAV_ITEMS.find((item) => isNavEntryActive(pathname, item));
@@ -77,7 +75,7 @@ export function TopBar(props: TopBarProps): ReactElement {
         sx={(theme) => ({
           flexWrap: "wrap",
           alignItems: "center",
-          columnGap: 2,
+          columnGap: { xs: 1, sm: 2 },
           rowGap: 1,
           minHeight: { xs: TOP_BAR_HEIGHT.mobile, md: TOP_BAR_HEIGHT.desktop },
           paddingInline: { xs: 1.5, sm: 3 },
@@ -86,20 +84,7 @@ export function TopBar(props: TopBarProps): ReactElement {
           maxWidth: pageWidth ? theme.breakpoints.values[pageWidth] : "none",
         })}
       >
-        {showMark && (
-          <Box
-            component={NextLink}
-            href="/pilot"
-            aria-label={`${APP_TITLE} home`}
-            sx={{ display: "flex" }}
-          >
-            <JobPilotMark size={28} />
-          </Box>
-        )}
-        <Stack
-          direction="row"
-          sx={{ alignItems: "center", minWidth: 0, flex: { xs: 1, sm: "none" } }}
-        >
+        <Stack direction="row" sx={{ alignItems: "center", minWidth: 0, flex: 1 }}>
           {/* A PageHeader portals here; the section name shows until one does. */}
           <Box ref={titleRef} data-slot sx={{ minWidth: 0, "&:empty": { display: "none" } }} />
           <Typography
@@ -111,21 +96,28 @@ export function TopBar(props: TopBarProps): ReactElement {
             {section?.label ?? APP_TITLE}
           </Typography>
         </Stack>
-        {showMark && <AgentPill />}
         <Box
           ref={actionsRef}
-          sx={{
+          sx={(theme) => ({
             display: "flex",
             alignItems: "center",
-            gap: 1,
-            ml: { sm: "auto" },
-            // Phones: actions take their own scrollable row under the title.
-            width: { xs: "100%", sm: "auto" },
+            gap: { xs: 0.5, sm: 1 },
             minWidth: 0,
-            overflowX: { xs: "auto", sm: "visible" },
+            overflowX: "auto",
             "&:empty": { display: "none" },
-          }}
+            // Phones: buttons with an icon drop their label, so title and actions share one row.
+            // font-size 0 keeps the label as the accessible name; the icon sizes itself.
+            [theme.breakpoints.down("sm")]: {
+              "& .MuiButton-root:has(.MuiButton-startIcon)": {
+                fontSize: 0,
+                minWidth: 0,
+                paddingInline: 1,
+                "& .MuiButton-startIcon": { margin: 0 },
+              },
+            },
+          })}
         />
+        {showAgentPill && <AgentPill />}
         {/* Tabs take the last row; the negative margin sets their underline on the bar's border. */}
         <Box
           ref={tabsRef}
@@ -135,6 +127,8 @@ export function TopBar(props: TopBarProps): ReactElement {
             mb: -1,
             "&:empty": { display: "none" },
             "& .MuiTabs-root": { borderBottom: 0 },
+            "& .MuiTabs-root, & .MuiTab-root": { minHeight: { xs: 40, sm: 48 } },
+            "& .MuiTab-root": { paddingBlock: { xs: 1, sm: 1.5 } },
           }}
         />
       </Stack>

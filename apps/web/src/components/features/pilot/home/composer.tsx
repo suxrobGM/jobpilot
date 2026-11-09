@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
+import { TooltipIconButton } from "@/components/ui/buttons";
+import { useIsDesktop } from "@/hooks/use-is-desktop";
 import { plural } from "@/utils/format";
 import { AddLinksDialog } from "../../pipeline/add-links-dialog";
 import { parseLinks, useAddLinks } from "../../pipeline/use-add-links";
@@ -42,6 +44,8 @@ function PromptChips(props: PromptChipsProps): ReactElement {
           label={prompt}
           variant="outlined"
           onClick={() => onPick(prompt)}
+          // Keeps the box focused, so the prompts don't hide before the tap lands.
+          onMouseDown={(event) => event.preventDefault()}
           sx={(theme) => ({ borderRadius: theme.radii.pill })}
         />
       ))}
@@ -58,6 +62,11 @@ export function Composer(): ReactElement {
   const links = parseLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
   const empty = text.trim() === "";
+  const isDesktop = useIsDesktop();
+  const [focused, setFocused] = useState(false);
+  const placeholder = settingUp
+    ? "Tell the pilot what jobs you want…"
+    : "Ask the pilot, change a rule, or paste job links…";
 
   const send = useApiMutation((body: string) => api.pilot.messages.post({ body }), {
     invalidate: [pilotQueries.threadAll],
@@ -72,10 +81,53 @@ export function Composer(): ReactElement {
     }
   };
 
+  const input = (
+    <InputBase
+      multiline
+      minRows={1}
+      maxRows={8}
+      fullWidth
+      placeholder={placeholder}
+      value={text}
+      onChange={(event) => setText(event.target.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onKeyDown={(event) => {
+        // Enter sends; Shift+Enter keeps writing.
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          submit();
+        }
+      }}
+      inputProps={{ "aria-label": "Message the pilot", maxLength: 4000 }}
+      sx={
+        isDesktop
+          ? { px: 2, pt: 1.75, pb: 0.5, typography: "body1" }
+          : { py: 1, typography: "body1" }
+      }
+    />
+  );
+
+  const sendButton = (
+    <Button
+      variant="contained"
+      size="small"
+      aria-label="Send"
+      disabled={empty || send.isPending}
+      onClick={submit}
+      sx={{ minWidth: 0, px: 1, flexShrink: 0 }}
+    >
+      <ArrowUpward fontSize="sm" />
+    </Button>
+  );
+
+  // Phones keep the prompts out of the way until the user reaches for the box.
+  const showPrompts = text === "" && (isDesktop || focused);
+
   return (
-    <Stack spacing={1.25} sx={{ pt: 1.5 }}>
+    <Stack spacing={1.25} sx={{ pt: { xs: 1, md: 1.5 } }}>
       {replying && <Typography variant="captionMuted">Pilot is replying…</Typography>}
-      {text === "" && <PromptChips settingUp={settingUp} onPick={setText} />}
+      {showPrompts && <PromptChips settingUp={settingUp} onPick={setText} />}
       {links.length > 0 && (
         <Stack direction="row">
           <Chip
@@ -86,56 +138,35 @@ export function Composer(): ReactElement {
           />
         </Stack>
       )}
-      <Card variant="field">
-        <InputBase
-          multiline
-          minRows={1}
-          maxRows={8}
-          fullWidth
-          placeholder={
-            settingUp
-              ? "Tell the pilot what jobs you want…"
-              : "Ask the pilot, change a rule, or paste job links…"
-          }
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          onKeyDown={(event) => {
-            // Enter sends; Shift+Enter keeps writing.
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              submit();
-            }
-          }}
-          inputProps={{ "aria-label": "Message the pilot", maxLength: 4000 }}
-          sx={{ px: 2, pt: 1.75, pb: 0.5, typography: "body1" }}
-        />
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", px: 1, pb: 1 }}>
-          <Button
-            size="small"
-            color="inherit"
-            startIcon={<AddLink fontSize="sm" />}
-            onClick={() => setAddingLinks(true)}
-          >
-            Job links
-          </Button>
-          <Typography
-            variant="captionMuted"
-            sx={{ flex: 1, textAlign: "right", pr: 1, display: { xs: "none", sm: "block" } }}
-          >
-            Enter to send · Shift+Enter for a new line
-          </Typography>
-          <Button
-            variant="contained"
-            size="small"
-            aria-label="Send"
-            disabled={empty || send.isPending}
-            onClick={submit}
-            sx={{ ml: { xs: "auto", sm: 0 }, minWidth: 0, px: 1 }}
-          >
-            <ArrowUpward fontSize="sm" />
-          </Button>
-        </Stack>
-      </Card>
+      {isDesktop ? (
+        <Card variant="field">
+          {input}
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", px: 1, pb: 1 }}>
+            <Button
+              size="small"
+              color="inherit"
+              startIcon={<AddLink fontSize="sm" />}
+              onClick={() => setAddingLinks(true)}
+            >
+              Job links
+            </Button>
+            <Typography variant="captionMuted" sx={{ flex: 1, textAlign: "right", pr: 1 }}>
+              Enter to send · Shift+Enter for a new line
+            </Typography>
+            {sendButton}
+          </Stack>
+        </Card>
+      ) : (
+        <Card variant="field">
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: "flex-end", p: 0.5 }}>
+            <TooltipIconButton title="Add job links" onClick={() => setAddingLinks(true)}>
+              <AddLink fontSize="md" />
+            </TooltipIconButton>
+            {input}
+            {sendButton}
+          </Stack>
+        </Card>
+      )}
       <AddLinksDialog open={addingLinks} onClose={() => setAddingLinks(false)} />
     </Stack>
   );
