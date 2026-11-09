@@ -1,6 +1,6 @@
 "use client";
 
-import { type MouseEvent, type ReactNode, useState } from "react";
+import { type MouseEvent, type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { Security } from "@mui/icons-material";
 import {
   Avatar,
@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import NextLink from "next/link";
+import { usePathname } from "next/navigation";
 import type { AuthUserDto } from "@/api/types";
 import { LogoutMenuItem } from "@/components/features/auth";
 import { useSession } from "@/hooks/use-auth";
@@ -32,12 +33,74 @@ function displayName(u: AuthUserDto): string {
   return name || u.email || "Your profile";
 }
 
-/** One profile per user, so identity, feedback, admin and sign-out rather than a switcher. */
+/**
+ * Identity, security, admin, feedback and sign-out: the rail's account menu, and the foot of the
+ * phone's More sheet. An array, not a component: MenuList walks its direct children for focus.
+ * `onClose` only runs for items that stay on the page; the caller closes on route change.
+ */
+export function accountMenuItems(user: AuthUserDto, onClose: () => void): ReactElement[] {
+  return [
+    <MenuItem key="who" disabled sx={{ opacity: "1 !important" }}>
+      <ListItemText
+        primary={displayName(user)}
+        secondary={user.email || undefined}
+        slotProps={{
+          primary: { variant: "body2" },
+          secondary: { variant: "caption" },
+        }}
+      />
+    </MenuItem>,
+    <Divider key="who-divider" />,
+    <MenuItem key="security" component={NextLink} href="/settings/security">
+      <ListItemIcon>
+        <Security fontSize="md" />
+      </ListItemIcon>
+      <ListItemText primary="Security settings" />
+    </MenuItem>,
+    ...(isAdminRole(user.role)
+      ? [
+          <MenuItem key="admin" component={NextLink} href={ADMIN_NAV_ITEM.href}>
+            <ListItemIcon>
+              <ADMIN_NAV_ITEM.icon fontSize="md" />
+            </ListItemIcon>
+            <ListItemText primary={ADMIN_NAV_ITEM.label} />
+          </MenuItem>,
+        ]
+      : []),
+    <Divider key="feedback-divider" />,
+    ...feedbackLinks.map((link) => (
+      <MenuItem
+        key={link.href}
+        component="a"
+        href={link.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClose}
+      >
+        <ListItemIcon>
+          <link.icon fontSize="md" />
+        </ListItemIcon>
+        <ListItemText primary={link.label} />
+      </MenuItem>
+    )),
+    <Divider key="logout-divider" />,
+    <LogoutMenuItem key="logout" onClick={onClose} />,
+  ];
+}
+
+/** The rail's avatar: one profile per user, so a menu rather than a switcher. */
 export function AccountMenu(): ReactNode {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
-
+  const pathname = usePathname();
   const user = useSession();
+
+  // Close after the route commit, as the phone's More sheet does.
+  useEffect(() => {
+    if (pathname) {
+      setAnchor(null);
+    }
+  }, [pathname]);
 
   if (!user) {
     return null;
@@ -88,49 +151,7 @@ export function AccountMenu(): ReactNode {
           paper: { sx: { minWidth: 220 } },
         }}
       >
-        <MenuItem disabled sx={{ opacity: "1 !important" }}>
-          <ListItemText
-            primary={name}
-            secondary={user.email || undefined}
-            slotProps={{
-              primary: { variant: "body2" },
-              secondary: { variant: "caption" },
-            }}
-          />
-        </MenuItem>
-        <Divider />
-        <MenuItem component={NextLink} href="/settings/security" onClick={handleClose}>
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            <Security fontSize="md" />
-          </ListItemIcon>
-          <ListItemText primary="Security settings" />
-        </MenuItem>
-        {isAdminRole(user.role) && (
-          <MenuItem component={NextLink} href={ADMIN_NAV_ITEM.href} onClick={handleClose}>
-            <ListItemIcon sx={{ minWidth: 32 }}>
-              <ADMIN_NAV_ITEM.icon fontSize="md" />
-            </ListItemIcon>
-            <ListItemText primary={ADMIN_NAV_ITEM.label} />
-          </MenuItem>
-        )}
-        <Divider />
-        {feedbackLinks.map((link) => (
-          <MenuItem
-            key={link.href}
-            component="a"
-            href={link.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleClose}
-          >
-            <ListItemIcon sx={{ minWidth: 32 }}>
-              <link.icon fontSize="md" />
-            </ListItemIcon>
-            <ListItemText primary={link.label} />
-          </MenuItem>
-        ))}
-        <Divider />
-        <LogoutMenuItem onClick={handleClose} />
+        {accountMenuItems(user, handleClose)}
       </Menu>
     </>
   );

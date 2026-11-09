@@ -39,8 +39,6 @@ const NAV_ITEMS = [
 ];
 
 interface TopBarProps {
-  /** Without the rail (phones), the bar carries the agent's status. */
-  showAgentPill: boolean;
   /** Null on full-bleed pages. */
   pageWidth: PageWidth | null;
   titleRef: Ref<HTMLElement>;
@@ -50,7 +48,7 @@ interface TopBarProps {
 
 /** Page title, page actions and page tabs; a page's `PageHeader` fills the slots. */
 export function TopBar(props: TopBarProps): ReactElement {
-  const { showAgentPill, pageWidth, titleRef, actionsRef, tabsRef } = props;
+  const { pageWidth, titleRef, actionsRef, tabsRef } = props;
   const pathname = usePathname();
   const heightRef = useHeightVar();
   const section = NAV_ITEMS.find((item) => isNavEntryActive(pathname, item));
@@ -117,7 +115,7 @@ export function TopBar(props: TopBarProps): ReactElement {
             },
           })}
         />
-        {showAgentPill && <AgentPill />}
+        <AgentPill />
         {/* Tabs take the last row; the negative margin sets their underline on the bar's border. */}
         <Box
           ref={tabsRef}

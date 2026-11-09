@@ -7,21 +7,18 @@ import {
   BottomNavigationAction,
   Divider,
   Drawer,
-  ListItemButton,
   ListItemIcon,
   ListItemText,
+  MenuItem,
   MenuList,
 } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogoutMenuItem } from "@/components/features/auth";
 import { useSession } from "@/hooks/use-auth";
-import { isAdminRole } from "@/lib/roles";
 import { useAgentDrawer } from "@/providers/agent-provider";
+import { accountMenuItems } from "./account-menu";
 import { NavBadge } from "./nav-badge";
 import {
-  ADMIN_NAV_ITEM,
-  feedbackLinks,
   isNavEntryActive,
   MOBILE_NAV_HEIGHT,
   type NavItem,
@@ -31,6 +28,7 @@ import { useNavGroups } from "./use-nav-groups";
 
 const MORE_VALUE = "more";
 
+/** The phone's bottom bar; the app shell hides it from md, where the rail takes over. */
 export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -46,19 +44,16 @@ export function MobileNav(): ReactElement {
   }, [pathname]);
 
   const allItems = useNavGroups().flatMap((group) => group.items);
-  const footerItems = isAdminRole(user?.role)
-    ? [SETTINGS_NAV_ITEM, ADMIN_NAV_ITEM]
-    : [SETTINGS_NAV_ITEM];
   const primaryItems = allItems.filter((item) => item.primary);
-
-  // The sidebar pins these to its foot, so they land at the end of the drawer here.
-  const moreItems = [...allItems.filter((item) => !item.primary), ...footerItems];
+  // The rail pins Settings to its foot, so it lands at the end of the sheet here.
+  const moreItems = [...allItems.filter((item) => !item.primary), SETTINGS_NAV_ITEM];
 
   const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));
   const moreActive = moreItems.some((item) => isNavEntryActive(pathname, item));
   const value = activePrimary?.href ?? (moreActive ? MORE_VALUE : false);
-  // More carries a badge only while a badged item lives in the drawer.
+  // More carries a badge only while a badged item lives in the sheet.
   const moreBadge = moreItems.find((item) => item.badge)?.badge;
+  const closeMore = (): void => setMoreOpen(false);
 
   const renderTab = (item: NavItem): ReactElement => (
     <BottomNavigationAction
@@ -82,6 +77,7 @@ export function MobileNav(): ReactElement {
         showLabels
         value={value}
         sx={(theme) => ({
+          display: { md: "none" },
           position: "fixed",
           left: 0,
           right: 0,
@@ -118,54 +114,37 @@ export function MobileNav(): ReactElement {
         />
       </BottomNavigation>
 
-      <Drawer anchor="bottom" open={moreOpen} onClose={() => setMoreOpen(false)}>
-        {/* MenuList (not List): MUI 9 MenuItem throws without a MenuListContext. */}
+      <Drawer anchor="bottom" open={moreOpen} onClose={closeMore}>
+        {/* No onClick close on links: the pathname effect closes after the commit. */}
         <MenuList sx={{ pb: 1 }}>
-          {/* No onClick close on nav items: the pathname effect closes after the commit. */}
           {moreItems.map((item) => (
-            <ListItemButton
+            <MenuItem
               key={item.href}
               component={Link}
               href={item.href}
               selected={isNavEntryActive(pathname, item)}
             >
-              <ListItemIcon sx={{ minWidth: 40 }}>
+              <ListItemIcon>
                 <NavBadge badge={item.badge}>
                   <item.icon fontSize="md" />
                 </NavBadge>
               </ListItemIcon>
               <ListItemText primary={item.label} />
-            </ListItemButton>
+            </MenuItem>
           ))}
-          <ListItemButton
+          <MenuItem
             onClick={() => {
-              setMoreOpen(false);
+              closeMore();
               watchSteps();
             }}
           >
-            <ListItemIcon sx={{ minWidth: 40 }}>
+            <ListItemIcon>
               <Terminal fontSize="md" />
             </ListItemIcon>
             <ListItemText primary="Agent" />
-          </ListItemButton>
-          <Divider sx={{ my: 0.5 }} />
-          {feedbackLinks.map((link) => (
-            <ListItemButton
-              key={link.href}
-              component="a"
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMoreOpen(false)}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>
-                <link.icon fontSize="md" />
-              </ListItemIcon>
-              <ListItemText primary={link.label} />
-            </ListItemButton>
-          ))}
-          <Divider sx={{ my: 0.5 }} />
-          <LogoutMenuItem onClick={() => setMoreOpen(false)} />
+          </MenuItem>
+          {user && <Divider />}
+          {user && accountMenuItems(user, closeMore)}
         </MenuList>
       </Drawer>
     </>

@@ -1,24 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { belowTopBar } from "@/components/ui/layout/top-bar-slots";
-import { sideNavLink } from "@/components/ui/navigation";
+import { SideNav, type SideNavGroup } from "@/components/ui/navigation";
 
-interface SettingsLink {
-  label: string;
-  href: Route;
-}
-
-interface SettingsGroup {
-  label: string;
-  links: SettingsLink[];
-}
-
-const GROUPS: SettingsGroup[] = [
+const GROUPS: SideNavGroup[] = [
   {
     label: "You",
     links: [
@@ -46,72 +32,6 @@ const GROUPS: SettingsGroup[] = [
   },
 ];
 
-/** Grouped settings pages: a sticky column beside the page, a scrolling row on phones. */
 export function SettingsNav(): ReactElement {
-  const pathname = usePathname();
-
-  return (
-    <Box
-      component="nav"
-      aria-label="Settings sections"
-      sx={(theme) => ({
-        flexShrink: 0,
-        width: { xs: "100%", md: 200 },
-        position: { md: "sticky" },
-        top: { md: belowTopBar(theme.spacing(3)) },
-        overflowX: { xs: "auto", md: "visible" },
-        scrollbarWidth: "none",
-      })}
-    >
-      <Stack direction={{ xs: "row", md: "column" }} spacing={{ xs: 0.5, md: 2.5 }}>
-        {GROUPS.map((group) => (
-          <Stack
-            key={group.label}
-            role="group"
-            aria-label={group.label}
-            direction={{ xs: "row", md: "column" }}
-            spacing={0.25}
-          >
-            <Typography
-              variant="overlineMuted"
-              sx={{ display: { xs: "none", md: "block" }, px: 1, pb: 0.5 }}
-            >
-              {group.label}
-            </Typography>
-            {group.links.map((link) => (
-              <SettingsNavLink key={link.href} link={link} active={pathname === link.href} />
-            ))}
-          </Stack>
-        ))}
-      </Stack>
-    </Box>
-  );
-}
-
-interface SettingsNavLinkProps {
-  link: SettingsLink;
-  active: boolean;
-}
-
-function SettingsNavLink(props: SettingsNavLinkProps): ReactElement {
-  const { link, active } = props;
-  return (
-    <Box
-      component={Link}
-      href={link.href}
-      aria-current={active ? "page" : undefined}
-      sx={(theme) => ({
-        display: "flex",
-        alignItems: "center",
-        flexShrink: 0,
-        height: 34,
-        paddingInline: 1,
-        whiteSpace: "nowrap",
-        typography: "body2",
-        ...sideNavLink(theme, active),
-      })}
-    >
-      {link.label}
-    </Box>
-  );
+  return <SideNav label="Settings sections" groups={GROUPS} stickyTop={belowTopBar("24px")} />;
 }

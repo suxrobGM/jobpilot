@@ -9,7 +9,6 @@ import { VerifyEmailBanner } from "@/components/features/auth";
 import { PilotLive } from "@/components/features/pilot/pilot-live";
 import { PipelineLive } from "@/components/features/pipeline";
 import { type PageWidth, TopBarSlotsContext } from "@/components/ui/layout/top-bar-slots";
-import { useIsDesktop } from "@/hooks/use-is-desktop";
 import { useTyping } from "@/hooks/use-typing";
 import { MobileNav } from "./mobile-nav";
 import { MOBILE_NAV_HEIGHT } from "./shell-config";
@@ -18,11 +17,8 @@ import { TopBar } from "./top-bar";
 
 export function AppShell(props: PropsWithChildren): ReactElement {
   const { children } = props;
-  // Below md a bottom bar replaces the sidebar; the drawer still opens there for the agent's status.
-  const isDesktop = useIsDesktop();
   // The keyboard covers the bottom bar anyway, and iOS floats it above the keyboard.
   const typing = useTyping();
-  const showMobileNav = !isDesktop && !typing;
   const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null);
   const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
   const [tabsSlot, setTabsSlot] = useState<HTMLElement | null>(null);
@@ -37,7 +33,8 @@ export function AppShell(props: PropsWithChildren): ReactElement {
         backgroundColor: theme.palette.surfaces.base,
       })}
     >
-      {isDesktop && <Sidebar />}
+      {/* Both navs render and CSS picks one at md, so the server's first paint is already right. */}
+      <Sidebar />
       <Box
         component="main"
         sx={{
@@ -48,11 +45,10 @@ export function AppShell(props: PropsWithChildren): ReactElement {
           minWidth: 0,
           height: "100%",
           overflowY: "auto",
-          pb: showMobileNav ? `${MOBILE_NAV_HEIGHT}px` : 0,
+          pb: { xs: typing ? 0 : `${MOBILE_NAV_HEIGHT}px`, md: 0 },
         }}
       >
         <TopBar
-          showAgentPill={!isDesktop}
           pageWidth={pageWidth}
           titleRef={setTitleSlot}
           actionsRef={setActionsSlot}
@@ -70,7 +66,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
         </TopBarSlotsContext>
       </Box>
       <AgentDrawer />
-      {showMobileNav && <MobileNav />}
+      {!typing && <MobileNav />}
     </Box>
   );
 }

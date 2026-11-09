@@ -90,6 +90,8 @@ export function AgentDrawer(): ReactElement {
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         sx={(theme) => ({
+          // Phones get the full width; there is nothing to drag.
+          display: { xs: "none", md: "block" },
           position: "absolute",
           top: 0,
           bottom: 0,

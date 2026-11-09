@@ -5,7 +5,7 @@ import { ButtonBase, Typography } from "@mui/material";
 import { AgentOrb } from "./agent-orb";
 import { useAgentToggle } from "./use-agent-toggle";
 
-/** The phone top bar's agent status (the rail has its own on desktop), and the way into its drawer. */
+/** The phone top bar's agent status and the way into its drawer; hidden from md, where the rail has it. */
 export function AgentPill(): ReactElement {
   const { orb, text, open, buttonProps } = useAgentToggle();
 
@@ -13,6 +13,7 @@ export function AgentPill(): ReactElement {
     <ButtonBase
       {...buttonProps}
       sx={(theme) => ({
+        display: { md: "none" },
         gap: 1,
         minWidth: 0,
         height: theme.controlHeights.sm,

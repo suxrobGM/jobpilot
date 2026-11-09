@@ -2,7 +2,7 @@
 
 import { type ReactElement, type ReactNode, useState } from "react";
 import { Clear, Tune } from "@mui/icons-material";
-import { Badge, Box, Button, Drawer, Stack, Typography, useMediaQuery } from "@mui/material";
+import { Badge, Box, Button, Drawer, Stack, Typography } from "@mui/material";
 
 interface FilterBarProps {
   hasFilters: boolean;
@@ -17,7 +17,6 @@ interface FilterBarProps {
 /** The toolbar above a list: search, filters, Clear while any is set, then `end` on the right. */
 export function FilterBar(props: FilterBarProps): ReactElement {
   const { hasFilters, onClear, search, end, children } = props;
-  const phone = useMediaQuery((theme) => theme.breakpoints.down("sm"));
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const clearButton = hasFilters && (
@@ -26,28 +25,30 @@ export function FilterBar(props: FilterBarProps): ReactElement {
     </Button>
   );
 
-  if (!phone) {
-    return (
-      <Stack direction="row" useFlexGap spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-        {search}
-        {children}
-        {clearButton}
-        {end && (
-          <>
-            <Box sx={{ flex: 1 }} />
-            {end}
-          </>
-        )}
-      </Stack>
-    );
-  }
-
-  // Phones: one row, so the stacked filters don't push the list below the fold.
+  // Inline from sm; phones keep one row and open the filters in a sheet, so they don't push the
+  // list below the fold. CSS picks the layout, so the server's first paint is already right.
   return (
     <>
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-        {search && <Box sx={{ flex: 1, minWidth: 0 }}>{search}</Box>}
-        <Badge color="primary" variant="dot" invisible={!hasFilters}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ alignItems: "center", flexWrap: { xs: "nowrap", sm: "wrap" } }}
+      >
+        {search && (
+          <Box sx={{ display: { xs: "block", sm: "contents" }, flex: 1, minWidth: 0 }}>
+            {search}
+          </Box>
+        )}
+        <Box sx={{ display: { xs: "none", sm: "contents" } }}>
+          {children}
+          {clearButton}
+        </Box>
+        <Badge
+          color="primary"
+          variant="dot"
+          invisible={!hasFilters}
+          sx={{ display: { sm: "none" } }}
+        >
           <Button
             variant="outlined"
             startIcon={<Tune fontSize="sm" />}
@@ -56,8 +57,7 @@ export function FilterBar(props: FilterBarProps): ReactElement {
             Filters
           </Button>
         </Badge>
-        {!search && <Box sx={{ flex: 1 }} />}
-        {end}
+        {end && <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>{end}</Box>}
       </Stack>
       <Drawer anchor="bottom" open={sheetOpen} onClose={() => setSheetOpen(false)}>
         <Stack spacing={2} sx={{ p: 2 }}>

@@ -11,7 +11,7 @@ import { NavItem } from "./nav-item";
 import { APP_TITLE, RAIL_WIDTH, SETTINGS_NAV_ITEM } from "./shell-config";
 import { useNavGroups } from "./use-nav-groups";
 
-/** A fixed rail: icons with short labels, so every section stays readable in little width. */
+/** A fixed rail from md: icons with short labels, so every section stays readable in little width. */
 export function Sidebar(): ReactElement {
   const groups = useNavGroups();
 
@@ -21,6 +21,7 @@ export function Sidebar(): ReactElement {
       aria-label={APP_TITLE}
       spacing={1}
       sx={{
+        display: { xs: "none", md: "flex" },
         width: RAIL_WIDTH,
         flexShrink: 0,
         height: "100%",

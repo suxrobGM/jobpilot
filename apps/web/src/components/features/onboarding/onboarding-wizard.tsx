@@ -26,7 +26,7 @@ import { PersonalSection, toProfileFormValues } from "@/components/features/sett
 import { QueryError } from "@/components/ui/feedback";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { useIsDesktop } from "@/hooks/use-is-desktop";
+import { useIsComputer } from "@/hooks/use-is-computer";
 import { patchAgentStorage } from "@/lib/terminal/agent-storage";
 import { useToast } from "@/providers/toast-provider";
 import { ResumeUploadStep } from "./resume-upload-step";
@@ -62,21 +62,23 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
   const toast = useToast();
   const [step, setStep] = useState<StepKey>("resume");
   const [showValidationErrors, setShowValidationErrors] = useState(false);
-  const desktop = useIsDesktop();
+  const computer = useIsComputer();
 
-  // The drawer walks through agent setup; a phone has no host, so it would only hide the wizard.
+  // The drawer walks through agent setup; a phone has no host, so it would only hide the page.
   useEffect(() => {
-    if (desktop) {
+    if (computer) {
       patchAgentStorage({ drawerOpen: true });
     }
-  }, [desktop]);
+  }, [computer]);
 
   const save = useApiMutation((vars: UserUpdateInput) => api.user.put(vars), {
     successMessage: "Profile saved",
     onSuccess: () => {
       queryClient.invalidateQueries();
-      // A saved profile clears the redirect gate; land on the pilot with the drawer open.
-      patchAgentStorage({ drawerOpen: true });
+      // A saved profile clears the redirect gate; land on the pilot, with the drawer on a computer.
+      if (computer) {
+        patchAgentStorage({ drawerOpen: true });
+      }
       router.push("/pilot");
     },
   });

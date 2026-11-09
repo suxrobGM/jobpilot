@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
-import { useIsDesktop } from "@/hooks/use-is-desktop";
+import { useIsComputer } from "@/hooks/use-is-computer";
 import {
   patchAgentStorage,
   readStoredDrawerOpen,
@@ -138,9 +138,9 @@ export function useAgentConnected(): boolean | null {
   return data ?? null;
 }
 
-/** Desktop always queues agent work; below md a host must be connected to the API. */
+/** A computer always queues agent work; a phone or tablet needs a host connected to the API. */
 export function useAgentAvailable(): boolean {
-  const desktop = useIsDesktop();
+  const computer = useIsComputer();
   const connected = useAgentConnected();
-  return desktop || connected === true;
+  return computer || connected === true;
 }

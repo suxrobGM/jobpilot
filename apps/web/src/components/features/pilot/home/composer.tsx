@@ -2,13 +2,12 @@
 
 import { type ReactElement, useState } from "react";
 import { AddLink, ArrowUpward } from "@mui/icons-material";
-import { Button, Card, Chip, InputBase, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, Chip, InputBase, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { pilotQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
 import { TooltipIconButton } from "@/components/ui/buttons";
-import { useIsDesktop } from "@/hooks/use-is-desktop";
 import { plural } from "@/utils/format";
 import { AddLinksDialog } from "../../pipeline/add-links-dialog";
 import { parseLinks, useAddLinks } from "../../pipeline/use-add-links";
@@ -62,7 +61,6 @@ export function Composer(): ReactElement {
   const links = parseLinks(text);
   const replying = state.currentRun?.taskType === "chat.reply";
   const empty = text.trim() === "";
-  const isDesktop = useIsDesktop();
   const [focused, setFocused] = useState(false);
   const placeholder = settingUp
     ? "Tell the pilot what jobs you want…"
@@ -81,49 +79,17 @@ export function Composer(): ReactElement {
     }
   };
 
-  const input = (
-    <InputBase
-      multiline
-      minRows={1}
-      maxRows={8}
-      fullWidth
-      placeholder={placeholder}
-      value={text}
-      onChange={(event) => setText(event.target.value)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      onKeyDown={(event) => {
-        // Enter sends; Shift+Enter keeps writing.
-        if (event.key === "Enter" && !event.shiftKey) {
-          event.preventDefault();
-          submit();
-        }
-      }}
-      inputProps={{ "aria-label": "Message the pilot", maxLength: 4000 }}
-      sx={isDesktop ? { px: 2, pt: 1.75, pb: 0.5 } : { py: 1 }}
-    />
-  );
-
-  const sendButton = (
-    <Button
-      variant="contained"
-      size="small"
-      aria-label="Send"
-      disabled={empty || send.isPending}
-      onClick={submit}
-      sx={{ minWidth: 0, px: 1, flexShrink: 0 }}
-    >
-      <ArrowUpward fontSize="sm" />
-    </Button>
-  );
-
-  // Phones keep the prompts out of the way until the user reaches for the box.
-  const showPrompts = text === "" && (isDesktop || focused);
-
+  // One tree for both layouts: phones put links, input and send on one row; from md the input
+  // takes the full width and the controls sit under it.
   return (
     <Stack spacing={1.25} sx={{ pt: { xs: 1, md: 1.5 } }}>
       {replying && <Typography variant="captionMuted">Pilot is replying…</Typography>}
-      {showPrompts && <PromptChips settingUp={settingUp} onPick={setText} />}
+      {text === "" && (
+        // Phones keep the prompts out of the way until the user reaches for the box.
+        <Box sx={{ display: { xs: focused ? "block" : "none", md: "block" } }}>
+          <PromptChips settingUp={settingUp} onPick={setText} />
+        </Box>
+      )}
       {links.length > 0 && (
         <Stack direction="row">
           <Chip
@@ -134,35 +100,78 @@ export function Composer(): ReactElement {
           />
         </Stack>
       )}
-      {isDesktop ? (
-        <Card variant="field">
-          {input}
-          <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", px: 1, pb: 1 }}>
-            <Button
-              size="small"
-              color="inherit"
-              startIcon={<AddLink fontSize="sm" />}
-              onClick={() => setAddingLinks(true)}
-            >
-              Job links
-            </Button>
-            <Typography variant="captionMuted" sx={{ flex: 1, textAlign: "right", pr: 1 }}>
-              Enter to send · Shift+Enter for a new line
-            </Typography>
-            {sendButton}
-          </Stack>
-        </Card>
-      ) : (
-        <Card variant="field">
-          <Stack direction="row" spacing={0.5} sx={{ alignItems: "flex-end", p: 0.5 }}>
-            <TooltipIconButton title="Add job links" onClick={() => setAddingLinks(true)}>
-              <AddLink fontSize="md" />
-            </TooltipIconButton>
-            {input}
-            {sendButton}
-          </Stack>
-        </Card>
-      )}
+      <Card
+        variant="field"
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "auto 1fr auto",
+          gridTemplateAreas: {
+            xs: '"links input send"',
+            md: '"input input input" "links hint send"',
+          },
+          alignItems: { xs: "end", md: "center" },
+          columnGap: 0.5,
+          p: 0.5,
+          pt: { md: 0 },
+          px: { md: 1 },
+          pb: { md: 1 },
+        }}
+      >
+        <InputBase
+          multiline
+          minRows={1}
+          maxRows={8}
+          fullWidth
+          placeholder={placeholder}
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onKeyDown={(event) => {
+            // Enter sends; Shift+Enter keeps writing.
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              submit();
+            }
+          }}
+          inputProps={{ "aria-label": "Message the pilot", maxLength: 4000 }}
+          sx={{ gridArea: "input", py: 1, px: { md: 1 }, pt: { md: 1.75 }, pb: { md: 0.5 } }}
+        />
+        <Box sx={{ gridArea: "links" }}>
+          <TooltipIconButton
+            title="Add job links"
+            onClick={() => setAddingLinks(true)}
+            sx={{ display: { md: "none" } }}
+          >
+            <AddLink fontSize="md" />
+          </TooltipIconButton>
+          <Button
+            size="small"
+            color="inherit"
+            startIcon={<AddLink fontSize="sm" />}
+            onClick={() => setAddingLinks(true)}
+            sx={{ display: { xs: "none", md: "inline-flex" } }}
+          >
+            Job links
+          </Button>
+        </Box>
+        <Typography
+          variant="captionMuted"
+          sx={{ gridArea: "hint", display: { xs: "none", md: "block" }, textAlign: "right", pr: 1 }}
+        >
+          Enter to send · Shift+Enter for a new line
+        </Typography>
+        <Button
+          variant="contained"
+          size="small"
+          aria-label="Send"
+          disabled={empty || send.isPending}
+          onClick={submit}
+          sx={{ gridArea: "send", minWidth: 0, px: 1 }}
+        >
+          <ArrowUpward fontSize="sm" />
+        </Button>
+      </Card>
       <AddLinksDialog open={addingLinks} onClose={() => setAddingLinks(false)} />
     </Stack>
   );

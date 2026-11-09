@@ -8,7 +8,7 @@ import { TOP_BAR_HEIGHT } from "@/components/layout/shell-config";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { DropdownMenu } from "@/components/ui/navigation";
-import { useIsDesktop } from "@/hooks/use-is-desktop";
+import { useIsComputer } from "@/hooks/use-is-computer";
 import { BROWSER_BLOCKED_MESSAGE, canRelaunch } from "@/hooks/use-terminal-health";
 import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal/client";
 import { type AgentDrawerTab, useAgentDrawer } from "@/providers/agent-provider";
@@ -156,7 +156,7 @@ function TerminalTabBody(props: TerminalTabBodyProps): ReactElement {
   const { agent, remote } = props;
   const { health, status, pending, beginPending } = agent;
   const { provider, terminalRevision } = useAgentDrawer();
-  const desktop = useIsDesktop();
+  const computer = useIsComputer();
 
   if (health === "reachable") {
     return (
@@ -200,7 +200,7 @@ function TerminalTabBody(props: TerminalTabBodyProps): ReactElement {
     );
   }
   // A phone has no host of its own to install or unblock.
-  if (!desktop) {
+  if (!computer) {
     return <SetupOnComputerCard />;
   }
   if (health === "blocked") {

@@ -1,61 +1,12 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Link, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
-import { usePathname } from "next/navigation";
-import { sideNavLink } from "@/components/ui/navigation";
-import { DocsMobileNav } from "./docs-mobile-nav";
+import { SideNav } from "@/components/ui/navigation";
 import { DOCS_LINKS } from "./docs-nav";
 
-interface SidebarLinkProps {
-  href: Route;
-  label: string;
-  active: boolean;
-}
+const GROUPS = [{ label: "Docs", links: DOCS_LINKS }];
 
-function SidebarLink(props: SidebarLinkProps): ReactElement {
-  const { href, label, active } = props;
-  return (
-    <Link
-      href={href}
-      underline="none"
-      aria-current={active ? "page" : undefined}
-      sx={(theme) => ({
-        display: "block",
-        whiteSpace: "nowrap",
-        ...(active ? theme.typography.body1Strong : theme.typography.body1),
-        paddingBlock: 0.75,
-        paddingInline: 1.5,
-        ...sideNavLink(theme, active),
-      })}
-    >
-      {label}
-    </Link>
-  );
-}
-
-/** Docs navigation: sticky vertical rail on md+, collapsible section navigator on xs-sm. */
+/** The docs layout pins this column; on phones it is one scrolling row above the page. */
 export function DocsSidebar(): ReactElement {
-  const pathname = usePathname();
-  return (
-    <>
-      <DocsMobileNav />
-      <Box component="nav" aria-label="Documentation" sx={{ display: { xs: "none", md: "block" } }}>
-        <Typography variant="overlineMuted" sx={{ display: "block", mb: 1.5 }}>
-          Docs
-        </Typography>
-        <Stack spacing={0}>
-          {DOCS_LINKS.map((link) => (
-            <SidebarLink
-              key={link.href}
-              href={link.href}
-              label={link.label}
-              active={pathname === link.href}
-            />
-          ))}
-        </Stack>
-      </Box>
-    </>
-  );
+  return <SideNav label="Documentation" groups={GROUPS} />;
 }
