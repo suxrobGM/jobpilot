@@ -112,7 +112,7 @@ public sealed class PilotEventListenerTests
         {
             Handler = new FakeSseHandler { Status = status };
             Store = temp.PairingStore();
-            var api = new PilotApi(new HttpClient(Handler), Store, NullLogger<PilotApi>.Instance);
+            var api = new PilotApi(new HttpClient(Handler), Store, new FakeHostSelfUpdate(), NullLogger<PilotApi>.Instance);
             listener = new PilotEventListener(Store, api, Pilot, WakeSignal, NullLogger<PilotEventListener>.Instance);
         }
 

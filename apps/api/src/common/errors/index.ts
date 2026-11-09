@@ -1,4 +1,5 @@
 export {
+  agentOutdated,
   badGateway,
   badRequest,
   conflict,

@@ -80,14 +80,25 @@ function SaidLine(props: SaidLineProps): ReactElement {
   );
 }
 
-type SaidMode = Extract<PilotMode, "offline" | "unpaired" | "held" | "off" | "starting">;
+type SaidMode = Extract<
+  PilotMode,
+  "offline" | "outdated" | "unpaired" | "held" | "off" | "starting"
+>;
 
 const MODE_LINES: Record<SaidMode, string> = {
   offline: "I'm offline. Start the agent on your computer and I'll pick up where I left off.",
+  outdated:
+    "The JobPilot app on your computer is out of date, so I can't work. Update it and I'll pick up where I left off.",
   unpaired: "The agent is running but hasn't connected to me yet.",
   held: "You're using the terminal, so I'm holding new work until you hand it back.",
   off: "Autopilot is off, so I only do what you ask.",
   starting: "Starting up.",
+};
+
+const AGENT_ACTIONS: Record<"offline" | "outdated" | "unpaired", string> = {
+  offline: "Start agent",
+  outdated: "Update agent",
+  unpaired: "Open agent",
 };
 
 const AWAITING_LINES: Record<Awaiting, string> = {
@@ -111,19 +122,21 @@ export function LiveTurn(): ReactElement {
       return <RunningLine run={run} />;
     }
     // Under an unanswered ask, a status line reads like the reply; offline and held explain the wait.
-    const ready = mode !== "offline" && mode !== "unpaired" && mode !== "held";
+    const ready =
+      mode !== "offline" && mode !== "outdated" && mode !== "unpaired" && mode !== "held";
     if (awaiting && ready) {
       return <SaidLine text={AWAITING_LINES[awaiting]} />;
     }
     switch (mode) {
       case "offline":
+      case "outdated":
       case "unpaired":
         return (
           <SaidLine
             text={MODE_LINES[mode]}
             action={
               <Button size="small" variant="contained" onClick={openDrawer}>
-                {mode === "offline" ? "Start agent" : "Open agent"}
+                {AGENT_ACTIONS[mode]}
               </Button>
             }
           />

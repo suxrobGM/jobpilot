@@ -35,6 +35,10 @@ export function unprocessable(message = "Invalid request", details?: unknown): H
   return new HttpError(ErrorCodes.UNPROCESSABLE, message, 422, details);
 }
 
+export function agentOutdated(message: string): HttpError {
+  return new HttpError(ErrorCodes.AGENT_OUTDATED, message, 426);
+}
+
 export function unauthorized(message = "Unauthorized"): HttpError {
   return new HttpError(ErrorCodes.UNAUTHORIZED, message, 401);
 }

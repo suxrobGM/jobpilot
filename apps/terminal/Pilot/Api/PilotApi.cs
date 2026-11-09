@@ -1,6 +1,9 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization.Metadata;
 using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
+using JobPilot.Terminal.Install.Updates;
 using JobPilot.Terminal.Pilot.Pairing;
 
 namespace JobPilot.Terminal.Pilot.Api;
@@ -9,7 +12,8 @@ namespace JobPilot.Terminal.Pilot.Api;
 /// Calls for the paired account. Probes and reports throw only on the caller's cancellation, so a briefly unreachable
 /// API cannot take the loop down, and while unpaired they send nothing and return null.
 /// </summary>
-public sealed class PilotApi(HttpClient http, PairingStore store, ILogger<PilotApi> logger) : IPilotApi
+public sealed class PilotApi(HttpClient http, PairingStore store, IHostSelfUpdate selfUpdate, ILogger<PilotApi> logger)
+    : IPilotApi
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
@@ -83,6 +87,11 @@ public sealed class PilotApi(HttpClient http, PairingStore store, ILogger<PilotA
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(timeoutAfter ?? RequestTimeout);
             using var response = await http.SendAsync(request, timeout.Token);
+            if (response.StatusCode == HttpStatusCode.UpgradeRequired)
+            {
+                selfUpdate.Start();
+            }
+
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogWarning("Pilot call {Route} was rejected ({Status}).", route, (int)response.StatusCode);
@@ -98,10 +107,15 @@ public sealed class PilotApi(HttpClient http, PairingStore store, ILogger<PilotA
         }
     }
 
-    private static HttpRequestMessage Request(PilotPairing pairing, HttpMethod method, string path, HttpContent? content) =>
-        new(method, pairing.Api.Url + path)
+    // The API refuses agents too old for it, so every call says which version this is.
+    private static HttpRequestMessage Request(PilotPairing pairing, HttpMethod method, string path, HttpContent? content)
+    {
+        var request = new HttpRequestMessage(method, pairing.Api.Url + path)
         {
             Content = content,
             Headers = { Authorization = new AuthenticationHeaderValue("Bearer", pairing.Api.Token) },
         };
+        request.Headers.Add("x-jobpilot-version", HostInstall.HostVersion);
+        return request;
+    }
 }

@@ -23,6 +23,8 @@ export const ErrorCodes = {
   PILOT_CONFLICT: "PILOT_CONFLICT",
   /** The row changed since the caller read it; re-fetch before writing. */
   STALE_WRITE: "STALE_WRITE",
+  /** The agent on the user's computer is too old for this API; it must update before calling. */
+  AGENT_OUTDATED: "AGENT_OUTDATED",
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

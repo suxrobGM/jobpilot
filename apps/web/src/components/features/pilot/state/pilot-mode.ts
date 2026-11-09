@@ -9,6 +9,7 @@ export type PilotMode =
   | "off"
   | "held"
   | "offline"
+  | "outdated"
   | "working"
   | "starting"
   | "idle"
@@ -33,6 +34,7 @@ export const PILOT_MODE_LOOK: Record<PilotMode, PilotModeLook> = {
     dimmed: false,
   },
   offline: { tone: "amber", label: "Agent offline", pulsing: false, dimmed: true },
+  outdated: { tone: "amber", label: "Agent needs an update", pulsing: false, dimmed: true },
   working: { tone: "violet", label: "Working", pulsing: true, dimmed: false },
   starting: { tone: "blue", label: "Starting up", pulsing: true, dimmed: false },
   idle: { tone: "green", label: "Idle", pulsing: false, dimmed: false },
@@ -60,10 +62,17 @@ function isHeld(pilot: PilotHealth | null): boolean {
 
 /** The host runs whenever paired; autopilot only decides whether it picks work on its own. */
 export function pilotMode(
-  state: Pick<PilotState, "autopilot" | "cycleCount" | "currentRun" | "agentConnected">,
+  state: Pick<
+    PilotState,
+    "autopilot" | "cycleCount" | "currentRun" | "agentConnected" | "agentOutdated"
+  >,
   health: TerminalHealth | null,
   pilot: PilotHealth | null,
 ): PilotMode {
+  // The server refuses an outdated agent, so it would otherwise read as offline.
+  if (state.agentOutdated) {
+    return "outdated";
+  }
   if (isHostOffline(health) && !isHostRemote(state, health)) {
     return "offline";
   }

@@ -1,4 +1,5 @@
 using System.Net;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot.Api;
 using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Tests.Support;
@@ -15,12 +16,14 @@ public sealed class PilotApiTests : IDisposable
 
     private readonly TempDir temp = new();
 
+    private readonly FakeHostSelfUpdate selfUpdate = new();
+
     private PilotApi Api(
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond, PilotPairing? pairing = null)
     {
         var store = temp.PairingStore();
         store.Save(pairing ?? NewPairing());
-        return new(new HttpClient(new StubHandler(respond)), store, NullLogger<PilotApi>.Instance);
+        return new(new HttpClient(new StubHandler(respond)), store, selfUpdate, NullLogger<PilotApi>.Instance);
     }
 
     public void Dispose() => temp.Dispose();
@@ -109,6 +112,22 @@ public sealed class PilotApiTests : IDisposable
                 """POST /api/pilot/runs/run-1/usage {"model":"claude-sonnet-5","inputTokens":4,"outputTokens":320,"cacheReadTokens":130000,"cacheWriteTokens":600}""",
             ],
             seen);
+    }
+
+    [Fact]
+    public async Task Calls_SayTheHostVersion_AndA426StartsAnUpdate()
+    {
+        List<string?> versions = [];
+        var api = Api((request, _) =>
+        {
+            versions.Add(request.Headers.GetValues("x-jobpilot-version").SingleOrDefault());
+            return Respond(HttpStatusCode.UpgradeRequired);
+        });
+
+        Assert.Null(await api.GetActivityAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal([HostInstall.HostVersion], versions);
+        Assert.Equal(1, selfUpdate.Starts);
     }
 
     [Fact]

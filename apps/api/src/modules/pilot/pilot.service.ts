@@ -8,6 +8,7 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import { unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
+import { agentRefusedRecently } from "@/common/middleware/agent-version";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
 import { boardDomain } from "@/modules/job-board/board-host";
@@ -54,6 +55,7 @@ export class PilotService {
       networkingSentToday,
       capReached: allowedToday(config, { appliedToday, networkingSentToday }).appliesLeft === 0,
       agentConnected: this.presence.isConnected(row.userId),
+      agentOutdated: agentRefusedRecently(row.userId),
       pendingRequests,
       currentRun: openRun,
       createdAt: row.createdAt,
