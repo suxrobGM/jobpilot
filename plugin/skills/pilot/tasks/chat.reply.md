@@ -77,7 +77,8 @@ The user applies or dismisses it. Offer a suggestion once: if an earlier reply a
 don't repeat it.
 
 **Work** ("apply to the Brex job", "find recruiters at Waymo") becomes a request that runs after
-this reply. Skip any already in `openRequests`:
+this reply. Asking for work already in `openRequests` returns that request, so tell the user it's
+already queued:
 
 ```bash
 jobpilot-api POST /api/pilot/requests --data '{"taskType":"networking.find","payload":{"criteria":"recruiters at Waymo"},"source":"chat"}'

@@ -6,7 +6,7 @@ import { type PilotRequestSource, PrismaClient } from "@/generated/prisma/client
 import { moveStatus } from "@/modules/feed/jobs/job.service";
 import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import { dropTaskList } from "../tasks/snapshot";
-import { publishRequest, requestSubject } from "./request-row";
+import { publishRequest, requestSubject, toPilotRequest } from "./request-row";
 
 @injectable()
 export class RequestService {
@@ -18,21 +18,29 @@ export class RequestService {
       await this.approveJob(userId, input.payload.feedId, input.payload.jobKey);
     }
     const id = crypto.randomUUID();
-    const row = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.pilotRequest.create({
-        data: {
-          id,
+    const subject = requestSubject(input, id);
+    const payload = toInputJson(input.payload);
+    const { row, created } = await this.prisma.$transaction(async (tx) => {
+      // Asking twice for the same work runs it once.
+      const queued = await tx.pilotRequest.findFirst({
+        where: {
           userId,
           taskType: input.taskType,
-          payload: toInputJson(input.payload),
-          ...requestSubject(input, id),
-          source,
+          ...subject,
+          status: { in: ["pending", "running"] },
+          payload: { equals: payload },
         },
       });
+      if (queued) {
+        return { row: queued, created: false };
+      }
+      const row = await tx.pilotRequest.create({
+        data: { id, userId, taskType: input.taskType, payload, ...subject, source },
+      });
       await dropTaskList(tx, userId);
-      return created;
+      return { row, created: true };
     });
-    return publishRequest(userId, row, "request.created");
+    return created ? publishRequest(userId, row, "request.created") : toPilotRequest(row);
   }
 
   /** Only queued work stops; a running request ends with its run. */
