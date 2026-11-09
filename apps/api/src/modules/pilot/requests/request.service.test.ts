@@ -5,14 +5,14 @@ import { describe, expect, it } from "bun:test";
 
 const FEED_ID = "0b6f3c2a-8d1e-4f5a-9c7b-3e2d1a0f9b8c";
 
-function service(status: JobStatus) {
-  const jobWrites: { where: unknown; data: Record<string, unknown>; select?: unknown }[] = [];
+function service(status: JobStatus, moved = 1) {
+  const jobWrites: { where: unknown; data: Record<string, unknown> }[] = [];
   const db = {
     job: {
-      findFirst: async () => ({ id: "j1", status }),
-      updateManyAndReturn: async (a: (typeof jobWrites)[number]) => {
+      findFirst: async () => ({ feedId: FEED_ID, key: "k1", status }),
+      updateMany: async (a: (typeof jobWrites)[number]) => {
         jobWrites.push(a);
-        return [{ feedId: FEED_ID, key: "k1", status: "approved" }];
+        return { count: moved };
       },
     },
     pilotRequest: {
@@ -44,13 +44,17 @@ describe("RequestService.create for job.apply", () => {
       await apply();
       expect(jobWrites).toEqual([
         {
-          where: { id: "j1", status },
+          where: { feedId: FEED_ID, key: "k1", status },
           data: { status: "approved", appliedAt: null, failReason: null, skipReason: null },
-          select: expect.anything(),
         },
       ]);
     },
   );
+
+  it("fails when the job moved before it could be approved", async () => {
+    const { apply } = service("skipped", 0);
+    await expect(apply()).rejects.toMatchObject({ status: 409 });
+  });
 
   it("refuses a job already applied to or being applied", async () => {
     for (const status of ["applied", "applying"] as const) {

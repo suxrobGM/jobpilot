@@ -16,7 +16,7 @@ import { type JobStatus, type Prisma, PrismaClient } from "@/generated/prisma/cl
 import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { ensureFeedOwned } from "../feed-ownership";
-import { assertNotDuplicateApply, guardApply } from "./apply-guard";
+import { assertNotDuplicateApply, guardApply, type JobPosting } from "./apply-guard";
 import { LIVE_AUTO_APPLY_FEED } from "./applying";
 import { publishJobAdded, publishJobApproved, publishJobUpdated } from "./job-events";
 import { isTerminalJob, writeJobResult } from "./job-result";
@@ -36,7 +36,7 @@ const ALLOWED_TRANSITIONS: Record<JobStatus, readonly JobStatus[]> = {
 };
 
 /** A job back in the approved queue carries no trace of an earlier outcome. */
-export const OUTCOME_CLEARED = { appliedAt: null, failReason: null, skipReason: null };
+const OUTCOME_CLEARED = { appliedAt: null, failReason: null, skipReason: null };
 
 interface JobTransition {
   from: JobStatus;
@@ -59,11 +59,15 @@ export interface ScoredJob {
   threshold: number;
 }
 
+interface MovingJob extends JobPosting {
+  status: JobStatus;
+}
+
 /** Guarded on the old status, so a concurrent move fails rather than being overwritten. */
-async function moveStatus(
+export async function moveStatus(
   tx: Prisma.TransactionClient,
   userId: string,
-  job: JobRow,
+  job: MovingJob,
   to: JobStatus,
 ): Promise<void> {
   if (to === "applying") {

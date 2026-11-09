@@ -3,7 +3,7 @@ import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { type PilotRequestSource, PrismaClient } from "@/generated/prisma/client";
-import { OUTCOME_CLEARED } from "@/modules/feed/jobs/job.service";
+import { moveStatus } from "@/modules/feed/jobs/job.service";
 import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import { dropTaskList } from "../tasks/snapshot";
 import { publishRequest, requestSubject } from "./request-row";
@@ -58,7 +58,11 @@ export class RequestService {
    */
   private async approveJob(userId: string, feedId: string, key: string) {
     const job = await findOwned(
-      (where) => this.prisma.job.findFirst({ where, select: { id: true, status: true } }),
+      (where) =>
+        this.prisma.job.findFirst({
+          where,
+          select: { feedId: true, key: true, url: true, title: true, company: true, status: true },
+        }),
       { userId, feedId, key },
       "Job",
     );
@@ -71,13 +75,7 @@ export class RequestService {
     if (job.status === "approved") {
       return;
     }
-    const [approved] = await this.prisma.job.updateManyAndReturn({
-      where: { id: job.id, status: job.status },
-      data: { status: "approved", ...OUTCOME_CLEARED },
-      select: { feedId: true, key: true, status: true },
-    });
-    if (approved) {
-      publishJobUpdated(userId, approved);
-    }
+    await moveStatus(this.prisma, userId, job, "approved");
+    publishJobUpdated(userId, { feedId, key, status: "approved" });
   }
 }
