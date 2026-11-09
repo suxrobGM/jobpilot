@@ -10,7 +10,7 @@ import { useConfirm } from "@/providers/confirm-provider";
 
 const DEFAULT_VALUES: DeleteAccountInput = { currentPassword: "" };
 
-/** Hard delete; the API refuses the super admin, so the card hides for it. */
+/** Hard delete; shown to the super admin too, whose request the API rejects with 403. */
 export function DeleteAccountCard(): ReactNode {
   const { user } = useSession();
   const confirm = useConfirm();
@@ -35,7 +35,7 @@ export function DeleteAccountCard(): ReactNode {
     },
   });
 
-  if (!user || user.role === "super_admin") {
+  if (!user) {
     return null;
   }
 
