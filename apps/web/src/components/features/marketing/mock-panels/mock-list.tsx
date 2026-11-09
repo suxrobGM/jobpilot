@@ -19,7 +19,7 @@ interface MockTabsProps {
 export function MockTabs(props: MockTabsProps): ReactElement {
   const { tabs, active } = props;
   return (
-    <Tabs value={active} variant="scrollable" sx={{ mb: 1.5 }}>
+    <Tabs value={active} sx={{ mb: 1.5 }}>
       {tabs.map((tab) => (
         <Tab
           key={tab.label}
@@ -31,7 +31,7 @@ export function MockTabs(props: MockTabsProps): ReactElement {
   );
 }
 
-interface MockRowProps {
+interface MockListRow {
   id: string;
   lead: ReactNode;
   title: string;
@@ -40,7 +40,7 @@ interface MockRowProps {
 }
 
 interface MockListProps {
-  rows: MockRowProps[];
+  rows: MockListRow[];
 }
 
 /** A record list as the app draws one. */
@@ -48,14 +48,8 @@ export function MockList(props: MockListProps): ReactElement {
   const { rows } = props;
   return (
     <Card>
-      {rows.map((row) => (
-        <ListRow
-          key={row.id}
-          lead={row.lead}
-          title={row.title}
-          meta={row.meta}
-          status={row.status}
-        />
+      {rows.map(({ id, ...row }) => (
+        <ListRow key={id} {...row} />
       ))}
     </Card>
   );

@@ -44,7 +44,6 @@ const strong = { fontWeight: 600 } as const;
 
 export const typography: TypographyVariantsOptions = {
   fontFamily: fontFamilies.body,
-  // h1/h2 scale with clamp(), so theme.ts leaves them out of responsiveFontSizes.
   h1: {
     fontFamily: fontFamilies.display,
     fontStretch: displayStretch,

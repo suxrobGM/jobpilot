@@ -26,7 +26,7 @@ export function NavItem(props: NavItemProps): ReactElement {
       sx={railTile(active)}
     >
       <NavBadge badge={item.badge}>
-        <Icon fontSize="lg" sx={{ color: active ? "accent.primary" : undefined }} />
+        <Icon fontSize="lg" />
       </NavBadge>
       <RailLabel>{item.label}</RailLabel>
     </Box>

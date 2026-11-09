@@ -28,8 +28,14 @@ import { useNavGroups } from "./use-nav-groups";
 
 const MORE_VALUE = "more";
 
-/** The phone's bottom bar; the app shell hides it from md, where the rail takes over. */
-export function MobileNav(): ReactElement {
+interface MobileNavProps {
+  /** Hidden, not unmounted: focus changes toggle it, and a remount reruns its queries. */
+  hidden: boolean;
+}
+
+/** The phone's bottom bar; hidden from md, where the rail takes over. */
+export function MobileNav(props: MobileNavProps): ReactElement {
+  const { hidden } = props;
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { watchSteps } = useAgentDrawer();
@@ -77,7 +83,7 @@ export function MobileNav(): ReactElement {
         showLabels
         value={value}
         sx={(theme) => ({
-          display: { md: "none" },
+          display: { xs: hidden ? "none" : "flex", md: "none" },
           position: "fixed",
           left: 0,
           right: 0,
@@ -143,8 +149,7 @@ export function MobileNav(): ReactElement {
             </ListItemIcon>
             <ListItemText primary="Agent" />
           </MenuItem>
-          {user && <Divider />}
-          {user && accountMenuItems(user, closeMore)}
+          {user && [<Divider key="divider" />, ...accountMenuItems(user, closeMore)]}
         </MenuList>
       </Drawer>
     </>

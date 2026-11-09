@@ -66,7 +66,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
         </TopBarSlotsContext>
       </Box>
       <AgentDrawer />
-      {!typing && <MobileNav />}
+      <MobileNav hidden={typing} />
     </Box>
   );
 }

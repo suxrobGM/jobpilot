@@ -1,19 +1,17 @@
 import type { ReactElement, ReactNode } from "react";
-import { Description, Handshake, Inbox, SmartToy, ViewKanban } from "@mui/icons-material";
 import { Box, Card, Stack, Typography } from "@mui/material";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 import { RailLabel, railTile } from "@/components/layout/rail-tile";
+import { NAV_GROUPS } from "@/components/layout/shell-config";
 import { WindowBar } from "./panel-frame";
 
-const RAIL = [
-  { page: "pilot", label: "Pilot", icon: SmartToy },
-  { page: "pipeline", label: "Pipeline", icon: ViewKanban },
-  { page: "inbox", label: "Inbox", icon: Inbox },
-  { page: "resumes", label: "Resumes", icon: Description },
-  { page: "upwork", label: "Upwork", icon: Handshake },
-] as const;
+const PAGES = ["pilot", "pipeline", "inbox", "resumes", "upwork"] as const;
 
-type AppWindowPage = (typeof RAIL)[number]["page"];
+type AppWindowPage = (typeof PAGES)[number];
+
+const RAIL = NAV_GROUPS.flatMap((group) => group.items).filter((item) =>
+  PAGES.some((page) => item.href === `/${page}`),
+);
 
 interface AppWindowProps {
   page: AppWindowPage;
@@ -45,15 +43,12 @@ export function AppWindow(props: AppWindowProps): ReactElement {
           }}
         >
           <JobPilotMark size={24} />
-          {RAIL.map((item) => {
-            const active = item.page === page;
-            return (
-              <Box key={item.page} sx={railTile(active)}>
-                <item.icon fontSize="md" sx={{ color: active ? "accent.primary" : undefined }} />
-                <RailLabel>{item.label}</RailLabel>
-              </Box>
-            );
-          })}
+          {RAIL.map((item) => (
+            <Box key={item.href} sx={railTile(item.href === `/${page}`)}>
+              <item.icon fontSize="md" />
+              <RailLabel>{item.label}</RailLabel>
+            </Box>
+          ))}
         </Stack>
         <Stack sx={{ flex: 1, minWidth: 0 }}>
           <Stack

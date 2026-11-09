@@ -111,10 +111,9 @@ export function Composer(): ReactElement {
           },
           alignItems: { xs: "end", md: "center" },
           columnGap: 0.5,
-          p: 0.5,
-          pt: { md: 0 },
-          px: { md: 1 },
-          pb: { md: 1 },
+          pt: { xs: 0.5, md: 0 },
+          px: { xs: 0.5, md: 1 },
+          pb: { xs: 0.5, md: 1 },
         }}
       >
         <InputBase
@@ -135,7 +134,7 @@ export function Composer(): ReactElement {
             }
           }}
           inputProps={{ "aria-label": "Message the pilot", maxLength: 4000 }}
-          sx={{ gridArea: "input", py: 1, px: { md: 1 }, pt: { md: 1.75 }, pb: { md: 0.5 } }}
+          sx={{ gridArea: "input", pt: { xs: 1, md: 1.75 }, pb: { xs: 1, md: 0.5 }, px: { md: 1 } }}
         />
         <Box sx={{ gridArea: "links" }}>
           <TooltipIconButton

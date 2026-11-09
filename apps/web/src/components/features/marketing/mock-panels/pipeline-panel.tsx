@@ -25,7 +25,6 @@ const APPLICATIONS: MockApplication[] = [
   { company: "Linear", role: "Product Engineer", score: 79, status: "applied" },
 ];
 
-const SCORE_BAR = 70;
 export function PipelinePanel(): ReactElement {
   return (
     <AppWindow page="pipeline" title="Pipeline">
@@ -33,9 +32,9 @@ export function PipelinePanel(): ReactElement {
       <MockList
         rows={APPLICATIONS.map((app) => ({
           id: app.company,
-          lead: <ScoreBadge score={app.score} bar={SCORE_BAR} />,
+          lead: <ScoreBadge score={app.score} bar={70} />,
           title: app.role,
-          meta: `${app.company} · Remote`,
+          meta: `${app.company} Â· Remote`,
           status: <StatusChip domain="application" value={app.status} />,
         }))}
       />

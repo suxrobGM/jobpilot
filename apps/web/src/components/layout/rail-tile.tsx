@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 
-/** One rail entry: icon over a short label, accent-tinted while active. Spacing is in `sx` units. */
+/** One rail entry: icon over a short label, accent-tinted icon while active. Spacing is in `sx` units. */
 export function railTile(active: boolean): SxProps<Theme> {
   return (theme) => ({
     display: "flex",
@@ -16,6 +16,7 @@ export function railTile(active: boolean): SxProps<Theme> {
     color: active ? theme.palette.text.primary : theme.palette.text.secondary,
     backgroundColor: active ? theme.tints.selected : "transparent",
     textDecoration: "none",
+    "& .MuiSvgIcon-root": { color: active ? theme.palette.accent.primary : undefined },
     transition: theme.motion.fast,
     "&:hover": {
       color: theme.palette.text.primary,
