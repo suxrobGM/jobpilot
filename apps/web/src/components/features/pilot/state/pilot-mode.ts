@@ -44,12 +44,12 @@ function isHostOffline(health: TerminalHealth | null): boolean {
   return health === "offline" || health === "uninstalled" || health === "blocked";
 }
 
-/** Unprobeable here but connected to the API; a known-stopped local host ("offline") wins, so Stop reads at once. */
+/** No host was ever reachable here, yet one is connected to the API. Stopped ("offline") wins, so Stop reads at once. */
 export function isHostRemote(
   state: Pick<PilotState, "agentConnected">,
   health: TerminalHealth | null,
 ): boolean {
-  return health !== "reachable" && health !== "offline" && state.agentConnected;
+  return (health === "uninstalled" || health === "blocked") && state.agentConnected;
 }
 
 /** The user typed into the terminal recently, so the host holds new runs. */
