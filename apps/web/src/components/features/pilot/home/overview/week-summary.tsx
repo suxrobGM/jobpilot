@@ -21,7 +21,10 @@ export function WeekSummary(): ReactElement {
   const week = stats?.thisWeek;
 
   return (
-    <OverviewSection title="This week">
+    <OverviewSection
+      title="This week"
+      link={{ label: "Diagnostics", href: "/settings/diagnostics" }}
+    >
       {week ? (
         <Typography variant="body1Strong">
           {`${week.submitted} applied · ${plural(week.interviewing, "interview")}`}
