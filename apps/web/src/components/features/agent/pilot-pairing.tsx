@@ -24,7 +24,7 @@ async function pair(userId: string, provider: TerminalProviderId): Promise<void>
 /** Pairs a reachable host with the signed-in account, so the pilot runs with no Start button. */
 export function PilotPairing(): ReactNode {
   const { health, status } = useTerminalHealth();
-  const { user } = useSession();
+  const user = useSession();
   const { provider } = useAgentDrawer();
   // One attempt per account and provider per page load; a host paired elsewhere is re-paired once.
   const attempted = useRef<string | null>(null);

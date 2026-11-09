@@ -37,7 +37,7 @@ export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { watchSteps } = useAgentDrawer();
-  const { user } = useSession();
+  const user = useSession();
 
   // Close after the route commit: closing in the click lets the transition interrupt the
   // Modal's exit and strand its invisible backdrop over the app.

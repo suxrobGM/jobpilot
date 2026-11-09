@@ -12,7 +12,7 @@ const DEFAULT_VALUES: DeleteAccountInput = { currentPassword: "" };
 
 /** Hard delete; shown to the super admin too, whose request the API rejects with 403. */
 export function DeleteAccountCard(): ReactNode {
-  const { user } = useSession();
+  const user = useSession();
   const confirm = useConfirm();
   const { deleteAccount } = useAuthActions();
 

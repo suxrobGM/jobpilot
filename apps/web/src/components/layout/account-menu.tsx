@@ -37,7 +37,7 @@ export function AccountMenu(): ReactNode {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
 
-  const { user } = useSession();
+  const user = useSession();
 
   if (!user) {
     return null;

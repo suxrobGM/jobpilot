@@ -40,7 +40,7 @@ function VerifyTokenView(props: VerifyTokenViewProps): ReactElement {
 }
 
 function VerifyGateView(): ReactElement {
-  const { user } = useSession();
+  const user = useSession();
   const { logout } = useAuthActions();
   const resendVerification = useApiMutation(() => api.auth.email.verification.post(), {
     showErrorToast: false,

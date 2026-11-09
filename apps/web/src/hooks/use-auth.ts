@@ -13,11 +13,6 @@ import type {
 } from "@/api/types";
 import { type ApiMutationResult, useApiMutation } from "@/api/use-api-mutation";
 
-export interface UseSessionResult {
-  /** Null while loading and when signed out. */
-  user: AuthUserDto | null;
-}
-
 export interface UseAuthActionsResult {
   login: ApiMutationResult<AuthSessionResponse, LoginInput>;
   register: ApiMutationResult<AuthSessionResponse, RegisterInput>;
@@ -25,11 +20,10 @@ export interface UseAuthActionsResult {
   deleteAccount: ApiMutationResult<DeleteAccountResponse, DeleteAccountInput>;
 }
 
-/** Separate from `useAuthActions` so signed-out pages don't drag in a guaranteed-401 `me` fetch. */
-export function useSession(): UseSessionResult {
+/** Null while loading and when signed out. Separate from `useAuthActions` so signed-out pages skip the 401 `me` fetch. */
+export function useSession(): AuthUserDto | null {
   const meQuery = useQuery({ ...authQueries.me(), retry: false });
-
-  return { user: meQuery.data ?? null };
+  return meQuery.data ?? null;
 }
 
 /** Login and register land on `/pilot`; the proxy routes an empty profile on to onboarding. */
