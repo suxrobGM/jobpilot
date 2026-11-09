@@ -20,7 +20,8 @@
     "format": "biome format --write .",
     "lint": "biome lint .",
     "ci": "biome ci --error-on-warnings .",
-    "knip": "knip"
+    "knip": "knip",
+    "verify": "bun run ci && bun run knip && bun --cwd=apps/api run typecheck && bun --cwd=apps/web run typecheck && bun run test"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",

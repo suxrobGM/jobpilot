@@ -127,7 +127,7 @@ export const MAX_CLAIM_LIFETIME_MS = 25 * 60 * 1000;
 
 - Exports nothing imports, barrels, IIFEs, jargon names.
 - Schema changes without a migration (`db-migrate` skill).
-- Routes that skip the `add-api-route` layout.
+- Routes that skip the layout in `.claude/rules/api.md`.
 
 **Bugs**: note the ones you see. Do not hunt for them. `/code-review` does that.
 
@@ -148,7 +148,7 @@ step 6.
 ## 4. Apply, verify, commit locally
 
 1. Keep the author's structure and names where they are fine.
-2. Invoke the `verify` skill. Note a failure that `main` also has and continue.
+2. Run `bun run verify` (plus `dotnet test` for terminal changes). Note a failure that `main` also has and continue.
    A failure the PR causes goes to the author, unless the cleanup fixes it.
 3. Commit with the `commit` skill. Use one commit, or up to three by theme for a large PR.
 
@@ -212,7 +212,7 @@ Continue to step 7 only when the user says the review is complete, for example "
 
 1. Run `git status --porcelain` and `git log <your last commit>..HEAD` to find the user's
    changes. Commit uncommitted changes with the `commit` skill.
-2. If anything changed since the last `verify` run, invoke `verify` again. On a failure, stop
+2. If anything changed since the last `bun run verify`, run it again. On a failure, stop
    and tell the user.
 3. Update the draft comment: add the user's changes and set the marker to the current `HEAD`.
 4. `git push`. Never force-push. Skip the push if `maintainerCanModify` is false.

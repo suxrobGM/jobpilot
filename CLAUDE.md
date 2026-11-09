@@ -33,6 +33,7 @@ it to the PTY host, which sets `JOBPILOT_API_TOKEN`. Skills call the API through
 | `check` | Biome format + lint + import sort. Writes. |
 | `ci` | `biome ci --error-on-warnings`. |
 | `knip` | Dead files, exports, and dependencies. |
+| `verify` | The CI gate: `ci`, `knip`, API and web typechecks, `test`. |
 
 A local PostgreSQL and the tunnel both use port 5433. Check `docker ps` or `lsof -i :5433`
 before assuming which one `DATABASE_URL` hits.
@@ -40,7 +41,8 @@ before assuming which one `DATABASE_URL` hits.
 Never run `biome check --write --unsafe`. It rewrites `cookie[KEY]!.set(…)` to `?.set(…)` and
 drops auth cookie writes.
 
-Invoke the `verify` skill before committing. Commit with the `commit` skill.
+Run `bun run verify` before committing, plus `dotnet test` when `apps/terminal/` or `tests/`
+changed. Commit with the `commit` skill.
 
 ## Code style
 
