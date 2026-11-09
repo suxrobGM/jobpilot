@@ -38,14 +38,14 @@ describe("AdminService.listPilots", () => {
         [
           {
             userId: "p1",
-            autopilot: true,
+            autopilotSince: new Date("2026-07-01T00:00:00.000Z"),
             lastCycleAt: new Date("2026-07-15T10:00:00.000Z"),
             cycleCount: 42,
             user: { email: "alice@example.com" },
           },
           {
             userId: "p2",
-            autopilot: false,
+            autopilotSince: null,
             lastCycleAt: null,
             cycleCount: 0,
             user: { email: "bob@example.com" },

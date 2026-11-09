@@ -1,4 +1,6 @@
 import {
+  pilotRunHistoryPageSchema,
+  pilotRunHistoryQuerySchema,
   pilotRunResultSchema,
   pilotRunSchema,
   pilotStepListSchema,
@@ -14,9 +16,11 @@ import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { okResponseSchema } from "@/types/response";
 import { RunService } from "./run.service";
+import { RunListService } from "./run-list.service";
 import { StepService } from "./step.service";
 
 const runs = container.get(RunService);
+const runList = container.get(RunListService);
 const steps = container.get(StepService);
 const limitRun = rateLimit(RATE_LIMITS.pilotRun);
 
@@ -25,14 +29,31 @@ export const pilotRunsController = new Elysia({
   detail: { tags: ["Pilot"] },
 })
   .use(authGuard)
-  .post("/", ({ user, body }) => runs.start(user.id, body.taskListVersion, body.taskId), {
+  .post("/", ({ user, body }) => runs.start(user.id, body.taskId), {
     body: startPilotRunSchema,
     beforeHandle: limitRun,
     response: pilotRunSchema,
     detail: {
       summary: "Start a task run",
       description:
-        "Starts a task from the given task list version as a 15-minute run. A stale version or a race returns 409.",
+        "Starts a task from the live task list as a 15-minute run. An expired list, a missing task or a race returns 409.",
+    },
+  })
+  .get("/", ({ user, query }) => runList.list(user.id, query), {
+    query: pilotRunHistoryQuerySchema,
+    beforeHandle: rateLimit(RATE_LIMITS.pilotTasks),
+    response: pilotRunHistoryPageSchema,
+    detail: {
+      summary: "List finished runs",
+      description: "Paginated run history, newest first; optionally filtered by outcome.",
+    },
+  })
+  .get("/export", ({ user }) => runList.streamExport(user.id), {
+    beforeHandle: rateLimit(RATE_LIMITS.pilotRunsExport),
+    detail: {
+      summary: "Export the run history",
+      description:
+        "Streams every finished run as newline-delimited JSON (oldest first) for offline analysis.",
     },
   })
   .get("/:id", ({ user, params }) => runs.get(user.id, params.id), {
@@ -92,7 +113,7 @@ export const pilotRunsController = new Elysia({
     detail: {
       summary: "Post a run's result",
       description:
-        "The agent's last step: journals the action line and finishes the run. A finished run is returned unchanged, so retries are safe.",
+        "The agent's last step: stores the result line on the run and finishes it. A finished run is returned unchanged, so retries are safe.",
     },
   })
   .post("/:id/usage", ({ user, params, body }) => runs.reportUsage(user.id, params.id, body), {

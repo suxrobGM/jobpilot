@@ -1,23 +1,18 @@
 import { z } from "zod/v4";
-import { pilotSubjectTypeSchema, taskFieldsSchema } from "./tasks";
-
-/** Free-form structured detail on a journal entry. */
-export const journalDetailSchema = z.record(z.string(), z.json());
+import { csvArray, paginatedSchema, paginationQuerySchema } from "../pagination";
+import { taskFieldsSchema } from "./tasks";
 
 export const PILOT_RUN_OUTCOMES = ["done", "failed", "cancelled", "expired"] as const;
+const pilotRunOutcomeSchema = z.enum(PILOT_RUN_OUTCOMES);
 
-export const startPilotRunSchema = z.object({
-  taskListVersion: z.uuid(),
-  taskId: z.string().min(1),
-});
+export const startPilotRunSchema = z.object({ taskId: z.string().min(1) });
 
 export const pilotRunResultSchema = z.object({
   outcome: z.enum(["done", "failed"]),
-  // The journal action line, human and specific.
+  // The run's result line, human and specific.
   summary: z.string().trim().min(1),
-  subjectType: pilotSubjectTypeSchema.optional(),
-  subjectId: z.string().min(1).optional(),
-  detail: journalDetailSchema.optional(),
+  // `reply` answers work the user asked for in chat.
+  detail: z.object({ reply: z.string().trim().min(1).optional() }).optional(),
 });
 
 /** Typed into the running session as one line. */
@@ -76,13 +71,34 @@ const pilotRunBaseSchema = z.object({
   heartbeatAt: z.date().nullable(),
   expiresAt: z.date(),
   finishedAt: z.date().nullable(),
-  outcome: z.enum(PILOT_RUN_OUTCOMES).nullable(),
+  outcome: pilotRunOutcomeSchema.nullable(),
+  summary: z.string().nullable(),
   // The user asked for this work in chat: the result's `detail.reply` answers them there.
   askedInChat: z.boolean(),
 });
 
 export const pilotRunSchema = z.intersection(pilotRunBaseSchema, taskFieldsSchema);
 
+/** A finished run as Diagnostics lists it; tokens stay null until the host reports the cycle. */
+const pilotRunHistoryItemSchema = z.object({
+  id: z.uuid(),
+  taskType: z.string(),
+  title: z.string(),
+  outcome: pilotRunOutcomeSchema,
+  summary: z.string().nullable(),
+  finishedAt: z.date(),
+  tokens: tokenUsageSchema.nullable(),
+});
+
+export const pilotRunHistoryQuerySchema = paginationQuerySchema.extend({
+  outcomes: csvArray(pilotRunOutcomeSchema).optional(),
+});
+
+export const pilotRunHistoryPageSchema = paginatedSchema(pilotRunHistoryItemSchema);
+
 export type PilotRun = z.infer<typeof pilotRunSchema>;
+export type PilotRunOutcome = z.infer<typeof pilotRunOutcomeSchema>;
+export type PilotRunHistoryItem = z.infer<typeof pilotRunHistoryItemSchema>;
+export type PilotRunHistoryQuery = z.infer<typeof pilotRunHistoryQuerySchema>;
 export type PilotRunResultInput = z.infer<typeof pilotRunResultSchema>;
 export type ReportPilotUsageInput = z.infer<typeof reportPilotUsageSchema>;

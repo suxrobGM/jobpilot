@@ -1,14 +1,12 @@
 import type { PilotTask, TaskList } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { subscribe } from "@/common/sse/server";
-import type { PilotJournalEntry, PrismaClient } from "@/generated/prisma/client";
-import type { PilotJournalService } from "../thread/journal.service";
+import type { PrismaClient } from "@/generated/prisma/client";
 import { RunService } from "./run.service";
 import { describe, expect, it } from "bun:test";
 
 const USER_ID = "5f0d4d0e-4f27-4a0a-9f4e-2b1c6f1f7f01";
 const RUN_ID = "4c965efd-b586-49ea-825b-1af715760116";
-const VERSION = "31b0c512-b767-4dd7-9ee8-913e46d544c6";
 const FEED_ID = "0b6f3c2a-8d1e-4f5a-9c7b-3e2d1a0f9b8c";
 const PAUSED_FEED_ID = "7a1e9d4c-2b3f-4e6a-8d5c-9f0e1b2a3c4d";
 const now = new Date();
@@ -42,7 +40,6 @@ const pausedTask: PilotTask = {
 };
 
 const snapshot: TaskList = {
-  version: VERSION,
   builtAt: now,
   expiresAt: new Date(now.getTime() + 60_000),
   tasks: [applyTask, pausedTask],
@@ -60,30 +57,22 @@ const snapshot: TaskList = {
   nextWakeAt: new Date(now.getTime() + 15_000),
 };
 
-function fakeJournal() {
-  const appended: PilotJournalEntry[] = [];
-  const journal = {
-    publishAppended: async (_userId: string, rows: PilotJournalEntry[]) => appended.push(...rows),
-  } as unknown as PilotJournalService;
-  return { journal, appended };
-}
-
-function makeRunService(db: unknown, journal = fakeJournal().journal) {
-  return new RunService(db as PrismaClient, journal);
+function makeRunService(db: unknown) {
+  return new RunService(db as PrismaClient);
 }
 
 interface RunSetup {
-  currentVersion?: string;
+  listExpired?: boolean;
   openRun?: { id: string } | null;
   feedStillPaused?: boolean;
 }
 
-function runDb({ currentVersion = VERSION, openRun = null, feedStillPaused = true }: RunSetup) {
+function runDb({ listExpired = false, openRun = null, feedStillPaused = true }: RunSetup) {
   const creates: Record<string, unknown>[] = [];
+  const expiresAt = new Date(now.getTime() + (listExpired ? -60_000 : 60_000));
   const db = {
     pilotState: {
-      updateManyAndReturn: async (a: { where: { taskListVersion: string } }) =>
-        a.where.taskListVersion === currentVersion ? [{ taskListSnapshot: snapshot }] : [],
+      updateManyAndReturn: async () => [{ taskList: { ...snapshot, expiresAt } }],
     },
     pilotRequest: { count: async () => 0, updateManyAndReturn: async () => [] },
     pilotRun: {
@@ -97,6 +86,7 @@ function runDb({ currentVersion = VERSION, openRun = null, feedStillPaused = tru
           heartbeatAt: null,
           finishedAt: null,
           outcome: null,
+          summary: null,
           ...a.data,
         };
       },
@@ -135,6 +125,7 @@ const runRow = (over: Record<string, unknown> = {}) => {
     expiresAt: now,
     finishedAt: null,
     outcome: null,
+    summary: null,
     askedInChat: false,
     ...over,
   };
@@ -156,7 +147,6 @@ function closeDb(row: ReturnType<typeof runRow>) {
         return { count: 1 };
       },
     },
-    pilotJournalEntry: { createMany: async () => ({ count: 1 }) },
     pilotMessage: {
       create: async (a: { data: { body: string } }) => {
         messages.push(a.data.body);
@@ -185,16 +175,16 @@ async function withEvent<T>(userId: string, act: () => Promise<T>): Promise<[T, 
 }
 
 describe("RunService.start", () => {
-  it("starts a task off the supplied snapshot and stores its payload", async () => {
+  it("starts a task off the live list and stores its payload", async () => {
     const { service, creates } = runDb({});
-    const run = await service.start(USER_ID, VERSION, applyTask.id);
+    const run = await service.start(USER_ID, applyTask.id);
     expect(creates[0]).toMatchObject({ taskType: "job.apply", subjectId: `${FEED_ID}:j1` });
     expect(run.payload).toMatchObject({ feedId: FEED_ID, jobKey: "j1" });
   });
 
   it("publishes run.started", async () => {
     const [, event] = await withEvent(USER_ID, () =>
-      runDb({}).service.start(USER_ID, VERSION, pausedTask.id),
+      runDb({}).service.start(USER_ID, pausedTask.id),
     );
     expect(event).toEqual({
       type: "run.started",
@@ -203,15 +193,15 @@ describe("RunService.start", () => {
     });
   });
 
-  it("refuses a stale snapshot, a held subject, or a row that changed since the build", async () => {
+  it("refuses an expired list, a held subject, or a row that changed since the build", async () => {
     const refusals: [RunSetup, string, string][] = [
-      [{ currentVersion: "d6579e89-e9af-4f83-a04e-7d2cfad07cf3" }, applyTask.id, "stale"],
+      [{ listExpired: true }, applyTask.id, "stale"],
       [{ openRun: { id: "held" } }, applyTask.id, "already started"],
       [{ feedStillPaused: false }, pausedTask.id, "no longer paused"],
     ];
     for (const [setup, taskId, message] of refusals) {
       const { service, creates } = runDb(setup);
-      await expect(service.start(USER_ID, VERSION, taskId)).rejects.toThrow(message);
+      await expect(service.start(USER_ID, taskId)).rejects.toThrow(message);
       expect(creates).toHaveLength(0);
     }
   });
@@ -280,35 +270,22 @@ describe("RunService.recordResult", () => {
 
   const post = async (userId: string, finishedAt: Date | null) => {
     const { db, jobReverts } = closeDb(runRow({ userId, finishedAt }));
-    const { journal, appended } = fakeJournal();
-    const run = await makeRunService(db, journal).recordResult(userId, RUN_ID, result);
-    return { run, appended, jobReverts };
+    const run = await makeRunService(db).recordResult(userId, RUN_ID, result);
+    return { run, jobReverts };
   };
 
-  it("journals the action under the run id, finishes the run, and publishes", async () => {
+  it("stores the summary on the run, finishes it, and publishes", async () => {
     const userId = crypto.randomUUID();
-    const [{ run, appended, jobReverts }, event] = await withEvent(userId, () =>
-      post(userId, null),
-    );
+    const [{ run, jobReverts }, event] = await withEvent(userId, () => post(userId, null));
 
-    expect(run.outcome).toBe("done");
+    expect(run).toMatchObject({ outcome: "done", summary: result.summary });
     expect(jobReverts).toHaveLength(0);
-    expect(appended).toEqual([
-      expect.objectContaining({
-        runId: RUN_ID,
-        kind: "action",
-        summary: result.summary,
-        subjectType: "job",
-        subjectId: `${FEED_ID}:j1`,
-      }),
-    ]);
     expect(event).toEqual({ type: "run.finished", runId: RUN_ID, outcome: "done" });
   });
 
-  it("returns a finished run unchanged and journals nothing", async () => {
-    const { run, appended } = await post(USER_ID, now);
-    expect(run.finishedAt).toEqual(now);
-    expect(appended).toHaveLength(0);
+  it("returns a finished run unchanged", async () => {
+    const { run } = await post(USER_ID, now);
+    expect(run).toMatchObject({ finishedAt: now, summary: null });
   });
 });
 
@@ -318,8 +295,7 @@ describe("a request follows the run that picked it up", () => {
     ["failed", "failed"],
   ] as const)("a %s result marks it %s", async (outcome, status) => {
     const { db, requestWrites } = closeDb(runRow());
-    const { journal } = fakeJournal();
-    await makeRunService(db, journal).recordResult(USER_ID, RUN_ID, { outcome, summary: "x" });
+    await makeRunService(db).recordResult(USER_ID, RUN_ID, { outcome, summary: "x" });
     expect(requestWrites).toEqual([
       {
         where: { runId: { in: [RUN_ID] }, status: "running" },

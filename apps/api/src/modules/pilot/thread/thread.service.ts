@@ -1,7 +1,6 @@
 import { cursorPage } from "@jobpilot/contracts/pagination";
 import type {
   PilotChange,
-  PilotJournalKind,
   PilotMessage,
   PilotQuestion,
   PilotRequest,
@@ -9,34 +8,41 @@ import type {
   PilotThreadPage,
 } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
-import {
-  type PilotJournalEntry as PilotJournalEntryModel,
-  PrismaClient,
-} from "@/generated/prisma/client";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { JobRef } from "@/modules/feed/jobs/applying";
 import { toPilotChange } from "../changes/change-row";
 import { jobSubjectId } from "../job-subject";
 import { toPilotQuestion } from "../questions/question-row";
 import { toPilotRequest } from "../requests/request-row";
-import { toJournalEntry } from "./journal-entries";
 import {
   type DiscoveredJob,
   foldWork,
+  type QuestionJobs,
   type ThreadJobs,
   type ThreadRunRow,
   threadJobRefs,
   toRunLine,
 } from "./thread-work";
 
-/** Cycle entries are the loop's bookkeeping; questions arrive as their own rows. */
-const THREAD_KINDS: PilotJournalKind[] = ["action", "digest", "system", "correction"];
-
 /** Questions, drafts and changes per page; bounds the oldest page, which has no lower time bound. */
 const SIDE_ROWS_CAP = 100;
 
+const THREAD_RUN_SELECT = {
+  id: true,
+  taskType: true,
+  subjectType: true,
+  subjectId: true,
+  title: true,
+  summary: true,
+  outcome: true,
+  startedAt: true,
+  finishedAt: true,
+  payload: true,
+} satisfies Prisma.PilotRunSelect;
+
 interface ThreadSources {
-  entries: PilotJournalEntryModel[];
   runs: ThreadRunRow[];
+  questionJobs: QuestionJobs;
   jobs: ThreadJobs;
   discovered: DiscoveredJob[];
   questions: PilotQuestion[];
@@ -45,36 +51,10 @@ interface ThreadSources {
   requests: PilotRequest[];
 }
 
-/** Merges one page of journal entries with the questions and drafts from the same span, newest first. */
+/** Merges one page of runs with the questions, messages and changes from the same span, newest first. */
 export function buildThread(sources: ThreadSources): PilotThreadItem[] {
-  const runsById = new Map(sources.runs.map((run) => [run.id, run]));
-  const entriesByRun = new Map<ThreadRunRow, PilotJournalEntryModel[]>();
-  const items: PilotThreadItem[] = [];
-
-  for (const row of sources.entries) {
-    const run = row.runId ? runsById.get(row.runId) : undefined;
-    if (run && row.kind !== "digest") {
-      const entries = entriesByRun.get(run);
-      if (entries) {
-        entries.push(row);
-      } else {
-        entriesByRun.set(run, [row]);
-      }
-    } else {
-      items.push({
-        type: row.kind === "digest" ? "digest" : "note",
-        id: row.id,
-        at: row.createdAt,
-        entry: toJournalEntry(row, new Map()),
-      });
-    }
-  }
-
-  const runs = [...entriesByRun].map(([run, entries]) => {
-    const ordered = [...entries].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-    return toRunLine(run, ordered, sources.jobs);
-  });
-  items.push(...foldWork(runs, sources.jobs, sources.discovered));
+  const lines = sources.runs.map((run) => toRunLine(run, sources.jobs, sources.questionJobs));
+  const items = foldWork(lines, sources.jobs, sources.discovered);
   for (const question of sources.questions) {
     items.push({ type: "question", id: question.id, at: question.createdAt, question });
   }
@@ -99,50 +79,37 @@ export class PilotThreadService {
     cursor: string | undefined,
     limit: number,
   ): Promise<PilotThreadPage> {
+    // Runs that closed without a result line (cancelled, expired) never show.
+    const where = { userId, finishedAt: { not: null }, summary: { not: null } };
     const [rows, cursorRow] = await Promise.all([
-      this.prisma.pilotJournalEntry.findMany({
-        where: { userId, kind: { in: THREAD_KINDS } },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      this.prisma.pilotRun.findMany({
+        where,
+        orderBy: [{ finishedAt: "desc" }, { id: "desc" }],
+        select: THREAD_RUN_SELECT,
         take: limit + 1,
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       }),
       cursor
-        ? this.prisma.pilotJournalEntry.findFirst({
+        ? this.prisma.pilotRun.findFirst({
             where: { id: cursor, userId },
-            select: { createdAt: true },
+            select: { finishedAt: true },
           })
         : null,
     ]);
-    const { items: entries, nextCursor } = cursorPage(rows, limit);
+    const { items: runs, nextCursor } = cursorPage(rows, limit);
 
-    // The page's span: older than the previous page's last entry, back to this page's oldest.
-    const upper = cursorRow?.createdAt;
-    const lower = nextCursor ? entries.at(-1)?.createdAt : undefined;
+    // The page's span: older than the previous page's last run, back to this page's oldest.
+    const upper = cursorRow?.finishedAt ?? undefined;
+    const lower = nextCursor ? (runs.at(-1)?.finishedAt ?? undefined) : undefined;
     const createdAt = { lt: upper, gte: lower };
     const sideRows = {
       where: { userId, createdAt },
       orderBy: { createdAt: "desc" as const },
       take: SIDE_ROWS_CAP,
     };
-    const runIds = [...new Set(entries.flatMap((entry) => (entry.runId ? [entry.runId] : [])))];
 
-    const [runs, questions, changes, messages, requests] = await Promise.all([
-      runIds.length === 0
-        ? []
-        : this.prisma.pilotRun.findMany({
-            where: { userId, id: { in: runIds } },
-            select: {
-              id: true,
-              taskType: true,
-              subjectType: true,
-              subjectId: true,
-              title: true,
-              outcome: true,
-              startedAt: true,
-              finishedAt: true,
-              payload: true,
-            },
-          }),
+    const [questionJobs, questions, changes, messages, requests] = await Promise.all([
+      this.loadQuestionJobs(userId, runs),
       this.prisma.pilotQuestion.findMany(sideRows),
       this.prisma.pilotChange.findMany(sideRows),
       this.prisma.pilotMessage.findMany(sideRows),
@@ -150,12 +117,12 @@ export class PilotThreadService {
     ]);
 
     const [jobs, discovered] = await Promise.all([
-      this.loadJobs(userId, threadJobRefs(runs, entries)),
+      this.loadJobs(userId, threadJobRefs(runs, questionJobs)),
       this.loadDiscovered(userId, runs),
     ]);
     const items = buildThread({
-      entries,
       runs,
+      questionJobs,
       jobs,
       discovered,
       questions: questions.map(toPilotQuestion),
@@ -164,6 +131,20 @@ export class PilotThreadService {
       requests: requests.map(toPilotRequest),
     });
     return { items, nextCursor };
+  }
+
+  private async loadQuestionJobs(userId: string, runs: ThreadRunRow[]): Promise<QuestionJobs> {
+    const ids = runs.flatMap((run) =>
+      run.taskType === "question.answered" ? [run.subjectId] : [],
+    );
+    if (ids.length === 0) {
+      return new Map();
+    }
+    const rows = await this.prisma.pilotQuestion.findMany({
+      where: { userId, id: { in: ids }, subjectType: "job" },
+      select: { id: true, subjectId: true },
+    });
+    return new Map(rows.flatMap((row) => (row.subjectId ? [[row.id, row.subjectId]] : [])));
   }
 
   private async loadJobs(userId: string, refs: JobRef[]): Promise<ThreadJobs> {

@@ -22,20 +22,17 @@ public sealed class PilotApi(HttpClient http, PairingStore store, ILogger<PilotA
     public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) =>
         SendAsync(HttpMethod.Post, "/api/pilot/tasks/refresh", null, AppJsonContext.Default.PilotTaskList, ct, RefreshTimeout);
 
-    public Task WriteJournalAsync(string summary, CancellationToken ct)
-    {
-        var body = new JournalRequest([new JournalEntry("system", summary)]);
-        return PostAsync("/api/pilot/journal", JsonContent.Create(body, AppJsonContext.Default.JournalRequest), ct);
-    }
+    public Task RecordCycleAsync(int sleepSeconds, string? message, CancellationToken ct) =>
+        PostAsync(
+            "/api/pilot/cycles",
+            JsonContent.Create(new CycleRequest(sleepSeconds, message), AppJsonContext.Default.CycleRequest),
+            ct);
 
-    public Task RecordCycleAsync(int sleepSeconds, CancellationToken ct) =>
-        PostAsync("/api/pilot/cycles", JsonContent.Create(new CycleRequest(sleepSeconds), AppJsonContext.Default.CycleRequest), ct);
-
-    public Task<PilotRun?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct) =>
+    public Task<PilotRun?> StartRunAsync(string taskId, CancellationToken ct) =>
         SendAsync(
             HttpMethod.Post,
             "/api/pilot/runs",
-            JsonContent.Create(new StartRunRequest(taskId, taskListVersion), AppJsonContext.Default.StartRunRequest),
+            JsonContent.Create(new StartRunRequest(taskId), AppJsonContext.Default.StartRunRequest),
             AppJsonContext.Default.PilotRun,
             ct);
 

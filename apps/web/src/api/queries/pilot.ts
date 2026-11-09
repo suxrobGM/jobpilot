@@ -1,11 +1,11 @@
 import { DEFAULT_CURSOR_PAGE_SIZE, type PaginationQuery } from "@jobpilot/contracts/pagination";
-import type { PilotChange, PilotJournalKind, PilotQuestionStatus } from "@jobpilot/contracts/pilot";
+import type { PilotChange, PilotQuestionStatus, PilotRunOutcome } from "@jobpilot/contracts/pilot";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { unwrap } from "@/api/error";
 
 const PILOT = ["pilot"] as const;
-const JOURNAL = [...PILOT, "journal"] as const;
+const RUN_HISTORY = [...PILOT, "run-history"] as const;
 const THREAD = [...PILOT, "thread"] as const;
 const CHANGES = [...PILOT, "changes"] as const;
 const QUESTIONS = [...PILOT, "questions"] as const;
@@ -13,7 +13,7 @@ const PUSH = [...PILOT, "push"] as const;
 
 export const pilotQueries = {
   all: PILOT,
-  journalAll: JOURNAL,
+  runHistoryAll: RUN_HISTORY,
   threadAll: THREAD,
   changesAll: CHANGES,
   questionsAll: QUESTIONS,
@@ -66,14 +66,14 @@ export const pilotQueries = {
       retry: false,
     }),
   // Sorted so the same filter set toggled in a different order shares one cache entry.
-  journalPage: (kinds: PilotJournalKind[], page: PaginationQuery) => {
-    const filter = [...kinds].sort();
+  runHistory: (outcomes: PilotRunOutcome[], page: PaginationQuery) => {
+    const filter = [...outcomes].sort();
     return queryOptions({
-      queryKey: [...JOURNAL, { kinds: filter, ...page }],
+      queryKey: [...RUN_HISTORY, { outcomes: filter, ...page }],
       queryFn: () =>
         unwrap(
-          api.pilot.journal.get({
-            query: { ...page, ...(filter.length > 0 ? { kinds: filter } : {}) },
+          api.pilot.runs.get({
+            query: { ...page, ...(filter.length > 0 ? { outcomes: filter } : {}) },
           }),
         ),
     });

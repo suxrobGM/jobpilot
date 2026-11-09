@@ -1,7 +1,6 @@
 import type {
   PILOT_RUN_OUTCOMES,
   PilotChange,
-  PilotJournalEntry,
   PilotMessage,
   PilotQuestion,
   PilotRequest,
@@ -12,7 +11,6 @@ import type {
 import { defineChannel } from "../channel";
 
 export type PilotEvent =
-  | { type: "journal.appended"; entry: PilotJournalEntry }
   | { type: "question.created"; question: PilotQuestion }
   | { type: "question.answered"; question: PilotQuestion }
   | { type: "state.changed"; state: PilotState }

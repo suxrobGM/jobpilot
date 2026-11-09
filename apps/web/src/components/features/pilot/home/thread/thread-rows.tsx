@@ -1,11 +1,12 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
+import type { PilotThreadItem } from "@jobpilot/contracts/pilot";
 import { UnfoldMore } from "@mui/icons-material";
 import { ButtonBase, Divider, Stack, Typography } from "@mui/material";
 import { formatDayLabel } from "@/utils/format";
 import { TURN_INDENT } from "./pilot-turn";
-import { foldLabel, foldQuietRuns, rowKey, type ThreadRow } from "./thread-folds";
+import { foldLabel, foldQuietRuns, rowKey } from "./thread-folds";
 import { ThreadItem } from "./thread-item";
 
 interface DaySeparatorProps {
@@ -22,13 +23,13 @@ function DaySeparator(props: DaySeparatorProps): ReactElement {
 }
 
 interface ThreadFoldProps {
-  rows: ThreadRow[];
+  items: PilotThreadItem[];
   onOpen: () => void;
 }
 
 /** A quiet stretch of history as one line; opening it lays the rows back out in place. */
 function ThreadFold(props: ThreadFoldProps): ReactElement {
-  const { rows, onOpen } = props;
+  const { items, onOpen } = props;
   return (
     <ButtonBase
       onClick={onOpen}
@@ -46,44 +47,44 @@ function ThreadFold(props: ThreadFoldProps): ReactElement {
       })}
     >
       <UnfoldMore fontSize="sm" />
-      {foldLabel(rows)}
+      {foldLabel(items)}
     </ButtonBase>
   );
 }
 
 interface ThreadRowsProps {
-  rows: ThreadRow[];
+  items: PilotThreadItem[];
 }
 
 /** Rows with a day line wherever the day changes; quiet stretches fold until opened. */
 export function ThreadRows(props: ThreadRowsProps): ReactElement {
-  const { rows } = props;
+  const { items } = props;
   const [openFolds, setOpenFolds] = useState<string[]>([]);
 
   const out: ReactElement[] = [];
   let lastDay: string | null = null;
-  const pushRow = (row: ThreadRow): void => {
-    const day = formatDayLabel(row.item.at);
+  const pushRow = (item: PilotThreadItem): void => {
+    const day = formatDayLabel(item.at);
     if (day !== lastDay) {
-      out.push(<DaySeparator key={`day:${rowKey(row.item)}`} label={day} />);
+      out.push(<DaySeparator key={`day:${rowKey(item)}`} label={day} />);
       lastDay = day;
     }
-    out.push(<ThreadItem key={rowKey(row.item)} item={row.item} repeats={row.repeats} />);
+    out.push(<ThreadItem key={rowKey(item)} item={item} />);
   };
-  for (const segment of foldQuietRuns(rows)) {
+  for (const segment of foldQuietRuns(items)) {
     if (segment.type === "row") {
-      pushRow(segment.row);
+      pushRow(segment.item);
     } else if (openFolds.includes(segment.key)) {
-      segment.rows.forEach(pushRow);
+      segment.items.forEach(pushRow);
     } else {
       out.push(
         <ThreadFold
           key={`fold:${segment.key}`}
-          rows={segment.rows}
+          items={segment.items}
           onOpen={() => setOpenFolds([...openFolds, segment.key])}
         />,
       );
-      lastDay = formatDayLabel(segment.rows[segment.rows.length - 1].item.at);
+      lastDay = formatDayLabel(segment.items[segment.items.length - 1].at);
     }
   }
   return <Stack spacing={3}>{out}</Stack>;

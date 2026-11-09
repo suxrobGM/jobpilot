@@ -44,11 +44,11 @@ public class CycleRunnerStuckTests
         await RunAsync(runner);
         await Exit();
         await Exit();
-        Assert.DoesNotContain(JournalLines.ExitBackoff, pilot.Reports);
+        Assert.Empty(pilot.Messages);
 
         await Exit();
 
-        Assert.Equal([JournalLines.ExitBackoff], pilot.Reports);
+        Assert.Equal([PilotMessages.ExitBackoff], pilot.Messages);
         Assert.Equal("sleep:1800", pilot.Actions[^1]);
         Assert.Equal(0, runner.ConsecutiveExits);
     }
@@ -70,7 +70,6 @@ public class CycleRunnerStuckTests
 
         Assert.Null(sleep);
         Assert.Equal(FullLadder, pilot.Actions);
-        Assert.Equal([JournalLines.CheckIn, JournalLines.Skip, JournalLines.Restart], pilot.Reports);
         Assert.Equal(["run-1"], pilot.CancelledRuns);
         Assert.Single(pilot.Cycles);
         Assert.Equal(1, runner.ConsecutiveRestarts);
@@ -85,7 +84,6 @@ public class CycleRunnerStuckTests
 
         Assert.Equal(TimeSpan.FromSeconds(30), await RunAsync(Runner(checkedIn)));
         Assert.Equal(["cycle", "wait", "check-in", "wait"], checkedIn.Actions);
-        Assert.Equal([JournalLines.CheckIn], checkedIn.Reports);
 
         var skipped = new FakePilot { RunningProvider = Provider.Claude };
         skipped.Signals.Enqueue(WaitResult.Stuck);
@@ -94,7 +92,6 @@ public class CycleRunnerStuckTests
 
         Assert.Equal(TimeSpan.FromSeconds(30), await RunAsync(Runner(skipped)));
         Assert.Equal(["cycle", "wait", "check-in", "wait", "skip", "wait"], skipped.Actions);
-        Assert.Equal([JournalLines.CheckIn, JournalLines.Skip], skipped.Reports);
         Assert.Empty(skipped.CancelledRuns);
     }
 
@@ -111,7 +108,7 @@ public class CycleRunnerStuckTests
 
         await RunAsync(runner);
         await RunAsync(runner);
-        Assert.DoesNotContain(JournalLines.Backoff, pilot.Reports);
+        Assert.Empty(pilot.Messages);
 
         await RunAsync(runner);
         Assert.Equal(0, runner.ConsecutiveRestarts);
@@ -119,7 +116,7 @@ public class CycleRunnerStuckTests
 
         // The break re-arms the streak, so the next stuck run is not another 30 minutes.
         await RunAsync(runner);
-        Assert.Single(pilot.Reports, r => r == JournalLines.Backoff);
+        Assert.Equal([PilotMessages.Backoff], pilot.Messages);
     }
 
     [Fact]
@@ -135,10 +132,9 @@ public class CycleRunnerStuckTests
 
         var sleep = await RunAsync(Runner(pilot));
 
-        // A noisy burst on a live run must never reach the cycle cap, nor announce an extension.
+        // A noisy burst on a live run must never reach the cycle cap.
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
         Assert.DoesNotContain("check-in", pilot.Actions);
-        Assert.Empty(pilot.Reports);
     }
 
     [Fact]
@@ -151,7 +147,6 @@ public class CycleRunnerStuckTests
         // Two extensions (20 -> 40 -> 60 minutes), then the cap hands over to the ladder.
         Assert.Null(sleep);
         Assert.Equal(["cycle", "wait", "wait", "wait", "check-in", "wait", "skip", "wait", "stop"], pilot.Actions);
-        Assert.Single(pilot.Reports, r => r == JournalLines.Extend);
     }
 
     [Fact]

@@ -14,7 +14,6 @@ import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact/contact.mapper";
 import { ensureFeedOwned } from "@/modules/feed/feed-ownership";
-import { publishJournalEntries, writeJournalEntries } from "@/modules/pilot/thread/journal-entries";
 
 export interface NetworkingMessageFilters {
   feedId?: string;
@@ -100,9 +99,7 @@ export class NetworkingService {
     if (isTerminalNetworkingStatus(existing.status)) {
       throw conflict("Terminal networking messages cannot be edited.");
     }
-    const subjectChanged = body.subject !== undefined && body.subject !== existing.subject;
-    const bodyChanged = body.body !== undefined && body.body !== existing.body;
-    const result = await this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       if (body.status && body.status !== existing.status) {
         const changed = await tx.networkingMessage.updateMany({
           where: { id: messageId, status: existing.status },
@@ -124,29 +121,8 @@ export class NetworkingService {
         });
         message.contact.linkedinConnection = body.contactLinkedinConnection;
       }
-      const activity =
-        existing.status === "draft" && (subjectChanged || bodyChanged)
-          ? await writeJournalEntries(tx, userId, {
-              entries: [
-                {
-                  kind: "correction",
-                  summary: "Edited networking draft.",
-                  detail: {
-                    type: "networking.edited",
-                    messageId,
-                    before: { subject: existing.subject, body: existing.body },
-                    after: { subject: message.subject, body: message.body },
-                  },
-                  subjectType: "networking",
-                  subjectId: messageId,
-                },
-              ],
-            })
-          : [];
-      return { message, activity };
+      return message;
     });
-    publishJournalEntries(userId, result.activity);
-    return result.message;
   }
 
   async recordNetworkingResult(

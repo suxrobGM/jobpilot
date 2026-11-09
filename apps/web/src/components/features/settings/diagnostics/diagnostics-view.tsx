@@ -4,10 +4,10 @@ import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
 import { PilotStateLoader } from "../../pilot/state/pilot-state-loader";
 import { CycleCost } from "./cycle-cost";
-import { JournalFeed } from "./journal-feed";
 import { OrchestrationPanel } from "./orchestration-panel";
+import { RunHistory } from "./run-history";
 
-/** How the pilot works under the hood: the loop, its agents, token cost, and the raw journal. */
+/** How the pilot works under the hood: the loop, its agents, token cost, and the run history. */
 export function DiagnosticsView(): ReactElement {
   return (
     <PilotStateLoader heights={[220, 180, 320]}>
@@ -15,7 +15,7 @@ export function DiagnosticsView(): ReactElement {
         <Stack spacing={3}>
           <OrchestrationPanel state={state} />
           <CycleCost />
-          <JournalFeed />
+          <RunHistory />
         </Stack>
       )}
     </PilotStateLoader>

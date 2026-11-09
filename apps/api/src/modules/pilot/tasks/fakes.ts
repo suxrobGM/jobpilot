@@ -2,8 +2,7 @@ import type { TaskType } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
 import type { JobService } from "@/modules/feed/jobs/job.service";
-import { makePush, type SentPush } from "@/modules/web-push/web-push.fake";
-import type { PilotJournalService } from "../thread/journal.service";
+import type { MessageService } from "../messages/message.service";
 import { DigestService } from "./digest.service";
 import { PilotMaintenanceService } from "./maintenance.service";
 import { TaskListService } from "./task-list.service";
@@ -20,10 +19,15 @@ interface RunRow {
 
 type LatestRun = Omit<RunRow, "subjectId" | "startedAt"> & { startedAt?: Date };
 
+/** A message the pilot posted on its own, with how it showed on the phone. */
+interface PostedMessage {
+  body: string;
+  alert: { title: string; tag: string };
+}
+
 interface Recorder {
   settleScored: unknown[][];
-  journals: Row[];
-  pushes: SentPush[];
+  posted: PostedMessage[];
   inboxSyncs: { userId: string; staleMs: number }[];
 }
 
@@ -61,7 +65,8 @@ export interface Over {
   quietFeeds?: Row[];
   quietJobCounts?: Row[];
   skipReasonRows?: { feedId: string; skipReason: string | null; _count: { _all: number } }[];
-  existingDigests?: number;
+  /** Whether today's digest is already out; defaults to true so it stays quiet elsewhere. */
+  digestedToday?: boolean;
   digestApps?: number;
   jobsFailed?: number;
   jobsSkipped?: number;
@@ -164,22 +169,27 @@ function fakeFeed(over: Over) {
 function makeTaskListDb(over: Over = {}) {
   const rec: Recorder = {
     settleScored: [],
-    journals: [],
-    pushes: [],
+    posted: [],
     inboxSyncs: [],
   };
   // Networking is off by default in prod; these suites exercise it.
   const config = over.config ?? { networking: { email: "review", linkedIn: "draft" } };
 
-  let txChain: Promise<unknown> = Promise.resolve();
+  let digested = over.digestedToday ?? true;
   const db = {
     pilotState: {
       upsert: async () => ({
-        autopilot: true,
+        autopilotSince: new Date("2026-07-01T00:00:00.000Z"),
         cycleCount: 0,
         config: config,
       }),
       update: async () => ({}),
+      // The digest's claim on the day: the first caller wins, as the conditional update does.
+      updateMany: async () => {
+        const count = digested ? 0 : 1;
+        digested = true;
+        return { count };
+      },
     },
     pilotRequest: { findMany: async () => over.pendingRequests ?? [] },
     pilotMessage: { findFirst: async () => null },
@@ -214,19 +224,7 @@ function makeTaskListDb(over: Over = {}) {
         "importedAt" in a.where ? (over.jobAlertEmails ?? []).length : 0,
     },
     contact: { findMany: async () => over.contacts ?? [] },
-    pilotJournalEntry: {
-      // Defaults to 1 so the digest stays quiet elsewhere; counting this run's own digest writes
-      // is what lets the race test see a concurrent writer.
-      count: async () =>
-        (over.existingDigests ?? 1) + rec.journals.filter((j) => j.kind === "digest").length,
-    },
-    $executeRaw: async () => 0,
-    // Serialized, as the advisory lock would, so concurrent digest writes queue up.
-    $transaction: (cb: (tx: unknown) => Promise<unknown>) => {
-      const run = txChain.then(() => cb(db));
-      txChain = run.catch(() => undefined);
-      return run;
-    },
+    $transaction: (cb: (tx: unknown) => Promise<unknown>) => cb(db),
   };
 
   return { prisma: db as unknown as PrismaClient, rec };
@@ -239,24 +237,23 @@ export function makeTaskListDeps(over: Over = {}) {
       rec.settleScored.push(args);
     },
   } as unknown as JobService;
-  const journal = {
-    append: async (_userId: string, body: { entries: Row[] }) => {
-      rec.journals.push(...body.entries);
-      return { items: [] };
+  const messages = {
+    postFromPilot: async (_userId: string, body: string, alert: PostedMessage["alert"]) => {
+      rec.posted.push({ body, alert });
     },
-  } as unknown as PilotJournalService;
+  } as unknown as MessageService;
   const emailSync = {
     syncIfStale: async (userId: string, staleMs: number) => {
       rec.inboxSyncs.push({ userId, staleMs });
     },
   } as unknown as EmailSyncService;
-  return { prisma, jobs, journal, push: makePush(rec.pushes), emailSync, rec };
+  return { prisma, jobs, messages, emailSync, rec };
 }
 
 export const serviceWithRec = (over: Over = {}) => {
-  const { prisma, jobs, journal, push, emailSync, rec } = makeTaskListDeps(over);
+  const { prisma, jobs, messages, emailSync, rec } = makeTaskListDeps(over);
   const maintenance = new PilotMaintenanceService(prisma, jobs);
-  const digest = new DigestService(prisma, journal, push);
+  const digest = new DigestService(prisma, messages);
   return { svc: new TaskListService(prisma, maintenance, digest, emailSync), rec };
 };
 

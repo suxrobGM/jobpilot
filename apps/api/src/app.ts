@@ -41,7 +41,6 @@ import { pilotRequestsController } from "@/modules/pilot/requests/request.contro
 import { expiryJob } from "@/modules/pilot/runs/expiry.job";
 import { pilotRunsController } from "@/modules/pilot/runs/run.controller";
 import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
-import { pilotJournalController } from "@/modules/pilot/thread/journal.controller";
 import { pilotThreadController } from "@/modules/pilot/thread/thread.controller";
 import { pipelineController } from "@/modules/pipeline/pipeline.controller";
 import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
@@ -98,7 +97,6 @@ const app = new Elysia()
       .use(pilotJobAlertsController)
       .use(pilotJobLookupController)
       .use(pilotResearchController)
-      .use(pilotJournalController)
       .use(pilotThreadController)
       .use(pilotChangesController)
       .use(pilotMessagesController)

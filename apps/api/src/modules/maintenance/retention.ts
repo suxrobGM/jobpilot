@@ -17,20 +17,6 @@ const DROPPED: JobStatus[] = ["skipped", "failed"];
 
 /** Applied in order, once a day. */
 export const RETENTION_RULES = [
-  {
-    name: "journalEntries",
-    days: 30,
-    apply: (db, before) =>
-      db.pilotJournalEntry.deleteMany({
-        where: { createdAt: { lt: before }, kind: { not: "digest" } },
-      }),
-  },
-  {
-    name: "digests",
-    days: 90,
-    apply: (db, before) =>
-      db.pilotJournalEntry.deleteMany({ where: { kind: "digest", createdAt: { lt: before } } }),
-  },
   // Never shorter than `questions`: a finished run is the only record an answer was acted on.
   {
     name: "runs",

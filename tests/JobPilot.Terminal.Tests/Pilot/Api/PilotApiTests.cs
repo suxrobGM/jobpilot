@@ -66,13 +66,12 @@ public sealed class PilotApiTests : IDisposable
     [Fact]
     public async Task RefreshTasks_ReadsTheTaskList()
     {
-        const string body = """{"tasks":[{"id":"t1","title":"Apply to Acme","taskType":"job.apply"}],"emptyReason":null,"sleepSeconds":15,"nextWakeAt":"2026-10-02T12:00:15Z","version":"v1"}""";
+        const string body = """{"tasks":[{"id":"t1","title":"Apply to Acme","taskType":"job.apply"}],"emptyReason":null,"sleepSeconds":15,"nextWakeAt":"2026-10-02T12:00:15Z"}""";
         var api = Api((_, _) => Respond(HttpStatusCode.OK, body));
 
         var taskList = await api.RefreshTasksAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal([new PilotTask("t1")], taskList!.Tasks);
-        Assert.Equal("v1", taskList.Version);
         Assert.Equal(15, taskList.SleepSeconds);
     }
 
@@ -92,9 +91,9 @@ public sealed class PilotApiTests : IDisposable
         var ct = TestContext.Current.CancellationToken;
 
         await api.RefreshTasksAsync(ct);
-        await api.WriteJournalAsync("hello world", ct);
-        await api.RecordCycleAsync(1800, ct);
-        Assert.Equal(new PilotRun("run-1", null, null), await api.StartRunAsync("t1", "v1", ct));
+        await api.RecordCycleAsync(30, null, ct);
+        await api.RecordCycleAsync(1800, "Taking a break.", ct);
+        Assert.Equal(new PilotRun("run-1", null, null), await api.StartRunAsync("t1", ct));
         Assert.NotNull(await api.GetRunAsync("run-1", ct));
         await api.CancelRunAsync("run-1", ct);
         await api.ReportUsageAsync("run-1", new PilotUsage("claude-sonnet-5", 4, 320, 130000, 600), ct);
@@ -102,9 +101,9 @@ public sealed class PilotApiTests : IDisposable
         Assert.Equal(
             [
                 "POST /api/pilot/tasks/refresh",
-                """POST /api/pilot/journal {"entries":[{"kind":"system","summary":"hello world"}]}""",
-                """POST /api/pilot/cycles {"sleepSeconds":1800}""",
-                """POST /api/pilot/runs {"taskId":"t1","taskListVersion":"v1"}""",
+                """POST /api/pilot/cycles {"sleepSeconds":30}""",
+                """POST /api/pilot/cycles {"sleepSeconds":1800,"message":"Taking a break."}""",
+                """POST /api/pilot/runs {"taskId":"t1"}""",
                 "GET /api/pilot/runs/run-1",
                 "POST /api/pilot/runs/run-1/cancel",
                 """POST /api/pilot/runs/run-1/usage {"model":"claude-sonnet-5","inputTokens":4,"outputTokens":320,"cacheReadTokens":130000,"cacheWriteTokens":600}""",
@@ -124,7 +123,7 @@ public sealed class PilotApiTests : IDisposable
         cts.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.GetActivityAsync(cts.Token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.WriteJournalAsync("stop", cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => api.RecordCycleAsync(30, null, cts.Token));
     }
 
     private sealed class StubHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond)

@@ -7,14 +7,20 @@ import { useQueryClient } from "@tanstack/react-query";
 import { pilotQueries, pipelineQueries } from "@/api/queries";
 import { invalidateSoon, useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { refetchThread } from "./home/thread/thread-cache";
-import { prependJournalEntry, refetchJournal } from "./journal/journal-cache";
 import { appendRunSteps } from "./steps/steps-cache";
 
 const STATE_KEY = pilotQueries.state().queryKey;
-// Never `pilot.all`: it would rebuild the task list.
-const RUN_KEYS = [STATE_KEY, pilotQueries.jobAlerts().queryKey, pilotQueries.research().queryKey];
+// Never `pilot.all`: it would rebuild the task list. Run history rides on state changes because
+// the host reports a run's tokens after it finishes, then records the cycle.
+const RUN_KEYS = [
+  STATE_KEY,
+  pilotQueries.runHistoryAll,
+  pilotQueries.jobAlerts().queryKey,
+  pilotQueries.research().queryKey,
+];
 const RECONNECT_KEYS = [
   STATE_KEY,
+  pilotQueries.runHistoryAll,
   pilotQueries.questionsAll,
   pilotQueries.changesAll,
   pilotQueries.searches().queryKey,
@@ -47,11 +53,6 @@ export function PilotLive(): ReactNode {
           pilotQueries.searches().queryKey,
           pilotQueries.notices().queryKey,
         ]),
-      // Written straight into the cache rather than refetched.
-      "journal.appended": (event) => {
-        prependJournalEntry(queryClient, event.entry);
-        refetchThread(queryClient);
-      },
       "question.created": () => invalidate([pilotQueries.questionsAll]),
       "question.answered": () => invalidate([pilotQueries.questionsAll]),
       "run.steps": (event) => appendRunSteps(queryClient, event.runId, event.steps),
@@ -69,7 +70,6 @@ export function PilotLive(): ReactNode {
         ]),
     },
     onReconnect: () => {
-      refetchJournal(queryClient);
       refetchThread(queryClient);
       for (const queryKey of RECONNECT_KEYS) {
         invalidateSoon(queryClient, queryKey);

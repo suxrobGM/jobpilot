@@ -4,10 +4,11 @@ import type { ReactElement } from "react";
 import type { PilotState, TaskList } from "@jobpilot/contracts/pilot";
 import { taskTypeAgent, taskTypeLabel } from "@jobpilot/contracts/pilot";
 import { Box, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
 import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, formatTimeUntil, humanizeIsoInText } from "@/utils/format";
-import { useLatestJournalPage } from "../../pilot/journal/journal-cache";
 import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../../pilot/state/pilot-mode";
 import { usePilotStatus } from "../../pilot/state/use-pilot-status";
 import { AgentList } from "./agent-list";
@@ -18,7 +19,7 @@ import { useTaskList } from "./use-task-list";
 const HOST: Stage = { title: "Host", role: "Checks for work", tone: "blue" };
 const SERVER: Stage = { title: "Server", role: "Picks a task", tone: "peach" };
 const SESSION: Stage = { title: "Session", role: "Runs the task", tone: "violet" };
-const JOURNAL: Stage = { title: "Journal", role: "Records the outcome", tone: "green" };
+const RESULT: Stage = { title: "Result", role: "Records the outcome", tone: "green" };
 
 const EMPTY_REASON_CAPTIONS: Record<NonNullable<TaskList["emptyReason"]>, string> = {
   capReached: "Daily cap reached",
@@ -60,7 +61,7 @@ interface OrchestrationPanelProps {
 export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement {
   const { state } = props;
   const { pilot, mode, nextWakeAt } = usePilotStatus(state);
-  const journal = useLatestJournalPage();
+  const latest = useQuery(pilotQueries.runHistory([], { page: 1, limit: 1 }));
   const taskList = useTaskList();
 
   const { dimmed } = PILOT_MODE_LOOK[mode];
@@ -69,13 +70,9 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
   const running = run !== null;
   const activeAgent = run ? taskTypeAgent(run.taskType) : null;
 
-  // The action a run posts carries its id as `runId`.
-  const journalItems = journal.data?.items ?? [];
-  const posted = run
-    ? (journalItems.find((entry) => entry.kind === "action" && entry.runId === run.id) ?? null)
-    : null;
-  const journalCaption = posted
-    ? truncate(humanizeIsoInText(posted.summary))
+  const lastSummary = latest.data?.items[0]?.summary ?? null;
+  const resultCaption = lastSummary
+    ? truncate(humanizeIsoInText(lastSummary))
     : `${state.appliedToday} / ${state.config.dailyApplyCap} applied today`;
   const sessionCaption = run
     ? `${taskTypeLabel(run.taskType)} · running ${formatRelativeTime(run.startedAt)}`
@@ -105,12 +102,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
         <StageArrow lit={running} />
         <StageCard stage={SESSION} caption={sessionCaption} active={running} dimmed={dimmed} />
         <StageArrow lit={running} />
-        <StageCard
-          stage={JOURNAL}
-          caption={journalCaption}
-          active={posted !== null}
-          dimmed={dimmed}
-        />
+        <StageCard stage={RESULT} caption={resultCaption} dimmed={dimmed} />
       </Box>
       <TaskQueue taskList={taskList.data} />
       <Box sx={{ mt: 2 }}>

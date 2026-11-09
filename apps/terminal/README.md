@@ -32,12 +32,14 @@ Namespaces match folders.
   server flag: with it off the task list holds only what the user asked for. Each cycle starts with
   one `/api/pilot/activity` probe, so an unreachable API backs off instead of spending a refresh.
   `CycleRunner` then refreshes the task list. With no tasks it records an idle check on the pilot
-  state (no journal entry) and sleeps, so an idle pilot never wakes the model. With tasks it starts
+  state and sleeps, so an idle pilot never wakes the model. With tasks it starts
   a run for the top one, unless the user typed into the terminal in the last 3 minutes: then it
-  journals one waiting line, reports `heldUntil` in `/healthz`, and sleeps until the hold ends
+  reports `heldUntil` in `/healthz` and sleeps until the hold ends
   (`DELETE /pilot/hold` ends it early). Otherwise it starts the run, types `/clear` and the pilot skill with the run id, and waits for the run
   to finish: the `run.finished` event the agent's result publishes, or a poll of the run. A stuck
-  run climbs check-in, skip, then restart, and a run with no result is cancelled by the host. The
+  run climbs check-in, skip, then restart, and a run with no result is cancelled by the host. Three
+  stuck runs or three early session exits in a row take a 30-minute break, reported as a cycle whose
+  `message` (`PilotMessages`) reaches the user in the pilot chat and on their phone. The
   host then posts the run's token usage, which `UsageMeter` sums from the CLI's OTLP logs on
   `/v1/logs`, and reports the cycle to `/api/pilot/cycles`, as it does after an idle check. `PilotEventListener` holds the API's event stream open while paired,
   passes `run.finished` to the session, wakes the loop on messages, requests and answered questions,

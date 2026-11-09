@@ -343,7 +343,6 @@ const taskListContentSchema = z.object({
 });
 
 export const taskListSchema = taskListContentSchema.extend({
-  version: z.uuid(),
   expiresAt: storedDate,
 });
 

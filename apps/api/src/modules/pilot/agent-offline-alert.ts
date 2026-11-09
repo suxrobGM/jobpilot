@@ -44,9 +44,9 @@ export class AgentOfflineAlert {
     try {
       const state = await this.prisma.pilotState.findUnique({
         where: { userId },
-        select: { autopilot: true },
+        select: { autopilotSince: true },
       });
-      if (!state?.autopilot) {
+      if (!state?.autopilotSince) {
         return;
       }
       this.lastSentAt.set(userId, Date.now());

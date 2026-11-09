@@ -6,11 +6,7 @@ interface Over {
   message: Record<string, unknown>;
 }
 
-function makeDb(
-  over: Over,
-  journals: Record<string, unknown>[],
-  networkingWrites: Record<string, unknown>[],
-) {
+function makeDb(over: Over, networkingWrites: Record<string, unknown>[]) {
   const contact = {
     id: "ct1",
     userId: "p1",
@@ -76,12 +72,6 @@ function makeDb(
       findMany: async () => [],
     },
     feed: { update: async () => ({}) },
-    pilotJournalEntry: {
-      createMany: async ({ data }: { data: Record<string, unknown>[] }) => {
-        journals.push(...data);
-        return { count: data.length };
-      },
-    },
     pilotState: { upsert: async () => ({}) },
     $queryRaw: async () => [],
     $transaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(db),
@@ -90,11 +80,9 @@ function makeDb(
 }
 
 const service = (over: Over) => {
-  const journals: Record<string, unknown>[] = [];
   const networkingWrites: Record<string, unknown>[] = [];
   return {
-    svc: new NetworkingService(makeDb(over, journals, networkingWrites) as unknown as PrismaClient),
-    journals,
+    svc: new NetworkingService(makeDb(over, networkingWrites) as unknown as PrismaClient),
     networkingWrites,
   };
 };
@@ -149,45 +137,5 @@ describe("networking result: sent email", () => {
         failReason: "late failure",
       }),
     ).rejects.toThrow("already finished");
-  });
-});
-
-describe("networking correction capture", () => {
-  it("logs a correction with before/after when a draft's body is edited", async () => {
-    const { svc, journals } = service({
-      message: { status: "draft", subject: "Hi", body: "hello" },
-    });
-    await svc.patchNetworking("p1", "c1", "m1", { body: "hello, updated" });
-
-    expect(journals).toHaveLength(1);
-    expect(journals[0]).toMatchObject({
-      kind: "correction",
-      subjectType: "networking",
-      subjectId: "m1",
-      detail: {
-        type: "networking.edited",
-        messageId: "m1",
-        before: { subject: "Hi", body: "hello" },
-        after: { subject: "Hi", body: "hello, updated" },
-      },
-    });
-  });
-
-  it("does not log a correction when the message is not a draft", async () => {
-    const { svc, journals } = service({
-      message: { status: "approved", subject: "Hi", body: "hello" },
-    });
-    await svc.patchNetworking("p1", "c1", "m1", { body: "hello, updated" });
-
-    expect(journals).toHaveLength(0);
-  });
-
-  it("does not log a correction when a draft edit changes no content", async () => {
-    const { svc, journals } = service({
-      message: { status: "draft", subject: "Hi", body: "hello" },
-    });
-    await svc.patchNetworking("p1", "c1", "m1", { status: "approved" });
-
-    expect(journals).toHaveLength(0);
   });
 });

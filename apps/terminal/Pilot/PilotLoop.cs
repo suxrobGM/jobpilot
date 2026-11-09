@@ -168,14 +168,10 @@ public sealed class PilotLoop : BackgroundService
 
         await Task.Delay(StartupResumeDelay, time, stoppingToken);
         var owed = CycleSleep.RemainingSleep(await api.GetActivityAsync(stoppingToken), time.GetUtcNow());
-        if (owed <= TimeSpan.Zero)
+        if (owed > TimeSpan.Zero)
         {
-            await api.WriteJournalAsync(JournalLines.Resume, stoppingToken);
-            return;
+            await SleepOrWakeAsync(owed, stoppingToken);
         }
-
-        await api.WriteJournalAsync($"{JournalLines.Resume} Waiting out the planned break until {time.GetUtcNow() + owed:u} first.", stoppingToken);
-        await SleepOrWakeAsync(owed, stoppingToken);
     }
 
     /// <summary>Sleeps until the duration passes or a wake arrives. Throws when <paramref name="ct"/> cancels.</summary>

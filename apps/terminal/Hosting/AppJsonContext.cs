@@ -23,7 +23,6 @@ namespace JobPilot.Terminal.Hosting;
 [JsonSerializable(typeof(BrowserMessage))]
 [JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(PairingFile))]
-[JsonSerializable(typeof(JournalRequest))]
 [JsonSerializable(typeof(PilotActivity))]
 [JsonSerializable(typeof(PilotTaskList))]
 [JsonSerializable(typeof(PilotUsage))]

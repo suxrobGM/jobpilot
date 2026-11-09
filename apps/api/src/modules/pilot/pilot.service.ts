@@ -12,6 +12,7 @@ import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
 import { boardDomain } from "@/modules/job-board/board-host";
 import { AgentPresence } from "./agent-presence";
+import { MessageService } from "./messages/message.service";
 import { costByTaskType, countAppliedToday, countSentToday } from "./pilot.stats";
 import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
@@ -26,6 +27,7 @@ export class PilotService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly presence = inject(AgentPresence),
+    private readonly messages = inject(MessageService),
   ) {}
 
   private async toState(row: PilotStateModel): Promise<PilotState> {
@@ -43,7 +45,7 @@ export class PilotService {
     ]);
     return {
       userId: row.userId,
-      autopilot: row.autopilot,
+      autopilot: row.autopilotSince !== null,
       config,
       lastCycleAt: row.lastCycleAt,
       nextWakeAt: row.nextWakeAt,
@@ -121,26 +123,8 @@ export class PilotService {
     const autopilotSince = enabled ? (saved?.autopilotSince ?? new Date()) : null;
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
-      create: { userId, autopilot: enabled, autopilotSince },
-      update: { autopilot: enabled, autopilotSince, ...TASK_LIST_SNAPSHOT_RESET },
-    });
-    return this.publishState(row);
-  }
-
-  /** Clears run history only; instructions, searches and autopilot survive. */
-  async reset(userId: string) {
-    const row = await this.prisma.$transaction(async (tx) => {
-      await tx.pilotJournalEntry.deleteMany({ where: { userId } });
-      return tx.pilotState.upsert({
-        where: { userId },
-        create: { userId },
-        update: {
-          cycleCount: 0,
-          lastCycleAt: null,
-          nextWakeAt: null,
-          ...TASK_LIST_SNAPSHOT_RESET,
-        },
-      });
+      create: { userId, autopilotSince },
+      update: { autopilotSince, ...TASK_LIST_SNAPSHOT_RESET },
     });
     return this.publishState(row);
   }
@@ -154,6 +138,12 @@ export class PilotService {
       create: { userId, lastCycleAt: now, cycleCount: 1, nextWakeAt },
       update: { lastCycleAt: now, cycleCount: { increment: 1 }, nextWakeAt },
     });
+    if (body.message) {
+      await this.messages.postFromPilot(userId, body.message, {
+        title: "Pilot alert",
+        tag: "pilot-alert",
+      });
+    }
     return this.publishState(row);
   }
 
@@ -172,12 +162,12 @@ export class PilotService {
   /** Newest server-side activity, so the terminal can tell a slow live cycle from a stuck one. */
   async getActivity(userId: string) {
     const { prisma } = this;
-    const [runs, journal, feed, job, state] = await Promise.all([
+    const [runs, finished, feed, job, state] = await Promise.all([
       prisma.pilotRun.findMany({
         where: { userId, finishedAt: null },
         select: { startedAt: true, heartbeatAt: true, expiresAt: true },
       }),
-      prisma.pilotJournalEntry.aggregate({ where: { userId }, _max: { createdAt: true } }),
+      prisma.pilotRun.aggregate({ where: { userId }, _max: { finishedAt: true } }),
       prisma.feed.aggregate({ where: { userId }, _max: { updatedAt: true } }),
       prisma.job.aggregate({ where: { userId }, _max: { updatedAt: true } }),
       prisma.pilotState.findUnique({
@@ -188,7 +178,7 @@ export class PilotService {
 
     const times = [
       ...runs.flatMap((run) => [run.startedAt, run.heartbeatAt]),
-      journal._max.createdAt,
+      finished._max.finishedAt,
       feed._max.updatedAt,
       job._max.updatedAt,
     ].filter((time) => time != null);

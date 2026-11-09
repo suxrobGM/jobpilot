@@ -31,10 +31,8 @@ export class TaskListService {
   /** The current snapshot, with none of refresh's writes. */
   async getCurrent(userId: string) {
     const state = await this.prisma.pilotState.findUnique({ where: { userId } });
-    const expiresAt = state?.taskListExpiresAt;
-    const snapshot = state?.taskListSnapshot;
-    const live = snapshot && expiresAt && expiresAt > new Date();
-    return { taskList: live ? taskListSchema.parse(snapshot) : null };
+    const taskList = state?.taskList ? taskListSchema.parse(state.taskList) : null;
+    return { taskList: taskList && taskList.expiresAt > new Date() ? taskList : null };
   }
 
   /** Runs whether or not autopilot is on: requests, chat and answered questions always run. */
@@ -43,9 +41,10 @@ export class TaskListService {
       where: { userId },
       create: { userId },
       update: {},
-      select: { autopilot: true, cycleCount: true, config: true },
+      select: { autopilotSince: true, cycleCount: true, config: true },
     });
-    const { autopilot, cycleCount } = state;
+    const { cycleCount } = state;
+    const autopilot = state.autopilotSince !== null;
     const now = new Date();
     const config = pilotConfigSchema.parse(state.config);
 
@@ -71,18 +70,10 @@ export class TaskListService {
       chat,
       awaitingSetup: searchCount === 0,
     });
-    const taskList: TaskList = {
-      ...content,
-      version: crypto.randomUUID(),
-      expiresAt: new Date(now.getTime() + SNAPSHOT_TTL_MS),
-    };
+    const taskList: TaskList = { ...content, expiresAt: new Date(now.getTime() + SNAPSHOT_TTL_MS) };
     await this.prisma.pilotState.update({
       where: { userId },
-      data: {
-        taskListVersion: taskList.version,
-        taskListExpiresAt: taskList.expiresAt,
-        taskListSnapshot: toInputJson(taskList),
-      },
+      data: { taskList: toInputJson(taskList) },
     });
     return taskList;
   }

@@ -52,15 +52,6 @@ export const pilotController = new Elysia({
         "With autopilot off, the pilot runs only what the user asks for: requests, chat and answered questions.",
     },
   })
-  .delete("/runs", ({ user }) => pilot.reset(user.id), {
-    beforeHandle: limitMutation,
-    response: pilotStateSchema,
-    detail: {
-      summary: "Reset the pilot's run history",
-      description:
-        "Deletes the journal, zeroes the cycle count and drops the cached task list. Instructions, searches and autopilot stay.",
-    },
-  })
   .post("/cycles", ({ user, body }) => pilot.recordCycle(user.id, body), {
     body: recordCycleSchema,
     beforeHandle: limitTaskList,
@@ -68,7 +59,7 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Record a cycle",
       description:
-        "The host finished one loop pass, with or without a run: advances the cycle count and plans the next wake.",
+        "The host finished one loop pass, with or without a run: advances the cycle count and plans the next wake. A message is posted to the user as the pilot.",
     },
   })
   .get("/stats/cost", ({ user }) => pilot.getCost(user.id), {
@@ -102,7 +93,7 @@ export const pilotController = new Elysia({
       detail: {
         summary: "Stream pilot events",
         description:
-          "Server-Sent Events for journal appends, questions, runs and state changes. The host's stream also marks the agent connected.",
+          "Server-Sent Events for messages, questions, runs and state changes. The host's stream also marks the agent connected.",
       },
     },
   );

@@ -1,30 +1,11 @@
 import type { PilotThreadJob } from "@jobpilot/contracts/pilot";
-import type { PilotJournalEntry, PilotRun } from "@/generated/prisma/client";
+import type { PilotRun } from "@/generated/prisma/client";
 import { buildThread } from "./thread.service";
 import type { DiscoveredJob } from "./thread-work";
 import { describe, expect, it } from "bun:test";
 
 const T0 = new Date("2026-11-05T09:00:00Z").getTime();
 const at = (minutes: number) => new Date(T0 + minutes * 60_000);
-
-function entry(
-  id: string,
-  minutes: number,
-  over: Partial<PilotJournalEntry> = {},
-): PilotJournalEntry {
-  return {
-    id,
-    userId: "u1",
-    runId: null,
-    kind: "action",
-    summary: `entry ${id}`,
-    detail: {},
-    subjectType: null,
-    subjectId: null,
-    createdAt: at(minutes),
-    ...over,
-  };
-}
 
 function run(id: string, startMin: number, endMin: number, over: Partial<PilotRun> = {}) {
   return {
@@ -33,6 +14,7 @@ function run(id: string, startMin: number, endMin: number, over: Partial<PilotRu
     subjectType: "upwork",
     subjectId: "inbox",
     title: "Pull the Upwork inbox",
+    summary: `run ${id}`,
     outcome: "done",
     startedAt: at(startMin),
     finishedAt: at(endMin),
@@ -43,17 +25,14 @@ function run(id: string, startMin: number, endMin: number, over: Partial<PilotRu
 
 interface ThreadExtras {
   jobs?: Map<string, PilotThreadJob>;
+  questionJobs?: Map<string, string>;
   discovered?: DiscoveredJob[];
 }
 
-function thread(
-  entries: PilotJournalEntry[],
-  runs: ReturnType<typeof run>[],
-  extras: ThreadExtras = {},
-) {
+function thread(runs: ReturnType<typeof run>[], extras: ThreadExtras = {}) {
   return buildThread({
-    entries,
     runs,
+    questionJobs: extras.questionJobs ?? new Map(),
     jobs: extras.jobs ?? new Map(),
     discovered: extras.discovered ?? [],
     questions: [],
@@ -64,14 +43,8 @@ function thread(
 }
 
 describe("buildThread", () => {
-  it("folds a run's entries into one line led by its result summary", () => {
-    const items = thread(
-      [
-        entry("e1", 1, { runId: "r1", kind: "correction", summary: "draft edited" }),
-        entry("e2", 2, { runId: "r1", summary: "Refreshed the inbox" }),
-      ],
-      [run("r1", 0, 3)],
-    );
+  it("shows each run as a line led by its result summary", () => {
+    const items = thread([run("r1", 0, 3, { summary: "Refreshed the inbox" })]);
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({
       type: "work",
@@ -80,14 +53,7 @@ describe("buildThread", () => {
   });
 
   it("folds runs under 20 minutes apart and splits wider gaps", () => {
-    const items = thread(
-      [
-        entry("a", 5, { runId: "r1" }),
-        entry("b", 15, { runId: "r2" }),
-        entry("c", 60, { runId: "r3" }),
-      ],
-      [run("r1", 0, 5), run("r2", 6, 15), run("r3", 50, 60)],
-    );
+    const items = thread([run("r1", 0, 5), run("r2", 6, 15), run("r3", 50, 60)]);
     const work = items.filter((item) => item.type === "work");
     expect(work.map((block) => block.runs.map((line) => line.runId))).toEqual([
       ["r3"],
@@ -96,18 +62,24 @@ describe("buildThread", () => {
     expect(work[1]).toMatchObject({ startedAt: at(0), endedAt: at(15) });
   });
 
-  it("keeps runless entries as notes and digests, newest first", () => {
+  it("links an answer's run to the job its question was about", () => {
+    const job = "019a0000-0000-7000-8000-000000000001:a";
     const items = thread(
       [
-        entry("n1", 30, { kind: "system", summary: "Host restarted" }),
-        entry("d1", 10, { kind: "digest", summary: "Morning summary" }),
+        run("r1", 0, 3, {
+          taskType: "question.answered",
+          subjectType: "question",
+          subjectId: "q1",
+        }),
       ],
-      [],
+      {
+        questionJobs: new Map([["q1", job]]),
+        jobs: new Map([[job, { title: "ML Engineer", company: "Acme", score: 82 }]]),
+      },
     );
-    expect(items.map((item) => [item.type, item.id])).toEqual([
-      ["note", "n1"],
-      ["digest", "d1"],
-    ]);
+    expect(items[0]).toMatchObject({
+      runs: [{ subjectType: "job", subjectId: job, job: { company: "Acme" } }],
+    });
   });
 
   it("totals a sitting's searches and scores and names each applied job", () => {
@@ -119,11 +91,6 @@ describe("buildThread", () => {
     ]);
     const items = thread(
       [
-        entry("s", 5, { runId: "search" }),
-        entry("sc", 10, { runId: "score" }),
-        entry("ap", 15, { runId: "apply", subjectType: "job", subjectId: `${feed}:a` }),
-      ],
-      [
         run("search", 0, 5, { taskType: "search.discover", subjectType: "feed", subjectId: feed }),
         run("score", 6, 10, {
           taskType: "feed.score",
@@ -131,7 +98,11 @@ describe("buildThread", () => {
           subjectId: feed,
           payload: { minScore: 60, entries: [{ key: "a" }, { key: "b" }, { key: "c" }] },
         }),
-        run("apply", 11, 15, { taskType: "job.apply" }),
+        run("apply", 11, 15, {
+          taskType: "job.apply",
+          subjectType: "job",
+          subjectId: `${feed}:a`,
+        }),
       ],
       {
         jobs,

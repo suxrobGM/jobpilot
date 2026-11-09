@@ -1,6 +1,5 @@
 import { ErrorCodes } from "@jobpilot/contracts/errors";
 import {
-  type CreatePilotJournalInput,
   type PilotRun,
   type PilotRunResultInput,
   pilotRunSchema,
@@ -20,8 +19,6 @@ import { revertApplyingJobs } from "@/modules/feed/jobs/applying";
 import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import { parseJobRef } from "../job-subject";
 import { finishRequests, publishRequest } from "../requests/request-row";
-import { PilotJournalService } from "../thread/journal.service";
-import { writeJournalEntries } from "../thread/journal-entries";
 import { RUN_TTL_MS, startRun } from "./run-start";
 
 /** Counted from `startedAt`, so a stuck driver that keeps heartbeating still expires. */
@@ -33,14 +30,12 @@ function toPilotRun(row: PilotRunModel): PilotRun {
 
 const alreadyFinished = () => conflict("Run is already finished.", ErrorCodes.PILOT_CONFLICT);
 
-type JournalEntryInput = CreatePilotJournalInput["entries"][number];
-
 /** The agent's answer to work asked for in chat; done needs one. */
 function replyFromResult(run: PilotRunModel, body: PilotRunResultInput): string | null {
   if (!run.askedInChat) {
     return null;
   }
-  const reply = typeof body.detail?.reply === "string" ? body.detail.reply : null;
+  const reply = body.detail?.reply ?? null;
   // Closing without it would leave the user waiting on an answer with no error.
   if (body.outcome === "done" && reply === null) {
     throw badRequest("A done result for work asked in chat needs detail.reply.");
@@ -49,22 +44,19 @@ function replyFromResult(run: PilotRunModel, body: PilotRunResultInput): string 
 }
 
 interface CloseOptions {
-  /** Journaled under the run id in the same transaction, so a result never half-lands. */
-  entries?: JournalEntryInput[];
-  /** Posted as the pilot's message in the conversation. */
+  /** The agent's result line, stored on the run. */
+  summary?: string | null;
+  /** Posted as the pilot's message in the conversation, in the same transaction. */
   reply?: string | null;
 }
 
 @injectable()
 export class RunService {
-  constructor(
-    private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly journal = inject(PilotJournalService),
-  ) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
-  async start(userId: string, taskListVersion: string, taskId: string) {
+  async start(userId: string, taskId: string) {
     const { run, startedJob, requests } = await guardApply(this.prisma, userId, () =>
-      this.prisma.$transaction((tx) => startRun(tx, userId, taskListVersion, taskId)),
+      this.prisma.$transaction((tx) => startRun(tx, userId, taskId)),
     );
     if (startedJob) {
       publishJobUpdated(userId, startedJob);
@@ -147,23 +139,15 @@ export class RunService {
     return { ok: true as const };
   }
 
-  /** The host's cycle entry for this run carries its id as `runId`, so the two group together. */
+  /** A repeat call returns the finished run unchanged. */
   async recordResult(userId: string, id: string, body: PilotRunResultInput) {
     const existing = await this.findRun(userId, id);
     if (existing.finishedAt) {
       return toPilotRun(existing);
     }
 
-    const action: JournalEntryInput = {
-      kind: "action",
-      summary: body.summary,
-      subjectType: body.subjectType ?? existing.subjectType,
-      subjectId: body.subjectId ?? existing.subjectId,
-      detail: body.detail,
-    };
     const reply = replyFromResult(existing, body);
-    const run = await this.close(userId, existing, body.outcome, { entries: [action], reply });
-    // After the journal line, so a run.finished listener already sees the result.
+    const run = await this.close(userId, existing, body.outcome, { summary: body.summary, reply });
     publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });
     return run;
   }
@@ -184,37 +168,32 @@ export class RunService {
     userId: string,
     existing: PilotRunModel,
     outcome: PilotRunOutcome,
-    { entries = [], reply = null }: CloseOptions = {},
+    { summary = null, reply = null }: CloseOptions = {},
   ) {
     const runId = existing.id;
-    const { finished, journaled, requests, message } = await this.prisma.$transaction(
-      async (tx) => {
-        const now = new Date();
-        // Otherwise the job stays `applying` until the stale sweep.
-        if (outcome === "cancelled" && existing.taskType === "job.apply") {
-          await revertApplyingJobs(tx, userId, [parseJobRef(existing.payload)]);
-        }
-        const [row] = await tx.pilotRun.updateManyAndReturn({
-          where: { id: runId, userId, finishedAt: null },
-          data: { finishedAt: now, outcome },
-        });
-        if (!row) {
-          throw conflict("Run was finished concurrently.", ErrorCodes.PILOT_CONFLICT);
-        }
-        return {
-          finished: row,
-          journaled:
-            entries.length > 0 ? await writeJournalEntries(tx, userId, { runId, entries }) : [],
-          message: reply
-            ? await tx.pilotMessage.create({
-                data: { userId, author: "pilot", body: reply, runId },
-              })
-            : null,
-          requests: await finishRequests(tx, [runId], outcome, now),
-        };
-      },
-    );
-    await this.journal.publishAppended(userId, journaled);
+    const { finished, requests, message } = await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      // Otherwise the job stays `applying` until the stale sweep.
+      if (outcome === "cancelled" && existing.taskType === "job.apply") {
+        await revertApplyingJobs(tx, userId, [parseJobRef(existing.payload)]);
+      }
+      const [row] = await tx.pilotRun.updateManyAndReturn({
+        where: { id: runId, userId, finishedAt: null },
+        data: { finishedAt: now, outcome, summary },
+      });
+      if (!row) {
+        throw conflict("Run was finished concurrently.", ErrorCodes.PILOT_CONFLICT);
+      }
+      return {
+        finished: row,
+        message: reply
+          ? await tx.pilotMessage.create({
+              data: { userId, author: "pilot", body: reply, runId },
+            })
+          : null,
+        requests: await finishRequests(tx, [runId], outcome, now),
+      };
+    });
     for (const request of requests) {
       publishRequest(userId, request, "request.updated");
     }

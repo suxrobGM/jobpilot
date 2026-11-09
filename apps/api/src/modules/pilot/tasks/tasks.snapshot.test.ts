@@ -8,7 +8,6 @@ import { describe, expect, it } from "bun:test";
 
 const now = new Date();
 const snapshot: TaskList = {
-  version: "fe0893aa-7310-4ea6-bbcf-ef803bd4b70b",
   builtAt: now,
   expiresAt: new Date(now.getTime() + 60_000),
   tasks: [],
@@ -49,20 +48,14 @@ function service(row: Record<string, unknown> | null) {
 
 describe("TaskListService current snapshot", () => {
   it("returns the typed current snapshot with one read and no maintenance writes", async () => {
-    const fixture = service({
-      taskListSnapshot: snapshot,
-      taskListExpiresAt: snapshot.expiresAt,
-    });
+    const fixture = service({ taskList: snapshot });
 
     expect(await fixture.taskList.getCurrent("u1")).toEqual({ taskList: snapshot });
     expect(fixture.reads()).toBe(1);
   });
 
   it("returns no task list after the snapshot expires", async () => {
-    const fixture = service({
-      taskListSnapshot: snapshot,
-      taskListExpiresAt: new Date(now.getTime() - 1),
-    });
+    const fixture = service({ taskList: { ...snapshot, expiresAt: new Date(now.getTime() - 1) } });
 
     expect(await fixture.taskList.getCurrent("u1")).toEqual({ taskList: null });
   });

@@ -1,13 +1,24 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { AgentPresence } from "./agent-presence";
+import type { MessageService } from "./messages/message.service";
 import { PilotService } from "./pilot.service";
 import { describe, expect, it } from "bun:test";
 
 const offline = { isConnected: () => false } as unknown as AgentPresence;
 
+function fakeMessages() {
+  const posted: string[] = [];
+  const messages = {
+    postFromPilot: async (_userId: string, body: string) => {
+      posted.push(body);
+    },
+  } as unknown as MessageService;
+  return { messages, posted };
+}
+
 const stateRow = (over: Record<string, unknown>) => ({
   userId: "p1",
-  autopilot: false,
+  autopilotSince: null,
   config: {},
   lastCycleAt: null,
   nextWakeAt: null,
@@ -67,11 +78,13 @@ function stateService(openRun: OpenRun | null = null, savedConfig = {}) {
     userJobBoard: { findMany: async () => LINKED.map((domain) => ({ board: { domain } })) },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   };
+  const { messages, posted } = fakeMessages();
   return {
-    svc: new PilotService(db as unknown as PrismaClient, offline),
+    svc: new PilotService(db as unknown as PrismaClient, offline, messages),
     rec,
     runQueries,
     upserts,
+    posted,
   };
 }
 
@@ -118,6 +131,13 @@ describe("PilotService.recordCycle", () => {
     expect(state.lastCycleAt).toBeInstanceOf(Date);
     expect(state.nextWakeAt?.getTime()).toBeGreaterThanOrEqual(before + 1_800_000);
   });
+
+  it("posts the host's message to the user only when it sends one", async () => {
+    const { svc, posted } = stateService();
+    await svc.recordCycle("p1", { sleepSeconds: 60 });
+    await svc.recordCycle("p1", { sleepSeconds: 1800, message: "Taking a 30-minute break." });
+    expect(posted).toEqual(["Taking a 30-minute break."]);
+  });
 });
 
 describe("PilotService.updateSettings", () => {
@@ -142,15 +162,14 @@ describe("PilotService.getActivity", () => {
   const completedAt = new Date("2026-07-20T12:00:00Z");
 
   function activityService(state: { lastCycleAt: Date | null; nextWakeAt: Date | null } | null) {
-    const noMax = { _max: { createdAt: null, updatedAt: null } };
+    const noMax = { _max: { finishedAt: null, updatedAt: null } };
     const db = {
-      pilotRun: { findMany: async () => [] },
-      pilotJournalEntry: { aggregate: async () => noMax },
+      pilotRun: { findMany: async () => [], aggregate: async () => noMax },
       feed: { aggregate: async () => noMax },
       job: { aggregate: async () => noMax },
       pilotState: { findUnique: async () => state },
     };
-    return new PilotService(db as unknown as PrismaClient, offline);
+    return new PilotService(db as unknown as PrismaClient, offline, fakeMessages().messages);
   }
 
   // A stuck-recovery cycle plans no wake but still reports when it completed.

@@ -46,26 +46,25 @@ async function assertStillStartable(tx: Prisma.TransactionClient, userId: string
   }
 }
 
-/** The task as the live snapshot lists it. The no-op write locks the state row, serializing starts. */
-async function lockSnapshotTask(
+/** The task as the live list has it. The no-op write locks the state row, serializing starts. */
+async function lockListedTask(
   tx: Prisma.TransactionClient,
   userId: string,
-  taskListVersion: string,
   taskId: string,
 ): Promise<PilotTask> {
   const [locked] = await tx.pilotState.updateManyAndReturn({
-    where: { userId, taskListVersion, taskListExpiresAt: { gt: new Date() } },
-    data: { taskListVersion },
-    select: { taskListSnapshot: true },
+    where: { userId },
+    data: { userId },
+    select: { taskList: true },
   });
-  if (!locked?.taskListSnapshot) {
+  const taskList = locked?.taskList ? taskListSchema.parse(locked.taskList) : null;
+  if (!taskList || taskList.expiresAt <= new Date()) {
     throw conflict(
       "Task list is stale; refresh it before starting a run.",
       ErrorCodes.PILOT_CONFLICT,
     );
   }
-  const { tasks } = taskListSchema.parse(locked.taskListSnapshot);
-  const task = tasks.find((entry) => entry.id === taskId);
+  const task = taskList.tasks.find((entry) => entry.id === taskId);
   if (!task) {
     throw conflict("Task is no longer available.", ErrorCodes.PILOT_CONFLICT);
   }
@@ -73,13 +72,8 @@ async function lockSnapshotTask(
 }
 
 /** Opens a run on a snapshot task and hands it the requests waiting on the same subject. */
-export async function startRun(
-  tx: Prisma.TransactionClient,
-  userId: string,
-  taskListVersion: string,
-  taskId: string,
-) {
-  const task = await lockSnapshotTask(tx, userId, taskListVersion, taskId);
+export async function startRun(tx: Prisma.TransactionClient, userId: string, taskId: string) {
+  const task = await lockListedTask(tx, userId, taskId);
   const subject = {
     userId,
     taskType: task.taskType,

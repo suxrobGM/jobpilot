@@ -104,7 +104,7 @@ export class AdminService {
         ...pageSlice(query),
         select: {
           userId: true,
-          autopilot: true,
+          autopilotSince: true,
           lastCycleAt: true,
           cycleCount: true,
           user: { select: { email: true } },
@@ -140,7 +140,7 @@ export class AdminService {
     const items = rows.map((row) => ({
       userEmail: row.user.email,
       userId: row.userId,
-      autopilot: row.autopilot,
+      autopilot: row.autopilotSince !== null,
       lastCycleAt: row.lastCycleAt,
       cycleCount: row.cycleCount,
       openQuestions: openByUser.get(row.userId) ?? 0,

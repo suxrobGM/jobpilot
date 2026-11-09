@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 import { cursorPageSchema, cursorQuerySchema } from "../pagination";
 import { pilotChangeSchema } from "./change";
-import { pilotJournalEntrySchema } from "./journal";
 import { pilotMessageSchema } from "./message";
 import { pilotQuestionSchema } from "./question";
 import { pilotRequestSchema } from "./request";
@@ -54,12 +53,6 @@ const pilotThreadItemSchema = z.discriminatedUnion("type", [
     question: pilotQuestionSchema,
   }),
   z.object({
-    type: z.literal("digest"),
-    id: z.string(),
-    at: z.date(),
-    entry: pilotJournalEntrySchema,
-  }),
-  z.object({
     type: z.literal("change"),
     id: z.string(),
     at: z.date(),
@@ -77,17 +70,11 @@ const pilotThreadItemSchema = z.discriminatedUnion("type", [
     at: z.date(),
     request: pilotRequestSchema,
   }),
-  z.object({
-    type: z.literal("note"),
-    id: z.string(),
-    at: z.date(),
-    entry: pilotJournalEntrySchema,
-  }),
 ]);
 
 export const pilotThreadQuerySchema = cursorQuerySchema;
 
-/** Newest first; the cursor is a journal entry id. */
+/** Newest first; the cursor is a run id. */
 export const pilotThreadPageSchema = cursorPageSchema(pilotThreadItemSchema);
 
 export type PilotThreadJob = z.infer<typeof pilotThreadJobSchema>;
