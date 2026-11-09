@@ -14,7 +14,13 @@ interface ListCardProps {
 export function ListCard(props: ListCardProps): ReactElement {
   const { header, footer, children } = props;
   return (
-    <Card sx={{ overflow: "hidden" }}>
+    <Card
+      sx={(theme) => ({
+        overflow: "hidden",
+        // Phones: edge to edge, so rows get the width the page gutter and card frame took.
+        [theme.breakpoints.down("sm")]: { mx: -1.5, borderRadius: 0, borderInline: 0 },
+      })}
+    >
       {header}
       {children}
       {footer && (
