@@ -12,7 +12,7 @@ import {
 import { UPWORK_DOMAIN } from "@jobpilot/contracts/upwork";
 import { inject, injectable } from "@needle-di/core";
 import { DAY_MS } from "@/common/date/buckets";
-import { HttpError } from "@/common/errors";
+import { findOwned, HttpError } from "@/common/errors";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { ApplicationService } from "@/modules/application/application.service";
@@ -51,6 +51,19 @@ const PIPELINE_INCLUDE = {
   ...JOB_INCLUDE,
   feed: { select: { id: true, name: true, config: true } },
 } satisfies Prisma.JobInclude;
+
+type PipelineRow = Prisma.JobGetPayload<{ include: typeof PIPELINE_INCLUDE }>;
+
+/** `pilotMinScore` stands in for a feed with no bar of its own. */
+function toPipelineJob(row: PipelineRow, pilotMinScore: number, now: Date) {
+  const { feed, ...job } = row;
+  return {
+    ...toJob(job),
+    feed: { id: feed.id, name: feed.name },
+    minScore: feedConfigSchema.parse(feed.config).minScore ?? pilotMinScore,
+    stale: REVIEW_STATUSES.includes(row.status) && row.createdAt < staleCutoff(now),
+  };
+}
 
 function viewCounts(byStatus: Map<JobStatus, number>): Record<PipelineJobView, number> {
   const count = (view: PipelineJobView) =>
@@ -127,14 +140,22 @@ export class PipelineService {
       this.prisma.pilotState.findUnique({ where: { userId }, select: { config: true } }),
     ]);
     const { minScore } = pilotConfigSchema.parse(state?.config ?? {});
-    const cutoff = staleCutoff(now);
-    const items = rows.map(({ feed, ...row }) => ({
-      ...toJob(row),
-      feed: { id: feed.id, name: feed.name },
-      minScore: feedConfigSchema.parse(feed.config).minScore ?? minScore,
-      stale: REVIEW_STATUSES.includes(row.status) && row.createdAt < cutoff,
-    }));
+    const items = rows.map((row) => toPipelineJob(row, minScore, now));
     return paginate(items, query, total);
+  }
+
+  /** One job by id, whatever its status, for the job page the thread links to. */
+  async get(userId: string, id: string, now = new Date()) {
+    const [row, state] = await Promise.all([
+      findOwned(
+        (where) => this.prisma.job.findFirst({ where, include: PIPELINE_INCLUDE }),
+        { id, userId },
+        "Job",
+      ),
+      this.prisma.pilotState.findUnique({ where: { userId }, select: { config: true } }),
+    ]);
+    const { minScore } = pilotConfigSchema.parse(state?.config ?? {});
+    return toPipelineJob(row, minScore, now);
   }
 
   /** Needs you as refs only, for the always-mounted nav badge. */
@@ -242,12 +263,21 @@ export class PipelineService {
       this.feeds.ensure(userId, "links"),
       findRecentPostings(this.prisma, userId, normalized),
     ]);
-    const fresh = normalized.filter((url) => !existing.has(url));
-    if (fresh.length > 0) {
-      await this.prisma.job.createMany({
-        data: queuedJobRows(userId, feed.id, fresh),
-      });
+    const rows = queuedJobRows(
+      userId,
+      feed.id,
+      normalized.filter((url) => !existing.has(url)),
+    );
+    if (rows.length > 0) {
+      await this.prisma.job.createMany({ data: rows });
     }
-    return { feedId: feed.id, added: fresh.length, duplicates: [...existing] };
+    const added = new Map(
+      rows.map((row) => [row.url, { feedId: feed.id, key: row.key, status: "queued" as const }]),
+    );
+    const jobs = normalized.flatMap((url) => {
+      const ref = existing.get(url) ?? added.get(url);
+      return ref ? [{ url, ...ref }] : [];
+    });
+    return { feedId: feed.id, added: rows.length, duplicates: [...existing.keys()], jobs };
   }
 }

@@ -36,8 +36,6 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
     // How often a wait asks the server whether the run finished, in case its event was missed.
     private readonly TimeSpan checkInterval = checkInterval ?? TimeSpan.FromMinutes(2);
 
-    private bool holdReported;
-
     public int ConsecutiveRestarts { get; private set; }
 
     /// <summary>Sessions that died on their own mid-wait.</summary>
@@ -85,18 +83,11 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
         var now = time.GetUtcNow();
         if (HeldUntil(now) is { } until)
         {
-            if (!holdReported)
-            {
-                await api.WriteJournalAsync(JournalLines.Hold, ct);
-                holdReported = true;
-            }
-
             return until - now;
         }
 
-        holdReported = false;
         var task = taskList.Tasks[0];
-        var runId = (await api.StartRunAsync(task.Id, taskList.Version, ct))?.Id;
+        var runId = (await api.StartRunAsync(task.Id, ct))?.Id;
         if (runId is null)
         {
             // A lost race or the duplicate-apply guard; the next refresh moves past it.
@@ -117,7 +108,7 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
 
     private async Task<TimeSpan?> FinishEmptyAsync(int sleep, CancellationToken ct)
     {
-        await api.RecordCycleAsync(sleep, ct);
+        await api.RecordCycleAsync(sleep, null, ct);
         LastCycleAt = time.GetUtcNow();
         LastCycleStatus = CycleStatus.Empty;
         return TimeSpan.FromSeconds(sleep);
@@ -137,7 +128,7 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
             await api.ReportUsageAsync(runId, usage, ct);
         }
 
-        await api.RecordCycleAsync(sleep, ct);
+        await api.RecordCycleAsync(sleep, null, ct);
         var ok = posted && result.RunOutcome == "done";
 
         LastCycleAt = time.GetUtcNow();
@@ -152,22 +143,19 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
         var result = await WaitAsync(runId, wait, ResultTimeout, ct);
 
         // No server check between rungs: every unfinished wait has just checked whether the run finished.
-        (Directive Directive, string Report)[] rungs = [(Directive.CheckIn, JournalLines.CheckIn), (Directive.Skip, JournalLines.Skip)];
-        foreach (var (directive, report) in rungs)
+        foreach (var directive in (Directive[])[Directive.CheckIn, Directive.Skip])
         {
             if (result.IsFinal)
             {
                 return result;
             }
 
-            await api.WriteJournalAsync(report, ct);
             await agent.SendDirectiveAsync(directive, ct);
             result = await WaitAsync(runId, wait, CheckInGrace, ct);
         }
 
         if (!result.IsFinal)
         {
-            await api.WriteJournalAsync(JournalLines.Restart, ct);
             agent.Stop();
         }
 
@@ -187,19 +175,20 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
             if (++ConsecutiveExits >= BackoffThreshold)
             {
                 ConsecutiveExits = 0;
-                await BackOffAsync(JournalLines.ExitBackoff, ct);
+                await BackOffAsync(PilotMessages.ExitBackoff, ct);
             }
         }
         else if (++ConsecutiveRestarts >= BackoffThreshold)
         {
             ConsecutiveRestarts = 0;
-            await BackOffAsync(JournalLines.Backoff, ct);
+            await BackOffAsync(PilotMessages.Backoff, ct);
         }
     }
 
-    private async Task BackOffAsync(string journalLine, CancellationToken ct)
+    /// <summary>Reports the break as a cycle, so the user hears why and the web shows the next wake.</summary>
+    private async Task BackOffAsync(string message, CancellationToken ct)
     {
-        await api.WriteJournalAsync(journalLine, ct);
+        await api.RecordCycleAsync((int)BackoffDelay.TotalSeconds, message, ct);
         await Task.Delay(BackoffDelay, time, ct);
     }
 
@@ -238,12 +227,6 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
                     return result;
                 }
 
-                if (wait.Waited >= ResultTimeout && !wait.ExtensionReported)
-                {
-                    await api.WriteJournalAsync(JournalLines.Extend, ct);
-                    wait.ExtensionReported = true;
-                }
-
                 quiet = TimeSpan.Zero;
             }
             else if (quiet >= quietBudget || result.Kind is WaitKind.Stuck)
@@ -253,11 +236,9 @@ internal sealed class CycleRunner(IPilotAgent agent, IPilotApi api, TimeProvider
         }
     }
 
-    /// <summary>Shared by every wait of one run, so the cycle cap and the extension report count all of them.</summary>
+    /// <summary>Shared by every wait of one run, so the cycle cap counts all of them.</summary>
     private sealed class RunWait
     {
         public TimeSpan Waited { get; set; }
-
-        public bool ExtensionReported { get; set; }
     }
 }

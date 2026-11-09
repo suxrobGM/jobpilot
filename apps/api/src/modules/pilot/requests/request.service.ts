@@ -1,10 +1,12 @@
 import type { CreatePilotRequestInput } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
-import { conflict } from "@/common/errors";
+import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { type PilotRequestSource, PrismaClient } from "@/generated/prisma/client";
+import { moveStatus } from "@/modules/feed/jobs/job.service";
+import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import { dropTaskList } from "../tasks/snapshot";
-import { publishRequest, requestSubject } from "./request-row";
+import { publishRequest, requestSubject, toPilotRequest } from "./request-row";
 
 @injectable()
 export class RequestService {
@@ -16,21 +18,29 @@ export class RequestService {
       await this.approveJob(userId, input.payload.feedId, input.payload.jobKey);
     }
     const id = crypto.randomUUID();
-    const row = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.pilotRequest.create({
-        data: {
-          id,
+    const subject = requestSubject(input, id);
+    const payload = toInputJson(input.payload);
+    const { row, created } = await this.prisma.$transaction(async (tx) => {
+      // Asking twice for the same work runs it once.
+      const queued = await tx.pilotRequest.findFirst({
+        where: {
           userId,
           taskType: input.taskType,
-          payload: toInputJson(input.payload),
-          ...requestSubject(input, id),
-          source,
+          ...subject,
+          status: { in: ["pending", "running"] },
+          payload: { equals: payload },
         },
       });
+      if (queued) {
+        return { row: queued, created: false };
+      }
+      const row = await tx.pilotRequest.create({
+        data: { id, userId, taskType: input.taskType, payload, ...subject, source },
+      });
       await dropTaskList(tx, userId);
-      return created;
+      return { row, created: true };
     });
-    return publishRequest(userId, row, "request.created");
+    return created ? publishRequest(userId, row, "request.created") : toPilotRequest(row);
   }
 
   /** Only queued work stops; a running request ends with its run. */
@@ -49,20 +59,31 @@ export class RequestService {
     return publishRequest(userId, row, "request.updated");
   }
 
-  /** Applying is for approved jobs; a found one the user picks is approved on the way. */
+  /**
+   * The user asked for this job by name, so it overrides the pilot's own calls: a skip, a low
+   * score, a failure. Only an application already sent or in flight stops it; the duplicate guard
+   * at run start still catches the same posting applied elsewhere.
+   */
   private async approveJob(userId: string, feedId: string, key: string) {
-    const job = await this.prisma.job.findFirst({
-      where: { userId, feedId, key },
-      select: { status: true },
-    });
-    if (!job || !["pending", "approved"].includes(job.status)) {
-      throw conflict("This job can't be applied to from where it is now.");
+    const job = await findOwned(
+      (where) =>
+        this.prisma.job.findFirst({
+          where,
+          select: { feedId: true, key: true, url: true, title: true, company: true, status: true },
+        }),
+      { userId, feedId, key },
+      "Job",
+    );
+    if (job.status === "applied") {
+      throw conflict("You already applied to this job.");
     }
-    if (job.status === "pending") {
-      await this.prisma.job.updateMany({
-        where: { userId, feedId, key, status: "pending" },
-        data: { status: "approved" },
-      });
+    if (job.status === "applying") {
+      throw conflict("This job is being applied to right now.");
     }
+    if (job.status === "approved") {
+      return;
+    }
+    await moveStatus(this.prisma, userId, job, "approved");
+    publishJobUpdated(userId, { feedId, key, status: "approved" });
   }
 }

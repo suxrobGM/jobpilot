@@ -1,4 +1,5 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
+import { NOT_SETTLED } from "../../questions/settled-answers";
 import { GATHER_CAP, withoutConsumingRuns } from "../../runs/run-history";
 import type { GatherContext } from "./gather-context";
 
@@ -8,7 +9,7 @@ export async function gatherAnsweredQuestions(
 ): Promise<TaskPayload<"question.answered">[]> {
   const { prisma, userId } = ctx;
   const answered = await prisma.pilotQuestion.findMany({
-    where: { userId, status: "answered" },
+    where: { userId, status: "answered", ...NOT_SETTLED },
     orderBy: { answeredAt: "desc" },
     take: GATHER_CAP,
     select: {

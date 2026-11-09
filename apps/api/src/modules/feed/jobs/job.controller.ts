@@ -58,6 +58,15 @@ export const jobController = new Elysia({
         "Adds a discovered job to the feed and emits SSE updates. When the user already has the same normalized URL from the last 30 days, returns that job with duplicate: true and adds nothing.",
     },
   })
+  .get("/:id/jobs/:key", ({ user, params }) => jobs.get(user.id, params.id, params.key), {
+    params: jobParams,
+    response: jobSchema,
+    detail: {
+      summary: "Get feed job",
+      description:
+        "Returns one job of the feed, whatever its status. 404 when the feed has no such key.",
+    },
+  })
   .patch(
     "/:id/jobs/:key",
     ({ user, params, body }) => jobs.update(user.id, params.id, params.key, body),

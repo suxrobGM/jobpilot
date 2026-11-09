@@ -31,7 +31,7 @@ internal static class Builders
     public static CompletedCycle Completed(int? sleep) => new(DateTimeOffset.UtcNow, sleep);
 
     public static PilotTaskList TaskList(int tasks = 0, int sleep = 1800) =>
-        new([.. Enumerable.Range(1, tasks).Select(i => new PilotTask($"t{i}"))], "v1", sleep);
+        new([.. Enumerable.Range(1, tasks).Select(i => new PilotTask($"t{i}"))], sleep);
 
     // An interval at least as long as every wait makes each wait a single "wait" action.
     public static CycleRunner Runner(FakePilot pilot) => new(pilot, pilot, pilot.Time, TimeSpan.FromMinutes(20));
@@ -41,7 +41,6 @@ internal static class Builders
 
     public static PtyOptions SpawnOptions => new() { App = "claude", CommandLine = [], Cwd = ".", Cols = 80, Rows = 24 };
 
-    /// <summary>A started process over the given fake connection.</summary>
     public static PtyProcess StartedPty(FakePtyConnection connection)
     {
         var process = new PtyProcess(SpawnOptions, _ => connection, NullLogger.Instance);

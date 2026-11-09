@@ -1,4 +1,10 @@
-import type { CreatePilotRequestInput, PilotConfig, PilotTask } from "@jobpilot/contracts/pilot";
+import {
+  type CreatePilotRequestInput,
+  openRequestSchema,
+  type PilotConfig,
+  type PilotTask,
+} from "@jobpilot/contracts/pilot";
+import { z } from "zod/v4";
 import { parseRequest, publishRequest } from "../../requests/request-row";
 import { applyTask, discoveryBoard, SEARCH_MAX_PAGES } from "../build";
 import { makeTask, REQUEST_PRIORITY } from "../task-defs";
@@ -34,11 +40,11 @@ async function requestTask(
       return job && applyTask(job, false);
     }
     case "job.rescanSkipped": {
-      const { feedId, jobKeys } = input.payload;
+      const { feedId, jobKeys, minScore } = input.payload;
       const skippedCount =
         jobKeys?.length ??
         (await prisma.job.count({ where: { userId, feedId, status: "skipped" } }));
-      return makeTask("job.rescanSkipped", { feedId, skippedCount, jobKeys });
+      return makeTask("job.rescanSkipped", { feedId, skippedCount, jobKeys, minScore });
     }
     case "job.retryFailed": {
       const { feedId } = input.payload;
@@ -146,16 +152,31 @@ export async function gatherRequests(
   return tasks;
 }
 
-/** One reply to the newest user message that has none after it, so a burst gets one answer. */
+/** Requests the chat reply should know are already queued, oldest first. */
+async function openRequests(ctx: GatherContext) {
+  const rows = await ctx.prisma.pilotRequest.findMany({
+    where: { userId: ctx.userId, status: { in: ["pending", "running"] } },
+    orderBy: { createdAt: "asc" },
+    take: REQUEST_BATCH,
+    select: { taskType: true, status: true, payload: true },
+  });
+  return z.array(openRequestSchema).parse(rows);
+}
+
+/** One reply to the newest unanswered user message, so a burst gets one answer. */
 export async function gatherChat(ctx: GatherContext): Promise<PilotTask | null> {
   const { prisma, userId } = ctx;
   const newest = await prisma.pilotMessage.findFirst({
-    where: { userId },
+    where: { userId, author: "user", answeredAt: null },
     orderBy: { createdAt: "desc" },
-    select: { id: true, author: true },
+    select: { id: true },
   });
-  if (newest?.author !== "user") {
+  if (!newest) {
     return null;
   }
-  return makeTask("chat.reply", { messageId: newest.id });
+  const queued = await openRequests(ctx);
+  return makeTask("chat.reply", {
+    messageId: newest.id,
+    ...(queued.length > 0 && { openRequests: queued }),
+  });
 }

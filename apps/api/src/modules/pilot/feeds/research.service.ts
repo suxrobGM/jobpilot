@@ -13,12 +13,7 @@ export class ResearchService {
         select: {
           startedAt: true,
           outcome: true,
-          journalEntries: {
-            where: { kind: "action" },
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            select: { summary: true },
-          },
+          summary: true,
         },
       }),
       this.prisma.feed.findFirst({
@@ -26,15 +21,6 @@ export class ResearchService {
         select: { id: true },
       }),
     ]);
-    return {
-      lastRun: lastRun
-        ? {
-            startedAt: lastRun.startedAt,
-            outcome: lastRun.outcome,
-            summary: lastRun.journalEntries[0]?.summary ?? null,
-          }
-        : null,
-      feedId: feed?.id ?? null,
-    };
+    return { lastRun, feedId: feed?.id ?? null };
   }
 }

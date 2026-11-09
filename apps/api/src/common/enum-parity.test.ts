@@ -19,7 +19,6 @@ import {
   NETWORKING_MESSAGE_STATUSES,
 } from "@jobpilot/contracts/networking";
 import { PILOT_CHANGE_SOURCES, PILOT_CHANGE_STATUSES } from "@jobpilot/contracts/pilot/change";
-import { PILOT_JOURNAL_KINDS } from "@jobpilot/contracts/pilot/journal";
 import { PILOT_MESSAGE_AUTHORS } from "@jobpilot/contracts/pilot/message";
 import { PILOT_QUESTION_KINDS, PILOT_QUESTION_STATUSES } from "@jobpilot/contracts/pilot/question";
 import { PILOT_REQUEST_SOURCES, PILOT_REQUEST_STATUSES } from "@jobpilot/contracts/pilot/request";
@@ -69,7 +68,6 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   NetworkingChannel: NETWORKING_CHANNELS,
   NetworkingMessageStatus: NETWORKING_MESSAGE_STATUSES,
   OAuthProvider: OAUTH_PROVIDERS,
-  PilotJournalKind: PILOT_JOURNAL_KINDS,
   PilotQuestionKind: PILOT_QUESTION_KINDS,
   PilotQuestionStatus: PILOT_QUESTION_STATUSES,
   PilotChangeSource: PILOT_CHANGE_SOURCES,

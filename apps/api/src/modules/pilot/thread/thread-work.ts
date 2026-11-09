@@ -5,10 +5,7 @@ import type {
   PilotThreadSearchTally,
 } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
-import type {
-  PilotJournalEntry as PilotJournalEntryModel,
-  PilotRun as PilotRunModel,
-} from "@/generated/prisma/client";
+import type { PilotRun as PilotRunModel } from "@/generated/prisma/client";
 import type { JobRef } from "@/modules/feed/jobs/applying";
 import { jobSubjectId, parseJobSubject } from "../job-subject";
 
@@ -22,14 +19,34 @@ export type ThreadRunRow = Pick<
   | "subjectType"
   | "subjectId"
   | "title"
+  | "summary"
   | "outcome"
   | "startedAt"
   | "finishedAt"
   | "payload"
 >;
 
-/** A job the page's runs touched, keyed by its subject id. */
-export type ThreadJobs = Map<string, PilotThreadJob>;
+/** A job the page touched; `appliedAt` stays server-side, to tell which run applied. */
+export interface ThreadJob {
+  job: PilotThreadJob;
+  appliedAt: Date | null;
+}
+
+/** Keyed by job subject id. */
+export type ThreadJobs = Map<string, ThreadJob>;
+
+/** Only the run the application landed in applied; an earlier skip of the same job didn't. */
+function appliedDuring(run: ThreadRunRow, found: ThreadJob | undefined): boolean {
+  const appliedAt = found?.appliedAt;
+  if (run.taskType !== "job.apply" || found?.job.status !== "applied" || !appliedAt) {
+    return false;
+  }
+  const finishedAt = run.finishedAt ?? appliedAt;
+  return appliedAt >= run.startedAt && appliedAt <= finishedAt;
+}
+
+/** Answered questions' job subjects by question id, so an answer's run links to its job. */
+export type QuestionJobs = ReadonlyMap<string, string>;
 
 /** A job a search run created, for counting what each run found. */
 export interface DiscoveredJob {
@@ -58,14 +75,29 @@ function scoredRefs(run: ThreadRunRow): { refs: JobRef[]; minScore: number } | n
   return { refs, minScore: parsed.data.minScore };
 }
 
+/** The job a run worked: its own subject, or for an answer's run, the question's. */
+function runJobSubject(run: ThreadRunRow, questionJobs: QuestionJobs): string | null {
+  if (run.subjectType === "job") {
+    return run.subjectId;
+  }
+  if (run.taskType === "question.answered") {
+    return questionJobs.get(run.subjectId) ?? null;
+  }
+  return null;
+}
+
 const uuid = z.uuid();
 
-/** Job refs to look up: each run's job subject and each scored job. Bad ids are skipped, not thrown. */
-export function threadJobRefs(runs: ThreadRunRow[], entries: PilotJournalEntryModel[]): JobRef[] {
+/** Jobs the runs, scores and requests name; bad ids are skipped, not thrown. */
+export function threadJobRefs(
+  runs: ThreadRunRow[],
+  questionJobs: QuestionJobs,
+  requestJobs: (string | null)[],
+): JobRef[] {
   const subjects = new Set<string>();
-  for (const item of [...runs, ...entries]) {
-    if (item.subjectType === "job" && item.subjectId?.includes(":")) {
-      subjects.add(item.subjectId);
+  for (const subject of [...requestJobs, ...runs.map((run) => runJobSubject(run, questionJobs))]) {
+    if (subject?.includes(":")) {
+      subjects.add(subject);
     }
   }
   for (const run of runs) {
@@ -76,29 +108,26 @@ export function threadJobRefs(runs: ThreadRunRow[], entries: PilotJournalEntryMo
   return [...subjects].map(parseJobSubject).filter((ref) => uuid.safeParse(ref.feedId).success);
 }
 
-/** The run's line, from entries oldest first: its newest action entry is the result summary `recordResult` journals. */
 export function toRunLine(
   run: ThreadRunRow,
-  entries: PilotJournalEntryModel[],
   jobs: ThreadJobs,
+  questionJobs: QuestionJobs,
 ): TimedRun {
-  const newest = entries[entries.length - 1];
-  const result = entries.filter((entry) => entry.kind === "action").at(-1) ?? newest;
-  const subjectType = result.subjectType ?? run.subjectType;
-  const subjectId = result.subjectId ?? run.subjectId;
-  const job = subjectType === "job" && subjectId ? (jobs.get(subjectId) ?? null) : null;
+  const jobSubject = runJobSubject(run, questionJobs);
+  const found = jobSubject ? jobs.get(jobSubject) : undefined;
   return {
     row: run,
     line: {
       runId: run.id,
       taskType: run.taskType,
       title: run.title,
-      summary: result.summary,
+      summary: run.summary ?? run.title,
       outcome: run.outcome,
-      subjectType,
-      subjectId,
-      job,
-      finishedAt: run.finishedAt ?? newest.createdAt,
+      subjectType: jobSubject ? "job" : run.subjectType,
+      subjectId: jobSubject ?? run.subjectId,
+      job: found?.job ?? null,
+      applied: appliedDuring(run, found),
+      finishedAt: run.finishedAt ?? run.startedAt,
     },
   };
 }
@@ -137,7 +166,7 @@ function tallySearches(
     }
     counted = true;
     for (const ref of scoring.refs) {
-      const job = jobs.get(jobSubjectId(ref));
+      const job = jobs.get(jobSubjectId(ref))?.job;
       if (job?.score == null) {
         continue;
       }

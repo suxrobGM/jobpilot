@@ -14,6 +14,8 @@ export const pilotMessageSchema = z.object({
   /** Markdown when the pilot wrote it. */
   body: z.string(),
   runId: z.uuid().nullable(),
+  /** User messages only: when a chat reply answered it. */
+  answeredAt: z.date().nullable(),
   createdAt: z.date(),
 });
 

@@ -68,17 +68,7 @@ enum PilotQuestionStatus {
   @@map("pilot_question_status")
 }
 
-enum PilotJournalKind {
-  action
-  question
-  system
-  digest
-  correction
-
-  @@map("pilot_journal_kind")
-}
-
-// What a run, question or journal entry is about. `subjectId` stays text: it holds ids and keys
+// What a run, question or request is about. `subjectId` stays text: it holds ids and keys
 // like `inbox` or `<feedId>:<jobKey>`.
 enum PilotSubjectType {
   job
@@ -99,25 +89,25 @@ enum PilotSubjectType {
 }
 
 model PilotState {
-  userId            String    @id @map("user_id") @db.Uuid
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // Autonomous work runs only while on; requests, chat and answered questions always run.
-  autopilot         Boolean   @default(false)
-  // Set when autopilot turns on; `cap.unused` waits for a week of it.
-  autopilotSince    DateTime? @map("autopilot_since") @db.Timestamptz(3)
+  userId           String    @id @map("user_id") @db.Uuid
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Autopilot is on while set. Autonomous work runs only then; requests, chat and answered
+  // questions always run. `cap.unused` waits for a week of it.
+  autopilotSince   DateTime? @map("autopilot_since") @db.Timestamptz(3)
   // Rules and settings; `pilotConfigSchema` parses it.
-  config            Json      @default("{}")
-  taskListVersion   String?   @map("task_list_version")
-  taskListExpiresAt DateTime? @map("task_list_expires_at") @db.Timestamptz(3)
-  taskListSnapshot  Json?     @map("task_list_snapshot")
-  lastCycleAt       DateTime? @map("last_cycle_at") @db.Timestamptz(3)
-  // When the host plans its next task list check; idle checks write here, not to the journal.
-  nextWakeAt        DateTime? @map("next_wake_at") @db.Timestamptz(3)
-  cycleCount        Int       @default(0) @map("cycle_count")
+  config           Json      @default("{}")
+  // The live task list; `taskListSchema` parses it, and its `expiresAt` says when it goes stale.
+  taskList         Json?     @map("task_list")
+  lastCycleAt      DateTime? @map("last_cycle_at") @db.Timestamptz(3)
+  // When the host plans its next task list check.
+  nextWakeAt       DateTime? @map("next_wake_at") @db.Timestamptz(3)
+  cycleCount       Int       @default(0) @map("cycle_count")
+  // The last morning digest, so one goes out per day.
+  digestAt         DateTime? @map("digest_at") @db.Timestamptz(3)
   // Notice key to the ISO time it may show again.
-  dismissedNotices  Json      @default("{}") @map("dismissed_notices")
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  dismissedNotices Json      @default("{}") @map("dismissed_notices")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("pilot_states")
 }
@@ -137,6 +127,8 @@ model PilotRun {
   expiresAt        DateTime         @map("expires_at") @db.Timestamptz(3)
   finishedAt       DateTime?        @map("finished_at") @db.Timestamptz(3)
   outcome          PilotRunOutcome?
+  // The agent's one-line result; null for runs that closed without one (cancelled, expired).
+  summary          String?
   // The run picked up work the user asked for in chat, so it answers there.
   askedInChat      Boolean          @default(false) @map("asked_in_chat")
   // Null until the host reports the usage of the cycle that started this run.
@@ -146,12 +138,12 @@ model PilotRun {
   cacheReadTokens  Int              @default(0) @map("cache_read_tokens")
   cacheWriteTokens Int              @default(0) @map("cache_write_tokens")
 
-  journalEntries PilotJournalEntry[]
-  changes        PilotChange[]
-  messages       PilotMessage[]
-  requests       PilotRequest[]
+  changes  PilotChange[]
+  messages PilotMessage[]
+  requests PilotRequest[]
 
   @@index([userId, subjectType, subjectId])
+  @@index([userId, finishedAt])
   @@index([finishedAt])
   // Partial indexes live in the migration SQL: open runs by (userId, expiresAt), and one open run per
   // (userId, subjectType, subjectId). Finished rows stay as history for the retry damper.
@@ -178,27 +170,6 @@ model PilotQuestion {
   @@index([userId, status])
   @@index([status, expiresAt])
   @@map("pilot_questions")
-}
-
-model PilotJournalEntry {
-  id          String            @id @default(uuid(7)) @db.Uuid
-  userId      String            @map("user_id") @db.Uuid
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // The run whose cycle wrote this entry.
-  runId       String?           @map("run_id") @db.Uuid
-  run         PilotRun?         @relation(fields: [runId], references: [id], onDelete: SetNull)
-  kind        PilotJournalKind
-  summary     String
-  detail      Json              @default("{}")
-  subjectType PilotSubjectType? @map("subject_type")
-  subjectId   String?           @map("subject_id")
-  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-
-  @@index([userId, createdAt])
-  @@index([userId, kind, createdAt])
-  @@index([createdAt])
-  @@index([runId])
-  @@map("pilot_journal_entries")
 }
 
 /**
@@ -232,12 +203,15 @@ model PilotMessage {
   id        String             @id @default(uuid(7)) @db.Uuid
   userId    String             @map("user_id") @db.Uuid
   user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  author    PilotMessageAuthor
-  body      String
-  // The chat.reply run that wrote a pilot message.
-  runId     String?            @map("run_id") @db.Uuid
-  run       PilotRun?          @relation(fields: [runId], references: [id], onDelete: SetNull)
-  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  author     PilotMessageAuthor
+  body       String
+  // The run that wrote a pilot message: a chat reply, or a report on work asked for in chat.
+  runId      String?            @map("run_id") @db.Uuid
+  run        PilotRun?          @relation(fields: [runId], references: [id], onDelete: SetNull)
+  // User messages only: set when a chat.reply run that started after it finishes. A run's report
+  // never answers the user, so it can't swallow a message sent while the run worked.
+  answeredAt DateTime?          @map("answered_at") @db.Timestamptz(3)
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([userId, createdAt])
   @@index([runId])

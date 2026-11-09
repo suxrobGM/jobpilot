@@ -41,7 +41,7 @@ public class CycleRunnerTests
     }
 
     [Fact]
-    public async Task Run_HoldsNewRuns_WhileTheUserTypes_AndSaysSoOnce()
+    public async Task Run_HoldsNewRuns_WhileTheUserTypes()
     {
         var pilot = new FakePilot { LastUserInputAt = DateTimeOffset.UtcNow };
         var runner = Runner(pilot);
@@ -52,7 +52,6 @@ public class CycleRunnerTests
         Assert.DoesNotContain("cycle", pilot.Actions);
         Assert.InRange(first!.Value, TimeSpan.FromMinutes(2), CycleRunner.HoldWindow);
         Assert.NotNull(second);
-        Assert.Equal([JournalLines.Hold], pilot.Reports);
         Assert.NotNull(runner.HeldUntil(DateTimeOffset.UtcNow));
     }
 

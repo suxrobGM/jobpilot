@@ -47,18 +47,28 @@ describe("buildTaskList and autopilot", () => {
 });
 
 describe("gatherChat", () => {
-  const chat = (newest: { id: string; author: "user" | "pilot" } | null) => {
-    const prisma = { pilotMessage: { findFirst: async () => newest } } as unknown as PrismaClient;
+  const chat = (newestUnanswered: { id: string } | null, open: Record<string, unknown>[] = []) => {
+    const prisma = {
+      pilotMessage: { findFirst: async () => newestUnanswered },
+      pilotRequest: { findMany: async () => open },
+    } as unknown as PrismaClient;
     return gatherChat({ prisma, userId: "u1", now: new Date() });
   };
 
-  it("answers the newest user message once, however many came before it", async () => {
-    const task = await chat({ id: MESSAGE_ID, author: "user" });
-    expect(task).toMatchObject({ taskType: "chat.reply", payload: { messageId: MESSAGE_ID } });
+  it("answers the newest unanswered message, telling the reply what is already queued", async () => {
+    const queued = {
+      taskType: "job.apply",
+      status: "pending",
+      payload: { feedId: "f1", jobKey: "k1" },
+    };
+    const task = await chat({ id: MESSAGE_ID }, [queued]);
+    expect(task).toMatchObject({
+      taskType: "chat.reply",
+      payload: { messageId: MESSAGE_ID, openRequests: [queued] },
+    });
   });
 
-  it("waits when the pilot spoke last", async () => {
-    expect(await chat({ id: MESSAGE_ID, author: "pilot" })).toBeNull();
+  it("waits when every message is answered", async () => {
     expect(await chat(null)).toBeNull();
   });
 });

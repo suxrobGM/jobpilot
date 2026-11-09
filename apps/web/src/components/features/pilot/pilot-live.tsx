@@ -7,14 +7,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { pilotQueries, pipelineQueries } from "@/api/queries";
 import { invalidateSoon, useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import { refetchThread } from "./home/thread/thread-cache";
-import { prependJournalEntry, refetchJournal } from "./journal/journal-cache";
 import { appendRunSteps } from "./steps/steps-cache";
 
 const STATE_KEY = pilotQueries.state().queryKey;
 // Never `pilot.all`: it would rebuild the task list.
 const RUN_KEYS = [STATE_KEY, pilotQueries.jobAlerts().queryKey, pilotQueries.research().queryKey];
+// Only finished runs are listed; state changes too, since the host reports tokens after finishing.
+const FINISHED_KEYS = [...RUN_KEYS, pilotQueries.runHistoryAll];
 const RECONNECT_KEYS = [
   STATE_KEY,
+  pilotQueries.runHistoryAll,
   pilotQueries.questionsAll,
   pilotQueries.changesAll,
   pilotQueries.searches().queryKey,
@@ -34,7 +36,7 @@ export function PilotLive(): ReactNode {
 
   useLiveInvalidation(pilotChannel, null, {
     on: {
-      "state.changed": RUN_KEYS,
+      "state.changed": FINISHED_KEYS,
       "agent.presence": (event) =>
         queryClient.setQueryData<PilotState>(
           STATE_KEY,
@@ -43,15 +45,10 @@ export function PilotLive(): ReactNode {
       "run.started": () => invalidate(RUN_KEYS),
       "run.finished": () =>
         invalidate([
-          ...RUN_KEYS,
+          ...FINISHED_KEYS,
           pilotQueries.searches().queryKey,
           pilotQueries.notices().queryKey,
         ]),
-      // Written straight into the cache rather than refetched.
-      "journal.appended": (event) => {
-        prependJournalEntry(queryClient, event.entry);
-        refetchThread(queryClient);
-      },
       "question.created": () => invalidate([pilotQueries.questionsAll]),
       "question.answered": () => invalidate([pilotQueries.questionsAll]),
       "run.steps": (event) => appendRunSteps(queryClient, event.runId, event.steps),
@@ -69,7 +66,6 @@ export function PilotLive(): ReactNode {
         ]),
     },
     onReconnect: () => {
-      refetchJournal(queryClient);
       refetchThread(queryClient);
       for (const queryKey of RECONNECT_KEYS) {
         invalidateSoon(queryClient, queryKey);

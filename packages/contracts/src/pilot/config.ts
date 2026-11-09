@@ -29,7 +29,6 @@ const pilotRulesSchema = z.object({
   preferCapExempt: z.boolean().default(false),
 });
 
-/** How the pilot runs. */
 const pilotSettingsSchema = z.object({
   boards: z.array(z.string()).default([]),
   checkIntervalMinutes: z.number().int().min(5).default(30),
@@ -66,6 +65,8 @@ export const pilotStateSchema = z.object({
   networkingSentToday: z.number().int(),
   // A host holds the event stream open; devices that can't probe it locally see it runs.
   agentConnected: z.boolean(),
+  // The API refused the user's agent as too old in the last few minutes.
+  agentOutdated: z.boolean(),
   // Requests no run has picked up yet.
   pendingRequests: z.number().int(),
   // The newest unfinished, unexpired run.

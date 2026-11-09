@@ -1,15 +1,7 @@
 import { jobStatusSchema } from "@jobpilot/contracts/feed";
-import {
-  PILOT_RUN_OUTCOMES,
-  pilotJournalEntrySchema,
-  tokenUsageSchema,
-} from "@jobpilot/contracts/pilot";
+import { PILOT_RUN_OUTCOMES, tokenUsageSchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { APPLIED_DUPLICATE_WINDOW_DAYS } from "@/modules/scoring/applied-duplicates";
-
-export const createPilotJournalResponseSchema = z.object({
-  items: z.array(pilotJournalEntrySchema),
-});
 
 export const pilotCostSchema = z.object({
   items: z.array(

@@ -14,7 +14,6 @@ public sealed class PilotEventListenerTests
     [Theory]
     [InlineData("""{"type":"question.answered","question":{}}""", true)]
     [InlineData("""{"type":"state.changed","state":{}}""", true)]
-    [InlineData("""{"type":"journal.appended","entry":{}}""", false)]
     [InlineData("""{"type":"question.created","question":{}}""", false)]
     [InlineData("""{"type":"message.created","message":{}}""", true)]
     [InlineData("""{"type":"request.created","request":{}}""", true)]
@@ -112,7 +111,7 @@ public sealed class PilotEventListenerTests
         {
             Handler = new FakeSseHandler { Status = status };
             Store = temp.PairingStore();
-            var api = new PilotApi(new HttpClient(Handler), Store, NullLogger<PilotApi>.Instance);
+            var api = new PilotApi(new HttpClient(Handler), Store, new FakeHostSelfUpdate(), NullLogger<PilotApi>.Instance);
             listener = new PilotEventListener(Store, api, Pilot, WakeSignal, NullLogger<PilotEventListener>.Instance);
         }
 

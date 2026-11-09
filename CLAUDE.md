@@ -7,7 +7,9 @@ Playwright. Dev ports: web `:4100`, API `:4101`, PTY host `:4102`.
 Auth: the web signs in with an opaque session (httpOnly `session` cookie, a row in `auth_tokens`).
 It fetches the user's terminal token via `POST /api/auth/tokens/terminal` and hands
 it to the PTY host, which sets `JOBPILOT_API_TOKEN`. Skills call the API through
-`plugin/bin/jobpilot-api`, which sends it as `Authorization: Bearer`.
+`plugin/bin/jobpilot-api`, which sends it as `Authorization: Bearer`. Every bearer call (host and
+skills) also sends `x-jobpilot-version`; the API answers 426 below `MIN_AGENT_VERSION`
+(`apps/api/src/common/middleware/agent-version.ts`). Raise it when a release removes a route.
 
 ## Layout
 

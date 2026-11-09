@@ -7,7 +7,7 @@ import { pilotQueries } from "@/api/queries";
 import { QuerySection } from "@/components/ui/feedback";
 import { LiveTurn } from "../now/live-turn";
 import { SetupTurn } from "../now/setup-turn";
-import { collapseRepeats, rowKey } from "./thread-folds";
+import { rowKey } from "./thread-folds";
 import { ThreadRows } from "./thread-rows";
 
 /** The reading column of the thread, composer included. */
@@ -55,10 +55,9 @@ export function Thread(): ReactElement {
   const selfScrolled = useRef(false);
 
   const items = (query.data?.pages ?? []).flatMap((page) => page.items).reverse();
-  const rows = collapseRepeats(items);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
 
-  const firstKey = rows[0] ? rowKey(rows[0].item) : null;
+  const firstKey = items[0] ? rowKey(items[0]) : null;
 
   const loadEarlier = (): void => {
     const box = scrollRef.current;
@@ -152,7 +151,7 @@ export function Thread(): ReactElement {
           isEmpty={items.length === 0}
           empty={<Greeting />}
         >
-          <ThreadRows rows={rows} />
+          <ThreadRows items={items} />
         </QuerySection>
         <SetupTurn />
         <LiveTurn />

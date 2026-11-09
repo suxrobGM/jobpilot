@@ -12,7 +12,7 @@ internal sealed class FakePilot : IPilotAgent, IPilotApi
     // The loop records from a background thread while the test asserts, so the logs are read as snapshots.
     private readonly Lock sync = new();
     private readonly List<string> actions = [];
-    private readonly List<string> reports = [];
+    private readonly List<string> messages = [];
     private readonly List<string> cycles = [];
     private readonly List<string> cancelledRuns = [];
     private readonly List<string> usageReports = [];
@@ -26,7 +26,7 @@ internal sealed class FakePilot : IPilotAgent, IPilotApi
 
     public List<string> Actions => Snapshot(actions);
 
-    public List<string> Reports => Snapshot(reports);
+    public List<string> Messages => Snapshot(messages);
 
     /// <summary>The recorded cycles, as "runId/sleep" after a run ended, or "idle/sleep" for a cycle without one.</summary>
     public List<string> Cycles => Snapshot(cycles);
@@ -147,19 +147,9 @@ internal sealed class FakePilot : IPilotAgent, IPilotApi
         }
     }
 
-    public Task WriteJournalAsync(string summary, CancellationToken ct)
-    {
-        lock (sync)
-        {
-            reports.Add(summary);
-        }
-
-        return Task.CompletedTask;
-    }
-
     public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) => Task.FromResult(TaskList);
 
-    public Task<PilotRun?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct) =>
+    public Task<PilotRun?> StartRunAsync(string taskId, CancellationToken ct) =>
         Task.FromResult(StartedRunId is { } id ? new PilotRun(id, null, null) : null);
 
     public Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct) => Task.FromResult(Run);
@@ -189,12 +179,16 @@ internal sealed class FakePilot : IPilotAgent, IPilotApi
     public Task<HttpResponseMessage?> OpenEventsAsync(PilotPairing pairing, CancellationToken ct) =>
         Task.FromResult<HttpResponseMessage?>(null);
 
-    public Task RecordCycleAsync(int sleepSeconds, CancellationToken ct)
+    public Task RecordCycleAsync(int sleepSeconds, string? message, CancellationToken ct)
     {
         lock (sync)
         {
             cycles.Add($"{endedRun ?? "idle"}/{sleepSeconds}");
             endedRun = null;
+            if (message is not null)
+            {
+                messages.Add(message);
+            }
         }
 
         return Task.CompletedTask;

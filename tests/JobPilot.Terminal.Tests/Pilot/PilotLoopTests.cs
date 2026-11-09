@@ -145,7 +145,6 @@ public sealed class PilotLoopTests : IAsyncLifetime
         await loop.StartAsync(CancellationToken.None);
 
         await TestWait.Until(() => CyclesSent == 1);
-        Assert.Contains(JournalLines.Resume, pilot.Reports);
     }
 
     [Fact]
@@ -157,7 +156,6 @@ public sealed class PilotLoopTests : IAsyncLifetime
         await loop.StartAsync(CancellationToken.None);
 
         await TestWait.Until(() => CyclesSent == 1);
-        Assert.Contains(pilot.Reports, r => r.StartsWith(JournalLines.Resume, StringComparison.Ordinal) && r.Contains("planned break"));
         var breakSleep = pilot.Actions.FindIndex(a => a.StartsWith("sleep:", StringComparison.Ordinal) && int.Parse(a["sleep:".Length..]) > 60);
         Assert.InRange(breakSleep, 0, pilot.Actions.IndexOf("cycle") - 1);
     }

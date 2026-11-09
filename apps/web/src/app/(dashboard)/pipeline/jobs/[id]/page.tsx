@@ -1,27 +1,27 @@
 import { type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
-import { ParkedJobPage } from "@/components/features/pilot";
+import { JobPage } from "@/components/features/pipeline";
 import { DetailSkeleton } from "@/components/ui/feedback";
 import { PageShell } from "@/components/ui/layout";
 
-export const metadata: Metadata = { title: "Parked job" };
+export const metadata: Metadata = { title: "Job" };
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default function PilotJobPage(props: PageProps): ReactElement {
+export default function PipelineJobPage(props: PageProps): ReactElement {
   return (
     <PageShell maxWidth="md">
       <Suspense fallback={<DetailSkeleton heights={[120, 320]} />}>
-        <ParkedJob params={props.params} />
+        <Job params={props.params} />
       </Suspense>
     </PageShell>
   );
 }
 
-async function ParkedJob(props: PageProps): Promise<ReactElement> {
+async function Job(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
 
-  return <ParkedJobPage jobId={id} />;
+  return <JobPage jobId={id} />;
 }

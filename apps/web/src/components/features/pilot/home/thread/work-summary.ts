@@ -16,7 +16,7 @@ export function shownRuns(item: WorkItem): PilotThreadRun[] {
 }
 
 export function isApplied(run: PilotThreadRun): boolean {
-  return run.taskType === "job.apply" && run.outcome === "done" && run.job !== null;
+  return run.applied;
 }
 
 function jobWithScore(job: PilotThreadJob): string {

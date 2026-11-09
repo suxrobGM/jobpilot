@@ -1,18 +1,21 @@
 import { z } from "zod/v4";
+import { jobStatusSchema } from "../feed";
 import { cursorPageSchema, cursorQuerySchema } from "../pagination";
 import { pilotChangeSchema } from "./change";
-import { pilotJournalEntrySchema } from "./journal";
 import { pilotMessageSchema } from "./message";
 import { pilotQuestionSchema } from "./question";
 import { pilotRequestSchema } from "./request";
 import { PILOT_RUN_OUTCOMES } from "./run";
 import { pilotSubjectTypeSchema } from "./tasks";
 
-/** The job a run touched, read live so a rescored job shows its current score. */
+/** The job a run touched, read live so a rescored job shows its current score and status. */
 const pilotThreadJobSchema = z.object({
+  id: z.uuid(),
   title: z.string(),
   company: z.string(),
   score: z.number().int().nullable(),
+  status: jobStatusSchema,
+  applicationId: z.uuid().nullable(),
 });
 
 const pilotThreadRunSchema = z.object({
@@ -24,6 +27,8 @@ const pilotThreadRunSchema = z.object({
   subjectType: pilotSubjectTypeSchema.nullable(),
   subjectId: z.string().nullable(),
   job: pilotThreadJobSchema.nullable(),
+  // A job.apply run that applied: the job's application landed during this run.
+  applied: z.boolean(),
   finishedAt: z.date(),
 });
 
@@ -54,12 +59,6 @@ const pilotThreadItemSchema = z.discriminatedUnion("type", [
     question: pilotQuestionSchema,
   }),
   z.object({
-    type: z.literal("digest"),
-    id: z.string(),
-    at: z.date(),
-    entry: pilotJournalEntrySchema,
-  }),
-  z.object({
     type: z.literal("change"),
     id: z.string(),
     at: z.date(),
@@ -76,18 +75,14 @@ const pilotThreadItemSchema = z.discriminatedUnion("type", [
     id: z.string(),
     at: z.date(),
     request: pilotRequestSchema,
-  }),
-  z.object({
-    type: z.literal("note"),
-    id: z.string(),
-    at: z.date(),
-    entry: pilotJournalEntrySchema,
+    // The job a job.apply request named, so the row can say how it went.
+    job: pilotThreadJobSchema.nullable(),
   }),
 ]);
 
 export const pilotThreadQuerySchema = cursorQuerySchema;
 
-/** Newest first; the cursor is a journal entry id. */
+/** Newest first; the cursor is a run id. */
 export const pilotThreadPageSchema = cursorPageSchema(pilotThreadItemSchema);
 
 export type PilotThreadJob = z.infer<typeof pilotThreadJobSchema>;

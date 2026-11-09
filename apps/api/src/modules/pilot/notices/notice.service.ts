@@ -43,7 +43,6 @@ export class NoticeService {
       where: { userId },
       select: {
         config: true,
-        autopilot: true,
         autopilotSince: true,
         dismissedNotices: true,
       },
@@ -51,7 +50,7 @@ export class NoticeService {
     const dismissed = dismissedNoticesSchema.parse(state?.dismissedNotices ?? {});
     const facts = await this.gatherFacts(userId, now, {
       config: pilotConfigSchema.parse(state?.config ?? {}),
-      autopilotSince: state?.autopilot ? (state.autopilotSince ?? null) : null,
+      autopilotSince: state?.autopilotSince ?? null,
     });
     return buildNotices(facts, now).filter((notice) => {
       const until = dismissed[notice.key];

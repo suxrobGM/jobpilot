@@ -11,7 +11,7 @@ A skip needs one of these reasons, worded exactly:
   - `clearance`: `Active security clearance required`.
 - `Deal-breaker: <rule>`: the posting clearly states something in `GET /api/pilot`
   `config.dealBreakers`.
-- `CAPTCHA - apply manually via the apply skill` and `Payment required`: only while applying.
+- `Payment required`: only while applying.
 
 The fit score reads `requirements` and `descriptionExcerpt` from the brief, so fill them.
 

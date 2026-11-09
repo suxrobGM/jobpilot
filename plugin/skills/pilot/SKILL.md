@@ -51,7 +51,6 @@ jobpilot-api POST /api/pilot/runs/$RUN_ID/result --data @"$JOBPILOT_TEMP/result.
 - `detail.reply`: required when the run has `askedInChat: true` and the outcome is `done`. Short
   markdown in plain words: what you found or did and what deserves attention, not run stats. It
   becomes your message in the chat.
-- `subjectType` / `subjectId`: only when they differ from the run's.
 
 A `400` names the bad field: fix it and post again. Then stop.
 

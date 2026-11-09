@@ -2,6 +2,7 @@
 // Calls the JobPilot API as the session's user. Node's fetch does TLS through OpenSSL, so it works
 // inside the Codex Windows sandbox, where Schannel-based HTTP clients cannot get credentials.
 import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const USAGE = `usage: jobpilot-api <METHOD> <path> [--query key=value]... [--data <json>|@<file>|-] [--out <file>]
 
@@ -11,6 +12,12 @@ const USAGE = `usage: jobpilot-api <METHOD> <path> [--query key=value]... [--dat
   jobpilot-api GET /api/resumes/3/pdf --out resume-3.pdf`;
 
 const REQUEST_TIMEOUT_MS = 120_000;
+
+// The API refuses skill trees too old for it, so every call says which one this is.
+const PLUGIN_MANIFEST = fileURLToPath(new URL("../.claude-plugin/plugin.json", import.meta.url));
+const PLUGIN_VERSION = /** @type {{ version: string }} */ (
+  JSON.parse(readFileSync(PLUGIN_MANIFEST, "utf8"))
+).version;
 
 /**
  * @typedef {object} ApiRequest
@@ -153,7 +160,7 @@ async function main() {
   const url = buildUrl(base, request.path, request.query);
   const body = readBody(request.data);
   /** @type {Record<string, string>} */
-  const headers = { accept: "application/json" };
+  const headers = { accept: "application/json", "x-jobpilot-version": PLUGIN_VERSION };
   if (process.env.JOBPILOT_API_TOKEN) {
     headers.authorization = `Bearer ${process.env.JOBPILOT_API_TOKEN}`;
   }

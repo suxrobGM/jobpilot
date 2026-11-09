@@ -7,8 +7,10 @@ import {
   pipelineCountsSchema,
   pipelineFiltersSchema,
   pipelineJobListSchema,
+  pipelineJobSchema,
   pipelineJobsQuerySchema,
 } from "@jobpilot/contracts/pipeline";
+import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
@@ -30,6 +32,14 @@ export const pipelineController = new Elysia({
       summary: "List pipeline jobs",
       description:
         "One page of the user's jobs across searches and feeds in one view (review, inProgress, notApplied, needsYou). A posting in several feeds shows once, as its most advanced copy. Networking feeds are left out; Upwork jobs stay in for their proposal action.",
+    },
+  })
+  .get("/jobs/:id", ({ user, params }) => pipeline.get(user.id, params.id), {
+    params: idParam,
+    response: pipelineJobSchema,
+    detail: {
+      summary: "Get a pipeline job",
+      description: "One job by id, whatever its status or feed, as the pipeline lists it.",
     },
   })
   .get("/counts", ({ user, query }) => pipeline.counts(user.id, query), {

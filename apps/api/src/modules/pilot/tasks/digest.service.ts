@@ -1,34 +1,32 @@
 import { inject, injectable } from "@needle-di/core";
 import { DAY_MS, minutesOfDay, startOfDay } from "@/common/date/buckets";
 import { allNamed } from "@/common/utils";
-import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { WebPushService } from "@/modules/web-push/web-push.service";
-import { PilotJournalService } from "../thread/journal.service";
+import { PrismaClient } from "@/generated/prisma/client";
+import { MessageService } from "../messages/message.service";
 
 const DIGEST_HOUR_UTC = 7;
 
-// A type, not an interface: journal `detail` needs the implicit index signature.
-type DigestCounts = {
+interface DigestCounts {
   applicationsCreated: number;
   jobsFailed: number;
   jobsSkipped: number;
   openQuestions: number;
   networkingSent: number;
   networkingReplies: number;
-};
+}
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
-function countLastDay(tx: Prisma.TransactionClient, userId: string, now: Date) {
+function countLastDay(db: PrismaClient, userId: string, now: Date) {
   const since = new Date(now.getTime() - DAY_MS);
   const jobs = (status: "failed" | "skipped") =>
-    tx.job.count({ where: { status, userId, createdAt: { gte: since } } });
+    db.job.count({ where: { status, userId, createdAt: { gte: since } } });
   return allNamed({
-    applicationsCreated: tx.application.count({ where: { userId, appliedAt: { gte: since } } }),
+    applicationsCreated: db.application.count({ where: { userId, appliedAt: { gte: since } } }),
     jobsFailed: jobs("failed"),
     jobsSkipped: jobs("skipped"),
-    networkingSent: tx.networkingMessage.count({ where: { userId, sentAt: { gte: since } } }),
-    networkingReplies: tx.networkingMessage.count({ where: { userId, repliedAt: { gte: since } } }),
+    networkingSent: db.networkingMessage.count({ where: { userId, sentAt: { gte: since } } }),
+    networkingReplies: db.networkingMessage.count({ where: { userId, repliedAt: { gte: since } } }),
   });
 }
 
@@ -42,47 +40,41 @@ function digestSummary(counts: DigestCounts): string {
   return `Last 24h: ${parts.join(", ")}.`;
 }
 
+function isQuiet(counts: DigestCounts): boolean {
+  return Object.values(counts).every((count) => count === 0);
+}
+
 @injectable()
 export class DigestService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly journal = inject(PilotJournalService),
-    private readonly push = inject(WebPushService),
+    private readonly messages = inject(MessageService),
   ) {}
 
   /**
-   * Writes one "digest" journal entry per UTC day, after 07:00, and pushes it. Called fire-and-forget,
-   * so it logs its own errors instead of rejecting.
+   * Posts one morning summary per UTC day, after 07:00, as a pilot message; a day with nothing to
+   * report posts nothing. Called fire-and-forget, so it logs its own errors instead of rejecting.
    */
   async writeIfDue(userId: string, now: Date, openQuestions: number): Promise<void> {
     if (minutesOfDay(now) < DIGEST_HOUR_UTC * 60) {
       return;
     }
-    const todaysDigest = { userId, kind: "digest" as const, createdAt: { gte: startOfDay(now) } };
     try {
-      // Unlocked first: every refresh after the digest hour would otherwise open a locking transaction.
-      const alreadyWritten = await this.prisma.pilotJournalEntry.count({ where: todaysDigest });
-      if (alreadyWritten > 0) {
+      // Claiming the day first is the only duplicate guard: a racing refresh matches no row.
+      const { count } = await this.prisma.pilotState.updateMany({
+        where: { userId, OR: [{ digestAt: null }, { digestAt: { lt: startOfDay(now) } }] },
+        data: { digestAt: now },
+      });
+      if (count === 0) {
         return;
       }
-      await this.prisma.$transaction(async (tx) => {
-        // No unique constraint backs once-per-day, so this lock is the only duplicate guard.
-        // $executeRaw because the pg adapter can't deserialize the lock's void column.
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}), hashtext('pilot-digest'))`;
-        const written = await tx.pilotJournalEntry.count({ where: todaysDigest });
-        if (written > 0) {
-          return;
-        }
-
-        const detail = { ...(await countLastDay(tx, userId, now)), openQuestions };
-        const summary = digestSummary(detail);
-        await this.journal.append(userId, { entries: [{ kind: "digest", summary, detail }] });
-        void this.push.sendToUser(userId, {
-          title: "Your Pilot's morning digest",
-          body: summary,
-          url: "/pilot",
-          tag: "pilot-digest",
-        });
+      const counts = { ...(await countLastDay(this.prisma, userId, now)), openQuestions };
+      if (isQuiet(counts)) {
+        return;
+      }
+      await this.messages.postFromPilot(userId, digestSummary(counts), {
+        title: "Your Pilot's morning digest",
+        tag: "pilot-digest",
       });
     } catch (err) {
       console.error("[pilot] digest write failed", err);

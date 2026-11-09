@@ -107,7 +107,7 @@ describe("TaskListService mail and Upwork sync", () => {
     const quiet = [
       {},
       { upworkProfiles: 1, upworkAccount: { lastSyncedAt: new Date(Date.now() - hour) } },
-      // An unconnected MCP only journals "not connected", so a recent try holds it back.
+      // An unconnected MCP only reports "not connected", so a recent try holds it back.
       {
         upworkProfiles: 1,
         latestRuns: {

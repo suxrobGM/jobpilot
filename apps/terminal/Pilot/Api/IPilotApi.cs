@@ -10,13 +10,14 @@ public interface IPilotApi
     /// <summary>Null when the refresh fails, including the 409 of a stopped pilot.</summary>
     Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct);
 
-    Task WriteJournalAsync(string summary, CancellationToken ct);
-
-    /// <summary>Recorded on the pilot state; the activity probe reads it back as the cycle's completion.</summary>
-    Task RecordCycleAsync(int sleepSeconds, CancellationToken ct);
+    /// <summary>
+    /// Recorded on the pilot state; the activity probe reads it back as the cycle's completion. A message is
+    /// something the user must act on, posted to them as the pilot.
+    /// </summary>
+    Task RecordCycleAsync(int sleepSeconds, string? message, CancellationToken ct);
 
     /// <summary>Null when the server refuses the start.</summary>
-    Task<PilotRun?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct);
+    Task<PilotRun?> StartRunAsync(string taskId, CancellationToken ct);
 
     Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct);
 

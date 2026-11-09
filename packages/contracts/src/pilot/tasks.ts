@@ -26,6 +26,12 @@ export const pilotSubjectTypeSchema = z.enum(PILOT_SUBJECT_TYPES);
 type PilotSubjectType = (typeof PILOT_SUBJECT_TYPES)[number];
 
 const nullableString = z.string().nullable();
+
+export const openRequestSchema = z.object({
+  taskType: z.string(),
+  status: z.enum(["pending", "running"]),
+  payload: z.record(z.string(), z.json()),
+});
 const optionalString = z.string().optional();
 const warmContactSchema = z.object({
   id: z.uuid(),
@@ -249,6 +255,8 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       skippedCount: z.number().int(),
       // Set when the user picked jobs; otherwise every skipped job of the feed.
       jobKeys: z.array(z.string()).optional(),
+      // The bar the user named for this rescan, over the feed's own.
+      minScore: z.number().int().min(0).max(100).optional(),
     }),
   ),
   taskVariant(
@@ -277,7 +285,15 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       focus: z.string().optional(),
     }),
   ),
-  taskVariant("chat.reply", "chat", z.object({ messageId: z.uuid() })),
+  taskVariant(
+    "chat.reply",
+    "chat",
+    z.object({
+      messageId: z.uuid(),
+      // Work already queued, so the reply never asks for it twice.
+      openRequests: z.array(openRequestSchema).optional(),
+    }),
+  ),
   taskVariant("resume.extract", "resume", z.object({ resumeId: z.uuid(), force: z.boolean() })),
   taskVariant(
     "resume.tailor",
@@ -343,7 +359,6 @@ const taskListContentSchema = z.object({
 });
 
 export const taskListSchema = taskListContentSchema.extend({
-  version: z.uuid(),
   expiresAt: storedDate,
 });
 

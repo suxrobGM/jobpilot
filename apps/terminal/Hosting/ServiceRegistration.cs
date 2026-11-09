@@ -47,6 +47,7 @@ public static class ServiceRegistration
         services.AddSingleton<GitHubReleases>();
         services.AddSingleton<ReleaseInstaller>();
         services.AddSingleton<HostUpdater>();
+        services.AddSingleton<IHostSelfUpdate, HostSelfUpdate>();
 
         services.ConfigureHttpJsonOptions(c => c.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
 

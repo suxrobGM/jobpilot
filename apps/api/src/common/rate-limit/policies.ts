@@ -81,11 +81,8 @@ export const RATE_LIMITS = {
   /** Pilot polls the task list once per cycle; burst covers a tight run-then-repoll loop. */
   pilotTasks: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
 
-  /** Batched journal writes, several per cycle - the loosest Pilot limit. */
-  pilotJournal: { key: byUser, limit: 600, windowMs: HOUR, burst: 20 },
-
-  /** Streams every row, and is rarely needed. */
-  pilotJournalExport: { key: byUser, limit: 10, windowMs: HOUR },
+  /** Streams every finished run, and is rarely needed. */
+  pilotRunsExport: { key: byUser, limit: 10, windowMs: HOUR },
 
   /** Run/heartbeat/finish bookkeeping, a few per worked item. */
   pilotRun: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },

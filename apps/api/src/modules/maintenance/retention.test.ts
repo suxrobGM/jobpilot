@@ -31,7 +31,6 @@ const RETENTION_BY_MODEL = {
   PilotState: "bounded",
   PilotRun: ["runs", "discoveryRuns"],
   PilotQuestion: ["questions", "staleAnswers"],
-  PilotJournalEntry: ["journalEntries", "digests"],
   PilotChange: ["staleProposals", "decidedChanges"],
   PilotMessage: ["messages"],
   PilotRequest: ["requests"],

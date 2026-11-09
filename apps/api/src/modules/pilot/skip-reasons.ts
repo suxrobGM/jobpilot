@@ -2,4 +2,5 @@
 export const SERVER_SKIP_REASONS = {
   wentStale: "Posting went stale before the pilot applied.",
   unanswered: "Question expired without an answer.",
+  userSkipped: "Skipped by user.",
 };
