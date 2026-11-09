@@ -8,7 +8,7 @@ import {
   sumTokenUsage,
   taskTypeAgent,
 } from "@jobpilot/contracts/pilot";
-import { Box, Card, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Card, Grid, Stack, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { PulseDot } from "@/components/ui/feedback";
@@ -45,44 +45,44 @@ export function AgentList(props: AgentListProps): ReactElement {
         <Typography variant="overlineMuted">Agents</Typography>
         <Typography variant="overlineMuted">New tokens, last 7 days</Typography>
       </Stack>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", lg: "repeat(6, 1fr)" },
-          gap: 1,
-        }}
-      >
+      <Grid container spacing={1}>
         {AGENTS.map((agent) => {
           const active = agent === activeAgent;
           const usage = sumTokenUsage((costByAgent.get(agent) ?? []).map((item) => item.tokens));
           return (
-            <Card
-              key={agent}
-              variant={active ? "accent" : undefined}
-              sx={{ px: 1.5, py: 1, opacity: activeAgent !== null && !active ? DIM_OPACITY : 1 }}
-            >
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                <PulseDot
-                  tone={active ? PILOT_MODE_LOOK.working.tone : "muted"}
-                  size="xs"
-                  pulsing={active}
-                />
-                <Typography variant={active ? "body2Strong" : "body2"} sx={{ flex: 1 }}>
-                  {AGENT_LABELS[agent]}
+            <Grid key={agent} size={{ xs: 6, sm: 4, lg: 2 }}>
+              <Card
+                variant={active ? "accent" : undefined}
+                sx={{
+                  height: "100%",
+                  px: 1.5,
+                  py: 1,
+                  opacity: activeAgent !== null && !active ? DIM_OPACITY : 1,
+                }}
+              >
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                  <PulseDot
+                    tone={active ? PILOT_MODE_LOOK.working.tone : "muted"}
+                    size="xs"
+                    pulsing={active}
+                  />
+                  <Typography variant={active ? "body2Strong" : "body2"} sx={{ flex: 1 }}>
+                    {AGENT_LABELS[agent]}
+                  </Typography>
+                  <Tooltip
+                    title={`${formatNewTokenParts(usage)} · ${formatTokens(usage.cacheRead)} cached`}
+                  >
+                    <Typography variant="captionMuted">{formatTokens(newTokens(usage))}</Typography>
+                  </Tooltip>
+                </Stack>
+                <Typography variant="captionMuted" noWrap sx={{ display: "block", ml: 2 }}>
+                  {AGENT_ROLES[agent]}
                 </Typography>
-                <Tooltip
-                  title={`${formatNewTokenParts(usage)} · ${formatTokens(usage.cacheRead)} cached`}
-                >
-                  <Typography variant="captionMuted">{formatTokens(newTokens(usage))}</Typography>
-                </Tooltip>
-              </Stack>
-              <Typography variant="captionMuted" noWrap sx={{ display: "block", ml: 2 }}>
-                {AGENT_ROLES[agent]}
-              </Typography>
-            </Card>
+              </Card>
+            </Grid>
           );
         })}
-      </Box>
+      </Grid>
     </Box>
   );
 }

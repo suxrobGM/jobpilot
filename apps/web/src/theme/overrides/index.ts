@@ -15,6 +15,7 @@ import {
   dialogContentOverrides,
   dialogOverrides,
   dialogTitleOverrides,
+  drawerOverrides,
 } from "./dialog";
 import {
   formHelperTextOverrides,
@@ -59,6 +60,7 @@ export const componentOverrides: Components<Theme> = {
   MuiDialogActions: dialogActionsOverrides,
   MuiDialogContent: dialogContentOverrides,
   MuiDialogTitle: dialogTitleOverrides,
+  MuiDrawer: drawerOverrides,
   MuiFormHelperText: formHelperTextOverrides,
   MuiLink: linkOverrides,
   MuiMenu: menuOverrides,

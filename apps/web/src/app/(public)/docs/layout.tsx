@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
-import { Box, Container } from "@mui/material";
+import { Container, Grid } from "@mui/material";
 import { DocsBreadcrumbJsonLd, DocsSidebar } from "@/components/features/docs";
 
 export const ensureStatic = "navigation";
@@ -13,22 +13,22 @@ export default function DocsLayout(props: DocsLayoutProps): ReactElement {
   return (
     <Container component="main" maxWidth="lg" sx={{ flex: 1, paddingBlock: { xs: 3, md: 6 } }}>
       <DocsBreadcrumbJsonLd />
-      <Box
-        sx={{
-          display: "grid",
-          // minmax(0, ...), not 1fr: on xs the nowrap sidebar pills' min-content widens the page.
-          gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "200px minmax(0, 720px)" },
-          gap: { xs: 3, md: 8 },
-          alignItems: "start",
-        }}
-      >
-        <Box sx={{ minWidth: 0, position: { md: "sticky" }, top: { md: 88 } }}>
+      <Grid container spacing={{ xs: 3, md: 8 }} sx={{ alignItems: "flex-start" }}>
+        {/* minWidth 0: on xs the nowrap sidebar pills' min-content would widen the page. */}
+        <Grid
+          size={{ xs: 12, md: "auto" }}
+          sx={{ width: { md: 200 }, minWidth: 0, position: { md: "sticky" }, top: { md: 88 } }}
+        >
           <DocsSidebar />
-        </Box>
-        <Box component="article" sx={{ minWidth: 0 }}>
+        </Grid>
+        <Grid
+          component="article"
+          size={{ xs: 12, md: "grow" }}
+          sx={{ minWidth: 0, maxWidth: { md: 720 } }}
+        >
           {children}
-        </Box>
-      </Box>
+        </Grid>
+      </Grid>
     </Container>
   );
 }

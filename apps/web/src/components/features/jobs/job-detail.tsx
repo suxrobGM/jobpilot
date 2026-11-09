@@ -1,16 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { OpenInNew } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  Grid,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Button, Card, CardContent, Chip, Divider, Grid, Stack, Typography } from "@mui/material";
 import type { JobListingDto } from "@/api/types";
 import { BackLink, LinkButton } from "@/components/ui/buttons";
 import { formatDate, formatRelativeTime } from "@/utils/format";
@@ -162,13 +152,13 @@ interface BulletListProps {
 function BulletList(props: BulletListProps): ReactElement {
   const { items } = props;
   return (
-    <Box component="ul" sx={{ m: 0, pl: 3, display: "grid", gap: 1 }}>
+    <Stack component="ul" spacing={1} sx={{ m: 0, pl: 3 }}>
       {items.map((item) => (
         <Typography component="li" key={item} variant="body1Muted">
           {item}
         </Typography>
       ))}
-    </Box>
+    </Stack>
   );
 }
 

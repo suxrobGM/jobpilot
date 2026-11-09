@@ -103,6 +103,8 @@ export function TopBar(props: TopBarProps): ReactElement {
             minWidth: 0,
             overflowX: "auto",
             "&:empty": { display: "none" },
+            // A switch label's -11px form-row margin would be clipped by the scroll.
+            "& .MuiFormControlLabel-root": { marginInline: 0 },
             // Phones: buttons with an icon drop their label, so title and actions share one row.
             // font-size 0 keeps the label as the accessible name; the icon sizes itself.
             [theme.breakpoints.down("sm")]: {

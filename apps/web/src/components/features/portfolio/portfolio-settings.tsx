@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { type PortfolioSettingsPatch, usernameSchema } from "@jobpilot/contracts/user";
 import { OpenInNew } from "@mui/icons-material";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Button, Grid, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { userQueries } from "@/api/queries";
@@ -62,26 +62,25 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
 
   return (
     // Settings beside the page they shape, so every change is checked against the preview.
-    <Box
+    <Grid
+      container
       component="form"
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();
       }}
-      sx={{
-        display: "grid",
-        gap: 3,
-        alignItems: "start",
-        gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "380px minmax(0, 1fr)" },
-      }}
+      spacing={3}
+      sx={{ alignItems: "flex-start" }}
     >
       <PageActions>
         <Button href={publicUrl} variant="outlined" endIcon={<OpenInNew />}>
           View public page
         </Button>
       </PageActions>
-      <Box
+      <Grid
+        size={{ xs: 12, lg: "auto" }}
         sx={(theme) => ({
+          width: { lg: 380 },
           position: { lg: "sticky" },
           top: belowTopBar(theme.spacing(3)),
         })}
@@ -138,15 +137,17 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
             </form.AppForm>
           </Stack>
         </SectionCard>
-      </Box>
+      </Grid>
 
-      <SectionCard
-        title="Preview"
-        description="Exactly what visitors see - drawn from your primary resume."
-      >
-        <PortfolioPreview />
-      </SectionCard>
-    </Box>
+      <Grid size={{ xs: 12, lg: "grow" }} sx={{ minWidth: 0 }}>
+        <SectionCard
+          title="Preview"
+          description="Exactly what visitors see - drawn from your primary resume."
+        >
+          <PortfolioPreview />
+        </SectionCard>
+      </Grid>
+    </Grid>
   );
 }
 

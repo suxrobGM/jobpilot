@@ -1,24 +1,16 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import { MoreHoriz, Terminal } from "@mui/icons-material";
-import {
-  BottomNavigation,
-  BottomNavigationAction,
-  Divider,
-  Drawer,
-  ListItemIcon,
-  ListItemText,
-  MenuItem,
-  MenuList,
-} from "@mui/material";
+import { MoreHoriz } from "@mui/icons-material";
+import { BottomNavigation, BottomNavigationAction } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "@/hooks/use-auth";
-import { useAgentDrawer } from "@/providers/agent-provider";
-import { accountMenuItems } from "./account-menu";
+import { isAdminRole } from "@/lib/roles";
+import { MoreSheet } from "./more-sheet";
 import { NavBadge } from "./nav-badge";
 import {
+  ADMIN_NAV_ITEM,
   isNavEntryActive,
   MOBILE_NAV_HEIGHT,
   type NavItem,
@@ -38,7 +30,6 @@ export function MobileNav(props: MobileNavProps): ReactElement {
   const { hidden } = props;
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
-  const { watchSteps } = useAgentDrawer();
   const user = useSession();
 
   // Close after the route commit: closing in the click lets the transition interrupt the
@@ -51,15 +42,18 @@ export function MobileNav(props: MobileNavProps): ReactElement {
 
   const allItems = useNavGroups().flatMap((group) => group.items);
   const primaryItems = allItems.filter((item) => item.primary);
-  // The rail pins Settings to its foot, so it lands at the end of the sheet here.
-  const moreItems = [...allItems.filter((item) => !item.primary), SETTINGS_NAV_ITEM];
+  // The rail pins Settings and Admin to its foot, so they land at the end of the sheet here.
+  const moreItems = [
+    ...allItems.filter((item) => !item.primary),
+    SETTINGS_NAV_ITEM,
+    ...(user && isAdminRole(user.role) ? [ADMIN_NAV_ITEM] : []),
+  ];
 
   const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));
   const moreActive = moreItems.some((item) => isNavEntryActive(pathname, item));
   const value = activePrimary?.href ?? (moreActive ? MORE_VALUE : false);
   // More carries a badge only while a badged item lives in the sheet.
   const moreBadge = moreItems.find((item) => item.badge)?.badge;
-  const closeMore = (): void => setMoreOpen(false);
 
   const renderTab = (item: NavItem): ReactElement => (
     <BottomNavigationAction
@@ -120,38 +114,7 @@ export function MobileNav(props: MobileNavProps): ReactElement {
         />
       </BottomNavigation>
 
-      <Drawer anchor="bottom" open={moreOpen} onClose={closeMore}>
-        {/* No onClick close on links: the pathname effect closes after the commit. */}
-        <MenuList sx={{ pb: 1 }}>
-          {moreItems.map((item) => (
-            <MenuItem
-              key={item.href}
-              component={Link}
-              href={item.href}
-              selected={isNavEntryActive(pathname, item)}
-            >
-              <ListItemIcon>
-                <NavBadge badge={item.badge}>
-                  <item.icon fontSize="md" />
-                </NavBadge>
-              </ListItemIcon>
-              <ListItemText primary={item.label} />
-            </MenuItem>
-          ))}
-          <MenuItem
-            onClick={() => {
-              closeMore();
-              watchSteps();
-            }}
-          >
-            <ListItemIcon>
-              <Terminal fontSize="md" />
-            </ListItemIcon>
-            <ListItemText primary="Agent" />
-          </MenuItem>
-          {user && [<Divider key="divider" />, ...accountMenuItems(user, closeMore)]}
-        </MenuList>
-      </Drawer>
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} items={moreItems} />
     </>
   );
 }

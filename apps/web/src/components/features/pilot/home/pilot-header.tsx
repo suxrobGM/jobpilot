@@ -43,7 +43,6 @@ export function PilotHeader(): ReactElement {
         <FormControlLabel
           label={<Typography variant="body2Muted">Autopilot</Typography>}
           disabled={autopilot.isPending}
-          sx={{ mr: 0 }}
           control={
             <Switch
               size="small"

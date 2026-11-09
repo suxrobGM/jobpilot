@@ -1,4 +1,4 @@
-import { dialogTitleClasses } from "@mui/material";
+import { dialogTitleClasses, drawerClasses } from "@mui/material";
 import { alpha, type Components, type Theme } from "@mui/material/styles";
 
 export const dialogOverrides: Components<Theme>["MuiDialog"] = {
@@ -9,6 +9,18 @@ export const dialogOverrides: Components<Theme>["MuiDialog"] = {
       backgroundColor: theme.palette.surfaces.card,
       // Wide content scrolls in DialogContent; a sideways paper scroll clipped the title.
       overflowX: "hidden",
+    }),
+  },
+};
+
+/** Bottom sheets (the More sheet, the phone filters) round only the edge that faces the page. */
+export const drawerOverrides: Components<Theme>["MuiDrawer"] = {
+  styleOverrides: {
+    anchorBottom: ({ theme }) => ({
+      [`& .${drawerClasses.paper}`]: {
+        borderTopLeftRadius: theme.radii.lg,
+        borderTopRightRadius: theme.radii.lg,
+      },
     }),
   },
 };
