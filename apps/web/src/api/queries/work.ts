@@ -1,5 +1,5 @@
 import type { ApplicationFilters } from "@jobpilot/contracts/application";
-import type { ReviewStatus } from "@jobpilot/contracts/email";
+import type { EmailProvider, ReviewStatus } from "@jobpilot/contracts/email";
 import type { FeedKind } from "@jobpilot/contracts/feed";
 import type { PaginationQuery } from "@jobpilot/contracts/pagination";
 import type { PipelineFilters, PipelineJobsQuery } from "@jobpilot/contracts/pipeline";
@@ -89,10 +89,10 @@ export const emailQueries = {
       queryKey: [...EMAIL, "account"],
       queryFn: () => unwrap(api.email.account.get()),
     }),
-  oauthClient: () =>
+  oauthClient: (provider: EmailProvider = "gmail") =>
     queryOptions({
-      queryKey: [...EMAIL, "oauthClient"],
-      queryFn: () => unwrap(api.email.oauth.client.get()),
+      queryKey: [...EMAIL, "oauthClient", provider],
+      queryFn: () => unwrap(api.email.oauth.client.get({ query: { provider } })),
     }),
   messages: (filter: ReviewStatus | null, page: PaginationQuery) =>
     queryOptions({

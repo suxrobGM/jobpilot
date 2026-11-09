@@ -7,8 +7,9 @@ import { logger } from "@/common/logger";
 import { publish } from "@/common/sse";
 import { type EmailAccount, PrismaClient } from "@/generated/prisma/client";
 import { MailboxSessionService } from "../account/mailbox-session.service";
+import type { NormalizedMessage } from "../email.types";
 import { GmailClient } from "../gmail.client";
-import type { NormalizedMessage } from "../gmail.types";
+import { MicrosoftClient } from "../microsoft.client";
 
 /** How far back the first sync after connecting reaches. */
 const FIRST_SYNC_DAYS = 14;
@@ -36,6 +37,7 @@ export class EmailSyncService {
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly sessions = inject(MailboxSessionService),
     private readonly gmail = inject(GmailClient),
+    private readonly microsoft = inject(MicrosoftClient),
   ) {}
 
   /**
@@ -77,6 +79,29 @@ export class EmailSyncService {
     publish(inboxChannel, { userId }, { type: "sync.started" });
 
     const startedAt = new Date();
+    if (account.provider === "microsoft") {
+      const pulled = await this.microsoft.sync(
+        session,
+        syncWindowStart(account, startedAt).getTime(),
+      );
+      let count = 0;
+      for (let i = 0; i < pulled.newMessages.length; i += STORE_CHUNK) {
+        const messages = pulled.newMessages.slice(i, i + STORE_CHUNK);
+        const created = await this.prisma.emailMessage.createMany({
+          data: messages.map((m) => ({ ...m, accountId: account.id, links: toInputJson(m.links) })),
+          skipDuplicates: true,
+        });
+        count += created.count;
+        await this.linkNetworkingReplies(userId, messages);
+      }
+      await this.prisma.emailAccount.update({
+        where: { id: account.id },
+        data: { deltaLink: pulled.deltaLink ?? account.deltaLink, lastSyncAt: startedAt },
+      });
+      const result = { fetched: pulled.fetched, new: count };
+      publish(inboxChannel, { userId }, { type: "sync.progress", ...result });
+      return result;
+    }
     const ids = await this.gmail.listMessageIds(session, syncWindowStart(account, startedAt));
     const unstored = await this.unstoredIds(account.id, ids);
 

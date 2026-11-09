@@ -7,7 +7,7 @@ import {
 import { AUTH_TOKEN_KINDS, OAUTH_PROVIDERS } from "@jobpilot/contracts/auth";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
 import { CAPTCHA_PROVIDERS, CREDENTIAL_KINDS } from "@jobpilot/contracts/credential";
-import { CLASSIFICATIONS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
+import { CLASSIFICATIONS, EMAIL_PROVIDERS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
 import { ACTORS, CAP_EXEMPT_BASES, FEED_KINDS, JOB_STATUSES } from "@jobpilot/contracts/feed";
 import { JOB_LISTING_STATUSES } from "@jobpilot/contracts/job-listing";
 import {
@@ -62,6 +62,7 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   CoverLetterSource: COVER_LETTER_SOURCES,
   CredentialKind: CREDENTIAL_KINDS,
   EmailClassification: CLASSIFICATIONS,
+  EmailProvider: EMAIL_PROVIDERS,
   EmailReviewStatus: REVIEW_STATUSES,
   JobListingStatus: JOB_LISTING_STATUSES,
   LinkedinMessageKind: LINKEDIN_KINDS,

@@ -25,7 +25,9 @@ const EnvSchema = z.object({
 
   LOG_LEVEL: z.string().default("info"),
 
-  // Gmail clients are per user; only their shared callback lives here.
+  // Google OAuth (Gmail) callback URL. Client id/secret are per-user (entered in the
+  // app); only this shared callback is configured here - users register it in their own client.
+  MICROSOFT_OAUTH_REDIRECT_URI: z.url().default("http://localhost:4101/api/email/oauth/callback"),
   GOOGLE_OAUTH_REDIRECT_URI: z.string().default("http://localhost:4101/api/email/oauth/callback"),
 
   // Sign-in providers, separate from the Gmail clients; unset disables one.

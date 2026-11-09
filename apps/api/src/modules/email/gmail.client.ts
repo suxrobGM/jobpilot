@@ -1,6 +1,15 @@
 import { injectable } from "@needle-di/core";
 import { type gmail_v1, google } from "googleapis";
 import { badGateway, unprocessable } from "@/common/errors";
+import type {
+  ExchangedCode,
+  MailboxSession,
+  NormalizedMessage,
+  OAuthClientConfig,
+  SendMessageInput,
+  SentMessage,
+  TokenSet,
+} from "./email.types";
 import {
   buildMimeMessage,
   emailDomain,
@@ -11,15 +20,6 @@ import {
   parseAddress,
   stripQuotedReplies,
 } from "./email.utils";
-import type {
-  ExchangedCode,
-  MailboxSession,
-  NormalizedMessage,
-  OAuthClientConfig,
-  SendMessageInput,
-  SentMessage,
-  TokenSet,
-} from "./gmail.types";
 
 // Derived from googleapis: importing google-auth-library directly can resolve a clashing version.
 type OAuth2Client = InstanceType<typeof google.auth.OAuth2>;

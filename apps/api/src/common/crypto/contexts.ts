@@ -10,6 +10,7 @@
 export const SECRET_CONTEXTS = {
   credentialPassword: "credential:password",
   credentialApiKey: "credential:apiKey",
+  microsoftTokens: "microsoft:tokens",
   gmailTokens: "gmail:tokens",
   emailOAuthClient: "email:oauthClient",
   apiTokenTerminal: "apiToken:terminal",

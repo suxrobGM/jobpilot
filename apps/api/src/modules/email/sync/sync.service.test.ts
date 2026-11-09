@@ -3,6 +3,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { MailboxSessionService } from "../account/mailbox-session.service";
 import type { GmailClient } from "../gmail.client";
+import type { MicrosoftClient } from "../microsoft.client";
 import { EmailSyncService } from "./sync.service";
 import { describe, expect, it } from "bun:test";
 
@@ -14,7 +15,12 @@ function make(account: { lastSyncAt: Date | null } | null, syncImpl?: () => Prom
   const prisma = {
     emailAccount: { findUnique: async () => account },
   } as unknown as PrismaClient;
-  const svc = new EmailSyncService(prisma, {} as MailboxSessionService, {} as GmailClient);
+  const svc = new EmailSyncService(
+    prisma,
+    {} as MailboxSessionService,
+    {} as GmailClient,
+    {} as MicrosoftClient,
+  );
   let syncs = 0;
   svc.syncInbox = syncImpl
     ? syncImpl

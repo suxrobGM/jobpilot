@@ -1,3 +1,10 @@
+enum EmailProvider {
+  gmail
+  microsoft
+
+  @@map("email_provider")
+}
+
 enum EmailClassification {
   interviewing
   rejected
@@ -18,6 +25,10 @@ enum EmailReviewStatus {
 }
 
 model EmailAccount {
+  provider        EmailProvider @default(gmail)
+  signedInEmail   String? @map("signed_in_email")
+  mailboxId       String? @map("mailbox_id")
+  deltaLink       String? @map("delta_link")
   id              String    @id @default(uuid(7)) @db.Uuid
   userId          String    @unique @map("user_id") @db.Uuid
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -41,14 +52,19 @@ model EmailAccount {
 
 // Separate from EmailAccount so it exists before connecting and survives a disconnect.
 model EmailOAuthClient {
+  provider     EmailProvider @default(gmail)
+  tenantId     String? @map("tenant_id")
+  mailbox      String?
+  allowSend    Boolean @default(false) @map("allow_send")
   id           String   @id @default(uuid(7)) @db.Uuid
-  userId       String   @unique @map("user_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   clientId     String   @map("client_id")
   clientSecret String   @map("client_secret") // encrypted
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  @@unique([userId, provider])
   @@map("email_oauth_clients")
 }
 
