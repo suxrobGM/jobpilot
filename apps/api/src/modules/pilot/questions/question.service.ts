@@ -1,3 +1,4 @@
+import { NETWORKING_MESSAGE_TERMINAL_STATUSES } from "@jobpilot/contracts/networking";
 import type {
   AnswerPilotQuestionInput,
   CreatePilotQuestionInput,
@@ -10,9 +11,13 @@ import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { type PilotQuestion as PilotQuestionModel, PrismaClient } from "@/generated/prisma/client";
+import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import { WebPushService } from "@/modules/web-push/web-push.service";
+import { parseJobSubject } from "../job-subject";
+import { SERVER_SKIP_REASONS } from "../skip-reasons";
 import { ProfileAnswerService } from "./answer.service";
 import { toPilotQuestion } from "./question-row";
+import { isSettledAnswer } from "./settled-answers";
 
 /** An unanswered 2FA code is useless within minutes, and expiring it frees the job it parked. */
 const TWO_FACTOR_TTL_MS = 5 * 60 * 1000;
@@ -91,8 +96,39 @@ export class PilotQuestionService {
       await this.answers.save(userId, row.savedAnswerKey, body.answer);
     }
 
+    if (isSettledAnswer(row)) {
+      await this.settle(userId, row);
+    }
+
     const question = toPilotQuestion(row);
     publish(pilotChannel, { userId }, { type: "question.answered", question });
     return question;
+  }
+
+  private async settle(userId: string, question: PilotQuestionModel) {
+    const { subjectType, subjectId } = question;
+    if (!subjectId) {
+      return;
+    }
+    if (subjectType === "job") {
+      const skipped = await this.prisma.job.updateManyAndReturn({
+        where: { userId, status: "needs_user", ...parseJobSubject(subjectId) },
+        data: { status: "skipped", skipReason: SERVER_SKIP_REASONS.userSkipped },
+        select: { feedId: true, key: true, status: true },
+      });
+      for (const job of skipped) {
+        publishJobUpdated(userId, job);
+      }
+    }
+    if (subjectType === "networking") {
+      await this.prisma.networkingMessage.updateMany({
+        where: {
+          id: subjectId,
+          userId,
+          status: { notIn: [...NETWORKING_MESSAGE_TERMINAL_STATUSES] },
+        },
+        data: { status: "skipped" },
+      });
+    }
   }
 }

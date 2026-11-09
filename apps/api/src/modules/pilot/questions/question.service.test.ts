@@ -12,6 +12,7 @@ function makeService(over: Row = {}) {
     created: null as Row | null,
     pushes: [] as { userId: string; payload: PushPayload }[],
     savedAnswers: [] as unknown[],
+    jobSkips: [] as unknown[],
   };
   const question: Row = {
     id: "e1",
@@ -46,6 +47,12 @@ function makeService(over: Row = {}) {
       },
     },
     profileAnswer: { upsert: async (args: unknown) => rec.savedAnswers.push(args) },
+    job: {
+      updateManyAndReturn: async (args: unknown) => {
+        rec.jobSkips.push(args);
+        return [];
+      },
+    },
   };
   const prisma = db as unknown as PrismaClient;
   const svc = new PilotQuestionService(
@@ -125,5 +132,22 @@ describe("PilotQuestionService.answer", () => {
       status: 409,
     });
     expect(question).toMatchObject({ status: "expired", answer: null });
+  });
+
+  it("skips the parked job itself when the user skips a job question", async () => {
+    const { svc, rec } = makeService({ subjectType: "job", subjectId: "f1:k1" });
+    await svc.answer("p1", "e1", { answer: "Skip" });
+    expect(rec.jobSkips).toEqual([
+      expect.objectContaining({
+        where: { userId: "p1", status: "needs_user", feedId: "f1", key: "k1" },
+        data: { status: "skipped", skipReason: "Skipped by user." },
+      }),
+    ]);
+  });
+
+  it("leaves any other job answer for the agent", async () => {
+    const { svc, rec } = makeService({ subjectType: "job", subjectId: "f1:k1" });
+    await svc.answer("p1", "e1", { answer: "Solved" });
+    expect(rec.jobSkips).toHaveLength(0);
   });
 });
