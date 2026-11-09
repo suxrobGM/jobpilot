@@ -2,7 +2,7 @@
 export const AGENT_VERSION_HEADER = "x-jobpilot-version";
 
 /** Older agents call routes this API no longer serves; raise it with a breaking release. */
-const MIN_AGENT_VERSION = "2.4.1";
+const MIN_AGENT_VERSION = "2.4.2";
 
 /** Agents from before the header existed send none, so a missing one is outdated too. */
 export function isOutdatedAgent(version: string | undefined): boolean {

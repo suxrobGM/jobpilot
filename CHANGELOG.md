@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.4.2 - 2026-11-09
+
+Update the plugin and terminal host with this release. The API now refuses agents older than 2.4.2, because older ones call routes it no longer serves; the host updates itself and the web says to update instead of showing the agent offline.
+
+### Added
+
+- Permanently delete your account from settings.
+- Phones see a pilot agent running on another device, and you get an alert when autopilot's agent stays offline.
+- Clear your inbox; unscanned mail is deleted after 30 days.
+- Diagnostics is linked from the Pilot overview.
+- Pipeline opens on the first tab that has jobs.
+
+### Changed
+
+- Chat replies follow your ask: a job you name is applied even if the pilot skipped it before, your minimum score wins over the pilot's, pasted links are read as-is, and a one-job ask stays on that job.
+- An unsolved CAPTCHA, or a sign-in wall on a job you asked for, parks the job for you instead of skipping it.
+- Skip and Keep paused answers apply right away without starting an agent run.
+- Asking for the same work twice returns the request already queued instead of queueing it again.
+- Run summaries live on the runs themselves; the thread, job brief and Diagnostics read them directly.
+
+### Fixed
+
+- Every chat message gets an answer, a skipped apply no longer reads as applied, rescans read the single job, and thread job rows open the job or its application.
+- Inbox sync no longer drops mail past the first page, and a reconnect re-lists missed mail.
+- Pipeline's board filter matches boards whose names have spaces.
+- Phone layout: the app frame stays on screen, filter toggles stay on one scrolling row, and dialogs no longer scroll sideways.
+
 ## v2.4.1 - 2026-11-08
 
 Update the plugin with this release so the pilot can set up searches from every resume.
