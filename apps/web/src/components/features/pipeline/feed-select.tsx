@@ -94,7 +94,7 @@ export function FeedSelect(): ReactElement {
       select
       value={value ?? ""}
       onChange={(event) => pagination.setFilters({ feed: event.target.value || null })}
-      sx={{ maxWidth: 320 }}
+      sx={{ maxWidth: { sm: 320 } }}
       slotProps={{
         input: {
           startAdornment: (
@@ -107,7 +107,7 @@ export function FeedSelect(): ReactElement {
           displayEmpty: true,
           SelectDisplayProps: { "aria-label": "Feed" },
           renderValue: (selected) => feeds.find((feed) => feed.id === selected)?.name ?? "All",
-          MenuProps: { slotProps: { paper: { sx: { minWidth: 360, maxWidth: 480 } } } },
+          MenuProps: { slotProps: { paper: { sx: { minWidth: { sm: 360 }, maxWidth: 480 } } } },
         },
       }}
     >

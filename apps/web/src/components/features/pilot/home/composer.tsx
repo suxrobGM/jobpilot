@@ -100,11 +100,7 @@ export function Composer(): ReactElement {
         }
       }}
       inputProps={{ "aria-label": "Message the pilot", maxLength: 4000 }}
-      sx={
-        isDesktop
-          ? { px: 2, pt: 1.75, pb: 0.5, typography: "body1" }
-          : { py: 1, typography: "body1" }
-      }
+      sx={isDesktop ? { px: 2, pt: 1.75, pb: 0.5 } : { py: 1 }}
     />
   );
 

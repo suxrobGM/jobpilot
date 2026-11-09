@@ -75,12 +75,14 @@ export function PipelineView(): ReactElement {
             </Typography>
           )
         }
+        search={
+          <SearchField
+            placeholder="Search role, company, URL"
+            value={search.draft}
+            onChange={search.setDraft}
+          />
+        }
       >
-        <SearchField
-          placeholder="Search role, company, URL"
-          value={search.draft}
-          onChange={search.setDraft}
-        />
         <FeedSelect />
         <BoardSelect />
         {tab.view === "applied" && <StatusFilter />}

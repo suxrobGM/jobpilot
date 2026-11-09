@@ -18,6 +18,7 @@ import {
 } from "./dialog";
 import {
   formHelperTextOverrides,
+  inputBaseOverrides,
   outlinedInputOverrides,
   selectOverrides,
   textFieldOverrides,
@@ -62,6 +63,7 @@ export const componentOverrides: Components<Theme> = {
   MuiLink: linkOverrides,
   MuiMenu: menuOverrides,
   MuiMenuItem: menuItemOverrides,
+  MuiInputBase: inputBaseOverrides,
   MuiOutlinedInput: outlinedInputOverrides,
   MuiPaper: paperOverrides,
   MuiSelect: selectOverrides,
