@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
 import type { ApplicationStatus } from "@jobpilot/contracts/application";
-import { Box } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+import { ScoreBadge } from "@/components/features/pipeline/jobs/score-badge";
 import { StatusChip } from "@/components/ui/display";
 import { AppWindow } from "./app-window";
 import { MockList, MockTabs } from "./mock-list";
@@ -26,32 +25,7 @@ const APPLICATIONS: MockApplication[] = [
   { company: "Linear", role: "Product Engineer", score: 79, status: "applied" },
 ];
 
-interface ScoreProps {
-  score: number;
-}
-
-/** The app's score square, at or above the bar. */
-function Score(props: ScoreProps): ReactElement {
-  const { score } = props;
-  return (
-    <Box
-      sx={(theme) => ({
-        width: 32,
-        height: 32,
-        flexShrink: 0,
-        display: "grid",
-        placeItems: "center",
-        borderRadius: theme.radii.md,
-        typography: "body2Strong",
-        color: "success.main",
-        backgroundColor: alpha(theme.palette.success.main, 0.12),
-      })}
-    >
-      {score}
-    </Box>
-  );
-}
-
+const SCORE_BAR = 70;
 export function PipelinePanel(): ReactElement {
   return (
     <AppWindow page="pipeline" title="Pipeline">
@@ -59,10 +33,10 @@ export function PipelinePanel(): ReactElement {
       <MockList
         rows={APPLICATIONS.map((app) => ({
           id: app.company,
-          lead: <Score score={app.score} />,
+          lead: <ScoreBadge score={app.score} bar={SCORE_BAR} />,
           title: app.role,
           meta: `${app.company} · Remote`,
-          end: <StatusChip domain="application" value={app.status} />,
+          status: <StatusChip domain="application" value={app.status} />,
         }))}
       />
     </AppWindow>

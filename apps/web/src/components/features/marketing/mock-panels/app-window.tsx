@@ -2,15 +2,15 @@ import type { ReactElement, ReactNode } from "react";
 import { Description, Handshake, Inbox, SmartToy, ViewKanban } from "@mui/icons-material";
 import { Box, Card, Stack, Typography } from "@mui/material";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
-
-const TRAFFIC_LIGHTS = ["error.main", "warning.main", "success.main"] as const;
+import { RailLabel, railTile } from "@/components/layout/rail-tile";
+import { WindowBar } from "./panel-frame";
 
 const RAIL = [
-  { page: "pilot", icon: SmartToy },
-  { page: "pipeline", icon: ViewKanban },
-  { page: "inbox", icon: Inbox },
-  { page: "resumes", icon: Description },
-  { page: "upwork", icon: Handshake },
+  { page: "pilot", label: "Pilot", icon: SmartToy },
+  { page: "pipeline", label: "Pipeline", icon: ViewKanban },
+  { page: "inbox", label: "Inbox", icon: Inbox },
+  { page: "resumes", label: "Resumes", icon: Description },
+  { page: "upwork", label: "Upwork", icon: Handshake },
 ] as const;
 
 type AppWindowPage = (typeof RAIL)[number]["page"];
@@ -23,40 +23,21 @@ interface AppWindowProps {
   children: ReactNode;
 }
 
-/** A small copy of the dashboard - rail, top bar, page - so the tour shows the app as it is. */
+/** A small copy of the dashboard - rail, top bar, page - built from the app's own parts. */
 export function AppWindow(props: AppWindowProps): ReactElement {
   const { page, title, actions, children } = props;
   return (
-    <Card aria-hidden variant="showcase">
-      <Stack
-        direction="row"
-        spacing={0.75}
-        sx={{
-          alignItems: "center",
-          paddingInline: 1.5,
-          paddingBlock: 1,
-          borderBottom: 1,
-          borderColor: "line.divider",
-          backgroundColor: "surfaces.elevated",
-        }}
-      >
-        {TRAFFIC_LIGHTS.map((color) => (
-          <Box
-            key={color}
-            sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: color }}
-          />
-        ))}
-        <Typography variant="monoCaption" sx={{ pl: 1 }}>
-          jobpilot · {page}
-        </Typography>
-      </Stack>
+    // Inert: the real components inside are focusable, and this is a picture.
+    <Card aria-hidden inert variant="showcase">
+      <WindowBar label={`jobpilot · ${page}`} />
       <Stack direction="row" sx={{ minHeight: 380 }}>
         <Stack
-          spacing={0.75}
+          spacing={0.5}
           sx={{
-            width: 48,
+            width: 72,
             flexShrink: 0,
             alignItems: "center",
+            px: 0.5,
             py: 1.25,
             borderRight: 1,
             borderColor: "line.divider",
@@ -65,23 +46,11 @@ export function AppWindow(props: AppWindowProps): ReactElement {
         >
           <JobPilotMark size={24} />
           {RAIL.map((item) => {
-            const Icon = item.icon;
             const active = item.page === page;
             return (
-              <Box
-                key={item.page}
-                sx={(theme) => ({
-                  width: 32,
-                  height: 32,
-                  mt: 0.5,
-                  display: "grid",
-                  placeItems: "center",
-                  borderRadius: theme.radii.md,
-                  color: active ? "accent.primary" : "text.secondary",
-                  backgroundColor: active ? theme.tints.selected : "transparent",
-                })}
-              >
-                <Icon fontSize="sm" />
+              <Box key={item.page} sx={railTile(active)}>
+                <item.icon fontSize="md" sx={{ color: active ? "accent.primary" : undefined }} />
+                <RailLabel>{item.label}</RailLabel>
               </Box>
             );
           })}

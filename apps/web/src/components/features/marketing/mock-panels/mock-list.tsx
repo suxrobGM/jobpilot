@@ -1,5 +1,9 @@
+"use client";
+
 import type { ReactElement, ReactNode } from "react";
-import { Box, Card, Stack, Typography } from "@mui/material";
+import { Card, Tab, Tabs } from "@mui/material";
+import { ListRow } from "@/components/ui/data";
+import { CountLabel } from "@/components/ui/display";
 
 interface MockTab {
   label: string;
@@ -15,33 +19,15 @@ interface MockTabsProps {
 export function MockTabs(props: MockTabsProps): ReactElement {
   const { tabs, active } = props;
   return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{ mb: 1.5, borderBottom: 1, borderColor: "line.divider", overflow: "hidden" }}
-    >
-      {tabs.map((tab) => {
-        const selected = tab.label === active;
-        return (
-          <Stack
-            key={tab.label}
-            direction="row"
-            spacing={0.5}
-            sx={{
-              alignItems: "baseline",
-              pb: 0.75,
-              borderBottom: 2,
-              borderColor: selected ? "accent.primary" : "transparent",
-            }}
-          >
-            <Typography variant={selected ? "body2Strong" : "body2Muted"} noWrap>
-              {tab.label}
-            </Typography>
-            <Typography variant="monoCaption">{tab.count}</Typography>
-          </Stack>
-        );
-      })}
-    </Stack>
+    <Tabs value={active} variant="scrollable" sx={{ mb: 1.5 }}>
+      {tabs.map((tab) => (
+        <Tab
+          key={tab.label}
+          value={tab.label}
+          label={<CountLabel label={tab.label} count={tab.count} />}
+        />
+      ))}
+    </Tabs>
   );
 }
 
@@ -50,38 +36,26 @@ interface MockRowProps {
   lead: ReactNode;
   title: string;
   meta: string;
-  end: ReactNode;
-}
-
-function MockRow(props: MockRowProps): ReactElement {
-  const { lead, title, meta, end } = props;
-  return (
-    <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", px: 1.5, py: 1 }}>
-      {lead}
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2Strong" noWrap sx={{ display: "block" }}>
-          {title}
-        </Typography>
-        <Typography variant="captionMuted" noWrap sx={{ display: "block" }}>
-          {meta}
-        </Typography>
-      </Box>
-      {end}
-    </Stack>
-  );
+  status: ReactNode;
 }
 
 interface MockListProps {
   rows: MockRowProps[];
 }
 
-/** Rows in a bordered card, as every list in the app is laid out. */
+/** A record list as the app draws one. */
 export function MockList(props: MockListProps): ReactElement {
   const { rows } = props;
   return (
-    <Card sx={{ "& > * + *": { borderTop: 1, borderColor: "line.divider" } }}>
+    <Card>
       {rows.map((row) => (
-        <MockRow key={row.id} {...row} />
+        <ListRow
+          key={row.id}
+          lead={row.lead}
+          title={row.title}
+          meta={row.meta}
+          status={row.status}
+        />
       ))}
     </Card>
   );

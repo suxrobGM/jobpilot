@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import type { Classification } from "@jobpilot/contracts/email";
-import { Avatar } from "@mui/material";
+import { ListLead } from "@/components/ui/data";
 import { StatusChip } from "@/components/ui/display";
 import { initials } from "@/utils/format";
 import { AppWindow } from "./app-window";
@@ -35,14 +35,10 @@ export function InboxPanel(): ReactElement {
       <MockList
         rows={MESSAGES.map((message) => ({
           id: message.from,
-          lead: (
-            <Avatar sx={{ width: 32, height: 32, typography: "caption" }}>
-              {initials(message.from)}
-            </Avatar>
-          ),
+          lead: <ListLead>{initials(message.from)}</ListLead>,
           title: message.from,
           meta: message.subject,
-          end: <StatusChip domain="classification" value={message.classification} />,
+          status: <StatusChip domain="classification" value={message.classification} />,
         }))}
       />
     </AppWindow>

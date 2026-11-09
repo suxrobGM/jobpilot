@@ -3,10 +3,12 @@
 import type { ReactElement } from "react";
 import { Box, Tooltip } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import type { PipelineJobDto } from "@/api/types";
 
 interface ScoreBadgeProps {
-  job: PipelineJobDto;
+  /** Null until the pilot scores the job. */
+  score: number | null;
+  /** The job's own minimum score. */
+  bar: number;
 }
 
 function scoreHint(score: number | null, bar: number): string {
@@ -18,11 +20,10 @@ function scoreHint(score: number | null, bar: number): string {
 
 /** The match score against the job's own bar: green at or above, muted below, dashed when unread. */
 export function ScoreBadge(props: ScoreBadgeProps): ReactElement {
-  const { job } = props;
-  const score = job.matchScore;
-  const strong = score !== null && score >= job.minScore;
+  const { score, bar } = props;
+  const strong = score !== null && score >= bar;
   return (
-    <Tooltip title={scoreHint(score, job.minScore)}>
+    <Tooltip title={scoreHint(score, bar)}>
       <Box
         sx={(theme) => ({
           width: 36,

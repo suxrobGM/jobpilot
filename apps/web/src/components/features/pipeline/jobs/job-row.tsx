@@ -42,7 +42,7 @@ export function JobRow(props: JobRowProps): ReactElement {
     <ListRow
       onOpen={onOpen}
       selection={selection}
-      lead={<ScoreBadge job={job} />}
+      lead={<ScoreBadge score={job.matchScore} bar={job.minScore} />}
       title={job.title}
       tags={<CapExemptChip job={job} />}
       meta={metaLine(job, showFeed)}
