@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Terminal } from "@mui/icons-material";
 import { Button, ButtonBase, Divider, Drawer, Grid, ListItem, ListItemAvatar } from "@mui/material";
+import { AgentOrb } from "@/components/features/agent/agent-orb";
+import { useAgentActivity } from "@/components/features/agent/use-agent-activity";
 import { LogoutButton } from "@/components/features/auth";
 import { useSession } from "@/hooks/use-auth";
 import { useAgentDrawer } from "@/providers/agent-provider";
@@ -10,6 +11,29 @@ import { UserAvatar, UserIdentity } from "./account-menu";
 import { NavItem } from "./nav-item";
 import { RailLabel, railTile } from "./rail-tile";
 import { feedbackLinks, type NavItem as NavItemType } from "./shell-config";
+
+interface AgentTileProps {
+  onClose: () => void;
+}
+
+function AgentTile(props: AgentTileProps): ReactElement {
+  const { onClose } = props;
+  const { watchSteps } = useAgentDrawer();
+  const { orb } = useAgentActivity();
+
+  return (
+    <ButtonBase
+      onClick={() => {
+        onClose();
+        watchSteps();
+      }}
+      sx={railTile(false)}
+    >
+      <AgentOrb state={orb} size="lg" />
+      <RailLabel>Agent</RailLabel>
+    </ButtonBase>
+  );
+}
 
 interface MoreSheetProps {
   open: boolean;
@@ -21,7 +45,6 @@ interface MoreSheetProps {
 export function MoreSheet(props: MoreSheetProps): ReactElement {
   const { open, onClose, items } = props;
   const user = useSession();
-  const { watchSteps } = useAgentDrawer();
 
   return (
     <Drawer anchor="bottom" open={open} onClose={onClose}>
@@ -32,16 +55,7 @@ export function MoreSheet(props: MoreSheetProps): ReactElement {
           </Grid>
         ))}
         <Grid size={4}>
-          <ButtonBase
-            onClick={() => {
-              onClose();
-              watchSteps();
-            }}
-            sx={railTile(false)}
-          >
-            <Terminal fontSize="lg" />
-            <RailLabel>Agent</RailLabel>
-          </ButtonBase>
+          <AgentTile onClose={onClose} />
         </Grid>
       </Grid>
       {user && (
