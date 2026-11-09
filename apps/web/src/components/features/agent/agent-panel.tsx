@@ -8,33 +8,28 @@ import { TOP_BAR_HEIGHT } from "@/components/layout/shell-config";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { DropdownMenu } from "@/components/ui/navigation";
-import { BROWSER_BLOCKED_MESSAGE } from "@/hooks/use-terminal-health";
-import { readAgentStorage } from "@/lib/terminal/agent-storage";
+import { useIsDesktop } from "@/hooks/use-is-desktop";
+import { BROWSER_BLOCKED_MESSAGE, canRelaunch } from "@/hooks/use-terminal-health";
 import { providerDisplayName, type TerminalProviderId } from "@/lib/terminal/client";
 import { type AgentDrawerTab, useAgentDrawer } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOfflineCard } from "./agent-offline-card";
 import { AgentOrb } from "./agent-orb";
+import { AgentRemoteCard } from "./agent-remote-card";
+import { SetupOnComputerCard } from "./setup-on-computer-card";
 import { TerminalPanel } from "./terminal-panel";
 import { PendingRestartCard } from "./update/pending-restart-card";
 import { AgentUpdateBanner } from "./update/update-banner";
 import { useAgentActivity } from "./use-agent-activity";
-import { useAgentHealth } from "./use-agent-health";
+import { type AgentHealthState, useAgentHealth } from "./use-agent-health";
 
 const PROVIDERS: TerminalProviderId[] = ["claude", "codex"];
 
 export function AgentPanel(): ReactElement {
-  const {
-    closeDrawer,
-    drawerTab,
-    setDrawerTab,
-    provider,
-    switchProvider,
-    restart,
-    stop,
-    terminalRevision,
-  } = useAgentDrawer();
-  const { health, status, pending, beginPending, unreachable } = useAgentHealth();
+  const { closeDrawer, drawerTab, setDrawerTab, provider, switchProvider, restart, stop } =
+    useAgentDrawer();
+  const agent = useAgentHealth();
+  const { health, status, pending, beginPending, unreachable } = agent;
   const activity = useAgentActivity();
   const providerLabel = providerDisplayName(provider);
   const restarting = pending !== null && unreachable;
@@ -146,48 +141,75 @@ export function AgentPanel(): ReactElement {
           minHeight: 0,
         }}
       >
-        {health === "checking" && (
-          <Stack sx={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <LoadingSpinner />
-          </Stack>
-        )}
-        {health === "offline" &&
-          (pending ? (
-            <PendingRestartCard action={pending} />
-          ) : (
-            <AgentOfflineCard
-              onStart={() => beginPending("starting")}
-              // Live status while warm-offline; the persisted copy covers a cold reload (status is null then).
-              canRelaunch={status?.canRelaunch ?? readAgentStorage()?.canRelaunch ?? false}
-            />
-          ))}
-        {health === "uninstalled" && <AgentInstallCard />}
-        {health === "blocked" && (
-          <AgentInstallCard
-            title="Allow local network access"
-            description={`${BROWSER_BLOCKED_MESSAGE} Not installed yet? Run setup below first.`}
-          />
-        )}
-        {health === "degraded" && (
-          <AgentInstallCard
-            title="Reinstall the JobPilot agent"
-            description="The agent host is running but its plugin files are missing or corrupt. Re-run setup to refresh it, then recheck."
-            detail={status?.detail}
-          />
-        )}
-        {health === "reachable" && (
-          <>
-            {status && (
-              <AgentUpdateBanner
-                currentVersion={status.hostVersion}
-                canUpdate={status.canUpdate}
-                onUpdating={() => beginPending("updating")}
-              />
-            )}
-            <TerminalPanel key={`${provider}-${terminalRevision}`} provider={provider} />
-          </>
-        )}
+        <TerminalTabBody agent={agent} remote={activity.remote} />
       </Box>
     </Stack>
   );
+}
+
+interface TerminalTabBodyProps {
+  agent: AgentHealthState;
+  remote: boolean;
+}
+
+function TerminalTabBody(props: TerminalTabBodyProps): ReactElement {
+  const { agent, remote } = props;
+  const { health, status, pending, beginPending } = agent;
+  const { provider, terminalRevision } = useAgentDrawer();
+  const desktop = useIsDesktop();
+
+  if (health === "reachable") {
+    return (
+      <>
+        {status && (
+          <AgentUpdateBanner
+            currentVersion={status.hostVersion}
+            canUpdate={status.canUpdate}
+            onUpdating={() => beginPending("updating")}
+          />
+        )}
+        <TerminalPanel key={`${provider}-${terminalRevision}`} provider={provider} />
+      </>
+    );
+  }
+  if (health === "degraded") {
+    return (
+      <AgentInstallCard
+        title="Reinstall the JobPilot agent"
+        description="The agent host is running but its plugin files are missing or corrupt. Re-run setup to refresh it, then recheck."
+        detail={status?.detail}
+      />
+    );
+  }
+  if (health === "offline") {
+    if (pending) {
+      return <PendingRestartCard action={pending} />;
+    }
+    return (
+      <AgentOfflineCard onStart={() => beginPending("starting")} canRelaunch={canRelaunch(agent)} />
+    );
+  }
+  if (remote) {
+    return <AgentRemoteCard />;
+  }
+  if (health === "checking") {
+    return (
+      <Stack sx={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <LoadingSpinner />
+      </Stack>
+    );
+  }
+  // A phone has no host of its own to install or unblock.
+  if (!desktop) {
+    return <SetupOnComputerCard />;
+  }
+  if (health === "blocked") {
+    return (
+      <AgentInstallCard
+        title="Allow local network access"
+        description={`${BROWSER_BLOCKED_MESSAGE} Not installed yet? Run setup below first.`}
+      />
+    );
+  }
+  return <AgentInstallCard />;
 }

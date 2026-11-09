@@ -1,1 +1,1 @@
-export { publish, sseStream } from "./server";
+export { publish, sseStream, subscribe } from "./server";

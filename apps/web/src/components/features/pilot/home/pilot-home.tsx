@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { CountLabel } from "@/components/ui/display";
 import { DetailSkeleton, QueryError } from "@/components/ui/feedback";
+import { useIsDesktop } from "@/hooks/use-is-desktop";
 import { NeedsYouList } from "../needs-you/needs-you-list";
 import { useNeedsYouCount } from "../needs-you/use-needs-you";
 import { Composer } from "./composer";
@@ -38,7 +39,7 @@ function ScrollPane(props: ScrollPaneProps): ReactElement {
 /** The "Needs you" queue beside the conversation. */
 export function PilotHome(): ReactElement {
   const stateQuery = useQuery(pilotQueries.state());
-  const isDesktop = useMediaQuery((theme) => theme.breakpoints.up("md"));
+  const isDesktop = useIsDesktop();
   // Wide enough for a third column, so the overview leaves the queue for its own.
   const wide = useMediaQuery((theme) => theme.breakpoints.up("xl"));
   const [tab, setTab] = useState<PhoneTab>("chat");

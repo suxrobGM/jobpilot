@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { PilotState } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
 import { pilotQueries, pipelineQueries } from "@/api/queries";
@@ -34,6 +35,11 @@ export function PilotLive(): ReactNode {
   useLiveInvalidation(pilotChannel, null, {
     on: {
       "state.changed": RUN_KEYS,
+      "agent.presence": (event) =>
+        queryClient.setQueryData<PilotState>(
+          STATE_KEY,
+          (state) => state && { ...state, agentConnected: event.connected },
+        ),
       "run.started": () => invalidate(RUN_KEYS),
       "run.finished": () =>
         invalidate([
@@ -50,8 +56,9 @@ export function PilotLive(): ReactNode {
       "question.answered": () => invalidate([pilotQueries.questionsAll]),
       "run.steps": (event) => appendRunSteps(queryClient, event.runId, event.steps),
       "message.created": () => refetchThread(queryClient),
-      "request.created": () => refetchThread(queryClient),
-      "request.updated": () => refetchThread(queryClient),
+      // Also moves the pending count the waiting banner reads.
+      "request.created": () => invalidate([STATE_KEY]),
+      "request.updated": () => invalidate([STATE_KEY]),
       // A change can touch searches, answers and jobs as well as the state.
       "change.updated": () =>
         invalidate([

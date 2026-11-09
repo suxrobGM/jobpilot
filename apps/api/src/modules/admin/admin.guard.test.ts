@@ -18,6 +18,7 @@ const user: AuthUser = {
   role: "user",
   email: "user@example.com",
   tokenId: crypto.randomUUID(),
+  tokenKind: "session",
 };
 // Resolved per request by the auth middleware, so binding before the first request is enough.
 container.bind({

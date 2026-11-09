@@ -11,6 +11,7 @@ const USER = { id: "u1", role: "user", email: "u1@example.com" };
 
 interface Row {
   id: string;
+  kind: "session" | "terminal";
   tokenHash: string;
   revokedAt: Date | null;
   expiresAt: Date | null;
@@ -22,6 +23,7 @@ function make(row: Partial<Row> | null) {
   const revocations: unknown[] = [];
   const stored: Row | null = row && {
     id: "t1",
+    kind: "terminal",
     tokenHash: hashToken("raw"),
     revokedAt: null,
     expiresAt: null,
@@ -49,7 +51,7 @@ function make(row: Partial<Row> | null) {
 describe("AuthTokenService.verify", () => {
   it("returns the principal with the authenticating token id", async () => {
     const { service } = make({});
-    expect(await service.verify("raw")).toEqual({ ...USER, tokenId: "t1" });
+    expect(await service.verify("raw")).toEqual({ ...USER, tokenId: "t1", tokenKind: "terminal" });
   });
 
   it("rejects an unknown token", async () => {

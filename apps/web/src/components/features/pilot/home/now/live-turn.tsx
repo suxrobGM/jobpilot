@@ -83,7 +83,7 @@ function SaidLine(props: SaidLineProps): ReactElement {
 type SaidMode = Extract<PilotMode, "offline" | "unpaired" | "held" | "off" | "starting">;
 
 const MODE_LINES: Record<SaidMode, string> = {
-  offline: "I'm offline. Start the agent on this computer and I'll pick up where I left off.",
+  offline: "I'm offline. Start the agent on your computer and I'll pick up where I left off.",
   unpaired: "The agent is running but hasn't connected to me yet.",
   held: "You're using the terminal, so I'm holding new work until you hand it back.",
   off: "Autopilot is off, so I only do what you ask.",

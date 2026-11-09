@@ -4,7 +4,7 @@ import type { TerminalHealth } from "@/hooks/use-terminal-health";
 import type { PilotHealth } from "@/lib/terminal/client";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
 
-/** `unknown` is a pilot with no host to ask: mobile, or the first probe still in flight. */
+/** `unknown`: no local host to ask whether it's paired, e.g. a remote host or a probe in flight. */
 export type PilotMode =
   | "off"
   | "held"
@@ -44,6 +44,14 @@ function isHostOffline(health: TerminalHealth | null): boolean {
   return health === "offline" || health === "uninstalled" || health === "blocked";
 }
 
+/** Unprobeable here but connected to the API; a known-stopped local host ("offline") wins, so Stop reads at once. */
+export function isHostRemote(
+  state: Pick<PilotState, "agentConnected">,
+  health: TerminalHealth | null,
+): boolean {
+  return health !== "reachable" && health !== "offline" && state.agentConnected;
+}
+
 /** The user typed into the terminal recently, so the host holds new runs. */
 function isHeld(pilot: PilotHealth | null): boolean {
   const heldUntil = pilot?.heldUntil;
@@ -52,11 +60,11 @@ function isHeld(pilot: PilotHealth | null): boolean {
 
 /** The host runs whenever paired; autopilot only decides whether it picks work on its own. */
 export function pilotMode(
-  state: Pick<PilotState, "autopilot" | "cycleCount" | "currentRun">,
+  state: Pick<PilotState, "autopilot" | "cycleCount" | "currentRun" | "agentConnected">,
   health: TerminalHealth | null,
   pilot: PilotHealth | null,
 ): PilotMode {
-  if (isHostOffline(health)) {
+  if (isHostOffline(health) && !isHostRemote(state, health)) {
     return "offline";
   }
   if (state.currentRun) {

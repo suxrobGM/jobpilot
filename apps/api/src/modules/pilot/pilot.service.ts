@@ -11,6 +11,7 @@ import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
 import { boardDomain } from "@/modules/job-board/board-host";
+import { AgentPresence } from "./agent-presence";
 import { costByTaskType, countAppliedToday, countSentToday } from "./pilot.stats";
 import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
@@ -22,12 +23,15 @@ function latest(times: Date[]): Date | null {
 /** Pilot state, instructions, and the stats and liveness reads. */
 @injectable()
 export class PilotService {
-  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly presence = inject(AgentPresence),
+  ) {}
 
   private async toState(row: PilotStateModel): Promise<PilotState> {
     const config = pilotConfigSchema.parse(row.config);
     const now = new Date();
-    const [appliedToday, networkingSentToday, openRun] = await Promise.all([
+    const [appliedToday, networkingSentToday, openRun, pendingRequests] = await Promise.all([
       countAppliedToday(this.prisma, row.userId, now),
       countSentToday(this.prisma, row.userId, now),
       this.prisma.pilotRun.findFirst({
@@ -35,6 +39,7 @@ export class PilotService {
         orderBy: { startedAt: "desc" },
         select: { id: true, taskType: true, title: true, startedAt: true },
       }),
+      this.prisma.pilotRequest.count({ where: { userId: row.userId, status: "pending" } }),
     ]);
     return {
       userId: row.userId,
@@ -46,6 +51,8 @@ export class PilotService {
       appliedToday,
       networkingSentToday,
       capReached: allowedToday(config, { appliedToday, networkingSentToday }).appliesLeft === 0,
+      agentConnected: this.presence.isConnected(row.userId),
+      pendingRequests,
       currentRun: openRun,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

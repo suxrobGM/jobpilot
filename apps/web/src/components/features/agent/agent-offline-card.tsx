@@ -1,51 +1,32 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Button, Stack, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import { CopyField } from "@/components/ui/display";
-import {
-  formatSkillCommand,
-  providerDisplayName,
-  TERMINAL_PROTOCOL_URL,
-} from "@/lib/terminal/client";
+import { formatSkillCommand, providerDisplayName } from "@/lib/terminal/client";
 import { useAgentDrawer } from "@/providers/agent-provider";
+import { AgentCard } from "./agent-card";
 import { RecheckButton } from "./recheck-button";
+import { StartAgentButton } from "./start-agent-button";
 
 interface AgentOfflineCardProps {
-  /** Marks a host relaunch as in flight, so the agent drawer shows its starting state and polls fast. */
   onStart: () => void;
-  /** Whether the host reported the jobpilot:// scheme is registered, so the browser can relaunch it. */
+  /** Whether the host registered the jobpilot:// scheme, so the browser can relaunch it. */
   canRelaunch: boolean;
 }
 
-/** Shown when a host previously connected from this browser but isn't answering now - installed, just stopped. */
+/** A host once connected from this browser but isn't answering now: installed, just stopped. */
 export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
   const { onStart, canRelaunch } = props;
   const { provider } = useAgentDrawer();
   const providerLabel = providerDisplayName(provider);
 
   return (
-    <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2, overflowY: "auto" }}>
-      <Stack spacing={0.5}>
-        <Typography variant="body1Strong">Agent is offline</Typography>
-        <Typography variant="body2Muted">
-          Your JobPilot agent is installed but not running. Start it and it reconnects here
-          automatically.
-        </Typography>
-      </Stack>
-
-      {canRelaunch && (
-        <Button
-          variant="contained"
-          size="small"
-          component="a"
-          href={TERMINAL_PROTOCOL_URL}
-          onClick={onStart}
-          sx={{ alignSelf: "flex-start" }}
-        >
-          Start agent
-        </Button>
-      )}
+    <AgentCard
+      title="Agent is offline"
+      description="Your JobPilot agent is installed but not running. Start it and it reconnects here automatically."
+    >
+      {canRelaunch && <StartAgentButton onStart={onStart} sx={{ alignSelf: "flex-start" }} />}
 
       <Stack spacing={0.5}>
         <Typography variant="captionMuted">In {providerLabel}, run setup:</Typography>
@@ -62,6 +43,6 @@ export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
       </Stack>
 
       <RecheckButton />
-    </Stack>
+    </AgentCard>
   );
 }

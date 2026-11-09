@@ -1,13 +1,15 @@
 "use client";
 
 import { type PropsWithChildren, type ReactElement, useState } from "react";
-import { Box, useMediaQuery } from "@mui/material";
+import { Box } from "@mui/material";
 import { AgentDrawer } from "@/components/features/agent/agent-drawer";
+import { AgentWaitingBanner } from "@/components/features/agent/agent-waiting-banner";
 import { PilotPairing } from "@/components/features/agent/pilot-pairing";
 import { VerifyEmailBanner } from "@/components/features/auth";
 import { PilotLive } from "@/components/features/pilot/pilot-live";
 import { PipelineLive } from "@/components/features/pipeline";
 import { type PageWidth, TopBarSlotsContext } from "@/components/ui/layout/top-bar-slots";
+import { useIsDesktop } from "@/hooks/use-is-desktop";
 import { MobileNav } from "./mobile-nav";
 import { MOBILE_NAV_HEIGHT } from "./shell-config";
 import { Sidebar } from "./sidebar";
@@ -16,7 +18,7 @@ import { TopBar } from "./top-bar";
 export function AppShell(props: PropsWithChildren): ReactElement {
   const { children } = props;
   // Below md a bottom bar replaces the sidebar; the drawer still opens there for the agent's status.
-  const isDesktop = useMediaQuery((theme) => theme.breakpoints.up("md"));
+  const isDesktop = useIsDesktop();
   const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null);
   const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
   const [tabsSlot, setTabsSlot] = useState<HTMLElement | null>(null);
@@ -53,6 +55,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
           tabsRef={setTabsSlot}
         />
         <VerifyEmailBanner />
+        <AgentWaitingBanner />
         <PilotLive />
         <PipelineLive />
         <PilotPairing />

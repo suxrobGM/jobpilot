@@ -5,15 +5,17 @@ import {
   updatePilotSettingsSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { Elysia } from "elysia";
+import { Elysia, sse } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
-import { sseStream } from "@/common/sse";
+import { subscribe } from "@/common/sse";
+import { AgentPresence } from "./agent-presence";
 import { pilotActivityResponseSchema, pilotCostSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
 
 const pilot = container.get(PilotService);
+const presence = container.get(AgentPresence);
 
 const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
@@ -87,9 +89,20 @@ export const pilotController = new Elysia({
         "Newest agent activity and the active-run count, so the host can tell a long run from a stuck one.",
     },
   })
-  .get("/events", ({ user, headers }) => sseStream(pilotChannel, { userId: user.id }, headers), {
-    detail: {
-      summary: "Stream pilot events",
-      description: "Server-Sent Events for journal appends, questions, runs and state changes.",
+  .get(
+    "/events",
+    ({ user, headers }) =>
+      sse(
+        presence.track(
+          user,
+          subscribe(pilotChannel, { userId: user.id }, headers["last-event-id"]),
+        ),
+      ),
+    {
+      detail: {
+        summary: "Stream pilot events",
+        description:
+          "Server-Sent Events for journal appends, questions, runs and state changes. The host's stream also marks the agent connected.",
+      },
     },
-  });
+  );

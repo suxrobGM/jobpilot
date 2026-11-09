@@ -76,6 +76,7 @@ export class AuthTokenService {
       where: { tokenHash: hashToken(raw) },
       select: {
         id: true,
+        kind: true,
         revokedAt: true,
         expiresAt: true,
         lastUsedAt: true,
@@ -93,7 +94,7 @@ export class AuthTokenService {
         .update({ where: { id: record.id }, data: { lastUsedAt: now } })
         .catch(() => {});
     }
-    return { ...record.user, tokenId: record.id };
+    return { ...record.user, tokenId: record.id, tokenKind: record.kind };
   }
 
   /** Ends the session behind a raw cookie token; a missing or unknown token is a no-op. */

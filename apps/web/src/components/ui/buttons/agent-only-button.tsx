@@ -5,7 +5,7 @@ import type { ButtonProps } from "@mui/material";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { TooltipButton } from "./tooltip-button";
 
-const UNAVAILABLE = "Open JobPilot on your desktop to run this.";
+const UNAVAILABLE = "Start the agent on your computer to run this.";
 
 interface AgentOnlyButtonProps extends ButtonProps {
   children: ReactNode;

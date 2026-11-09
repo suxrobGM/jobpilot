@@ -56,6 +56,10 @@ To start the agent again later:
 
 The agent checks for updates each time it starts.
 
+While the agent is offline, your requests wait in a queue and a banner shows
+how many. With autopilot on and notifications allowed, you get a push after 10
+minutes offline, at most twice a day.
+
 > Claude Code starts on the latest Sonnet model and Codex on GPT 6 Luna.
 > Bigger models use up your weekly limit much faster without sending more
 > applications. The [FAQ](/docs/faq) explains why.
@@ -64,14 +68,14 @@ The agent checks for updates each time it starts.
 
 [Sign up](/register) and confirm your email. Onboarding has three steps:
 
-1. **Resume.** Upload a PDF. The agent reads it into your profile: work
+1. **Connect agent.** Checks that the agent you set up above is running. If
+   it's stopped, press **Start agent**. You can skip this and connect later.
+2. **Resume.** Upload a PDF. The agent reads it into your profile: work
    history, education, skills, contact details. It takes a minute or two. If
-   the agent isn't running, the file is saved and you can fill in the details
-   yourself.
-2. **Personal.** Details from the resume fill any profile field you left
-   blank. Check them and press **Save & continue**.
-3. **Connect agent.** Checks that the agent from step 2 is running. Press
-   **Finish** to open the Pilot.
+   the agent isn't running, the file is saved and read when it starts.
+   Meanwhile, you can fill in the details yourself.
+3. **Personal.** Details from the resume fill any profile field you left
+   blank. Check them and press **Save & finish** to open the Pilot.
 
 Application forms are filled from your profile. Scoring and tailoring use your
 resume. Keep the address the same in both; the resume page warns you when

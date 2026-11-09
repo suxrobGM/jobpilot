@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import { type TerminalHealth, useTerminalHealth } from "@/hooks/use-terminal-health";
-import { pilotMode } from "../pilot/state/pilot-mode";
+import { isHostRemote, pilotMode } from "../pilot/state/pilot-mode";
 import type { AgentOrbState } from "./agent-orb";
 
 const HEALTH_ORB: Record<TerminalHealth, AgentOrbState> = {
@@ -25,7 +25,8 @@ const HEALTH_LABELS: Record<TerminalHealth, string> = {
 };
 
 interface AgentActivity {
-  health: TerminalHealth;
+  /** The host runs on another device, seen only through the API. */
+  remote: boolean;
   orb: AgentOrbState;
   /** The running task's title, else the host's health, e.g. "offline". */
   label: string;
@@ -35,14 +36,18 @@ interface AgentActivity {
 export function useAgentActivity(): AgentActivity {
   const { health, status } = useTerminalHealth();
   const { data: state } = useQuery(pilotQueries.state());
+  const remote = state ? isHostRemote(state, health) : false;
   // The same rule as the pilot header, so the two never disagree on working.
   const working =
-    health === "reachable" &&
+    (health === "reachable" || remote) &&
     state &&
     pilotMode(state, health, status?.pilot ?? null) === "working";
 
   if (working) {
-    return { health, orb: "working", label: state.currentRun?.title ?? "working" };
+    return { remote, orb: "working", label: state.currentRun?.title ?? "working" };
   }
-  return { health, orb: HEALTH_ORB[health], label: HEALTH_LABELS[health] };
+  if (remote) {
+    return { remote, orb: "ready", label: "running on your computer" };
+  }
+  return { remote, orb: HEALTH_ORB[health], label: HEALTH_LABELS[health] };
 }

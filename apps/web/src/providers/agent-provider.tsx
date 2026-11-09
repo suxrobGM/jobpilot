@@ -8,7 +8,9 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { useMediaQuery } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { pilotQueries } from "@/api/queries";
+import { useIsDesktop } from "@/hooks/use-is-desktop";
 import {
   patchAgentStorage,
   readStoredDrawerOpen,
@@ -130,7 +132,15 @@ export function useAgentDrawer(): AgentDrawerContextValue {
   return ctx;
 }
 
-/** Below md there is no terminal to inject into, so agent-driving controls hide against this. */
+/** Whether a host holds the API's event stream open, from any device. Null until the state loads. */
+export function useAgentConnected(): boolean | null {
+  const { data } = useQuery({ ...pilotQueries.state(), select: (state) => state.agentConnected });
+  return data ?? null;
+}
+
+/** Desktop always queues agent work; below md a host must be connected to the API. */
 export function useAgentAvailable(): boolean {
-  return useMediaQuery((theme) => theme.breakpoints.up("md"));
+  const desktop = useIsDesktop();
+  const connected = useAgentConnected();
+  return desktop || connected === true;
 }

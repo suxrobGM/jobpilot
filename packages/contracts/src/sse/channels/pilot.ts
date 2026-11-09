@@ -16,6 +16,7 @@ export type PilotEvent =
   | { type: "question.created"; question: PilotQuestion }
   | { type: "question.answered"; question: PilotQuestion }
   | { type: "state.changed"; state: PilotState }
+  | { type: "agent.presence"; connected: boolean }
   | { type: "change.updated"; change: PilotChange }
   | { type: "message.created"; message: PilotMessage }
   | { type: "request.created"; request: PilotRequest }

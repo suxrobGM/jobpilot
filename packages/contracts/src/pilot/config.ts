@@ -64,6 +64,10 @@ export const pilotStateSchema = z.object({
   appliedToday: z.number().int(),
   capReached: z.boolean(),
   networkingSentToday: z.number().int(),
+  // A host holds the event stream open; devices that can't probe it locally see it runs.
+  agentConnected: z.boolean(),
+  // Requests no run has picked up yet.
+  pendingRequests: z.number().int(),
   // The newest unfinished, unexpired run.
   currentRun: z
     .object({ id: z.uuid(), taskType: z.string(), title: z.string(), startedAt: z.date() })

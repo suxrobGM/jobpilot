@@ -19,3 +19,8 @@ export async function allNamed<T extends Record<string, unknown>>(
     [K in keyof T]: Awaited<T[K]>;
   };
 }
+
+/** So a background timer never holds the process open; Bun and Node both have `unref`. */
+export function unrefTimer(timer: ReturnType<typeof setTimeout>): void {
+  (timer as { unref?: () => void }).unref?.();
+}

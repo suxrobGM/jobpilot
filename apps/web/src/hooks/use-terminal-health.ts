@@ -141,3 +141,11 @@ export function useTerminalHealth(expectingReturn = false): TerminalHealthState 
 
   return snapshot;
 }
+
+/** A stopped host the browser can relaunch; the stored copy covers a cold reload (status is null). */
+export function canRelaunch(state: TerminalHealthState): boolean {
+  return (
+    state.health === "offline" &&
+    (state.status?.canRelaunch ?? readAgentStorage()?.canRelaunch ?? false)
+  );
+}

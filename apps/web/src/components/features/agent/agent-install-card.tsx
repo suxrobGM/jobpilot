@@ -1,40 +1,35 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Stack, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import { PluginInstallCommands } from "@/components/features/install";
+import { AgentCard } from "./agent-card";
 import { RecheckButton } from "./recheck-button";
 
 interface AgentInstallCardProps {
-  /** Override for the degraded-host case (running but broken install). */
   title?: string;
   description?: string;
-  /** Host-reported reason shown under the description (e.g. missing plugin tree). */
+  /** Host-reported reason, e.g. a missing plugin tree. */
   detail?: string | null;
 }
 
-/** Shown in the agent drawer when the local terminal host is unreachable: plugin-first install + recheck. */
+/** The local host is unreachable: plugin-first install plus recheck. */
 export function AgentInstallCard(props: AgentInstallCardProps): ReactElement {
-  const { title, description, detail } = props;
+  const {
+    title = "Install the JobPilot agent",
+    description = "Add the JobPilot plugin to Claude Code or Codex, then run setup. It installs and starts the local agent, which connects here automatically.",
+    detail,
+  } = props;
 
   return (
-    <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2, overflowY: "auto" }}>
-      <Stack spacing={0.5}>
-        <Typography variant="body1Strong">{title ?? "Install the JobPilot agent"}</Typography>
-        <Typography variant="body2Muted">
-          {description ??
-            "Add the JobPilot plugin to Claude Code or Codex, then run setup - it installs and starts the local agent, which connects here automatically."}
+    <AgentCard title={title} description={description}>
+      {detail && (
+        <Typography variant="captionMuted" sx={{ color: "error.main" }}>
+          {detail}
         </Typography>
-        {detail && (
-          <Typography variant="captionMuted" sx={{ color: "error.main" }}>
-            {detail}
-          </Typography>
-        )}
-      </Stack>
-
+      )}
       <PluginInstallCommands />
-
       <RecheckButton />
-    </Stack>
+    </AgentCard>
   );
 }

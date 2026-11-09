@@ -1,6 +1,9 @@
 import type { PrismaClient } from "@/generated/prisma/client";
+import type { AgentPresence } from "./agent-presence";
 import { PilotService } from "./pilot.service";
 import { describe, expect, it } from "bun:test";
+
+const offline = { isConnected: () => false } as unknown as AgentPresence;
 
 const stateRow = (over: Record<string, unknown>) => ({
   userId: "p1",
@@ -60,10 +63,16 @@ function stateService(openRun: OpenRun | null = null, savedConfig = {}) {
     job: { updateMany: count("jobsDropped") },
     application: { count: async () => 0 },
     networkingMessage: { count: async () => 0 },
+    pilotRequest: { count: async () => 0 },
     userJobBoard: { findMany: async () => LINKED.map((domain) => ({ board: { domain } })) },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   };
-  return { svc: new PilotService(db as unknown as PrismaClient), rec, runQueries, upserts };
+  return {
+    svc: new PilotService(db as unknown as PrismaClient, offline),
+    rec,
+    runQueries,
+    upserts,
+  };
 }
 
 describe("PilotService.getState", () => {
@@ -141,7 +150,7 @@ describe("PilotService.getActivity", () => {
       job: { aggregate: async () => noMax },
       pilotState: { findUnique: async () => state },
     };
-    return new PilotService(db as unknown as PrismaClient);
+    return new PilotService(db as unknown as PrismaClient, offline);
   }
 
   // A stuck-recovery cycle plans no wake but still reports when it completed.
