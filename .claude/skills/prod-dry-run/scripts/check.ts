@@ -1,9 +1,10 @@
-// Run from apps/api so its .env loads; relative imports because the workspace packages aren't hoisted.
-import { db } from "../../../../apps/api/src/common/database/prisma.client";
-import { RunListService } from "../../../../apps/api/src/modules/pilot/runs/run-list.service";
-import { TaskListService } from "../../../../apps/api/src/modules/pilot/tasks/task-list.service";
-import { PilotThreadService } from "../../../../apps/api/src/modules/pilot/thread/thread.service";
-import { taskFieldsSchema } from "../../../../packages/contracts/src/pilot";
+// Run from apps/api so its .env loads; tsconfig.json beside it maps the imports.
+import { taskFieldsSchema } from "@jobpilot/contracts/pilot";
+import { db } from "@/common/database/prisma.client";
+import type { PilotRun } from "@/generated/prisma/client";
+import { RunListService } from "@/modules/pilot/runs/run-list.service";
+import { TaskListService } from "@/modules/pilot/tasks/task-list.service";
+import { PilotThreadService } from "@/modules/pilot/thread/thread.service";
 
 const RUN_BATCH = 2000;
 const THREAD_PAGES = 5;
@@ -15,6 +16,8 @@ interface Report {
   tasksByType: Map<string, number>;
   failures: string[];
 }
+
+type StoredRun = Pick<PilotRun, "id" | "taskType" | "subjectType" | "subjectId" | "payload">;
 
 interface Services {
   thread: PilotThreadService;
@@ -57,7 +60,7 @@ function createServices(): Services {
 async function checkRunPayloads(report: Report): Promise<void> {
   let lastId: string | null = null;
   while (true) {
-    const runs = await db.pilotRun.findMany({
+    const runs: StoredRun[] = await db.pilotRun.findMany({
       select: { id: true, taskType: true, subjectType: true, subjectId: true, payload: true },
       where: lastId ? { id: { gt: lastId } } : {},
       orderBy: { id: "asc" },
