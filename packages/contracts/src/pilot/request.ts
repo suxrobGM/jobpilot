@@ -17,7 +17,11 @@ export const createPilotRequestSchema = z.discriminatedUnion("taskType", [
   request("job.apply", z.object({ feedId: z.uuid(), jobKey: z.string().min(1) })),
   request(
     "job.rescanSkipped",
-    z.object({ feedId: z.uuid(), jobKeys: z.array(z.string().min(1)).max(200).optional() }),
+    z.object({
+      feedId: z.uuid(),
+      jobKeys: z.array(z.string().min(1)).max(200).optional(),
+      minScore: z.number().int().min(0).max(100).optional(),
+    }),
   ),
   request("job.retryFailed", z.object({ feedId: z.uuid() })),
   request("inbox.review", z.object({ messageIds: z.array(z.string().min(1)).max(100).optional() })),

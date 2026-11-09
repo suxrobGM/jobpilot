@@ -26,8 +26,24 @@ export type ThreadRunRow = Pick<
   | "payload"
 >;
 
-/** A job the page's runs touched, keyed by its subject id. */
-export type ThreadJobs = Map<string, PilotThreadJob>;
+/** A job the page touched; `appliedAt` stays server-side, to tell which run applied. */
+export interface ThreadJob {
+  job: PilotThreadJob;
+  appliedAt: Date | null;
+}
+
+/** Keyed by job subject id. */
+export type ThreadJobs = Map<string, ThreadJob>;
+
+/** Only the run the application landed in applied; an earlier skip of the same job didn't. */
+function appliedDuring(run: ThreadRunRow, found: ThreadJob | undefined): boolean {
+  const appliedAt = found?.appliedAt;
+  if (run.taskType !== "job.apply" || found?.job.status !== "applied" || !appliedAt) {
+    return false;
+  }
+  const finishedAt = run.finishedAt ?? appliedAt;
+  return appliedAt >= run.startedAt && appliedAt <= finishedAt;
+}
 
 /** Answered questions' job subjects by question id, so an answer's run links to its job. */
 export type QuestionJobs = ReadonlyMap<string, string>;
@@ -93,6 +109,7 @@ export function toRunLine(
   questionJobs: QuestionJobs,
 ): TimedRun {
   const jobSubject = runJobSubject(run, questionJobs);
+  const found = jobSubject ? jobs.get(jobSubject) : undefined;
   return {
     row: run,
     line: {
@@ -103,7 +120,8 @@ export function toRunLine(
       outcome: run.outcome,
       subjectType: jobSubject ? "job" : run.subjectType,
       subjectId: jobSubject ?? run.subjectId,
-      job: jobSubject ? (jobs.get(jobSubject) ?? null) : null,
+      job: found?.job ?? null,
+      applied: appliedDuring(run, found),
       finishedAt: run.finishedAt ?? run.startedAt,
     },
   };
@@ -143,7 +161,7 @@ function tallySearches(
     }
     counted = true;
     for (const ref of scoring.refs) {
-      const job = jobs.get(jobSubjectId(ref));
+      const job = jobs.get(jobSubjectId(ref))?.job;
       if (job?.score == null) {
         continue;
       }

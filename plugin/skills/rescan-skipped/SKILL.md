@@ -1,7 +1,7 @@
 ---
 name: rescan-skipped
 description: Re-score a feed's skipped jobs and promote the eligible ones to approved for later applying. Recovers jobs wrongly dropped for location, a sparse posting, 1099, or seniority. Does not apply.
-argument-hint: "<feed-id> [--jobs key1,key2,...]"
+argument-hint: "<feed-id> [--jobs key1,key2,...] [--min-score N]"
 ---
 
 # Rescan skipped
@@ -11,12 +11,14 @@ change the feed's status.
 
 ## Setup
 
-Follow `../_shared/setup.md`. `GET /api/feeds/<feed-id>`. `THRESHOLD` is the feed's
-`config.minScore`, else `GET /api/pilot` `config.minScore`.
+Follow `../_shared/setup.md`. `GET /api/feeds/<feed-id>`. `THRESHOLD` is `--min-score` when given,
+else the feed's `config.minScore`, else `GET /api/pilot` `config.minScore`.
 
 ## 1. Targets
 
-Every `skipped` job, or only the `--jobs` keys. Leave these alone:
+Every `skipped` job (`GET /api/feeds/<feed-id>/jobs --query status=skipped`), or only the `--jobs`
+keys, each read with `GET /api/feeds/<feed-id>/jobs/<key>`. A 404 there means the key is wrong:
+say so, never that the job was removed. Leave these alone:
 
 - Always: `skipReason` starting `Already applied`, `CAPTCHA`, `Payment required` or `No visa
   sponsorship (JD:`, or one citing a stated citizenship or clearance requirement.

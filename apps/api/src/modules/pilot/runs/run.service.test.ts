@@ -136,6 +136,7 @@ function closeDb(row: ReturnType<typeof runRow>) {
   const jobReverts: unknown[] = [];
   const requestWrites: { where: unknown; data: unknown }[] = [];
   const messages: string[] = [];
+  const answered: unknown[] = [];
   const db = {
     pilotRun: {
       findFirst: async () => row,
@@ -148,6 +149,10 @@ function closeDb(row: ReturnType<typeof runRow>) {
       },
     },
     pilotMessage: {
+      updateMany: async (a: { where: unknown }) => {
+        answered.push(a.where);
+        return { count: 1 };
+      },
       create: async (a: { data: { body: string } }) => {
         messages.push(a.data.body);
         return { id: crypto.randomUUID(), ...a.data };
@@ -161,7 +166,7 @@ function closeDb(row: ReturnType<typeof runRow>) {
     },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
-  return { db, jobReverts, requestWrites, messages };
+  return { db, jobReverts, requestWrites, messages, answered };
 }
 
 /** Runs `act` and returns its result with the pilot event it published. */
@@ -321,5 +326,36 @@ describe("work asked for in chat answers in chat", () => {
     const detail = { reply: "Found 10 jobs; the best fit is Acme." };
     await service.recordResult(USER_ID, RUN_ID, { outcome: "done", summary: "x", detail });
     expect(messages).toEqual([detail.reply]);
+  });
+
+  // A report landing right after the user wrote must not count as the answer to them.
+  it("only a chat reply answers the user's earlier messages", async () => {
+    const detail = { reply: "Done." };
+    const report = closeDb(runRow({ askedInChat: true }));
+    await makeRunService(report.db).recordResult(USER_ID, RUN_ID, {
+      outcome: "done",
+      summary: "x",
+      detail,
+    });
+    expect(report.answered).toEqual([]);
+
+    const messageId = crypto.randomUUID();
+    const reply = closeDb(
+      runRow({
+        askedInChat: true,
+        taskType: "chat.reply",
+        subjectType: "chat",
+        subjectId: messageId,
+        payload: { messageId },
+      }),
+    );
+    await makeRunService(reply.db).recordResult(USER_ID, RUN_ID, {
+      outcome: "done",
+      summary: "x",
+      detail,
+    });
+    expect(reply.answered).toEqual([
+      { userId: USER_ID, author: "user", answeredAt: null, createdAt: { lte: now } },
+    ]);
   });
 });

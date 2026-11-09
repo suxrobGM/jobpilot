@@ -14,7 +14,7 @@ import {
 import { Box, Button, Card, Divider, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { humanizeIsoInText } from "@/utils/format";
-import { pipelineHref } from "@/utils/routes";
+import { applicationHref, jobPageHref } from "@/utils/routes";
 import { formatClockSpan, PilotTurn } from "./pilot-turn";
 import { isApplied, shownRuns, tallyLine, type WorkItem, workSummary } from "./work-summary";
 
@@ -40,13 +40,16 @@ function rowLook(run: PilotThreadRun): RowLook {
   }
 }
 
-/** Job subjects are "<feedId>:<jobKey>"; other subjects have no page of their own yet. */
+/** An application opens what was sent; any other job opens its page. Other runs have none. */
 function subjectHref(run: PilotThreadRun) {
-  if (run.subjectType !== "job" || !run.subjectId) {
+  const { job } = run;
+  if (!job) {
     return null;
   }
-  const [feedId] = run.subjectId.split(":");
-  return feedId ? pipelineHref(feedId) : null;
+  if (isApplied(run) && job.applicationId) {
+    return applicationHref(job.applicationId);
+  }
+  return jobPageHref(job.id);
 }
 
 interface RunRowProps {

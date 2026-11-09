@@ -11,7 +11,7 @@ import { inject, injectable } from "@needle-di/core";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { JobRef } from "@/modules/feed/jobs/applying";
 import { toPilotChange } from "../changes/change-row";
-import { jobSubjectId } from "../job-subject";
+import { jobSubjectId, parseJobSubject } from "../job-subject";
 import { toPilotQuestion } from "../questions/question-row";
 import { toPilotRequest } from "../requests/request-row";
 import {
@@ -48,7 +48,13 @@ interface ThreadSources {
   questions: PilotQuestion[];
   changes: PilotChange[];
   messages: PilotMessage[];
-  requests: PilotRequest[];
+  requests: ThreadRequest[];
+}
+
+/** A request with the job it named, when it named one. */
+interface ThreadRequest {
+  request: PilotRequest;
+  jobSubject: string | null;
 }
 
 /** Merges one page of runs with the questions, messages and changes from the same span, newest first. */
@@ -61,8 +67,9 @@ export function buildThread(sources: ThreadSources): PilotThreadItem[] {
   for (const message of sources.messages) {
     items.push({ type: "message", id: message.id, at: message.createdAt, message });
   }
-  for (const request of sources.requests) {
-    items.push({ type: "request", id: request.id, at: request.createdAt, request });
+  for (const { request, jobSubject } of sources.requests) {
+    const job = jobSubject ? (sources.jobs.get(jobSubject)?.job ?? null) : null;
+    items.push({ type: "request", id: request.id, at: request.createdAt, request, job });
   }
   for (const change of sources.changes) {
     items.push({ type: "change", id: change.id, at: change.createdAt, change });
@@ -116,8 +123,14 @@ export class PilotThreadService {
       this.prisma.pilotRequest.findMany(sideRows),
     ]);
 
+    const requestJobs = requests.flatMap((row) =>
+      row.subjectType === "job" ? [row.subjectId] : [],
+    );
     const [jobs, discovered] = await Promise.all([
-      this.loadJobs(userId, threadJobRefs(runs, questionJobs)),
+      this.loadJobs(userId, [
+        ...threadJobRefs(runs, questionJobs),
+        ...requestJobs.map(parseJobSubject),
+      ]),
       this.loadDiscovered(userId, runs),
     ]);
     const items = buildThread({
@@ -128,7 +141,10 @@ export class PilotThreadService {
       questions: questions.map(toPilotQuestion),
       changes: changes.map((row) => toPilotChange(row)),
       messages,
-      requests: requests.map(toPilotRequest),
+      requests: requests.map((row) => ({
+        request: toPilotRequest(row),
+        jobSubject: row.subjectType === "job" ? row.subjectId : null,
+      })),
     });
     return { items, nextCursor };
   }
@@ -153,12 +169,32 @@ export class PilotThreadService {
     }
     const rows = await this.prisma.job.findMany({
       where: { userId, OR: refs.map((ref) => ({ feedId: ref.feedId, key: ref.key })) },
-      select: { feedId: true, key: true, title: true, company: true, matchScore: true },
+      select: {
+        id: true,
+        feedId: true,
+        key: true,
+        title: true,
+        company: true,
+        matchScore: true,
+        status: true,
+        appliedAt: true,
+        applications: { select: { id: true }, take: 1 },
+      },
     });
     return new Map(
       rows.map((row) => [
         jobSubjectId(row),
-        { title: row.title, company: row.company, score: row.matchScore },
+        {
+          job: {
+            id: row.id,
+            title: row.title,
+            company: row.company,
+            score: row.matchScore,
+            status: row.status,
+            applicationId: row.applications[0]?.id ?? null,
+          },
+          appliedAt: row.appliedAt,
+        },
       ]),
     );
   }

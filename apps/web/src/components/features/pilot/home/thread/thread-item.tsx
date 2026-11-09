@@ -23,7 +23,7 @@ export function ThreadItem(props: ThreadItemProps): ReactElement {
     case "message":
       return <MessageTurn message={item.message} />;
     case "request":
-      return <RequestRow request={item.request} />;
+      return <RequestRow request={item.request} job={item.job} />;
     case "change":
       return <ChangeRow change={item.change} />;
   }

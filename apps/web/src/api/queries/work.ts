@@ -49,6 +49,11 @@ export const pipelineQueries = {
       queryKey: [...PIPELINE, "jobs", query],
       queryFn: () => unwrap(api.pipeline.jobs.get({ query })),
     }),
+  job: (id: string) =>
+    queryOptions({
+      queryKey: [...PIPELINE, "job", id],
+      queryFn: () => unwrap(api.pipeline.jobs({ id }).get()),
+    }),
   counts: (filters: PipelineFilters) =>
     queryOptions({
       queryKey: [...PIPELINE, "counts", filters],

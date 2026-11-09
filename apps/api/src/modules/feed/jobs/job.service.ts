@@ -138,6 +138,10 @@ export class JobService {
     return { ...toJob(job), duplicate: false };
   }
 
+  async get(userId: string, feedId: string, key: string) {
+    return toJob(await this.findJob(userId, feedId, key));
+  }
+
   /** A field edit, moving the status too when the patch names a new one. Never idempotent. */
   async update(userId: string, feedId: string, key: string, patch: PatchJobInput) {
     const existing = await this.findJob(userId, feedId, key);

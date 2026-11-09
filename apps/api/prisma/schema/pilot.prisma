@@ -203,12 +203,15 @@ model PilotMessage {
   id        String             @id @default(uuid(7)) @db.Uuid
   userId    String             @map("user_id") @db.Uuid
   user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  author    PilotMessageAuthor
-  body      String
-  // The chat.reply run that wrote a pilot message.
-  runId     String?            @map("run_id") @db.Uuid
-  run       PilotRun?          @relation(fields: [runId], references: [id], onDelete: SetNull)
-  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  author     PilotMessageAuthor
+  body       String
+  // The run that wrote a pilot message: a chat reply, or a report on work asked for in chat.
+  runId      String?            @map("run_id") @db.Uuid
+  run        PilotRun?          @relation(fields: [runId], references: [id], onDelete: SetNull)
+  // User messages only: set when a chat.reply run that started after it finishes. A run's report
+  // never answers the user, so it can't swallow a message sent while the run worked.
+  answeredAt DateTime?          @map("answered_at") @db.Timestamptz(3)
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([userId, createdAt])
   @@index([runId])

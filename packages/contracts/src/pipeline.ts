@@ -34,7 +34,7 @@ export type PipelineFilters = z.infer<typeof pipelineFiltersSchema>;
  * `minScore` is the bar this job's feed applies: its own override, else the pilot's.
  * `stale` marks a To review job found over `PIPELINE_STALE_DAYS` ago.
  */
-const pipelineJobSchema = jobSchema.extend({
+export const pipelineJobSchema = jobSchema.extend({
   feed: z.object({ id: z.uuid(), name: z.string() }),
   minScore: z.number().int(),
   stale: z.boolean(),

@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { PauseCircleOutlined } from "@mui/icons-material";
 import { Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
 import type { PipelineJobDto } from "@/api/types";
-import { parkedJobHref } from "@/utils/routes";
+import { jobPageHref } from "@/utils/routes";
 
 interface ParkedJobCardProps {
   job: PipelineJobDto;
@@ -15,7 +15,7 @@ export function ParkedJobCard(props: ParkedJobCardProps): ReactElement {
   const { job } = props;
   return (
     <Card variant="interactive">
-      <CardActionArea href={parkedJobHref(job.id)}>
+      <CardActionArea href={jobPageHref(job.id)}>
         <CardContent>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
             <PauseCircleOutlined fontSize="lg" sx={{ color: "warning.main", mt: 0.25 }} />

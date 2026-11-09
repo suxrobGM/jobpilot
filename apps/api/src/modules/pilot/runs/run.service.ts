@@ -12,6 +12,7 @@ import { publish } from "@/common/sse";
 import {
   type PilotRun as PilotRunModel,
   type PilotRunOutcome,
+  type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
 import { guardApply } from "@/modules/feed/jobs/apply-guard";
@@ -41,6 +42,28 @@ function replyFromResult(run: PilotRunModel, body: PilotRunResultInput): string 
     throw badRequest("A done result for work asked in chat needs detail.reply.");
   }
   return reply;
+}
+
+/**
+ * Posts the run's chat message. A chat reply also answers every user message sent before the run
+ * started; later ones wait for the next reply.
+ */
+async function postReply(
+  tx: Prisma.TransactionClient,
+  run: PilotRunModel,
+  reply: string,
+  now: Date,
+) {
+  const { userId } = run;
+  if (run.taskType === "chat.reply") {
+    await tx.pilotMessage.updateMany({
+      where: { userId, author: "user", answeredAt: null, createdAt: { lte: run.startedAt } },
+      data: { answeredAt: now },
+    });
+  }
+  return tx.pilotMessage.create({
+    data: { userId, author: "pilot", body: reply, runId: run.id },
+  });
 }
 
 interface CloseOptions {
@@ -186,11 +209,7 @@ export class RunService {
       }
       return {
         finished: row,
-        message: reply
-          ? await tx.pilotMessage.create({
-              data: { userId, author: "pilot", body: reply, runId },
-            })
-          : null,
+        message: reply ? await postReply(tx, existing, reply, now) : null,
         requests: await finishRequests(tx, [runId], outcome, now),
       };
     });

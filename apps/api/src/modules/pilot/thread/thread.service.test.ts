@@ -1,7 +1,7 @@
 import type { PilotThreadJob } from "@jobpilot/contracts/pilot";
 import type { PilotRun } from "@/generated/prisma/client";
 import { buildThread } from "./thread.service";
-import type { DiscoveredJob } from "./thread-work";
+import type { DiscoveredJob, ThreadJob } from "./thread-work";
 import { describe, expect, it } from "bun:test";
 
 const T0 = new Date("2026-11-05T09:00:00Z").getTime();
@@ -23,8 +23,23 @@ function run(id: string, startMin: number, endMin: number, over: Partial<PilotRu
   } satisfies Partial<PilotRun>;
 }
 
+function threadJob(over: Partial<PilotThreadJob>, appliedAt: Date | null = null): ThreadJob {
+  return {
+    job: {
+      id: crypto.randomUUID(),
+      title: "ML Engineer",
+      company: "Acme",
+      score: null,
+      status: "approved",
+      applicationId: null,
+      ...over,
+    },
+    appliedAt,
+  };
+}
+
 interface ThreadExtras {
-  jobs?: Map<string, PilotThreadJob>;
+  jobs?: Map<string, ThreadJob>;
   questionJobs?: Map<string, string>;
   discovered?: DiscoveredJob[];
 }
@@ -74,7 +89,7 @@ describe("buildThread", () => {
       ],
       {
         questionJobs: new Map([["q1", job]]),
-        jobs: new Map([[job, { title: "ML Engineer", company: "Acme", score: 82 }]]),
+        jobs: new Map([[job, threadJob({ company: "Acme" })]]),
       },
     );
     expect(items[0]).toMatchObject({
@@ -84,10 +99,10 @@ describe("buildThread", () => {
 
   it("totals a sitting's searches and scores and names each applied job", () => {
     const feed = "019a0000-0000-7000-8000-000000000001";
-    const jobs = new Map<string, PilotThreadJob>([
-      [`${feed}:a`, { title: "ML Engineer", company: "Acme", score: 82 }],
-      [`${feed}:b`, { title: "AI Engineer", company: "Globex", score: 55 }],
-      [`${feed}:c`, { title: "Data Engineer", company: "Initech", score: null }],
+    const jobs = new Map([
+      [`${feed}:a`, threadJob({ title: "ML Engineer", company: "Acme", score: 82 })],
+      [`${feed}:b`, threadJob({ title: "AI Engineer", company: "Globex", score: 55 })],
+      [`${feed}:c`, threadJob({ title: "Data Engineer", company: "Initech", score: null })],
     ]);
     const items = thread(
       [
@@ -120,10 +135,23 @@ describe("buildThread", () => {
         best: { company: "Acme", score: 82 },
       },
     });
-    expect(work?.type === "work" && work.runs.at(-1)?.job).toEqual({
+    expect(work?.type === "work" && work.runs.at(-1)?.job).toMatchObject({
       title: "ML Engineer",
       company: "Acme",
       score: 82,
     });
+  });
+
+  it("calls a run applied only when the application landed during it", () => {
+    const subject = "019a0000-0000-7000-8000-000000000001:g";
+    const apply = { taskType: "job.apply", subjectType: "job" as const, subjectId: subject };
+    // Skipped at the first try, then applied on a later run.
+    const jobs = new Map([[subject, threadJob({ status: "applied" }, at(62))]]);
+    const items = thread([run("skip", 0, 5, apply), run("apply", 60, 65, apply)], { jobs });
+    const lines = items.flatMap((item) => (item.type === "work" ? item.runs : []));
+    expect(lines.map((line) => [line.runId, line.applied])).toEqual([
+      ["apply", true],
+      ["skip", false],
+    ]);
   });
 });
