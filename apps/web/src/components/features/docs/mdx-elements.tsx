@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps, ReactElement } from "react";
-import { Box, Divider, Link, Paper, Typography } from "@mui/material";
+import { Box, Card, Divider, Link, Typography } from "@mui/material";
 import type { Route } from "next";
 import { fontFamilies } from "@/theme";
 
@@ -74,9 +74,8 @@ export function DocsCode(props: ComponentProps<"code">): ReactElement {
 
 export function DocsPre(props: ComponentProps<"pre">): ReactElement {
   return (
-    <Paper
+    <Card
       component="pre"
-      variant="panel"
       sx={(theme) => ({
         margin: 0,
         marginBottom: 2,

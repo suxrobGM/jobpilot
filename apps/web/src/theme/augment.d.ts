@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { accent, line, stages, surfaces } from "./palette";
+import type { accent, line, surfaces } from "./palette";
 import type { controlHeights, iconSizes, motion, radii, shadows, tints } from "./tokens";
 
 /** Add variants here only; the three MUI interfaces below derive from it. */
@@ -9,18 +9,13 @@ interface CustomTypographyVariants {
   captionMuted: CSSProperties;
   overline: CSSProperties;
   overlineMuted: CSSProperties;
-  monoChip: CSSProperties;
-  skillChip: CSSProperties;
   statValue: CSSProperties;
-  statLabel: CSSProperties;
   body1Strong: CSSProperties;
   body2Strong: CSSProperties;
   lead: CSSProperties;
   eyebrow: CSSProperties;
   monoBody: CSSProperties;
   monoCaption: CSSProperties;
-  displayLg: CSSProperties;
-  displayMd: CSSProperties;
   docsBody: CSSProperties;
   docsH1: CSSProperties;
   docsH2: CSSProperties;
@@ -33,13 +28,11 @@ declare module "@mui/material/styles" {
     surfaces: typeof surfaces;
     accent: typeof accent;
     line: typeof line;
-    stages: typeof stages;
   }
   interface PaletteOptions {
     surfaces?: typeof surfaces;
     accent?: typeof accent;
     line?: typeof line;
-    stages?: typeof stages;
   }
 
   interface Theme {
@@ -78,8 +71,13 @@ declare module "@mui/material/SvgIcon" {
     md: true;
     lg: true;
     xl: true;
-    xxl: true;
-    "2xxl": true;
+  }
+}
+
+declare module "@mui/material/Chip" {
+  interface ChipPropsVariantOverrides {
+    /** A mono pill for skills and board names; `size="medium"` for the larger one. */
+    tag: true;
   }
 }
 
@@ -91,13 +89,11 @@ declare module "@mui/material/Badge" {
 
 declare module "@mui/material/Paper" {
   interface PaperPropsVariantOverrides {
-    interactive: true;
     /** For a whole card that is a link. */
     lift: true;
     /** For inline CTA cards. */
     accent: true;
-    panel: true;
-    /** A cell inside a `panel`. */
+    /** A cell inside a card. */
     inset: true;
     showcase: true;
     field: true;

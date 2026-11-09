@@ -14,7 +14,7 @@ interface ParkedJobCardProps {
 export function ParkedJobCard(props: ParkedJobCardProps): ReactElement {
   const { job } = props;
   return (
-    <Card variant="interactive">
+    <Card>
       <CardActionArea href={jobPageHref(job.id)}>
         <CardContent>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>

@@ -32,9 +32,7 @@ export function OverviewSection(props: OverviewSectionProps): ReactElement {
         direction="row"
         sx={{ alignItems: "center", justifyContent: "space-between", minHeight: 30 }}
       >
-        <Typography variant="overline" color="textSecondary">
-          {title}
-        </Typography>
+        <Typography variant="overlineMuted">{title}</Typography>
         {link && <EdgeLinkButton {...link} />}
       </Stack>
       {children}

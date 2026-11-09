@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Paper, Stack, Typography } from "@mui/material";
+import { Chip, Paper, Stack, Typography } from "@mui/material";
 import { AppWindow } from "./app-window";
 
 const CLIENT_MARKERS = ["$40k+ spent", "92% hire rate", "4.9 rating", "payment verified"];
@@ -16,9 +16,7 @@ export function UpworkPanel(): ReactElement {
             <Typography variant="captionMuted">Fixed price · $4,500 · Expert</Typography>
             <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75 }}>
               {CLIENT_MARKERS.map((marker) => (
-                <Typography key={marker} variant="monoChip">
-                  {marker}
-                </Typography>
+                <Chip key={marker} variant="tag" size="medium" label={marker} />
               ))}
             </Stack>
           </Stack>

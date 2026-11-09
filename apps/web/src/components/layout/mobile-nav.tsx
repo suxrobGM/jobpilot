@@ -30,8 +30,6 @@ import {
 import { useNavGroups } from "./use-nav-groups";
 
 const MORE_VALUE = "more";
-/** Below MUI's 0.75rem default - "Workspace" has to fit a fifth of a 360px phone. */
-const LABEL_SIZE = "0.6875rem";
 
 export function MobileNav(): ReactElement {
   const pathname = usePathname();
@@ -100,9 +98,10 @@ export function MobileNav(): ReactElement {
             overflow: "hidden",
             whiteSpace: "nowrap",
             textOverflow: "ellipsis",
-            // Both states, or MUI grows the selected label to 0.875rem and re-clips the active tab.
-            fontSize: LABEL_SIZE,
-            "&.Mui-selected": { fontSize: LABEL_SIZE },
+            // Overline size so five labels fit a 360px phone. Both states, or MUI grows the
+            // selected label to 0.875rem and re-clips the active tab.
+            fontSize: theme.typography.overline.fontSize,
+            "&.Mui-selected": { fontSize: theme.typography.overline.fontSize },
           },
         })}
       >

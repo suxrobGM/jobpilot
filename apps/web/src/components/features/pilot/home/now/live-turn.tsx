@@ -32,7 +32,7 @@ function RunningLine(props: RunningLineProps): ReactElement {
   });
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-      <PulseDot tone="violet" pulsing size="md" />
+      <PulseDot tone="primary" pulsing size="md" />
       <Stack sx={{ flex: 1, minWidth: 0 }}>
         <Typography variant="body2Strong" noWrap>
           {run.title}

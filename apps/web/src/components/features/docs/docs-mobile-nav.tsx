@@ -2,7 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import { ExpandMore } from "@mui/icons-material";
-import { ButtonBase, Collapse, Link, Paper, Stack, Typography } from "@mui/material";
+import { ButtonBase, Card, Collapse, Link, Stack, Typography } from "@mui/material";
 import { usePathname } from "next/navigation";
 import { sideNavLink } from "@/components/ui/navigation";
 import { DOCS_LINKS } from "./docs-nav";
@@ -26,10 +26,9 @@ export function DocsMobileNav(): ReactElement {
   const controlledPanelId = open ? PANEL_ID : undefined;
 
   return (
-    <Paper
+    <Card
       component="nav"
       aria-label="Documentation"
-      variant="panel"
       sx={{
         display: { xs: "block", md: "none" },
         backgroundColor: "surfaces.elevated",
@@ -93,6 +92,6 @@ export function DocsMobileNav(): ReactElement {
           })}
         </Stack>
       </Collapse>
-    </Paper>
+    </Card>
   );
 }

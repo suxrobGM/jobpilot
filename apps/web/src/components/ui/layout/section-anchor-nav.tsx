@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import { Box, ButtonBase, Paper, Stack, Typography } from "@mui/material";
+import { Box, ButtonBase, Stack, Typography } from "@mui/material";
 import { sideNavLink } from "../navigation/side-nav-link";
 import { belowTopBar } from "./top-bar-slots";
 
@@ -98,9 +98,14 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                 <Typography variant={active ? "body1Strong" : "body1"}>{anchor.label}</Typography>
                 {anchor.empty && (
-                  <Paper
-                    variant="panel"
-                    sx={(theme) => ({ width: 6, height: 6, borderRadius: theme.radii.pill })}
+                  <Box
+                    sx={(theme) => ({
+                      width: 6,
+                      height: 6,
+                      border: 1,
+                      borderColor: "line.border",
+                      borderRadius: theme.radii.pill,
+                    })}
                   />
                 )}
               </Stack>

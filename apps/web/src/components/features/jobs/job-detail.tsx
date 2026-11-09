@@ -82,7 +82,7 @@ function JobHeader(props: JobDetailProps): ReactElement {
   return (
     <Stack spacing={2}>
       <Stack spacing={1}>
-        <Typography variant="displayMd" component="h1" sx={{ overflowWrap: "anywhere" }}>
+        <Typography variant="h2" component="h1" sx={{ overflowWrap: "anywhere" }}>
           {job.title}
         </Typography>
         <Typography variant="h4" component="p" sx={{ color: "text.secondary" }}>

@@ -13,16 +13,6 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
   },
   variants: [
     {
-      props: { variant: "interactive" },
-      style: ({ theme }) => ({
-        cursor: "pointer",
-        "&:hover": {
-          borderColor: theme.palette.line.borderHi,
-          backgroundColor: theme.palette.surfaces.elevated,
-        },
-      }),
-    },
-    {
       props: { variant: "lift" },
       style: ({ theme }) => ({
         height: "100%",

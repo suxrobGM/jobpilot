@@ -79,7 +79,7 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
         ])}
       />
       <Stack spacing={1}>
-        <Typography variant="displayMd" component="h1">
+        <Typography variant="h2" component="h1">
           Jobs found by JobPilot
         </Typography>
         <Typography variant="body1Muted">

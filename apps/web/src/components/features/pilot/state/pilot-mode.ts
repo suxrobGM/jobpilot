@@ -28,18 +28,18 @@ export const PILOT_MODE_LOOK: Record<PilotMode, PilotModeLook> = {
   // Off means autopilot off: what the user asks for still runs.
   off: { tone: "muted", label: "Autopilot off", pulsing: false, dimmed: false },
   held: {
-    tone: "amber",
+    tone: "warning",
     label: "Waiting while you use the terminal",
     pulsing: false,
     dimmed: false,
   },
-  offline: { tone: "amber", label: "Agent offline", pulsing: false, dimmed: true },
-  outdated: { tone: "amber", label: "Agent needs an update", pulsing: false, dimmed: true },
-  working: { tone: "violet", label: "Working", pulsing: true, dimmed: false },
-  starting: { tone: "blue", label: "Starting up", pulsing: true, dimmed: false },
-  idle: { tone: "green", label: "Idle", pulsing: false, dimmed: false },
-  unpaired: { tone: "blue", label: "Waiting for agent", pulsing: false, dimmed: false },
-  unknown: { tone: "green", label: "Running", pulsing: false, dimmed: false },
+  offline: { tone: "warning", label: "Agent offline", pulsing: false, dimmed: true },
+  outdated: { tone: "warning", label: "Agent needs an update", pulsing: false, dimmed: true },
+  working: { tone: "primary", label: "Working", pulsing: true, dimmed: false },
+  starting: { tone: "info", label: "Starting up", pulsing: true, dimmed: false },
+  idle: { tone: "success", label: "Idle", pulsing: false, dimmed: false },
+  unpaired: { tone: "info", label: "Waiting for agent", pulsing: false, dimmed: false },
+  unknown: { tone: "success", label: "Running", pulsing: false, dimmed: false },
 };
 
 function isHostOffline(health: TerminalHealth | null): boolean {

@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 import { Box, Paper, Stack, Typography } from "@mui/material";
-import { editorial, radii } from "@/theme";
 import { AppWindow } from "./app-window";
 
 const VARIANTS = [
@@ -23,26 +22,26 @@ const LINES = [
 function PagePreview(): ReactElement {
   return (
     <Box
-      sx={{
+      sx={(theme) => ({
         width: 104,
         flexShrink: 0,
         aspectRatio: "3 / 4",
-        borderRadius: radii.xs,
-        backgroundColor: editorial.paper,
+        borderRadius: theme.radii.xs,
+        backgroundColor: theme.palette.text.primary,
         padding: 1.25,
         display: { xs: "none", sm: "flex" },
         flexDirection: "column",
         gap: 0.75,
-      }}
+      })}
     >
-      <Box sx={{ height: 6, width: "55%", backgroundColor: editorial.ink, opacity: 0.8 }} />
+      <Box sx={{ height: 6, width: "55%", backgroundColor: "surfaces.base", opacity: 0.8 }} />
       {LINES.map((line) => (
         <Box
           key={line.id}
           sx={{
             height: 3,
             width: `${line.width * 100}%`,
-            backgroundColor: editorial.ink,
+            backgroundColor: "surfaces.base",
             opacity: 0.25,
           }}
         />

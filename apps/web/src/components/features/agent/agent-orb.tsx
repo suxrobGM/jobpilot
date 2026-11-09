@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { alpha, Box, type Theme } from "@mui/material";
-import { editorial, type IconSizeToken, iconSizes } from "@/theme";
+import { type IconSizeToken, iconSizes } from "@/theme";
 
 export type AgentOrbState = "off" | "connecting" | "ready" | "working" | "attention";
 
@@ -21,7 +21,7 @@ const ROOT_ANIMATION: Record<AgentOrbState, string> = {
 
 function ringColor(theme: Theme, state: AgentOrbState): string {
   if (state === "attention") {
-    return editorial.amber;
+    return theme.palette.warning.main;
   }
   if (state === "ready" || state === "working") {
     return theme.palette.accent.primary;
@@ -31,18 +31,19 @@ function ringColor(theme: Theme, state: AgentOrbState): string {
 
 function coreBackground(theme: Theme, state: AgentOrbState): string {
   const accent = theme.palette.accent.primary;
+  const amber = theme.palette.warning.main;
   if (state === "connecting") {
     return `radial-gradient(circle, ${alpha(theme.palette.text.disabled, 0.5)} 0%, transparent 100%)`;
   }
   if (state === "attention") {
-    return `radial-gradient(circle, ${editorial.amber} 0%, ${alpha(editorial.amber, 0)} 100%)`;
+    return `radial-gradient(circle, ${amber} 0%, ${alpha(amber, 0)} 100%)`;
   }
-  return `radial-gradient(circle, ${editorial.amber} 0%, ${alpha(accent, 0.87)} 50%, ${alpha(accent, 0)} 100%)`;
+  return `radial-gradient(circle, ${amber} 0%, ${alpha(accent, 0.87)} 50%, ${alpha(accent, 0)} 100%)`;
 }
 
 /** The agent's mark. Motion means it is working; a still orb is idle, offline or waiting on you. */
 export function AgentOrb(props: AgentOrbProps): ReactElement {
-  const { state, size = "2xxl" } = props;
+  const { state, size = "xl" } = props;
 
   const sizePx = iconSizes[size];
   // Small orbs blur into a smudge with every layer, so the halo and counter-spin are large-only.
@@ -125,14 +126,15 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           {spinning && (
             <Box
               sx={(theme) => {
-                const head = state === "working" ? editorial.amber : theme.palette.text.secondary;
+                const head =
+                  state === "working" ? theme.palette.warning.main : theme.palette.text.secondary;
                 const tail =
                   state === "working" ? theme.palette.accent.primary : theme.palette.text.disabled;
                 return {
                   position: "absolute",
                   inset: 0,
                   borderRadius: "50%",
-                  background: `conic-gradient(from 0deg, transparent 0deg, transparent 200deg, ${alpha(tail, 0.5)} 260deg, ${head} 330deg, ${alpha(editorial.paper, 0.8)} 350deg, transparent 360deg)`,
+                  background: `conic-gradient(from 0deg, transparent 0deg, transparent 200deg, ${alpha(tail, 0.5)} 260deg, ${head} 330deg, ${alpha(theme.palette.text.primary, 0.8)} 350deg, transparent 360deg)`,
                   animation: `agent-orb-spin ${state === "working" ? 4.5 : 1.6}s linear infinite`,
                   mixBlendMode: "screen",
                 };
@@ -141,15 +143,15 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           )}
           {state === "working" && detailed && (
             <Box
-              sx={{
+              sx={(theme) => ({
                 position: "absolute",
                 inset: 0,
                 borderRadius: "50%",
-                background: `conic-gradient(from 120deg, transparent 0deg, transparent 240deg, ${alpha(editorial.thrust, 0.35)} 320deg, transparent 360deg)`,
+                background: `conic-gradient(from 120deg, transparent 0deg, transparent 240deg, ${alpha(theme.palette.accent.secondary, 0.35)} 320deg, transparent 360deg)`,
                 animation: "agent-orb-counterspin 9s linear infinite",
                 mixBlendMode: "screen",
                 opacity: 0.7,
-              }}
+              })}
             />
           )}
           {/* donut hole - masks the ring layers in the middle */}

@@ -77,7 +77,7 @@ export function Teaser(props: TeaserProps): ReactElement {
                   },
                 }}
               >
-                <PlayArrow fontSize="2xxl" />
+                <PlayArrow fontSize="large" />
               </IconButton>
             </Box>
           )}

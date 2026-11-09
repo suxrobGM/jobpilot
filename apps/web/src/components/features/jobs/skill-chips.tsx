@@ -1,15 +1,11 @@
 import type { ReactNode } from "react";
 import { serializeSkillsParam } from "@jobpilot/contracts/job-listing";
-import { Box, Link, Typography } from "@mui/material";
-import { motion } from "@/theme";
+import { Box, Chip, Link } from "@mui/material";
 import { jobsHref } from "./jobs-href";
 
-// The raw token, not an `sx` callback: a function can't cross the RSC boundary into MUI's Link.
+// A plain object, not an `sx` callback: a function can't cross the RSC boundary into MUI.
 const linkedChipSx = {
-  // MuiLink's theme default paints links in the accent; a tag only takes it on hover.
-  color: "text.secondary",
-  transition: motion.fast,
-  "&:hover": { color: "accent.primary", borderColor: "accent.primary" },
+  "&:hover .MuiChip-root": { color: "accent.primary", borderColor: "accent.primary" },
 } as const;
 
 interface SkillChipsProps {
@@ -35,20 +31,17 @@ export function SkillChips(props: SkillChipsProps): ReactNode {
         linked ? (
           <Link
             key={item}
-            variant="skillChip"
             underline="none"
             href={jobsHref(new URLSearchParams({ skills: serializeSkillsParam([item]) }))}
             sx={linkedChipSx}
           >
-            {item}
+            <Chip variant="tag" label={item} />
           </Link>
         ) : (
-          <Typography key={item} variant="skillChip">
-            {item}
-          </Typography>
+          <Chip key={item} variant="tag" label={item} />
         ),
       )}
-      {overflow > 0 && <Typography variant="skillChip">+{overflow}</Typography>}
+      {overflow > 0 && <Chip variant="tag" label={`+${overflow}`} />}
     </Box>
   );
 }

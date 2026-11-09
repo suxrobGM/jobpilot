@@ -27,7 +27,7 @@ export function Hero(): ReactElement {
               <Typography variant="eyebrow" color="primary">
                 Free · open source · runs on your computer
               </Typography>
-              <Typography variant="displayLg" sx={{ textWrap: "balance" }}>
+              <Typography variant="h1" sx={{ textWrap: "balance" }}>
                 An AI agent that applies to jobs for you.
               </Typography>
               <Typography variant="lead" sx={{ maxWidth: 540 }}>

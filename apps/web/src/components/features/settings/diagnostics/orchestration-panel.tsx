@@ -16,10 +16,10 @@ import { type Stage, StageArrow, StageCard } from "./stage-card";
 import { RefreshTaskListButton, TaskQueue } from "./task-queue";
 import { useTaskList } from "./use-task-list";
 
-const HOST: Stage = { title: "Host", role: "Checks for work", tone: "blue" };
-const SERVER: Stage = { title: "Server", role: "Picks a task", tone: "peach" };
-const SESSION: Stage = { title: "Session", role: "Runs the task", tone: "violet" };
-const RESULT: Stage = { title: "Result", role: "Records the outcome", tone: "green" };
+const HOST: Stage = { title: "Host", role: "Checks for work", tone: "info" };
+const SERVER: Stage = { title: "Server", role: "Picks a task", tone: "warning" };
+const SESSION: Stage = { title: "Session", role: "Runs the task", tone: "primary" };
+const RESULT: Stage = { title: "Result", role: "Records the outcome", tone: "success" };
 
 const EMPTY_REASON_CAPTIONS: Record<NonNullable<TaskList["emptyReason"]>, string> = {
   capReached: "Daily cap reached",

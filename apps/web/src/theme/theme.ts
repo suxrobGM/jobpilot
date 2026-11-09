@@ -1,6 +1,6 @@
 import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 import { componentOverrides } from "./overrides";
-import { accent, feedback, line, stages, surfaces, textColors, textOnAccent } from "./palette";
+import { accent, feedback, line, surfaces, textColors, textOnAccent } from "./palette";
 import { controlHeights, iconSizes, motion, radii, shadows, tints } from "./tokens";
 import { typography } from "./typography";
 
@@ -25,7 +25,6 @@ const baseTheme = createTheme({
     surfaces,
     accent,
     line,
-    stages,
   },
   // Keep the sx multiplier at 1 so a `radii` token in sx means that many px, exactly as in
   // styleOverrides. Component overrides pin the real radii (card md, dialog lg) explicitly.
@@ -40,5 +39,5 @@ const baseTheme = createTheme({
   components: componentOverrides,
 });
 
-// Scale headings (h1-h4) down on smaller viewports so page/marketing titles fit phones.
-export const theme = responsiveFontSizes(baseTheme, { variants: ["h1", "h2", "h3", "h4"] });
+// h1/h2 are fluid clamp() sizes already; this steps the fixed h3/h4 down on phones.
+export const theme = responsiveFontSizes(baseTheme, { variants: ["h3", "h4"] });

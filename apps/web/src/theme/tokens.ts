@@ -46,14 +46,13 @@ export const controlHeights = {
   md: 40,
 } as const;
 
+/** `<Icon fontSize="md">` and `AgentOrb` sizes; the SvgIcon override reads this table. */
 export const iconSizes = {
   xs: 14,
   sm: 16,
   md: 18,
   lg: 20,
   xl: 24,
-  xxl: 28,
-  "2xxl": 32,
 } as const;
 
 export type IconSizeToken = keyof typeof iconSizes;

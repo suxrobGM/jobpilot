@@ -7,7 +7,7 @@ import {
   AccordionSummary,
   Avatar,
   alpha,
-  Paper,
+  Card,
   Stack,
   Typography,
 } from "@mui/material";
@@ -27,7 +27,7 @@ interface InstallStepProps {
 function InstallStep(props: InstallStepProps): ReactElement {
   const { number, title, children } = props;
   return (
-    <Paper component={Stack} variant="panel" spacing={1.5} sx={{ padding: { xs: 2.5, md: 3 } }}>
+    <Card component={Stack} spacing={1.5} sx={{ padding: { xs: 2.5, md: 3 } }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
         <Avatar
           sx={(theme) => ({
@@ -46,7 +46,7 @@ function InstallStep(props: InstallStepProps): ReactElement {
         </Typography>
       </Stack>
       {children}
-    </Paper>
+    </Card>
   );
 }
 
