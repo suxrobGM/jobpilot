@@ -158,13 +158,7 @@ export class ResumeService {
 
     // `User.primaryResume` is `onDelete: SetNull`, so the pointer clears with the row.
     await this.prisma.resume.delete({ where: { id } });
-    await this.storage.deleteAllResumeArtifacts([
-      {
-        resumeId: id,
-        sourceFilename: resume.sourceFilename,
-        variantIds: resume.variants.map((v) => v.id),
-      },
-    ]);
+    await this.storage.deleteAllResumeArtifacts([{ id, ...resume }]);
 
     return { deleted: id };
   }

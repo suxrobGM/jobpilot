@@ -40,10 +40,13 @@ async function unlinkMatching(dir: string, prefixes: string[], suffix: string): 
 }
 
 interface ResumeArtifactRefs {
-  resumeId: string;
+  id: string;
   sourceFilename: string | null;
-  variantIds: string[];
+  variants: { id: string }[];
 }
+
+const masterPrefix = (resumeId: string) => `master-${resumeId}-`;
+const variantPrefix = (variantId: string) => `variant-${variantId}-`;
 
 /** Streams a file inline. Rejects when the file is missing. */
 export async function streamFile(
@@ -92,11 +95,11 @@ export class ResumeStorage {
   }
 
   generatedResumePath(id: string, updatedAtMs: number): string {
-    return path.join(this.generatedDir, `master-${id}-${updatedAtMs}.pdf`);
+    return path.join(this.generatedDir, `${masterPrefix(id)}${updatedAtMs}.pdf`);
   }
 
   generatedVariantPath(variantId: string, createdAtMs: number): string {
-    return path.join(this.generatedDir, `variant-${variantId}-${createdAtMs}.pdf`);
+    return path.join(this.generatedDir, `${variantPrefix(variantId)}${createdAtMs}.pdf`);
   }
 
   async deleteResumeFile(filename: string): Promise<void> {
@@ -105,19 +108,15 @@ export class ResumeStorage {
 
   /** Takes every id at once: one call per variant would re-scan the shared cache dir each time. */
   deleteGeneratedVariantFiles(...variantIds: string[]): Promise<void> {
-    return unlinkMatching(
-      this.generatedDir,
-      variantIds.map((id) => `variant-${id}-`),
-      ".pdf",
-    );
+    return unlinkMatching(this.generatedDir, variantIds.map(variantPrefix), ".pdf");
   }
 
   /** One cache-dir scan for every resume, so deleting an account doesn't re-scan per resume. */
   async deleteAllResumeArtifacts(resumes: ResumeArtifactRefs[]): Promise<void> {
     const sourceFiles = resumes.flatMap((r) => (r.sourceFilename ? [r.sourceFilename] : []));
     const generatedPrefixes = resumes.flatMap((r) => [
-      `master-${r.resumeId}-`,
-      ...r.variantIds.map((id) => `variant-${id}-`),
+      masterPrefix(r.id),
+      ...r.variants.map((v) => variantPrefix(v.id)),
     ]);
     await Promise.all([
       ...sourceFiles.map((filename) => this.deleteResumeFile(filename)),

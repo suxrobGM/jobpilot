@@ -3,13 +3,9 @@
 import type { ReactNode } from "react";
 import { type DeleteAccountInput, DeleteAccountSchema } from "@jobpilot/contracts/auth";
 import { Alert, Stack } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { api } from "@/api/client";
-import { useApiMutation } from "@/api/use-api-mutation";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { useSession } from "@/hooks/use-auth";
+import { useAuthActions, useSession } from "@/hooks/use-auth";
 import { useConfirm } from "@/providers/confirm-provider";
 
 const DEFAULT_VALUES: DeleteAccountInput = { currentPassword: "" };
@@ -18,19 +14,7 @@ const DEFAULT_VALUES: DeleteAccountInput = { currentPassword: "" };
 export function DeleteAccountCard(): ReactNode {
   const { user } = useSession();
   const confirm = useConfirm();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  const deleteAccount = useApiMutation(
-    (body: DeleteAccountInput) => api.auth.account.delete(body),
-    {
-      showErrorToast: false,
-      onSuccess: () => {
-        queryClient.clear();
-        router.push("/login");
-      },
-    },
-  );
+  const { deleteAccount } = useAuthActions();
 
   const form = useAppForm({
     defaultValues: DEFAULT_VALUES,

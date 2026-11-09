@@ -108,13 +108,7 @@ export class SecurityService {
 
     // Row first: a failed unlink then leaves an orphan file, never an orphan account.
     await this.prisma.user.delete({ where: { id: userId } });
-    await this.storage.deleteAllResumeArtifacts(
-      user.resumes.map((resume) => ({
-        resumeId: resume.id,
-        sourceFilename: resume.sourceFilename,
-        variantIds: resume.variants.map((v) => v.id),
-      })),
-    );
+    await this.storage.deleteAllResumeArtifacts(user.resumes);
     return { ok: true };
   }
 }

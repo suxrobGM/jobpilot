@@ -9,6 +9,7 @@ export type { ApplicationDetailDto, ApplicationDto, ApplicationEventDto } from "
 export type {
   AuthSessionResponse,
   AuthUserDto,
+  DeleteAccountResponse,
   LogoutResponse,
 } from "./auth";
 export type { CredentialDto } from "./credential";

@@ -62,19 +62,21 @@ const OAUTH_ERROR_REASONS = [
 ] as const;
 export type OAuthErrorReason = (typeof OAUTH_ERROR_REASONS)[number];
 
-/** currentPassword is required by the service iff the account has one; "" counts as absent. */
+/** Required by the service iff the account has one; "" counts as absent. */
+const currentPassword = z.string().optional();
+
 export const ChangePasswordSchema = z.object({
-  currentPassword: z.string().optional(),
+  currentPassword,
   newPassword: PasswordSchema,
 });
 
 export const ChangeEmailSchema = z.object({
   newEmail: z.email(),
-  currentPassword: z.string().optional(),
+  currentPassword,
 });
 
 export const DeleteAccountSchema = z.object({
-  currentPassword: z.string().optional(),
+  currentPassword,
 });
 
 export const ConfirmEmailChangeSchema = z.object({

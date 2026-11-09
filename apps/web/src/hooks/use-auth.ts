@@ -1,11 +1,16 @@
 "use client";
 
-import type { LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
+import type { DeleteAccountInput, LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { authQueries } from "@/api/queries";
-import type { AuthSessionResponse, AuthUserDto, LogoutResponse } from "@/api/types";
+import type {
+  AuthSessionResponse,
+  AuthUserDto,
+  DeleteAccountResponse,
+  LogoutResponse,
+} from "@/api/types";
 import { type ApiMutationResult, useApiMutation } from "@/api/use-api-mutation";
 
 export interface UseSessionResult {
@@ -17,6 +22,7 @@ export interface UseAuthActionsResult {
   login: ApiMutationResult<AuthSessionResponse, LoginInput>;
   register: ApiMutationResult<AuthSessionResponse, RegisterInput>;
   logout: ApiMutationResult<LogoutResponse, void>;
+  deleteAccount: ApiMutationResult<DeleteAccountResponse, DeleteAccountInput>;
 }
 
 /** Separate from `useAuthActions` so signed-out pages don't drag in a guaranteed-401 `me` fetch. */
@@ -47,12 +53,17 @@ export function useAuthActions(): UseAuthActionsResult {
     showErrorToast: false,
   });
 
-  const logout = useApiMutation(() => api.auth.logout.post(), {
-    onSuccess: () => {
-      queryClient.clear();
-      router.push("/login");
-    },
-  });
+  const onSignedOut = () => {
+    queryClient.clear();
+    router.push("/login");
+  };
 
-  return { login, register, logout };
+  const logout = useApiMutation(() => api.auth.logout.post(), { onSuccess: onSignedOut });
+
+  const deleteAccount = useApiMutation(
+    (body: DeleteAccountInput) => api.auth.account.delete(body),
+    { onSuccess: onSignedOut, showErrorToast: false },
+  );
+
+  return { login, register, logout, deleteAccount };
 }

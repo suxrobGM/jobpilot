@@ -8,3 +8,4 @@ export type AuthUserDto = Data<typeof api.auth.me.get>;
 export type AuthSessionResponse = Data<typeof api.auth.login.post>;
 
 export type LogoutResponse = Data<typeof api.auth.logout.post>;
+export type DeleteAccountResponse = Data<typeof api.auth.account.delete>;

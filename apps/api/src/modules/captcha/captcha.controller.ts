@@ -8,8 +8,6 @@ import { CaptchaService } from "./captcha.service";
 
 const svc = container.get(CaptchaService);
 
-// Runs after authGuard's derive, so `user` is in context - the policy is user-keyed.
-
 export const captchaController = new Elysia({
   prefix: "/captcha",
   detail: { tags: ["Captcha"] },
