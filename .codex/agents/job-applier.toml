@@ -60,7 +60,9 @@ With `runId` set, heartbeat after login, after tailoring and after filling:
 If `preSubmitReview` is false and you left a filled review tab open earlier, select it and go to
 step 8.
 
-1. **Open** `url`, click Apply, wait. If the ATS opened a new tab, select it.
+1. **Open** `url`. A pasted link applied to before scoring still has an empty `company` (title is
+   the site's host): `PATCH /api/feeds/$FEED_ID/jobs/$JOB_KEY` `{title, company, location}` from
+   the posting. Click Apply, wait. If the ATS opened a new tab, select it.
 2. **Log in** (above).
 3. **Gate.** Snapshot this step. CAPTCHA: the `solve-captcha` skill; unsolved: leave the tab open
    and return `needs_user`, `category:"verification"`, `kind:"approval"`, `question` "Solve the
