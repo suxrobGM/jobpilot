@@ -22,7 +22,6 @@ function latest(times: Date[]): Date | null {
   return times.reduce<Date | null>((max, time) => (!max || time > max ? time : max), null);
 }
 
-/** Pilot state, instructions, and the stats and liveness reads. */
 @injectable()
 export class PilotService {
   constructor(

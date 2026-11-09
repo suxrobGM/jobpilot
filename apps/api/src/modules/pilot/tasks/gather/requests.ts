@@ -1,4 +1,9 @@
-import type { CreatePilotRequestInput, PilotConfig, PilotTask } from "@jobpilot/contracts/pilot";
+import {
+  type CreatePilotRequestInput,
+  openRequestSchema,
+  type PilotConfig,
+  type PilotTask,
+} from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { parseRequest, publishRequest } from "../../requests/request-row";
 import { applyTask, discoveryBoard, SEARCH_MAX_PAGES } from "../build";
@@ -8,8 +13,6 @@ import { gatherInbox } from "./inbox";
 import { findJobAlerts } from "./job-alerts";
 import { findApprovedJob } from "./jobs";
 import { researchPayload } from "./research";
-
-const openRequestPayload = z.record(z.string(), z.json());
 
 /** Requests waiting at once; more just wait a cycle. */
 const REQUEST_BATCH = 20;
@@ -157,11 +160,7 @@ async function openRequests(ctx: GatherContext) {
     take: REQUEST_BATCH,
     select: { taskType: true, status: true, payload: true },
   });
-  return rows.map((row) => ({
-    taskType: row.taskType,
-    status: row.status === "running" ? ("running" as const) : ("pending" as const),
-    payload: openRequestPayload.parse(row.payload),
-  }));
+  return z.array(openRequestSchema).parse(rows);
 }
 
 /** One reply to the newest unanswered user message, so a burst gets one answer. */

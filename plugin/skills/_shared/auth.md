@@ -32,8 +32,6 @@ Click Sign in, snapshot the form, fill it, submit, wait. Then:
 
 ## Challenges
 
-These usually happen once per site per session.
-
 - **Email code or link**: run the `get-code` skill with the site's domain. `code`: type it. `link`:
   open it. `{}`: ask the user for the code.
 - **CAPTCHA**: run the `solve-captcha` skill. Unsolved: ask the user to solve it in the browser and

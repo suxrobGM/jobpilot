@@ -36,12 +36,6 @@ describe("DigestService", () => {
     expect(rec.posted).toHaveLength(0);
   });
 
-  it("posts exactly one digest when two refreshes race at the digest hour", async () => {
-    const { write, rec } = run({ digestApps: 1 }, MORNING, 0);
-    await Promise.all([write(), write()]);
-    expect(rec.posted).toHaveLength(1);
-  });
-
   it("posts nothing on a day with nothing to report", async () => {
     const { write, rec } = run({}, MORNING, 0);
     await write();

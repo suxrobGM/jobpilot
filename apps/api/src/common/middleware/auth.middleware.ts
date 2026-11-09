@@ -15,10 +15,7 @@ interface AuthContext {
   cookie: Record<string, Cookie<unknown> | undefined>;
 }
 
-/**
- * Resolve the principal from a request: `Authorization: Bearer` (the agent's terminal token), then
- * the httpOnly `session` cookie. Returns null when unauthenticated.
- */
+/** The agent's bearer token wins over the `session` cookie. */
 export async function resolveAuthUser({ headers, cookie }: AuthContext): Promise<AuthUser | null> {
   const authorization = headers.authorization;
   const bearer = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
@@ -30,10 +27,7 @@ export async function resolveAuthUser({ headers, cookie }: AuthContext): Promise
   return container.get(AuthTokenService).verify(token);
 }
 
-/**
- * Derives `user`. Throws 401 when unauthenticated, and 426 when the agent (a bearer caller) is too
- * old: it would otherwise hit removed routes and lose work silently.
- */
+/** 426 for a too-old bearer caller: it would otherwise hit removed routes and lose work silently. */
 export const authGuard = new Elysia({ name: "auth-guard" }).derive(
   { as: "scoped" },
   async ({ headers, cookie }): Promise<{ user: AuthUser }> => {

@@ -88,14 +88,19 @@ function runJobSubject(run: ThreadRunRow, questionJobs: QuestionJobs): string | 
 
 const uuid = z.uuid();
 
-/** Job refs to look up: each run's job and each scored job. Bad ids are skipped, not thrown. */
-export function threadJobRefs(runs: ThreadRunRow[], questionJobs: QuestionJobs): JobRef[] {
+/** Jobs the runs, scores and requests name; bad ids are skipped, not thrown. */
+export function threadJobRefs(
+  runs: ThreadRunRow[],
+  questionJobs: QuestionJobs,
+  requestJobs: (string | null)[],
+): JobRef[] {
   const subjects = new Set<string>();
-  for (const run of runs) {
-    const subject = runJobSubject(run, questionJobs);
+  for (const subject of [...requestJobs, ...runs.map((run) => runJobSubject(run, questionJobs))]) {
     if (subject?.includes(":")) {
       subjects.add(subject);
     }
+  }
+  for (const run of runs) {
     for (const ref of scoredRefs(run)?.refs ?? []) {
       subjects.add(jobSubjectId(ref));
     }

@@ -58,8 +58,7 @@ export const addPipelineLinksSchema = z.object({
   urls: z.array(z.url()).min(1).max(MAX_LINKS),
 });
 
-/** `duplicates` are links the user already had from the last 30 days. */
-/** Every link, new or already in the pipeline, so the caller can act on the job it names. */
+/** `jobs` holds every link, new or not, to act on; `duplicates` were added in the last 30 days. */
 export const addedPipelineLinksSchema = z.object({
   feedId: z.uuid(),
   added: z.number().int(),

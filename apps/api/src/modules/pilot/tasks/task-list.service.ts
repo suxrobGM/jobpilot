@@ -30,7 +30,10 @@ export class TaskListService {
 
   /** The current snapshot, with none of refresh's writes. */
   async getCurrent(userId: string) {
-    const state = await this.prisma.pilotState.findUnique({ where: { userId } });
+    const state = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { taskList: true },
+    });
     const taskList = state?.taskList ? taskListSchema.parse(state.taskList) : null;
     return { taskList: taskList && taskList.expiresAt > new Date() ? taskList : null };
   }

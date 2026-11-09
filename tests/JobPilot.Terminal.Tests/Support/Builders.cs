@@ -41,7 +41,6 @@ internal static class Builders
 
     public static PtyOptions SpawnOptions => new() { App = "claude", CommandLine = [], Cwd = ".", Cols = 80, Rows = 24 };
 
-    /// <summary>A started process over the given fake connection.</summary>
     public static PtyProcess StartedPty(FakePtyConnection connection)
     {
         var process = new PtyProcess(SpawnOptions, _ => connection, NullLogger.Instance);

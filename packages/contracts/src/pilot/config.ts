@@ -29,7 +29,6 @@ const pilotRulesSchema = z.object({
   preferCapExempt: z.boolean().default(false),
 });
 
-/** How the pilot runs. */
 const pilotSettingsSchema = z.object({
   boards: z.array(z.string()).default([]),
   checkIntervalMinutes: z.number().int().min(5).default(30),

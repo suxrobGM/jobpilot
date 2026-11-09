@@ -1,9 +1,6 @@
 import { type ErrorCode, ErrorCodes } from "@jobpilot/contracts/errors";
 
-/**
- * An error carrying the HTTP status + envelope code it maps to. Thrown anywhere
- * in a handler or a service it calls; the global `.onError` shapes the response.
- */
+/** Throw it anywhere in a request; the global `.onError` turns it into the error envelope. */
 export class HttpError extends Error {
   constructor(
     readonly code: ErrorCode,

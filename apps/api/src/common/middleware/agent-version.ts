@@ -2,21 +2,15 @@
 export const AGENT_VERSION_HEADER = "x-jobpilot-version";
 
 /** Older agents call routes this API no longer serves; raise it with a breaking release. */
-const MIN_AGENT_VERSION = [2, 4, 1];
+const MIN_AGENT_VERSION = "2.4.1";
 
 /** Agents from before the header existed send none, so a missing one is outdated too. */
 export function isOutdatedAgent(version: string | undefined): boolean {
-  const match = version ? /^(\d+)\.(\d+)\.(\d+)/.exec(version.trim()) : null;
-  if (!match) {
+  const trimmed = version?.trim() ?? "";
+  if (!/^\d+\.\d+\.\d+/.test(trimmed)) {
     return true;
   }
-  const have = match.slice(1, 4).map(Number);
-  for (const [index, need] of MIN_AGENT_VERSION.entries()) {
-    if (have[index] !== need) {
-      return have[index] < need;
-    }
-  }
-  return false;
+  return Bun.semver.order(trimmed, MIN_AGENT_VERSION) < 0;
 }
 
 /** A refused agent keeps retrying; past this quiet spell it was stopped or updated. */
@@ -38,4 +32,4 @@ export function agentRefusedRecently(userId: string): boolean {
   return at !== undefined && Date.now() - at < REFUSED_FOR_MS;
 }
 
-export const OUTDATED_AGENT_MESSAGE = `Update JobPilot on your computer to ${MIN_AGENT_VERSION.join(".")} or later; this version can no longer work with the server.`;
+export const OUTDATED_AGENT_MESSAGE = `Update JobPilot on your computer to ${MIN_AGENT_VERSION} or later; this version can no longer work with the server.`;

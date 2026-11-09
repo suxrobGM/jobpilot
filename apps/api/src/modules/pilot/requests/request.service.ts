@@ -1,6 +1,6 @@
 import type { CreatePilotRequestInput } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
-import { conflict, notFound } from "@/common/errors";
+import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { type PilotRequestSource, PrismaClient } from "@/generated/prisma/client";
 import { OUTCOME_CLEARED } from "@/modules/feed/jobs/job.service";
@@ -57,13 +57,11 @@ export class RequestService {
    * at run start still catches the same posting applied elsewhere.
    */
   private async approveJob(userId: string, feedId: string, key: string) {
-    const job = await this.prisma.job.findFirst({
-      where: { userId, feedId, key },
-      select: { id: true, status: true },
-    });
-    if (!job) {
-      throw notFound("Job not found");
-    }
+    const job = await findOwned(
+      (where) => this.prisma.job.findFirst({ where, select: { id: true, status: true } }),
+      { userId, feedId, key },
+      "Job",
+    );
     if (job.status === "applied") {
       throw conflict("You already applied to this job.");
     }

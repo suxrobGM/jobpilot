@@ -5,13 +5,13 @@ import type { PilotRunHistoryItem, PilotRunOutcome } from "@jobpilot/contracts/p
 import { AGENT_LABELS, taskTypeAgent } from "@jobpilot/contracts/pilot";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { Block, CheckCircleOutlined, ErrorOutlined, TimerOff } from "@mui/icons-material";
-import { alpha, Box, type ChipProps, Stack, Tooltip, Typography } from "@mui/material";
+import { alpha, Box, Stack, Tooltip, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
 import { formatTokenSplit, humanizeIsoInText } from "@/utils/format";
 
 export const OUTCOME_META: Record<
   PilotRunOutcome,
-  { icon: SvgIconComponent; color: ChipProps["color"]; label: string }
+  { icon: SvgIconComponent; color: "success" | "error" | "warning" | "default"; label: string }
 > = {
   done: { icon: CheckCircleOutlined, color: "success", label: "Done" },
   failed: { icon: ErrorOutlined, color: "error", label: "Failed" },
@@ -38,7 +38,7 @@ export function RunHistoryRow(props: RunHistoryRowProps): ReactElement {
           aria-label={meta.label}
           sx={(theme) => {
             const color =
-              meta.color === "default" || meta.color === undefined
+              meta.color === "default"
                 ? theme.palette.text.secondary
                 : theme.palette[meta.color].main;
             return {

@@ -11,7 +11,7 @@ import { inject, injectable } from "@needle-di/core";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { JobRef } from "@/modules/feed/jobs/applying";
 import { toPilotChange } from "../changes/change-row";
-import { jobSubjectId, parseJobSubject } from "../job-subject";
+import { jobSubjectId } from "../job-subject";
 import { toPilotQuestion } from "../questions/question-row";
 import { toPilotRequest } from "../requests/request-row";
 import {
@@ -123,14 +123,13 @@ export class PilotThreadService {
       this.prisma.pilotRequest.findMany(sideRows),
     ]);
 
-    const requestJobs = requests.flatMap((row) =>
-      row.subjectType === "job" ? [row.subjectId] : [],
-    );
+    const threadRequests = requests.map((row) => ({
+      request: toPilotRequest(row),
+      jobSubject: row.subjectType === "job" ? row.subjectId : null,
+    }));
+    const requestJobs = threadRequests.map((row) => row.jobSubject);
     const [jobs, discovered] = await Promise.all([
-      this.loadJobs(userId, [
-        ...threadJobRefs(runs, questionJobs),
-        ...requestJobs.map(parseJobSubject),
-      ]),
+      this.loadJobs(userId, threadJobRefs(runs, questionJobs, requestJobs)),
       this.loadDiscovered(userId, runs),
     ]);
     const items = buildThread({
@@ -141,10 +140,7 @@ export class PilotThreadService {
       questions: questions.map(toPilotQuestion),
       changes: changes.map((row) => toPilotChange(row)),
       messages,
-      requests: requests.map((row) => ({
-        request: toPilotRequest(row),
-        jobSubject: row.subjectType === "job" ? row.subjectId : null,
-      })),
+      requests: threadRequests,
     });
     return { items, nextCursor };
   }

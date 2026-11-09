@@ -122,8 +122,7 @@ export function LiveTurn(): ReactElement {
       return <RunningLine run={run} />;
     }
     // Under an unanswered ask, a status line reads like the reply; offline and held explain the wait.
-    const ready =
-      mode !== "offline" && mode !== "outdated" && mode !== "unpaired" && mode !== "held";
+    const ready = mode !== "held" && !(mode in AGENT_ACTIONS);
     if (awaiting && ready) {
       return <SaidLine text={AWAITING_LINES[awaiting]} />;
     }

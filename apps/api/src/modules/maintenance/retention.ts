@@ -205,7 +205,7 @@ export const RETENTION_RULES = [
 
 export type RetentionRuleName = (typeof RETENTION_RULES)[number]["name"];
 
-/** Runs every rule in order; returns how many rows each touched. */
+/** Rows touched per rule. */
 export async function applyRetention(
   db: PrismaClient,
   now: Date,

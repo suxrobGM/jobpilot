@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace JobPilot.Terminal.Pilot.Api;
 
-// The JobPilot API shapes the host sends and reads; they mirror @jobpilot/contracts.
+// Mirrors @jobpilot/contracts.
 
 /// <summary>GET /api/pilot/activity.</summary>
 public sealed record PilotActivity(DateTimeOffset? LastActivityAt, CompletedCycle? LastCycle);

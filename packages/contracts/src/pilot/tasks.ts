@@ -27,7 +27,7 @@ type PilotSubjectType = (typeof PILOT_SUBJECT_TYPES)[number];
 
 const nullableString = z.string().nullable();
 
-const openRequestSchema = z.object({
+export const openRequestSchema = z.object({
   taskType: z.string(),
   status: z.enum(["pending", "running"]),
   payload: z.record(z.string(), z.json()),

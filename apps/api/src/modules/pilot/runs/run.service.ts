@@ -67,7 +67,6 @@ async function postReply(
 }
 
 interface CloseOptions {
-  /** The agent's result line, stored on the run. */
   summary?: string | null;
   /** Posted as the pilot's message in the conversation, in the same transaction. */
   reply?: string | null;

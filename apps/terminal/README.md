@@ -1,76 +1,52 @@
 # JobPilot terminal host
 
-A local .NET process that runs one Claude Code or Codex PTY for the web app. It owns no cloud state:
-it launches the provider with the user's JobPilot API environment and relays raw terminal traffic.
+A local .NET process that runs one Claude Code or Codex PTY for the web app and drives the pilot
+loop. It holds no cloud state.
 
 ## Layout
 
-Each folder is one feature and holds its endpoints, request and response records, and logic.
-Namespaces match folders.
+One folder per feature; namespaces match folders.
 
 | Folder | What it does |
 | --- | --- |
-| `Hosting/` | DI and middleware, `/healthz` and `/shutdown`, the origin allowlist, the AOT JSON context. |
-| `Install/` | The install layout and the `jobpilot://` scheme. |
-| `Install/Updates/` | `HostUpdater` installs a newer GitHub release; `HostRelaunch` passes the port to the relaunched host. |
-| `Providers/` | What to launch. `Provider` is the registry; `ClaudeProvider` and `Codex/` hold each CLI's arguments and quirks. |
-| `Sessions/` | The live session. `TerminalSession` owns it. `Pty/` wraps one spawned process, `Relay/` bridges WebSockets. |
-| `Pilot/` | The autonomous loop: `PilotLoop` runs cycles, `CycleRunner` runs one, `PilotEventListener` routes the API's events. |
-| `Pilot/Pairing/` | The paired account in `pilot.json`: `PairingStore` saves and loads it, `TokenProtection` wraps its token. |
-| `Pilot/Agent/` | `PilotAgent` drives the agent's terminal for a run; `StuckDetector` spots a stuck agent from its output. |
-| `Pilot/Api/` | Calls to the JobPilot API and its wire records. |
-| `Pilot/Telemetry/` | `/v1/logs`: token usage and readable steps from the CLI's OTLP log export. |
+| `Hosting/` | DI, middleware, `/healthz`, `/shutdown`, origin allowlist, AOT JSON context. |
+| `Install/` | Install layout and the `jobpilot://` scheme. |
+| `Install/Updates/` | `HostUpdater` installs a release, `HostRelaunch` restarts on the same port, `HostSelfUpdate` updates on a 426. |
+| `Providers/` | Per-CLI launch arguments: `ClaudeProvider`, `Codex/`. |
+| `Sessions/` | `TerminalSession` owns the live session; `Pty/` spawns it, `Relay/` bridges WebSockets. |
+| `Pilot/` | `PilotLoop` runs cycles, `CycleRunner` runs one, `PilotEventListener` routes API events. |
+| `Pilot/Pairing/` | `PairingStore` keeps the paired account in `pilot.json`; `TokenProtection` wraps its token. |
+| `Pilot/Agent/` | `PilotAgent` types into the session for a run; `StuckDetector` spots a stuck agent. |
+| `Pilot/Api/` | JobPilot API calls and wire records. |
+| `Pilot/Telemetry/` | `/v1/logs`: token usage and run steps from the CLI's OTLP logs. |
 
-## Runtime flows
+## Flows
 
-- **Session.** `/sessions/start` calls `TerminalSession.Start`, which prepares the provider's
-  workspace (Codex mirrors the bundled skills into `.agents/skills`), builds the child environment
-  (`SessionEnvironment`: locale, repaired PATH, `JOBPILOT_*`), and spawns a new `PtyProcess`. `TerminalRelay` broadcasts output to every WebSocket
-  and keeps a 512 KB replay for reconnects.
-- **Pilot.** `PUT /pilot/pairing` saves the `PilotPairing` to `pilot.json` and `DELETE` removes it;
-  every change wakes `PilotLoop`, which runs cycles whenever the host is paired. Autopilot is a
-  server flag: with it off the task list holds only what the user asked for. Each cycle starts with
-  one `/api/pilot/activity` probe, so an unreachable API backs off instead of spending a refresh.
-  `CycleRunner` then refreshes the task list. With no tasks it records an idle check on the pilot
-  state and sleeps, so an idle pilot never wakes the model. With tasks it starts
-  a run for the top one, unless the user typed into the terminal in the last 3 minutes: then it
-  reports `heldUntil` in `/healthz` and sleeps until the hold ends
-  (`DELETE /pilot/hold` ends it early). Otherwise it starts the run, types `/clear` and the pilot skill with the run id, and waits for the run
-  to finish: the `run.finished` event the agent's result publishes, or a poll of the run. A stuck
-  run climbs check-in, skip, then restart, and a run with no result is cancelled by the host. Three
-  stuck runs or three early session exits in a row take a 30-minute break, reported as a cycle whose
-  `message` (`PilotMessages`) reaches the user in the pilot chat and on their phone. The
-  host then posts the run's token usage, which `UsageMeter` sums from the CLI's OTLP logs on
-  `/v1/logs`, and reports the cycle to `/api/pilot/cycles`, as it does after an idle check. `PilotEventListener` holds the API's event stream open while paired,
-  passes `run.finished` to the session, wakes the loop on messages, requests and answered questions,
-  and hands `run.interrupt` (Esc, a stop line, then a cancel) and `run.steer` (one sanitized line
-  typed into the session) to the session for the run in flight. While a run is open,
-  `StepRecorder` reads the same OTLP logs for tool calls, `StepLabels` turns each into a short
-  label ("Opened boards.greenhouse.io/acme/jobs/42", "Filled 6 fields", "Updated a job"), and the
-  batch goes to `POST /api/pilot/runs/:id/steps` every 2 seconds. Labels never carry typed values,
-  page text, query strings or whole commands; tool calls outside a run are never sent.
-- **Update.** `HostUpdater` downloads the release, moves the running executable aside, and copies
-  the release over the install. `HostRelaunch.Relaunch` starts the new host, which waits for this one
-  to release the port. Only the executable and `plugin/` are the updater's; the rest of the install
-  root may be user state.
+- **Session.** `/sessions/start` prepares the provider workspace, builds the child environment
+  (`SessionEnvironment`) and spawns a `PtyProcess`. `TerminalRelay` fans output to every WebSocket
+  and keeps a 512 KB replay.
+- **Pilot.** While paired, each cycle probes `/api/pilot/activity`, refreshes the task list, and
+  either sleeps (no tasks, or the user typed in the last 3 minutes) or starts a run: `/clear`, then
+  the pilot skill with the run id, until `run.finished`. Stuck runs escalate check-in → skip →
+  restart; three stuck runs or early exits in a row pause for 30 minutes. After a run the host
+  posts token usage (`UsageMeter`) and reports the cycle. `StepRecorder` posts short step labels
+  every 2 seconds; they never carry typed values, page text, query strings or full commands.
+- **Update.** `HostUpdater` swaps the executable and `plugin/` (the rest of the install root may be
+  user state), then `HostRelaunch` starts the new host. A 426 from the API triggers the same update.
 
 ## Shared state
 
-- `TerminalSession.sync` guards the current `PtyProcess` and the active provider. Replacing or
-  stopping a session disposes its process, which never reports an exit afterwards, so a stale exit
-  cannot stop a newer one.
-- `TerminalRelay.sync` orders replay writes against client registration and guards the client map.
-- `PairingStore.sync` guards the in-memory pairing and serializes the atomic `pilot.json`
-  replacement.
-- `PilotLoop.sync` guards the live cycle's cancellation source. The loop publishes it before reading
-  the settings, so an unpair either cancels that cycle or is seen by its read.
+- `TerminalSession.sync` guards the process and provider. A replaced process never reports an exit,
+  so a stale exit can't stop a newer session.
+- `TerminalRelay.sync` orders replay writes against client registration.
+- `PairingStore.sync` guards the pairing and the atomic `pilot.json` replace.
+- `PilotLoop.sync` guards the cycle's cancellation source, published before reading settings so an
+  unpair either cancels the cycle or is seen by it.
 
 ## Invariants
 
-- A stop on request raises one requested exit (for Pilot waiters) and never shows a crash banner.
-- `PilotApi` probes and reports never throw except on the caller's own cancellation; a failed probe
-  returns null.
-- A wake that leaves the host paired never interrupts the agent mid-turn; an unpair does.
-- The user's typing in the terminal holds new runs; a run already in progress keeps going.
-- `pilot.json` keeps its wire shape, is DPAPI-protected on Windows, and is created with mode `0600`
-  on Unix.
+- A requested stop raises one exit and never shows a crash banner.
+- `PilotApi` probes and reports never throw except on the caller's cancellation.
+- A wake that keeps the pairing never interrupts the agent mid-turn; an unpair does.
+- Terminal typing holds new runs, never the one in flight.
+- `pilot.json` is DPAPI-protected on Windows and mode `0600` on Unix.

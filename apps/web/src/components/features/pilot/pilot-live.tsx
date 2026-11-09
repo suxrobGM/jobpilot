@@ -10,14 +10,10 @@ import { refetchThread } from "./home/thread/thread-cache";
 import { appendRunSteps } from "./steps/steps-cache";
 
 const STATE_KEY = pilotQueries.state().queryKey;
-// Never `pilot.all`: it would rebuild the task list. Run history rides on state changes because
-// the host reports a run's tokens after it finishes, then records the cycle.
-const RUN_KEYS = [
-  STATE_KEY,
-  pilotQueries.runHistoryAll,
-  pilotQueries.jobAlerts().queryKey,
-  pilotQueries.research().queryKey,
-];
+// Never `pilot.all`: it would rebuild the task list.
+const RUN_KEYS = [STATE_KEY, pilotQueries.jobAlerts().queryKey, pilotQueries.research().queryKey];
+// Only finished runs are listed; state changes too, since the host reports tokens after finishing.
+const FINISHED_KEYS = [...RUN_KEYS, pilotQueries.runHistoryAll];
 const RECONNECT_KEYS = [
   STATE_KEY,
   pilotQueries.runHistoryAll,
@@ -40,7 +36,7 @@ export function PilotLive(): ReactNode {
 
   useLiveInvalidation(pilotChannel, null, {
     on: {
-      "state.changed": RUN_KEYS,
+      "state.changed": FINISHED_KEYS,
       "agent.presence": (event) =>
         queryClient.setQueryData<PilotState>(
           STATE_KEY,
@@ -49,7 +45,7 @@ export function PilotLive(): ReactNode {
       "run.started": () => invalidate(RUN_KEYS),
       "run.finished": () =>
         invalidate([
-          ...RUN_KEYS,
+          ...FINISHED_KEYS,
           pilotQueries.searches().queryKey,
           pilotQueries.notices().queryKey,
         ]),
