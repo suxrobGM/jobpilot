@@ -16,14 +16,17 @@ import { THREAD_WIDTH, Thread } from "./thread/thread";
 
 type PhoneTab = "chat" | "needsYou" | "overview";
 
+// Padded inside each pane: a scroll pane must own its gutter, or flush-edge buttons overflow it.
+const GUTTER = { xs: 1.5, sm: 3 };
+
 function Conversation(): ReactElement {
   return (
-    <>
+    <Stack sx={{ flex: 1, minHeight: 0, px: GUTTER }}>
       <Thread />
       <Box sx={{ maxWidth: THREAD_WIDTH, width: "100%", mx: "auto" }}>
         <Composer />
       </Box>
-    </>
+    </Stack>
   );
 }
 
@@ -33,7 +36,7 @@ interface ScrollPaneProps {
 
 function ScrollPane(props: ScrollPaneProps): ReactElement {
   const { children } = props;
-  return <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", py: 1 }}>{children}</Box>;
+  return <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", py: 1, px: GUTTER }}>{children}</Box>;
 }
 
 /** The "Needs you" queue beside the conversation. */
@@ -97,7 +100,6 @@ export function PilotHome(): ReactElement {
         sx={{
           flex: 1,
           minWidth: 0,
-          px: { xs: 1.5, sm: 3 },
           pt: { xs: 0, md: 2 },
           pb: { xs: 1, md: 2 },
         }}
@@ -107,7 +109,7 @@ export function PilotHome(): ReactElement {
             value={tab}
             onChange={(_, value: PhoneTab) => setTab(value)}
             variant="fullWidth"
-            sx={{ minHeight: 40, "& .MuiTab-root": { minHeight: 40, py: 1 } }}
+            sx={{ mx: GUTTER, minHeight: 40, "& .MuiTab-root": { minHeight: 40, py: 1 } }}
           >
             <Tab value="chat" label="Chat" />
             <Tab
