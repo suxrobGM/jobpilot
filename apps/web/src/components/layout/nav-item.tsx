@@ -1,10 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Tooltip } from "@mui/material";
+import { Box } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavBadge } from "./nav-badge";
+import { RailLabel, railTile } from "./rail-tile";
 import { isNavEntryActive, type NavItem as NavItemType } from "./shell-config";
 
 interface NavItemProps {
@@ -16,46 +17,18 @@ export function NavItem(props: NavItemProps): ReactElement {
   const pathname = usePathname();
   const Icon = item.icon;
   const active = isNavEntryActive(pathname, item);
-  const icon = <Icon fontSize="md" />;
 
   return (
-    <Tooltip title={item.label} placement="right" arrow>
-      <Box
-        component={Link}
-        href={item.href}
-        aria-label={item.label}
-        aria-current={active ? "page" : undefined}
-        sx={(theme) => ({
-          position: "relative",
-          width: 36,
-          height: 36,
-          display: "grid",
-          placeItems: "center",
-          borderRadius: theme.radii.sm,
-          color: active ? "text.primary" : "text.disabled",
-          backgroundColor: active ? theme.palette.surfaces.elevated : "transparent",
-          textDecoration: "none",
-          transition: theme.motion.fast,
-          "&:hover": {
-            color: "text.secondary",
-            backgroundColor: active ? theme.palette.surfaces.elevated : theme.palette.surfaces.card,
-          },
-          "&::before": active
-            ? {
-                content: '""',
-                position: "absolute",
-                left: -10,
-                top: 8,
-                bottom: 8,
-                width: 2,
-                borderRadius: theme.radii.xs,
-                background: theme.palette.accent.primary,
-              }
-            : undefined,
-        })}
-      >
-        <NavBadge badge={item.badge}>{icon}</NavBadge>
-      </Box>
-    </Tooltip>
+    <Box
+      component={Link}
+      href={item.href}
+      aria-current={active ? "page" : undefined}
+      sx={railTile(active)}
+    >
+      <NavBadge badge={item.badge}>
+        <Icon fontSize="lg" />
+      </NavBadge>
+      <RailLabel>{item.label}</RailLabel>
+    </Box>
   );
 }

@@ -31,7 +31,7 @@ interface SimpleTableProps<T> {
   rowHref?: (row: T) => Route;
 }
 
-/** A plain, server-renderable table. DataTable is for client-side sorting and paging. */
+/** A plain, server-renderable table for desktop-only admin views; user-facing lists use `ListRow`. */
 // A transform makes the row the containing block for the name link's stretched ::after; other
 // controls in the row sit above that overlay so they stay clickable.
 const linkedRowSx = {

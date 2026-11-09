@@ -1,62 +1,31 @@
 using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Sessions.Relay;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace JobPilot.Terminal.Sessions;
 
 public sealed record StartSessionRequest(int Cols, int Rows, string? Provider, string? ApiToken, string? ApiUrl, string? WebUrl);
 
-public sealed record InjectRequest(string? Command, string? Provider = null);
-
-public static class Viewport
-{
-    public const int MinSize = 1;
-    public const int MaxSize = 2000;
-
-    public static bool IsValid(int cols, int rows) =>
-        cols is >= MinSize and <= MaxSize && rows is >= MinSize and <= MaxSize;
-}
-
 public static class SessionEndpoints
 {
-    private const int MaxCommandLength = 32 * 1024;
-
     public static void MapSessionEndpoints(this WebApplication app)
     {
         app.MapPost("/sessions/start", Results<Ok<StatusResponse>, ProblemHttpResult> (
             StartSessionRequest request, TerminalSession session, HostStatus status) =>
         {
-            if (!Viewport.IsValid(request.Cols, request.Rows))
+            if (!TerminalSize.IsValid(request.Cols, request.Rows))
             {
-                return Problems.BadRequest($"cols and rows must each be between {Viewport.MinSize} and {Viewport.MaxSize}.");
+                return Problems.BadRequest($"cols and rows must each be between {TerminalSize.MinSize} and {TerminalSize.MaxSize}.");
             }
 
-            session.Start(Provider.Find(request.Provider), request.Cols, request.Rows, request.ApiToken, request.ApiUrl, request.WebUrl);
+            if (!ApiConnection.TryParse(request.ApiToken, request.ApiUrl, request.WebUrl, out var api, out var problem))
+            {
+                return Problems.BadRequest(problem);
+            }
+
+            session.Start(Provider.Parse(request.Provider), request.Cols, request.Rows, api);
             return TypedResults.Ok(status.Get());
-        });
-
-        app.MapPost("/sessions/inject", async Task<Results<Ok, ProblemHttpResult>> (
-            InjectRequest request, TerminalSession session, CancellationToken ct) =>
-        {
-            if (string.IsNullOrWhiteSpace(request.Command))
-            {
-                return Problems.BadRequest("command must be a non-empty string.");
-            }
-
-            if (request.Command.Length > MaxCommandLength)
-            {
-                return Problems.BadRequest($"command must be at most {MaxCommandLength} characters.");
-            }
-
-            // No provider means any: Find would read a blank id as Claude.
-            var expected = request.Provider is null ? null : Provider.Find(request.Provider);
-            var result = await session.SendCommandAsync(request.Command, expected, ct);
-            return result switch
-            {
-                SendResult.Sent => TypedResults.Ok(),
-                SendResult.ProviderMismatch => Rejected("The active provider does not match the requested provider."),
-                _ => Rejected("The terminal session is not running."),
-            };
         });
 
         app.MapDelete("/sessions/current", (TerminalSession session, HostStatus status) =>
@@ -77,7 +46,4 @@ public static class SessionEndpoints
             await relay.ServeAsync(socket, context.RequestAborted);
         });
     }
-
-    private static ProblemHttpResult Rejected(string detail) =>
-        TypedResults.Problem(title: "Inject rejected", detail: detail, statusCode: StatusCodes.Status409Conflict);
 }

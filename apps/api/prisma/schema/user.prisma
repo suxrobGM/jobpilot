@@ -32,10 +32,9 @@ model User {
   oauthAccounts      OAuthAccount[]
 
   resumes              Resume[]
-  autoApply            AutoApplySettings?
   applications         Application[]
-  campaigns            Campaign[]
-  campaignJobs         CampaignJob[]
+  feeds                Feed[]
+  jobs                 Job[]
   credentials          Credential[]
   jobBoards            UserJobBoard[]
   emailAccount         EmailAccount?
@@ -50,13 +49,13 @@ model User {
   networkingMessages   NetworkingMessage[]
   coverLetters         CoverLetter[]
   pilotState           PilotState?
-  pilotSearches        PilotSearch[]
   pilotRuns            PilotRun[]
   pilotQuestions       PilotQuestion[]
-  pilotJournal         PilotJournalEntry[]
+  pilotChanges         PilotChange[]
+  pilotMessages        PilotMessage[]
+  pilotRequests        PilotRequest[]
   profileAnswers       ProfileAnswer[]
   webPushSubscriptions WebPushSubscription[]
-  promotionPosts       PromotionPost[]
 
   @@map("users")
 }

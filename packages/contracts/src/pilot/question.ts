@@ -40,7 +40,7 @@ export const pilotQuestionSchema = z.object({
   answer: z.string().nullable(),
   savedAnswerKey: savedAnswerKeySchema.nullable(),
   answeredAt: z.date().nullable(),
-  expiresAt: z.date().nullable(),
+  expiresAt: z.date(),
   createdAt: z.date(),
 });
 

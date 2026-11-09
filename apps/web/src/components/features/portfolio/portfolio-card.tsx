@@ -30,7 +30,7 @@ export function PortfolioCard(props: PortfolioCardProps): ReactElement {
         <PortfolioAvatar name={portfolio.displayName} size={80} />
         <Stack spacing={0.75}>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-            <Typography variant="displayMd" component="h1">
+            <Typography variant="h2" component="h1">
               {portfolio.displayName}
             </Typography>
             <AvailabilityBadge availability={portfolio.availability} />

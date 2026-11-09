@@ -9,6 +9,7 @@ const principal = {
   role: "USER",
   email: "user@example.org",
   tokenId: "22222222-2222-4222-8222-222222222222",
+  tokenKind: "session" as const,
 };
 const state = "synthetic-state";
 const verifier = "v".repeat(43);
@@ -20,7 +21,7 @@ const tokens = container.get(AuthTokenService);
 const { emailOAuthController } = await import("./oauth.controller");
 const spies: Array<{ mockRestore: () => void }> = [];
 const app = new Elysia().group("/api", (api) => api.use(emailOAuthController));
-const headers = { authorization: "Bearer synthetic-session" };
+const headers = { authorization: "Bearer synthetic-session", "x-jobpilot-version": "2.4.2" };
 async function start(provider = "microsoft"): Promise<string> {
   const response = await app.handle(
     new Request(`http://localhost/api/email/oauth/authorize?provider=${provider}`, { headers }),
@@ -65,7 +66,9 @@ describe("mailbox OAuth cookie round trip", () => {
     );
   });
   afterEach(() => {
-    for (const spy of spies) spy.mockRestore();
+    for (const spy of spies) {
+      spy.mockRestore();
+    }
     spies.length = 0;
   });
   it("returns Microsoft callback context intact through HTTP cookies", async () => {

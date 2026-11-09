@@ -4,7 +4,7 @@ import type { UpworkClient, UpworkQualityResult } from "@jobpilot/contracts/upwo
  * Heuristic Upwork client/job quality score - deterministic, no LLM (mirrors `scoreFit` in
  * ./fit.ts). Each component returns 0..1 and a signal we could not read scores neutral, so a
  * partial read never looks bad. A `skip` verdict carries the exact `skipReason` the
- * `upwork-search` skill records on the campaign Job.
+ * `upwork-search` skill records on the feed Job.
  */
 
 // Soft floor: below this the posting is skipped even without a hard-rule hit.
@@ -16,8 +16,12 @@ const TOO_MANY_PROPOSALS = 50;
 const NEUTRAL = 0.5;
 
 function paymentScore(verified: boolean | null | undefined): number {
-  if (verified === true) return 1;
-  if (verified === false) return 0;
+  if (verified === true) {
+    return 1;
+  }
+  if (verified === false) {
+    return 0;
+  }
   return NEUTRAL;
 }
 
@@ -86,11 +90,21 @@ function hireScore(hires: number | null | undefined): number {
 }
 
 function recencyScore(hoursAgo: number | null | undefined): number {
-  if (hoursAgo == null) return NEUTRAL;
-  if (hoursAgo <= 24) return 1;
-  if (hoursAgo <= 72) return 0.8;
-  if (hoursAgo <= 168) return 0.6;
-  if (hoursAgo <= 336) return 0.4;
+  if (hoursAgo == null) {
+    return NEUTRAL;
+  }
+  if (hoursAgo <= 24) {
+    return 1;
+  }
+  if (hoursAgo <= 72) {
+    return 0.8;
+  }
+  if (hoursAgo <= 168) {
+    return 0.6;
+  }
+  if (hoursAgo <= 336) {
+    return 0.4;
+  }
   return 0.2;
 }
 
@@ -99,15 +113,22 @@ function buildFlags(client: UpworkClient): string[] {
   if (client.paymentVerified != null) {
     flags.push(client.paymentVerified ? "Payment verified" : "Payment unverified");
   }
-  if (client.clientHires != null) flags.push(`${client.clientHires} hires`);
-  if (client.totalSpent != null)
+  if (client.clientHires != null) {
+    flags.push(`${client.clientHires} hires`);
+  }
+  if (client.totalSpent != null) {
     flags.push(`$${Math.round(client.totalSpent).toLocaleString()} spent`);
+  }
   if (client.reviewsCount != null) {
     const rating = client.rating != null ? ` (${client.rating.toFixed(1)}★)` : "";
     flags.push(`${client.reviewsCount} reviews${rating}`);
   }
-  if (client.proposalsCount != null) flags.push(`${client.proposalsCount} proposals`);
-  if (client.postedHoursAgo != null) flags.push(`Posted ${Math.round(client.postedHoursAgo)}h ago`);
+  if (client.proposalsCount != null) {
+    flags.push(`${client.proposalsCount} proposals`);
+  }
+  if (client.postedHoursAgo != null) {
+    flags.push(`Posted ${Math.round(client.postedHoursAgo)}h ago`);
+  }
   return flags;
 }
 

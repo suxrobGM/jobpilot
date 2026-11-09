@@ -3,7 +3,7 @@ import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/p
 import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
 import { renderCoverLetterPdf } from "@/common/pdf/render";
-import { slugifyForDownload } from "@/common/storage/storage";
+import { slugifyForDownload } from "@/common/storage/resume.storage";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { PrismaClient } from "@/generated/prisma/client";
 

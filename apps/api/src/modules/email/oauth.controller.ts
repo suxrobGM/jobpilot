@@ -118,8 +118,9 @@ export const emailOAuthController = new Elysia({
       } catch {
         return fail("invalid_callback");
       }
-      if (binding.userId !== user.id || binding.tokenId !== user.tokenId)
+      if (binding.userId !== user.id || binding.tokenId !== user.tokenId) {
         return fail("invalid_callback");
+      }
       stateCookies.clear();
       try {
         await account.completeEmailOAuth(

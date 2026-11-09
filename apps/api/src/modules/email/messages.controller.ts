@@ -5,6 +5,7 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
+import { deletedCountResponseSchema } from "@/types/response";
 import {
   emailMessageListSchema,
   emailMessageSchema,
@@ -36,6 +37,14 @@ export const emailMessagesController = new Elysia({
       summary: "List inbox messages",
       description:
         "Returns one page of the user's email messages as `{ items, pagination }`, ordered newest first, filtered by the optional review status, classification, since date, domain hint, and verification domain query parameters.",
+    },
+  })
+  .delete("/messages", ({ user }) => svc.clearMessages(user.id), {
+    response: deletedCountResponseSchema,
+    detail: {
+      summary: "Clear inbox",
+      description:
+        "Deletes every inbox message not linked to an application and returns `{ deletedCount }`. Sync does not re-import them: it only lists mail received since the last sync.",
     },
   })
   .get("/messages/count", ({ user, query }) => svc.countMessages(user.id, query), {
@@ -89,7 +98,7 @@ export const emailMessagesController = new Elysia({
       detail: {
         summary: "Mark job-alert emails imported",
         description:
-          "Stamps `importedAt` on the given job-alert emails once the pilot has pulled their job links into a campaign, so the next scheduled import skips them. Returns `{ imported }`, the number of rows newly stamped.",
+          "Stamps `importedAt` on the given job-alert emails once the pilot has pulled their job links into a feed, so the next scheduled import skips them. Returns `{ imported }`, the number of rows newly stamped.",
       },
     },
   )

@@ -9,170 +9,169 @@ export const metadata = buildDocsMetadata("faq", {
 
 ## Do I need an API key?
 
-No. The agent runs on the Claude Code or Codex subscription you already have.
-JobPilot doesn't include any AI keys and doesn't charge you anything.
+No. The agent runs on your Claude Code or Codex subscription. JobPilot is free
+and has no AI bill of its own.
 
 ## Which AI model should I use?
 
-A mid-range one, like **Claude Sonnet 5.5** or **GPT 6 Luna**.
+A mid-range one, like **Claude Sonnet 5.5** or **GPT 6 Luna**. JobPilot starts
+on these by default.
 
-We don't recommend top models like **Claude Opus 5.5**. Applying to jobs is
-mostly reading postings and filling in forms, which doesn't need much
-reasoning. A top model spends longer thinking at every step, so it uses up
-your weekly limit much faster and doesn't send any more applications. With
-the Pilot running all day, it could use a whole week's limit in a day or two.
-Mid-range models are also quicker, so more gets done.
-
-JobPilot already starts Claude Code on the latest Sonnet and Codex on GPT 6
-Luna. If you want a different model, type `/model` in either one.
+Top models like **Claude Opus 5.5** don't send more applications. The work is
+mostly reading postings and filling in forms, and a top model spends longer
+thinking at each step. With the Pilot running all day, it can use a week's
+limit in a day or two. To change the model anyway, type `/model` in the
+terminal.
 
 ## Where does the agent run?
 
-On your computer. The dashboard is a website, but the terminal host, the AI
-session, and the browser that does the applying all run on your machine. You
-can watch everything it does in the dock.
+On your computer. The website stores your data, but the agent and the browser
+it applies with run on your machine.
 
-## How do I start the agent again after it stops?
+## How do I start the agent after it stops?
 
-On Windows, press **Start agent** in the dock. On macOS and Linux, use one of
-the two commands the dock shows: run setup again in Claude Code or Codex, or
-type `jobpilot` in a terminal. Both commands work on Windows too.
-
-The button only appears on Windows, and only after the agent has run once.
-[Getting started](/docs/getting-started) explains why.
+Open the agent drawer. On Windows, press **Start agent**; the button appears
+after the agent's first run. On macOS and Linux, run setup again in Claude
+Code or Codex, or type `jobpilot` in a terminal.
 
 ## Which job boards does it work with?
 
-Any board you can open in a browser. New accounts start with LinkedIn, Indeed,
-Hiring Cafe, and We Work Remotely. You can add Wellfound, Y Combinator (Work at
-a Startup), Welcome to the Jungle, Hacker News "Who's Hiring", Remote OK,
-4 Day Week, and Upwork from the board picker, or add any other site from the
-boards page.
+Any site you can open in a browser. New accounts start with LinkedIn, Indeed,
+Hiring Cafe, and We Work Remotely. Wellfound, Y Combinator (Work at a
+Startup), Welcome to the Jungle, Hacker News "Who's Hiring", Remote OK, 4 Day
+Week, and Upwork are one click away. Add any other site on the **Job boards**
+page.
 
-## How many jobs does the Pilot apply to each day?
+## How do I tell the Pilot what jobs I want?
 
-As many as your daily limit allows, one per cycle. The server enforces the
-limit, not just the AI's instructions, so it holds even if something goes
-wrong in a cycle. The networking limit works the same way.
+Say it in the Pilot page's chat, the way you'd brief a recruiter. Your first
+message sets up searches, each carrying the reason behind it. Ask it any time
+to add, pause, or change a search, or to run a focused web search.
 
-## How does the Pilot decide what to do first?
+**Pilot → Searches & rules** shows the searches, your deal-breakers, and the
+lowest match score worth applying to. Every change, yours or the Pilot's, can
+be undone for 7 days.
 
-The server sorts the to-do list before every cycle. Questions you've just
-answered come first, then interview replies, then applications (best matches
-first), then networking, and finally searching for new jobs. You steer it
-with your goals and limits. See [the Pilot](/docs/pilot).
+## What is autopilot?
 
-## Will the Pilot send messages or post anything without asking me?
+With autopilot on, the Pilot picks its own work: new searches, applications,
+replies, and networking. With it off, it runs only what you ask for in chat or
+with a button. Queued work can be cancelled from the thread.
 
-Only the things you've allowed: applications up to your daily limit, and
-networking emails if you set email to **Auto-send**. LinkedIn messages and
-public posts always wait for your approval, and interview replies are always
-drafts for you to check. The server enforces these rules.
+## How many jobs does it apply to each day?
 
-## What if my computer sleeps or crashes in the middle of a cycle?
+Up to your daily limit, which the server enforces, so it holds even if
+something goes wrong mid-task. Change it under **Pilot → Searches & rules**,
+or ask in chat. The networking limit, under **Settings → Behavior**, works the
+same way.
 
-You don't lose anything. Each cycle does one task and saves the result before
-moving on. If a cycle crashes partway, its task times out and goes back on the
-to-do list. The host starts cycles again by itself after a reboot or when the
-computer wakes up.
+## What does the Pilot do first?
 
-## Can I use JobPilot myself while the Pilot is running?
+Your chat messages, then work you asked for, then questions you answered,
+interview replies, applications (best matches first), networking, and new
+searches. See [The Pilot](/docs/pilot).
 
-Yes. Campaigns and every dashboard button work as normal. If you start a
-session with the other provider yourself, the Pilot pauses so the two don't
-fight over the terminal, and carries on when you're done.
+## Will it send or post anything without asking?
 
-## What is a "cycle" in the journal?
+Only what you've allowed: applications up to your limit, and networking emails
+if email is set to **Auto-send**. LinkedIn messages, posts, and interview
+replies always wait for your approval. The server enforces this.
 
-One task the Pilot did on its own, like one application, one inbox check, or
-one search. The "By cycle" view on the Activity tab groups the journal so you
-can see what each cycle did, how it went, and how long it took.
+## What if my computer sleeps or crashes mid-task?
+
+Nothing is lost. Results are saved as the agent goes, and an unfinished task
+goes back on the list. After a restart, start the agent again and it carries
+on.
+
+## Can I use JobPilot while the Pilot is running?
+
+Yes. Buttons ask the Pilot for work, so it runs next. If you type in the
+terminal, the Pilot waits 3 minutes after your last keystroke before starting
+anything new. **Hand back** on the Pilot page ends the wait early.
+
+## Can I see exactly what it did?
+
+Yes. The thread lists every task and its result. The agent drawer's **Steps**
+tab shows the running task step by step, on any device. **Settings →
+Diagnostics** has every run, its token cost, and an export.
 
 ## How long do I have to answer a question?
 
-As long as you like for most questions; the job involved just waits. Login
-codes are the exception. They expire after about five minutes, and if you miss
-one the Pilot skips that job. You only get asked for codes the agent can't
-read itself, from SMS or an authenticator app. Codes sent by email are read
-from your inbox without bothering you. To get questions on your phone, turn on
-notifications under **Settings → Notifications**.
+As long as you like. The job waits. Login codes are the exception: they expire
+in about five minutes, and if you miss one the Pilot skips that job. You're
+only asked for codes from SMS or an authenticator app; emailed codes are read
+from your inbox. Turn on **Settings → Notifications** to get questions on
+your phone.
 
 ## Can JobPilot read and send email?
 
 Yes, through a Google OAuth client you create. See
-[Email setup](/docs/email-setup). Reading lets it match replies to
-applications and pick up sign-in codes. Sending is for networking. It can't
-delete email. JobPilot works without email too, you just don't get those
-features.
+[Email setup](/docs/email-setup). It reads mail to match replies and pick up
+sign-in codes, and sends networking emails. It can't delete mail. JobPilot
+works without email, minus those features.
 
 ## What about captchas?
 
-The agent handles checkbox and text captchas by itself. For picture puzzles it
-needs a 2Captcha or CapSolver key, which you add under
-[Credentials](/docs/credentials). Without one, it skips the job and tells you
-why.
+It solves checkbox and text captchas itself. Picture puzzles need a 2Captcha
+or CapSolver key, added on the **Job boards** page (see
+[Credentials](/docs/credentials)). Without one,
+it skips the job and tells you why.
 
 ## How do I update the agent?
 
-When a new version comes out, a banner appears in the dock. **Update now**
-installs the new terminal host and restarts it, which ends any session that's
-running. You'll rarely need it, though, because the agent checks for updates
-every time it starts.
-
-The plugin updates separately. The same banner has a **Prefer to update
-manually?** link with the commands for your provider.
+It checks for updates every time it starts. When a new version is out while
+it's running, the agent drawer shows a banner. **Update now** installs it and
+restarts the agent, ending the current session. **Prefer to update manually?**
+shows the commands instead.
 
 ## Can I switch between Claude Code and Codex?
 
-Yes, at any time, from the dock. Both use the same plugin and the same skills.
+Yes, any time, from the agent drawer. Both use the same skills.
 
 ## Where are my resumes stored?
 
-In your JobPilot account, not on your computer. That includes the PDFs you
-upload and every tailored version. You can edit the content under
-**Documents**.
+In your JobPilot account: uploaded PDFs and every tailored copy. Edit them
+under **Resumes**.
 
 ## Does the agent change my resume?
 
-Not unless you say so. Two things can change resume content, and both need
-your approval:
+Not without your approval.
 
-- After you upload a resume, `review-resume` suggests a rewrite and lists
-  each change. Press **Review** to compare it with your current text, then
-  **Apply rewrite** or **Discard**. Your PDF stays as it is, so
-  **Re-extract from PDF** brings back the original.
-- For each job, `tailor-resume` makes a separate copy and leaves your main
-  resume alone. If your resume isn't a good fit for the job, the copy may also
-  reorder, combine, or drop entries, or move a project into your work history.
+- After you upload a resume, `review-resume` suggests a rewrite. **Review**
+  shows each change; then **Apply rewrite** or **Discard**. Your PDF is kept,
+  so **Re-extract from PDF** brings back the original.
+- For each job, `tailor-resume` works on a separate copy. It may reorder,
+  combine, or drop entries for a better fit, but never touches your main
+  resume.
 
-Neither one can make up an employer, a date, or a number. The server rejects
-a rewritten bullet that contains a number the original didn't have, works out
-the dates of combined roles from the real ones, and won't move a project that
-has no dates. Anything it can't confirm is flagged for you.
+Neither can invent an employer, a date, or a number. The server rejects a
+reworded bullet with a number the original didn't have, and works out the
+dates of combined roles from the real ones. Anything it can't confirm is
+flagged for you.
 
 ## Why do I keep getting rejected without interviews?
 
-Look at how fast the rejections come. If they arrive within a day, a person
-probably never read your resume. An automatic filter turned you down, usually
-over work authorization, location, or years of experience. These things help
-more than another resume edit:
+Look at how fast rejections arrive. Within a day usually means an automatic
+filter, not a person, turned you down, often over work authorization,
+location, or years of experience. What helps more than another resume edit:
 
-- **Check the sponsorship question.** If you need visa sponsorship, most large
-  companies filter on it before anyone reads your application. The agent skips
-  postings that say so, but most companies don't say so.
-- **Apply to fewer, better-fitting companies.** Fifty applications to
-  companies that filter you out get you fifty rejections.
-- **Use networking.** A referral skips the automatic filter.
-- **Connect your email,** so rejections show up in your pipeline and you can
-  see your response rate.
+- **Check the sponsorship question.** If you need sponsorship, many large
+  companies filter on it first. The agent skips postings that say so, but
+  most don't.
+- **Apply to fewer, better-fitting companies.**
+- **Use networking.** A referral skips the filter.
+- **Connect your email** so rejections show up and you can see your response
+  rate.
 
 ## How do I delete my data?
 
-The dashboard doesn't have a delete button yet. Until it does, email
-[suxrobgm@gmail.com](mailto:suxrobgm@gmail.com) from the address you signed up
-with and ask for your account to be deleted. Deleting an account
-removes your profile data and destroys your encryption key, so your stored
-secrets can never be read again.
+Go to **Settings → Security → Delete account**, enter your password if you
+have one, and type your email to confirm. Deletion is immediate and
+permanent: your profile, resumes and their PDFs, applications, searches,
+Pilot history, connected mailbox, and saved credentials are erased, and your
+encryption key is destroyed, so stored secrets can never be read again. The
+agent stops working right away because its token is gone. Shared job
+listings aren't yours, so they stay.
 
 ## Is JobPilot open source?
 

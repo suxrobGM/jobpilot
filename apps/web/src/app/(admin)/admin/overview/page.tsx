@@ -67,7 +67,7 @@ async function AdminOverview(): Promise<ReactElement> {
     { label: "Verified", value: users.verified, hint: `of ${users.total} accounts` },
     { label: "Admins", value: users.admins, hint: "incl. the super admin" },
     { label: "Active", value: users.active, hint: "in the last 30 days" },
-    { label: "Campaigns", value: content.campaigns, hint: `${content.activeCampaigns} running` },
+    { label: "Feeds", value: content.feeds, hint: `${content.activeFeeds} running` },
     {
       label: "Applications",
       value: content.applications,

@@ -89,8 +89,8 @@ model NetworkingMessage {
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   contactId  String    @map("contact_id") @db.Uuid
   contact    Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  campaignId String?   @map("campaign_id") @db.Uuid
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  feedId String? @map("feed_id") @db.Uuid
+  feed   Feed?   @relation(fields: [feedId], references: [id], onDelete: SetNull)
 
   channel      NetworkingChannel
   linkedinKind LinkedinMessageKind? @map("linkedin_kind")
@@ -107,7 +107,7 @@ model NetworkingMessage {
   updatedAt  DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([userId, createdAt])
-  @@index([campaignId, status])
+  @@index([feedId, status])
   @@index([contactId])
   @@index([threadId])
   @@index([userId, status, sentAt])

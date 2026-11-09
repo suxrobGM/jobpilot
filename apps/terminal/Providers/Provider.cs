@@ -1,4 +1,5 @@
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
+using JobPilot.Terminal.Providers.Codex;
 
 namespace JobPilot.Terminal.Providers;
 
@@ -10,38 +11,31 @@ public abstract class Provider
     public static readonly Provider Claude = new ClaudeProvider();
     public static readonly Provider Codex = new CodexProvider();
 
-    public static readonly ProviderInfo[] All = [Claude.Info, Codex.Info];
+    public static readonly Provider[] All = [Claude, Codex];
+
+    public static readonly ProviderInfo[] Infos = [.. All.Select(p => p.Info)];
 
     public abstract string Id { get; }
 
     public abstract string DisplayName { get; }
 
     /// <summary>Executable to spawn.</summary>
-    public abstract string Command { get; }
+    public abstract string Executable { get; }
 
     public ProviderInfo Info => new(Id, DisplayName);
 
     /// <summary>Resolves an id case-insensitively; a blank id means Claude.</summary>
     /// <exception cref="ArgumentException">The id is not a known provider.</exception>
-    public static Provider Find(string? id)
+    public static Provider Parse(string? id)
     {
-        var normalized = id?.Trim().ToLowerInvariant();
-        if (string.IsNullOrEmpty(normalized))
+        var trimmed = id?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
         {
             return Claude;
         }
 
-        if (normalized == Claude.Id)
-        {
-            return Claude;
-        }
-
-        if (normalized == Codex.Id)
-        {
-            return Codex;
-        }
-
-        throw new ArgumentException($"Unsupported terminal provider '{id}'.");
+        return All.FirstOrDefault(p => p.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"Unsupported terminal provider '{id}'.");
     }
 
     /// <summary>Launch arguments, reading the provider's shipped settings from the plugin dir.</summary>

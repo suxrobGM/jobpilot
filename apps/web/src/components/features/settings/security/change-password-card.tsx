@@ -15,7 +15,7 @@ const DEFAULT_VALUES: ChangePasswordInput = { currentPassword: "", newPassword: 
 
 /** Change, or first-set for OAuth-only accounts. */
 export function ChangePasswordCard(): ReactElement {
-  const { user } = useSession();
+  const user = useSession();
   const hasPassword = user?.hasPassword ?? true;
 
   const changePassword = useApiMutation(

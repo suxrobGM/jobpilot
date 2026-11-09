@@ -6,7 +6,7 @@ internal sealed class ClaudeProvider : Provider
 
     public override string DisplayName => "Claude Code";
 
-    public override string Command => "claude";
+    public override string Executable => "claude";
 
     public override string[] BuildArgs(string pluginDir, ILogger logger)
     {

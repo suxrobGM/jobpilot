@@ -1,4 +1,4 @@
-import { bucketPerDay, DAYS_IN_TIMELINE, minutesOfDay, nextDayReset, startOfDay } from "./buckets";
+import { bucketPerDay, minutesOfDay, nextDayReset, startOfDay } from "./buckets";
 import { describe, expect, it } from "bun:test";
 
 const iso = (d: Date): string => d.toISOString();
@@ -41,10 +41,6 @@ describe("bucketPerDay", () => {
       { date: new Date("2026-06-02T00:00:00.000Z"), count: 0 },
       { date: new Date("2026-06-03T00:00:00.000Z"), count: 0 },
     ]);
-  });
-
-  it("defaults to the timeline window", () => {
-    expect(bucketPerDay([], start)).toHaveLength(DAYS_IN_TIMELINE);
   });
 
   it("counts each timestamp into its own UTC day", () => {

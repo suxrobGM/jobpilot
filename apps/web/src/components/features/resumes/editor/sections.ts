@@ -22,10 +22,12 @@ export interface EditorSection {
   icon: ComponentType<SvgIconProps>;
   /** Collapsed-header line: what is already in this section, or "empty". */
   summary: (data: ResumeData) => string;
+  /** Hidden while empty, offered as an "Add" button instead: most resumes never use it. */
+  optional?: boolean;
 }
 
-const count = (items: unknown[], noun: string): string =>
-  items.length === 0 ? "empty" : plural(items.length, noun);
+const count = (items: unknown[], noun: string, nouns?: string): string =>
+  items.length === 0 ? "empty" : plural(items.length, noun, nouns);
 
 export const RESUME_SECTIONS: EditorSection[] = [
   {
@@ -69,7 +71,7 @@ export const RESUME_SECTIONS: EditorSection[] = [
     label: "Education",
     description: "Degrees, schools, and details.",
     icon: SchoolOutlined,
-    summary: (data) => count(data.education, "entry"),
+    summary: (data) => count(data.education, "entry", "entries"),
   },
   {
     id: "publications",
@@ -77,6 +79,7 @@ export const RESUME_SECTIONS: EditorSection[] = [
     description: "Papers, preprints, and book chapters.",
     icon: MenuBookOutlined,
     summary: (data) => count(data.publications, "publication"),
+    optional: true,
   },
   {
     id: "awards",
@@ -84,6 +87,7 @@ export const RESUME_SECTIONS: EditorSection[] = [
     description: "Prizes, fellowships, and recognitions.",
     icon: EmojiEventsOutlined,
     summary: (data) => count(data.awards, "award"),
+    optional: true,
   },
   {
     id: "certifications",
@@ -91,6 +95,7 @@ export const RESUME_SECTIONS: EditorSection[] = [
     description: "Licenses and professional certifications.",
     icon: VerifiedOutlined,
     summary: (data) => count(data.certifications, "certification"),
+    optional: true,
   },
   {
     id: "sections",
@@ -98,5 +103,6 @@ export const RESUME_SECTIONS: EditorSection[] = [
     description: "Grants, talks, patents, teaching - anything the sections above don't cover.",
     icon: ViewListOutlined,
     summary: (data) => count(data.sections, "section"),
+    optional: true,
   },
 ];

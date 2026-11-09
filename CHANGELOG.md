@@ -2,6 +2,93 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.4.2 - 2026-11-09
+
+Update the plugin and terminal host with this release. The API now refuses agents older than 2.4.2, because older ones call routes it no longer serves; the host updates itself and the web says to update instead of showing the agent offline.
+
+### Added
+
+- Permanently delete your account from settings.
+- Phones see a pilot agent running on another device, and you get an alert when autopilot's agent stays offline.
+- Clear your inbox; unscanned mail is deleted after 30 days.
+- Diagnostics is linked from the Pilot overview.
+- Pipeline opens on the first tab that has jobs.
+
+### Changed
+
+- Chat replies follow your ask: a job you name is applied even if the pilot skipped it before, your minimum score wins over the pilot's, pasted links are read as-is, and a one-job ask stays on that job.
+- An unsolved CAPTCHA, or a sign-in wall on a job you asked for, parks the job for you instead of skipping it.
+- Skip and Keep paused answers apply right away without starting an agent run.
+- Asking for the same work twice returns the request already queued instead of queueing it again.
+- Run summaries live on the runs themselves; the thread, job brief and Diagnostics read them directly.
+
+### Fixed
+
+- Every chat message gets an answer, a skipped apply no longer reads as applied, rescans read the single job, and thread job rows open the job or its application.
+- Inbox sync no longer drops mail past the first page, and a reconnect re-lists missed mail.
+- Pipeline's board filter matches boards whose names have spaces.
+- Phone layout: the app frame stays on screen, filter toggles stay on one scrolling row, and dialogs no longer scroll sideways.
+
+## v2.4.1 - 2026-11-08
+
+Update the plugin with this release so the pilot can set up searches from every resume.
+
+### Added
+
+- Ask the pilot to set up searches from your resumes, with autopilot on or off. It groups your resumes by the role each targets and adds searches for roles your current searches don't cover, each scoring jobs against its own resume.
+- A job waiting on you can be skipped from its page.
+
+### Changed
+
+- Clearer FAQ and public copy, covering chat steering and autopilot.
+
+## v2.4.0 - 2026-11-08
+
+Update the plugin and terminal host with this release. Older hosts stop running the pilot once the API is deployed, because the pilot no longer has a Start/Stop switch; the update banner brings them current.
+
+### Added
+
+- The Pilot page is an assistant conversation: a thread of the pilot's work, questions, changes and replies split by day, a composer to ask or tell it anything, and a status line whose one main button starts the agent, turns on autopilot, or pauses it. Work you ask for in chat is reported back in chat.
+- Autopilot: on, the pilot picks its own work; off, it runs only what you ask for. Buttons across the app ask the pilot for work, those requests run next from any device, and you can cancel queued work from the thread.
+- Needs you items sit in a side queue beside the conversation; a parked job opens on its own page.
+- The Pilot overview shows this week, the job brief, and where the pilot looks: each search with its board, a pin to keep it on that board, and run buttons.
+- Searches & rules: deal-breakers, named searches you can pause or delete, and standing answers. Every edit is a change with Undo for 7 days. Ask the pilot in chat for a focused web search.
+- Heads up notices for missing email, unread mail, no replies, near-miss scores and an unused daily limit, each with one button to act on it.
+- Live steps: the agent drawer's Steps tab and the status line show what the running task is doing, readable on a phone. Steps never include typed values or page text.
+- Pasting a job link offers to add it to your pipeline without waiting for the pilot.
+- Pipeline: tick several jobs to approve, skip or retry them at once, and skip To review jobs found over a month ago in one go.
+
+### Changed
+
+- Goals are gone: tell the pilot what you want in chat, and your first message or autopilot sets up searches that carry the reason behind them.
+- The Pipeline replaces the workspace and campaign pages, with To review, In progress, Applied and Not applied tabs and a source filter grouped into searches and other sources. Jobs you already have are never added twice.
+- A new look: a labelled icon rail, a top bar with the page title and agent status, a larger type scale, and one shared list, toolbar and pager for every record list. Upwork and Networking appear once you use them; Feedback and Admin moved into the account menu.
+- Inbox is a grouped list with a review pane, and each message opens on its own page.
+- Documents is now Resumes, with the editor beside a full-height PDF preview and delete in the list. Cover letters and Portfolio have their own pages.
+- Job boards and every login live on one Job boards page, where you also set the order the pilot searches them.
+- Settings use a grouped side nav. Application answers are separate from the profile, and a page saves only what changed. The run history and token costs live under Diagnostics.
+- The agent dock is now an on-demand drawer, and the host pairs with the pilot automatically. Typing in the terminal holds new pilot work for 3 minutes; Hand back ends the wait. The agent orb moves only while the agent works.
+- Searches, job alerts, research, pasted links and your own skill runs are all feeds. Deleting a search keeps its jobs' history, and duplicate copies of the same job were merged.
+- Jobs from `search`, `auto-apply` and `apply` go to one feed the pilot never applies from on its own. `resume-campaign` and the per-run `--campaign`/`--feed` flags are gone; `auto-apply approved` and `auto-apply retry-failed` work on that feed.
+- The minimum match score, preferring cap-exempt employers, and the default start date moved from your profile into the pilot's rules and saved answers.
+- Promotion posts are gone.
+- Unanswered questions expire after 14 days, and old skipped jobs, irrelevant mail and finished runs are cleaned up on a schedule.
+- Campaign questions still open, and answers the pilot never acted on, close as "No longer needed" instead of replaying decisions about campaigns that are now feeds.
+- The landing page tour shows a real Pilot run on the redesigned app, the brand mark was refined, and the docs were rewritten for the new Pilot.
+
+### Fixed
+
+- The terminal host builds on the patched .NET 10.0.14 compiler and runtime (CVE-2026-111497).
+- Plugin commands stay on PATH for hosts started from Git Bash.
+- Approving or retrying a job starts it right away instead of after the next check.
+- Searches rotate only across linked job boards, stay on a board they are pinned to, and a search with no board is held until you pick one.
+- Search rows with too little detail are left unscored instead of guessed.
+- Browsing the app no longer holds the pilot as if you were typing in the terminal.
+- The Pilot status line says the pilot is idle, held or off between runs instead of "Working."
+- After its 30-minute break for 3 stuck runs in a row, the pilot no longer takes another break after every later stuck run.
+- Saving one pilot setting no longer resets the others.
+- Dialogs no longer clip the floating label of their first field, and every titled dialog has a close button.
+
 ## v2.3.5 - 2026-11-05
 
 ### Fixed

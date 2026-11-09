@@ -18,7 +18,7 @@ interface TeaserProps {
   footer: ReactNode;
 }
 
-/** Poster + `preload="none"`: the 9 MB cut costs nothing until a visitor asks for it. */
+/** Poster + `preload="none"`: the 10 MB cut costs nothing until a visitor asks for it. */
 export function Teaser(props: TeaserProps): ReactElement {
   const { footer } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -77,15 +77,15 @@ export function Teaser(props: TeaserProps): ReactElement {
                   },
                 }}
               >
-                <PlayArrow fontSize="2xxl" />
+                <PlayArrow fontSize="large" />
               </IconButton>
             </Box>
           )}
         </Card>
       </Box>
       <Typography variant="body2Muted" sx={{ mt: 2, textAlign: "center" }}>
-        A real Pilot run, start to finish: it applies to a job on LinkedIn and the application shows
-        up on your dashboard. Sound on.
+        A real Pilot run: one request finds new-grad ML roles on hiring.cafe, you pick one, and
+        Claude Code submits the application. Sound on.
       </Typography>
       {footer}
     </Section>

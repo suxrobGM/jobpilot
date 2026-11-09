@@ -40,18 +40,19 @@ export class EmailProviders {
     state: string,
     verifier: string,
   ) {
-    if (provider === "microsoft") return this.microsoft.authorizeUrl(config, state, verifier);
+    if (provider === "microsoft") {
+      return this.microsoft.authorizeUrl(config, state, verifier);
+    }
     return this.gmail.authorizeUrl(config, state);
   }
   exchangeCode(provider: EmailProvider, config: OAuthClientConfig, code: string, verifier: string) {
-    if (provider === "microsoft") return this.microsoft.exchangeCode(config, code, verifier);
+    if (provider === "microsoft") {
+      return this.microsoft.exchangeCode(config, code, verifier);
+    }
     return this.gmail.exchangeCode(config, code);
   }
   refresh(provider: EmailProvider, config: OAuthClientConfig, token: string) {
     return this.client(provider).refresh(config, token);
-  }
-  sync(provider: EmailProvider, session: MailboxSession) {
-    return this.client(provider).sync(session);
   }
   send(provider: EmailProvider, session: MailboxSession, input: SendMessageInput) {
     return this.client(provider).send(session, input);

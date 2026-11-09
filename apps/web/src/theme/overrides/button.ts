@@ -1,4 +1,4 @@
-import type { Components, Theme } from "@mui/material/styles";
+import { type Components, darken, type Theme } from "@mui/material/styles";
 import { controlBox, controlBoxSmall, outlinedControl } from "./control-box";
 
 export const buttonOverrides: Components<Theme>["MuiButton"] = {
@@ -6,20 +6,12 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
   styleOverrides: {
     root: ({ theme }) => ({ position: "relative", ...controlBox(theme) }),
     sizeSmall: ({ theme }) => controlBoxSmall(theme),
-    contained: ({ theme }) => ({
-      backgroundColor: theme.palette.accent.primary,
-      color: (theme.vars ?? theme).palette.primary.contrastText,
-      boxShadow: theme.shadows_custom.button,
-      "&:hover": {
-        backgroundColor: theme.palette.accent.dark,
-        transform: "translateY(-1px)",
-        boxShadow: theme.shadows_custom.buttonHover,
-      },
-      "&:active": {
-        transform: "translateY(0)",
-        boxShadow: theme.shadows_custom.buttonActive,
-      },
-    }),
+    // Flat: no lift or glow.
+    contained: {
+      fontWeight: 600,
+      boxShadow: "none",
+      "&:hover": { boxShadow: "none" },
+    },
     outlined: ({ theme }) => ({
       ...outlinedControl(theme),
       color: (theme.vars ?? theme).palette.text.primary,
@@ -35,4 +27,15 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
       },
     }),
   },
+  variants: [
+    {
+      // Darkens on hover: lightening would drop white text below a readable contrast.
+      props: { variant: "contained", color: "primary" },
+      style: ({ theme }) => ({
+        backgroundColor: theme.palette.accent.action,
+        color: theme.palette.common.white,
+        "&:hover": { backgroundColor: darken(theme.palette.accent.action, 0.12) },
+      }),
+    },
+  ],
 };

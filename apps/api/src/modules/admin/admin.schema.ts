@@ -17,7 +17,7 @@ export const adminUserPageSchema = paginatedSchema(adminUserSchema);
 const adminPilotSchema = z.object({
   userEmail: z.string(),
   userId: z.uuid(),
-  running: z.boolean(),
+  autopilot: z.boolean(),
   lastCycleAt: z.date().nullable(),
   cycleCount: z.number().int(),
   openQuestions: z.number().int(),
@@ -37,8 +37,8 @@ export const adminStatsSchema = z.object({
     active: z.number().int(),
   }),
   content: z.object({
-    campaigns: z.number().int(),
-    activeCampaigns: z.number().int(),
+    feeds: z.number().int(),
+    activeFeeds: z.number().int(),
     applications: z.number().int(),
     applicationsThisWeek: z.number().int(),
     boards: z.number().int(),

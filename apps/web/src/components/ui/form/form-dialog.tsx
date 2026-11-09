@@ -7,9 +7,9 @@ import {
   DialogActions,
   DialogContent,
   type DialogProps,
-  DialogTitle,
   Stack,
 } from "@mui/material";
+import { DialogHeader } from "@/components/ui/feedback";
 
 interface FormDialogShellProps {
   open: boolean;
@@ -36,7 +36,7 @@ export function FormDialogShell(props: FormDialogShellProps): ReactElement {
           onSubmit();
         }}
       >
-        <DialogTitle>{title}</DialogTitle>
+        <DialogHeader title={title} onClose={onClose} />
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {children}

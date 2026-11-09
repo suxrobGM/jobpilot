@@ -6,8 +6,9 @@ import storyboard from "../storyboard.json";
 // Mirrors apps/web/src/theme/palette.ts (warm carbon + flame/thrust duotone).
 export const c = {
   base: "#0B0B0A",
-  card: "#151413",
-  elevated: "#201E1B",
+  panel: "#121110",
+  card: "#1A1917",
+  elevated: "#23211E",
   hover: "#2B2925",
   flame: "#FF6A3D",
   thrust: "#3B82F6",

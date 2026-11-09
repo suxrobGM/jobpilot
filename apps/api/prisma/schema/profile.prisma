@@ -35,7 +35,6 @@ model Profile {
 
   usAuthorized        Boolean  @default(false) @map("us_authorized")
   requiresSponsorship Boolean  @default(false) @map("requires_sponsorship")
-  preferCapExempt     Boolean  @default(false) @map("prefer_cap_exempt")
   visaStatus          String?  @map("visa_status")
   optExtension        String?  @map("opt_extension")
   willingToRelocate   Boolean  @default(false) @map("willing_to_relocate")
@@ -82,19 +81,6 @@ model SalaryPreference {
 
   @@index([userId])
   @@map("salary_preferences")
-}
-
-model AutoApplySettings {
-  id                         String   @id @default(uuid(7)) @db.Uuid
-  userId                     String   @unique @map("user_id") @db.Uuid
-  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  minMatchScore              Int      @default(60) @map("min_match_score")
-  maxApplicationsPerCampaign Int?     @map("max_applications_per_campaign")
-  defaultStartDate           String   @default("2 weeks notice") @map("default_start_date")
-  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt                  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  @@map("auto_apply_settings")
 }
 
 // Answers the user gave, never the model's guesses.

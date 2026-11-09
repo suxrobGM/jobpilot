@@ -94,7 +94,7 @@ export const authProvidersController = new Elysia({
         stateCookies.clear();
         setSessionCookie(cookie, result.token);
         // Same landing as form login; the proxy bounces new users on to onboarding.
-        return redirect(`${env.APP_URL}/workspace`);
+        return redirect(`${env.APP_URL}/pilot`);
       } catch (e) {
         return fail(flowFailureReason<OAuthErrorReason>(e, "OAuth sign-in"));
       }

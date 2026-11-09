@@ -20,7 +20,9 @@ export function useKeyedList(length: number): KeyedList {
   const keys = useRef<string[]>([]);
 
   // Resync when the parent swapped the array wholesale (load, reset, rejected add).
-  while (keys.current.length < length) keys.current.push(nextKey());
+  while (keys.current.length < length) {
+    keys.current.push(nextKey());
+  }
   keys.current.length = length;
 
   return {

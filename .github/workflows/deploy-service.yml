@@ -13,7 +13,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  APP_DIR: ~/deploy/jobpilot
+  # Relative to the SSH user's home, for both ssh and scp.
+  APP_DIR: deploy/jobpilot
 
 jobs:
   build:
@@ -70,27 +71,41 @@ jobs:
           # Lowercased owner/repo so the compose image refs resolve.
           echo "GITHUB_REPOSITORY=${GITHUB_REPOSITORY,,}" >> deploy/.env
 
+      # Plain OpenSSH: appleboy actions download a release binary each run, which can 504.
+      - name: Set up SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          cat > ~/.ssh/config <<EOF
+          Host vps
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking accept-new
+          EOF
+
       - name: Copy deploy files to VPS
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          source: "deploy/docker-compose.yml,deploy/.env,deploy/jobpilot.conf"
-          target: ${{ env.APP_DIR }}
-          strip_components: 1
+        run: |
+          ssh vps "mkdir -p $APP_DIR"
+          scp deploy/docker-compose.yml deploy/.env deploy/jobpilot.conf "vps:$APP_DIR/"
 
       - name: Deploy with Docker Compose
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd ${{ env.APP_DIR }}
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose pull ${{ inputs.service }}
-            # --wait blocks until healthchecks (deploy/docker-compose.yml) pass and fails the deploy otherwise.
-            docker compose up -d --no-deps --force-recreate --wait --wait-timeout 120 ${{ inputs.service }}
-            docker image prune -f
-            docker compose ps --format "table {{.Name}}\t{{.Status}}"
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SERVICE: ${{ inputs.service }}
+        run: |
+          ssh vps bash -s <<EOF
+          set -e
+          cd $APP_DIR
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker compose pull $SERVICE
+          # --wait blocks until healthchecks (deploy/docker-compose.yml) pass and fails the deploy otherwise.
+          docker compose up -d --no-deps --force-recreate --wait --wait-timeout 120 $SERVICE
+          docker image prune -f
+          docker compose ps --format "table {{.Name}}\t{{.Status}}"
+          EOF

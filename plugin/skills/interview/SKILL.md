@@ -4,73 +4,61 @@ description: Produce a tailored interview prep sheet (behavioral, technical, sys
 argument-hint: "<job_description>"
 ---
 
-# Interview Prep
+# Interview prep
 
-Generate interview prep tailored to a JD and the candidate's resume.
+Prep for one role, from its job description and the candidate's resume.
 
 ## Setup
 
-Follow `../_shared/setup.md`, then load the structured resume (`jobpilot-api GET /api/resumes/<id>`, the caller's `resumeId` else `user.primaryResumeId`). Its `content` holds the full background; don't `Read` the source PDF.
+Follow `../_shared/setup.md`, then `GET /api/resumes/<id>` (the caller's `resumeId`, else
+`user.primaryResumeId`). Work from its `content`.
 
-## Step 1: Analyze the Role
+## 1. Read the role
 
-From the argument, identify: role title + level + team, core technical requirements, domain/industry, key responsibilities, company size/stage, any interview-process hints.
+Note the title, level and team; the core technical requirements; the domain; the main
+responsibilities; company size and stage; any hints about the interview process.
 
-## Step 2: Generate Questions
+## 2. Questions
 
-### Behavioral (5–7)
+Most likely first in each group. Every answer draws on real resume experience, named.
 
-Focus on competencies the role requires. For each: question + suggested **STAR answer** (Situation, Task, Action, Result) using a real example from the resume + the experience to reference.
+- **Behavioral (5-7)**, on the competencies the role needs. Each: the question and a STAR outline
+  (situation, task, action, result) from one real role or project.
+- **Technical (5-7)**, on the stack and requirements. Each: an answer outline with talking points
+  from the candidate's work.
+- **System design (2-3)**, in the company's product area. Each: the approach, and which of the
+  candidate's projects show relevant experience.
+- **Company (2-3)**: product, market, competitors, and what to research beforehand.
 
 Example:
 
-```
-**Q: Tell me about a time you led a major migration.**
-
-Suggested answer (STAR):
-- Situation: At EmTech Care Labs, the platform was on AWS Amplify Gen 1 with slow builds.
-- Task: Lead the migration to Gen 2 and unify the codebase.
-- Action: Phased migration, unified TypeScript monorepo, consolidated 3 component libraries into one design system.
-- Result: Cut build/deploy time 40%, created 40+ reusable components, improved velocity.
+```text
+Q: Tell me about a time you led a major migration.
+- Situation: at EmTech Care Labs the platform ran on Amplify Gen 1 with slow builds.
+- Task: move to Gen 2 and unify the codebase.
+- Action: phased migration into one TypeScript monorepo; merged 3 component libraries.
+- Result: build and deploy time down 40%; 40+ shared components.
 ```
 
-### Technical (5–7)
+## 3. Weak spots
 
-Based on the role's stack and requirements: language/framework, architecture and patterns, technologies listed in the JD. For each: concise answer outline with talking points from the candidate's experience.
+Requirements where the candidate is thin. For each, an honest answer they could say out loud: the
+closest thing they have done, named, and how they would close the gap. No "I'm a quick learner".
+Then what to brush up on.
 
-### System Design (2–3)
+## 4. Output
 
-Scenarios relevant to the company's product area. For each: outline the approach + which candidate projects demonstrate relevant experience.
+```text
+# Interview prep: <role> at <company>
 
-### Company / Domain (2–3)
-
-Questions about the company's product, industry, competitors. Suggest research areas to explore before the interview.
-
-## Step 3: Identify Weak Spots
-
-List requirements where the candidate's experience is thin. For each, give an honest answer the candidate could say out loud: the closest thing they have done, named, and what they would do to close the gap. No "I'm a quick learner" or "I'm passionate about learning". Recommend areas to brush up on.
-
-## Step 4: Output
-
-```
-# Interview Prep: [Role] at [Company]
-
-## Role Summary
-[2-3 sentences]
-
-## Behavioral Questions
-## Technical Questions
-## System Design
-## Company Research
-## Watch Out For
-## Key Talking Points
-[3-5 bullets to weave into any answer]
+## Role summary        (2-3 sentences)
+## Behavioral
+## Technical
+## System design
+## Company research
+## Watch out for
+## Key talking points  (3-5 bullets to weave into any answer)
 ```
 
-## Rules
-
-1. **Real experience only.** Every suggested answer references real projects/roles/metrics. Never fabricate.
-2. **Tailor to this role.** Generic "tell me about yourself" prep is useless.
-3. **Be honest about gaps.** Don't pretend they don't exist.
-4. **Spoken, not written.** Answers are talking points for 1-2 minutes out loud: short phrases in the candidate's own words, not polished paragraphs to memorize.
-5. **Probability-order.** Most likely questions first in each category.
+Answers are talking points for one or two minutes out loud: short phrases in the candidate's
+words, not paragraphs to memorize. Never invent experience.

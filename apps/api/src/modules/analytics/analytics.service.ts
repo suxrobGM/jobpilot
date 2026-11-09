@@ -37,7 +37,7 @@ export class AnalyticsService {
       networkingTimelineRows,
       contactSourceRows,
     ] = await Promise.all([
-      this.prisma.campaignJob.count({ where: { status: "queued", userId } }),
+      this.prisma.job.count({ where: { status: "queued", userId } }),
       this.prisma.application.count({
         where: { userId, status: "applied", appliedAt: { gte: weekStart } },
       }),
@@ -68,7 +68,7 @@ export class AnalyticsService {
         select: { appliedAt: true },
       }),
       this.boards.topBoards({ userId }),
-      this.prisma.campaignJob.groupBy({
+      this.prisma.job.groupBy({
         by: ["failReason"],
         where: { failReason: { not: null }, userId },
         _count: { _all: true },
@@ -110,15 +110,15 @@ export class AnalyticsService {
 
     // Every application total comes off this one groupBy; a per-status count query would re-read the same rows.
     const byStatus = new Map(statusBreakdown.map((r) => [r.status as string, r.count]));
-    const sumOf = (statuses: readonly string[]): number =>
+    const sumStatuses = (statuses: readonly string[]): number =>
       statuses.reduce((n, status) => n + (byStatus.get(status) ?? 0), 0);
 
     const totalApplications = statusBreakdown.reduce((n, r) => n + r.count, 0);
     const totalSubmitted = byStatus.get("applied") ?? 0;
-    const totalInterviewing = sumOf(INTERVIEW_STATUSES);
+    const totalInterviewing = sumStatuses(INTERVIEW_STATUSES);
     const totalOffers = byStatus.get("offer") ?? 0;
     const totalRejected = byStatus.get("rejected") ?? 0;
-    const responded = sumOf(RESPONDED_STATUSES);
+    const responded = sumStatuses(RESPONDED_STATUSES);
 
     const perDay = bucketPerDay(
       timelineRows.map((r) => r.appliedAt),
@@ -144,12 +144,9 @@ export class AnalyticsService {
     const replyRatePct =
       networkingSent > 0 ? Math.round((networkingReplied / networkingSent) * 100) : 0;
 
-    const topContactSources = contactSourceRows
-      .filter((r) => r.discoverySource)
-      .map((r) => ({
-        source: r.discoverySource as string,
-        count: r._count._all,
-      }));
+    const topContactSources = contactSourceRows.flatMap((r) =>
+      r.discoverySource ? [{ source: r.discoverySource, count: r._count._all }] : [],
+    );
 
     const perDaySent = bucketPerDay(
       networkingTimelineRows.map((r) => r.sentAt as Date),

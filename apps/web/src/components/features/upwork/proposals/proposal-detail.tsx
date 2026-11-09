@@ -9,13 +9,13 @@ import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { upworkAccountQueries, upworkProposalQueries } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
-import { AgentOnlyButton, TooltipIconButton } from "@/components/ui/buttons";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
+import { TooltipIconButton } from "@/components/ui/buttons";
 import { LabelValue } from "@/components/ui/display";
 import { DetailLoadFailure, DetailSkeleton } from "@/components/ui/feedback";
-import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
+import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useCopy } from "@/hooks/use-copy";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
-import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { ProposalNotes } from "./proposal-notes";
 import { ProposalStatusBar } from "./proposal-status-bar";
@@ -27,7 +27,7 @@ interface ProposalDetailProps {
 export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const { id } = props;
   const router = useRouter();
-  const agent = useAgent();
+  const request = useCreateRequest();
   const copy = useCopy();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -61,13 +61,11 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const proposal = detail.data;
   if (!proposal) {
     return (
-      <PageShell maxWidth="md">
-        <DetailLoadFailure
-          noun="proposal"
-          error={detail.error}
-          onRetry={() => void detail.refetch()}
-        />
-      </PageShell>
+      <DetailLoadFailure
+        noun="proposal"
+        error={detail.error}
+        onRetry={() => void detail.refetch()}
+      />
     );
   }
 
@@ -84,7 +82,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   };
 
   return (
-    <PageShell maxWidth="md">
+    <>
       <PageHeader
         eyebrow={proposal.clientName ?? "Upwork"}
         title={proposal.jobTitle}
@@ -101,21 +99,26 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
                 Open posting
               </Button>
             )}
-            <AgentOnlyButton
+            <Button
               variant="outlined"
               startIcon={<AutoAwesome fontSize="md" />}
-              onClick={() => void agent.injectSkill("upwork-proposal", id)}
+              disabled={request.isPending}
+              onClick={() =>
+                request.mutate({ taskType: "upwork.proposal", payload: { proposalId: id } })
+              }
             >
               {proposal.proposalText ? "Regenerate" : "Generate"}
-            </AgentOnlyButton>
-            <AgentOnlyButton
+            </Button>
+            <Button
               variant="contained"
               startIcon={<Send fontSize="md" />}
-              disabled={proposal.status !== "draft" || !proposal.proposalText}
-              onClick={() => void agent.injectSkill("upwork-submit", id)}
+              disabled={request.isPending || proposal.status !== "draft" || !proposal.proposalText}
+              onClick={() =>
+                request.mutate({ taskType: "upwork.submit", payload: { proposalId: id } })
+              }
             >
               Submit on Upwork
-            </AgentOnlyButton>
+            </Button>
             <TooltipIconButton title="Delete proposal" onClick={() => void handleDelete()}>
               <Delete fontSize="md" />
             </TooltipIconButton>
@@ -182,6 +185,6 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
       )}
 
       <ProposalNotes id={id} notes={proposal.notes} />
-    </PageShell>
+    </>
   );
 }

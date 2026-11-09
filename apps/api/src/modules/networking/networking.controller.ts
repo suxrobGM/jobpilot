@@ -1,5 +1,6 @@
+import { feedSchema } from "@jobpilot/contracts/feed";
 import {
-  addCampaignNetworkingSchema,
+  addFeedNetworkingSchema,
   networkingMessageResultSchema,
   patchNetworkingMessageSchema,
 } from "@jobpilot/contracts/networking";
@@ -17,12 +18,22 @@ import {
   networkingMessageSchema,
 } from "./networking.schema";
 import { NetworkingService } from "./networking.service";
+import { StandingNetworkingService } from "./standing-feed.service";
 
 const svc = container.get(NetworkingService);
+const standing = container.get(StandingNetworkingService);
 const users = container.get(UserService);
 
-export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] } })
+export const networkingController = new Elysia({ detail: { tags: ["Feeds"] } })
   .use(authGuard)
+  .post("/networking/feed", ({ user }) => standing.getOrCreate(user.id), {
+    response: feedSchema,
+    detail: {
+      summary: "Get the standing networking feed",
+      description:
+        "Returns the user's one open networking feed for outreach that belongs to no job, creating it on first use with the primary resume.",
+    },
+  })
   .get(
     "/networking/messages",
     ({ user, query }) => svc.listNetworking(user.id, { ...query, order: "desc" }),
@@ -30,15 +41,15 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
       query: networkingMessageQuerySchema,
       response: networkingMessageListSchema,
       detail: {
-        summary: "List networking messages across campaigns",
+        summary: "List networking messages across feeds",
         description:
-          "Returns one page of the user's networking messages, newest first. Optional `status` and `campaignId` filters.",
+          "Returns one page of the user's networking messages, newest first. Optional `status` and `feedId` filters.",
       },
     },
   )
   .get(
-    "/campaigns/:id/networking/messages",
-    ({ user, params, query }) => svc.listNetworking(user.id, { ...query, campaignId: params.id }),
+    "/feeds/:id/networking/messages",
+    ({ user, params, query }) => svc.listNetworking(user.id, { ...query, feedId: params.id }),
     {
       params: idParam,
       query: paginationQuerySchema,
@@ -46,19 +57,19 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
       detail: {
         summary: "List networking messages",
         description:
-          "Returns one page of the campaign's networking messages with contacts, ordered by creation.",
+          "Returns one page of the feed's networking messages with contacts, ordered by creation.",
       },
     },
   )
   .post(
-    "/campaigns/:id/networking/messages",
+    "/feeds/:id/networking/messages",
     async ({ user, params, body }) => {
       await users.requireVerifiedEmail(user.id);
       return svc.addNetworking(user.id, params.id, body);
     },
     {
       params: idParam,
-      body: addCampaignNetworkingSchema,
+      body: addFeedNetworkingSchema,
       response: networkingMessageSchema,
       detail: {
         summary: "Add networking message",
@@ -68,7 +79,7 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
     },
   )
   .patch(
-    "/campaigns/:id/networking/messages/:messageId",
+    "/feeds/:id/networking/messages/:messageId",
     ({ user, params, body }) => svc.patchNetworking(user.id, params.id, params.messageId, body),
     {
       params: networkingMessageParams,
@@ -82,7 +93,7 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
     },
   )
   .post(
-    "/campaigns/:id/networking/messages/:messageId/result",
+    "/feeds/:id/networking/messages/:messageId/result",
     ({ user, params, body }) =>
       svc.recordNetworkingResult(user.id, params.id, params.messageId, body),
     {
@@ -92,7 +103,7 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
       detail: {
         summary: "Record networking message result",
         description:
-          "Idempotently records a terminal outcome, stamps delivery identifiers when sent, and returns the message with the campaign's current summary.",
+          "Idempotently records a terminal outcome, stamps delivery identifiers when sent, and returns the message.",
       },
     },
   );

@@ -7,7 +7,7 @@ export interface FieldChange {
   after: string;
 }
 
-const bulletsOf = (entries: { bullets: string[] }[]): string[] =>
+const allBullets = (entries: { bullets: string[] }[]): string[] =>
   entries.flatMap((entry) => entry.bullets);
 
 function compareLists(where: string, before: string[], after: string[]): FieldChange[] {
@@ -41,7 +41,7 @@ export function diffRewrite(base: ResumeData, suggested: ResumeData): FieldChang
   }
 
   changes.push(
-    ...compareLists("Project bullet", bulletsOf(base.projects), bulletsOf(suggested.projects)),
+    ...compareLists("Project bullet", allBullets(base.projects), allBullets(suggested.projects)),
   );
 
   for (const [index, group] of suggested.skills.entries()) {

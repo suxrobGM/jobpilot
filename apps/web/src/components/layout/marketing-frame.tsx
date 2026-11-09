@@ -13,7 +13,7 @@ export function MarketingFrame(props: MarketingFrameProps): ReactElement {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         display: "flex",
         flexDirection: "column",
         backgroundColor: "surfaces.base",

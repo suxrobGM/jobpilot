@@ -32,7 +32,9 @@ function reorderSkillGroups(skills: ResumeSkillGroup[], emphasized: string[]): R
 
   const annotated = skills.map((group) => {
     const emphasis = group.items.filter((i) => matchesAny(i, emphasized));
-    if (emphasis.length === 0) return { group, hasEmphasis: false };
+    if (emphasis.length === 0) {
+      return { group, hasEmphasis: false };
+    }
     const rest = group.items.filter((i) => !emphasis.includes(i));
     return { group: { ...group, items: [...emphasis, ...rest] }, hasEmphasis: true };
   });

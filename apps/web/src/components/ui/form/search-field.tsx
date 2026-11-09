@@ -10,7 +10,7 @@ interface SearchFieldProps {
   placeholder: string;
 }
 
-/** The filter box above a list: a small text field with a leading search icon. */
+/** The search box that leads a list's toolbar; full width on phones. */
 export function SearchField(props: SearchFieldProps): ReactElement {
   const { value, onChange, placeholder } = props;
 
@@ -29,7 +29,7 @@ export function SearchField(props: SearchFieldProps): ReactElement {
           ),
         },
       }}
-      sx={{ flex: 1, minWidth: 200 }}
+      sx={{ width: { xs: "100%", sm: 300 } }}
     />
   );
 }

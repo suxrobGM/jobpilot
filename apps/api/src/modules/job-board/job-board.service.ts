@@ -2,6 +2,7 @@ import type { JobBoardInput } from "@jobpilot/contracts/job-board";
 import { inject, injectable } from "@needle-di/core";
 import { findOwned, unprocessable } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { dropFromRotation } from "@/modules/pilot/rotation";
 import { boardDomain } from "./board-host";
 
 /** How a board appears inside another resource's response. */
@@ -123,12 +124,16 @@ export class JobBoardService {
 
   /** Unlinks the board from this user. The global row survives - other users still use it. */
   async remove(userId: string, id: string) {
-    await findOwned(
-      (where) => this.prisma.userJobBoard.findFirst({ where, select: { id: true } }),
-      { id, userId },
-      "Board",
-    );
-    await this.prisma.userJobBoard.delete({ where: { id } });
+    await this.prisma.$transaction(async (tx) => {
+      const link = await findOwned(
+        (where) =>
+          tx.userJobBoard.findFirst({ where, select: { board: { select: { domain: true } } } }),
+        { id, userId },
+        "Board",
+      );
+      await tx.userJobBoard.delete({ where: { id } });
+      await dropFromRotation(tx, { userId }, link.board.domain);
+    });
     return { deleted: id };
   }
 }

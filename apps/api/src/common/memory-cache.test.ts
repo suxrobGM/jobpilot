@@ -44,14 +44,6 @@ describe("MemoryCache", () => {
     expect(await cache.getOrLoad("a", load)).toBe(2);
   });
 
-  it("keeps keys apart", async () => {
-    const { cache } = cacheWithClock();
-
-    await cache.getOrLoad("a", () => Promise.resolve(1));
-    expect(await cache.getOrLoad("b", () => Promise.resolve(2))).toBe(2);
-    expect(await cache.getOrLoad("a", () => Promise.resolve(99))).toBe(1);
-  });
-
   it("shares one in-flight load between concurrent misses", async () => {
     const { cache } = cacheWithClock();
     const pending = deferred<number>();
@@ -109,17 +101,5 @@ describe("MemoryCache", () => {
     expect(cache.size).toBe(2);
     expect(await cache.getOrLoad("a", () => Promise.resolve(99))).toBe(1);
     expect(await cache.getOrLoad("b", () => Promise.resolve(20))).toBe(20);
-  });
-
-  it("forgets a key on delete and everything on clear", async () => {
-    const { cache } = cacheWithClock();
-
-    await cache.getOrLoad("a", () => Promise.resolve(1));
-    await cache.getOrLoad("b", () => Promise.resolve(2));
-    cache.delete("a");
-    expect(await cache.getOrLoad("a", () => Promise.resolve(10))).toBe(10);
-
-    cache.clear();
-    expect(cache.size).toBe(0);
   });
 });

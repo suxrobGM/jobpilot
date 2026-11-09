@@ -1,7 +1,6 @@
 import type { Components, CSSObject, Theme } from "@mui/material/styles";
 
-/** Column-header text, shared with the DataGrid so the two table styles read as one. */
-export function columnHeaderTextStyles(theme: Theme): CSSObject {
+function columnHeaderTextStyles(theme: Theme): CSSObject {
   return {
     textTransform: "uppercase",
     fontSize: theme.typography.caption.fontSize,

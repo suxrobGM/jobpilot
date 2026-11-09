@@ -34,7 +34,7 @@ export interface TerminalHealthState {
 
 const INITIAL: TerminalHealthState = { health: "checking", status: null };
 
-// One poller for the whole page: the dock, pilot views and onboarding all read this store.
+// One poller for the whole page: the agent drawer, pilot views and onboarding all read this store.
 let isPolling = false;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let consecutiveFailures = 0;
@@ -80,7 +80,7 @@ async function probe(): Promise<void> {
     const status = await getTerminalHostStatus();
     consecutiveFailures = 0;
     setSnapshot({ health: status.status === "degraded" ? "degraded" : "reachable", status });
-    // Persisted so the dock's auto-expand and the Start-agent gate survive reloads.
+    // Persisted so the agent drawer's auto-open and the Start-agent gate survive reloads.
     const stored = readAgentStorage();
     if (!stored?.everReachable || stored.canRelaunch !== status.canRelaunch) {
       patchAgentStorage({ everReachable: true, canRelaunch: status.canRelaunch });
@@ -140,4 +140,12 @@ export function useTerminalHealth(expectingReturn = false): TerminalHealthState 
   }, [expectingReturn]);
 
   return snapshot;
+}
+
+/** A stopped host the browser can relaunch; the stored copy covers a cold reload (status is null). */
+export function canRelaunch(state: TerminalHealthState): boolean {
+  return (
+    state.health === "offline" &&
+    (state.status?.canRelaunch ?? readAgentStorage()?.canRelaunch ?? false)
+  );
 }

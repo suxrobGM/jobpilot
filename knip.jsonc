@@ -18,7 +18,8 @@
       "ignoreDependencies": ["pg", "pino-pretty", "@types/pg", "@prisma/client"]
     },
     "apps/web": {
-      "project": ["src/**/*.{ts,tsx,mdx}"],
+      "entry": ["scripts/*.ts"],
+      "project": ["src/**/*.{ts,tsx,mdx}", "scripts/*.ts"],
       "includeEntryExports": true,
       "ignoreExportsUsedInFile": false,
       // server-only ships inside next.

@@ -6,65 +6,58 @@ export const metadata = buildDocsMetadata("email-setup", {
 
 # Email setup
 
-When you connect Gmail, JobPilot can do three more things:
+With Gmail connected, JobPilot can:
 
-- Match recruiter replies to your applications.
-- Read the sign-in codes that job boards email you while it's applying.
-- Send networking emails from your own address.
+- match recruiter replies to your applications,
+- read sign-in codes that job boards email you,
+- send networking emails from your address.
 
-You connect Gmail through a Google OAuth client that you create yourself.
-JobPilot doesn't have a shared Google app, so your mail never goes through
-anyone else's, and Google doesn't need to review anything. You only do this
-once, and it takes about five minutes.
+You connect through a Google OAuth client you create yourself. There's no
+shared JobPilot app, so your mail never passes through anyone else's. It takes
+about five minutes, once.
 
 ## Create your OAuth client
 
 1. In the [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
-   create a project. Then create an OAuth 2.0 Client ID and choose
-   **Web application** as the type.
-2. Under "APIs & Services", turn on the **Gmail API** for the project.
+   create a project, then an **OAuth 2.0 Client ID** of type
+   **Web application**.
+2. Under **APIs & Services**, turn on the **Gmail API**.
 3. In JobPilot, open **Settings → Email** and copy the **redirect URI**. Add
    it to your OAuth client as an authorized redirect URI.
-4. Go to
-   [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes)
-   and press **Add or remove scopes**. Search for **`gmail.readonly`** and
-   **`gmail.send`**, tick both Gmail API rows, and press **Save**. The first
-   lets JobPilot read replies and sign-in codes. The second lets it send
-   networking emails.
-5. Leave the app in Testing mode and add your Gmail address under
+4. Open [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes),
+   press **Add or remove scopes**, tick **`gmail.readonly`** and
+   **`gmail.send`**, and press **Save**.
+5. Leave the app in **Testing** and add your Gmail address under
    [Audience → Test users](https://console.cloud.google.com/auth/audience).
-   You're the only user of your own project, so Google never needs to verify
-   it. The downside is that Google signs you out of Testing-mode apps after
-   about seven days, so expect to reconnect about once a week. Publishing the
-   app doesn't help. Gmail access is restricted, and a published app that
-   Google hasn't verified can't sign in at all.
 6. Back in **Settings → Email**, paste the **Client ID** and **Client
    secret**, save, and press **Connect Gmail**.
 
+Google signs you out of Testing apps after about seven days, so expect to
+reconnect once a week. JobPilot shows a notice when it's time. Publishing the
+app doesn't help: Gmail access is restricted, and an unverified published app
+can't sign in at all.
+
 ## What JobPilot can access
 
-JobPilot can read your mail and send mail. It can't delete or change
-anything. Google's consent screen lists four permissions: `gmail.readonly` and
-`gmail.send` do the work, and `openid` and `email` only tell JobPilot which
-address you connected.
+It can read and send mail. It can't delete or change anything. Google's
+consent screen lists four permissions: `gmail.readonly` and `gmail.send` do the
+work; `openid` and `email` only identify the connected address.
 
-Your client ID and secret are encrypted and stored with your account. The
-secret stays on the server and is never sent to your browser. The connected
-Gmail account is linked to your profile and nobody else's.
+Your client ID and secret are encrypted with your account's key. The secret
+stays on the server and never reaches your browser.
 
 ## Troubleshooting
 
 - **"Access blocked: app has not completed the Google verification
-  process".** Your Gmail address isn't on the test users list. Add it under
+  process".** Your address isn't a test user. Add it under
   **Audience → Test users**.
-- **403 "Request had insufficient authentication scopes".** One of the Gmail
-  permissions is missing. Add both under **Data access**, then disconnect and
-  connect again in **Settings → Email** so Google issues a new token.
+- **403 "Request had insufficient authentication scopes".** A Gmail scope is
+  missing. Add both under **Data access**, then disconnect and connect again
+  in **Settings → Email**.
 - **Gmail connects, but networking can't send.** You connected before adding
-  `gmail.send`. Add it under **Data access**, then press
-  **Reconnect to enable sending** in **Settings → Email**.
-- **Google shows a 500 error after you published the app.** Published apps
-  that use Gmail need Google's review. Switch back under
+  `gmail.send`. Add it, then press **Reconnect to enable sending** in
+  **Settings → Email**.
+- **Google shows a 500 error after you published the app.** Switch back under
   **Audience → Publishing status → Back to testing**.
 
 ## Microsoft 365 and shared mailboxes
@@ -86,5 +79,4 @@ One mailbox can be connected per JobPilot profile. Gmail and Microsoft app confi
 
 For access troubleshooting, see [Microsoft's shared-mailbox guidance](https://learn.microsoft.com/en-us/graph/outlook-share-messages-folders) and [sending from another mailbox](https://learn.microsoft.com/en-us/graph/outlook-send-mail-from-other-user).
 
-Next: [Credentials](/docs/credentials), so the agent can sign in to job
-boards.
+Next: [Credentials](/docs/credentials).

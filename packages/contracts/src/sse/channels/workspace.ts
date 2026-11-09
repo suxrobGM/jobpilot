@@ -1,12 +1,10 @@
 import { defineChannel } from "../channel";
 
 export type WorkspaceEvent =
-  | { type: "campaign.updated"; campaignId: string; status?: string; source?: string }
-  | { type: "campaign.completed"; campaignId: string }
-  | { type: "campaign.deleted"; campaignId: string }
-  | { type: "campaignjob.created"; campaignId: string; key: string }
-  | { type: "campaignjob.updated"; campaignId: string; key: string; status?: string }
-  | { type: "application.created"; campaignId: string | null }
+  | { type: "feed.updated"; feedId: string }
+  | { type: "job.created"; feedId: string; key: string }
+  | { type: "job.updated"; feedId: string; key: string; status?: string }
+  | { type: "application.created"; feedId: string | null }
   // Mirrors the per-resume channel, so the resume list holds one connection, not one per row.
   | { type: "resume.updated"; resumeId: string };
 

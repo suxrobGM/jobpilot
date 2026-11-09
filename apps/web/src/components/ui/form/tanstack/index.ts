@@ -9,13 +9,14 @@ import { SubmitButton } from "./submit-button";
 import { Switch } from "./switch-field";
 import { TextField } from "./text-field";
 import { Toggle } from "./toggle-field";
+import { UnsavedChangesBar } from "./unsaved-changes-bar";
 
 /** Inside `form.AppField`, render a bound field from the `field` arg, e.g. `<field.TextField />`. */
 const formHook = createFormHook({
   fieldContext,
   formContext,
   fieldComponents: { TextField, Select, MultiSelect, Phone, Currency, Switch, Toggle },
-  formComponents: { SubmitButton },
+  formComponents: { SubmitButton, UnsavedChangesBar },
 });
 
 export const { withForm } = formHook;

@@ -11,7 +11,7 @@ export default function OnboardingPage(): ReactElement {
       <PageHeader
         eyebrow="First run"
         title="Welcome to JobPilot"
-        description="Fill in your profile so skills can autofill applications, then optionally connect email and add job-board credentials. You can edit anything later in Settings."
+        description="Upload your resume and confirm your details so the agent can fill in applications. The agent drawer walks you through connecting it. You can edit anything later in Settings."
       />
       <OnboardingWizard />
     </PageShell>

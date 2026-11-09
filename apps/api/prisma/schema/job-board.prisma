@@ -14,11 +14,10 @@ model JobBoard {
 
   userBoards     UserJobBoard[]
   credentials    Credential[]
-  jobs           CampaignJob[]
+  jobs           Job[]
   applications   Application[]
   listingSources JobListingSource[]
-  pilotSearches  PilotSearch[]
-  campaigns      Campaign[]
+  feeds          Feed[]
 
   @@map("job_boards")
 }

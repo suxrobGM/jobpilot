@@ -1,22 +1,22 @@
 import {
-  type PilotInstructionsConfig,
-  pilotInstructionsConfigSchema,
+  type PilotConfig,
+  pilotConfigSchema,
   type TaskListContent,
   type TaskPayload,
   type TaskType,
 } from "@jobpilot/contracts/pilot";
 import type { z } from "zod/v4";
 import type { TaskListInput } from "./build";
-import type { TaskJob } from "./gather-jobs";
-import type { Followup } from "./gather-outreach";
-import type { ResearchTask } from "./gather-research";
+import type { TaskJob } from "./gather/jobs";
+import type { Followup } from "./gather/outreach";
+import type { ResearchTask } from "./gather/research";
 
-type ConfigOverrides = z.input<typeof pilotInstructionsConfigSchema>;
+type ConfigOverrides = z.input<typeof pilotConfigSchema>;
 type WarmContact = NonNullable<TaskJob["warmContacts"]>[number];
 
 // Networking is off by default, but these suites exercise it, so both channels start on here.
-export const cfg = (over: ConfigOverrides = {}): PilotInstructionsConfig =>
-  pilotInstructionsConfigSchema.parse({
+export const cfg = (over: ConfigOverrides = {}): PilotConfig =>
+  pilotConfigSchema.parse({
     ...over,
     networking: { email: "review", linkedIn: "draft", ...over.networking },
   });
@@ -26,12 +26,14 @@ const NOW = new Date("2026-07-15T12:00:00.000Z");
 export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   now: NOW,
   config: cfg(),
+  autopilot: true,
+  requests: [],
+  chat: null,
   cycleCount: 0,
   openQuestions: 0,
   activeRuns: 0,
   appliedToday: 0,
   networkingSentToday: 0,
-  preferCapExempt: false,
   awaitingSetup: true,
   nextSearchRunAt: null,
   answeredQuestions: [],
@@ -40,7 +42,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   dueQueries: [],
   scorePending: [],
   queueScores: [],
-  pausedCampaigns: [],
+  pausedFeeds: [],
   boardDiagnoses: [],
   inbox: { messageIds: [], count: 0 },
   jobAlerts: null,
@@ -49,9 +51,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   upworkSync: null,
   approvedNetworking: [],
   followups: [],
-  approvedPromotions: [],
-  duePlatforms: [],
-  campaignTunes: [],
+  feedTunes: [],
   rescanSkipped: [],
   retryFailed: [],
   setup: null,
@@ -60,7 +60,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
 });
 
 export const job = (key: string, matchScore: number | null, over: Partial<TaskJob> = {}) => ({
-  campaignId: "c1",
+  feedId: "c1",
   key,
   title: `Job ${key}`,
   url: `https://x/${key}`,
@@ -93,7 +93,7 @@ export const question = (id: string): TaskPayload<"question.answered"> => ({
 });
 
 export const send = (messageId: string): TaskPayload<"networking.send"> => ({
-  campaignId: "c1",
+  feedId: "c1",
   messageId,
   contactId: `ct-${messageId}`,
   contactName: "Dana Recruiter",
@@ -103,7 +103,7 @@ export const send = (messageId: string): TaskPayload<"networking.send"> => ({
 });
 
 export const followup = (messageId: string): Followup => ({
-  campaignId: "c1",
+  feedId: "c1",
   messageId,
   contactId: `ct-${messageId}`,
   contactName: "Dana Recruiter",
@@ -140,28 +140,29 @@ export const boardDiagnose = (board: string): TaskPayload<"board.diagnose"> => (
   testJob: null,
 });
 
-export const dueQuery = (query: string, board?: string) => ({
+/** `null` leaves the search unpinned, so it rotates the configured boards. */
+export const dueQuery = (query: string, board: string | null = "linkedin.com") => ({
   searchId: `s-${query}`,
   query,
-  board,
+  board: board ?? undefined,
 });
 
-export const pausedCampaign = (campaignId: string): TaskPayload<"campaign.reviewPaused"> => ({
-  campaignId,
+export const pausedFeed = (feedId: string): TaskPayload<"search.review"> => ({
+  feedId,
   query: "react",
   board: null,
   pausedAt: new Date("2026-07-14T12:00:00.000Z"),
 });
 
-export const queueScore = (campaignId: string): TaskPayload<"queue.score"> => ({
-  campaignId,
+export const queueScore = (feedId: string): TaskPayload<"queue.score"> => ({
+  feedId,
   minScore: 60,
   queuedCount: 1,
   entries: [{ key: "q1", url: "https://x/1" }],
 });
 
-export const scorePending = (campaignId: string): TaskPayload<"campaign.scorePending"> => ({
-  campaignId,
+export const scorePending = (feedId: string): TaskPayload<"feed.score"> => ({
+  feedId,
   query: "react",
   board: null,
   minScore: 60,
@@ -169,21 +170,17 @@ export const scorePending = (campaignId: string): TaskPayload<"campaign.scorePen
   entries: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
 });
 
-export const tune = (campaignId: string): TaskPayload<"campaign.tune"> => ({
-  campaignId,
+export const tune = (feedId: string): TaskPayload<"search.tune"> => ({
+  feedId,
   query: "react",
   config: { minScore: 70, board: "linkedin" },
   counts: { totalFound: 40, qualified: 4, applied: 1, skipped: 36 },
   topSkipReasons: ["overqualified"],
 });
 
-export const setup: TaskPayload<"search.setup"> = {
-  goals: "Senior TypeScript roles, remote",
-  minScore: 60,
-};
+export const setup: TaskPayload<"search.setup"> = { minScore: 60, trigger: "auto" };
 
 export const research = (trigger: ResearchTask["trigger"]): ResearchTask => ({
-  goals: "ML research assistant roles at US universities",
   resumeId: "0f4b6a52-7c1e-4d8a-9b3f-2e5c6d7a8b90",
   minScore: 60,
   preferCapExempt: true,

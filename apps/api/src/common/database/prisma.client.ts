@@ -2,9 +2,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 
-// Explicit pool bounds + timeouts: interactive transactions (campaign /result,
+// Explicit pool bounds + timeouts: interactive transactions (feed /result,
 // email approve, etc.) hold a pooled connection for their whole duration, so an
-// unbounded default pool can starve under the campaign apply loop.
+// unbounded default pool can starve under the feed apply loop.
 const adapter = new PrismaPg({
   connectionString: env.DATABASE_URL,
   max: 10,

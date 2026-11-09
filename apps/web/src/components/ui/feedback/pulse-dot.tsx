@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Box, type Theme } from "@mui/material";
 
-export type PulseDotTone = "violet" | "green" | "amber" | "red" | "blue" | "peach" | "muted";
+export type PulseDotTone = "primary" | "success" | "warning" | "error" | "info" | "muted";
 
 type PulseDotSize = "xs" | "sm" | "md";
 
@@ -15,26 +15,10 @@ interface PulseDotProps {
 
 const DOT_SIZE: Record<PulseDotSize, number> = { xs: 5, sm: 7, md: 9 };
 
-// Standard keys via theme.vars (raw theme.palette.* drifts SSR vs client under
-// cssVariables); custom keys (accent/stages) have no var and stay raw hex.
+// theme.vars: raw theme.palette values drift between SSR and client under cssVariables.
 function toneColor(theme: Theme, tone: PulseDotTone): string {
-  const vars = theme.vars ?? theme;
-  switch (tone) {
-    case "violet":
-      return theme.palette.accent.primary;
-    case "green":
-      return vars.palette.success.main;
-    case "amber":
-      return vars.palette.warning.main;
-    case "red":
-      return vars.palette.error.main;
-    case "blue":
-      return vars.palette.info.main;
-    case "peach":
-      return theme.palette.stages.interviewing;
-    default:
-      return vars.palette.text.disabled;
-  }
+  const { palette } = theme.vars ?? theme;
+  return tone === "muted" ? palette.text.disabled : palette[tone].main;
 }
 
 export function PulseDot(props: PulseDotProps): ReactElement {

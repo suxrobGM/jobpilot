@@ -8,15 +8,15 @@ const dueRow = (over: Record<string, unknown> = {}) =>
 const futureRow = (over: Record<string, unknown> = {}) =>
   pilotSearchRow({ nextRunAt: new Date(Date.now() + HOUR_MS), ...over });
 
-const spentCap = { instructionsConfig: { dailyApplyCap: 5 }, appliedToday: 5 };
+const spentCap = { config: { dailyApplyCap: 5 }, appliedToday: 5 };
 
-const discoverOf = (taskList: Parameters<typeof findTask>[0]) =>
+const findDiscover = (taskList: Parameters<typeof findTask>[0]) =>
   findTask(taskList, "search.discover");
 
 describe("TaskListService search.discover", () => {
   it("offers a due search, keyed by its id", async () => {
     const taskList = await service({ pilotSearches: [dueRow({ id: "s-react" })] }).refresh("p1");
-    const task = discoverOf(taskList);
+    const task = findDiscover(taskList);
     expect(task?.subjectId).toBe("s-react");
     expect(task?.payload).toMatchObject({ searchId: "s-react", query: "react", newJobsTarget: 10 });
   });
@@ -25,20 +25,20 @@ describe("TaskListService search.discover", () => {
     const taskList = await service({
       pilotSearches: [futureRow({ lastRunAt: new Date() })],
     }).refresh("p1");
-    expect(discoverOf(taskList)).toBeUndefined();
+    expect(findDiscover(taskList)).toBeUndefined();
   });
 
   it("runs an idle search early while the apply cap has room, and not once it is spent", async () => {
     const idle = await service({
       pilotSearches: [futureRow({ id: "s-idle", lastRunAt: null })],
     }).refresh("p1");
-    expect(discoverOf(idle)?.subjectId).toBe("s-idle");
+    expect(findDiscover(idle)?.subjectId).toBe("s-idle");
 
     const spent = await service({
       ...spentCap,
       pilotSearches: [futureRow({ lastRunAt: null })],
     }).refresh("p1");
-    expect(discoverOf(spent)).toBeUndefined();
+    expect(findDiscover(spent)).toBeUndefined();
   });
 
   it("holds a search back while its last run is still open", async () => {
@@ -48,7 +48,7 @@ describe("TaskListService search.discover", () => {
         "search.discover": [{ subjectId: "s-react", startedAt: new Date(), finishedAt: null }],
       },
     }).refresh("p1");
-    expect(discoverOf(taskList)).toBeUndefined();
+    expect(findDiscover(taskList)).toBeUndefined();
   });
 
   it("reruns a search rescheduled after its last run, and holds one nothing rescheduled", async () => {
@@ -62,65 +62,45 @@ describe("TaskListService search.discover", () => {
       pilotSearches: [dueRow({ id: "s-react", nextRunAt: new Date(Date.now() - 60_000) })],
       runs: { "search.discover": [run] },
     }).refresh("p1");
-    expect(discoverOf(rewritten)?.subjectId).toBe("s-react");
+    expect(findDiscover(rewritten)?.subjectId).toBe("s-react");
 
     const unreported = await service({
       pilotSearches: [dueRow({ id: "s-react" })],
       runs: { "search.discover": [run] },
     }).refresh("p1");
-    expect(discoverOf(unreported)).toBeUndefined();
-  });
-
-  it("reuses the search's open campaign, whatever its query is now", async () => {
-    const taskList = await service({
-      pilotSearches: [dueRow({ id: "s1", query: "senior react" })],
-      dueSearchCampaigns: [{ id: "c-open", pilotSearchId: "s1", status: "in_progress" }],
-    }).refresh("p1");
-    expect(discoverOf(taskList)?.payload).toMatchObject({ campaignId: "c-open" });
-  });
-
-  it("holds a search back while its campaign is paused", async () => {
-    const taskList = await service({
-      pilotSearches: [dueRow({ id: "s1" })],
-      dueSearchCampaigns: [{ id: "c-open", pilotSearchId: "s1", status: "paused" }],
-    }).refresh("p1");
-    expect(discoverOf(taskList)).toBeUndefined();
+    expect(findDiscover(unreported)).toBeUndefined();
   });
 });
 
 describe("TaskListService search.setup", () => {
-  const goals = "Senior TS roles, remote";
-  const setupOf = (taskList: Parameters<typeof findTask>[0]) => findTask(taskList, "search.setup");
+  const findSetup = (taskList: Parameters<typeof findTask>[0]) =>
+    findTask(taskList, "search.setup");
 
-  it("derives searches from the goals when none exist", async () => {
-    const taskList = await service({
-      instructionsConfig: { minScore: 70 },
-      instructionsGoals: `  ${goals} `,
-    }).refresh("p1");
-    expect(setupOf(taskList)?.payload).toEqual({ goals, minScore: 70 });
+  it("starts from the resume when no search exists", async () => {
+    const taskList = await service({ config: { minScore: 70 }, resumeCount: 1 }).refresh("p1");
+    expect(findSetup(taskList)?.payload).toEqual({ minScore: 70, trigger: "auto" });
   });
 
   it("refills while the apply cap has room and every search is waiting", async () => {
     const taskList = await service({
-      instructionsGoals: goals,
       pilotSearches: [futureRow({ lastRunAt: new Date() })],
     }).refresh("p1");
-    expect(setupOf(taskList)).toBeDefined();
+    expect(findSetup(taskList)).toBeDefined();
   });
 
-  it("stays out when goals are blank, the cap is spent, a try is recent, or work is queued", async () => {
-    const blank = await service({ instructionsGoals: "   " }).refresh("p1");
-    expect(setupOf(blank)).toBeUndefined();
+  it("stays out with nothing to start from, the cap spent, a try recent, or work queued", async () => {
+    const blank = await service({}).refresh("p1");
+    expect(findSetup(blank)).toBeUndefined();
     expect(blank.emptyReason).toBe("awaitingSetup");
 
     const cases = [
       { ...spentCap, pilotSearches: [futureRow({ lastRunAt: new Date() })] },
-      { latestRuns: { "search.setup": { finishedAt: null } } },
+      { resumeCount: 1, latestRuns: { "search.setup": { finishedAt: null } } },
       { approvedJobs: [approvedJob()] },
     ];
     for (const over of cases) {
-      const taskList = await service({ instructionsGoals: goals, ...over }).refresh("p1");
-      expect(setupOf(taskList)).toBeUndefined();
+      const taskList = await service(over).refresh("p1");
+      expect(findSetup(taskList)).toBeUndefined();
     }
   });
 });

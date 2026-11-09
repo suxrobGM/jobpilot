@@ -4,104 +4,70 @@ description: Submit an approved JobPilot proposal draft to Upwork through the Up
 argument-hint: "<proposal_id>"
 ---
 
-# Submit an Upwork Proposal
+# Upwork submit
 
-Take a proposal the user already reviewed in JobPilot and submit it to Upwork. **This spends the
-user's Connects.** Never submit without showing the cost and getting an explicit yes in this
-conversation.
+Submit a proposal the user already reviewed. It spends the user's Connects: never submit without
+showing the cost and getting an explicit yes in this conversation.
 
 ## Setup
 
-1. Follow `../_shared/setup.md`.
-2. Follow `../_shared/upwork-mcp.md`: confirm the tools are connected and resolve `ORG_UID`.
+Follow `../_shared/setup.md` and `../_shared/upwork-mcp.md` (connection check, `org_uid`).
 
-## Step 1: Load the draft
+## 1. Load the draft
 
-```bash
-jobpilot-api GET "/api/upwork/proposals/$ARG"
-```
+`GET /api/upwork/proposals/<id>`. Its `status` must be `draft` (a `submitted` one must never go
+twice); otherwise say what it is and stop. Empty `proposalText` or no `jobUrl`: tell the user to
+draft it with the `upwork-proposal` skill first, and stop.
 
-Require `.status == "draft"`. Anything else → stop and say what the status is; a `submitted`
-proposal must not be sent twice.
+## 2. Check for an invitation or proposal
 
-Require a non-empty `.proposalText` and a `.jobUrl`. Missing either → tell the user to draft it
-first with the `upwork-proposal` skill, then stop.
+Always. Upwork rejects a `create` on a job with an invitation or proposal (`VJ-JA-10`).
 
-## Step 2: Check for an existing invitation or proposal
+- `list_freelancer_proposals` `list` has one for this job: stop and tell the user.
+- `list_freelancer_proposals` `invitations` has one: use `manage_proposals` `accept_invitation`
+  with its `id` instead of `create`, confirm type `proposal_accept_invitation`.
 
-**Mandatory. Never skip.** Upwork rejects a `create` on a job the user was invited to or already
-applied to, with error `VJ-JA-10`, and the turn is wasted.
+## 3. Preview
 
-1. `list_freelancer_proposals` action `invitations` - is there an invitation for this job?
-2. `list_freelancer_proposals` action `list` - is there already a proposal for it?
+`manage_proposals` `create`:
 
-An existing proposal → stop and tell the user; do not submit again. An invitation → use
-`manage_proposals` action `accept_invitation` with the invitation's `id` instead of `create`, and
-confirm with type `proposal_accept_invitation`.
+- `job_reference`: the numeric job id, not the `~02...` ciphertext. Resolve it from `jobUrl` with
+  `find_jobs` `get` when needed.
+- `cover_letter`: `proposalText`, max 5000 characters. Longer: ask the user to shorten it; never
+  truncate their words.
+- `charged_amount`: the bid, a number. From the stored proposal or the user, never invented.
+- `answers`: `screeningAnswers`. A screening question they don't cover: ask the user.
 
-## Step 3: Build the preview
+This returns a preview; nothing is submitted yet.
 
-`manage_proposals` action `create` with:
+## 4. Confirm
 
-- `job_reference` - the **numeric** job id, not the `~02…` ciphertext. Resolve it from the
-  proposal's `jobUrl` via `find_jobs` action `get` if the id is not already in the brief.
-- `cover_letter` - the proposal's `proposalText`. Max 5000 characters; if it is longer, stop and
-  ask the user to shorten it rather than truncating their words.
-- `charged_amount` - the bid, as a number.
-- `answers` - the proposal's `screeningAnswers`. The preview lists the job's
-  `screening_questions`; if it asks something the stored answers do not cover, stop and ask the
-  user rather than inventing an answer.
+Show:
 
-This returns a preview. It does **not** submit.
+- `connects_cost` and `connects_balance`, always;
+- `unmet_preferred_qualifications`, when present (advisory);
+- boost, unless `boost.available` is false or `boost.recommendation` is `skip`. Boosting is a
+  Connects bid for a top slot: show `boost.current_top_bids` and `boost.recommended_connects` (the
+  smallest bid that wins a slot) and let the user pick, at most `boost.max_boost_connects`, passed
+  as `boost_connects`. Never boost by default.
 
-## Step 4: Present and confirm
+Offer attachments and highlights (`get_profile` `list_highlights`). Then ask for an explicit yes;
+silence or a vague reply is a no.
 
-Show the user, always including the first two:
+## 5. Submit
 
-- `connects_cost` - what this application spends.
-- `connects_balance` - what they have.
-- `unmet_preferred_qualifications`, when present. Advisory only, it does not block submission.
-- The `boost` block, unless `boost.available` is false or `boost.recommendation` is `skip`.
-  Boosting is a Connects **bid** for a top slot, not a flat fee. Show
-  `boost.current_top_bids` as the real competing bids and `boost.recommended_connects` as the
-  smallest bid that takes a top slot. Let the user pick the number. Never exceed
-  `boost.max_boost_connects`, and pass what they chose as `boost_connects`.
-
-Ask whether they want to attach files or highlight portfolio projects and certificates
-(`get_profile` action `list_highlights`). Both are optional but must be offered.
-
-Then get an explicit yes. A silent or ambiguous reply is a no.
-
-## Step 5: Submit and record
-
-`confirm_preview` type `proposal` with the `preview_id`.
-
-On success:
+`confirm_preview` type `proposal` with the `preview_id`. On success:
 
 ```bash
-jobpilot-api PATCH "/api/upwork/proposals/$ARG" \
-  --data '{"status":"submitted","submittedAt":"<now, UTC ISO-8601>"}'
+jobpilot-api PATCH /api/upwork/proposals/<id> --data '{"status":"submitted","submittedAt":"<now, ISO 8601 UTC>"}'
+jobpilot-api PUT /api/upwork/account --data '{"connectsBalance": <balance>}'
 ```
 
-Then refresh the Connects balance so the web app shows what is left:
+Read the new balance from `get_profile` `connects_balance`, not by subtracting. With a boost,
+report the stored bid from `list_freelancer_proposals` `get` (`terms.connectsBid`); it can't be
+changed here.
 
-```bash
-jobpilot-api PUT /api/upwork/account --data '{"connectsBalance": <new balance>}'
-```
-
-Read the new balance from `get_profile` action `connects_balance`, not by subtracting.
-
-If the user declines, leave the proposal as `draft`, say nothing was submitted and no Connects
-were spent, and stop. Do not start a second preview: a new one silently replaces the pending one.
-
-If Upwork returns an error, leave the proposal as `draft` and report the error text verbatim. An
-insufficient-Connects error carries a purchase URL - pass it on.
-
-## Rules
-
-1. **Never submit without an explicit yes** in this conversation, naming the Connects cost.
-2. **One submission per proposal.** Status must be `draft` going in.
-3. **Never invent a screening answer or a bid.** Both come from the stored proposal or the user.
-4. **Never boost by default.** It is a separate Connects spend and a separate decision.
-5. A submitted boost cannot be edited or withdrawn here. Verify what Upwork stored with
-   `list_freelancer_proposals` action `get` and report `terms.connectsBid` as the real figure.
+- Declined: leave it a draft, say nothing was sent or spent, and stop. Don't start a second
+  preview; it would replace the pending one.
+- Upwork error: leave it a draft and report the error verbatim, including any purchase URL for
+  missing Connects.

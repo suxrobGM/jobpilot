@@ -4,21 +4,19 @@ import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { AutoFixHigh } from "@mui/icons-material";
-import { Box, LinearProgress, Stack } from "@mui/material";
+import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { upworkProfileQueries } from "@/api/queries";
-import { AgentOnlyButton } from "@/components/ui/buttons";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { StatusChip } from "@/components/ui/display";
 import { EmptyState } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { ProfileReview } from "./profile-review";
 
 /** Loads the profile-enhancement record, streams live updates, and renders the review. */
 export function ProfileEnhancer(): ReactElement {
-  const agent = useAgent();
-  const agentAvailable = useAgentAvailable();
+  const request = useCreateRequest();
 
   useLiveInvalidation(upworkChannel, null, {
     on: { "profile.updated": [upworkProfileQueries.all] },
@@ -50,13 +48,16 @@ export function ProfileEnhancer(): ReactElement {
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <StatusChip domain="upworkProfile" value={status} />
           <Box sx={{ flex: 1 }} />
-          <AgentOnlyButton
+          <Button
             variant={hasSuggestion ? "text" : "contained"}
             startIcon={<AutoFixHigh fontSize="sm" />}
-            onClick={() => void agent.injectSkill("upwork-profile")}
+            loading={request.isPending}
+            onClick={() =>
+              request.mutate({ taskType: "upwork.profile", payload: { mode: "review" } })
+            }
           >
             {hasSuggestion ? "Re-generate" : "Generate suggestions"}
-          </AgentOnlyButton>
+          </Button>
         </Stack>
 
         {hasSuggestion && profile ? (
@@ -65,11 +66,7 @@ export function ProfileEnhancer(): ReactElement {
           <EmptyState
             variant="inline"
             title="No suggestions yet."
-            description={
-              agentAvailable
-                ? "Run “Generate suggestions” - the agent reads your live Upwork profile and résumé, then drafts an improved overview and portfolio for review."
-                : "Open JobPilot on your desktop to generate suggestions - the agent reads your live Upwork profile and résumé, then drafts an improved overview and portfolio for review."
-            }
+            description="Run “Generate suggestions” - the agent reads your live Upwork profile and résumé, then drafts an improved overview and portfolio for review."
           />
         )}
       </Stack>

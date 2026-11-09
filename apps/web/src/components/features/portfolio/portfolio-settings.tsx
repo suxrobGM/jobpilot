@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { type PortfolioSettingsPatch, usernameSchema } from "@jobpilot/contracts/user";
 import { OpenInNew } from "@mui/icons-material";
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Grid, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { userQueries } from "@/api/queries";
@@ -12,7 +12,8 @@ import { useApiMutation } from "@/api/use-api-mutation";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { SectionCard } from "@/components/ui/layout";
+import { PageActions, SectionCard } from "@/components/ui/layout";
+import { belowTopBar } from "@/components/ui/layout/top-bar-slots";
 import { toPortfolioFormValues } from "./portfolio-form-values";
 import { PortfolioView } from "./portfolio-view";
 import { PortfolioVisibilityFields } from "./portfolio-visibility-fields";
@@ -60,79 +61,93 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
   const publicUrl = `${origin}/u/${settings.username}`;
 
   return (
-    <Stack
+    // Settings beside the page they shape, so every change is checked against the preview.
+    <Grid
+      container
       component="form"
-      spacing={3}
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();
       }}
+      spacing={3}
+      sx={{ alignItems: "flex-start" }}
     >
-      <SectionCard
-        title="Public portfolio"
-        description="Your always-on hire-me page, built from your active resume and job-search activity. Pick a memorable username to share it."
+      <PageActions>
+        <Button href={publicUrl} variant="outlined" endIcon={<OpenInNew />}>
+          View public page
+        </Button>
+      </PageActions>
+      <Grid
+        size={{ xs: 12, lg: "auto" }}
+        sx={(theme) => ({
+          width: { lg: 380 },
+          position: { lg: "sticky" },
+          top: belowTopBar(theme.spacing(3)),
+        })}
       >
-        <Stack spacing={2.5}>
-          <form.AppField
-            name="username"
-            validators={{
-              onChange: usernameSchema,
-              onChangeAsyncDebounceMs: 350,
-              // The caller's own username always reads as free, so skip the round trip.
-              onChangeAsync: async ({ value }) => {
-                if (value === settings.username) {
-                  return undefined;
-                }
-                const { data } = await api.user.portfolio.available.get({
-                  query: { username: value },
-                });
-                return data?.available ? undefined : "That username is already taken.";
-              },
-            }}
-          >
-            {(field) => (
-              <field.TextField
-                label="Username"
-                transform={(v) => v.toLowerCase()}
-                helperText="Your page lives at /u/<username>."
-              />
-            )}
-          </form.AppField>
+        <SectionCard
+          title="Public portfolio"
+          description="Your hire-me page, built from your primary resume and search activity."
+        >
+          <Stack spacing={2.5}>
+            <form.AppField
+              name="username"
+              validators={{
+                onChange: usernameSchema,
+                onChangeAsyncDebounceMs: 350,
+                // The caller's own username always reads as free, so skip the round trip.
+                onChangeAsync: async ({ value }) => {
+                  if (value === settings.username) {
+                    return undefined;
+                  }
+                  const { data } = await api.user.portfolio.available.get({
+                    query: { username: value },
+                  });
+                  return data?.available ? undefined : "That username is already taken.";
+                },
+              }}
+            >
+              {(field) => (
+                <field.TextField
+                  label="Username"
+                  transform={(v) => v.toLowerCase()}
+                  helperText="Your page lives at /u/<username>."
+                />
+              )}
+            </form.AppField>
 
-          <form.AppField name="availability">
-            {(field) => (
-              <field.Select
-                label="Availability"
-                items={AVAILABILITY_ITEMS}
-                optional
-                emptyLabel="Not shown"
-                helperText="Shown as a badge on your page."
-              />
-            )}
-          </form.AppField>
+            <form.AppField name="availability">
+              {(field) => (
+                <field.Select
+                  label="Availability"
+                  items={AVAILABILITY_ITEMS}
+                  optional
+                  emptyLabel="Not shown"
+                  helperText="Shown as a badge on your page."
+                />
+              )}
+            </form.AppField>
 
-          <PortfolioVisibilityFields form={form} />
+            <PortfolioVisibilityFields form={form} />
 
-          <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1 }}>
+            <CopyField value={publicUrl} copyMessage="Portfolio link copied" />
+
             <form.AppForm>
               <form.SubmitButton>Save settings</form.SubmitButton>
             </form.AppForm>
-            <Button href={publicUrl} variant="outlined" endIcon={<OpenInNew />}>
-              View public page
-            </Button>
           </Stack>
+        </SectionCard>
+      </Grid>
 
-          <CopyField value={publicUrl} copyMessage="Portfolio link copied" />
-        </Stack>
-      </SectionCard>
-
-      <SectionCard
-        title="Preview"
-        description="Exactly what visitors see - drawn from your primary resume."
-      >
-        <PortfolioPreview />
-      </SectionCard>
-    </Stack>
+      <Grid size={{ xs: 12, lg: "grow" }} sx={{ minWidth: 0 }}>
+        <SectionCard
+          title="Preview"
+          description="Exactly what visitors see - drawn from your primary resume."
+        >
+          <PortfolioPreview />
+        </SectionCard>
+      </Grid>
+    </Grid>
   );
 }
 

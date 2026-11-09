@@ -1,37 +1,26 @@
 using System.Net.ServerSentEvents;
 using System.Text.Json;
 using JobPilot.Terminal.Common;
-using Microsoft.Extensions.Hosting;
+using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Pilot.Agent;
+using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
 
 namespace JobPilot.Terminal.Pilot;
 
-/// <summary>The event type is in the JSON, not the SSE event name.</summary>
-internal sealed record PilotEvent(
-    string? Type, PilotEventPromotion? Promotion, PilotEventState? State, string? RunId = null, string? Outcome = null);
-
-internal sealed record PilotEventPromotion(string? Status);
-
-internal sealed record PilotEventState(bool? Running);
-
 /// <summary>
-/// Holds the pilot event stream open while the pilot runs. It wakes the loop on events that unblock a cycle and
-/// passes each finished run to the session waiting on it.
+/// Holds the pilot event stream open while the host is paired. It wakes the loop on work the user asked for, passes
+/// each finished run to the cycle waiting on it, and relays interrupts and steers of the run in flight.
 /// </summary>
 public sealed class PilotEventListener(
-    PilotStore store, PilotApi api, Action wake, Action<string, string> runFinished, ILogger<PilotEventListener> logger)
+    PairingStore store, IPilotApi api, IPilotAgent agent, WakeSignal wakeSignal, ILogger<PilotEventListener> logger)
     : BackgroundService
 {
     private static readonly TimeSpan InitialBackoff = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan MaxBackoff = TimeSpan.FromMinutes(5);
 
-    internal static bool ShouldWake(PilotEvent e) => e.Type switch
-    {
-        "question.answered" or "state.changed" => true,
-        "promotion.updated" => e.Promotion?.Status == "approved",
-        _ => false,
-    };
-
-    internal static bool IsRemoteStop(PilotEvent e) => e.Type == "state.changed" && e.State?.Running == false;
+    internal static bool ShouldWake(PilotEvent e) =>
+        e.Type is "question.answered" or "state.changed" or "message.created" or "request.created" or "job.approved";
 
     internal static PilotEvent? Parse(string data)
     {
@@ -56,20 +45,20 @@ public sealed class PilotEventListener(
         var backoff = new ExponentialBackoff(InitialBackoff, MaxBackoff);
         while (!stoppingToken.IsCancellationRequested)
         {
-            // Any settings change cancels this pass, so the stream never outlives the credentials it opened with.
+            // Any pairing change cancels this pass, so the stream never outlives the credentials it opened with.
             using var changed = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
             void OnChanged() => changed.Cancel();
             store.Changed += OnChanged;
             try
             {
                 // Read after subscribing, so a change in between still cancels this pass.
-                if (store.Current is not { Running: true } settings)
+                if (store.Current is not { } pairing)
                 {
                     await Task.Delay(Timeout.Infinite, changed.Token);
                     continue;
                 }
 
-                var connected = await StreamAsync(settings, changed.Token);
+                var connected = await StreamAsync(pairing, changed.Token);
                 if (connected)
                 {
                     backoff.Reset();
@@ -93,12 +82,12 @@ public sealed class PilotEventListener(
     }
 
     /// <summary>Pumps events until the stream ends. Returns whether the server accepted the connection.</summary>
-    private async Task<bool> StreamAsync(PilotSettings settings, CancellationToken ct)
+    private async Task<bool> StreamAsync(PilotPairing pairing, CancellationToken ct)
     {
         var connected = false;
         try
         {
-            using var response = await api.OpenEventsAsync(settings, ct);
+            using var response = await api.OpenEventsAsync(pairing, ct);
             if (response is null)
             {
                 return false;
@@ -108,7 +97,7 @@ public sealed class PilotEventListener(
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             await foreach (var item in SseParser.Create(stream).EnumerateAsync(ct))
             {
-                Handle(item.Data);
+                await HandleAsync(item.Data, ct);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -119,28 +108,29 @@ public sealed class PilotEventListener(
         return connected;
     }
 
-    private void Handle(string data)
+    private async Task HandleAsync(string data, CancellationToken ct)
     {
         if (Parse(data) is not { } e)
         {
             return;
         }
 
-        // A stop from another device reaches this host only here. Mirror it before waking, or the loop re-reads
-        // Running=true and keeps starting cycles.
-        if (IsRemoteStop(e))
+        switch (e)
         {
-            store.SetRunning(false);
-        }
-
-        if (e is { Type: "run.finished", RunId: { } runId })
-        {
-            runFinished(runId, e.Outcome ?? "failed");
+            case { Type: "run.finished", RunId: { } runId }:
+                agent.OnRunFinished(runId, e.Outcome ?? "failed");
+                break;
+            case { Type: "run.interrupt", RunId: { } runId }:
+                await agent.StopRunAsync(runId, ct);
+                break;
+            case { Type: "run.steer", RunId: { } runId, Text: { } text }:
+                await agent.SteerRunAsync(runId, text, ct);
+                break;
         }
 
         if (ShouldWake(e))
         {
-            wake();
+            wakeSignal.Signal();
         }
     }
 }

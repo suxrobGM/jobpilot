@@ -5,17 +5,10 @@ import {
   APPLICATION_STATUSES,
 } from "@jobpilot/contracts/application";
 import { AUTH_TOKEN_KINDS, OAUTH_PROVIDERS } from "@jobpilot/contracts/auth";
-import {
-  ACTORS,
-  CAMPAIGN_FEEDS,
-  CAMPAIGN_JOB_STATUSES,
-  CAMPAIGN_SOURCES,
-  CAMPAIGN_STATUSES,
-  CAP_EXEMPT_BASES,
-} from "@jobpilot/contracts/campaign";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
 import { CAPTCHA_PROVIDERS, CREDENTIAL_KINDS } from "@jobpilot/contracts/credential";
 import { CLASSIFICATIONS, EMAIL_PROVIDERS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
+import { ACTORS, CAP_EXEMPT_BASES, FEED_KINDS, JOB_STATUSES } from "@jobpilot/contracts/feed";
 import { JOB_LISTING_STATUSES } from "@jobpilot/contracts/job-listing";
 import {
   CONTACT_DISCOVERY_SOURCES,
@@ -25,9 +18,10 @@ import {
   NETWORKING_CHANNELS,
   NETWORKING_MESSAGE_STATUSES,
 } from "@jobpilot/contracts/networking";
-import { PILOT_JOURNAL_KINDS } from "@jobpilot/contracts/pilot/journal";
-import { PROMOTION_STATUSES } from "@jobpilot/contracts/pilot/promotion";
+import { PILOT_CHANGE_SOURCES, PILOT_CHANGE_STATUSES } from "@jobpilot/contracts/pilot/change";
+import { PILOT_MESSAGE_AUTHORS } from "@jobpilot/contracts/pilot/message";
 import { PILOT_QUESTION_KINDS, PILOT_QUESTION_STATUSES } from "@jobpilot/contracts/pilot/question";
+import { PILOT_REQUEST_SOURCES, PILOT_REQUEST_STATUSES } from "@jobpilot/contracts/pilot/request";
 import { PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot/run";
 import { PILOT_SUBJECT_TYPES } from "@jobpilot/contracts/pilot/tasks";
 import { ROLES } from "@jobpilot/contracts/role";
@@ -59,10 +53,8 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   AuthTokenKind: AUTH_TOKEN_KINDS,
   Availability: AVAILABILITY,
   Actor: ACTORS,
-  CampaignFeed: CAMPAIGN_FEEDS,
-  CampaignJobStatus: CAMPAIGN_JOB_STATUSES,
-  CampaignSource: CAMPAIGN_SOURCES,
-  CampaignStatus: CAMPAIGN_STATUSES,
+  FeedKind: FEED_KINDS,
+  JobStatus: JOB_STATUSES,
   CapExemptBasis: CAP_EXEMPT_BASES,
   ContactDiscoverySource: CONTACT_DISCOVERY_SOURCES,
   ContactEmailSource: CONTACT_EMAIL_SOURCES,
@@ -77,12 +69,15 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
   NetworkingChannel: NETWORKING_CHANNELS,
   NetworkingMessageStatus: NETWORKING_MESSAGE_STATUSES,
   OAuthProvider: OAUTH_PROVIDERS,
-  PilotJournalKind: PILOT_JOURNAL_KINDS,
   PilotQuestionKind: PILOT_QUESTION_KINDS,
   PilotQuestionStatus: PILOT_QUESTION_STATUSES,
+  PilotChangeSource: PILOT_CHANGE_SOURCES,
+  PilotChangeStatus: PILOT_CHANGE_STATUSES,
+  PilotMessageAuthor: PILOT_MESSAGE_AUTHORS,
+  PilotRequestStatus: PILOT_REQUEST_STATUSES,
+  PilotRequestSource: PILOT_REQUEST_SOURCES,
   PilotRunOutcome: PILOT_RUN_OUTCOMES,
   PilotSubjectType: PILOT_SUBJECT_TYPES,
-  PromotionStatus: PROMOTION_STATUSES,
   SalaryCurrency: SALARY_CURRENCIES,
   SalaryPeriod: SALARY_PERIODS,
   CaptchaProvider: CAPTCHA_PROVIDERS,
@@ -97,7 +92,9 @@ const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
 
 describe("contracts enums match the Prisma schema", () => {
   for (const [name, prismaEnum] of Object.entries(prismaEnums)) {
-    if ((API_ONLY as readonly string[]).includes(name)) continue;
+    if ((API_ONLY as readonly string[]).includes(name)) {
+      continue;
+    }
     it(name, () => {
       const contract = CONTRACTS[name as PrismaEnumName];
       expect([...contract].sort()).toEqual(Object.values(prismaEnum).sort());

@@ -11,7 +11,7 @@ interface LinkBoardOptions {
   onSuccess?: (board: JobBoardDto) => void;
 }
 
-/** Links a board to the profile. Shared by the Boards page dialog and the campaign composer. */
+/** Links a board to the profile. Used by the add-board dialog. */
 export function useLinkBoard(
   options?: LinkBoardOptions,
 ): ApiMutationResult<JobBoardDto, JobBoardInput> {

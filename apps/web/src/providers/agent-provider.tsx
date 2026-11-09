@@ -8,16 +8,16 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { useMediaQuery } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { pilotQueries } from "@/api/queries";
+import { useIsComputer } from "@/hooks/use-is-computer";
 import {
   patchAgentStorage,
-  readStoredExpanded,
+  readStoredDrawerOpen,
   readStoredProvider,
   subscribeAgentStorage,
 } from "@/lib/terminal/agent-storage";
 import {
-  formatSkillCommand,
-  injectCommand,
   killSession,
   shutdownHost,
   TerminalApiError,
@@ -25,46 +25,26 @@ import {
 } from "@/lib/terminal/client";
 import { useToast } from "@/providers/toast-provider";
 
-export interface AgentContextValue {
-  inject: (command: string) => Promise<void>;
-  injectSkill: (skill: string, args?: string) => Promise<void>;
-}
+export type AgentDrawerTab = "steps" | "terminal";
 
-export interface AgentDockContextValue {
+export interface AgentDrawerContextValue {
   provider: TerminalProviderId;
   switchProvider: (next: TerminalProviderId) => Promise<void>;
   restart: () => Promise<void>;
   /** Resolves true when the host is shutting down, false when it stayed up. */
   stop: () => Promise<boolean>;
   terminalRevision: number;
-  expanded: boolean;
-  expand: () => void;
-  collapse: () => void;
+  drawerOpen: boolean;
+  drawerTab: AgentDrawerTab;
+  setDrawerTab: (tab: AgentDrawerTab) => void;
+  /** Opens on the terminal. */
+  openDrawer: () => void;
+  /** Opens on the running task's steps, which also work away from this computer. */
+  watchSteps: () => void;
+  closeDrawer: () => void;
 }
 
-const AgentContext = createContext<AgentContextValue | null>(null);
-const AgentDockContext = createContext<AgentDockContextValue | null>(null);
-
-function describeInjectError(error: unknown): string {
-  if (error instanceof TypeError) {
-    return "The JobPilot agent isn't reachable. Open the agent dock to install and start it, then try again.";
-  }
-
-  if (error instanceof TerminalApiError) {
-    if (error.status === 404) {
-      return "Terminal session has ended. Restart it from the Terminal tab in the dock.";
-    }
-    // The host answers 409 both for "not running" and for a provider mismatch.
-    if (error.status === 409 && /provider/i.test(error.message)) {
-      return "A different provider is running in the terminal. Switch provider in the dock or restart it.";
-    }
-    if (error.status === 409 || error.status === 500) {
-      return "No active terminal session. Open the Terminal tab in the dock and start one.";
-    }
-  }
-  const message = error instanceof Error ? error.message : String(error);
-  return `Failed to send command to terminal: ${message}`;
-}
+const AgentDrawerContext = createContext<AgentDrawerContextValue | null>(null);
 
 export function AgentProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
@@ -78,8 +58,9 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     (): TerminalProviderId => "claude",
   );
 
-  const expanded = useSyncExternalStore(subscribeAgentStorage, readStoredExpanded, () => false);
+  const drawerOpen = useSyncExternalStore(subscribeAgentStorage, readStoredDrawerOpen, () => false);
   const [terminalRevision, setTerminalRevision] = useState(0);
+  const [drawerTab, setDrawerTab] = useState<AgentDrawerTab>("terminal");
 
   // True only when the host goes down; otherwise nothing would ever clear the "Stopping…" card.
   const stop = async (): Promise<boolean> => {
@@ -120,55 +101,46 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     setTerminalRevision((n) => n + 1);
   };
 
-  const runInject = async (command: string): Promise<void> => {
-    patchAgentStorage({ dockExpanded: true });
-    try {
-      await injectCommand(command, provider);
-    } catch (error) {
-      toast.error(describeInjectError(error));
-    }
-  };
-
-  const publicValue: AgentContextValue = {
-    inject: (command) => runInject(command),
-    injectSkill: (skill, args) => runInject(formatSkillCommand(provider, skill, args)),
-  };
-
-  const dockValue: AgentDockContextValue = {
+  const drawerValue: AgentDrawerContextValue = {
     provider,
     switchProvider,
     restart,
     stop,
     terminalRevision,
-    expanded,
-    expand: () => patchAgentStorage({ dockExpanded: true }),
-    collapse: () => patchAgentStorage({ dockExpanded: false }),
+    drawerOpen,
+    drawerTab,
+    setDrawerTab,
+    openDrawer: () => {
+      setDrawerTab("terminal");
+      patchAgentStorage({ drawerOpen: true });
+    },
+    watchSteps: () => {
+      setDrawerTab("steps");
+      patchAgentStorage({ drawerOpen: true });
+    },
+    closeDrawer: () => patchAgentStorage({ drawerOpen: false }),
   };
 
-  return (
-    <AgentContext.Provider value={publicValue}>
-      <AgentDockContext.Provider value={dockValue}>{children}</AgentDockContext.Provider>
-    </AgentContext.Provider>
-  );
+  return <AgentDrawerContext.Provider value={drawerValue}>{children}</AgentDrawerContext.Provider>;
 }
 
-export function useAgent(): AgentContextValue {
-  const ctx = useContext(AgentContext);
+export function useAgentDrawer(): AgentDrawerContextValue {
+  const ctx = useContext(AgentDrawerContext);
   if (!ctx) {
-    throw new Error("useAgent must be used within an AgentProvider");
+    throw new Error("useAgentDrawer must be used within an AgentProvider");
   }
   return ctx;
 }
 
-export function useAgentDock(): AgentDockContextValue {
-  const ctx = useContext(AgentDockContext);
-  if (!ctx) {
-    throw new Error("useAgentDock must be used within an AgentProvider");
-  }
-  return ctx;
+/** Whether a host holds the API's event stream open, from any device. Null until the state loads. */
+export function useAgentConnected(): boolean | null {
+  const { data } = useQuery({ ...pilotQueries.state(), select: (state) => state.agentConnected });
+  return data ?? null;
 }
 
-/** Below md there is no dock to inject into, so agent-driving controls hide against this. */
+/** A computer always queues agent work; a phone or tablet needs a host connected to the API. */
 export function useAgentAvailable(): boolean {
-  return useMediaQuery((theme) => theme.breakpoints.up("md"));
+  const computer = useIsComputer();
+  const connected = useAgentConnected();
+  return computer || connected === true;
 }

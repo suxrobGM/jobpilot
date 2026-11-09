@@ -7,10 +7,13 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
-import { deletedResponseSchema, idResponseSchema } from "@/types/response";
+import {
+  deletedCountResponseSchema,
+  deletedResponseSchema,
+  idResponseSchema,
+} from "@/types/response";
 import { resumeUpdatedSchema } from "../resume.schema";
 import {
-  prunedResponseSchema,
   pruneVariantsQuerySchema,
   tailoredVariantSchema,
   tailorResumeSchema,
@@ -112,7 +115,7 @@ export const resumeVariantController = new Elysia({
     {
       params: idParam,
       query: pruneVariantsQuerySchema,
-      response: prunedResponseSchema,
+      response: deletedCountResponseSchema,
       detail: {
         summary: "Prune resume variants",
         description: `Bulk-deletes accumulated variants under a master resume and returns how many were removed. Filters: \`before\` (created before an instant), \`keep\` (retain the N newest matches), \`unlinkedOnly\` (default true - skip variants linked to an application). Variants labelled ${PROTECTED_VARIANT_LABELS.map((label) => `'${label}'`).join(" or ")} are never pruned.`,

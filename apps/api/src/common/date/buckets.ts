@@ -1,5 +1,5 @@
 /** The rolling window every timeline series in the app is drawn over. */
-export const DAYS_IN_TIMELINE = 30;
+const DAYS_IN_TIMELINE = 30;
 
 export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * HOUR_MS;

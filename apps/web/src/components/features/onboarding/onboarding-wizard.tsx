@@ -1,10 +1,10 @@
 "use client";
 
-import { type ReactElement, type SubmitEvent, useState } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 import {
   USER_DEFAULT_VALUES,
-  type UserWithAutoApplyInput,
-  userWithAutoApplySchema,
+  type UserUpdateInput,
+  userUpdateSchema,
 } from "@jobpilot/contracts/user";
 import {
   Alert,
@@ -26,22 +26,18 @@ import { PersonalSection, toProfileFormValues } from "@/components/features/sett
 import { QueryError } from "@/components/ui/feedback";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
+import { useIsComputer } from "@/hooks/use-is-computer";
 import { patchAgentStorage } from "@/lib/terminal/agent-storage";
 import { useToast } from "@/providers/toast-provider";
-import { AgentSetupStep } from "./agent-setup-step";
 import { ResumeUploadStep } from "./resume-upload-step";
-import { describeIssues, firstStepWithIssue } from "./validation-issues";
 
 // Minimal first run; the rest lives in Settings, surfaced by the workspace's profile checklist.
 const STEPS = [
   { key: "resume", label: "Resume" },
   { key: "personal", label: "Personal" },
-  { key: "agent", label: "Connect agent" },
 ] as const;
 
-/** Profile-form steps come first; the agent step is a self-contained section. */
-const PROFILE_STEPS = STEPS.findIndex((s) => s.key === "agent");
-const PERSONAL_STEP = STEPS.findIndex((s) => s.key === "personal");
+type StepKey = (typeof STEPS)[number]["key"];
 
 export function OnboardingWizard(): ReactElement {
   const query = useQuery(userQueries.detail());
@@ -56,7 +52,7 @@ export function OnboardingWizard(): ReactElement {
 }
 
 interface OnboardingStepsProps {
-  initialValues: UserWithAutoApplyInput;
+  initialValues: UserUpdateInput;
 }
 
 function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
@@ -64,60 +60,44 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState<StepKey>("resume");
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const computer = useIsComputer();
 
-  const save = useApiMutation((vars: UserWithAutoApplyInput) => api.user.put(vars), {
+  // The drawer walks through agent setup; a phone has no host, so it would only hide the page.
+  useEffect(() => {
+    if (computer) {
+      patchAgentStorage({ drawerOpen: true });
+    }
+  }, [computer]);
+
+  const save = useApiMutation((vars: UserUpdateInput) => api.user.put(vars), {
     successMessage: "Profile saved",
     onSuccess: () => {
       queryClient.invalidateQueries();
-      // Profile saved (non-empty) clears the redirect gate, so the optional steps can navigate away safely.
-      setStep(PROFILE_STEPS);
+      // A saved profile clears the redirect gate; land on the pilot, with the drawer on a computer.
+      if (computer) {
+        patchAgentStorage({ drawerOpen: true });
+      }
+      router.push("/pilot");
     },
   });
 
   const form = useAppForm({
     defaultValues: initialValues,
-    validators: { onSubmit: userWithAutoApplySchema },
+    validators: { onSubmit: userUpdateSchema },
+    onSubmitInvalid: () => {
+      setShowValidationErrors(true);
+      toast.error("Some fields need fixing before we can save your profile.");
+    },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },
   });
-  const isProfileStep = step < PROFILE_STEPS;
-  const isLastProfileStep = step === PROFILE_STEPS - 1;
-
-  const finish = (): void => {
-    // Land on the workspace with the dock open so the agent is the obvious next step.
-    patchAgentStorage({ dockExpanded: true });
-    router.push("/workspace");
-  };
-
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!isLastProfileStep) {
-      setStep((s) => s + 1);
-      return;
-    }
-
-    const result = userWithAutoApplySchema.safeParse(form.state.values);
-    if (!result.success) {
-      const issues = describeIssues(result.error.issues, PERSONAL_STEP);
-      setShowValidationErrors(true);
-      const target = firstStepWithIssue(issues);
-      if (target !== null) {
-        setStep(target);
-      }
-      toast.error("Some fields need fixing before we can save your profile.");
-      return;
-    }
-
-    setShowValidationErrors(false);
-    await form.handleSubmit();
-  };
 
   return (
     <Stack spacing={3}>
-      <Stepper activeStep={step} alternativeLabel>
+      <Stepper activeStep={STEPS.findIndex((s) => s.key === step)} alternativeLabel>
         {STEPS.map((s) => (
           <Step key={s.key}>
             <StepLabel>{s.label}</StepLabel>
@@ -125,36 +105,29 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
         ))}
       </Stepper>
       <SectionCard>
-        {isProfileStep ? (
-          <form onSubmit={handleSubmit}>
+        {step === "resume" && (
+          <ResumeUploadStep form={form} onContinue={() => setStep("personal")} />
+        )}
+        {step === "personal" && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void form.handleSubmit();
+            }}
+          >
             <Stack spacing={3}>
-              {step === 0 && <ResumeUploadStep form={form} onContinue={() => setStep(1)} />}
-              {step === 1 && <PersonalSection form={form} />}
+              <PersonalSection form={form} />
               {showValidationErrors && <ValidationSummary form={form} />}
-              {step !== 0 && (
-                <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
-                  <Button variant="outlined" onClick={() => setStep((s) => Math.max(0, s - 1))}>
-                    Back
-                  </Button>
-                  <Button type="submit" variant="contained" loading={save.isPending}>
-                    {isLastProfileStep ? "Save & continue" : "Next"}
-                  </Button>
-                </Stack>
-              )}
+              <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
+                <Button variant="outlined" onClick={() => setStep("resume")}>
+                  Back
+                </Button>
+                <Button type="submit" variant="contained" loading={save.isPending}>
+                  Save & finish
+                </Button>
+              </Stack>
             </Stack>
           </form>
-        ) : (
-          <Stack spacing={3}>
-            <AgentSetupStep />
-            <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
-              <Button variant="outlined" onClick={() => setStep((s) => s - 1)}>
-                Back
-              </Button>
-              <Button variant="contained" onClick={finish}>
-                Finish
-              </Button>
-            </Stack>
-          </Stack>
         )}
       </SectionCard>
     </Stack>
@@ -167,22 +140,20 @@ const ValidationSummary = withForm({
     return (
       <form.Subscribe selector={(s) => s.values}>
         {(values) => {
-          const result = userWithAutoApplySchema.safeParse(values);
+          const result = userUpdateSchema.safeParse(values);
           if (result.success) {
             return null;
           }
 
-          const issues = describeIssues(result.error.issues, PERSONAL_STEP);
           return (
             <Alert severity="error">
               <AlertTitle>Some fields need fixing</AlertTitle>
               <Stack spacing={0.5}>
-                {issues.map((issue) => {
-                  const stepLabel = issue.stepIndex !== null ? STEPS[issue.stepIndex]?.label : null;
+                {result.error.issues.map((issue) => {
+                  const path = issue.path.map(String).join(".") || "form";
                   return (
-                    <Typography key={`${issue.path}:${issue.message}`} variant="body2">
-                      <strong>{issue.path}</strong>
-                      {stepLabel ? ` (${stepLabel} step)` : ""}: {issue.message}
+                    <Typography key={`${path}:${issue.message}`} variant="body2">
+                      <strong>{path}</strong>: {issue.message}
                     </Typography>
                   );
                 })}

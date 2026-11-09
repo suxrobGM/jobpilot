@@ -8,9 +8,6 @@ import { CaptchaService } from "./captcha.service";
 
 const svc = container.get(CaptchaService);
 
-// Runs after authGuard's derive, so `user` is in context - the policy is user-keyed.
-const limitSolve = rateLimit(RATE_LIMITS.captchaSolve);
-
 export const captchaController = new Elysia({
   prefix: "/captcha",
   detail: { tags: ["Captcha"] },
@@ -18,7 +15,8 @@ export const captchaController = new Elysia({
   .use(authGuard)
   .post("/solve", ({ user, body }) => svc.solve(user.id, body), {
     body: captchaSolveSchema,
-    beforeHandle: limitSolve,
+    // Runs after authGuard's derive, so `user` is in context - the policy is user-keyed.
+    beforeHandle: rateLimit(RATE_LIMITS.captchaSolve),
     response: captchaSolveResultSchema,
     detail: {
       summary: "Solve a CAPTCHA",

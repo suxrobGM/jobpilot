@@ -11,27 +11,27 @@ export const DOCS_NAV: DocsNavEntry[] = [
   {
     title: "Getting started",
     href: "/docs/getting-started",
-    description: "Install the plugin, create your account, and run your first campaign.",
+    description: "Install the plugin, create your account, and set up the Pilot.",
   },
   {
     title: "The Pilot",
     href: "/docs/pilot",
-    description: "Let JobPilot run your search on its own, within limits you set.",
+    description: "Autopilot, talking to the Pilot, searches and rules, and what it asks you about.",
   },
   {
-    title: "Campaigns & skills",
-    href: "/docs/campaigns-and-skills",
-    description: "The four campaign modes, what each button does, and application statuses.",
+    title: "Skills",
+    href: "/docs/skills",
+    description: "What each button does, running skills yourself, and application statuses.",
   },
   {
     title: "Email setup",
     href: "/docs/email-setup",
-    description: "Connect Gmail so JobPilot can track replies and send emails.",
+    description: "Connect Gmail so JobPilot can match replies and send emails.",
   },
   {
     title: "Credentials",
     href: "/docs/credentials",
-    description: "Job board logins, captcha keys, and how JobPilot keeps them safe.",
+    description: "Board logins, captcha keys, and how they're stored.",
   },
   {
     title: "FAQ",
@@ -40,7 +40,7 @@ export const DOCS_NAV: DocsNavEntry[] = [
   },
 ];
 
-/** Every docs destination in nav order - the desktop rail and the mobile navigator render the same list. */
+/** Every docs destination in nav order, for the docs side nav. */
 export const DOCS_LINKS: { href: Route; label: string }[] = [
   { href: "/docs", label: "Overview" },
   ...DOCS_NAV.map((entry) => ({ href: entry.href, label: entry.title })),

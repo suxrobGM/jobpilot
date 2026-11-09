@@ -14,7 +14,7 @@ import type { ExternalUrl } from "@/lib/constants";
 import { AppLink } from "@/theme/app-link";
 
 /** `show: false` hides an entry without `&&` checks across the JSX. */
-export type DropdownMenuItem =
+type DropdownMenuItem =
   | { kind: "divider"; key: string; show?: boolean }
   | {
       kind: "item";

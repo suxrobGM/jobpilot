@@ -1,0 +1,10 @@
+{
+  "extends": "../../../../apps/api/tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["../../../../apps/api/src/*"],
+      "@jobpilot/contracts/*": ["../../../../packages/contracts/src/*"]
+    }
+  },
+  "include": ["*.ts"]
+}

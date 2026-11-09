@@ -23,7 +23,6 @@ export const PROFILE_SELECT = {
   country: true,
   usAuthorized: true,
   requiresSponsorship: true,
-  preferCapExempt: true,
   visaStatus: true,
   optExtension: true,
   willingToRelocate: true,
@@ -61,6 +60,8 @@ export function withProfile<T extends WithProfile>(
 ): Omit<T, "profile"> & NonNullable<T["profile"]> {
   const { profile, ...account } = row;
   // Every user gets a profile at sign-up; a missing one is a broken row, not an empty profile.
-  if (!profile) throw notFound("Profile not found");
+  if (!profile) {
+    throw notFound("Profile not found");
+  }
   return { ...account, ...profile };
 }

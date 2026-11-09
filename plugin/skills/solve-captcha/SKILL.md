@@ -1,59 +1,61 @@
 ---
 name: solve-captcha
-description: Solve a CAPTCHA on the current browser tab - free checkbox/text paths first, then a configured token service for image challenges. Returns solved or unsolved for the caller to fall back.
-argument-hint: "[url | ref_or_description] (optional; a URL → navigate there first; omit → auto-detect)"
+description: Solve a CAPTCHA on the current browser tab - free checkbox and text paths first, then a configured token service for image challenges. Returns solved or unsolved for the caller to fall back.
+argument-hint: "[url | ref_or_description] (optional; a URL is opened first; omit to auto-detect)"
 ---
 
 # Solve CAPTCHA
 
-Clear a CAPTCHA on the **current browser tab**. Return **solved** or **unsolved** (the caller falls back). Authorized use only - the user's own applications. Call the API with `jobpilot-api` (`../_shared/setup.md` "Calling the API").
+Clear a CAPTCHA on the current tab, for the user's own applications only. Return **solved** or
+**unsolved**; on unsolved, leave the page as it is for the caller.
 
-## 1. Dispatch + identify
+## 1. Identify
 
-If the argument is a URL → `browser_navigate` there first. `browser_resize` to a tall viewport (`1280×1400`) so the widget is fully on-screen, then `browser_snapshot` + `browser_take_screenshot` the captcha and classify:
+A URL argument: open it first. `browser_resize` to 1280x1400 so the widget is fully visible, then
+snapshot and `browser_take_screenshot` it:
 
-- **checkbox** (reCAPTCHA "I'm not a robot" / hCaptcha / Turnstile) → §2. **Always try this first** - it escalates to the service only if it opens an image challenge.
-- **text** (distorted characters + answer field) → §3.
-- **image-grid already open** (no checkbox to click) → §4 directly.
-- **slider / unknown** → **unsolved**.
+- **Checkbox** (reCAPTCHA "I'm not a robot", hCaptcha, Turnstile): step 2. Always try this first.
+- **Text** (distorted characters and an answer field): step 3.
+- **Image grid** already open: step 4.
+- **Slider or unknown**: unsolved.
 
-## 2. Checkbox (free, first)
+## 2. Checkbox
 
-`browser_click` the control by `ref`, `browser_wait_for`, re-snapshot. Verified → **solved**. An image grid opened instead → escalate to §4. **Never hand-click tiles** - automated clicks get flagged and fail.
+`browser_click` the checkbox ref, wait, snapshot. Verified: solved. An image grid opened: step 4.
+Never click grid tiles yourself; automated clicks get flagged.
 
-## 3. Text (free)
+## 3. Text
 
-`browser_take_screenshot`, read the characters, `browser_type` the answer, submit. Verified → **solved**.
+Read the characters from a screenshot, `browser_type` them, submit. Verified: solved.
 
-## 4. Image-grid → token service
+## 4. Token service
 
-Read the sitekey (`browser_evaluate`, read-only):
+Read the sitekey with `browser_evaluate`:
 
 ```js
 () => {
   const el = document.querySelector(".g-recaptcha, [data-sitekey]");
   let key = el?.getAttribute("data-sitekey");
   if (!key) {
-    const f = [...document.querySelectorAll('iframe[src*="recaptcha"]')]
+    const src = [...document.querySelectorAll('iframe[src*="recaptcha"]')]
       .map((f) => f.src)
       .find((s) => /[?&]k=/.test(s));
-    key = f && new URL(f).searchParams.get("k");
+    key = src && new URL(src).searchParams.get("k");
   }
   return { sitekey: key, pageurl: location.href };
 };
 ```
 
-hCaptcha: `iframe[src*="hcaptcha"]` → `type:"hcaptcha"`. Turnstile: `.cf-turnstile[data-sitekey]` → `type:"turnstile"`.
-
-Solve it server-side (the endpoint resolves the configured key + polls the provider; the skill never sees the key):
+hCaptcha (`iframe[src*="hcaptcha"]`) is `type:"hcaptcha"`; Turnstile (`.cf-turnstile[data-sitekey]`)
+is `type:"turnstile"`. The server holds the service key and polls the provider:
 
 ```bash
 jobpilot-api POST /api/captcha/solve --data '{"type":"recaptcha","sitekey":"<sitekey>","pageurl":"<pageurl>"}'
 ```
 
-A failed call or an empty `.token` (no key configured, or solver failure) → **unsolved**.
+A failed call or an empty `.token` (no key configured, or the service failed): unsolved.
 
-Inject the token (sanctioned `browser_evaluate` - a real solved token, not a faked click), then `browser_click` the form's submit `ref`:
+Inject the token with `browser_evaluate`, then `browser_click` the form's submit ref:
 
 ```js
 (t) => {
@@ -72,11 +74,11 @@ Inject the token (sanctioned `browser_evaluate` - a real solved token, not a fak
 };
 ```
 
-hCaptcha uses `h-captcha-response`; Turnstile uses `cf-turnstile-response`. `browser_wait_for`, verify → **solved**.
+hCaptcha uses `h-captcha-response`; Turnstile uses `cf-turnstile-response`. Wait, verify: solved.
 
 ## Rules
 
-- **Retry at most 3 rounds**, then **unsolved**. Never loop indefinitely.
-- **Trusted clicks on widgets** - `browser_click` a `ref` only. Never fake a widget click with `browser_evaluate` / `.click()` / `scrollIntoView`; reCAPTCHA flags synthetic clicks and hard-fails. JS is only for reading the sitekey and injecting a service token.
-- **unsolved** → leave the page as-is for the caller to take over.
-- Service solves cost ~$1–3 / 1000. Narrow snapshots (`../_shared/browser-tips.md`).
+- At most 3 rounds, then unsolved.
+- Click widgets only with `browser_click` on a ref. Never fake a click with `browser_evaluate`,
+  `.click()` or `scrollIntoView`: reCAPTCHA detects synthetic clicks and hard-fails. Scripts only
+  read the sitekey and inject a token.

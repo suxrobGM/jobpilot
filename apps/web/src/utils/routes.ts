@@ -1,12 +1,28 @@
 import type { Route } from "next";
 
 // Typed routes can't see a template literal, so each dynamic page casts once, here.
-export function campaignHref(campaignId: string): Route {
-  return `/campaigns/${encodeURIComponent(campaignId)}` as Route;
+/** A search or feed's jobs: the Pipeline filtered to its feed. */
+export function pipelineHref(feedId: string): Route {
+  return `/pipeline?feed=${encodeURIComponent(feedId)}` as Route;
+}
+
+export function jobPageHref(jobId: string): Route {
+  return `/pipeline/jobs/${encodeURIComponent(jobId)}` as Route;
 }
 
 export function applicationHref(applicationId: string): Route {
   return `/applications/${encodeURIComponent(applicationId)}` as Route;
+}
+
+/** The inbox list; `listQuery` is its `?filter=&page=` string, kept so Back lands on the same view. */
+export function inboxHref(listQuery: string): Route {
+  return (listQuery ? `/inbox?${listQuery}` : "/inbox") as Route;
+}
+
+/** One message, carrying the list query it was opened from for Back and next/previous. */
+export function messageHref(messageId: string, listQuery: string): Route {
+  const path = `/inbox/${encodeURIComponent(messageId)}`;
+  return (listQuery ? `${path}?${listQuery}` : path) as Route;
 }
 
 export function resumeHref(resumeId: string): Route {

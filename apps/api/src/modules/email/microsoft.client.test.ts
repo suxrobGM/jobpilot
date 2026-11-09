@@ -15,7 +15,6 @@ const session: MailboxSession = {
   accessToken: "access",
   refreshToken: "refresh",
   tokenExpiresAt: null,
-  historyId: null,
   mailboxId: "applications@example.com",
   deltaLink: null,
 };
@@ -38,11 +37,14 @@ function client(responses: Response[], calls: { url: string; init?: RequestInit 
     if (
       String(url).includes("/mailFolders/inbox?$select=id") &&
       !calls.some((call) => call.url.startsWith("https://login.microsoftonline.com/"))
-    )
+    ) {
       return Response.json({ id: "verified-inbox-id" });
+    }
     calls.push({ url: String(url), init });
     const response = responses.shift();
-    if (!response) throw new Error("Unexpected request");
+    if (!response) {
+      throw new Error("Unexpected request");
+    }
     return response;
   }) as typeof fetch);
 }

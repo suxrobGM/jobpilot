@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Support;
 
 internal static class TestWait
 {

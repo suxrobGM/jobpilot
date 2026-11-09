@@ -1,5 +1,8 @@
 import { z } from "zod/v4";
 
+/** Upwork jobs get proposals, not applications, wherever they show. */
+export const UPWORK_DOMAIN = "upwork.com";
+
 export const UPWORK_PROPOSAL_STATUSES = ["draft", "submitted", "closed"] as const;
 const upworkProposalStatusSchema = z.enum(UPWORK_PROPOSAL_STATUSES);
 export type UpworkProposalStatus = z.infer<typeof upworkProposalStatusSchema>;

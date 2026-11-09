@@ -23,64 +23,39 @@
 
 ---
 
-Applying for jobs takes hours. You fill in the same forms, adjust your resume
-for every posting, and keep track of who replied. JobPilot gives that work to
-an AI agent on your computer. You tell it what kind of job you want. It
-searches job boards, tailors your resume for each posting, fills in and sends
-the application, writes to recruiters, and keeps track of the replies. The
-JobPilot website shows where every application stands.
+JobPilot finds jobs that fit you, tailors your resume for each one, fills in
+the application, and writes to recruiters. You describe what you want once.
+The Pilot, an assistant on the JobPilot website, keeps the search going and
+asks you when it needs a decision.
 
-> You don't need an API key, and there's no usage bill. The agent runs inside
-> Claude Code or Codex, so it uses the subscription you already pay for.
-
-The agent works in a normal browser window on your computer, signed in as
-you. You can watch it, or leave it alone and check what it did later.
+The agent runs on your computer, inside Claude Code or Codex, in a browser
+window signed in as you. There's no API key and no usage bill. You can watch
+it work or check the results later.
 
 ## What it does
 
-- **Applies to jobs.** It searches LinkedIn, Indeed, Hiring Cafe, and other
-  boards, and you can add your own. Each job gets a score against your
-  resume. It can apply to the jobs you pick, or work through a list on its own
-  up to a limit you set. It answers screening questions and writes cover
-  letters along the way.
-- **Runs without you.** With the Pilot turned on, you write down your goals
-  and a daily limit, and it keeps finding jobs, applying, and following up.
-  If it needs a decision from you, it sends a notification to your phone.
-  Everything else goes into a journal you can read later.
-- **Reaches out to people.** It finds the recruiter or hiring manager for a
-  job and writes them a personal email or LinkedIn message. If you connect
-  Gmail, it reads the replies, matches them to your applications, and
-  suggests what to do next. Nothing is sent without your approval.
-- **Keeps track.** Every application sits in one list, from applied to offer,
-  with charts on top. Each tailored resume is saved as its own PDF, so you
-  know which version went to which company.
-- **Works on Upwork.** Through Upwork's own connector, it finds jobs, skips
-  clients who rarely hire, drafts proposals you send with one click, and
-  collects your invitations, offers, and messages.
+- **Finds and applies.** Searches LinkedIn, Indeed, Hiring Cafe and other
+  boards, plus any site you add. Scores each job against your resume and
+  applies to the good matches, up to your daily limit. Answers screening
+  questions and writes cover letters.
+- **Takes instructions in plain words.** "Skip jobs that need a security
+  clearance" or "look for remote roles too". Every change it makes has Undo.
+- **Asks before it acts on your behalf.** Salary questions, login codes, and
+  messages to send wait in a **Needs you** list, with optional push
+  notifications to your phone.
+- **Tracks replies.** With Gmail connected, it matches recruiter emails to
+  your applications and suggests the new status.
+- **Reaches out.** Finds the recruiter or hiring manager for a job and drafts
+  a personal email or LinkedIn message.
+- **Works on Upwork.** Skips clients who rarely hire, drafts proposals, and
+  collects invitations, offers, and messages.
 
 ## Get started
 
-You need a Claude Code or Codex subscription and [Node.js](https://nodejs.org)
-22 or newer.
+You need a Claude Code or Codex subscription and
+[Node.js](https://nodejs.org) 22 or newer.
 
-1. Install the JobPilot plugin in Claude Code or Codex (commands below).
-2. Run setup. It installs a small program called the terminal host, starts
-   the agent, and opens the dashboard. If the host is already installed, setup
-   updates it.
-3. [Create an account](https://jobpilot.suxrobgm.net) and upload your resume.
-   The agent reads it and fills in your profile.
-4. Start a search campaign. Look over the matches, then apply to the ones you
-   like, or let an auto-apply campaign handle them.
-
-> Claude Code starts on the latest Sonnet model and Codex on GPT 6 Luna. Bigger
-> models use up your weekly limit much faster and don't send any more
-> applications. [Here's why](https://jobpilot.suxrobgm.net/docs/faq).
-
-### Install the plugin
-
-#### Claude Code
-
-Run these in Claude Code:
+**Claude Code:** run these in a Claude Code session:
 
 ```text
 /plugin marketplace add https://github.com/suxrobGM/claude-plugins
@@ -88,31 +63,31 @@ Run these in Claude Code:
 /jobpilot:setup
 ```
 
-#### Codex
-
-Run these in a terminal:
+**Codex:** run these in a terminal, then run `$setup` in a new Codex session:
 
 ```text
 codex plugin marketplace add suxrobGM/codex-plugins
 codex plugin add jobpilot@sukhrob-codex-plugins
 ```
 
-Then start a new Codex session and run:
+Setup installs the terminal host (the small program that runs the agent),
+starts it, and opens JobPilot. Then:
 
-```text
-$setup
-```
+1. [Create an account](https://jobpilot.suxrobgm.net/register) and upload
+   your resume. The agent reads it and fills in your profile.
+2. On the **Pilot** page, tell it what jobs you want, then turn on **Autopilot**.
 
-Once setup is done, you can start the agent from the dock on the right side
-of the dashboard.
+Setup is the only command you type. Everything else starts from the website.
+Run setup again any time to update or repair the install.
+
+The [getting started guide](https://jobpilot.suxrobgm.net/docs/getting-started)
+covers each step.
 
 <details>
 <summary><b>Install the terminal host without the plugin</b></summary>
 
-Use one of these to install or repair the terminal host without running
-setup. The host ships with all the skills and the browser settings the agent
-needs. The plugin from the marketplace only exists to run setup the first
-time.
+The host ships with all the skills, so the marketplace plugin is only needed
+for the first setup. To install or repair the host directly:
 
 - **Windows (PowerShell):**
 
@@ -128,64 +103,22 @@ time.
 
 </details>
 
-For a step-by-step walkthrough, read the
-[getting started guide](https://jobpilot.suxrobgm.net/docs/getting-started).
-
 ## Skills
 
-You only ever type one command:
-
-```text
-/jobpilot:setup     # Claude Code
-$setup              # Codex
-```
-
-It installs the terminal host, starts the agent, and opens the dashboard. If
-the host is already installed, it updates it, so you can run it again whenever
-you want to update or fix your install.
-
-Everything else starts from a button in the dashboard. JobPilot passes the
-matching skill to the agent, and you can watch it work in the dock:
-
-| In the dashboard                             | What the agent does                                                      |
-| -------------------------------------------- | ------------------------------------------------------------------------ |
-| New campaign → Search only (`search`)        | Searches a board and scores every job against your resume.               |
-| New campaign → Auto-apply (`auto-apply`)     | Searches, then applies to matches one at a time, up to your limit.       |
-| New campaign → Networking (`networking`)     | Finds the recruiter or hiring manager and drafts a message to each.      |
-| New campaign on Upwork (`upwork-search`)     | Searches Upwork, drops low-quality clients, and ranks the rest.          |
-| New campaign → Apply to links (`apply`)      | Checks the fit of each job link you paste, then applies.                 |
-| Campaign → Resume (`resume-campaign`)        | Restarts a paused campaign and finishes its approved jobs.               |
-| Campaign → Rescan skipped (`rescan-skipped`) | Checks skipped jobs again in case they were skipped by mistake.          |
-| Campaign → Retry failed (`auto-apply`)       | Tries the failed applications again.                                     |
-| Inbox → Scan pending (`scan-inbox`)          | Sorts new email, matches it to applications, suggests status changes.    |
-| Networking → Regenerate (`networking`)       | Writes a new version of a draft message.                                 |
-| Resume → Extract from PDF (`extract-resume`) | Reads an uploaded PDF into your resume editor.                           |
-| Resume → Tailor (`tailor-resume`)            | Rewrites a copy of your resume for one job posting.                      |
-| Upwork → Proposal (`upwork-proposal`)        | Drafts a proposal for one job.                                           |
-| Upwork → Submit (`upwork-submit`)            | Sends a draft proposal after showing you the Connects cost.              |
-| Upwork → Profile (`upwork-profile`)          | Suggests a better title, overview, and skills; saves them if you agree.  |
-| Upwork → Inbox sync (`upwork-sync`)          | Brings in invitations, offers, messages, and your Connects balance.      |
-| Pilot → Start (`pilot`)                      | Hands your whole job search to the agent until you stop it.              |
-
-Some skills run in the middle of other work, and you never start them
-yourself. The agent uses them to tailor your resume before applying, write a
-cover letter, solve a captcha, or read a sign-in code from your email. The
-[full list](https://jobpilot.suxrobgm.net/docs/campaigns-and-skills) covers
-every skill.
-
-Reading replies, picking up sign-in codes, and sending networking emails all
-need a Google OAuth client that you create. The
-[email setup guide](https://jobpilot.suxrobgm.net/docs/email-setup) walks you
-through it.
+Buttons on the website ask the Pilot for work, and it runs next on your
+agent. You can also type a skill in the terminal yourself, like
+`/jobpilot:search` or `/jobpilot:apply <link>` (`$search`, `$apply` in
+Codex). The [skills guide](https://jobpilot.suxrobgm.net/docs/skills) lists
+every button and skill.
 
 ## Documentation
 
-- [User guide](https://jobpilot.suxrobgm.net/docs): setup, campaigns, skills,
-  email, credentials, and the FAQ.
-- [How JobPilot works](docs/architecture.md): a plain-language overview of
-  the website, the agent, and the terminal host.
-- [Development guide](docs/development.md): running JobPilot locally, the
-  repository layout, and technical details for contributors.
+- [User guide](https://jobpilot.suxrobgm.net/docs): setup, the Pilot,
+  skills, email, credentials, FAQ.
+- [How JobPilot works](docs/architecture.md): the website, the agent, and
+  the terminal host, in plain language.
+- [Development guide](docs/development.md): running JobPilot locally and the
+  technical details.
 
 ## License
 

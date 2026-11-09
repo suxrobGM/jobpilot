@@ -1,9 +1,10 @@
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Sessions;
+using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Sessions;
 
 public sealed class ScratchCleanerTests : IDisposable
 {
@@ -12,7 +13,7 @@ public sealed class ScratchCleanerTests : IDisposable
     private readonly ScratchCleaner cleaner = new(new HostInstall(paths: null), NullLogger<ScratchCleaner>.Instance);
 
     public ScratchCleanerTests() =>
-        paths = new InstallPaths { WorkingDir = temp.Root, PluginDir = Path.Combine(temp.Root, "plugin") };
+        paths = temp.Paths;
 
     public void Dispose()
     {
@@ -28,45 +29,45 @@ public sealed class ScratchCleanerTests : IDisposable
     }
 
     [Fact]
-    public void CleanSessionStart_RemovesTopLevelPlaywrightScratch_RegardlessOfAge()
+    public void CleanForNewSession_RemovesTopLevelPlaywrightScratch_RegardlessOfAge()
     {
         var fresh = temp.File(Path.Combine(".playwright-mcp", "console-fresh.log"));
         var aged = AgedFile(Path.Combine(".playwright-mcp", "screenshot.png"));
 
-        cleaner.CleanSessionStart(paths);
+        cleaner.CleanForNewSession(paths);
 
         Assert.False(File.Exists(fresh));
         Assert.False(File.Exists(aged));
     }
 
     [Fact]
-    public void CleanSessionStart_KeepsUnknownExtensionsAndTheBrowserProfile()
+    public void CleanForNewSession_KeepsUnknownExtensionsAndTheBrowserProfile()
     {
         var db = temp.File(Path.Combine(".playwright-mcp", "first_party_sets.db"));
         var profile = temp.File(Path.Combine(".playwright-mcp", "Default", "Preferences.json"));
 
-        cleaner.CleanSessionStart(paths);
+        cleaner.CleanForNewSession(paths);
 
         Assert.True(File.Exists(db));
         Assert.True(File.Exists(profile));
     }
 
     [Fact]
-    public void CleanSessionStart_RemovesAgedTempFiles_KeepsFreshOnes()
+    public void CleanForNewSession_RemovesAgedTempFiles_KeepsFreshOnes()
     {
         var aged = AgedFile(Path.Combine(".temp", "old-resume.pdf"));
         var fresh = temp.File(Path.Combine(".temp", "current-job.json"));
 
-        cleaner.CleanSessionStart(paths);
+        cleaner.CleanForNewSession(paths);
 
         Assert.False(File.Exists(aged));
         Assert.True(File.Exists(fresh));
     }
 
     [Fact]
-    public void CleanSessionStart_IsANoOp_WhenScratchDirectoriesAreAbsent()
+    public void CleanForNewSession_IsANoOp_WhenScratchDirectoriesAreAbsent()
     {
-        cleaner.CleanSessionStart(paths);
+        cleaner.CleanForNewSession(paths);
     }
 
     [Fact]

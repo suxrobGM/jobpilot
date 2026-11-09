@@ -1,36 +1,29 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
-import type { Pagination as PageMeta } from "@jobpilot/contracts/pagination";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Stack, Typography } from "@mui/material";
-import { PaginationFooter } from "@/components/ui/data";
-import { QuerySection, type QueryState } from "@/components/ui/feedback";
+import { PagedList } from "@/components/ui/data";
 import { FilterBar } from "@/components/ui/form";
-import { SectionCard } from "@/components/ui/layout";
 import type { PaginationParams } from "@/hooks/use-pagination";
 
 export const UPWORK_PAGE_SIZE = 10;
-
-interface PagedQuery extends QueryState {
-  data: { pagination: PageMeta } | undefined;
-}
 
 interface UpworkListFrameProps {
   filters: ReactNode;
   hasFilters: boolean;
   onClearFilters: () => void;
-  /** e.g. "12 proposals", beside the filters. */
+  /** e.g. "12 proposals", at the toolbar's right end. */
   countLabel: string;
   actions?: ReactNode;
-  query: PagedQuery;
+  query: ComponentProps<typeof PagedList>["query"];
   pager: PaginationParams;
   errorTitle: string;
   empty: ReactNode;
-  /** The rows of the current page; an empty array shows `empty`. */
+  /** The `ListRow`s of the current page; an empty array shows `empty`. */
   children: ReactNode[];
 }
 
-/** Filter row, count, a page of cards and the pager - the shape of every Upwork list. */
+/** Toolbar, a page of rows and the pager - the shape of every Upwork list. */
 export function UpworkListFrame(props: UpworkListFrameProps): ReactElement {
   const {
     filters,
@@ -44,39 +37,31 @@ export function UpworkListFrame(props: UpworkListFrameProps): ReactElement {
     empty,
     children,
   } = props;
-  const pagination = query.data?.pagination;
 
   return (
-    <SectionCard>
+    <Stack spacing={2}>
       <FilterBar
         hasFilters={hasFilters}
         onClear={onClearFilters}
         end={
-          <>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
             <Typography variant="captionMuted">{countLabel}</Typography>
             {actions}
-          </>
+          </Stack>
         }
       >
         {filters}
       </FilterBar>
 
-      <QuerySection
+      <PagedList
         query={query}
+        pager={pager}
         errorTitle={errorTitle}
         isEmpty={children.length === 0}
         empty={empty}
       >
-        <Stack spacing={1}>{children}</Stack>
-      </QuerySection>
-
-      {pagination && (
-        <PaginationFooter
-          pagination={pagination}
-          onPageChange={pager.setPage}
-          onPageSizeChange={pager.setPageSize}
-        />
-      )}
-    </SectionCard>
+        {children}
+      </PagedList>
+    </Stack>
   );
 }

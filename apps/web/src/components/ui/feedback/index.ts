@@ -1,6 +1,7 @@
 export { ConfirmDialog } from "./confirm-dialog";
 export { DetailLoadFailure } from "./detail-load-failure";
 export { DetailSkeleton } from "./detail-skeleton";
+export { DialogHeader } from "./dialog-header";
 export { EmptyState } from "./empty-state";
 export { LoadingSpinner } from "./loading-spinner";
 export { PulseDot, type PulseDotTone } from "./pulse-dot";

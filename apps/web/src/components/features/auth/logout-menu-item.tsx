@@ -22,7 +22,7 @@ export function LogoutMenuItem(props: LogoutMenuItemProps): ReactElement {
       }}
       disabled={logout.isPending}
     >
-      <ListItemIcon sx={{ minWidth: 32 }}>
+      <ListItemIcon>
         <Logout fontSize="md" />
       </ListItemIcon>
       <ListItemText primary={logout.isPending ? "Signing out…" : "Sign out"} />

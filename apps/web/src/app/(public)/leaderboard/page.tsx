@@ -17,7 +17,7 @@ export default function LeaderboardPage(): ReactElement {
   return (
     <Stack spacing={4}>
       <Stack spacing={1}>
-        <Typography variant="h1" sx={{ fontSize: { xs: "1.9rem", md: "2.4rem" } }}>
+        <Typography variant="h2" component="h1">
           Trending users
         </Typography>
         <Typography variant="body1Muted">

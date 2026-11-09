@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Avatar } from "@mui/material";
 import type { PortfolioDto } from "@/api/types";
-import { initials } from "./initials";
+import { initials } from "@/utils/format";
 
 interface PortfolioAvatarProps {
   name: string;
@@ -18,7 +18,7 @@ export function PortfolioAvatar(props: PortfolioAvatarProps): ReactElement {
       sx={{
         width: size,
         height: size,
-        fontSize: size <= 44 ? "0.9rem" : "1.4rem",
+        typography: size <= 44 ? "body2Strong" : "h3",
         bgcolor: "surfaces.elevated",
         color: "accent.primary",
         border: availability === "open" ? "2px solid" : "none",

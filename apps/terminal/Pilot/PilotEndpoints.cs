@@ -1,90 +1,64 @@
-using System.Text.Json;
 using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Pilot.Pairing;
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Sessions;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace JobPilot.Terminal.Pilot;
 
-public sealed record PilotStartRequest(string? Provider, string? ApiToken, string? ApiUrl, string? WebUrl);
+public sealed record PairingRequest(string? Provider, string? ApiToken, string? ApiUrl, string? WebUrl, string? UserId);
 
 /// <summary>The pilot part of /healthz.</summary>
 public sealed record PilotStatus
 {
-    public required bool Running { get; init; }
-
-    /// <summary>Whether pilot settings are saved.</summary>
+    /// <summary>Whether a pairing is saved; the loop runs whenever one is.</summary>
     public required bool Paired { get; init; }
 
-    /// <summary>Whether the loop is driving a session right now.</summary>
-    public required bool Conducting { get; init; }
+    /// <summary>The account the host is paired to.</summary>
+    public string? UserId { get; init; }
+
+    /// <summary>Set while the user's own typing holds new runs back.</summary>
+    public DateTimeOffset? HeldUntil { get; init; }
 
     public DateTimeOffset? LastCycleAt { get; init; }
 
     /// <summary><c>ok</c>, <c>empty</c>, or <c>error</c>.</summary>
     public string? LastCycleStatus { get; init; }
-
-    /// <summary>Restarts of a stuck session in a row; reset by a finished cycle.</summary>
-    public required int ConsecutiveTimeouts { get; init; }
 }
 
 public static class PilotEndpoints
 {
     public static void MapPilotEndpoints(this WebApplication app)
     {
-        app.MapPost("/pilot/start", Results<Ok<StatusResponse>, ProblemHttpResult> (
-            PilotStartRequest request, PilotStore store, HostStatus status) =>
+        app.MapPut("/pilot/pairing", Results<Ok<StatusResponse>, ProblemHttpResult> (
+            PairingRequest request, PairingStore store, HostStatus status) =>
         {
-            var provider = Provider.Find(request.Provider);
-            if (string.IsNullOrWhiteSpace(request.ApiToken))
+            var provider = Provider.Parse(request.Provider);
+            if (!ApiConnection.TryParse(request.ApiToken, request.ApiUrl, request.WebUrl, out var api, out var problem))
             {
-                return Problems.BadRequest("apiToken must be a non-empty string.");
+                return Problems.BadRequest(problem);
             }
 
-            if (!IsHttpUrl(request.ApiUrl))
-            {
-                return Problems.BadRequest("apiUrl must be an absolute HTTP(S) URL.");
-            }
-
-            if (!IsHttpUrl(request.WebUrl))
-            {
-                return Problems.BadRequest("webUrl must be an absolute HTTP(S) URL.");
-            }
-
-            store.Save(new PilotSettings
+            store.Save(new PilotPairing
             {
                 Provider = provider,
-                ApiToken = request.ApiToken,
-                ApiUrl = request.ApiUrl!,
-                WebUrl = request.WebUrl!,
-                Running = true,
+                Api = api,
+                UserId = request.UserId,
             });
             return TypedResults.Ok(status.Get());
         });
 
-        // The provider CLI's OpenTelemetry log exporter (OTLP/HTTP JSON) posts here; see UsageMeter.
-        app.MapPost("/v1/logs", async Task<IResult> (HttpRequest request, UsageMeter meter) =>
+        app.MapDelete("/pilot/pairing", (PairingStore store, HostStatus status) =>
         {
-            try
-            {
-                using var export = await JsonDocument.ParseAsync(request.Body, cancellationToken: request.HttpContext.RequestAborted);
-                meter.Read(export.RootElement);
-                return Results.Text("{}", "application/json");
-            }
-            catch (JsonException)
-            {
-                return TypedResults.BadRequest();
-            }
+            store.Clear();
+            return TypedResults.Ok(status.Get());
         });
 
-        app.MapPost("/pilot/stop", (PilotStore store, HostStatus status) =>
+        // Ends the hold the user's typing put on new runs.
+        app.MapDelete("/pilot/hold", (TerminalSession terminal, HostStatus status) =>
         {
-            // Keeps the settings and the session; the loop interrupts the agent's turn and stops starting cycles.
-            store.SetRunning(false);
+            terminal.ResetLastUserInput();
             return TypedResults.Ok(status.Get());
         });
     }
-
-    internal static bool IsHttpUrl(string? value) =>
-        Uri.TryCreate(value, UriKind.Absolute, out var uri)
-        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 }

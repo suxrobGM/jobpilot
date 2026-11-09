@@ -133,7 +133,7 @@ export function FileUpload(props: FileUploadProps): ReactElement {
           "&:hover": disabled || loading ? undefined : { borderColor: t.palette.accent.primary },
         })}
       >
-        <CloudUpload fontSize="xxl" />
+        <CloudUpload fontSize="xl" />
         <Typography variant="body2" sx={{ mt: 1 }}>
           {loading
             ? "Uploading…"

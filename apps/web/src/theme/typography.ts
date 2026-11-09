@@ -1,6 +1,5 @@
 import type { TypographyVariantsOptions } from "@mui/material/styles";
-import { line, surfaces, textColors } from "./palette";
-import { radii } from "./tokens";
+import { textColors } from "./palette";
 
 export const fontFamilies = {
   body: 'var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -9,16 +8,6 @@ export const fontFamilies = {
 } as const;
 
 const displayStretch = "125%";
-
-const monoPill = {
-  fontFamily: fontFamilies.mono,
-  display: "inline-block",
-  whiteSpace: "nowrap",
-  borderRadius: radii.pill,
-  color: textColors.secondary,
-  border: `1px solid ${line.border}`,
-  backgroundColor: surfaces.elevated,
-};
 
 /** `docsH4` reuses this size so an h4 sits flush with the prose around it. */
 const docsBody = {
@@ -35,11 +24,11 @@ const docsHeading = {
 } as const;
 
 // The Muted and Strong variants are these plus one property, so the scale has one source.
-const body1 = { fontFamily: fontFamilies.body, fontSize: "0.8125rem", lineHeight: 1.55 } as const;
-const body2 = { fontFamily: fontFamilies.body, fontSize: "0.75rem", lineHeight: 1.5 } as const;
+const body1 = { fontFamily: fontFamilies.body, fontSize: "0.9375rem", lineHeight: 1.55 } as const;
+const body2 = { fontFamily: fontFamilies.body, fontSize: "0.875rem", lineHeight: 1.5 } as const;
 const caption = {
   fontFamily: fontFamilies.body,
-  fontSize: "0.6875rem",
+  fontSize: "0.75rem",
   letterSpacing: "0",
 } as const;
 const overline = {
@@ -59,15 +48,15 @@ export const typography: TypographyVariantsOptions = {
     fontFamily: fontFamilies.display,
     fontStretch: displayStretch,
     fontWeight: 700,
-    fontSize: "2.25rem",
-    lineHeight: 1.05,
+    fontSize: "clamp(2rem, 1.4rem + 2.4vw, 2.9rem)",
+    lineHeight: 1.1,
     letterSpacing: "-0.025em",
   },
   h2: {
     fontFamily: fontFamilies.display,
     fontStretch: displayStretch,
     fontWeight: 700,
-    fontSize: "1.75rem",
+    fontSize: "clamp(1.75rem, 1.3rem + 2vw, 2.5rem)",
     lineHeight: 1.15,
     letterSpacing: "-0.02em",
   },
@@ -93,19 +82,13 @@ export const typography: TypographyVariantsOptions = {
     fontSize: "0.9375rem",
     lineHeight: 1.35,
   },
-  h6: {
-    fontFamily: fontFamilies.body,
-    fontWeight: 500,
-    fontSize: "0.8125rem",
-    lineHeight: 1.4,
-  },
   body1,
   body2,
   button: {
     fontFamily: fontFamilies.body,
     textTransform: "none",
     fontWeight: 500,
-    fontSize: "0.8125rem",
+    fontSize: "0.875rem",
     letterSpacing: 0,
   },
   caption,
@@ -114,9 +97,6 @@ export const typography: TypographyVariantsOptions = {
   body1Muted: { ...body1, ...muted },
   body2Muted: { ...body2, ...muted },
   captionMuted: { ...caption, ...muted },
-  // Callers override `fontSize`: ring labels run smaller than board chips.
-  monoChip: { ...monoPill, fontSize: "0.75rem", lineHeight: 1.55, padding: "4px 10px" },
-  skillChip: { ...monoPill, fontSize: "0.7rem", lineHeight: 1.5, padding: "2px 8px" },
   statValue: {
     fontFamily: fontFamilies.mono,
     fontWeight: 600,
@@ -124,15 +104,6 @@ export const typography: TypographyVariantsOptions = {
     lineHeight: 1.1,
     letterSpacing: "-0.02em",
     fontVariantNumeric: "tabular-nums",
-  },
-  statLabel: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.625rem",
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    lineHeight: 1,
-    fontWeight: 600,
-    color: textColors.secondary,
   },
   body1Strong: { ...body1, ...strong },
   body2Strong: { ...body2, ...strong },
@@ -160,24 +131,6 @@ export const typography: TypographyVariantsOptions = {
     fontSize: "0.6875rem",
     lineHeight: 1.5,
     color: textColors.secondary,
-  },
-  displayLg: {
-    fontFamily: fontFamilies.display,
-    fontStretch: displayStretch,
-    fontWeight: 700,
-    // Plain clamp() keeps this out of responsiveFontSizes; bounds track hero.tsx's h1 (2rem→2.9rem).
-    fontSize: "clamp(2rem, 1.4rem + 2.4vw, 2.9rem)",
-    lineHeight: 1.1,
-    letterSpacing: "-0.025em",
-  },
-  displayMd: {
-    fontFamily: fontFamilies.display,
-    fontStretch: displayStretch,
-    fontWeight: 700,
-    // Min tracks job-detail.tsx's 1.75rem heading; max matches the cta-band h2 ceiling.
-    fontSize: "clamp(1.75rem, 1.3rem + 2vw, 2.5rem)",
-    lineHeight: 1.15,
-    letterSpacing: "-0.02em",
   },
   docsBody,
   docsH1: {

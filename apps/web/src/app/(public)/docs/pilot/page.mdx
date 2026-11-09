@@ -2,183 +2,241 @@ import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("pilot", {
   description:
-    "Let JobPilot run your search on its own: set your goals once, answer the odd question from your phone, and check the journal when you like.",
+    "Let JobPilot run your search: tell it what you want, talk to it like an assistant, and step in only when it needs you.",
 });
 
 # The Pilot
 
-The Pilot runs your job search without you. You tell it what you're looking
-for and set some limits. It then finds and scores jobs, applies, contacts
-people and follows up, reads recruiter replies, and drafts interview replies,
-prep notes, and posts.
+The Pilot runs your job search. You tell it what jobs you want. It finds
+and scores jobs, applies, reaches out to people, reads replies, and drafts
+interview replies and prep notes. When it needs a decision, it asks.
 
-You can see everything it does in a journal that updates live. When it needs
-a decision from you, it asks a short question, and it can send that question
-to your phone.
+It works through the agent on your computer, so you can watch every step.
 
-The Pilot does the same work as [campaigns](/docs/campaigns-and-skills), so
-you don't need to run those yourself. They're all still there if you want to
-do something by hand.
+## The Pilot page
 
-## How it works
+- **Top bar.** Applications sent today against your daily limit, and the
+  **Autopilot** switch.
+- **Needs you** (left). Everything waiting on you: questions to answer,
+  suggested changes to approve, applications that stopped for your input, and
+  notices. You answer most of them right there. A stopped application opens
+  on its own page.
+- **The thread** (middle). The Pilot reports what it did, newest at the
+  bottom: "Applied to Acme (82) and Globex (74)", with a line per job below.
+  Your messages, changes with **Undo**, and the morning summary show here too.
+  The last line says what it's doing now.
+- **Overview** (right). A chart of the week, where the Pilot looks (the
+  boards it rotates, your searches with applications sent from each this
+  week, job alert emails, and web search), and your rules.
 
-The Pilot does its work in small steps called **cycles**. Each cycle does one
-thing:
+On a phone, these are three tabs: **Chat**, **Needs you**, and **Overview**.
 
-```text
-looks for work ──► picks the most useful task ─┬─► finds jobs ────┐
-                                               ├─► scores them ───┤
-                                               ├─► applies ───────┼─► writes to the journal
-                                               ├─► reaches out ───┤
-                                               └─► writing tasks ─┘
-```
+## Getting started
 
-1. **Look for work.** A small program on your computer asks the server what
-   needs doing: questions you've answered, jobs you've approved, replies to
-   read, searches that are due. If there's nothing, it goes back to sleep
-   without starting the AI, so an idle Pilot doesn't use any of your Claude
-   or Codex quota.
-2. **Pick a task.** If there is work, it takes the most important task and
-   starts the AI on it with a fresh, empty context.
-3. **Do the work.** Browser tasks go to a helper agent built for that one
-   job. One finds new jobs on a board, one scores them, one fills in a single
-   application, and one finds a contact and writes the message. Each helper
-   only reads what it needs, which keeps usage down. Tasks that are just
-   writing, like reading a reply or making prep notes, the AI does itself.
-4. **Write it down.** The result goes into the journal. If more work is
-   waiting, the next cycle starts a few seconds later. If not, the Pilot
-   waits for your check interval.
+Tell the Pilot what you want in the message box, the way you'd brief a
+recruiter: "Senior frontend roles, remote in the US, at least $150k. Skip
+crypto and agencies." It turns that into a few searches and rules and shows
+the change in the thread with **Undo**. Turn on **Autopilot** and it starts.
 
-It does one task per cycle on purpose. Each result is saved on the server
-before the next task starts, so if your computer crashes, restarts, or goes to
-sleep, nothing is lost and the next cycle carries on from there. The program
-also restarts runs that get stuck and starts up again after a reboot, so you
-don't have to keep a browser tab open.
+If you turn on autopilot first, the Pilot sets up searches from your resume.
+Tell it later if you want something different.
 
-## Starting it
+## Autopilot
 
-1. Check that the agent is running in the dock on the right of the
-   dashboard. If it's offline, see [Getting started](/docs/getting-started).
-2. Open **Pilot** in the workspace, write your instructions, and save.
-3. Press **Start**.
+With autopilot **on**, the Pilot picks its own work: runs searches, scores
+results, applies to good matches, follows up, and reads your inbox.
 
-The first start links your computer to the Pilot. From then on the terminal
-host keeps it running after a reboot, crash, or sleep until you stop it.
+With autopilot **off**, it only does what you ask: your messages, buttons you
+press, and questions you answer.
 
-## Your instructions
+## Talking to it
 
-The Instructions tab shows **Goals**, **Searches** and **Research** at the top. Everything
-else is optional and sits under **Advanced settings**.
+Type in the message box as you would to a person:
 
-- **Goals.** Describe what you want in your own words: the kind of role,
-  what matters most, and any hard limits. For example, "senior TypeScript,
-  remote, at least $150k, by October". This is the only part you have to fill
-  in.
-- **Searches.** The Pilot writes these from your goals. A search that keeps
-  finding new jobs runs again soon; one that keeps coming up empty runs less
-  often. You can see each search here, with how many jobs it found recently
-  and when it runs next, but you can't edit them.
-- **Research.** Searches beyond your boards; see **Research** below.
-- **Operating limits.** How many applications a day, the lowest match score
-  worth applying to, and how often to check for work.
+- "Stop applying to jobs that need a security clearance"
+- "Find research assistant roles at universities in Pennsylvania"
+- "Why did you skip the Waymo job?"
+
+Your messages go ahead of other work. When you ask for a change, it makes it
+and shows it in the thread with **Undo**.
+
+Paste job links, or press **Job links**, to add jobs to your pipeline at
+once. To search past your boards, ask, like "find ML roles at university labs
+in PA". The Pilot says what it will search before it starts. **Cancel** on that
+line stops it while it's still queued.
+
+Buttons elsewhere in the app, like **Apply now** on a job, work the same way:
+the request shows in the thread and runs next, with autopilot on or off.
+
+While a task runs, its line in the thread has three buttons:
+
+- **Watch** opens the task's steps.
+- **Tell this task** sends a note to the task in progress, like "use my other
+  resume for this one", without stopping it.
+- **Stop** ends the task. The Pilot moves on.
+
+## Searches and rules
+
+To change what the Pilot looks for, tell it: "add research engineer roles",
+"only Boston and remote", "drop the data analyst search". **Manage** next to
+**Sources** in the Overview, or **Edit** next to **Rules**, opens a page with
+your searches, rules, and standing answers.
+
+- **Searches.** What the Pilot looks for. Each shows what it's after in your
+  words, like "Series A-C startups; needs OPT sponsorship". A search that
+  keeps finding new jobs runs more often; one that comes up empty runs less.
+  **Resume all** under **Searches** restarts paused ones.
+- **Rules.** Applications per day, the lowest match score worth applying to,
+  and **deal-breakers** that rule a job out, like "security clearance" or
+  "unpaid". The server enforces these, so the Pilot can't go past them.
+- **Standing answers.** When a form asks something that applies to other jobs
+  too, like your salary expectation, save your answer and the Pilot reuses it.
+
+What you ask for in a message is done right away. On its own, the Pilot
+changes only its searches; changes to your rules and standing answers are
+suggested, and you approve or dismiss each one under **Needs you**. Every
+change can be undone for 7 days.
+
+## Sources
+
+The Overview's **Sources** section lists where the Pilot finds jobs.
+Job alert emails have a button that imports them now; for a web search now,
+ask the Pilot to find more jobs.
+
+- **Job boards.** The Pilot runs each search on the boards you check, one board
+  per cycle, in the order you set. To keep a search on one board, open it
+  under **Searches & rules** and choose its **Board**. With no board checked,
+  unpinned searches can't run, and the Pilot asks you to pick one. Set boards,
+  their order, and their logins on the **Job boards** page.
+- **Job alert emails.** Reads job alert emails from boards like LinkedIn and
+  adds the jobs. Set the schedule under **Settings → Behavior**.
+- **Web search.** Finds postings your boards miss, such as company career
+  pages and university and lab portals. It runs once your first searches
+  exist, then weekly, and sooner when your searches keep coming up empty. It
+  never logs in, signs up, or applies while researching.
+
+## Settings
+
+**Settings → Behavior**. The defaults suit most people.
+
 - **Networking.** Off until you turn it on. Set a daily limit and how long to
-  wait before following up, then choose how much freedom it has on each
-  channel. Email can be **Draft only**, **Review each**, or **Auto-send**.
-  LinkedIn goes no further than **Review each**, so nothing is ever sent
-  there without you.
-- **Boards.** Which job boards to search, in order. The Pilot moves to the
-  next board each cycle so they all get searched. If you leave this empty,
-  each search sticks to the board it was created on.
-- **Platforms.** Where the Pilot may draft posts about you. It never
-  publishes them; you review every one.
+  wait before following up. Email can be **Draft only**, **Review each**, or
+  **Auto-send**. LinkedIn goes no further than **Review each**.
+- **Job alerts.** Whether alert emails import on a schedule, and when.
+- **Check interval.** How often an idle Pilot looks for work.
 
-Each search, the job alert import, and research keep one campaign each, which
-stays open between runs. Pausing that campaign pauses its search or feed until
-you resume it, and the Pilot won't ask whether to restart it; **Run now** or
-**Research now** resumes it too.
+### Cap-exempt employers
 
-### Research
-
-Boards miss many postings, mostly university and research-institute portals
-and lab pages. Research searches the open web for postings that fit your goals,
-reads each one, scores it, and adds it to the **Research** campaign. From there
-good matches are applied to like any other.
-
-- **When it runs.** Once when you first set goals, then weekly, and within a
-  day when most of your searches keep coming up empty. **Research now** runs it
-  on the next cycle.
-- **Cap-exempt employers.** Universities, their affiliated hospitals and
-  institutes, and nonprofit or government research employers can sponsor an
-  H-1B outside the yearly cap. When the Pilot finds evidence of that, the job
-  gets a **Cap-exempt** tag that links to it. Turn on **Prefer H-1B
-  cap-exempt employers** in Settings to have those jobs applied to first.
-- **Boards worth adding.** The run summary names sites that kept turning up
-  good postings. The Pilot never adds a board itself.
-- It never logs in, signs up, contacts anyone, or applies while researching.
-
-The goals guide the Pilot's judgment, but the limits are hard rules. The
-server enforces them, so the Pilot can't go over a limit however your goals
-are worded. You can change anything at any time, and the next cycle picks up
-the change.
+Universities, their hospitals and institutes, and nonprofit or government
+research employers can sponsor an H-1B outside the yearly cap. When the Pilot
+finds evidence of this, the job gets a **Cap-exempt** tag. Turn on **Prefer
+H-1B cap-exempt employers** in your rules to apply to those first.
 
 ## What it does alone and what it asks about
 
-| Does on its own | Always asks you first |
+| Does on its own | Asks you first |
 | --- | --- |
-| Applies to good matches, up to your daily limit | Login codes it can't read itself, from SMS or an authenticator app |
-| Reads sign-in codes that arrive in your connected email | Salary and screening questions on an application |
-| Sends networking emails you set to Auto-send, up to your limit | Sending a LinkedIn message |
-| Follows up on networking messages, as your settings allow | Publishing any post |
-| Reads recruiter replies and suggests a new status | Sending an interview reply it drafted |
-| Drafts emails, follow-ups, interview replies, prep notes, and posts | Whether to restart a campaign you paused |
-| Researches the open web for postings and tags cap-exempt employers | Adding a board it suggests |
-
-Everything in the right-hand column turns into a question for you. The Pilot
-never sends, posts, or changes an application's status without your say.
+| Applies to good matches, up to your daily limit | Login codes from SMS or an authenticator app |
+| Reads sign-in codes sent to your connected email | Screening questions it has no saved answer for |
+| Sends networking emails set to **Auto-send** | Sending a LinkedIn message |
+| Follows up, as your settings allow | Sending an interview reply |
+| Reads replies and suggests a new status | Changing your rules or standing answers |
+| Drafts emails, interview replies, and prep notes | Publishing a post |
+| Adds, renames, and pauses its own searches | Adding a board it found |
 
 ## Questions and notifications
 
-When the Pilot needs your decision, it creates a **question**: a small card
-under **Needs attention** on the Overview tab. Anything that depends on the
-answer waits until you reply. To get a push notification when a question
-comes in, even with the dashboard closed, turn on notifications under
-**Settings → Notifications**. You do this once per device.
+Questions wait under **Needs you** for as long as you need. Login codes are
+the exception: they expire in about five minutes, and if you miss one, the
+Pilot skips that job.
 
-Most questions wait as long as you need. Login codes are different. They
-expire after about five minutes, and if you miss one the Pilot skips that job
-and moves on. Codes sent by email never reach you as questions, because the
-agent reads them from your inbox.
+To get questions on your phone, even with JobPilot closed, turn on
+**Settings → Notifications** on each device.
 
-## The journal and daily summary
+## Notices
 
-Everything the Pilot does is logged in the **journal** on the Activity tab.
-You can filter it by type, or group it **by cycle** to see what each cycle
-did, how it went, and how long it took. The Overview tab shows the latest
-entries and when the next cycle is due.
+**Needs you** also points out patterns in your data, each with a button to act
+on it:
 
-Once a day, after 07:00 UTC, the Pilot writes a summary of the past 24 hours:
-applications sent, replies read, messages sent, and questions waiting for
-you. **Export** downloads the whole history as a file.
+- your email isn't connected, or needs reconnecting;
+- mail unread for more than two days;
+- 25 or more applications in three weeks with no replies;
+- many jobs scoring just under your minimum score;
+- a week of autopilot using under a quarter of your daily limit.
+
+**Dismiss** hides a notice for two weeks.
+
+## The pipeline
+
+**Pipeline** holds every job the Pilot found, in four tabs:
+
+- **To review.** Best matches first, with each job's score against your
+  minimum. **Approve** or **Skip** one, or select several.
+- **In progress.** Approved, applying, or waiting on you.
+- **Applied.** Every application, from applied to offer. See
+  [application statuses](/docs/skills).
+- **Not applied.** Skipped or failed, with the reason. **Retry** a failed
+  job, or **Rescan** a skipped one.
+
+Filter by source (a search, job alerts, research, links you added), board, or
+text. Jobs found over a month ago show a clock, and a banner offers to skip
+them all. A job is never added twice.
+
+## Watching it work
+
+The agent drawer, opened from the agent button on the left rail or **Watch**
+in the thread, has two tabs:
+
+- **Steps.** The task in progress as short lines: "Opened
+  boards.greenhouse.io/acme/jobs/42", "Filled 6 fields". Works on any device,
+  including your phone. Steps never show what was typed into forms.
+- **Terminal.** The live agent session. Only on the computer running the
+  agent.
+
+If you type in the terminal, the Pilot holds new tasks for 3 minutes so it
+doesn't interrupt you. **Hand back** in the thread ends the wait early.
+
+## How it works
+
+The Pilot does its work as small tasks, one at a time:
+
+1. The agent asks the server what needs doing: your messages, buttons you
+   pressed, answered questions, jobs to apply to, replies to read, searches
+   that are due. With nothing to do, the AI stays off and uses none of your
+   quota.
+2. It takes the most important task. Your messages come first, then your
+   requests, then the rest.
+3. It does the task with a fresh context. Browser work goes to a helper made
+   for one thing: finding jobs on a board, scoring them, filling in one
+   application, or writing to one contact.
+4. It reports the result in the thread and moves on.
+
+Results are saved as it goes, so a crash or sleep loses nothing. After a
+restart, start the agent again and it picks up where it stopped. You don't
+need to keep JobPilot open in a browser.
+
+Each morning after 07:00 UTC, the thread gets a summary of the last day:
+applications sent, replies read, messages sent, and questions waiting.
+**Settings → Diagnostics** has every run, its token cost, and an export.
 
 ## Interviews
 
-When a recruiter invites you to interview, the Pilot drafts a short reply with
-your availability and shows it to you for approval. It never sends that reply
-itself. It also writes prep notes covering behavioral, technical, and system
-design questions plus notes on the company, and attaches them to the
-application.
+When a recruiter invites you to interview, the Pilot drafts a reply with your
+availability and waits for your approval. It also writes prep notes covering
+behavioral, technical, and system design questions, plus notes on the company,
+and attaches them to the application.
 
 ## Troubleshooting
 
-- **The host is offline.** Start the agent from the dock: one click on
-  Windows, or one of the commands it shows on macOS and Linux. The Pilot picks
-  up again by itself once the host is back.
-- **The Pilot paused after several stuck runs.** The host stops to avoid
-  wasting your machine's time. Look at the terminal in the dock to see what
-  got stuck, then start the Pilot again.
-- **One board keeps failing.** The Pilot checks that board once and writes
-  what it found in the journal. Usually it's an expired login, and it signs
-  back in on the spot. Other boards keep running either way.
+- **The agent is offline.** Open the agent drawer and start it. The Pilot
+  carries on once it's back.
+- **Nothing is happening.** Read the last line of the thread. "Autopilot is
+  off" means it only does what you ask. "You're using the terminal" clears 3
+  minutes after you stop typing, or at once with **Hand back**.
+- **A task is stuck.** Open **Steps** or **Terminal** to see where, then
+  **Stop** it or use **Tell this task**.
+- **One board keeps failing.** Usually an expired login. The Pilot checks the
+  board, signs back in if it can, and reports what it found. Other boards keep
+  running.
 
-Next: [Campaigns & skills](/docs/campaigns-and-skills), for doing the same
-work by hand.
+Next: [Skills](/docs/skills).

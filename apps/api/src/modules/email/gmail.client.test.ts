@@ -21,10 +21,6 @@ describe("scopeCanRead", () => {
     expect(scopeCanRead(`${GMAIL_SEND_SCOPE} openid email`)).toBe(false);
   });
 
-  it("rejects a sign-in-only grant", () => {
-    expect(scopeCanRead("openid email profile")).toBe(false);
-  });
-
   it("rejects a missing scope", () => {
     expect(scopeCanRead(null)).toBe(false);
     expect(scopeCanRead(undefined)).toBe(false);

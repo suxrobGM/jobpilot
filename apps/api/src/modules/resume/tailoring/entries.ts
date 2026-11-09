@@ -2,7 +2,7 @@
 // lands in `report.violations`, so one response lists them all.
 import type { ResumeExperience, ResumeProject } from "@jobpilot/contracts/resume";
 import type { StructureAudit, StructurePlan } from "../variants/variant.schema";
-import { parseResumeDate, spanOf } from "./dates";
+import { dateSpan, parseResumeDate } from "./dates";
 
 /** The employer a promoted entry gets when the model names none. */
 const DEFAULT_UMBRELLA_COMPANY = "Independent Software Development";
@@ -82,7 +82,7 @@ export function combineEntries(
 
   const target = experience[merge.into];
   const group = [target, ...absorbed.map((index) => experience[index])];
-  const span = spanOf(group);
+  const span = dateSpan(group);
   if (!span) {
     report.violations.push(
       `mergeEntries: cannot merge ${target.company} - no parseable start date among the merged roles.`,
@@ -166,7 +166,7 @@ export function promoteToEntry(
   }
 
   // Non-null: every chosen project parsed a start date above.
-  const span = spanOf(chosen)!;
+  const span = dateSpan(chosen)!;
   report.audit.promoted.push({
     company,
     projects: chosen.map((project) => project.name),

@@ -1,10 +1,12 @@
 // Films one page during a real run, plus the agent's Chrome via Windows Graphics Capture.
 // Every source is stamped against one wall clock so the edit can line them up.
-//   node live.js <name> [--start] [--minutes N] [--path /] [--ready <selector>]
-// --start clicks the first "Start" button on camera. Stop early by creating takes/<name>/STOP.
+//   node live.js <name> [--start] [--minutes N] [--path /] [--ready <selector>] [--do scene.js]
+// --start clicks the first "Start" button on camera. --do runs a scene module's default export
+// ({ page, log }) after rolling, for the user's on-camera actions. Stop early by creating takes/<name>/STOP.
 import { execFile, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { click, ENCODER, hideCursor, open, roll } from "./cam.js";
 
 // Regex matched against chrome.exe command lines to find the agent's own browser.
@@ -36,7 +38,9 @@ const cam = await open({ path: PAGE_PATH, ready: READY });
 const { browser, page } = cam;
 let frames = 0;
 const stopWeb = await roll(page, path.join(dir, "web.mkv"), cam, () => {
-  if (frames === 0) log("web first frame");
+  if (frames === 0) {
+    log("web first frame");
+  }
   frames++;
 });
 log("web recording");
@@ -52,7 +56,8 @@ function findAgentWindow() {
   );
 }
 function startWindowCapture(hwnd) {
-  const file = path.join(dir, `agent-${windowTakes.length}.mkv`);
+  // MPEG-TS, not MKV: the capture is killed when the window idles, and a killed MKV loses its tail.
+  const file = path.join(dir, `agent-${windowTakes.length}.ts`);
   const proc = spawn(
     "ffmpeg",
     [
@@ -61,7 +66,8 @@ function startWindowCapture(hwnd) {
       "error",
       "-y",
       "-filter_complex",
-      `gfxcapture=hwnd=${hwnd}:capture_cursor=0:max_framerate=30,hwdownload,format=bgra,format=yuv420p`,
+      // Windows can have odd pixel sizes; yuv420p needs even ones or the encoder stalls silently.
+      `gfxcapture=hwnd=${hwnd}:capture_cursor=0:max_framerate=30,hwdownload,format=bgra,crop=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p`,
       ...ENCODER,
       file,
     ],
@@ -75,9 +81,13 @@ function startWindowCapture(hwnd) {
 const watchWindow = setInterval(async () => {
   const found = await findAgentWindow();
   const hwnd = found ? found.split("|")[1] : null;
-  if (current && current.proc.exitCode !== null) current = null;
+  if (current && current.proc.exitCode !== null) {
+    current = null;
+  }
   if (hwnd && (!current || current.hwnd !== hwnd)) {
-    if (current) current.proc.stdin.write("q");
+    if (current) {
+      current.proc.stdin.write("q");
+    }
     log(`agent window: ${found}`);
     current = startWindowCapture(hwnd);
   }
@@ -86,7 +96,9 @@ const watchWindow = setInterval(async () => {
 let lastStatus = "";
 const watchHost = setInterval(async () => {
   try {
-    if (!HEALTH_URL) return;
+    if (!HEALTH_URL) {
+      return;
+    }
     const s = JSON.stringify(await (await fetch(HEALTH_URL)).json());
     if (s !== lastStatus) {
       log(`host ${s}`);
@@ -104,17 +116,28 @@ if (flag("--start")) {
   await hideCursor(page);
 }
 
+if (opt("--do", null)) {
+  const scene = await import(pathToFileURL(path.resolve(opt("--do"))).href);
+  await scene.default({ page, log });
+}
+
 const deadline = Date.now() + MINUTES * 60_000;
-while (Date.now() < deadline && !fs.existsSync(STOP)) await new Promise((r) => setTimeout(r, 1000));
+while (Date.now() < deadline && !fs.existsSync(STOP)) {
+  await new Promise((r) => setTimeout(r, 1000));
+}
 
 log("stopping");
 clearInterval(watchWindow);
 clearInterval(watchHost);
-if (current) current.proc.stdin.write("q");
+if (current) {
+  current.proc.stdin.write("q");
+}
 await stopWeb();
 await new Promise((r) => setTimeout(r, 3000));
 // gfxcapture only reads "q" between frames; an idle window never yields one.
-if (current && current.proc.exitCode === null) current.proc.kill();
+if (current && current.proc.exitCode === null) {
+  current.proc.kill();
+}
 await browser.close();
 log(`done frames=${frames} agentTakes=${windowTakes.length}`);
 events.end();

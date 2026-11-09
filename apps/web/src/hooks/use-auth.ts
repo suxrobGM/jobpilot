@@ -1,39 +1,39 @@
 "use client";
 
-import type { LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
+import type { DeleteAccountInput, LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { authQueries } from "@/api/queries";
-import type { AuthSessionResponse, AuthUserDto, LogoutResponse } from "@/api/types";
+import type {
+  AuthSessionResponse,
+  AuthUserDto,
+  DeleteAccountResponse,
+  LogoutResponse,
+} from "@/api/types";
 import { type ApiMutationResult, useApiMutation } from "@/api/use-api-mutation";
-
-export interface UseSessionResult {
-  /** Null while loading and when signed out. */
-  user: AuthUserDto | null;
-}
 
 export interface UseAuthActionsResult {
   login: ApiMutationResult<AuthSessionResponse, LoginInput>;
   register: ApiMutationResult<AuthSessionResponse, RegisterInput>;
   logout: ApiMutationResult<LogoutResponse, void>;
+  deleteAccount: ApiMutationResult<DeleteAccountResponse, DeleteAccountInput>;
 }
 
-/** Separate from `useAuthActions` so signed-out pages don't drag in a guaranteed-401 `me` fetch. */
-export function useSession(): UseSessionResult {
+/** Null while loading and when signed out. Separate from `useAuthActions` so signed-out pages skip the 401 `me` fetch. */
+export function useSession(): AuthUserDto | null {
   const meQuery = useQuery({ ...authQueries.me(), retry: false });
-
-  return { user: meQuery.data ?? null };
+  return meQuery.data ?? null;
 }
 
-/** Login and register land on `/workspace`; the proxy routes an empty profile on to onboarding. */
+/** Login and register land on `/pilot`; the proxy routes an empty profile on to onboarding. */
 export function useAuthActions(): UseAuthActionsResult {
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const onSession = () => {
     queryClient.invalidateQueries({ queryKey: authQueries.me().queryKey });
-    router.push("/workspace");
+    router.push("/pilot");
   };
 
   // The forms render these errors inline - no toast on top.
@@ -47,12 +47,17 @@ export function useAuthActions(): UseAuthActionsResult {
     showErrorToast: false,
   });
 
-  const logout = useApiMutation(() => api.auth.logout.post(), {
-    onSuccess: () => {
-      queryClient.clear();
-      router.push("/login");
-    },
-  });
+  const onSignedOut = () => {
+    queryClient.clear();
+    router.push("/login");
+  };
 
-  return { login, register, logout };
+  const logout = useApiMutation(() => api.auth.logout.post(), { onSuccess: onSignedOut });
+
+  const deleteAccount = useApiMutation(
+    (body: DeleteAccountInput) => api.auth.account.delete(body),
+    { onSuccess: onSignedOut, showErrorToast: false },
+  );
+
+  return { login, register, logout, deleteAccount };
 }

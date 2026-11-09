@@ -38,7 +38,7 @@ export function parseResumeDate(raw: string | undefined): number | null {
 }
 
 /** Earliest start and latest end, as the original strings. */
-export function spanOf(
+export function dateSpan(
   entries: { start?: string; end?: string }[],
 ): { start: string; end: string } | null {
   const parsed = (raws: (string | undefined)[]) =>

@@ -1,0 +1,123 @@
+import { buildDocsMetadata } from "@/components/features/docs";
+
+export const metadata = buildDocsMetadata("skills", {
+  description:
+    "What each button asks the Pilot to do, the skills you can run yourself in the terminal, and how applications move through your pipeline.",
+});
+
+# Skills
+
+Skills are the tasks the agent knows how to do: search a board, apply to a
+job, read your inbox, write a proposal. [The Pilot](/docs/pilot) picks which
+one to run and when. This page covers what each button does and how to run a
+skill yourself.
+
+## What each button does
+
+Each button asks the Pilot for that work. The request shows in the thread and
+runs next, with autopilot on or off. It works from your phone too; the agent
+on your computer picks it up.
+
+| Button | What the agent does |
+| --- | --- |
+| **Pipeline → Apply now** | Applies to the job. |
+| **Pipeline → Retry** | Tries a failed application again. |
+| **Pipeline → Rescan** | Scores a skipped job again, in case it was skipped by mistake. |
+| **Inbox → Scan pending** | Sorts new email, matches it to applications, and suggests status changes. |
+| **Networking → Find contacts** | Finds recruiters or hiring managers and drafts a message to each. |
+| **Networking → Rewrite** | Writes a new version of the selected drafts. |
+| **Resumes → Extract from PDF** | Reads a PDF into the resume editor. |
+| **Resumes → Tailor for job** | Makes a copy of your resume for one job. |
+| **Pipeline → Draft proposal** | Drafts an Upwork proposal for the job. |
+| **Upwork → Submit on Upwork** | Sends a proposal after showing you the Connects cost. |
+| **Upwork → Generate suggestions** | Suggests a better profile title, overview, and skills. |
+| **Upwork → Sync** | Brings in invitations, offers, messages, and your Connects balance. |
+
+**Add job links**, on the Pipeline page or in the Pilot's message box, adds
+jobs to your pipeline right away. With autopilot on, the Pilot then scores
+them and applies to good fits.
+
+Uploading a resume reads it straight away. Uploading a new PDF onto an
+existing resume doesn't, so use **Extract from PDF** (or **Re-extract from
+PDF**) for that.
+
+## Running a skill yourself
+
+Type a skill in the terminal in the agent drawer. In Claude Code, skills start
+with `/jobpilot:`; in Codex, with `$`.
+
+```text
+/jobpilot:search ML engineer new grad Pittsburgh --board linkedin.com
+/jobpilot:apply https://boards.greenhouse.io/acme/jobs/42
+/jobpilot:scan-inbox
+```
+
+| Skill | What it does |
+| --- | --- |
+| `search` | Searches a board, or the open web with `--anywhere`, and scores each job. Results go to **To review** under **Started in terminal**. The Pilot won't apply to them on its own. |
+| `auto-apply` | Searches, then applies to each new job above your minimum score until it runs out or hits `--max-apps`. `auto-apply approved` applies to jobs you approved; `auto-apply retry-failed` retries failed ones. |
+| `apply` | Checks the fit of one job link or pasted posting, then applies. |
+| `networking` | Finds the hiring contact for a role and drafts a message. |
+| `rescan-skipped` | Scores skipped jobs again. |
+| `scan-inbox` | Sorts new email and suggests status changes. |
+| `upwork-search` | Searches Upwork, drops low-quality clients, and ranks the rest. |
+
+`auto-apply` and `apply` use your minimum score from the Pilot's rules. They
+answer "When can you start?" with your saved start date, or "2 weeks notice"
+if you haven't saved one.
+
+While you type in the terminal, the Pilot holds new work for 3 minutes.
+**Hand back** in the thread ends the wait early.
+
+The agent uses these skills during other work; you don't start them:
+
+- `tailor-resume` picks or makes the right resume for each application.
+- `cover-letter` writes a cover letter when a form asks for one.
+- `get-code` reads sign-in codes from your email.
+- `solve-captcha` handles captchas.
+- `interview` drafts interview replies and writes prep notes.
+- `review-resume` suggests a rewrite after you upload a resume.
+- `humanizer` edits generated text so it reads like a person wrote it.
+
+### Searching the open web
+
+`search --anywhere` and the Pilot's research look past your boards:
+university and institute portals, lab pages, niche job sites. It works with no
+boards set up. Each posting is read, scored, and added to your pipeline. The
+run also names sites worth adding as boards. It never logs in or signs up.
+
+## Application statuses
+
+An application is **applied**, **screening**, **interviewing**, **offer**,
+**rejected**, or **withdrawn**. The **Applied** tab in your pipeline counts
+each stage. Each application has its own page with its history, and
+**Analytics** charts the funnel over time.
+
+## Handling replies
+
+With [email connected](/docs/email-setup) and autopilot on, the Pilot reads
+new mail on its own. You can also press **Sync** on the **Inbox** page, then
+**Scan pending**. The agent works out what each message is (interview,
+rejection, offer, and so on) and which application it belongs to, then
+suggests a status change. Nothing changes until you approve it.
+
+## Upwork
+
+Upwork connects through Upwork's own connector, so you don't store a
+password. Run `/mcp` in the terminal, choose `upwork`, and sign in. The
+**Upwork** page appears in the rail once you use it.
+
+- `upwork-search` checks each client's payment verification, spend, hire
+  count, and how many proposals the job has, then saves the best jobs to your
+  pipeline.
+- `upwork-proposal` writes a short proposal for you to review.
+- `upwork-submit` shows the Connects cost and your balance, and waits for you
+  to confirm.
+- `upwork-profile` suggests a title, overview, and skills, and saves them when
+  you approve. It also suggests portfolio and rate changes, which you copy
+  over yourself.
+- `upwork-sync` brings in invitations, offers, and unread messages.
+
+Nothing is sent to Upwork without your approval.
+
+Next: [Email setup](/docs/email-setup).

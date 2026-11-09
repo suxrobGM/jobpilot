@@ -41,10 +41,15 @@ owns per-job variants, guarded in `apps/api/src/modules/resume/tailoring/structu
 - Load profile, resume, and credentials per `skills/_shared/setup.md`. Resolve a board login with
   `GET /api/credentials/resolve` (the board's login, else the default). Log in before searching.
 - Dedupe with `GET /api/applications/duplicates` before applying.
-- Campaigns: `PATCH /api/campaigns/[id]/jobs/[jobKey]` for non-terminal transitions.
+- Jobs: `PATCH /api/feeds/[id]/jobs/[jobKey]` for non-terminal transitions.
   `POST .../jobs/[jobKey]/result` for applied / failed / skipped. It updates the job and creates
-  the application in one call.
+  the application in one call. Skills the user types write to their kind's feed
+  (`POST /api/feeds {kind}` returns it).
 - Browser: `browser_snapshot` (with `ref` on large pages), not screenshots.
+- Every `<METHOD> /api/...` path and `$JOBPILOT_WEB/...` link must exist:
+  `apps/api/src/plugin-links.test.ts` checks them against the controllers and web pages.
+- `search` and `auto-apply` delegate to the pilot's agents (`feed-flow.md` → Searching). Keep one
+  copy of each procedure in `agents/`, never a second one in a skill.
 
 ## Humanizer
 

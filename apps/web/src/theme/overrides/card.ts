@@ -4,7 +4,7 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
   defaultProps: { elevation: 0 },
   styleOverrides: {
     root: ({ theme }) => ({
-      borderRadius: theme.radii.md,
+      borderRadius: theme.radii.lg,
       border: `1px solid ${theme.palette.line.border}`,
       backgroundColor: theme.palette.surfaces.card,
       boxShadow: theme.shadows_custom.highlight,
@@ -12,16 +12,6 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
     }),
   },
   variants: [
-    {
-      props: { variant: "interactive" },
-      style: ({ theme }) => ({
-        cursor: "pointer",
-        "&:hover": {
-          borderColor: theme.palette.line.borderHi,
-          backgroundColor: theme.palette.surfaces.elevated,
-        },
-      }),
-    },
     {
       props: { variant: "lift" },
       style: ({ theme }) => ({
@@ -40,6 +30,15 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
       }),
     },
     {
+      props: { variant: "field" },
+      style: ({ theme }) => ({
+        borderColor: theme.palette.line.borderHi,
+        borderRadius: theme.radii.lg * 1.5,
+        boxShadow: theme.shadows_custom.md,
+        "&:focus-within": { borderColor: theme.palette.accent.primary },
+      }),
+    },
+    {
       props: { variant: "showcase" },
       style: ({ theme }) => ({
         borderRadius: theme.radii.lg,
@@ -53,6 +52,8 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
 
 // Tighter below sm: cards nest, and two levels at the desktop 20px eat a fifth of a phone's width.
 export const cardHeaderOverrides: Components<Theme>["MuiCardHeader"] = {
+  // The same face as a form section's title, so settings and cards read as one family.
+  defaultProps: { slotProps: { title: { variant: "h4" } } },
   styleOverrides: {
     root: ({ theme }) => ({
       paddingInline: 14,
@@ -60,7 +61,6 @@ export const cardHeaderOverrides: Components<Theme>["MuiCardHeader"] = {
       paddingBottom: 8,
       [theme.breakpoints.up("sm")]: { paddingInline: 20, paddingTop: 16 },
     }),
-    title: { fontSize: "1.0625rem", fontWeight: 600, lineHeight: 1.3 },
     subheader: { fontSize: "0.8125rem", marginTop: 2 },
   },
 };

@@ -4,7 +4,6 @@ import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import type { PortfolioDayPoint } from "@/api/types";
-import { radii } from "@/theme";
 import { formatDayBucket, plural } from "@/utils/format";
 
 interface ActivityHeatmapProps {
@@ -124,7 +123,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
                     gridRow: i === 0 ? leadPad + 1 : undefined,
                     width: CELL,
                     height: CELL,
-                    borderRadius: radii.xs,
+                    borderRadius: theme.radii.xs,
                     backgroundColor: shade(level(day.count)),
                   }}
                 />
@@ -142,7 +141,12 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
         {LEGEND_LEVELS.map((lvl) => (
           <Box
             key={`legend-${lvl}`}
-            sx={{ width: CELL, height: CELL, borderRadius: radii.xs, backgroundColor: shade(lvl) }}
+            sx={{
+              width: CELL,
+              height: CELL,
+              borderRadius: theme.radii.xs,
+              backgroundColor: shade(lvl),
+            }}
           />
         ))}
         <Typography variant="captionMuted">More</Typography>

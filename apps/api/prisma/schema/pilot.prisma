@@ -16,6 +16,49 @@ enum PilotQuestionKind {
   @@map("pilot_question_kind")
 }
 
+enum PilotChangeSource {
+  user
+  chat
+  pilot
+  notice
+
+  @@map("pilot_change_source")
+}
+
+enum PilotChangeStatus {
+  proposed
+  applied
+  undone
+  dismissed
+
+  @@map("pilot_change_status")
+}
+
+enum PilotMessageAuthor {
+  user
+  pilot
+
+  @@map("pilot_message_author")
+}
+
+enum PilotRequestStatus {
+  pending
+  running
+  done
+  failed
+  cancelled
+
+  @@map("pilot_request_status")
+}
+
+enum PilotRequestSource {
+  web
+  chat
+  notice
+
+  @@map("pilot_request_source")
+}
+
 enum PilotQuestionStatus {
   open
   answered
@@ -25,98 +68,48 @@ enum PilotQuestionStatus {
   @@map("pilot_question_status")
 }
 
-enum PilotJournalKind {
-  cycle
-  action
-  question
-  system
-  digest
-  correction
-
-  @@map("pilot_journal_kind")
-}
-
-// What a run, question or journal entry is about. `subjectId` stays text: it holds ids and keys
-// like `inbox` or `<campaignId>:<jobKey>`.
+// What a run, question or request is about. `subjectId` stays text: it holds ids and keys
+// like `inbox` or `<feedId>:<jobKey>`.
 enum PilotSubjectType {
   job
-  campaign
+  feed
   question
   networking
   inbox
-  promotion
   application
   email
   board
   pilot
   upwork
+  chat
+  resume
+  request
 
   @@map("pilot_subject_type")
 }
 
-enum PromotionStatus {
-  draft
-  approved
-  declined
-  posted
-  failed
-  skipped
-  expired
-
-  @@map("promotion_status")
-}
-
 model PilotState {
-  userId                String    @id @map("user_id") @db.Uuid
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  running               Boolean   @default(false)
-  instructionsGoals     String    @default("") @map("instructions_goals")
-  instructionsConfig    Json      @default("{}") @map("instructions_config")
-  instructionsUpdatedAt DateTime? @map("instructions_updated_at") @db.Timestamptz(3)
-  taskListVersion       String?   @map("task_list_version")
-  taskListExpiresAt     DateTime? @map("task_list_expires_at") @db.Timestamptz(3)
-  taskListSnapshot      Json?     @map("task_list_snapshot")
-  lastCycleAt           DateTime? @map("last_cycle_at") @db.Timestamptz(3)
-  // When the host plans its next task list check; idle checks write here, not to the journal.
-  nextWakeAt            DateTime? @map("next_wake_at") @db.Timestamptz(3)
-  cycleCount            Int       @default(0) @map("cycle_count")
-  // "Run now" for the job-alert import: offered off-schedule until a later run or an hour passes.
-  jobAlertsRequestedAt  DateTime? @map("job_alerts_requested_at") @db.Timestamptz(3)
-  // "Research now": offered ungated until a later research run or an hour passes.
-  researchRequestedAt   DateTime? @map("research_requested_at") @db.Timestamptz(3)
-  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userId           String    @id @map("user_id") @db.Uuid
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Autopilot is on while set. Autonomous work runs only then; requests, chat and answered
+  // questions always run. `cap.unused` waits for a week of it.
+  autopilotSince   DateTime? @map("autopilot_since") @db.Timestamptz(3)
+  // Rules and settings; `pilotConfigSchema` parses it.
+  config           Json      @default("{}")
+  // The live task list; `taskListSchema` parses it, and its `expiresAt` says when it goes stale.
+  taskList         Json?     @map("task_list")
+  lastCycleAt      DateTime? @map("last_cycle_at") @db.Timestamptz(3)
+  // When the host plans its next task list check.
+  nextWakeAt       DateTime? @map("next_wake_at") @db.Timestamptz(3)
+  cycleCount       Int       @default(0) @map("cycle_count")
+  // The last morning digest, so one goes out per day.
+  digestAt         DateTime? @map("digest_at") @db.Timestamptz(3)
+  // Notice key to the ISO time it may show again.
+  dismissedNotices Json      @default("{}") @map("dismissed_notices")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("pilot_states")
-}
-
-model PilotSearch {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  userId       String    @map("user_id") @db.Uuid
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  query        String
-  boardId      String?   @map("board_id") @db.Uuid
-  board        JobBoard? @relation(fields: [boardId], references: [id], onDelete: SetNull)
-  resumeId     String?   @map("resume_id") @db.Uuid
-  resume       Resume?   @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
-  reason       String    @default("")
-  lastRunAt    DateTime? @map("last_run_at") @db.Timestamptz(3)
-  lastJobsScanned Int?  @map("last_jobs_scanned")
-  lastNewJobs  Int?      @map("last_new_jobs")
-  // Consecutive runs with no new jobs; 3 or more backs the search off.
-  emptyRuns    Int       @default(0) @map("empty_runs")
-  nextRunAt    DateTime  @default(now()) @map("next_run_at") @db.Timestamptz(3)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  // A run opens a new campaign once the previous one completes.
-  campaigns Campaign[]
-
-  @@index([userId, nextRunAt])
-  @@index([boardId])
-  @@index([resumeId])
-  @@map("pilot_searches")
 }
 
 model PilotRun {
@@ -124,6 +117,8 @@ model PilotRun {
   userId           String           @map("user_id") @db.Uuid
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskType         String           @map("task_type")
+  // The task's title when the run started, so old runs never need their payload parsed.
+  title            String
   subjectType      PilotSubjectType @map("subject_type")
   subjectId        String           @map("subject_id")
   payload          Json             @default("{}")
@@ -132,6 +127,10 @@ model PilotRun {
   expiresAt        DateTime         @map("expires_at") @db.Timestamptz(3)
   finishedAt       DateTime?        @map("finished_at") @db.Timestamptz(3)
   outcome          PilotRunOutcome?
+  // The agent's one-line result; null for runs that closed without one (cancelled, expired).
+  summary          String?
+  // The run picked up work the user asked for in chat, so it answers there.
+  askedInChat      Boolean          @default(false) @map("asked_in_chat")
   // Null until the host reports the usage of the cycle that started this run.
   model            String?
   inputTokens      Int              @default(0) @map("input_tokens")
@@ -139,9 +138,12 @@ model PilotRun {
   cacheReadTokens  Int              @default(0) @map("cache_read_tokens")
   cacheWriteTokens Int              @default(0) @map("cache_write_tokens")
 
-  journalEntries PilotJournalEntry[]
+  changes  PilotChange[]
+  messages PilotMessage[]
+  requests PilotRequest[]
 
   @@index([userId, subjectType, subjectId])
+  @@index([userId, finishedAt])
   @@index([finishedAt])
   // Partial indexes live in the migration SQL: open runs by (userId, expiresAt), and one open run per
   // (userId, subjectType, subjectId). Finished rows stay as history for the retry damper.
@@ -162,7 +164,7 @@ model PilotQuestion {
   answer         String?
   savedAnswerKey String?             @map("saved_answer_key")
   answeredAt     DateTime?           @map("answered_at") @db.Timestamptz(3)
-  expiresAt      DateTime?           @map("expires_at") @db.Timestamptz(3)
+  expiresAt      DateTime            @map("expires_at") @db.Timestamptz(3)
   createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([userId, status])
@@ -170,43 +172,74 @@ model PilotQuestion {
   @@map("pilot_questions")
 }
 
-model PilotJournalEntry {
-  id          String            @id @default(uuid(7)) @db.Uuid
-  userId      String            @map("user_id") @db.Uuid
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // The run whose cycle wrote this entry.
-  runId       String?           @map("run_id") @db.Uuid
-  run         PilotRun?         @relation(fields: [runId], references: [id], onDelete: SetNull)
-  kind        PilotJournalKind
-  summary     String
-  detail      Json              @default("{}")
-  subjectType PilotSubjectType? @map("subject_type")
-  subjectId   String?           @map("subject_id")
-  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+/**
+ * An edit to rules, searches, answers or jobs, applied with an inverse or proposed.
+ */
+model PilotChange {
+  id        String            @id @default(uuid(7)) @db.Uuid
+  userId    String            @map("user_id") @db.Uuid
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source    PilotChangeSource
+  status    PilotChangeStatus
+  summary   String
+  actions   Json
+  // The inverse actions, set once applied; replaying them undoes the change.
+  undo      Json?
+  runId     String?           @map("run_id") @db.Uuid
+  run       PilotRun?         @relation(fields: [runId], references: [id], onDelete: SetNull)
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  decidedAt DateTime?         @map("decided_at") @db.Timestamptz(3)
 
+  @@index([userId, status, createdAt])
   @@index([userId, createdAt])
-  @@index([userId, kind, createdAt])
-  @@index([createdAt])
   @@index([runId])
-  @@map("pilot_journal_entries")
+  @@map("pilot_changes")
 }
 
-model PromotionPost {
-  id           String          @id @default(uuid(7)) @db.Uuid
-  userId       String          @map("user_id") @db.Uuid
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform     String
-  target       String?
-  title        String?
-  body         String
-  status       PromotionStatus @default(draft)
-  postedUrl    String?         @map("posted_url")
-  scheduledFor DateTime?       @map("scheduled_for") @db.Timestamptz(3)
-  postedAt     DateTime?       @map("posted_at") @db.Timestamptz(3)
-  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+/**
+ * The conversation with the pilot: the user's messages and its replies.
+ */
+model PilotMessage {
+  id        String             @id @default(uuid(7)) @db.Uuid
+  userId    String             @map("user_id") @db.Uuid
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  author     PilotMessageAuthor
+  body       String
+  // The run that wrote a pilot message: a chat reply, or a report on work asked for in chat.
+  runId      String?            @map("run_id") @db.Uuid
+  run        PilotRun?          @relation(fields: [runId], references: [id], onDelete: SetNull)
+  // User messages only: set when a chat.reply run that started after it finishes. A run's report
+  // never answers the user, so it can't swallow a message sent while the run worked.
+  answeredAt DateTime?          @map("answered_at") @db.Timestamptz(3)
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  @@index([userId, status])
-  @@index([updatedAt]) // Retention sweep.
-  @@map("promotion_posts")
+  @@index([userId, createdAt])
+  @@index([runId])
+  @@map("pilot_messages")
+}
+
+/**
+ * Work the user asked for by name; it follows the run that picks it up.
+ */
+model PilotRequest {
+  id          String             @id @default(uuid(7)) @db.Uuid
+  userId      String             @map("user_id") @db.Uuid
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskType    String             @map("task_type")
+  // The request's input, expanded into a task payload when the task list is built.
+  payload     Json               @default("{}")
+  // The task's subject, so the run that starts on it can be matched back.
+  subjectType PilotSubjectType   @map("subject_type")
+  subjectId   String             @map("subject_id")
+  status      PilotRequestStatus @default(pending)
+  source      PilotRequestSource
+  runId       String?            @map("run_id") @db.Uuid
+  run         PilotRun?          @relation(fields: [runId], references: [id], onDelete: SetNull)
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  finishedAt  DateTime?          @map("finished_at") @db.Timestamptz(3)
+
+  @@index([userId, status, createdAt])
+  @@index([userId, createdAt])
+  @@index([runId])
+  @@map("pilot_requests")
 }

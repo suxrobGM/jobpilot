@@ -22,7 +22,7 @@ import type {
 } from "./email.types";
 import {
   buildMimeMessage,
-  domainOf,
+  emailDomain,
   encodeBase64Url,
   extractLinks,
   extractPlainText,
@@ -72,13 +72,16 @@ export function microsoftScopes(config: OAuthClientConfig): string[] {
     "User.Read",
     config.mailbox ? "Mail.Read.Shared" : "Mail.Read",
   ];
-  if (config.allowSend) scopes.push(config.mailbox ? "Mail.Send.Shared" : "Mail.Send");
+  if (config.allowSend) {
+    scopes.push(config.mailbox ? "Mail.Send.Shared" : "Mail.Send");
+  }
   return scopes;
 }
 
 export function microsoftCanRead(scope: string | null | undefined, shared: boolean): boolean {
-  if (shared)
+  if (shared) {
     return hasScope(scope, "Mail.Read.Shared") || hasScope(scope, "Mail.ReadWrite.Shared");
+  }
   return hasScope(scope, "Mail.Read") || hasScope(scope, "Mail.ReadWrite");
 }
 
@@ -106,8 +109,9 @@ function deltaTarget(url: string, session: MailboxSession): { url: string; folde
       target.username ||
       target.password ||
       target.hash
-    )
+    ) {
       throw new Error("Invalid origin");
+    }
     // Graph canonicalizes Inbox aliases into OData folder IDs on continuation links.
     const pathname = target.pathname.replace(
       /\('((?:[^']|'')*)'\)/g,
@@ -117,8 +121,9 @@ function deltaTarget(url: string, session: MailboxSession): { url: string; folde
       /^\/v1\.0\/(me|users\/[^/]+)\/mailfolders\/([^/]+)\/messages\/delta$/i,
     );
     const expected = session.mailboxId ? `users/${session.mailboxId}` : "me";
-    if (!match || decodeURIComponent(match[1]).toLowerCase() !== expected.toLowerCase())
+    if (!match || decodeURIComponent(match[1]).toLowerCase() !== expected.toLowerCase()) {
       throw new Error("Invalid mailbox");
+    }
     return { url: target.href, folder: decodeURIComponent(match[2]) };
   } catch {
     throw unprocessable("Invalid Microsoft mailbox sync cursor. Reconnect this mailbox.");
@@ -127,8 +132,9 @@ function deltaTarget(url: string, session: MailboxSession): { url: string; folde
 
 function checkedDelta(url: string, session: MailboxSession, inboxId: string): string {
   const target = deltaTarget(url, session);
-  if (target.folder.toLowerCase() !== "inbox" && target.folder !== inboxId)
+  if (target.folder.toLowerCase() !== "inbox" && target.folder !== inboxId) {
     throw unprocessable("Invalid Microsoft mailbox sync cursor. Reconnect this mailbox.");
+  }
   return target.url;
 }
 
@@ -162,8 +168,9 @@ export class MicrosoftClient {
       code_verifier: verifier,
       redirect_uri: config.redirectUri,
     });
-    if (!microsoftCanRead(tokens.scope, !!config.mailbox))
+    if (!microsoftCanRead(tokens.scope, !!config.mailbox)) {
       throw new OAuthFlowError<EmailConnectErrorReason>("scope_not_granted");
+    }
     const me = identitySchema.parse(
       await this.graph("/me?$select=mail,userPrincipalName", tokens.accessToken),
     );
@@ -198,8 +205,9 @@ export class MicrosoftClient {
       }),
     });
     if (!response.ok) {
-      if (response.status === 429 || response.status >= 500)
+      if (response.status === 429 || response.status >= 500) {
         throw badGateway("Microsoft authentication is temporarily unavailable. Try again later.");
+      }
       throw unauthorized(
         "Microsoft rejected the mailbox authorization. Check the app settings and reconnect.",
       );
@@ -242,8 +250,9 @@ export class MicrosoftClient {
           ...init.headers,
         },
       });
-      if (response.ok)
+      if (response.ok) {
         return response.status === 202 || response.status === 204 ? null : response.json();
+      }
       if (
         init.method !== "POST" &&
         (response.status === 429 || response.status === 503) &&
@@ -259,15 +268,20 @@ export class MicrosoftClient {
           continue;
         }
       }
-      if (response.status === 410) throw new ExpiredCursor();
-      if (response.status === 401)
+      if (response.status === 410) {
+        throw new ExpiredCursor();
+      }
+      if (response.status === 401) {
         throw unauthorized("Microsoft mailbox authorization expired. Reconnect it.");
-      if (response.status === 403)
+      }
+      if (response.status === 403) {
         throw forbidden(
           "Microsoft denied access to the selected mailbox. Check delegated mailbox and Send As permissions.",
         );
-      if (response.status === 429 || response.status === 503)
+      }
+      if (response.status === 429 || response.status === 503) {
         throw tooManyRequests("Microsoft mail is rate limited. Wait before syncing again.", 60);
+      }
       throw badGateway(
         "Microsoft mail request failed. Check the mailbox configuration and try again.",
       );
@@ -275,10 +289,14 @@ export class MicrosoftClient {
     throw badGateway("Microsoft mail request failed.");
   }
 
-  async sync(session: MailboxSession): Promise<SyncResult> {
-    if (!session.accessToken) throw unauthorized("Reconnect the Microsoft mailbox.");
+  async sync(session: MailboxSession, since = Date.now() - 14 * 86400000): Promise<SyncResult> {
+    if (!session.accessToken) {
+      throw unauthorized("Reconnect the Microsoft mailbox.");
+    }
     let initial = this.initialUrl(session);
-    if (session.deltaLink) initial = deltaTarget(session.deltaLink, session).url;
+    if (session.deltaLink) {
+      initial = deltaTarget(session.deltaLink, session).url;
+    }
     const inbox = z
       .object({ id: z.string().min(1) })
       .parse(
@@ -288,10 +306,12 @@ export class MicrosoftClient {
         ),
       );
     try {
-      return await this.pages(initial, session, inbox.id);
+      return await this.pages(initial, session, inbox.id, since);
     } catch (error) {
-      if (!(error instanceof ExpiredCursor) || !session.deltaLink) throw error;
-      return this.pages(this.initialUrl(session), session, inbox.id);
+      if (!(error instanceof ExpiredCursor) || !session.deltaLink) {
+        throw error;
+      }
+      return this.pages(this.initialUrl(session), session, inbox.id, since);
     }
   }
 
@@ -299,20 +319,26 @@ export class MicrosoftClient {
     initial: string,
     session: MailboxSession,
     inboxId: string,
+    since: number,
   ): Promise<SyncResult> {
     const messages = new Map<string, NormalizedMessage>();
     const visited = new Set<string>();
     let next: string | undefined = initial;
-    const since = Date.now() - 14 * 86400000;
     for (let count = 0; next && count < 100; count++) {
       next = checkedDelta(next, session, inboxId);
-      if (visited.has(next)) throw badGateway("Microsoft returned a repeated mailbox page.");
+      if (visited.has(next)) {
+        throw badGateway("Microsoft returned a repeated mailbox page.");
+      }
       visited.add(next);
       const page = pageSchema.parse(await this.graph(next, session.accessToken!));
       for (const raw of page.value) {
-        if (typeof raw === "object" && raw !== null && "@removed" in raw) continue;
+        if (typeof raw === "object" && raw !== null && "@removed" in raw) {
+          continue;
+        }
         const message = messageSchema.parse(raw);
-        if (!message.from || Date.parse(message.receivedDateTime) < since) continue;
+        if (!message.from || Date.parse(message.receivedDateTime) < since) {
+          continue;
+        }
         const content = message.body ?? { contentType: "text", content: message.bodyPreview };
         const payload = {
           mimeType: content.contentType === "html" ? "text/html" : "text/plain",
@@ -325,20 +351,20 @@ export class MicrosoftClient {
           subject: message.subject,
           fromAddress: address,
           fromName: message.from.emailAddress.name ?? null,
-          fromDomain: domainOf(address),
+          fromDomain: emailDomain(address),
           snippet: message.bodyPreview,
           body: stripQuotedReplies(extractPlainText(payload)),
           links: extractLinks(payload),
           receivedAt: new Date(message.receivedDateTime),
         });
       }
-      if (page["@odata.deltaLink"])
+      if (page["@odata.deltaLink"]) {
         return {
           fetched: messages.size,
           newMessages: [...messages.values()],
-          historyId: null,
           deltaLink: checkedDelta(page["@odata.deltaLink"], session, inboxId),
         };
+      }
       next = page["@odata.nextLink"];
     }
     throw badGateway(
@@ -351,8 +377,9 @@ export class MicrosoftClient {
       !session.accessToken ||
       !session.config.allowSend ||
       !microsoftCanSend(session.scope, !!session.mailboxId)
-    )
+    ) {
       throw unprocessable("This Microsoft mailbox is read-only. Reconnect with sending enabled.");
+    }
     // MIME preserves RFC reply headers and attachments using the existing email builder.
     const from = session.mailboxId ? `From: ${z.email().parse(session.mailboxId)}\r\n` : "";
     const mime = Buffer.from(

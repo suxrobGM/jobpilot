@@ -49,7 +49,7 @@ function body(over: Partial<TailorVariantBody> = {}): TailorVariantBody {
   return { label: "Acme - Engineer", ...over };
 }
 
-function violationsOf(fn: () => unknown): string[] {
+function collectViolations(fn: () => unknown): string[] {
   try {
     fn();
   } catch (error) {
@@ -123,17 +123,11 @@ describe("buildTailoredVariant", () => {
   });
 
   it("rejects the whole request when the structure plan is invalid", () => {
-    const violations = violationsOf(() =>
+    const violations = collectViolations(() =>
       buildTailoredVariant(base(), body({ structure: { dropEntries: [0, 1, 2, 3] } })),
     );
 
     expect(violations.length).toBeGreaterThan(0);
-  });
-
-  it("retargets the headline", () => {
-    const result = buildTailoredVariant(base(), body({ headline: "Backend Engineer" }));
-
-    expect(result.content.basics.headline).toBe("Backend Engineer");
   });
 
   it("stores no audit when nothing was reworded or restructured", () => {

@@ -1,17 +1,25 @@
-import {
-  pilotInstructionsChangeSchema,
-  pilotInstructionsConfigSchema,
-} from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
+import type { AgentPresence } from "./agent-presence";
+import type { MessageService } from "./messages/message.service";
 import { PilotService } from "./pilot.service";
 import { describe, expect, it } from "bun:test";
 
+const offline = { isConnected: () => false } as unknown as AgentPresence;
+
+function fakeMessages() {
+  const posted: string[] = [];
+  const messages = {
+    postFromPilot: async (_userId: string, body: string) => {
+      posted.push(body);
+    },
+  } as unknown as MessageService;
+  return { messages, posted };
+}
+
 const stateRow = (over: Record<string, unknown>) => ({
   userId: "p1",
-  running: false,
-  instructionsGoals: "",
-  instructionsConfig: {},
-  instructionsUpdatedAt: new Date(),
+  autopilotSince: null,
+  config: {},
   lastCycleAt: null,
   nextWakeAt: null,
   cycleCount: 0,
@@ -20,18 +28,21 @@ const stateRow = (over: Record<string, unknown>) => ({
   ...over,
 });
 
+const LINKED = ["linkedin.com", "hiringcafe.com"];
+
 interface OpenRun {
   id: string;
   taskType: string;
+  title: string;
   startedAt: Date;
 }
 
-function stateService(savedGoals: string, openRun: OpenRun | null = null, savedConfig = {}) {
+function stateService(openRun: OpenRun | null = null, savedConfig = {}) {
   const rec = {
     searchResets: 0,
     searchDeletes: 0,
     setupRunDeletes: 0,
-    campaignsCompleted: 0,
+    feedsCompleted: 0,
     jobsDropped: 0,
   };
   const runQueries: unknown[] = [];
@@ -42,10 +53,10 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null, savedC
   };
   const db = {
     pilotState: {
-      findUnique: async () => ({ instructionsGoals: savedGoals, instructionsConfig: savedConfig }),
+      findUnique: async () => ({ config: savedConfig }),
       upsert: async (a: { update: Record<string, unknown> }) => {
         upserts.push(a);
-        return stateRow({ instructionsGoals: savedGoals, ...a.update });
+        return stateRow(a.update);
       },
     },
     pilotSearch: { updateMany: count("searchResets"), deleteMany: count("searchDeletes") },
@@ -56,116 +67,109 @@ function stateService(savedGoals: string, openRun: OpenRun | null = null, savedC
         return openRun;
       },
     },
-    campaign: {
-      findMany: async () => [{ campaignId: "c1", source: "auto_apply" }],
-      updateMany: count("campaignsCompleted"),
+    feed: {
+      findMany: async () => [{ feedId: "c1", source: "auto_apply" }],
+      updateMany: count("feedsCompleted"),
     },
-    campaignJob: { updateMany: count("jobsDropped") },
+    job: { updateMany: count("jobsDropped") },
     application: { count: async () => 0 },
     networkingMessage: { count: async () => 0 },
+    pilotRequest: { count: async () => 0 },
+    userJobBoard: { findMany: async () => LINKED.map((domain) => ({ board: { domain } })) },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   };
-  return { svc: new PilotService(db as unknown as PrismaClient), rec, runQueries, upserts };
+  const { messages, posted } = fakeMessages();
+  return {
+    svc: new PilotService(db as unknown as PrismaClient, offline, messages),
+    rec,
+    runQueries,
+    upserts,
+    posted,
+  };
 }
-
-describe("PilotService.updateInstructions", () => {
-  const body = (goals: string, onChange = {}) => ({
-    goals,
-    config: pilotInstructionsConfigSchema.omit({ jobAlerts: true }).parse({}),
-    onChange: pilotInstructionsChangeSchema.parse(onChange),
-  });
-
-  it("makes every search due when the goals change, and retires nothing unasked", async () => {
-    const { svc, rec } = stateService("old goals");
-    await svc.updateInstructions("p1", body("new goals"));
-    expect(rec).toEqual({
-      searchResets: 1,
-      searchDeletes: 0,
-      setupRunDeletes: 0,
-      campaignsCompleted: 0,
-      jobsDropped: 0,
-    });
-  });
-
-  it("leaves searches alone when the goals are unchanged", async () => {
-    const { svc, rec } = stateService("same goals");
-    await svc.updateInstructions("p1", body("same goals"));
-    expect(rec.searchResets).toBe(0);
-  });
-
-  it("clears the setup damper with the searches, or the re-derive waits a day", async () => {
-    const { svc, rec } = stateService("old goals");
-    await svc.updateInstructions("p1", body("new goals", { rederiveSearches: true }));
-    expect(rec).toMatchObject({ searchResets: 0, searchDeletes: 1, setupRunDeletes: 1 });
-  });
-
-  it("completes campaigns and drops the approved backlog when asked", async () => {
-    const { svc, rec } = stateService("old goals");
-    await svc.updateInstructions(
-      "p1",
-      body("new goals", { completeCampaigns: true, dropApprovedJobs: true }),
-    );
-    expect(rec).toMatchObject({ campaignsCompleted: 1, jobsDropped: 1 });
-  });
-
-  it("keeps the stored job-alert schedule, which only its own route edits", async () => {
-    const jobAlerts = { enabled: true, runHours: [9], timeZone: "America/Detroit" };
-    const { svc, upserts } = stateService("goals", null, { minScore: 80, jobAlerts });
-    await svc.updateInstructions("p1", body("goals"));
-    expect(upserts[0].update.instructionsConfig).toMatchObject({ minScore: 60, jobAlerts });
-  });
-});
 
 describe("PilotService.getState", () => {
   it("reports the newest open, unexpired run as currentRun, or null", async () => {
-    const run = { id: "r1", taskType: "job.apply", startedAt: new Date() };
-    const { svc, runQueries } = stateService("", run);
+    const startedAt = new Date();
+    const run = {
+      id: "r1",
+      taskType: "upwork.syncInbox",
+      title: "Pull the Upwork inbox",
+      startedAt,
+    };
+    const { svc, runQueries } = stateService(run);
     expect((await svc.getState("p1")).currentRun).toEqual(run);
     expect(runQueries[0]).toMatchObject({
       where: { userId: "p1", finishedAt: null, expiresAt: { gt: expect.any(Date) } },
       orderBy: { startedAt: "desc" },
     });
-    expect((await stateService("").svc.getState("p1")).currentRun).toBeNull();
+    expect((await stateService().svc.getState("p1")).currentRun).toBeNull();
   });
 });
 
-describe("PilotService.start", () => {
-  it("refuses to start without goals, but always stops", async () => {
-    await expect(stateService("   ").svc.start("p1")).rejects.toMatchObject({ status: 409 });
-    expect((await stateService("").svc.stop("p1")).running).toBe(false);
+describe("PilotService.setAutopilot", () => {
+  it("stamps the start time when turned on", async () => {
+    const { svc, upserts } = stateService();
+    const state = await svc.setAutopilot("p1", true);
+    expect(state.autopilot).toBe(true);
+    expect(upserts[0].update.autopilotSince).toBeInstanceOf(Date);
   });
 
-  it("starts once goals are written", async () => {
-    const state = await stateService("ship senior frontend roles").svc.start("p1");
-    expect(state.running).toBe(true);
+  // `cap.unused` counts a week from the start; turning off clears it.
+  it("clears the start time when turned off", async () => {
+    const { svc, upserts } = stateService();
+    await svc.setAutopilot("p1", false);
+    expect(upserts[0].update.autopilotSince).toBeNull();
   });
 });
 
-describe("PilotService.recordIdleCycle", () => {
+describe("PilotService.recordCycle", () => {
   it("counts the check as a cycle and plans the next wake", async () => {
-    const { svc } = stateService("goals");
+    const { svc } = stateService();
     const before = Date.now();
-    const state = await svc.recordIdleCycle("p1", { sleepSeconds: 1800 });
+    const state = await svc.recordCycle("p1", { sleepSeconds: 1800 });
     expect(state.lastCycleAt).toBeInstanceOf(Date);
     expect(state.nextWakeAt?.getTime()).toBeGreaterThanOrEqual(before + 1_800_000);
+  });
+
+  it("posts the host's message to the user only when it sends one", async () => {
+    const { svc, posted } = stateService();
+    await svc.recordCycle("p1", { sleepSeconds: 60 });
+    await svc.recordCycle("p1", { sleepSeconds: 1800, message: "Taking a 30-minute break." });
+    expect(posted).toEqual(["Taking a 30-minute break."]);
+  });
+});
+
+describe("PilotService.updateSettings", () => {
+  it("stores the rotation as linked board domains, folding aliases and repeats", async () => {
+    const { svc, upserts } = stateService();
+    await svc.updateSettings("p1", {
+      boards: ["https://hiring.cafe/", "LinkedIn.com", "hiringcafe.com"],
+    });
+    expect(upserts[0].update.config).toMatchObject({ boards: ["hiringcafe.com", "linkedin.com"] });
+  });
+
+  it("refuses a board the user hasn't linked, since the searcher can't open it", async () => {
+    const { svc, upserts } = stateService();
+    await expect(
+      svc.updateSettings("p1", { boards: ["linkedin.com", "dice.com"] }),
+    ).rejects.toThrow("dice.com");
+    expect(upserts).toHaveLength(0);
   });
 });
 
 describe("PilotService.getActivity", () => {
   const completedAt = new Date("2026-07-20T12:00:00Z");
 
-  function activityService(
-    state: { running: boolean; lastCycleAt: Date | null; nextWakeAt: Date | null } | null,
-  ) {
-    const noMax = { _max: { createdAt: null, updatedAt: null } };
+  function activityService(state: { lastCycleAt: Date | null; nextWakeAt: Date | null } | null) {
+    const noMax = { _max: { finishedAt: null, updatedAt: null } };
     const db = {
-      pilotRun: { findMany: async () => [] },
-      pilotJournalEntry: { aggregate: async () => noMax },
-      campaign: { aggregate: async () => noMax },
-      campaignJob: { aggregate: async () => noMax },
+      pilotRun: { findMany: async () => [], aggregate: async () => noMax },
+      feed: { aggregate: async () => noMax },
+      job: { aggregate: async () => noMax },
       pilotState: { findUnique: async () => state },
     };
-    return new PilotService(db as unknown as PrismaClient);
+    return new PilotService(db as unknown as PrismaClient, offline, fakeMessages().messages);
   }
 
   // A stuck-recovery cycle plans no wake but still reports when it completed.
@@ -173,17 +177,12 @@ describe("PilotService.getActivity", () => {
     [new Date(completedAt.getTime() + 300_000), 300],
     [null, null],
   ])("reports the last cycle's planned sleep (wake %p)", async (nextWakeAt, sleepSeconds) => {
-    const svc = activityService({ running: true, lastCycleAt: completedAt, nextWakeAt });
+    const svc = activityService({ lastCycleAt: completedAt, nextWakeAt });
     expect((await svc.getActivity("p1")).lastCycle).toEqual({ completedAt, sleepSeconds });
   });
 
-  it("reads a profile with no state row as never run and stopped", async () => {
+  it("reads a profile with no state row as never run", async () => {
     const activity = await activityService(null).getActivity("p1");
-    expect(activity).toMatchObject({ lastCycle: null, running: false, lastActivityAt: null });
-    const idle = { running: true, lastCycleAt: null, nextWakeAt: null };
-    expect(await activityService(idle).getActivity("p1")).toMatchObject({
-      lastCycle: null,
-      running: true,
-    });
+    expect(activity).toMatchObject({ lastCycle: null, lastActivityAt: null });
   });
 });

@@ -21,16 +21,6 @@ const authService = container.get(AuthService);
 const verificationService = container.get(VerificationService);
 const authTokens = container.get(AuthTokenService);
 
-// One hook per route: each public route needs its own policy, and /me and /tokens/* stay unthrottled.
-const limitRegister = rateLimit(RATE_LIMITS.register);
-const limitLoginIp = rateLimit(RATE_LIMITS.loginPerIp);
-const limitLoginAccount = rateLimit(RATE_LIMITS.loginPerAccount);
-const limitEmailVerify = rateLimit(RATE_LIMITS.emailVerify);
-const limitForgotIp = rateLimit(RATE_LIMITS.forgotPerIp);
-const limitForgotEmail = rateLimit(RATE_LIMITS.forgotPerEmail);
-const limitPasswordReset = rateLimit(RATE_LIMITS.passwordReset);
-const limitEmailResend = rateLimit(RATE_LIMITS.emailResend);
-
 export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .post(
     "/register",
@@ -49,7 +39,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
     {
       body: RegisterSchema,
-      beforeHandle: limitRegister,
+      beforeHandle: rateLimit(RATE_LIMITS.register),
       response: authSessionSchema,
       detail: {
         summary: "Register a new account",
@@ -67,7 +57,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     },
     {
       body: LoginSchema,
-      beforeHandle: [limitLoginIp, limitLoginAccount],
+      beforeHandle: [rateLimit(RATE_LIMITS.loginPerIp), rateLimit(RATE_LIMITS.loginPerAccount)],
       response: authSessionSchema,
       detail: {
         summary: "Log in with credentials",
@@ -94,7 +84,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   )
   .post("/email/verification/confirm", ({ body }) => verificationService.verifyEmail(body.token), {
     body: VerifyEmailSchema,
-    beforeHandle: limitEmailVerify,
+    beforeHandle: rateLimit(RATE_LIMITS.emailVerify),
     response: okResponseSchema,
     detail: {
       summary: "Verify an email address",
@@ -104,7 +94,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   })
   .post("/password/reset", ({ body }) => verificationService.requestPasswordReset(body.email), {
     body: ForgotPasswordSchema,
-    beforeHandle: [limitForgotIp, limitForgotEmail],
+    beforeHandle: [rateLimit(RATE_LIMITS.forgotPerIp), rateLimit(RATE_LIMITS.forgotPerEmail)],
     response: okResponseSchema,
     detail: {
       summary: "Request a password reset",
@@ -117,7 +107,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     ({ body }) => verificationService.resetPassword(body.token, body.password),
     {
       body: ResetPasswordSchema,
-      beforeHandle: limitPasswordReset,
+      beforeHandle: rateLimit(RATE_LIMITS.passwordReset),
       response: okResponseSchema,
       detail: {
         summary: "Reset a password",
@@ -128,7 +118,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
   )
   .use(authGuard)
   .post("/email/verification", ({ user }) => verificationService.resendVerification(user.id), {
-    beforeHandle: limitEmailResend,
+    beforeHandle: rateLimit(RATE_LIMITS.emailResend),
     response: okResponseSchema,
     detail: {
       summary: "Send the verification email",

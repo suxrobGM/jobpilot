@@ -13,9 +13,11 @@ export interface EmailHeader {
  * trailing whitespace or stray `>` characters so callers can pass raw header
  * values without sanitising first.
  */
-export function domainOf(address: string): string {
+export function emailDomain(address: string): string {
   const at = address.lastIndexOf("@");
-  if (at < 0) return "";
+  if (at < 0) {
+    return "";
+  }
   return address
     .slice(at + 1)
     .toLowerCase()
@@ -53,7 +55,9 @@ export function encodeBase64Url(data: string | Buffer): string {
 /** RFC 2047 encode a header value when it contains non-ASCII characters. */
 function encodeHeaderValue(value: string): string {
   // biome-ignore lint/suspicious/noControlCharactersInRegex: RFC 2047 defines the ASCII range by codepoint
-  if (/^[\x00-\x7F]*$/.test(value)) return value;
+  if (/^[\x00-\x7F]*$/.test(value)) {
+    return value;
+  }
   return `=?UTF-8?B?${Buffer.from(value, "utf-8").toString("base64")}?=`;
 }
 
@@ -145,7 +149,9 @@ export function extractPlainText(payload: unknown): string {
       html = decodeBase64Url(node.body.data);
     }
     if (node.parts) {
-      for (const p of node.parts) stack.push(p);
+      for (const p of node.parts) {
+        stack.push(p);
+      }
     }
   }
 

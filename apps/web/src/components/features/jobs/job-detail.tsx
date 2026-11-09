@@ -1,16 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { OpenInNew } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  Grid,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Button, Card, CardContent, Chip, Divider, Grid, Stack, Typography } from "@mui/material";
 import type { JobListingDto } from "@/api/types";
 import { BackLink, LinkButton } from "@/components/ui/buttons";
 import { formatDate, formatRelativeTime } from "@/utils/format";
@@ -82,7 +72,7 @@ function JobHeader(props: JobDetailProps): ReactElement {
   return (
     <Stack spacing={2}>
       <Stack spacing={1}>
-        <Typography variant="displayMd" component="h1" sx={{ overflowWrap: "anywhere" }}>
+        <Typography variant="h2" component="h1" sx={{ overflowWrap: "anywhere" }}>
           {job.title}
         </Typography>
         <Typography variant="h4" component="p" sx={{ color: "text.secondary" }}>
@@ -162,13 +152,13 @@ interface BulletListProps {
 function BulletList(props: BulletListProps): ReactElement {
   const { items } = props;
   return (
-    <Box component="ul" sx={{ m: 0, pl: 3, display: "grid", gap: 1 }}>
+    <Stack component="ul" spacing={1} sx={{ m: 0, pl: 3 }}>
       {items.map((item) => (
         <Typography component="li" key={item} variant="body1Muted">
           {item}
         </Typography>
       ))}
-    </Box>
+    </Stack>
   );
 }
 
@@ -182,7 +172,7 @@ function ApplyCard(): ReactElement {
             Apply with JobPilot
           </Typography>
           <Typography variant="body2Muted">
-            Your own AI agent tailors your resume and fills the form - on your machine, on your
+            Your own AI agent tailors your resume and fills the form, on your machine and your
             Claude or Codex plan.
           </Typography>
           <LinkButton href="/install" variant="outlined" fullWidth>

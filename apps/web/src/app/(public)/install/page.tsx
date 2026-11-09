@@ -21,7 +21,7 @@ export default function InstallPage(): ReactElement {
           <Typography variant="eyebrow" color="primary">
             Get started
           </Typography>
-          <Typography variant="displayLg">Install JobPilot</Typography>
+          <Typography variant="h1">Install JobPilot</Typography>
           <Typography variant="lead" sx={{ maxWidth: 560 }}>
             JobPilot is a plugin for Claude Code and Codex. Add it, run setup, and create an
             account. After that you control everything from the dashboard.

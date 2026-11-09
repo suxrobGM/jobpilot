@@ -40,7 +40,7 @@ export function CoverLetterDetail(props: CoverLetterDetailProps): ReactElement {
       <PageHeader
         eyebrow={letter.company ?? "Cover letter"}
         title={letter.jobTitle ?? "Untitled role"}
-        backHref="/documents/cover-letters"
+        backHref="/cover-letters"
         actions={
           <>
             {letter.jobUrl && (

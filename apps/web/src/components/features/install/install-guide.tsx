@@ -7,7 +7,7 @@ import {
   AccordionSummary,
   Avatar,
   alpha,
-  Paper,
+  Card,
   Stack,
   Typography,
 } from "@mui/material";
@@ -27,7 +27,7 @@ interface InstallStepProps {
 function InstallStep(props: InstallStepProps): ReactElement {
   const { number, title, children } = props;
   return (
-    <Paper component={Stack} variant="panel" spacing={1.5} sx={{ padding: { xs: 2.5, md: 3 } }}>
+    <Card component={Stack} spacing={1.5} sx={{ padding: { xs: 2.5, md: 3 } }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
         <Avatar
           sx={(theme) => ({
@@ -46,7 +46,7 @@ function InstallStep(props: InstallStepProps): ReactElement {
         </Typography>
       </Stack>
       {children}
-    </Paper>
+    </Card>
   );
 }
 
@@ -89,8 +89,8 @@ export function InstallGuide(): ReactElement {
 
       <InstallStep number={3} title="Create your account">
         <Typography variant="body2Muted">
-          Sign up and upload your resume. The agent connects to your account by itself. Then turn on
-          the Pilot from the dashboard.
+          Sign up and upload your resume. The agent connects to your account by itself. Then tell
+          the Pilot what jobs you want.
         </Typography>
         <LinkButton href="/register" variant="contained" size="large" sx={{ alignSelf: "start" }}>
           Create account

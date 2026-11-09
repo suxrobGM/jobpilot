@@ -1,6 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
 import { List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
-import { radii } from "@/theme";
 
 interface ItemListProps {
   children: ReactNode;
@@ -29,15 +28,15 @@ export function ItemRow(props: ItemRowProps): ReactElement {
   return (
     <ListItem
       secondaryAction={action}
-      sx={{
+      sx={(theme) => ({
         border: 1,
         borderColor: "line.border",
-        borderRadius: radii.md,
+        borderRadius: theme.radii.md,
         pl: 1.5,
         // secondaryAction is absolutely positioned; 6 clears it, or noWrap text slides underneath.
         pr: action ? 6 : 1.5,
         py: 1,
-      }}
+      })}
     >
       {icon && <ListItemIcon sx={{ minWidth: "auto", mr: 1.5 }}>{icon}</ListItemIcon>}
       <ListItemText

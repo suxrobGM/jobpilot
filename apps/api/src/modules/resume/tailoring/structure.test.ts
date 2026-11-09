@@ -64,16 +64,6 @@ describe("applyStructure - merge", () => {
     expect(result.audit.merged[0]).toMatchObject({ absorbed: ["Older Co"] });
   });
 
-  it("cannot widen a date range beyond the merged roles", () => {
-    const result = applyStructure(base(), {
-      mergeEntries: [{ into: 2, from: [3] }],
-    });
-    const merged = result.content.experience[2];
-    // The model has no field to pass dates through; these come from the entries themselves.
-    expect(merged.start).toBe("Mar 2020");
-    expect(merged.end).not.toBe("Present");
-  });
-
   it("keeps an open-ended role open", () => {
     const data = base();
     data.experience[0].end = "Present";

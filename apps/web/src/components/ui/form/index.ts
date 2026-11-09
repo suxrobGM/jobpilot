@@ -1,4 +1,3 @@
-export { FieldInfo } from "./field-info";
 export { FieldRowList } from "./field-row-list";
 export { FileUpload } from "./file-upload";
 export { FilterBar } from "./filter-bar";

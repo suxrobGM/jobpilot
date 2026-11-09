@@ -1,35 +1,52 @@
-// For next/og raster targets, which need a data-URI <img>. Mirrors jobpilot-mark.tsx.
+import { accent, line, markEye, surfaces } from "@/theme/palette";
 
-const FACE = `
-  <line x1="50" y1="16" x2="50" y2="9.5" stroke="#FF6A3D" stroke-width="3.2" stroke-linecap="round"/>
-  <circle cx="50" cy="7" r="3" fill="#6FA8FF"/>
-  <rect x="21" y="26" width="58" height="17" rx="8.5" fill="#0C0D13" stroke="#23252F" stroke-width="1.4"/>
-  <circle cx="37" cy="34.5" r="5.6" fill="url(#ey)"/>
-  <circle cx="63" cy="34.5" r="5.6" fill="url(#ey)"/>
-  <circle cx="35" cy="32.5" r="1.7" fill="#FFFFFF" fill-opacity="0.85"/>
-  <circle cx="61" cy="32.5" r="1.7" fill="#FFFFFF" fill-opacity="0.85"/>
-  <path d="M45 53 L67 53" fill="none" stroke="url(#fl)" stroke-width="13" stroke-linecap="round"/>
-  <path d="M63 53 L63 70 C63 80 54 86 44 86 C37 86 32 83 29 77" fill="none" stroke="url(#fl)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>`;
+// The one source of the brand mark. `bun run brand:icons` regenerates public/ and the terminal .ico.
 
-const DEFS = `
-  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#191A22"/><stop offset="1" stop-color="#0B0B0A"/></linearGradient>
-  <linearGradient id="fl" x1="0.15" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#FF8A5C"/><stop offset="0.55" stop-color="#FF6A3D"/><stop offset="1" stop-color="#D9532A"/></linearGradient>
-  <radialGradient id="cr" cx="0.5" cy="0.12" r="0.7"><stop offset="0" stop-color="#4C8DFF" stop-opacity="0.32"/><stop offset="1" stop-color="#4C8DFF" stop-opacity="0"/></radialGradient>
-  <radialGradient id="em" cx="0.5" cy="0.85" r="0.6"><stop offset="0" stop-color="#FF6A3D" stop-opacity="0.32"/><stop offset="1" stop-color="#FF6A3D" stop-opacity="0"/></radialGradient>
-  <radialGradient id="ey" cx="0.4" cy="0.35" r="0.75"><stop offset="0" stop-color="#CFE0FF"/><stop offset="1" stop-color="#6FA8FF"/></radialGradient>`;
+interface MarkOptions {
+  /** Under 48px: drops the antenna and glow, enlarges the eyes. */
+  small?: boolean;
+  /** Full-bleed tile with the face inside the maskable safe zone. */
+  bleed?: boolean;
+}
 
-function markSvg(px: number, opts: { bleed?: boolean } = {}): string {
-  const bleed = opts.bleed ?? false;
-  const frame = bleed
-    ? `<rect width="100" height="100" fill="url(#bg)"/><rect width="100" height="100" fill="url(#cr)"/><rect width="100" height="100" fill="url(#em)"/>`
-    : `<rect x="3" y="3" width="94" height="94" rx="24" fill="url(#bg)" stroke="#3A3B44" stroke-width="1.5"/><rect x="3" y="3" width="94" height="94" rx="24" fill="url(#cr)"/><rect x="3" y="3" width="94" height="94" rx="24" fill="url(#em)"/>`;
-  const face = bleed
-    ? `<g transform="translate(50 50) scale(0.82) translate(-50 -48)">${FACE}</g>`
-    : FACE;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 100 100"><defs>${DEFS}</defs>${frame}${face}</svg>`;
+const J_PATH = "M46 52H66M66 52V67C66 77 57.5 83 47.5 83C40.5 83 35 80 31.5 74";
+const TILE = `x="3" y="3" width="94" height="94" rx="24"`;
+
+function pill(x: number, y: number, width: number, height: number): string {
+  const r = height / 2;
+  return `M${x + r} ${y}H${x + width - r}A${r} ${r} 0 0 1 ${x + width - r} ${y + height}H${x + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`;
+}
+
+function dot(cx: number, cy: number, r: number): string {
+  return `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
+}
+
+function face(small: boolean): string {
+  const eyeRadius = small ? 7.5 : 6.5;
+  const eyes = `${dot(36, 30.5, eyeRadius)}${dot(64, 30.5, eyeRadius)}`;
+  const antenna = small
+    ? ""
+    : `<path d="M50 19V13" stroke="${accent.primary}" stroke-width="4.5" stroke-linecap="round"/><circle cx="50" cy="10" r="4" fill="${markEye}"/>`;
+  return `${antenna}<path d="${pill(18, 20, 64, 21)}" fill="${surfaces.base}" stroke="${line.borderHi}" stroke-width="2"/><path d="${eyes}" fill="${markEye}"/><path d="${J_PATH}" fill="none" stroke="${accent.primary}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+
+export function markSvg(px: number, options: MarkOptions = {}): string {
+  const { small = false, bleed = false } = options;
+  const shape = bleed ? `width="100" height="100"` : TILE;
+  const border = bleed ? "" : ` stroke="${line.borderHi}" stroke-width="1.5"`;
+  const ember = small ? "" : `<rect ${shape} fill="url(#ember)"/>`;
+  const content = bleed
+    ? `<g transform="translate(50 50) scale(0.8) translate(-50 -48)">${face(small)}</g>`
+    : face(small);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 100 100"><defs><linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${surfaces.elevated}"/><stop offset="1" stop-color="${surfaces.base}"/></linearGradient><radialGradient id="ember" cx="0.5" cy="0.95" r="0.65"><stop offset="0" stop-color="${accent.primary}" stop-opacity="0.22"/><stop offset="1" stop-color="${accent.primary}" stop-opacity="0"/></radialGradient></defs><rect ${shape} fill="url(#tile)"${border}/>${ember}${content}</svg>`;
+}
+
+/** The single-color mark is the J alone: the face turns to noise at badge sizes. */
+export function monoMarkSvg(px: number, ink: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 100 100"><path d="${J_PATH}" transform="translate(50 50) scale(1.55) translate(-48.75 -67.5)" fill="none" stroke="${ink}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 /** Base64: resvg fails the `;utf8,` form ("svgload_buffer"). ASCII-only markup, so btoa is safe. */
-export function markDataUri(px: number, opts: { bleed?: boolean } = {}): string {
-  return `data:image/svg+xml;base64,${btoa(markSvg(px, opts))}`;
+export function markDataUri(px: number, options: MarkOptions = {}): string {
+  return `data:image/svg+xml;base64,${btoa(markSvg(px, options))}`;
 }

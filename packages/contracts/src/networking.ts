@@ -7,9 +7,6 @@ const reasonText = z.string().transform(cleanReplacementChars);
 export const NETWORKING_CHANNELS = ["email", "linkedin"] as const;
 export const networkingChannelSchema = z.enum(NETWORKING_CHANNELS);
 
-const LINKEDIN_TIERS = ["free", "premium"] as const;
-const linkedinTierSchema = z.enum(LINKEDIN_TIERS);
-
 export const NETWORKING_AUTONOMY = ["draft", "review", "auto"] as const;
 const networkingAutonomySchema = z.enum(NETWORKING_AUTONOMY);
 
@@ -17,14 +14,6 @@ const networkingAutonomySchema = z.enum(NETWORKING_AUTONOMY);
 export const networkingModeSchema = z.object({
   channel: networkingChannelSchema,
   autonomy: networkingAutonomySchema,
-});
-
-/** Shape of `Campaign.config.networking` - the per-campaign mode selector. */
-export const networkingConfigSchema = z.object({
-  channels: z.array(networkingChannelSchema).min(1),
-  linkedinTier: linkedinTierSchema.optional(),
-  autonomy: networkingAutonomySchema.default("draft"),
-  dailyCap: z.number().int().min(1).max(100).optional(),
 });
 
 export const LINKEDIN_KINDS = ["inmail", "connect_note", "dm"] as const;
@@ -96,11 +85,11 @@ const networkingMessageFieldsSchema = z.object({
 });
 
 /**
- * POST /api/campaigns/[id]/networking/messages - add a discovered contact (or attach to an
+ * POST /api/feeds/[id]/networking/messages - add a discovered contact (or attach to an
  * existing one via `contactId`) plus an initial draft message. Mirrors the
- * `addCampaignJobSchema` create-and-relate shape.
+ * `addJobSchema` create-and-relate shape.
  */
-export const addCampaignNetworkingSchema = z
+export const addFeedNetworkingSchema = z
   .object({
     contactId: z.uuid().optional(),
     contact: createContactSchema.optional(),
@@ -110,7 +99,7 @@ export const addCampaignNetworkingSchema = z
     message: "Provide either contactId or contact.",
   });
 
-/** PATCH /api/campaigns/[id]/networking/messages/[messageId] - non-terminal edits. */
+/** PATCH /api/feeds/[id]/networking/messages/[messageId] - non-terminal edits. */
 export const patchNetworkingMessageSchema = z.object({
   status: z.enum(["draft", "approved"]).optional(),
   subject: reasonText.optional().nullable(),
@@ -122,7 +111,7 @@ export const patchNetworkingMessageSchema = z.object({
 const NETWORKING_MESSAGE_OUTCOMES = ["sent", "failed", "skipped"] as const;
 const networkingMessageOutcomeSchema = z.enum(NETWORKING_MESSAGE_OUTCOMES);
 
-/** POST /api/campaigns/[id]/networking/messages/[messageId]/result - terminal outcome. */
+/** POST /api/feeds/[id]/networking/messages/[messageId]/result - terminal outcome. */
 export const networkingMessageResultSchema = z
   .object({
     outcome: networkingMessageOutcomeSchema,
@@ -156,7 +145,7 @@ export type NetworkingAutonomy = z.infer<typeof networkingAutonomySchema>;
 export type NetworkingMode = z.infer<typeof networkingModeSchema>;
 export type NetworkingMessageStatus = z.infer<typeof networkingMessageStatusSchema>;
 export type CreateContactInput = z.infer<typeof createContactSchema>;
-export type AddCampaignNetworkingInput = z.infer<typeof addCampaignNetworkingSchema>;
+export type AddFeedNetworkingInput = z.infer<typeof addFeedNetworkingSchema>;
 export type PatchNetworkingMessageInput = z.infer<typeof patchNetworkingMessageSchema>;
 export type NetworkingMessageResultInput = z.infer<typeof networkingMessageResultSchema>;
 export type SendEmailInput = z.infer<typeof sendEmailSchema>;

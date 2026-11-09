@@ -1,10 +1,9 @@
 "use client";
 
-import { type MouseEvent, type ReactNode, useState } from "react";
+import { type MouseEvent, type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { Security } from "@mui/icons-material";
 import {
   Avatar,
-  Box,
   Divider,
   IconButton,
   ListItemIcon,
@@ -14,9 +13,12 @@ import {
   Tooltip,
 } from "@mui/material";
 import NextLink from "next/link";
+import { usePathname } from "next/navigation";
 import type { AuthUserDto } from "@/api/types";
 import { LogoutMenuItem } from "@/components/features/auth";
 import { useSession } from "@/hooks/use-auth";
+import { isAdminRole } from "@/lib/roles";
+import { ADMIN_NAV_ITEM, feedbackLinks } from "./shell-config";
 
 function initials(u: AuthUserDto): string {
   const both = `${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.trim();
@@ -31,12 +33,51 @@ function displayName(u: AuthUserDto): string {
   return name || u.email || "Your profile";
 }
 
-/** One profile per user, so an identity + sign-out menu rather than a switcher. */
+interface UserProps {
+  user: AuthUserDto;
+}
+
+export function UserIdentity(props: UserProps): ReactElement {
+  const { user } = props;
+  return (
+    <ListItemText
+      primary={displayName(user)}
+      secondary={user.email || null}
+      slotProps={{ primary: { variant: "body2" }, secondary: { variant: "caption" } }}
+    />
+  );
+}
+
+export function UserAvatar(props: UserProps): ReactElement {
+  const { user } = props;
+  return (
+    <Avatar
+      sx={(theme) => ({
+        width: 32,
+        height: 32,
+        ...theme.typography.caption,
+        bgcolor: theme.tints.selected,
+        color: "accent.primary",
+      })}
+    >
+      {initials(user)}
+    </Avatar>
+  );
+}
+
+/** The rail's avatar: one profile per user, so a menu rather than a switcher. */
 export function AccountMenu(): ReactNode {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
+  const pathname = usePathname();
+  const user = useSession();
 
-  const { user } = useSession();
+  // Close after the route commit, as the phone's More sheet does.
+  useEffect(() => {
+    if (pathname) {
+      setAnchor(null);
+    }
+  }, [pathname]);
 
   if (!user) {
     return null;
@@ -44,34 +85,21 @@ export function AccountMenu(): ReactNode {
 
   const handleOpen = (e: MouseEvent<HTMLElement>) => setAnchor(e.currentTarget);
   const handleClose = () => setAnchor(null);
+  const name = displayName(user);
 
   return (
-    <Box sx={{ pb: 1 }}>
-      <Tooltip title={displayName(user)} placement="right">
+    <>
+      <Tooltip title={name} placement="right">
         <IconButton
-          aria-label={`Account: ${displayName(user)}`}
+          size="small"
+          aria-label={`Account: ${name}`}
           aria-haspopup="menu"
           aria-controls={open ? "account-menu" : undefined}
           aria-expanded={open}
           onClick={handleOpen}
-          sx={(theme) => ({
-            p: 0,
-            borderRadius: theme.radii.sm,
-            "&:focus-visible": { boxShadow: theme.shadows_custom.focus },
-          })}
+          sx={{ alignSelf: "center" }}
         >
-          <Avatar
-            sx={(theme) => ({
-              width: 36,
-              height: 36,
-              ...theme.typography.body1Strong,
-              bgcolor: theme.palette.accent.primary,
-              color: "primary.contrastText",
-              border: `1px solid ${theme.palette.line.borderHi}`,
-            })}
-          >
-            {initials(user)}
-          </Avatar>
+          <UserAvatar user={user} />
         </IconButton>
       </Tooltip>
       <Menu
@@ -87,24 +115,43 @@ export function AccountMenu(): ReactNode {
         }}
       >
         <MenuItem disabled sx={{ opacity: "1 !important" }}>
-          <ListItemText
-            primary={displayName(user)}
-            secondary={user.email || undefined}
-            slotProps={{
-              primary: { variant: "body2" },
-              secondary: { variant: "caption" },
-            }}
-          />
+          <UserIdentity user={user} />
         </MenuItem>
         <Divider />
-        <MenuItem component={NextLink} href="/settings/security" onClick={handleClose}>
-          <ListItemIcon sx={{ minWidth: 32 }}>
+        {/* Links close through the pathname effect; items that stay on the page close here. */}
+        <MenuItem component={NextLink} href="/settings/security">
+          <ListItemIcon>
             <Security fontSize="md" />
           </ListItemIcon>
           <ListItemText primary="Security settings" />
         </MenuItem>
+        {isAdminRole(user.role) && (
+          <MenuItem component={NextLink} href={ADMIN_NAV_ITEM.href}>
+            <ListItemIcon>
+              <ADMIN_NAV_ITEM.icon fontSize="md" />
+            </ListItemIcon>
+            <ListItemText primary={ADMIN_NAV_ITEM.label} />
+          </MenuItem>
+        )}
+        <Divider />
+        {feedbackLinks.map((link) => (
+          <MenuItem
+            key={link.href}
+            component="a"
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleClose}
+          >
+            <ListItemIcon>
+              <link.icon fontSize="md" />
+            </ListItemIcon>
+            <ListItemText primary={link.label} />
+          </MenuItem>
+        ))}
+        <Divider />
         <LogoutMenuItem onClick={handleClose} />
       </Menu>
-    </Box>
+    </>
   );
 }

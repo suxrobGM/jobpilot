@@ -8,7 +8,7 @@ const HOST_ALIASES: Record<string, string> = {
  * Greenhouse's params: `gh_jid` is the posting id, so a `gh_` prefix would merge distinct jobs.
  */
 const TRACKING_PARAMS = new Set([
-  "campaign",
+  "feed",
   "fbclid",
   "gclid",
   "gh_src",

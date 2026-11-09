@@ -1,43 +1,72 @@
 "use client";
 
-import type { PropsWithChildren, ReactElement } from "react";
+import { type PropsWithChildren, type ReactElement, useState } from "react";
 import { Box } from "@mui/material";
-import { AgentDock } from "@/components/features/agent-dock/agent-dock";
+import { AgentDrawer } from "@/components/features/agent/agent-drawer";
+import { AgentWaitingBanner } from "@/components/features/agent/agent-waiting-banner";
+import { PilotPairing } from "@/components/features/agent/pilot-pairing";
 import { VerifyEmailBanner } from "@/components/features/auth";
 import { PilotLive } from "@/components/features/pilot/pilot-live";
-import { useAgentAvailable } from "@/providers/agent-provider";
+import { PipelineLive } from "@/components/features/pipeline";
+import { type PageWidth, TopBarSlotsContext } from "@/components/ui/layout/top-bar-slots";
+import { useTyping } from "@/hooks/use-typing";
 import { MobileNav } from "./mobile-nav";
-import { Rail } from "./rail";
 import { MOBILE_NAV_HEIGHT } from "./shell-config";
+import { Sidebar } from "./sidebar";
+import { TopBar } from "./top-bar";
 
 export function AppShell(props: PropsWithChildren): ReactElement {
   const { children } = props;
-  // The agent terminal is desktop-only, so below md a bottom bar replaces the rail and dock.
-  const isDesktop = useAgentAvailable();
+  // The keyboard covers the bottom bar anyway, and iOS floats it above the keyboard.
+  const typing = useTyping();
+  const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null);
+  const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
+  const [tabsSlot, setTabsSlot] = useState<HTMLElement | null>(null);
+  const [pageWidth, setPageWidth] = useState<PageWidth | null>(null);
 
   return (
     <Box
       sx={(theme) => ({
         display: "flex",
-        height: "100vh",
+        // dvh, not vh: phone vh counts the hidden address bar, so the shell overflows and the page scrolls.
+        height: "100dvh",
         backgroundColor: theme.palette.surfaces.base,
       })}
     >
-      {isDesktop && <Rail />}
+      {/* Both navs render and CSS picks one at md, so the server's first paint is already right. */}
+      <Sidebar />
       <Box
         component="main"
         sx={{
+          // A column, so a full-height page (Pilot) can take what the top bar leaves.
+          display: "flex",
+          flexDirection: "column",
           flex: 1,
+          minWidth: 0,
           height: "100%",
           overflowY: "auto",
-          pb: isDesktop ? 0 : `${MOBILE_NAV_HEIGHT}px`,
+          pb: { xs: typing ? 0 : `${MOBILE_NAV_HEIGHT}px`, md: 0 },
         }}
       >
+        <TopBar
+          pageWidth={pageWidth}
+          titleRef={setTitleSlot}
+          actionsRef={setActionsSlot}
+          tabsRef={setTabsSlot}
+        />
         <VerifyEmailBanner />
+        <AgentWaitingBanner />
         <PilotLive />
-        {children}
+        <PipelineLive />
+        <PilotPairing />
+        <TopBarSlotsContext
+          value={{ title: titleSlot, actions: actionsSlot, tabs: tabsSlot, setPageWidth }}
+        >
+          {children}
+        </TopBarSlotsContext>
       </Box>
-      {isDesktop ? <AgentDock /> : <MobileNav />}
+      <AgentDrawer />
+      <MobileNav hidden={typing} />
     </Box>
   );
 }

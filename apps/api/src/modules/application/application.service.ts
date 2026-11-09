@@ -3,7 +3,7 @@ import type {
   ApplicationStatus,
   StatusTransitionInput,
 } from "@jobpilot/contracts/application";
-import { APPLICATION_STATUSES, SINGLE_APPLY_CAMPAIGN } from "@jobpilot/contracts/application";
+import { APPLICATION_STATUSES, SINGLE_APPLY_FEED } from "@jobpilot/contracts/application";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
@@ -20,7 +20,7 @@ export interface AppliedListFilters {
   board?: string;
   source?: ApplicationSource;
   search?: string;
-  campaignId?: string;
+  feedId?: string;
 }
 
 @injectable()
@@ -68,16 +68,20 @@ export class ApplicationService {
     return { total, byStatus };
   }
 
+  async count(userId: string, filters: AppliedListFilters): Promise<number> {
+    return this.prisma.application.count({ where: this.where(userId, filters) });
+  }
+
   private where(userId: string, filters: AppliedListFilters): Prisma.ApplicationWhereInput {
-    const { status, board, source, search, campaignId } = filters;
+    const { status, board, source, search, feedId } = filters;
 
     return {
       userId,
       ...(status && { status }),
       ...(board && { board: boardFilter(board) }),
       ...(source && { source }),
-      ...(campaignId && {
-        campaignId: campaignId === SINGLE_APPLY_CAMPAIGN ? null : campaignId,
+      ...(feedId && {
+        feedId: feedId === SINGLE_APPLY_FEED ? null : feedId,
       }),
       ...(search && {
         OR: [

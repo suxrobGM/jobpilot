@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { jobBriefSchema } from "../campaign";
+import { jobBriefSchema } from "../feed";
 import { networkingModeSchema } from "../networking";
 import { storedDate } from "../utils/json";
 
@@ -8,20 +8,30 @@ const outgoingMode = networkingModeSchema.shape;
 
 export const PILOT_SUBJECT_TYPES = [
   "job",
-  "campaign",
+  "feed",
   "question",
   "networking",
   "inbox",
-  "promotion",
   "application",
   "email",
   "board",
   "pilot",
   "upwork",
+  "chat",
+  "resume",
+  // Work with no record of its own, keyed by the request that asked for it.
+  "request",
 ] as const;
 export const pilotSubjectTypeSchema = z.enum(PILOT_SUBJECT_TYPES);
+type PilotSubjectType = (typeof PILOT_SUBJECT_TYPES)[number];
 
 const nullableString = z.string().nullable();
+
+export const openRequestSchema = z.object({
+  taskType: z.string(),
+  status: z.enum(["pending", "running"]),
+  payload: z.record(z.string(), z.json()),
+});
 const optionalString = z.string().optional();
 const warmContactSchema = z.object({
   id: z.uuid(),
@@ -59,7 +69,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "job.apply",
     "job",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       jobKey: z.string(),
       jobTitle: z.string(),
       url: z.string(),
@@ -72,23 +82,22 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
   ),
   taskVariant(
     "search.discover",
-    "campaign",
+    "feed",
     z.object({
       searchId: z.uuid(),
       query: z.string(),
       board: optionalString,
       resumeId: z.uuid().optional(),
       minScore: z.number(),
-      campaignId: z.uuid().optional(),
       newJobsTarget: z.number().int(),
       maxPages: z.number().int(),
     }),
   ),
   taskVariant(
-    "campaign.scorePending",
-    "campaign",
+    "feed.score",
+    "feed",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       query: z.string(),
       board: nullableString,
       resumeId: z.uuid().optional(),
@@ -98,13 +107,13 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     }),
   ),
   taskVariant(
-    "campaign.reviewPaused",
-    "campaign",
+    "search.review",
+    "feed",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       query: z.string(),
       board: nullableString,
-      // The campaign's last update, which approximates when it was paused.
+      // The feed's last update, which approximates when it was paused.
       pausedAt: storedDate,
     }),
   ),
@@ -128,7 +137,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "networking.send",
     "networking",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       messageId: z.uuid(),
       contactId: z.uuid(),
       contactName: z.string(),
@@ -141,7 +150,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "networking.followup",
     "networking",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       messageId: z.uuid(),
       contactId: z.uuid(),
       contactName: z.string(),
@@ -156,7 +165,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "networking.warmIntro",
     "networking",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       jobKey: z.string(),
       company: nullableString,
       jobTitle: z.string(),
@@ -164,22 +173,6 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       // Empty when nobody at the company is known yet; the worker discovers one.
       contacts: z.array(warmContactSchema).default([]),
       ...outgoingMode,
-    }),
-  ),
-  taskVariant(
-    "promotion.draft",
-    "promotion",
-    z.object({ platform: z.string(), target: optionalString }),
-  ),
-  taskVariant(
-    "promotion.post",
-    "promotion",
-    z.object({
-      promotionId: z.uuid(),
-      platform: z.string(),
-      target: nullableString,
-      title: nullableString,
-      body: z.string(),
     }),
   ),
   taskVariant(
@@ -209,9 +202,9 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
   ),
   taskVariant(
     "queue.score",
-    "campaign",
+    "feed",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       resumeId: z.uuid().optional(),
       minScore: z.number(),
       queuedCount: z.number().int(),
@@ -235,14 +228,14 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       board: z.string(),
       consecutiveFailures: z.number().int(),
       recentFailReasons: z.array(z.string()),
-      testJob: z.object({ campaignId: z.uuid(), jobKey: z.string(), url: z.string() }).nullable(),
+      testJob: z.object({ feedId: z.uuid(), jobKey: z.string(), url: z.string() }).nullable(),
     }),
   ),
   taskVariant(
-    "campaign.tune",
-    "campaign",
+    "search.tune",
+    "feed",
     z.object({
-      campaignId: z.uuid(),
+      feedId: z.uuid(),
       query: z.string(),
       config: z.object({ minScore: z.number().nullable(), board: nullableString }),
       counts: z.object({
@@ -256,27 +249,31 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
   ),
   taskVariant(
     "job.rescanSkipped",
-    "campaign",
-    z.object({ campaignId: z.uuid(), skippedCount: z.number().int() }),
+    "feed",
+    z.object({
+      feedId: z.uuid(),
+      skippedCount: z.number().int(),
+      // Set when the user picked jobs; otherwise every skipped job of the feed.
+      jobKeys: z.array(z.string()).optional(),
+      // The bar the user named for this rescan, over the feed's own.
+      minScore: z.number().int().min(0).max(100).optional(),
+    }),
   ),
   taskVariant(
     "job.retryFailed",
-    "campaign",
-    z.object({ campaignId: z.uuid(), failedCount: z.number().int() }),
+    "feed",
+    z.object({ feedId: z.uuid(), failedCount: z.number().int() }),
   ),
   taskVariant(
     "search.setup",
     "pilot",
-    z.object({
-      goals: z.string(),
-      minScore: z.number(),
-    }),
+    // `requested`: the user asked, so build from every resume and keep what's there.
+    z.object({ minScore: z.number(), trigger: z.enum(["requested", "auto"]) }),
   ),
   taskVariant(
     "research.explore",
     "pilot",
     z.object({
-      goals: z.string(),
       resumeId: z.uuid(),
       minScore: z.number(),
       preferCapExempt: z.boolean(),
@@ -285,17 +282,54 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       boards: z.array(z.string()),
       newJobsTarget: z.number().int(),
       trigger: z.enum(["requested", "initial", "dry", "periodic"]),
+      focus: z.string().optional(),
     }),
   ),
+  taskVariant(
+    "chat.reply",
+    "chat",
+    z.object({
+      messageId: z.uuid(),
+      // Work already queued, so the reply never asks for it twice.
+      openRequests: z.array(openRequestSchema).optional(),
+    }),
+  ),
+  taskVariant("resume.extract", "resume", z.object({ resumeId: z.uuid(), force: z.boolean() })),
+  taskVariant(
+    "resume.tailor",
+    "request",
+    z.object({
+      requestId: z.uuid(),
+      jobDescription: z.string(),
+      baseResumeId: z.uuid().optional(),
+    }),
+  ),
+  taskVariant(
+    "networking.find",
+    "request",
+    z.object({ requestId: z.uuid(), criteria: z.string() }),
+  ),
+  taskVariant(
+    "networking.rewrite",
+    "request",
+    z.object({ requestId: z.uuid(), messageIds: z.array(z.uuid()) }),
+  ),
+  taskVariant("upwork.profile", "upwork", z.object({ mode: z.enum(["review", "apply"]) })),
+  taskVariant("upwork.proposal", "upwork", z.object({ proposalId: z.uuid() })),
+  taskVariant("upwork.submit", "upwork", z.object({ proposalId: z.uuid() })),
 ]);
 
 type TaskFields = z.infer<typeof taskFieldsSchema>;
+
+/** Each task type's subject type, read off its variant so it is declared once. */
+export const TASK_SUBJECT_TYPES = Object.fromEntries(
+  taskFieldsSchema.options.map((variant) => [
+    variant.shape.taskType.value,
+    variant.shape.subjectType.value,
+  ]),
+) as Record<TaskType, PilotSubjectType>;
 export type TaskType = TaskFields["taskType"];
 export type TaskPayload<K extends TaskType> = Extract<TaskFields, { taskType: K }>["payload"];
-export type TaskSubjectType<K extends TaskType> = Extract<
-  TaskFields,
-  { taskType: K }
->["subjectType"];
 
 const taskSchema = z.intersection(
   z.object({ id: z.string(), priority: z.number(), title: z.string() }),
@@ -319,13 +353,12 @@ const taskListContentSchema = z.object({
     networkingSentToday: z.number().int(),
     resetsAt: storedDate,
   }),
-  emptyReason: z.enum(["capReached", "awaitingSetup", "clear"]).nullable(),
+  emptyReason: z.enum(["capReached", "awaitingSetup", "autopilotOff", "clear"]).nullable(),
   sleepSeconds: z.number(),
   nextWakeAt: storedDate,
 });
 
 export const taskListSchema = taskListContentSchema.extend({
-  version: z.uuid(),
   expiresAt: storedDate,
 });
 

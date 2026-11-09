@@ -1,7 +1,7 @@
 using JobPilot.Terminal.Common;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Common;
 
 public class ExponentialBackoffTests
 {

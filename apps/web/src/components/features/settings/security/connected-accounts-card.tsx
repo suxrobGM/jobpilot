@@ -19,7 +19,7 @@ export function ConnectedAccountsCard(): ReactElement {
   const oauthResult = params.get("oauth") ?? undefined;
   const provider = params.get("provider") ?? undefined;
   const reason = params.get("reason") ?? undefined;
-  const { user } = useSession();
+  const user = useSession();
   const confirm = useConfirm();
 
   const linked = user?.providers ?? [];

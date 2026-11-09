@@ -1,4 +1,5 @@
 import { alpha, type Components, type Theme } from "@mui/material/styles";
+import { iconSizes } from "../tokens";
 
 /** Here, not in globals.css, so the palette stays the one color source. */
 export const cssBaselineOverrides: Components<Theme>["MuiCssBaseline"] = {
@@ -35,6 +36,37 @@ export const chipOverrides: Components<Theme>["MuiChip"] = {
       height: 24,
     }),
   },
+  variants: [
+    {
+      // The same fill as the main button and the nav badges: one orange for "this one".
+      props: { variant: "filled", color: "primary" },
+      style: ({ theme }) => ({
+        backgroundColor: theme.palette.accent.action,
+        color: theme.palette.common.white,
+      }),
+    },
+    {
+      props: { variant: "tag" },
+      style: ({ theme }) => ({
+        height: "auto",
+        fontFamily: theme.typography.monoBody.fontFamily,
+        fontWeight: 400,
+        fontSize: "0.7rem",
+        borderRadius: theme.radii.pill,
+        color: theme.palette.text.secondary,
+        border: `1px solid ${theme.palette.line.border}`,
+        backgroundColor: theme.palette.surfaces.elevated,
+        "& .MuiChip-label": { paddingInline: 8, paddingBlock: 2, lineHeight: 1.5 },
+      }),
+    },
+    {
+      props: { variant: "tag", size: "medium" },
+      style: {
+        fontSize: "0.75rem",
+        "& .MuiChip-label": { paddingInline: 10, paddingBlock: 4, lineHeight: 1.55 },
+      },
+    },
+  ],
 };
 
 /** A flex column so pages space the header and cards with `gap`. */
@@ -53,17 +85,10 @@ export const containerOverrides: Components<Theme>["MuiContainer"] = {
 };
 
 export const svgIconOverrides: Components<Theme>["MuiSvgIcon"] = {
-  styleOverrides: {
-    root: ({ ownerState }) => ({
-      ...(ownerState.fontSize === "xs" && { fontSize: "0.875rem" }),
-      ...(ownerState.fontSize === "sm" && { fontSize: "1rem" }),
-      ...(ownerState.fontSize === "md" && { fontSize: "1.125rem" }),
-      ...(ownerState.fontSize === "lg" && { fontSize: "1.25rem" }),
-      ...(ownerState.fontSize === "xl" && { fontSize: "1.5rem" }),
-      ...(ownerState.fontSize === "xxl" && { fontSize: "1.75rem" }),
-      ...(ownerState.fontSize === "2xxl" && { fontSize: "2rem" }),
-    }),
-  },
+  variants: Object.entries(iconSizes).map(([size, px]) => ({
+    props: { fontSize: size as keyof typeof iconSizes },
+    style: { fontSize: `${px / 16}rem` },
+  })),
 };
 
 export const paperOverrides: Components<Theme>["MuiPaper"] = {
@@ -75,13 +100,6 @@ export const paperOverrides: Components<Theme>["MuiPaper"] = {
     }),
   },
   variants: [
-    {
-      props: { variant: "panel" },
-      style: ({ theme }) => ({
-        border: `1px solid ${theme.palette.line.border}`,
-        borderRadius: theme.radii.md,
-      }),
-    },
     {
       props: { variant: "inset" },
       style: ({ theme }) => ({
@@ -125,8 +143,6 @@ export const typographyOverrides: Components<Theme>["MuiTypography"] = {
       eyebrow: "p",
       monoBody: "p",
       monoCaption: "span",
-      displayLg: "h1",
-      displayMd: "h2",
       docsBody: "p",
       docsH1: "h1",
       docsH2: "h2",

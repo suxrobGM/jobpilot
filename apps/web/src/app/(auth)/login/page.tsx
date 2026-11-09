@@ -4,7 +4,7 @@ import { AuthCard, LoginForm } from "@/components/features/auth";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in to your JobPilot dashboard to run and track job-application campaigns.",
+  description: "Sign in to JobPilot to run and track your job search.",
   alternates: { canonical: "/login" },
 };
 

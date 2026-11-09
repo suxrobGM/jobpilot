@@ -12,7 +12,7 @@ export function AuthCard(props: AuthCardProps): ReactElement {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -24,12 +24,10 @@ export function AuthCard(props: AuthCardProps): ReactElement {
         <Stack spacing={3}>
           <Stack spacing={1} sx={{ alignItems: "center", textAlign: "center" }}>
             <JobPilotMark size={48} />
-            <Typography variant="h1" sx={{ fontSize: "2rem", letterSpacing: "-0.035em" }}>
+            <Typography variant="h2" component="h1">
               JobPilot
             </Typography>
-            <Typography variant="body2Muted">
-              Your autonomous copilot for the whole job search
-            </Typography>
+            <Typography variant="body2Muted">An AI agent that applies to jobs for you</Typography>
           </Stack>
           <Card>
             <CardContent sx={{ p: 4 }}>

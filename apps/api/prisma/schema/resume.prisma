@@ -15,7 +15,7 @@ model Resume {
   variants      ResumeVariant[]
   primaryFor    User?           @relation("PrimaryResume")
   applications  Application[]
-  pilotSearches PilotSearch[]
+  feeds         Feed[]
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)

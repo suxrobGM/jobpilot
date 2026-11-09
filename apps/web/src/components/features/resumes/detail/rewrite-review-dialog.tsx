@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { EMPTY_RESUME_DATA } from "@jobpilot/contracts/resume";
 import { OpenInNew } from "@mui/icons-material";
-import { Button, Divider, Paper, Stack, Typography } from "@mui/material";
+import { Button, Card, Divider, Stack, Typography } from "@mui/material";
 import { resumePdfUrl, variantPdfUrl } from "@/api/resume-urls";
 import type { ResumeDto, ResumeVariantDto } from "@/api/types";
 import { FormDialogShell } from "@/components/ui/form";
@@ -72,14 +72,14 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
             {changes.map((change) => (
               <Stack key={change.where} spacing={1}>
                 <Typography variant="body2Strong">{change.where}</Typography>
-                <Paper variant="panel" sx={{ p: 1.5 }}>
+                <Card sx={{ p: 1.5 }}>
                   <Typography variant="captionMuted">Now</Typography>
                   <Typography variant="body2Muted">{change.before || "(empty)"}</Typography>
-                </Paper>
-                <Paper variant="panel" sx={{ p: 1.5, borderColor: "primary.main" }}>
+                </Card>
+                <Card sx={{ p: 1.5, borderColor: "primary.main" }}>
                   <Typography variant="captionMuted">Suggested</Typography>
                   <Typography variant="body2">{change.after || "(empty)"}</Typography>
-                </Paper>
+                </Card>
               </Stack>
             ))}
           </Stack>

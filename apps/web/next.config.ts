@@ -23,7 +23,6 @@ const config: NextConfig = {
   // Index routes that only pick a default tab.
   redirects: async () => [
     { source: "/settings", destination: "/settings/profile", permanent: false },
-    { source: "/documents", destination: "/documents/resumes", permanent: false },
     { source: "/networking", destination: "/networking/contacts", permanent: false },
   ],
 };

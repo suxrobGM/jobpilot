@@ -37,8 +37,9 @@ model EmailAccount {
   refreshToken    String?   @map("refresh_token")
   tokenExpiresAt  DateTime? @map("token_expires_at") @db.Timestamptz(3)
   scope           String?
-  historyId       String?   @map("history_id")
   lastSyncAt      DateTime? @map("last_sync_at") @db.Timestamptz(3)
+  // Set by clearing the inbox: sync never lists mail received before it, so cleared mail stays gone.
+  clearedBefore   DateTime? @map("cleared_before") @db.Timestamptz(3)
   // Set on invalid_grant: the mailbox needs reconnecting. Cleared on the next good refresh.
   refreshFailedAt DateTime? @map("refresh_failed_at") @db.Timestamptz(3)
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)

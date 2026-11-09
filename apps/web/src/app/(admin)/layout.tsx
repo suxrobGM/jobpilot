@@ -9,14 +9,9 @@ export default function AdminLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
     <AppShell>
-      <Box sx={{ minHeight: "100%", display: "flex", flexDirection: "column", py: 3 }}>
+      <Box sx={{ flex: "1 0 auto", display: "flex", flexDirection: "column" }}>
         <PageShell maxWidth="lg">
-          <PageHeader
-            eyebrow="Platform"
-            title="Admin"
-            description="Users, platform activity, and the shared board catalog."
-          />
-          <AdminTabs />
+          <PageHeader eyebrow="Platform" title="Admin" tabs={<AdminTabs />} />
           {children}
         </PageShell>
       </Box>

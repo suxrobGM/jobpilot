@@ -1,4 +1,3 @@
-import { campaignSummarySchema } from "@jobpilot/contracts/campaign";
 import {
   networkingChannelSchema,
   networkingMessageStatusSchema,
@@ -11,14 +10,14 @@ export const networkingMessageParams = z.object({ id: z.uuid(), messageId: z.uui
 
 export const networkingMessageQuerySchema = paginationQuerySchema.extend({
   status: networkingMessageStatusSchema.optional(),
-  campaignId: z.uuid().optional(),
+  feedId: z.uuid().optional(),
 });
 
 export const networkingMessageSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
   contactId: z.uuid(),
-  campaignId: z.string().nullable(),
+  feedId: z.string().nullable(),
   channel: networkingChannelSchema,
   linkedinKind: z.string().nullable(),
   subject: z.string().nullable(),
@@ -38,5 +37,4 @@ export const networkingMessageListSchema = paginatedSchema(networkingMessageSche
 
 export const networkingMessageResultResponseSchema = z.object({
   message: networkingMessageSchema,
-  summary: campaignSummarySchema,
 });

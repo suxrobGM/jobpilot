@@ -99,9 +99,13 @@ export function words(s: string): Word[] {
   return s.split(" ").map((t) => {
     const opens = t.startsWith("*");
     const closes = t.endsWith("*") && t.length > 1;
-    if (opens) inAccent = true;
+    if (opens) {
+      inAccent = true;
+    }
     const word = { text: t.replace(/^\*|\*$/g, ""), accent: inAccent };
-    if (closes) inAccent = false;
+    if (closes) {
+      inAccent = false;
+    }
     return word;
   });
 }

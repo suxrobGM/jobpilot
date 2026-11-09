@@ -1,5 +1,13 @@
 import { newTokens, type TokenUsage } from "@jobpilot/contracts/pilot";
-import { format, formatDistanceStrict, formatDistanceToNowStrict, isSameDay } from "date-fns";
+import {
+  format,
+  formatDistanceStrict,
+  formatDistanceToNowStrict,
+  isSameDay,
+  isThisYear,
+  isToday,
+  isYesterday,
+} from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 
 const COMPACT_UNIT: Record<string, string> = {
@@ -53,11 +61,6 @@ export function formatSpanBetween(start: string | Date, end: string | Date): str
   return formatDistanceStrict(from, to, { locale: compactLocale });
 }
 
-/** Compact duration from a plain second count, e.g. `20m`. */
-export function formatDuration(seconds: number): string {
-  return formatSpanBetween(new Date(0), new Date(seconds * 1000));
-}
-
 const countFormat = new Intl.NumberFormat("en-US");
 
 /** Whole count with a fixed locale, so server and browser render the same digits. */
@@ -98,6 +101,11 @@ export function formatDate(value: string | Date | null | undefined): string {
   return Number.isNaN(date.getTime())
     ? "-"
     : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+/** An hour of the day as a clock time, e.g. `09:00`. */
+export function formatHour(hour: number): string {
+  return `${String(hour).padStart(2, "0")}:00`;
 }
 
 /** Pinned to UTC: a bucket is UTC midnight, which shows as the previous day west of Greenwich. */
@@ -143,4 +151,31 @@ export function humanizeIsoInText(text: string): string {
     }
     return isSameDay(date, new Date()) ? format(date, "h:mm a") : format(date, "MMM d, h:mm a");
   });
+}
+
+/** "Today", "Yesterday", or the date, for day separators. */
+export function formatDayLabel(date: Date): string {
+  if (isToday(date)) {
+    return "Today";
+  }
+  if (isYesterday(date)) {
+    return "Yesterday";
+  }
+  return format(date, isThisYear(date) ? "EEEE, MMM d" : "MMM d, yyyy");
+}
+
+export function humanizeKey(key: string): string {
+  const spaced = key.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
+}
+
+export function initials(name: string): string {
+  const letters = name
+    .trim()
+    .split(/\s+/)
+    .filter((word) => /^\p{L}/u.test(word))
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
+  return letters || "?";
 }

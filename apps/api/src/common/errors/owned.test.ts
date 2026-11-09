@@ -12,23 +12,9 @@ describe("findOwned", () => {
     expect(found).toBe(row);
   });
 
-  it("passes the where clause through to the finder unchanged", async () => {
-    const where = { id: "abc", userId: "p1" };
-    let seen: unknown;
-    await findOwned(
-      async (w) => {
-        seen = w;
-        return {};
-      },
-      where,
-      "Credential",
-    );
-    expect(seen).toBe(where);
-  });
-
   it("throws a 404 HttpError labelled with the entity when nothing is found", async () => {
-    const call = findOwned(async () => null, { id: "missing" }, "Campaign");
-    await expect(call).rejects.toThrow("Campaign not found");
+    const call = findOwned(async () => null, { id: "missing" }, "Feed");
+    await expect(call).rejects.toThrow("Feed not found");
     await expect(call).rejects.toMatchObject({ status: 404, code: "NOT_FOUND" });
     await expect(call).rejects.toBeInstanceOf(HttpError);
   });

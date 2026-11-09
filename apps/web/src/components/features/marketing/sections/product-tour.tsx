@@ -3,11 +3,11 @@
 import { type ReactElement, useState } from "react";
 import { Box, Grid, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { Glow } from "../glow";
-import { CampaignsPanel } from "../mock-panels/campaigns-panel";
 import { InboxPanel } from "../mock-panels/inbox-panel";
+import { PilotPanel } from "../mock-panels/pilot-panel";
+import { PipelinePanel } from "../mock-panels/pipeline-panel";
 import { ResumePanel } from "../mock-panels/resume-panel";
 import { UpworkPanel } from "../mock-panels/upwork-panel";
-import { WorkspacePanel } from "../mock-panels/workspace-panel";
 import { Section } from "../section";
 import { SectionHeading } from "../section-heading";
 
@@ -21,11 +21,18 @@ interface TourStop {
 
 const STOPS: TourStop[] = [
   {
-    id: "workspace",
-    label: "Applications",
-    title: "Every application in one place.",
-    body: "The agent records each application as it sends it, so you can follow it from applied to offer without a spreadsheet.",
-    panel: <WorkspacePanel />,
+    id: "pilot",
+    label: "Pilot",
+    title: "An assistant you can talk to.",
+    body: "The Pilot reports what it did as it goes. Tell it what to change in plain words and it does it, with an Undo on every change.",
+    panel: <PilotPanel />,
+  },
+  {
+    id: "pipeline",
+    label: "Pipeline",
+    title: "Every job and application in one place.",
+    body: "Each job the agent finds lands in your pipeline with its score, and each application is tracked from applied to offer. No spreadsheet.",
+    panel: <PipelinePanel />,
   },
   {
     id: "inbox",
@@ -40,13 +47,6 @@ const STOPS: TourStop[] = [
     title: "A tailored resume for each job.",
     body: "You keep one main resume. For each application the agent makes a copy aimed at that job and saves it as a PDF, so you can always see which version you sent where.",
     panel: <ResumePanel />,
-  },
-  {
-    id: "campaigns",
-    label: "Campaigns",
-    title: "Or run each step yourself.",
-    body: "Campaigns handle one search, a list of job links, or a round of messages when you want to drive. You start each one from the dashboard and watch the agent work.",
-    panel: <CampaignsPanel />,
   },
   {
     id: "upwork",

@@ -123,7 +123,7 @@ interface FormStackProps {
 
 /**
  * The grind: forms fly up out of the dark in a tilted 3D plane, faster and
- * faster, while a counter runs. Pure motion graphic, no real data.
+ * faster. Pure motion graphic, no real data.
  */
 export function FormStack(props: FormStackProps): ReactElement {
   const { dur } = props;
@@ -155,7 +155,6 @@ export function FormStack(props: FormStackProps): ReactElement {
       </div>,
     );
   }
-  const count = Math.floor(1 + pos * 22);
   return (
     <AbsoluteFill style={{ perspective: 1600, overflow: "hidden" }}>
       <AbsoluteFill
@@ -171,20 +170,6 @@ export function FormStack(props: FormStackProps): ReactElement {
           background: `radial-gradient(ellipse 60% 45% at 50% 50%, ${alpha(c.base, 0.86)}, ${alpha(c.base, 0.35)} 55%, ${alpha(c.base, 0.05)})`,
         }}
       />
-      <div
-        style={{
-          position: "absolute",
-          right: 70,
-          bottom: 56,
-          fontFamily: fonts.mono,
-          fontSize: 30,
-          color: c.text2,
-          letterSpacing: "0.14em",
-        }}
-      >
-        APPLICATIONS SENT{" "}
-        <span style={{ color: c.flame, fontWeight: 700 }}>{String(count).padStart(3, "0")}</span>
-      </div>
     </AbsoluteFill>
   );
 }

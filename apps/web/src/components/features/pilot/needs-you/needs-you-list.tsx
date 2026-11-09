@@ -1,0 +1,50 @@
+"use client";
+
+import type { ReactElement, ReactNode } from "react";
+import { Badge, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { pilotQueries } from "@/api/queries";
+import { ChangeCard } from "../changes/change-card";
+import { NoticeCard } from "./notice-card";
+import { ParkedJobCard } from "./parked-job-card";
+import { QuestionCard } from "./question-card";
+import { type Pending, useNeedsYou, useNeedsYouCount } from "./use-needs-you";
+
+/** Everything waiting on the user, answered in place; parked jobs open on their own page. */
+export function NeedsYouList(): ReactElement {
+  const { data: notices = [] } = useQuery(pilotQueries.notices());
+  const items = useNeedsYou();
+  const total = useNeedsYouCount();
+
+  const render = (item: Pending): ReactNode => {
+    switch (item.type) {
+      case "question":
+        return <QuestionCard key={item.id} question={item.question} />;
+      case "change":
+        return <ChangeCard key={item.id} change={item.change} />;
+      case "job":
+        return <ParkedJobCard key={item.id} job={item.job} />;
+    }
+  };
+
+  return (
+    <Stack spacing={1.25}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", px: 0.5 }}>
+        <Typography variant="overline">Needs you</Typography>
+        {total > 0 && (
+          // Matches the rail badge.
+          <Badge badgeContent={total} variant="inline" />
+        )}
+      </Stack>
+      {total === 0 && (
+        <Typography variant="body2Muted" sx={{ px: 0.5 }}>
+          Nothing is waiting on you. I'll ask here when something is.
+        </Typography>
+      )}
+      {notices.map((notice) => (
+        <NoticeCard key={notice.key} notice={notice} />
+      ))}
+      {items.map(render)}
+    </Stack>
+  );
+}

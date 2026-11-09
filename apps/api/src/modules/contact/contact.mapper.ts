@@ -3,7 +3,7 @@ import { normalizeJobUrl } from "@/common/utils/url";
 
 /**
  * Map a validated contact payload to Prisma `Contact` create fields (sans
- * `userId`). Shared by the manual contacts route and the campaign-discovery
+ * `userId`). Shared by the manual contacts route and the feed-discovery
  * route so the optional-field defaulting lives in one place. Callers may
  * override individual fields after spreading (e.g. `discoverySource`).
  */

@@ -259,10 +259,14 @@ export class PortfolioService {
     let run = 0;
     for (const p of perDay) {
       run = p.count > 0 ? run + 1 : 0;
-      if (run > longest) longest = run;
+      if (run > longest) {
+        longest = run;
+      }
     }
     let current = 0;
-    for (let i = perDay.length - 1; i >= 0 && perDay[i].count > 0; i--) current++;
+    for (let i = perDay.length - 1; i >= 0 && perDay[i].count > 0; i--) {
+      current++;
+    }
     return { current, longest };
   }
 

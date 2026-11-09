@@ -1,4 +1,5 @@
 import { sse } from "elysia";
+import { unrefTimer } from "../utils/async";
 
 /** Topic-based in-process SSE pub/sub with bounded per-topic replay. */
 export interface SseBroker<TEvent> {
@@ -79,10 +80,10 @@ export function createSseBroker<TEvent = unknown>(
       return;
     }
 
-    // Keep the topic alive briefly so a reconnect can replay gap events; unref so it never holds the process open.
+    // Keep the topic alive briefly so a reconnect can replay gap events.
     if (retentionMs > 0) {
       const timer = setTimeout(() => topics.delete(topic), retentionMs);
-      (timer as { unref?: () => void }).unref?.();
+      unrefTimer(timer);
       t.evict = timer;
     } else {
       topics.delete(topic);

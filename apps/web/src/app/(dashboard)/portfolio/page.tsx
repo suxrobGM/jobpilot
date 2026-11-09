@@ -7,12 +7,8 @@ export const metadata: Metadata = { title: "Portfolio" };
 
 export default function PortfolioPage(): ReactElement {
   return (
-    <PageShell maxWidth="md">
-      <PageHeader
-        eyebrow="Share"
-        title="Portfolio"
-        description="Your public hire-me page, built from your active resume and job-search activity."
-      />
+    <PageShell maxWidth="xl">
+      <PageHeader title="Portfolio" />
       <PortfolioSettings />
     </PageShell>
   );

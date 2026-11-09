@@ -15,13 +15,13 @@ export function NetworkingStatTiles(props: NetworkingStatTilesProps): ReactEleme
 
   return (
     <Grid container spacing={1.5}>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+      <Grid size={{ xs: 6, sm: 4, md: "grow" }}>
         <StatCard label="Contacts" value={totals.contacts} />
       </Grid>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+      <Grid size={{ xs: 6, sm: 4, md: "grow" }}>
         <StatCard label="Sent" value={totals.sent} hint={`${thisWeek.sent} this week`} />
       </Grid>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+      <Grid size={{ xs: 6, sm: 4, md: "grow" }}>
         <StatCard
           label="Replied"
           value={totals.replied}
@@ -29,10 +29,10 @@ export function NetworkingStatTiles(props: NetworkingStatTilesProps): ReactEleme
           accent="success"
         />
       </Grid>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+      <Grid size={{ xs: 6, sm: 4, md: "grow" }}>
         <StatCard label="Reply rate" value={`${replyRatePct}%`} />
       </Grid>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+      <Grid size={{ xs: 6, sm: 4, md: "grow" }}>
         <StatCard label="Bounced" value={totals.bounced} accent="error" />
       </Grid>
     </Grid>

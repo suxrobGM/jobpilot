@@ -1,6 +1,7 @@
 using System.Text;
-using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Sessions.Pty;
 using Pty.Net;
 
 namespace JobPilot.Terminal.Sessions;
@@ -66,13 +67,7 @@ public sealed class TerminalSession : IDisposable
 
     /// <summary>Starts a provider unless it is already running, replacing any other one.</summary>
     /// <exception cref="PtyStartException">The process could not be spawned.</exception>
-    public void Start(
-        Provider provider,
-        int cols,
-        int rows,
-        string? apiToken = null,
-        string? apiUrl = null,
-        string? webUrl = null)
+    public void Start(Provider provider, int cols, int rows, ApiConnection api)
     {
         lock (sync)
         {
@@ -93,33 +88,31 @@ public sealed class TerminalSession : IDisposable
                 current = null;
             }
 
-            scratch.CleanSessionStart(paths);
+            scratch.CleanForNewSession(paths);
             var args = provider.BuildArgs(paths.PluginDir, logger);
             logger.LogInformation(
-                "Starting {Provider}: cwd={Cwd} command={Command} args={Args} cols={Cols} rows={Rows}",
+                "Starting {Provider}: cwd={Cwd} executable={Executable} args={Args} cols={Cols} rows={Rows}",
                 provider.DisplayName,
                 paths.WorkingDir,
-                provider.Command,
+                provider.Executable,
                 string.Join(" ", args),
                 cols,
                 rows);
 
-            // Skills write scratch files here; a shell-local TEMP would not survive between tool calls.
-            var scratchDir = Directory.CreateDirectory(paths.ScratchDir).FullName;
-            var env = new Dictionary<string, string>(StringComparer.Ordinal)
+            var options = new PtyOptions
             {
-                ["JOBPILOT_SKILLS_ROOT"] = paths.SkillsDir,
-                ["JOBPILOT_WORKSPACE_ROOT"] = paths.WorkingDir,
-                ["JOBPILOT_TEMP"] = scratchDir,
-                ["JOBPILOT_API"] = RequestOrEnv(apiUrl, "JOBPILOT_API", "http://localhost:4101"),
-                ["JOBPILOT_API_TOKEN"] = RequestOrEnv(apiToken, "JOBPILOT_API_TOKEN", ""),
-                ["JOBPILOT_WEB"] = RequestOrEnv(webUrl, "JOBPILOT_WEB", "http://localhost:4100"),
+                App = provider.Executable,
+                CommandLine = args,
+                Cwd = paths.WorkingDir,
+                Cols = cols,
+                Rows = rows,
+                ForceWinPty = false,
+                Environment = SessionEnvironment.Build(paths, api),
             };
 
             Starting?.Invoke();
 
-            var process = new PtyProcess(
-                PtyProcess.BuildOptions(provider.Command, args, paths.WorkingDir, cols, rows, paths.BinDir, env), spawn, logger);
+            var process = new PtyProcess(options, spawn, logger);
             process.Output += data => Output?.Invoke(data);
             process.Exited += exitCode => OnExited(process, exitCode);
             try
@@ -183,6 +176,13 @@ public sealed class TerminalSession : IDisposable
 
     public void Write(byte[] data) => current?.Write(data);
 
+    /// <summary>When the user last typed into the terminal; the pilot holds new runs for a while after.</summary>
+    public DateTimeOffset? LastUserInputAt { get; private set; }
+
+    public void MarkUserInput() => LastUserInputAt = DateTimeOffset.UtcNow;
+
+    public void ResetLastUserInput() => LastUserInputAt = null;
+
     public void Resize(int cols, int rows) => current?.Resize(cols, rows);
 
     public void Stop()
@@ -223,7 +223,4 @@ public sealed class TerminalSession : IDisposable
 
         Exited?.Invoke(new SessionExit(providerName, exitCode));
     }
-
-    private static string RequestOrEnv(string? value, string envKey, string fallback) =>
-        !string.IsNullOrEmpty(value) ? value : Environment.GetEnvironmentVariable(envKey) ?? fallback;
 }

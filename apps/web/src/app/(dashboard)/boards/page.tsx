@@ -1,21 +1,18 @@
 import type { ReactElement } from "react";
 import type { Metadata } from "next";
 import { AddBoardButton } from "@/components/features/boards/add-board-button";
-import { BoardsContent } from "@/components/features/boards/boards-content";
+import { BoardsSection } from "@/components/features/boards/boards-section";
+import { CredentialsSection } from "@/components/features/boards/credentials-section";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
-export const metadata: Metadata = { title: "Boards" };
+export const metadata: Metadata = { title: "Job boards" };
 
 export default function BoardsPage(): ReactElement {
   return (
-    <PageShell maxWidth="lg">
-      <PageHeader
-        eyebrow="Configure"
-        title="Job boards"
-        description="Sites the search and apply skills can use. Pick one when launching a campaign. Logins live under Settings, Credentials."
-        actions={<AddBoardButton />}
-      />
-      <BoardsContent />
+    <PageShell maxWidth="md">
+      <PageHeader title="Job boards" actions={<AddBoardButton />} />
+      <BoardsSection />
+      <CredentialsSection />
     </PageShell>
   );
 }

@@ -1,18 +1,34 @@
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
-import { isPrismaError, notFound, PRISMA_ERRORS } from "@/common/errors";
+import { DAY_MS } from "@/common/date/buckets";
+import { notFound } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { logger } from "@/common/logger";
 import { publish } from "@/common/sse";
-import { PrismaClient } from "@/generated/prisma/client";
+import { type EmailAccount, PrismaClient } from "@/generated/prisma/client";
 import { MailboxSessionService } from "../account/mailbox-session.service";
-import { EmailProviders } from "../email-provider";
+import type { NormalizedMessage } from "../email.types";
+import { GmailClient } from "../gmail.client";
+import { MicrosoftClient } from "../microsoft.client";
 
-/** The fields the reply-linker needs from a freshly-synced inbound message. */
-interface InboundForLinking {
-  threadId: string | null;
-  fromAddress: string;
-  receivedAt: Date;
+/** How far back the first sync after connecting reaches. */
+const FIRST_SYNC_DAYS = 14;
+
+/** Fetched and stored together, so a failed sync keeps what it already stored. */
+const STORE_CHUNK = 100;
+
+type SyncedAccount = Pick<EmailAccount, "lastSyncAt" | "clearedBefore">;
+
+/** A day of overlap covers late delivery; stored ids are skipped before fetching anyway. */
+function syncWindowStart(account: SyncedAccount, now: Date): Date {
+  const { lastSyncAt, clearedBefore } = account;
+  const start = lastSyncAt
+    ? new Date(lastSyncAt.getTime() - DAY_MS)
+    : new Date(now.getTime() - FIRST_SYNC_DAYS * DAY_MS);
+  if (clearedBefore && clearedBefore > start) {
+    return clearedBefore;
+  }
+  return start;
 }
 
 @injectable()
@@ -20,7 +36,8 @@ export class EmailSyncService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly sessions = inject(MailboxSessionService),
-    private readonly providers = inject(EmailProviders),
+    private readonly gmail = inject(GmailClient),
+    private readonly microsoft = inject(MicrosoftClient),
   ) {}
 
   /**
@@ -57,107 +74,102 @@ export class EmailSyncService {
     if (!mailbox) {
       throw notFound("No email account connected");
     }
-    const { account: active, session } = mailbox;
+    const { account, session } = mailbox;
 
     publish(inboxChannel, { userId }, { type: "sync.started" });
 
-    const result = await this.providers.sync(active.provider, session);
-
-    let inserted = 0;
-    const insertedForLinking: InboundForLinking[] = [];
-    for (const m of result.newMessages) {
-      try {
-        await this.prisma.emailMessage.create({
-          data: {
-            accountId: active.id,
-            providerId: m.providerId,
-            threadId: m.threadId,
-            subject: m.subject,
-            fromAddress: m.fromAddress,
-            fromName: m.fromName,
-            fromDomain: m.fromDomain,
-            snippet: m.snippet,
-            body: m.body,
-            links: toInputJson(m.links),
-            receivedAt: m.receivedAt,
-          },
+    const startedAt = new Date();
+    if (account.provider === "microsoft") {
+      const pulled = await this.microsoft.sync(
+        session,
+        syncWindowStart(account, startedAt).getTime(),
+      );
+      let count = 0;
+      for (let i = 0; i < pulled.newMessages.length; i += STORE_CHUNK) {
+        const messages = pulled.newMessages.slice(i, i + STORE_CHUNK);
+        const created = await this.prisma.emailMessage.createMany({
+          data: messages.map((m) => ({ ...m, accountId: account.id, links: toInputJson(m.links) })),
+          skipDuplicates: true,
         });
-        inserted += 1;
-        insertedForLinking.push({
-          threadId: m.threadId,
-          fromAddress: m.fromAddress,
-          receivedAt: m.receivedAt,
-        });
-      } catch (e) {
-        if (isPrismaError(e, PRISMA_ERRORS.UNIQUE_VIOLATION)) {
-          continue;
-        }
-        throw e;
+        count += created.count;
+        await this.linkNetworkingReplies(userId, messages);
       }
+      await this.prisma.emailAccount.update({
+        where: { id: account.id },
+        data: { deltaLink: pulled.deltaLink ?? account.deltaLink, lastSyncAt: startedAt },
+      });
+      const result = { fetched: pulled.fetched, new: count };
+      publish(inboxChannel, { userId }, { type: "sync.progress", ...result });
+      return result;
     }
+    const ids = await this.gmail.listMessageIds(session, syncWindowStart(account, startedAt));
+    const unstored = await this.unstoredIds(account.id, ids);
 
-    // Flip any sent networking messages to "replied" when their reply just arrived.
-    await this.linkNetworkingReplies(userId, insertedForLinking);
-
+    let count = 0;
+    for (let i = 0; i < unstored.length; i += STORE_CHUNK) {
+      const messages = await this.gmail.getMessages(session, unstored.slice(i, i + STORE_CHUNK));
+      // skipDuplicates: a concurrent sync may have stored some of them meanwhile.
+      const created = await this.prisma.emailMessage.createMany({
+        data: messages.map((m) => ({ ...m, accountId: account.id, links: toInputJson(m.links) })),
+        skipDuplicates: true,
+      });
+      count += created.count;
+      await this.linkNetworkingReplies(userId, messages);
+    }
     await this.prisma.emailAccount.update({
-      where: { id: active.id },
-      data: {
-        historyId: result.historyId ?? active.historyId,
-        deltaLink: result.deltaLink ?? active.deltaLink,
-        lastSyncAt: new Date(),
-      },
+      where: { id: account.id },
+      data: { lastSyncAt: startedAt },
     });
 
-    publish(
-      inboxChannel,
-      { userId },
-      {
-        type: "sync.progress",
-        fetched: result.fetched,
-        new: inserted,
-      },
-    );
+    const result = { fetched: ids.length, new: count };
+    publish(inboxChannel, { userId }, { type: "sync.progress", ...result });
+    return result;
+  }
 
-    return { fetched: result.fetched, new: inserted };
+  private async unstoredIds(accountId: string, ids: string[]): Promise<string[]> {
+    const stored = await this.prisma.emailMessage.findMany({
+      where: { accountId, providerId: { in: ids } },
+      select: { providerId: true },
+    });
+    const storedIds = new Set(stored.map((m) => m.providerId));
+    return ids.filter((id) => !storedIds.has(id));
   }
 
   /**
-   * Flip `sent` networking messages to `replied` when a matching inbound email
-   * arrives. Matches first by Gmail `threadId` (the thread the networking message was sent
-   * on), then falls back to the sender address equalling a contact's email.
-   * Returns the number of networking messages newly marked replied.
+   * Flips `sent` networking messages to `replied` when their reply arrives: by Gmail thread first,
+   * else by the sender matching a contact's email. Matched in memory: most users have none sent.
    */
   private async linkNetworkingReplies(
     userId: string,
-    messages: InboundForLinking[],
-  ): Promise<number> {
-    let linked = 0;
+    messages: NormalizedMessage[],
+  ): Promise<void> {
+    const sent = await this.prisma.networkingMessage.findMany({
+      where: { userId, status: "sent" },
+      select: { id: true, threadId: true, contact: { select: { email: true } } },
+    });
+    if (sent.length === 0) {
+      return;
+    }
 
+    const sentThreads = new Set(sent.map((s) => s.threadId));
+    const repliedAt = new Map<string, Date>();
     for (const m of messages) {
-      if (m.threadId) {
-        const byThread = await this.prisma.networkingMessage.updateMany({
-          where: { userId, status: "sent", threadId: m.threadId },
-          data: { status: "replied", repliedAt: m.receivedAt },
-        });
-        linked += byThread.count;
-        if (byThread.count > 0) continue;
-      }
-
-      if (m.fromAddress) {
-        const contacts = await this.prisma.contact.findMany({
-          where: { userId, email: m.fromAddress },
-          select: { id: true },
-        });
-        if (contacts.length > 0) {
-          const byEmail = await this.prisma.networkingMessage.updateMany({
-            where: { userId, status: "sent", contactId: { in: contacts.map((c) => c.id) } },
-            data: { status: "replied", repliedAt: m.receivedAt },
-          });
-          linked += byEmail.count;
+      const byThread = m.threadId !== null && sentThreads.has(m.threadId);
+      for (const s of sent) {
+        const matches = byThread ? s.threadId === m.threadId : s.contact.email === m.fromAddress;
+        if (matches && m.fromAddress && !repliedAt.has(s.id)) {
+          repliedAt.set(s.id, m.receivedAt);
         }
       }
     }
 
-    return linked;
+    await this.prisma.$transaction(
+      [...repliedAt].map(([id, at]) =>
+        this.prisma.networkingMessage.updateMany({
+          where: { id, status: "sent" },
+          data: { status: "replied", repliedAt: at },
+        }),
+      ),
+    );
   }
 }

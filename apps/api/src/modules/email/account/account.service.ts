@@ -39,7 +39,9 @@ export class EmailAccountService {
 
   async accountStatus(userId: string) {
     const account = await this.prisma.emailAccount.findUnique({ where: { userId } });
-    if (!account) return { connected: false as const, canSend: false };
+    if (!account) {
+      return { connected: false as const, canSend: false };
+    }
     const microsoftConfig =
       account.provider === "microsoft"
         ? await this.prisma.emailOAuthClient.findUnique({
@@ -66,25 +68,31 @@ export class EmailAccountService {
 
   async send(userId: string, body: SendEmailInput) {
     const mailbox = await this.sessions.open(userId);
-    if (!mailbox) throw notFound("No email account connected");
+    if (!mailbox) {
+      throw notFound("No email account connected");
+    }
     if (
       !mailboxCanSend(mailbox.account.provider, mailbox.account.scope, !!mailbox.account.mailboxId)
-    )
+    ) {
       throw unprocessable(
         "Connected mailbox lacks send access. Reconnect it with sending enabled.",
       );
+    }
     try {
       return await this.providers.send(mailbox.account.provider, mailbox.session, body);
     } catch (error) {
-      if (error instanceof HttpError) throw error;
+      if (error instanceof HttpError) {
+        throw error;
+      }
       throw badGateway("The email provider could not send this message.");
     }
   }
 
   async buildAuthorizeUrl(userId: string, provider: EmailProvider = "gmail") {
     const active = await this.prisma.emailAccount.findUnique({ where: { userId } });
-    if (active && active.provider !== provider)
+    if (active && active.provider !== provider) {
       throw conflict("Disconnect the current mailbox before connecting another provider.");
+    }
     const config = await this.sessions.resolveOAuthClient(userId, provider);
     const state = randomBytes(32).toString("base64url");
     const verifier = randomBytes(32).toString("base64url");
@@ -104,29 +112,34 @@ export class EmailAccountService {
     expectedConfigHash?: string,
   ): Promise<{ email: string }> {
     const config = await this.sessions.resolveOAuthClient(userId, provider);
-    if (!expectedConfigHash || configHash(config) !== expectedConfigHash)
+    if (!expectedConfigHash || configHash(config) !== expectedConfigHash) {
       throw new OAuthFlowError<EmailConnectErrorReason>("invalid_callback");
+    }
     let exchanged: ExchangedCode;
     try {
       exchanged = await this.providers.exchangeCode(provider, config, code, verifier);
     } catch (error) {
-      if (error instanceof OAuthFlowError) throw error;
+      if (error instanceof OAuthFlowError) {
+        throw error;
+      }
       if (provider === "microsoft" && error instanceof HttpError && error.status === 403) {
         throw new OAuthFlowError<EmailConnectErrorReason>("mailbox_access_denied");
       }
       throw new OAuthFlowError<EmailConnectErrorReason>("provider_error");
     }
     const { tokens, email } = exchanged;
-    if (!mailboxCanRead(provider, tokens.scope, !!exchanged.mailboxId))
+    if (!mailboxCanRead(provider, tokens.scope, !!exchanged.mailboxId)) {
       throw new OAuthFlowError<EmailConnectErrorReason>("scope_not_granted");
+    }
     const existing = await this.prisma.emailAccount.findUnique({ where: { userId } });
     if (
       existing &&
       (existing.provider !== provider ||
         existing.email.toLowerCase() !== email.toLowerCase() ||
         (existing.signedInEmail !== null && existing.signedInEmail !== exchanged.signedInEmail))
-    )
+    ) {
       throw conflict("Disconnect the current mailbox before changing the connected identity.");
+    }
     const fields = {
       provider,
       email,
@@ -143,9 +156,11 @@ export class EmailAccountService {
       refreshFailedAt: null,
     };
     // Create instead of upsert: racing OAuth callbacks must not replace a different mailbox.
-    if (existing)
+    if (existing) {
       await this.prisma.emailAccount.update({ where: { id: existing.id }, data: fields });
-    else await this.prisma.emailAccount.create({ data: { userId, ...fields } });
+    } else {
+      await this.prisma.emailAccount.create({ data: { userId, ...fields } });
+    }
     return { email };
   }
 
@@ -187,18 +202,22 @@ export class EmailAccountService {
       (existing.clientId !== input.clientId ||
         existing.tenantId !== tenantId ||
         existing.mailbox !== mailbox)
-    )
+    ) {
       throw conflict(
         "Disconnect this mailbox before changing its OAuth client, tenant or mailbox address.",
       );
+    }
     let clientSecret = existing?.clientSecret;
-    if (input.clientSecret?.trim())
+    if (input.clientSecret?.trim()) {
       clientSecret = await this.crypto.encryptFor(
         userId,
         SECRET_CONTEXTS.emailOAuthClient,
         input.clientSecret.trim(),
       );
-    if (!clientSecret) throw badRequest("Client secret is required");
+    }
+    if (!clientSecret) {
+      throw badRequest("Client secret is required");
+    }
     const fields = {
       clientId: input.clientId,
       clientSecret,
@@ -216,8 +235,9 @@ export class EmailAccountService {
 
   async deleteOAuthClient(userId: string, provider: EmailProvider = "gmail") {
     const active = await this.prisma.emailAccount.findUnique({ where: { userId } });
-    if (active?.provider === provider)
+    if (active?.provider === provider) {
       throw conflict("Disconnect the mailbox before removing its OAuth client.");
+    }
     await this.prisma.emailOAuthClient.deleteMany({ where: { userId, provider } });
     return { ok: true as const };
   }

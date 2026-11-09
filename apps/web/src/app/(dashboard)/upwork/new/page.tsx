@@ -9,7 +9,6 @@ export default function NewProposalPage(): ReactElement {
   return (
     <PageShell maxWidth="md">
       <PageHeader
-        eyebrow="Upwork"
         title="New proposal"
         description="Paste a job posting; the proposal skill drafts a targeted proposal in the terminal."
         backHref="/upwork"

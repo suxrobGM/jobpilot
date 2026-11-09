@@ -11,7 +11,9 @@ import { OAuthClientCard } from "./oauth-client-card";
 
 export function EmailSection(): ReactElement {
   const account = useQuery(emailQueries.account());
-  if (!account.data) return <LoadingSpinner />;
+  if (!account.data) {
+    return <LoadingSpinner />;
+  }
   return (
     <ProviderSettings initialProvider={account.data.connected ? account.data.provider : "gmail"} />
   );

@@ -17,7 +17,7 @@ export function StatCard(props: StatCardProps): ReactElement {
     <Card sx={{ height: "100%" }}>
       <CardContent>
         <Stack spacing={0.5}>
-          <Typography variant="statLabel">{label}</Typography>
+          <Typography variant="overlineMuted">{label}</Typography>
           <Typography
             variant="statValue"
             sx={{ color: accent ? `${accent}.main` : "text.primary" }}

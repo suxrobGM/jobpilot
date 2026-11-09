@@ -2,15 +2,22 @@
 // Calls the JobPilot API as the session's user. Node's fetch does TLS through OpenSSL, so it works
 // inside the Codex Windows sandbox, where Schannel-based HTTP clients cannot get credentials.
 import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const USAGE = `usage: jobpilot-api <METHOD> <path> [--query key=value]... [--data <json>|@<file>|-] [--out <file>]
 
   jobpilot-api GET /api/user
   jobpilot-api GET /api/applications --query search=Acme --query limit=100
-  jobpilot-api POST /api/campaigns --data @body.json
+  jobpilot-api POST /api/feeds --data @body.json
   jobpilot-api GET /api/resumes/3/pdf --out resume-3.pdf`;
 
 const REQUEST_TIMEOUT_MS = 120_000;
+
+// The API refuses skill trees too old for it, so every call says which one this is.
+const PLUGIN_MANIFEST = fileURLToPath(new URL("../.claude-plugin/plugin.json", import.meta.url));
+const PLUGIN_VERSION = /** @type {{ version: string }} */ (
+  JSON.parse(readFileSync(PLUGIN_MANIFEST, "utf8"))
+).version;
 
 /**
  * @typedef {object} ApiRequest
@@ -62,18 +69,24 @@ function errorCode(body) {
  */
 function parseArgs(argv) {
   const [method, path, ...rest] = argv;
-  if (!method || !path || method === "--help" || method === "-h") fail(USAGE);
+  if (!method || !path || method === "--help" || method === "-h") {
+    fail(USAGE);
+  }
 
   /** @type {ApiRequest} */
   const request = { method: method.toUpperCase(), path, query: [], data: null, out: null };
   for (let i = 0; i < rest.length; i += 2) {
     const flag = rest[i];
     const value = rest[i + 1] ?? null;
-    if (value === null) fail(`${flag} needs a value\n\n${USAGE}`);
+    if (value === null) {
+      fail(`${flag} needs a value\n\n${USAGE}`);
+    }
 
     if (flag === "--query" || flag === "-q") {
       const separator = value.indexOf("=");
-      if (separator < 1) fail(`--query takes key=value, got "${value}"`);
+      if (separator < 1) {
+        fail(`--query takes key=value, got "${value}"`);
+      }
       request.query.push([value.slice(0, separator), value.slice(separator + 1)]);
     } else if (flag === "--data" || flag === "-d") {
       request.data = value;
@@ -92,11 +105,16 @@ function parseArgs(argv) {
  * @returns {string | null}
  */
 function readBody(data) {
-  if (data === null) return null;
+  if (data === null) {
+    return null;
+  }
 
   let text = data;
-  if (data === "-") text = readFileSync(0, "utf8");
-  else if (data.startsWith("@")) text = readFileSync(data.slice(1), "utf8");
+  if (data === "-") {
+    text = readFileSync(0, "utf8");
+  } else if (data.startsWith("@")) {
+    text = readFileSync(data.slice(1), "utf8");
+  }
 
   // Windows PowerShell 5.1 writes UTF-8 files with a BOM, which JSON.parse rejects.
   text = text.replace(/^﻿/, "");
@@ -122,8 +140,12 @@ function buildUrl(base, rawPath, query) {
     fail(`path must be API-relative, like /api/user - got "${rawPath}"`);
   }
   const url = new URL(base.replace(/\/+$/, "") + path);
-  if (url.origin !== new URL(base).origin) fail(`path "${path}" leaves ${base}`);
-  for (const [key, value] of query) url.searchParams.append(key, value);
+  if (url.origin !== new URL(base).origin) {
+    fail(`path "${path}" leaves ${base}`);
+  }
+  for (const [key, value] of query) {
+    url.searchParams.append(key, value);
+  }
   return url;
 }
 
@@ -131,16 +153,20 @@ function buildUrl(base, rawPath, query) {
 async function main() {
   const request = parseArgs(process.argv.slice(2));
   const base = process.env.JOBPILOT_API;
-  if (!base)
+  if (!base) {
     fail("JOBPILOT_API is unset - this session is not running inside the JobPilot terminal host");
+  }
 
   const url = buildUrl(base, request.path, request.query);
   const body = readBody(request.data);
   /** @type {Record<string, string>} */
-  const headers = { accept: "application/json" };
-  if (process.env.JOBPILOT_API_TOKEN)
+  const headers = { accept: "application/json", "x-jobpilot-version": PLUGIN_VERSION };
+  if (process.env.JOBPILOT_API_TOKEN) {
     headers.authorization = `Bearer ${process.env.JOBPILOT_API_TOKEN}`;
-  if (body !== null) headers["content-type"] = "application/json";
+  }
+  if (body !== null) {
+    headers["content-type"] = "application/json";
+  }
 
   /** @type {Response} */
   let response;
@@ -181,7 +207,9 @@ async function main() {
 try {
   await main();
 } catch (error) {
-  if (!(error instanceof CliError)) throw error;
+  if (!(error instanceof CliError)) {
+    throw error;
+  }
   process.stderr.write(`${error.message}\n`);
   process.exitCode = error.exitCode;
 }

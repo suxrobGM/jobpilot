@@ -73,7 +73,6 @@ export class MailboxSessionService {
       accessToken,
       refreshToken,
       tokenExpiresAt: account.tokenExpiresAt,
-      historyId: account.historyId,
       mailboxId: account.mailboxId,
       deltaLink: account.deltaLink,
       scope: account.scope,
@@ -102,8 +101,9 @@ export class MailboxSessionService {
       if (
         account.provider === "microsoft" &&
         (!(error instanceof HttpError) || error.status !== 401)
-      )
+      ) {
         throw error;
+      }
       await this.prisma.emailAccount.update({
         where: { id: account.id },
         data: { refreshFailedAt: account.refreshFailedAt ?? new Date() },

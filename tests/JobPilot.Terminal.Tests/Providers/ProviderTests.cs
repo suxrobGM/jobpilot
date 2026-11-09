@@ -1,8 +1,9 @@
 using JobPilot.Terminal.Providers;
+using JobPilot.Terminal.Tests.Support;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace JobPilot.Terminal.Tests;
+namespace JobPilot.Terminal.Tests.Providers;
 
 public class ProviderTests
 {
@@ -11,23 +12,17 @@ public class ProviderTests
     [InlineData("   ", "claude")]
     [InlineData("  Claude  ", "claude")]
     [InlineData("CoDeX", "codex")]
-    public void Find_IsCaseInsensitive_AndDefaultsToClaude(string? id, string expected)
+    public void Parse_IsCaseInsensitive_AndDefaultsToClaude(string? id, string expected)
     {
-        Assert.Equal(expected, Provider.Find(id).Id);
+        Assert.Equal(expected, Provider.Parse(id).Id);
     }
 
     [Theory]
     [InlineData("gemini")]
     [InlineData("claude-code")]
-    public void Find_Throws_ForAnUnknownProvider(string id)
+    public void Parse_Throws_ForAnUnknownProvider(string id)
     {
-        Assert.Throws<ArgumentException>(() => Provider.Find(id));
-    }
-
-    [Fact]
-    public void All_ListsEveryProvider()
-    {
-        Assert.Equal([("claude", "Claude Code"), ("codex", "Codex")], Provider.All.Select(p => (p.Id, p.DisplayName)));
+        Assert.Throws<ArgumentException>(() => Provider.Parse(id));
     }
 
     [Fact]
@@ -67,7 +62,7 @@ public class ProviderTests
     [InlineData("codex", "$pilot")]
     public void SkillCommand_UsesTheProvidersInvocationSyntax(string id, string expected)
     {
-        Assert.Equal(expected, Provider.Find(id).SkillCommand("pilot"));
+        Assert.Equal(expected, Provider.Parse(id).SkillCommand("pilot"));
     }
 
     [Theory]
@@ -76,6 +71,6 @@ public class ProviderTests
     [InlineData("codex", "Checking in", 1)]
     public void SubmitKeyPresses_AcceptsCodexAutocompleteFirst(string id, string command, int expected)
     {
-        Assert.Equal(expected, Provider.Find(id).SubmitKeyPresses(command));
+        Assert.Equal(expected, Provider.Parse(id).SubmitKeyPresses(command));
     }
 }

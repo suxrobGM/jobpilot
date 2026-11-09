@@ -7,8 +7,8 @@ const STORAGE_KEY = "jobpilot:agent";
 
 interface AgentStorage {
   provider: TerminalProviderId;
-  dockWidth: number;
-  dockExpanded: boolean;
+  drawerWidth: number;
+  drawerOpen: boolean;
   /** True once a local terminal host has ever answered /healthz from this browser. */
   everReachable: boolean;
   /** Last-reported host capability: the jobpilot:// scheme is registered, so it can be relaunched from the browser. */
@@ -60,8 +60,8 @@ export function readStoredProvider(): TerminalProviderId {
   return provider === "codex" || provider === "claude" ? provider : "claude";
 }
 
-export function readStoredExpanded(): boolean {
+export function readStoredDrawerOpen(): boolean {
   const stored = readAgentStorage();
-  // Expanded until a host has connected, so new users see install; a stored collapse wins.
-  return stored?.dockExpanded ?? !stored?.everReachable;
+  // Open until a host has connected, so new users see install; a stored close wins.
+  return stored?.drawerOpen ?? !stored?.everReachable;
 }

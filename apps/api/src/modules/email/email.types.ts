@@ -39,8 +39,6 @@ export interface MailboxSession {
   accessToken: string | null;
   refreshToken: string | null;
   tokenExpiresAt: Date | null;
-  /** Gmail's delta-sync cursor; `null` before the first sync. */
-  historyId: string | null;
   mailboxId?: string | null;
   deltaLink?: string | null;
   scope?: string | null;
@@ -94,6 +92,5 @@ export interface SyncResult {
   fetched: number;
   newMessages: NormalizedMessage[];
   /** Cursor for the next delta sync; `null` forces a full re-list. */
-  historyId: string | null;
   deltaLink?: string | null;
 }

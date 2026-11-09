@@ -9,7 +9,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>JobPilot.Terminal</RootNamespace>
     <AssemblyName>jobpilot</AssemblyName>
-    <Version>2.3.5</Version>
+    <Version>2.4.2</Version>
     <ApplicationIcon>jobpilot.ico</ApplicationIcon>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
@@ -18,8 +18,12 @@
 
   <ItemGroup>
     <PackageReference Include="Quick.PtyNet" Version="1.0.4" />
-    <!-- DPAPI for the pilot token at rest on Windows; a P/Invoke shim that is trim/AOT safe. -->
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <KnownILCompilerPack Update="Microsoft.DotNet.ILCompiler" ILCompilerPackVersion="10.0.14" />
+    <KnownFrameworkReference Update="Microsoft.NETCore.App" LatestRuntimeFrameworkVersion="10.0.14" />
   </ItemGroup>
 
   <ItemGroup>

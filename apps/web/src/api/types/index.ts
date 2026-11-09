@@ -9,24 +9,16 @@ export type { ApplicationDetailDto, ApplicationDto, ApplicationEventDto } from "
 export type {
   AuthSessionResponse,
   AuthUserDto,
+  DeleteAccountResponse,
   LogoutResponse,
 } from "./auth";
-export {
-  type CampaignDetailDto,
-  type CampaignDto,
-  type CampaignJobDto,
-  type CampaignJobReasonDto,
-  type CampaignSummaryDto,
-  type CreateCampaignRequest,
-  jobSummary,
-} from "./campaign";
-export type { CoverLetterListItem } from "./cover-letter";
 export type { CredentialDto } from "./credential";
 export type { EmailMessageDto, OAuthClientStatus } from "./email";
+export type { FeedDto, JobReasonDto, PipelineJobDto } from "./feed";
 export type { JobBoardDto } from "./job-board";
 export type { AdminJobListingDto, JobListingDto, JobListingSummaryDto } from "./job-listing";
-export type { ContactDto, NetworkingConfigDto, NetworkingMessageDto } from "./networking";
-export type { ResearchStatusDto, SavedAnswerDto, SkipReason } from "./pilot";
+export type { NetworkingMessageDto } from "./networking";
+export type { ResearchStatusDto, SavedAnswerDto } from "./pilot";
 export type {
   LeaderboardDto,
   LeaderboardRow,

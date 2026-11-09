@@ -1,14 +1,15 @@
 import { ExpandMore } from "@mui/icons-material";
 import type { Components, Theme } from "@mui/material/styles";
 
-/**
- * The app's accordions are bordered panels, so they borrow Paper's `panel` variant and drop MUI's
- * gutters. `::before` is MUI's top divider rule, which doubles the panel border.
- */
+/** Bordered panels without MUI's gutters. `::before` is MUI's top rule, which doubles the border. */
 export const accordionOverrides: Components<Theme>["MuiAccordion"] = {
-  defaultProps: { disableGutters: true, elevation: 0, variant: "panel" },
+  defaultProps: { disableGutters: true, elevation: 0 },
   styleOverrides: {
-    root: { "&::before": { display: "none" } },
+    root: ({ theme }) => ({
+      border: `1px solid ${theme.palette.line.border}`,
+      borderRadius: theme.radii.lg,
+      "&::before": { display: "none" },
+    }),
   },
 };
 

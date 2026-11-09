@@ -56,20 +56,20 @@ describe("TaskListService warm intros", () => {
 
 describe("TaskListService board.diagnose", () => {
   // Newest-first apply outcomes for one board.
-  const failed = (key: string, campaignStatus = "in_progress") => ({
-    campaignId: "c1",
+  const failed = (key: string, live = true) => ({
+    feedId: "c1",
     key,
     url: `https://x/${key}`,
     board: { id: "b-linkedin", domain: "linkedin.com" },
     status: "failed",
     failReason: "captcha wall",
-    campaign: { status: campaignStatus },
+    feed: { pausedAt: live ? null : new Date(), archivedAt: null },
   });
   const applied = (key: string) => ({ ...failed(key), status: "applied", failReason: null });
 
   it("flags a board whose latest three applies failed, probing the newest retryable failure", async () => {
     const taskList = await service({
-      boardDiagnoseJobs: [failed("a", "completed"), failed("b"), failed("c"), applied("d")],
+      boardDiagnoseJobs: [failed("a", false), failed("b"), failed("c"), applied("d")],
     }).refresh("p1");
     const task = findTask(taskList, "board.diagnose");
     expect(task?.payload).toEqual({
@@ -77,13 +77,13 @@ describe("TaskListService board.diagnose", () => {
       board: "linkedin.com",
       consecutiveFailures: 3,
       recentFailReasons: ["captcha wall", "captcha wall", "captcha wall"],
-      testJob: { campaignId: "c1", jobKey: "b", url: "https://x/b" },
+      testJob: { feedId: "c1", jobKey: "b", url: "https://x/b" },
     });
   });
 
-  it("offers no test job when every failure sits in a closed campaign", async () => {
+  it("offers no test job when every failure sits in a paused feed", async () => {
     const taskList = await service({
-      boardDiagnoseJobs: ["a", "b", "c"].map((key) => failed(key, "completed")),
+      boardDiagnoseJobs: ["a", "b", "c"].map((key) => failed(key, false)),
     }).refresh("p1");
     expect(findTask(taskList, "board.diagnose")?.payload).toMatchObject({ testJob: null });
   });

@@ -1,7 +1,6 @@
-import type { PortfolioSettingsPatch, UserWithAutoApplyInput } from "@jobpilot/contracts/user";
+import type { PortfolioSettingsPatch, UserUpdateInput } from "@jobpilot/contracts/user";
 import { inject, injectable } from "@needle-di/core";
 import { conflict, emailNotVerified, findOwned, notFound } from "@/common/errors";
-import { resumePath } from "@/common/storage/storage";
 import { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { PORTFOLIO_SETTINGS_SELECT, PROFILE_SELECT, withProfile } from "./user.mapper";
 
@@ -16,7 +15,7 @@ export class UserService {
   constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /**
-   * Gate for outward-facing actions (creating campaigns, composing networking messages):
+   * Gate for outward-facing actions (creating feeds, composing networking messages):
    * email verification is otherwise non-blocking, so this is the only enforcement.
    */
   async requireVerifiedEmail(userId: string): Promise<void> {
@@ -38,55 +37,47 @@ export class UserService {
       ),
     );
 
-    const [autoApply, primarySource, resumeRows, withContent, references, salaryPreferences] =
-      await Promise.all([
-        this.prisma.autoApplySettings.findUnique({ where: { userId } }),
-        user.primaryResumeId
-          ? this.prisma.resume.findUnique({
-              where: { id: user.primaryResumeId },
-              select: { sourceFilename: true },
-            })
-          : Promise.resolve(null),
-        this.prisma.resume.findMany({
-          where: { userId },
-          orderBy: { updatedAt: "desc" },
-          select: {
-            id: true,
-            label: true,
-            sourceFilename: true,
-            updatedAt: true,
-            _count: { select: { variants: true } },
-          },
-        }),
-        this.prisma.resume.findMany({
-          where: { userId, content: { not: Prisma.DbNull } },
-          select: { id: true },
-        }),
-        this.prisma.professionalReference.findMany({
-          where: { userId },
-          orderBy: { position: "asc" },
-          select: {
-            id: true,
-            name: true,
-            relationship: true,
-            company: true,
-            email: true,
-            phone: true,
-          },
-        }),
-        this.prisma.salaryPreference.findMany({
-          where: { userId },
-          orderBy: { position: "asc" },
-          select: {
-            id: true,
-            appliesTo: true,
-            minAmount: true,
-            maxAmount: true,
-            currency: true,
-            period: true,
-          },
-        }),
-      ]);
+    const [resumeRows, withContent, references, salaryPreferences] = await Promise.all([
+      this.prisma.resume.findMany({
+        where: { userId },
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          label: true,
+          sourceFilename: true,
+          updatedAt: true,
+          _count: { select: { variants: true } },
+        },
+      }),
+      this.prisma.resume.findMany({
+        where: { userId, content: { not: Prisma.DbNull } },
+        select: { id: true },
+      }),
+      this.prisma.professionalReference.findMany({
+        where: { userId },
+        orderBy: { position: "asc" },
+        select: {
+          id: true,
+          name: true,
+          relationship: true,
+          company: true,
+          email: true,
+          phone: true,
+        },
+      }),
+      this.prisma.salaryPreference.findMany({
+        where: { userId },
+        orderBy: { position: "asc" },
+        select: {
+          id: true,
+          appliesTo: true,
+          minAmount: true,
+          maxAmount: true,
+          currency: true,
+          period: true,
+        },
+      }),
+    ]);
 
     const hasContentIds = new Set(withContent.map((r) => r.id));
     const resumes = resumeRows.map((r) => ({
@@ -101,23 +92,13 @@ export class UserService {
 
     return {
       user: { ...user, references, salaryPreferences },
-      autoApply,
-      primaryResumeSourceAbsolutePath: primarySource?.sourceFilename
-        ? resumePath(primarySource.sourceFilename)
-        : null,
       resumes,
     };
   }
 
-  async update(userId: string, body: UserWithAutoApplyInput) {
-    const {
-      autoApply,
-      preferredLocations,
-      primaryResumeId,
-      references,
-      salaryPreferences,
-      ...profileFields
-    } = body;
+  async update(userId: string, body: UserUpdateInput) {
+    const { preferredLocations, primaryResumeId, references, salaryPreferences, ...profileFields } =
+      body;
     // Replace the reference and salary-preference sets wholesale - the settings form submits the full lists.
     await this.prisma.$transaction([
       this.prisma.user.update({
@@ -154,14 +135,6 @@ export class UserService {
       }),
     ]);
 
-    if (autoApply) {
-      await this.prisma.autoApplySettings.upsert({
-        where: { userId },
-        create: { userId, ...autoApply },
-        update: autoApply,
-      });
-    }
-
     return { id: userId };
   }
 
@@ -188,7 +161,9 @@ export class UserService {
       where: { id: userId },
       select: PORTFOLIO_SETTINGS_SELECT,
     });
-    if (!user) throw notFound("User not found");
+    if (!user) {
+      throw notFound("User not found");
+    }
     return withProfile(user);
   }
 

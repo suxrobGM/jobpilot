@@ -1,64 +1,51 @@
 import { DEFAULT_CURSOR_PAGE_SIZE, type PaginationQuery } from "@jobpilot/contracts/pagination";
-import type {
-  PilotJournalKind,
-  PilotQuestionStatus,
-  PromotionStatus,
-} from "@jobpilot/contracts/pilot";
+import type { PilotChange, PilotQuestionStatus, PilotRunOutcome } from "@jobpilot/contracts/pilot";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { unwrap } from "@/api/error";
-import { FULL_PAGE } from "./shared";
 
 const PILOT = ["pilot"] as const;
-const JOURNAL = [...PILOT, "journal"] as const;
+const RUN_HISTORY = [...PILOT, "run-history"] as const;
+const THREAD = [...PILOT, "thread"] as const;
+const CHANGES = [...PILOT, "changes"] as const;
 const QUESTIONS = [...PILOT, "questions"] as const;
-const PROMOTIONS = [...PILOT, "promotions"] as const;
 const PUSH = [...PILOT, "push"] as const;
-
-function requestJournalPage(kinds: PilotJournalKind[], cursor: string | null) {
-  return api.pilot.journal.get({
-    query: {
-      limit: DEFAULT_CURSOR_PAGE_SIZE,
-      ...(cursor ? { cursor } : {}),
-      ...(kinds.length > 0 ? { kinds } : {}),
-    },
-  });
-}
 
 export const pilotQueries = {
   all: PILOT,
-  journalAll: JOURNAL,
+  runHistoryAll: RUN_HISTORY,
+  threadAll: THREAD,
+  changesAll: CHANGES,
   questionsAll: QUESTIONS,
-  promotionsAll: PROMOTIONS,
   pushAll: PUSH,
   state: () =>
     queryOptions({ queryKey: [...PILOT, "state"], queryFn: () => unwrap(api.pilot.get()) }),
-  todayOutcomes: () =>
-    queryOptions({
-      queryKey: [...PILOT, "today-outcomes"],
-      queryFn: () => unwrap(api.pilot.stats.today.get()),
-    }),
   cost: () =>
     queryOptions({
       queryKey: [...PILOT, "cost"],
       queryFn: () => unwrap(api.pilot.stats.cost.get()),
     }),
-  /** Read-only view of the pilot's self-managed discovery searches. */
+  /** The pilot's searches, with what each applied to this week. */
   searches: () =>
     queryOptions({
       queryKey: [...PILOT, "searches"],
-      queryFn: () => unwrap(api.pilot.searches.get()),
+      queryFn: () => unwrap(api.feeds.get({ query: { kind: "search" } })),
+    }),
+  /** A run's live steps so far; `run.steps` events append to it. */
+  runSteps: (runId: string) =>
+    queryOptions({
+      queryKey: [...PILOT, "runs", runId, "steps"],
+      queryFn: () => unwrap(api.pilot.runs({ id: runId }).steps.get()),
+    }),
+  notices: () =>
+    queryOptions({
+      queryKey: [...PILOT, "notices"],
+      queryFn: () => unwrap(api.pilot.notices.get()),
     }),
   savedAnswers: () =>
     queryOptions({
       queryKey: [...PILOT, "savedAnswers"],
       queryFn: () => unwrap(api.pilot["saved-answers"].get()),
-    }),
-  /** What an instructions edit would leave running; read on demand, never prefetched. */
-  instructionsImpact: () =>
-    queryOptions({
-      queryKey: [...PILOT, "instructions-impact"],
-      queryFn: () => unwrap(api.pilot.instructions.impact.get()),
     }),
   jobAlerts: () =>
     queryOptions({
@@ -79,25 +66,40 @@ export const pilotQueries = {
       retry: false,
     }),
   // Sorted so the same filter set toggled in a different order shares one cache entry.
-  journalFeed: (kinds: PilotJournalKind[]) => {
-    const filter = [...kinds].sort();
-    return infiniteQueryOptions({
-      queryKey: [...JOURNAL, { kinds: filter }],
-      queryFn: ({ pageParam }) => unwrap(requestJournalPage(filter, pageParam)),
-      initialPageParam: null as string | null,
-      getNextPageParam: (page) => page.nextCursor,
+  runHistory: (outcomes: PilotRunOutcome[], page: PaginationQuery) => {
+    const filter = [...outcomes].sort();
+    return queryOptions({
+      queryKey: [...RUN_HISTORY, { outcomes: filter, ...page }],
+      queryFn: () =>
+        unwrap(
+          api.pilot.runs.get({
+            query: { ...page, ...(filter.length > 0 ? { outcomes: filter } : {}) },
+          }),
+        ),
     });
   },
+  changes: (status?: PilotChange["status"]) =>
+    queryOptions({
+      queryKey: [...CHANGES, { status: status ?? "all" }],
+      queryFn: () => unwrap(api.pilot.changes.get({ query: status ? { status } : {} })),
+    }),
+  /** Newest page first; the thread renders the pages reversed. */
+  thread: () =>
+    infiniteQueryOptions({
+      queryKey: THREAD,
+      queryFn: ({ pageParam }) =>
+        unwrap(
+          api.pilot.thread.get({
+            query: { limit: DEFAULT_CURSOR_PAGE_SIZE, ...(pageParam ? { cursor: pageParam } : {}) },
+          }),
+        ),
+      initialPageParam: null as string | null,
+      getNextPageParam: (page) => page.nextCursor,
+    }),
   questions: (status?: PilotQuestionStatus) =>
     queryOptions({
       queryKey: [...QUESTIONS, { status: status ?? "all" }],
       queryFn: () => unwrap(api.pilot.questions.get({ query: status ? { status } : {} })),
-    }),
-  promotions: (status?: PromotionStatus, page: PaginationQuery = FULL_PAGE) =>
-    queryOptions({
-      queryKey: [...PROMOTIONS, { status: status ?? "all", ...page }],
-      queryFn: () =>
-        unwrap(api.pilot.promotions.get({ query: { ...page, ...(status && { status }) } })),
     }),
   vapidKey: () =>
     queryOptions({

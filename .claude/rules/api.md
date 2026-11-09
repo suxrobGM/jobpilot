@@ -26,7 +26,7 @@ Pagination schemas live in `@jobpilot/contracts/pagination`, shared with web and
 
 ## Routes
 
-Add a route with the `add-api-route` skill. The rules:
+A new module mirrors an existing one and mounts its controller in `app.ts`. The rules:
 
 - A schema lives in its module's `<name>.schema.ts` unless another package (web, plugin
   helpers) imports it; then it goes in `@jobpilot/contracts`. Use `idParam` for uuid path ids.
@@ -46,8 +46,7 @@ Add a route with the `add-api-route` skill. The rules:
 ## Pagination
 
 Paginate lists that grow with use (applications, inbox, contacts, cover letters, proposals,
-campaigns, campaign jobs). Small bounded lists (resumes, credentials, boards, tokens) stay
-`z.array()`.
+jobs). Small bounded lists (resumes, credentials, boards, tokens, feeds) stay `z.array()`.
 
 1. Query: `paginationQuerySchema.extend({ …filters })`. `csvArray(item)` for `?x=a,b`.
 2. Response: `paginatedSchema(item)`.
@@ -55,7 +54,7 @@ campaigns, campaign jobs). Small bounded lists (resumes, credentials, boards, to
 
 Never hand-write `skip` / `take`. Filter and sort in SQL. Counts beside a filter come from a
 `groupBy`, not the page. Cursor paging (`cursorPageSchema`, `cursorPage`) is only for
-append-only feeds. The pilot journal is the sole user.
+append-only feeds. The Pilot thread is the sole user.
 
 ## Enums
 

@@ -1,20 +1,28 @@
 import type {
   PILOT_RUN_OUTCOMES,
-  PilotJournalEntry,
+  PilotChange,
+  PilotMessage,
   PilotQuestion,
+  PilotRequest,
   PilotState,
-  Promotion,
+  PilotStep,
   TaskType,
 } from "../../pilot";
 import { defineChannel } from "../channel";
 
 export type PilotEvent =
-  | { type: "journal.appended"; entry: PilotJournalEntry }
   | { type: "question.created"; question: PilotQuestion }
   | { type: "question.answered"; question: PilotQuestion }
   | { type: "state.changed"; state: PilotState }
-  | { type: "promotion.created"; promotion: Promotion }
-  | { type: "promotion.updated"; promotion: Promotion }
+  | { type: "agent.presence"; connected: boolean }
+  | { type: "change.updated"; change: PilotChange }
+  | { type: "message.created"; message: PilotMessage }
+  | { type: "request.created"; request: PilotRequest }
+  | { type: "request.updated"; request: PilotRequest }
+  | { type: "job.approved"; feedId: string; key: string }
+  | { type: "run.interrupt"; runId: string }
+  | { type: "run.steer"; runId: string; text: string }
+  | { type: "run.steps"; runId: string; steps: PilotStep[] }
   | { type: "run.started"; runId: string; taskType: TaskType }
   | { type: "run.finished"; runId: string; outcome: (typeof PILOT_RUN_OUTCOMES)[number] };
 

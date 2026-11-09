@@ -38,7 +38,9 @@ function setEntryStatus(entry: SharedSource, status: SseConnectionStatus): void 
     return;
   }
   entry.status = status;
-  for (const listener of entry.onStatus) listener(status);
+  for (const listener of entry.onStatus) {
+    listener(status);
+  }
 }
 
 /** `eventsource` (not native) for fetch-based transport: credentialed cross-origin streams + header control. */
@@ -50,7 +52,9 @@ function dial(url: string, entry: SharedSource, source: EventSource): void {
   entry.source = source;
   // A listener may remove itself during dispatch; Sets tolerate deletion while iterating.
   source.onmessage = (event) => {
-    for (const listener of entry.onMessage) listener(event);
+    for (const listener of entry.onMessage) {
+      listener(event);
+    }
   };
   source.onopen = () => {
     entry.redialDelayMs = REDIAL_BASE_MS;

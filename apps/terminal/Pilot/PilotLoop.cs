@@ -1,53 +1,53 @@
-using System.Threading.Channels;
 using JobPilot.Terminal.Common;
-using Microsoft.Extensions.Hosting;
+using JobPilot.Terminal.Pilot.Agent;
+using JobPilot.Terminal.Pilot.Api;
+using JobPilot.Terminal.Pilot.Pairing;
 
 namespace JobPilot.Terminal.Pilot;
 
-/// <summary>Runs cycles while the pilot is running and parks while it is stopped.</summary>
+/// <summary>Runs cycles whenever the host is paired and parks while it is not.</summary>
 public sealed class PilotLoop : BackgroundService
 {
-    public const string ResumeReport = "Pilot resumed after the app restarted.";
-    public const string StandingDownReport = "Pilot is stopped on the server - standing down.";
-
     private static readonly TimeSpan ErrorBackoff = TimeSpan.FromSeconds(30);
 
     // Lets Kestrel finish binding before a restarted host resumes its first cycle.
     private static readonly TimeSpan StartupResumeDelay = TimeSpan.FromSeconds(10);
 
-    private readonly PilotStore store;
-    private readonly IPilotSession session;
+    private readonly PairingStore store;
+    private readonly IPilotAgent agent;
+    private readonly IPilotApi api;
+    private readonly TimeProvider time;
     private readonly ILogger<PilotLoop> logger;
     private readonly CycleRunner runner;
 
-    // Capacity one coalesces a burst of wakes into one.
-    private readonly Channel<bool> wakes = Channel.CreateBounded<bool>(
-        new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite, SingleReader = true });
+    private readonly WakeSignal wakeSignal;
 
     private readonly Lock sync = new();
     private CancellationTokenSource? cycleCts;
 
     // With no reachable API a cycle is pure burn, so the loop backs off instead.
     private ExponentialBackoff apiBackoff = new(TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10));
-    private volatile bool working;
 
-    public PilotLoop(PilotStore store, IPilotSession session, ILogger<PilotLoop> logger)
+    public PilotLoop(PairingStore store, IPilotAgent agent, IPilotApi api, TimeProvider time, WakeSignal wakeSignal, ILogger<PilotLoop> logger)
     {
         this.store = store;
-        this.session = session;
+        this.agent = agent;
+        this.api = api;
+        this.time = time;
+        this.wakeSignal = wakeSignal;
         this.logger = logger;
-        runner = new CycleRunner(session);
+        runner = new CycleRunner(agent, api, time);
         store.Changed += Wake;
     }
 
-    /// <summary>Ends an inter-cycle sleep early. If the pilot is no longer running, also aborts the live cycle.</summary>
+    /// <summary>Ends an inter-cycle sleep early. If the host was unpaired, also aborts the live cycle.</summary>
     public void Wake()
     {
-        wakes.Writer.TryWrite(true);
+        wakeSignal.Signal();
         lock (sync)
         {
-            // A wake that leaves the pilot running must never interrupt the agent mid-turn.
-            if (store.Current is not { Running: true })
+            // A wake that leaves the host paired must never interrupt the agent mid-turn.
+            if (store.Current is null)
             {
                 cycleCts?.Cancel();
             }
@@ -56,15 +56,14 @@ public sealed class PilotLoop : BackgroundService
 
     public PilotStatus GetStatus()
     {
-        var settings = store.Current;
+        var pairing = store.Current;
         return new PilotStatus
         {
-            Running = settings?.Running ?? false,
-            Paired = settings is not null,
-            Conducting = working && runner.Conducting,
+            Paired = pairing is not null,
+            UserId = pairing?.UserId,
+            HeldUntil = runner.HeldUntil(time.GetUtcNow()),
             LastCycleAt = runner.LastCycleAt,
             LastCycleStatus = runner.LastCycleStatus?.ToString().ToLowerInvariant(),
-            ConsecutiveTimeouts = runner.ConsecutiveRestarts,
         };
     }
 
@@ -83,7 +82,7 @@ public sealed class PilotLoop : BackgroundService
     {
         try
         {
-            await ResumeIfRunningAsync(stoppingToken);
+            await ResumeIfPairedAsync(stoppingToken);
         }
         catch (OperationCanceledException)
         {
@@ -99,26 +98,24 @@ public sealed class PilotLoop : BackgroundService
                 cycle = cycleCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
             }
 
-            working = false;
-
-            // Read only after publishing the token: a stop then either cancels this token or shows up in this read.
-            var settings = store.Current;
+            // Read only after publishing the token: an unpair then either cancels this token or shows up in this read.
+            var pairing = store.Current;
             try
             {
-                if (settings is not { Running: true })
+                if (pairing is null)
                 {
-                    await wakes.Reader.ReadAsync(stoppingToken);
+                    await wakeSignal.TakeAsync(stoppingToken);
                     continue;
                 }
 
-                await RunOnceAsync(settings, cycle.Token, stoppingToken);
+                await RunOnceAsync(pairing, cycle.Token);
             }
             catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
             {
-                // A stop aborts the agent's turn, unless it is the user's own session on the other provider.
-                if (runner.Conducting && store.Current is not { Running: true })
+                // An unpair aborts the agent's turn, unless it is the user's own session on the other provider.
+                if (runner.Conducting && store.Current is null)
                 {
-                    session.Interrupt();
+                    agent.AbortTurn();
                 }
             }
             catch (OperationCanceledException)
@@ -128,10 +125,9 @@ public sealed class PilotLoop : BackgroundService
             catch (Exception ex)
             {
                 logger.LogError(ex, "Pilot cycle failed; backing off before retrying.");
-                working = false;
                 try
                 {
-                    await Task.Delay(ErrorBackoff, stoppingToken);
+                    await Task.Delay(ErrorBackoff, time, stoppingToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -141,10 +137,10 @@ public sealed class PilotLoop : BackgroundService
         }
     }
 
-    private async Task RunOnceAsync(PilotSettings settings, CancellationToken ct, CancellationToken stoppingToken)
+    private async Task RunOnceAsync(PilotPairing pairing, CancellationToken ct)
     {
-        // One probe gates the cycle on the server's run-state.
-        var activity = await session.GetActivityAsync(ct);
+        // One probe checks the API is reachable before the cycle spends a refresh.
+        var activity = await api.GetActivityAsync(ct);
         if (activity is null)
         {
             await SleepOrWakeAsync(apiBackoff.Next(), ct);
@@ -152,56 +148,44 @@ public sealed class PilotLoop : BackgroundService
         }
 
         apiBackoff.Reset();
-        if (!activity.Running)
-        {
-            // Stopped on the server: mirror it locally so the loop parks. That save cancels ct, so report on stoppingToken.
-            store.SetRunning(false);
-            await session.ReportAsync(StandingDownReport, stoppingToken);
-            return;
-        }
 
-        // This cycle reads the current settings, which covers any wake that came before it.
-        wakes.Reader.TryRead(out _);
+        // This cycle reads the current pairing, which covers any wake that came before it.
+        wakeSignal.TryTake();
 
-        working = true;
-        var sleep = await runner.RunAsync(settings, ct);
+        var sleep = await runner.RunAsync(pairing, ct);
         if (sleep is { } duration && duration > TimeSpan.Zero)
         {
             await SleepOrWakeAsync(duration, ct);
         }
     }
 
-    private async Task ResumeIfRunningAsync(CancellationToken stoppingToken)
+    private async Task ResumeIfPairedAsync(CancellationToken stoppingToken)
     {
-        if (store.Current is not { Running: true })
+        if (store.Current is null)
         {
             return;
         }
 
-        await session.DelayAsync(StartupResumeDelay, stoppingToken);
-        var owed = CycleRunner.OwedBreak(await session.GetActivityAsync(stoppingToken), DateTimeOffset.UtcNow);
-        if (owed <= TimeSpan.Zero)
+        await Task.Delay(StartupResumeDelay, time, stoppingToken);
+        var owed = CycleSleep.RemainingSleep(await api.GetActivityAsync(stoppingToken), time.GetUtcNow());
+        if (owed > TimeSpan.Zero)
         {
-            await session.ReportAsync(ResumeReport, stoppingToken);
-            return;
+            await SleepOrWakeAsync(owed, stoppingToken);
         }
-
-        await session.ReportAsync($"{ResumeReport} Waiting out the planned break until {DateTimeOffset.UtcNow + owed:u} first.", stoppingToken);
-        await SleepOrWakeAsync(owed, stoppingToken);
     }
 
     /// <summary>Sleeps until the duration passes or a wake arrives. Throws when <paramref name="ct"/> cancels.</summary>
     private async Task SleepOrWakeAsync(TimeSpan duration, CancellationToken ct)
     {
         // A wake during the cycle had no sleep to end, so its pending wake ends this one before it starts.
-        if (wakes.Reader.TryRead(out _))
+        if (wakeSignal.TryTake())
         {
             return;
         }
 
         using var sleepCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var woken = wakes.Reader.WaitToReadAsync(sleepCts.Token).AsTask();
-        var slept = session.DelayAsync(duration, sleepCts.Token);
+        var woken = wakeSignal.WaitAsync(sleepCts.Token);
+        var slept = Task.Delay(duration, time, sleepCts.Token);
         await Task.WhenAny(woken, slept);
         await sleepCts.CancelAsync();
         ct.ThrowIfCancellationRequested();

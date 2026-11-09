@@ -65,17 +65,17 @@ describe("TaskListService interviews", () => {
     expect(hasTaskType(noEmail, "interview.reply")).toBe(false);
   });
 
-  it("preps with the campaign's resume, or none without a campaign", async () => {
+  it("preps with the feed's resume, or none without a feed", async () => {
     const resumeId = "3f0e1a9c-2b4d-4c8e-9f1a-5b6c7d8e9f0a";
     const app = { id: "app1", company: "Acme", title: "Engineer", url: "https://x/1" };
     const taskList = await service({
-      interviewPrepApps: [{ ...app, campaign: { config: { resumeId } } }],
+      interviewPrepApps: [{ ...app, feed: { resumeId } }],
     }).refresh("p1");
     const task = findTask(taskList, "interview.prep");
     expect(task?.payload).toMatchObject({ applicationId: "app1", resumeId });
 
     const orphan = await service({
-      interviewPrepApps: [{ ...app, campaign: null }],
+      interviewPrepApps: [{ ...app, feed: null }],
     }).refresh("p1");
     expect(findTask(orphan, "interview.prep")?.payload).toMatchObject({
       resumeId: null,
@@ -107,7 +107,7 @@ describe("TaskListService mail and Upwork sync", () => {
     const quiet = [
       {},
       { upworkProfiles: 1, upworkAccount: { lastSyncedAt: new Date(Date.now() - hour) } },
-      // An unconnected MCP only journals "not connected", so a recent try holds it back.
+      // An unconnected MCP only reports "not connected", so a recent try holds it back.
       {
         upworkProfiles: 1,
         latestRuns: {
@@ -124,36 +124,29 @@ describe("TaskListService mail and Upwork sync", () => {
 describe("TaskListService job-alert import", () => {
   const emails = [{ id: "m1" }, { id: "m2" }];
 
-  it("offers an import for a live Run now request, even with the schedule off", async () => {
-    const taskList = await service({
-      jobAlertsRequestedAt: new Date(Date.now() - 60_000),
-      jobAlertEmails: emails,
-    }).refresh("p1");
+  it("imports on request, even with the schedule off", async () => {
+    const request = {
+      id: "r1",
+      taskType: "inbox.jobAlerts",
+      payload: {},
+      subjectType: "inbox",
+      subjectId: "jobAlerts",
+      status: "pending",
+      source: "web",
+      createdAt: new Date(),
+    };
+    const taskList = await service({ pendingRequests: [request], jobAlertEmails: emails }).refresh(
+      "p1",
+    );
     expect(findTask(taskList, "inbox.jobAlerts")?.payload).toMatchObject({
       messageIds: ["m1", "m2"],
       count: 2,
     });
   });
 
-  it("offers nothing once an import has started since the request", async () => {
-    const now = Date.now();
+  it("offers nothing while the alerts feed is paused", async () => {
     const taskList = await service({
-      jobAlertsRequestedAt: new Date(now - 60_000),
-      latestRuns: {
-        "inbox.jobAlerts": {
-          startedAt: new Date(now - 30_000),
-          finishedAt: new Date(now - 10_000),
-          outcome: "done",
-        },
-      },
-      jobAlertEmails: emails,
-    }).refresh("p1");
-    expect(hasTaskType(taskList, "inbox.jobAlerts")).toBe(false);
-  });
-
-  it("offers nothing while the alerts campaign is paused", async () => {
-    const taskList = await service({
-      instructionsConfig: { jobAlerts: { enabled: true, runHours: [0] } },
+      config: { jobAlerts: { enabled: true, runHours: [0] } },
       pausedFeeds: ["job_alerts"],
       jobAlertEmails: emails,
     }).refresh("p1");

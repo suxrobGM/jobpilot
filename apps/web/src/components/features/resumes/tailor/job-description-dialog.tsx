@@ -3,9 +3,9 @@
 import type { ReactElement } from "react";
 import { DialogContentText } from "@mui/material";
 import { z } from "zod/v4";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { useAgent } from "@/providers/agent-provider";
 
 const schema = z.object({ jd: z.string().trim().min(1, "Paste a job description or a URL") });
 
@@ -16,13 +16,16 @@ interface JobDescriptionDialogProps {
 
 export function JobDescriptionDialog(props: JobDescriptionDialogProps): ReactElement {
   const { open, onClose } = props;
-  const agent = useAgent();
+  const request = useCreateRequest();
 
   const form = useAppForm({
     defaultValues: { jd: "" },
     validators: { onSubmit: schema },
     onSubmit: async ({ value }) => {
-      await agent.injectSkill("tailor-resume", JSON.stringify(value.jd.trim()));
+      await request.mutateAsync({
+        taskType: "resume.tailor",
+        payload: { jobDescription: value.jd.trim() },
+      });
       handleClose();
     },
   });

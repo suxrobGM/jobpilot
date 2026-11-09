@@ -1,46 +1,34 @@
 # JobPilot plugin
 
-This plugin turns Claude Code or Codex into an agent that looks for jobs for
-you. It searches job boards, tailors your resume for each posting, fills in
-applications, writes cover letters and messages to recruiters, and keeps your
-[JobPilot dashboard](https://jobpilot.suxrobgm.net) up to date.
-
-It runs on your computer and uses your own Claude or Codex subscription. Your
-profile, resumes, and applications are stored in your JobPilot account, and
-the agent reads and updates them through the JobPilot API.
+Turns Claude Code or Codex into a job-search agent. It searches job boards, tailors your resume
+per posting, fills applications, writes cover letters and recruiter messages, and keeps your
+[JobPilot dashboard](https://jobpilot.suxrobgm.net) current. It runs on your computer with your
+own Claude or Codex subscription; your data lives in your JobPilot account.
 
 ## Install
 
-Install the plugin from your provider's marketplace (the commands are in the
-[main README](../README.md#install-the-plugin)), then run setup. Setup
-installs the terminal host on your computer, starts it, and opens the
-dashboard. After that, you start the agent and watch it from the dashboard.
+Install the plugin from your provider's marketplace (commands in the
+[main README](../README.md#get-started)), then run `setup`. It installs and starts the terminal
+host and opens the dashboard, where you launch and watch the agent.
 
-The marketplace version only contains `setup`. The terminal host comes with
-the full set of skills and keeps them updated.
+The marketplace ships only `setup`. The terminal host carries the full skill set and keeps it
+updated. The [skills guide](https://jobpilot.suxrobgm.net/docs/skills) lists every skill.
 
-## Skills
-
-The main skills are `search`, `auto-apply`, `apply`, `networking`, and
-`cover-letter`. The [main README](../README.md#skills) lists all of them.
-
-## What's in this folder
+## Layout
 
 | Path | What it is |
 | --- | --- |
-| `skills/<name>/SKILL.md` | One skill per folder. Claude and Codex read the same file. |
-| `skills/_shared/` | Notes that several skills read: setup, signing in, filling forms, browser tips, eligibility. It has no `SKILL.md`, so it doesn't show up as a skill. |
-| `skills/pilot/tasks/` | One file for each kind of task the Pilot can take on. |
-| `skills/humanizer/` | Edits letters, proposals, and messages so they read like a person wrote them. Adapted from [blader/humanizer](https://github.com/blader/humanizer) (MIT). |
-| `agents/` | `job-scorer`, `job-applier`, `job-searcher`, `job-researcher`, and `networking-worker`. Each handles one job, search, or contact at a time, which keeps the browser output out of the main session. |
-| `bin/` | `jobpilot-api`, the script every skill uses to call the API. |
-| `settings/` | Settings the terminal host passes to Claude and Codex. |
-| `.mcp.json` | The Playwright browser server. |
+| `skills/<name>/SKILL.md` | One skill per folder, shared by Claude and Codex. |
+| `skills/_shared/` | Docs several skills read (setup, sign-in, feed flow, eligibility). No `SKILL.md`, so not a skill. |
+| `skills/pilot/tasks/` | One file per Pilot task type. |
+| `skills/humanizer/` | Makes letters and messages read like a person wrote them. Adapted from [blader/humanizer](https://github.com/blader/humanizer) (MIT). |
+| `agents/` | Worker agents that each handle one job, search or contact, keeping browser output out of the main session. |
+| `bin/` | `jobpilot-api`, the API client every skill uses. |
+| `settings/` | Settings the host passes to Claude and Codex. |
+| `.mcp.json` | The Playwright and Upwork MCP servers. |
 
-## Editing skills
+## Editing
 
-Edit the files in this folder directly. There's no build step. Skills refer
-to other skills by name and to shared notes by relative path
-(`../_shared/setup.md`), so the same text works for both providers. The
-[development guide](../docs/development.md) explains how the host loads the
-plugin and how releases ship it.
+Edit files here directly; there is no build step. Skills name other skills and link shared docs by
+relative path (`../_shared/setup.md`), so one text serves both providers. The
+[development guide](../docs/development.md) covers how the host loads the plugin and ships it.

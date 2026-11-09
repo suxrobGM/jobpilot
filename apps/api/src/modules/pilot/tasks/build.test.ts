@@ -9,7 +9,7 @@ import {
   followup,
   hotJob,
   job,
-  pausedCampaign,
+  pausedFeed,
   prep,
   question,
   queueScore,
@@ -24,7 +24,7 @@ import { describe, expect, it } from "bun:test";
 const NETWORKING_OFF = cfg({ networking: { email: "off", linkedIn: "off" } });
 type Built = ReturnType<typeof buildTaskList>;
 const taskTypes = (taskList: Built) => taskList.tasks.map((task) => task.taskType);
-const countOf = (taskList: Built, taskType: string) =>
+const countTasks = (taskList: Built, taskType: string) =>
   taskTypes(taskList).filter((type) => type === taskType).length;
 
 describe("buildTaskList ranking", () => {
@@ -35,7 +35,7 @@ describe("buildTaskList ranking", () => {
         answeredQuestions: [question("q1")],
         interviewReplies: [reply("em1")],
         boardDiagnoses: [boardDiagnose("linkedin")],
-        pausedCampaigns: [pausedCampaign("c9")],
+        pausedFeeds: [pausedFeed("c9")],
         approvedJobs: [job("j1", 100)],
         interviewPreps: [prep("app1")],
         queueScores: [queueScore("c8")],
@@ -47,7 +47,7 @@ describe("buildTaskList ranking", () => {
       "question.answered",
       "interview.reply",
       "board.diagnose",
-      "campaign.reviewPaused",
+      "search.review",
       "job.apply",
       "interview.prep",
       "queue.score",
@@ -60,31 +60,25 @@ describe("buildTaskList ranking", () => {
     const taskList = buildTaskList(
       base({
         approvedNetworking: [send("m1")],
-        approvedPromotions: [
-          { promotionId: "p1", platform: "hn", target: null, title: null, body: "b" },
-        ],
         warmIntroCandidates: [hotJob("j1", 90)],
         scorePending: [scorePending("c1")],
         dueQueries: [dueQuery("golang")],
         followups: [followup("f1")],
-        duePlatforms: [{ platform: "reddit" }],
       }),
     );
     expect(taskTypes(taskList)).toEqual([
       "networking.send",
-      "promotion.post",
       "networking.warmIntro",
-      "campaign.scorePending",
+      "feed.score",
       "search.discover",
       "networking.followup",
-      "promotion.draft",
     ]);
   });
 
   it("ranks applies by matchScore and keeps the top 10, with a paused review still on top", () => {
     const jobs = Array.from({ length: 15 }, (_, i) => job(`j${i}`, 80 + i));
     const taskList = buildTaskList(
-      base({ config: NETWORKING_OFF, approvedJobs: jobs, pausedCampaigns: [pausedCampaign("c9")] }),
+      base({ config: NETWORKING_OFF, approvedJobs: jobs, pausedFeeds: [pausedFeed("c9")] }),
     );
     expect(taskList.tasks).toHaveLength(10);
     expect(taskList.tasks.map((task) => task.subjectId).slice(0, 3)).toEqual([
@@ -102,16 +96,16 @@ describe("buildTaskList ranking", () => {
 });
 
 describe("buildTaskList gating", () => {
-  it("stops applying once the daily cap is spent, but still reviews paused campaigns", () => {
+  it("stops applying once the daily cap is spent, but still reviews paused feeds", () => {
     const taskList = buildTaskList(
       base({
         config: cfg({ dailyApplyCap: 3, networking: { email: "off", linkedIn: "off" } }),
         appliedToday: 3,
         approvedJobs: [job("j1", 90)],
-        pausedCampaigns: [pausedCampaign("c9")],
+        pausedFeeds: [pausedFeed("c9")],
       }),
     );
-    expect(taskTypes(taskList)).toEqual(["campaign.reviewPaused"]);
+    expect(taskTypes(taskList)).toEqual(["search.review"]);
     expect(taskList.budget).toMatchObject({ dailyApplyCap: 3, appliedToday: 3, capReached: true });
   });
 
@@ -126,16 +120,16 @@ describe("buildTaskList gating", () => {
     expect(taskTypes(taskList)).toEqual(["job.apply"]);
   });
 
-  it("holds setup and campaign reviews back until the pipeline is quiet", () => {
+  it("holds setup and feed reviews back until the pipeline is quiet", () => {
     const quietWork = {
       setup,
-      campaignTunes: [tune("c1")],
-      rescanSkipped: [{ campaignId: "c1", skippedCount: 9 }],
-      retryFailed: [{ campaignId: "c1", failedCount: 4 }],
+      feedTunes: [tune("c1")],
+      rescanSkipped: [{ feedId: "c1", skippedCount: 9 }],
+      retryFailed: [{ feedId: "c1", failedCount: 4 }],
     };
     expect(taskTypes(buildTaskList(base(quietWork)))).toEqual([
       "search.setup",
-      "campaign.tune",
+      "search.tune",
       "job.rescanSkipped",
       "job.retryFailed",
     ]);
@@ -149,7 +143,7 @@ describe("buildTaskList gating", () => {
     for (const busy of busyWith) {
       const taskList = buildTaskList(base({ ...quietWork, ...busy }));
       expect(taskTypes(taskList)).not.toContain("search.setup");
-      expect(taskTypes(taskList)).not.toContain("campaign.tune");
+      expect(taskTypes(taskList)).not.toContain("search.tune");
     }
   });
 
@@ -157,28 +151,26 @@ describe("buildTaskList gating", () => {
     const taskList = buildTaskList(
       base({
         boardDiagnoses: [boardDiagnose("linkedin"), boardDiagnose("indeed")],
-        pausedCampaigns: [pausedCampaign("c1"), pausedCampaign("c2")],
+        pausedFeeds: [pausedFeed("c1"), pausedFeed("c2")],
         interviewReplies: [reply("e1"), reply("e2"), reply("e3")],
         interviewPreps: [prep("a1"), prep("a2")],
       }),
     );
-    expect(countOf(taskList, "board.diagnose")).toBe(1);
-    expect(countOf(taskList, "campaign.reviewPaused")).toBe(1);
-    expect(countOf(taskList, "interview.reply")).toBe(2);
-    expect(countOf(taskList, "interview.prep")).toBe(1);
+    expect(countTasks(taskList, "board.diagnose")).toBe(1);
+    expect(countTasks(taskList, "search.review")).toBe(1);
+    expect(countTasks(taskList, "interview.reply")).toBe(2);
+    expect(countTasks(taskList, "interview.prep")).toBe(1);
 
     const quiet = buildTaskList(
       base({
         warmIntroCandidates: [hotJob("j1", 90), hotJob("j2", 88)],
         followups: [followup("f1"), followup("f2"), followup("f3")],
-        duePlatforms: [{ platform: "hn" }, { platform: "reddit" }],
-        campaignTunes: [tune("c1"), tune("c2")],
+        feedTunes: [tune("c1"), tune("c2")],
       }),
     );
-    expect(countOf(quiet, "networking.warmIntro")).toBe(1);
-    expect(countOf(quiet, "networking.followup")).toBe(2);
-    expect(countOf(quiet, "promotion.draft")).toBe(1);
-    expect(countOf(quiet, "campaign.tune")).toBe(1);
+    expect(countTasks(quiet, "networking.warmIntro")).toBe(1);
+    expect(countTasks(quiet, "networking.followup")).toBe(2);
+    expect(countTasks(quiet, "search.tune")).toBe(1);
   });
 });
 
@@ -192,8 +184,8 @@ describe("buildTaskList networking", () => {
         followups: [followup("f1"), followup("f2")],
       }),
     );
-    expect(countOf(withRoom, "networking.send")).toBe(1);
-    expect(countOf(withRoom, "networking.followup")).toBe(1);
+    expect(countTasks(withRoom, "networking.send")).toBe(1);
+    expect(countTasks(withRoom, "networking.followup")).toBe(1);
 
     const spent = buildTaskList(
       base({
@@ -263,24 +255,33 @@ describe("buildTaskList networking", () => {
 });
 
 describe("buildTaskList discovery", () => {
-  it("rotates across the configured boards, or keeps the search's own board without any", () => {
-    const boardAt = (cycleCount: number, boards: string[]) =>
+  it("rotates an unpinned search across the configured boards, and keeps a pinned one", () => {
+    const boardAt = (cycleCount: number, ownBoard: string | null) =>
       buildTaskList(
         base({
-          config: cfg({ boards }),
+          config: cfg({ boards: ["hiring.cafe", "linkedin.com", "indeed.com"] }),
           cycleCount,
-          dueQueries: [dueQuery("golang", "wellfound")],
+          dueQueries: [dueQuery("golang", ownBoard)],
         }),
       ).tasks[0].payload;
 
-    const rotation = ["hiring.cafe", "linkedin.com", "indeed.com"];
-    expect([0, 1, 2, 3].map((cycle) => boardAt(cycle, rotation))).toMatchObject([
+    expect([0, 1, 2, 3].map((cycle) => boardAt(cycle, null))).toMatchObject([
       { board: "hiring.cafe" },
       { board: "linkedin.com" },
       { board: "indeed.com" },
       { board: "hiring.cafe" },
     ]);
-    expect(boardAt(0, [])).toMatchObject({ board: "wellfound", maxPages: 5 });
+    expect(boardAt(1, "wellfound")).toMatchObject({ board: "wellfound", maxPages: 5 });
+  });
+
+  it("skips an unpinned search while no board is checked, but runs a pinned one", () => {
+    const taskList = buildTaskList(
+      base({
+        config: cfg({ boards: [] }),
+        dueQueries: [dueQuery("golang", null), dueQuery("rust", "wellfound")],
+      }),
+    );
+    expect(taskList.tasks.map((task) => task.payload)).toMatchObject([{ board: "wellfound" }]);
   });
 });
 

@@ -1,13 +1,15 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { MenuItem, TextField } from "@mui/material";
+import { ListItemText, MenuItem, TextField } from "@mui/material";
 import { firstErrorMessage } from "./error-message";
 import { useFieldContext } from "./form-context";
 
 interface SelectItem {
   value: string | number;
   label: string;
+  /** Shown under the label in the open menu only. */
+  description?: string;
 }
 
 interface SelectProps {
@@ -23,6 +25,7 @@ interface SelectProps {
 export function Select(props: SelectProps): ReactElement {
   const { label, items, optional, emptyLabel = "- none -", disabled, helperText } = props;
   const field = useFieldContext<string | number>();
+  const labelOf = (value: unknown) => items.find((it) => it.value === value)?.label ?? emptyLabel;
 
   return (
     <TextField
@@ -35,6 +38,7 @@ export function Select(props: SelectProps): ReactElement {
       onBlur={field.handleBlur}
       error={field.state.meta.errors.length > 0}
       helperText={firstErrorMessage(field.state.meta.errors) ?? helperText}
+      slotProps={{ select: { renderValue: labelOf } }}
     >
       {optional && (
         <MenuItem value="">
@@ -43,7 +47,8 @@ export function Select(props: SelectProps): ReactElement {
       )}
       {items.map((it) => (
         <MenuItem key={it.value} value={it.value}>
-          {it.label}
+          {it.description && <ListItemText primary={it.label} secondary={it.description} />}
+          {!it.description && it.label}
         </MenuItem>
       ))}
     </TextField>

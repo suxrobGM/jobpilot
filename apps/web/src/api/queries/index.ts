@@ -10,7 +10,6 @@ export {
   userQueries,
 } from "./account";
 export { pilotQueries } from "./pilot";
-export { FULL_PAGE } from "./shared";
 export {
   upworkAccountQueries,
   upworkInboxQueries,
@@ -20,10 +19,11 @@ export {
 export {
   analyticsQueries,
   applicationQueries,
-  campaignQueries,
   coverLetterQueries,
   emailQueries,
+  feedQueries,
   networkingQueries,
+  pipelineQueries,
 } from "./work";
 
 /** Named invalidation sets for useApiMutation's `invalidate:` option. */

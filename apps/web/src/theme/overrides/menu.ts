@@ -8,6 +8,7 @@ export function listOptionStyles(theme: Theme): CSSObject {
     marginInline: 4,
     paddingBlock: 6,
     "&:hover": { backgroundColor: theme.palette.surfaces.hover },
+    "& .MuiListItemIcon-root": { minWidth: 32 },
   };
 }
 

@@ -27,13 +27,13 @@ export function Hero(): ReactElement {
               <Typography variant="eyebrow" color="primary">
                 Free · open source · runs on your computer
               </Typography>
-              <Typography variant="displayLg" sx={{ textWrap: "balance" }}>
+              <Typography variant="h1" sx={{ textWrap: "balance" }}>
                 An AI agent that applies to jobs for you.
               </Typography>
               <Typography variant="lead" sx={{ maxWidth: 540 }}>
-                Turn on the Pilot and it finds jobs that fit, tailors your resume for each one,
-                fills in the application, and writes to recruiters. It uses the Claude or Codex
-                subscription you already have, and asks you when it needs a decision.
+                Tell the Pilot what you want and it finds jobs that fit, tailors your resume for
+                each one, fills in the application, and writes to recruiters. It uses the Claude or
+                Codex subscription you already have, and asks you when it needs a decision.
               </Typography>
               <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1.5 }}>
                 <LinkButton href="/install" variant="contained" size="large">

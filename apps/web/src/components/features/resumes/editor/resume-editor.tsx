@@ -2,7 +2,8 @@
 
 import { type ReactElement, useEffect, useState } from "react";
 import type { ResumeData } from "@jobpilot/contracts/resume";
-import { Alert, Button, Stack } from "@mui/material";
+import { Add } from "@mui/icons-material";
+import { Alert, Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { invalidations } from "@/api/queries";
 import { useApiMutation } from "@/api/use-api-mutation";
@@ -18,7 +19,7 @@ import { ProjectsSection } from "./projects-section";
 import { PublicationsSection } from "./publications-section";
 import { SaveBar } from "./save-bar";
 import { SectionBlock } from "./section-block";
-import { RESUME_SECTIONS } from "./sections";
+import { type EditorSection, RESUME_SECTIONS } from "./sections";
 import { SkillsSection } from "./skills-section";
 import { SummarySection } from "./summary-section";
 import { useAutosave } from "./use-autosave";
@@ -35,6 +36,8 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
   const confirm = useConfirm();
   const [data, setData] = useState<ResumeData>(initialData);
   const [openSection, setOpenSection] = useState<string | null>(RESUME_SECTIONS[0].id);
+  // Optional sections added this session stay visible while still empty, so they can be filled.
+  const [added, setAdded] = useState<string[]>([]);
   // The newest version this editor produced, so its own save echoing back is not a conflict.
   const [ownVersion, setOwnVersion] = useState(version);
 
@@ -116,9 +119,18 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
     ),
   };
 
+  const hidden = (section: EditorSection): boolean =>
+    Boolean(section.optional) && section.summary(data) === "empty" && !added.includes(section.id);
+  const addable = RESUME_SECTIONS.filter(hidden);
+
+  const addSection = (id: string): void => {
+    setAdded([...added, id]);
+    setOpenSection(id);
+  };
+
   return (
     <Stack spacing={1.5}>
-      {RESUME_SECTIONS.map((section) => (
+      {RESUME_SECTIONS.filter((section) => !hidden(section)).map((section) => (
         <SectionBlock
           key={section.id}
           section={section}
@@ -129,6 +141,26 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
           {body[section.id]}
         </SectionBlock>
       ))}
+
+      {addable.length > 0 && (
+        <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: 1, pt: 0.5 }}>
+          <Typography variant="overlineMuted" sx={{ mr: 0.5 }}>
+            Add
+          </Typography>
+          {addable.map((section) => (
+            <Button
+              key={section.id}
+              size="small"
+              variant="outlined"
+              startIcon={<Add fontSize="sm" />}
+              onClick={() => addSection(section.id)}
+              sx={{ borderStyle: "dashed", bgcolor: "transparent" }}
+            >
+              {section.label}
+            </Button>
+          ))}
+        </Stack>
+      )}
 
       <SaveBar
         state={autosave.state}

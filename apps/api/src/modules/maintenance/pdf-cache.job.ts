@@ -1,6 +1,7 @@
 import { cron, Patterns } from "@elysiajs/cron";
+import { container } from "@/common/di/container";
 import { logger } from "@/common/logger";
-import { pruneGeneratedCache } from "@/common/storage/storage";
+import { ResumeStorage } from "@/common/storage/resume.storage";
 
 const HOUR_MS = 60 * 60 * 1000;
 const MB = 1024 * 1024;
@@ -10,7 +11,9 @@ const CACHE_TTL_MS = 72 * HOUR_MS;
 const CACHE_MAX_BYTES = 512 * MB;
 
 async function prunePdfCache(): Promise<void> {
-  const result = await pruneGeneratedCache({ ttlMs: CACHE_TTL_MS, maxBytes: CACHE_MAX_BYTES });
+  const result = await container
+    .get(ResumeStorage)
+    .pruneGeneratedCache({ ttlMs: CACHE_TTL_MS, maxBytes: CACHE_MAX_BYTES });
   if (result.removed > 0) {
     logger.info(
       { ...result, freedMb: Math.round((result.freedBytes / MB) * 10) / 10 },

@@ -2,11 +2,10 @@
 
 import type { ReactElement } from "react";
 import { DocumentScanner } from "@mui/icons-material";
+import { Button } from "@mui/material";
 import type { ResumeDto } from "@/api/types";
-import { AgentOnlyButton } from "@/components/ui/buttons";
-import { useAgent } from "@/providers/agent-provider";
+import { useCreateRequest } from "@/components/features/pilot/requests/use-create-request";
 import { useConfirm } from "@/providers/confirm-provider";
-import { buildCliArgs } from "@/utils/cli-args";
 
 interface ExtractResumeButtonProps {
   resume: ResumeDto;
@@ -15,16 +14,16 @@ interface ExtractResumeButtonProps {
 
 export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactElement {
   const { resume, size = "small" } = props;
-  const agent = useAgent();
+  const request = useCreateRequest();
   const confirm = useConfirm();
 
   const hasData = resume.content !== null;
 
   const run = async (force: boolean) => {
-    await agent.injectSkill(
-      "extract-resume",
-      buildCliArgs({ positional: [resume.id], flags: { force } }),
-    );
+    await request.mutateAsync({
+      taskType: "resume.extract",
+      payload: { resumeId: resume.id, force },
+    });
   };
 
   const handleClick = async (): Promise<void> => {
@@ -44,13 +43,13 @@ export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactEleme
   };
 
   return (
-    <AgentOnlyButton
+    <Button
       size={size}
       variant="outlined"
       startIcon={<DocumentScanner />}
       onClick={() => void handleClick()}
     >
       {hasData ? "Re-extract from PDF" : "Extract from PDF"}
-    </AgentOnlyButton>
+    </Button>
   );
 }

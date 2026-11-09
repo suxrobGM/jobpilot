@@ -13,7 +13,7 @@ const DEFAULT_VALUES: ChangeEmailInput = { newEmail: "", currentPassword: "" };
 
 /** Two-step change: a confirmation link goes to the new address; nothing switches until clicked. */
 export function ChangeEmailCard(): ReactElement {
-  const { user } = useSession();
+  const user = useSession();
 
   const changeEmail = useApiMutation((body: ChangeEmailInput) => api.auth.email.change.post(body), {
     showErrorToast: false,

@@ -223,7 +223,7 @@ for (const code of getCountries()) {
 const WORK_MODE =
   /^(remote|remoto|hybrid|on-?site|in-office|work from home|wfh|global|unverified|everywhere|anywhere.*|worldwide.*)$/i;
 
-function regionOf(part: string): Region | null {
+function parseRegion(part: string): Region | null {
   const byCode = /^[A-Z]{2}$/.test(part);
   const region = byCode ? REGIONS_BY_CODE.get(part) : REGIONS_BY_NAME.get(part.toLowerCase());
   return region ?? null;
@@ -254,7 +254,7 @@ export function parseJobLocation(raw: string): JobLocation {
   for (const [index, part] of parts.entries()) {
     const country = COUNTRIES.get(part.toLowerCase());
     // A later part is a state before a country ("Atlanta, Georgia"); a lone first part is the reverse.
-    const place = index > 0 || (parts.length === 1 && !country) ? regionOf(part) : null;
+    const place = index > 0 || (parts.length === 1 && !country) ? parseRegion(part) : null;
     if (place) {
       region ??= place.region;
       countries.add(place.country);

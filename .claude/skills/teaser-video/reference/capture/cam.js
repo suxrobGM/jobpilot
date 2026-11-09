@@ -37,8 +37,9 @@ export async function open({
     deviceScaleFactor: SCALE,
   });
   await ctx.addInitScript((entries) => {
-    for (const [k, v] of Object.entries(entries))
+    for (const [k, v] of Object.entries(entries)) {
       localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v));
+    }
   }, seed);
   const page = await ctx.newPage();
   await go(page, p, { ready, settleMs });
@@ -52,11 +53,15 @@ export async function open({
  */
 export async function go(page, p, { ready = null, settleMs = 1000 } = {}) {
   await page.goto(BASE + p, { waitUntil: "load" });
-  if (ready) await page.locator(ready).first().waitFor({ timeout: 30_000 });
-  else await page.waitForLoadState("networkidle").catch(() => {});
+  if (ready) {
+    await page.locator(ready).first().waitFor({ timeout: 30_000 });
+  } else {
+    await page.waitForLoadState("networkidle").catch(() => {});
+  }
   await page.waitForTimeout(settleMs);
-  if (AUTH_PATHS.test(new URL(page.url()).pathname))
+  if (AUTH_PATHS.test(new URL(page.url()).pathname)) {
     throw new Error("session expired - re-run login.js");
+  }
   await installCursor(page);
 }
 
@@ -96,8 +101,11 @@ export async function roll(page, file, { w, h }, onFrame = () => {}) {
     // screencast instead of growing Node's buffer through a long take.
     const ack = () =>
       cdp.send("Page.screencastFrameAck", { sessionId: ev.sessionId }).catch(() => {});
-    if (enc.stdin.write(last)) ack();
-    else enc.stdin.once("drain", ack);
+    if (enc.stdin.write(last)) {
+      ack();
+    } else {
+      enc.stdin.once("drain", ack);
+    }
   });
   await cdp.send("Page.startScreencast", {
     format: "jpeg",
@@ -109,7 +117,9 @@ export async function roll(page, file, { w, h }, onFrame = () => {}) {
   return async function stop() {
     // A settled page stops emitting frames; repeat the last one so the clip
     // really lasts as long as we filmed.
-    if (last) enc.stdin.write(last);
+    if (last) {
+      enc.stdin.write(last);
+    }
     await cdp.send("Page.stopScreencast").catch(() => {});
     enc.stdin.end();
     await new Promise((r) => enc.on("exit", r));
@@ -119,7 +129,9 @@ export async function roll(page, file, { w, h }, onFrame = () => {}) {
 
 export async function installCursor(page) {
   await page.evaluate(() => {
-    if (document.getElementById("__filmCursor")) return;
+    if (document.getElementById("__filmCursor")) {
+      return;
+    }
     const c = document.createElement("div");
     c.id = "__filmCursor";
     c.innerHTML =
@@ -153,8 +165,11 @@ export async function glide(page, x, y, ms = 900) {
           const e = ease(t);
           window.__cursorPos = { x: from.x + (x - from.x) * e, y: from.y + (y - from.y) * e };
           c.style.transform = `translate(${window.__cursorPos.x}px, ${window.__cursorPos.y}px)`;
-          if (t < 1) requestAnimationFrame(step);
-          else done();
+          if (t < 1) {
+            requestAnimationFrame(step);
+          } else {
+            done();
+          }
         };
         requestAnimationFrame(step);
       }),
@@ -164,7 +179,9 @@ export async function glide(page, x, y, ms = 900) {
 
 export async function center(locator) {
   const box = await locator.boundingBox();
-  if (!box) throw new Error("no bounding box");
+  if (!box) {
+    throw new Error("no bounding box");
+  }
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
@@ -216,8 +233,11 @@ async function scrollEased(page, target) {
         const step = (now) => {
           const t = Math.min(1, (now - start) / ms);
           el.scrollTop = from + (to - from) * ease(t);
-          if (t < 1) requestAnimationFrame(step);
-          else done();
+          if (t < 1) {
+            requestAnimationFrame(step);
+          } else {
+            done();
+          }
         };
         requestAnimationFrame(step);
       }),

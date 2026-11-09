@@ -17,7 +17,7 @@ export const INTERVIEW_STATUSES = [
   "screening",
   "interviewing",
 ] as const satisfies readonly (typeof APPLICATION_STATUSES)[number][];
-/** Superset of CampaignSource: a row created from a campaign job carries that campaign's source. */
+/** Superset of FeedSource: a row created from a feed job carries that feed's source. */
 export const APPLICATION_SOURCES = [
   "apply",
   "auto_apply",
@@ -37,7 +37,7 @@ export const APPLICATION_EVENT_KINDS = [
 export const applicationEventKindSchema = z.enum(APPLICATION_EVENT_KINDS);
 
 /** What originated an activity event. */
-export const APPLICATION_EVENT_SOURCES = ["manual", "email", "campaign"] as const;
+export const APPLICATION_EVENT_SOURCES = ["manual", "email", "feed"] as const;
 export const applicationEventSourceSchema = z.enum(APPLICATION_EVENT_SOURCES);
 
 export const statusTransitionSchema = z.object({
@@ -45,8 +45,8 @@ export const statusTransitionSchema = z.object({
   note: z.string().optional().nullable(),
 });
 
-/** The sentinel `?campaignId=` value meaning "applications not attributed to any campaign". */
-export const SINGLE_APPLY_CAMPAIGN = "none";
+/** The sentinel `?feedId=` value meaning "applications not attributed to any feed". */
+export const SINGLE_APPLY_FEED = "none";
 
 /** Every filter the workspace applies, so a page reflects the whole account rather than itself. */
 export const applicationFilterSchema = z.object({
@@ -54,8 +54,8 @@ export const applicationFilterSchema = z.object({
   board: z.string().trim().min(1).optional(),
   source: applicationSourceSchema.optional(),
   search: queryText.optional(),
-  /** A campaign id, or {@link SINGLE_APPLY_CAMPAIGN} for rows with no campaign. */
-  campaignId: z.union([z.uuid(), z.literal(SINGLE_APPLY_CAMPAIGN)]).optional(),
+  /** A feed id, or {@link SINGLE_APPLY_FEED} for rows with no feed. */
+  feedId: z.union([z.uuid(), z.literal(SINGLE_APPLY_FEED)]).optional(),
 });
 
 export type ApplicationFilters = z.infer<typeof applicationFilterSchema>;

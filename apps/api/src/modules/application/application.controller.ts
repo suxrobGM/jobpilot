@@ -19,7 +19,6 @@ import {
 import { ApplicationService } from "./application.service";
 
 const svc = container.get(ApplicationService);
-const limitNote = rateLimit(RATE_LIMITS.applicationNote);
 
 export const applicationController = new Elysia({
   prefix: "/applications",
@@ -32,7 +31,7 @@ export const applicationController = new Elysia({
     detail: {
       summary: "List applications",
       description:
-        "Returns one page of the user's applied jobs (newest first) as `{ items, pagination }`, optionally filtered by status, board, source, campaign (`none` for single applies), or a search term matched against title, company, and URL.",
+        "Returns one page of the user's applied jobs (newest first) as `{ items, pagination }`, optionally filtered by status, board, source, feed (`none` for single applies), or a search term matched against title, company, and URL.",
     },
   })
   .get("/summary", ({ user, query }) => svc.summary(user.id, query), {
@@ -84,7 +83,7 @@ export const applicationController = new Elysia({
   .post("/:id/events", ({ user, params, body }) => svc.addEvent(user.id, params.id, body), {
     params: idParam,
     body: appendNoteSchema,
-    beforeHandle: limitNote,
+    beforeHandle: rateLimit(RATE_LIMITS.applicationNote),
     response: applicationEventSchema,
     detail: {
       summary: "Append a note to an application",

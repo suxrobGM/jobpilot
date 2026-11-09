@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Box, Grid, Stack, Typography } from "@mui/material";
+import { Box, Chip, Grid, Stack, Typography } from "@mui/material";
 import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
 import { formatCount } from "@/utils/format";
@@ -50,7 +50,7 @@ export async function ProofStrip(): Promise<ReactElement> {
             <Typography variant="statValue" component="p">
               {stat.value}
             </Typography>
-            <Typography variant="statLabel" component="p" sx={{ mt: 1 }}>
+            <Typography variant="overlineMuted" component="p" sx={{ mt: 1 }}>
               {stat.label}
             </Typography>
           </Grid>
@@ -61,17 +61,15 @@ export async function ProofStrip(): Promise<ReactElement> {
         sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 1, m: 0, p: 0 }}
       >
         {BOARDS.map((board) => (
-          <Typography key={board} component="li" variant="monoChip" sx={{ listStyle: "none" }}>
-            {board}
-          </Typography>
+          <Chip key={board} component="li" variant="tag" size="medium" label={board} />
         ))}
-        <Typography
+        <Chip
           component="li"
-          variant="monoChip"
-          sx={{ listStyle: "none", color: "primary.main", borderStyle: "dashed" }}
-        >
-          + any site you add
-        </Typography>
+          variant="tag"
+          size="medium"
+          label="+ any site you add"
+          sx={{ color: "primary.main", borderStyle: "dashed" }}
+        />
       </Box>
     </Stack>
   );

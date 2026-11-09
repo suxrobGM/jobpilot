@@ -2,7 +2,6 @@ import type { ReactElement } from "react";
 import { Card, CardContent, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { SITE_HOST } from "@/lib/constants";
-import { radii } from "@/theme";
 import { Glow } from "../glow";
 import { type NumberedStep, NumberedSteps } from "../numbered-steps";
 import { Section } from "../section";
@@ -20,23 +19,20 @@ const SETUP: NumberedStep[] = [
   },
   {
     title: "Turn on the Pilot",
-    body: "Describe the jobs you want and set your limits. Run a search first if you'd like to check the matches.",
-    snippet: "Dashboard → Pilot → Start",
+    body: "Tell the Pilot what jobs you want, then turn on autopilot. Leave it off at first and ask for a search if you'd like to check the matches.",
+    snippet: "Pilot → Turn on autopilot",
   },
 ];
 
 export function CtaBand(): ReactElement {
   return (
     <Section>
-      <Card
-        variant="accent"
-        sx={{ position: "relative", overflow: "hidden", borderRadius: radii.lg }}
-      >
+      <Card variant="accent" sx={{ position: "relative", overflow: "hidden" }}>
         <Glow placement="corner" />
         <CardContent sx={{ position: "relative", padding: { xs: 3, md: 6 } }}>
           <Stack spacing={{ xs: 4, md: 5 }}>
             <Stack spacing={2} sx={{ maxWidth: 620 }}>
-              <Typography variant="displayMd">Start your first search in ten minutes.</Typography>
+              <Typography variant="h2">Start your first search in ten minutes.</Typography>
               <Typography variant="lead">
                 Three steps, and you can stop the agent at any time.
               </Typography>

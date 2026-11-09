@@ -1,25 +1,20 @@
 import type { ApplicationFilters } from "@jobpilot/contracts/application";
-import type {
-  CampaignJobStatus,
-  CampaignSource,
-  CampaignStatus,
-} from "@jobpilot/contracts/campaign";
 import type { EmailProvider, ReviewStatus } from "@jobpilot/contracts/email";
+import type { FeedKind } from "@jobpilot/contracts/feed";
 import type { PaginationQuery } from "@jobpilot/contracts/pagination";
+import type { PipelineFilters, PipelineJobsQuery } from "@jobpilot/contracts/pipeline";
 import { queryOptions } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { unwrap } from "@/api/error";
 import { FULL_PAGE } from "./shared";
 
 const APPLICATIONS = ["applications"] as const;
-const CAMPAIGNS = ["campaigns"] as const;
+const FEEDS = ["feeds"] as const;
 const EMAIL = ["email"] as const;
 const COVER_LETTERS = ["cover-letters"] as const;
 const ANALYTICS = ["analytics"] as const;
 const NETWORKING = ["networking"] as const;
-
-type CampaignListQuery = PaginationQuery & { status?: CampaignStatus[]; source?: CampaignSource };
-type CampaignJobsQuery = PaginationQuery & { status?: CampaignJobStatus; search?: string };
+const PIPELINE = ["pipeline"] as const;
 
 export const applicationQueries = {
   all: APPLICATIONS,
@@ -47,43 +42,43 @@ export const applicationQueries = {
     }),
 };
 
-export const campaignQueries = {
-  all: CAMPAIGNS,
-  list: (query: CampaignListQuery = FULL_PAGE) =>
+export const pipelineQueries = {
+  all: PIPELINE,
+  jobs: (query: PipelineJobsQuery) =>
     queryOptions({
-      queryKey: [...CAMPAIGNS, "list", query],
-      queryFn: () => unwrap(api.campaigns.get({ query })),
+      queryKey: [...PIPELINE, "jobs", query],
+      queryFn: () => unwrap(api.pipeline.jobs.get({ query })),
     }),
-  /** Whole-account totals - a page of campaigns can't back a dashboard count. */
-  summary: () =>
+  job: (id: string) =>
     queryOptions({
-      queryKey: [...CAMPAIGNS, "summary"],
-      queryFn: () => unwrap(api.campaigns.summary.get()),
+      queryKey: [...PIPELINE, "job", id],
+      queryFn: () => unwrap(api.pipeline.jobs({ id }).get()),
     }),
-  detail: (id: string) =>
+  counts: (filters: PipelineFilters) =>
     queryOptions({
-      queryKey: [...CAMPAIGNS, "detail", id],
-      queryFn: () => unwrap(api.campaigns({ id }).get()),
+      queryKey: [...PIPELINE, "counts", filters],
+      queryFn: () => unwrap(api.pipeline.counts.get({ query: filters })),
     }),
-  /** Every cached page and filter of one campaign's jobs. */
-  jobsKey: (id: string) => [...CAMPAIGNS, "jobs", id] as const,
-  /** One server-filtered page of a campaign's jobs; filters apply across the whole campaign. */
-  jobs: (id: string, params: CampaignJobsQuery) =>
+  needsYou: () =>
     queryOptions({
-      queryKey: [...campaignQueries.jobsKey(id), params],
-      queryFn: () => unwrap(api.campaigns({ id }).jobs.get({ query: params })),
+      queryKey: [...PIPELINE, "needsYou"],
+      queryFn: () => unwrap(api.pipeline["needs-you"].get()),
+    }),
+};
+
+export const feedQueries = {
+  all: FEEDS,
+  /** Every feed, or one kind; small enough to filter in the browser. */
+  list: (kind?: FeedKind) =>
+    queryOptions({
+      queryKey: [...FEEDS, "list", kind ?? "all"],
+      queryFn: () => unwrap(api.feeds.get({ query: kind ? { kind } : {} })),
     }),
   /** Skip/fail reasons aggregated server-side, so counts cover every job rather than one page. */
   reasons: (id: string) =>
     queryOptions({
-      queryKey: [...CAMPAIGNS, "reasons", id],
-      queryFn: () => unwrap(api.campaigns({ id })["job-reasons"].get()),
-    }),
-  networkingKey: (id: string) => [...CAMPAIGNS, "networking", id] as const,
-  networking: (id: string, query: PaginationQuery = FULL_PAGE) =>
-    queryOptions({
-      queryKey: [...campaignQueries.networkingKey(id), query],
-      queryFn: () => unwrap(api.campaigns({ id }).networking.messages.get({ query })),
+      queryKey: [...FEEDS, "reasons", id],
+      queryFn: () => unwrap(api.feeds({ id })["job-reasons"].get()),
     }),
 };
 
@@ -128,7 +123,7 @@ export const coverLetterQueries = {
     }),
 };
 
-/** Cross-campaign outreach; a campaign's own drafts read through `campaignQueries.networking`. */
+/** Cross-feed outreach; a feed's own drafts read through `feedQueries.networking`. */
 export const networkingQueries = {
   all: NETWORKING,
   messages: (query: PaginationQuery) =>

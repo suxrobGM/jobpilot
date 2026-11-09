@@ -1,3 +1,4 @@
+using JobPilot.Terminal.Install;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
@@ -38,7 +39,7 @@ public sealed class HostStatus(TerminalSession session, HostInstall install, Url
         Status = install.PathsError is null ? "ok" : "degraded",
         Session = session.IsRunning ? "running" : "stopped",
         Provider = session.ActiveProvider.Id,
-        Providers = Provider.All,
+        Providers = Provider.Infos,
         HostVersion = HostInstall.HostVersion,
         Detail = install.PathsError,
         CanRelaunch = scheme.IsRegistered,

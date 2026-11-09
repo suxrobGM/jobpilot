@@ -2,8 +2,10 @@ import {
   ChangeEmailSchema,
   ChangePasswordSchema,
   ConfirmEmailChangeSchema,
+  DeleteAccountSchema,
 } from "@jobpilot/contracts/auth";
 import { Elysia } from "elysia";
+import { clearSessionCookie } from "@/common/auth";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
@@ -14,14 +16,10 @@ import { VerificationService } from "./verification.service";
 const securityService = container.get(SecurityService);
 const verificationService = container.get(VerificationService);
 
-const limitEmailChangeConfirm = rateLimit(RATE_LIMITS.emailChangeConfirm);
-const limitPasswordChange = rateLimit(RATE_LIMITS.passwordChange);
-const limitEmailChange = rateLimit(RATE_LIMITS.emailChange);
-
 export const securityController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .post("/email/change/confirm", ({ body }) => verificationService.confirmEmailChange(body.token), {
     body: ConfirmEmailChangeSchema,
-    beforeHandle: limitEmailChangeConfirm,
+    beforeHandle: rateLimit(RATE_LIMITS.emailChangeConfirm),
     response: okResponseSchema,
     detail: {
       summary: "Confirm an email change",
@@ -35,7 +33,7 @@ export const securityController = new Elysia({ prefix: "/auth", detail: { tags: 
     ({ user, body }) => securityService.changePassword(user.id, body, user.tokenId),
     {
       body: ChangePasswordSchema,
-      beforeHandle: limitPasswordChange,
+      beforeHandle: rateLimit(RATE_LIMITS.passwordChange),
       response: okResponseSchema,
       detail: {
         summary: "Change or set the password",
@@ -46,11 +44,29 @@ export const securityController = new Elysia({ prefix: "/auth", detail: { tags: 
   )
   .post("/email/change", ({ user, body }) => securityService.requestEmailChange(user.id, body), {
     body: ChangeEmailSchema,
-    beforeHandle: limitEmailChange,
+    beforeHandle: rateLimit(RATE_LIMITS.emailChange),
     response: okResponseSchema,
     detail: {
       summary: "Request an email change",
       description:
         "Verifies the current password (when set), then emails a confirmation link to the new address. The login email only switches when that link is clicked; until then the old address keeps working.",
     },
-  });
+  })
+  .delete(
+    "/account",
+    async ({ user, body, cookie }) => {
+      const result = await securityService.deleteAccount(user.id, body);
+      clearSessionCookie(cookie);
+      return result;
+    },
+    {
+      body: DeleteAccountSchema,
+      beforeHandle: rateLimit(RATE_LIMITS.accountDelete),
+      response: okResponseSchema,
+      detail: {
+        summary: "Delete the account",
+        description:
+          "Verifies the current password (when set), then permanently deletes the user and everything it owns - profile, resumes and their files, applications, feeds, mailbox, credentials, Pilot history, sessions and the terminal token. No soft delete. Clears the session cookie. The super admin can't be deleted.",
+      },
+    },
+  );

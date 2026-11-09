@@ -1,59 +1,43 @@
-# Authentication
+# Signing in
 
-## Proactive Login
+Sign in before using a site when a login resolves for it: many boards hide apply buttons and
+results from guests.
 
-**Always attempt to log in before interacting with a board** if a credential resolves for it (the board's own login, or the default). Many sites limit functionality without login (no apply, fewer results, rate limiting).
+## Check
 
-1. Take a `browser_snapshot` narrowed to the header. A Sign in / Log in control (or a visible password field) means **not** logged in; an account/avatar menu means logged in → skip auth.
-2. If not logged in:
-   - Click the Sign in / Log in control (use its `ref`).
-   - Resolve credentials per the **Credential lookup** section below. If none, proceed without login (some boards allow it).
-   - On the login page, `browser_snapshot` the form to get field refs. Fill, click sign-in.
-   - Wait, then branch on the response per **Login outcomes** below.
-3. Navigate back to the intended page once logged in.
+Snapshot the header. A Sign in / Log in control or a password field means logged out; an account
+or avatar menu means logged in.
 
-## Login Challenges
-
-Typically **once per board per session** - handle once, then subsequent applications run uninterrupted.
-
-### Email Verification Codes
-
-1. Confirm the page asks for a code (a narrowed snapshot shows a field labelled "code" or "verification").
-2. Run the `get-code` skill for `<board-domain>`. Parse the JSON: `code` present → fill+submit; `link` present → navigate; `{}` → fall back to user prompt.
-3. Fallback: ask the user to paste the code from their inbox.
-4. Confirm login via a narrowed header snapshot.
-
-### CAPTCHA / reCAPTCHA
-
-Narrowed `browser_snapshot` to confirm, then invoke the `solve-captcha` skill. On **solved**, verify via a narrowed header snapshot and continue. On **unsolved**, ask the user to solve it in the browser, wait for confirmation, then verify.
-
-**Loop skills (apply / auto-apply):** CAPTCHA / email-code during login → pause, don't fail. Only fail when the CAPTCHA appears mid-form (per-job, not per-board).
-
-### 2FA / MFA
-
-Ask the user to complete it; wait for confirmation.
-
-## Credential lookup
-
-Resolve the login in **one call** - the API applies the precedence (the board's login → the default login) server-side. Never pick from `/api/credentials` by hand.
+## Credentials
 
 ```bash
-jobpilot-api GET /api/credentials/resolve --query domain=<board-domain>
+jobpilot-api GET /api/credentials/resolve --query domain=<domain>
 ```
 
-`data` → `{ id, email, password, kind }` (`kind`: `board` or `default`) or `null`. Null → report to the user and proceed without login (some boards allow it). Use the resolved `email`/`password` exactly; never substitute the default login when the board has its own.
+It returns `{ id, email, password, kind }` (the site's own login, else the default) or null. The
+server picks; never choose from `/api/credentials` yourself. Null: continue logged out. Otherwise
+use `email` and `password` exactly.
 
-## Login outcomes
+## Sign in
 
-After submitting the form, branch on the portal's response:
+Click Sign in, snapshot the form, fill it, submit, wait. Then:
 
-- **Accepted** → proceed.
-- **"Account doesn't exist" / "no user found"** → **register without asking**: click Sign up, snapshot the form, fill from profile + credential password, submit. Handle email verification if it follows. A missing account is never a reason to stop in loop skills.
-- **"Wrong password" / invalid** - stored password is stale. Click Forgot password, fill email, submit. Then run the `get-code` skill for `<board-domain>`: `link` → navigate; `code` → enter where prompted; `{}` → ask the user. Set a new password, then persist:
-  - Persist it to the credential the resolver returned: `PATCH /api/credentials/<id> { "password": "<new>" }`.
-  - Retry login.
-- **Unresponsive / unknown** → one-shot retry; if still stuck, proceed without auth (public listings may still work).
+- **Accepted**: go back to the page you wanted.
+- **No such account**: register without asking. Click Sign up, fill it from the profile and the
+  resolved password, submit, and handle the email code if one follows.
+- **Wrong password**: click Forgot password, submit the email, get the reset code or link (below),
+  set a new password, save it with `PATCH /api/credentials/<id>` `{"password":"<new>"}`, and sign
+  in again.
+- **No response or an unknown page**: retry once, then continue logged out.
 
-## OAuth / SSO
+## Challenges
 
-If "Sign in with Google/LinkedIn" is offered, ask before using it.
+- **Email code or link**: run the `get-code` skill with the site's domain. `code`: type it. `link`:
+  open it. `{}`: ask the user for the code.
+- **CAPTCHA**: run the `solve-captcha` skill. Unsolved: ask the user to solve it in the browser and
+  wait. Loop skills pause on a login CAPTCHA; in a job application the `job-applier` parks the job
+  with a question instead.
+- **2FA**: ask the user to complete it and wait.
+- **Sign in with Google / LinkedIn**: ask before using it.
+
+Confirm with a header snapshot after each challenge.

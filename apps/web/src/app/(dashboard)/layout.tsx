@@ -8,10 +8,9 @@ export default function DashboardLayout(props: PropsWithChildren): ReactElement 
     <AppShell>
       <Box
         sx={{
-          minHeight: "100%",
+          flex: "1 0 auto",
           display: "flex",
           flexDirection: "column",
-          py: { xs: 2, sm: 3 },
         }}
       >
         {children}

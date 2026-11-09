@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  DEFAULT_PAGE_SIZE,
-  PAGE_SIZE_OPTIONS,
-  type Pagination as PageMeta,
-  type PaginationQuery,
-} from "@jobpilot/contracts/pagination";
+import { DEFAULT_PAGE_SIZE, type PaginationQuery } from "@jobpilot/contracts/pagination";
 import { useSearchParams } from "next/navigation";
 import { useSearchParamWriter } from "@/hooks/use-search-param-writer";
 import { pageParam, pageSizeParam } from "@/utils/search-params";
@@ -27,7 +22,7 @@ export interface PaginationParams {
   setPageSize: (pageSize: number) => void;
   /** Not a filter write plus `setPage(1)`: both start from one URL snapshot, so one undoes the other. */
   setFilters: (updates: Record<string, string | null>) => void;
-  /** Drops straight into a query factory: `campaignQueries.list(query)`. */
+  /** Drops straight into a query factory: `feedQueries.list(query)`. */
   query: PaginationQuery;
 }
 
@@ -62,30 +57,5 @@ export function usePaginationParams(options: UsePaginationParamsOptions = {}): P
     setPageSize: (next) => write({ [sizeKey]: paramValue(next, defaultPageSize), [pageKey]: null }),
     setFilters: (updates) => write({ ...updates, [pageKey]: null }),
     query: { page, limit: pageSize },
-  };
-}
-
-/** MUI's 0-based grid model, structurally typed so this file never imports the grid package. */
-interface GridPaginationModel {
-  page: number;
-  pageSize: number;
-}
-
-export type GridPaginationProps = ReturnType<typeof gridPagination>;
-
-/** The grid keeps its own footer but pages server-side off the same URL params. */
-export function gridPagination(params: PaginationParams, meta: PageMeta | undefined) {
-  return {
-    paginationMode: "server" as const,
-    rowCount: meta?.total ?? 0,
-    pageSizeOptions: PAGE_SIZE_OPTIONS,
-    paginationModel: { page: params.page - 1, pageSize: params.pageSize },
-    onPaginationModelChange: (model: GridPaginationModel) => {
-      if (model.pageSize !== params.pageSize) {
-        params.setPageSize(model.pageSize);
-        return;
-      }
-      params.setPage(model.page + 1);
-    },
   };
 }

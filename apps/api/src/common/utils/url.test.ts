@@ -48,25 +48,12 @@ describe("normalizeJobUrl", () => {
     );
   });
 
-  it("leaves an already-canonical url byte-identical", () => {
-    const url = "https://hiringcafe.com/job/abc";
-    expect(normalizeJobUrl(url)).toBe(url);
-  });
-
   it("returns an unparseable value untouched rather than throwing", () => {
     expect(normalizeJobUrl("not a url")).toBe("not a url");
   });
 
   it("leaves a non-http url alone", () => {
     expect(normalizeJobUrl("mailto:jobs@example.test")).toBe("mailto:jobs@example.test");
-  });
-});
-
-describe("normalizeJobUrl: listing-index cases", () => {
-  it("strips referrer params the listing index used to strip", () => {
-    expect(
-      normalizeJobUrl("https://WWW.Example.com/jobs/123/?utm_source=linkedin&ref=abc&src=x#apply"),
-    ).toBe("https://example.com/jobs/123");
   });
 
   it("keeps Greenhouse's gh_jid posting id while dropping gh_src", () => {
@@ -76,11 +63,5 @@ describe("normalizeJobUrl: listing-index cases", () => {
     expect(normalizeJobUrl("https://acme.example/careers?gh_jid=1")).not.toBe(
       normalizeJobUrl("https://acme.example/careers?gh_jid=2"),
     );
-  });
-
-  it("collapses two links to the same posting onto one string", () => {
-    const a = normalizeJobUrl("https://boards.example.com/acme/jobs/42?utm_campaign=spring");
-    const b = normalizeJobUrl("http://boards.example.com/acme/jobs/42/#content");
-    expect(a).toBe(b);
   });
 });

@@ -4,12 +4,14 @@ import {
   ChangeEmailCard,
   ChangePasswordCard,
   ConnectedAccountsCard,
+  DeleteAccountCard,
 } from "@/components/features/settings";
 import { DetailSkeleton } from "@/components/ui/feedback";
 
 export const metadata: Metadata = {
   title: "Security",
-  description: "Manage your sign-in email, password, and connected accounts.",
+  description:
+    "Manage your sign-in email, password, and connected accounts, or delete your account.",
 };
 
 export default function SecuritySettingsPage(): ReactElement {
@@ -21,6 +23,7 @@ export default function SecuritySettingsPage(): ReactElement {
       <Suspense fallback={<DetailSkeleton heights={[220]} />}>
         <ConnectedAccountsCard />
       </Suspense>
+      <DeleteAccountCard />
     </>
   );
 }

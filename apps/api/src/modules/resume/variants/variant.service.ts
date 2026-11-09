@@ -7,11 +7,7 @@ import type { z } from "zod/v4";
 import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { renderResumePdf } from "@/common/pdf/render";
-import {
-  deleteGeneratedVariantFiles,
-  generatedVariantPath,
-  serveCachedPdf,
-} from "@/common/storage/storage";
+import { ResumeStorage } from "@/common/storage/resume.storage";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { readContent, toStoredContent } from "../content";
@@ -34,6 +30,7 @@ export class ResumeVariantService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly resumes = inject(ResumeService),
+    private readonly storage = inject(ResumeStorage),
   ) {}
 
   private findVariant(userId: string, id: string) {
@@ -82,7 +79,7 @@ export class ResumeVariantService {
     resumeId: string,
     ...ids: string[]
   ): Promise<void> {
-    await deleteGeneratedVariantFiles(...ids);
+    await this.storage.deleteGeneratedVariantFiles(...ids);
     publishResumeEvent(userId, { type: "variant.deleted", resumeId, variantIds: ids });
   }
 
@@ -226,8 +223,8 @@ export class ResumeVariantService {
 
   async renderVariantPdf(userId: string, id: string) {
     const variant = await this.findVariant(userId, id);
-    return serveCachedPdf(
-      generatedVariantPath(variant.id, variant.updatedAt.getTime()),
+    return this.storage.serveCachedPdf(
+      this.storage.generatedVariantPath(variant.id, variant.updatedAt.getTime()),
       () => renderResumePdf(readContent(variant.content)),
       variant.label,
     );

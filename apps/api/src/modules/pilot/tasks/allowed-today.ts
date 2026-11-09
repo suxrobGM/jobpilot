@@ -1,9 +1,5 @@
 import type { NetworkingAutonomy, NetworkingMode } from "@jobpilot/contracts/networking";
-import {
-  channelAutonomy,
-  networkingMode,
-  type PilotInstructionsConfig,
-} from "@jobpilot/contracts/pilot";
+import { channelAutonomy, networkingMode, type PilotConfig } from "@jobpilot/contracts/pilot";
 
 interface GateCounts {
   appliedToday: number;
@@ -22,7 +18,7 @@ export interface AllowedToday {
 }
 
 /** What the config and today's counts allow. The gather, the build and the pilot state all read this. */
-export function allowedToday(config: PilotInstructionsConfig, counts: GateCounts): AllowedToday {
+export function allowedToday(config: PilotConfig, counts: GateCounts): AllowedToday {
   return {
     emailAutonomy: channelAutonomy(config, "email"),
     outreach: networkingMode(config),

@@ -9,16 +9,17 @@ import {
   cardHeaderOverrides,
   cardOverrides,
 } from "./card";
-import { dataGridOverrides } from "./data-grid";
 import {
   backdropOverrides,
   dialogActionsOverrides,
   dialogContentOverrides,
   dialogOverrides,
   dialogTitleOverrides,
+  drawerOverrides,
 } from "./dialog";
 import {
   formHelperTextOverrides,
+  inputBaseOverrides,
   outlinedInputOverrides,
   selectOverrides,
   textFieldOverrides,
@@ -55,15 +56,16 @@ export const componentOverrides: Components<Theme> = {
   MuiChip: chipOverrides,
   MuiContainer: containerOverrides,
   MuiCssBaseline: cssBaselineOverrides,
-  MuiDataGrid: dataGridOverrides,
   MuiDialog: dialogOverrides,
   MuiDialogActions: dialogActionsOverrides,
   MuiDialogContent: dialogContentOverrides,
   MuiDialogTitle: dialogTitleOverrides,
+  MuiDrawer: drawerOverrides,
   MuiFormHelperText: formHelperTextOverrides,
   MuiLink: linkOverrides,
   MuiMenu: menuOverrides,
   MuiMenuItem: menuItemOverrides,
+  MuiInputBase: inputBaseOverrides,
   MuiOutlinedInput: outlinedInputOverrides,
   MuiPaper: paperOverrides,
   MuiSelect: selectOverrides,

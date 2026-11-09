@@ -8,7 +8,7 @@ import { useSession } from "@/hooks/use-auth";
 
 /** Non-blocking: only applying and networking are gated server-side until verified. */
 export function VerifyEmailBanner(): ReactElement | null {
-  const { user } = useSession();
+  const user = useSession();
   const [dismissed, setDismissed] = useState(false);
   const resend = useApiMutation(() => api.auth.email.verification.post(), {
     successMessage: "Verification email sent - check your inbox.",

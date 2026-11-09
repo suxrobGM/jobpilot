@@ -1,17 +1,13 @@
 import type { ApplicationSource, ApplicationStatus } from "@jobpilot/contracts/application";
-import type {
-  CampaignJobStatus,
-  CampaignSource,
-  CampaignStatus,
-} from "@jobpilot/contracts/campaign";
 import type { CoverLetterSource } from "@jobpilot/contracts/cover-letter";
 import type { Classification } from "@jobpilot/contracts/email";
+import type { JobStatus } from "@jobpilot/contracts/feed";
 import type { JobListingStatus } from "@jobpilot/contracts/job-listing";
 import type {
   CONTACT_LINKEDIN_CONNECTIONS,
   NetworkingMessageStatus,
 } from "@jobpilot/contracts/networking";
-import type { PilotCycleStatus, PilotQuestion, PromotionStatus } from "@jobpilot/contracts/pilot";
+import type { PilotQuestion } from "@jobpilot/contracts/pilot";
 import type { Role } from "@jobpilot/contracts/role";
 import type {
   UpworkInboxKind,
@@ -39,8 +35,8 @@ const application: Styles<ApplicationStatus> = {
   withdrawn: { label: "Withdrawn", color: "default" },
 };
 
-/** Campaign, application and cover-letter sources share one vocabulary. */
-const source: Styles<CampaignSource | ApplicationSource | CoverLetterSource> = {
+/** Application and cover-letter sources share one vocabulary. */
+const source: Styles<ApplicationSource | CoverLetterSource> = {
   search: { label: "Search", color: "default" },
   auto_apply: { label: "Auto-apply", color: "success" },
   apply: { label: "Single apply", color: "info" },
@@ -48,22 +44,17 @@ const source: Styles<CampaignSource | ApplicationSource | CoverLetterSource> = {
   networking: { label: "Networking", color: "default" },
 };
 
-const campaign: Styles<CampaignStatus> = {
-  in_progress: { label: "In progress", color: "info" },
-  paused: { label: "Paused", color: "default" },
-  completed: { label: "Completed", color: "success" },
-  failed: { label: "Failed", color: "error" },
-};
-
-const campaignJob: Styles<CampaignJobStatus> = {
+const job: Styles<JobStatus> = {
   queued: { label: "Queued", color: "default" },
   pending: { label: "Pending", color: "default" },
   approved: { label: "Approved", color: "info" },
   applying: { label: "Applying", color: "primary" },
-  needs_user: { label: "Needs you", color: "warning" },
+  // The orange of the nav badge and the Needs you queue: the same "waiting on you".
+  needs_user: { label: "Needs you", color: "primary" },
   applied: { label: "Applied", color: "success" },
   failed: { label: "Failed", color: "error" },
-  skipped: { label: "Skipped", color: "warning" },
+  // A normal outcome, not a warning.
+  skipped: { label: "Skipped", color: "default" },
 };
 
 const networking: Styles<NetworkingMessageStatus> = {
@@ -80,22 +71,6 @@ const connection: Styles<(typeof CONTACT_LINKEDIN_CONNECTIONS)[number]> = {
   none: { label: "Not connected", color: "default" },
   pending: { label: "Pending", color: "info" },
   connected: { label: "Connected", color: "success" },
-};
-
-const promotion: Styles<PromotionStatus> = {
-  draft: { label: "Draft", color: "warning" },
-  approved: { label: "Approved", color: "info" },
-  declined: { label: "Declined", color: "default" },
-  posted: { label: "Posted", color: "success" },
-  failed: { label: "Failed", color: "error" },
-  skipped: { label: "Skipped", color: "default" },
-  expired: { label: "Expired", color: "default" },
-};
-
-const cycle: Styles<PilotCycleStatus> = {
-  ok: { label: "OK", color: "success" },
-  empty: { label: "Nothing to do", color: "default" },
-  error: { label: "Error", color: "error" },
 };
 
 const classification: Styles<Classification> = {
@@ -157,12 +132,9 @@ const role: Styles<Role> = {
 const STATUS_STYLES = {
   application,
   source,
-  campaign,
-  campaignJob,
+  job,
   networking,
   connection,
-  promotion,
-  cycle,
   classification,
   upworkProposal,
   upworkOutcome,

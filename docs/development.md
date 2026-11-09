@@ -18,7 +18,7 @@ The repo doesn't start a database for you. Before running `db:setup`, set
 you can reach. That can be one you run yourself, or the remote database
 through the SSH tunnel described below.
 
-Then open `http://localhost:4100` and open the Terminal panel.
+Then open `http://localhost:4100` and open the agent drawer.
 
 ### Remote database over SSH
 
@@ -59,9 +59,9 @@ private address instead.
 
 | Layer              | Choice                                         |
 | ------------------ | ---------------------------------------------- |
-| Runtime            | Bun 1.3                                        |
+| Runtime            | Bun 1.4                                        |
 | Web                | Next.js 16 (App Router, RSC, typed routes)     |
-| UI                 | MUI 9 + MUI X DataGrid                         |
+| UI                 | MUI 9                                          |
 | Forms              | TanStack Form 1 + Zod v4                       |
 | Server state       | TanStack Query 5                               |
 | API                | Elysia + Eden Treaty (end-to-end types)        |
@@ -101,11 +101,12 @@ flowchart LR
 
 ### Web
 
-[apps/web/](../apps/web/) is the Next.js UI: the application pipeline,
-campaigns with live per-job progress, inbox, networking, the resume studio,
-Upwork (proposals, profile, inbox), analytics, settings, and the agent dock.
-The dock is an xterm.js panel that installs, starts, and monitors the local
-agent.
+[apps/web/](../apps/web/) is the Next.js UI: the Pilot home (thread, chat,
+needs-you, notices), the pipeline with live per-job progress, inbox,
+networking, the resume studio, Upwork (proposals, profile, inbox), analytics,
+settings, and the agent drawer. The drawer has a Steps tab (the running task's
+readable steps, streamed from the API) and a Terminal tab, an xterm.js panel
+that installs, starts, and monitors the local agent.
 
 Both the browser and the Next.js server call the API directly through
 `API_BASE_URL`. Nothing proxies data in between.
@@ -122,8 +123,10 @@ by domain under `apps/api/prisma/schema/`.
 one provider PTY (ConPTY via Quick.PtyNet). It streams that PTY to the web's
 xterm.js over a WebSocket.
 
-Endpoints: `POST /sessions/start`, `POST /sessions/inject`,
-`DELETE /sessions/current`, `GET /healthz`, `GET /ws`.
+Endpoints: `POST /sessions/start`, `DELETE /sessions/current`,
+`PUT /pilot/pairing`, `DELETE /pilot/pairing`, `DELETE /pilot/hold`,
+`POST /v1/logs` (the CLI's OTLP log export, read for token usage and live
+steps), `GET /healthz`, `GET /ws`.
 
 `/sessions/start` takes the user's terminal token and starts the provider
 with these environment variables:
@@ -140,8 +143,11 @@ When the panel reopens, it reconnects a WebSocket to the running session and
 replays the most recent output (`TerminalRelay`, 512 KB, cleared when a new
 session starts). Switching providers restarts the PTY.
 
-The web sends skills as `/jobpilot:<skill>` for Claude and `$<skill>` for
-Codex. When a new release is out, the dock shows an update banner. The guided
+The web never types into the PTY. Buttons create pilot requests
+(`POST /api/pilot/requests`), and the paired host's pilot loop runs them as
+normal runs, typing the pilot skill with the run id (`/jobpilot:pilot` for
+Claude, `$pilot` for Codex). When a new release is out, the agent drawer shows
+an update banner. The guided
 update replaces the host and plugin and, on Claude, finishes with
 `/reload-plugins`.
 
@@ -155,7 +161,7 @@ generation step:
   a skill. Skills refer to each other by name and to shared docs by relative
   path (`../_shared/<doc>.md`), so the same text works for both providers.
 - `agents/*.md`: worker subagents (`job-scorer`, `job-applier`,
-  `job-searcher`, `job-researcher`, `networking-worker`). Campaign skills hand
+  `job-searcher`, `job-researcher`, `networking-worker`). Job skills hand
   them one item at a time so heavy browser output stays out of the main session. Each worker
   includes the rules it needs instead of reading shared docs, and uses the
   session's model. Claude finds them on its own; the host writes Codex copies
@@ -181,7 +187,7 @@ describes the JobPilot API under `autoMode.environment`.
 
 Codex has no `--settings` flag, and it only loads a project
 `.codex/config.toml` for trusted projects. So
-[CodexProvider](../apps/terminal/Providers/CodexProvider.cs) turns
+[CodexConfig](../apps/terminal/Providers/Codex/CodexConfig.cs) turns
 `settings/codex.json` into `-c` arguments. If the file is missing, it logs a
 warning and starts anyway.
 
@@ -206,27 +212,29 @@ trust policy for this repo; behavior belongs to the plugin.
 
 ```mermaid
 sequenceDiagram
-    participant W as Web (agent dock)
-    participant T as Terminal :4102
-    participant S as apply skill (PTY)
+    participant W as Web (Pipeline)
     participant API as API :4101
+    participant T as Terminal :4102 (pilot loop)
+    participant S as pilot skill (PTY)
     participant B as Browser (Playwright MCP)
 
-    W->>T: POST /sessions/inject
-    T->>S: PTY stdin
-    S->>API: GET /health, /profile, /credentials, /applications/duplicates
+    W->>API: POST /pilot/requests {taskType: "job.apply"}
+    API-->>T: SSE request.created (wake)
+    T->>API: POST /pilot/tasks/refresh, POST /pilot/runs
+    T->>S: PTY stdin: /jobpilot:pilot <runId>
+    S->>API: GET /health, /user, /credentials/resolve, /applications/duplicates
     S->>B: navigate, login, fill, submit
-    S->>API: POST /campaigns/[id]/jobs/[jobKey]/result
-    API-->>W: SSE campaign event → query invalidation → refetch
+    T->>API: POST /pilot/runs/[id]/steps (from the CLI's OTLP logs)
+    S->>API: PATCH /feeds/[id]/jobs/[jobKey], POST /pilot/runs/[id]/result
+    API-->>W: SSE run.steps, run.finished → query invalidation → refetch
 ```
 
 ### Live updates
 
-Skills write through `/api/campaigns/*`. The web opens
-`EventSource /api/campaigns/[id]/events` and, on each event, invalidates the
-TanStack Query cache so the page refetches the real state from PostgreSQL.
-Five more channels (`workspace`, `inbox`, `resume`, `upwork`, `pilot`) work
-the same way. They're defined in `packages/contracts/src/sse/channels/`.
+Skills write through `/api/feeds/*`. The web opens one `EventSource` per channel
+(`workspace`, `inbox`, `resume`, `upwork`, `pilot`) and, on each event, invalidates
+the TanStack Query cache so the page refetches the real state from PostgreSQL. The pilot channel also carries the host's control events
+(`run.interrupt`, `run.steer`) and live `run.steps`. They're defined in `packages/contracts/src/sse/channels/`.
 
 ### Skills
 
@@ -236,13 +244,14 @@ load config:
 1. `/api/health`
 2. `GET /api/user` (the payload comes back bare, with no `data.` wrapper)
 3. `GET /api/credentials/resolve?domain=…`
-4. Resumes through `primaryResumeSourceAbsolutePath` or
-   `GET /api/resumes/[id]/pdf`
+4. Resumes through `GET /api/resumes/[id]` (content), `/pdf` (rendered), or
+   `/source` (the uploaded file)
 
 The other shared docs cover browser behavior that many skills need:
-`auth.md`, `form-filling.md`, and `browser-tips.md`. `campaign-flow.md` holds
-the campaign steps every apply skill shares (the applied check, result writes,
-worker input, and rules). Skills that write text call the `humanizer` skill by
+`auth.md` and `browser-tips.md`. `feed-flow.md` holds the steps every job
+skill shares (searching through the pilot's agents, the applied check, result
+writes, worker input, and rules). `apps/api/src/plugin-links.test.ts` fails when
+a skill calls an API route or links a web page that doesn't exist. Skills that write text call the `humanizer` skill by
 name in **embedded mode**, so only the final text comes back.
 
 The resume skills form a chain, and each has one rule:

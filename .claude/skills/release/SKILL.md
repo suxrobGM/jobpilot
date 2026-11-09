@@ -53,12 +53,20 @@ The user provides a version (e.g. `2.1.0`) or a bump type (`major`, `minor`,
      one line or omit them.
    - Skip merge commits and the release commit itself.
 
-5. **Commit:** stage the four version files + `CHANGELOG.md`, commit
-   `chore: release vX.Y.Z`.
+5. **Agent version floor:** if the commits since the previous tag include a
+   breaking change (a `!` subject or `BREAKING CHANGE`, or a removed/renamed route
+   or payload the host or skills call), list them and ask the user whether to
+   raise `MIN_AGENT_VERSION` in `apps/api/src/common/middleware/agent-version.ts`
+   to the new version. If yes, bump it, move the boundary cases in
+   `agent-version.test.ts`, and say in the changelog intro that older agents are
+   refused. Skip the question if the user already said in the arguments.
 
-6. **Tag:** `git tag -a vX.Y.Z -m "JobPilot vX.Y.Z"`.
+6. **Commit:** stage the four version files + `CHANGELOG.md` (plus the
+   agent-version files if bumped), commit `chore: release vX.Y.Z`.
 
-7. **Report:** show the new version and tag, and remind the user to run
+7. **Tag:** `git tag -a vX.Y.Z -m "JobPilot vX.Y.Z"`.
+
+8. **Report:** show the new version and tag, and remind the user to run
    `git push && git push origin vX.Y.Z` to trigger `release.yml`.
 
 ## Do NOT

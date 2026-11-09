@@ -11,8 +11,6 @@ import { applicationController } from "@/modules/application/application.control
 import { authController } from "@/modules/auth/auth.controller";
 import { authProvidersController } from "@/modules/auth/providers.controller";
 import { securityController } from "@/modules/auth/security.controller";
-import { campaignController } from "@/modules/campaign/campaign.controller";
-import { campaignJobController } from "@/modules/campaign/jobs/job.controller";
 import { captchaController } from "@/modules/captcha/captcha.controller";
 import { contactController } from "@/modules/contact/contact.controller";
 import { coverLetterController } from "@/modules/cover-letter/cover-letter.controller";
@@ -20,25 +18,31 @@ import { credentialController } from "@/modules/credential/credential.controller
 import { emailAccountController } from "@/modules/email/account/account.controller";
 import { emailMessagesController } from "@/modules/email/messages.controller";
 import { emailOAuthController } from "@/modules/email/oauth.controller";
+import { feedController } from "@/modules/feed/feed.controller";
+import { jobController } from "@/modules/feed/jobs/job.controller";
 import { healthController } from "@/modules/health/health.controller";
 import { adminBoardController } from "@/modules/job-board/admin-board.controller";
 import { jobBoardController } from "@/modules/job-board/job-board.controller";
 import { adminJobListingController } from "@/modules/job-listing/admin-listing.controller";
 import { publicJobListingController } from "@/modules/job-listing/job-listing.controller";
-import { cleanupJob } from "@/modules/maintenance/cleanup.job";
 import { pdfCacheJob } from "@/modules/maintenance/pdf-cache.job";
+import { retentionJob } from "@/modules/maintenance/retention.job";
 import { networkingController } from "@/modules/networking/networking.controller";
-import { profileAnswersController } from "@/modules/pilot/answer.controller";
-import { pilotJobAlertsController } from "@/modules/pilot/job-alerts.controller";
-import { pilotJobLookupController } from "@/modules/pilot/job-lookup.controller";
-import { pilotJournalController } from "@/modules/pilot/journal.controller";
+import { pilotChangesController } from "@/modules/pilot/changes/change.controller";
+import { pilotJobAlertsController } from "@/modules/pilot/feeds/job-alerts.controller";
+import { pilotJobLookupController } from "@/modules/pilot/feeds/job-lookup.controller";
+import { pilotResearchController } from "@/modules/pilot/feeds/research.controller";
+import { pilotMessagesController } from "@/modules/pilot/messages/message.controller";
+import { pilotNoticesController } from "@/modules/pilot/notices/notice.controller";
 import { pilotController } from "@/modules/pilot/pilot.controller";
-import { promotionController } from "@/modules/pilot/promotion.controller";
-import { pilotQuestionsController } from "@/modules/pilot/question.controller";
-import { pilotResearchController } from "@/modules/pilot/research.controller";
-import { pilotSearchController } from "@/modules/pilot/search.controller";
-import { expiryJob } from "@/modules/pilot/tasks/expiry.job";
+import { profileAnswersController } from "@/modules/pilot/questions/answer.controller";
+import { pilotQuestionsController } from "@/modules/pilot/questions/question.controller";
+import { pilotRequestsController } from "@/modules/pilot/requests/request.controller";
+import { expiryJob } from "@/modules/pilot/runs/expiry.job";
+import { pilotRunsController } from "@/modules/pilot/runs/run.controller";
 import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
+import { pilotThreadController } from "@/modules/pilot/thread/thread.controller";
+import { pipelineController } from "@/modules/pipeline/pipeline.controller";
 import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
 import { publicResumeController, resumeController } from "@/modules/resume/resume.controller";
 import { resumeVariantController } from "@/modules/resume/variants/variant.controller";
@@ -55,7 +59,7 @@ const app = new Elysia()
   .use(corsPlugin)
   .use(openapiPlugin)
   .use(pdfCacheJob)
-  .use(cleanupJob)
+  .use(retentionJob)
   .use(expiryJob)
   .onStop(async () => {
     await db.$disconnect();
@@ -85,19 +89,23 @@ const app = new Elysia()
       .use(applicationController)
       .use(scoringController)
       .use(upworkController)
-      .use(campaignController)
-      .use(campaignJobController)
+      .use(feedController)
+      .use(jobController)
       .use(networkingController)
       .use(pilotController)
-      .use(pilotSearchController)
       .use(pilotTasksController)
       .use(pilotJobAlertsController)
       .use(pilotJobLookupController)
       .use(pilotResearchController)
-      .use(pilotJournalController)
+      .use(pilotThreadController)
+      .use(pilotChangesController)
+      .use(pilotMessagesController)
+      .use(pilotNoticesController)
+      .use(pilotRunsController)
+      .use(pilotRequestsController)
+      .use(pipelineController)
       .use(pilotQuestionsController)
       .use(profileAnswersController)
-      .use(promotionController)
       .use(webPushController)
       .use(workspaceController)
       .use(emailAccountController)

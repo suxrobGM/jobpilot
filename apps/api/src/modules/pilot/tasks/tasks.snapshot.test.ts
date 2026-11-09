@@ -1,15 +1,13 @@
 import type { TaskList } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
-import type { WebPushService } from "@/modules/web-push/web-push.service";
-import type { PilotJournalService } from "../journal.service";
+import type { DigestService } from "./digest.service";
+import type { PilotMaintenanceService } from "./maintenance.service";
 import { TaskListService } from "./task-list.service";
 import { describe, expect, it } from "bun:test";
 
 const now = new Date();
 const snapshot: TaskList = {
-  version: "fe0893aa-7310-4ea6-bbcf-ef803bd4b70b",
   builtAt: now,
   expiresAt: new Date(now.getTime() + 60_000),
   tasks: [],
@@ -40,9 +38,8 @@ function service(row: Record<string, unknown> | null) {
   return {
     taskList: new TaskListService(
       prisma,
-      {} as CampaignJobService,
-      {} as PilotJournalService,
-      {} as WebPushService,
+      {} as PilotMaintenanceService,
+      {} as DigestService,
       {} as EmailSyncService,
     ),
     reads: () => reads,
@@ -51,28 +48,15 @@ function service(row: Record<string, unknown> | null) {
 
 describe("TaskListService current snapshot", () => {
   it("returns the typed current snapshot with one read and no maintenance writes", async () => {
-    const fixture = service({
-      running: true,
-      taskListSnapshot: snapshot,
-      taskListExpiresAt: snapshot.expiresAt,
-    });
+    const fixture = service({ taskList: snapshot });
 
     expect(await fixture.taskList.getCurrent("u1")).toEqual({ taskList: snapshot });
     expect(fixture.reads()).toBe(1);
   });
 
   it("returns no task list after the snapshot expires", async () => {
-    const fixture = service({
-      running: true,
-      taskListSnapshot: snapshot,
-      taskListExpiresAt: new Date(now.getTime() - 1),
-    });
+    const fixture = service({ taskList: { ...snapshot, expiresAt: new Date(now.getTime() - 1) } });
 
     expect(await fixture.taskList.getCurrent("u1")).toEqual({ taskList: null });
-  });
-
-  it("rejects reads while the pilot is stopped", async () => {
-    const fixture = service({ running: false });
-    await expect(fixture.taskList.getCurrent("u1")).rejects.toThrow("stopped");
   });
 });

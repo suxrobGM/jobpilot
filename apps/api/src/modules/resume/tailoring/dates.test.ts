@@ -1,4 +1,4 @@
-import { parseResumeDate, spanOf } from "./dates";
+import { dateSpan, parseResumeDate } from "./dates";
 import { describe, expect, it } from "bun:test";
 
 describe("parseResumeDate", () => {
@@ -17,10 +17,10 @@ describe("parseResumeDate", () => {
   });
 });
 
-describe("spanOf", () => {
+describe("dateSpan", () => {
   it("takes the earliest start and latest end rather than either entry's own range", () => {
     expect(
-      spanOf([
+      dateSpan([
         { start: "Sep 2020", end: "Oct 2021" },
         { start: "Mar 2020", end: "Feb 2021" },
       ]),
@@ -28,7 +28,7 @@ describe("spanOf", () => {
   });
 
   it("reports an open-ended span when no end parses, and refuses one with no start", () => {
-    expect(spanOf([{ start: "2024" }])).toEqual({ start: "2024", end: "Present" });
-    expect(spanOf([{ end: "2024" }])).toBeNull();
+    expect(dateSpan([{ start: "2024" }])).toEqual({ start: "2024", end: "Present" });
+    expect(dateSpan([{ end: "2024" }])).toBeNull();
   });
 });

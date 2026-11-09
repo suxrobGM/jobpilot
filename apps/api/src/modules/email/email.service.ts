@@ -41,7 +41,9 @@ export class EmailService {
     }
     if (since) {
       const date = new Date(since);
-      if (!Number.isNaN(date.getTime())) where.receivedAt = { gte: date };
+      if (!Number.isNaN(date.getTime())) {
+        where.receivedAt = { gte: date };
+      }
     }
     if (verificationDomain) {
       where.verificationDomain = verificationDomain;
@@ -80,6 +82,28 @@ export class EmailService {
     ]);
 
     return paginate(rows.map(withLinks), query, total);
+  }
+
+  /** Keeps mail linked to an application: it is that application's timeline. */
+  async clearMessages(userId: string) {
+    const account = await this.prisma.emailAccount.findUnique({
+      where: { userId },
+      select: { id: true, lastSyncAt: true },
+    });
+    if (!account) {
+      return { deletedCount: 0 };
+    }
+    // Floor at lastSyncAt, not now: mail received since then was never stored, so never cleared.
+    const [{ count }] = await this.prisma.$transaction([
+      this.prisma.emailMessage.deleteMany({
+        where: { accountId: account.id, applicationId: null },
+      }),
+      this.prisma.emailAccount.update({
+        where: { id: account.id },
+        data: { clearedBefore: account.lastSyncAt },
+      }),
+    ]);
+    return { deletedCount: count };
   }
 
   async getMessage(userId: string, id: string) {

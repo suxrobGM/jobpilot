@@ -48,6 +48,9 @@ export const RATE_LIMITS = {
   /** Sends mail to an arbitrary address the caller typed, so tight like emailResend. */
   emailChange: { key: byUser, limit: 3, windowMs: HOUR },
 
+  /** Same current-password brute-force cap as passwordChange. */
+  accountDelete: { key: byUser, limit: 5, windowMs: HOUR },
+
   /** Magic-link consumption; same shape as passwordReset (high-entropy token, DB-cost cap). */
   emailChangeConfirm: { key: byIp, limit: 10, windowMs: HOUR },
 
@@ -78,14 +81,13 @@ export const RATE_LIMITS = {
   /** Pilot polls the task list once per cycle; burst covers a tight run-then-repoll loop. */
   pilotTasks: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
 
-  /** Batched journal writes, several per cycle - the loosest Pilot limit. */
-  pilotJournal: { key: byUser, limit: 600, windowMs: HOUR, burst: 20 },
-
-  /** Streams every row, and is rarely needed. */
-  pilotJournalExport: { key: byUser, limit: 10, windowMs: HOUR },
+  /** Streams every finished run, and is rarely needed. */
+  pilotRunsExport: { key: byUser, limit: 10, windowMs: HOUR },
 
   /** Run/heartbeat/finish bookkeeping, a few per worked item. */
   pilotRun: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
+  /** The host posts a run's steps every 2 seconds while it works. */
+  pilotSteps: { key: byUser, limit: 2400, windowMs: HOUR, burst: 20 },
 
   /** User- or agent-driven Pilot mutations (instructions, enable, questions) - infrequent. */
   pilotMutation: { key: byUser, limit: 120, windowMs: HOUR },
