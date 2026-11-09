@@ -2,8 +2,8 @@
 
 import { type ReactElement, useEffect, useState } from "react";
 import { Box, ButtonBase, Stack, Typography } from "@mui/material";
-import { sideNavLink } from "../navigation/side-nav-link";
-import { belowTopBar } from "./top-bar-slots";
+import { belowTopBar } from "@/components/ui/layout/top-bar-slots";
+import { sideNavLink } from "@/components/ui/navigation";
 
 export interface SectionAnchor {
   id: string;

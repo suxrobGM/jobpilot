@@ -3,7 +3,6 @@
 import type { ReactElement, ReactNode } from "react";
 import type { JobAlertsStatus } from "@jobpilot/contracts/pilot";
 import { PlayArrow } from "@mui/icons-material";
-import { Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { pilotQueries } from "@/api/queries";
 import type { ResearchStatusDto } from "@/api/types";
@@ -11,30 +10,7 @@ import { TooltipIconButton } from "@/components/ui/buttons";
 import { formatHour, formatRelativeTime } from "@/utils/format";
 import { pipelineHref } from "@/utils/routes";
 import { useCreateRequest } from "../../requests/use-create-request";
-import { EdgeLinkButton } from "./overview-section";
-
-interface SourceRowProps {
-  label: string;
-  detail: string;
-  /** What the source is, on hover. */
-  hint?: string;
-  action?: ReactNode;
-}
-
-function SourceRow(props: SourceRowProps): ReactElement {
-  const { label, detail, hint, action } = props;
-  return (
-    <Stack direction="row" spacing={1} title={hint} sx={{ alignItems: "center", minHeight: 30 }}>
-      <Typography variant="body2" sx={{ flexShrink: 0 }}>
-        {label}
-      </Typography>
-      <Typography variant="body2Muted" noWrap title={detail} sx={{ flex: 1, minWidth: 0 }}>
-        {detail}
-      </Typography>
-      {action}
-    </Stack>
-  );
-}
+import { EdgeLinkButton, OverviewRow } from "./overview-section";
 
 function isImporting(status: JobAlertsStatus): boolean {
   return status.lastRun !== null && status.lastRun.outcome === null;
@@ -98,10 +74,10 @@ export function JobAlertsSource(): ReactNode {
     return null;
   }
   return (
-    <SourceRow
+    <OverviewRow
       label="Alert emails"
       detail={jobAlertsDetail(status)}
-      action={<JobAlertsAction status={status} />}
+      end={<JobAlertsAction status={status} />}
     />
   );
 }
@@ -127,11 +103,11 @@ export function ResearchSource(): ReactNode {
     return null;
   }
   return (
-    <SourceRow
+    <OverviewRow
       label="Web search"
       detail={researchDetail(status)}
       hint={WEB_SEARCH_HINT}
-      action={status.feedId && <EdgeLinkButton label="View" href={pipelineHref(status.feedId)} />}
+      end={status.feedId && <EdgeLinkButton label="View" href={pipelineHref(status.feedId)} />}
     />
   );
 }

@@ -3,11 +3,13 @@
 import type { ReactElement } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Box, Stack } from "@mui/material";
-import { type SectionAnchor, SectionCard, SectionLayout } from "@/components/ui/layout";
+import { SectionCard } from "@/components/ui/layout";
 import { PilotStateLoader } from "../state/pilot-state-loader";
 import { AnswersSection } from "./answers-section";
 import { RulesForm } from "./rules-form";
 import { SearchesSection } from "./searches-section";
+import type { SectionAnchor } from "./section-anchor-nav";
+import { SectionLayout } from "./section-layout";
 
 const ANCHORS: SectionAnchor[] = [
   { id: "searches", label: "Searches" },

@@ -8,6 +8,7 @@ import { pilotQueries } from "@/api/queries";
 import type { FeedDto } from "@/api/types";
 import { plural } from "@/utils/format";
 import { useMakeChange } from "../../changes/use-changes";
+import { OverviewRow } from "./overview-section";
 
 const SHOWN_SEARCHES = 3;
 
@@ -18,28 +19,29 @@ interface SearchRowProps {
 function SearchRow(props: SearchRowProps): ReactElement {
   const { search } = props;
   const paused = search.pausedAt !== null;
+  const end = paused ? (
+    <Tooltip title={search.pausedReason ?? "Paused"}>
+      <PauseCircleOutlined fontSize="sm" sx={{ color: "text.secondary" }} />
+    </Tooltip>
+  ) : (
+    <Typography variant="body2Muted">{search.appliedThisWeek}</Typography>
+  );
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: "center", minHeight: 28 }}>
-      <Typography
-        variant="body2"
-        noWrap
-        title={search.query ?? undefined}
-        sx={{ flex: 1, minWidth: 0, color: paused ? "text.secondary" : "text.primary" }}
-      >
-        {search.name}
-        {search.board && (
-          <Typography component="span" variant="body2Muted">
-            {` · ${search.board.name}`}
-          </Typography>
-        )}
-      </Typography>
-      {paused && (
-        <Tooltip title={search.pausedReason ?? "Paused"}>
-          <PauseCircleOutlined fontSize="sm" sx={{ color: "text.secondary" }} />
-        </Tooltip>
-      )}
-      {!paused && <Typography variant="body2Muted">{search.appliedThisWeek}</Typography>}
-    </Stack>
+    <OverviewRow
+      label={
+        <>
+          {search.name}
+          {search.board && (
+            <Typography component="span" variant="body2Muted">
+              {` · ${search.board.name}`}
+            </Typography>
+          )}
+        </>
+      }
+      hint={search.query ?? undefined}
+      dimmed={paused}
+      end={end}
+    />
   );
 }
 

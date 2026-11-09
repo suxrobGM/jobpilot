@@ -6,11 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import { credentialQueries, pilotQueries, resumeQueries, userQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
-import { ChecklistRow } from "@/components/ui/display";
 import { DialogHeader } from "@/components/ui/feedback";
 import { plural } from "@/utils/format";
 import { usePilotState } from "../../state/use-pilot-state";
 import { PilotTurn } from "../thread/pilot-turn";
+import { ChecklistRow } from "./checklist-row";
 import { SetupFromResumeButton } from "./setup-from-resume-button";
 
 interface StepLinkProps {
