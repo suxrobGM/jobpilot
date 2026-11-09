@@ -11,7 +11,6 @@ import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { MessageService } from "./message.service";
 
 const messages = container.get(MessageService);
-const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pilotMessagesController = new Elysia({
   prefix: "/pilot/messages",
@@ -28,7 +27,7 @@ export const pilotMessagesController = new Elysia({
   })
   .post("/", ({ user, body }) => messages.create(user.id, body.body), {
     body: createPilotMessageSchema,
-    beforeHandle: limitMutation,
+    beforeHandle: rateLimit(RATE_LIMITS.pilotMutation),
     response: pilotMessageSchema,
     detail: {
       summary: "Message the pilot",

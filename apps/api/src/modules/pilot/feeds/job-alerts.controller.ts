@@ -6,7 +6,6 @@ import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { JobAlertsService } from "./job-alerts.service";
 
 const jobAlerts = container.get(JobAlertsService);
-const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pilotJobAlertsController = new Elysia({
   prefix: "/pilot",
@@ -23,7 +22,7 @@ export const pilotJobAlertsController = new Elysia({
   })
   .put("/job-alerts", ({ user, body }) => jobAlerts.updateSettings(user.id, body), {
     body: pilotJobAlertsSchema,
-    beforeHandle: limitMutation,
+    beforeHandle: rateLimit(RATE_LIMITS.pilotMutation),
     response: jobAlertsStatusSchema,
     detail: {
       summary: "Update the job-alert import schedule",

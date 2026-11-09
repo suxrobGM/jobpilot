@@ -11,15 +11,12 @@ import { createPilotJournalResponseSchema } from "../pilot.schema";
 import { PilotJournalService } from "./journal.service";
 
 const journal = container.get(PilotJournalService);
-const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
-const limitJournal = rateLimit(RATE_LIMITS.pilotJournal);
-const limitJournalExport = rateLimit(RATE_LIMITS.pilotJournalExport);
 
 export const pilotJournalController = new Elysia({ prefix: "/pilot", detail: { tags: ["Pilot"] } })
   .use(authGuard)
   .post("/journal", ({ user, body }) => journal.append(user.id, body), {
     body: createPilotJournalSchema,
-    beforeHandle: limitJournal,
+    beforeHandle: rateLimit(RATE_LIMITS.pilotJournal),
     response: createPilotJournalResponseSchema,
     detail: {
       summary: "Append journal entries",
@@ -29,7 +26,7 @@ export const pilotJournalController = new Elysia({ prefix: "/pilot", detail: { t
   })
   .get("/journal", ({ user, query }) => journal.list(user.id, query, query.kinds), {
     query: pilotJournalQuerySchema,
-    beforeHandle: limitTaskList,
+    beforeHandle: rateLimit(RATE_LIMITS.pilotTasks),
     response: pilotJournalPageSchema,
     detail: {
       summary: "List journal entries",
@@ -37,7 +34,7 @@ export const pilotJournalController = new Elysia({ prefix: "/pilot", detail: { t
     },
   })
   .get("/journal/export", ({ user }) => journal.streamExport(user.id), {
-    beforeHandle: limitJournalExport,
+    beforeHandle: rateLimit(RATE_LIMITS.pilotJournalExport),
     detail: {
       summary: "Export the journal",
       description:

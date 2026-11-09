@@ -19,7 +19,6 @@ import {
 import { ApplicationService } from "./application.service";
 
 const svc = container.get(ApplicationService);
-const limitNote = rateLimit(RATE_LIMITS.applicationNote);
 
 export const applicationController = new Elysia({
   prefix: "/applications",
@@ -84,7 +83,7 @@ export const applicationController = new Elysia({
   .post("/:id/events", ({ user, params, body }) => svc.addEvent(user.id, params.id, body), {
     params: idParam,
     body: appendNoteSchema,
-    beforeHandle: limitNote,
+    beforeHandle: rateLimit(RATE_LIMITS.applicationNote),
     response: applicationEventSchema,
     detail: {
       summary: "Append a note to an application",

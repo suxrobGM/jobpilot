@@ -16,15 +16,10 @@ import { VerificationService } from "./verification.service";
 const securityService = container.get(SecurityService);
 const verificationService = container.get(VerificationService);
 
-const limitEmailChangeConfirm = rateLimit(RATE_LIMITS.emailChangeConfirm);
-const limitPasswordChange = rateLimit(RATE_LIMITS.passwordChange);
-const limitEmailChange = rateLimit(RATE_LIMITS.emailChange);
-const limitAccountDelete = rateLimit(RATE_LIMITS.accountDelete);
-
 export const securityController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .post("/email/change/confirm", ({ body }) => verificationService.confirmEmailChange(body.token), {
     body: ConfirmEmailChangeSchema,
-    beforeHandle: limitEmailChangeConfirm,
+    beforeHandle: rateLimit(RATE_LIMITS.emailChangeConfirm),
     response: okResponseSchema,
     detail: {
       summary: "Confirm an email change",
@@ -38,7 +33,7 @@ export const securityController = new Elysia({ prefix: "/auth", detail: { tags: 
     ({ user, body }) => securityService.changePassword(user.id, body, user.tokenId),
     {
       body: ChangePasswordSchema,
-      beforeHandle: limitPasswordChange,
+      beforeHandle: rateLimit(RATE_LIMITS.passwordChange),
       response: okResponseSchema,
       detail: {
         summary: "Change or set the password",
@@ -49,7 +44,7 @@ export const securityController = new Elysia({ prefix: "/auth", detail: { tags: 
   )
   .post("/email/change", ({ user, body }) => securityService.requestEmailChange(user.id, body), {
     body: ChangeEmailSchema,
-    beforeHandle: limitEmailChange,
+    beforeHandle: rateLimit(RATE_LIMITS.emailChange),
     response: okResponseSchema,
     detail: {
       summary: "Request an email change",
@@ -66,7 +61,7 @@ export const securityController = new Elysia({ prefix: "/auth", detail: { tags: 
     },
     {
       body: DeleteAccountSchema,
-      beforeHandle: limitAccountDelete,
+      beforeHandle: rateLimit(RATE_LIMITS.accountDelete),
       response: okResponseSchema,
       detail: {
         summary: "Delete the account",
