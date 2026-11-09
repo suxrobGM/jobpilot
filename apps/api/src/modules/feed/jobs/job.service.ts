@@ -36,7 +36,7 @@ const ALLOWED_TRANSITIONS: Record<JobStatus, readonly JobStatus[]> = {
 };
 
 /** A job back in the approved queue carries no trace of an earlier outcome. */
-const OUTCOME_CLEARED = { appliedAt: null, failReason: null, skipReason: null };
+export const OUTCOME_CLEARED = { appliedAt: null, failReason: null, skipReason: null };
 
 interface JobTransition {
   from: JobStatus;

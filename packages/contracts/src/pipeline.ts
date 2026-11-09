@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { type JobStatus, jobSchema, MAX_LINKS } from "./feed";
+import { type JobStatus, jobSchema, jobStatusSchema, MAX_LINKS } from "./feed";
 import { MAX_PAGE_SIZE, paginatedSchema, paginationQuerySchema } from "./pagination";
 
 /** Needs you feeds the banner and nav badge; Applied lists applications, so it isn't a job view. */
@@ -59,10 +59,14 @@ export const addPipelineLinksSchema = z.object({
 });
 
 /** `duplicates` are links the user already had from the last 30 days. */
+/** Every link, new or already in the pipeline, so the caller can act on the job it names. */
 export const addedPipelineLinksSchema = z.object({
   feedId: z.uuid(),
   added: z.number().int(),
   duplicates: z.array(z.string()),
+  jobs: z.array(
+    z.object({ url: z.string(), feedId: z.uuid(), key: z.string(), status: jobStatusSchema }),
+  ),
 });
 
 /** Approve acts on To review rows, skip on those and approved ones, retry on failed ones. */

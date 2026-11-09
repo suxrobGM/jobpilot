@@ -1,8 +1,10 @@
 import type { CreatePilotRequestInput } from "@jobpilot/contracts/pilot";
 import { inject, injectable } from "@needle-di/core";
-import { conflict } from "@/common/errors";
+import { conflict, notFound } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { type PilotRequestSource, PrismaClient } from "@/generated/prisma/client";
+import { OUTCOME_CLEARED } from "@/modules/feed/jobs/job.service";
+import { publishJobUpdated } from "@/modules/feed/jobs/job-events";
 import { dropTaskList } from "../tasks/snapshot";
 import { publishRequest, requestSubject } from "./request-row";
 
@@ -49,20 +51,35 @@ export class RequestService {
     return publishRequest(userId, row, "request.updated");
   }
 
-  /** Applying is for approved jobs; a found one the user picks is approved on the way. */
+  /**
+   * The user asked for this job by name, so it overrides the pilot's own calls: a skip, a low
+   * score, a failure. Only an application already sent or in flight stops it; the duplicate guard
+   * at run start still catches the same posting applied elsewhere.
+   */
   private async approveJob(userId: string, feedId: string, key: string) {
     const job = await this.prisma.job.findFirst({
       where: { userId, feedId, key },
-      select: { status: true },
+      select: { id: true, status: true },
     });
-    if (!job || !["pending", "approved"].includes(job.status)) {
-      throw conflict("This job can't be applied to from where it is now.");
+    if (!job) {
+      throw notFound("Job not found");
     }
-    if (job.status === "pending") {
-      await this.prisma.job.updateMany({
-        where: { userId, feedId, key, status: "pending" },
-        data: { status: "approved" },
-      });
+    if (job.status === "applied") {
+      throw conflict("You already applied to this job.");
+    }
+    if (job.status === "applying") {
+      throw conflict("This job is being applied to right now.");
+    }
+    if (job.status === "approved") {
+      return;
+    }
+    const [approved] = await this.prisma.job.updateManyAndReturn({
+      where: { id: job.id, status: job.status },
+      data: { status: "approved", ...OUTCOME_CLEARED },
+      select: { feedId: true, key: true, status: true },
+    });
+    if (approved) {
+      publishJobUpdated(userId, approved);
     }
   }
 }

@@ -23,7 +23,8 @@ say so, never that the job was removed. Leave these alone:
 - Always: `skipReason` starting `Already applied`, `CAPTCHA`, `Payment required` or `No visa
   sponsorship (JD:`, or one citing a stated citizenship or clearance requirement.
 - Whole-feed runs (no `--jobs`) also leave the user's own choices: `Removed by user`, `Not
-  selected by user`, `User cancelled...`, `Max applications limit reached`, `Feed paused by user`.
+  selected by user`, `Skipped by user...`, `User cancelled...`, `Max applications limit reached`,
+  `Feed paused by user`.
 
 Low-score, zero-score and reason-less jobs are all targets: their stored score came from the run
 that wrongly skipped them. Count the targets first and process every one.

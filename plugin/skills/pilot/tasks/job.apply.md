@@ -2,8 +2,8 @@
 
 Payload `{feedId, jobKey, jobTitle, url, board, brief, resumeId?, matchScore, warmContacts?}`.
 
-Delegate one `job-applier` run with `feedId`, `jobKey`, `url`, `board`, `brief`, `resumeId` and
-`runId:$RUN_ID`. Record its outcome:
+Delegate one `job-applier` run with `feedId`, `jobKey`, `url`, `board`, `brief`, `resumeId`,
+`userAsked` (the run's `askedInChat`) and `runId:$RUN_ID`. Record its outcome:
 
 - `applied`, `failed`, `skipped`: `POST /api/feeds/$FEED_ID/jobs/$JOB_KEY/result` as in
   `../../_shared/feed-flow.md` ("Job writes"), passing the worker's `resumeId` and

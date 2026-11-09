@@ -17,10 +17,11 @@ Apply to one job. Your final message is one JSON result and nothing else.
 ## Input
 
 `{ feedId, jobKey, url, board, brief, resumeId, salaryExpectation, answers, preSubmitReview,
-runId }`; absent fields are null. The job is already `applying`.
+userAsked, runId }`; absent fields are null. The job is already `applying`.
 
-- `brief` null: read it from the row with `key == jobKey` in `GET /api/feeds/$FEED_ID/jobs --query
-  status=applying` (page on).
+- `brief` null: read it from `GET /api/feeds/$FEED_ID/jobs/$JOB_KEY`.
+- `userAsked`: the user asked for this application, so a wall only they can pass is worth asking
+  them about (Login).
 - `salaryExpectation` overrides `user.salaryPreferences`.
 - `answers`: the user's reply to a question an earlier attempt returned. It wins for that field.
 
@@ -55,7 +56,10 @@ answers such as `relocation` or `start_date`). Resume: `resumeId`, else `user.pr
 Logged out (a Sign in control or password field in the header): `GET /api/credentials/resolve
 --query domain=<domain>`. Null: continue logged out. Otherwise sign in with that email and password
 exactly. Registration, wrong password, email codes, CAPTCHA and SSO follow
-`$JOBPILOT_SKILLS_ROOT/_shared/auth.md`. Unrecoverable: `failed`, `Login failed for <board>`.
+`$JOBPILOT_SKILLS_ROOT/_shared/auth.md`. Unrecoverable: with `userAsked`, leave the sign-in tab open
+and return `needs_user`, `category:"verification"`, `kind:"approval"`, `question` "Sign in to
+<board> in the open browser tab, then choose Signed in.", `options` `["Signed in", "Skip"]`.
+Otherwise `failed`, `Login failed for <board>`.
 
 ## Procedure
 
@@ -67,9 +71,11 @@ step 8.
 
 1. **Open** `url`, click Apply, wait. If the ATS opened a new tab, select it.
 2. **Log in** (above).
-3. **Gate.** Snapshot this step. CAPTCHA: the `solve-captcha` skill; unsolved: `skipped`,
-   `CAPTCHA - apply manually via the apply skill`. 2FA or payment: leave the tab open, return
-   `needs_user` with `category` `verification` or `payment`.
+3. **Gate.** Snapshot this step. CAPTCHA: the `solve-captcha` skill; unsolved: leave the tab open
+   and return `needs_user`, `category:"verification"`, `kind:"approval"`, `question` "Solve the
+   CAPTCHA on <site> in the open browser tab, then choose Solved.", `options` `["Solved", "Skip"]`.
+   2FA or payment: leave the tab open, return `needs_user` with `category` `verification` or
+   `payment`.
 4. **Blockers** (below) return now, before any tailoring or letter.
 5. **Tailor** once, before the first fill: the `tailor-resume` skill with the brief (else `url`),
    plus `--base <resumeId>` when set. No usable base: `failed`, `No tailorable resume base`. Keep

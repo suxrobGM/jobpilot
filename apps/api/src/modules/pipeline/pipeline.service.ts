@@ -263,12 +263,21 @@ export class PipelineService {
       this.feeds.ensure(userId, "links"),
       findRecentPostings(this.prisma, userId, normalized),
     ]);
-    const fresh = normalized.filter((url) => !existing.has(url));
-    if (fresh.length > 0) {
-      await this.prisma.job.createMany({
-        data: queuedJobRows(userId, feed.id, fresh),
-      });
+    const rows = queuedJobRows(
+      userId,
+      feed.id,
+      normalized.filter((url) => !existing.has(url)),
+    );
+    if (rows.length > 0) {
+      await this.prisma.job.createMany({ data: rows });
     }
-    return { feedId: feed.id, added: fresh.length, duplicates: [...existing] };
+    const added = new Map(
+      rows.map((row) => [row.url, { feedId: feed.id, key: row.key, status: "queued" as const }]),
+    );
+    const jobs = normalized.flatMap((url) => {
+      const ref = existing.get(url) ?? added.get(url);
+      return ref ? [{ url, ...ref }] : [];
+    });
+    return { feedId: feed.id, added: rows.length, duplicates: [...existing.keys()], jobs };
   }
 }

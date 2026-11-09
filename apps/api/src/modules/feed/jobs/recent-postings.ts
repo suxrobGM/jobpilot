@@ -1,5 +1,5 @@
 import { DAY_MS } from "@/common/date/buckets";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { JobStatus, PrismaClient } from "@/generated/prisma/client";
 
 /** Overlapping searches and feeds find the same posting; one row per posting per month. */
 const DUPLICATE_WINDOW_MS = 30 * DAY_MS;
@@ -13,16 +13,28 @@ export function recentPostingsWhere(userId: string, urls: string[], now = new Da
   };
 }
 
-/** The normalized URLs the user already has from the window. */
+interface PostingRef {
+  feedId: string;
+  key: string;
+  status: JobStatus;
+}
+
+/** The normalized URLs the user already has from the window, each with its newest job. */
 export async function findRecentPostings(
   prisma: Pick<PrismaClient, "job">,
   userId: string,
   urls: string[],
-): Promise<Set<string>> {
+): Promise<Map<string, PostingRef>> {
   const rows = await prisma.job.findMany({
     where: recentPostingsWhere(userId, urls),
-    distinct: ["url"],
-    select: { url: true },
+    orderBy: { createdAt: "desc" },
+    select: { url: true, feedId: true, key: true, status: true },
   });
-  return new Set(rows.map((row) => row.url));
+  const found = new Map<string, PostingRef>();
+  for (const { url, ...ref } of rows) {
+    if (!found.has(url)) {
+      found.set(url, ref);
+    }
+  }
+  return found;
 }

@@ -3,8 +3,10 @@
 Payload `{questionId, questionKind, subjectType, subjectId, prompt, answer}`. Route by
 `subjectType`:
 
-- **`job`** (`subjectId` is `<feedId>:<jobKey>`): apply as `./job.apply.md` does, adding
-  `answers:<answer>` to the `job-applier` input.
+- **`job`** (`subjectId` is `<feedId>:<jobKey>`): `Skip` on a CAPTCHA or sign-in question: record
+  `skipped` with `Skipped by user (CAPTCHA)` or `Skipped by user (sign-in)` as `./job.apply.md`
+  records results. Otherwise apply as `./job.apply.md` does, adding `answers:<answer>` and
+  `userAsked:true` to the `job-applier` input.
 - **`email`** (an `interview.reply` approval): `Send` sends the draft in `prompt` with `POST
   /api/email/outbound` `{to, subject, body, threadId}`, replying to the `from` and `threadId` of
   `GET /api/email/messages/<subjectId>`. Free text is availability or corrections: revise the

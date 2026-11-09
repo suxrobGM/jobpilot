@@ -143,30 +143,38 @@ function JobActions(props: JobActionsProps): ReactNode {
       );
     case "failed":
       return (
-        <Button
-          variant="contained"
-          loading={request.isPending}
-          onClick={() =>
-            request.mutate({ taskType: "job.retryFailed", payload: { feedId: job.feedId } })
-          }
-        >
-          Retry
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button variant="contained" loading={request.isPending} onClick={applyNow}>
+            Apply anyway
+          </Button>
+          <Button
+            loading={request.isPending}
+            onClick={() =>
+              request.mutate({ taskType: "job.retryFailed", payload: { feedId: job.feedId } })
+            }
+          >
+            Retry all failed
+          </Button>
+        </Stack>
       );
     case "skipped":
       return (
-        <Button
-          variant="outlined"
-          loading={request.isPending}
-          onClick={() =>
-            request.mutate({
-              taskType: "job.rescanSkipped",
-              payload: { feedId: job.feedId, jobKeys: [job.key] },
-            })
-          }
-        >
-          Rescan
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button variant="contained" loading={request.isPending} onClick={applyNow}>
+            Apply anyway
+          </Button>
+          <Button
+            loading={request.isPending}
+            onClick={() =>
+              request.mutate({
+                taskType: "job.rescanSkipped",
+                payload: { feedId: job.feedId, jobKeys: [job.key] },
+              })
+            }
+          >
+            Rescan
+          </Button>
+        </Stack>
       );
     default:
       return null;

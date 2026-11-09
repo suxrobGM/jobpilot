@@ -78,7 +78,7 @@ results (above). Route `needs_user` by `category`:
    no skip.
 2. The feed is the audit trail: every state change goes through the API.
 3. Never pay for anything.
-4. A CAPTCHA is not a pause: try the `solve-captcha` skill; unsolved, skip the job with
-   `CAPTCHA - apply manually via the apply skill`. 2FA is a pause. Logins follow `./auth.md`.
+4. A CAPTCHA: try the `solve-captcha` skill; unsolved, the `job-applier` parks the job for the
+   user to solve it. 2FA is a pause. Logins follow `./auth.md`.
 5. Wait 3-5 seconds between submissions on the same site.
 6. Report scores honestly; a stretch is a stretch.
