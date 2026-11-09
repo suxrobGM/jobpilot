@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 import {
   USER_DEFAULT_VALUES,
   type UserUpdateInput,
@@ -26,14 +26,13 @@ import { PersonalSection, toProfileFormValues } from "@/components/features/sett
 import { QueryError } from "@/components/ui/feedback";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
+import { useIsDesktop } from "@/hooks/use-is-desktop";
 import { patchAgentStorage } from "@/lib/terminal/agent-storage";
 import { useToast } from "@/providers/toast-provider";
-import { AgentSetupStep } from "./agent-setup-step";
 import { ResumeUploadStep } from "./resume-upload-step";
 
 // Minimal first run; the rest lives in Settings, surfaced by the workspace's profile checklist.
 const STEPS = [
-  { key: "agent", label: "Connect agent" },
   { key: "resume", label: "Resume" },
   { key: "personal", label: "Personal" },
 ] as const;
@@ -61,8 +60,16 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [step, setStep] = useState<StepKey>("agent");
+  const [step, setStep] = useState<StepKey>("resume");
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const desktop = useIsDesktop();
+
+  // The drawer walks through agent setup; a phone has no host, so it would only hide the wizard.
+  useEffect(() => {
+    if (desktop) {
+      patchAgentStorage({ drawerOpen: true });
+    }
+  }, [desktop]);
 
   const save = useApiMutation((vars: UserUpdateInput) => api.user.put(vars), {
     successMessage: "Profile saved",
@@ -96,13 +103,8 @@ function OnboardingSteps(props: OnboardingStepsProps): ReactElement {
         ))}
       </Stepper>
       <SectionCard>
-        {step === "agent" && <AgentSetupStep onContinue={() => setStep("resume")} />}
         {step === "resume" && (
-          <ResumeUploadStep
-            form={form}
-            onContinue={() => setStep("personal")}
-            onBack={() => setStep("agent")}
-          />
+          <ResumeUploadStep form={form} onContinue={() => setStep("personal")} />
         )}
         {step === "personal" && (
           <form

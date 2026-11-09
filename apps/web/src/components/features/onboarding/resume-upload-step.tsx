@@ -15,7 +15,7 @@ import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { canRelaunch } from "@/hooks/use-terminal-health";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { useAgentConnected } from "@/providers/agent-provider";
+import { useAgentConnected, useAgentDrawer } from "@/providers/agent-provider";
 import { useToast } from "@/providers/toast-provider";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
@@ -26,8 +26,8 @@ const SLOW_EXTRACTION_MS = 90_000;
 
 export const ResumeUploadStep = withForm({
   defaultValues: USER_DEFAULT_VALUES,
-  props: { onContinue: () => {}, onBack: () => {} },
-  render: function ResumeUploadStep({ form, onContinue, onBack }) {
+  props: { onContinue: () => {} },
+  render: function ResumeUploadStep({ form, onContinue }) {
     const toast = useToast();
     const request = useCreateRequest();
     const [state, setState] = useState<StepState>("idle");
@@ -35,6 +35,7 @@ export const ResumeUploadStep = withForm({
     const [slow, setSlow] = useState(false);
     const connected = useAgentConnected();
     const agent = useAgentHealth();
+    const { openDrawer } = useAgentDrawer();
     // Null while loading, so the spinner shows instead of a warning flash.
     const agentMissing = connected === false;
     const relaunchable = canRelaunch(agent);
@@ -113,18 +114,22 @@ export const ResumeUploadStep = withForm({
             severity="warning"
             icon={<HourglassEmpty fontSize="md" />}
             action={
-              relaunchable && (
+              relaunchable ? (
                 <StartAgentButton
                   color="inherit"
                   variant="text"
                   onStart={() => agent.beginPending("starting")}
                 />
+              ) : (
+                <Button color="inherit" size="small" onClick={openDrawer}>
+                  Open agent
+                </Button>
               )
             }
           >
             {relaunchable
               ? "Resume saved, but the agent isn't running. Start it and the fields fill in here, or continue and fill them in yourself."
-              : "Resume saved; the agent reads it once one connects. Go back to connect it, or continue and fill in the details yourself."}
+              : "Resume saved; the agent reads it once one connects. Set it up in the agent drawer, or continue and fill in the details yourself."}
           </Alert>
         )}
 
@@ -165,10 +170,7 @@ export const ResumeUploadStep = withForm({
           </Alert>
         )}
 
-        <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
-          <Button variant="outlined" onClick={onBack}>
-            Back
-          </Button>
+        <Stack direction="row" sx={{ justifyContent: "flex-end", pt: 1 }}>
           <Button variant={started ? "contained" : "text"} onClick={onContinue}>
             {started ? "Continue" : "Skip - fill manually"}
           </Button>
