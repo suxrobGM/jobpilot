@@ -73,6 +73,10 @@ export const ChangeEmailSchema = z.object({
   currentPassword: z.string().optional(),
 });
 
+export const DeleteAccountSchema = z.object({
+  currentPassword: z.string().optional(),
+});
+
 export const ConfirmEmailChangeSchema = z.object({
   token: z.string().min(1),
 });
@@ -86,3 +90,4 @@ export type OAuthProviderInput = z.infer<typeof OAuthProviderSchema>;
 export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 export type ChangeEmailInput = z.infer<typeof ChangeEmailSchema>;
 export type ConfirmEmailChangeInput = z.infer<typeof ConfirmEmailChangeSchema>;
+export type DeleteAccountInput = z.infer<typeof DeleteAccountSchema>;

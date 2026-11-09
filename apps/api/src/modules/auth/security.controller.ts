@@ -2,8 +2,10 @@ import {
   ChangeEmailSchema,
   ChangePasswordSchema,
   ConfirmEmailChangeSchema,
+  DeleteAccountSchema,
 } from "@jobpilot/contracts/auth";
 import { Elysia } from "elysia";
+import { clearSessionCookie } from "@/common/auth";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
@@ -17,6 +19,7 @@ const verificationService = container.get(VerificationService);
 const limitEmailChangeConfirm = rateLimit(RATE_LIMITS.emailChangeConfirm);
 const limitPasswordChange = rateLimit(RATE_LIMITS.passwordChange);
 const limitEmailChange = rateLimit(RATE_LIMITS.emailChange);
+const limitAccountDelete = rateLimit(RATE_LIMITS.accountDelete);
 
 export const securityController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .post("/email/change/confirm", ({ body }) => verificationService.confirmEmailChange(body.token), {
@@ -53,4 +56,22 @@ export const securityController = new Elysia({ prefix: "/auth", detail: { tags: 
       description:
         "Verifies the current password (when set), then emails a confirmation link to the new address. The login email only switches when that link is clicked; until then the old address keeps working.",
     },
-  });
+  })
+  .delete(
+    "/account",
+    async ({ user, body, cookie }) => {
+      const result = await securityService.deleteAccount(user.id, body);
+      clearSessionCookie(cookie);
+      return result;
+    },
+    {
+      body: DeleteAccountSchema,
+      beforeHandle: limitAccountDelete,
+      response: okResponseSchema,
+      detail: {
+        summary: "Delete the account",
+        description:
+          "Verifies the current password (when set), then permanently deletes the user and everything it owns - profile, resumes and their files, applications, feeds, mailbox, credentials, Pilot history, sessions and the terminal token. No soft delete. Clears the session cookie. The super admin can't be deleted.",
+      },
+    },
+  );

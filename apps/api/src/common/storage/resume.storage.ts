@@ -103,10 +103,6 @@ export class ResumeStorage {
     await tryUnlink(this.resumePath(filename));
   }
 
-  private deleteGeneratedResumeFiles(resumeId: string): Promise<void> {
-    return unlinkMatching(this.generatedDir, [`master-${resumeId}-`], ".pdf");
-  }
-
   /** Takes every id at once: one call per variant would re-scan the shared cache dir each time. */
   deleteGeneratedVariantFiles(...variantIds: string[]): Promise<void> {
     return unlinkMatching(
@@ -116,12 +112,16 @@ export class ResumeStorage {
     );
   }
 
-  async deleteAllResumeArtifacts(refs: ResumeArtifactRefs): Promise<void> {
-    const { resumeId, sourceFilename, variantIds } = refs;
+  /** One cache-dir scan for every resume, so deleting an account doesn't re-scan per resume. */
+  async deleteAllResumeArtifacts(resumes: ResumeArtifactRefs[]): Promise<void> {
+    const sourceFiles = resumes.flatMap((r) => (r.sourceFilename ? [r.sourceFilename] : []));
+    const generatedPrefixes = resumes.flatMap((r) => [
+      `master-${r.resumeId}-`,
+      ...r.variantIds.map((id) => `variant-${id}-`),
+    ]);
     await Promise.all([
-      sourceFilename ? this.deleteResumeFile(sourceFilename) : Promise.resolve(),
-      this.deleteGeneratedResumeFiles(resumeId),
-      this.deleteGeneratedVariantFiles(...variantIds),
+      ...sourceFiles.map((filename) => this.deleteResumeFile(filename)),
+      unlinkMatching(this.generatedDir, generatedPrefixes, ".pdf"),
     ]);
   }
 

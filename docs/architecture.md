@@ -108,6 +108,8 @@ and flags what it can't confirm.
 - Board sessions, cookies, and form submissions: the browser on your
   computer. The website never signs in to job boards.
 - AI work: your own Claude or Codex subscription, not JobPilot's servers.
+- Deleting your account (Settings → Security) erases all of it at once.
+  There's no soft delete.
 
 Every open page updates by itself as the agent works, so you never need to
 refresh.

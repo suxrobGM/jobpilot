@@ -48,6 +48,9 @@ export const RATE_LIMITS = {
   /** Sends mail to an arbitrary address the caller typed, so tight like emailResend. */
   emailChange: { key: byUser, limit: 3, windowMs: HOUR },
 
+  /** Same current-password brute-force cap as passwordChange. */
+  accountDelete: { key: byUser, limit: 5, windowMs: HOUR },
+
   /** Magic-link consumption; same shape as passwordReset (high-entropy token, DB-cost cap). */
   emailChangeConfirm: { key: byIp, limit: 10, windowMs: HOUR },
 

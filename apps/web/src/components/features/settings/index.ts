@@ -10,4 +10,5 @@ export { ProfileSettingsForm } from "./profile/profile-settings-form";
 export { ChangeEmailCard } from "./security/change-email-card";
 export { ChangePasswordCard } from "./security/change-password-card";
 export { ConnectedAccountsCard } from "./security/connected-accounts-card";
+export { DeleteAccountCard } from "./security/delete-account-card";
 export { SettingsNav } from "./settings-nav";
