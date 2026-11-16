@@ -44,11 +44,13 @@ export class TaskListService {
       where: { userId },
       create: { userId },
       update: {},
-      select: { autopilotSince: true, cycleCount: true, config: true },
+      select: { autopilotSince: true, autopilotPausedUntil: true, cycleCount: true, config: true },
     });
     const { cycleCount } = state;
-    const autopilot = state.autopilotSince !== null;
     const now = new Date();
+    // A timed pause reads as autopilot off until it passes; the snapshot below expires at that moment.
+    const paused = state.autopilotPausedUntil !== null && state.autopilotPausedUntil > now;
+    const autopilot = state.autopilotSince !== null && !paused;
     const config = pilotConfigSchema.parse(state.config);
 
     await this.maintain(userId, config, autopilot, now);
@@ -73,7 +75,11 @@ export class TaskListService {
       chat,
       awaitingSetup: searchCount === 0,
     });
-    const taskList: TaskList = { ...content, expiresAt: new Date(now.getTime() + SNAPSHOT_TTL_MS) };
+    // During a pause the snapshot must not outlive it, or resumed autopilot waits for the TTL.
+    const pauseEnd = paused ? state.autopilotPausedUntil : null;
+    const defaultExpiry = new Date(now.getTime() + SNAPSHOT_TTL_MS);
+    const expiresAt = pauseEnd && pauseEnd < defaultExpiry ? pauseEnd : defaultExpiry;
+    const taskList: TaskList = { ...content, expiresAt };
     await this.prisma.pilotState.update({
       where: { userId },
       data: { taskList: toInputJson(taskList) },

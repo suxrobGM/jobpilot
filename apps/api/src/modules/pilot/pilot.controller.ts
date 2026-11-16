@@ -1,4 +1,5 @@
 import {
+  pauseAutopilotSchema,
   pilotStateSchema,
   recordCycleSchema,
   setAutopilotSchema,
@@ -50,6 +51,24 @@ export const pilotController = new Elysia({
       summary: "Turn autopilot on or off",
       description:
         "With autopilot off, the pilot runs only what the user asks for: requests, chat and answered questions.",
+    },
+  })
+  .post("/autopilot/pause", ({ user, body }) => pilot.pauseAutopilot(user.id, body.hours), {
+    body: pauseAutopilotSchema,
+    beforeHandle: limitMutation,
+    response: pilotStateSchema,
+    detail: {
+      summary: "Pause autopilot for a while",
+      description:
+        "Holds autonomous work for the given hours. Requests and chat still run, and autopilot resumes on its own when the time passes.",
+    },
+  })
+  .post("/autopilot/resume", ({ user }) => pilot.resumeAutopilot(user.id), {
+    beforeHandle: limitMutation,
+    response: pilotStateSchema,
+    detail: {
+      summary: "Resume a paused autopilot",
+      description: "Ends an autopilot pause early.",
     },
   })
   .post("/cycles", ({ user, body }) => pilot.recordCycle(user.id, body), {
