@@ -56,6 +56,8 @@ export const pilotStateSchema = z.object({
   userId: z.uuid(),
   // Autonomous work runs only while on; requests, chat and answered questions always run.
   autopilot: z.boolean(),
+  // While set and in the future, autonomous work waits; it resumes by itself at this time.
+  autopilotPausedUntil: z.date().nullable(),
   config: pilotConfigSchema,
   lastCycleAt: z.date().nullable(),
   nextWakeAt: z.date().nullable(),
@@ -79,6 +81,9 @@ export const pilotStateSchema = z.object({
 
 export type PilotConfig = z.infer<typeof pilotConfigSchema>;
 export const setAutopilotSchema = z.object({ enabled: z.boolean() });
+
+/** Pause length in hours: a quarter hour up to three days. */
+export const pauseAutopilotSchema = z.object({ hours: z.number().min(0.25).max(72) });
 
 export type UpdatePilotSettingsInput = z.infer<typeof updatePilotSettingsSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;

@@ -94,6 +94,8 @@ model PilotState {
   // Autopilot is on while set. Autonomous work runs only then; requests, chat and answered
   // questions always run. `cap.unused` waits for a week of it.
   autopilotSince   DateTime? @map("autopilot_since") @db.Timestamptz(3)
+  // Set by a timed pause: autonomous work waits until this passes, then resumes on its own. Autopilot stays on.
+  autopilotPausedUntil DateTime? @map("autopilot_paused_until") @db.Timestamptz(3)
   // Rules and settings; `pilotConfigSchema` parses it.
   config           Json      @default("{}")
   // The live task list; `taskListSchema` parses it, and its `expiresAt` says when it goes stale.

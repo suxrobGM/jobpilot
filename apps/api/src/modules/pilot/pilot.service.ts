@@ -6,7 +6,7 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
-import { unprocessable } from "@/common/errors";
+import { conflict, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { agentRefusedRecently } from "@/common/middleware/agent-version";
 import { publish } from "@/common/sse";
@@ -46,6 +46,7 @@ export class PilotService {
     return {
       userId: row.userId,
       autopilot: row.autopilotSince !== null,
+      autopilotPausedUntil: row.autopilotPausedUntil,
       config,
       lastCycleAt: row.lastCycleAt,
       nextWakeAt: row.nextWakeAt,
@@ -122,10 +123,37 @@ export class PilotService {
     });
     // Turning it on again keeps the original start.
     const autopilotSince = enabled ? (saved?.autopilotSince ?? new Date()) : null;
+    // A pause belongs to the autopilot run it was set in, so either change clears it.
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
       create: { userId, autopilotSince },
-      update: { autopilotSince, ...TASK_LIST_SNAPSHOT_RESET },
+      update: { autopilotSince, autopilotPausedUntil: null, ...TASK_LIST_SNAPSHOT_RESET },
+    });
+    return this.publishState(row);
+  }
+
+  /** Holds autonomous work for a while; requests and chat still run. Autopilot stays on. */
+  async pauseAutopilot(userId: string, hours: number) {
+    const saved = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { autopilotSince: true },
+    });
+    if (!saved?.autopilotSince) {
+      throw conflict("Turn autopilot on before pausing it.");
+    }
+    const autopilotPausedUntil = new Date(Date.now() + hours * 60 * 60 * 1000);
+    const row = await this.prisma.pilotState.update({
+      where: { userId },
+      data: { autopilotPausedUntil, ...TASK_LIST_SNAPSHOT_RESET },
+    });
+    return this.publishState(row);
+  }
+
+  async resumeAutopilot(userId: string) {
+    const row = await this.prisma.pilotState.upsert({
+      where: { userId },
+      create: { userId },
+      update: { autopilotPausedUntil: null, ...TASK_LIST_SNAPSHOT_RESET },
     });
     return this.publishState(row);
   }
