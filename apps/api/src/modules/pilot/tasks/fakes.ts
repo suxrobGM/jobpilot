@@ -44,6 +44,8 @@ export interface Over {
   pilotSearches?: Row[];
   answered?: Row[];
   approvedJobs?: Row[];
+  /** Set by a timed autopilot pause; autonomous work waits until it passes. */
+  autopilotPausedUntil?: Date | null;
   recentAppliedJobs?: Row[];
   contacts?: Row[];
   pausedFeeds?: string[];
@@ -180,6 +182,7 @@ function makeTaskListDb(over: Over = {}) {
     pilotState: {
       upsert: async () => ({
         autopilotSince: new Date("2026-07-01T00:00:00.000Z"),
+        autopilotPausedUntil: over.autopilotPausedUntil ?? null,
         cycleCount: 0,
         config: config,
       }),
