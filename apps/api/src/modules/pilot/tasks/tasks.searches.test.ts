@@ -75,7 +75,7 @@ describe("TaskListService search.discover", () => {
     const taskList = await service({
       config: { boards: ["ph.jobstreet.com", "Indeed.com"] },
       linkedBoards: ["indeed.com"],
-      pilotSearches: [dueRow()],
+      pilotSearches: [dueRow({ board: null })],
     }).refresh("p1");
     expect(findDiscover(taskList)?.payload).toMatchObject({ board: "Indeed.com" });
     expect(taskList.skippedBoards).toEqual(["ph.jobstreet.com"]);
