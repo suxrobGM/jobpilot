@@ -94,7 +94,10 @@ export async function gatherSetup(
   ]);
   const noStart = needsResume && resumeCount === 0;
   return {
-    task: noStart || ranRecently(last, now, IDLE_RERUN_MS) ? null : { minScore: input.minScore, trigger: "auto" },
+    task:
+      noStart || ranRecently(last, now, IDLE_RERUN_MS)
+        ? null
+        : { minScore: input.minScore, trigger: "auto" },
     retryAt: noStart ? null : retryAfter(last, now, IDLE_RERUN_MS),
   };
 }

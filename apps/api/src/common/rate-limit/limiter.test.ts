@@ -86,7 +86,9 @@ describe("rateLimit token bucket", () => {
   it("keeps an agent's bucket intact while the user's own bucket drains", () => {
     const hook = rateLimit({ limit: 1, windowMs: 60_000, key: byAgentOrUser });
     hook(ctx({ user: { id: "u1", tokenKind: "session" } }));
-    expect(caught(() => hook(ctx({ user: { id: "u1", tokenKind: "session" } })))).toMatchObject({ status: 429 });
+    expect(caught(() => hook(ctx({ user: { id: "u1", tokenKind: "session" } })))).toMatchObject({
+      status: 429,
+    });
     expect(caught(() => hook(ctx({ user: { id: "u1", tokenKind: "terminal" } })))).toBeUndefined();
   });
 

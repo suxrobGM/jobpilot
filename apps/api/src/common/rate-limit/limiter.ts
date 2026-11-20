@@ -46,7 +46,9 @@ export const byUser: RateLimitKey = (ctx) =>
  * `AuthTokenService.verify`.
  */
 export const byAgentOrUser: RateLimitKey = (ctx) => {
-  if (!ctx.user) return `ip:${clientIp(ctx)}`;
+  if (!ctx.user) {
+    return `ip:${clientIp(ctx)}`;
+  }
   return ctx.user.tokenKind === "terminal" ? `agent:${ctx.user.id}` : `user:${ctx.user.id}`;
 };
 

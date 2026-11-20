@@ -70,7 +70,9 @@ export function retryAfter(
   now: Date,
   cooldownMs: number,
 ): Date | null {
-  if (!last?.finishedAt) return null;
+  if (!last?.finishedAt) {
+    return null;
+  }
   const cooldown = isCrash(last.outcome) ? Math.min(cooldownMs, CRASH_RETRY_MS) : cooldownMs;
   const held = new Date(last.finishedAt.getTime() + cooldown);
   return now < held ? held : null;
