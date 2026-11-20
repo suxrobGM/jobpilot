@@ -70,9 +70,7 @@ describe("get agentNotes", () => {
     };
     const svc = new UserService(db as unknown as PrismaClient);
     await svc.get("u1");
-    expect(
-      (select!.profile as { select: Record<string, unknown> }).select.agentNotes,
-    ).toBe(true);
+    expect((select!.profile as { select: Record<string, unknown> }).select.agentNotes).toBe(true);
   });
 });
 

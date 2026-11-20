@@ -24,20 +24,14 @@ describe("agentNotes", () => {
   });
 
   it("trims the value", () => {
-    expect(userUpdateSchema.parse(body({ agentNotes: "  3 YOE  " })).agentNotes).toBe(
-      "3 YOE",
-    );
+    expect(userUpdateSchema.parse(body({ agentNotes: "  3 YOE  " })).agentNotes).toBe("3 YOE");
   });
 
   it("caps at 2000 characters on the trimmed value", () => {
-    expect(userUpdateSchema.safeParse(body({ agentNotes: "x".repeat(2000) })).success).toBe(
+    expect(userUpdateSchema.safeParse(body({ agentNotes: "x".repeat(2000) })).success).toBe(true);
+    expect(userUpdateSchema.safeParse(body({ agentNotes: "x".repeat(2001) })).success).toBe(false);
+    expect(userUpdateSchema.safeParse(body({ agentNotes: `  ${"x".repeat(1999)} ` })).success).toBe(
       true,
     );
-    expect(userUpdateSchema.safeParse(body({ agentNotes: "x".repeat(2001) })).success).toBe(
-      false,
-    );
-    expect(
-      userUpdateSchema.safeParse(body({ agentNotes: `  ${"x".repeat(1999)} ` })).success,
-    ).toBe(true);
   });
 });
