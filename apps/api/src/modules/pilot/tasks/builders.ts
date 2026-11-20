@@ -57,6 +57,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   setup: null,
   research: null,
   setupRetryAt: null,
+  skippedBoards: [],
   ...over,
 });
 

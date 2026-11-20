@@ -72,6 +72,8 @@ export interface TaskListInput extends TaskCounts, AutonomousWork {
   cycleCount: number;
   // No searches yet.
   awaitingSetup: boolean;
+  // Instructions boards the profile never linked, verbatim for display.
+  skippedBoards: string[];
 }
 
 type PipelineWork = Pick<
@@ -285,6 +287,7 @@ function finishTaskList(
     },
     emptyReason: emptyReason(ranked.length, capReached, input.awaitingSetup, input.autopilot),
     setupRetryAt: input.setupRetryAt,
+    skippedBoards: input.skippedBoards,
     sleepSeconds,
     nextWakeAt: new Date(now.getTime() + sleepSeconds * 1000),
   };

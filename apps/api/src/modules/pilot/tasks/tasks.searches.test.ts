@@ -70,6 +70,16 @@ describe("TaskListService search.discover", () => {
     }).refresh("p1");
     expect(findDiscover(unreported)).toBeUndefined();
   });
+
+  it("rotates only over linked boards and surfaces the skipped ones", async () => {
+    const taskList = await service({
+      config: { boards: ["ph.jobstreet.com", "Indeed.com"] },
+      linkedBoards: ["indeed.com"],
+      pilotSearches: [dueRow()],
+    }).refresh("p1");
+    expect(findDiscover(taskList)?.payload).toMatchObject({ board: "Indeed.com" });
+    expect(taskList.skippedBoards).toEqual(["ph.jobstreet.com"]);
+  });
 });
 
 describe("TaskListService search.setup", () => {

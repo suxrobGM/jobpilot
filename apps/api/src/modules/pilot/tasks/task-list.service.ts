@@ -8,6 +8,7 @@ import { inject, injectable } from "@needle-di/core";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
+import { linkedBoardDomains, partitionBoards } from "../boards";
 import { buildTaskList } from "./build";
 import { DigestService } from "./digest.service";
 import { gatherAutonomousWork, NO_AUTONOMOUS_WORK } from "./gather/autonomous";
@@ -52,12 +53,21 @@ export class TaskListService {
     const config = pilotConfigSchema.parse(state.config);
 
     await this.maintain(userId, config, autopilot, now);
+
+    // Unconfigured boards claim and fail pre-browser every rotation (B74): rotate only over
+    // linked boards and surface the skipped set instead.
+    const linked = await linkedBoardDomains(this.prisma, userId);
+    const { usable, skipped: skippedBoards } = partitionBoards(config.boards, linked);
+    const rotationConfig = skippedBoards.length > 0 ? { ...config, boards: usable } : config;
+
     const ctx = { prisma: this.prisma, userId, now };
     const countsRead = gatherCounts(ctx);
     const [{ searchCount, ...counts }, work, requests, chat] = await Promise.all([
       countsRead,
-      autopilot ? gatherAutonomousWork(ctx, { config, counts: countsRead }) : NO_AUTONOMOUS_WORK,
-      gatherRequests(ctx, { config, cycleCount }),
+      autopilot
+        ? gatherAutonomousWork(ctx, { config: rotationConfig, counts: countsRead })
+        : NO_AUTONOMOUS_WORK,
+      gatherRequests(ctx, { config: rotationConfig, cycleCount }),
       gatherChat(ctx),
     ]);
     void this.digest.writeIfDue(userId, now, counts.openQuestions);
@@ -66,12 +76,13 @@ export class TaskListService {
       ...counts,
       ...work,
       now,
-      config,
+      config: rotationConfig,
       autopilot,
       cycleCount,
       requests,
       chat,
       awaitingSetup: searchCount === 0,
+      skippedBoards,
     });
     const taskList: TaskList = { ...content, expiresAt: new Date(now.getTime() + SNAPSHOT_TTL_MS) };
     await this.prisma.pilotState.update({

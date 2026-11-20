@@ -111,6 +111,13 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
       <Box sx={{ mt: 2 }}>
         <AgentList activeAgent={activeAgent} dimmed={dimmed} />
       </Box>
+      {(taskList.data?.skippedBoards.length ?? 0) > 0 && (
+        <Box sx={{ mt: 1.5 }}>
+          <Typography variant="captionMuted">
+            Skipping boards not linked in your profile: {taskList.data?.skippedBoards.join(", ")}
+          </Typography>
+        </Box>
+      )}
       <Box sx={{ mt: 1.5 }}>
         <Typography variant="captionMuted">
           Each cycle the host checks for work, the server picks one task, and the pilot session
