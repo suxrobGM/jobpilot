@@ -33,6 +33,7 @@ export const NO_AUTONOMOUS_WORK: AutonomousWork = {
   approvedNetworking: [],
   followups: [],
   setup: null,
+  setupRetryAt: null,
   research: null,
 };
 
@@ -93,7 +94,8 @@ export async function gatherAutonomousWork(
     ...searches,
     ...queued,
     ...idle.reviews,
-    setup: idle.setup,
+    setup: idle.setup?.task ?? null,
+    setupRetryAt: idle.setup?.retryAt ?? null,
     research: idle.research,
   };
 }

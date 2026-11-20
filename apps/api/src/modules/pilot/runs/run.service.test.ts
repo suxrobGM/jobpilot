@@ -53,6 +53,8 @@ const snapshot: TaskList = {
     resetsAt: now,
   },
   emptyReason: null,
+  setupRetryAt: null,
+  skippedBoards: [],
   sleepSeconds: 15,
   nextWakeAt: new Date(now.getTime() + 15_000),
 };

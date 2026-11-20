@@ -65,6 +65,8 @@ export interface Over {
   quietFeeds?: Row[];
   quietJobCounts?: Row[];
   skipReasonRows?: { feedId: string; skipReason: string | null; _count: { _all: number } }[];
+  /** Domains the user linked on the Job boards page; defaults to none so a test must opt in. */
+  linkedBoards?: string[];
   /** Whether today's digest is already out; defaults to true so it stays quiet elsewhere. */
   digestedToday?: boolean;
   digestApps?: number;
@@ -199,6 +201,9 @@ function makeTaskListDb(over: Over = {}) {
     resume: { findMany: async () => [], count: async () => over.resumeCount ?? 0 },
     pilotQuestion: fakePilotQuestion(over),
     job: fakeJob(over),
+    userJobBoard: {
+      findMany: async () => (over.linkedBoards ?? []).map((domain) => ({ board: { domain } })),
+    },
     application: {
       count: async (a: { where: Row }) =>
         over.digestApps != null && a.where.appliedAt ? over.digestApps : (over.appliedToday ?? 0),

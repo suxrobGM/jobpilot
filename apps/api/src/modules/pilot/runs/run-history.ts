@@ -64,6 +64,20 @@ export function ranRecently(
   return now.getTime() - last.finishedAt.getTime() < cooldown;
 }
 
+/** The instant a held-back run frees up; null while one is open or nothing is held. */
+export function retryAfter(
+  last: RunHistory | null | undefined,
+  now: Date,
+  cooldownMs: number,
+): Date | null {
+  if (!last?.finishedAt) {
+    return null;
+  }
+  const cooldown = isCrash(last.outcome) ? Math.min(cooldownMs, CRASH_RETRY_MS) : cooldownMs;
+  const held = new Date(last.finishedAt.getTime() + cooldown);
+  return now < held ? held : null;
+}
+
 interface RecentRunFilter {
   taskType: string;
   cooldownMs: number;

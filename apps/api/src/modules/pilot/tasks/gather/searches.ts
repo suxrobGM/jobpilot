@@ -1,6 +1,12 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
-import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "../../runs/run-history";
+import {
+  GATHER_CAP,
+  latestRun,
+  latestRunBySubject,
+  ranRecently,
+  retryAfter,
+} from "../../runs/run-history";
 import type { GatherContext } from "./gather-context";
 
 /** With apply room left, an idle search reruns early, and setup refills, at most this often. */
@@ -78,7 +84,7 @@ interface SetupInput {
 export async function gatherSetup(
   ctx: GatherContext,
   input: SetupInput,
-): Promise<TaskPayload<"search.setup"> | null> {
+): Promise<{ task: TaskPayload<"search.setup"> | null; retryAt: Date | null }> {
   const { prisma, userId, now } = ctx;
   // With no searches the first ones come from the resume.
   const needsResume = input.searchCount === 0;
@@ -87,8 +93,11 @@ export async function gatherSetup(
     needsResume ? prisma.resume.count({ where: { userId } }) : null,
   ]);
   const noStart = needsResume && resumeCount === 0;
-  if (noStart || ranRecently(last, now, IDLE_RERUN_MS)) {
-    return null;
-  }
-  return { minScore: input.minScore, trigger: "auto" };
+  return {
+    task:
+      noStart || ranRecently(last, now, IDLE_RERUN_MS)
+        ? null
+        : { minScore: input.minScore, trigger: "auto" },
+    retryAt: noStart ? null : retryAfter(last, now, IDLE_RERUN_MS),
+  };
 }

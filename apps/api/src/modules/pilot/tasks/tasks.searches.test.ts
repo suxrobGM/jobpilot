@@ -70,6 +70,16 @@ describe("TaskListService search.discover", () => {
     }).refresh("p1");
     expect(findDiscover(unreported)).toBeUndefined();
   });
+
+  it("rotates only over linked boards and surfaces the skipped ones", async () => {
+    const taskList = await service({
+      config: { boards: ["ph.jobstreet.com", "Indeed.com"] },
+      linkedBoards: ["indeed.com"],
+      pilotSearches: [dueRow({ board: null })],
+    }).refresh("p1");
+    expect(findDiscover(taskList)?.payload).toMatchObject({ board: "Indeed.com" });
+    expect(taskList.skippedBoards).toEqual(["ph.jobstreet.com"]);
+  });
 });
 
 describe("TaskListService search.setup", () => {
@@ -86,6 +96,28 @@ describe("TaskListService search.setup", () => {
       pilotSearches: [futureRow({ lastRunAt: new Date() })],
     }).refresh("p1");
     expect(findSetup(taskList)).toBeDefined();
+  });
+
+  it("says when a held-back setup retries, sooner after a crash than a decision", async () => {
+    const finishedAt = new Date(Date.now() - 30 * 60_000);
+    const crashed = await service({
+      resumeCount: 1,
+      latestRuns: { "search.setup": { finishedAt, outcome: "expired" } },
+    }).refresh("p1");
+    expect(findSetup(crashed)).toBeUndefined();
+    expect(crashed.setupRetryAt).toEqual(new Date(finishedAt.getTime() + 2 * HOUR_MS));
+
+    const decided = await service({
+      resumeCount: 1,
+      latestRuns: { "search.setup": { finishedAt, outcome: "done" } },
+    }).refresh("p1");
+    expect(decided.setupRetryAt).toEqual(new Date(finishedAt.getTime() + 6 * HOUR_MS));
+
+    const running = await service({
+      resumeCount: 1,
+      latestRuns: { "search.setup": { finishedAt: null } },
+    }).refresh("p1");
+    expect(running.setupRetryAt).toBeNull();
   });
 
   it("stays out with nothing to start from, the cap spent, a try recent, or work queued", async () => {

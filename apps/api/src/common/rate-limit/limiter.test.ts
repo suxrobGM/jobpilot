@@ -3,6 +3,7 @@
 
 import {
   acquireSlot,
+  byAgentOrUser,
   byEmail,
   byEmailAndIp,
   byIp,
@@ -31,6 +32,12 @@ describe("rate-limit keys", () => {
       "user:u1",
     );
     expect(byUser(ctx({ headers: { "x-real-ip": "1.1.1.1" } }))).toBe("ip:1.1.1.1");
+  });
+
+  it("byAgentOrUser buckets PAT callers apart from the same user's session", () => {
+    expect(byAgentOrUser(ctx({ user: { id: "u1", tokenKind: "terminal" } }))).toBe("agent:u1");
+    expect(byAgentOrUser(ctx({ user: { id: "u1", tokenKind: "session" } }))).toBe("user:u1");
+    expect(byAgentOrUser(ctx({ headers: { "x-real-ip": "1.1.1.1" } }))).toBe("ip:1.1.1.1");
   });
 
   it("byEmail lowercases and skips (null) when the email is missing or oversized", () => {
@@ -74,6 +81,15 @@ describe("rateLimit token bucket", () => {
     hook(ctx({ headers: { "x-real-ip": "1.1.1.1" } }));
     // A different IP has its own full bucket.
     expect(caught(() => hook(ctx({ headers: { "x-real-ip": "2.2.2.2" } })))).toBeUndefined();
+  });
+
+  it("keeps an agent's bucket intact while the user's own bucket drains", () => {
+    const hook = rateLimit({ limit: 1, windowMs: 60_000, key: byAgentOrUser });
+    hook(ctx({ user: { id: "u1", tokenKind: "session" } }));
+    expect(caught(() => hook(ctx({ user: { id: "u1", tokenKind: "session" } })))).toMatchObject({
+      status: 429,
+    });
+    expect(caught(() => hook(ctx({ user: { id: "u1", tokenKind: "terminal" } })))).toBeUndefined();
   });
 
   it("honours the burst knob above the sustained limit", () => {

@@ -6,7 +6,7 @@ export interface RateLimitContext {
   server: { requestIP(request: Request): { address: string } | null } | null;
   headers: Record<string, string | undefined>;
   body?: unknown;
-  user?: { id: string };
+  user?: { id: string; tokenKind?: string };
 }
 
 /** How requests are bucketed. `null` skips the check for this request. */
@@ -39,6 +39,18 @@ export const byIp: RateLimitKey = (ctx) => `ip:${clientIp(ctx)}`;
 
 export const byUser: RateLimitKey = (ctx) =>
   ctx.user ? `user:${ctx.user.id}` : `ip:${clientIp(ctx)}`;
+
+/**
+ * Machine credentials (terminal tokens) bucket apart from the user's session, so a human
+ * watching the dashboard can't drain the agent's allowance. `tokenKind` is set by
+ * `AuthTokenService.verify`.
+ */
+export const byAgentOrUser: RateLimitKey = (ctx) => {
+  if (!ctx.user) {
+    return `ip:${clientIp(ctx)}`;
+  }
+  return ctx.user.tokenKind === "terminal" ? `agent:${ctx.user.id}` : `user:${ctx.user.id}`;
+};
 
 /** Throttles stuffing against one account without punishing everyone behind a shared office NAT. */
 export const byEmailAndIp: RateLimitKey = (ctx) => {
