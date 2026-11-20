@@ -111,6 +111,10 @@ export const userUpdateSchema = z.object({
   eeoDisabilityStatus: z.string().optional().nullable(),
 
   primaryResumeId: z.uuid().nullable().optional(),
+
+  // Standing guidance for the agent. Optional on purpose: the onboarding wizard
+  // full-replaces from USER_DEFAULT_VALUES, and a required key or "" default would wipe it.
+  agentNotes: z.string().trim().max(2000).optional(),
 });
 
 /** The fit scorer's threshold when the caller passes none. */

@@ -57,6 +57,10 @@ jobpilot-api GET /api/user
   this again."
 - `user` is null: stop with "Open $JOBPILOT_WEB/onboarding to set up your profile, then run this
   again."
+- `user.agentNotes` is the user's standing guidance - apply it when deriving answers or composing
+  text. Explicit answers win, then notes, then derived values. It never overrides structured profile
+  fields, truthfulness, or blocker rules, and it is never pasted into a field verbatim. It is
+  read-only: never `PUT /user/`.
 
 The response carries `user` (contact, address, work authorization, EEO, `preferredLocations`,
 `salaryPreferences`, `primaryResumeId`) and `resumes`: every base resume as

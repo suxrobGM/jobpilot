@@ -14,6 +14,7 @@ import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/toast-provider";
 import { SettingsCard } from "../settings-card";
 import { AddressSection } from "./address-section";
+import { AgentNotesSection } from "./agent-notes-section";
 import { EeoSection } from "./eeo-section";
 import { PersonalSection } from "./personal-section";
 import { toProfileFormValues } from "./profile-form-values";
@@ -122,6 +123,9 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
           </SettingsCard>
           <SettingsCard>
             <AddressSection form={form} />
+          </SettingsCard>
+          <SettingsCard>
+            <AgentNotesSection form={form} />
           </SettingsCard>
         </Stack>
       )}

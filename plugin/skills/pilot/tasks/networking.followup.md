@@ -1,7 +1,9 @@
 # `networking.followup`
 
 Payload `{feedId, messageId, contactId, contactName, contactEmail, subject, sentAt, daysSince,
-channel, autonomy}`.
+channel, autonomy}`. Load `GET /api/user`; `user.agentNotes` is the user's standing guidance - apply
+it when composing the follow-up. It never overrides structured profile fields or truthfulness, and
+it is never pasted into a message verbatim. It is read-only: never `PUT /user/`.
 
 Write a two- or three-sentence follow-up that refers to `subject` and adds one thing the first
 message lacked: another proof point from the resume, a link to recent work, or a narrower ask. No

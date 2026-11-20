@@ -33,6 +33,7 @@ export const PROFILE_SELECT = {
   eeoHispanicOrLatino: true,
   eeoVeteranStatus: true,
   eeoDisabilityStatus: true,
+  agentNotes: true,
   updatedAt: true,
 } satisfies Prisma.ProfileSelect;
 
