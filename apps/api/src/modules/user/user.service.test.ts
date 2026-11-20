@@ -1,4 +1,4 @@
-import type { UserWithAutoApplyInput } from "@jobpilot/contracts/user";
+import type { UserUpdateInput } from "@jobpilot/contracts/user";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { userAggregateSchema } from "./user.schema";
 import { UserService } from "./user.service";
@@ -16,20 +16,20 @@ const baseBody = (over: Record<string, unknown> = {}) =>
     references: [],
     salaryPreferences: [],
     ...over,
-  }) as UserWithAutoApplyInput;
+  }) as UserUpdateInput;
 
 function updateService() {
   let updateData: Record<string, unknown> | undefined;
   const db = {
-    user: {
+    user: { update: async () => ({ id: "u1" }) },
+    profile: {
       update: async (a: { data: Record<string, unknown> }) => {
         updateData = a.data;
-        return { id: "u1" };
+        return { userId: "u1" };
       },
     },
-    reference: { deleteMany: async () => ({}), createMany: async () => ({}) },
+    professionalReference: { deleteMany: async () => ({}), createMany: async () => ({}) },
     salaryPreference: { deleteMany: async () => ({}), createMany: async () => ({}) },
-    autoApplySettings: { upsert: async () => ({}) },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   };
   return { svc: new UserService(db as unknown as PrismaClient), updateData: () => updateData };
@@ -59,19 +59,20 @@ describe("get agentNotes", () => {
           return {
             id: "u1",
             primaryResumeId: null,
-            preferredLocations: "[]",
             updatedAt: new Date(),
+            profile: { preferredLocations: [] },
           };
         },
       },
-      autoApplySettings: { findUnique: async () => null },
       resume: { findMany: async () => [] },
-      reference: { findMany: async () => [] },
+      professionalReference: { findMany: async () => [] },
       salaryPreference: { findMany: async () => [] },
     };
     const svc = new UserService(db as unknown as PrismaClient);
     await svc.get("u1");
-    expect(select!.agentNotes).toBe(true);
+    expect(
+      (select!.profile as { select: Record<string, unknown> }).select.agentNotes,
+    ).toBe(true);
   });
 });
 

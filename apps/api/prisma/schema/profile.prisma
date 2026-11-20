@@ -47,6 +47,9 @@ model Profile {
   eeoVeteranStatus    String? @map("eeo_veteran_status")
   eeoDisabilityStatus String? @map("eeo_disability_status")
 
+  // Standing user-authored guidance for the agent (e.g. "3 years of experience").
+  agentNotes String @default("") @map("agent_notes")
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
