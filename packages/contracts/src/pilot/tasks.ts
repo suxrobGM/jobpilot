@@ -354,7 +354,7 @@ const taskListContentSchema = z.object({
     resetsAt: storedDate,
   }),
   emptyReason: z.enum(["capReached", "awaitingSetup", "autopilotOff", "clear"]).nullable(),
-  setupRetryAt: z.date().nullable().default(null),
+  setupRetryAt: storedDate.nullable().default(null),
   skippedBoards: z.array(z.string()).default([]),
   sleepSeconds: z.number(),
   nextWakeAt: storedDate,
