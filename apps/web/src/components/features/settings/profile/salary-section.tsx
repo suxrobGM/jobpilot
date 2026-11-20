@@ -32,6 +32,7 @@ const CURRENCY_SYMBOLS: Record<SalaryCurrency, string> = {
   CAD: "CA$",
   AUD: "A$",
   INR: "₹",
+  PHP: "₱",
 };
 const CURRENCIES = SALARY_CURRENCIES.map((code) => ({ value: code, label: code }));
 

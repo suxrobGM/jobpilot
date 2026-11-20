@@ -112,6 +112,7 @@ enum SalaryCurrency {
   CAD
   AUD
   INR
+  PHP
 
   @@map("salary_currency")
 }
