@@ -51,6 +51,9 @@ function serverCaption(taskList: TaskList | null | undefined): string {
   if (reason === "capReached" && taskList) {
     return `Daily cap reached · resets in ${formatTimeUntil(taskList.budget.resetsAt)}`;
   }
+  if (reason === "awaitingSetup" && taskList?.setupRetryAt) {
+    return `Setup retry in ${formatTimeUntil(taskList.setupRetryAt)}`;
+  }
   return EMPTY_REASON_CAPTIONS[reason];
 }
 

@@ -56,6 +56,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   retryFailed: [],
   setup: null,
   research: null,
+  setupRetryAt: null,
   ...over,
 });
 

@@ -57,6 +57,8 @@ export interface AutonomousWork extends FeedReviews {
   followups: Followup[];
   setup: TaskPayload<"search.setup"> | null;
   research: ResearchTask | null;
+  // When a held-back setup frees up; null while one is open or nothing is held.
+  setupRetryAt: Date | null;
 }
 
 export interface TaskListInput extends TaskCounts, AutonomousWork {
@@ -282,6 +284,7 @@ function finishTaskList(
       resetsAt: nextDayReset(now),
     },
     emptyReason: emptyReason(ranked.length, capReached, input.awaitingSetup, input.autopilot),
+    setupRetryAt: input.setupRetryAt,
     sleepSeconds,
     nextWakeAt: new Date(now.getTime() + sleepSeconds * 1000),
   };
