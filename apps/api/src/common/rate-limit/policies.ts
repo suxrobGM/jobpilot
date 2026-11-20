@@ -1,4 +1,11 @@
-import { byEmail, byEmailAndIp, byIp, byUser, type RateLimitPolicy } from "./limiter";
+import {
+  byAgentOrUser,
+  byEmail,
+  byEmailAndIp,
+  byIp,
+  byUser,
+  type RateLimitPolicy,
+} from "./limiter";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -78,8 +85,9 @@ export const RATE_LIMITS = {
     message: "Too many CAPTCHA solves in flight. Slow the loop down.",
   },
 
-  /** Pilot polls the task list once per cycle; burst covers a tight run-then-repoll loop. */
-  pilotTasks: { key: byUser, limit: 240, windowMs: HOUR, burst: 10 },
+  /** Pilot polls the task list once per cycle; burst covers a tight run-then-repoll loop. PAT
+   *  calls bucket apart from the session, or dashboard watching starves the host. */
+  pilotTasks: { key: byAgentOrUser, limit: 240, windowMs: HOUR, burst: 10 },
 
   /** Streams every finished run, and is rarely needed. */
   pilotRunsExport: { key: byUser, limit: 10, windowMs: HOUR },
