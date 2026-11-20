@@ -64,7 +64,7 @@ export const SALARY_PERIODS = ["yearly", "monthly", "hourly"] as const;
 
 export type SalaryPeriod = (typeof SALARY_PERIODS)[number];
 
-export const SALARY_CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD", "INR"] as const;
+export const SALARY_CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD", "INR", "PHP"] as const;
 
 export type SalaryCurrency = (typeof SALARY_CURRENCIES)[number];
 
