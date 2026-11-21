@@ -24,7 +24,7 @@ export function AskedRow(props: AskedRowProps): ReactElement {
     ? `You answered: ${question.answer}`
     : CLOSED_LABELS[question.status];
   return (
-    <PilotTurn at={question.createdAt}>
+    <PilotTurn at={new Date(question.createdAt)}>
       <Stack
         spacing={1}
         sx={(theme) => ({
