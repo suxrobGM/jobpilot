@@ -63,8 +63,8 @@ export function TurnLine(props: TurnLineProps): ReactElement {
   );
 }
 
-export function formatClockSpan(start: Date, end: Date): string {
-  const from = timeFormat.format(start);
-  const to = timeFormat.format(end);
+export function formatClockSpan(start: string | Date, end: string | Date): string {
+  const from = timeFormat.format(new Date(start));
+  const to = timeFormat.format(new Date(end));
   return from === to ? to : `${from}–${to}`;
 }

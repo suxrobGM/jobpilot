@@ -109,11 +109,12 @@ export function formatHour(hour: number): string {
 }
 
 /** Pinned to UTC: a bucket is UTC midnight, which shows as the previous day west of Greenwich. */
-export function formatDayBucket(value: Date): string {
-  if (Number.isNaN(value.getTime())) {
+export function formatDayBucket(value: string | Date): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
     return "";
   }
-  return value.toLocaleDateString(undefined, {
+  return date.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     timeZone: "UTC",

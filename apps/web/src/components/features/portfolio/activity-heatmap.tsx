@@ -116,7 +116,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
               {perDay.map((day, i) => (
                 // Native `title`, not a MUI Tooltip: ~365 cells, a Popper per cell is far too heavy.
                 <Box
-                  key={day.date.getTime()}
+                  key={new Date(day.date).getTime()}
                   title={`${plural(day.count, "activity", "activities")} · ${formatDayBucket(day.date)}`}
                   sx={{
                     // Offset only the first square to its weekday row; the rest auto-flow down columns.

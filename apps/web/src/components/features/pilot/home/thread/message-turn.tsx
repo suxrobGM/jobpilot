@@ -13,7 +13,7 @@ export function MessageTurn(props: MessageTurnProps): ReactElement {
   const { message } = props;
   if (message.author === "pilot") {
     return (
-      <PilotTurn at={message.createdAt}>
+      <PilotTurn at={new Date(message.createdAt)}>
         <MessageMarkdown body={message.body} />
       </PilotTurn>
     );

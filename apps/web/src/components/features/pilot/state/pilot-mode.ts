@@ -95,14 +95,14 @@ export function pilotMode(
 }
 
 /** What an idle pilot last found and when it looks again, e.g. "Checked 4m ago, nothing to do · wakes in 11m". */
-export function idleCaption(pilot: PilotHealth | null, nextWakeAt: Date | null): string {
+export function idleCaption(pilot: PilotHealth | null, nextWakeAt: string | Date | null): string {
   const parts: string[] = [];
   const lastCycleAt = pilot?.lastCycleAt ?? null;
   if (pilot?.lastCycleStatus === "empty" && lastCycleAt) {
     parts.push(`Checked ${formatRelativeTime(lastCycleAt)} ago, nothing to do`);
   }
   if (nextWakeAt) {
-    const due = nextWakeAt.getTime() <= Date.now();
+    const due = new Date(nextWakeAt).getTime() <= Date.now();
     parts.push(due ? "next check due now" : `wakes in ${formatTimeUntil(nextWakeAt)}`);
   }
   return parts.join(" · ");
